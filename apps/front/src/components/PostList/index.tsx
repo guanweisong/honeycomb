@@ -127,8 +127,8 @@ export default function PostList(props: PostListProps) {
       <div>{postList.map((item) => renderCard(item))}</div>
       {isEnd && <Signature text={t("listEnd")} />}
       {isLoadingMore && (
-        <div className="mt-4 text-center">
-          <Loader />
+        <div className="mt-4 flex justify-center">
+          <Loader className="animate-spin" />
         </div>
       )}
     </>
