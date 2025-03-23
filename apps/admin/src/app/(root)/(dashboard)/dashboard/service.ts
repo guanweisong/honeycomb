@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@/src/utils/request";
 import type { StatisticsIndexResponse } from "./types/statistics.index.response";
 
 export default class DashboardService {

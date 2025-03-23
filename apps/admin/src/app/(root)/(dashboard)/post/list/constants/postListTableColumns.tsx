@@ -2,10 +2,10 @@ import {
   CategoryReadOnly,
   PostEntity,
   UserReadOnly,
-} from "@/app/(root)/(dashboard)/post/types/post.entity";
-import MultiLangText from "@/components/MultiLangText";
-import { MultiLang } from "@/types/MulitLang";
-import { SortOrder } from "@/types/SortOrder";
+} from "@/src/app/(root)/(dashboard)/post/types/post.entity";
+import MultiLangText from "@/src/components/MultiLangText";
+import { MultiLang } from "@/src/types/MulitLang";
+import { SortOrder } from "@/src/types/SortOrder";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";
@@ -105,7 +105,7 @@ export const PostListTableColumns = (props: PostListTableColumnsProps) =>
       search: false,
       width: 80,
       fixed: "right",
-      render: (text, record) => (
+      render: (_text, record) => (
         <p>
           <Link href={`/post/edit?id=${record.id}`}>编辑</Link>&nbsp;
           <Popconfirm

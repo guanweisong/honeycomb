@@ -1,4 +1,4 @@
-import { SortOrder } from "@/types/SortOrder";
+import { SortOrder } from "@/src/types/SortOrder";
 
 export interface PaginationRequest {
   page?: number;

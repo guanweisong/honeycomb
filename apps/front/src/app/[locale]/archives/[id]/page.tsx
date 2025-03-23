@@ -20,13 +20,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MenuType } from "@/src/types/menu/MenuType";
 import { MultiLang } from "@/src/types/Language";
 import { BookOpen, Calendar, Camera } from "lucide-react";
+import { Metadata } from "next";
 
-export default async function Archives({
-  params,
-}: {
-  params: { id: string; locale: keyof MultiLang };
-}) {
-  const { id, locale } = params;
+export interface ArchivesProps {
+  params: Promise<{ id: string; locale: keyof MultiLang }>;
+}
+
+export default async function Archives(props: ArchivesProps) {
+  const { id, locale } = await props.params;
   const postDetail = await PostServer.indexPostDetail(id);
   const t = await getTranslations("Archive");
 
@@ -156,13 +157,15 @@ export default async function Archives({
   );
 }
 
-export interface GenerateMetadataProps {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type GenerateMetadataProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-export async function generateMetadata(props: GenerateMetadataProps) {
-  const { id } = props.params;
+export async function generateMetadata(
+  props: GenerateMetadataProps,
+): Promise<Metadata> {
+  const { id } = await props.params;
   const setting = await SettingServer.indexSetting();
   const postDetail = await PostServer.indexPostDetail(id);
   const locale = (await getLocale()) as keyof MultiLang;

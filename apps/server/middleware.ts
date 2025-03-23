@@ -9,7 +9,7 @@ export default async function middleware(req: NextRequest) {
 
   return Cors(req, res, {
     credentials: true,
-    origin: (origin, req) => {
+    origin: (origin) => {
       return origin!;
     },
   });

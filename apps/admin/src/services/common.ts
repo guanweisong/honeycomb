@@ -1,6 +1,6 @@
-import { UserEntity } from "@/app/(root)/(dashboard)/user/types/user.entity";
-import { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import { UserEntity } from "@/src/app/(root)/(dashboard)/user/types/user.entity";
+import { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 
 export default class CommonService {
   static queryUser = (): Promise<BaseResponse<UserEntity>> => {

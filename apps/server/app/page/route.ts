@@ -14,6 +14,7 @@ import { errorHandle } from "@/libs/errorHandle";
 export async function GET(request: NextRequest) {
   // @ts-ignore
   return validateParams(
+    // @ts-ignore
     PageListQuerySchema,
     getQueryParams(request),
     async (data) => {

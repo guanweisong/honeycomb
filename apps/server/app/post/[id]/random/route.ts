@@ -4,11 +4,11 @@ import ResponseHandler from "@/libs/responseHandler";
 import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } },
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   return errorHandle(async () => {
-    const { id } = params;
+    const { id } = await params;
     const allIds = await prisma.post
       .findMany({ where: { categoryId: id }, select: { id: true } })
       .then((result) => result.map((item) => item.id));

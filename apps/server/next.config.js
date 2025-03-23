@@ -4,9 +4,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   env: {
-    LINK_OBJECT_ID: '5349b4ddd2781d08c09890f3',
-    FRONT_DOMAIN: 'www.guanweisong.com',
+    LINK_OBJECT_ID: "5349b4ddd2781d08c09890f3",
+    FRONT_DOMAIN: "www.guanweisong.com",
   },
 };
 

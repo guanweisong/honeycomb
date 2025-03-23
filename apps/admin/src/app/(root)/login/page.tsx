@@ -1,5 +1,5 @@
 "use client";
-import { useSettingStore } from "@/stores/useSettingStore";
+import { useSettingStore } from "@/src/stores/useSettingStore";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { LoginForm, ProFormText } from "@ant-design/pro-components";
 import { Form, message } from "antd";

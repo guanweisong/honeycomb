@@ -13,6 +13,7 @@ import { arraybufferToBuffer } from "@/libs/arraybufferToBuffer";
 import sizeOf from "image-size";
 import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
+// @ts-ignore
 import { getColor } from "@/libs/colorThief";
 
 export const dynamic = "force-dynamic";

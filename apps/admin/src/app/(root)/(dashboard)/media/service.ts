@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import type { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 import type { MediaCreateResponse } from "./types/media.create.response";
 import type { MediaEntity } from "./types/media.entity";
 import type { MediaIndexRequest } from "./types/media.index.request";

@@ -1,7 +1,7 @@
 "use client";
 
-import { formItemLayout } from "@/constants/formItemLayout";
-import { ModalType, ModalTypeName } from "@/types/ModalType";
+import { formItemLayout } from "@/src/constants/formItemLayout";
+import { ModalType, ModalTypeName } from "@/src/types/ModalType";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ActionType } from "@ant-design/pro-components";
 import {
@@ -22,7 +22,7 @@ import type { UserIndexRequest } from "./types/user.index.request";
 
 const User = () => {
   const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
@@ -181,10 +181,10 @@ const User = () => {
 
   /**
    * 校验用户名是否唯一
-   * @param rule
+   * @param _rule
    * @param value
    */
-  const validateUserName = async (rule: RuleObject, value: string) => {
+  const validateUserName = async (_rule: RuleObject, value: string) => {
     if (value && value.length > 0) {
       const result = await checkExist({ name: value });
       if (result) {
@@ -197,10 +197,10 @@ const User = () => {
 
   /**
    * 校验邮箱地址是否唯一
-   * @param rule
+   * @param _rule
    * @param value
    */
-  const validateUserEmail = async (rule: RuleObject, value: string) => {
+  const validateUserEmail = async (_rule: RuleObject, value: string) => {
     if (value && value.length > 0) {
       const result = await checkExist({ email: value });
       if (result) {

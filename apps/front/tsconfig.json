@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "allowJs": true,
+    "allowJs": false,
     "alwaysStrict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -8,7 +8,7 @@
     "jsx": "preserve",
     "lib": [
       "dom",
-      "es2017"
+      "esnext" // 推荐使用 esnext，确保对最新 JS 特性的支持
     ],
     "module": "esnext",
     "moduleResolution": "node",

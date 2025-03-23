@@ -1,8 +1,8 @@
 "use client";
 
-import { route } from "@/constants/menuData";
-import { useSettingStore } from "@/stores/useSettingStore";
-import { useUserStore } from "@/stores/useUserStore";
+import { route } from "@/src/constants/menuData";
+import { useSettingStore } from "@/src/stores/useSettingStore";
+import { useUserStore } from "@/src/stores/useUserStore";
 import { GithubOutlined, IeOutlined, LogoutOutlined } from "@ant-design/icons";
 import { ProLayout } from "@ant-design/pro-components";
 import { Dropdown, message } from "antd";

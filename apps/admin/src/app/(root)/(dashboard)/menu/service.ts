@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@/src/utils/request";
 import type { MenuEntity } from "./types/menu.entity";
 import type { MenuIndexResponse } from "./types/menu.index.response";
 

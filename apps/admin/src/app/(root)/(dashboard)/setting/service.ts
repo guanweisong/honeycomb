@@ -1,5 +1,5 @@
-import { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 import type { SettingEntity } from "./types/setting.entity";
 import type { SettingUpdateResponse } from "./types/setting.update.response";
 

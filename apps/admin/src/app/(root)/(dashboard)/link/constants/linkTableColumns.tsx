@@ -1,4 +1,4 @@
-import { enableOptions } from "@/types/EnableType";
+import { enableOptions } from "@/src/types/EnableType";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";

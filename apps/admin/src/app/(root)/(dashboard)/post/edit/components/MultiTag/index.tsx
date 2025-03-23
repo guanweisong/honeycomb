@@ -1,7 +1,7 @@
 "use client";
 
-import TagService from "@/app/(root)/(dashboard)/tag/service";
-import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
+import TagService from "@/src/app/(root)/(dashboard)/tag/service";
+import type { TagEntity } from "@/src/app/(root)/(dashboard)/tag/types/tag.entity";
 import { AutoComplete, Button, Form, Input, Tag } from "antd";
 import type { DataSourceItemObject } from "antd/es/auto-complete";
 import { useRef, useState } from "react";

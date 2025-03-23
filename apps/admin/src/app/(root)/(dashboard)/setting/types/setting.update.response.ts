@@ -1,4 +1,4 @@
-import type { BaseResponse } from "@/types/BaseResponse";
+import type { BaseResponse } from "@/src/types/BaseResponse";
 import type { SettingEntity } from "./setting.entity";
 
 export interface SettingUpdateResponse extends BaseResponse<SettingEntity> {}

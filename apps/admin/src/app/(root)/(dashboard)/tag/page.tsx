@@ -1,8 +1,8 @@
 "use client";
 
-import MultiLangFormItem from "@/components/MultiLangFormItem";
-import { formItemLayout } from "@/constants/formItemLayout";
-import { ModalType, ModalTypeName } from "@/types/ModalType";
+import MultiLangFormItem from "@/src/components/MultiLangFormItem";
+import { formItemLayout } from "@/src/constants/formItemLayout";
+import { ModalType, ModalTypeName } from "@/src/types/ModalType";
 import { PlusOutlined } from "@ant-design/icons";
 import {
   ActionType,

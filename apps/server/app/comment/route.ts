@@ -37,6 +37,7 @@ const include = {
 export async function GET(request: NextRequest) {
   // @ts-ignore
   return validateParams(
+    // @ts-ignore
     CommentListQuerySchema,
     getQueryParams(request),
     async (data) => {
@@ -92,55 +93,55 @@ export async function POST(request: NextRequest) {
         const siteNameZh = setting!.siteName!.zh;
         const systemEmail = `notice@guanweisong.com`;
         // 通知管理员
-        resend.emails
-          .send({
-            from: systemEmail,
-            to: "307761682@qq.com",
-            subject: `[${siteNameZh}]有一条新的评论`,
-            // @ts-ignore
-            react: AdminCommentEmailMessage({
-              currentComment: currentComment,
-              setting: setting!,
-            }),
-          })
-          .then((e) => {
-            console.log("SendEmail Success", e);
-          })
-          .catch((e) => {
-            console.log("SendEmail Error", e);
-          });
+        // resend.emails
+        //   .send({
+        //     from: systemEmail,
+        //     to: "307761682@qq.com",
+        //     subject: `[${siteNameZh}]有一条新的评论`,
+        //     react: AdminCommentEmailMessage({
+        //       // @ts-ignore
+        //       currentComment: currentComment,
+        //       setting: setting!,
+        //     }),
+        //   })
+        //   .then((e) => {
+        //     console.log("SendEmail Success", e);
+        //   })
+        //   .catch((e) => {
+        //     console.log("SendEmail Error", e);
+        //   });
         // 通知被评论人
-        if (rest.parentId) {
-          let parentComment = await prisma.comment.findUnique({
-            where: { id: rest.parentId },
-            include: include,
-          });
-          const parentCustom = getCustomCommentLink(parentComment?.customId);
-          if (parentCustom) {
-            // @ts-ignore
-            parentComment = { ...parentComment, custom: parentCustom };
-          }
-          if (parentComment) {
-            resend.emails
-              .send({
-                from: systemEmail,
-                to: parentComment.email,
-                subject: `您在[${siteNameZh}]的评论有新的回复`,
-                react: ReplyCommentEmailMessage({
-                  // @ts-ignore
-                  currentComment: currentComment,
-                  setting: setting!,
-                  parentComment,
-                }),
-              })
-              .then((e) => {
-                console.log("SendEmail Success", e);
-              })
-              .catch((e) => {
-                console.log("SendEmail Error", e);
-              });
-          }
-        }
+        // if (rest.parentId) {
+        //   let parentComment = await prisma.comment.findUnique({
+        //     where: { id: rest.parentId },
+        //     include: include,
+        //   });
+        //   const parentCustom = getCustomCommentLink(parentComment?.customId);
+        //   if (parentCustom) {
+        //     // @ts-ignore
+        //     parentComment = { ...parentComment, custom: parentCustom };
+        //   }
+        //   if (parentComment) {
+        //     resend.emails
+        //       .send({
+        //         from: systemEmail,
+        //         to: parentComment.email,
+        //         subject: `您在[${siteNameZh}]的评论有新的回复`,
+        //         react: ReplyCommentEmailMessage({
+        //           // @ts-ignore
+        //           currentComment: currentComment,
+        //           setting: setting!,
+        //           parentComment,
+        //         }),
+        //       })
+        //       .then((e) => {
+        //         console.log("SendEmail Success", e);
+        //       })
+        //       .catch((e) => {
+        //         console.log("SendEmail Error", e);
+        //       });
+        //   }
+        // }
         return ResponseHandler.Create(currentComment);
       });
     });

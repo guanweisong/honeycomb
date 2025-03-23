@@ -1,4 +1,4 @@
-import type { BaseEntity } from "@/types/BaseEntity";
+import type { BaseEntity } from "@/src/types/BaseEntity";
 
 export interface MediaEntity extends BaseEntity {
   id: string;

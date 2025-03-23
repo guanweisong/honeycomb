@@ -7,7 +7,7 @@ import { validateAuth } from "@/libs/validateAuth";
 import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   return errorHandle(async () => {
     const list = await prisma.menu.findMany({
       orderBy: { power: "asc" },

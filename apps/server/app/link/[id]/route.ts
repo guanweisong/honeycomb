@@ -9,8 +9,9 @@ import { errorHandle } from "@/libs/errorHandle";
 
 export async function PATCH(
   request: NextRequest,
-  { params: { id } }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   return validateAuth(request, [UserLevel.ADMIN], async () => {
     const params = await request.clone().json();
     return validateParams(LinkUpdateSchema, params, async (data) => {

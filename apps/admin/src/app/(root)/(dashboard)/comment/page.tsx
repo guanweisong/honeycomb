@@ -14,7 +14,7 @@ import { CommentStatus } from "./types/CommentStatus";
 import type { CommentEntity } from "./types/comment.entity";
 
 const Comment = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
 
   /**

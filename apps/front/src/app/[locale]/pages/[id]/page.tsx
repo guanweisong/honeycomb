@@ -50,13 +50,12 @@ export default async function Pages(props: PagesProps) {
   );
 }
 
-export interface GenerateMetadataProps {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
-
+type GenerateMetadataProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 export async function generateMetadata(props: GenerateMetadataProps) {
-  const { id } = props.params;
+  const { id } = await props.params;
   const setting = await SettingServer.indexSetting();
   const pageDetail = await PageServer.indexPageDetail(id);
   const local = (await getLocale()) as keyof MultiLang;

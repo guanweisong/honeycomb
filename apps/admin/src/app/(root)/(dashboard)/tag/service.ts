@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import type { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 import type { TagCreateResponse } from "./types/tag.create.response";
 import type { TagEntity } from "./types/tag.entity";
 import type { TagIndexRequest } from "./types/tag.index.request";

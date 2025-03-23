@@ -8,7 +8,7 @@ import SettingServer from "@/src/services/setting";
 import PostList from "@/src/components/PostList";
 import NoData from "@/src/components/NoData";
 import { SettingEntity } from "@/src/types/setting/setting.entity";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/src/types/Language";
 
 const PAGE_SIZE = 10;
@@ -101,10 +101,10 @@ export default async function List(props: ListProps) {
   );
 }
 
-export interface GenerateMetadataProps {
-  params: { slug: string[] };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type GenerateMetadataProps = {
+  params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 export async function generateMetadata(props: GenerateMetadataProps) {
   const [setting, menu, locale, t, params] = await Promise.all([

@@ -15,8 +15,9 @@ import { CommentType } from "@/types/CommentType";
 
 export async function GET(
   request: NextRequest,
-  { params: { id } }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   return validateParams(
     CommentQuerySchema,
     getQueryParams(request),
@@ -67,8 +68,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params: { id } }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   return validateAuth(request, [UserLevel.ADMIN], async () => {
     const params = await request.clone().json();
     return validateParams(CommentUpdateSchema, params, async (data) => {

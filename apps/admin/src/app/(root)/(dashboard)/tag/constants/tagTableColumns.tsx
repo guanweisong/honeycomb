@@ -1,6 +1,6 @@
-import MultiLangText from "@/components/MultiLangText";
-import { MultiLang } from "@/types/MulitLang";
-import { SortOrder } from "@/types/SortOrder";
+import MultiLangText from "@/src/components/MultiLangText";
+import { MultiLang } from "@/src/types/MulitLang";
+import { SortOrder } from "@/src/types/SortOrder";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";
@@ -40,7 +40,7 @@ export const tagTableColumns = (props: TagTableColumnsProps) =>
       key: "operation",
       width: 100,
       search: false,
-      render: (text, record) => (
+      render: (_text, record) => (
         <p>
           <a onClick={() => props.handleEditItem(record)}>编辑</a>&nbsp;
           <Popconfirm

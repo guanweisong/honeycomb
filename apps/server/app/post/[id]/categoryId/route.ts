@@ -4,11 +4,11 @@ import ResponseHandler from "@/libs/responseHandler";
 import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } },
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   return errorHandle(async () => {
-    const id = params.id;
     const result = await prisma.post.findUnique({
       where: { id },
       select: {

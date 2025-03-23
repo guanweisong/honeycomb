@@ -1,6 +1,6 @@
-import type { BaseEntity } from "@/types/BaseEntity";
-import type { EnableType } from "@/types/EnableType";
-import { MultiLang } from "@/types/MulitLang";
+import type { BaseEntity } from "@/src/types/BaseEntity";
+import type { EnableType } from "@/src/types/EnableType";
+import { MultiLang } from "@/src/types/MulitLang";
 import type { PostStatus } from "./PostStatus";
 import type { PostType } from "./PostType";
 

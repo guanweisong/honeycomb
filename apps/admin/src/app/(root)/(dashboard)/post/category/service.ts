@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import type { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 import type { CategoryCreateResponse } from "./types/category.create.response";
 import type { CategoryEntity } from "./types/category.entity";
 import type { CategoryIndexRequest } from "./types/category.index.request";

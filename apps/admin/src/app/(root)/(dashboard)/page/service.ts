@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/types/BaseResponse";
-import request from "@/utils/request";
+import type { BaseResponse } from "@/src/types/BaseResponse";
+import request from "@/src/utils/request";
 import type { PageCreateResponse } from "./types/page.create.response";
 import type { PageEntity } from "./types/page.entity";
 import type { PageIndexListRequest } from "./types/page.index.list.request";

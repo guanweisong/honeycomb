@@ -3,9 +3,9 @@ import SettingServer from "@/src/services/setting";
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const setting = await SettingServer.indexSetting();
   return {
-    name: setting.siteName.zh,
-    short_name: setting.siteName.zh,
-    description: setting.siteSubName.zh,
+    name: setting?.siteName.zh,
+    short_name: setting?.siteName.zh,
+    description: setting?.siteSubName.zh,
     background_color: "#FFFFFF",
     start_url: "/",
     display: "standalone",

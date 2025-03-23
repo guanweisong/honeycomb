@@ -9,11 +9,12 @@ import { MenuType } from "@/src/types/menu/MenuType";
 import classNames from "classnames";
 import { MultiLang } from "@/src/types/Language";
 
-const Links = async ({
-  params: { locale },
-}: {
-  params: { locale: keyof MultiLang };
-}) => {
+export interface LinksProps {
+  params: Promise<{ locale: keyof MultiLang }>;
+}
+
+const Links = async (props: LinksProps) => {
+  const { locale } = await props.params;
   const t = await getTranslations("Link");
   const result = await LinkServer.index({
     limit: 9999,

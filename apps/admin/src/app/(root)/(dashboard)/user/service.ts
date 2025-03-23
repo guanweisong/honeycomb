@@ -1,6 +1,6 @@
-import request from "@/utils/request";
+import request from "@/src/utils/request";
 
-import type { BaseResponse } from "@/types/BaseResponse";
+import type { BaseResponse } from "@/src/types/BaseResponse";
 import type { UserCreateResponse } from "./types/user.create.response";
 import type { UserEntity } from "./types/user.entity";
 import type { UserIndexRequest } from "./types/user.index.request";

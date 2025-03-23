@@ -9,11 +9,11 @@ import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } },
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   return errorHandle(async () => {
-    const id = params.id;
+    const { id } = await params;
     const result = await prisma.page.findUnique({
       where: { id },
       include: {
@@ -39,8 +39,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params: { id } }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   return validateAuth(
     request,
     [UserLevel.ADMIN, UserLevel.EDITOR],

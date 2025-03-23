@@ -1,6 +1,6 @@
 "use client";
 
-import MultiLangFormItem from "@/components/MultiLangFormItem";
+import MultiLangFormItem from "@/src/components/MultiLangFormItem";
 import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
 import { Button, Card, Form, Input, message } from "antd";
 import dynamic from "next/dynamic";

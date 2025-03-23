@@ -1,4 +1,4 @@
-import { SortOrder } from "@/types/SortOrder";
+import { SortOrder } from "@/src/types/SortOrder";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";

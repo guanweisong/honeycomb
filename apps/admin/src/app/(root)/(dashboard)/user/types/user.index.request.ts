@@ -1,4 +1,4 @@
-import type { PaginationRequest } from "@/types/PaginationRequest";
+import type { PaginationRequest } from "@/src/types/PaginationRequest";
 import type { UserLevel } from "./UserLevel";
 import type { UserStatus } from "./UserStatus";
 

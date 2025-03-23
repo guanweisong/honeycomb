@@ -1,7 +1,7 @@
 "use client";
-import FullLoadingView from "@/components/FullLoadingView";
-import { useSettingStore } from "@/stores/useSettingStore";
-import { useUserStore } from "@/stores/useUserStore";
+import FullLoadingView from "@/src/components/FullLoadingView";
+import { useSettingStore } from "@/src/stores/useSettingStore";
+import { useUserStore } from "@/src/stores/useUserStore";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
 import { useLayoutEffect } from "react";
 
