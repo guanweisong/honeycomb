@@ -5,7 +5,19 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "MONGODB_URI",
+        "R2_ACCOUNT_ID",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "R2_BUCKET_NAME",
+        "JWT_EXPIRES",
+        "JWT_SECRET",
+        "CAPTCHA_AID",
+        "CAPTCHA_APP_SECRET_KEY",
+        "RESEND_API_KEY"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
