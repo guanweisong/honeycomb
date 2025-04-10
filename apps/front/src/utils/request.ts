@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "http://localhost:7002",
+  baseURL: process.env.NEXT_PUBLIC_API_DOAMIN,
   withCredentials: true,
   timeout: 10000,
   headers: {},
