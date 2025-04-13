@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "cross-env PORT=3100 next dev --turbo",
-    "build": "next build",
+    "build": "next build --turbo",
     "start": "cross-env NODE_ENV=production PORT=3100 next start",
     "analyze": "cross-env ANALYZE=true next build"
   },

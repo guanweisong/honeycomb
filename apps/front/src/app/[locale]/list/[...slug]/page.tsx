@@ -12,6 +12,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/src/types/Language";
 
 const PAGE_SIZE = 10;
+export const dynamic = "force-dynamic";
 
 export interface ListProps {
   params: Promise<{ slug: string[]; locale: keyof MultiLang }>;
