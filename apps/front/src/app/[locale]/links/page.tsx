@@ -16,11 +16,13 @@ export interface LinksProps {
 const Links = async (props: LinksProps) => {
   const { locale } = await props.params;
   const t = await getTranslations("Link");
-  const result = await LinkServer.index({
-    limit: 9999,
-    status: [LinkStatus.ENABLE],
-  });
-  const setting = await SettingServer.indexSetting();
+  const [result, setting] = await Promise.all([
+    LinkServer.index({
+      limit: 9999,
+      status: [LinkStatus.ENABLE],
+    }),
+    SettingServer.indexSetting(),
+  ]);
   return (
     <div>
       <PageTitle>{t("slogan")}</PageTitle>
@@ -41,7 +43,7 @@ const Links = async (props: LinksProps) => {
               />
               <div>
                 <div>{item.name}</div>
-                <div className="text-auto-front-gray/50">
+                <div className="text-auto-front-gray/50 text-base">
                   {item.description}
                 </div>
               </div>
@@ -55,7 +57,7 @@ const Links = async (props: LinksProps) => {
         <div className="mb-1">{t("applyStep.title")}</div>
         <div>
           <div>{t("applyStep.stepOne")}</div>
-          <div className="text-base border-0.5 border-dashed border-auto-front-gray/50 my-1 px-1 py-1">
+          <div className="text-base border border-dashed border-auto-front-gray/50 my-1 px-1 py-1">
             <div>
               {t("applyStep.nameLabel")}: {setting.siteName?.[locale]}
             </div>

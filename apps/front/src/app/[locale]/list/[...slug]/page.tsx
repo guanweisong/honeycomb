@@ -7,27 +7,23 @@ import MenuServer from "@/src/services/menu";
 import SettingServer from "@/src/services/setting";
 import PostList from "@/src/components/PostList";
 import NoData from "@/src/components/NoData";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/src/types/Language";
 
 const PAGE_SIZE = 10;
-export const dynamic = "force-dynamic";
 
 export interface ListProps {
   params: Promise<{ slug: string[]; locale: keyof MultiLang }>;
 }
 
 export default async function List(props: ListProps) {
-  const t = await getTranslations("PostList");
-  const promise = [];
-  promise.push(SettingServer.indexSetting());
-  promise.push(MenuServer.indexMenu());
-  const [setting, menu] = (await Promise.all(promise)) as [
-    SettingEntity,
-    MenuEntity[],
-  ];
+  const [setting, menu] = await Promise.all([
+    SettingServer.indexSetting(),
+    MenuServer.indexMenu(),
+  ]);
+
   const params = await props.params;
+  const t = await getTranslations("PostList");
 
   const type =
     typeof params?.slug !== "undefined" ? params?.slug[0] : undefined;
@@ -108,13 +104,13 @@ type GenerateMetadataProps = {
 };
 
 export async function generateMetadata(props: GenerateMetadataProps) {
-  const [setting, menu, locale, t, params] = await Promise.all([
-    SettingServer.indexSetting(), // 获取设置
-    MenuServer.indexMenu(), // 获取菜单
-    getLocale().then((res) => res as keyof MultiLang), // 获取当前语言
-    getTranslations("PostList"), // 获取翻译
-    props.params, // 获取参数
+  const [setting, menu, locale] = await Promise.all([
+    SettingServer.indexSetting(),
+    MenuServer.indexMenu(),
+    getLocale().then((res) => res as keyof MultiLang),
   ]);
+  const t = await getTranslations("PostList");
+  const params = await props.params;
   const slug = params?.slug ?? [];
   // 获取第一个路径部分作为类型
   const type =

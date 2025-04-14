@@ -28,7 +28,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="shortcut icon" href="/favicon.ico" />
         <Script
@@ -37,7 +37,12 @@ export default async function LocaleLayout({
         />
       </head>
       <body>
-        <ThemeProvider attribute="class">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           <div className="min-h-full pt-14 lg:pt-24 text-lg">
             <NextIntlClientProvider>
               <Header />

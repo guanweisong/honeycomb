@@ -3,9 +3,6 @@ import React from "react";
 import PostInfo from "@/src/components/PostInfo";
 import Comment from "@/src/components/Comment";
 import CommentServer from "@/src/services/comment";
-import { PageEntity } from "@/src/types/page/page.entity";
-import PaginationResponse from "@/src/types/pagination.response";
-import { CommentEntity } from "@/src/types/comment/comment.entity";
 import Markdown from "@/src/components/Markdown";
 import SettingServer from "@/src/services/setting";
 import PageTitle from "@/src/components/PageTitle";
@@ -21,14 +18,11 @@ export interface PagesProps {
 
 export default async function Pages(props: PagesProps) {
   const { id, locale } = await props.params;
-  const promise = [];
-  promise.push(PageServer.indexPageDetail(id));
-  promise.push(CommentServer.index(id, MenuType.PAGE));
-  promise.push(ViewServer.updateViews({ type: UpdateType.Page, id }));
-  const [pageDetail, commentsData] = (await Promise.all(promise)) as [
-    PageEntity,
-    PaginationResponse<CommentEntity[]>,
-  ];
+  const [pageDetail, commentsData] = await Promise.all([
+    PageServer.indexPageDetail(id),
+    CommentServer.index(id, MenuType.PAGE),
+    ViewServer.updateViews({ type: UpdateType.Page, id }),
+  ]);
 
   return (
     <>
@@ -56,8 +50,10 @@ type GenerateMetadataProps = {
 };
 export async function generateMetadata(props: GenerateMetadataProps) {
   const { id } = await props.params;
-  const setting = await SettingServer.indexSetting();
-  const pageDetail = await PageServer.indexPageDetail(id);
+  const [setting, pageDetail] = await Promise.all([
+    SettingServer.indexSetting(),
+    PageServer.indexPageDetail(id),
+  ]);
   const local = (await getLocale()) as keyof MultiLang;
 
   const title = pageDetail.title?.[local];

@@ -7,9 +7,6 @@ import Card from "@/src/components/Card";
 import { Link } from "@/src/i18n/navigation";
 import Comment from "@/src/components/Comment";
 import CommentServer from "@/src/services/comment";
-import { PostEntity } from "@/src/types/post/post.entity";
-import PaginationResponse from "@/src/types/pagination.response";
-import { CommentEntity } from "@/src/types/comment/comment.entity";
 import Markdown from "@/src/components/Markdown";
 import SettingServer from "@/src/services/setting";
 import { utcFormat } from "@/src/utils/utcFormat";
@@ -31,20 +28,15 @@ export default async function Archives(props: ArchivesProps) {
   const postDetail = await PostServer.indexPostDetail(id);
   const t = await getTranslations("Archive");
 
-  const promise = [];
-  promise.push(
+  const [randomPostsList, commentsData] = await Promise.all([
     PostServer.indexRandomPostByCategoryId({
       postCategory: postDetail.category.id,
       postId: id,
       number: 10,
     }),
-  );
-  promise.push(CommentServer.index(id, MenuType.CATEGORY));
-  promise.push(ViewServer.updateViews({ type: UpdateType.Post, id }));
-  const [randomPostsList, commentsData] = (await Promise.all(promise)) as [
-    PostEntity[],
-    PaginationResponse<CommentEntity[]>,
-  ];
+    CommentServer.index(id, MenuType.CATEGORY),
+    ViewServer.updateViews({ type: UpdateType.Post, id }),
+  ]);
 
   /**
    * 格式化文章标题
@@ -115,7 +107,7 @@ export default async function Archives(props: ArchivesProps) {
         <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
           {postDetail.type === PostType.PHOTOGRAPH && (
             <li className="flex items-center">
-              <Camera />
+              <Camera size={20} />
               &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
               &nbsp;
               {postDetail.galleryLocation?.[locale]}
@@ -123,13 +115,13 @@ export default async function Archives(props: ArchivesProps) {
           )}
           {postDetail.type === PostType.MOVIE && (
             <li className="flex items-center">
-              <Calendar />
+              <Calendar size={20} />
               &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
             </li>
           )}
           {postDetail.type === PostType.QUOTE && (
             <li className="flex items-center">
-              <BookOpen />
+              <BookOpen size={20} />
               &nbsp; {t("quoteFrom")}: {postDetail.quoteAuthor?.[locale]}
             </li>
           )}
@@ -166,8 +158,10 @@ export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
   const { id } = await props.params;
-  const setting = await SettingServer.indexSetting();
-  const postDetail = await PostServer.indexPostDetail(id);
+  const [setting, postDetail] = await Promise.all([
+    SettingServer.indexSetting(),
+    PostServer.indexPostDetail(id),
+  ]);
   const locale = (await getLocale()) as keyof MultiLang;
 
   /**
