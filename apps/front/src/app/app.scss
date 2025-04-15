@@ -7,6 +7,10 @@
   @apply mx-auto;
 }
 
+html {
+  font-size: clamp(16px, 4.27vw, 18px);
+}
+
 @theme inline {
   --color-auto-front-gray: var(--auto-front-gray);
   --color-auto-back-gray: var(--auto-back-gray);
@@ -70,14 +74,8 @@ a {
     }
   }
   &.link-light {
-    &:link{
-      @apply text-gray-400;
-    }
-    &:visited {
-      @apply text-gray-400;
-    }
     &:hover {
-      @apply text-gray-500 underline;
+      @apply underline;
     }
   }
 }

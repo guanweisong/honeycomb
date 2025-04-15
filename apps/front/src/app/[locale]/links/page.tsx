@@ -57,7 +57,7 @@ const Links = async (props: LinksProps) => {
         <div className="mb-1">{t("applyStep.title")}</div>
         <div>
           <div>{t("applyStep.stepOne")}</div>
-          <div className="text-base border border-dashed border-auto-front-gray/50 my-1 px-1 py-1">
+          <div className="text-sm border border-dashed border-auto-front-gray/50 my-1 px-1 py-1">
             <div>
               {t("applyStep.nameLabel")}: {setting.siteName?.[locale]}
             </div>

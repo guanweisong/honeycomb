@@ -24,11 +24,7 @@ const PostInfo = (props: PostInfoProps) => {
 
   if (typeof author !== "undefined") {
     data.push(
-      <Link
-        // @ts-ignore
-        href={`/list/authors/${author}`}
-        className="link-light"
-      >
+      <Link href={`/list/authors/${author}`} className="link-light">
         {author}
       </Link>,
     );
@@ -53,7 +49,7 @@ const PostInfo = (props: PostInfoProps) => {
   return (
     <div
       className={classNames(
-        "flex text-base my-2 border-dashed border-auto-front-gray/30",
+        "flex text-sm my-2 border-dashed border-auto-front-gray/30",
         {
           "justify-center": align === Align.Center,
           "justify-start": align === Align.Left,

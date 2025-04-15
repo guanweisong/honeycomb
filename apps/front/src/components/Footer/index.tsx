@@ -11,7 +11,7 @@ export default async function Footer() {
   ])) as [SettingEntity, keyof MultiLang];
 
   return (
-    <div className="text-center py-4 px-2 text-base text-auto-front-gray/40">
+    <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[locale]}</div>
       <div>
         ©{dayjs().format("YYYY")}&nbsp;{setting?.siteCopyright?.[locale]}
