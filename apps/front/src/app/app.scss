@@ -11,6 +11,22 @@ html {
   font-size: clamp(16px, 4.27vw, 18px);
 }
 
+.container {
+  width: 100%;
+  @media (width >= 40rem) {
+    max-width: 40rem;
+  }
+  @media (width >= 48rem) {
+    max-width: 48rem;
+  }
+  @media (width >= 64rem) {
+    max-width: 64rem;
+  }
+  @media (width >= 80rem) {
+    max-width: 80rem;
+  }
+}
+
 @theme inline {
   --color-auto-front-gray: var(--auto-front-gray);
   --color-auto-back-gray: var(--auto-back-gray);
