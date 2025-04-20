@@ -1,6 +1,11 @@
-@import "tailwindcss";
+@import "../../../../packages/ui/src/styles/globals.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-auto-front-gray: var(--auto-front-gray);
+  --color-auto-back-gray: var(--auto-back-gray);
+}
 
 @utility container {
   @apply mx-auto;
@@ -19,6 +24,39 @@
   }
 }
 
+.light {
+  --auto-front-gray: rgb(0, 0, 0);
+  --auto-back-gray: rgb(255, 255, 255);
+}
+
+.dark {
+  --auto-front-gray: rgb(255 255 255);
+  --auto-back-gray: rgb(17 24 39);
+}
+
 html {
   font-size: clamp(16px, 4.27vw, 18px);
+}
+
+body, input, textarea {
+  @apply bg-gray-100 dark:bg-gray-800 dark:text-gray-400 font-light;
+}
+
+a {
+  &.link-primary {
+    &:link{
+      @apply text-pink-500;
+    }
+    &:visited {
+      @apply text-pink-500;
+    }
+    &:hover {
+      @apply text-pink-700 underline;
+    }
+  }
+  &.link-light {
+    &:hover {
+      @apply underline;
+    }
+  }
 }
