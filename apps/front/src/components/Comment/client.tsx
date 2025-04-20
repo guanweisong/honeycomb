@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
+import { Button } from "@ui/components/button";
 import { CommentEntity } from "@/src/types/comment/comment.entity";
 import Card from "../Card";
 import { CommentStatus } from "@/src/types/comment/CommentStatus";
@@ -14,7 +15,6 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import CommentServer from "@/src/services/comment";
 import { MenuType } from "@/src/types/menu/MenuType";
-import { Button } from "@/components/ui/button";
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<PaginationResponse<CommentEntity[]>>;

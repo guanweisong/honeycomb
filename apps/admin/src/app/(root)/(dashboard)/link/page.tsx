@@ -19,7 +19,7 @@ import type { LinkEntity } from "./types/link.entity";
 
 const Link = () => {
   const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;

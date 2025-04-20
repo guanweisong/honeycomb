@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { startTransition, useEffect, useState } from "react";
+import { Button } from "@ui/components/button";
 import Image from "next/image";
 import { usePathname, useRouter } from "@/src/i18n/navigation";
 import { useTheme } from "next-themes";
@@ -11,7 +12,6 @@ import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
 import { Theme } from "@/src/types/Theme";
 import { Language, MultiLang } from "@/src/types/Language";
-import { Button } from "@/components/ui/button";
 
 const LanguageSwitcher = () => {
   const locale = useLocale() as keyof MultiLang;
