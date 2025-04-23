@@ -41,7 +41,7 @@ const LanguageSwitcher = () => {
 
   return (
     <ViewTransition name="siteLanguageSwitcher">
-      <Link href={pathname} locale={otherLocale}>
+      <Link href={pathname} locale={otherLocale} replace>
         <Image
           src={localeIcon[locale]}
           alt="switch language"
