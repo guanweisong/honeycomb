@@ -1,5 +1,5 @@
 import { Link } from "@/src/i18n/navigation";
-import React from "react";
+import React, { unstable_ViewTransition as ViewTransition } from "react";
 import classNames from "classnames";
 import { utcFormat } from "@/src/utils/utcFormat";
 import { useTranslations } from "next-intl";
@@ -10,6 +10,7 @@ export enum Align {
 }
 
 export interface PostInfoProps {
+  id?: string;
   author?: string;
   date?: string;
   comments?: number;
@@ -18,7 +19,7 @@ export interface PostInfoProps {
 }
 
 const PostInfo = (props: PostInfoProps) => {
-  const { author, date, views, comments, align = Align.Center } = props;
+  const { id, author, date, views, comments, align = Align.Center } = props;
   const data = [];
   const t = useTranslations("PostInfo");
 
@@ -47,22 +48,24 @@ const PostInfo = (props: PostInfoProps) => {
   }
 
   return (
-    <div
-      className={classNames(
-        "flex text-sm my-2 border-dashed border-auto-front-gray/30",
-        {
-          "justify-center": align === Align.Center,
-          "justify-start": align === Align.Left,
-        },
-      )}
-    >
-      {data.map((item, index) => (
-        <span key={item.toString()}>
-          {index > 0 && <span className="mx-1 text-gray-300">/</span>}
-          <span>{item}</span>
-        </span>
-      ))}
-    </div>
+    <ViewTransition name={`postInfo-${id}`}>
+      <div
+        className={classNames(
+          "flex text-sm my-2 border-dashed border-auto-front-gray/30",
+          {
+            "justify-center": align === Align.Center,
+            "justify-start": align === Align.Left,
+          },
+        )}
+      >
+        {data.map((item, index) => (
+          <span key={item.toString()}>
+            {index > 0 && <span className="mx-1 text-gray-300">/</span>}
+            <span>{item}</span>
+          </span>
+        ))}
+      </div>
+    </ViewTransition>
   );
 };
 

@@ -1,3 +1,4 @@
+import { unstable_ViewTransition as ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
 import { MenuEntity } from "@/src/types/menu/menu.entity";
@@ -96,18 +97,20 @@ export default async function Header() {
         <div className="container relative box-border h-full flex justify-between items-center">
           <div className="h-full flex items-center">
             <span className="lg:ml-2 absolute inset-x-24 lg:static text-center">
-              <Link
-                href={"/list/category"}
-                scroll={false}
-                className="text-pink-500 text-xl"
-              >
-                {setting?.siteName?.[locale]}
-              </Link>
+              <ViewTransition name="siteTitle">
+                <Link
+                  href={"/list/category"}
+                  scroll={false}
+                  className="text-pink-500 text-xl"
+                >
+                  {setting?.siteName?.[locale]}
+                </Link>
+              </ViewTransition>
             </span>
-            <span className="ml-2">
+            <span className="ml-4">
               <ThemeSwitcher />
             </span>
-            <span className="ml-2">
+            <span className="ml-4">
               <LanguageSwitcher />
             </span>
           </div>
@@ -116,7 +119,9 @@ export default async function Header() {
           </div>
         </div>
       </div>
-      <Breadcrumb menu={allMenu} />
+      <ViewTransition name="siteBreadcrumb">
+        <Breadcrumb menu={allMenu} />
+      </ViewTransition>
     </>
   );
 }

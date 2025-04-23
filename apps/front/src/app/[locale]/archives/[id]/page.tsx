@@ -1,4 +1,4 @@
-import React from "react";
+import React, { unstable_ViewTransition as ViewTransition } from "react";
 import PostServer from "@/src/services/post";
 import { PostType } from "@/src/types/post/PostType";
 import PostInfo from "@/src/components/PostInfo";
@@ -81,8 +81,11 @@ export default async function Archives(props: ArchivesProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PageTitle>{getTitle()}</PageTitle>
+      <ViewTransition name={`postTitle-${postDetail.id}`}>
+        <PageTitle>{getTitle()}</PageTitle>
+      </ViewTransition>
       <PostInfo
+        id={postDetail.id}
         author={postDetail.author.name}
         date={postDetail.createdAt}
         comments={commentsData?.total}
@@ -91,14 +94,18 @@ export default async function Archives(props: ArchivesProps) {
       {postDetail.type !== PostType.QUOTE && (
         <div className="markdown-body my-3 lg:my-5">
           {postDetail.excerpt?.[locale] && (
-            <div className="mb-2 p-2 bg-auto-front-gray/5">
-              {postDetail.excerpt?.[locale]}
-            </div>
+            <ViewTransition name={`postExcerpt-${postDetail.id}`}>
+              <div className="mb-2 p-2 bg-auto-front-gray/5">
+                {postDetail.excerpt?.[locale]}
+              </div>
+            </ViewTransition>
           )}
-          <Markdown
-            children={postDetail.content?.[locale]}
-            imagesInContent={postDetail.imagesInContent}
-          />
+          <ViewTransition name={`postContent-${postDetail.id}`}>
+            <Markdown
+              children={postDetail.content?.[locale]}
+              imagesInContent={postDetail.imagesInContent}
+            />
+          </ViewTransition>
         </div>
       )}
       {[PostType.PHOTOGRAPH, PostType.MOVIE, PostType.QUOTE].includes(

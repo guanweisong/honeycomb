@@ -8,7 +8,11 @@ const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
+};
 
 export default withBundleAnalyzer(
   withNextIntl({ ...baseNextConfig, ...nextConfig }),

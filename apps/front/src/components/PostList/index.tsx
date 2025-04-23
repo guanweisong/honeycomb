@@ -5,7 +5,10 @@ import { PostEntity } from "@/src/types/post/post.entity";
 import useQueryPostList from "@/src/hooks/swr/post/use.query.post.list";
 import { PostListQuery } from "@/src/types/post/post.list.query";
 import { useScroll } from "ahooks";
-import React, { useEffect } from "react";
+import React, {
+  useEffect,
+  unstable_ViewTransition as ViewTransition,
+} from "react";
 import { Link } from "@/src/i18n/navigation";
 import {
   PostType,
@@ -66,50 +69,58 @@ export default function PostList(props: PostListProps) {
                 href={`/archives/${item.id}`}
                 className="relative block lg:w-[250px] w-full lg:h-[150px] h-[200px]"
               >
-                <Image
-                  priority={true}
-                  src={item.cover?.url ?? ""}
-                  alt={item.title?.[locale] ?? ""}
-                  sizes="33vw"
-                  fill={true}
-                  className="object-cover flex-shrink-0"
-                />
-                <span
-                  className={classNames(
-                    "absolute left-2 top-2 text-white text-base rounded py-0.5 px-1",
-                    [PostTypeBgColor[item.type]],
-                  )}
-                >
-                  {PostTypeName[item.type]}
-                </span>
+                <ViewTransition name={`postContent-${item.id}`}>
+                  <Image
+                    priority={true}
+                    src={item.cover?.url ?? ""}
+                    alt={item.title?.[locale] ?? ""}
+                    sizes="33vw"
+                    fill={true}
+                    className="object-cover flex-shrink-0"
+                  />
+                  <span
+                    className={classNames(
+                      "absolute left-2 top-2 text-white text-base rounded py-0.5 px-1",
+                      [PostTypeBgColor[item.type]],
+                    )}
+                  >
+                    {PostTypeName[item.type]}
+                  </span>
+                </ViewTransition>
               </Link>
             )}
           <div className="p-2 lg:px-4 flex-1">
-            <Link
-              href={`/archives/${item.id}`}
-              className="block font-normal text-lg"
-            >
-              {item.type === PostType.MOVIE && (
-                <>
-                  {item.title?.[locale]} ({utcFormat(item.movieTime!, "YYYY")})
-                </>
-              )}
-              {[PostType.ARTICLE, PostType.PHOTOGRAPH].includes(item.type) && (
-                <>{item.title?.[locale]}</>
-              )}
-              {item.type === PostType.QUOTE && (
-                <>
-                  “{item.quoteContent?.[locale]}” ——{" "}
-                  {item.quoteAuthor?.[locale]}
-                </>
-              )}
-            </Link>
+            <ViewTransition name={`postTitle-${item.id}`}>
+              <Link
+                href={`/archives/${item.id}`}
+                className="block font-normal text-lg"
+              >
+                {item.type === PostType.MOVIE && (
+                  <>
+                    {item.title?.[locale]} ({utcFormat(item.movieTime!, "YYYY")}
+                    )
+                  </>
+                )}
+                {[PostType.ARTICLE, PostType.PHOTOGRAPH].includes(
+                  item.type,
+                ) && <>{item.title?.[locale]}</>}
+                {item.type === PostType.QUOTE && (
+                  <>
+                    “{item.quoteContent?.[locale]}” ——{" "}
+                    {item.quoteAuthor?.[locale]}
+                  </>
+                )}
+              </Link>
+            </ViewTransition>
             {item.excerpt?.[locale] && (
-              <div className="lg:my-2 lg:line-clamp-2">
-                {item.excerpt?.[locale]}
-              </div>
+              <ViewTransition name={`postExcerpt-${item.id}`}>
+                <div className="lg:my-2 lg:line-clamp-2">
+                  {item.excerpt?.[locale]}
+                </div>
+              </ViewTransition>
             )}
             <PostInfo
+              id={item.id}
               author={item.author.name}
               date={item.createdAt}
               comments={item.commentCount}

@@ -1,8 +1,11 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import { startTransition, useEffect, useState } from "react";
-import { Button } from "@ui/components/button";
+import {
+  useEffect,
+  useState,
+  unstable_ViewTransition as ViewTransition,
+} from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "@/src/i18n/navigation";
 import { useTheme } from "next-themes";
@@ -12,6 +15,7 @@ import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
 import { Theme } from "@/src/types/Theme";
 import { Language, MultiLang } from "@/src/types/Language";
+import { Link } from "@/src/i18n/navigation";
 
 const LanguageSwitcher = () => {
   const locale = useLocale() as keyof MultiLang;
@@ -30,25 +34,21 @@ const LanguageSwitcher = () => {
     return null;
   }
 
-  const handleChange = () => {
-    startTransition(() => {
-      router.replace(pathname, { locale: otherLocale });
-    });
-  };
-
   const localeIcon = {
     en: resolvedTheme === Theme.Dark ? enIconLight : enIcon,
     zh: resolvedTheme === Theme.Dark ? zhIconLight : zhIcon,
   };
 
   return (
-    <Button onClick={handleChange} variant={"ghost"}>
-      <Image
-        src={localeIcon[locale]}
-        alt="switch language"
-        className="w-5 cursor-pointer"
-      />
-    </Button>
+    <ViewTransition name="siteLanguageSwitcher">
+      <Link href={pathname} locale={otherLocale}>
+        <Image
+          src={localeIcon[locale]}
+          alt="switch language"
+          className="w-5 cursor-pointer"
+        />
+      </Link>
+    </ViewTransition>
   );
 };
 
