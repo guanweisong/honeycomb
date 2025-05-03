@@ -1,8 +1,8 @@
 import { Link } from "@/src/i18n/navigation";
 import React, { unstable_ViewTransition as ViewTransition } from "react";
-import classNames from "classnames";
 import { utcFormat } from "@/src/utils/utcFormat";
 import { useTranslations } from "next-intl";
+import { cn } from "@ui/lib/utils";
 
 export enum Align {
   Left = "left",
@@ -50,7 +50,7 @@ const PostInfo = (props: PostInfoProps) => {
   return (
     <ViewTransition name={`postInfo-${id}`}>
       <div
-        className={classNames(
+        className={cn(
           "flex text-sm my-2 border-dashed border-auto-front-gray/30",
           {
             "justify-center": align === Align.Center,

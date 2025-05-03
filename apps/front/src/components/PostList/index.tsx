@@ -20,8 +20,8 @@ import Signature from "@/src/components/Signature";
 import { utcFormat } from "@/src/utils/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@/src/types/Language";
-import classNames from "classnames";
 import { Loader } from "lucide-react";
+import { cn } from "@ui/lib/utils";
 
 export interface PostListProps {
   initData: PostEntity[];
@@ -79,7 +79,7 @@ export default function PostList(props: PostListProps) {
                     className="object-cover flex-shrink-0"
                   />
                   <span
-                    className={classNames(
+                    className={cn(
                       "absolute left-2 top-2 text-white text-base rounded py-0.5 px-1",
                       [PostTypeBgColor[item.type]],
                     )}

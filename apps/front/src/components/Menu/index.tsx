@@ -1,6 +1,5 @@
 "use client";
 
-import classNames from "classnames";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/src/i18n/navigation";
 import { useClickAway } from "ahooks";
@@ -8,6 +7,7 @@ import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import PostServer from "@/src/services/post";
 import { MenuEntity } from "@/src/types/menu/menu.entity";
 import getCurrentPathOfMenu from "@/src/utils/getCurrentPathOfMenu";
+import { cn } from "@ui/lib/utils";
 
 export interface MenuItem {
   label: React.ReactNode;
@@ -71,13 +71,10 @@ const Menu = (props: MenuProps) => {
   const renderItem = (data: MenuItem[]) => {
     return (
       <ul
-        className={classNames(
-          "absolute backdrop-blur lg:static lg:flex py-2 lg:py-0",
-          {
-            "inset-x-0 top-full shadow-md bg-auto-back-gray/80": visible,
-            ["hidden"]: !visible,
-          },
-        )}
+        className={cn("absolute backdrop-blur lg:static lg:flex py-2 lg:py-0", {
+          "inset-x-0 top-full shadow-md bg-auto-back-gray/80": visible,
+          ["hidden"]: !visible,
+        })}
         ref={ref1}
       >
         {data.map((m) => (
@@ -87,7 +84,7 @@ const Menu = (props: MenuProps) => {
           >
             <Link
               href={m.link ?? ""}
-              className={classNames(
+              className={cn(
                 "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
                 {
                   "text-pink-500": m.link === currentCategory[0],
@@ -107,7 +104,7 @@ const Menu = (props: MenuProps) => {
                   >
                     <Link
                       href={n.link ?? ""}
-                      className={classNames(
+                      className={cn(
                         "block leading-10 lg:text-center hover:lg:text-pink-500 px-4 lg:px-0",
                         {
                           "text-pink-500": n.link === currentCategory[1],
@@ -136,7 +133,7 @@ const Menu = (props: MenuProps) => {
         {Array.from(new Array(3)).map((item, index) => (
           <div
             key={`menu-trigger-${index}`}
-            className={classNames("h-0.5 my-1.5 bg-gray-500 transition-all", {
+            className={cn("h-0.5 my-1.5 bg-gray-500 transition-all", {
               "first:translate-y-2 first:rotate-45 even:opacity-0 last:-translate-y-2 last:-rotate-45":
                 visible,
             })}

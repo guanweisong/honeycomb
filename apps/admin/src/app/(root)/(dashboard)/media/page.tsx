@@ -16,7 +16,6 @@ import {
   UploadProps,
   message,
 } from "antd";
-import classNames from "classnames";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
@@ -24,6 +23,7 @@ import MediaService from "./service";
 import { TabType } from "./types/TabType";
 import type { MediaEntity } from "./types/media.entity";
 import { MediaIndexRequest } from "./types/media.index.request";
+import { cn } from "@ui/lib/utils";
 
 const { Dragger } = Upload;
 
@@ -142,7 +142,7 @@ const Media = (props: MediaProps) => {
               <ul className="flex flex-wrap overflow-hidden">
                 {list.map((item) => (
                   <li
-                    className={classNames(
+                    className={cn(
                       "relative w-32 h-32 mr-2 mb-2 border-2 border-solid bg-gray-100",
                       {
                         "border-blue-500": item.id === currentItem?.id,

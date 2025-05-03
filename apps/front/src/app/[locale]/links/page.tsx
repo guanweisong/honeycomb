@@ -6,8 +6,8 @@ import PageTitle from "@/src/components/PageTitle";
 import SettingServer from "@/src/services/setting";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MenuType } from "@/src/types/menu/MenuType";
-import classNames from "classnames";
 import { MultiLang } from "@/src/types/Language";
+import { cn } from "@ui/lib/utils";
 
 export interface LinksProps {
   params: Promise<{ locale: keyof MultiLang }>;
@@ -32,7 +32,7 @@ const Links = async (props: LinksProps) => {
             <a
               href={item.url}
               target="_blank"
-              className={classNames("flex items-center py-2", {
+              className={cn("flex items-center py-2", {
                 "border-t-0.5 border-dashed border-auto-front-gray/30":
                   index > 0,
               })}
