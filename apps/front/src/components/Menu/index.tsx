@@ -99,7 +99,19 @@ const Menu = (props: MenuProps) => {
               {m.label}
             </Link>
             {m.children && (
-              <ul className="lg:absolute ml-4 lg:ml-0 lg:opacity-0 lg:bg-auto-back-gray/90 lg:border-t-2 lg:border-pink-700 lg:z-10 lg:top-full lg:left-0 lg:right-0 lg:transition-all lg:-translate-y-full group-hover:lg:translate-y-0 group-hover:lg:shadow-md group-hover:lg:opacity-100">
+              <ul
+                className={classNames(
+                  "pointer-events-none",
+                  "lg:absolute ml-4 lg:ml-0",
+                  "lg:opacity-0 lg:invisible",
+                  "lg:bg-auto-back-gray/90 lg:border-t-2 lg:border-pink-700",
+                  "lg:z-10 lg:top-full lg:left-0 lg:right-0",
+                  "lg:transition-all lg:duration-300 lg:ease-in-out",
+                  "lg:translate-y-2",
+                  "group-hover:lg:translate-y-0 group-hover:lg:opacity-100 group-hover:lg:visible group-hover:lg:pointer-events-auto",
+                  "group-hover:lg:shadow-md",
+                )}
+              >
                 {m.children.map((n) => (
                   <li
                     className="inline-block lg:block"
@@ -132,8 +144,7 @@ const Menu = (props: MenuProps) => {
         className="w-10 px-2 cursor-pointer pt-2 lg:hidden"
         onClick={() => setVisible(!visible)}
       >
-        {/** @ts-ignore **/}
-        {Array.from(new Array(3)).map((item, index) => (
+        {Array.from(new Array(3)).map((_item, index) => (
           <div
             key={`menu-trigger-${index}`}
             className={classNames("h-0.5 my-1.5 bg-gray-500 transition-all", {
