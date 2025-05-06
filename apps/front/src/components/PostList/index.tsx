@@ -74,7 +74,6 @@ export default function PostList(props: PostListProps) {
                     priority={true}
                     src={item.cover?.url ?? ""}
                     alt={item.title?.[locale] ?? ""}
-                    sizes="33vw"
                     fill={true}
                     className="object-cover flex-shrink-0"
                   />
