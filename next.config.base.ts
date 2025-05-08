@@ -15,7 +15,7 @@ const baseNextConfig: NextConfig = {
         port: "",
       },
     ],
-    unoptimized: true,
+    // unoptimized: true,
     formats: ["image/webp"],
     deviceSizes: [640, 960, 1920], // fill 模式生成这几种宽度
     imageSizes: [640, 960, 1920], // 用于有 width 的 Image
