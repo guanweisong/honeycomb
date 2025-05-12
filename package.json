@@ -17,7 +17,9 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.0",
     "lucide-react": "^0.479.0",
-    "motion": "^12.9.2"
+    "motion": "^12.9.2",
+    "recharts":"^2.15.3",
+    "@tanstack/react-table": "^8.21.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.13",

@@ -3,24 +3,23 @@
 import MultiLangFormItem from "@/src/components/MultiLangFormItem";
 import { formItemLayout } from "@/src/constants/formItemLayout";
 import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { PlusOutlined } from "@ant-design/icons";
-import {
-  ActionType,
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Form, Input, Modal, Popconfirm, message } from "antd";
-import type { RuleObject } from "antd/es/form";
+import { Form, Popconfirm } from "antd";
 import { useRef, useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
 import TagService from "./service";
 import type { TagEntity } from "./types/tag.entity";
 import { TagIndexRequest } from "./types/tag.index.request";
+import { DataTable, DataTableRef } from "@ui/extended/DataTable";
+import { Button } from "@ui/components/button";
+import { toast } from "sonner";
+import { Dialog } from "@ui/extended/Dialog";
+import { Input } from "@ui/components/input";
+import { DynamicForm } from "@ui/extended/DynamicForm";
+import { z } from "zod";
 
 const Tag = () => {
   const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>();
+  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
@@ -30,37 +29,7 @@ const Tag = () => {
     type: ModalType.ADD,
     open: false,
   });
-
-  /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
-   */
-  const request = async (
-    params: { pageSize: number; current: number; name?: string },
-    sort: any = {},
-  ) => {
-    const { pageSize, current, name } = params;
-    const data: TagIndexRequest = {
-      page: current,
-      limit: pageSize,
-      name,
-    };
-
-    const sortKeys = Object.keys(sort);
-    if (sortKeys.length > 0) {
-      data.sortField = sortKeys[0];
-      data.sortOrder = sort[sortKeys[0]];
-    }
-
-    const result = await TagService.index(data);
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
 
   /**
    * 新增按钮事件
@@ -81,8 +50,8 @@ const Tag = () => {
   const handleDeleteItem = async (ids: string[]) => {
     const result = await TagService.destroy(ids);
     if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
+      tableRef.current?.reload();
+      toast.success("删除成功");
     }
   };
 
@@ -119,8 +88,9 @@ const Tag = () => {
           case ModalType.ADD:
             const createResult = await TagService.create(values);
             if (createResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("添加成功");
+              tableRef.current?.reload();
+              toast.success("添加成功");
+              setModalProps({ open: false });
             }
             break;
           case ModalType.EDIT:
@@ -129,12 +99,12 @@ const Tag = () => {
               values,
             );
             if (updateResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("更新成功");
+              tableRef.current?.reload();
+              toast.success("更新成功");
+              setModalProps({ open: false });
             }
             break;
         }
-        setModalProps({ open: false });
       })
       .catch((e) => {
         console.error(e);
@@ -143,10 +113,10 @@ const Tag = () => {
 
   /**
    * 校验标签名是否存在
-   * @param rule
+   * @param _rule
    * @param value
    */
-  const validateTagName = async (rule: RuleObject, value: string) => {
+  const validateTagName = async (_rule: any, value: string) => {
     if (value && value.length > 0) {
       let exist = false;
       const result = await TagService.index({ name: value });
@@ -163,46 +133,80 @@ const Tag = () => {
   };
 
   return (
-    <PageContainer>
-      <ProTable<TagEntity, any>
-        form={{ syncToUrl: true }}
-        defaultSize={"middle"}
-        rowKey="id"
-        request={request}
-        actionRef={actionRef}
-        columns={tagTableColumns({ handleEditItem, handleDeleteItem })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
-        }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary" onClick={handleAddNew}>
-            <PlusOutlined /> 添加新标签
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+    <>
+      <DataTable<TagEntity, TagIndexRequest>
+        columns={tagTableColumns}
+        request={TagService.index}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        params={searchParams}
+        ref={tableRef}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button onClick={handleAddNew}>添加新标签</Button>
+              <Dialog
+                title="确认删除吗？"
+                trigger={
+                  <Button
+                    variant="destructive"
+                    disabled={selectedRows.length === 0}
+                  >
+                    批量删除
+                  </Button>
+                }
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-      <Modal
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={z.object({ name: z.string().optional() })}
+                fields={[
+                  {
+                    name: "name",
+                    type: "text",
+                    placeholder: "请输入标签名进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleEditItem(row)}
+            >
+              编辑
+            </Button>
+            &nbsp;
+            <Popconfirm
+              title="确定要删除吗？"
+              onConfirm={() => handleDeleteItem([row.id])}
+            >
+              <Button size="sm" variant="outline">
+                删除
+              </Button>
+            </Popconfirm>
+          </div>
+        )}
+      />
+      <Dialog
         title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}标签`}
         open={modalProps.open}
-        onOk={handleModalOk}
-        onCancel={() => setModalProps({ open: false })}
+        onOpenChange={(open) =>
+          setModalProps((prevState) => ({ ...prevState, open }))
+        }
+        onOK={handleModalOk}
       >
         <Form form={form}>
           <MultiLangFormItem>
@@ -219,8 +223,8 @@ const Tag = () => {
             </Form.Item>
           </MultiLangFormItem>
         </Form>
-      </Modal>
-    </PageContainer>
+      </Dialog>
+    </>
   );
 };
 

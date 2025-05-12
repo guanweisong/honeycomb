@@ -46,6 +46,8 @@ interface DynamicFormProps<TSchema extends ZodTypeAny> {
   onSubmit: (values: z.infer<TSchema>) => void;
   loading?: boolean;
   formRef?: React.MutableRefObject<DynamicFormRef<z.infer<TSchema>> | null>;
+  inline?: boolean;
+  submitProps?: React.ComponentProps<typeof Button>; // 添加提交按钮的props配置
 }
 
 type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
@@ -75,6 +77,8 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
   onSubmit,
   loading = false,
   formRef,
+  inline = false,
+  submitProps,
 }: DynamicFormProps<TSchema>) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema as z.ZodType),
@@ -183,7 +187,10 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={inline ? "flex gap-2" : "space-y-4"}
+      >
         {fields.map((field) => (
           <FormField
             key={field.name}
@@ -208,10 +215,11 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
         ))}
         <Button
           type="submit"
-          className="w-full cursor-pointer"
+          className="cursor-pointer"
           disabled={loading}
+          {...submitProps} // 将提交按钮的配置传递给 Button 组件
         >
-          提交
+          {submitProps?.children ?? "提交"}
         </Button>
       </form>
     </Form>

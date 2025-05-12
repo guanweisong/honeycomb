@@ -97,7 +97,7 @@ const Menu = (props: MenuProps) => {
             </Link>
             {m.children && (
               <ul
-                className={classNames(
+                className={cn(
                   "pointer-events-none",
                   "lg:absolute ml-4 lg:ml-0",
                   "lg:opacity-0 lg:invisible",

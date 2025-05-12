@@ -1,30 +1,11 @@
-"use client";
-
-import { StyleProvider } from "@ant-design/cssinjs";
-import { ProConfigProvider } from "@ant-design/pro-provider";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { ConfigProvider } from "antd";
-import zhCN from "antd/locale/zh_CN";
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import React from "react";
+import { Toaster } from "@ui/components/sonner";
 
 import "./globals.scss";
 
 export const dynamic = "force-dynamic";
-
-const Dynamic = ({ children }: { children: React.ReactNode }) => {
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  if (!hasMounted) {
-    return null;
-  }
-
-  return <>{children}</>;
-};
 
 export default function RootLayout({
   children,
@@ -45,13 +26,8 @@ export default function RootLayout({
         <Script src="https://ssl.captcha.qq.com/TCaptcha.js" />
       </head>
       <body>
-        <Dynamic>
-          <ConfigProvider locale={zhCN}>
-            <ProConfigProvider>
-              <StyleProvider ssrInline={true}>{children}</StyleProvider>
-            </ProConfigProvider>
-          </ConfigProvider>
-        </Dynamic>
+        {children}
+        <Toaster />
       </body>
       <GoogleAnalytics gaId="G-15D5ZQ68JX" />
     </html>
