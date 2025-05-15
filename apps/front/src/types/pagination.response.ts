@@ -1,4 +1,4 @@
 export default interface PaginationResponse<T> {
-  list: T;
+  list: T[];
   total: number;
 }

@@ -10,7 +10,7 @@ export default class PostServer {
   static indexPostList = cache(
     (params: PostListQuery): Promise<PostEntity[]> => {
       console.log("category=>service=>indexPostList");
-      return request<string, PaginationResponse<PostEntity[]>>({
+      return request<string, PaginationResponse<PostEntity>>({
         url: "/post",
         method: "get",
         params: params,

@@ -9,7 +9,7 @@ export default class CommentServer {
   static index(
     id: string,
     type: MenuType,
-  ): Promise<PaginationResponse<CommentEntity[]>> {
+  ): Promise<PaginationResponse<CommentEntity>> {
     console.log("comment=>service=>index");
     return request({
       url: `/comment/${id}`,

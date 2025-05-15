@@ -7,7 +7,7 @@ import { cache } from "react";
 export default class TagServer {
   // 获取标签列表
   static indexList = cache(
-    (params: TagListQuery): Promise<PaginationResponse<TagEntity[]>> => {
+    (params: TagListQuery): Promise<PaginationResponse<TagEntity>> => {
       console.log("category=>service=>indexTagList");
       return request({
         url: "/tag",

@@ -16,6 +16,8 @@ import { Dialog } from "@ui/extended/Dialog";
 import { Input } from "@ui/components/input";
 import { DynamicForm } from "@ui/extended/DynamicForm";
 import { z } from "zod";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { TagNameSchema } from "server/app/tag/schemas/fields/tag.name.schema";
 
 const Tag = () => {
   const [form] = Form.useForm();
@@ -30,6 +32,7 @@ const Tag = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const [loading, setLoading] = useState(false);
 
   /**
    * 新增按钮事件
@@ -80,35 +83,37 @@ const Tag = () => {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then(async (values) => {
-        switch (modalProps.type!) {
-          case ModalType.ADD:
-            const createResult = await TagService.create(values);
-            if (createResult.status === 201) {
+  const handleModalOk = (values: any) => {
+    switch (modalProps.type!) {
+      case ModalType.ADD:
+        setLoading(true);
+        TagService.create(values)
+          .then((result) => {
+            if (result.status === 201) {
               tableRef.current?.reload();
               toast.success("添加成功");
               setModalProps({ open: false });
             }
-            break;
-          case ModalType.EDIT:
-            const updateResult = await TagService.update(
-              modalProps.record?.id as string,
-              values,
-            );
-            if (updateResult.status === 201) {
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+        break;
+      case ModalType.EDIT:
+        setLoading(true);
+        TagService.update(modalProps.record?.id as string, values)
+          .then((result) => {
+            if (result.status === 201) {
               tableRef.current?.reload();
               toast.success("更新成功");
               setModalProps({ open: false });
             }
-            break;
-        }
-      })
-      .catch((e) => {
-        console.error(e);
-      });
+          })
+          .catch(() => {
+            setLoading(false);
+          });
+        break;
+    }
   };
 
   /**
@@ -145,14 +150,18 @@ const Tag = () => {
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
-              <Button onClick={handleAddNew}>添加新标签</Button>
+              <Button onClick={handleAddNew} variant="outline">
+                <Plus />
+                添加新标签
+              </Button>
               <Dialog
                 title="确认删除吗？"
                 trigger={
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     disabled={selectedRows.length === 0}
                   >
+                    <Trash />
                     批量删除
                   </Button>
                 }
@@ -183,18 +192,18 @@ const Tag = () => {
           <div>
             <Button
               size="sm"
-              variant="outline"
+              variant="secondary"
               onClick={() => handleEditItem(row)}
             >
-              编辑
+              <Pencil />
             </Button>
             &nbsp;
             <Popconfirm
               title="确定要删除吗？"
               onConfirm={() => handleDeleteItem([row.id])}
             >
-              <Button size="sm" variant="outline">
-                删除
+              <Button size="sm" variant="secondary">
+                <Trash />
               </Button>
             </Popconfirm>
           </div>
@@ -206,23 +215,30 @@ const Tag = () => {
         onOpenChange={(open) =>
           setModalProps((prevState) => ({ ...prevState, open }))
         }
-        onOK={handleModalOk}
       >
-        <Form form={form}>
-          <MultiLangFormItem>
-            <Form.Item
-              {...formItemLayout}
-              name={"name"}
-              label="标签名称"
-              rules={[
-                { required: true, message: "请输入标签名称" },
-                { validator: validateTagName },
-              ]}
-            >
-              <Input maxLength={100} />
-            </Form.Item>
-          </MultiLangFormItem>
-        </Form>
+        <DynamicForm
+          schema={z.object({
+            "name.zh": TagNameSchema,
+            "name.en": TagNameSchema,
+          })}
+          loading={loading}
+          labelPosition="left"
+          fields={[
+            {
+              label: "标签名称(zh)",
+              name: "name.zh",
+              type: "text",
+              placeholder: "请输入标签名称",
+            },
+            {
+              label: "标签名称(en)",
+              name: "name.en",
+              type: "text",
+              placeholder: "请输入标签名称",
+            },
+          ]}
+          onSubmit={handleModalOk}
+        />
       </Dialog>
     </>
   );

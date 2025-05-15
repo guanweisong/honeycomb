@@ -41,9 +41,10 @@ interface DataTableProps<TData, TRequest> {
 
   params?: TRequest;
 
-  request: (params: TRequest) => Promise<PaginationResponse<TData[]>>;
+  request: (params: TRequest) => Promise<PaginationResponse<TData>>;
 
   selectableRows?: boolean;
+  disabledRowSelectable?: (row: TData) => boolean;
   selectedRows?: TData[];
   onSelectionChange?: (selectedRows: TData[]) => void;
 
@@ -62,6 +63,7 @@ function DataTableInner<TData, TRequest>(
     columns,
     request,
     selectableRows = false,
+    disabledRowSelectable,
     onSelectionChange,
     selectedRows = [],
     params,
@@ -149,7 +151,10 @@ function DataTableInner<TData, TRequest>(
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      onSelectionChange?.(data);
+      const selectable = disabledRowSelectable
+        ? data.filter((row) => !disabledRowSelectable(row))
+        : data;
+      onSelectionChange?.(selectable);
     } else {
       onSelectionChange?.([]);
     }
@@ -161,6 +166,10 @@ function DataTableInner<TData, TRequest>(
       : selectedRows.filter((r) => r !== row);
     onSelectionChange?.(newSelectedRows);
   };
+
+  const selectableRowsList = data.filter(
+    (row) => !disabledRowSelectable?.(row),
+  );
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -174,7 +183,8 @@ function DataTableInner<TData, TRequest>(
                   <TableHead>
                     <Checkbox
                       checked={
-                        data.length > 0 && selectedRows.length === data.length
+                        selectableRowsList.length > 0 &&
+                        selectedRows.length === selectableRowsList.length
                       }
                       onCheckedChange={handleSelectAll}
                     />
@@ -241,6 +251,7 @@ function DataTableInner<TData, TRequest>(
                         onCheckedChange={(checked) =>
                           handleSelectRow(row.original, checked)
                         }
+                        disabled={disabledRowSelectable?.(row.original)}
                       />
                     </TableCell>
                   )}

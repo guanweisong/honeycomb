@@ -8,7 +8,7 @@ export default class MenuServer {
   static indexMenu = cache((): Promise<MenuEntity[]> => {
     console.log("menu=>service=>indexMenu");
     // @ts-ignore
-    return request<string, PaginationResponse<MenuEntity[]>>({
+    return request<string, PaginationResponse<MenuEntity>>({
       url: "/menu",
       method: "get",
     }).then((result) => {

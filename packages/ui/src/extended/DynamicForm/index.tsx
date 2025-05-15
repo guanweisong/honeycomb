@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useImperativeHandle, forwardRef } from "react";
 import {
   useForm,
   useWatch,
-  Path,
   FieldValues,
   UseFormReturn,
+  PathValue,
+  FieldPath,
 } from "react-hook-form";
 import { z, ZodTypeAny } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ui/components/select";
+import { RadioGroup, RadioGroupItem } from "@ui/components/radio-group";
 import { Switch } from "@ui/components/switch";
 import { Calendar } from "@ui/components/calendar";
 import { Button } from "@ui/components/button";
@@ -35,29 +37,28 @@ import { Button } from "@ui/components/button";
 export type DynamicFormRef<T extends FieldValues = any> = Pick<
   UseFormReturn<T>,
   "setValue" | "getValues" | "reset"
-> & {
-  clear: () => void;
-};
+>;
 
 interface DynamicFormProps<TSchema extends ZodTypeAny> {
   schema: TSchema;
   fields: FieldConfig<TSchema>[];
-  defaultValues?: z.infer<TSchema>;
+  defaultValues?: Partial<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void;
   loading?: boolean;
-  formRef?: React.MutableRefObject<DynamicFormRef<z.infer<TSchema>> | null>;
   inline?: boolean;
-  submitProps?: React.ComponentProps<typeof Button>; // 添加提交按钮的props配置
+  labelPosition?: "top" | "left";
+  submitProps?: React.ComponentProps<typeof Button>;
 }
 
 type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
-  name: Path<z.infer<TSchema>>;
+  name: FieldPath<z.infer<TSchema>>;
   label?: string;
   type:
     | "text"
     | "password"
     | "textarea"
     | "select"
+    | "radio"
     | "switch"
     | "calendar"
     | "calendar-range";
@@ -70,45 +71,38 @@ type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
   disabled?: (formValues: any) => boolean;
 };
 
-export function DynamicForm<TSchema extends ZodTypeAny>({
-  schema,
-  fields,
-  defaultValues = {},
-  onSubmit,
-  loading = false,
-  formRef,
-  inline = false,
-  submitProps,
-}: DynamicFormProps<TSchema>) {
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema as z.ZodType),
-    defaultValues,
+export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
+  {
+    schema,
+    fields,
+    defaultValues = {},
+    onSubmit,
+    loading = false,
+    inline = false,
+    labelPosition = "top",
+    submitProps,
+  }: DynamicFormProps<TSchema>,
+  ref: React.Ref<DynamicFormRef<z.infer<TSchema>>>,
+) {
+  const form = useForm<z.infer<TSchema>>({
+    resolver: zodResolver(schema),
+    mode: "onBlur",
+    defaultValues: defaultValues as any,
   });
 
   const formValues = useWatch({ control: form.control });
 
-  useEffect(() => {
-    if (formRef) {
-      formRef.current = {
-        setValue: form.setValue,
-        getValues: form.getValues,
-        reset: form.reset,
-        clear: () => {
-          const cleared: Record<string, any> = {};
-          Object.keys(form.getValues()).forEach((key) => {
-            cleared[key] = undefined;
-          });
-          form.reset(cleared);
-        },
-      };
-    }
-  }, [form, formRef]);
+  useImperativeHandle(ref, () => ({
+    setValue: form.setValue,
+    getValues: form.getValues,
+    reset: form.reset,
+  }));
 
   const renderField = (
     field: FieldConfig<TSchema>,
     controllerField: any,
     values: any,
-  ) => {
+  ): React.ReactNode => {
     const fieldDisabled = field.disabled?.(values) ?? false;
     const fieldHidden = field.hidden?.(values) ?? false;
 
@@ -123,6 +117,21 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
             placeholder={field.placeholder}
             disabled={fieldDisabled}
             {...controllerField}
+            onBlur={(e) => {
+              const trimmedValue = e.target.value.trim();
+              const currentValue = controllerField.value;
+              if (trimmedValue !== currentValue) {
+                form.setValue(
+                  field.name,
+                  trimmedValue as PathValue<
+                    z.infer<TSchema>,
+                    typeof field.name
+                  >,
+                  { shouldValidate: true, shouldDirty: true },
+                );
+              }
+              controllerField.onBlur();
+            }}
           />
         );
       case "textarea":
@@ -131,6 +140,21 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
             placeholder={field.placeholder}
             disabled={fieldDisabled}
             {...controllerField}
+            onBlur={(e) => {
+              const trimmedValue = e.target.value.trim();
+              const currentValue = controllerField.value;
+              if (trimmedValue !== currentValue) {
+                form.setValue(
+                  field.name,
+                  trimmedValue as PathValue<
+                    z.infer<TSchema>,
+                    typeof field.name
+                  >,
+                  { shouldValidate: true, shouldDirty: true },
+                );
+              }
+              controllerField.onBlur();
+            }}
           />
         );
       case "select":
@@ -155,6 +179,26 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
               ))}
             </SelectContent>
           </Select>
+        );
+      case "radio":
+        const radioOptions =
+          typeof field.options === "function"
+            ? field.options(values)
+            : field.options;
+        return (
+          <RadioGroup
+            onValueChange={controllerField.onChange}
+            value={controllerField.value}
+            className="flex items-center gap-4"
+            disabled={fieldDisabled}
+          >
+            {radioOptions?.map((opt) => (
+              <div key={opt.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={opt.value} id={opt.value} />
+                <label htmlFor={opt.value}>{opt.label}</label>
+              </div>
+            ))}
+          </RadioGroup>
         );
       case "switch":
         return (
@@ -204,24 +248,42 @@ export function DynamicForm<TSchema extends ZodTypeAny>({
               );
               if (!renderedField) return <></>;
               return (
-                <FormItem>
-                  {field.label && <FormLabel>{field.label}</FormLabel>}
-                  <FormControl>{renderedField}</FormControl>
-                  <FormMessage className="text-left" />
+                <FormItem
+                  className={
+                    labelPosition === "left"
+                      ? "flex items-center gap-4"
+                      : "space-y-2"
+                  }
+                >
+                  {field.label && (
+                    <FormLabel
+                      className={
+                        labelPosition === "left" ? "min-w-16 justify-end" : ""
+                      }
+                    >
+                      {field.label}
+                    </FormLabel>
+                  )}
+                  <div className="flex-1">
+                    <FormControl>{renderedField}</FormControl>
+                    <FormMessage className="text-left" />
+                  </div>
                 </FormItem>
               );
             }}
           />
         ))}
-        <Button
-          type="submit"
-          className="cursor-pointer"
-          disabled={loading}
-          {...submitProps} // 将提交按钮的配置传递给 Button 组件
-        >
-          {submitProps?.children ?? "提交"}
-        </Button>
+        <div className="flex gap-2 justify-center">
+          <Button
+            type="submit"
+            className="cursor-pointer mt-2"
+            disabled={loading}
+            {...submitProps}
+          >
+            {loading ? "处理中..." : (submitProps?.children ?? "提交")}
+          </Button>
+        </div>
       </form>
     </Form>
   );
-}
+});

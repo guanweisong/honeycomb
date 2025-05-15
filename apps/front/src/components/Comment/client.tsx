@@ -17,7 +17,7 @@ import CommentServer from "@/src/services/comment";
 import { MenuType } from "@/src/types/menu/MenuType";
 
 export interface CommentClientProps extends CommentProps {
-  queryCommentPromise: Promise<PaginationResponse<CommentEntity[]>>;
+  queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;
 }
 
 export interface User {

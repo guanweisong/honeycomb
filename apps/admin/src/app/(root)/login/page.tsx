@@ -7,10 +7,12 @@ import { useEffect, useRef, useState } from "react";
 import LoginService from "./service";
 import { DynamicForm, DynamicFormRef } from "@ui/extended/DynamicForm";
 import { z } from "zod";
+import { NameSchema } from "server/app/user/schemas/fields/name.schema";
+import { PasswordSchema } from "server/app/user/schemas/fields/password.schema";
 
 const Login = () => {
   const captchaRef = useRef<any>(null);
-  const formRef = useRef<DynamicFormRef>(null);
+  const form = useRef<DynamicFormRef>(null);
   const searchParams = useSearchParams();
   const settingStore = useSettingStore();
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ const Login = () => {
   useEffect(() => {
     captchaRef.current = new TencentCaptcha("2090829333", async (res: any) => {
       if (res.ret === 0) {
-        const values = formRef.current?.getValues();
+        const values = form.current?.getValues();
         const { name, password } = values;
         setLoading(true);
         LoginService.login({
@@ -68,14 +70,10 @@ const Login = () => {
         <h1 className="text-2xl">{setting?.siteName.zh}</h1>
         <div className="opacity-80 mb-6">游客账号：guest 123456</div>
         <DynamicForm
-          formRef={formRef}
+          ref={form}
           schema={z.object({
-            name: z
-              .string({ required_error: "用户名不能为空" })
-              .min(1, { message: "用户名不能为空" }),
-            password: z
-              .string({ required_error: "密码不能为空" })
-              .min(1, { message: "密码不能为空" }),
+            name: NameSchema,
+            password: PasswordSchema,
           })}
           fields={[
             { name: "name", type: "text", placeholder: "用户名" },

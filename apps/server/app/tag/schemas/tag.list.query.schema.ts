@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@/schemas/pagination.query.schema";
-import { NameSchema } from "@/app/tag/schemas/fields/name.schema";
+import { TagNameSchema } from "@/app/tag/schemas/fields/tag.name.schema";
 
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: NameSchema.optional(),
+  name: TagNameSchema.optional(),
 });
