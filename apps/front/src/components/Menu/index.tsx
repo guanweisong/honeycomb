@@ -101,7 +101,7 @@ const Menu = (props: MenuProps) => {
             {m.children && (
               <ul
                 className={classNames(
-                  "pointer-events-none",
+                  "lg:pointer-events-none",
                   "lg:absolute ml-4 lg:ml-0",
                   "lg:opacity-0 lg:invisible",
                   "lg:bg-auto-back-gray/90 lg:border-t-2 lg:border-pink-700",
