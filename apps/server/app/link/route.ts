@@ -12,9 +12,7 @@ import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(request: NextRequest) {
-  // @ts-ignore
   return validateParams(
-    // @ts-ignore
     LinkListQuerySchema,
     getQueryParams(request),
     async (data) => {

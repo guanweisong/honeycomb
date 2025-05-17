@@ -26,6 +26,20 @@ import { cn } from "@ui/lib/utils";
 import { useDeepCompareEffect } from "ahooks";
 import { PaginationResponse } from "admin/src/types/PaginationResponse";
 import { CheckedState } from "@radix-ui/react-checkbox";
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
+import { MultiSelect } from "@ui/extended/MultiSelect";
+
+export function normalizeFilters(
+  filters: ColumnFiltersState,
+): Record<string, any> {
+  return filters.reduce(
+    (acc, filter) => {
+      acc[filter.id] = filter.value;
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
+}
 
 interface Pagination {
   page: number;
@@ -104,9 +118,21 @@ function DataTableInner<TData, TRequest>(
   const requestFn = () => {
     setError(false);
     setLoading(true);
-    let data = { ...pagination } as TRequest;
+    let data: any = { ...pagination };
     if (params) {
       data = { ...data, ...params };
+    }
+    if (sorting?.length) {
+      sorting.forEach((item) => {
+        data.sortField = item.id;
+        data.sortOrder = item.desc ? "desc" : "asc";
+      });
+    }
+    if (columnFilters.length) {
+      data = {
+        ...data,
+        ...normalizeFilters(columnFilters),
+      };
     }
     request(data)
       .then((result) => {
@@ -126,11 +152,14 @@ function DataTableInner<TData, TRequest>(
 
   useDeepCompareEffect(() => {
     requestFn();
-  }, [pagination, sorting]);
+  }, [pagination, sorting, columnFilters]);
 
   const table = useReactTable({
     data,
     columns,
+    defaultColumn: {
+      enableSorting: false,
+    },
     state: {
       sorting,
       columnFilters,
@@ -140,6 +169,7 @@ function DataTableInner<TData, TRequest>(
     pageCount: Math.ceil(rowCount / pagination.limit),
     manualPagination: true,
     manualSorting: true,
+    manualFiltering: true,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -190,14 +220,72 @@ function DataTableInner<TData, TRequest>(
                     />
                   </TableHead>
                 )}
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const column = header.column;
+                  // @ts-ignore
+                  const filterOptions = column.columnDef.meta?.filterOptions;
+                  const isSorted = column.getIsSorted();
+                  const isFiltered = (column.getFilterValue() as string[])
+                    ?.length;
+
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      onClick={() => {
+                        if (column.getCanSort()) {
+                          column.toggleSorting();
+                        }
+                      }}
+                      className={cn(
+                        column.getCanSort() && "cursor-pointer select-none",
+                      )}
+                    >
+                      <div className="flex items-center gap-1">
+                        {flexRender(
+                          column.columnDef.header,
+                          header.getContext(),
+                        )}
+
+                        {column.getCanSort() &&
+                          ({
+                            asc: <ArrowUp size={16} />,
+                            desc: <ArrowDown size={16} />,
+                          }[isSorted as string] ?? (
+                            <ArrowUpDown
+                              size={16}
+                              className="text-muted-foreground"
+                            />
+                          ))}
+
+                        {filterOptions?.length > 0 && (
+                          <MultiSelect
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                  "h-4 w-4 p-0",
+                                  isFiltered
+                                    ? "text-blue-600"
+                                    : "text-muted-foreground",
+                                )}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Filter size={14} />
+                              </Button>
+                            }
+                            options={filterOptions}
+                            value={(column.getFilterValue() as string[]) ?? []}
+                            onChange={(val) => {
+                              column.setFilterValue(val || []);
+                            }}
+                          />
+                        )}
+                      </div>
+                    </TableHead>
+                  );
+                })}
                 {rowActions && <TableHead>操作</TableHead>}
               </TableRow>
             ))}

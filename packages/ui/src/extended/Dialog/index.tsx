@@ -11,6 +11,31 @@ import {
   DialogFooter,
 } from "@ui/components/dialog";
 import { Button } from "@ui/components/button";
+import { cn } from "@ui/lib/utils";
+
+import {
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  XCircle,
+  LucideIcon,
+} from "lucide-react";
+
+type DialogType = "default" | "danger" | "success" | "warning";
+
+const typeIconMap: Record<DialogType, LucideIcon> = {
+  default: Info,
+  danger: XCircle,
+  success: CheckCircle,
+  warning: AlertTriangle,
+};
+
+const typeButtonVariantMap: Record<DialogType, "default" | "destructive"> = {
+  default: "default",
+  danger: "destructive",
+  success: "default",
+  warning: "default",
+};
 
 interface CustomDialogProps
   extends React.ComponentPropsWithoutRef<typeof BaseDialog> {
@@ -18,6 +43,7 @@ interface CustomDialogProps
   title?: React.ReactNode;
   description?: React.ReactNode;
   footer?: React.ReactNode;
+  type?: DialogType;
   children?: React.ReactNode;
   className?: string;
   onOK?: () => void | Promise<void>;
@@ -31,6 +57,7 @@ export function Dialog({
   title,
   description,
   footer,
+  type,
   children,
   className,
   onOK,
@@ -57,6 +84,8 @@ export function Dialog({
     }
   };
 
+  const Icon = type ? typeIconMap[type] : null;
+
   return (
     <BaseDialog open={open} onOpenChange={setOpen} {...props}>
       {trigger && (
@@ -71,10 +100,26 @@ export function Dialog({
       <DialogContent className={className}>
         {(title || description) && (
           <DialogHeader>
-            {title && <DialogTitle>{title}</DialogTitle>}
-            {description && (
-              <DialogDescription>{description}</DialogDescription>
-            )}
+            <div className="flex items-start gap-3">
+              {Icon && (
+                <Icon
+                  className={cn("w-5 h-5 mt-0.5", {
+                    "text-destructive": type === "danger",
+                    "text-green-500": type === "success",
+                    "text-yellow-500": type === "warning",
+                    "text-primary": type === "default",
+                  })}
+                />
+              )}
+              <div>
+                {title && <DialogTitle>{title}</DialogTitle>}
+                {description && (
+                  <DialogDescription className="!mt-3">
+                    {description}
+                  </DialogDescription>
+                )}
+              </div>
+            </div>
           </DialogHeader>
         )}
         {children}
@@ -85,6 +130,7 @@ export function Dialog({
               <Button
                 onClick={handleOK}
                 disabled={loading || OKProps?.disabled}
+                variant={type ? typeButtonVariantMap[type] : "default"}
                 {...OKProps}
               >
                 {loading ? "处理中…" : OKProps?.children || "确定"}

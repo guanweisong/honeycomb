@@ -77,7 +77,7 @@ export const PostListTableColumns = (props: PostListTableColumnsProps) =>
       dataIndex: "createdAt",
       key: "createdAt",
       sorter: true,
-      defaultSortOrder: SortOrder.descend,
+      defaultSortOrder: SortOrder.desc,
       search: false,
       width: 180,
       render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),

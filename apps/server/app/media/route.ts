@@ -13,7 +13,6 @@ import { arraybufferToBuffer } from "@/libs/arraybufferToBuffer";
 import sizeOf from "image-size";
 import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
-// @ts-ignore
 import { getColor } from "@/libs/colorThief";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +22,7 @@ export async function GET(request: NextRequest) {
     request,
     [UserLevel.ADMIN, UserLevel.EDITOR, UserLevel.GUEST],
     async () => {
-      // @ts-ignore
       return validateParams(
-        // @ts-ignore
         MediaListQuerySchema,
         getQueryParams(request),
         async (data) => {

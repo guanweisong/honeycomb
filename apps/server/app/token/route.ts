@@ -11,9 +11,7 @@ import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(request: NextRequest) {
   return validateAuth(request, [UserLevel.ADMIN], async () => {
-    // @ts-ignore
     return validateParams(
-      // @ts-ignore
       TokenListQuerySchema,
       getQueryParams(request),
       async (data) => {

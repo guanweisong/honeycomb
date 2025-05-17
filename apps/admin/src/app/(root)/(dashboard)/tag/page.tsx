@@ -1,9 +1,6 @@
 "use client";
 
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import { formItemLayout } from "@/src/constants/formItemLayout";
 import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { Form, Popconfirm } from "antd";
 import { useRef, useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
 import TagService from "./service";
@@ -13,14 +10,12 @@ import { DataTable, DataTableRef } from "@ui/extended/DataTable";
 import { Button } from "@ui/components/button";
 import { toast } from "sonner";
 import { Dialog } from "@ui/extended/Dialog";
-import { Input } from "@ui/components/input";
 import { DynamicForm } from "@ui/extended/DynamicForm";
 import { z } from "zod";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { TagNameSchema } from "server/app/tag/schemas/fields/tag.name.schema";
 
 const Tag = () => {
-  const [form] = Form.useForm();
   const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
@@ -43,7 +38,6 @@ const Tag = () => {
       open: true,
       record: undefined,
     });
-    form.resetFields();
   };
 
   /**
@@ -51,11 +45,12 @@ const Tag = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await TagService.destroy(ids);
-    if (result.status === 204) {
-      tableRef.current?.reload();
-      toast.success("删除成功");
-    }
+    return TagService.destroy(ids).then((result) => {
+      if (result.status === 204) {
+        tableRef.current?.reload();
+        toast.success("删除成功");
+      }
+    });
   };
 
   /**
@@ -72,7 +67,6 @@ const Tag = () => {
    * @param record
    */
   const handleEditItem = (record: TagEntity) => {
-    form.setFieldsValue(record);
     setModalProps({
       type: ModalType.EDIT,
       open: true,
@@ -118,23 +112,18 @@ const Tag = () => {
 
   /**
    * 校验标签名是否存在
-   * @param _rule
    * @param value
    */
-  const validateTagName = async (_rule: any, value: string) => {
-    if (value && value.length > 0) {
-      let exist = false;
+  const checkExist = async (value: string) => {
+    let valid = true;
+    if (value) {
       const result = await TagService.index({ name: value });
       const currentId = modalProps.record?.id;
       if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-        exist = true;
+        valid = false;
       }
-      if (exist) {
-        return Promise.reject("抱歉，标签已存在，请换一个标签");
-      }
-      return Promise.resolve();
     }
-    return Promise.resolve();
+    return valid;
   };
 
   return (
@@ -155,7 +144,6 @@ const Tag = () => {
                 添加新标签
               </Button>
               <Dialog
-                title="确认删除吗？"
                 trigger={
                   <Button
                     variant="outline"
@@ -165,6 +153,8 @@ const Tag = () => {
                     批量删除
                   </Button>
                 }
+                type="danger"
+                title="确定要删除吗？"
                 onOK={handleDeleteBatch}
               />
             </div>
@@ -189,7 +179,7 @@ const Tag = () => {
           </div>
         }
         rowActions={(row) => (
-          <div>
+          <div className="flex gap-1">
             <Button
               size="sm"
               variant="secondary"
@@ -197,15 +187,16 @@ const Tag = () => {
             >
               <Pencil />
             </Button>
-            &nbsp;
-            <Popconfirm
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
               title="确定要删除吗？"
-              onConfirm={() => handleDeleteItem([row.id])}
-            >
-              <Button size="sm" variant="secondary">
-                <Trash />
-              </Button>
-            </Popconfirm>
+              onOK={() => handleDeleteItem([row.id])}
+            />
           </div>
         )}
       />
@@ -217,9 +208,16 @@ const Tag = () => {
         }
       >
         <DynamicForm
+          defaultValues={modalProps.record}
           schema={z.object({
-            "name.zh": TagNameSchema,
-            "name.en": TagNameSchema,
+            name: z.object({
+              zh: TagNameSchema.refine(async (name) => await checkExist(name), {
+                message: "标签名已存在",
+              }),
+              en: TagNameSchema.refine(async (name) => await checkExist(name), {
+                message: "标签名已存在",
+              }),
+            }),
           })}
           loading={loading}
           labelPosition="left"
@@ -228,13 +226,13 @@ const Tag = () => {
               label: "标签名称(zh)",
               name: "name.zh",
               type: "text",
-              placeholder: "请输入标签名称",
+              placeholder: "请输入标签中文名称",
             },
             {
               label: "标签名称(en)",
               name: "name.en",
               type: "text",
-              placeholder: "请输入标签名称",
+              placeholder: "请输入标签英文名称",
             },
           ]}
           onSubmit={handleModalOk}

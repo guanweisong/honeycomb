@@ -13,6 +13,7 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
   {
     accessorKey: "createdAt",
     header: "添加时间",
+    enableSorting: true,
     cell: ({ getValue }) =>
       dayjs(getValue() as string).format("YYYY-MM-DD HH:mm:ss"),
   },

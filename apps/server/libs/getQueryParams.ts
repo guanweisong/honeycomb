@@ -11,5 +11,17 @@ export const getQueryParams = (request: NextRequest) => {
       parseBooleans: true,
     });
   }
-  return result;
+  // 过滤掉空字符串
+  return Object.fromEntries(
+    Object.entries(result).flatMap(([key, value]) => {
+      if (typeof value === "string") {
+        return value.trim() === "" ? [] : [[key, value]];
+      }
+      if (Array.isArray(value)) {
+        const filtered = value.filter((v) => v !== "");
+        return filtered.length > 0 ? [[key, filtered]] : [];
+      }
+      return [[key, value]];
+    }),
+  );
 };

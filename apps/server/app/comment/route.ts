@@ -35,9 +35,7 @@ const include = {
 };
 
 export async function GET(request: NextRequest) {
-  // @ts-ignore
   return validateParams(
-    // @ts-ignore
     CommentListQuerySchema,
     getQueryParams(request),
     async (data) => {

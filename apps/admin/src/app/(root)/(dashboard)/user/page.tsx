@@ -1,7 +1,6 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { Popconfirm } from "antd";
 import md5 from "md5";
 import { useRef, useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
@@ -22,6 +21,7 @@ import { PasswordSchema } from "server/app/user/schemas/fields/password.schema";
 import { UserLevelEnum } from "server/app/user/schemas/fields/level.schema";
 import { UserStatusEnum } from "server/app/user/schemas/fields/status.schema";
 import { Pencil, Plus, Trash } from "lucide-react";
+import { TagIndexRequest } from "@/src/app/(root)/(dashboard)/tag/types/tag.index.request";
 
 const User = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -35,6 +35,7 @@ const User = () => {
     open: false,
   });
   const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
 
   /**
    * 删除事件
@@ -153,6 +154,7 @@ const User = () => {
         disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
+        params={searchParams}
         ref={tableRef}
         toolBar={
           <div className="flex justify-between">
@@ -162,7 +164,6 @@ const User = () => {
                 添加新用户
               </Button>
               <Dialog
-                title="确认删除吗？"
                 trigger={
                   <Button
                     variant="outline"
@@ -172,13 +173,33 @@ const User = () => {
                     批量删除
                   </Button>
                 }
+                type="danger"
+                title="确定要删除吗？"
                 onOK={handleDeleteBatch}
+              />
+            </div>
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={z.object({ name: z.string().optional() })}
+                fields={[
+                  {
+                    name: "name",
+                    type: "text",
+                    placeholder: "请输入用户名进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
               />
             </div>
           </div>
         }
         rowActions={(row) => (
-          <div>
+          <div className="flex gap-1">
             <Button
               variant="secondary"
               size="sm"
@@ -186,17 +207,18 @@ const User = () => {
             >
               <Pencil />
             </Button>
-            &nbsp;
             {row.level !== UserLevel.ADMIN &&
               row.status !== UserStatus.DELETED && (
-                <Popconfirm
+                <Dialog
+                  trigger={
+                    <Button variant="secondary" size="sm">
+                      <Trash />
+                    </Button>
+                  }
+                  type="danger"
                   title="确定要删除吗？"
-                  onConfirm={() => handleDeleteItem([row.id])}
-                >
-                  <Button variant="secondary" size="sm">
-                    <Trash />
-                  </Button>
-                </Popconfirm>
+                  onOK={() => handleDeleteItem([row.id])}
+                />
               )}
           </div>
         )}

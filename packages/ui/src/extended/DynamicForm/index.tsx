@@ -276,7 +276,7 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
         <div className="flex gap-2 justify-center">
           <Button
             type="submit"
-            className="cursor-pointer mt-2"
+            className={`cursor-pointer ${inline ? "" : "mt-2"}`}
             disabled={loading}
             {...submitProps}
           >

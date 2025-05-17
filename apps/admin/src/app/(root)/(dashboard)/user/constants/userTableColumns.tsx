@@ -2,8 +2,6 @@ import dayjs from "dayjs";
 import { UserEntity } from "../types/user.entity";
 import { userLevelOptions } from "../types/UserLevel";
 import { userStatusOptions } from "../types/UserStatus";
-import { ArrowUpDown } from "lucide-react";
-import { Button } from "@ui/components/button";
 import { ColumnDef } from "@tanstack/react-table";
 
 export const userTableColumns: ColumnDef<UserEntity>[] = [
@@ -14,6 +12,9 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
   {
     accessorKey: "level",
     header: "级别",
+    meta: {
+      filterOptions: userLevelOptions,
+    },
     cell: ({ row }) => {
       const level = row.getValue("level") as string;
       return userLevelOptions.find((opt) => opt.value === level)?.label;
@@ -22,6 +23,9 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
   {
     accessorKey: "status",
     header: "状态",
+    meta: {
+      filterOptions: userStatusOptions,
+    },
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return userStatusOptions.find((opt) => opt.value === status)?.label;
@@ -33,17 +37,8 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          添加时间
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "添加时间",
+    enableSorting: true,
     cell: ({ row }) => {
       const value: string = row.getValue("createdAt");
       return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
@@ -51,17 +46,8 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
   },
   {
     accessorKey: "updatedAt",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          最后更新日期
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "最后更新日期",
+    enableSorting: true,
     cell: ({ row }) => {
       const value: string = row.getValue("updatedAt");
       return dayjs(value).format("YYYY-MM-DD HH:mm:ss");

@@ -12,9 +12,7 @@ import { validateAuth } from "@/libs/validateAuth";
 import { errorHandle } from "@/libs/errorHandle";
 
 export async function GET(request: NextRequest) {
-  // @ts-ignore
   return validateParams(
-    // @ts-ignore
     TagListQuerySchema,
     getQueryParams(request),
     async (data) => {
