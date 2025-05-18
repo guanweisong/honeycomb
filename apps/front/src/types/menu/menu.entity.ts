@@ -1,5 +1,5 @@
-import { MenuType } from "@/src/types/menu/MenuType";
-import { MultiLang } from "@/src/types/Language";
+import { MenuType } from "@/types/menu/MenuType";
+import { MultiLang } from "@/types/Language";
 
 export interface MenuEntity {
   id: string;

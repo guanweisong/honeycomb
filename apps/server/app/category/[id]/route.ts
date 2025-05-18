@@ -1,7 +1,7 @@
 import prisma from "@/libs/prisma";
 import ResponseHandler from "@/libs/responseHandler";
 import { NextRequest } from "next/server";
-import { CategoryUpdateSchema } from "@/app/category/schemas/category.update.schema";
+import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 import { UserLevel } from ".prisma/client";
 import { validateAuth } from "@/libs/validateAuth";
 import { validateParams } from "@/libs/validateParams";

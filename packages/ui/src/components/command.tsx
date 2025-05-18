@@ -4,14 +4,14 @@ import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
 
-import { cn } from "@ui/lib/utils";
+import { cn } from "@honeycomb/ui/lib/utils";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@ui/components/dialog";
+} from "@honeycomb/ui/components/dialog";
 
 function Command({
   className,

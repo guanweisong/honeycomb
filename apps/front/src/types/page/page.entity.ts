@@ -1,7 +1,7 @@
-import { PageStatus } from "@/src/types/page/PageStatus";
-import { EnableType } from "@/src/types/EnableType";
-import { MediaEntity } from "@/src/types/media/media.entity";
-import { MultiLang } from "@/src/types/Language";
+import { PageStatus } from "@/types/page/PageStatus";
+import { EnableType } from "@/types/EnableType";
+import { MediaEntity } from "@/types/media/media.entity";
+import { MultiLang } from "@/types/Language";
 
 export interface PageEntity {
   id: string;

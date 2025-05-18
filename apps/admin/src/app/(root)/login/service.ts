@@ -1,4 +1,4 @@
-import request from "@/src/utils/request";
+import request from "@/utils/request";
 import type { LoginRequest } from "./types/login.request";
 import type { LoginResponse } from "./types/login.response";
 

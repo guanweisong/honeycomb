@@ -1,6 +1,6 @@
-import request from "@/src/utils/request";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import PaginationResponse from "@/src/types/pagination.response";
+import request from "@/utils/request";
+import { MenuEntity } from "@/types/menu/menu.entity";
+import PaginationResponse from "@/types/pagination.response";
 import { cache } from "react";
 
 export default class MenuServer {

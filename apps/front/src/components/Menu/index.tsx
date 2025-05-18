@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "@/src/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
-import PostServer from "@/src/services/post";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import getCurrentPathOfMenu from "@/src/utils/getCurrentPathOfMenu";
-import { cn } from "@ui/lib/utils";
+import PostServer from "@/services/post";
+import { MenuEntity } from "@/types/menu/menu.entity";
+import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 export interface MenuItem {
   label: React.ReactNode;

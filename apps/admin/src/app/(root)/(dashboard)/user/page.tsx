@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
+import { ModalType, ModalTypeName } from "@/types/ModalType";
 import md5 from "md5";
 import { useRef, useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
@@ -9,19 +9,16 @@ import { UserLevel, userLevelOptions } from "./types/UserLevel";
 import { UserStatus, userStatusOptions } from "./types/UserStatus";
 import type { UserEntity } from "./types/user.entity";
 import type { UserIndexRequest } from "./types/user.index.request";
-import { DataTable, DataTableRef } from "@ui/extended/DataTable";
-import { Button } from "@ui/components/button";
-import { Dialog } from "@ui/extended/Dialog";
+import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { Button } from "@honeycomb/ui/components/button";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { toast } from "sonner";
-import { DynamicForm } from "@ui/extended/DynamicForm";
-import { z } from "zod";
-import { EmailSchema } from "server/app/user/schemas/fields/email.schema";
-import { NameSchema } from "server/app/user/schemas/fields/name.schema";
-import { PasswordSchema } from "server/app/user/schemas/fields/password.schema";
-import { UserLevelEnum } from "server/app/user/schemas/fields/level.schema";
-import { UserStatusEnum } from "server/app/user/schemas/fields/status.schema";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { TagIndexRequest } from "@/src/app/(root)/(dashboard)/tag/types/tag.index.request";
+import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
+import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
+import { UserCreateSchema } from "@honeycomb/validation/user/schemas/user.create.schema";
+import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.list.query.schema";
 
 const User = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -34,7 +31,6 @@ const User = () => {
     type: ModalType.ADD,
     open: false,
   });
-  const [loading, setLoading] = useState(false);
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
 
   /**
@@ -73,7 +69,7 @@ const User = () => {
   /**
    * 新增、修改保存事件
    */
-  const handleModalOk = (values: any) => {
+  const handleModalOk = async (values: any) => {
     const { password, ...rest } = values;
     const params = rest;
     if (password) {
@@ -81,33 +77,24 @@ const User = () => {
     }
     switch (modalProps.type!) {
       case ModalType.ADD:
-        setLoading(true);
-        UserService.create(params)
-          .then((result) => {
-            if (result.status === 201) {
-              tableRef.current?.reload();
-              toast.success("添加成功");
-            }
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
+        return UserService.create(params).then((result) => {
+          if (result.status === 201) {
+            tableRef.current?.reload();
+            toast.success("添加成功");
+            setModalProps({ open: false });
+          }
+        });
       case ModalType.EDIT:
-        setLoading(true);
-        UserService.update(modalProps.record?.id as string, params)
-          .then((result) => {
+        return UserService.update(modalProps.record?.id as string, params).then(
+          (result) => {
             if (result.status === 201) {
               tableRef.current?.reload();
               toast.success("更新成功");
+              setModalProps({ open: false });
             }
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
+          },
+        );
     }
-    setModalProps({ open: false });
   };
 
   /**
@@ -119,30 +106,6 @@ const User = () => {
       open: true,
       record: undefined,
     });
-  };
-
-  /**
-   * 查询唯一性
-   * @param name
-   * @param email
-   */
-  const checkExist = async ({
-    name,
-    email,
-  }: {
-    name?: string;
-    email?: string;
-  }) => {
-    console.log("users=>model=>checkExist", { name, email });
-    let valid = true;
-    if (name || email) {
-      const result = await UserService.index({ name, email });
-      const currentId = modalProps.record?.id;
-      if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-        valid = false;
-      }
-    }
-    return valid;
   };
 
   return (
@@ -180,7 +143,7 @@ const User = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={z.object({ name: z.string().optional() })}
+                schema={UserListQuerySchema}
                 fields={[
                   {
                     name: "name",
@@ -239,24 +202,12 @@ const User = () => {
                 }
               : modalProps.record
           }
-          loading={loading}
           labelPosition="left"
-          schema={z.object({
-            name: NameSchema.refine(
-              async (name) => await checkExist({ name }),
-              { message: "用户名已存在" },
-            ),
-            password:
-              modalProps.type === ModalType.ADD
-                ? PasswordSchema
-                : PasswordSchema.optional(),
-            email: EmailSchema.refine(
-              async (email) => await checkExist({ email }),
-              { message: "邮箱已存在" },
-            ),
-            level: UserLevelEnum,
-            status: UserStatusEnum,
-          })}
+          schema={
+            modalProps.type === ModalType.EDIT
+              ? UserUpdateSchema
+              : UserCreateSchema
+          }
           fields={[
             {
               label: "用户名",

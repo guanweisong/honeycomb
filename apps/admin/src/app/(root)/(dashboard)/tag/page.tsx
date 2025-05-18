@@ -1,19 +1,20 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
+import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { useRef, useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
 import TagService from "./service";
 import type { TagEntity } from "./types/tag.entity";
 import { TagIndexRequest } from "./types/tag.index.request";
-import { DataTable, DataTableRef } from "@ui/extended/DataTable";
-import { Button } from "@ui/components/button";
+import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
-import { Dialog } from "@ui/extended/Dialog";
-import { DynamicForm } from "@ui/extended/DynamicForm";
-import { z } from "zod";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { TagNameSchema } from "server/app/tag/schemas/fields/tag.name.schema";
+import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
+import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
+import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.schema";
 
 const Tag = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -27,7 +28,6 @@ const Tag = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
-  const [loading, setLoading] = useState(false);
 
   /**
    * 新增按钮事件
@@ -77,53 +77,27 @@ const Tag = () => {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = (values: any) => {
+  const handleModalOk = async (values: any) => {
     switch (modalProps.type!) {
       case ModalType.ADD:
-        setLoading(true);
-        TagService.create(values)
-          .then((result) => {
-            if (result.status === 201) {
-              tableRef.current?.reload();
-              toast.success("添加成功");
-              setModalProps({ open: false });
-            }
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
+        return TagService.create(values).then((result) => {
+          if (result.status === 201) {
+            tableRef.current?.reload();
+            toast.success("添加成功");
+            setModalProps({ open: false });
+          }
+        });
       case ModalType.EDIT:
-        setLoading(true);
-        TagService.update(modalProps.record?.id as string, values)
-          .then((result) => {
+        return TagService.update(modalProps.record?.id as string, values).then(
+          (result) => {
             if (result.status === 201) {
               tableRef.current?.reload();
               toast.success("更新成功");
               setModalProps({ open: false });
             }
-          })
-          .catch(() => {
-            setLoading(false);
-          });
-        break;
+          },
+        );
     }
-  };
-
-  /**
-   * 校验标签名是否存在
-   * @param value
-   */
-  const checkExist = async (value: string) => {
-    let valid = true;
-    if (value) {
-      const result = await TagService.index({ name: value });
-      const currentId = modalProps.record?.id;
-      if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-        valid = false;
-      }
-    }
-    return valid;
   };
 
   return (
@@ -160,7 +134,7 @@ const Tag = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={z.object({ name: z.string().optional() })}
+                schema={TagListQuerySchema}
                 fields={[
                   {
                     name: "name",
@@ -209,17 +183,11 @@ const Tag = () => {
       >
         <DynamicForm
           defaultValues={modalProps.record}
-          schema={z.object({
-            name: z.object({
-              zh: TagNameSchema.refine(async (name) => await checkExist(name), {
-                message: "标签名已存在",
-              }),
-              en: TagNameSchema.refine(async (name) => await checkExist(name), {
-                message: "标签名已存在",
-              }),
-            }),
-          })}
-          loading={loading}
+          schema={
+            modalProps.type === ModalType.EDIT
+              ? TagUpdateSchema
+              : TagCreateSchema
+          }
           labelPosition="left"
           fields={[
             {

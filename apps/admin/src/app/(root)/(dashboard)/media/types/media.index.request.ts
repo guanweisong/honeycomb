@@ -1,3 +1,3 @@
-import type { PaginationRequest } from "@/src/types/PaginationRequest";
+import type { PaginationRequest } from "@/types/PaginationRequest";
 
 export interface MediaIndexRequest extends PaginationRequest {}

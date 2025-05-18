@@ -1,7 +1,7 @@
 import prisma from "@/libs/prisma";
 import ResponseHandler from "@/libs/responseHandler";
 import { NextRequest } from "next/server";
-import { PageUpdateSchema } from "@/app/page/schemas/page.update.schema";
+import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { Media, UserLevel } from ".prisma/client";
 import { getAllImageLinkFormMarkdown } from "@/libs/getAllImageLinkFormMarkdown";
 import { validateAuth } from "@/libs/validateAuth";

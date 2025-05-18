@@ -16,7 +16,7 @@ import type { PageEntity } from "../types/page.entity";
 import { pageListTableColumns } from "./constants/pageListTableColumns";
 
 const Page = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
 
   /**

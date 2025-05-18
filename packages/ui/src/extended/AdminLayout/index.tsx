@@ -1,10 +1,10 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { Avatar } from "@ui/components/avatar";
-import { Menu, MenuItem } from "@ui/extended/Menu";
+import { Avatar } from "@honeycomb/ui/components/avatar";
+import { Menu, MenuItem } from "@honeycomb/ui/extended/Menu";
 import { UserEntity } from "admin/src/app/(root)/(dashboard)/user/types/user.entity";
-import { UserDropdown } from "@ui/extended/UserDropdown";
+import { UserDropdown } from "@honeycomb/ui/extended/UserDropdown";
 import { usePathname } from "next/navigation";
 
 export interface AdminLayoutProps {

@@ -1,5 +1,5 @@
-import request from "@/src/utils/request";
-import { PageEntity } from "@/src/types/page/page.entity";
+import request from "@/utils/request";
+import { PageEntity } from "@/types/page/page.entity";
 import { cache } from "react";
 
 export default class PageServer {

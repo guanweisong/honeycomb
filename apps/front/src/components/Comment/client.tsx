@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
-import { Button } from "@ui/components/button";
-import { CommentEntity } from "@/src/types/comment/comment.entity";
+import { Button } from "@honeycomb/ui/components/button";
+import { CommentEntity } from "@/types/comment/comment.entity";
 import Card from "../Card";
-import { CommentStatus } from "@/src/types/comment/CommentStatus";
-import { utcFormat } from "@/src/utils/utcFormat";
+import { CommentStatus } from "@/types/comment/CommentStatus";
+import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
-import PaginationResponse from "@/src/types/pagination.response";
+import PaginationResponse from "@/types/pagination.response";
 import { useRouter } from "next/navigation";
-import { CommentCreate } from "@/src/types/comment/comment.create";
-import { refreshPath } from "@/src/utils/refreshPath";
+import { CommentCreate } from "@/types/comment/comment.create";
+import { refreshPath } from "@/utils/refreshPath";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import CommentServer from "@/src/services/comment";
-import { MenuType } from "@/src/types/menu/MenuType";
+import CommentServer from "@/services/comment";
+import { MenuType } from "@/types/menu/MenuType";
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;

@@ -1,7 +1,7 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 import React from "react";
-import { Toaster } from "@ui/components/sonner";
+import { Toaster } from "@honeycomb/ui/components/sonner";
 
 import "./globals.scss";
 

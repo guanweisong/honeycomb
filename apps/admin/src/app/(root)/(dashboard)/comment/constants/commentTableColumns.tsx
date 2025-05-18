@@ -1,4 +1,4 @@
-import MultiLangText from "@/src/components/MultiLangText";
+import MultiLangText from "@/components/MultiLangText";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";

@@ -1,4 +1,4 @@
-import { PostStatus } from "@/src/types/post/PostStatus";
+import { PostStatus } from "@/types/post/PostStatus";
 
 export interface PostListQuery {
   categoryId?: string;

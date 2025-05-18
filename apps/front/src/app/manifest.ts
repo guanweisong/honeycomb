@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import SettingServer from "@/src/services/setting";
+import SettingServer from "@/services/setting";
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const setting = await SettingServer.indexSetting();
   return {

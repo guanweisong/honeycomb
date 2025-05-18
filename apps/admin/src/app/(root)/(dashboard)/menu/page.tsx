@@ -1,7 +1,7 @@
 "use client";
 
-import { PageEntity } from "@/src/app/(root)/(dashboard)/page/types/page.entity";
-import { creatCategoryTitleByDepth } from "@/src/utils/help";
+import { PageEntity } from "@/app/(root)/(dashboard)/page/types/page.entity";
+import { creatCategoryTitleByDepth } from "@/utils/help";
 import { SaveOutlined } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import {

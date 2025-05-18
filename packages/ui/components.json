@@ -11,10 +11,10 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@ui/components",
+    "components": "@honeycomb/ui/components",
     "hooks": "@ui/hooks",
-    "lib": "@ui/lib",
-    "utils": "@ui/lib/utils",
-    "ui": "@ui/components"
+    "lib": "lib",
+    "utils": "@honeycomb/ui/lib/utils",
+    "ui": "@honeycomb/ui/components"
   }
 }

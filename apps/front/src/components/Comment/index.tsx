@@ -1,7 +1,7 @@
 import React from "react";
-import CommentServer from "@/src/services/comment";
-import CommentClient from "@/src/components/Comment/client";
-import { MenuType } from "@/src/types/menu/MenuType";
+import CommentServer from "@/services/comment";
+import CommentClient from "@/components/Comment/client";
+import { MenuType } from "@/types/menu/MenuType";
 
 export interface CommentProps {
   id: string;

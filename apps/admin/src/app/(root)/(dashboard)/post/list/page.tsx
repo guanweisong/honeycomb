@@ -18,7 +18,7 @@ import type { PostIndexRequest } from "../types/post.index.request";
 import { PostListTableColumns } from "./constants/postListTableColumns";
 
 const PostList = () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
 
   /**

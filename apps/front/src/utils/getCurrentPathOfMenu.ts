@@ -1,4 +1,4 @@
-import { MenuEntity } from "@/src/types/menu/menu.entity";
+import { MenuEntity } from "@/types/menu/menu.entity";
 
 /**
  * 根据id寻找家族属性集合

@@ -1,14 +1,14 @@
 import React from "react";
-import { PostStatus } from "@/src/types/post/PostStatus";
-import { PostListQuery } from "@/src/types/post/post.list.query";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import PostServer from "@/src/services/post";
-import MenuServer from "@/src/services/menu";
-import SettingServer from "@/src/services/setting";
-import PostList from "@/src/components/PostList";
-import NoData from "@/src/components/NoData";
+import { PostStatus } from "@/types/post/PostStatus";
+import { PostListQuery } from "@/types/post/post.list.query";
+import { MenuEntity } from "@/types/menu/menu.entity";
+import PostServer from "@/services/post";
+import MenuServer from "@/services/menu";
+import SettingServer from "@/services/setting";
+import PostList from "@/components/PostList";
+import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@/types/Language";
 
 const PAGE_SIZE = 10;
 

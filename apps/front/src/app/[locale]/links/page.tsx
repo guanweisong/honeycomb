@@ -1,13 +1,13 @@
-import LinkServer from "@/src/services/link";
-import { LinkStatus } from "@/src/types/link/LinkStatus";
-import NoData from "@/src/components/NoData";
-import Comment from "@/src/components/Comment";
-import PageTitle from "@/src/components/PageTitle";
-import SettingServer from "@/src/services/setting";
+import LinkServer from "src/services/link";
+import { LinkStatus } from "@/types/link/LinkStatus";
+import NoData from "@/components/NoData";
+import Comment from "@/components/Comment";
+import PageTitle from "@/components/PageTitle";
+import SettingServer from "@/services/setting";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MenuType } from "@/src/types/menu/MenuType";
-import { MultiLang } from "@/src/types/Language";
-import { cn } from "@ui/lib/utils";
+import { MenuType } from "@/types/menu/MenuType";
+import { MultiLang } from "@/types/Language";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 export interface LinksProps {
   params: Promise<{ locale: keyof MultiLang }>;

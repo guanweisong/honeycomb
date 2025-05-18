@@ -9,9 +9,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@ui/components/dialog";
-import { Button } from "@ui/components/button";
-import { cn } from "@ui/lib/utils";
+} from "@honeycomb/ui/components/dialog";
+import { Button } from "@honeycomb/ui/components/button";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 import {
   AlertTriangle,

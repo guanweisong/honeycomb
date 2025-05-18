@@ -1,21 +1,23 @@
 "use client";
-import { useSettingStore } from "@/src/stores/useSettingStore";
+import { useSettingStore } from "@/stores/useSettingStore";
 import { message } from "antd";
 import md5 from "md5";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LoginService from "./service";
-import { DynamicForm, DynamicFormRef } from "@ui/extended/DynamicForm";
+import {
+  DynamicForm,
+  DynamicFormRef,
+} from "@honeycomb/ui/extended/DynamicForm";
 import { z } from "zod";
-import { NameSchema } from "server/app/user/schemas/fields/name.schema";
-import { PasswordSchema } from "server/app/user/schemas/fields/password.schema";
+import { NameSchema } from "@honeycomb/validation/user/schemas/fields/name.schema";
+import { PasswordSchema } from "@honeycomb/validation/user/schemas/fields/password.schema";
 
 const Login = () => {
   const captchaRef = useRef<any>(null);
   const form = useRef<DynamicFormRef>(null);
   const searchParams = useSearchParams();
   const settingStore = useSettingStore();
-  const [loading, setLoading] = useState(false);
 
   const { setting } = settingStore;
   const targetUrl = searchParams.get("targetUrl");
@@ -25,7 +27,6 @@ const Login = () => {
       if (res.ret === 0) {
         const values = form.current?.getValues();
         const { name, password } = values;
-        setLoading(true);
         LoginService.login({
           name,
           password: md5(password),
@@ -33,17 +34,13 @@ const Login = () => {
             ticket: res.ticket,
             randstr: res.randstr,
           },
-        })
-          .then((result) => {
-            if (result.status === 200) {
-              message.success("登录成功");
-              localStorage.setItem("token", result.data.token);
-              window.location.href = targetUrl || "/";
-            }
-          })
-          .finally(() => {
-            setLoading(false);
-          });
+        }).then((result) => {
+          if (result.status === 200) {
+            message.success("登录成功");
+            localStorage.setItem("token", result.data.token);
+            window.location.href = targetUrl || "/";
+          }
+        });
       }
     });
     return () => {
@@ -79,7 +76,6 @@ const Login = () => {
             { name: "name", type: "text", placeholder: "用户名" },
             { name: "password", type: "password", placeholder: "密码" },
           ]}
-          loading={loading}
           onSubmit={onSubmit}
         />
       </div>

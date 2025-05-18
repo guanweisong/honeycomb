@@ -1,4 +1,4 @@
-import { Captcha } from "@/src/types/Captcha";
+import { Captcha } from "@/types/Captcha";
 
 export interface CommentCreate {
   postId?: string;

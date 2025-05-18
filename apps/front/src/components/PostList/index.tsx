@@ -1,27 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { PostEntity } from "@/src/types/post/post.entity";
-import useQueryPostList from "@/src/hooks/swr/post/use.query.post.list";
-import { PostListQuery } from "@/src/types/post/post.list.query";
+import { PostEntity } from "@/types/post/post.entity";
+import useQueryPostList from "@/hooks/swr/post/use.query.post.list";
+import { PostListQuery } from "@/types/post/post.list.query";
 import { useScroll } from "ahooks";
 import React, {
   useEffect,
   unstable_ViewTransition as ViewTransition,
 } from "react";
-import { Link } from "@/src/i18n/navigation";
-import {
-  PostType,
-  PostTypeName,
-  PostTypeBgColor,
-} from "@/src/types/post/PostType";
-import PostInfo, { Align } from "@/src/components/PostInfo";
-import Signature from "@/src/components/Signature";
-import { utcFormat } from "@/src/utils/utcFormat";
+import { Link } from "@/i18n/navigation";
+import { PostType, PostTypeName, PostTypeBgColor } from "@/types/post/PostType";
+import PostInfo, { Align } from "@/components/PostInfo";
+import Signature from "@/components/Signature";
+import { utcFormat } from "@/utils/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@/types/Language";
 import { Loader } from "lucide-react";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 export interface PostListProps {
   initData: PostEntity[];

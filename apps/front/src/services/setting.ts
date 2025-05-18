@@ -1,5 +1,5 @@
-import request from "@/src/utils/request";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
+import request from "@/utils/request";
+import { SettingEntity } from "@/types/setting/setting.entity";
 import { cache } from "react";
 
 export default class SettingServer {

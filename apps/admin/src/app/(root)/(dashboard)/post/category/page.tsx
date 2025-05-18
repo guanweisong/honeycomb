@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType } from "@/src/types/ModalType";
+import { ModalType } from "@/types/ModalType";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ActionType } from "@ant-design/pro-components";
 import {

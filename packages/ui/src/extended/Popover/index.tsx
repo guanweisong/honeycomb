@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as BasePopover from "@ui/components/popover";
+import * as BasePopover from "@honeycomb/ui/components/popover";
 import type { ComponentProps } from "react";
 
 export interface PopoverProps

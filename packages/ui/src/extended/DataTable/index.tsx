@@ -19,15 +19,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@ui/components/table";
-import { Button } from "@ui/components/button";
-import { Checkbox } from "@ui/components/checkbox";
-import { cn } from "@ui/lib/utils";
+} from "@honeycomb/ui/components/table";
+import { Button } from "@honeycomb/ui/components/button";
+import { Checkbox } from "@honeycomb/ui/components/checkbox";
+import { cn } from "@honeycomb/ui/lib/utils";
 import { useDeepCompareEffect } from "ahooks";
 import { PaginationResponse } from "admin/src/types/PaginationResponse";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
-import { MultiSelect } from "@ui/extended/MultiSelect";
+import { MultiSelect } from "../MultiSelect";
 
 export function normalizeFilters(
   filters: ColumnFiltersState,

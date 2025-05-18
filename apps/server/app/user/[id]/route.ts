@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/libs/prisma";
 import ResponseHandler from "@/libs/responseHandler";
-import { UserUpdateSchema } from "@/app/user/schemas/user.update.schema";
+import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
 import { UserLevel } from ".prisma/client";
 import { validateAuth } from "@/libs/validateAuth";
 import { validateParams } from "@/libs/validateParams";

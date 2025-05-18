@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/src/types/BaseResponse";
-import request from "@/src/utils/request";
+import type { BaseResponse } from "@/types/BaseResponse";
+import request from "@/utils/request";
 import type { LinkCreateResponse } from "./types/link.create.response";
 import type { LinkEntity } from "./types/link.entity";
 import type { LinkIndexRequest } from "./types/link.index.request";

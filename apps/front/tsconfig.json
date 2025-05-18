@@ -3,12 +3,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@ui/*": ["../../packages/ui/src/*"]
+      "@honeycomb/validation/*": ["../../packages/validation/src/*"],
+      "@honeycomb/ui/*":["../../packages/ui/src/*"],
+      "@/*": ["src/*"]
     }
   },
+  "references": [
+    { "path": "../../packages/validation" },
+    { "path": "../../packages/ui" }
+  ],
   "include": [
     "../../**/*.ts",
     "../../**/*.tsx",

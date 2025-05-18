@@ -1,4 +1,4 @@
-import type { PaginationResponse } from "@/src/types/PaginationResponse";
+import type { PaginationResponse } from "@/types/PaginationResponse";
 import type { CommentEntity } from "./comment.entity";
 
 export interface CommentIndexResponse

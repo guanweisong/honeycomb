@@ -3,16 +3,16 @@
 import {
   CommentStatus,
   CommentStatusName,
-} from "@/src/app/(root)/(dashboard)/comment/types/CommentStatus";
-import CustomPie from "@/src/app/(root)/(dashboard)/dashboard/components/CustomPie";
+} from "@/app/(root)/(dashboard)/comment/types/CommentStatus";
+import CustomPie from "@/app/(root)/(dashboard)/dashboard/components/CustomPie";
 import {
   PostType,
   PostTypeName,
-} from "@/src/app/(root)/(dashboard)/post/types/PostType";
+} from "@/app/(root)/(dashboard)/post/types/PostType";
 import {
   UserLevel,
   UserLevelName,
-} from "@/src/app/(root)/(dashboard)/user/types/UserLevel";
+} from "@/app/(root)/(dashboard)/user/types/UserLevel";
 import { PageContainer } from "@ant-design/pro-components";
 import { Card, Space } from "antd";
 import { useEffect, useState } from "react";

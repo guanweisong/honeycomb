@@ -1,4 +1,4 @@
-import type { PaginationRequest } from "@/src/types/PaginationRequest";
+import type { PaginationRequest } from "@/types/PaginationRequest";
 import type { PostStatus } from "./PostStatus";
 import type { PostType } from "./PostType";
 

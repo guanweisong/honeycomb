@@ -5,12 +5,12 @@ import md5 from "md5";
 import { CommentStatus, UserLevel } from ".prisma/client";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
-import { CommentUpdateSchema } from "@/app/comment/schemas/comment.update.schema";
+import { CommentUpdateSchema } from "@honeycomb/validation/comment/schemas/comment.update.schema";
 import { validateAuth } from "@/libs/validateAuth";
 import { validateParams } from "@/libs/validateParams";
 import { errorHandle } from "@/libs/errorHandle";
 import { getQueryParams } from "@/libs/getQueryParams";
-import { CommentQuerySchema } from "@/app/comment/schemas/comment.query.schema";
+import { CommentQuerySchema } from "@honeycomb/validation/comment/schemas/comment.query.schema";
 import { CommentType } from "@/types/CommentType";
 
 export async function GET(

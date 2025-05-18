@@ -1,26 +1,27 @@
 "use client";
 
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { EnableType, enableOptions } from "@/src/types/EnableType";
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType } from "@ant-design/pro-components";
-import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Form, Input, Modal, Popconfirm, Radio, message } from "antd";
-import type { RuleObject } from "antd/es/form";
+import { EnableType, enableOptions } from "@/types/EnableType";
+import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { useRef, useState } from "react";
 import { linkTableColumns } from "./constants/linkTableColumns";
 import LinkService from "./service";
 import type { LinkEntity } from "./types/link.entity";
+import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { LinkIndexRequest } from "@/app/(root)/(dashboard)/link/types/link.index.request";
+import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
+import { Button } from "@honeycomb/ui/components/button";
+import { toast } from "sonner";
+import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
+import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
+import { LinkCreateSchema } from "@honeycomb/validation/link/schemas/link.create.schema";
 
 const Link = () => {
-  const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
+
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -30,65 +31,32 @@ const Link = () => {
     open: false,
   });
 
-  /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
-   */
-  const request = async (params: {
-    pageSize: number;
-    current: number;
-    name?: string;
-    url?: string;
-    status?: EnableType[];
-  }) => {
-    const { pageSize, current, name, url, status } = params;
-    const result = await LinkService.index({
-      name,
-      url,
-      status,
-      page: current,
-      limit: pageSize,
-    });
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
 
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then(async (values) => {
-        switch (modalProps.type!) {
-          case ModalType.ADD:
-            const createResult = await LinkService.create(values);
-            if (createResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("添加成功");
+  const handleModalOk = async (values: any) => {
+    switch (modalProps.type!) {
+      case ModalType.ADD:
+        return LinkService.create(values).then((result) => {
+          if (result.status === 201) {
+            tableRef.current?.reload();
+            toast.success("添加成功");
+            setModalProps({ open: false });
+          }
+        });
+      case ModalType.EDIT:
+        return LinkService.update(modalProps.record?.id as string, values).then(
+          (result) => {
+            if (result.status === 201) {
+              tableRef.current?.reload();
+              toast.success("更新成功");
+              setModalProps({ open: false });
             }
-            break;
-          case ModalType.EDIT:
-            const updateResult = await LinkService.update(
-              modalProps.record?.id as string,
-              values,
-            );
-            if (updateResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("更新成功");
-            }
-            break;
-        }
-        setModalProps({ open: false });
-      })
-      .catch((e) => {
-        console.error(e);
-      });
+          },
+        );
+    }
   };
 
   /**
@@ -100,8 +68,6 @@ const Link = () => {
       open: true,
       record: undefined,
     });
-    form.resetFields();
-    form.setFieldsValue({ status: EnableType.ENABLE });
   };
 
   /**
@@ -109,11 +75,12 @@ const Link = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await LinkService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
-    }
+    return LinkService.destroy(ids).then((result) => {
+      if (result.status === 204) {
+        tableRef.current?.reload();
+        toast.success("删除成功");
+      }
+    });
   };
 
   /**
@@ -130,7 +97,6 @@ const Link = () => {
    * @param record
    */
   const handleEditItem = (record: LinkEntity) => {
-    form.setFieldsValue(record);
     setModalProps({
       type: ModalType.EDIT,
       open: true,
@@ -138,131 +104,137 @@ const Link = () => {
     });
   };
 
-  /**
-   * 校验link_url是否存在
-   * @param rule
-   * @param value
-   */
-  const validateLinkUrl = async (rule: RuleObject, value: string) => {
-    if (value && value.length > 0) {
-      let exist = false;
-      const result = await LinkService.index({ url: value });
-      const currentId = modalProps.record?.id;
-      if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-        exist = true;
-      }
-      if (exist) {
-        return Promise.reject("抱歉，URL已存在，请换一个URL");
-      }
-      return Promise.resolve();
-    }
-    return Promise.resolve();
-  };
-
   return (
-    <PageContainer>
-      <ProTable<LinkEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        request={request}
-        actionRef={actionRef}
-        columns={linkTableColumns({
-          handleEditItem,
-          handleDeleteItem,
-        })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
-        }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary" onClick={handleAddNew}>
-            <PlusOutlined /> 添加新链接
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+    <>
+      <DataTable<LinkEntity, LinkIndexRequest>
+        request={LinkService.index}
+        columns={linkTableColumns}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        params={searchParams}
+        ref={tableRef}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button onClick={handleAddNew} variant="outline">
+                <Plus />
+                添加链接
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-      <Modal
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={LinkListQuerySchema}
+                fields={[
+                  {
+                    name: "name",
+                    type: "text",
+                    placeholder: "请输入链接名称进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleEditItem(row)}
+            >
+              <Pencil />
+            </Button>
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
+              title="确定要删除吗？"
+              onOK={() => handleDeleteItem([row.id])}
+            />
+          </div>
+        )}
+      />
+      <Dialog
         title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}链接`}
         open={modalProps?.open}
-        onOk={handleModalOk}
-        onCancel={() => setModalProps({ open: false })}
+        onOpenChange={(open) =>
+          setModalProps((prevState) => ({ ...prevState, open }))
+        }
       >
-        <Form form={form} onFinish={handleModalOk}>
-          <Form.Item
-            {...formItemLayout}
-            name="name"
-            label="链接名称"
-            rules={[{ required: true, message: "请输入链接名称" }]}
-          >
-            <Input maxLength={20} />
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            name="url"
-            label="链接URL"
-            rules={[
-              { required: true, message: "请输入链接URL" },
-              { type: "url", message: "请输入正确的链接地址" },
-              { validator: validateLinkUrl },
-            ]}
-          >
-            <Input
-              placeholder="请以http://或者https://开头"
-              autoComplete="off"
-              maxLength={200}
-            />
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            name="logo"
-            label="logo网址"
-            rules={[
-              { required: true, message: "请输入链接URL" },
-              { type: "url", message: "请输入正确的链接地址" },
-            ]}
-          >
-            <Input
-              placeholder="请以http://或者https://开头"
-              autoComplete="off"
-              maxLength={200}
-            />
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            name="description"
-            label="链接描述："
-            rules={[{ required: true, message: "请输入链接描述" }]}
-          >
-            <Input.TextArea rows={3} autoComplete="off" maxLength={20} />
-          </Form.Item>
-          <Form.Item {...formItemLayout} name="status" label="状态">
-            <Radio.Group buttonStyle="solid">
-              {enableOptions.map((item) => (
-                <Radio.Button value={item.value} key={item.value}>
-                  {item.label}
-                </Radio.Button>
-              ))}
-            </Radio.Group>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </PageContainer>
+        <DynamicForm
+          defaultValues={
+            modalProps.type === ModalType.ADD
+              ? {
+                  status: EnableType.ENABLE,
+                }
+              : modalProps.record
+          }
+          labelPosition="left"
+          schema={
+            modalProps.type === ModalType.EDIT
+              ? LinkUpdateSchema
+              : LinkCreateSchema
+          }
+          fields={[
+            {
+              label: "链接名称",
+              name: "name",
+              type: "text",
+              placeholder: "请输入链接名称",
+            },
+            {
+              label: "链接URL",
+              name: "url",
+              type: "text",
+              placeholder: "请以http://或者https://开头",
+            },
+            {
+              label: "logo网址",
+              name: "logo",
+              type: "text",
+              placeholder: "请以http://或者https://开头",
+            },
+            {
+              label: "链接描述",
+              name: "description",
+              type: "textarea",
+              placeholder: "请输入链接描述",
+            },
+            {
+              label: "状态",
+              name: "status",
+              type: "radio",
+              options: enableOptions,
+            },
+          ]}
+          onSubmit={handleModalOk}
+        />
+      </Dialog>
+    </>
   );
 };
 

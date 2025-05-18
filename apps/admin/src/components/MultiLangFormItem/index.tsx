@@ -1,4 +1,4 @@
-import { MultiLangEnum } from "@/src/types/MulitLang";
+import { MultiLangEnum } from "@/types/MulitLang";
 import Image from "next/image";
 import React, { useState } from "react";
 import enIcon from "./img/en.svg";

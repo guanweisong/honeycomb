@@ -1,8 +1,8 @@
-import request from "@/src/utils/request";
-import { PostEntity } from "@/src/types/post/post.entity";
-import PaginationResponse from "@/src/types/pagination.response";
-import { PostListQuery } from "@/src/types/post/post.list.query";
-import { PostRandomListQuery } from "@/src/types/post/post.random.list.query";
+import request from "@/utils/request";
+import { PostEntity } from "@/types/post/post.entity";
+import PaginationResponse from "@/types/pagination.response";
+import { PostListQuery } from "@/types/post/post.list.query";
+import { PostRandomListQuery } from "@/types/post/post.random.list.query";
 import { cache } from "react";
 
 export default class PostServer {

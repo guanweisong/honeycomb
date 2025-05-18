@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/libs/prisma";
-import { SettingUpdateSchema } from "@/app/setting/schemas/setting.update.schema";
+import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import ResponseHandler from "@/libs/responseHandler";
 import { UserLevel } from ".prisma/client";
 import { validateAuth } from "@/libs/validateAuth";

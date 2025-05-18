@@ -1,4 +1,4 @@
-import type { BaseResponse } from "@/src/types/BaseResponse";
+import type { BaseResponse } from "@/types/BaseResponse";
 
 export type PaginationResponse<T> = BaseResponse<{
   total: number;

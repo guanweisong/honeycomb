@@ -1,9 +1,9 @@
 import { TagEntity } from "../tag/tag.entity";
-import { PostStatus } from "@/src/types/post/PostStatus";
-import { PostType } from "@/src/types/post/PostType";
-import { EnableType } from "@/src/types/EnableType";
-import { MediaEntity } from "@/src/types/media/media.entity";
-import { MultiLang } from "@/src/types/Language";
+import { PostStatus } from "@/types/post/PostStatus";
+import { PostType } from "@/types/post/PostType";
+import { EnableType } from "@/types/EnableType";
+import { MediaEntity } from "@/types/media/media.entity";
+import { MultiLang } from "@/types/Language";
 
 export interface PostEntity {
   id: string;

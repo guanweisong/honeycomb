@@ -1,8 +1,8 @@
-import { Link } from "@/src/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import React, { unstable_ViewTransition as ViewTransition } from "react";
-import { utcFormat } from "@/src/utils/utcFormat";
+import { utcFormat } from "@/utils/utcFormat";
 import { useTranslations } from "next-intl";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 export enum Align {
   Left = "left",

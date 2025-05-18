@@ -1,7 +1,7 @@
 "use client";
 
-import PhotoPickerPanel from "@/src/app/(root)/(dashboard)/media/page";
-import { MediaEntity } from "@/src/app/(root)/(dashboard)/media/types/media.entity";
+import PhotoPickerPanel from "@/app/(root)/(dashboard)/media/page";
+import { MediaEntity } from "@/app/(root)/(dashboard)/media/types/media.entity";
 import { Modal, message } from "antd";
 import React, { useState } from "react";
 

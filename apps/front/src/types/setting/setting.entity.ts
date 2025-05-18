@@ -1,4 +1,4 @@
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@/types/Language";
 
 export interface SettingEntity {
   id: string;

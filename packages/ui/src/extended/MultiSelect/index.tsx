@@ -4,10 +4,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@ui/components/command";
-import { Checkbox } from "@ui/components/checkbox";
-import { Popover } from "@ui/extended/Popover";
-import { PopoverProps } from "@ui/extended/Popover";
+} from "@honeycomb/ui/components/command";
+import { Checkbox } from "@honeycomb/ui/components/checkbox";
+import { Popover } from "@honeycomb/ui/extended/Popover";
+import { PopoverProps } from "@honeycomb/ui/extended/Popover";
 import { Option } from "commander";
 
 export interface MultiSelectProps extends PopoverProps {

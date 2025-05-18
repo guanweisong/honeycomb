@@ -1,4 +1,4 @@
-import { message } from "antd";
+import { toast } from "sonner";
 import axios from "axios";
 
 const instance = axios.create({
@@ -24,18 +24,18 @@ instance.interceptors.response.use(
     if (err.response) {
       switch (err.response.status) {
         case 400:
-          message.error(err.response.data.message[0]);
+          toast.error(err.response.data.message[0]);
           break;
         case 401:
         case 403:
         case 500:
-          message.error(err.response.data.message);
+          toast.error(err.response.data.message);
           break;
         default:
-          message.error("系统错误，请稍后再试");
+          toast.error("系统错误，请稍后再试");
       }
     } else {
-      message.error("网络错误，请稍后再试");
+      toast.error("网络错误，请稍后再试");
     }
     return Promise.reject(err);
   },

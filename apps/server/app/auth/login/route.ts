@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import ResponseHandler from "@/libs/responseHandler";
 import prisma from "@/libs/prisma";
 import { encode } from "next-auth/jwt";
-import { LoginSchema } from "@/app/auth/schemas/login.schema";
+import { LoginSchema } from "@honeycomb/validation/auth/schemas/login.schema";
 import { UserStatus } from ".prisma/client";
 import { validateCaptcha } from "@/libs/validateCaptcha";
 import { validateParams } from "@/libs/validateParams";

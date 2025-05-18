@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
-import SettingServer from "@/src/services/setting";
-import { MultiLang } from "@/src/types/Language";
+import SettingServer from "@/services/setting";
+import { MultiLang } from "@/types/Language";
 import { getLocale } from "next-intl/server";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
+import { SettingEntity } from "@/types/setting/setting.entity";
 
 export default async function Footer() {
   const [setting, locale] = (await Promise.all([

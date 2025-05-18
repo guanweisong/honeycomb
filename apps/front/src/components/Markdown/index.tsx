@@ -1,7 +1,7 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import React from "react";
-import { MediaEntity } from "@/src/types/media/media.entity";
+import { MediaEntity } from "@/types/media/media.entity";
 
 export interface MarkDownProps {
   children?: string;

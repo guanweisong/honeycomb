@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/src/types/BaseResponse";
-import request from "@/src/utils/request";
+import type { BaseResponse } from "@/types/BaseResponse";
+import request from "@/utils/request";
 import type { PostCreateResponse } from "./types/post.create.response";
 import type { PostEntity } from "./types/post.entity";
 import type { PostIndexRequest } from "./types/post.index.request";

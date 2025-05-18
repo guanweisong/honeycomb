@@ -1,5 +1,5 @@
-import request from "@/src/utils/request";
-import { UpdateView } from "@/src/types/view/update.view";
+import request from "@/utils/request";
+import { UpdateView } from "@/types/view/update.view";
 
 export default class ViewServer {
   // 更新浏览量

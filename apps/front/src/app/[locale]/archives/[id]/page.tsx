@@ -1,21 +1,21 @@
 import React, { unstable_ViewTransition as ViewTransition } from "react";
-import PostServer from "@/src/services/post";
-import { PostType } from "@/src/types/post/PostType";
-import PostInfo from "@/src/components/PostInfo";
-import Tags from "@/src/components/Tags";
-import Card from "@/src/components/Card";
-import { Link } from "@/src/i18n/navigation";
-import Comment from "@/src/components/Comment";
-import CommentServer from "@/src/services/comment";
-import Markdown from "@/src/components/Markdown";
-import SettingServer from "@/src/services/setting";
-import { utcFormat } from "@/src/utils/utcFormat";
-import PageTitle from "@/src/components/PageTitle";
-import ViewServer from "@/src/services/view";
-import { UpdateType } from "@/src/types/view/update.view";
+import PostServer from "@/services/post";
+import { PostType } from "@/types/post/PostType";
+import PostInfo from "@/components/PostInfo";
+import Tags from "@/components/Tags";
+import Card from "@/components/Card";
+import { Link } from "@/i18n/navigation";
+import Comment from "@/components/Comment";
+import CommentServer from "@/services/comment";
+import Markdown from "@/components/Markdown";
+import SettingServer from "@/services/setting";
+import { utcFormat } from "@/utils/utcFormat";
+import PageTitle from "@/components/PageTitle";
+import ViewServer from "@/services/view";
+import { UpdateType } from "@/types/view/update.view";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MenuType } from "@/src/types/menu/MenuType";
-import { MultiLang } from "@/src/types/Language";
+import { MenuType } from "@/types/menu/MenuType";
+import { MultiLang } from "@/types/Language";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 
@@ -185,7 +185,7 @@ export async function generateMetadata(
   const openGraph = {
     title: title,
     type: "article",
-    images: postDetail.imagesInContent.map((item) => item.url),
+    images: postDetail.imagesInContent.map((item: any) => item.url),
     description: setting.siteName?.[locale],
   };
 

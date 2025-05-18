@@ -1,7 +1,7 @@
 import useSWRInfinite from "swr/infinite";
-import PostServer from "@/src/services/post";
-import { PostListQuery } from "@/src/types/post/post.list.query";
-import { PostEntity } from "@/src/types/post/post.entity";
+import PostServer from "@/services/post";
+import { PostListQuery } from "@/types/post/post.list.query";
+import { PostEntity } from "@/types/post/post.entity";
 
 const useQueryPostList = (params: PostListQuery, initData: PostEntity[]) => {
   const { data, error, mutate, size, setSize } = useSWRInfinite(

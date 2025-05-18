@@ -1,5 +1,5 @@
-import MultiLangText from "@/src/components/MultiLangText";
-import { MultiLang } from "@/src/types/MulitLang";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@/types/MulitLang";
 import dayjs from "dayjs";
 import type { TagEntity } from "../types/tag.entity";
 import { ColumnDef } from "@tanstack/react-table";

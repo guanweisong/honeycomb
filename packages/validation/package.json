@@ -1,0 +1,10 @@
+{
+  "name": "@honeycomb/validation",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.21.4"
+  }
+}

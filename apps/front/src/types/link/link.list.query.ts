@@ -1,4 +1,4 @@
-import { LinkStatus } from "@/src/types/link/LinkStatus";
+import { LinkStatus } from "@/types/link/LinkStatus";
 
 export interface LinkListQuery {
   status?: LinkStatus[];

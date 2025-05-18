@@ -5,10 +5,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@ui/components/dropdown-menu";
+} from "@honeycomb/ui/components/dropdown-menu";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
-import { Avatar } from "@ui/components/avatar";
+import { Avatar } from "@honeycomb/ui/components/avatar";
 import { UserLevelName } from "admin/src/app/(root)/(dashboard)/user/types/UserLevel";
 import { UserEntity } from "admin/src/app/(root)/(dashboard)/user/types/user.entity";
 

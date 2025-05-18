@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as BaseSelect from "@ui/components/select";
+import * as BaseSelect from "@honeycomb/ui/components/select";
 import { SelectProps as BaseSelectProps } from "@radix-ui/react-select";
 
 type Option = {

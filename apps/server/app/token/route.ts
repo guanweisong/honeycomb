@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import Tools from "@/libs/tools";
 import ResponseHandler from "@/libs/responseHandler";
 import prisma from "@/libs/prisma";
-import { TokenListQuerySchema } from "@/app/token/schemas/token.list.query.schema";
+import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import { UserLevel } from ".prisma/client";
 import { getQueryParams } from "@/libs/getQueryParams";
 import { validateAuth } from "@/libs/validateAuth";

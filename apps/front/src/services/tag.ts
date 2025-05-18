@@ -1,7 +1,7 @@
-import request from "@/src/utils/request";
-import { TagListQuery } from "@/src/types/tag/tag.list.query";
-import PaginationResponse from "@/src/types/pagination.response";
-import { TagEntity } from "@/src/types/tag/tag.entity";
+import request from "@/utils/request";
+import { TagListQuery } from "@/types/tag/tag.list.query";
+import PaginationResponse from "@/types/pagination.response";
+import { TagEntity } from "@/types/tag/tag.entity";
 import { cache } from "react";
 
 export default class TagServer {

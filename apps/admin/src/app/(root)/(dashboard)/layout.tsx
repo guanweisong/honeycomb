@@ -1,13 +1,13 @@
 "use client";
 
-import { menu } from "@/src/constants/menuData";
-import { useSettingStore } from "@/src/stores/useSettingStore";
-import { useUserStore } from "@/src/stores/useUserStore";
+import { menu } from "@/constants/menuData";
+import { useSettingStore } from "@/stores/useSettingStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { message } from "antd";
 import { useRouter } from "next/navigation";
 import React from "react";
 import LoginService from "../login/service";
-import { AdminLayout } from "@ui/extended/AdminLayout";
+import { AdminLayout } from "@honeycomb/ui/extended/AdminLayout";
 
 export default ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();

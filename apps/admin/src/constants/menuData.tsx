@@ -1,5 +1,5 @@
 import React from "react";
-import { MenuItem } from "@ui/extended/Menu";
+import { MenuItem } from "@honeycomb/ui/extended/Menu";
 import {
   FileChartColumn,
   Gauge,

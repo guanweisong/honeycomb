@@ -23,7 +23,7 @@ import MediaService from "./service";
 import { TabType } from "./types/TabType";
 import type { MediaEntity } from "./types/media.entity";
 import { MediaIndexRequest } from "./types/media.index.request";
-import { cn } from "@ui/lib/utils";
+import { cn } from "@honeycomb/ui/lib/utils";
 
 const { Dragger } = Upload;
 

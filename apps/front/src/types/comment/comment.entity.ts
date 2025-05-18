@@ -1,4 +1,4 @@
-import { CommentStatus } from "@/src/types/comment/CommentStatus";
+import { CommentStatus } from "@/types/comment/CommentStatus";
 
 export interface CommentEntity {
   id: string;

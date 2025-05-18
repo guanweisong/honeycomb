@@ -1,8 +1,8 @@
-import request from "@/src/utils/request";
-import { CommentCreate } from "@/src/types/comment/comment.create";
-import PaginationResponse from "@/src/types/pagination.response";
-import { CommentEntity } from "@/src/types/comment/comment.entity";
-import { MenuType } from "@/src/types/menu/MenuType";
+import request from "@/utils/request";
+import { CommentCreate } from "@/types/comment/comment.create";
+import PaginationResponse from "@/types/pagination.response";
+import { CommentEntity } from "@/types/comment/comment.entity";
+import { MenuType } from "@/types/menu/MenuType";
 
 export default class CommentServer {
   // 根据文章id获取评论列表

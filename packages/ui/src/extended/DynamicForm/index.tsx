@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useImperativeHandle, forwardRef } from "react";
+import React, { useImperativeHandle, forwardRef, useState } from "react";
 import {
   useForm,
   useWatch,
@@ -19,20 +19,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@ui/components/form";
-import { Input } from "@ui/components/input";
-import { Textarea } from "@ui/components/textarea";
+} from "@honeycomb/ui/components/form";
+import { Input } from "@honeycomb/ui/components/input";
+import { Textarea } from "@honeycomb/ui/components/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@ui/components/select";
-import { RadioGroup, RadioGroupItem } from "@ui/components/radio-group";
-import { Switch } from "@ui/components/switch";
-import { Calendar } from "@ui/components/calendar";
-import { Button } from "@ui/components/button";
+} from "@honeycomb/ui/components/select";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@honeycomb/ui/components/radio-group";
+import { Switch } from "@honeycomb/ui/components/switch";
+import { Calendar } from "@honeycomb/ui/components/calendar";
+import { Button } from "@honeycomb/ui/components/button";
 
 export type DynamicFormRef<T extends FieldValues = any> = Pick<
   UseFormReturn<T>,
@@ -44,7 +47,6 @@ interface DynamicFormProps<TSchema extends ZodTypeAny> {
   fields: FieldConfig<TSchema>[];
   defaultValues?: Partial<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void;
-  loading?: boolean;
   inline?: boolean;
   labelPosition?: "top" | "left";
   submitProps?: React.ComponentProps<typeof Button>;
@@ -77,13 +79,14 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     fields,
     defaultValues = {},
     onSubmit,
-    loading = false,
     inline = false,
     labelPosition = "top",
     submitProps,
   }: DynamicFormProps<TSchema>,
   ref: React.Ref<DynamicFormRef<z.infer<TSchema>>>,
 ) {
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<z.infer<TSchema>>({
     resolver: zodResolver(schema),
     mode: "onBlur",
@@ -232,7 +235,14 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(async (values) => {
+          try {
+            setLoading(true);
+            await onSubmit(values);
+          } finally {
+            setLoading(false);
+          }
+        })}
         className={inline ? "flex gap-2" : "space-y-4"}
       >
         {fields.map((field) => (

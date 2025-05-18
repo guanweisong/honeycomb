@@ -1,8 +1,8 @@
 "use client";
 
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { useSettingStore } from "@/src/stores/useSettingStore";
+import MultiLangFormItem from "@/components/MultiLangFormItem";
+import { formItemLayout } from "@/constants/formItemLayout";
+import { useSettingStore } from "@/stores/useSettingStore";
 import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
 import { Button, Card, Form, Input, Space, message } from "antd";
 import { useEffect } from "react";

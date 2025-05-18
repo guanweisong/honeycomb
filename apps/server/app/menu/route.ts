@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import ResponseHandler from "@/libs/responseHandler";
 import prisma from "@/libs/prisma";
-import { MenuUpdateSchema } from "@/app/menu/schemas/menu.update.schema";
+import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
 import { MenuType, UserLevel } from ".prisma/client";
 import { validateAuth } from "@/libs/validateAuth";
 import { validateParams } from "@/libs/validateParams";

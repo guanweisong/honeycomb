@@ -1,4 +1,4 @@
-import { LinkUpdateSchema } from "@/app/link/schemas/link.update.schema";
+import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import prisma from "@/libs/prisma";
 import ResponseHandler from "@/libs/responseHandler";
 import { NextRequest } from "next/server";

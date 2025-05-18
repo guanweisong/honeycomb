@@ -1,16 +1,16 @@
-import PageServer from "@/src/services/page";
+import PageServer from "@/services/page";
 import React from "react";
-import PostInfo from "@/src/components/PostInfo";
-import Comment from "@/src/components/Comment";
-import CommentServer from "@/src/services/comment";
-import Markdown from "@/src/components/Markdown";
-import SettingServer from "@/src/services/setting";
-import PageTitle from "@/src/components/PageTitle";
-import ViewServer from "@/src/services/view";
-import { UpdateType } from "@/src/types/view/update.view";
+import PostInfo from "@/components/PostInfo";
+import Comment from "@/components/Comment";
+import CommentServer from "@/services/comment";
+import Markdown from "@/components/Markdown";
+import SettingServer from "@/services/setting";
+import PageTitle from "@/components/PageTitle";
+import ViewServer from "@/services/view";
+import { UpdateType } from "@/types/view/update.view";
 import { getLocale } from "next-intl/server";
-import { MenuType } from "@/src/types/menu/MenuType";
-import { MultiLang } from "@/src/types/Language";
+import { MenuType } from "@/types/menu/MenuType";
+import { MultiLang } from "@/types/Language";
 
 export interface PagesProps {
   params: Promise<{ id: string; locale: keyof MultiLang }>;

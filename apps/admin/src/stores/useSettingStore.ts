@@ -1,5 +1,5 @@
-import SettingService from "@/src/app/(root)/(dashboard)/setting/service";
-import { SettingEntity } from "@/src/app/(root)/(dashboard)/setting/types/setting.entity";
+import SettingService from "@/app/(root)/(dashboard)/setting/service";
+import { SettingEntity } from "@/app/(root)/(dashboard)/setting/types/setting.entity";
 import { create } from "zustand";
 
 type Store = {

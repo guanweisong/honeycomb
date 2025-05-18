@@ -1,19 +1,19 @@
 import { unstable_ViewTransition as ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import Menu, { MenuItem } from "@/src/components/Menu";
-import { Link } from "@/src/i18n/navigation";
-import { MenuType } from "@/src/types/menu/MenuType";
-import SettingServer from "@/src/services/setting";
-import MenuServer from "@/src/services/menu";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
-import getCurrentPathOfMenu from "@/src/utils/getCurrentPathOfMenu";
-import Breadcrumb from "@/src/components/Breadcrumb";
-import { ThemeSwitcher } from "@/src/components/ThemeSwitcher";
-import LanguageSwitcher from "@/src/components/LanguageSwitcher";
+import { MenuEntity } from "@/types/menu/menu.entity";
+import Menu, { MenuItem } from "@/components/Menu";
+import { Link } from "@/i18n/navigation";
+import { MenuType } from "@/types/menu/MenuType";
+import SettingServer from "@/services/setting";
+import MenuServer from "@/services/menu";
+import { SettingEntity } from "@/types/setting/setting.entity";
+import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
+import Breadcrumb from "@/components/Breadcrumb";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@/types/Language";
 
 export default async function Header() {
   const [setting, menu = [], locale] = (await Promise.all([

@@ -1,13 +1,13 @@
 "use client";
 
-import type { MediaEntity } from "@/src/app/(root)/(dashboard)/media/types/media.entity";
-import PostService from "@/src/app/(root)/(dashboard)/post/service";
-import TagService from "@/src/app/(root)/(dashboard)/tag/service";
-import type { TagEntity } from "@/src/app/(root)/(dashboard)/tag/types/tag.entity";
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import PhotoPickerModal from "@/src/components/PhotoPicker";
-import { ModalType } from "@/src/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/src/utils/help";
+import type { MediaEntity } from "@/app/(root)/(dashboard)/media/types/media.entity";
+import PostService from "@/app/(root)/(dashboard)/post/service";
+import TagService from "@/app/(root)/(dashboard)/tag/service";
+import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
+import MultiLangFormItem from "@/components/MultiLangFormItem";
+import PhotoPickerModal from "@/components/PhotoPicker";
+import { ModalType } from "@/types/ModalType";
+import { creatCategoryTitleByDepth } from "@/utils/help";
 import { PlusOutlined } from "@ant-design/icons";
 import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
 import {

@@ -1,4 +1,4 @@
-import type { BaseEntity } from "@/src/types/BaseEntity";
+import type { BaseEntity } from "@/types/BaseEntity";
 import type { UserLevel } from "./UserLevel";
 import type { UserStatus } from "./UserStatus";
 

@@ -1,5 +1,5 @@
-import { UserEntity } from "@/src/app/(root)/(dashboard)/user/types/user.entity";
-import CommonService from "@/src/services/common";
+import { UserEntity } from "@/app/(root)/(dashboard)/user/types/user.entity";
+import CommonService from "@/services/common";
 import { create } from "zustand";
 
 type Store = {

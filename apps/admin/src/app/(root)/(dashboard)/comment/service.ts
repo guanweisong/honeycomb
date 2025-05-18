@@ -1,5 +1,5 @@
-import type { BaseResponse } from "@/src/types/BaseResponse";
-import request from "@/src/utils/request";
+import type { BaseResponse } from "@/types/BaseResponse";
+import request from "@/utils/request";
 import type { CommentCreateResponse } from "./types/comment.create.response";
 import type { CommentEntity } from "./types/comment.entity";
 import type { CommentIndexRequest } from "./types/comment.index.request";

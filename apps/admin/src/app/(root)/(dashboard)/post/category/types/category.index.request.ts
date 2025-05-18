@@ -1,4 +1,4 @@
-import { PaginationRequest } from "@/src/types/PaginationRequest";
+import { PaginationRequest } from "@/types/PaginationRequest";
 
 export interface CategoryIndexRequest extends PaginationRequest {
   title?: string;

@@ -2,10 +2,10 @@ import {
   CategoryReadOnly,
   PostEntity,
   UserReadOnly,
-} from "@/src/app/(root)/(dashboard)/post/types/post.entity";
-import MultiLangText from "@/src/components/MultiLangText";
-import { MultiLang } from "@/src/types/MulitLang";
-import { SortOrder } from "@/src/types/SortOrder";
+} from "@/app/(root)/(dashboard)/post/types/post.entity";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@/types/MulitLang";
+import { SortOrder } from "@/types/SortOrder";
 import type { ProColumns } from "@ant-design/pro-components";
 import { Popconfirm } from "antd";
 import dayjs from "dayjs";

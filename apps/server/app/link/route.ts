@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import Tools from "@/libs/tools";
-import { LinkListQuerySchema } from "@/app/link/schemas/link.list.query.schema";
+import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import ResponseHandler from "@/libs/responseHandler";
 import prisma from "@/libs/prisma";
-import { LinkCreateSchema } from "@/app/link/schemas/link.create.schema";
-import { DeleteBatchSchema } from "@/schemas/delete.batch.schema";
+import { LinkCreateSchema } from "@honeycomb/validation/link/schemas/link.create.schema";
+import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { UserLevel } from ".prisma/client";
 import { getQueryParams } from "@/libs/getQueryParams";
 import { validateAuth } from "@/libs/validateAuth";

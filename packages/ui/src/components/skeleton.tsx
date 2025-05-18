@@ -1,4 +1,4 @@
-import { cn } from "@ui/lib/utils";
+import { cn } from "@honeycomb/ui/lib/utils";
 import React from "react";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {

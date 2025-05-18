@@ -1,6 +1,15 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-  }
+  "baseUrl": ".",
+  "paths": {
+    "@honeycomb/validation": ["packages/validation/src"],
+    "@honeycomb/ui":["packages/ui/src"]
+  },
+  "references": [
+    { "path": "packages/validation" },
+    { "path": "packages/ui" },
+    { "path": "apps/admin" },
+    { "path": "apps/server" },
+    { "path": "apps/front" }
+  ]
 }

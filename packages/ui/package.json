@@ -1,6 +1,6 @@
 {
-  "name": "@workspace/ui",
-  "version": "0.0.0",
+  "name": "@honeycomb/ui",
+  "version": "1.0.0",
   "type": "module",
   "private": true,
   "dependencies": {
@@ -27,12 +27,5 @@
   },
   "devDependencies": {
     "@turbo/gen": "^2.4.2"
-  },
-  "exports": {
-    "./globals.css": "./src/styles/globals.css",
-    "./postcss.config": "./postcss.config.mjs",
-    "./lib/*": "./src/lib/*.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts"
   }
 }

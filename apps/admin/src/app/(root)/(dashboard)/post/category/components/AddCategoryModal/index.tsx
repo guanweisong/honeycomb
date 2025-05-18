@@ -1,10 +1,10 @@
 "use client";
 
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { EnableType, enableOptions } from "@/src/types/EnableType";
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/src/utils/help";
+import MultiLangFormItem from "@/components/MultiLangFormItem";
+import { formItemLayout } from "@/constants/formItemLayout";
+import { EnableType, enableOptions } from "@/types/EnableType";
+import { ModalType, ModalTypeName } from "@/types/ModalType";
+import { creatCategoryTitleByDepth } from "@/utils/help";
 import { Form, Input, Modal, Radio, Select, message } from "antd";
 import { useEffect, useState } from "react";
 import CategoryService from "../../service";

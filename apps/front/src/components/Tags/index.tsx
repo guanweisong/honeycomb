@@ -1,9 +1,9 @@
 import React from "react";
-import { Link } from "@/src/i18n/navigation";
-import { TagEntity } from "@/src/types/tag/tag.entity";
-import { PostEntity } from "@/src/types/post/post.entity";
+import { Link } from "@/i18n/navigation";
+import { TagEntity } from "@/types/tag/tag.entity";
+import { PostEntity } from "@/types/post/post.entity";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@/types/Language";
 
 const Tag = (props: PostEntity) => {
   const t = useTranslations("Tag");
