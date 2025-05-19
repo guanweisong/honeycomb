@@ -1,52 +1,48 @@
 "use client";
 
-import { PieConfig } from "@ant-design/charts";
-import dynamic from "next/dynamic";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Cell,
+} from "recharts";
 
-const Pie = dynamic(
-  () => import("@ant-design/charts").then((mod) => mod.Pie) as any,
-  {
-    ssr: false,
-  },
-);
-
-export interface PieProps {
-  title: String;
-  data: any;
+export interface BarProps {
+  title: string;
+  data?: { item: string; count: number }[];
+  colors?: string[];
 }
 
-const defaultConfig: PieConfig = {
-  data: [],
-  width: 250,
-  height: 250,
-  angleField: "count",
-  colorField: "item",
-  radius: 1,
-  innerRadius: 0.64,
-};
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#a0e0f0"];
 
-const CustomPie = (props: PieProps) => {
-  const { title, data = [] } = props;
+const CustomBar = ({ title, data, colors = COLORS }: BarProps) => {
   return (
-    <Pie
-      {...defaultConfig}
-      // @ts-ignore
-      data={data}
-      annotations={[
-        {
-          type: "text",
-          style: {
-            text: title,
-            x: "50%",
-            y: "50%",
-            textAlign: "center",
-            fontSize: 16,
-            fontStyle: "bold",
-          },
-        },
-      ]}
-    />
+    <div className="w-[360px]">
+      <div className="text-center">{title}</div>
+      <div className="h-[360px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="item" />
+            <YAxis domain={[1, "auto"]} allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" barSize={40} radius={[4, 4, 0, 0]}>
+              {data?.map((_, index) => (
+                <Cell key={index} fill={colors[index % colors.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 };
 
-export default CustomPie;
+export default CustomBar;

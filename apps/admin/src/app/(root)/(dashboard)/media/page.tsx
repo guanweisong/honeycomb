@@ -1,49 +1,30 @@
 "use client";
 
-import {
-  CopyOutlined,
-  DeleteOutlined,
-  FileOutlined,
-  InboxOutlined,
-} from "@ant-design/icons";
-import { PageContainer } from "@ant-design/pro-components";
-import {
-  Card,
-  Popconfirm,
-  Space,
-  Spin,
-  Upload,
-  UploadProps,
-  message,
-} from "antd";
+import { Copy, File, Trash, UploadCloud } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { CopyToClipboard } from "react-copy-to-clipboard";
-import MediaService from "./service";
-import { TabType } from "./types/TabType";
-import type { MediaEntity } from "./types/media.entity";
-import { MediaIndexRequest } from "./types/media.index.request";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@honeycomb/ui/components/button";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { Skeleton } from "@honeycomb/ui/components/skeleton";
 import { cn } from "@honeycomb/ui/lib/utils";
 
-const { Dragger } = Upload;
+import MediaService from "./service";
+import type { MediaEntity } from "./types/media.entity";
+import { MediaIndexRequest } from "./types/media.index.request";
 
 export interface MediaProps {
   onSelect?: (media: MediaEntity) => void;
 }
 
-const Media = (props: MediaProps) => {
-  const { onSelect } = props;
-
+const Media = ({ onSelect }: MediaProps) => {
   const [list, setList] = useState<MediaEntity[]>();
   const [total, setTotal] = useState(0);
   const [currentItem, setCurrentItem] = useState<MediaEntity>();
-  const [tab, setTab] = useState<TabType>(TabType.ALL);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * 查询已上传列表
-   * @param values
-   */
   const index = async (values?: MediaIndexRequest) => {
     const result = await MediaService.index({ ...values, limit: 99999 });
     if (result.status === 200) {
@@ -52,32 +33,49 @@ const Media = (props: MediaProps) => {
     }
   };
 
-  /**
-   * 上传的参数
-   */
-  const uploadProps: UploadProps = {
-    name: "file",
-    multiple: true,
-    showUploadList: false,
-    action: `${process.env.NEXT_PUBLIC_API_DOAMIN}/media`,
-    headers: {
-      "x-auth-token": localStorage.getItem("token")!,
-    },
-    onChange(info: any) {
-      setLoading(true);
-      const { response } = info.file;
-      if (response) {
-        setLoading(false);
-        if (info.file.status === "done") {
-          message.success(`${info.file.name} 上传成功`);
-          setTab(TabType.ALL);
-          setCurrentItem(response);
-          index();
-        } else {
-          message.error("网络错误，请稍后再试");
-        }
+  const handleUpload = async (files: FileList | null) => {
+    if (!files) return;
+
+    setLoading(true);
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append("file", file);
+    });
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_DOAMIN}/media`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            "x-auth-token": localStorage.getItem("token") || "",
+          },
+        },
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("上传成功");
+        setCurrentItem(data);
+        index();
+      } else {
+        toast.error(data.message || "上传失败");
       }
-    },
+    } catch (e) {
+      toast.error("上传失败，请稍后再试");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await MediaService.destroy([id]);
+    if (result.status === 204) {
+      toast.success("删除成功");
+      setCurrentItem(undefined);
+      index();
+    }
   };
 
   useEffect(() => {
@@ -90,128 +88,81 @@ const Media = (props: MediaProps) => {
     }
   }, [currentItem]);
 
-  /**
-   * 编辑图片
-   * @param item
-   */
-  const onEditItem = (item: MediaEntity) => {
-    setCurrentItem(item);
-  };
-
-  /**
-   * 删除图片
-   * @param ids
-   */
-  const onDeleteItem = async (ids: string) => {
-    const result = await MediaService.destroy([ids]);
-    if (result.status === 204) {
-      index();
-      setCurrentItem(undefined);
-      message.success("删除成功");
-    }
-  };
-
-  /**
-   * 切换Tab事件
-   * @param value
-   */
-  const handleSwitchTab = (value: string) => {
-    setTab(value as TabType);
-  };
-
   return (
-    <PageContainer
-      tabList={[
-        {
-          tab: "媒体库",
-          key: TabType.ALL,
-        },
-        {
-          tab: "上传文件",
-          key: TabType.UPLOAD,
-        },
-      ]}
-      onTabChange={handleSwitchTab}
-      tabActiveKey={tab}
-      loading={typeof list === "undefined"}
-    >
-      <Card>
-        {tab === TabType.ALL && list && (
-          <div className="flex">
-            {list?.length !== 0 ? (
-              <ul className="flex flex-wrap overflow-hidden">
-                {list.map((item) => (
-                  <li
-                    className={cn(
-                      "relative w-32 h-32 mr-2 mb-2 border-2 border-solid bg-gray-100",
-                      {
-                        "border-blue-500": item.id === currentItem?.id,
-                        "border-gray-100": item.id !== currentItem?.id,
-                      },
-                    )}
-                    key={item.id}
-                    onClick={() => onEditItem(item)}
-                    title={item.name}
-                  >
-                    {item.type.indexOf("image") !== -1 ? (
-                      <Image
-                        className="w-full h-full absolute object-contain"
-                        fill
-                        sizes="7vw"
-                        src={item.url}
-                        alt={item.name}
-                        loading={"lazy"}
-                      />
-                    ) : (
-                      <FileOutlined className="text-2xl" />
-                    )}
-                    <div className="absolute text-2xl transition-all inset-0 flex text-white justify-center opacity-0 hover:opacity-100 hover:bg-black/40">
-                      <Space>
-                        <CopyToClipboard
-                          text={item?.url}
-                          onCopy={() => message.success("已复制至剪切板")}
-                        >
-                          <CopyOutlined title={"复制链接"} />
-                        </CopyToClipboard>
-                        <Popconfirm
-                          title="确定要删除吗？"
-                          onConfirm={() =>
-                            onDeleteItem(currentItem?.id as string)
-                          }
-                        >
-                          <DeleteOutlined title="删除资源" />
-                        </Popconfirm>
-                      </Space>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-gray-300 text-xl">
-                暂无媒体文件，请点击上方的上传文件按钮上传媒体
+    <div>
+      <div className="flex m-1">
+        <input
+          type="file"
+          multiple
+          hidden
+          ref={fileInputRef}
+          onChange={(e) => handleUpload(e.target.files)}
+        />
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+        >
+          <UploadCloud />
+          {loading ? "正在上传中..." : "点击上传文件"}
+        </Button>
+      </div>
+      <div className="flex flex-wrap">
+        {list?.length ? (
+          list.map((item) => (
+            <div
+              key={item.id}
+              className={cn(
+                "relative w-32 h-32 m-1 border-2 bg-gray-100 cursor-pointer",
+                item.id === currentItem?.id
+                  ? "border-blue-500"
+                  : "border-gray-100",
+              )}
+              onClick={() => setCurrentItem(item)}
+              title={item.name}
+            >
+              {item.type.includes("image") ? (
+                <Image
+                  className="object-contain"
+                  fill
+                  sizes="7vw"
+                  src={item.url}
+                  alt={item.name}
+                />
+              ) : (
+                <File className="w-full h-full p-8 text-gray-400" />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center space-x-2 text-white transition">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(item.url);
+                    toast.success("已复制至剪切板");
+                  }}
+                >
+                  <Copy />
+                </Button>
+                <Dialog
+                  trigger={
+                    <Button variant="secondary">
+                      <Trash />
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={() => handleDelete(item.id)}
+                />
               </div>
-            )}
+            </div>
+          ))
+        ) : (
+          <div className="flex flex-wrap">
+            {Array.from({ length: 100 }).map(() => (
+              <Skeleton className="relative w-32 h-32 m-1 border-2 bg-gray-100 border-gray-100 rounded-none" />
+            ))}
           </div>
         )}
-        {tab === TabType.UPLOAD && (
-          <Spin spinning={loading} tip="正在上传中...">
-            <div style={{ height: 400 }}>
-              <Dragger {...uploadProps}>
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">
-                  点击此处或者直接拖拽文件到此处上传
-                </p>
-                <p className="ant-upload-hint">
-                  支持单个或者多个文件上传，严禁上传数据文件或者其他侵权文件
-                </p>
-              </Dragger>
-            </div>
-          </Spin>
-        )}
-      </Card>
-    </PageContainer>
+      </div>
+    </div>
   );
 };
 
