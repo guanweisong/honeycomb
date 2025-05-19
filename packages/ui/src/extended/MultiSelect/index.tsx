@@ -8,10 +8,15 @@ import {
 import { Checkbox } from "@honeycomb/ui/components/checkbox";
 import { Popover } from "@honeycomb/ui/extended/Popover";
 import { PopoverProps } from "@honeycomb/ui/extended/Popover";
-import { Option } from "commander";
+
+export interface MultiSelectOption {
+  label: string;
+  value: string;
+  disabled?: boolean;
+}
 
 export interface MultiSelectProps extends PopoverProps {
-  options?: Option[];
+  options?: MultiSelectOption[];
   value?: string[];
   onChange?: (values: string[]) => void;
 }

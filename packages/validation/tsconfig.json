@@ -2,11 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "rootDir": "src"
+    "baseUrl": ".",
+    "paths": {
+      "@honeycomb/validation/*": ["src/*"],
+    }
   },
   "include": ["src"]
 }

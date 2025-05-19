@@ -188,19 +188,13 @@ const Tag = () => {
               ? TagUpdateSchema
               : TagCreateSchema
           }
-          labelPosition="left"
           fields={[
             {
-              label: "标签名称(zh)",
-              name: "name.zh",
+              label: "标签名称",
+              name: "name",
               type: "text",
-              placeholder: "请输入标签中文名称",
-            },
-            {
-              label: "标签名称(en)",
-              name: "name.en",
-              type: "text",
-              placeholder: "请输入标签英文名称",
+              placeholder: "请输入标签名称",
+              multiLang: true,
             },
           ]}
           onSubmit={handleModalOk}

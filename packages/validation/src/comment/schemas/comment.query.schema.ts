@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CommentType } from "@/types/CommentType";
+import { CommentType } from "server/types/CommentType";
 
 const CommentTypeEnum = z.nativeEnum(CommentType);
 

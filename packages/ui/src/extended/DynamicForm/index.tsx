@@ -36,6 +36,12 @@ import {
 import { Switch } from "@honeycomb/ui/components/switch";
 import { Calendar } from "@honeycomb/ui/components/calendar";
 import { Button } from "@honeycomb/ui/components/button";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@honeycomb/ui/components/tabs"; // 需要有 Tabs 组件支持
 
 export type DynamicFormRef<T extends FieldValues = any> = Pick<
   UseFormReturn<T>,
@@ -48,7 +54,6 @@ interface DynamicFormProps<TSchema extends ZodTypeAny> {
   defaultValues?: Partial<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void;
   inline?: boolean;
-  labelPosition?: "top" | "left";
   submitProps?: React.ComponentProps<typeof Button>;
 }
 
@@ -69,8 +74,8 @@ type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
     | { label: string; value: string }[]
     | ((formValues: any) => { label: string; value: string }[]);
   placeholder?: string;
-  hidden?: (formValues: any) => boolean;
   disabled?: (formValues: any) => boolean;
+  multiLang?: boolean;
 };
 
 export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
@@ -80,7 +85,6 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     defaultValues = {},
     onSubmit,
     inline = false,
-    labelPosition = "top",
     submitProps,
   }: DynamicFormProps<TSchema>,
   ref: React.Ref<DynamicFormRef<z.infer<TSchema>>>,
@@ -107,9 +111,6 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     values: any,
   ): React.ReactNode => {
     const fieldDisabled = field.disabled?.(values) ?? false;
-    const fieldHidden = field.hidden?.(values) ?? false;
-
-    if (fieldHidden) return null;
 
     switch (field.type) {
       case "text":
@@ -245,44 +246,81 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
         })}
         className={inline ? "flex gap-2" : "space-y-4"}
       >
-        {fields.map((field) => (
-          <FormField
-            key={field.name}
-            control={form.control}
-            name={field.name}
-            render={({ field: controllerField }) => {
-              const renderedField = renderField(
-                field,
-                controllerField,
-                formValues,
-              );
-              if (!renderedField) return <></>;
-              return (
-                <FormItem
-                  className={
-                    labelPosition === "left"
-                      ? "flex items-center gap-4"
-                      : "space-y-2"
-                  }
-                >
-                  {field.label && (
-                    <FormLabel
-                      className={
-                        labelPosition === "left" ? "min-w-16 justify-end" : ""
-                      }
-                    >
-                      {field.label}
-                    </FormLabel>
-                  )}
-                  <div className="flex-1">
-                    <FormControl>{renderedField}</FormControl>
-                    <FormMessage className="text-left" />
+        {fields.map((field) => {
+          if (field.multiLang) {
+            return (
+              <FormItem key={field.name} className={"space-y-2"}>
+                <Tabs defaultValue="zh" className="w-full">
+                  <div className="flex justify-between">
+                    {field.label && <FormLabel>{field.label}</FormLabel>}
+                    <TabsList>
+                      {["zh", "en"].map((lang) => {
+                        const hasError =
+                          // @ts-ignore
+                          !!form.formState.errors?.[field.name]?.[lang];
+                        return (
+                          <TabsTrigger
+                            key={lang}
+                            value={lang}
+                            className={hasError ? "text-red-600" : ""}
+                          >
+                            {lang}
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
                   </div>
-                </FormItem>
-              );
-            }}
-          />
-        ))}
+                  {["zh", "en"].map((lang) => (
+                    <TabsContent key={lang} value={lang}>
+                      <FormField
+                        control={form.control}
+                        name={
+                          `${field.name}.${lang}` as FieldPath<z.infer<TSchema>>
+                        }
+                        render={({ field: controllerField }) => (
+                          <>
+                            <FormControl>
+                              {renderField(
+                                { ...field, multiLang: false },
+                                controllerField,
+                                formValues,
+                              )}
+                            </FormControl>
+                            <FormMessage className="text-left" />
+                          </>
+                        )}
+                      />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </FormItem>
+            );
+          }
+
+          return (
+            <FormField
+              key={field.name}
+              control={form.control}
+              name={field.name}
+              render={({ field: controllerField }) => {
+                const renderedField = renderField(
+                  field,
+                  controllerField,
+                  formValues,
+                );
+                return (
+                  <FormItem className="space-y-2">
+                    {field.label && <FormLabel>{field.label}</FormLabel>}
+                    <div className="flex-1">
+                      <FormControl>{renderedField}</FormControl>
+                      <FormMessage className="text-left" />
+                    </div>
+                  </FormItem>
+                );
+              }}
+            />
+          );
+        })}
         <div className="flex gap-2 justify-center">
           <Button
             type="submit"

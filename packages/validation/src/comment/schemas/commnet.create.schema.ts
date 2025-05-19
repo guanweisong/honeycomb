@@ -7,8 +7,8 @@ import { StatusSchema } from "./fields/status.schema";
 import { UrlSchema } from "../../schemas/fields/url.schema";
 
 export const CommentCreateSchema = CaptchaSchema.extend({
-  author: AuthorSchema,
-  content: ContentSchema,
+  author: AuthorSchema.min(1, "昵称不可为空"),
+  content: ContentSchema.min(1, "评论内容不可为空"),
   email: EmailSchema,
   site: UrlSchema.optional(),
   parentId: IdSchema.optional(),
