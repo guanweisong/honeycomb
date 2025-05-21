@@ -1,77 +1,75 @@
+import dayjs from "dayjs";
+import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
-import dayjs from "dayjs";
-import Link from "next/link";
-import type { UserReadOnly } from "../../../post/types/post.entity";
 import { pageStatusOptions } from "../../types/PageStatus";
-import type { PageEntity } from "../../types/page.entity";
+import { PageEntity } from "../../types/page.entity";
+import { UserReadOnly } from "../../../post/types/post.entity";
+import { Badge } from "@honeycomb/ui/components/badge";
 
-export interface PageListTableColumnsProps {
-  handleDeleteItem: (ids: string[]) => void;
-}
-
-export const pageListTableColumns = (props: PageListTableColumnsProps) =>
-  [
-    {
-      title: "文章名称",
-      dataIndex: "title",
-      key: "title",
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+export const pageListTableColumns: ColumnDef<PageEntity>[] = [
+  {
+    accessorKey: "title",
+    header: "文章名称",
+    cell: ({ row }) => {
+      const title = row.getValue("title") as MultiLang;
+      return <MultiLangText text={title} />;
     },
-    {
-      title: "作者",
-      dataIndex: "author",
-      key: "author",
-      search: false,
-      render: (text: UserReadOnly) => text.name,
+  },
+  {
+    accessorKey: "author",
+    header: "作者",
+    cell: ({ row }) => {
+      const author = row.getValue("author") as UserReadOnly;
+      return author?.name ?? "-";
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: pageStatusOptions,
-      },
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    meta: {
+      filterOptions: pageStatusOptions,
     },
-    {
-      title: "发表时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const label =
+        pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      return (
+        <Badge variant={status === "published" ? "default" : "secondary"}>
+          {label}
+        </Badge>
+      );
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "发表时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "点击量",
-      dataIndex: "views",
-      key: "views",
-      search: false,
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      const value = row.getValue("updatedAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "操作",
-      key: "operation",
-      width: 100,
-      search: false,
-      render: (text, record) => (
-        <p>
-          <Link href={`/page/edit?id=${record.id}`}>编辑</Link>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
-    },
-  ] as ProColumns<PageEntity>[];
+  },
+  {
+    accessorKey: "views",
+    header: "点击量",
+    enableSorting: true,
+  },
+];

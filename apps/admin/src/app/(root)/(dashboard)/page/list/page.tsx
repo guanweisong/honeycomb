@@ -1,60 +1,36 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType } from "@ant-design/pro-components";
-import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Popconfirm, message } from "antd";
-import Link from "next/link";
+import { Button } from "@honeycomb/ui/components/button";
 import { useRef, useState } from "react";
 import PageService from "../service";
-import type { PageStatus } from "../types/PageStatus";
 import type { PageEntity } from "../types/page.entity";
 import { pageListTableColumns } from "./constants/pageListTableColumns";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import type { PageIndexListRequest } from "@/app/(root)/(dashboard)/page/types/page.index.list.request";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { PageListQuerySchema } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 
 const Page = () => {
-  const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
-
-  /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
-   */
-  const request = async (params: {
-    pageSize: number;
-    current: number;
-    title?: string;
-    status?: PageStatus[];
-  }) => {
-    const { pageSize, current, title, status } = params;
-    const result = await PageService.indexPageList({
-      title,
-      status,
-      page: current,
-      limit: pageSize,
-    });
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  const [searchParams, setSearchParams] = useState<PageIndexListRequest>();
+  const router = useRouter();
 
   /**
    * 删除事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await PageService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
-    }
+    return await PageService.destroy(ids).then((result) => {
+      if (result.status === 204) {
+        tableRef.current?.reload();
+        toast.success("删除成功");
+      }
+    });
   };
 
   /**
@@ -67,46 +43,83 @@ const Page = () => {
   };
 
   return (
-    <PageContainer>
-      <ProTable<PageEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        request={request}
-        form={{ syncToUrl: true }}
-        actionRef={actionRef}
-        columns={pageListTableColumns({
-          handleDeleteItem,
-        })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
-        }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary">
-            <Link href="/page/edit">
-              <PlusOutlined /> 添加新页面
-            </Link>
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+    <>
+      <DataTable<PageEntity, PageIndexListRequest>
+        request={PageService.indexPageList}
+        columns={pageListTableColumns}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        params={searchParams}
+        ref={tableRef}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button
+                onClick={() => router.push("/page/edit")}
+                variant="outline"
+              >
+                <Plus />
+                添加新页面
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-    </PageContainer>
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={PageListQuerySchema}
+                fields={[
+                  {
+                    name: "title",
+                    type: "text",
+                    placeholder: "请输入文章名称进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(`/page/edit?id=${row.id}`)}
+            >
+              <Pencil />
+            </Button>
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
+              title="确定要删除吗？"
+              onOK={() => handleDeleteItem([row.id])}
+            />
+          </div>
+        )}
+      />
+    </>
   );
 };
 

@@ -13,7 +13,7 @@ type Option = {
 interface SelectProps extends Omit<BaseSelectProps, "onValueChange" | "value"> {
   value?: string;
   onChange?: (value: string) => void;
-  options: Option[];
+  options?: Option[];
   placeholder?: string;
   disabled?: boolean;
   size?: "default" | "sm";
@@ -23,7 +23,7 @@ interface SelectProps extends Omit<BaseSelectProps, "onValueChange" | "value"> {
 export function Select({
   value,
   onChange,
-  options,
+  options = [],
   placeholder,
   disabled,
   size = "default",

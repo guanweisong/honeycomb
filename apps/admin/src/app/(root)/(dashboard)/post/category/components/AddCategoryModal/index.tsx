@@ -1,16 +1,16 @@
 "use client";
 
-import MultiLangFormItem from "@/components/MultiLangFormItem";
-import { formItemLayout } from "@/constants/formItemLayout";
-import { EnableType, enableOptions } from "@/types/EnableType";
+import { enableOptions } from "@/types/EnableType";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { creatCategoryTitleByDepth } from "@/utils/help";
-import { Form, Input, Modal, Radio, Select, message } from "antd";
 import { useEffect, useState } from "react";
 import CategoryService from "../../service";
 import { CategoryEntity } from "../../types/category.entity";
-
-const { Option } = Select;
+import { toast } from "sonner";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { CategoryCreateSchema } from "@honeycomb/validation/category/schemas/category.create.schema";
+import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 
 export interface ModalProps {
   type?: ModalType;
@@ -20,21 +20,12 @@ export interface ModalProps {
 
 export interface AddCategoryModalProps {
   modalProps: ModalProps;
-  setModalProps: (state: ModalProps) => void;
+  setModalProps: (state: ModalProps) => ModalProps;
 }
 
 const AddCategoryModal = (props: AddCategoryModalProps) => {
-  const [form] = Form.useForm();
   const [list, setList] = useState<CategoryEntity[]>([]);
   const { modalProps, setModalProps } = props;
-
-  const initForm = () => {
-    form.resetFields();
-    form.setFieldsValue({
-      parent: "0",
-      status: EnableType.ENABLE,
-    });
-  };
 
   /**
    * 分类列表获取
@@ -45,20 +36,6 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
       setList(result.data.list);
     }
   };
-
-  useEffect(() => {
-    switch (modalProps.type!) {
-      case ModalType.ADD:
-        initForm();
-        break;
-      case ModalType.EDIT:
-        form.setFieldsValue({
-          ...modalProps.record,
-          parent: modalProps.record.parent ?? "0",
-        });
-        break;
-    }
-  }, [modalProps.type]);
 
   useEffect(() => {
     index();
@@ -76,103 +53,87 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 确认按钮事件
    */
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then(async (values) => {
-        if (values.parent === "0") {
-          delete values.parent;
-        }
-        switch (modalProps.type!) {
-          case ModalType.ADD:
-            const createResult = await CategoryService.create(values);
-            if (createResult.status === 201) {
-              index();
-              message.success("添加成功");
-            }
-            break;
-          case ModalType.EDIT:
-            const updateResult = await CategoryService.update(
-              modalProps.record?.id as string,
-              values,
-            );
-            if (updateResult.status === 201) {
-              index();
-              message.success("更新成功");
-            }
-            break;
-        }
-        handleModalCancel();
-        initForm();
-      })
-      .catch((e) => {
-        console.error(e);
-      });
+  const handleModalOk = (values: any) => {
+    if (values.parent === "0") {
+      delete values.parent;
+    }
+    switch (modalProps.type!) {
+      case ModalType.ADD:
+        return CategoryService.create(values).then((result) => {
+          if (result.status === 201) {
+            index();
+            toast.success("添加成功");
+            handleModalCancel();
+          }
+        });
+      case ModalType.EDIT:
+        return CategoryService.update(
+          modalProps.record?.id as string,
+          values,
+        ).then((result) => {
+          if (result.status === 201) {
+            index();
+            toast.success("更新成功");
+            handleModalCancel();
+          }
+        });
+    }
   };
 
   return (
-    <Modal
+    <Dialog
       title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}分类`}
       open={modalProps.open}
-      onOk={handleModalOk}
-      onCancel={handleModalCancel}
+      onOpenChange={(open) => setModalProps({ ...modalProps, open })}
     >
-      <Form form={form}>
-        <MultiLangFormItem>
-          <Form.Item
-            {...formItemLayout}
-            name={"title"}
-            label="分类名称"
-            rules={[{ required: true, message: "请输入分类名称" }]}
-          >
-            <Input maxLength={20} />
-          </Form.Item>
-        </MultiLangFormItem>
-        <Form.Item
-          {...formItemLayout}
-          name="path"
-          label="分类路径"
-          rules={[{ required: true, message: "请输入分类路径" }]}
-        >
-          <Input
-            placeholder="输入小写字母，单词间以中划线分隔，用于URL显示"
-            maxLength={20}
-          />
-        </Form.Item>
-        <Form.Item
-          {...formItemLayout}
-          name="parent"
-          label="父级分类"
-          rules={[{ required: true, message: "请选择父级分类" }]}
-        >
-          <Select>
-            <Option value="0">无父级分类</Option>
-            {list.map((option) => (
-              <Option
-                value={option.id}
-                key={option.id}
-                disabled={option.id === modalProps.record?.id}
-              >
-                {creatCategoryTitleByDepth(option.title.zh, option)}
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
-        <MultiLangFormItem>
-          <Form.Item
-            {...formItemLayout}
-            name={"description"}
-            label="分类描述："
-            rules={[{ required: true, message: "请输入分类描述" }]}
-          >
-            <Input.TextArea rows={3} autoComplete="off" maxLength={200} />
-          </Form.Item>
-        </MultiLangFormItem>
-        <Form.Item {...formItemLayout} name="status" label="状态">
-          <Radio.Group buttonStyle="solid" options={enableOptions} />
-        </Form.Item>
-      </Form>
-    </Modal>
+      <DynamicForm
+        defaultValues={modalProps.record}
+        schema={
+          modalProps.type === ModalType.EDIT
+            ? CategoryUpdateSchema
+            : CategoryCreateSchema
+        }
+        fields={[
+          {
+            label: "分类名称",
+            name: "title",
+            type: "text",
+            placeholder: "请输入分类名称",
+            multiLang: true,
+          },
+          {
+            label: "分类路径",
+            name: "path",
+            type: "text",
+            placeholder: "输入小写字母，单词间以中划线分隔，用于URL显示",
+          },
+          {
+            label: "父级分类",
+            name: "parent",
+            type: "select",
+            options: list.map((option) => ({
+              label: creatCategoryTitleByDepth(option.title.zh, option),
+              value: option.id ?? "0",
+            })),
+            placeholder: "请选择父级分类",
+          },
+          {
+            label: "分类描述",
+            name: "description",
+            type: "textarea",
+            placeholder: "请输入分类描述",
+            multiLang: true,
+          },
+          {
+            label: "状态",
+            name: "status",
+            type: "radio",
+            options: enableOptions,
+          },
+        ]}
+        onSubmit={handleModalOk}
+      />
+    </Dialog>
   );
 };
 

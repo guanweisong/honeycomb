@@ -202,7 +202,6 @@ const User = () => {
                 }
               : modalProps.record
           }
-          labelPosition="left"
           schema={
             modalProps.type === ModalType.EDIT
               ? UserUpdateSchema

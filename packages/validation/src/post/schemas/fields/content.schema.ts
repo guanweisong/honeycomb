@@ -1,6 +1,5 @@
 import { z } from "zod";
 
 export const ContentSchema = z
-  .string()
-  .min(1)
+  .string({ required_error: "文章内容不可为空" })
   .max(20000, "文章内容最大长度不可超过20000");

@@ -11,5 +11,5 @@ export const CategoryCreateSchema = z.object({
   path: PathSchema,
   status: StatusSchema,
   description: MultiLangSchema(DescriptionSchema),
-  parent: IdSchema,
+  parent: IdSchema.nullable(),
 });

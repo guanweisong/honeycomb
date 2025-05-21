@@ -17,7 +17,7 @@ const MultiLangText = (props: MultiLangTextProps) => {
     );
   };
 
-  if (!text.en && !text.zh) {
+  if (!text?.en && !text?.zh) {
     return "-";
   }
 

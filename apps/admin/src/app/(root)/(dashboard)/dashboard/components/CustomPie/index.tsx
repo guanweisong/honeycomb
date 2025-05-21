@@ -23,7 +23,7 @@ const CustomBar = ({ title, data, colors = COLORS }: BarProps) => {
   return (
     <div className="w-[360px]">
       <div className="text-center">{title}</div>
-      <div className="h-[360px]">
+      <div className="h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

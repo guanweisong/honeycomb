@@ -1,73 +1,36 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType } from "@ant-design/pro-components";
-import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Popconfirm, message } from "antd";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import PostService from "../service";
-import type { PostStatus } from "../types/PostStatus";
-import type { PostType } from "../types/PostType";
 import type { PostEntity } from "../types/post.entity";
-import type { PostIndexRequest } from "../types/post.index.request";
-import { PostListTableColumns } from "./constants/postListTableColumns";
+import { PostIndexRequest } from "../types/post.index.request";
+import { postListTableColumns } from "./constants/postListTableColumns";
+import { Button } from "@honeycomb/ui/components/button";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
 const PostList = () => {
-  const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
-
-  /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
-   */
-  const request = async (
-    params: {
-      pageSize: number;
-      current: number;
-      title?: string;
-      type?: PostType[];
-      status?: PostStatus[];
-    },
-    sort: any = {},
-  ) => {
-    const { pageSize, current, title, type, status } = params;
-    const data: PostIndexRequest = {
-      title,
-      type,
-      status,
-      page: current,
-      limit: pageSize,
-    };
-    const sortKeys = Object.keys(sort);
-    if (sortKeys.length > 0) {
-      data.sortField = sortKeys[0];
-      data.sortOrder = sort[sortKeys[0]];
-    }
-    const result = await PostService.indexPostList(data);
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  const [searchParams, setSearchParams] = useState<PostIndexRequest>();
+  const router = useRouter();
 
   /**
    * 删除事件
-   * @param id
+   * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await PostService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
-    }
+    return PostService.destroy(ids).then((result) => {
+      if (result.status === 204) {
+        tableRef.current?.reload();
+        toast.success("删除成功");
+      }
+    });
   };
 
   /**
@@ -80,48 +43,83 @@ const PostList = () => {
   };
 
   return (
-    <PageContainer>
-      <ProTable<PostEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        form={{ syncToUrl: true }}
-        request={request}
-        tableLayout="fixed"
-        scroll={{ x: "max-content" }}
-        actionRef={actionRef}
-        columns={PostListTableColumns({
-          handleDeleteItem,
-        })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
-        }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary">
-            <Link href="/post/edit">
-              <PlusOutlined /> 添加新文章
-            </Link>
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+    <>
+      <DataTable<PostEntity, PostIndexRequest>
+        request={PostService.indexPostList}
+        columns={postListTableColumns}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        params={searchParams}
+        ref={tableRef}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button
+                onClick={() => router.push("/post/edit")}
+                variant="outline"
+              >
+                <Plus />
+                添加新文章
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-    </PageContainer>
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={PostListQuerySchema}
+                fields={[
+                  {
+                    name: "title",
+                    type: "text",
+                    placeholder: "请输入文章名称进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(`/post/edit?id=${row.id}`)}
+            >
+              <Pencil />
+            </Button>
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
+              title="确定要删除吗？"
+              onOK={() => handleDeleteItem([row.id])}
+            />
+          </div>
+        )}
+      />
+    </>
   );
 };
 

@@ -1,120 +1,106 @@
+import dayjs from "dayjs";
+import { ColumnDef } from "@tanstack/react-table";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@/types/MulitLang";
 import {
   CategoryReadOnly,
   PostEntity,
   UserReadOnly,
 } from "@/app/(root)/(dashboard)/post/types/post.entity";
-import MultiLangText from "@/components/MultiLangText";
-import { MultiLang } from "@/types/MulitLang";
-import { SortOrder } from "@/types/SortOrder";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
-import dayjs from "dayjs";
-import Link from "next/link";
 import { postStatusOptions } from "../../types/PostStatus";
 import { postTypeOptions } from "../../types/PostType";
+import { Badge } from "@honeycomb/ui/components/badge";
 
-export interface PostListTableColumnsProps {
-  handleDeleteItem: (id: string[]) => void;
-}
-
-export const PostListTableColumns = (props: PostListTableColumnsProps) =>
-  [
-    {
-      title: "文章名称",
-      dataIndex: "title",
-      key: "title",
-      width: 200,
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+export const postListTableColumns: ColumnDef<PostEntity>[] = [
+  {
+    accessorKey: "title",
+    header: "文章名称",
+    cell: ({ row }) => {
+      const title = row.getValue("title") as MultiLang;
+      return <MultiLangText text={title} />;
     },
-    {
-      title: "引用内容",
-      dataIndex: "quoteContent",
-      key: "quoteContent",
-      search: false,
-      width: 200,
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+  },
+  {
+    accessorKey: "quoteContent",
+    header: "引用内容",
+    cell: ({ row }) => {
+      const quote = row.getValue("quoteContent") as MultiLang;
+      return <MultiLangText text={quote} />;
     },
-    {
-      title: "分类",
-      dataIndex: "category",
-      key: "category",
-      search: false,
-      width: 120,
-      render: (text: CategoryReadOnly) => <MultiLangText text={text.title} />,
+  },
+  {
+    accessorKey: "category",
+    header: "分类",
+    cell: ({ row }) => {
+      const category = row.getValue("category") as CategoryReadOnly;
+      return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
-    {
-      title: "类型",
-      dataIndex: "type",
-      key: "type",
-      width: 70,
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: postTypeOptions,
-      },
+  },
+  {
+    accessorKey: "type",
+    header: "类型",
+    meta: {
+      filterOptions: postTypeOptions,
     },
-    {
-      title: "作者",
-      dataIndex: "author",
-      key: "author",
-      search: false,
-      width: 80,
-      render: (text: UserReadOnly) => text.name,
+    cell: ({ row }) => {
+      const type = row.getValue("type") as string;
+      return postTypeOptions.find((opt) => opt.value === type)?.label ?? type;
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      width: 70,
-      fieldProps: {
-        mode: "multiple",
-        options: postStatusOptions,
-      },
+  },
+  {
+    accessorKey: "author",
+    header: "作者",
+    cell: ({ row }) => {
+      const author = row.getValue("author") as UserReadOnly;
+      return author?.name ?? "-";
     },
-    {
-      title: "发表时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: true,
-      defaultSortOrder: SortOrder.desc,
-      search: false,
-      width: 180,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    meta: {
+      filterOptions: postStatusOptions,
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      sorter: true,
-      search: false,
-      width: 180,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      const label =
+        postStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      return (
+        <Badge variant={status === "published" ? "default" : "secondary"}>
+          {label}
+        </Badge>
+      );
     },
-    {
-      title: "点击量",
-      dataIndex: "views",
-      key: "views",
-      search: false,
-      sorter: true,
-      width: 80,
+  },
+  {
+    accessorKey: "createdAt",
+    header: "发表时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "操作",
-      key: "operation",
-      search: false,
-      width: 80,
-      fixed: "right",
-      render: (_text, record) => (
-        <p>
-          <Link href={`/post/edit?id=${record.id}`}>编辑</Link>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      const value = row.getValue("updatedAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-  ] as ProColumns<PostEntity>[];
+  },
+  {
+    accessorKey: "views",
+    header: "点击量",
+    enableSorting: true,
+  },
+];

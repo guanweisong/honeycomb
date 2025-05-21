@@ -22,13 +22,7 @@ import {
 } from "@honeycomb/ui/components/form";
 import { Input } from "@honeycomb/ui/components/input";
 import { Textarea } from "@honeycomb/ui/components/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@honeycomb/ui/components/select";
+import { Select } from "../Select";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -59,7 +53,7 @@ interface DynamicFormProps<TSchema extends ZodTypeAny> {
 
 type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
   name: FieldPath<z.infer<TSchema>>;
-  label?: string;
+  label?: React.ReactNode;
   type:
     | "text"
     | "password"
@@ -71,8 +65,8 @@ type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
     | "calendar-range";
   fields?: FieldConfig[];
   options?:
-    | { label: string; value: string }[]
-    | ((formValues: any) => { label: string; value: string }[]);
+    | { label: React.ReactNode; value: string }[]
+    | ((formValues: any) => { label: React.ReactNode; value: string }[]);
   placeholder?: string;
   disabled?: (formValues: any) => boolean;
   multiLang?: boolean;
@@ -169,20 +163,12 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
         return (
           <Select
             disabled={fieldDisabled}
-            onValueChange={controllerField.onChange}
+            options={opts}
+            className="w-full"
+            onChange={controllerField.onChange}
             value={controllerField.value}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={field.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {opts?.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            placeholder={field.placeholder}
+          />
         );
       case "radio":
         const radioOptions =
