@@ -2,18 +2,9 @@
 
 import { PageEntity } from "@/app/(root)/(dashboard)/page/types/page.entity";
 import { creatCategoryTitleByDepth } from "@/utils/help";
-import { SaveOutlined } from "@ant-design/icons";
-import { PageContainer } from "@ant-design/pro-components";
-import {
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Row,
-  Tabs,
-  Typography,
-  message,
-} from "antd";
+import { Tabs } from "@honeycomb/ui/extended/Tabs";
+import { Checkbox } from "@honeycomb/ui/extended/Checkbox";
+import { Button } from "@honeycomb/ui/components/button";
 import { useEffect, useState } from "react";
 import SortableTree, {
   TreeItem,
@@ -27,9 +18,8 @@ import { CategoryEntity } from "../post/category/types/category.entity";
 import MenuService from "./service";
 import { MenuType, MenuTypeName } from "./types/MenuType";
 import type { MenuEntity } from "./types/menu.entity";
-
-const { TabPane } = Tabs;
-const { Title, Text } = Typography;
+import { Save } from "lucide-react";
+import { toast } from "sonner";
 
 const Menu = () => {
   const [pageList, setPageList] = useState<PageEntity[]>([]);
@@ -89,17 +79,15 @@ const Menu = () => {
 
   /**
    * 可选菜单的选中事件
-   * @param e
+   * @param item
+   * @param checked
    * @param type
    */
-  const onCheck = (e: any, type: MenuType) => {
-    if (e.target.checked) {
-      setCheckedList([
-        ...checkedList,
-        { ...e.target.value, parent: "0", type },
-      ]);
+  const onCheck = (item: MenuEntity, checked: boolean, type: MenuType) => {
+    if (checked) {
+      setCheckedList([...checkedList, { ...item, parent: "0", type }]);
     } else {
-      removeItem(e.target.value.id);
+      removeItem(item.id);
     }
   };
 
@@ -195,20 +183,23 @@ const Menu = () => {
     });
     const result = await MenuService.update(data);
     if (result.status === 201) {
-      message.success("更新成功");
+      toast.success("更新成功");
       indexMenu();
     }
   };
 
   return (
-    <PageContainer>
-      <Card>
-        <Row>
-          <Col span={6}>
-            <Title level={4}>可选菜单项</Title>
-            <Text>勾选菜单项添加到右侧</Text>
-            <Tabs defaultActiveKey="1">
-              <TabPane tab="分类" key="1">
+    <div className="flex gap-6">
+      <div className="w-72">
+        <div className="text-lg">可选菜单项</div>
+        <div className="text-gray-500">勾选菜单项添加到右侧</div>
+        <Tabs
+          className="mt-3"
+          tabs={[
+            {
+              label: "分类",
+              value: "1",
+              content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
                   {categoryList.map((item) => (
                     <div
@@ -216,18 +207,23 @@ const Menu = () => {
                       className="px-3 leading-8 transition-all hover:bg-gray-100"
                     >
                       <Checkbox
-                        value={item}
-                        onChange={(e) => onCheck(e, MenuType.CATEGORY)}
+                        onCheckedChange={(checked) =>
+                          // @ts-ignore
+                          onCheck(item, checked, MenuType.CATEGORY)
+                        }
                         checked={getCheckedStatus(item)}
                         disabled={getDisabledStatus(item)}
-                      >
-                        {creatCategoryTitleByDepth(item.title.zh, item)}
-                      </Checkbox>
+                        label={creatCategoryTitleByDepth(item.title.zh, item)}
+                      />
                     </div>
                   ))}
                 </div>
-              </TabPane>
-              <TabPane tab="页面" key="2">
+              ),
+            },
+            {
+              label: "页面",
+              value: "2",
+              content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
                   {pageList.map((item) => (
                     <div
@@ -235,40 +231,42 @@ const Menu = () => {
                       className="px-3 leading-8 transition-all hover:bg-gray-100"
                     >
                       <Checkbox
-                        value={item}
-                        onChange={(e) => onCheck(e, MenuType.PAGE)}
+                        onCheckedChange={(checked) =>
+                          // @ts-ignore
+                          onCheck(item, checked, MenuType.PAGE)
+                        }
                         defaultChecked={getCheckedStatus(item)}
                         disabled={getDisabledStatus(item)}
-                      >
-                        {item.title.zh}
-                      </Checkbox>
+                        label={item.title.zh}
+                      />
                     </div>
                   ))}
                 </div>
-              </TabPane>
-            </Tabs>
-          </Col>
-          <Col span={16} offset={2}>
-            <Title level={4}>菜单结构</Title>
-            <Text>
-              {checkedList.length > 0
-                ? "拖拽下方菜单进行排序"
-                : "请先从左侧选择菜单"}
-            </Text>
-            <div className="bg-gray-50 h-96 my-2 py-2">
-              <SortableTree
-                treeData={getMenuFormat()}
-                onChange={(treeData) => onDragEnd(treeData)}
-                rowHeight={50}
-              />
-            </div>
-            <Button type="primary" icon={<SaveOutlined />} onClick={submit}>
-              保存
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-    </PageContainer>
+              ),
+            },
+          ]}
+        />
+      </div>
+      <div className="flex-1">
+        <div className="text-lg">菜单结构</div>
+        <div className="text-gray-500">
+          {checkedList.length > 0
+            ? "拖拽下方菜单进行排序"
+            : "请先从左侧选择菜单"}
+        </div>
+        <Button onClick={submit} className="mb-1 mt-2">
+          <Save /> 保存
+        </Button>
+        <div className="bg-gray-50 h-96 my-2 py-2">
+          <SortableTree
+            treeData={getMenuFormat()}
+            onChange={(treeData) => onDragEnd(treeData)}
+            rowHeight={50}
+            isVirtualized={false}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 
