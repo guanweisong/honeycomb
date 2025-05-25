@@ -28,7 +28,7 @@ export default class PageService {
   };
 
   static create = (
-    params: Omit<PageEntity, "id">,
+    params: Omit<PageEntity, "id" | "views">,
   ): Promise<PageCreateResponse> => {
     console.log("page=>service=>create", params);
     return request({

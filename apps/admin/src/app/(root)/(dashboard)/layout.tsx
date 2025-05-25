@@ -3,11 +3,11 @@
 import { menu } from "@/constants/menuData";
 import { useSettingStore } from "@/stores/useSettingStore";
 import { useUserStore } from "@/stores/useUserStore";
-import { message } from "antd";
 import { useRouter } from "next/navigation";
 import React from "react";
 import LoginService from "../login/service";
 import { AdminLayout } from "@honeycomb/ui/extended/AdminLayout";
+import { toast } from "sonner";
 
 export default ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default ({ children }: { children: React.ReactNode }) => {
   const handleLogout = async () => {
     const result = await LoginService.logout();
     if (result.status === 201 && result.data.isOk) {
-      message.success("登出成功");
+      toast.success("登出成功");
       localStorage.removeItem("token");
       setUser(false);
       router.push("/login");

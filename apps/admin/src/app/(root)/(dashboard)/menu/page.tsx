@@ -257,7 +257,7 @@ const Menu = () => {
         <Button onClick={submit} className="mb-1 mt-2">
           <Save /> 保存
         </Button>
-        <div className="bg-gray-50 h-96 my-2 py-2">
+        <div className="bg-gray-50 my-2 py-2">
           <SortableTree
             treeData={getMenuFormat()}
             onChange={(treeData) => onDragEnd(treeData)}

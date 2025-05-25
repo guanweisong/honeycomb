@@ -1,9 +1,8 @@
 "use client";
 import { useSettingStore } from "@/stores/useSettingStore";
-import { message } from "antd";
 import md5 from "md5";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import LoginService from "./service";
 import {
   DynamicForm,
@@ -12,6 +11,7 @@ import {
 import { z } from "zod";
 import { NameSchema } from "@honeycomb/validation/user/schemas/fields/name.schema";
 import { PasswordSchema } from "@honeycomb/validation/user/schemas/fields/password.schema";
+import { toast } from "sonner";
 
 const Login = () => {
   const captchaRef = useRef<any>(null);
@@ -36,7 +36,7 @@ const Login = () => {
           },
         }).then((result) => {
           if (result.status === 200) {
-            message.success("登录成功");
+            toast.success("登录成功");
             localStorage.setItem("token", result.data.token);
             window.location.href = targetUrl || "/";
           }

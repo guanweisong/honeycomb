@@ -193,7 +193,6 @@ const Link = () => {
                 }
               : modalProps.record
           }
-          labelPosition="left"
           schema={
             modalProps.type === ModalType.EDIT
               ? LinkUpdateSchema

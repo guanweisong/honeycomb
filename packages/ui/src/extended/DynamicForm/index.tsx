@@ -35,12 +35,20 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@honeycomb/ui/components/tabs"; // 需要有 Tabs 组件支持
+} from "@honeycomb/ui/components/tabs";
+import dynamic from "next/dynamic";
 
-export type DynamicFormRef<T extends FieldValues = any> = Pick<
-  UseFormReturn<T>,
-  "setValue" | "getValues" | "reset"
->;
+const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
+  ssr: false,
+});
+
+export type DynamicFormRef<T extends FieldValues = any> = {
+  setValue: UseFormReturn<T>["setValue"];
+  getValues: UseFormReturn<T>["getValues"];
+  reset: UseFormReturn<T>["reset"];
+  setValues: (values: Partial<T>) => void;
+  submit: () => void | Promise<void>;
+};
 
 interface DynamicFormProps<TSchema extends ZodTypeAny> {
   schema: TSchema;
@@ -49,6 +57,7 @@ interface DynamicFormProps<TSchema extends ZodTypeAny> {
   onSubmit: (values: z.infer<TSchema>) => void;
   inline?: boolean;
   submitProps?: React.ComponentProps<typeof Button>;
+  renderSubmitButton?: boolean;
 }
 
 type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
@@ -62,7 +71,8 @@ type FieldConfig<TSchema extends ZodTypeAny = ZodTypeAny> = {
     | "radio"
     | "switch"
     | "calendar"
-    | "calendar-range";
+    | "calendar-range"
+    | "richText";
   fields?: FieldConfig[];
   options?:
     | { label: React.ReactNode; value: string }[]
@@ -80,6 +90,7 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     onSubmit,
     inline = false,
     submitProps,
+    renderSubmitButton = true,
   }: DynamicFormProps<TSchema>,
   ref: React.Ref<DynamicFormRef<z.infer<TSchema>>>,
 ) {
@@ -97,6 +108,18 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     setValue: form.setValue,
     getValues: form.getValues,
     reset: form.reset,
+    setValues: (values) => {
+      Object.entries(values).forEach(([key, value]) => {
+        form.setValue(
+          key as FieldPath<z.infer<TSchema>>,
+          value as PathValue<z.infer<TSchema>, FieldPath<z.infer<TSchema>>>,
+          { shouldValidate: true, shouldDirty: true },
+        );
+      });
+    },
+    submit: () => {
+      return form.handleSubmit(onSubmit)();
+    },
   }));
 
   const renderField = (
@@ -216,6 +239,14 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
             disabled={fieldDisabled}
           />
         );
+      case "richText":
+        return (
+          <SimpleMDE
+            className="markdown-body"
+            onChange={controllerField.onChange}
+            value={controllerField.value}
+          />
+        );
     }
   };
 
@@ -225,7 +256,7 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
         onSubmit={form.handleSubmit(async (values) => {
           try {
             setLoading(true);
-            await onSubmit(values);
+            await onSubmit?.(values);
           } finally {
             setLoading(false);
           }
@@ -238,7 +269,7 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
               <FormItem key={field.name} className={"space-y-2"}>
                 <Tabs defaultValue="zh" className="w-full">
                   <div className="flex justify-between">
-                    {field.label && <FormLabel>{field.label}</FormLabel>}
+                    <FormLabel>{field.label}</FormLabel>
                     <TabsList>
                       {["zh", "en"].map((lang) => {
                         const hasError =
@@ -307,16 +338,18 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
             />
           );
         })}
-        <div className="flex gap-2 justify-center">
-          <Button
-            type="submit"
-            className={`cursor-pointer ${inline ? "" : "mt-2"}`}
-            disabled={loading}
-            {...submitProps}
-          >
-            {loading ? "处理中..." : (submitProps?.children ?? "提交")}
-          </Button>
-        </div>
+        {renderSubmitButton && (
+          <div className="flex gap-2 justify-center">
+            <Button
+              type="submit"
+              className={`cursor-pointer ${inline ? "" : "mt-2"}`}
+              disabled={loading}
+              {...submitProps}
+            >
+              {loading ? "处理中..." : (submitProps?.children ?? "提交")}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );
