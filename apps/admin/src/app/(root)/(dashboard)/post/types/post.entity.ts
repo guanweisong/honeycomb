@@ -3,6 +3,7 @@ import type { EnableType } from "@/types/EnableType";
 import { MultiLang } from "@/types/MulitLang";
 import type { PostStatus } from "./PostStatus";
 import type { PostType } from "./PostType";
+import { Dayjs } from "dayjs";
 
 export interface TagReadOnly {
   id: string;

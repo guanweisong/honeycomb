@@ -25,7 +25,11 @@ export const postListTableColumns: ColumnDef<PostEntity>[] = [
     header: "引用内容",
     cell: ({ row }) => {
       const quote = row.getValue("quoteContent") as MultiLang;
-      return <MultiLangText text={quote} />;
+      return (
+        <div className="max-w-60 whitespace-normal">
+          <MultiLangText text={quote} />
+        </div>
+      );
     },
   },
   {

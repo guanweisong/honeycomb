@@ -2,13 +2,33 @@ import { NextResponse } from "next/server";
 import { HttpStatus } from "@/types/HttpStatus";
 import { ZodError } from "zod";
 
+/**
+ * prisma查询产生的null值过滤
+ * @param obj
+ */
+export function deepCleanNulls(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(deepCleanNulls);
+  }
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== null) {
+        cleaned[key] = deepCleanNulls(value);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 export default class ResponseHandler {
   static Create = (result: unknown) => {
     return NextResponse.json(result, { status: HttpStatus.CREATED });
   };
 
   static Query = (result: unknown) => {
-    return NextResponse.json(result, { status: HttpStatus.OK });
+    return NextResponse.json(deepCleanNulls(result), { status: HttpStatus.OK });
   };
 
   static Update = (result: unknown) => {

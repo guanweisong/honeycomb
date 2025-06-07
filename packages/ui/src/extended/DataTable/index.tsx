@@ -204,7 +204,7 @@ function DataTableInner<TData, TRequest>(
   return (
     <div className={cn("space-y-2", className)}>
       {toolBar}
-      <div className="rounded-md border overflow-hidden">
+      <div className="relative rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -291,13 +291,6 @@ function DataTableInner<TData, TRequest>(
             ))}
           </TableHeader>
           <TableBody className="relative">
-            {loading && (
-              <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
-                <span className="text-muted-foreground text-sm">
-                  正在加载中...
-                </span>
-              </div>
-            )}
             {error ? (
               <TableRow>
                 <TableCell
@@ -326,7 +319,7 @@ function DataTableInner<TData, TRequest>(
                   }
                   className="h-24 text-center text-muted-foreground"
                 >
-                  暂无数据
+                  {loading ? "" : "暂无数据"}
                 </TableCell>
               </TableRow>
             ) : (
@@ -359,6 +352,11 @@ function DataTableInner<TData, TRequest>(
             )}
           </TableBody>
         </Table>
+        {loading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
+            <span className="text-muted-foreground text-sm">正在加载中...</span>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">

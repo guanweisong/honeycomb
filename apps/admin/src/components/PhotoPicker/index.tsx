@@ -2,13 +2,14 @@
 
 import PhotoPickerPanel from "@/app/(root)/(dashboard)/media/page";
 import { MediaEntity } from "@/app/(root)/(dashboard)/media/types/media.entity";
-import { Modal, message } from "antd";
+import { Sheet } from "@honeycomb/ui/extended/Sheet";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 export interface PhotoPickerModalProps {
   showPhotoPicker: boolean;
   handlePhotoPickerOk: (media: MediaEntity) => void;
-  handlePhotoPickerCancel: (e: React.MouseEvent<HTMLElement>) => void;
+  handlePhotoPickerCancel: () => void;
 }
 
 const PhotoPickerModal = (props: PhotoPickerModalProps) => {
@@ -22,23 +23,23 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
 
   const onOk = () => {
     if (!selectItem) {
-      message.info("请选择图片");
+      toast.info("请选择图片");
       return;
     }
     handlePhotoPickerOk(selectItem);
   };
 
   return (
-    <Modal
+    <Sheet
       open={showPhotoPicker}
-      width="90%"
-      okText="使用"
-      cancelText="取消"
-      onOk={onOk}
-      onCancel={handlePhotoPickerCancel}
+      onConfirm={onOk}
+      title="选择图片"
+      className="min-w-[1000px]"
+      onOpenChange={() => handlePhotoPickerCancel()}
+      showFooter={true}
     >
       <PhotoPickerPanel onSelect={onSelect} />
-    </Modal>
+    </Sheet>
   );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/types/ModalType";
+import { ModalType } from "@/types/ModalType";
 import { useRef, useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
 import TagService from "./service";
@@ -13,8 +13,7 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
-import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
-import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.schema";
+import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 
 const Tag = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -72,32 +71,6 @@ const Tag = () => {
       open: true,
       record: record,
     });
-  };
-
-  /**
-   * 新增、编辑弹窗表单保存事件
-   */
-  const handleModalOk = async (values: any) => {
-    switch (modalProps.type!) {
-      case ModalType.ADD:
-        return TagService.create(values).then((result) => {
-          if (result.status === 201) {
-            tableRef.current?.reload();
-            toast.success("添加成功");
-            setModalProps({ open: false });
-          }
-        });
-      case ModalType.EDIT:
-        return TagService.update(modalProps.record?.id as string, values).then(
-          (result) => {
-            if (result.status === 201) {
-              tableRef.current?.reload();
-              toast.success("更新成功");
-              setModalProps({ open: false });
-            }
-          },
-        );
-    }
   };
 
   return (
@@ -174,32 +147,15 @@ const Tag = () => {
           </div>
         )}
       />
-      <Dialog
-        title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}标签`}
-        open={modalProps.open}
-        onOpenChange={(open) =>
-          setModalProps((prevState) => ({ ...prevState, open }))
+      <AddTagDialog
+        {...modalProps}
+        onClose={() =>
+          setModalProps((prevState) => ({ ...prevState, open: false }))
         }
-      >
-        <DynamicForm
-          defaultValues={modalProps.record}
-          schema={
-            modalProps.type === ModalType.EDIT
-              ? TagUpdateSchema
-              : TagCreateSchema
-          }
-          fields={[
-            {
-              label: "标签名称",
-              name: "name",
-              type: "text",
-              placeholder: "请输入标签名称",
-              multiLang: true,
-            },
-          ]}
-          onSubmit={handleModalOk}
-        />
-      </Dialog>
+        onSuccess={() => {
+          tableRef.current?.reload();
+        }}
+      />
     </>
   );
 };

@@ -1,532 +1,386 @@
 "use client";
 
-import type { MediaEntity } from "@/app/(root)/(dashboard)/media/types/media.entity";
 import PostService from "@/app/(root)/(dashboard)/post/service";
-import TagService from "@/app/(root)/(dashboard)/tag/service";
 import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
-import MultiLangFormItem from "@/components/MultiLangFormItem";
 import PhotoPickerModal from "@/components/PhotoPicker";
 import { ModalType } from "@/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/utils/help";
-import { PlusOutlined } from "@ant-design/icons";
-import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
-import {
-  Button,
-  Card,
-  DatePicker,
-  Form,
-  Input,
-  Popconfirm,
-  Select,
-  message,
-} from "antd";
-import dayjs from "dayjs";
-import dynamic from "next/dynamic";
+import { Button } from "@honeycomb/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import AddCategoryModal from "../category/components/AddCategoryModal";
+import React, { useEffect, useState } from "react";
+import AddCategoryModal, {
+  ModalProps,
+} from "../category/components/AddCategoryModal";
 import CategoryService from "../category/service";
 import type { CategoryEntity } from "../category/types/category.entity";
-import Block from "../edit/components/Block";
 import { PostStatus } from "../types/PostStatus";
 import { PostType, postTypeOptions } from "../types/PostType";
 import type { PostEntity } from "../types/post.entity";
-import type { MultiTagProps } from "./components/MultiTag";
 import MultiTag from "./components/MultiTag";
 import type { PhotoPickerItemProps } from "./components/PhotoPickerItem";
 import PhotoPickerItem from "./components/PhotoPickerItem";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { Form } from "@honeycomb/ui/components/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PostCreateSchema } from "@honeycomb/validation/post/schemas/post.create.schema";
+import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
+import { DynamicField } from "@honeycomb/ui/extended/DynamicForm/DynamicField";
+import { creatCategoryTitleByDepth } from "@/utils/help";
+import { Plus } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
 
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
-
-const FormItem = Form.Item;
-const { TextArea } = Input;
+const tagMap = {
+  galleryStyles: "galleryStyleIds",
+  movieDirectors: "movieDirectorIds",
+  movieActors: "movieActorIds",
+  movieStyles: "movieStyleIds",
+};
 
 const PostDetail = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  // @ts-ignore
-  const [detail, setDetail] = useState<PostEntity>({ type: PostType.ARTICLE });
+  const [detail, setDetail] = useState<PostEntity>();
   const [list, setList] = useState<CategoryEntity[]>([]);
-  const [showPhotoPicker, setShowPhotoPicker] = useState<boolean>(false);
-  const [modalProps, setModalProps] = useState<{
-    type?: ModalType;
-    open: boolean;
-    record?: CategoryEntity;
-  }>({
-    type: ModalType.ADD,
-    open: false,
-  });
-
-  const [form] = Form.useForm();
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const [modalProps, setModalProps] = useState<ModalProps>();
+  const [loading, setLoading] = useState(false);
 
   const id = searchParams.get("id");
 
-  /**
-   * 分类列表获取
-   */
-  const index = async () => {
-    const result = await CategoryService.index({ limit: 9999 });
-    if (result.status === 200) {
-      setList(result.data.list);
-    }
-  };
+  const form = useForm({
+    resolver: zodResolver(id ? PostUpdateSchema : PostCreateSchema),
+    defaultValues: {
+      type: PostType.ARTICLE,
+    },
+  });
 
-  /**
-   * 查询文章详情
-   * @param values
-   */
-  const indexDetail = async (values: Partial<PostEntity>) => {
-    console.log("post=>model=>detail", values);
-    let result;
-    if (typeof values.id !== "undefined") {
-      result = await PostService.indexPostDetail(values);
-      result = result.data;
-      if (result.movieTime) {
-        // @ts-ignore
-        result.movieTime = dayjs(result.movieTime);
-      }
-      if (result.galleryTime) {
-        // @ts-ignore
-        result.galleryTime = dayjs(result.galleryTime);
-      }
-      setDetail(result);
-    }
-  };
+  const type = (form.watch("type") ?? detail?.type) as PostType;
 
   useEffect(() => {
-    if (id) {
-      indexDetail({ id });
-    }
-    return () => {
-      // @ts-ignore
-      setDetail({ type: PostType.ARTICLE });
-    };
-  }, [id]);
-
-  useEffect(() => {
-    index();
+    CategoryService.index({ limit: 9999 }).then((res) => {
+      if (res.status === 200) setList(res.data.list);
+    });
   }, []);
 
   useEffect(() => {
-    form.setFieldsValue(detail);
-  }, [detail]);
+    if (!id) return;
+    indexDetail({ id });
+    return () => {
+      form.reset();
+      setDetail(undefined);
+    };
+  }, [id]);
 
-  /**
-   * 从tag对象数组中收集id数组
-   * @param values
-   */
-  const getTagsValue = (
-    values: Omit<TagEntity, "createdAt" | "updatedAt">[],
-  ) => {
-    const result: string[] = [];
-    values.forEach((item) => {
-      result.push(item.id);
-    });
-    return result;
-  };
-
-  /**
-   * 提交按钮事件
-   * @param status
-   * @param type
-   */
-  const handleSubmit = (status: PostStatus, type: "create" | "update") => {
-    form.validateFields().then(async (values) => {
-      const data = values;
-      console.log("values", data);
-      data.status = status;
-      if (data.galleryStyles) {
-        data.galleryStyleIds = getTagsValue(data.galleryStyles);
-        delete data.galleryStyles;
-      }
-      if (data.movieDirectors) {
-        data.movieDirectorIds = getTagsValue(data.movieDirectors);
-        delete data.movieDirectors;
-      }
-      if (data.movieActors) {
-        data.movieActorIds = getTagsValue(data.movieActors);
-        delete data.movieActors;
-      }
-      if (data.movieStyles) {
-        data.movieStyleIds = getTagsValue(data.movieStyles);
-        delete data.movieStyles;
-      }
-      if (
-        [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-          data.type,
-        ) &&
-        !data.cover?.id
-      ) {
-        message.error("请上传封面");
-        return;
-      }
-      if (data.cover) {
-        data.coverId = data.cover.id;
-        delete data.cover;
-      }
-      switch (type) {
-        case "create":
-          console.log("create", data);
-          const createResult = await PostService.create(data);
-          if (createResult.status === 201) {
-            message.success("添加成功");
-            router.push(`/post/edit?id=${createResult.data.id}`);
-          }
-          break;
-        case "update":
-          console.log("update", detail!.id, data);
-          const updateResult = await PostService.update(detail!.id, data);
-          if (updateResult.status === 201) {
-            message.success("更新成功");
-            indexDetail({ id: detail!.id });
-          }
-          break;
-        default:
-      }
-    });
-  };
-
-  /**
-   * 创建tag
-   * @param name
-   * @param tag_name
-   */
-  const onAddTag = async (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
-    tag_name: string,
-  ) => {
-    const result = await TagService.create({ name: { zh: tag_name, en: "" } });
-    if (result && result.status === 201) {
-      setDetail({
-        ...detail,
-        [name]: [
-          ...(detail[name] ?? []),
-          { id: result.data.id, name: result.data.name },
-        ],
-      } as PostEntity);
+  const normalizeFormData = (values: any, status: PostStatus) => {
+    const data: any = { ...values, status };
+    debugger;
+    if (
+      [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
+        data.type,
+      ) &&
+      !data.coverId
+    ) {
+      toast.error("请上传封面");
+      return null;
     }
+
+    if (data.cover) {
+      data.coverId = data.cover.id;
+      delete data.cover;
+    }
+
+    return data;
   };
 
-  /**
-   * 更新tag
-   * @param name
-   * @param tags
-   */
-  const onUpdateTags = (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
-    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
-  ) => {
-    setDetail({
-      ...detail,
-      [name]: tags,
-    } as PostEntity);
-  };
-
-  /**
-   * 打开图片选择器事件
-   * @param type
-   */
-  const openPhotoPicker = () => {
-    setShowPhotoPicker(true);
-  };
-
-  /**
-   * 关闭图片选择器
-   */
-  const handlePhotoPickerCancel = () => {
-    setShowPhotoPicker(false);
-  };
-
-  /**
-   * 图片选择器的确认事件
-   */
-  const handlePhotoPickerOk = (media: MediaEntity) => {
-    setDetail({ ...detail, cover: media, coverId: media.id } as PostEntity);
-    handlePhotoPickerCancel();
-  };
-
-  /**
-   * 清空图片选择器的图片
-   * @param type
-   */
-  const handlePhotoClear = () => {
-    const { cover, ...rest } = detail as PostEntity;
-    setDetail(rest);
-  };
-
-  /**
-   * 新增分类弹窗事件
-   */
-  const handleAddNewCategory = () => {
-    setModalProps({
-      open: true,
-      type: ModalType.ADD,
+  const indexDetail = async (values: Partial<PostEntity>) => {
+    return PostService.indexPostDetail(values).then((res) => {
+      setDetail(res.data);
+      form.reset(res.data);
     });
   };
 
-  console.log("detail", detail);
+  const handleFormSubmit = (
+    status: PostStatus,
+    actionType: "create" | "update",
+  ) => {
+    return form.handleSubmit(
+      (values) => {
+        const data = normalizeFormData(values, status);
+        if (!data) return;
+        if (actionType === "create") {
+          setLoading(true);
+          return PostService.create(data)
+            .then((res) => {
+              if (res.status === 201) {
+                toast.success("添加成功");
+                router.push(`/post/edit?id=${res.data.id}`);
+              }
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        } else if (actionType === "update" && detail?.id) {
+          setLoading(true);
+          return PostService.update(detail.id, data)
+            .then((res) => {
+              if (res.status === 201) {
+                toast.success("更新成功");
+                indexDetail({ id: detail.id });
+              }
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        }
+      },
+      (errors) => {
+        console.error("validate errors", errors);
+      },
+    )();
+  };
 
-  /**
-   * 定义tag选择器的参数
-   */
-  const tagProps = {
+  const getBtns = () => {
+    const isEdit = !!detail?.id;
+    const isDraft = detail?.status === PostStatus.DRAFT;
+    const isPublished = detail?.status === PostStatus.PUBLISHED;
+
+    if (isEdit) {
+      if (isPublished) {
+        return (
+          <>
+            <Button
+              type={"button"}
+              disabled={loading}
+              onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
+            >
+              更新
+            </Button>
+            <Dialog
+              trigger={
+                <Button type="button" variant="secondary" disabled={loading}>
+                  撤回为草稿
+                </Button>
+              }
+              type="danger"
+              title="确定要撤回吗？"
+              onOK={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+            />
+          </>
+        );
+      }
+      if (isDraft) {
+        return (
+          <>
+            <Button
+              type={"button"}
+              disabled={loading}
+              onClick={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+            >
+              保存
+            </Button>
+            <Button
+              type={"button"}
+              disabled={loading}
+              onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
+            >
+              发布
+            </Button>
+          </>
+        );
+      }
+    }
+    return (
+      <>
+        <Button
+          type={"button"}
+          onClick={() => handleFormSubmit(PostStatus.DRAFT, "create")}
+        >
+          保存草稿
+        </Button>
+        <Button
+          type={"button"}
+          disabled={loading}
+          onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "create")}
+        >
+          发布
+        </Button>
+      </>
+    );
+  };
+
+  const photoPickerProps: PhotoPickerItemProps = {
     detail,
-    onTagsChange: onUpdateTags,
-    onAddTag,
-  };
-  const galleryStyleProps: MultiTagProps = {
-    ...tagProps,
-    name: "galleryStyles",
-    title: "照片风格",
-  };
-  const movieDirectorProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieDirectors",
-    title: "导演",
-  };
-  const movieActorProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieActors",
-    title: "演员",
-  };
-  const movieStyleProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieStyles",
-    title: "电影风格",
-  };
-
-  /**
-   * 定义图片选择的参数
-   */
-  const photoProps = {
-    detail,
-    form,
-    handlePhotoClear,
-    openPhotoPicker,
-  };
-
-  const postCoverProps: PhotoPickerItemProps = {
-    ...photoProps,
+    handlePhotoClear: () => {
+      const { cover, ...rest } = detail as PostEntity;
+      setDetail(rest);
+    },
+    openPhotoPicker: () => setShowPhotoPicker(true),
     title: "封面",
     size: "1920*1080",
   };
 
-  /**
-   * 计算按钮状态
-   */
-  const getBtns = () => {
-    const btns = [];
-    if (!!detail?.id) {
-      if (detail.status === PostStatus.PUBLISHED) {
-        btns.push(
-          <Button
-            type="primary"
-            onClick={() => handleSubmit(PostStatus.PUBLISHED, "update")}
-          >
-            更新
-          </Button>,
-          <Popconfirm
-            title="确定要撤回吗？"
-            onConfirm={() => handleSubmit(PostStatus.DRAFT, "update")}
-          >
-            <Button type={"dashed"}>撤回为草稿</Button>
-          </Popconfirm>,
-        );
-      }
-      if (detail.status === PostStatus.DRAFT) {
-        btns.push(
-          <Button onClick={() => handleSubmit(PostStatus.DRAFT, "update")}>
-            保存
-          </Button>,
-          <Button
-            type="primary"
-            onClick={() => handleSubmit(PostStatus.PUBLISHED, "update")}
-          >
-            发布
-          </Button>,
-        );
-      }
-    } else {
-      btns.push(
-        <Button onClick={() => handleSubmit(PostStatus.DRAFT, "create")}>
-          保存草稿
-        </Button>,
-        <Button
-          type="primary"
-          onClick={() => handleSubmit(PostStatus.PUBLISHED, "create")}
-        >
-          发布
-        </Button>,
-      );
-    }
-    return btns;
+  const onUpdateTags = (
+    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
+    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
+  ) => {
+    setDetail({ ...detail, [name]: tags } as PostEntity);
+    form.setValue(
+      // @ts-ignore
+      tagMap[name],
+      tags.map((item) => item.id),
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+  };
+
+  const tagProps = {
+    detail,
+    onTagsChange: onUpdateTags,
   };
 
   return (
-    <PageContainer>
-      <Card>
-        <Form
-          form={form}
-          onValuesChange={(changedValues) => {
-            setDetail({ ...detail, ...changedValues });
-          }}
-        >
+    <>
+      <Form {...form}>
+        <form>
           <div className="lg:flex">
-            <div className="lg:flex-1">
+            <div className="lg:flex-1 flex flex-col gap-3 mb-3">
               {([
                 PostType.ARTICLE,
                 PostType.MOVIE,
                 PostType.PHOTOGRAPH,
-              ].includes(detail.type) ||
-                !detail.type) && (
+              ].includes(type) ||
+                !type) && (
                 <>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"title"}
-                      rules={[{ required: true, message: "请输入标题" }]}
-                    >
-                      <Input
-                        type="text"
-                        size="large"
-                        placeholder="在此输入文章标题"
-                        maxLength={20}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"content"}
-                      rules={[
-                        { max: 20000, message: "最多只能输入20000个字符" },
-                        { required: true, message: "请输入内容" },
-                      ]}
-                    >
-                      <SimpleMDE className="markdown-body" />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem name={"excerpt"}>
-                      <TextArea
-                        rows={4}
-                        placeholder="内容简介"
-                        maxLength={1000}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
+                  <DynamicField
+                    name="title"
+                    type="text"
+                    label="标题"
+                    placeholder="在此输入文章标题"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="content"
+                    type="richText"
+                    label="内容"
+                    placeholder="请输入内容"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="excerpt"
+                    type="textarea"
+                    label="简介"
+                    placeholder="内容简介"
+                    multiLang
+                  />
                 </>
               )}
-              {[PostType.QUOTE].includes(detail.type) && (
+              {type === PostType.QUOTE && (
                 <>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"quoteContent"}
-                      rules={[{ required: true, message: "请输入内容" }]}
-                    >
-                      <TextArea
-                        rows={4}
-                        placeholder="请输入话语"
-                        maxLength={500}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"quoteAuthor"}
-                      rules={[{ required: true, message: "请输入作者名" }]}
-                    >
-                      <Input
-                        type="text"
-                        size="large"
-                        placeholder="请输入作者"
-                        max={50}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
+                  <DynamicField
+                    name="quoteContent"
+                    type="textarea"
+                    placeholder="请输入话语"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="quoteAuthor"
+                    type="text"
+                    placeholder="请输入作者"
+                    multiLang
+                  />
                 </>
               )}
             </div>
-            <div className="lg:w-80 lg:ml-8">
-              <Block title="文章类型">
-                <FormItem name="type" className="mb-0">
-                  <Select options={postTypeOptions} />
-                </FormItem>
-              </Block>
-              <Block title="分类目录">
-                <FormItem
-                  name="categoryId"
-                  rules={[{ required: true, message: "请选择分类" }]}
-                >
-                  <Select
-                    showSearch
-                    optionFilterProp="children"
-                    placeholder="请选择"
-                    filterOption={(input, option) =>
-                      option?.props.value
-                        .toLowerCase()
-                        .indexOf(input.toLowerCase()) >= 0
-                    }
-                  >
-                    {list.map((option) => (
-                      <Select.Option value={option.id} key={option.id}>
-                        {creatCategoryTitleByDepth(option.title.zh, option)}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </FormItem>
-                <Button type="dashed" onClick={handleAddNewCategory}>
-                  <PlusOutlined />
-                  新建分类
-                </Button>
-              </Block>
+            <div className="lg:w-80 lg:ml-8 space-y-4">
+              <div className="flex gap-1 justify-end">{getBtns()}</div>
+              <DynamicField
+                label="文章类型"
+                name="type"
+                type="select"
+                options={postTypeOptions}
+              />
+              <DynamicField
+                label="分类目录"
+                name="categoryId"
+                type="select"
+                options={list.map((item) => ({
+                  label: creatCategoryTitleByDepth(item.title.zh, item),
+                  value: item.id ?? "0",
+                }))}
+              />
+              <Button
+                variant="outline"
+                type={"button"}
+                onClick={() =>
+                  setModalProps({ open: true, type: ModalType.ADD })
+                }
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                新建分类
+              </Button>
+
               {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-                detail.type,
-              ) && <PhotoPickerItem {...postCoverProps} />}
-              {detail.type === PostType.MOVIE && (
+                type,
+              ) && <PhotoPickerItem {...photoPickerProps} />}
+
+              {type === PostType.MOVIE && (
                 <>
-                  <Block title="上映年代">
-                    <FormItem name="movieTime" className="mb-0">
-                      <DatePicker placeholder="请选择上映年代" />
-                    </FormItem>
-                  </Block>
-                  <MultiTag {...movieDirectorProps} />
-                  <MultiTag {...movieActorProps} />
-                  <MultiTag {...movieStyleProps} />
+                  <DynamicField
+                    label="上映年代"
+                    name="movieTime"
+                    type="calendar"
+                    placeholder="请选择上映时间"
+                  />
+                  <MultiTag {...tagProps} name="movieDirectors" title="导演" />
+                  <MultiTag {...tagProps} name="movieActors" title="演员" />
+                  <MultiTag {...tagProps} name="movieStyles" title="电影风格" />
                 </>
               )}
-              {detail.type === PostType.PHOTOGRAPH && (
+
+              {type === PostType.PHOTOGRAPH && (
                 <>
-                  <Block title="拍摄地点">
-                    <MultiLangFormItem>
-                      <FormItem name="galleryLocation" className="mb-0">
-                        <Input type="text" placeholder="请填写地址" />
-                      </FormItem>
-                    </MultiLangFormItem>
-                  </Block>
-                  <Block title="拍摄时间">
-                    <FormItem name="galleryTime" className="mb-0">
-                      <DatePicker placeholder="请选择拍摄时间" />
-                    </FormItem>
-                  </Block>
-                  <MultiTag {...galleryStyleProps} />
+                  <DynamicField
+                    label="拍摄地点"
+                    name="galleryLocation"
+                    type="text"
+                    placeholder="请填写地址"
+                    multiLang
+                  />
+                  <DynamicField
+                    label="拍摄时间"
+                    name="galleryTime"
+                    type="calendar"
+                    placeholder="请选择拍摄时间"
+                  />
+                  <MultiTag
+                    {...tagProps}
+                    name="galleryStyles"
+                    title="照片风格"
+                  />
                 </>
               )}
             </div>
           </div>
-        </Form>
-        <PhotoPickerModal
-          showPhotoPicker={showPhotoPicker}
-          handlePhotoPickerOk={handlePhotoPickerOk}
-          handlePhotoPickerCancel={handlePhotoPickerCancel}
-        />
-        <AddCategoryModal
-          modalProps={modalProps}
-          setModalProps={setModalProps}
-        />
-      </Card>
-      <FooterToolbar>{getBtns()}</FooterToolbar>
-    </PageContainer>
+        </form>
+      </Form>
+
+      <PhotoPickerModal
+        showPhotoPicker={showPhotoPicker}
+        handlePhotoPickerOk={(media) => {
+          setDetail({
+            ...detail,
+            cover: media,
+            coverId: media.id,
+          } as PostEntity);
+          form.setValue("coverId", media.id);
+          setShowPhotoPicker(false);
+        }}
+        handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
+      />
+      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+    </>
   );
 };
 

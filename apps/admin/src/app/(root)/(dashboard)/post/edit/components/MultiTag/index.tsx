@@ -1,180 +1,174 @@
 "use client";
 
-import TagService from "@/app/(root)/(dashboard)/tag/service";
-import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
-import { AutoComplete, Button, Form, Input, Tag } from "antd";
-import type { DataSourceItemObject } from "antd/es/auto-complete";
-import { useRef, useState } from "react";
-import type { PostEntity, TagReadOnly } from "../../../types/post.entity";
-import Block from "../Block";
+import React, { useEffect, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { Badge } from "@honeycomb/ui/components/badge";
+import { Button } from "@honeycomb/ui/components/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@honeycomb/ui/components/popover";
+import {
+  Command,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandEmpty,
+} from "@honeycomb/ui/components/command";
+import { X, Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
-const FormItem = Form.Item;
+import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
+import type { PostEntity, TagReadOnly } from "../../../types/post.entity";
+import TagService from "@/app/(root)/(dashboard)/tag/service";
+import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
+import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 
 export interface MultiTagProps {
   name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles";
-  detail: PostEntity;
+  detail?: PostEntity;
   title: string;
-  onAddTag: (
-    name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles",
-    value: string,
-  ) => void;
   onTagsChange: (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
+    name: MultiTagProps["name"],
     tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
   ) => void;
 }
 
 const MultiTag = (props: MultiTagProps) => {
-  const { name, detail, title, onTagsChange, onAddTag } = props;
+  const { name, detail, title, onTagsChange } = props;
+  const { control, setValue } = useFormContext();
 
-  const [inputVisible, setInputVisible] = useState<boolean>(false);
-  const [data, setData] = useState<DataSourceItemObject[]>([]);
-  const timeout = useRef<any>();
+  const [input, setInput] = useState("");
+  const [options, setOptions] = useState<TagReadOnly[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const timeout = useRef<any>(null);
 
-  /**
-   * 获取tag列表
-   */
-  const getTags = (): TagReadOnly[] => {
-    return detail[name] ?? [];
+  const [modalProps, setModalProps] = useState<{
+    open: boolean;
+  }>({
+    open: false,
+  });
+
+  const getTags = (): TagReadOnly[] => detail?.[name] ?? [];
+
+  const removeTag = (id: string) => {
+    const filtered = getTags().filter((tag) => tag.id !== id);
+    onTagsChange(name, filtered);
   };
 
-  /**
-   * 删除已选Tag
-   * @param removedTag
-   */
-  const handleClose = (removedTag: string) => {
-    console.log("handleClose", removedTag);
-    const tags = getTags().filter((tag) => tag.id !== removedTag);
-    onTagsChange(name, tags);
+  const addTag = (tag: TagReadOnly) => {
+    if (getTags().some((t) => t.id === tag.id)) return;
+    const newTags = [...getTags(), tag];
+    onTagsChange(name, newTags);
+    setInput("");
+    setOpen(false);
   };
 
-  /**
-   * 显示tag输入框函数
-   */
-  const showInput = () => {
-    setInputVisible(true);
-  };
-
-  const handleUpdateTags = (
-    tag: Omit<TagEntity, "updatedAt" | "createdAt">,
-  ) => {
-    console.log("handleUpdateTags", tag);
-    const tags = getTags();
-    if (tags.some((item) => item.id === tag.id)) {
-      return;
-    }
-    onTagsChange(props.name, [...tags, tag]);
-  };
-
-  /**
-   * tag选中事件
-   * @param value
-   * @param option
-   */
-  const handleInputConfirm = (value: string, option: any) => {
-    console.log("handleInputConfirm", value, option.props.children);
-    handleUpdateTags({ id: value, name: { zh: option.props.children } });
-    setInputVisible(false);
-  };
-
-  /**
-   * tag输入框失焦事件
-   * @param e
-   */
-  const handleBlur = (e: any) => {
-    const { value } = e.target;
-    console.log("handleBlur", value);
-    if (value === "" || value.length === 0) {
-      setInputVisible(false);
-      return;
-    }
-
-    let has = false;
-    data.forEach((item) => {
-      if (item.text === value) {
-        has = true;
+  const handleSearch = (value: string) => {
+    setInput(value);
+    if (timeout.current) clearTimeout(timeout.current);
+    timeout.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await TagService.index({ name: value });
+        setOptions(res.data.list);
+      } catch (e) {
+        toast.error("标签搜索失败");
+      } finally {
+        setLoading(false);
       }
-    });
-    if (!has) {
-      onAddTag(name, value);
-    } else {
-      const obj = data.find(
-        (item) => item.text === value,
-      ) as DataSourceItemObject;
-      handleUpdateTags({ id: obj.value, name: { zh: obj.text } });
-    }
-    setInputVisible(false);
-  };
-
-  /**
-   * 联想搜索tag列表
-   * @param value
-   * @param callback
-   */
-  const fetchTagsList = (
-    value: string,
-    callback: (items: DataSourceItemObject[]) => void,
-  ) => {
-    if (timeout.current) {
-      clearTimeout(timeout.current);
-      timeout.current = undefined;
-    }
-    const fake = async () => {
-      const result = await TagService.index({ name: value });
-      const items: DataSourceItemObject[] = [];
-      console.log(result.data.list);
-      result.data.list.forEach((r) => {
-        items.push({
-          value: r.id,
-          text: r.name.zh!,
-        });
-      });
-      callback(items);
-    };
-    timeout.current = setTimeout(fake, 300);
-  };
-
-  /**
-   * tag输入框输入事件
-   * @param value
-   */
-  const handleChange = (value: string) => {
-    fetchTagsList(value.trim(), (items: DataSourceItemObject[]) =>
-      setData(items),
-    );
+    }, 300);
   };
 
   return (
-    <Block title={title}>
-      <FormItem style={{ display: "none" }} name={props.name}>
-        <Input type="text" />
-      </FormItem>
-      {getTags().map((tag) => {
-        const tagElem = (
-          <Tag key={tag.id} closable onClose={() => handleClose(tag.id)}>
-            {tag.name.zh}
-          </Tag>
-        );
-        return tagElem;
-      })}
-      {inputVisible && (
-        <AutoComplete
-          autoFocus
-          filterOption={false}
-          size="small"
-          style={{ width: 78 }}
-          dataSource={data}
-          onSelect={handleInputConfirm}
-          onSearch={handleChange}
-          onBlur={handleBlur}
-        />
-      )}
-      {!inputVisible && (
-        <Button size="small" type="dashed" onClick={showInput}>
-          + 添加
-        </Button>
-      )}
-    </Block>
+    <div>
+      <div className="font-medium mb-1">{title}</div>
+      <FormField
+        name={name}
+        control={control}
+        render={() => (
+          <>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {getTags().map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="gap-1 text-sm"
+                >
+                  {tag.name.zh}
+                  <Button
+                    onClick={() => removeTag(tag.id)}
+                    variant="ghost"
+                    size={"icon"}
+                    className="size-4"
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+            <FormMessage />
+          </>
+        )}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            <Plus />
+            添加
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[220px]">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="搜索标签"
+              value={input}
+              onValueChange={handleSearch}
+            />
+            <CommandList>
+              {loading ? (
+                <div className="flex items-center justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {options.map((tag) => (
+                    <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
+                      {tag.name.zh}
+                    </CommandItem>
+                  ))}
+                  {options.length === 0 && input && (
+                    <CommandEmpty>
+                      <div className="text-xs px-2 py-1">
+                        无匹配，你可以
+                        <Button
+                          size={"sm"}
+                          variant={"link"}
+                          onClick={() => setModalProps({ open: true })}
+                        >
+                          新建标签
+                        </Button>
+                      </div>
+                    </CommandEmpty>
+                  )}
+                </>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <AddTagDialog
+        {...modalProps}
+        onClose={() =>
+          setModalProps((prevState) => ({ ...prevState, open: false }))
+        }
+        onSuccess={() => {
+          setModalProps({ open: false });
+        }}
+      />
+    </div>
   );
 };
 

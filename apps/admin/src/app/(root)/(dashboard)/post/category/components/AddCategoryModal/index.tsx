@@ -19,8 +19,8 @@ export interface ModalProps {
 }
 
 export interface AddCategoryModalProps {
-  modalProps: ModalProps;
-  setModalProps: (state: ModalProps) => ModalProps;
+  modalProps?: ModalProps;
+  setModalProps: (state: ModalProps) => void;
 }
 
 const AddCategoryModal = (props: AddCategoryModalProps) => {
@@ -39,7 +39,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
 
   useEffect(() => {
     index();
-  }, [modalProps.open]);
+  }, [modalProps?.open]);
 
   /**
    * 关闭弹窗
@@ -53,11 +53,11 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 确认按钮事件
    */
-  const handleModalOk = (values: any) => {
+  const handleModalOk = async (values: any) => {
     if (values.parent === "0") {
       delete values.parent;
     }
-    switch (modalProps.type!) {
+    switch (modalProps?.type!) {
       case ModalType.ADD:
         return CategoryService.create(values).then((result) => {
           if (result.status === 201) {
@@ -68,7 +68,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
         });
       case ModalType.EDIT:
         return CategoryService.update(
-          modalProps.record?.id as string,
+          modalProps?.record?.id as string,
           values,
         ).then((result) => {
           if (result.status === 201) {
@@ -82,14 +82,14 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
 
   return (
     <Dialog
-      title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}分类`}
-      open={modalProps.open}
+      title={`${ModalTypeName[ModalType[modalProps?.type!] as keyof typeof ModalTypeName]}分类`}
+      open={modalProps?.open}
       onOpenChange={(open) => setModalProps({ ...modalProps, open })}
     >
       <DynamicForm
-        defaultValues={modalProps.record}
+        defaultValues={modalProps?.record}
         schema={
-          modalProps.type === ModalType.EDIT
+          modalProps?.type === ModalType.EDIT
             ? CategoryUpdateSchema
             : CategoryCreateSchema
         }
