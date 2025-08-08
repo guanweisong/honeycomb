@@ -10,7 +10,6 @@
     "moduleResolution": "bundler",
     "lib": ["DOM", "ESNext"],
     "allowJs": true,
-    "noEmit": true,
     "jsx": "preserve",
     "strict": true,
     "incremental": true,

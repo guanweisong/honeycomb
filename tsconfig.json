@@ -3,11 +3,15 @@
   "baseUrl": ".",
   "paths": {
     "@honeycomb/validation": ["packages/validation/src"],
-    "@honeycomb/ui":["packages/ui/src"]
+    "@honeycomb/ui":["packages/ui/src"],
+    "@honeycomb/db":["packages/db/src"],
+    "@honeycomb/trpc":["packages/trpc/src"]
   },
   "references": [
     { "path": "packages/validation" },
     { "path": "packages/ui" },
+    { "path": "packages/db" },
+    { "path": "packages/trpc" },
     { "path": "apps/admin" },
     { "path": "apps/server" },
     { "path": "apps/front" }

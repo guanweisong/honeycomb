@@ -1,9 +1,20 @@
-import { enableOptions } from "@/types/EnableType";
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
-import type { LinkEntity } from "../types/link.entity";
+import type { Link } from "@prisma/client";
+import { LinkStatus } from ".prisma/client";
 
-export const linkTableColumns: ColumnDef<LinkEntity>[] = [
+const linkStatusOptions = [
+  {
+    label: "禁用",
+    value: LinkStatus.DISABLE,
+  },
+  {
+    label: "启用",
+    value: LinkStatus.ENABLE,
+  },
+];
+
+export const linkTableColumns: ColumnDef<Link>[] = [
   {
     header: "链接名称",
     accessorKey: "name",
@@ -16,11 +27,11 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     header: "状态",
     accessorKey: "status",
     meta: {
-      filterOptions: enableOptions,
+      filterOptions: linkStatusOptions,
     },
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      return enableOptions.find((opt) => opt.value === status)?.label;
+      const status = row.getValue("status");
+      return linkStatusOptions.find((opt) => opt.value === status)?.label;
     },
   },
   {

@@ -1,37 +1,53 @@
 "use client";
 
-import { EnableType, enableOptions } from "@/types/EnableType";
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { useRef, useState } from "react";
 import { linkTableColumns } from "./constants/linkTableColumns";
-import LinkService from "./service";
-import type { LinkEntity } from "./types/link.entity";
 import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { LinkIndexRequest } from "@/app/(root)/(dashboard)/link/types/link.index.request";
-import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import { LinkCreateSchema } from "@honeycomb/validation/link/schemas/link.create.schema";
+import { LinkStatus } from ".prisma/client";
+import type { Link } from "@prisma/client";
+
+const linkStatusOptions = [
+  {
+    label: "禁用",
+    value: LinkStatus.DISABLE,
+  },
+  {
+    label: "启用",
+    value: LinkStatus.ENABLE,
+  },
+];
 
 const Link = () => {
   const tableRef = useRef<DataTableRef>(null);
-  const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Link[]>([]);
 
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
-    record?: LinkEntity;
+    record?: Link;
   }>({
     type: ModalType.ADD,
     open: false,
   });
 
-  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const [searchParams, setSearchParams] = useState();
+
+  const createLink = trpc.link.create.useMutation();
+  const updateLink = trpc.link.update.useMutation();
+  const destroyLink = trpc.link.destroy.useMutation();
+  const { refetch } = trpc.link.index.useQuery(searchParams, {
+    enabled: false,
+  });
 
   /**
    * 新增、编辑弹窗表单保存事件
@@ -39,23 +55,28 @@ const Link = () => {
   const handleModalOk = async (values: any) => {
     switch (modalProps.type!) {
       case ModalType.ADD:
-        return LinkService.create(values).then((result) => {
-          if (result.status === 201) {
-            tableRef.current?.reload();
-            toast.success("添加成功");
-            setModalProps({ open: false });
-          }
-        });
+        try {
+          await createLink.mutateAsync(values);
+          tableRef.current?.reload();
+          toast.success("添加成功");
+          setModalProps({ open: false });
+        } catch (error) {
+          toast.error("添加失败");
+        }
+        break;
       case ModalType.EDIT:
-        return LinkService.update(modalProps.record?.id as string, values).then(
-          (result) => {
-            if (result.status === 201) {
-              tableRef.current?.reload();
-              toast.success("更新成功");
-              setModalProps({ open: false });
-            }
-          },
-        );
+        try {
+          await updateLink.mutateAsync({
+            id: modalProps.record?.id as string,
+            data: values,
+          });
+          tableRef.current?.reload();
+          toast.success("更新成功");
+          setModalProps({ open: false });
+        } catch (error) {
+          toast.error("更新失败");
+        }
+        break;
     }
   };
 
@@ -75,12 +96,20 @@ const Link = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    return LinkService.destroy(ids).then((result) => {
-      if (result.status === 204) {
-        tableRef.current?.reload();
-        toast.success("删除成功");
-      }
-    });
+    destroyLink
+      .mutateAsync({ ids })
+      .then((res) => {
+        if (res.success) {
+          tableRef.current?.reload();
+          toast.success("删除成功");
+          return true;
+        } else {
+          return false;
+        }
+      })
+      .catch(() => {
+        toast.error("删除失败");
+      });
   };
 
   /**
@@ -96,7 +125,7 @@ const Link = () => {
    * 编辑按钮事件
    * @param record
    */
-  const handleEditItem = (record: LinkEntity) => {
+  const handleEditItem = (record: Link) => {
     setModalProps({
       type: ModalType.EDIT,
       open: true,
@@ -106,8 +135,18 @@ const Link = () => {
 
   return (
     <>
-      <DataTable<LinkEntity, LinkIndexRequest>
-        request={LinkService.index}
+      <DataTable<Link, any>
+        request={async (params) => {
+          setSearchParams(params);
+          const res = await refetch();
+          return {
+            status: 200,
+            data: {
+              list: res.data?.list ?? [],
+              total: res.data?.total ?? 0,
+            },
+          };
+        }}
         columns={linkTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}
@@ -138,7 +177,7 @@ const Link = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={LinkListQuerySchema}
+                schema={LinkListQuerySchema as any}
                 fields={[
                   {
                     name: "name",
@@ -189,14 +228,14 @@ const Link = () => {
           defaultValues={
             modalProps.type === ModalType.ADD
               ? {
-                  status: EnableType.ENABLE,
+                  status: LinkStatus.ENABLE,
                 }
               : modalProps.record
           }
           schema={
             modalProps.type === ModalType.EDIT
-              ? LinkUpdateSchema
-              : LinkCreateSchema
+              ? (LinkUpdateSchema as any)
+              : (LinkCreateSchema as any)
           }
           fields={[
             {
@@ -227,7 +266,7 @@ const Link = () => {
               label: "状态",
               name: "status",
               type: "radio",
-              options: enableOptions,
+              options: linkStatusOptions,
             },
           ]}
           onSubmit={handleModalOk}

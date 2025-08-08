@@ -1,0 +1,218 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+type MultiLang {
+  zh String
+  en String
+}
+
+model User {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime   @default(now()) @map("created_at") @db.Date
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Date
+  email     String     @unique()
+  level     UserLevel  @default(EDITOR)
+  name      String     @unique()
+  password  String
+  status    UserStatus @default(ENABLE)
+  pages     Page[]
+  posts     Post[]
+}
+
+model Category {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  description MultiLang
+  parent      String?        @db.ObjectId
+  status      CategoryStatus @default(ENABLE)
+  title       MultiLang
+  path        String
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Date
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Date
+  posts       Post[]
+}
+
+model Comment {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  userAgent String        @map("user_agent")
+  author    String
+  content   String
+  site      String?
+  email     String
+  ip        String?
+  parentId  String?       @map("parent_id") @db.ObjectId
+  postId    String?       @map("post_id") @db.ObjectId
+  post      Post?         @relation(fields: [postId], references: [id])
+  pageId    String?       @map("page_id") @db.ObjectId
+  page      Page?         @relation(fields: [pageId], references: [id])
+  customId  String?       @map("custom_id") @db.ObjectId
+  status    CommentStatus @default(PUBLISH)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Date
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Date
+}
+
+model Link {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  url         String     @unique()
+  name        String
+  logo        String
+  description String
+  status      LinkStatus @default(ENABLE)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Date
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Date
+}
+
+model Media {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now()) @map("created_at") @db.Date
+  key       String
+  name      String
+  size      Int
+  type      String
+  url       String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Date
+  postCover Post[]   @relation("cover")
+  color     String?
+  height    Int?
+  width     Int?
+}
+
+model Menu {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now()) @map("created_at") @db.Date
+  parent    String?  @db.ObjectId
+  power     Int
+  type      MenuType
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Date
+}
+
+model Page {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime   @default(now()) @map("created_at") @db.Date
+  authorId  String     @map("author_id") @db.ObjectId
+  author    User       @relation(fields: [authorId], references: [id])
+  content   MultiLang
+  status    PageStatus @default(TO_AUDIT)
+  title     MultiLang
+  views     Int        @default(0)
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Date
+  comments  Comment[]
+}
+
+model Post {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  commentStatus    PostCommentStatus @default(ENABLE) @map("comment_status")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Date
+  galleryLocation  MultiLang?        @map("gallery_location")
+  galleryStyleIds  String[]          @map("gallery_style_ids") @db.ObjectId
+  galleryTime      DateTime?         @map("gallery_time") @db.Date
+  movieActorIds    String[]          @map("movie_actor_ids") @db.ObjectId
+  movieDirectorIds String[]          @map("movie_director_ids") @db.ObjectId
+  movieStyleIds    String[]          @map("movie_style_ids") @db.ObjectId
+  movieTime        DateTime?         @map("movie_time") @db.Date
+  authorId         String            @map("author_id") @db.ObjectId
+  author           User              @relation(fields: [authorId], references: [id])
+  categoryId       String            @map("category_id") @db.ObjectId
+  category         Category          @relation(fields: [categoryId], references: [id])
+  content          MultiLang?
+  coverId          String?           @map("cover_id") @db.ObjectId
+  cover            Media?            @relation("cover", fields: [coverId], references: [id])
+  excerpt          MultiLang?
+  status           PostStatus        @default(TO_AUDIT)
+  title            MultiLang?
+  type             PostType          @default(ARTICLE)
+  views            Int               @default(0)
+  quoteAuthor      MultiLang?        @map("quote_author")
+  quoteContent     MultiLang?        @map("quote_content")
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Date
+  comments         Comment[]
+}
+
+model Setting {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  siteCopyright MultiLang? @map("site_copyright")
+  siteName      MultiLang? @map("site_name")
+  siteRecordNo  String?    @map("site_record_no")
+  siteRecordUrl String?    @map("site_record_url")
+  siteSignature MultiLang? @map("site_signature")
+  siteSubName   MultiLang? @map("site_sub_name")
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Date
+}
+
+model Tag {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime  @default(now()) @map("created_at") @db.Date
+  name      MultiLang
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Date
+}
+
+model Token {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now()) @map("created_at") @db.Date
+  content   String   @unique()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Date
+  userId    String   @db.ObjectId
+}
+
+enum UserLevel {
+  ADMIN
+  EDITOR
+  GUEST
+}
+
+enum UserStatus {
+  DELETED
+  ENABLE
+  DISABLE
+}
+
+enum CategoryStatus {
+  ENABLE
+  DISABLE
+}
+
+enum CommentStatus {
+  TO_AUDIT
+  PUBLISH
+  RUBBISH
+  BAN
+}
+
+enum LinkStatus {
+  ENABLE
+  DISABLE
+}
+
+enum PageStatus {
+  PUBLISHED
+  DRAFT
+  TO_AUDIT
+}
+
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+  TO_AUDIT
+}
+
+enum PostType {
+  ARTICLE
+  MOVIE
+  PHOTOGRAPH
+  QUOTE
+}
+
+enum MenuType {
+  CATEGORY
+  PAGE
+}
+
+enum PostCommentStatus {
+  ENABLE
+  DISABLE
+}

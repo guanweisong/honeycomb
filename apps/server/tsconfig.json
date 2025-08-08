@@ -3,13 +3,25 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@honeycomb/validation/*": ["../../packages/validation/src/*"],
-      "@honeycomb/ui/*":["../../packages/ui/src/*"],
-      "@/*": ["*"]
-    }
+      "@honeycomb/validation/*": [
+        "../../packages/validation/src/*"
+      ],
+      "@honeycomb/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@honeycomb/trpc/*": [
+        "../../packages/trpc/src/*"
+      ],
+      "@/*": [
+        "*"
+      ]
+    },
+    "noEmit": true
   },
   "references": [
-    { "path": "../../packages/validation" }
+    {
+      "path": "../../packages/validation"
+    }
   ],
   "include": [
     "../../**/*.ts",

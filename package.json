@@ -10,17 +10,21 @@
     "check-types": "turbo run check-types"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "@trpc/client": "^11.3.1",
+    "@trpc/react-query": "^11.3.1",
+    "@trpc/server": "^11.3.1",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
+    "lucide-react": "^0.479.0",
+    "motion": "^12.9.2",
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.0",
-    "lucide-react": "^0.479.0",
-    "motion": "^12.9.2",
-    "recharts":"^2.15.3",
-    "@tanstack/react-table": "^8.21.3",
-    "zod": "^3.21.4"
+    "recharts": "^2.15.3",
+    "superjson": "^2.2.2",
+    "zod": "^3.25.56"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.13",
@@ -31,8 +35,8 @@
     "prettier": "^3.5.3",
     "sass": "^1.85.1",
     "tailwindcss": "^4.0.13",
-    "tw-animate-css": "^1.2.4",
     "turbo": "^2.5.0",
+    "tw-animate-css": "^1.2.4",
     "typescript": "5.8.2"
   },
   "engines": {
