@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import PostService from "../service";
 import type { PostEntity } from "../types/post.entity";
 import { PostIndexRequest } from "../types/post.index.request";
 import { postListTableColumns } from "./constants/postListTableColumns";
@@ -13,24 +12,28 @@ import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const PostList = () => {
   const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
   const [searchParams, setSearchParams] = useState<PostIndexRequest>();
   const router = useRouter();
+  const listQuery = trpc.post.index.useQuery(searchParams as any, { enabled: false });
+  const destroyPost = trpc.post.destroy.useMutation();
 
   /**
    * 删除事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    return PostService.destroy(ids).then((result) => {
-      if (result.status === 204) {
-        tableRef.current?.reload();
-        toast.success("删除成功");
-      }
-    });
+    try {
+      await destroyPost.mutateAsync({ ids });
+      tableRef.current?.reload();
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
+    }
   };
 
   /**
@@ -45,7 +48,11 @@ const PostList = () => {
   return (
     <>
       <DataTable<PostEntity, PostIndexRequest>
-        request={PostService.indexPostList}
+        request={async (params) => {
+          setSearchParams(params);
+          const { data } = await listQuery.refetch();
+          return { status: 200, data } as any;
+        }}
         columns={postListTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}

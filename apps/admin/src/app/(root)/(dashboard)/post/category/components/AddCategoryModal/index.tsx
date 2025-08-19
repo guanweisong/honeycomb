@@ -5,12 +5,11 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { creatCategoryTitleByDepth } from "@/utils/help";
 import { useEffect, useState } from "react";
-import CategoryService from "../../service";
-import { CategoryEntity } from "../../types/category.entity";
 import { toast } from "sonner";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { CategoryCreateSchema } from "@honeycomb/validation/category/schemas/category.create.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 export interface ModalProps {
   type?: ModalType;
@@ -24,22 +23,21 @@ export interface AddCategoryModalProps {
 }
 
 const AddCategoryModal = (props: AddCategoryModalProps) => {
-  const [list, setList] = useState<CategoryEntity[]>([]);
+  const [list, setList] = useState<any[]>([]);
   const { modalProps, setModalProps } = props;
 
   /**
    * 分类列表获取
    */
-  const index = async () => {
-    const result = await CategoryService.index({ limit: 9999 });
-    if (result.status === 200) {
-      setList(result.data.list);
-    }
-  };
+  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 } as any, {
+    enabled: !!modalProps?.open,
+  });
+  const createCategory = trpc.category.create.useMutation();
+  const updateCategory = trpc.category.update.useMutation();
 
   useEffect(() => {
-    index();
-  }, [modalProps?.open]);
+    if (categoryQuery.data) setList(((categoryQuery.data as any).list) ?? []);
+  }, [modalProps?.open, categoryQuery.data]);
 
   /**
    * 关闭弹窗
@@ -59,24 +57,19 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
     }
     switch (modalProps?.type!) {
       case ModalType.ADD:
-        return CategoryService.create(values).then((result) => {
-          if (result.status === 201) {
-            index();
-            toast.success("添加成功");
-            handleModalCancel();
-          }
+        return createCategory.mutateAsync(values).then(() => {
+          categoryQuery.refetch();
+          toast.success("添加成功");
+          handleModalCancel();
         });
       case ModalType.EDIT:
-        return CategoryService.update(
-          modalProps?.record?.id as string,
-          values,
-        ).then((result) => {
-          if (result.status === 201) {
-            index();
+        return updateCategory
+          .mutateAsync({ id: modalProps?.record?.id as string, data: values })
+          .then(() => {
+            categoryQuery.refetch();
             toast.success("更新成功");
             handleModalCancel();
-          }
-        });
+          });
     }
   };
 

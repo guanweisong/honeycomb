@@ -4,8 +4,8 @@ import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.sc
 import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.schema";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
-import TagService from "@/app/(root)/(dashboard)/tag/service";
 import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 export interface AddTagDialogProps {
   type?: ModalType;
@@ -17,6 +17,8 @@ export interface AddTagDialogProps {
 
 export default function AddTagDialog(props: AddTagDialogProps) {
   const { type = ModalType.ADD, open, record, onClose, onSuccess } = props;
+  const createTag = trpc.tag.create.useMutation();
+  const updateTag = trpc.tag.update.useMutation();
 
   /**
    * 新增、编辑弹窗表单保存事件
@@ -24,23 +26,25 @@ export default function AddTagDialog(props: AddTagDialogProps) {
   const handleModalOk = async (values: any) => {
     switch (type) {
       case ModalType.ADD:
-        return TagService.create(values).then((result) => {
-          if (result.status === 201) {
-            onSuccess?.();
-            toast.success("添加成功");
-            onClose?.();
-          }
-        });
+        try {
+          await createTag.mutateAsync(values);
+          onSuccess?.();
+          toast.success("添加成功");
+          onClose?.();
+        } catch (e) {
+          toast.error("添加失败");
+        }
+        break;
       case ModalType.EDIT:
-        return TagService.update(record?.id as string, values).then(
-          (result) => {
-            if (result.status === 201) {
-              onSuccess?.();
-              toast.success("更新成功");
-              onClose?.();
-            }
-          },
-        );
+        try {
+          await updateTag.mutateAsync({ id: record?.id as string, data: values });
+          onSuccess?.();
+          toast.success("更新成功");
+          onClose?.();
+        } catch (e) {
+          toast.error("更新失败");
+        }
+        break;
     }
   };
 

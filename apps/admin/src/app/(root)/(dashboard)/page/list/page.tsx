@@ -2,7 +2,6 @@
 
 import { Button } from "@honeycomb/ui/components/button";
 import { useRef, useState } from "react";
-import PageService from "../service";
 import type { PageEntity } from "../types/page.entity";
 import { pageListTableColumns } from "./constants/pageListTableColumns";
 import { Pencil, Plus, Trash } from "lucide-react";
@@ -13,24 +12,28 @@ import type { PageIndexListRequest } from "@/app/(root)/(dashboard)/page/types/p
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { PageListQuerySchema } from "@honeycomb/validation/page/schemas/page.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Page = () => {
   const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
   const [searchParams, setSearchParams] = useState<PageIndexListRequest>();
   const router = useRouter();
+  const listQuery = trpc.page.index.useQuery(searchParams as any, { enabled: false });
+  const destroyPage = trpc.page.destroy.useMutation();
 
   /**
    * 删除事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    return await PageService.destroy(ids).then((result) => {
-      if (result.status === 204) {
-        tableRef.current?.reload();
-        toast.success("删除成功");
-      }
-    });
+    try {
+      await destroyPage.mutateAsync({ ids });
+      tableRef.current?.reload();
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
+    }
   };
 
   /**
@@ -45,7 +48,11 @@ const Page = () => {
   return (
     <>
       <DataTable<PageEntity, PageIndexListRequest>
-        request={PageService.indexPageList}
+        request={async (params) => {
+          setSearchParams(params);
+          const { data } = await listQuery.refetch();
+          return { status: 200, data } as any;
+        }}
         columns={pageListTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}

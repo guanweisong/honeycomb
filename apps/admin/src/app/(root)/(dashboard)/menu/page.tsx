@@ -12,14 +12,12 @@ import SortableTree, {
   getTreeFromFlatData,
 } from "react-sortable-tree";
 import "react-sortable-tree/style.css";
-import PageService from "../page/service";
-import CategoryService from "../post/category/service";
 import { CategoryEntity } from "../post/category/types/category.entity";
-import MenuService from "./service";
 import { MenuType, MenuTypeName } from "./types/MenuType";
 import type { MenuEntity } from "./types/menu.entity";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Menu = () => {
   const [pageList, setPageList] = useState<PageEntity[]>([]);
@@ -29,32 +27,28 @@ const Menu = () => {
   /**
    * 查询页面集合
    */
+  const pageIndexQuery = trpc.page.index.useQuery({ limit: 9999 } as any, { enabled: false });
   const indexPage = async () => {
-    console.log("pages=>model=>index");
-    const result = await PageService.indexPageList();
-    if (result.status === 200) {
-      setPageList(result.data.list);
-    }
+    const res = await pageIndexQuery.refetch();
+    if (res.data) setPageList(res.data.list as any);
   };
 
   /**
    * 查询分类列表
    */
+  const categoryIndexQuery = trpc.category.index.useQuery({ limit: 9999 } as any, { enabled: false });
   const indexCategory = async () => {
-    const result = await CategoryService.index({ limit: 9999 });
-    if (result.status === 200) {
-      setCategoryList(result.data.list);
-    }
+    const res = await categoryIndexQuery.refetch();
+    if (res.data) setCategoryList(res.data.list as any);
   };
 
   /**
    * 查询菜单集合
    */
+  const menuIndexQuery = trpc.menu.index.useQuery(undefined, { enabled: false });
   const indexMenu = async () => {
-    const result = await MenuService.index();
-    if (result.status === 200) {
-      setCheckedList(result.data.list);
-    }
+    const res = await menuIndexQuery.refetch();
+    if (res.data) setCheckedList(res.data.list as any);
   };
 
   useEffect(() => {
@@ -168,6 +162,7 @@ const Menu = () => {
   /**
    * 保存数据
    */
+  const saveAllMenu = trpc.menu.saveAll.useMutation();
   const submit = async () => {
     const data: MenuEntity[] = [];
     checkedList.forEach((item, index) => {
@@ -181,10 +176,12 @@ const Menu = () => {
       }
       data.push(menu);
     });
-    const result = await MenuService.update(data);
-    if (result.status === 201) {
+    try {
+      await saveAllMenu.mutateAsync(data as any);
       toast.success("更新成功");
       indexMenu();
+    } catch (e) {
+      toast.error("更新失败");
     }
   };
 

@@ -3,7 +3,6 @@
 import { Button } from "@honeycomb/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import PageService from "../service";
 import { PageStatus } from "../types/PageStatus";
 import type { PageEntity } from "../types/page.entity";
 import {
@@ -13,6 +12,7 @@ import {
 import { PageCreateSchema } from "@honeycomb/validation/page/schemas/page.create.schema";
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Page = () => {
   const router = useRouter();
@@ -24,21 +24,18 @@ const Page = () => {
 
   const id = searchParams.get("id");
 
-  const queryDetail = async (values: Partial<PageEntity>) => {
-    let result;
-    if (typeof values.id !== "undefined") {
-      result = await PageService.indexPageDetail(values);
-      result = result.data;
-    }
-    setDetail(result);
-  };
+  const detailQuery = trpc.page.detail.useQuery(
+    { id: id as string },
+    {
+      enabled: !!id,
+      onSuccess: (data) => {
+        setDetail(data as any);
+      },
+    },
+  );
 
   useEffect(() => {
-    if (id) {
-      queryDetail({ id });
-    } else {
-      setDetail(undefined);
-    }
+    if (!id) setDetail(undefined);
   }, [id]);
 
   useEffect(() => {
@@ -49,6 +46,8 @@ const Page = () => {
     }
   }, [detail]);
 
+  const createPage = trpc.page.create.useMutation();
+  const updatePage = trpc.page.update.useMutation();
   const handleSubmit = async (
     values: Partial<PageEntity>,
     status: PageStatus,
@@ -57,22 +56,20 @@ const Page = () => {
       const data = { ...values, status };
       setLoading(true);
       if (detail?.id) {
-        return PageService.update(detail.id, data)
-          .then((result) => {
-            if (result?.status === 201) {
-              toast.success("更新成功");
-              queryDetail({ id: detail.id });
-            }
+        return updatePage
+          .mutateAsync({ id: detail.id, data: data as any })
+          .then(() => {
+            toast.success("更新成功");
+            detailQuery.refetch();
           })
           .finally(() => setLoading(false));
       } else {
         // @ts-ignore
-        return PageService.create(data)
+        return createPage
+          .mutateAsync(data as any)
           .then((result) => {
-            if (result?.status === 201) {
-              toast.success("添加成功");
-              router.push(`/page/edit?id=${result.data.id}`);
-            }
+            toast.success("添加成功");
+            router.push(`/page/edit?id=${(result as any).id}`);
           })
           .finally(() => setLoading(false));
       }

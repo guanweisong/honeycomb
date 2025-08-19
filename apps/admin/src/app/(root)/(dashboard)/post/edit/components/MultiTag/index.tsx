@@ -21,9 +21,9 @@ import { toast } from "sonner";
 
 import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
 import type { PostEntity, TagReadOnly } from "../../../types/post.entity";
-import TagService from "@/app/(root)/(dashboard)/tag/service";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 export interface MultiTagProps {
   name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles";
@@ -44,6 +44,8 @@ const MultiTag = (props: MultiTagProps) => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const timeout = useRef<any>(null);
+  const [searchParams, setSearchParams] = useState<any>({});
+  const listQuery = trpc.tag.index.useQuery(searchParams, { enabled: false });
 
   const [modalProps, setModalProps] = useState<{
     open: boolean;
@@ -72,15 +74,17 @@ const MultiTag = (props: MultiTagProps) => {
     timeout.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await TagService.index({ name: value });
-        setOptions(res.data.list);
+        setSearchParams({ name: value });
+        const { data } = await listQuery.refetch();
+        setOptions((data as any)?.list ?? []);
       } catch (e) {
-        toast.error("标签搜索失败");
+        // ignore
       } finally {
         setLoading(false);
       }
     }, 300);
   };
+
 
   return (
     <div>

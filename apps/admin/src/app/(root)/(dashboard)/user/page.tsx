@@ -4,7 +4,6 @@ import { ModalType, ModalTypeName } from "@/types/ModalType";
 import md5 from "md5";
 import { useRef, useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
-import UserService from "./service";
 import { UserLevel, userLevelOptions } from "./types/UserLevel";
 import { UserStatus, userStatusOptions } from "./types/UserStatus";
 import type { UserEntity } from "./types/user.entity";
@@ -19,6 +18,7 @@ import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.re
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
 import { UserCreateSchema } from "@honeycomb/validation/user/schemas/user.create.schema";
 import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const User = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -32,16 +32,26 @@ const User = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const { refetch } = trpc.user.index.useQuery(searchParams as any, {
+    enabled: false,
+  });
+  const createUser = trpc.user.create.useMutation();
+  const updateUser = trpc.user.update.useMutation();
+  const destroyUser = trpc.user.destroy.useMutation();
 
   /**
    * 删除事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await UserService.destroy(ids);
-    if (result.status === 204) {
-      tableRef.current?.reload();
-      toast.success("删除成功");
+    try {
+      const res = await destroyUser.mutateAsync({ ids });
+      if (res.success) {
+        tableRef.current?.reload();
+        toast.success("删除成功");
+      }
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 
@@ -77,23 +87,28 @@ const User = () => {
     }
     switch (modalProps.type!) {
       case ModalType.ADD:
-        return UserService.create(params).then((result) => {
-          if (result.status === 201) {
-            tableRef.current?.reload();
-            toast.success("添加成功");
-            setModalProps({ open: false });
-          }
-        });
+        try {
+          await createUser.mutateAsync(params as any);
+          tableRef.current?.reload();
+          toast.success("添加成功");
+          setModalProps({ open: false });
+        } catch (e) {
+          toast.error("添加失败");
+        }
+        break;
       case ModalType.EDIT:
-        return UserService.update(modalProps.record?.id as string, params).then(
-          (result) => {
-            if (result.status === 201) {
-              tableRef.current?.reload();
-              toast.success("更新成功");
-              setModalProps({ open: false });
-            }
-          },
-        );
+        try {
+          await updateUser.mutateAsync({
+            id: modalProps.record?.id as string,
+            data: params as any,
+          });
+          tableRef.current?.reload();
+          toast.success("更新成功");
+          setModalProps({ open: false });
+        } catch (e) {
+          toast.error("更新失败");
+        }
+        break;
     }
   };
 
@@ -111,7 +126,17 @@ const User = () => {
   return (
     <>
       <DataTable<UserEntity, UserIndexRequest>
-        request={UserService.index}
+        request={async (params) => {
+          setSearchParams(params);
+          const res = await refetch();
+          return {
+            status: 200,
+            data: {
+              list: (res.data?.list as any) ?? [],
+              total: res.data?.total ?? 0,
+            },
+          };
+        }}
         columns={userTableColumns}
         selectableRows={true}
         disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}

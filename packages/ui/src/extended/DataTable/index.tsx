@@ -3,8 +3,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   ColumnDef,
   SortingState,
@@ -23,7 +21,7 @@ import {
 import { Button } from "@honeycomb/ui/components/button";
 import { Checkbox } from "@honeycomb/ui/components/checkbox";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { useDeepCompareEffect } from "ahooks";
+import { useDeepCompareEffect, useDebounceEffect } from "ahooks";
 import { PaginationResponse } from "admin/src/types/PaginationResponse";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
@@ -95,10 +93,11 @@ function DataTableInner<TData, TRequest>(
     React.useState<VisibilityState>({});
   const [pagination, setPagination] = React.useState<Pagination>({
     page: 1,
-    limit: 20,
+    limit: 1,
   });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(false);
+  const requestIdRef = React.useRef(0);
 
   const handlePaginationChange = (value: Pagination) => {
     setPagination(value);
@@ -106,27 +105,24 @@ function DataTableInner<TData, TRequest>(
 
   useDeepCompareEffect(() => {
     setPagination((preState) => ({ ...preState, page: 1 }));
-    setTimeout(() => {
-      requestFn();
-    }, 0);
   }, [params]);
 
   React.useImperativeHandle(ref, () => ({
     reload: requestFn,
   }));
 
-  const requestFn = () => {
+  const requestFn = React.useCallback(() => {
     setError(false);
     setLoading(true);
+    const id = ++requestIdRef.current;
     let data: any = { ...pagination };
     if (params) {
-      data = { ...data, ...params };
+      data = { ...params, ...data };
     }
     if (sorting?.length) {
-      sorting.forEach((item) => {
-        data.sortField = item.id;
-        data.sortOrder = item.desc ? "desc" : "asc";
-      });
+      const item = sorting[0];
+      data.sortField = item.id;
+      data.sortOrder = item.desc ? "desc" : "asc";
     }
     if (columnFilters.length) {
       data = {
@@ -136,23 +132,33 @@ function DataTableInner<TData, TRequest>(
     }
     request(data)
       .then((result) => {
+        if (id !== requestIdRef.current) return;
         setData(result.data.list);
         setRowCount(result.data.total);
+        onSelectionChange?.([]);
       })
       .catch(() => {
+        if (id !== requestIdRef.current) return;
         setError(true);
         setData([]);
         setRowCount(0);
       })
       .finally(() => {
-        onSelectionChange?.([]);
-        setLoading(false);
+        if (id === requestIdRef.current) setLoading(false);
       });
-  };
+  }, [pagination, params, sorting, columnFilters, request, onSelectionChange]);
 
   useDeepCompareEffect(() => {
     requestFn();
-  }, [pagination, sorting, columnFilters]);
+  }, [pagination, sorting]);
+
+  useDebounceEffect(
+    () => {
+      requestFn();
+    },
+    [columnFilters],
+    { wait: 300 },
+  );
 
   const table = useReactTable({
     data,
@@ -164,7 +170,10 @@ function DataTableInner<TData, TRequest>(
       sorting,
       columnFilters,
       columnVisibility,
-      pagination: { pageIndex: pagination.page, pageSize: pagination.limit },
+      pagination: {
+        pageIndex: pagination.page - 1,
+        pageSize: pagination.limit,
+      },
     },
     pageCount: Math.ceil(rowCount / pagination.limit),
     manualPagination: true,
@@ -174,31 +183,36 @@ function DataTableInner<TData, TRequest>(
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const selectable = disabledRowSelectable
-        ? data.filter((row) => !disabledRowSelectable(row))
-        : data;
-      onSelectionChange?.(selectable);
-    } else {
-      onSelectionChange?.([]);
-    }
-  };
+  const handleSelectAll = React.useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        const selectable = disabledRowSelectable
+          ? data.filter((row) => !disabledRowSelectable(row))
+          : data;
+        onSelectionChange?.(selectable);
+      } else {
+        onSelectionChange?.([]);
+      }
+    },
+    [data, disabledRowSelectable, onSelectionChange],
+  );
 
-  const handleSelectRow = (row: TData, checked: CheckedState) => {
-    const newSelectedRows = checked
-      ? [...selectedRows, row]
-      : selectedRows.filter((r) => r !== row);
-    onSelectionChange?.(newSelectedRows);
-  };
+  const handleSelectRow = React.useCallback(
+    (row: TData, checked: CheckedState) => {
+      const newSelectedRows = checked
+        ? [...selectedRows, row]
+        : selectedRows.filter((r) => r !== row);
+      onSelectionChange?.(newSelectedRows);
+    },
+    [selectedRows, onSelectionChange],
+  );
 
-  const selectableRowsList = data.filter(
-    (row) => !disabledRowSelectable?.(row),
+  const selectableRowsList = React.useMemo(
+    () => data.filter((row) => !disabledRowSelectable?.(row)),
+    [data, disabledRowSelectable],
   );
 
   return (

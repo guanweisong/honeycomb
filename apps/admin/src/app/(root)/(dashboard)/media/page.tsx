@@ -10,9 +10,9 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { Skeleton } from "@honeycomb/ui/components/skeleton";
 import { cn } from "@honeycomb/ui/lib/utils";
 
-import MediaService from "./service";
 import type { MediaEntity } from "./types/media.entity";
 import { MediaIndexRequest } from "./types/media.index.request";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 export interface MediaProps {
   onSelect?: (media: MediaEntity) => void;
@@ -25,11 +25,15 @@ const Media = ({ onSelect }: MediaProps) => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [searchParams, setSearchParams] = useState<MediaIndexRequest | undefined>();
+  const mediaIndexQuery = trpc.media.index.useQuery(searchParams, { enabled: false });
+
   const index = async (values?: MediaIndexRequest) => {
-    const result = await MediaService.index({ ...values, limit: 99999 });
-    if (result.status === 200) {
-      setList(result.data.list);
-      setTotal(result.data.total);
+    setSearchParams({ ...(values || {}), limit: 99999 } as any);
+    const res = await mediaIndexQuery.refetch();
+    if (res.data) {
+      setList(res.data.list as any);
+      setTotal(res.data.total);
     }
   };
 
@@ -69,12 +73,17 @@ const Media = ({ onSelect }: MediaProps) => {
     }
   };
 
+  const destroyMedia = trpc.media.destroy.useMutation();
   const handleDelete = async (id: string) => {
-    const result = await MediaService.destroy([id]);
-    if (result.status === 204) {
-      toast.success("删除成功");
-      setCurrentItem(undefined);
-      index();
+    try {
+      const res = await destroyMedia.mutateAsync({ ids: [id] });
+      if (res.success) {
+        toast.success("删除成功");
+        setCurrentItem(undefined);
+        index();
+      }
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 

@@ -1,6 +1,5 @@
 "use client";
 
-import PostService from "@/app/(root)/(dashboard)/post/service";
 import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
 import PhotoPickerModal from "@/components/PhotoPicker";
 import { ModalType } from "@/types/ModalType";
@@ -10,7 +9,6 @@ import React, { useEffect, useState } from "react";
 import AddCategoryModal, {
   ModalProps,
 } from "../category/components/AddCategoryModal";
-import CategoryService from "../category/service";
 import type { CategoryEntity } from "../category/types/category.entity";
 import { PostStatus } from "../types/PostStatus";
 import { PostType, postTypeOptions } from "../types/PostType";
@@ -28,6 +26,7 @@ import { DynamicField } from "@honeycomb/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/utils/help";
 import { Plus } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const tagMap = {
   galleryStyles: "galleryStyleIds",
@@ -56,11 +55,10 @@ const PostDetail = () => {
 
   const type = (form.watch("type") ?? detail?.type) as PostType;
 
+  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 } as any);
   useEffect(() => {
-    CategoryService.index({ limit: 9999 }).then((res) => {
-      if (res.status === 200) setList(res.data.list);
-    });
-  }, []);
+    if (categoryQuery.data) setList((categoryQuery.data as any).list ?? []);
+  }, [categoryQuery.data]);
 
   useEffect(() => {
     if (!id) return;
@@ -92,12 +90,19 @@ const PostDetail = () => {
     return data;
   };
 
-  const indexDetail = async (values: Partial<PostEntity>) => {
-    return PostService.indexPostDetail(values).then((res) => {
-      setDetail(res.data);
-      form.reset(res.data);
-    });
-  };
+  const detailQuery = trpc.post.detail.useQuery(
+    { id: (searchParams.get("id") as string) ?? "" },
+    {
+      enabled: !!id,
+      onSuccess: (res) => {
+        setDetail(res as any);
+        form.reset(res as any);
+      },
+    },
+  );
+
+  const createPost = trpc.post.create.useMutation();
+  const updatePost = trpc.post.update.useMutation();
 
   const handleFormSubmit = (
     status: PostStatus,
@@ -109,24 +114,22 @@ const PostDetail = () => {
         if (!data) return;
         if (actionType === "create") {
           setLoading(true);
-          return PostService.create(data)
+          return createPost
+            .mutateAsync(data as any)
             .then((res) => {
-              if (res.status === 201) {
-                toast.success("添加成功");
-                router.push(`/post/edit?id=${res.data.id}`);
-              }
+              toast.success("添加成功");
+              router.push(`/post/edit?id=${(res as any).id}`);
             })
             .finally(() => {
               setLoading(false);
             });
         } else if (actionType === "update" && detail?.id) {
           setLoading(true);
-          return PostService.update(detail.id, data)
+          return updatePost
+            .mutateAsync({ id: detail.id, data: data as any })
             .then((res) => {
-              if (res.status === 201) {
-                toast.success("更新成功");
-                indexDetail({ id: detail.id });
-              }
+              toast.success("更新成功");
+              detailQuery.refetch();
             })
             .finally(() => {
               setLoading(false);

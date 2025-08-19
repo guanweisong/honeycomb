@@ -3,7 +3,6 @@
 import { ModalType } from "@/types/ModalType";
 import { useRef, useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
-import TagService from "./service";
 import type { TagEntity } from "./types/tag.entity";
 import { TagIndexRequest } from "./types/tag.index.request";
 import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
@@ -14,6 +13,7 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Tag = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -27,6 +27,8 @@ const Tag = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const { refetch } = trpc.tag.index.useQuery(searchParams as any, { enabled: false });
+  const destroyTag = trpc.tag.destroy.useMutation();
 
   /**
    * 新增按钮事件
@@ -44,12 +46,15 @@ const Tag = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    return TagService.destroy(ids).then((result) => {
-      if (result.status === 204) {
+    try {
+      const res = await destroyTag.mutateAsync({ ids });
+      if (res.success) {
         tableRef.current?.reload();
         toast.success("删除成功");
       }
-    });
+    } catch (e) {
+      toast.error("删除失败");
+    }
   };
 
   /**
@@ -77,7 +82,17 @@ const Tag = () => {
     <>
       <DataTable<TagEntity, TagIndexRequest>
         columns={tagTableColumns}
-        request={TagService.index}
+        request={async (params) => {
+          setSearchParams(params);
+          const res = await refetch();
+          return {
+            status: 200,
+            data: {
+              list: (res.data?.list as any) ?? [],
+              total: res.data?.total ?? 0,
+            },
+          };
+        }}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}

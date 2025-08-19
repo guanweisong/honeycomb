@@ -14,22 +14,11 @@ import {
   UserLevelName,
 } from "@/app/(root)/(dashboard)/user/types/UserLevel";
 import { useEffect, useState } from "react";
-import DashboardService from "./service";
 import type { StatisticsType } from "./types/StatisticsType";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Dashboard = () => {
-  const [statistics, setStatistics] = useState<StatisticsType>();
-
-  const index = async () => {
-    const result = await DashboardService.index();
-    if (result.status === 200) {
-      setStatistics(result.data);
-    }
-  };
-
-  useEffect(() => {
-    index();
-  }, []);
+  const { data: statistics } = trpc.statistic.index.useQuery();
 
   return (
     <div className="flex flex-wrap gap-3 p-3">

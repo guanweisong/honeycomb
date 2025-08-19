@@ -1,10 +1,10 @@
 "use client";
 
 import { useSettingStore } from "@/stores/useSettingStore";
-import SettingService from "./service";
 import { toast } from "sonner";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Setting = () => {
   const settingStore = useSettingStore();
@@ -14,13 +14,15 @@ const Setting = () => {
   /**
    * 保存事件
    */
+  const updateSetting = trpc.setting.update.useMutation();
   const handleSubmit = async (values: any) => {
-    return SettingService.update(setting!.id, values).then(async (result) => {
-      if (result.status === 201) {
-        querySetting();
-        toast.success("更新成功");
-      }
-    });
+    try {
+      await updateSetting.mutateAsync({ id: setting!.id, data: values });
+      await querySetting();
+      toast.success("更新成功");
+    } catch (e) {
+      toast.error("更新失败");
+    }
   };
 
   return (

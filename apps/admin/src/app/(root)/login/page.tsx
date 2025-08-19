@@ -3,7 +3,7 @@ import { useSettingStore } from "@/stores/useSettingStore";
 import md5 from "md5";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import LoginService from "./service";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 import {
   DynamicForm,
   DynamicFormRef,
@@ -18,31 +18,40 @@ const Login = () => {
   const form = useRef<DynamicFormRef>(null);
   const searchParams = useSearchParams();
   const settingStore = useSettingStore();
+  const loginMutation = trpc.auth.login.useMutation();
 
   const { setting } = settingStore;
   const targetUrl = searchParams.get("targetUrl");
 
   useEffect(() => {
-    captchaRef.current = new TencentCaptcha("2090829333", async (res: any) => {
-      if (res.ret === 0) {
-        const values = form.current?.getValues();
-        const { name, password } = values;
-        LoginService.login({
-          name,
-          password: md5(password),
-          captcha: {
-            ticket: res.ticket,
-            randstr: res.randstr,
-          },
-        }).then((result) => {
-          if (result.status === 200) {
-            toast.success("登录成功");
-            localStorage.setItem("token", result.data.token);
-            window.location.href = targetUrl || "/";
+    setTimeout(() => {
+      captchaRef.current = new TencentCaptcha(
+        "2090829333",
+        async (res: any) => {
+          if (res.ret === 0) {
+            const values = form.current?.getValues();
+            const { name, password } = values;
+            loginMutation
+              .mutateAsync({
+                name,
+                password: md5(password),
+                captcha: {
+                  ticket: res.ticket,
+                  randstr: res.randstr,
+                },
+              })
+              .then((result) => {
+                toast.success("登录成功");
+                localStorage.setItem("token", (result as any).token);
+                window.location.href = targetUrl || "/";
+              })
+              .catch((e) => {
+                toast.error(e?.message || "登录失败");
+              });
           }
-        });
-      }
-    });
+        },
+      );
+    }, 1000);
     return () => {
       captchaRef.current = null;
     };

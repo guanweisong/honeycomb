@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
-import CommentService from "./service";
 import { CommentStatus } from "./types/CommentStatus";
 import type { CommentEntity } from "./types/comment.entity";
 import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
@@ -13,11 +12,15 @@ import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Comment = () => {
   const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const listQuery = trpc.comment.index.useQuery(searchParams as any, { enabled: false });
+  const updateComment = trpc.comment.update.useMutation();
+  const destroyComment = trpc.comment.destroy.useMutation();
 
   /**
    * 评论状态操作
@@ -25,10 +28,12 @@ const Comment = () => {
    * @param type
    */
   const handleSetStatus = async (id: string, type: CommentStatus) => {
-    const result = await CommentService.update(id, { status: type });
-    if (result.status === 201) {
+    try {
+      await updateComment.mutateAsync({ id, data: { status: type } });
       tableRef.current?.reload();
       toast.success("更新成功");
+    } catch (e) {
+      toast.error("更新失败");
     }
   };
 
@@ -129,12 +134,13 @@ const Comment = () => {
    * @param ids
    */
   const handleDelete = async (ids: string[]) => {
-    return CommentService.destroy(ids).then((result) => {
-      if (result.status === 204) {
-        tableRef.current?.reload();
-        toast.success("删除成功");
-      }
-    });
+    try {
+      await destroyComment.mutateAsync({ ids });
+      tableRef.current?.reload();
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
+    }
   };
 
   /**
@@ -150,7 +156,11 @@ const Comment = () => {
     <>
       <DataTable<CommentEntity, TagIndexRequest>
         columns={commentTableColumns}
-        request={CommentService.index}
+        request={async (params) => {
+          setSearchParams(params);
+          const { data } = await listQuery.refetch();
+          return { status: 200, data } as any;
+        }}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}

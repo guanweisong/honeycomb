@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const MultiLangSchema = <T>(type: z.ZodType<T, any, any>) =>
+export const MultiLangSchema = (type: z.ZodTypeAny) =>
   z.object({
     zh: type,
     en: type,

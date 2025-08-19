@@ -1,25 +1,17 @@
-import { UserEntity } from "@/app/(root)/(dashboard)/user/types/user.entity";
-import CommonService from "@/services/common";
-import { create } from "zustand";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import type { AppRouter } from "@honeycomb/trpc/server";
+import type { inferRouterOutputs } from "@trpc/server";
 
-type Store = {
-  user?: UserEntity | false;
-  setUser: (data: UserEntity | false) => void;
-  queryUser: () => void;
+type MeData = inferRouterOutputs<AppRouter>["auth"]["me"]; // could be User | null
+
+export const useUserStore = () => {
+  const { data, refetch } = trpc.auth.me.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
+  return {
+    user: (data as MeData) && (data as any)?.id ? (data as MeData) : undefined,
+    queryUser: () => {
+      refetch();
+    },
+  } as const;
 };
-
-export const useUserStore = create<Store>((set) => ({
-  user: undefined,
-  setUser: (data) => {
-    set(() => ({ user: data }));
-  },
-  queryUser: async () => {
-    CommonService.queryUser().then((result) => {
-      if (result.data.id) {
-        set(() => ({ user: result.data }));
-      } else {
-        set(() => ({ user: false }));
-      }
-    });
-  },
-}));

@@ -5,7 +5,6 @@ import { Button } from "@honeycomb/ui/components/button";
 import { useRef, useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
 import { categoryListTableColumns } from "./constans/categoryListTableColumns";
-import CategoryService from "./service";
 import type { CategoryEntity } from "./types/category.entity";
 import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { Pencil, Plus, Trash } from "lucide-react";
@@ -15,6 +14,7 @@ import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.q
 import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
 import type { CategoryIndexRequest } from "@/app/(root)/(dashboard)/post/category/types/category.index.request";
 import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Category = () => {
   const tableRef = useRef<DataTableRef>(null);
@@ -28,6 +28,10 @@ const Category = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const listQuery = trpc.category.index.useQuery(searchParams as any, {
+    enabled: false,
+  });
+  const destroyCategory = trpc.category.destroy.useMutation();
 
   /**
    * 编辑事件
@@ -46,12 +50,13 @@ const Category = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    return CategoryService.destroy(ids).then((result) => {
-      if (result.status === 204) {
-        tableRef.current?.reload();
-        toast.success("删除成功");
-      }
-    });
+    try {
+      await destroyCategory.mutateAsync({ ids });
+      tableRef.current?.reload();
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
+    }
   };
 
   /**
@@ -78,7 +83,11 @@ const Category = () => {
     <>
       <DataTable<CategoryEntity, CategoryIndexRequest>
         columns={categoryListTableColumns}
-        request={CategoryService.index}
+        request={async (params) => {
+          setSearchParams(params as any);
+          const { data } = await listQuery.refetch();
+          return { status: 200, data } as any;
+        }}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}

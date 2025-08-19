@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const UpdateSchema = <T>(type: z.ZodType<T>) =>
+export const UpdateSchema = (type: z.ZodTypeAny) =>
   z.object({
     id: z.string(),
     data: type,
