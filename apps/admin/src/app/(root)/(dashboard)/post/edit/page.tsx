@@ -55,7 +55,7 @@ const PostDetail = () => {
 
   const type = (form.watch("type") ?? detail?.type) as PostType;
 
-  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 } as any);
+  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 });
   useEffect(() => {
     if (categoryQuery.data) setList((categoryQuery.data as any).list ?? []);
   }, [categoryQuery.data]);

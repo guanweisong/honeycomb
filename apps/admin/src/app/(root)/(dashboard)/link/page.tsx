@@ -1,9 +1,9 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/types/ModalType";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { linkTableColumns } from "./constants/linkTableColumns";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
@@ -28,7 +28,6 @@ const linkStatusOptions = [
 ];
 
 const Link = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<Link[]>([]);
 
   const [modalProps, setModalProps] = useState<{
@@ -45,9 +44,8 @@ const Link = () => {
   const createLink = trpc.link.create.useMutation();
   const updateLink = trpc.link.update.useMutation();
   const destroyLink = trpc.link.destroy.useMutation();
-  const { refetch } = trpc.link.index.useQuery(searchParams, {
-    enabled: false,
-  });
+  const { data, isLoading, isError, refetch } =
+    trpc.link.index.useQuery(searchParams);
 
   /**
    * 新增、编辑弹窗表单保存事件
@@ -57,7 +55,7 @@ const Link = () => {
       case ModalType.ADD:
         try {
           await createLink.mutateAsync(values);
-          tableRef.current?.reload();
+          refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
         } catch (error) {
@@ -70,7 +68,7 @@ const Link = () => {
             id: modalProps.record?.id as string,
             data: values,
           });
-          tableRef.current?.reload();
+          refetch();
           toast.success("更新成功");
           setModalProps({ open: false });
         } catch (error) {
@@ -100,7 +98,7 @@ const Link = () => {
       .mutateAsync({ ids })
       .then((res) => {
         if (res.success) {
-          tableRef.current?.reload();
+          refetch();
           toast.success("删除成功");
           return true;
         } else {
@@ -136,23 +134,19 @@ const Link = () => {
   return (
     <>
       <DataTable<Link, any>
-        request={async (params) => {
-          setSearchParams(params);
-          const res = await refetch();
-          return {
-            status: 200,
-            data: {
-              list: res.data?.list ?? [],
-              total: res.data?.total ?? 0,
-            },
-          };
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        loading={isLoading}
+        error={isError}
         columns={linkTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">

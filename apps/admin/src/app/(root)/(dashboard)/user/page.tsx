@@ -2,13 +2,13 @@
 
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import md5 from "md5";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
 import { UserLevel, userLevelOptions } from "./types/UserLevel";
 import { UserStatus, userStatusOptions } from "./types/UserStatus";
 import type { UserEntity } from "./types/user.entity";
 import type { UserIndexRequest } from "./types/user.index.request";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { toast } from "sonner";
@@ -21,7 +21,6 @@ import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.lis
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const User = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
@@ -32,9 +31,8 @@ const User = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
-  const { refetch } = trpc.user.index.useQuery(searchParams as any, {
-    enabled: false,
-  });
+  const { data, isLoading, isError, refetch } =
+    trpc.user.index.useQuery(searchParams);
   const createUser = trpc.user.create.useMutation();
   const updateUser = trpc.user.update.useMutation();
   const destroyUser = trpc.user.destroy.useMutation();
@@ -47,7 +45,7 @@ const User = () => {
     try {
       const res = await destroyUser.mutateAsync({ ids });
       if (res.success) {
-        tableRef.current?.reload();
+        refetch();
         toast.success("删除成功");
       }
     } catch (e) {
@@ -89,7 +87,7 @@ const User = () => {
       case ModalType.ADD:
         try {
           await createUser.mutateAsync(params as any);
-          tableRef.current?.reload();
+          refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
         } catch (e) {
@@ -102,7 +100,7 @@ const User = () => {
             id: modalProps.record?.id as string,
             data: params as any,
           });
-          tableRef.current?.reload();
+          refetch();
           toast.success("更新成功");
           setModalProps({ open: false });
         } catch (e) {
@@ -126,24 +124,20 @@ const User = () => {
   return (
     <>
       <DataTable<UserEntity, UserIndexRequest>
-        request={async (params) => {
-          setSearchParams(params);
-          const res = await refetch();
-          return {
-            status: 200,
-            data: {
-              list: (res.data?.list as any) ?? [],
-              total: res.data?.total ?? 0,
-            },
-          };
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
         columns={userTableColumns}
+        loading={isLoading}
+        error={isError}
         selectableRows={true}
         disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">

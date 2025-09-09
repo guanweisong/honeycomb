@@ -1,11 +1,11 @@
 "use client";
 
 import { ModalType } from "@/types/ModalType";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
 import type { TagEntity } from "./types/tag.entity";
 import { TagIndexRequest } from "./types/tag.index.request";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
@@ -14,9 +14,9 @@ import { Pencil, Plus, Trash } from "lucide-react";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { useGetState } from "ahooks";
 
 const Tag = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
@@ -26,8 +26,11 @@ const Tag = () => {
     type: ModalType.ADD,
     open: false,
   });
-  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
-  const { refetch } = trpc.tag.index.useQuery(searchParams as any, { enabled: false });
+
+  const [searchParams, setSearchParams] = useGetState<TagIndexRequest>();
+
+  const { data, isLoading, isError, refetch } =
+    trpc.tag.index.useQuery(searchParams);
   const destroyTag = trpc.tag.destroy.useMutation();
 
   /**
@@ -49,8 +52,8 @@ const Tag = () => {
     try {
       const res = await destroyTag.mutateAsync({ ids });
       if (res.success) {
-        tableRef.current?.reload();
         toast.success("删除成功");
+        refetch();
       }
     } catch (e) {
       toast.error("删除失败");
@@ -68,13 +71,12 @@ const Tag = () => {
 
   /**
    * 编辑按钮事件
-   * @param record
    */
   const handleEditItem = (record: TagEntity) => {
     setModalProps({
       type: ModalType.EDIT,
       open: true,
-      record: record,
+      record,
     });
   };
 
@@ -82,22 +84,18 @@ const Tag = () => {
     <>
       <DataTable<TagEntity, TagIndexRequest>
         columns={tagTableColumns}
-        request={async (params) => {
-          setSearchParams(params);
-          const res = await refetch();
-          return {
-            status: 200,
-            data: {
-              list: (res.data?.list as any) ?? [],
-              total: res.data?.total ?? 0,
-            },
-          };
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
-        selectableRows={true}
+        loading={isLoading}
+        error={isError}
+        selectableRows
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
@@ -130,8 +128,10 @@ const Tag = () => {
                     placeholder: "请输入标签名进行搜索",
                   },
                 ]}
-                onSubmit={setSearchParams}
-                inline={true}
+                onSubmit={(values) =>
+                  setSearchParams((prev) => ({ ...prev, ...values, page: 1 }))
+                }
+                inline
                 submitProps={{
                   children: "查询",
                   variant: "outline",
@@ -162,13 +162,12 @@ const Tag = () => {
           </div>
         )}
       />
+
       <AddTagDialog
         {...modalProps}
-        onClose={() =>
-          setModalProps((prevState) => ({ ...prevState, open: false }))
-        }
+        onClose={() => setModalProps((prev) => ({ ...prev, open: false }))}
         onSuccess={() => {
-          tableRef.current?.reload();
+          refetch();
         }}
       />
     </>

@@ -29,14 +29,12 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 分类列表获取
    */
-  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 } as any, {
-    enabled: !!modalProps?.open,
-  });
+  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 });
   const createCategory = trpc.category.create.useMutation();
   const updateCategory = trpc.category.update.useMutation();
 
   useEffect(() => {
-    if (categoryQuery.data) setList(((categoryQuery.data as any).list) ?? []);
+    if (categoryQuery.data) setList((categoryQuery.data as any).list ?? []);
   }, [modalProps?.open, categoryQuery.data]);
 
   /**

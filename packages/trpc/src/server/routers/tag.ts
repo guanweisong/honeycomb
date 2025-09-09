@@ -1,4 +1,8 @@
-import { protectedProcedure, publicProcedure, router } from "@honeycomb/trpc/server/core";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "@honeycomb/trpc/server/core";
 import Tools from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
@@ -12,7 +16,9 @@ export const tagRouter = router({
     .input(TagListQuerySchema.default({}))
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, name, ...rest } = input as any;
-      const conditions = Tools.getFindConditionsByQueries(rest, ["status"], { name });
+      const conditions = Tools.getFindConditionsByQueries(rest, ["status"], {
+        name,
+      });
       const list = await ctx.prisma.tag.findMany({
         where: conditions,
         orderBy: { [sortField]: sortOrder },

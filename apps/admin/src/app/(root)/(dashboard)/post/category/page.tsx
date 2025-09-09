@@ -2,7 +2,7 @@
 
 import { ModalType } from "@/types/ModalType";
 import { Button } from "@honeycomb/ui/components/button";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
 import { categoryListTableColumns } from "./constans/categoryListTableColumns";
 import type { CategoryEntity } from "./types/category.entity";
@@ -11,13 +11,12 @@ import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import type { CategoryIndexRequest } from "@/app/(root)/(dashboard)/post/category/types/category.index.request";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Category = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
@@ -28,9 +27,8 @@ const Category = () => {
     open: false,
   });
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
-  const listQuery = trpc.category.index.useQuery(searchParams as any, {
-    enabled: false,
-  });
+  const { data, isLoading, isError, refetch } =
+    trpc.category.index.useQuery(searchParams);
   const destroyCategory = trpc.category.destroy.useMutation();
 
   /**
@@ -52,7 +50,7 @@ const Category = () => {
   const handleDeleteItem = async (ids: string[]) => {
     try {
       await destroyCategory.mutateAsync({ ids });
-      tableRef.current?.reload();
+      refetch();
       toast.success("删除成功");
     } catch (e) {
       toast.error("删除失败");
@@ -83,16 +81,18 @@ const Category = () => {
     <>
       <DataTable<CategoryEntity, CategoryIndexRequest>
         columns={categoryListTableColumns}
-        request={async (params) => {
-          setSearchParams(params as any);
-          const { data } = await listQuery.refetch();
-          return { status: 200, data } as any;
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        loading={isLoading}
+        error={isError}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">

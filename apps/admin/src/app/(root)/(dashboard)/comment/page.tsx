@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
 import { CommentStatus } from "./types/CommentStatus";
 import type { CommentEntity } from "./types/comment.entity";
@@ -8,17 +8,17 @@ import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.re
 import { Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Comment = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
   const [searchParams, setSearchParams] = useState<TagIndexRequest>();
-  const listQuery = trpc.comment.index.useQuery(searchParams as any, { enabled: false });
+  const { data, isLoading, isError, refetch } =
+    trpc.comment.index.useQuery(searchParams);
   const updateComment = trpc.comment.update.useMutation();
   const destroyComment = trpc.comment.destroy.useMutation();
 
@@ -30,7 +30,7 @@ const Comment = () => {
   const handleSetStatus = async (id: string, type: CommentStatus) => {
     try {
       await updateComment.mutateAsync({ id, data: { status: type } });
-      tableRef.current?.reload();
+      refetch();
       toast.success("更新成功");
     } catch (e) {
       toast.error("更新失败");
@@ -47,6 +47,7 @@ const Comment = () => {
       case CommentStatus.TO_AUDIT:
         dom.push(
           <Dialog
+            key="publish"
             trigger={
               <Button variant="secondary" size="sm">
                 通过
@@ -59,6 +60,7 @@ const Comment = () => {
         );
         dom.push(
           <Dialog
+            key="rubbish"
             trigger={
               <Button variant="secondary" size="sm">
                 驳回
@@ -73,6 +75,7 @@ const Comment = () => {
       case CommentStatus.PUBLISH:
         dom.push(
           <Dialog
+            key="ban"
             trigger={
               <Button variant="secondary" size="sm">
                 屏蔽
@@ -87,6 +90,7 @@ const Comment = () => {
       case CommentStatus.RUBBISH:
         dom.push(
           <Dialog
+            key="publish"
             trigger={
               <Button variant="secondary" size="sm">
                 通过
@@ -116,6 +120,7 @@ const Comment = () => {
     }
     dom.push(
       <Dialog
+        key="delete"
         trigger={
           <Button variant="secondary" size="sm">
             <Trash />
@@ -136,7 +141,7 @@ const Comment = () => {
   const handleDelete = async (ids: string[]) => {
     try {
       await destroyComment.mutateAsync({ ids });
-      tableRef.current?.reload();
+      refetch();
       toast.success("删除成功");
     } catch (e) {
       toast.error("删除失败");
@@ -156,16 +161,18 @@ const Comment = () => {
     <>
       <DataTable<CommentEntity, TagIndexRequest>
         columns={commentTableColumns}
-        request={async (params) => {
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
+        }}
+        loading={isLoading}
+        error={isError}
+        onChange={(params) => {
           setSearchParams(params);
-          const { data } = await listQuery.refetch();
-          return { status: 200, data } as any;
         }}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">

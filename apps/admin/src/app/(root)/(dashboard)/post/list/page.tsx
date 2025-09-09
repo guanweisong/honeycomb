@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { PostEntity } from "../types/post.entity";
 import { PostIndexRequest } from "../types/post.index.request";
 import { postListTableColumns } from "./constants/postListTableColumns";
@@ -8,18 +8,18 @@ import { Button } from "@honeycomb/ui/components/button";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const PostList = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
   const [searchParams, setSearchParams] = useState<PostIndexRequest>();
   const router = useRouter();
-  const listQuery = trpc.post.index.useQuery(searchParams as any, { enabled: false });
+  const { data, isLoading, isError, refetch } =
+    trpc.post.index.useQuery(searchParams);
   const destroyPost = trpc.post.destroy.useMutation();
 
   /**
@@ -29,7 +29,7 @@ const PostList = () => {
   const handleDeleteItem = async (ids: string[]) => {
     try {
       await destroyPost.mutateAsync({ ids });
-      tableRef.current?.reload();
+      refetch();
       toast.success("删除成功");
     } catch (e) {
       toast.error("删除失败");
@@ -48,17 +48,19 @@ const PostList = () => {
   return (
     <>
       <DataTable<PostEntity, PostIndexRequest>
-        request={async (params) => {
-          setSearchParams(params);
-          const { data } = await listQuery.refetch();
-          return { status: 200, data } as any;
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        loading={isLoading}
+        error={isError}
         columns={postListTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">

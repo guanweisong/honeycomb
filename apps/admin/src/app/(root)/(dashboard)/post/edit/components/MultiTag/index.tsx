@@ -45,7 +45,7 @@ const MultiTag = (props: MultiTagProps) => {
   const [open, setOpen] = useState(false);
   const timeout = useRef<any>(null);
   const [searchParams, setSearchParams] = useState<any>({});
-  const listQuery = trpc.tag.index.useQuery(searchParams, { enabled: false });
+  const listQuery = trpc.tag.index.useQuery(searchParams);
 
   const [modalProps, setModalProps] = useState<{
     open: boolean;
@@ -84,7 +84,6 @@ const MultiTag = (props: MultiTagProps) => {
       }
     }, 300);
   };
-
 
   return (
     <div>

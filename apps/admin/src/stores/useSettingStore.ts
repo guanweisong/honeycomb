@@ -5,9 +5,7 @@ import type { inferRouterOutputs } from "@trpc/server";
 type SettingData = inferRouterOutputs<AppRouter>["setting"]["index"];
 
 export const useSettingStore = () => {
-  const { data, refetch } = trpc.setting.index.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-  });
+  const { data, refetch } = trpc.setting.index.useQuery(undefined);
   return {
     setting: data as SettingData | undefined,
     querySetting: () => {

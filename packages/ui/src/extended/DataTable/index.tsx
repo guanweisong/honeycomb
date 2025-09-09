@@ -21,8 +21,6 @@ import {
 import { Button } from "@honeycomb/ui/components/button";
 import { Checkbox } from "@honeycomb/ui/components/checkbox";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { useDeepCompareEffect, useDebounceEffect } from "ahooks";
-import { PaginationResponse } from "admin/src/types/PaginationResponse";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { MultiSelect } from "../MultiSelect";
@@ -44,16 +42,17 @@ interface Pagination {
   limit: number;
 }
 
-export interface DataTableRef {
-  reload: () => void;
+interface DataSource<TData> {
+  list: TData[];
+  total: number;
 }
 
 interface DataTableProps<TData, TRequest> {
   columns: ColumnDef<TData>[];
+  data: DataSource<TData>;
 
-  params?: TRequest;
-
-  request: (params: TRequest) => Promise<PaginationResponse<TData>>;
+  loading?: boolean;
+  error?: boolean;
 
   selectableRows?: boolean;
   disabledRowSelectable?: (row: TData) => boolean;
@@ -61,30 +60,30 @@ interface DataTableProps<TData, TRequest> {
   onSelectionChange?: (selectedRows: TData[]) => void;
 
   rowActions?: (row: TData) => React.ReactNode;
-
+  toolBar?: React.ReactNode;
   className?: string;
 
-  toolBar?: React.ReactNode;
+  onChange?: (params: TRequest) => void;
 }
 
-function DataTableInner<TData, TRequest>(
+export function DataTable<TData, TRequest>(
   props: DataTableProps<TData, TRequest>,
-  ref: React.Ref<{ reload: () => void }>,
 ) {
   const {
     columns,
-    request,
+    data,
+    loading,
+    error,
     selectableRows = false,
     disabledRowSelectable,
     onSelectionChange,
     selectedRows = [],
-    params,
     rowActions,
-    className,
     toolBar,
+    className,
+    onChange,
   } = props;
-  const [data, setData] = React.useState<TData[]>([]);
-  const [rowCount, setRowCount] = React.useState(0);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -93,75 +92,27 @@ function DataTableInner<TData, TRequest>(
     React.useState<VisibilityState>({});
   const [pagination, setPagination] = React.useState<Pagination>({
     page: 1,
-    limit: 1,
+    limit: 10,
   });
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(false);
-  const requestIdRef = React.useRef(0);
+
+  React.useEffect(() => {
+    let params = { ...pagination } as any;
+    if (sorting?.length) {
+      params.sortField = sorting[0].id;
+      params.sortOrder = sorting[0].desc ? "desc" : "asc";
+    }
+    if (columnFilters?.length) {
+      params = { ...params, ...normalizeFilters(columnFilters) };
+    }
+    onChange?.(params as TRequest);
+  }, [pagination, sorting, columnFilters]);
 
   const handlePaginationChange = (value: Pagination) => {
     setPagination(value);
   };
 
-  useDeepCompareEffect(() => {
-    setPagination((preState) => ({ ...preState, page: 1 }));
-  }, [params]);
-
-  React.useImperativeHandle(ref, () => ({
-    reload: requestFn,
-  }));
-
-  const requestFn = React.useCallback(() => {
-    setError(false);
-    setLoading(true);
-    const id = ++requestIdRef.current;
-    let data: any = { ...pagination };
-    if (params) {
-      data = { ...params, ...data };
-    }
-    if (sorting?.length) {
-      const item = sorting[0];
-      data.sortField = item.id;
-      data.sortOrder = item.desc ? "desc" : "asc";
-    }
-    if (columnFilters.length) {
-      data = {
-        ...data,
-        ...normalizeFilters(columnFilters),
-      };
-    }
-    request(data)
-      .then((result) => {
-        if (id !== requestIdRef.current) return;
-        setData(result.data.list);
-        setRowCount(result.data.total);
-        onSelectionChange?.([]);
-      })
-      .catch(() => {
-        if (id !== requestIdRef.current) return;
-        setError(true);
-        setData([]);
-        setRowCount(0);
-      })
-      .finally(() => {
-        if (id === requestIdRef.current) setLoading(false);
-      });
-  }, [pagination, params, sorting, columnFilters, request, onSelectionChange]);
-
-  useDeepCompareEffect(() => {
-    requestFn();
-  }, [pagination, sorting]);
-
-  useDebounceEffect(
-    () => {
-      requestFn();
-    },
-    [columnFilters],
-    { wait: 300 },
-  );
-
   const table = useReactTable({
-    data,
+    data: data.list,
     columns,
     defaultColumn: {
       enableSorting: false,
@@ -175,7 +126,7 @@ function DataTableInner<TData, TRequest>(
         pageSize: pagination.limit,
       },
     },
-    pageCount: Math.ceil(rowCount / pagination.limit),
+    pageCount: Math.ceil(data.total / pagination.limit),
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
@@ -190,14 +141,14 @@ function DataTableInner<TData, TRequest>(
     (checked: boolean) => {
       if (checked) {
         const selectable = disabledRowSelectable
-          ? data.filter((row) => !disabledRowSelectable(row))
-          : data;
+          ? data.list.filter((row) => !disabledRowSelectable(row))
+          : data.list;
         onSelectionChange?.(selectable);
       } else {
         onSelectionChange?.([]);
       }
     },
-    [data, disabledRowSelectable, onSelectionChange],
+    [data.list, disabledRowSelectable, onSelectionChange],
   );
 
   const handleSelectRow = React.useCallback(
@@ -211,8 +162,8 @@ function DataTableInner<TData, TRequest>(
   );
 
   const selectableRowsList = React.useMemo(
-    () => data.filter((row) => !disabledRowSelectable?.(row)),
-    [data, disabledRowSelectable],
+    () => data.list.filter((row) => !disabledRowSelectable?.(row)),
+    [data.list, disabledRowSelectable],
   );
 
   return (
@@ -317,7 +268,17 @@ function DataTableInner<TData, TRequest>(
                 >
                   <div className="flex flex-col items-center gap-2">
                     <div>数据加载失败，请重试</div>
-                    <Button size="sm" onClick={requestFn}>
+                    <Button
+                      size="sm"
+                      onClick={
+                        () => {}
+                        // onChange?.({
+                        //   pagination,
+                        //   sorting,
+                        //   filters: normalizeFilters(columnFilters),
+                        // })
+                      }
+                    >
                       重试
                     </Button>
                   </div>
@@ -374,8 +335,8 @@ function DataTableInner<TData, TRequest>(
       </div>
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          第 {pagination.page} / {Math.ceil(rowCount / pagination.limit)} 页，共{" "}
-          {rowCount} 条
+          第 {pagination.page} / {Math.ceil(data.total / pagination.limit)}{" "}
+          页，共 {data.total} 条
         </div>
         <div className="flex gap-2">
           <Button
@@ -400,7 +361,9 @@ function DataTableInner<TData, TRequest>(
                 page: pagination.page + 1,
               })
             }
-            disabled={pagination.page * pagination.limit >= rowCount || loading}
+            disabled={
+              pagination.page * pagination.limit >= data.total || loading
+            }
           >
             下一页
           </Button>
@@ -409,7 +372,3 @@ function DataTableInner<TData, TRequest>(
     </div>
   );
 }
-
-export const DataTable = React.forwardRef(DataTableInner) as <TData, TRequest>(
-  props: DataTableProps<TData, TRequest> & { ref?: React.Ref<DataTableRef> },
-) => ReturnType<typeof DataTableInner>;

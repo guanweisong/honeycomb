@@ -19,27 +19,18 @@ export interface MediaProps {
 }
 
 const Media = ({ onSelect }: MediaProps) => {
-  const [list, setList] = useState<MediaEntity[]>();
-  const [total, setTotal] = useState(0);
   const [currentItem, setCurrentItem] = useState<MediaEntity>();
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [searchParams, setSearchParams] = useState<MediaIndexRequest | undefined>();
-  const mediaIndexQuery = trpc.media.index.useQuery(searchParams, { enabled: false });
-
-  const index = async (values?: MediaIndexRequest) => {
-    setSearchParams({ ...(values || {}), limit: 99999 } as any);
-    const res = await mediaIndexQuery.refetch();
-    if (res.data) {
-      setList(res.data.list as any);
-      setTotal(res.data.total);
-    }
-  };
+  const [searchParams, setSearchParams] = useState<MediaIndexRequest>({
+    limit: 99999,
+  });
+  const { data, refetch } = trpc.media.index.useQuery(searchParams);
+  const destroyMedia = trpc.media.destroy.useMutation();
 
   const handleUpload = async (files: FileList | null) => {
     if (!files) return;
-
     setLoading(true);
     const formData = new FormData();
     Array.from(files).forEach((file) => {
@@ -62,7 +53,7 @@ const Media = ({ onSelect }: MediaProps) => {
       if (response.ok) {
         toast.success("上传成功");
         setCurrentItem(data);
-        index();
+        refetch();
       } else {
         toast.error(data.message || "上传失败");
       }
@@ -73,23 +64,18 @@ const Media = ({ onSelect }: MediaProps) => {
     }
   };
 
-  const destroyMedia = trpc.media.destroy.useMutation();
   const handleDelete = async (id: string) => {
     try {
       const res = await destroyMedia.mutateAsync({ ids: [id] });
       if (res.success) {
         toast.success("删除成功");
         setCurrentItem(undefined);
-        index();
+        refetch();
       }
     } catch (e) {
       toast.error("删除失败");
     }
   };
-
-  useEffect(() => {
-    index();
-  }, []);
 
   useEffect(() => {
     if (onSelect && currentItem) {
@@ -116,8 +102,8 @@ const Media = ({ onSelect }: MediaProps) => {
         </Button>
       </div>
       <div className="flex flex-wrap">
-        {list?.length ? (
-          list.map((item) => (
+        {data?.list?.length ? (
+          data?.list?.map((item) => (
             <div
               key={item.id}
               className={cn(

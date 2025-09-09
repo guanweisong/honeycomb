@@ -1,13 +1,13 @@
 "use client";
 
 import { Button } from "@honeycomb/ui/components/button";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { PageEntity } from "../types/page.entity";
 import { pageListTableColumns } from "./constants/pageListTableColumns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { DataTable, DataTableRef } from "@honeycomb/ui/extended/DataTable";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import type { PageIndexListRequest } from "@/app/(root)/(dashboard)/page/types/page.index.list.request";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -15,11 +15,11 @@ import { PageListQuerySchema } from "@honeycomb/validation/page/schemas/page.lis
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
 const Page = () => {
-  const tableRef = useRef<DataTableRef>(null);
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
   const [searchParams, setSearchParams] = useState<PageIndexListRequest>();
   const router = useRouter();
-  const listQuery = trpc.page.index.useQuery(searchParams as any, { enabled: false });
+  const { data, isLoading, isError, refetch } =
+    trpc.page.index.useQuery(searchParams);
   const destroyPage = trpc.page.destroy.useMutation();
 
   /**
@@ -29,7 +29,7 @@ const Page = () => {
   const handleDeleteItem = async (ids: string[]) => {
     try {
       await destroyPage.mutateAsync({ ids });
-      tableRef.current?.reload();
+      refetch();
       toast.success("删除成功");
     } catch (e) {
       toast.error("删除失败");
@@ -48,17 +48,19 @@ const Page = () => {
   return (
     <>
       <DataTable<PageEntity, PageIndexListRequest>
-        request={async (params) => {
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
+        }}
+        loading={isLoading}
+        error={isError}
+        onChange={(params) => {
           setSearchParams(params);
-          const { data } = await listQuery.refetch();
-          return { status: 200, data } as any;
         }}
         columns={pageListTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        params={searchParams}
-        ref={tableRef}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
