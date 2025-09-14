@@ -1,16 +1,19 @@
-export enum CommentStatus {
-  TO_AUDIT = "TO_AUDIT",
-  PUBLISH = "PUBLISH",
-  RUBBISH = "RUBBISH",
-  BAN = "BAN",
-}
+import { COMMENT_STATUS, CommentStatus as CommentStatusType } from "@honeycomb/db";
 
-export enum CommentStatusName {
-  TO_AUDIT = "待审核",
-  PUBLISH = "已发布",
-  RUBBISH = "垃圾评论",
-  BAN = "已屏蔽",
-}
+export const CommentStatus = Object.freeze({
+  TO_AUDIT: COMMENT_STATUS[0],
+  PUBLISH: COMMENT_STATUS[1],
+  RUBBISH: COMMENT_STATUS[2],
+  BAN: COMMENT_STATUS[3],
+} as const);
+export type CommentStatus = CommentStatusType;
+
+export const CommentStatusName = Object.freeze({
+  TO_AUDIT: "待审核",
+  PUBLISH: "已发布",
+  RUBBISH: "垃圾评论",
+  BAN: "已屏蔽",
+} as const);
 
 export const commentStatusOptions = [
   {

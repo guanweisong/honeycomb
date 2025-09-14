@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { LinkStatus } from ".prisma/client";
+import { enumWithDefault } from "../../../schemas/enum.helpers";
+import { LINK_STATUS } from "@honeycomb/db";
 
-export const LinkStatusEnum = z.nativeEnum(LinkStatus);
+export const LinkStatusEnum = enumWithDefault(LINK_STATUS, "ENABLE");
 
-export const StatusSchema = LinkStatusEnum.default(LinkStatus.ENABLE);
+export const StatusSchema = LinkStatusEnum;

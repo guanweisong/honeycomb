@@ -104,9 +104,10 @@ const Menu = () => {
     const list = listData.map(({ node, parentNode }) => ({
       ...node,
       // @ts-ignore
-      parent: parentNode ? parentNode.id : "0",
+      parent: parentNode?.id ?? "0",
       expanded: !!node.children,
     }));
+    // @ts-ignore
     setCheckedList(list);
   };
 
@@ -130,6 +131,8 @@ const Menu = () => {
       getKey: (node) => node.id,
       // @ts-ignore
       getParentKey: (node) => node.parent,
+      // @ts-ignore
+      rootKey: null,
     });
     return tree;
   };
@@ -210,7 +213,9 @@ const Menu = () => {
                           // @ts-ignore
                           onCheck(item, checked, MenuType.PAGE)
                         }
+                        // @ts-ignore
                         defaultChecked={getCheckedStatus(item)}
+                        // @ts-ignore
                         disabled={getDisabledStatus(item)}
                         label={item.title.zh}
                       />

@@ -1,12 +1,14 @@
-export enum EnableType {
-  DISABLE = "DISABLE", // 禁用
-  ENABLE = "ENABLE", // 启用
-}
+import { ENABLE_STATUS } from "@honeycomb/db";
 
-export enum EnableTypeName {
-  DISABLE = "禁用",
-  ENABLE = "启用",
-}
+export const EnableType = Object.freeze({
+  DISABLE: ENABLE_STATUS[0],
+  ENABLE: ENABLE_STATUS[1],
+} as const);
+
+export const EnableTypeName = Object.freeze({
+  DISABLE: "禁用",
+  ENABLE: "启用",
+} as const);
 
 export const enableOptions = [
   {

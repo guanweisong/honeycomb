@@ -1,44 +1,49 @@
-import { protectedProcedure, publicProcedure, router } from "@honeycomb/trpc/server/core";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "@honeycomb/trpc/server/core";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
-import { UserLevel, MenuType } from ".prisma/client";
 
 export const menuRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
-    const list = await ctx.prisma.menu.findMany({ orderBy: { power: "asc" } });
+    const list = await ctx.db.tables.menu.select({
+      orderBy: { field: "power", direction: "asc" },
+    });
     const [categoryList, pageList] = await Promise.all([
-      ctx.prisma.category.findMany(),
-      ctx.prisma.page.findMany(),
+      ctx.db.tables.category.select({}),
+      ctx.db.tables.page.select({}),
     ]);
 
     list.forEach((m: any) => {
-      if (m.type === MenuType.CATEGORY) {
+      if (m.type === "CATEGORY") {
         categoryList.forEach((n: any) => {
           if (m.id.toString() === n.id.toString()) {
-            m.title = n.title;
-            m.path = n.path;
-            m.parent = n.parent;
+            (m as any).title = n.title;
+            (m as any).path = n.path;
+            (m as any).parent = n.parent;
           }
         });
       }
-      if (m.type === MenuType.PAGE) {
+      if (m.type === "PAGE") {
         pageList.forEach((n: any) => {
           if (m.id.toString() === n.id.toString()) {
-            m.title = n.title;
+            (m as any).title = n.title;
           }
         });
       }
     });
 
-    const total = await ctx.prisma.menu.count();
-    return { list, total };
+    const count = await ctx.db.tables.menu.count({});
+    return { list, total: count };
   }),
 
   // 覆盖式更新：清空并重建
-  saveAll: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  saveAll: protectedProcedure(["ADMIN", "EDITOR"])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.prisma.menu.deleteMany({});
-      const result = await ctx.prisma.menu.createMany({ data: input as any });
-      return result;
+      await ctx.db.tables.menu.deleteAll();
+      await ctx.db.tables.menu.bulkInsert(input as any);
+      return { count: (input as any[]).length } as any;
     }),
 });

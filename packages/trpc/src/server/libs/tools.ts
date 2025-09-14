@@ -69,4 +69,50 @@ class Tools {
   }
 }
 
+// ===== Drizzle Helpers =====
+import { and, inArray, like, or, SQL } from "drizzle-orm";
+
+export function buildDrizzleWhere<T extends Record<string, any>>(
+  table: T,
+  queries: any,
+  queryArray: string[],
+  multiLangQueries?: any,
+): SQL | undefined {
+  const clauses: SQL[] = [] as unknown as SQL[];
+
+  // simple fields
+  for (const key in queries) {
+    const value = queries[key];
+    if (typeof value === "undefined") continue;
+    const isEmptyArray = Array.isArray(value) && value.length === 0;
+    if (value === "" || isEmptyArray) continue;
+
+    const col = (table as any)[key];
+    if (!col) continue;
+
+    if (queryArray.includes(key)) {
+      // exact enums/status filters: IN
+      clauses.push(inArray(col, Array.isArray(value) ? value : [value]));
+    } else {
+      // fuzzy search via LIKE on stored text (includes JSON text columns)
+      clauses.push(like(col, `%${value}%`));
+    }
+  }
+
+  // multi-lang fuzzy OR
+  if (multiLangQueries) {
+    for (const k in multiLangQueries) {
+      const v = multiLangQueries[k];
+      if (typeof v === "undefined" || v === "") continue;
+      const col = (table as any)[k];
+      if (!col) continue;
+      clauses.push(like(col, `%${v}%`));
+    }
+  }
+
+  if (!clauses.length) return undefined;
+  if (clauses.length === 1) return clauses[0] as unknown as SQL;
+  return and(...(clauses as any));
+}
+
 export default Tools;

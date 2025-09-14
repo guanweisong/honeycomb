@@ -13,8 +13,19 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import { LinkCreateSchema } from "@honeycomb/validation/link/schemas/link.create.schema";
-import { LinkStatus } from ".prisma/client";
-import type { Link } from "@prisma/client";
+import { LinkStatus, LINK_STATUS } from "@honeycomb/db";
+
+// Local shape for table rows (align with API payload)
+type Link = {
+  id: string;
+  name: string;
+  url: string;
+  logo?: string | null;
+  description: string;
+  status: (typeof LINK_STATUS)[number];
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 const linkStatusOptions = [
   {

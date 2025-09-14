@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { PostStatus } from ".prisma/client";
+import { enumFrom, enumWithDefault } from "../../../schemas/enum.helpers";
+import { POST_STATUS } from "@honeycomb/db";
 
-const PostStatusEnum = z.nativeEnum(PostStatus);
+const PostStatusEnum = enumFrom(POST_STATUS);
 
-export const StatusSchema = PostStatusEnum.default(PostStatus.TO_AUDIT);
+export const StatusSchema = enumWithDefault(POST_STATUS, "TO_AUDIT");

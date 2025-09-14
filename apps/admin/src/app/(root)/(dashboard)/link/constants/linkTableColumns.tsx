@@ -1,7 +1,18 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
-import type { Link } from "@prisma/client";
-import { LinkStatus } from ".prisma/client";
+import { LinkStatus, LINK_STATUS } from "@honeycomb/db";
+
+// Local shape for table rows (align with API payload)
+type Link = {
+  id: string;
+  name: string;
+  url: string;
+  logo?: string | null;
+  description: string;
+  status: (typeof LINK_STATUS)[number];
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 const linkStatusOptions = [
   {

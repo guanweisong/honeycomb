@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { UserStatus } from ".prisma/client";
+import { USER_STATUS } from "@honeycomb/db";
 
-export const UserStatusEnum = z.nativeEnum(UserStatus);
+export const UserStatusEnum = z.enum([...USER_STATUS]);
 
-export const StatusSchema = UserStatusEnum.default(UserStatus.ENABLE);
+export const StatusSchema = UserStatusEnum.default("ENABLE");

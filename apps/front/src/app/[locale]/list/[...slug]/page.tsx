@@ -2,13 +2,13 @@ import React from "react";
 import { PostStatus } from "@/types/post/PostStatus";
 import { PostListQuery } from "@/types/post/post.list.query";
 import { MenuEntity } from "@/types/menu/menu.entity";
-import PostServer from "@/services/post";
 import MenuServer from "@/services/menu";
 import SettingServer from "@/services/setting";
 import PostList from "@/components/PostList";
 import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
+import { serverClient } from "@honeycomb/trpc/server";
 
 const PAGE_SIZE = 10;
 
@@ -18,8 +18,8 @@ export interface ListProps {
 
 export default async function List(props: ListProps) {
   const [setting, menu] = await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+    serverClient.setting.index(),
+    serverClient.menu.index(),
   ]);
 
   const params = await props.params;
@@ -36,14 +36,14 @@ export default async function List(props: ListProps) {
   switch (type) {
     case "category":
       // 获取分类ID
-      const categoryId = menu?.find(
+      const categoryId = menu?.list?.find(
         (item: MenuEntity) => item.path === typeName,
       )?.id;
       if (typeof categoryId !== "undefined") {
         queryParams = { ...queryParams, categoryId: categoryId };
       }
       typeName =
-        menu?.find((item: MenuEntity) => item.path === typeName)?.title?.[
+        menu?.list?.find((item: MenuEntity) => item.path === typeName)?.title?.[
           params.locale
         ] || "";
       break;
@@ -56,7 +56,7 @@ export default async function List(props: ListProps) {
   }
   console.log("queryParams", queryParams);
   // 获取分类列表
-  const postList = await PostServer.indexPostList(queryParams);
+  const postList = await serverClient.post.list(queryParams);
 
   /**
    * 获取页面标题

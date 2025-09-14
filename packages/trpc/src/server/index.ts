@@ -12,6 +12,7 @@ import { pageRouter } from "./routers/page";
 import { postRouter } from "./routers/post";
 import { commentRouter } from "./routers/comment";
 import { authRouter } from "./routers/auth";
+import { createContext } from "./context";
 
 export const appRouter = router({
   link: linkRouter,
@@ -30,3 +31,5 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+export const serverClient = appRouter.createCaller(await createContext({}));

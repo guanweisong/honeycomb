@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { PostType } from ".prisma/client";
+import { enumFrom, enumWithDefault } from "../../../schemas/enum.helpers";
+import { POST_TYPE } from "@honeycomb/db";
 
-const PostTypeEnum = z.nativeEnum(PostType);
+const PostTypeEnum = enumFrom(POST_TYPE);
 
-export const TypeSchema = PostTypeEnum.default(PostType.ARTICLE);
+export const TypeSchema = enumWithDefault(POST_TYPE, "ARTICLE");

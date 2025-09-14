@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { CommentStatus } from ".prisma/client";
+import { enumWithDefault } from "../../../schemas/enum.helpers";
+import { COMMENT_STATUS } from "@honeycomb/db";
 
-export const CommentStatusEnum = z.nativeEnum(CommentStatus);
+export const CommentStatusEnum = enumWithDefault(COMMENT_STATUS, "PUBLISH");
 
-export const StatusSchema = CommentStatusEnum.default(CommentStatus.PUBLISH);
+export const StatusSchema = CommentStatusEnum;

@@ -1,8 +1,6 @@
-import { z } from "zod";
-import { CategoryStatus } from ".prisma/client";
+import { enumWithDefault } from "../../../schemas/enum.helpers";
+import { CATEGORY_STATUS } from "@honeycomb/db";
 
-export const CategoryStatusEnum = z
-  .nativeEnum(CategoryStatus)
-  .default(CategoryStatus.ENABLE);
+export const CategoryStatusEnum = enumWithDefault(CATEGORY_STATUS, "ENABLE");
 
 export const StatusSchema = CategoryStatusEnum;

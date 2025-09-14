@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { CommentType } from "server/types/CommentType";
+import { enumFrom } from "../../schemas/enum.helpers";
+import { COMMENT_REF_TYPE } from "@honeycomb/db";
 
-const CommentTypeEnum = z.nativeEnum(CommentType);
+const CommentTypeEnum = enumFrom(COMMENT_REF_TYPE);
 
 export const CommentQuerySchema = z.object({
   type: CommentTypeEnum,

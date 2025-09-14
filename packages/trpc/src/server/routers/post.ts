@@ -1,13 +1,14 @@
 import { protectedProcedure, publicProcedure, router } from "@honeycomb/trpc/server/core";
-import Tools from "@honeycomb/trpc/server/libs/tools";
+import Tools, { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostCreateSchema } from "@honeycomb/validation/post/schemas/post.create.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
-import { UserLevel } from ".prisma/client";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
+import * as schema from "@honeycomb/db/src/schema";
+import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 
 export const postRouter = router({
   index: publicProcedure
@@ -26,99 +27,153 @@ export const postRouter = router({
         ...rest
       } = input as any;
 
-      const conditions: any = Tools.getFindConditionsByQueries(rest, ["status", "type"], { title, content });
-      const OR: any[] = [];
+      let where = buildDrizzleWhere(
+        schema.post,
+        { ...rest, title, content },
+        ["status", "type"],
+        { title, content },
+      ) as any;
 
+      // 分类树过滤
       if (categoryId) {
-        const categoryListAll = await ctx.prisma.category.findMany();
-        const categoryList = Tools.sonsTree(categoryListAll, categoryId);
-        OR.push({ categoryId });
-        categoryList.forEach((item: any) => OR.push({ categoryId: item.id }));
+        const allCategories = await ctx.db.tables.category.select({});
+        const catList = Tools.sonsTree(allCategories, categoryId);
+        const ids = [categoryId, ...catList.map((c: any) => c.id)];
+        const catClause = or(...ids.map((id: string) => eq(schema.post.categoryId, id)));
+        where = where ? and(where, catClause) : catClause;
       }
 
+      // 标签名过滤（通过在 tag 表查到 id，再对 JSON 文本字段做 LIKE）
       if (tagName) {
-        const tagCondition: any = { OR: [ { name: { is: { zh: tagName } } }, { name: { is: { en: tagName } } } ] };
-        const tag = {
-          list: await ctx.prisma.tag.findMany({ where: tagCondition }),
-          total: await ctx.prisma.tag.count({ where: tagCondition }),
-        };
-        if (tag.total) {
-          const id = { hasSome: [tag.list[0].id] } as any;
-          OR.push({ galleryStyleIds: id }, { movieActorIds: id }, { movieStyleIds: id }, { movieDirectorIds: id });
-        } else {
+        const tagWhere = buildDrizzleWhere(schema.tag, { name: tagName }, [], { name: tagName });
+        const tags = await ctx.db.tables.tag.select({ whereExpr: tagWhere as any, limit: 1 });
+        if (!tags.length) {
           return { list: [], total: 0 };
         }
+        const tagId = tags[0].id as string;
+        const idLike = `%${tagId}%`;
+        const tagClause = or(
+          like(schema.post.galleryStyleIds as any, idLike),
+          like(schema.post.movieActorIds as any, idLike),
+          like(schema.post.movieStyleIds as any, idLike),
+          like(schema.post.movieDirectorIds as any, idLike),
+        );
+        where = where ? and(where, tagClause) : tagClause;
       }
 
+      // 作者名过滤 -> 查 user 再比对 authorId
       if (userName) {
-        const user = {
-          list: await ctx.prisma.user.findMany({ where: { name: userName } }),
-          total: await ctx.prisma.user.count({ where: { name: userName } }),
-        };
-        if (user.total) {
-          conditions.authorId = user.list[0].id;
-        } else {
-          return { list: [], total: 0 };
-        }
+        const users = await ctx.db.tables.user.select({ name: userName as string });
+        if (!users.length) return { list: [], total: 0 };
+        const authorClause = eq(schema.post.authorId, users[0].id);
+        where = where ? and(where, authorClause) : authorClause;
       }
 
-      if (OR.length) conditions.OR = OR;
-
-      const list = await ctx.prisma.post.findMany({
-        where: conditions,
-        orderBy: { [sortField]: sortOrder },
-        take: limit,
-        skip: (page - 1) * limit,
-        include: {
-          category: { select: { id: true, title: true } },
-          author: { select: { id: true, name: true } },
-          cover: { select: { id: true, url: true, width: true, height: true, color: true } },
-        },
+      const list = await ctx.db.tables.post.select({
+        whereExpr: where as any,
+        orderBy: { field: sortField, direction: sortOrder },
+        limit,
+        offset: (page - 1) * limit,
       });
-      const total = await ctx.prisma.post.count({ where: conditions });
-      const result = {
-        list: list.map((item: any) => {
-          const { content, ...rest } = item;
-          return rest;
-        }),
-        total,
-      };
-      return result;
+
+      // 批量加载关联数据以模拟 include
+      const categoryIds = Array.from(
+        new Set(list.map((p: any) => p.categoryId).filter(Boolean)),
+      );
+      const authorIds = Array.from(
+        new Set(list.map((p: any) => p.authorId).filter(Boolean)),
+      );
+      const coverIds = Array.from(
+        new Set(list.map((p: any) => p.coverId).filter(Boolean)),
+      );
+      const mediaIds = Array.from(
+        new Set(list.flatMap((p) => p.mediaId || [])),
+      ).filter(Boolean);
+
+      const [categories, authors, covers, mediaList] = await Promise.all([
+        categoryIds.length
+          ? ctx.db.tables.category.select({ whereExpr: inArray(schema.category.id, categoryIds as any) })
+          : Promise.resolve([] as any[]),
+        authorIds.length
+          ? ctx.db.tables.user.select({ whereExpr: inArray(schema.user.id, authorIds as any) })
+          : Promise.resolve([] as any[]),
+        coverIds.length
+          ? ctx.db.tables.media.select({ whereExpr: inArray(schema.media.id, coverIds as any) })
+          : Promise.resolve([] as any[]),
+        mediaIds.length
+          ? await ctx.db.tables.media.findMany({ where: { id: { in: mediaIds } } })
+          : [],
+      ]);
+      const categoryMap = Object.fromEntries(categories.map((c: any) => [c.id, c]));
+      const authorMap = Object.fromEntries(authors.map((u: any) => [u.id, u]));
+      const coverMap = Object.fromEntries(covers.map((m: any) => [m.id, m]));
+      const mediaMap = Object.fromEntries(mediaList.map((m: any) => [m.id, m]));
+
+      const mapped = list.map((item: any) => {
+        const { content: _content, ...rest } = item;
+        return {
+          ...rest,
+          category: item.categoryId ? categoryMap[item.categoryId] ?? null : null,
+          author: item.authorId ? authorMap[item.authorId] ?? null : null,
+          cover: item.coverId ? coverMap[item.coverId] ?? null : null,
+          media: item.mediaId ? mediaMap[item.mediaId] ?? null : null,
+        } as any;
+      });
+
+      const count = await ctx.db.tables.post.count(undefined, where as any);
+
+      return { list: mapped, total: count };
     }),
 
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .output(z.any())
     .query(async ({ input, ctx }) => {
-      const result = await ctx.prisma.post.findUnique({
-        where: { id: input.id },
-        include: {
-          category: { select: { id: true, title: true } },
-          author: { select: { id: true, name: true } },
-          cover: { select: { id: true, url: true, color: true } },
-        },
-      });
-      return result;
+      const result = await ctx.db.tables.post.select({ id: input.id as string });
+      const item = result[0] as any;
+      if (!item) return null;
+      const [category, author, cover] = await Promise.all([
+        item.categoryId
+          ? ctx.db.tables.category.select({ id: item.categoryId as string })
+          : Promise.resolve([] as any[]),
+        item.authorId
+          ? ctx.db.tables.user.select({ id: item.authorId as string })
+          : Promise.resolve([] as any[]),
+        item.coverId
+          ? ctx.db.tables.media.select({ id: item.coverId as string })
+          : Promise.resolve([] as any[]),
+      ]);
+      const c = category[0] as any;
+      const a = author[0] as any;
+      const m = cover[0] as any;
+      return {
+        ...item,
+        category: c ? { id: c.id, title: c.title } : null,
+        author: a ? { id: a.id, name: a.name } : null,
+        cover: m ? { id: m.id, url: m.url, color: m.color } : null,
+      } as any;
     }),
 
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostCreateSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      return await ctx.prisma.post.create({ data: { ...input, authorId } as any });
+      await ctx.db.tables.post.insert({ ...(input as any), authorId } as any);
+      return { ...(input as any), authorId } as any;
     }),
 
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: protectedProcedure(["ADMIN", "EDITOR"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.prisma.post.deleteMany({ where: { id: { in: input.ids as string[] } } });
+      await ctx.db.tables.post.deleteByIds(input.ids as string[]);
       return { success: true };
     }),
 
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(UpdateSchema(PostUpdateSchema))
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input;
-      return await ctx.prisma.post.update({ where: { id }, data: data as any });
+      const { id, data } = input as any;
+      await ctx.db.tables.post.update(data as any, { id });
+      return { id, ...data };
     }),
 });

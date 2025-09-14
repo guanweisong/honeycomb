@@ -1,45 +1,61 @@
-import { protectedProcedure, publicProcedure, router } from "@honeycomb/trpc/server/core";
-import Tools from "@honeycomb/trpc/server/libs/tools";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from "@honeycomb/trpc/server/core";
+import Tools, { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { CategoryListQuerySchema } from "@honeycomb/validation/category/schemas/category.list.query.schema";
 import { CategoryCreateSchema } from "@honeycomb/validation/category/schemas/category.create.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
-import { UserLevel } from ".prisma/client";
+import * as schema from "@honeycomb/db/src/schema";
 
 export const categoryRouter = router({
   index: publicProcedure
     .input(CategoryListQuerySchema.default({}))
     .query(async ({ input, ctx }) => {
-      const { id, page, limit, sortField, sortOrder, title, ...rest } = input as any;
-      const conditions = Tools.getFindConditionsByQueries(rest, ["status"], { title });
-      const list = await ctx.prisma.category.findMany({
-        where: conditions,
-        orderBy: { [sortField]: sortOrder },
-        take: limit,
-        skip: (page - 1) * limit,
+      const { id, page, limit, sortField, sortOrder, title, ...rest } =
+        input as any;
+      const where = buildDrizzleWhere(
+        schema.category,
+        { ...rest, title },
+        ["status"],
+        { title },
+      );
+      const list = await ctx.db.tables.category.select({
+        whereExpr: where as any,
+        orderBy: { field: sortField, direction: sortOrder },
+        limit,
+        offset: (page - 1) * limit,
       });
-      const total = await ctx.prisma.category.count({ where: conditions });
-      return { list: Tools.sonsTree(list, id as string | undefined), total };
+      const count = await ctx.db.tables.category.count(undefined, where as any);
+
+      return {
+        list: Tools.sonsTree(list, id),
+        total: count,
+      };
     }),
 
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(CategoryCreateSchema)
     .mutation(async ({ input, ctx }) => {
-      return await ctx.prisma.category.create({ data: input });
+      await ctx.db.tables.category.insert(input as any);
+      return input;
     }),
 
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: protectedProcedure(["ADMIN", "EDITOR"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.prisma.category.deleteMany({ where: { id: { in: input.ids as string[] } } });
+      await ctx.db.tables.category.deleteByIds(input.ids as string[]);
       return { success: true };
     }),
 
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(UpdateSchema(CategoryUpdateSchema))
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input;
-      return await ctx.prisma.category.update({ where: { id }, data });
+      const { id, data } = input as any;
+      await ctx.db.tables.category.update(data as any, { id });
+      return { id, ...data };
     }),
 });

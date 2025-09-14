@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { MenuType } from ".prisma/client";
+import { MENU_TYPE } from "@honeycomb/db";
 
-const MenuTypeSchema = z.nativeEnum(MenuType);
+const MenuTypeEnum = z.enum([...MENU_TYPE]);
 
-export const TypeSchema = MenuTypeSchema.default(MenuType.CATEGORY);
+export const TypeSchema = MenuTypeEnum.default("CATEGORY");

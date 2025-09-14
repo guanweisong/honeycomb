@@ -1,6 +1,6 @@
 import { publicProcedure, router } from "@honeycomb/trpc/server/core";
 import { z } from "zod";
-import { prisma } from "@honeycomb/db";
+import { db } from "@honeycomb/db";
 import crypto from "node:crypto";
 import { NameSchema } from "@honeycomb/validation/user/schemas/fields/name.schema";
 import { PasswordSchema } from "@honeycomb/validation/user/schemas/fields/password.schema";
@@ -12,37 +12,36 @@ const CaptchaSchema = z.object({
 
 export const authRouter = router({
   me: publicProcedure.query(async ({ ctx }) => {
-    // return current user from context (based on x-auth-token)
     return ctx.user ?? null;
   }),
+
   login: publicProcedure
     .input(
       z.object({
         name: NameSchema,
-        password: PasswordSchema, // expected to be md5 hashed on client (as current UI does)
+        password: PasswordSchema,
         captcha: CaptchaSchema.optional(),
       }),
     )
     .mutation(async ({ input }) => {
       const { name, password } = input;
       // Find user by name and password (already md5 hashed client-side)
-      const user = await prisma.user.findFirst({ where: { name, password } });
+      const users = await db.tables.user.select({ name, password });
+      const user = users[0];
       if (!user) {
         throw new Error("用户名或密码不正确");
       }
       // Issue token and persist
       const token = crypto.randomUUID();
-      await prisma.token.create({ data: { content: token, userId: user.id } });
+      await db.tables.token.insert({ content: token, userId: user.id } as any);
       return { token };
     }),
 
   logout: publicProcedure
-    .input(
-      z.object({ token: z.string().min(1) }),
-    )
+    .input(z.object({ token: z.string().min(1) }))
     .mutation(async ({ input }) => {
       const { token } = input;
-      await prisma.token.deleteMany({ where: { content: token } });
+      await db.tables.token.delete({ content: token });
       return { success: true };
     }),
 });

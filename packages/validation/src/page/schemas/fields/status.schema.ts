@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { PageStatus } from ".prisma/client";
+import { enumFrom, enumWithDefault } from "../../../schemas/enum.helpers";
+import { PAGE_STATUS } from "@honeycomb/db";
 
-const PageStatusEnum = z.nativeEnum(PageStatus);
+const PageStatusEnum = enumFrom(PAGE_STATUS);
 
-export const StatusSchema = PageStatusEnum.default(PageStatus.TO_AUDIT);
+export const StatusSchema = enumWithDefault(PAGE_STATUS, "TO_AUDIT");

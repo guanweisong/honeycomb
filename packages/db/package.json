@@ -3,5 +3,10 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "type": "module",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@libsql/client": "^0.15.15",
+    "bson": "^6.10.4",
+    "drizzle-orm": "^0.44.5"
+  }
 }
