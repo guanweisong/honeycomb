@@ -18,7 +18,7 @@ const Links = async (props: LinksProps) => {
   const t = await getTranslations("Link");
   const [result, setting] = await Promise.all([
     LinkServer.index({
-      limit: 9999,
+      limit: 999,
       status: [LinkStatus.ENABLE],
     }),
     SettingServer.indexSetting(),

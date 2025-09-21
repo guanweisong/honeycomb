@@ -17,26 +17,18 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 const Page = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [detail, setDetail] = useState<PageEntity>();
   const formRef = useRef<DynamicFormRef>(null);
   const submitStatusRef = useRef<PageStatus>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const id = searchParams.get("id");
 
-  const detailQuery = trpc.page.detail.useQuery(
+  const { data: detail, refetch } = trpc.page.detail.useQuery(
     { id: id as string },
     {
       enabled: !!id,
-      onSuccess: (data) => {
-        setDetail(data as any);
-      },
     },
   );
-
-  useEffect(() => {
-    if (!id) setDetail(undefined);
-  }, [id]);
 
   useEffect(() => {
     if (detail) {
@@ -48,6 +40,7 @@ const Page = () => {
 
   const createPage = trpc.page.create.useMutation();
   const updatePage = trpc.page.update.useMutation();
+
   const handleSubmit = async (
     values: Partial<PageEntity>,
     status: PageStatus,
@@ -60,7 +53,7 @@ const Page = () => {
           .mutateAsync({ id: detail.id, data: data as any })
           .then(() => {
             toast.success("更新成功");
-            detailQuery.refetch();
+            refetch();
           })
           .finally(() => setLoading(false));
       } else {
@@ -168,7 +161,7 @@ const Page = () => {
           handleSubmit(values, status);
         }}
       />
-      <div className="flex gap-1 mt-3">{getBtns()}</div>
+      <div className="flex justify-end gap-3 mt-3">{getBtns()}</div>
     </>
   );
 };

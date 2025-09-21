@@ -10,7 +10,6 @@ import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.sc
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { inArray } from "drizzle-orm";
 
 export const tagRouter = router({
   index: publicProcedure

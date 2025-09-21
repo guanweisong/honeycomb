@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Badge } from "@honeycomb/ui/components/badge";
 import { Button } from "@honeycomb/ui/components/button";
@@ -17,27 +17,23 @@ import {
   CommandEmpty,
 } from "@honeycomb/ui/components/command";
 import { X, Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
-
-import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
-import type { PostEntity, TagReadOnly } from "../../../types/post.entity";
+import type { TagReadOnly } from "../../../types/post.entity";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
-import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 
 export interface MultiTagProps {
-  name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles";
-  detail?: PostEntity;
+  name:
+    | "galleryStyleIds"
+    | "movieDirectorIds"
+    | "movieActorIds"
+    | "movieStyleIds";
   title: string;
-  onTagsChange: (
-    name: MultiTagProps["name"],
-    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
-  ) => void;
 }
 
-const MultiTag = (props: MultiTagProps) => {
-  const { name, detail, title, onTagsChange } = props;
-  const { control, setValue } = useFormContext();
+const MultiTag = ({ name, title }: MultiTagProps) => {
+  const { control, setValue, watch } = useFormContext();
+  const selectedIds: string[] = watch(name) ?? [];
 
   const [input, setInput] = useState("");
   const [options, setOptions] = useState<TagReadOnly[]>([]);
@@ -47,23 +43,21 @@ const MultiTag = (props: MultiTagProps) => {
   const [searchParams, setSearchParams] = useState<any>({});
   const listQuery = trpc.tag.index.useQuery(searchParams);
 
-  const [modalProps, setModalProps] = useState<{
-    open: boolean;
-  }>({
+  const [modalProps, setModalProps] = useState<{ open: boolean }>({
     open: false,
   });
 
-  const getTags = (): TagReadOnly[] => detail?.[name] ?? [];
-
   const removeTag = (id: string) => {
-    const filtered = getTags().filter((tag) => tag.id !== id);
-    onTagsChange(name, filtered);
+    setValue(
+      name,
+      selectedIds.filter((tagId) => tagId !== id),
+      { shouldDirty: true },
+    );
   };
 
   const addTag = (tag: TagReadOnly) => {
-    if (getTags().some((t) => t.id === tag.id)) return;
-    const newTags = [...getTags(), tag];
-    onTagsChange(name, newTags);
+    if (selectedIds.includes(tag.id)) return;
+    setValue(name, [...selectedIds, tag.id], { shouldDirty: true });
     setInput("");
     setOpen(false);
   };
@@ -77,8 +71,6 @@ const MultiTag = (props: MultiTagProps) => {
         setSearchParams({ name: value });
         const { data } = await listQuery.refetch();
         setOptions((data as any)?.list ?? []);
-      } catch (e) {
-        // ignore
       } finally {
         setLoading(false);
       }
@@ -94,23 +86,25 @@ const MultiTag = (props: MultiTagProps) => {
         render={() => (
           <>
             <div className="flex flex-wrap gap-2 mb-2">
-              {getTags().map((tag) => (
-                <Badge
-                  key={tag.id}
-                  variant="secondary"
-                  className="gap-1 text-sm"
-                >
-                  {tag.name.zh}
-                  <Button
-                    onClick={() => removeTag(tag.id)}
-                    variant="ghost"
-                    size={"icon"}
-                    className="size-4"
+              {options
+                .filter((opt) => selectedIds.includes(opt.id))
+                .map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="gap-1 text-sm"
                   >
-                    <X className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </Badge>
-              ))}
+                    {tag.name.zh}
+                    <Button
+                      onClick={() => removeTag(tag.id)}
+                      variant="ghost"
+                      size="icon"
+                      className="size-4"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </Badge>
+                ))}
             </div>
             <FormMessage />
           </>
@@ -119,7 +113,7 @@ const MultiTag = (props: MultiTagProps) => {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            <Plus />
+            <Plus className="mr-1" />
             添加
           </Button>
         </PopoverTrigger>
@@ -147,8 +141,8 @@ const MultiTag = (props: MultiTagProps) => {
                       <div className="text-xs px-2 py-1">
                         无匹配，你可以
                         <Button
-                          size={"sm"}
-                          variant={"link"}
+                          size="sm"
+                          variant="link"
                           onClick={() => setModalProps({ open: true })}
                         >
                           新建标签
@@ -164,12 +158,8 @@ const MultiTag = (props: MultiTagProps) => {
       </Popover>
       <AddTagDialog
         {...modalProps}
-        onClose={() =>
-          setModalProps((prevState) => ({ ...prevState, open: false }))
-        }
-        onSuccess={() => {
-          setModalProps({ open: false });
-        }}
+        onClose={() => setModalProps({ open: false })}
+        onSuccess={() => setModalProps({ open: false })}
       />
     </div>
   );

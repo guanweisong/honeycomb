@@ -5,14 +5,12 @@ import PhotoPickerModal from "@/components/PhotoPicker";
 import { ModalType } from "@/types/ModalType";
 import { Button } from "@honeycomb/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import AddCategoryModal, {
   ModalProps,
 } from "../category/components/AddCategoryModal";
-import type { CategoryEntity } from "../category/types/category.entity";
 import { PostStatus } from "../types/PostStatus";
 import { PostType, postTypeOptions } from "../types/PostType";
-import type { PostEntity } from "../types/post.entity";
 import MultiTag from "./components/MultiTag";
 import type { PhotoPickerItemProps } from "./components/PhotoPickerItem";
 import PhotoPickerItem from "./components/PhotoPickerItem";
@@ -33,13 +31,11 @@ const tagMap = {
   movieDirectors: "movieDirectorIds",
   movieActors: "movieActorIds",
   movieStyles: "movieStyleIds",
-};
+} as const;
 
 const PostDetail = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [detail, setDetail] = useState<PostEntity>();
-  const [list, setList] = useState<CategoryEntity[]>([]);
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [modalProps, setModalProps] = useState<ModalProps>();
   const [loading, setLoading] = useState(false);
@@ -53,25 +49,30 @@ const PostDetail = () => {
     },
   });
 
-  const type = (form.watch("type") ?? detail?.type) as PostType;
+  const type = (form.watch("type") as PostType) ?? PostType.ARTICLE;
 
-  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 });
-  useEffect(() => {
-    if (categoryQuery.data) setList((categoryQuery.data as any).list ?? []);
-  }, [categoryQuery.data]);
+  const { data: category } = trpc.category.index.useQuery({ limit: 9999 });
+  const { data: detail, refetch } = trpc.post.detail.useQuery({ id });
+  const createPost = trpc.post.create.useMutation();
+  const updatePost = trpc.post.update.useMutation();
 
+  // 初始化/同步表单数据
   useEffect(() => {
-    if (!id) return;
-    indexDetail({ id });
-    return () => {
-      form.reset();
-      setDetail(undefined);
-    };
-  }, [id]);
+    if (detail) {
+      form.reset({
+        ...detail,
+        galleryStyleIds: detail.galleryStyles?.map((t) => t.id),
+        movieDirectorIds: detail.movieDirectors?.map((t) => t.id),
+        movieActorIds: detail.movieActors?.map((t) => t.id),
+        movieStyleIds: detail.movieStyles?.map((t) => t.id),
+        coverId: detail.cover?.id,
+      });
+    }
+  }, [detail, form]);
 
   const normalizeFormData = (values: any, status: PostStatus) => {
     const data: any = { ...values, status };
-    debugger;
+
     if (
       [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
         data.type,
@@ -82,58 +83,31 @@ const PostDetail = () => {
       return null;
     }
 
-    if (data.cover) {
-      data.coverId = data.cover.id;
-      delete data.cover;
-    }
-
     return data;
   };
-
-  const detailQuery = trpc.post.detail.useQuery(
-    { id: (searchParams.get("id") as string) ?? "" },
-    {
-      enabled: !!id,
-      onSuccess: (res) => {
-        setDetail(res as any);
-        form.reset(res as any);
-      },
-    },
-  );
-
-  const createPost = trpc.post.create.useMutation();
-  const updatePost = trpc.post.update.useMutation();
 
   const handleFormSubmit = (
     status: PostStatus,
     actionType: "create" | "update",
   ) => {
     return form.handleSubmit(
-      (values) => {
+      async (values) => {
         const data = normalizeFormData(values, status);
         if (!data) return;
-        if (actionType === "create") {
-          setLoading(true);
-          return createPost
-            .mutateAsync(data as any)
-            .then((res) => {
-              toast.success("添加成功");
-              router.push(`/post/edit?id=${(res as any).id}`);
-            })
-            .finally(() => {
-              setLoading(false);
-            });
-        } else if (actionType === "update" && detail?.id) {
-          setLoading(true);
-          return updatePost
-            .mutateAsync({ id: detail.id, data: data as any })
-            .then((res) => {
-              toast.success("更新成功");
-              detailQuery.refetch();
-            })
-            .finally(() => {
-              setLoading(false);
-            });
+
+        setLoading(true);
+        try {
+          if (actionType === "create") {
+            const res = await createPost.mutateAsync(data as any);
+            toast.success("添加成功");
+            router.push(`/post/edit?id=${(res as any).id}`);
+          } else if (actionType === "update" && detail?.id) {
+            await updatePost.mutateAsync({ id: detail.id, data: data as any });
+            toast.success("更新成功");
+            refetch();
+          }
+        } finally {
+          setLoading(false);
         }
       },
       (errors) => {
@@ -147,99 +121,89 @@ const PostDetail = () => {
     const isDraft = detail?.status === PostStatus.DRAFT;
     const isPublished = detail?.status === PostStatus.PUBLISHED;
 
-    if (isEdit) {
-      if (isPublished) {
-        return (
-          <>
-            <Button
-              type={"button"}
-              disabled={loading}
-              onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
-            >
-              更新
-            </Button>
-            <Dialog
-              trigger={
-                <Button type="button" variant="secondary" disabled={loading}>
-                  撤回为草稿
-                </Button>
-              }
-              type="danger"
-              title="确定要撤回吗？"
-              onOK={() => handleFormSubmit(PostStatus.DRAFT, "update")}
-            />
-          </>
-        );
-      }
-      if (isDraft) {
-        return (
-          <>
-            <Button
-              type={"button"}
-              disabled={loading}
-              onClick={() => handleFormSubmit(PostStatus.DRAFT, "update")}
-            >
-              保存
-            </Button>
-            <Button
-              type={"button"}
-              disabled={loading}
-              onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
-            >
-              发布
-            </Button>
-          </>
-        );
-      }
-    }
     return (
       <>
-        <Button
-          type={"button"}
-          onClick={() => handleFormSubmit(PostStatus.DRAFT, "create")}
-        >
-          保存草稿
-        </Button>
-        <Button
-          type={"button"}
-          disabled={loading}
-          onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "create")}
-        >
-          发布
-        </Button>
+        {isEdit && isPublished && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
+          >
+            更新
+          </Button>
+        )}
+
+        {isEdit && isPublished && (
+          <Dialog
+            trigger={
+              <Button type="button" variant="secondary" disabled={loading}>
+                撤回为草稿
+              </Button>
+            }
+            type="danger"
+            title="确定要撤回吗？"
+            onOK={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+          />
+        )}
+
+        {isEdit && isDraft && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+          >
+            保存
+          </Button>
+        )}
+
+        {((isEdit && isDraft) || !isEdit) && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() =>
+              handleFormSubmit(
+                PostStatus.PUBLISHED,
+                isEdit ? "update" : "create",
+              )
+            }
+          >
+            发布
+          </Button>
+        )}
+
+        {!isEdit && (
+          <Button
+            type="button"
+            onClick={() => handleFormSubmit(PostStatus.DRAFT, "create")}
+          >
+            保存草稿
+          </Button>
+        )}
       </>
     );
   };
 
   const photoPickerProps: PhotoPickerItemProps = {
-    detail,
-    handlePhotoClear: () => {
-      const { cover, ...rest } = detail as PostEntity;
-      setDetail(rest);
-    },
+    coverId: form.watch("coverId"),
+    handlePhotoClear: () =>
+      form.setValue("coverId", undefined, { shouldDirty: true }),
     openPhotoPicker: () => setShowPhotoPicker(true),
     title: "封面",
     size: "1920*1080",
   };
 
   const onUpdateTags = (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
+    name: keyof typeof tagMap,
     tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
   ) => {
-    setDetail({ ...detail, [name]: tags } as PostEntity);
     form.setValue(
-      // @ts-ignore
       tagMap[name],
-      tags.map((item) => item.id),
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      },
+      tags.map((t) => t.id),
+      { shouldValidate: true, shouldDirty: true },
     );
   };
 
   const tagProps = {
-    detail,
     onTagsChange: onUpdateTags,
   };
 
@@ -296,8 +260,9 @@ const PostDetail = () => {
                 </>
               )}
             </div>
+
             <div className="lg:w-80 lg:ml-8 space-y-4">
-              <div className="flex gap-1 justify-end">{getBtns()}</div>
+              <div className="flex gap-3 justify-end">{getBtns()}</div>
               <DynamicField
                 label="文章类型"
                 name="type"
@@ -308,14 +273,14 @@ const PostDetail = () => {
                 label="分类目录"
                 name="categoryId"
                 type="select"
-                options={list.map((item) => ({
+                options={category?.list?.map((item) => ({
                   label: creatCategoryTitleByDepth(item.title.zh, item),
                   value: item.id ?? "0",
                 }))}
               />
               <Button
                 variant="outline"
-                type={"button"}
+                type="button"
                 onClick={() =>
                   setModalProps({ open: true, type: ModalType.ADD })
                 }
@@ -372,16 +337,12 @@ const PostDetail = () => {
       <PhotoPickerModal
         showPhotoPicker={showPhotoPicker}
         handlePhotoPickerOk={(media) => {
-          setDetail({
-            ...detail,
-            cover: media,
-            coverId: media.id,
-          } as PostEntity);
-          form.setValue("coverId", media.id);
+          form.setValue("coverId", media.id, { shouldDirty: true });
           setShowPhotoPicker(false);
         }}
         handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
       />
+
       <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
     </>
   );
