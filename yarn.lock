@@ -3739,6 +3739,11 @@ drizzle-orm@^0.44.5:
   resolved "https://registry.yarnpkg.com/drizzle-orm/-/drizzle-orm-0.44.5.tgz#e81a470631e95bfd1bf61bd853d013954cd5fa2b"
   integrity sha512-jBe37K7d8ZSKptdKfakQFdeljtu3P2Cbo7tJoJSVZADzIKOBo9IAJPOmMsH2bZl90bZgh8FQlD8BjxXA/zuBkQ==
 
+drizzle-zod@^0.8.3:
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/drizzle-zod/-/drizzle-zod-0.8.3.tgz#8c61aba8216195c7670ea5038b4f38c6ebc3868f"
+  integrity sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==
+
 dunder-proto@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz"
@@ -7195,15 +7200,15 @@ yn@3.1.1:
   resolved "https://registry.npmjs.org/yn/-/yn-3.1.1.tgz"
   integrity sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==
 
-zod@^3.21.4:
-  version "3.24.2"
-  resolved "https://registry.npmjs.org/zod/-/zod-3.24.2.tgz"
-  integrity sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==
-
 zod@^3.25.56:
   version "3.25.56"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.25.56.tgz#4cff0340b7cd3778314dac1e74d6a663ffeef914"
   integrity sha512-rd6eEF3BTNvQnR2e2wwolfTmUTnp70aUTqr0oaGbHifzC3BKJsoV+Gat8vxUMR1hwOKBs6El+qWehrHbCpW6SQ==
+
+zod@^4.1.11:
+  version "4.1.11"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.1.11.tgz#4aab62f76cfd45e6c6166519ba31b2ea019f75f5"
+  integrity sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==
 
 zustand@^4.5.0:
   version "4.5.6"

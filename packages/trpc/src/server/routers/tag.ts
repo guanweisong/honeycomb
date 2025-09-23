@@ -6,7 +6,7 @@ import {
 import { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
-import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.schema";
+import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
@@ -15,27 +15,26 @@ export const tagRouter = router({
   index: publicProcedure
     .input(TagListQuerySchema.default({}))
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, name, ...rest } = input as any;
+      const { page, limit, sortField, sortOrder, name, ...rest } = input;
       const where = buildDrizzleWhere(
         schema.tag,
         { ...rest, name },
         ["status"],
         { name },
       );
-
       const list = await ctx.db.tables.tag.select({
-        whereExpr: where as any,
+        whereExpr: where,
         orderBy: { field: sortField, direction: sortOrder },
         limit,
         offset: (page - 1) * limit,
       });
-      const total = await ctx.db.tables.tag.count(undefined, where as any);
+      const total = await ctx.db.tables.tag.count(undefined, where);
 
       return { list, total };
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(TagCreateSchema)
+    .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db.tables.tag.insert(input as any);
       return input;

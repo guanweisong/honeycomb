@@ -9,6 +9,6 @@ export const CommentListQuerySchema = PaginationQuerySchema.extend({
   content: ContentSchema.optional(),
   status: z.union([StatusSchema.array(), StatusSchema]).optional(),
   email: EmailSchema.optional(),
-  ip: z.string().ip().optional(),
+  ip: z.string().optional(),
   author: AuthorSchema.optional(),
 });

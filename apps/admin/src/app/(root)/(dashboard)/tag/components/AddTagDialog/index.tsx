@@ -1,7 +1,7 @@
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
-import { TagCreateSchema } from "@honeycomb/validation/tag/schemas/tag.create.schema";
+import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
 import { toast } from "sonner";
@@ -37,7 +37,10 @@ export default function AddTagDialog(props: AddTagDialogProps) {
         break;
       case ModalType.EDIT:
         try {
-          await updateTag.mutateAsync({ id: record?.id as string, data: values });
+          await updateTag.mutateAsync({
+            id: record?.id as string,
+            data: values,
+          });
           onSuccess?.();
           toast.success("更新成功");
           onClose?.();
@@ -56,7 +59,7 @@ export default function AddTagDialog(props: AddTagDialogProps) {
     >
       <DynamicForm
         defaultValues={record}
-        schema={type === ModalType.EDIT ? TagUpdateSchema : TagCreateSchema}
+        schema={type === ModalType.EDIT ? TagUpdateSchema : TagInsertSchema}
         fields={[
           {
             label: "标签名称",

@@ -1,3 +1,4 @@
-import { TagCreateSchema } from "./tag.create.schema";
+import { createUpdateSchema } from "drizzle-zod";
+import { tag } from "@honeycomb/db/src/schema";
 
-export const TagUpdateSchema = TagCreateSchema.partial();
+export const TagUpdateSchema = createUpdateSchema(tag);
