@@ -1,7 +1,6 @@
 import { db, schema } from "@honeycomb/db";
 import { eq } from "drizzle-orm";
 
-// 最小 User 类型，仅满足本项目上下文使用（id 与 level）
 export interface User {
   id: string;
   level: string; // "ADMIN" | "EDITOR" | "GUEST"
@@ -17,16 +16,18 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
   const token = req.headers.get("x-auth-token");
   if (!token) return null as any;
 
-  const tokenInfo = await db.tables.token.select({
-    whereExpr: eq(schema.token.content, token),
-    limit: 1,
-  });
+  const tokenInfo = await db
+    .select()
+    .from(schema.token)
+    .where(eq(schema.token.content, token))
+    .limit(1);
   if (!tokenInfo.length) return null as any;
 
-  const users = await db.tables.user.select({
-    whereExpr: eq(schema.user.id, tokenInfo[0].userId!),
-    limit: 1,
-  });
+  const users = await db
+    .select()
+    .from(schema.user)
+    .where(eq(schema.user.id, tokenInfo[0].userId!))
+    .limit(1);
   if (!users.length) return null;
   const u = users[0] as any;
   return { id: u.id, level: u.level, name: u.name } as User;

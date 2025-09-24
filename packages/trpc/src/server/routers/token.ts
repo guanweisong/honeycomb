@@ -1,6 +1,8 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
+import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import * as schema from "@honeycomb/db/src/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 export const tokenRouter = router({
   index: protectedProcedure(["ADMIN"])
@@ -9,14 +11,29 @@ export const tokenRouter = router({
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
       const where = rest;
 
-      const list = await ctx.db.tables.token.select({
-        whereExpr: where as any,
-        orderBy: { field: sortField, direction: sortOrder },
-        limit,
-        offset: (page - 1) * limit,
-      });
+      // 构建排序条件
+      const orderByClause = buildDrizzleOrderBy(
+        schema.token,
+        sortField,
+        sortOrder as 'asc' | 'desc',
+        'createdAt'
+      );
 
-      const total = await ctx.db.tables.token.count(undefined, where as any);
+      // 查询分页数据
+      const list = await ctx.db
+        .select()
+        .from(schema.token)
+        .where(where)
+        .orderBy(orderByClause as any)
+        .limit(limit)
+        .offset((page - 1) * limit);
+
+      // 查询总数
+      const [countResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as('count') })
+        .from(schema.token)
+        .where(where);
+      const total = Number(countResult?.count) || 0;
 
       return { list, total };
     }),

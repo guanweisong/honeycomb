@@ -3,16 +3,17 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import Tools, { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
+import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostCreateSchema } from "@honeycomb/validation/post/schemas/post.create.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
+import * as schema from "@honeycomb/db/src/schema";
+import { and, eq, inArray, sql, or, like } from "drizzle-orm";
+import * as Tools from "@honeycomb/trpc/server/libs/tools";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
-import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, like, or } from "drizzle-orm";
 
 export const postRouter = router({
   index: publicProcedure
@@ -40,9 +41,15 @@ export const postRouter = router({
 
       // 分类树过滤
       if (categoryId) {
-        const allCategories = await ctx.db.tables.category.select({});
-        const catList = Tools.sonsTree(allCategories, categoryId);
-        const ids = [categoryId, ...catList.map((c: any) => c.id)];
+        const allCategories = await ctx.db
+          .select()
+          .from(schema.category);
+        // 使用简单的子分类查询替代 sonsTree
+        const subCategories = await ctx.db
+          .select()
+          .from(schema.category)
+          .where(eq(schema.category.parent, categoryId));
+        const ids = [categoryId, ...subCategories.map((c: any) => c.id)];
         const catClause = or(
           ...ids.map((id: string) => eq(schema.post.categoryId, id)),
         );
@@ -54,10 +61,11 @@ export const postRouter = router({
         const tagWhere = buildDrizzleWhere(schema.tag, { name: tagName }, [], {
           name: tagName,
         });
-        const tags = await ctx.db.tables.tag.select({
-          whereExpr: tagWhere as any,
-          limit: 1,
-        });
+        const tags = await ctx.db
+          .select()
+          .from(schema.tag)
+          .where(tagWhere as any)
+          .limit(1);
         if (!tags.length) {
           return { list: [], total: 0 };
         }
@@ -74,20 +82,29 @@ export const postRouter = router({
 
       // 作者名过滤 -> 查 user 再比对 authorId
       if (userName) {
-        const users = await ctx.db.tables.user.select({
-          name: userName as string,
-        });
+        const users = await ctx.db
+          .select()
+          .from(schema.user)
+          .where(eq(schema.user.name, userName as string));
         if (!users.length) return { list: [], total: 0 };
         const authorClause = eq(schema.post.authorId, users[0].id);
         where = where ? and(where, authorClause) : authorClause;
       }
 
-      const list = await ctx.db.tables.post.select({
-        whereExpr: where as any,
-        orderBy: { field: sortField, direction: sortOrder },
-        limit,
-        offset: (page - 1) * limit,
-      });
+      const orderByClause = buildDrizzleOrderBy(
+        schema.post,
+        sortField,
+        sortOrder as "asc" | "desc",
+        "createdAt",
+      );
+
+      const list = await ctx.db
+        .select()
+        .from(schema.post)
+        .where(where)
+        .orderBy(orderByClause as any)
+        .limit(limit)
+        .offset((page - 1) * limit);
 
       // 批量加载关联数据以模拟 include
       const categoryIds = Array.from(
@@ -105,24 +122,28 @@ export const postRouter = router({
 
       const [categories, authors, covers, mediaList] = await Promise.all([
         categoryIds.length
-          ? ctx.db.tables.category.select({
-              whereExpr: inArray(schema.category.id, categoryIds),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.category)
+              .where(inArray(schema.category.id, categoryIds as any))
           : Promise.resolve([] as any[]),
         authorIds.length
-          ? ctx.db.tables.user.select({
-              whereExpr: inArray(schema.user.id, authorIds),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.user)
+              .where(inArray(schema.user.id, authorIds as any))
           : Promise.resolve([] as any[]),
         coverIds.length
-          ? ctx.db.tables.media.select({
-              whereExpr: inArray(schema.media.id, coverIds),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.media)
+              .where(inArray(schema.media.id, coverIds as any))
           : Promise.resolve([] as any[]),
         mediaIds.length
-          ? await ctx.db.tables.media.select({
-              whereExpr: inArray(schema.media.id, mediaIds),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.media)
+              .where(inArray(schema.media.id, mediaIds as any))
           : [],
       ]);
       const categoryMap = Object.fromEntries(
@@ -135,7 +156,7 @@ export const postRouter = router({
       const mapped = list.map((item: any) => {
         const { content: _content, ...rest } = item;
         return {
-          ...rest,
+          ...item,
           category: item.categoryId
             ? (categoryMap[item.categoryId] ?? null)
             : null,
@@ -145,62 +166,116 @@ export const postRouter = router({
         } as any;
       });
 
-      const count = await ctx.db.tables.post.count(undefined, where as any);
+      const [countResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.post)
+        .where(where);
+      const total = Number(countResult?.count) || 0;
 
-      return { list: mapped, total: count };
+      return { list: mapped, total };
     }),
 
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .output(z.any())
     .query(async ({ input, ctx }) => {
-      const result = await ctx.db.tables.post.select({
-        id: input.id as string,
-      });
-      const item = result[0] as any;
+      const [item] = await ctx.db
+        .select()
+        .from(schema.post)
+        .where(eq(schema.post.id, input.id as string))
+        .limit(1);
+
       if (!item) return null;
-      const [category, author, cover] = await Promise.all([
-        item.categoryId
-          ? ctx.db.tables.category.select({ id: item.categoryId as string })
-          : Promise.resolve([] as any[]),
-        item.authorId
-          ? ctx.db.tables.user.select({ id: item.authorId as string })
-          : Promise.resolve([] as any[]),
-        item.coverId
-          ? ctx.db.tables.media.select({ id: item.coverId as string })
-          : Promise.resolve([] as any[]),
-      ]);
-      const c = category[0] as any;
-      const a = author[0] as any;
-      const m = cover[0] as any;
+
+      // 获取分类信息
+      let category = null;
+      if (item.categoryId) {
+        [category] = await ctx.db
+          .select()
+          .from(schema.category)
+          .where(eq(schema.category.id, item.categoryId))
+          .limit(1);
+      }
+
+      // 获取作者信息
+      let author = null;
+      if (item.authorId) {
+        [author] = await ctx.db
+          .select({
+            id: schema.user.id,
+            name: schema.user.name,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, item.authorId))
+          .limit(1);
+      }
+
+      // 获取媒体信息
+      let cover = null;
+      if (item.coverId) {
+        [cover] = await ctx.db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.id, item.coverId))
+          .limit(1);
+      }
+
+      let thumbnail = null;
+      if (item.coverId) {
+        [thumbnail] = await ctx.db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.id, item.coverId))
+          .limit(1);
+      }
+
       return {
         ...item,
-        category: c ? { id: c.id, title: c.title } : null,
-        author: a ? { id: a.id, name: a.name } : null,
-        cover: m ? { id: m.id, url: m.url, color: m.color } : null,
-      } as any;
+        category,
+        author,
+        cover,
+        thumbnail,
+      };
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostCreateSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      await ctx.db.tables.post.insert({ ...(input as any), authorId } as any);
-      return { ...(input as any), authorId } as any;
+      const now = new Date().toISOString();
+      const [newPost] = await ctx.db
+        .insert(schema.post)
+        .values({
+          ...input,
+          authorId,
+          createdAt: now,
+          updatedAt: now,
+        } as any)
+        .returning();
+      return newPost;
     }),
 
   destroy: protectedProcedure(["ADMIN", "EDITOR"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.tables.post.deleteByIds(input.ids as string[]);
+      await ctx.db
+        .delete(schema.post)
+        .where(inArray(schema.post.id, input.ids as string[]));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(UpdateSchema(PostUpdateSchema))
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as any;
-      await ctx.db.tables.post.update(data as any, { id });
-      return { id, ...data };
+      const { id, data } = input as { id: string; data: any };
+      const [updatedPost] = await ctx.db
+        .update(schema.post)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        } as any)
+        .where(eq(schema.post.id, id))
+        .returning();
+      return updatedPost;
     }),
 });

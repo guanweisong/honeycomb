@@ -3,16 +3,25 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
+import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
+import * as schema from "@honeycomb/db/src/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 export const menuRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
-    const list = await ctx.db.tables.menu.select({
-      orderBy: { field: "power", direction: "asc" },
-    });
+    const where = buildDrizzleWhere(schema.menu, {}, [], {});
+    const orderByClause = buildDrizzleOrderBy(schema.menu, "power", "asc", "sort");
+
+    const list = await ctx.db
+      .select()
+      .from(schema.menu)
+      .where(where)
+      .orderBy(orderByClause as any);
+
     const [categoryList, pageList] = await Promise.all([
-      ctx.db.tables.category.select({}),
-      ctx.db.tables.page.select({}),
+      ctx.db.select().from(schema.category),
+      ctx.db.select().from(schema.page),
     ]);
 
     list.forEach((m: any) => {
@@ -34,16 +43,25 @@ export const menuRouter = router({
       }
     });
 
-    const count = await ctx.db.tables.menu.count({});
-    return { list, total: count };
+    const [countResult] = await ctx.db
+      .select({ count: sql<number>`count(*)`.as('count') })
+      .from(schema.menu)
+      .where(where);
+    const total = Number(countResult?.count) || 0;
+
+    return { list, total };
   }),
 
   // 覆盖式更新：清空并重建
   saveAll: protectedProcedure(["ADMIN", "EDITOR"])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.tables.menu.deleteAll();
-      await ctx.db.tables.menu.bulkInsert(input as any);
-      return { count: (input as any[]).length } as any;
+      await ctx.db.delete(schema.menu).where(eq(schema.menu.id, inArray(input.map((item) => item.id))));
+      const now = new Date().toISOString();
+      const newMenu = await ctx.db
+        .insert(schema.menu)
+        .values(input.map((item) => ({ ...item, createdAt: now, updatedAt: now })))
+        .returning();
+      return { count: newMenu.length };
     }),
 });

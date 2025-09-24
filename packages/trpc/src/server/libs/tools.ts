@@ -70,7 +70,7 @@ class Tools {
 }
 
 // ===== Drizzle Helpers =====
-import { and, inArray, like, or, SQL } from "drizzle-orm";
+import { and, inArray, like, or, SQL, sql } from "drizzle-orm";
 
 export function buildDrizzleWhere<T extends Record<string, any>>(
   table: T,
@@ -113,6 +113,30 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
   if (!clauses.length) return undefined;
   if (clauses.length === 1) return clauses[0] as unknown as SQL;
   return and(...(clauses as any));
+}
+
+/**
+ * 构建 Drizzle 的排序条件
+ * @param table 表对象
+ * @param sortField 排序字段
+ * @param sortOrder 排序方向 'asc' | 'desc'
+ * @param defaultField 默认排序字段
+ * @returns SQL 表达式
+ */
+export function buildDrizzleOrderBy<T extends Record<string, any>>(
+  table: T,
+  sortField: string | undefined,
+  sortOrder: 'asc' | 'desc' = 'desc',
+  defaultField: keyof T = 'createdAt'
+): SQL<unknown> {
+  const direction = sortOrder.toLowerCase() === 'asc' ? 'asc' : 'desc';
+  const field = (sortField && table[sortField as keyof T]) || table[defaultField];
+  
+  if (!field) {
+    throw new Error(`Invalid sort field: ${String(sortField)}`);
+  }
+  
+  return sql`${field} ${sql.raw(direction)}`;
 }
 
 export default Tools;

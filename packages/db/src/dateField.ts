@@ -1,18 +1,14 @@
-import { text } from "drizzle-orm/sqlite-core";
+import { customType } from "drizzle-orm/sqlite-core";
 
-export function dateField(name: string, config?: any) {
-  let column = text(name, config);
-  column = column.$type<Date>();
-
-  return {
-    ...column,
-    // 存入数据库时：Date → ISO 字符串
-    mapToDriverValue(value: Date | null) {
-      return value ? value.toISOString() : null;
+export const dateField = (name: string) =>
+  customType<{ data: Date; driverData: string }>({
+    dataType() {
+      return "text"; // SQLite 里存储为 TEXT
     },
-    // 查询出来时：ISO 字符串 → Date
-    mapFromDriverValue(value: string | null) {
-      return value ? new Date(value) : null;
+    toDriver(value: Date): string {
+      return value.toISOString(); // 写入时
     },
-  };
-}
+    fromDriver(value: string): Date {
+      return new Date(value); // 读出时
+    },
+  })(name);

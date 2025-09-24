@@ -3,7 +3,7 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
+import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@honeycomb/validation/comment/schemas/comment.update.schema";
@@ -23,12 +23,30 @@ export const commentRouter = router({
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
       const where = buildDrizzleWhere(schema.comment, rest, ["status"]);
-      const list = await ctx.db.tables.comment.select({
-        whereExpr: where as any,
-        orderBy: { field: sortField, direction: sortOrder },
-        limit,
-        offset: (page - 1) * limit,
-      });
+
+      // 构建排序条件
+      const orderByClause = buildDrizzleOrderBy(
+        schema.comment,
+        sortField,
+        sortOrder as 'asc' | 'desc',
+        'createdAt'
+      );
+
+      // 查询分页数据
+      const list = await ctx.db
+        .select()
+        .from(schema.comment)
+        .where(where)
+        .orderBy(orderByClause as any)
+        .limit(limit)
+        .offset((page - 1) * limit);
+
+      // 查询总数
+      const [countResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as('count') })
+        .from(schema.comment)
+        .where(where);
+      const total = Number(countResult?.count) || 0;
 
       // attach minimal refs
       const postIds = Array.from(
@@ -39,14 +57,16 @@ export const commentRouter = router({
       );
       const [posts, pages] = await Promise.all([
         postIds.length
-          ? ctx.db.tables.post.select({
-              whereExpr: inArray(schema.post.id, postIds as any),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.post)
+              .where(inArray(schema.post.id, postIds as any))
           : Promise.resolve([] as any[]),
         pageIds.length
-          ? ctx.db.tables.page.select({
-              whereExpr: inArray(schema.page.id, pageIds as any),
-            })
+          ? ctx.db
+              .select()
+              .from(schema.page)
+              .where(inArray(schema.page.id, pageIds as any))
           : Promise.resolve([] as any[]),
       ]);
       const postMap = Object.fromEntries(posts.map((p: any) => [p.id, p]));
@@ -57,9 +77,7 @@ export const commentRouter = router({
         page: c.pageId ? (pageMap[c.pageId] ?? null) : null,
       }));
 
-      const count = await ctx.db.tables.comment.count(undefined, where as any);
-
-      return { list: listWithRefs, total: count };
+      return { list: listWithRefs, total };
     }),
 
   // 针对某个资源(id + type)获取树形评论
@@ -81,10 +99,11 @@ export const commentRouter = router({
           where = and(where, eq(schema.comment.customId, input.id));
           break;
       }
-      const result = await ctx.db.tables.comment.select({
-        whereExpr: where,
-        orderBy: { field: "createdAt", direction: "asc" },
-      });
+      const result = await ctx.db
+        .select()
+        .from(schema.comment)
+        .where(where)
+        .orderBy({ field: "createdAt", direction: "asc" });
 
       const list = result.length
         ? listToTree(
@@ -97,22 +116,36 @@ export const commentRouter = router({
           )
         : [];
 
-      const count = await ctx.db.tables.comment.count(undefined, where);
-      return { list, total: count };
+      const [countResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as('count') })
+        .from(schema.comment)
+        .where(where);
+      const total = Number(countResult?.count) || 0;
+
+      return { list, total };
     }),
 
   update: protectedProcedure(["ADMIN"])
     .input(UpdateSchema(CommentUpdateSchema))
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as any;
-      await ctx.db.tables.comment.update(data as any, { id });
-      return { id, ...data };
+      const { id, data } = input as { id: string; data: any };
+      const [updatedComment] = await ctx.db
+        .update(schema.comment)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        } as any)
+        .where(eq(schema.comment.id, id))
+        .returning();
+      return updatedComment;
     }),
 
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.tables.comment.deleteByIds(input.ids as string[]);
+      await ctx.db
+        .delete(schema.comment)
+        .where(inArray(schema.comment.id, input.ids as string[]));
       return { success: true };
     }),
 });

@@ -3,13 +3,17 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 export const tagRouter = router({
   index: publicProcedure
@@ -22,13 +26,29 @@ export const tagRouter = router({
         ["status"],
         { name },
       );
-      const list = await ctx.db.tables.tag.select({
-        whereExpr: where,
-        orderBy: { field: sortField, direction: sortOrder },
-        limit,
-        offset: (page - 1) * limit,
-      });
-      const total = await ctx.db.tables.tag.count(undefined, where);
+      // 构建排序条件
+      const orderByClause = buildDrizzleOrderBy(
+        schema.tag,
+        sortField,
+        sortOrder as "asc" | "desc",
+        "createdAt",
+      );
+
+      // 查询分页数据
+      const list = await ctx.db
+        .select()
+        .from(schema.tag)
+        .where(where)
+        .orderBy(orderByClause as any)
+        .limit(limit)
+        .offset((page - 1) * limit);
+
+      // 查询总数
+      const [countResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.tag)
+        .where(where);
+      const total = Number(countResult?.count) || 0;
 
       return { list, total };
     }),
@@ -36,22 +56,40 @@ export const tagRouter = router({
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.tables.tag.insert(input as any);
-      return input;
+      const now = new Date().toISOString();
+      const [newTag] = await ctx.db
+        .insert(schema.tag)
+        .values({
+          ...input,
+          createdAt: now,
+          updatedAt: now,
+        } as any)
+        .returning();
+      return newTag;
     }),
 
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.tables.tag.deleteByIds(input.ids as string[]);
+      await ctx.db
+        .delete(schema.tag)
+        .where(inArray(schema.tag.id, input.ids as string[]));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(UpdateSchema(TagUpdateSchema))
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as any;
-      await ctx.db.tables.tag.update(data as any, { id });
-      return { id, ...data };
+      const { id, data } = input as { id: string; data: any };
+      const now = new Date().toISOString();
+      const [updatedTag] = await ctx.db
+        .update(schema.tag)
+        .set({
+          ...data,
+          updatedAt: now,
+        } as any)
+        .where(eq(schema.tag.id, id))
+        .returning();
+      return updatedTag;
     }),
 });
