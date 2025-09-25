@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { Form } from "@honeycomb/ui/components/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PostCreateSchema } from "@honeycomb/validation/post/schemas/post.create.schema";
+import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
 import { DynamicField } from "@honeycomb/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/utils/help";
@@ -43,7 +43,7 @@ const PostDetail = () => {
   const id = searchParams.get("id");
 
   const form = useForm({
-    resolver: zodResolver(id ? PostUpdateSchema : PostCreateSchema),
+    resolver: zodResolver(id ? PostUpdateSchema : PostInsertSchema),
     defaultValues: {
       type: PostType.ARTICLE,
     },

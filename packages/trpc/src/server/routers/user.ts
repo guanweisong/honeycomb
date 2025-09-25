@@ -3,14 +3,16 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.list.query.schema";
-import { UserCreateSchema } from "@honeycomb/validation/user/schemas/user.create.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 export const userRouter = router({
   index: publicProcedure
@@ -23,8 +25,8 @@ export const userRouter = router({
       const orderByClause = buildDrizzleOrderBy(
         schema.user,
         sortField,
-        sortOrder as 'asc' | 'desc',
-        'createdAt'
+        sortOrder as "asc" | "desc",
+        "createdAt",
       );
 
       // 查询分页数据
@@ -38,7 +40,7 @@ export const userRouter = router({
 
       // 查询总数
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.user)
         .where(where);
       const total = Number(countResult?.count) || 0;
@@ -47,9 +49,9 @@ export const userRouter = router({
     }),
 
   create: protectedProcedure(["ADMIN"])
-    .input(UserCreateSchema)
+    .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date().toISOString();
+      const now = new Date();
       const [newUser] = await ctx.db
         .insert(schema.user)
         .values({
@@ -71,10 +73,10 @@ export const userRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN"])
-    .input(UpdateSchema(UserUpdateSchema))
+    .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
-      const now = new Date().toISOString();
+      const now = new Date();
       const [updatedUser] = await ctx.db
         .update(schema.user)
         .set({

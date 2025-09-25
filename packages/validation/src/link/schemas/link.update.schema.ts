@@ -1,3 +1,13 @@
-import { LinkCreateSchema } from "./link.create.schema";
+import { createUpdateSchema } from "drizzle-zod";
+import { link } from "@honeycomb/db/src/schema";
 
-export const LinkUpdateSchema = LinkCreateSchema.partial();
+export const LinkUpdateSchema = createUpdateSchema(link)
+  .pick({
+    url: true,
+    status: true,
+    name: true,
+    description: true,
+    logo: true,
+    id: true,
+  })
+  .required({ id: true });

@@ -3,23 +3,25 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@honeycomb/validation/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@honeycomb/validation/comment/schemas/comment.query.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, inArray, and, sql } from "drizzle-orm";
 
 export const commentRouter = router({
   index: publicProcedure
-    .input(CommentListQuerySchema.default({}))
+    .input(CommentListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
       const where = buildDrizzleWhere(schema.comment, rest, ["status"]);
@@ -28,8 +30,8 @@ export const commentRouter = router({
       const orderByClause = buildDrizzleOrderBy(
         schema.comment,
         sortField,
-        sortOrder as 'asc' | 'desc',
-        'createdAt'
+        sortOrder as "asc" | "desc",
+        "createdAt",
       );
 
       // 查询分页数据
@@ -43,7 +45,7 @@ export const commentRouter = router({
 
       // 查询总数
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.comment)
         .where(where);
       const total = Number(countResult?.count) || 0;
@@ -117,7 +119,7 @@ export const commentRouter = router({
         : [];
 
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.comment)
         .where(where);
       const total = Number(countResult?.count) || 0;
@@ -126,7 +128,7 @@ export const commentRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN"])
-    .input(UpdateSchema(CommentUpdateSchema))
+    .input(CommentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
       const [updatedComment] = await ctx.db

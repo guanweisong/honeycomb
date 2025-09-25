@@ -4,7 +4,6 @@ import {
   router,
 } from "@honeycomb/trpc/server/core";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
@@ -23,10 +22,10 @@ export const settingRouter = router({
   }),
 
   update: protectedProcedure(["ADMIN"])
-    .input(UpdateSchema(SettingUpdateSchema))
+    .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
-      const now = new Date().toISOString();
+      const now = new Date();
       const [updatedSetting] = await ctx.db
         .update(schema.setting)
         .set({

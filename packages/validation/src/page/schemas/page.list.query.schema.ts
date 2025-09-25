@@ -1,11 +1,8 @@
 import { PaginationQuerySchema } from "../../schemas/pagination.query.schema";
-import { TitleSchema } from "./fields/title.schema";
-import { ContentSchema } from "./fields/content.schema";
-import { StatusSchema } from "./fields/status.schema";
-import { z } from "zod";
+import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert.schema";
 
 export const PageListQuerySchema = PaginationQuerySchema.extend({
-  title: TitleSchema.optional(),
-  content: ContentSchema.optional(),
-  status: z.union([StatusSchema.array(), StatusSchema]).optional(),
+  title: PageInsertSchema.shape.title.optional(),
+  content: PageInsertSchema.shape.content.optional(),
+  status: PageInsertSchema.shape.status.optional(),
 });

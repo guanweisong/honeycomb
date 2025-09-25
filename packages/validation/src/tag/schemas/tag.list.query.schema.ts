@@ -1,6 +1,6 @@
-import { PaginationQuerySchema } from "../../schemas/pagination.query.schema";
-import { TagNameSchema } from "./fields/tag.name.schema";
+import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
+import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: TagNameSchema.optional(),
+  name: TagUpdateSchema.shape.name.optional(),
 });

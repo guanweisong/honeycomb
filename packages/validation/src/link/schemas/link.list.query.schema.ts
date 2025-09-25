@@ -1,13 +1,9 @@
-import { PaginationQuerySchema } from "../../schemas/pagination.query.schema";
-import { LinkNameSchema } from "./fields/link.name.schema";
-import { UrlSchema } from "../../schemas/fields/url.schema";
-import { DescriptionSchema } from "./fields/description.schema";
-import { StatusSchema } from "./fields/status.schema";
-import { z } from "zod";
+import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
+import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
 
 export const LinkListQuerySchema = PaginationQuerySchema.extend({
-  name: LinkNameSchema.optional(),
-  url: UrlSchema.optional(),
-  description: DescriptionSchema.optional(),
-  status: z.union([StatusSchema.array(), StatusSchema]).optional(),
+  name: LinkInsertSchema.shape.name,
+  url: LinkInsertSchema.shape.url,
+  description: LinkInsertSchema.shape.description,
+  status: LinkInsertSchema.shape.status,
 });

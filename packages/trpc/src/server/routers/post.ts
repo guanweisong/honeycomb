@@ -3,21 +3,22 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
-import { PostCreateSchema } from "@honeycomb/validation/post/schemas/post.create.schema";
+import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { and, eq, inArray, sql, or, like } from "drizzle-orm";
-import * as Tools from "@honeycomb/trpc/server/libs/tools";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 
 export const postRouter = router({
   index: publicProcedure
-    .input(PostListQuerySchema.default({}))
+    .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
       const {
         page,
@@ -41,9 +42,7 @@ export const postRouter = router({
 
       // 分类树过滤
       if (categoryId) {
-        const allCategories = await ctx.db
-          .select()
-          .from(schema.category);
+        const allCategories = await ctx.db.select().from(schema.category);
         // 使用简单的子分类查询替代 sonsTree
         const subCategories = await ctx.db
           .select()
@@ -239,10 +238,10 @@ export const postRouter = router({
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(PostCreateSchema)
+    .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const now = new Date().toISOString();
+      const now = new Date();
       const [newPost] = await ctx.db
         .insert(schema.post)
         .values({
@@ -265,7 +264,7 @@ export const postRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(UpdateSchema(PostUpdateSchema))
+    .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
       const [updatedPost] = await ctx.db

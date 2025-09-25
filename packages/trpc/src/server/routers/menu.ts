@@ -3,15 +3,23 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 export const menuRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
     const where = buildDrizzleWhere(schema.menu, {}, [], {});
-    const orderByClause = buildDrizzleOrderBy(schema.menu, "power", "asc", "sort");
+    const orderByClause = buildDrizzleOrderBy(
+      schema.menu,
+      "power",
+      "asc",
+      "sort",
+    );
 
     const list = await ctx.db
       .select()
@@ -44,7 +52,7 @@ export const menuRouter = router({
     });
 
     const [countResult] = await ctx.db
-      .select({ count: sql<number>`count(*)`.as('count') })
+      .select({ count: sql<number>`count(*)`.as("count") })
       .from(schema.menu)
       .where(where);
     const total = Number(countResult?.count) || 0;
@@ -56,11 +64,15 @@ export const menuRouter = router({
   saveAll: protectedProcedure(["ADMIN", "EDITOR"])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(schema.menu).where(eq(schema.menu.id, inArray(input.map((item) => item.id))));
-      const now = new Date().toISOString();
+      await ctx.db
+        .delete(schema.menu)
+        .where(eq(schema.menu.id, inArray(input.map((item) => item.id))));
+      const now = new Date();
       const newMenu = await ctx.db
         .insert(schema.menu)
-        .values(input.map((item) => ({ ...item, createdAt: now, updatedAt: now })))
+        .values(
+          input.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
+        )
         .returning();
       return { count: newMenu.length };
     }),

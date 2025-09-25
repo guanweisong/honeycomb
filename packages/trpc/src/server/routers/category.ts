@@ -9,16 +9,15 @@ import {
 } from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { CategoryListQuerySchema } from "@honeycomb/validation/category/schemas/category.list.query.schema";
-import { CategoryCreateSchema } from "@honeycomb/validation/category/schemas/category.create.schema";
+import { CategoryInsertSchema } from "@honeycomb/validation/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import Tools from "@honeycomb/trpc/server/libs/tools";
 
 export const categoryRouter = router({
   index: publicProcedure
-    .input(CategoryListQuerySchema.default({}))
+    .input(CategoryListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { id, page, limit, sortField, sortOrder, title, ...rest } =
         input as any;
@@ -60,9 +59,9 @@ export const categoryRouter = router({
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(CategoryCreateSchema)
+    .input(CategoryInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date().toISOString();
+      const now = new Date();
       const [newCategory] = await ctx.db
         .insert(schema.category)
         .values({
@@ -84,7 +83,7 @@ export const categoryRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(UpdateSchema(CategoryUpdateSchema))
+    .input(CategoryUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
       const [updatedCategory] = await ctx.db

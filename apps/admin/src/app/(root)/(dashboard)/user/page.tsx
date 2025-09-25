@@ -16,7 +16,7 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
-import { UserCreateSchema } from "@honeycomb/validation/user/schemas/user.create.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
@@ -224,7 +224,7 @@ const User = () => {
           schema={
             modalProps.type === ModalType.EDIT
               ? UserUpdateSchema
-              : UserCreateSchema
+              : UserInsertSchema
           }
           fields={[
             {

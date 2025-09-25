@@ -8,10 +8,8 @@ import {
   DynamicForm,
   DynamicFormRef,
 } from "@honeycomb/ui/extended/DynamicForm";
-import { z } from "zod";
-import { NameSchema } from "@honeycomb/validation/user/schemas/fields/name.schema";
-import { PasswordSchema } from "@honeycomb/validation/user/schemas/fields/password.schema";
 import { toast } from "sonner";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 
 const Login = () => {
   const captchaRef = useRef<any>(null);
@@ -77,10 +75,7 @@ const Login = () => {
         <div className="opacity-80 mb-6">游客账号：guest 123456</div>
         <DynamicForm
           ref={form}
-          schema={z.object({
-            name: NameSchema,
-            password: PasswordSchema,
-          })}
+          schema={UserInsertSchema.pick({ name: true, password: true })}
           fields={[
             { name: "name", type: "text", placeholder: "用户名" },
             { name: "password", type: "password", placeholder: "密码" },

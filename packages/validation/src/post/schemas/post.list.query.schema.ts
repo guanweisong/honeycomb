@@ -1,17 +1,12 @@
-import { PaginationQuerySchema } from "../../schemas/pagination.query.schema";
-import { TitleSchema } from "./fields/title.schema";
-import { ContentSchema } from "./fields/content.schema";
-import { StatusSchema } from "./fields/status.schema";
-import { TypeSchema } from "./fields/type.schema";
-import { IdSchema } from "../../schemas/fields/id.schema";
-import { z } from "zod";
+import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
+import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 
 export const PostListQuerySchema = PaginationQuerySchema.extend({
-  title: TitleSchema.optional(),
-  content: ContentSchema.optional(),
-  status: z.union([StatusSchema.array(), StatusSchema]).optional(),
-  type: z.union([TypeSchema.array(), TypeSchema]).optional(),
-  categoryId: IdSchema.optional(),
-  tagName: z.string().optional(),
-  userName: z.string().optional(),
+  title: PostInsertSchema.shape.title.optional(),
+  content: PostInsertSchema.shape.content.optional(),
+  status: PostInsertSchema.shape.status.optional(),
+  type: PostInsertSchema.shape.type.optional(),
+  categoryId: PostInsertSchema.shape.categoryId.optional(),
+  userName: UserInsertSchema.shape.name.optional(),
 });

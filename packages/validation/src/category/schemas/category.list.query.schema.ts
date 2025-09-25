@@ -1,13 +1,8 @@
-import { PaginationQuerySchema } from "../../schemas/pagination.query.schema";
-import { TitleSchema } from "./fields/title.schema";
-import { PathSchema } from "./fields/path.schema";
-import { StatusSchema } from "./fields/status.schema";
-import { IdSchema } from "../../schemas/fields/id.schema";
-import { z } from "zod";
+import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
+import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 
 export const CategoryListQuerySchema = PaginationQuerySchema.extend({
-  id: IdSchema.optional(),
-  title: TitleSchema.optional(),
-  path: PathSchema.optional(),
-  status: z.union([StatusSchema.array(), StatusSchema]).optional(),
+  title: CategoryUpdateSchema.shape.title,
+  path: CategoryUpdateSchema.shape.path,
+  status: CategoryUpdateSchema.shape.status,
 });

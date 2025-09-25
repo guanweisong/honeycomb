@@ -1,3 +1,3 @@
-import { TokenCreateSchema } from "./token.create.schema";
+import { TokenInsertSchema } from "./token.insert.schema";
 
-export const TokenUpdateSchema = TokenCreateSchema.partial();
+export const TokenUpdateSchema = TokenInsertSchema.partial();

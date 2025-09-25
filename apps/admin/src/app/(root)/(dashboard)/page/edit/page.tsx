@@ -9,7 +9,7 @@ import {
   DynamicForm,
   DynamicFormRef,
 } from "@honeycomb/ui/extended/DynamicForm";
-import { PageCreateSchema } from "@honeycomb/validation/page/schemas/page.create.schema";
+import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert.schema";
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
@@ -137,7 +137,7 @@ const Page = () => {
     <>
       <DynamicForm
         ref={formRef}
-        schema={id ? PageUpdateSchema : PageCreateSchema}
+        schema={id ? PageUpdateSchema : PageInsertSchema}
         fields={[
           {
             name: "title",

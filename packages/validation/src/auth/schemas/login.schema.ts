@@ -1,8 +1,7 @@
-import { NameSchema } from "../../user/schemas/fields/name.schema";
-import { PasswordSchema } from "../../user/schemas/fields/password.schema";
-import { CaptchaSchema } from "../../schemas/captcha.schema";
+import { CaptchaSchema } from "@honeycomb/validation/schemas/captcha.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 
 export const LoginSchema = CaptchaSchema.extend({
-  name: NameSchema,
-  password: PasswordSchema,
+  name: UserInsertSchema.shape.name,
+  password: UserInsertSchema.shape.password,
 });

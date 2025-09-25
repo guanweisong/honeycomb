@@ -3,12 +3,14 @@ import {
   publicProcedure,
   router,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@honeycomb/validation/page/schemas/page.list.query.schema";
-import { PageCreateSchema } from "@honeycomb/validation/page/schemas/page.create.schema";
+import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert.schema";
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
@@ -16,7 +18,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 
 export const pageRouter = router({
   index: publicProcedure
-    .input(PageListQuerySchema.default({}))
+    .input(PageListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, title, content, ...rest } =
         input as any;
@@ -30,8 +32,8 @@ export const pageRouter = router({
       const orderByClause = buildDrizzleOrderBy(
         schema.page,
         sortField,
-        sortOrder as 'asc' | 'desc',
-        'createdAt'
+        sortOrder as "asc" | "desc",
+        "createdAt",
       );
 
       // 查询分页数据
@@ -55,7 +57,7 @@ export const pageRouter = router({
           .where(inArray(schema.user.id, authorIds as any));
         authorMap = Object.fromEntries(authors.map((u: any) => [u.id, u]));
       }
-      
+
       // 合并作者信息
       const listWithAuthor = list.map((p: any) => ({
         ...p,
@@ -64,7 +66,7 @@ export const pageRouter = router({
 
       // 查询总数
       const countResult = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.page)
         .where(where);
       const total = Number(countResult[0]?.count) || 0;
@@ -79,29 +81,29 @@ export const pageRouter = router({
         .select()
         .from(schema.page)
         .where(eq(schema.page.id, input.id as string));
-      
+
       if (!item) return null;
-      
+
       let author: any = null;
       if (item.authorId) {
         const [authorData] = await ctx.db
           .select({
             id: schema.user.id,
-            name: schema.user.name
+            name: schema.user.name,
           })
           .from(schema.user)
           .where(eq(schema.user.id, item.authorId));
         author = authorData || null;
       }
-      
+
       return { ...item, author };
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(PageCreateSchema)
+    .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const now = new Date().toISOString();
+      const now = new Date();
       const [newPage] = await ctx.db
         .insert(schema.page)
         .values({
@@ -124,7 +126,7 @@ export const pageRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(UpdateSchema(PageUpdateSchema))
+    .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
       const [updatedPage] = await ctx.db
@@ -135,19 +137,19 @@ export const pageRouter = router({
         } as any) // 使用类型断言解决类型问题
         .where(eq(schema.page.id, id))
         .returning();
-      
+
       let author: any = null;
       if (updatedPage.authorId) {
         const [authorData] = await ctx.db
           .select({
             id: schema.user.id,
-            name: schema.user.name
+            name: schema.user.name,
           })
           .from(schema.user)
           .where(eq(schema.user.id, updatedPage.authorId));
         author = authorData || null;
       }
-      
+
       return { ...updatedPage, author };
     }),
 });

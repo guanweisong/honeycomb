@@ -7,7 +7,7 @@ import { creatCategoryTitleByDepth } from "@/utils/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { CategoryCreateSchema } from "@honeycomb/validation/category/schemas/category.create.schema";
+import { CategoryInsertSchema } from "@honeycomb/validation/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
@@ -82,7 +82,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
         schema={
           modalProps?.type === ModalType.EDIT
             ? CategoryUpdateSchema
-            : CategoryCreateSchema
+            : CategoryInsertSchema
         }
         fields={[
           {

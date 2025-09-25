@@ -1,15 +1,16 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@honeycomb/trpc/server/libs/tools";
 import { MediaListQuerySchema } from "@honeycomb/validation/media/schemas/media.list.query.schema";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
-
-// all queries migrated to proxy, no direct drizzle imports needed here
+import { inArray, sql } from "drizzle-orm";
 
 export const mediaRouter = router({
   index: protectedProcedure(["ADMIN", "EDITOR", "GUEST"])
-    .input(MediaListQuerySchema.default({}))
+    .input(MediaListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
       const where = buildDrizzleWhere(schema.media, rest, []);
@@ -18,8 +19,8 @@ export const mediaRouter = router({
       const orderByClause = buildDrizzleOrderBy(
         schema.media,
         sortField,
-        sortOrder as 'asc' | 'desc',
-        'createdAt'
+        sortOrder as "asc" | "desc",
+        "createdAt",
       );
 
       // 查询分页数据
@@ -33,7 +34,7 @@ export const mediaRouter = router({
 
       // 查询总数
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.media)
         .where(where);
       const total = Number(countResult?.count) || 0;

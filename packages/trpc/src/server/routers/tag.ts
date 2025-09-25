@@ -11,13 +11,12 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
-import { UpdateSchema } from "@honeycomb/validation/schemas/update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 export const tagRouter = router({
   index: publicProcedure
-    .input(TagListQuerySchema.default({}))
+    .input(TagListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, name, ...rest } = input;
       const where = buildDrizzleWhere(
@@ -56,7 +55,7 @@ export const tagRouter = router({
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date().toISOString();
+      const now = new Date();
       const [newTag] = await ctx.db
         .insert(schema.tag)
         .values({
@@ -78,10 +77,10 @@ export const tagRouter = router({
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
-    .input(UpdateSchema(TagUpdateSchema))
+    .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, data } = input as { id: string; data: any };
-      const now = new Date().toISOString();
+      const now = new Date();
       const [updatedTag] = await ctx.db
         .update(schema.tag)
         .set({

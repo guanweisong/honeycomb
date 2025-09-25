@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
-import { LinkCreateSchema } from "@honeycomb/validation/link/schemas/link.create.schema";
+import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
 import { LinkStatus, LINK_STATUS } from "@honeycomb/db";
 
 // Local shape for table rows (align with API payload)
@@ -240,7 +240,7 @@ const Link = () => {
           schema={
             modalProps.type === ModalType.EDIT
               ? (LinkUpdateSchema as any)
-              : (LinkCreateSchema as any)
+              : (LinkInsertSchema as any)
           }
           fields={[
             {
