@@ -38,8 +38,8 @@ export default function AddTagDialog(props: AddTagDialogProps) {
       case ModalType.EDIT:
         try {
           await updateTag.mutateAsync({
-            id: record?.id as string,
-            data: values,
+            id: record?.id,
+            ...values,
           });
           onSuccess?.();
           toast.success("更新成功");

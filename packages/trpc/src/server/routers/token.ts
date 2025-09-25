@@ -1,12 +1,12 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import { buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 export const tokenRouter = router({
   index: protectedProcedure(["ADMIN"])
-    .input(TokenListQuerySchema.default({}))
+    .input(TokenListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
       const where = rest;
@@ -15,8 +15,8 @@ export const tokenRouter = router({
       const orderByClause = buildDrizzleOrderBy(
         schema.token,
         sortField,
-        sortOrder as 'asc' | 'desc',
-        'createdAt'
+        sortOrder as "asc" | "desc",
+        "createdAt",
       );
 
       // 查询分页数据
@@ -30,7 +30,7 @@ export const tokenRouter = router({
 
       // 查询总数
       const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as('count') })
+        .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.token)
         .where(where);
       const total = Number(countResult?.count) || 0;

@@ -5,11 +5,7 @@ import {
 } from "@honeycomb/trpc/server/core";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@honeycomb/trpc/server/libs/tools";
+import { eq } from "drizzle-orm";
 
 export const settingRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
@@ -24,15 +20,10 @@ export const settingRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
-      const now = new Date();
       const [updatedSetting] = await ctx.db
         .update(schema.setting)
-        .set({
-          ...data,
-          updatedAt: now,
-        } as any)
-        .where(eq(schema.setting.id, id))
+        .set(input)
+        .where(eq(schema.setting.id, input.id))
         .returning();
       return updatedSetting;
     }),

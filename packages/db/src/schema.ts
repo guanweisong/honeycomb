@@ -1,43 +1,39 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { dateField } from "./dateField";
 import { i18nField } from "./i18nField";
 import { arrayField } from "./arrayField";
-
-// ===== 表 schema (单数表名) =====
+import { objectId } from "./objectId";
+import { withTimestamps } from "./timestamps";
 
 export const user = sqliteTable("user", {
-  id: text("id").primaryKey(),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  id: text("id").primaryKey().default(objectId()),
   email: text("email").unique(),
   level: text("level").default("EDITOR"),
   name: text("name").unique(),
   password: text("password"),
   status: text("status").default("ENABLE"),
+  ...withTimestamps(),
 });
 
 export const category = sqliteTable("category", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   description: i18nField("description"),
   title: i18nField("title"),
   parent: text("parent"),
   status: text("status").default("ENABLE"),
   path: text("path"),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const post = sqliteTable("post", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   commentStatus: text("comment_status").default("ENABLE"),
-  createdAt: dateField("created_at"),
   galleryLocation: i18nField("gallery_location"),
   galleryStyleIds: arrayField<string>("gallery_style_ids"),
-  galleryTime: dateField("gallery_time"),
+  galleryTime: text("gallery_time"),
   movieActorIds: arrayField("movie_actor_ids"),
   movieDirectorIds: arrayField("movie_director_ids"),
   movieStyleIds: arrayField("movie_style_ids"),
-  movieTime: dateField("movie_time"),
+  movieTime: text("movie_time"),
   authorId: text("author_id"),
   categoryId: text("category_id"),
   content: i18nField("content"),
@@ -49,22 +45,21 @@ export const post = sqliteTable("post", {
   views: integer("views").default(0),
   quoteAuthor: i18nField("quote_author"),
   quoteContent: i18nField("quote_content"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const page = sqliteTable("page", {
-  id: text("id").primaryKey(),
-  createdAt: dateField("created_at"),
+  id: text("id").primaryKey().default(objectId()),
   authorId: text("author_id"),
   content: i18nField("content"),
   status: text("status").default("TO_AUDIT"),
   title: i18nField("title"),
   views: integer("views").default(0),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const comment = sqliteTable("comment", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   userAgent: text("user_agent"),
   author: text("author"),
   content: text("content"),
@@ -76,66 +71,60 @@ export const comment = sqliteTable("comment", {
   pageId: text("page_id"),
   customId: text("custom_id"),
   status: text("status").default("PUBLISH"),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const media = sqliteTable("media", {
-  id: text("id").primaryKey(),
-  createdAt: dateField("created_at"),
+  id: text("id").primaryKey().default(objectId()),
   key: text("key"),
   name: text("name"),
   size: integer("size"),
   type: text("type"),
   url: text("url"),
-  updatedAt: dateField("updated_at"),
   color: text("color"),
   height: integer("height"),
   width: integer("width"),
+  ...withTimestamps(),
 });
 
 export const token = sqliteTable("token", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   content: text("content").unique(),
   userId: text("user_id"),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const setting = sqliteTable("setting", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   siteName: i18nField("site_name"),
   siteSubName: i18nField("site_sub_name"),
   siteSignature: i18nField("site_signature"),
   siteCopyright: i18nField("site_copyright"),
   siteRecordNo: text("site_record_no"),
   siteRecordUrl: text("site_record_url"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const menu = sqliteTable("menu", {
-  id: text("id").primaryKey(),
-  createdAt: dateField("created_at"),
+  id: text("id").primaryKey().default(objectId()),
   parent: text("parent"),
   power: integer("power"),
   type: text("type"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const tag = sqliteTable("tag", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   name: i18nField("name"),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });
 
 export const link = sqliteTable("link", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().default(objectId()),
   url: text("url").unique(),
   name: text("name"),
   logo: text("logo"),
   description: text("description"),
   status: text("status").default("ENABLE"),
-  createdAt: dateField("created_at"),
-  updatedAt: dateField("updated_at"),
+  ...withTimestamps(),
 });

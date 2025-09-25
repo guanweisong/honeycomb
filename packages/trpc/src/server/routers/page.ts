@@ -103,15 +103,12 @@ export const pageRouter = router({
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const now = new Date();
       const [newPage] = await ctx.db
         .insert(schema.page)
         .values({
           ...input,
           authorId,
-          createdAt: now,
-          updatedAt: now,
-        } as any) // 使用类型断言解决类型问题
+        })
         .returning();
       return newPage;
     }),
@@ -128,14 +125,10 @@ export const pageRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
       const [updatedPage] = await ctx.db
         .update(schema.page)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        } as any) // 使用类型断言解决类型问题
-        .where(eq(schema.page.id, id))
+        .set(input) // 使用类型断言解决类型问题
+        .where(eq(schema.page.id, input.id))
         .returning();
 
       let author: any = null;

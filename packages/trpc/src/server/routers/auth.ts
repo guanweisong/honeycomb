@@ -25,7 +25,6 @@ export const authRouter = router({
       throw new Error("用户名或密码不正确");
     }
 
-    // Issue token and persist
     const token = crypto.randomUUID();
     await db
       .insert(schema.token)

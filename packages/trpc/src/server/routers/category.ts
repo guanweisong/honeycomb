@@ -61,14 +61,9 @@ export const categoryRouter = router({
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(CategoryInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date();
       const [newCategory] = await ctx.db
         .insert(schema.category)
-        .values({
-          ...input,
-          createdAt: now,
-          updatedAt: now,
-        } as any)
+        .values(input)
         .returning();
       return newCategory;
     }),
@@ -85,14 +80,10 @@ export const categoryRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(CategoryUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
       const [updatedCategory] = await ctx.db
         .update(schema.category)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        } as any)
-        .where(eq(schema.category.id, id))
+        .set(input)
+        .where(eq(schema.category.id, input.id))
         .returning();
       return updatedCategory;
     }),

@@ -47,7 +47,7 @@ export const mediaRouter = router({
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .delete(schema.media)
-        .where(inArray(schema.media.id, input.ids as string[]));
+        .where(inArray(schema.media.id, input.ids));
       return { success: true };
     }),
 });

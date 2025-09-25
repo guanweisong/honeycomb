@@ -241,14 +241,11 @@ export const postRouter = router({
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const now = new Date();
       const [newPost] = await ctx.db
         .insert(schema.post)
         .values({
           ...input,
           authorId,
-          createdAt: now,
-          updatedAt: now,
         } as any)
         .returning();
       return newPost;
@@ -259,21 +256,17 @@ export const postRouter = router({
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .delete(schema.post)
-        .where(inArray(schema.post.id, input.ids as string[]));
+        .where(inArray(schema.post.id, input.ids));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
       const [updatedPost] = await ctx.db
         .update(schema.post)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        } as any)
-        .where(eq(schema.post.id, id))
+        .set(input)
+        .where(eq(schema.post.id, input.id))
         .returning();
       return updatedPost;
     }),

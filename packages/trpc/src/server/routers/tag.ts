@@ -55,14 +55,9 @@ export const tagRouter = router({
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date();
       const [newTag] = await ctx.db
         .insert(schema.tag)
-        .values({
-          ...input,
-          createdAt: now,
-          updatedAt: now,
-        } as any)
+        .values(input)
         .returning();
       return newTag;
     }),
@@ -70,24 +65,17 @@ export const tagRouter = router({
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.tag)
-        .where(inArray(schema.tag.id, input.ids as string[]));
+      await ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
-      const now = new Date();
       const [updatedTag] = await ctx.db
         .update(schema.tag)
-        .set({
-          ...data,
-          updatedAt: now,
-        } as any)
-        .where(eq(schema.tag.id, id))
+        .set(input)
+        .where(eq(schema.tag.id, input.id))
         .returning();
       return updatedTag;
     }),

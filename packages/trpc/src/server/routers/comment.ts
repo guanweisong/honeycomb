@@ -130,14 +130,10 @@ export const commentRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(CommentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
       const [updatedComment] = await ctx.db
         .update(schema.comment)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        } as any)
-        .where(eq(schema.comment.id, id))
+        .set(input)
+        .where(eq(schema.comment.id, input.id))
         .returning();
       return updatedComment;
     }),
@@ -147,7 +143,7 @@ export const commentRouter = router({
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .delete(schema.comment)
-        .where(inArray(schema.comment.id, input.ids as string[]));
+        .where(inArray(schema.comment.id, input.ids));
       return { success: true };
     }),
 });

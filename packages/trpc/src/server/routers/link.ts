@@ -12,7 +12,7 @@ import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.lis
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 export const linkRouter = router({
   index: publicProcedure
@@ -57,14 +57,9 @@ export const linkRouter = router({
   create: protectedProcedure(["ADMIN"])
     .input(LinkInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date();
       const [newLink] = await ctx.db
         .insert(schema.link)
-        .values({
-          ...input,
-          createdAt: now,
-          updatedAt: now,
-        } as any)
+        .values(input)
         .returning();
       return newLink;
     }),
@@ -74,21 +69,17 @@ export const linkRouter = router({
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .delete(schema.link)
-        .where(inArray(schema.link.id, input.ids as string[]));
+        .where(inArray(schema.link.id, input.ids));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN"])
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
       const [updatedLink] = await ctx.db
         .update(schema.link)
-        .set({
-          ...data,
-          updatedAt: new Date().toISOString(),
-        } as any)
-        .where(eq(schema.link.id, id))
+        .set(input)
+        .where(eq(schema.link.id, input.id))
         .returning();
       return updatedLink;
     }),

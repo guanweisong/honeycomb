@@ -51,14 +51,9 @@ export const userRouter = router({
   create: protectedProcedure(["ADMIN"])
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const now = new Date();
       const [newUser] = await ctx.db
         .insert(schema.user)
-        .values({
-          ...input,
-          createdAt: now,
-          updatedAt: now,
-        } as any)
+        .values(input)
         .returning();
       return newUser;
     }),
@@ -68,22 +63,17 @@ export const userRouter = router({
     .mutation(async ({ input, ctx }) => {
       await ctx.db
         .delete(schema.user)
-        .where(inArray(schema.user.id, input.ids as string[]));
+        .where(inArray(schema.user.id, input.ids));
       return { success: true };
     }),
 
   update: protectedProcedure(["ADMIN"])
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, data } = input as { id: string; data: any };
-      const now = new Date();
       const [updatedUser] = await ctx.db
         .update(schema.user)
-        .set({
-          ...data,
-          updatedAt: now,
-        } as any)
-        .where(eq(schema.user.id, id))
+        .set(input)
+        .where(eq(schema.user.id, input.id))
         .returning();
       return updatedUser;
     }),
