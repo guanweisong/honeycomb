@@ -11,6 +11,26 @@ export const UserLevel = Object.freeze({
   EDITOR: USER_LEVEL[1],
   GUEST: USER_LEVEL[2],
 } as const);
+export const UserLevelName = Object.freeze({
+  ADMIN: "管理员",
+  EDITOR: "编辑",
+  GUEST: "游客",
+} as const);
+
+export const userLevelOptions = [
+  {
+    label: UserLevelName.ADMIN,
+    value: UserLevel.ADMIN,
+  },
+  {
+    label: UserLevelName.EDITOR,
+    value: UserLevel.EDITOR,
+  },
+  {
+    label: UserLevelName.GUEST,
+    value: UserLevel.GUEST,
+  },
+];
 
 export const USER_STATUS = ["DELETED", "ENABLE", "DISABLE"] as const;
 export type UserStatus = (typeof USER_STATUS)[number];
@@ -19,6 +39,26 @@ export const UserStatus = Object.freeze({
   ENABLE: USER_STATUS[1],
   DISABLE: USER_STATUS[2],
 } as const);
+export const UserStatusName = Object.freeze({
+  DELETED: "已删除",
+  DISABLE: "禁用",
+  ENABLE: "启用",
+} as const);
+
+export const userStatusOptions = [
+  {
+    label: UserStatusName.DELETED,
+    value: UserStatus.DELETED,
+  },
+  {
+    label: UserStatusName.DISABLE,
+    value: UserStatus.DISABLE,
+  },
+  {
+    label: UserStatusName.ENABLE,
+    value: UserStatus.ENABLE,
+  },
+];
 
 export const CATEGORY_STATUS = ["ENABLE", "DISABLE"] as const;
 export type CategoryStatus = (typeof CATEGORY_STATUS)[number];
@@ -47,6 +87,16 @@ export const LinkStatus = Object.freeze({
   ENABLE: LINK_STATUS[0],
   DISABLE: LINK_STATUS[1],
 } as const);
+export const linkStatusOptions = [
+  {
+    label: "禁用",
+    value: LinkStatus.DISABLE,
+  },
+  {
+    label: "启用",
+    value: LinkStatus.ENABLE,
+  },
+];
 
 export const PAGE_STATUS = ["PUBLISHED", "DRAFT", "TO_AUDIT"] as const;
 export type PageStatus = (typeof PAGE_STATUS)[number];
@@ -55,6 +105,25 @@ export const PageStatus = Object.freeze({
   DRAFT: PAGE_STATUS[1],
   TO_AUDIT: PAGE_STATUS[2],
 } as const);
+export const PageStatusName = Object.freeze({
+  PUBLISHED: "已发布",
+  DRAFT: "草稿",
+  TO_AUDIT: "待审核",
+} as const);
+export const pageStatusOptions = [
+  {
+    label: PageStatusName.PUBLISHED,
+    value: PageStatus.PUBLISHED,
+  },
+  {
+    label: PageStatusName.DRAFT,
+    value: PageStatus.DRAFT,
+  },
+  {
+    label: PageStatusName.TO_AUDIT,
+    value: PageStatus.TO_AUDIT,
+  },
+];
 
 export const POST_STATUS = ["PUBLISHED", "DRAFT", "TO_AUDIT"] as const;
 export type PostStatus = (typeof POST_STATUS)[number];
@@ -72,6 +141,52 @@ export const PostType = Object.freeze({
   PHOTOGRAPH: POST_TYPE[2],
   QUOTE: POST_TYPE[3],
 } as const);
+export const PostTypeName = Object.freeze({
+  ARTICLE: "文章",
+  MOVIE: "电影",
+  PHOTOGRAPH: "画廊",
+  QUOTE: "引用",
+} as const);
+
+export const postTypeOptions = [
+  {
+    label: PostTypeName.ARTICLE,
+    value: PostType.ARTICLE,
+  },
+  {
+    label: PostTypeName.MOVIE,
+    value: PostType.MOVIE,
+  },
+  {
+    label: PostTypeName.PHOTOGRAPH,
+    value: PostType.PHOTOGRAPH,
+  },
+  {
+    label: PostTypeName.QUOTE,
+    value: PostType.QUOTE,
+  },
+];
+
+export const PostStatusName = Object.freeze({
+  PUBLISHED: "已发布",
+  DRAFT: "草稿",
+  TO_AUDIT: "待审核",
+} as const);
+
+export const postStatusOptions = [
+  {
+    label: PostStatusName.PUBLISHED,
+    value: PostStatus.PUBLISHED,
+  },
+  {
+    label: PostStatusName.DRAFT,
+    value: PostStatus.DRAFT,
+  },
+  {
+    label: PostStatusName.TO_AUDIT,
+    value: PostStatus.TO_AUDIT,
+  },
+];
 
 export const MENU_TYPE = ["CATEGORY", "PAGE", "CUSTOM"] as const;
 export type MenuType = (typeof MENU_TYPE)[number];

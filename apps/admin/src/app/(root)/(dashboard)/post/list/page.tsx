@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { PostEntity } from "../types/post.entity";
-import { PostIndexRequest } from "../types/post.index.request";
 import { postListTableColumns } from "./constants/postListTableColumns";
 import { Button } from "@honeycomb/ui/components/button";
 import { Pencil, Plus, Trash } from "lucide-react";
@@ -13,10 +11,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 
 const PostList = () => {
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
-  const [searchParams, setSearchParams] = useState<PostIndexRequest>();
+  const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
   const router = useRouter();
   const { data, isLoading, isError, refetch } =
     trpc.post.index.useQuery(searchParams);
@@ -47,7 +47,7 @@ const PostList = () => {
 
   return (
     <>
-      <DataTable<PostEntity, PostIndexRequest>
+      <DataTable<PostEntity, PageListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

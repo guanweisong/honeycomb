@@ -5,16 +5,14 @@ import { Button } from "@honeycomb/ui/components/button";
 import { useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
 import { categoryListTableColumns } from "./constans/categoryListTableColumns";
-import type { CategoryEntity } from "./types/category.entity";
-import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
-import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
-import type { CategoryIndexRequest } from "@/app/(root)/(dashboard)/post/category/types/category.index.request";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
+import { CategoryListQueryInput } from "@honeycomb/validation/category/schemas/category.list.query.schema";
 
 const Category = () => {
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
@@ -26,7 +24,7 @@ const Category = () => {
     type: ModalType.ADD,
     open: false,
   });
-  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const [searchParams, setSearchParams] = useState<CategoryListQueryInput>({});
   const { data, isLoading, isError, refetch } =
     trpc.category.index.useQuery(searchParams);
   const destroyCategory = trpc.category.destroy.useMutation();
@@ -79,7 +77,7 @@ const Category = () => {
 
   return (
     <>
-      <DataTable<CategoryEntity, CategoryIndexRequest>
+      <DataTable<CategoryEntity, CategoryListQueryInput>
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],
@@ -117,12 +115,12 @@ const Category = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={TagListQuerySchema}
+                schema={CategoryListQueryInput}
                 fields={[
                   {
                     name: "name",
                     type: "text",
-                    placeholder: "请输入标签名进行搜索",
+                    placeholder: "请输入分类名进行搜索",
                   },
                 ]}
                 onSubmit={setSearchParams}

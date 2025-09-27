@@ -2,21 +2,23 @@
 
 import { Button } from "@honeycomb/ui/components/button";
 import { useState } from "react";
-import type { PageEntity } from "../types/page.entity";
 import { pageListTableColumns } from "./constants/pageListTableColumns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
-import type { PageIndexListRequest } from "@/app/(root)/(dashboard)/page/types/page.index.list.request";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { PageListQuerySchema } from "@honeycomb/validation/page/schemas/page.list.query.schema";
+import {
+  PageListQueryInput,
+  PageListQuerySchema,
+} from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 
 const Page = () => {
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
-  const [searchParams, setSearchParams] = useState<PageIndexListRequest>();
+  const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
   const router = useRouter();
   const { data, isLoading, isError, refetch } =
     trpc.page.index.useQuery(searchParams);
@@ -47,7 +49,7 @@ const Page = () => {
 
   return (
     <>
-      <DataTable<PageEntity, PageIndexListRequest>
+      <DataTable<PageEntity, PageListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

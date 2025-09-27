@@ -5,11 +5,10 @@ import type { inferRouterOutputs } from "@trpc/server";
 type SettingData = inferRouterOutputs<AppRouter>["setting"]["index"];
 
 export const useSettingStore = () => {
-  const { data, refetch } = trpc.setting.index.useQuery(undefined);
+  const { data, refetch } = trpc.setting.index.useQuery();
   return {
     setting: data as SettingData | undefined,
     querySetting: () => {
-      // keep API parity: manual refetch
       refetch();
     },
   };

@@ -1,6 +1,7 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
 import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
 import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
+import { CleanZod } from "@honeycomb/validation/clean.zod";
 
 export const PostListQuerySchema = PaginationQuerySchema.extend({
   title: PostInsertSchema.shape.title.optional(),
@@ -10,3 +11,5 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   categoryId: PostInsertSchema.shape.categoryId.optional(),
   userName: UserInsertSchema.shape.name.optional(),
 });
+
+export type PostListQueryInput = CleanZod<typeof PostListQuerySchema>;

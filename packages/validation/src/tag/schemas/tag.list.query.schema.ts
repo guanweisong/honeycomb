@@ -1,6 +1,9 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
-import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
+import { TagEntitySchema } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { CleanZod } from "@honeycomb/validation/clean.zod";
 
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: TagUpdateSchema.shape.name.optional(),
+  name: TagEntitySchema.shape.name.optional(),
 });
+
+export type TagListQueryInput = CleanZod<typeof TagListQuerySchema>;

@@ -3,9 +3,9 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
-import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 
 export interface AddTagDialogProps {
   type?: ModalType;

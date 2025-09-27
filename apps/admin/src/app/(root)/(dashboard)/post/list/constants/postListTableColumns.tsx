@@ -2,14 +2,9 @@ import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
-import {
-  CategoryReadOnly,
-  PostEntity,
-  UserReadOnly,
-} from "@/app/(root)/(dashboard)/post/types/post.entity";
-import { postStatusOptions } from "../../types/PostStatus";
-import { postTypeOptions } from "../../types/PostType";
 import { Badge } from "@honeycomb/ui/components/badge";
+import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { postStatusOptions, postTypeOptions } from "@honeycomb/db";
 
 export const postListTableColumns: ColumnDef<PostEntity>[] = [
   {
@@ -36,7 +31,7 @@ export const postListTableColumns: ColumnDef<PostEntity>[] = [
     accessorKey: "category",
     header: "分类",
     cell: ({ row }) => {
-      const category = row.getValue("category") as CategoryReadOnly;
+      const category = row.getValue("category") as any;
       return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
   },
@@ -55,7 +50,7 @@ export const postListTableColumns: ColumnDef<PostEntity>[] = [
     accessorKey: "author",
     header: "作者",
     cell: ({ row }) => {
-      const author = row.getValue("author") as UserReadOnly;
+      const author = row.getValue("author") as any;
       return author?.name ?? "-";
     },
   },

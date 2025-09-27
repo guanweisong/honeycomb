@@ -10,11 +10,11 @@ import { eq } from "drizzle-orm";
 export const settingRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
     const list = await ctx.db.select().from(schema.setting);
-    const result = list[0] as any;
+    const result = list[0];
     return {
       ...result,
       customObjectId: { link: process.env.LINK_OBJECT_ID },
-    } as any;
+    };
   }),
 
   update: protectedProcedure(["ADMIN"])

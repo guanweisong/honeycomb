@@ -4,21 +4,26 @@ import { ModalType, ModalTypeName } from "@/types/ModalType";
 import md5 from "md5";
 import { useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
-import { UserLevel, userLevelOptions } from "./types/UserLevel";
-import { UserStatus, userStatusOptions } from "./types/UserStatus";
-import type { UserEntity } from "./types/user.entity";
-import type { UserIndexRequest } from "./types/user.index.request";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { toast } from "sonner";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
 import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
-import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.list.query.schema";
+import {
+  UserListQueryInput,
+  UserListQuerySchema,
+} from "@honeycomb/validation/user/schemas/user.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
+import {
+  UserLevel,
+  userLevelOptions,
+  UserStatus,
+  userStatusOptions,
+} from "@honeycomb/db";
 
 const User = () => {
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
@@ -30,7 +35,7 @@ const User = () => {
     type: ModalType.ADD,
     open: false,
   });
-  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
   const { data, isLoading, isError, refetch } =
     trpc.user.index.useQuery(searchParams);
   const createUser = trpc.user.create.useMutation();
@@ -77,7 +82,7 @@ const User = () => {
   /**
    * 新增、修改保存事件
    */
-  const handleModalOk = async (values: any) => {
+  const handleModalOk = async (values) => {
     const { password, ...rest } = values;
     const params = rest;
     if (password) {
@@ -86,7 +91,7 @@ const User = () => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createUser.mutateAsync(params as any);
+          await createUser.mutateAsync(params);
           refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
@@ -97,8 +102,8 @@ const User = () => {
       case ModalType.EDIT:
         try {
           await updateUser.mutateAsync({
-            id: modalProps.record?.id as string,
-            data: params as any,
+            ...params,
+            id: modalProps.record?.id,
           });
           refetch();
           toast.success("更新成功");
@@ -123,7 +128,7 @@ const User = () => {
 
   return (
     <>
-      <DataTable<UserEntity, UserIndexRequest>
+      <DataTable<UserEntity, UserListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

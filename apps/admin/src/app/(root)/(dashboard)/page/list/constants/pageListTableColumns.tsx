@@ -2,10 +2,9 @@ import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
-import { pageStatusOptions } from "../../types/PageStatus";
-import { PageEntity } from "../../types/page.entity";
-import { UserReadOnly } from "../../../post/types/post.entity";
 import { Badge } from "@honeycomb/ui/components/badge";
+import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { pageStatusOptions } from "@honeycomb/db";
 
 export const pageListTableColumns: ColumnDef<PageEntity>[] = [
   {
@@ -20,7 +19,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
     accessorKey: "author",
     header: "作者",
     cell: ({ row }) => {
-      const author = row.getValue("author") as UserReadOnly;
+      const author = row.getValue("author") as any;
       return author?.name ?? "-";
     },
   },

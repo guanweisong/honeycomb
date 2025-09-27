@@ -1,8 +1,7 @@
 import dayjs from "dayjs";
-import { UserEntity } from "../types/user.entity";
-import { userLevelOptions } from "../types/UserLevel";
-import { userStatusOptions } from "../types/UserStatus";
 import { ColumnDef } from "@tanstack/react-table";
+import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
+import { userLevelOptions, userStatusOptions } from "@honeycomb/db";
 
 export const userTableColumns: ColumnDef<UserEntity>[] = [
   {

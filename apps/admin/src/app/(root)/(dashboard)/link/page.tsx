@@ -10,47 +10,28 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.list.query.schema";
+import {
+  LinkListQueryInput,
+  LinkListQuerySchema,
+} from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
-import { LinkStatus, LINK_STATUS } from "@honeycomb/db";
-
-// Local shape for table rows (align with API payload)
-type Link = {
-  id: string;
-  name: string;
-  url: string;
-  logo?: string | null;
-  description: string;
-  status: (typeof LINK_STATUS)[number];
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-const linkStatusOptions = [
-  {
-    label: "禁用",
-    value: LinkStatus.DISABLE,
-  },
-  {
-    label: "启用",
-    value: LinkStatus.ENABLE,
-  },
-];
+import { LinkStatus, linkStatusOptions } from "@honeycomb/db";
+import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
 
 const Link = () => {
-  const [selectedRows, setSelectedRows] = useState<Link[]>([]);
+  const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
 
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
-    record?: Link;
+    record?: LinkEntity;
   }>({
     type: ModalType.ADD,
     open: false,
   });
 
-  const [searchParams, setSearchParams] = useState();
+  const [searchParams, setSearchParams] = useState<LinkListQueryInput>({});
 
   const createLink = trpc.link.create.useMutation();
   const updateLink = trpc.link.update.useMutation();
@@ -61,7 +42,7 @@ const Link = () => {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = async (values: any) => {
+  const handleModalOk = async (values) => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
@@ -76,8 +57,8 @@ const Link = () => {
       case ModalType.EDIT:
         try {
           await updateLink.mutateAsync({
-            id: modalProps.record?.id as string,
-            data: values,
+            id: modalProps.record?.id,
+            ...values,
           });
           refetch();
           toast.success("更新成功");
@@ -134,7 +115,7 @@ const Link = () => {
    * 编辑按钮事件
    * @param record
    */
-  const handleEditItem = (record: Link) => {
+  const handleEditItem = (record: LinkEntity) => {
     setModalProps({
       type: ModalType.EDIT,
       open: true,
@@ -144,7 +125,7 @@ const Link = () => {
 
   return (
     <>
-      <DataTable<Link, any>
+      <DataTable<LinkEntity, LinkListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
@@ -182,7 +163,7 @@ const Link = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={LinkListQuerySchema as any}
+                schema={LinkListQuerySchema}
                 fields={[
                   {
                     name: "name",
@@ -239,8 +220,8 @@ const Link = () => {
           }
           schema={
             modalProps.type === ModalType.EDIT
-              ? (LinkUpdateSchema as any)
-              : (LinkInsertSchema as any)
+              ? LinkUpdateSchema
+              : LinkInsertSchema
           }
           fields={[
             {

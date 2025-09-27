@@ -10,9 +10,9 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { Skeleton } from "@honeycomb/ui/components/skeleton";
 import { cn } from "@honeycomb/ui/lib/utils";
 
-import type { MediaEntity } from "./types/media.entity";
-import { MediaIndexRequest } from "./types/media.index.request";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
+import { MediaIndexInput } from "@honeycomb/validation/media/schemas/media.list.query.schema";
 
 export interface MediaProps {
   onSelect?: (media: MediaEntity) => void;
@@ -23,7 +23,7 @@ const Media = ({ onSelect }: MediaProps) => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [searchParams, setSearchParams] = useState<MediaIndexRequest>({
+  const [searchParams] = useState<MediaIndexInput>({
     limit: 99999,
   });
   const { data, refetch } = trpc.media.index.useQuery(searchParams);
@@ -113,15 +113,15 @@ const Media = ({ onSelect }: MediaProps) => {
                   : "border-gray-100",
               )}
               onClick={() => setCurrentItem(item)}
-              title={item.name}
+              title={item.name as string}
             >
-              {item.type.includes("image") ? (
+              {item.type?.includes("image") ? (
                 <Image
                   className="object-contain"
                   fill
                   sizes="7vw"
-                  src={item.url}
-                  alt={item.name}
+                  src={item.url as string}
+                  alt={item.name as string}
                 />
               ) : (
                 <File className="w-full h-full p-8 text-gray-400" />
@@ -130,7 +130,7 @@ const Media = ({ onSelect }: MediaProps) => {
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    navigator.clipboard.writeText(item.url);
+                    navigator.clipboard.writeText(item.url!);
                     toast.success("已复制至剪切板");
                   }}
                 >

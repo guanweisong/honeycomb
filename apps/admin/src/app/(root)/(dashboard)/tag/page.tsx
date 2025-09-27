@@ -3,18 +3,20 @@
 import { ModalType } from "@/types/ModalType";
 import { useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
-import type { TagEntity } from "./types/tag.entity";
-import { TagIndexRequest } from "./types/tag.index.request";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
+import {
+  TagListQueryInput,
+  TagListQuerySchema,
+} from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useGetState } from "ahooks";
+import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 
 const Tag = () => {
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
@@ -27,7 +29,7 @@ const Tag = () => {
     open: false,
   });
 
-  const [searchParams, setSearchParams] = useGetState<TagIndexRequest>();
+  const [searchParams, setSearchParams] = useGetState<TagListQueryInput>({});
 
   const { data, isLoading, isError, refetch } =
     trpc.tag.index.useQuery(searchParams);
@@ -82,7 +84,7 @@ const Tag = () => {
 
   return (
     <>
-      <DataTable<TagEntity, TagIndexRequest>
+      <DataTable<TagEntity, TagListQueryInput>
         columns={tagTableColumns}
         data={{
           list: data?.list ?? [],

@@ -1,31 +1,9 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
-import { LinkStatus, LINK_STATUS } from "@honeycomb/db";
+import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
+import { linkStatusOptions } from "@honeycomb/db";
 
-// Local shape for table rows (align with API payload)
-type Link = {
-  id: string;
-  name: string;
-  url: string;
-  logo?: string | null;
-  description: string;
-  status: (typeof LINK_STATUS)[number];
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-const linkStatusOptions = [
-  {
-    label: "禁用",
-    value: LinkStatus.DISABLE,
-  },
-  {
-    label: "启用",
-    value: LinkStatus.ENABLE,
-  },
-];
-
-export const linkTableColumns: ColumnDef<Link>[] = [
+export const linkTableColumns: ColumnDef<LinkEntity>[] = [
   {
     header: "链接名称",
     accessorKey: "name",

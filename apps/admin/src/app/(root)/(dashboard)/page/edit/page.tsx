@@ -3,8 +3,6 @@
 import { Button } from "@honeycomb/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { PageStatus } from "../types/PageStatus";
-import type { PageEntity } from "../types/page.entity";
 import {
   DynamicForm,
   DynamicFormRef,
@@ -13,6 +11,8 @@ import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PageStatus } from "@honeycomb/db";
+import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 
 const Page = () => {
   const router = useRouter();
@@ -50,7 +50,7 @@ const Page = () => {
       setLoading(true);
       if (detail?.id) {
         return updatePage
-          .mutateAsync({ id: detail.id, data: data as any })
+          .mutateAsync({ id: detail.id, ...data })
           .then(() => {
             toast.success("更新成功");
             refetch();

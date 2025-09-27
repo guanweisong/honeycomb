@@ -15,9 +15,10 @@ const Setting = () => {
    * 保存事件
    */
   const updateSetting = trpc.setting.update.useMutation();
+
   const handleSubmit = async (values: any) => {
     try {
-      await updateSetting.mutateAsync({ id: setting!.id, data: values });
+      await updateSetting.mutateAsync({ id: setting!.id, ...values });
       await querySetting();
       toast.success("更新成功");
     } catch (e) {

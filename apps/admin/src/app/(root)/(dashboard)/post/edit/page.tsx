@@ -9,8 +9,6 @@ import React, { useState, useEffect } from "react";
 import AddCategoryModal, {
   ModalProps,
 } from "../category/components/AddCategoryModal";
-import { PostStatus } from "../types/PostStatus";
-import { PostType, postTypeOptions } from "../types/PostType";
 import MultiTag from "./components/MultiTag";
 import type { PhotoPickerItemProps } from "./components/PhotoPickerItem";
 import PhotoPickerItem from "./components/PhotoPickerItem";

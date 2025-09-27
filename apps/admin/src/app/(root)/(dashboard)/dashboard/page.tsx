@@ -5,17 +5,13 @@ import {
   CommentStatusName,
 } from "@/app/(root)/(dashboard)/comment/types/CommentStatus";
 import CustomPie from "./components/CustomPie";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 import {
   PostType,
   PostTypeName,
-} from "@/app/(root)/(dashboard)/post/types/PostType";
-import {
   UserLevel,
   UserLevelName,
-} from "@/app/(root)/(dashboard)/user/types/UserLevel";
-import { useEffect, useState } from "react";
-import type { StatisticsType } from "./types/StatisticsType";
-import { trpc } from "@honeycomb/trpc/client/trpc";
+} from "@honeycomb/db";
 
 const Dashboard = () => {
   const { data: statistics } = trpc.statistic.index.useQuery();

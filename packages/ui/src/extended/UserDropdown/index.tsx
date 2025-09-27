@@ -9,8 +9,8 @@ import {
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
 import { Avatar } from "@honeycomb/ui/components/avatar";
-import { UserLevelName } from "admin/src/app/(root)/(dashboard)/user/types/UserLevel";
-import { UserEntity } from "admin/src/app/(root)/(dashboard)/user/types/user.entity";
+import { UserLevelName } from "@honeycomb/db";
+import { UserEntity } from "@honeycomb/validation/src/user/schemas/user.entity.schema";
 
 export interface UserDropdownProps {
   user?: UserEntity | false;
