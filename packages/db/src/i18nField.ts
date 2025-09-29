@@ -2,8 +2,8 @@ import { customType } from "drizzle-orm/sqlite-core";
 import { z } from "zod";
 
 export const defaultI18nSchema = z.object({
-  en: z.string().optional(),
-  zh: z.string().optional(),
+  en: z.string(),
+  zh: z.string(),
 });
 
 export type DefaultI18n = z.infer<typeof defaultI18nSchema>;

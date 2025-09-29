@@ -1,26 +1,22 @@
 import { unstable_ViewTransition as ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
-import { MenuEntity } from "@/types/menu/menu.entity";
 import Menu, { MenuItem } from "@/components/Menu";
 import { Link } from "@/i18n/navigation";
-import { MenuType } from "@/types/menu/MenuType";
-import SettingServer from "@/services/setting";
-import MenuServer from "@/services/menu";
-import { SettingEntity } from "@/types/setting/setting.entity";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import Breadcrumb from "@/components/Breadcrumb";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/types/Language";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MenuEntity, MenuType } from "@honeycomb/db/src/types";
 
 export default async function Header() {
-  const [setting, menu = [], locale] = (await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+  const [setting, menu, locale] = await Promise.all([
+    serverClient.setting.index(),
+    serverClient.menu.index(),
     getLocale(),
-  ])) as [SettingEntity, MenuEntity[], keyof MultiLang];
+  ]);
 
   /**
    * 补充菜单
@@ -33,7 +29,7 @@ export default async function Header() {
       path: "/",
       children: [],
     },
-    ...menu,
+    ...menu?.list,
     {
       title: { zh: "比邻", en: "Links" },
       id: "links",
@@ -74,7 +70,7 @@ export default async function Header() {
           item.link = `/list/category/${getCurrentPathOfMenu({
             id: data.id,
             familyProp: "path",
-            menu,
+            menu: menu?.list,
           }).join("/")}`;
           break;
       }
@@ -115,7 +111,7 @@ export default async function Header() {
             </span>
           </div>
           <div className="h-full flex items-center">
-            <Menu data={menuDataFormat} flatMenuData={menu} />
+            <Menu data={menuDataFormat} flatMenuData={menu?.list} />
           </div>
         </div>
       </div>

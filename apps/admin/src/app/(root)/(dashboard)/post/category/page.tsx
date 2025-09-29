@@ -12,7 +12,10 @@ import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
-import { CategoryListQueryInput } from "@honeycomb/validation/category/schemas/category.list.query.schema";
+import {
+  CategoryListQueryInput,
+  CategoryListQuerySchema,
+} from "@honeycomb/validation/category/schemas/category.list.query.schema";
 
 const Category = () => {
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
@@ -24,7 +27,9 @@ const Category = () => {
     type: ModalType.ADD,
     open: false,
   });
-  const [searchParams, setSearchParams] = useState<CategoryListQueryInput>({});
+  const [searchParams, setSearchParams] = useState<CategoryListQueryInput>({
+    limit: 999,
+  });
   const { data, isLoading, isError, refetch } =
     trpc.category.index.useQuery(searchParams);
   const destroyCategory = trpc.category.destroy.useMutation();
@@ -115,7 +120,7 @@ const Category = () => {
             </div>
             <div className="flex gap-1">
               <DynamicForm
-                schema={CategoryListQueryInput}
+                schema={CategoryListQuerySchema}
                 fields={[
                   {
                     name: "name",

@@ -1,14 +1,12 @@
 import dayjs from "dayjs";
-import SettingServer from "@/services/setting";
-import { MultiLang } from "@/types/Language";
 import { getLocale } from "next-intl/server";
-import { SettingEntity } from "@/types/setting/setting.entity";
+import { serverClient } from "@honeycomb/trpc/server";
 
 export default async function Footer() {
-  const [setting, locale] = (await Promise.all([
-    SettingServer.indexSetting(),
+  const [setting, locale] = await Promise.all([
+    serverClient.setting.index(),
     getLocale(),
-  ])) as [SettingEntity, keyof MultiLang];
+  ]);
 
   return (
     <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">

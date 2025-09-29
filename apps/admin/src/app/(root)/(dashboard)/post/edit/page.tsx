@@ -23,6 +23,7 @@ import { creatCategoryTitleByDepth } from "@/utils/help";
 import { Plus } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PostType, PostStatus, postTypeOptions } from "@honeycomb/db/src/types";
 
 const tagMap = {
   galleryStyles: "galleryStyleIds",

@@ -1,14 +1,11 @@
 import React from "react";
-import { PostStatus } from "@/types/post/PostStatus";
 import { PostListQuery } from "@/types/post/post.list.query";
-import { MenuEntity } from "@/types/menu/menu.entity";
-import MenuServer from "@/services/menu";
-import SettingServer from "@/services/setting";
 import PostList from "@/components/PostList";
 import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
 import { serverClient } from "@honeycomb/trpc/server";
+import { PostStatus, MenuEntity } from "@honeycomb/db/src/types";
 
 const PAGE_SIZE = 10;
 
@@ -21,7 +18,6 @@ export default async function List(props: ListProps) {
     serverClient.setting.index(),
     serverClient.menu.index(),
   ]);
-
   const params = await props.params;
   const t = await getTranslations("PostList");
 
@@ -55,8 +51,9 @@ export default async function List(props: ListProps) {
       break;
   }
   console.log("queryParams", queryParams);
+
   // 获取分类列表
-  const postList = await serverClient.post.list(queryParams);
+  const postList = await serverClient.post.index(queryParams);
 
   /**
    * 获取页面标题
@@ -105,8 +102,8 @@ type GenerateMetadataProps = {
 
 export async function generateMetadata(props: GenerateMetadataProps) {
   const [setting, menu, locale] = await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+    serverClient.setting.index(),
+    serverClient.menu.index(),
     getLocale().then((res) => res as keyof MultiLang),
   ]);
   const t = await getTranslations("PostList");
@@ -120,7 +117,7 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   switch (type) {
     case "category":
       typeName =
-        menu?.find((item: MenuEntity) => item.path === typeName)?.title?.[
+        menu?.list?.find((item: MenuEntity) => item.path === typeName)?.title?.[
           locale
         ] || "";
       break;
