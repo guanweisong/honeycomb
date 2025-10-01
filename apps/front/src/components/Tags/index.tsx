@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "@/i18n/navigation";
-import { TagEntity } from "@/types/tag/tag.entity";
-import { PostEntity } from "@/types/post/post.entity";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/types/Language";
+import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { MultiLang } from "@honeycomb/db";
 
 const Tag = (props: PostEntity) => {
   const t = useTranslations("Tag");

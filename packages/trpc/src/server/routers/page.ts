@@ -127,7 +127,7 @@ export const pageRouter = router({
     .mutation(async ({ input, ctx }) => {
       const [updatedPage] = await ctx.db
         .update(schema.page)
-        .set(input) // 使用类型断言解决类型问题
+        .set(input)
         .where(eq(schema.page.id, input.id))
         .returning();
 
@@ -144,5 +144,29 @@ export const pageRouter = router({
       }
 
       return { ...updatedPage, author };
+    }),
+
+  getViews: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [result] = await ctx.db
+        .select({ views: schema.page.views })
+        .from(schema.page)
+        .where(eq(schema.page.id, input.id));
+      return result ?? { views: 0 };
+    }),
+
+  incrementViews: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updatedPage] = await ctx.db
+        .update(schema.page)
+        .set({
+          views: sql`${schema.page.views} + 1`,
+        })
+        .where(eq(schema.page.id, input.id))
+        .returning({ views: schema.page.views });
+
+      return updatedPage;
     }),
 });

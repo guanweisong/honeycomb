@@ -1,13 +1,11 @@
-import LinkServer from "src/services/link";
-import { LinkStatus } from "@/types/link/LinkStatus";
 import NoData from "@/components/NoData";
 import Comment from "@/components/Comment";
 import PageTitle from "@/components/PageTitle";
-import SettingServer from "@/services/setting";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MenuType } from "@/types/menu/MenuType";
 import { MultiLang } from "@/types/Language";
 import { cn } from "@honeycomb/ui/lib/utils";
+import { LinkStatus, MenuType } from "@honeycomb/db";
+import { serverClient } from "@honeycomb/trpc/server";
 
 export interface LinksProps {
   params: Promise<{ locale: keyof MultiLang }>;
@@ -17,12 +15,13 @@ const Links = async (props: LinksProps) => {
   const { locale } = await props.params;
   const t = await getTranslations("Link");
   const [result, setting] = await Promise.all([
-    LinkServer.index({
+    serverClient.link.index({
       limit: 999,
       status: [LinkStatus.ENABLE],
     }),
-    SettingServer.indexSetting(),
+    serverClient.setting.index(),
   ]);
+
   return (
     <div>
       <PageTitle>{t("slogan")}</PageTitle>
@@ -78,7 +77,7 @@ const Links = async (props: LinksProps) => {
 
 export async function generateMetadata() {
   const t = await getTranslations("Link");
-  const setting = await SettingServer.indexSetting();
+  const setting = await serverClient.setting.index();
   const locale = (await getLocale()) as keyof MultiLang;
   const title = t("title");
 

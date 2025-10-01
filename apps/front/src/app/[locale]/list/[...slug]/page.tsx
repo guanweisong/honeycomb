@@ -52,8 +52,7 @@ export default async function List(props: ListProps) {
   }
   console.log("queryParams", queryParams);
 
-  // 获取分类列表
-  const postList = await serverClient.post.index(queryParams);
+  const post = await serverClient.post.index(queryParams);
 
   /**
    * 获取页面标题
@@ -82,9 +81,9 @@ export default async function List(props: ListProps) {
       {["tags", "authors"].includes(type!) && (
         <div className="mb-2 lg:mb-4">{getTitle()}</div>
       )}
-      {postList.length > 0 ? (
+      {post.list.length > 0 ? (
         <PostList
-          initData={postList}
+          initData={post.list}
           pageSize={PAGE_SIZE}
           queryParams={queryParams}
         />

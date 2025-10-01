@@ -4,7 +4,6 @@ import React, { useRef, useState, use, useTransition, useEffect } from "react";
 import { Button } from "@honeycomb/ui/components/button";
 import { CommentEntity } from "@/types/comment/comment.entity";
 import Card from "../Card";
-import { CommentStatus } from "@/types/comment/CommentStatus";
 import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
 import PaginationResponse from "@/types/pagination.response";
@@ -14,7 +13,7 @@ import { refreshPath } from "@/utils/refreshPath";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import CommentServer from "@/services/comment";
-import { MenuType } from "@/types/menu/MenuType";
+import { CommentStatus, MenuType } from "@honeycomb/db";
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;

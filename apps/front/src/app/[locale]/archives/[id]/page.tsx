@@ -1,6 +1,5 @@
 import React, { unstable_ViewTransition as ViewTransition } from "react";
 import PostServer from "@/services/post";
-import { PostType } from "@/types/post/PostType";
 import PostInfo from "@/components/PostInfo";
 import Tags from "@/components/Tags";
 import Card from "@/components/Card";
@@ -8,16 +7,14 @@ import { Link } from "@/i18n/navigation";
 import Comment from "@/components/Comment";
 import CommentServer from "@/services/comment";
 import Markdown from "@/components/Markdown";
-import SettingServer from "@/services/setting";
 import { utcFormat } from "@/utils/utcFormat";
 import PageTitle from "@/components/PageTitle";
-import ViewServer from "@/services/view";
-import { UpdateType } from "@/types/view/update.view";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MenuType } from "@/types/menu/MenuType";
 import { MultiLang } from "@/types/Language";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MenuType, PostType } from "@honeycomb/db";
 
 export interface ArchivesProps {
   params: Promise<{ id: string; locale: keyof MultiLang }>;
@@ -29,13 +26,11 @@ export default async function Archives(props: ArchivesProps) {
   const t = await getTranslations("Archive");
 
   const [randomPostsList, commentsData] = await Promise.all([
-    PostServer.indexRandomPostByCategoryId({
-      postCategory: postDetail.category.id,
-      postId: id,
-      number: 10,
+    serverClient.post.getRandomByCategory({
+      categoryId: postDetail.category.id,
     }),
     CommentServer.index(id, MenuType.CATEGORY),
-    ViewServer.updateViews({ type: UpdateType.Post, id }),
+    serverClient.post.incrementViews({ id }),
   ]);
 
   /**
@@ -166,8 +161,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { id } = await props.params;
   const [setting, postDetail] = await Promise.all([
-    SettingServer.indexSetting(),
-    PostServer.indexPostDetail(id),
+    serverClient.setting.index(),
+    serverClient.post.detail({ id }),
   ]);
   const locale = (await getLocale()) as keyof MultiLang;
 

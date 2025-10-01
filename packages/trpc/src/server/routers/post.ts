@@ -270,4 +270,67 @@ export const postRouter = router({
         .returning();
       return updatedPost;
     }),
+
+  getRandomByCategory: publicProcedure
+    .input(z.object({ categoryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // 先拿到所有 post.id
+      const allPosts = await ctx.db
+        .select({ id: schema.post.id })
+        .from(schema.post)
+        .where(eq(schema.post.categoryId, input.categoryId));
+
+      const allIds = allPosts.map((p) => p.id);
+
+      // 随机抽取
+      const randomArr = (arr: string[], num: number) => {
+        const result: string[] = [];
+        const copy = [...arr];
+        const length = Math.min(num, copy.length);
+        for (let i = 0; i < length; i++) {
+          const idx = Math.floor(Math.random() * copy.length);
+          result.push(copy[idx]);
+          copy.splice(idx, 1);
+        }
+        return result;
+      };
+
+      const randomIds = randomArr(allIds, 10);
+
+      // 再查具体数据
+      const posts = await ctx.db
+        .select({
+          id: schema.post.id,
+          title: schema.post.title,
+          quoteContent: schema.post.quoteContent,
+        })
+        .from(schema.post)
+        .where(inArray(schema.post.id, randomIds));
+
+      return posts;
+    }),
+
+  getViews: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [result] = await ctx.db
+        .select({ views: schema.post.views })
+        .from(schema.post)
+        .where(eq(schema.post.id, input.id));
+      return result ?? { views: 0 };
+    }),
+
+  incrementViews: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [updatedPage] = await ctx.db
+        .update(schema.post)
+        .set({
+          views: sql`${schema.post.views} + 1`,
+        })
+        .where(eq(schema.post.id, input.id))
+        .returning({ views: schema.post.views });
+
+      return updatedPage;
+    }),
 });

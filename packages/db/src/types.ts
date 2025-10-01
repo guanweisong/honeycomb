@@ -147,6 +147,12 @@ export const PostTypeName = Object.freeze({
   PHOTOGRAPH: "画廊",
   QUOTE: "引用",
 } as const);
+export const PostTypeBgColor = Object.freeze({
+  ARTICLE: "bg-green-500",
+  MOVIE: "bg-orange-500",
+  PHOTOGRAPH: "bg-purple-500",
+  QUOTE: "bg-blue-500",
+} as const);
 
 export const postTypeOptions = [
   {

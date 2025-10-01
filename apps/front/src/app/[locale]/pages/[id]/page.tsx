@@ -1,17 +1,13 @@
-import PageServer from "@/services/page";
 import React from "react";
 import PostInfo from "@/components/PostInfo";
 import Comment from "@/components/Comment";
 import CommentServer from "@/services/comment";
 import Markdown from "@/components/Markdown";
-import SettingServer from "@/services/setting";
 import PageTitle from "@/components/PageTitle";
-import ViewServer from "@/services/view";
-import { UpdateType } from "@/types/view/update.view";
 import { getLocale } from "next-intl/server";
-import { MenuType } from "@/types/menu/MenuType";
 import { MultiLang } from "@/types/Language";
-
+import { MenuType } from "@honeycomb/db";
+import { serverClient } from "@honeycomb/trpc/server";
 export interface PagesProps {
   params: Promise<{ id: string; locale: keyof MultiLang }>;
 }
@@ -19,25 +15,25 @@ export interface PagesProps {
 export default async function Pages(props: PagesProps) {
   const { id, locale } = await props.params;
   const [pageDetail, commentsData] = await Promise.all([
-    PageServer.indexPageDetail(id),
+    serverClient.page.detail({ id }),
     CommentServer.index(id, MenuType.PAGE),
-    ViewServer.updateViews({ type: UpdateType.Page, id }),
+    serverClient.page.incrementViews({ id }),
   ]);
 
   return (
     <>
-      <PageTitle>{pageDetail.title?.[locale]}</PageTitle>
+      <PageTitle>{pageDetail?.title?.[locale]}</PageTitle>
       <PostInfo
-        id={pageDetail.id}
-        author={pageDetail.author.name}
-        date={pageDetail.createdAt}
+        id={pageDetail?.id}
+        author={pageDetail?.author.name}
+        date={pageDetail?.createdAt}
         comments={commentsData?.total}
-        views={pageDetail.views}
+        views={pageDetail?.views}
       />
       <div className="markdown-body my-3 lg:my-5">
         <Markdown
-          children={pageDetail.content?.[locale]}
-          imagesInContent={pageDetail.imagesInContent}
+          children={pageDetail?.content?.[locale]}
+          imagesInContent={pageDetail?.imagesInContent}
         />
       </div>
       <Comment id={id} type={MenuType.PAGE} />
@@ -52,18 +48,18 @@ type GenerateMetadataProps = {
 export async function generateMetadata(props: GenerateMetadataProps) {
   const { id } = await props.params;
   const [setting, pageDetail] = await Promise.all([
-    SettingServer.indexSetting(),
-    PageServer.indexPageDetail(id),
+    serverClient.setting.index(),
+    serverClient.page.detail({ id }),
   ]);
   const local = (await getLocale()) as keyof MultiLang;
 
-  const title = pageDetail.title?.[local];
+  const title = pageDetail?.title?.[local];
 
   const openGraph = {
     title: title,
     type: "article",
     description: setting.siteName?.[local],
-    images: pageDetail.imagesInContent.map((item) => item.url),
+    images: pageDetail?.imagesInContent?.map((item) => item.url),
   };
 
   return {
