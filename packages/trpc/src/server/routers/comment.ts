@@ -18,6 +18,9 @@ import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, and, sql } from "drizzle-orm";
+import { CommentStatus } from "@honeycomb/db/src/types";
+import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
+import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
 
 export const commentRouter = router({
   index: publicProcedure
@@ -125,6 +128,119 @@ export const commentRouter = router({
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
+    }),
+
+  create: publicProcedure
+    .input(CommentInsertSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { captcha, ...rest } = input;
+
+      // 插入评论
+      const [created] = await ctx.db
+        .insert(schema.comment)
+        .values({
+          ...rest,
+          ip: ctx.header.get("x-forwarded-for") ?? null,
+          userAgent: ctx.header.get("user-agent") ?? null,
+          status: CommentStatus.PUBLISH,
+        })
+        .returning();
+
+      let [currentComment] = await ctx.db
+        .select({
+          id: schema.comment.id,
+          content: schema.comment.content,
+          email: schema.comment.email,
+          customId: schema.comment.customId,
+          parentId: schema.comment.parentId,
+          postId: schema.comment.postId,
+          pageId: schema.comment.pageId,
+          // 关联 post
+          post: {
+            id: schema.post.id,
+            title: schema.post.title,
+          },
+          // 关联 page
+          page: {
+            id: schema.page.id,
+            title: schema.page.title,
+          },
+        })
+        .from(schema.comment)
+        .leftJoin(schema.post, eq(schema.comment.postId, schema.post.id))
+        .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
+        .where(eq(schema.comment.id, created.id));
+
+      // ====== custom link ======
+      const currentCustom = getCustomCommentLink(currentComment?.customId);
+      if (currentCustom) {
+        // @ts-ignore
+        currentComment = { ...currentComment, custom: currentCustom };
+      }
+
+      // ====== setting ======
+      const [setting] = await ctx.db.select().from(schema.setting);
+      const siteNameZh = setting?.siteName?.zh ?? "";
+      const systemEmail = `notice@guanweisong.com`;
+
+      // ====== 通知管理员 ======
+      // resend.emails
+      //   .send({
+      //     from: systemEmail,
+      //     to: "307761682@qq.com",
+      //     subject: `[${siteNameZh}]有一条新的评论`,
+      //     react: AdminCommentEmailMessage({
+      //       currentComment,
+      //       setting: setting!,
+      //     }),
+      //   })
+      //   .then((e) => {
+      //     console.log("SendEmail Success", e);
+      //   })
+      //   .catch((e) => {
+      //     console.log("SendEmail Error", e);
+      //   });
+
+      // ====== 通知被评论人 ======
+      // if (rest.parentId) {
+      //   let [parentComment] = await ctx.db
+      //     .select({
+      //       id: schema.comment.id,
+      //       email: schema.comment.email,
+      //       customId: schema.comment.customId,
+      //       content: schema.comment.content,
+      //     })
+      //     .from(schema.comment)
+      //     .where(eq(schema.comment.id, rest.parentId));
+      //
+      //   const parentCustom = getCustomCommentLink(parentComment?.customId);
+      //   if (parentCustom) {
+      //     // @ts-ignore
+      //     parentComment = { ...parentComment, custom: parentCustom };
+      //   }
+      //
+      //   if (parentComment) {
+      //     resend.emails
+      //       .send({
+      //         from: systemEmail,
+      //         to: parentComment.email,
+      //         subject: `您在[${siteNameZh}]的评论有新的回复`,
+      //         react: ReplyCommentEmailMessage({
+      //           currentComment,
+      //           setting: setting!,
+      //           parentComment,
+      //         }),
+      //       })
+      //       .then((e) => {
+      //         console.log("SendEmail Success", e);
+      //       })
+      //       .catch((e) => {
+      //         console.log("SendEmail Error", e);
+      //       });
+      //   }
+      // }
+
+      return currentComment;
     }),
 
   update: protectedProcedure(["ADMIN"])

@@ -1,7 +1,7 @@
 import React from "react";
-import CommentServer from "@/services/comment";
 import CommentClient from "@/components/Comment/client";
-import { MenuType } from "@/types/menu/MenuType";
+import { MenuType } from "@honeycomb/db";
+import { serverClient } from "@honeycomb/trpc/server";
 
 export interface CommentProps {
   id: string;
@@ -10,7 +10,7 @@ export interface CommentProps {
 
 const Comment = (props: CommentProps) => {
   const { id, type } = props;
-  const queryCommentPromise = CommentServer.index(id, type);
+  const queryCommentPromise = serverClient.comment.listByRef({ id, type });
 
   return <CommentClient {...props} queryCommentPromise={queryCommentPromise} />;
 };

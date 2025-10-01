@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import useQueryPostList from "@/hooks/swr/post/use.query.post.list";
-import { PostListQuery } from "@/types/post/post.list.query";
+import useInfiniteQueryPostList from "@/hooks/rq/post/use.infinite.query.post.list";
 import { useScroll } from "ahooks";
 import React, {
   useEffect,
@@ -18,36 +17,35 @@ import { Loader } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
 import { PostType, PostTypeBgColor, PostTypeName } from "@honeycomb/db";
+import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
 export interface PostListProps {
-  initData: PostEntity[];
-  queryParams: PostListQuery;
-  pageSize: Number;
+  queryParams: PostListQueryInput;
 }
 
 export default function PostList(props: PostListProps) {
-  const { initData, queryParams, pageSize } = props;
+  const { queryParams } = props;
   const scroll = useScroll(typeof document !== "undefined" ? document : null);
-  const { data, size, setSize } = useQueryPostList(queryParams, initData);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQueryPostList(queryParams);
   const locale = useLocale() as keyof MultiLang;
   const t = useTranslations("PostList");
 
-  const postList = data.flat();
-  // @ts-ignore
-  const isEnd = data[data.length - 1]?.length < pageSize;
-  const isLoadingMore = typeof data[size - 1] === "undefined";
+  const postList = data?.pages.flatMap((page) => page.list) ?? [];
+  const isEnd = !hasNextPage;
+  const isLoadingMore = isFetchingNextPage;
 
   useEffect(() => {
-    if (typeof document !== "undefined" && !isLoadingMore && !isEnd) {
+    if (typeof document !== "undefined" && !isLoadingMore && hasNextPage) {
       const { top = 0 } = scroll ?? {};
       const documentHeight = document.body.scrollHeight;
       const scrollTop = top + window.innerHeight;
       const difference = documentHeight - scrollTop;
       if (difference < 300) {
-        setSize(size + 1);
+        fetchNextPage();
       }
     }
-  }, [scroll, isLoadingMore]);
+  }, [scroll, isLoadingMore, hasNextPage, fetchNextPage]);
 
   /**
    * 渲染列表卡片

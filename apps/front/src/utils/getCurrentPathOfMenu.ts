@@ -1,8 +1,7 @@
-import { MenuEntity } from "@/types/menu/menu.entity";
-
 /**
  * 根据id寻找家族属性集合
  */
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 export interface GetCurrentPathProps {
   id?: string;

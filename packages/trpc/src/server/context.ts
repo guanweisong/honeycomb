@@ -38,6 +38,7 @@ export const createContext = async (opts: CreateContextOptions) => {
   return {
     db,
     user,
+    header: opts.req?.headers ?? new Headers(),
   } as const;
 };
 

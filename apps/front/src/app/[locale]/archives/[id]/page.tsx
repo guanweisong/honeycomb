@@ -1,11 +1,9 @@
 import React, { unstable_ViewTransition as ViewTransition } from "react";
-import PostServer from "@/services/post";
 import PostInfo from "@/components/PostInfo";
 import Tags from "@/components/Tags";
 import Card from "@/components/Card";
 import { Link } from "@/i18n/navigation";
 import Comment from "@/components/Comment";
-import CommentServer from "@/services/comment";
 import Markdown from "@/components/Markdown";
 import { utcFormat } from "@/utils/utcFormat";
 import PageTitle from "@/components/PageTitle";
@@ -22,14 +20,14 @@ export interface ArchivesProps {
 
 export default async function Archives(props: ArchivesProps) {
   const { id, locale } = await props.params;
-  const postDetail = await PostServer.indexPostDetail(id);
+  const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
 
   const [randomPostsList, commentsData] = await Promise.all([
     serverClient.post.getRandomByCategory({
       categoryId: postDetail.category.id,
     }),
-    CommentServer.index(id, MenuType.CATEGORY),
+    serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
     serverClient.post.incrementViews({ id }),
   ]);
 

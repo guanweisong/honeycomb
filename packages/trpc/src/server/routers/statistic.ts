@@ -20,7 +20,7 @@ export const statisticRouter = router({
       result.postType = [];
       for (let i = 0; i < postArray.length; i++) {
         const [postCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as('count') })
+          .select({ count: sql<number>`count(*)`.as("count") })
           .from(schema.post)
           .where(eq(schema.post.type, postArray[i] as any));
         const count = Number(postCountResult?.count) || 0;
@@ -31,7 +31,7 @@ export const statisticRouter = router({
       result.userType = [];
       for (let i = 0; i < userArray.length; i++) {
         const [userCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as('count') })
+          .select({ count: sql<number>`count(*)`.as("count") })
           .from(schema.user)
           .where(eq(schema.user.level, userArray[i] as any));
         const count = Number(userCountResult?.count) || 0;
@@ -42,7 +42,7 @@ export const statisticRouter = router({
       result.commentStatus = [];
       for (let i = 0; i < commentArray.length; i++) {
         const [commentCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as('count') })
+          .select({ count: sql<number>`count(*)`.as("count") })
           .from(schema.comment)
           .where(eq(schema.comment.status, commentArray[i] as any));
         const count = Number(commentCountResult?.count) || 0;
@@ -50,12 +50,10 @@ export const statisticRouter = router({
       }
 
       result.userPost = [];
-      const userList = await ctx.db
-        .select()
-        .from(schema.user);
+      const userList = await ctx.db.select().from(schema.user);
       for (let i = 0; i < userList.length; i++) {
         const [postCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as('count') })
+          .select({ count: sql<number>`count(*)`.as("count") })
           .from(schema.post)
           .where(eq(schema.post.authorId, userList[i].id));
         const count = Number(postCountResult?.count) || 0;

@@ -4,10 +4,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
-import PostServer from "@/services/post";
-import { MenuEntity } from "@/types/menu/menu.entity";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import { cn } from "@honeycomb/ui/lib/utils";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 export interface MenuItem {
   label: React.ReactNode;
@@ -46,7 +46,9 @@ const Menu = (props: MenuProps) => {
     let allCategoryPath = `/${segments.join("/")}`;
     switch (segments[0]) {
       case "archives":
-        const postDetail = await PostServer.indexPostCategoryId(segments[1]);
+        const postDetail = await serverClient.post.getCategoryId({
+          id: segments[1],
+        });
         allCategoryPath = `/list/category/${getCurrentPathOfMenu({
           id: postDetail.categoryId,
           familyProp: "path",

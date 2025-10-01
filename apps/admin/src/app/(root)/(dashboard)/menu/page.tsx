@@ -1,6 +1,5 @@
 "use client";
 
-import { PageEntity } from "@/app/(root)/(dashboard)/page/types/page.entity";
 import { creatCategoryTitleByDepth } from "@/utils/help";
 import { Tabs } from "@honeycomb/ui/extended/Tabs";
 import { Checkbox } from "@honeycomb/ui/extended/Checkbox";
@@ -11,13 +10,15 @@ import SortableTree, {
   getTreeFromFlatData,
 } from "react-sortable-tree";
 import "react-sortable-tree/style.css";
-import { CategoryEntity } from "../post/category/types/category.entity";
-import { MenuType, MenuTypeName } from "./types/MenuType";
-import type { MenuEntity } from "./types/menu.entity";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
+import { MenuType } from "@honeycomb/db";
+import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
+import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { MenuTypeName } from "@/app/(root)/(dashboard)/menu/types/MenuType";
 
 const Menu = () => {
   const saveAllMenu = trpc.menu.saveAll.useMutation();

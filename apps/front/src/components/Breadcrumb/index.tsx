@@ -1,11 +1,11 @@
 "use client";
 
-import { MenuEntity } from "@/types/menu/menu.entity";
 import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { MultiLang } from "@/types/Language";
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 export interface BreadCrumbProps {
   menu: MenuEntity[];

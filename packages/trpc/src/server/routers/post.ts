@@ -333,4 +333,15 @@ export const postRouter = router({
 
       return updatedPage;
     }),
+
+  getCategoryId: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [result] = await ctx.db
+        .select({ categoryId: schema.post.categoryId })
+        .from(schema.post)
+        .where(eq(schema.post.id, input.id));
+
+      return result;
+    }),
 });

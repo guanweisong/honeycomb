@@ -2,18 +2,18 @@
 
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
 import { Button } from "@honeycomb/ui/components/button";
-import { CommentEntity } from "@/types/comment/comment.entity";
 import Card from "../Card";
 import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
 import PaginationResponse from "@/types/pagination.response";
 import { useRouter } from "next/navigation";
-import { CommentCreate } from "@/types/comment/comment.create";
 import { refreshPath } from "@/utils/refreshPath";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import CommentServer from "@/services/comment";
 import { CommentStatus, MenuType } from "@honeycomb/db";
+import { serverClient } from "@honeycomb/trpc/server";
+import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
+import { CommentInsertInput } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;
@@ -70,7 +70,7 @@ const CommentClient = (props: CommentClientProps) => {
         userData.site = site;
       }
     }
-    const data = { ...userData } as CommentCreate;
+    const data = { ...userData } as CommentInsertInput;
     data.content = e.currentTarget.content.value;
     switch (type) {
       case MenuType.CATEGORY:
@@ -95,7 +95,7 @@ const CommentClient = (props: CommentClientProps) => {
         }
         console.log("handleSubmit", data);
         startTransition(async () => {
-          const result = await CommentServer.create(data);
+          const result = await serverClient.comment.create(data);
           if (result?.id) {
             startTransition(() => refreshPath(pathname));
             startTransition(router.refresh);

@@ -1,11 +1,12 @@
 import React from "react";
-import { PostListQuery } from "@/types/post/post.list.query";
 import PostList from "@/components/PostList";
 import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
 import { serverClient } from "@honeycomb/trpc/server";
-import { PostStatus, MenuEntity } from "@honeycomb/db/src/types";
+import { PostStatus } from "@honeycomb/db/src/types";
+import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 const PAGE_SIZE = 10;
 
@@ -27,7 +28,7 @@ export default async function List(props: ListProps) {
   let queryParams = {
     status: [PostStatus.PUBLISHED],
     limit: PAGE_SIZE,
-  } as PostListQuery;
+  } as PostListQueryInput;
   let typeName = decodeURI(params?.slug?.pop() ?? "");
   switch (type) {
     case "category":

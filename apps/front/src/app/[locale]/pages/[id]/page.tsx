@@ -1,7 +1,6 @@
 import React from "react";
 import PostInfo from "@/components/PostInfo";
 import Comment from "@/components/Comment";
-import CommentServer from "@/services/comment";
 import Markdown from "@/components/Markdown";
 import PageTitle from "@/components/PageTitle";
 import { getLocale } from "next-intl/server";
@@ -16,7 +15,7 @@ export default async function Pages(props: PagesProps) {
   const { id, locale } = await props.params;
   const [pageDetail, commentsData] = await Promise.all([
     serverClient.page.detail({ id }),
-    CommentServer.index(id, MenuType.PAGE),
+    serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
     serverClient.page.incrementViews({ id }),
   ]);
 

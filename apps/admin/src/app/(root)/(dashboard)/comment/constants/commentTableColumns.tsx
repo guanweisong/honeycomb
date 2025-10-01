@@ -1,8 +1,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
-import type { CommentEntity } from "../types/comment.entity";
 import { commentStatusOptions } from "../types/CommentStatus";
+import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 
 export const commentTableColumns: ColumnDef<CommentEntity>[] = [
   {
