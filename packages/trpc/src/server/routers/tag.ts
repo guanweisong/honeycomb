@@ -12,7 +12,7 @@ import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.q
 import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
 export const tagRouter = router({
   index: publicProcedure
@@ -57,7 +57,7 @@ export const tagRouter = router({
     .mutation(async ({ input, ctx }) => {
       const [newTag] = await ctx.db
         .insert(schema.tag)
-        .values(input)
+        .values(input as InferInsertModel<typeof schema.tag>)
         .returning();
       return newTag;
     }),
@@ -72,10 +72,11 @@ export const tagRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedTag] = await ctx.db
         .update(schema.tag)
-        .set(input)
-        .where(eq(schema.tag.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.tag>>)
+        .where(eq(schema.tag.id, id))
         .returning();
       return updatedTag;
     }),

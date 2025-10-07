@@ -14,7 +14,7 @@ import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 
@@ -121,7 +121,7 @@ export const pageRouter = router({
         .values({
           ...input,
           authorId,
-        })
+        } as InferInsertModel<typeof schema.page>)
         .returning();
       return newPage;
     }),
@@ -138,10 +138,11 @@ export const pageRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedPage] = await ctx.db
         .update(schema.page)
-        .set(input)
-        .where(eq(schema.page.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.page>>)
+        .where(eq(schema.page.id, id))
         .returning();
 
       let author: any = null;

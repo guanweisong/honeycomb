@@ -12,7 +12,7 @@ import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.lis
 import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { and, eq, inArray, sql, or, like } from "drizzle-orm";
+import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
@@ -288,10 +288,11 @@ export const postRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedPost] = await ctx.db
         .update(schema.post)
-        .set(input)
-        .where(eq(schema.post.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.post>>)
+        .where(eq(schema.post.id, id))
         .returning();
       return updatedPost;
     }),

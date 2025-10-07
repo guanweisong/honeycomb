@@ -5,7 +5,7 @@ import {
 } from "@honeycomb/trpc/server/core";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq } from "drizzle-orm";
+import { eq, InferInsertModel } from "drizzle-orm";
 
 export const settingRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
@@ -20,10 +20,11 @@ export const settingRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedSetting] = await ctx.db
         .update(schema.setting)
-        .set(input)
-        .where(eq(schema.setting.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.setting>>)
+        .where(eq(schema.setting.id, id))
         .returning();
       return updatedSetting;
     }),

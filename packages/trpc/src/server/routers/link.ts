@@ -12,7 +12,7 @@ import { LinkListQuerySchema } from "@honeycomb/validation/link/schemas/link.lis
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
 export const linkRouter = router({
   index: publicProcedure
@@ -59,7 +59,7 @@ export const linkRouter = router({
     .mutation(async ({ input, ctx }) => {
       const [newLink] = await ctx.db
         .insert(schema.link)
-        .values(input)
+        .values(input as InferInsertModel<typeof schema.link>)
         .returning();
       return newLink;
     }),
@@ -76,10 +76,11 @@ export const linkRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedLink] = await ctx.db
         .update(schema.link)
-        .set(input)
-        .where(eq(schema.link.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.link>>)
+        .where(eq(schema.link.id, id))
         .returning();
       return updatedLink;
     }),

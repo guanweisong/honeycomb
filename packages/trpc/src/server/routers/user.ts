@@ -12,7 +12,7 @@ import { UserListQuerySchema } from "@honeycomb/validation/user/schemas/user.lis
 import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
 export const userRouter = router({
   index: publicProcedure
@@ -53,7 +53,7 @@ export const userRouter = router({
     .mutation(async ({ input, ctx }) => {
       const [newUser] = await ctx.db
         .insert(schema.user)
-        .values(input)
+        .values(input as InferInsertModel<typeof schema.user>)
         .returning();
       return newUser;
     }),
@@ -70,10 +70,11 @@ export const userRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedUser] = await ctx.db
         .update(schema.user)
-        .set(input)
-        .where(eq(schema.user.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.user>>)
+        .where(eq(schema.user.id, id))
         .returning();
       return updatedUser;
     }),

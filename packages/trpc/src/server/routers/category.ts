@@ -12,7 +12,7 @@ import { CategoryListQuerySchema } from "@honeycomb/validation/category/schemas/
 import { CategoryInsertSchema } from "@honeycomb/validation/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import Tools from "@honeycomb/trpc/server/libs/tools";
 
 export const categoryRouter = router({
@@ -63,7 +63,7 @@ export const categoryRouter = router({
     .mutation(async ({ input, ctx }) => {
       const [newCategory] = await ctx.db
         .insert(schema.category)
-        .values(input)
+        .values(input as InferInsertModel<typeof schema.category>)
         .returning();
       return newCategory;
     }),
@@ -80,10 +80,11 @@ export const categoryRouter = router({
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(CategoryUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedCategory] = await ctx.db
         .update(schema.category)
-        .set(input)
-        .where(eq(schema.category.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.category>>)
+        .where(eq(schema.category.id, id))
         .returning();
       return updatedCategory;
     }),

@@ -9,17 +9,12 @@ import {
 } from "@honeycomb/trpc/server/libs/tools";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
 export const menuRouter = router({
   index: publicProcedure.query(async ({ ctx }) => {
     const where = buildDrizzleWhere(schema.menu, {}, [], {});
-    const orderByClause = buildDrizzleOrderBy(
-      schema.menu,
-      "power",
-      "asc",
-      "sort",
-    );
+    const orderByClause = buildDrizzleOrderBy(schema.menu, "power", "asc");
 
     const list = await ctx.db
       .select()
@@ -64,15 +59,15 @@ export const menuRouter = router({
   saveAll: protectedProcedure(["ADMIN", "EDITOR"])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.menu)
-        .where(eq(schema.menu.id, inArray(input.map((item) => item.id))));
-      const now = new Date();
+      await ctx.db.delete(schema.menu);
+
+      if (!input.length) {
+        return { count: 0 };
+      }
+
       const newMenu = await ctx.db
         .insert(schema.menu)
-        .values(
-          input.map((item) => ({ ...item, createdAt: now, updatedAt: now })),
-        )
+        .values(input.map(({ id, ...item }) => item))
         .returning();
       return { count: newMenu.length };
     }),

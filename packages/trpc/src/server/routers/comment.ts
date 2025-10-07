@@ -17,7 +17,7 @@ import md5 from "md5";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, and, sql } from "drizzle-orm";
+import { eq, inArray, and, sql, InferInsertModel, asc } from "drizzle-orm";
 import { CommentStatus } from "@honeycomb/db/src/types";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
 import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
@@ -108,7 +108,7 @@ export const commentRouter = router({
         .select()
         .from(schema.comment)
         .where(where)
-        .orderBy({ field: "createdAt", direction: "asc" });
+        .orderBy(asc(schema.comment.createdAt));
 
       const list = result.length
         ? listToTree(
@@ -246,10 +246,11 @@ export const commentRouter = router({
   update: protectedProcedure(["ADMIN"])
     .input(CommentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
+      const { id, ...rest } = input;
       const [updatedComment] = await ctx.db
         .update(schema.comment)
-        .set(input)
-        .where(eq(schema.comment.id, input.id))
+        .set(rest as Partial<InferInsertModel<typeof schema.comment>>)
+        .where(eq(schema.comment.id, id))
         .returning();
       return updatedComment;
     }),
