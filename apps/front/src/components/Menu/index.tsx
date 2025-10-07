@@ -6,8 +6,8 @@ import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { serverClient } from "@honeycomb/trpc/server";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
 export interface MenuItem {
   label: React.ReactNode;
@@ -30,25 +30,36 @@ const Menu = (props: MenuProps) => {
   const pathname = usePathname();
   const segments = useSelectedLayoutSegments();
 
+  const { data: postDetail } = trpc.post.getCategoryId.useQuery(
+    { id: segments?.[1] ?? "" },
+    { enabled: !!segments?.[1] }, // 只有有 id 时才请求
+  );
+
   useEffect(() => {
     setVisible(false);
     judgeCurrentMenu();
-  }, [pathname]);
+    // 依赖 postDetail：当异步数据到来时也会重新计算
+  }, [pathname, postDetail]);
 
   useClickAway(() => {
     setVisible(false);
   }, [ref1, ref2]);
 
   /**
-   * 计算当前菜单值
+   * 计算当前菜单值（不再使用 serverClient）
    */
-  const judgeCurrentMenu = async () => {
-    let allCategoryPath = `/${segments.join("/")}`;
-    switch (segments[0]) {
+  const judgeCurrentMenu = () => {
+    const segs = segments ?? [];
+    let allCategoryPath = `/${segs.join("/")}`;
+
+    switch (segs[0]) {
       case "archives":
-        const postDetail = await serverClient.post.getCategoryId({
-          id: segments[1],
-        });
+        // postDetail 是 useQuery 的 data，可能还没来
+        if (!postDetail) {
+          // 还没拿到详情，先设为基础路径（或直接 return，视你的 UX 期望）
+          setCurrentCategory([allCategoryPath]);
+          return;
+        }
         allCategoryPath = `/list/category/${getCurrentPathOfMenu({
           id: postDetail.categoryId,
           familyProp: "path",

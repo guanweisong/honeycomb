@@ -15,6 +15,9 @@ import * as schema from "@honeycomb/db/src/schema";
 import { and, eq, inArray, sql, or, like } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
+import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
+import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
+import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
 
 export const postRouter = router({
   index: publicProcedure
@@ -38,11 +41,10 @@ export const postRouter = router({
         { ...rest, title, content },
         ["status", "type"],
         { title, content },
-      ) as any;
+      );
 
       // 分类树过滤
       if (categoryId) {
-        const allCategories = await ctx.db.select().from(schema.category);
         // 使用简单的子分类查询替代 sonsTree
         const subCategories = await ctx.db
           .select()
@@ -63,18 +65,18 @@ export const postRouter = router({
         const tags = await ctx.db
           .select()
           .from(schema.tag)
-          .where(tagWhere as any)
+          .where(tagWhere)
           .limit(1);
         if (!tags.length) {
           return { list: [], total: 0 };
         }
-        const tagId = tags[0].id as string;
+        const tagId = tags[0].id;
         const idLike = `%${tagId}%`;
         const tagClause = or(
-          like(schema.post.galleryStyleIds as any, idLike),
-          like(schema.post.movieActorIds as any, idLike),
-          like(schema.post.movieStyleIds as any, idLike),
-          like(schema.post.movieDirectorIds as any, idLike),
+          like(schema.post.galleryStyleIds, idLike),
+          like(schema.post.movieActorIds, idLike),
+          like(schema.post.movieStyleIds, idLike),
+          like(schema.post.movieDirectorIds, idLike),
         );
         where = where ? and(where, tagClause) : tagClause;
       }
@@ -84,7 +86,7 @@ export const postRouter = router({
         const users = await ctx.db
           .select()
           .from(schema.user)
-          .where(eq(schema.user.name, userName as string));
+          .where(eq(schema.user.name, userName));
         if (!users.length) return { list: [], total: 0 };
         const authorClause = eq(schema.post.authorId, users[0].id);
         where = where ? and(where, authorClause) : authorClause;
@@ -101,19 +103,19 @@ export const postRouter = router({
         .select()
         .from(schema.post)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 
       // 批量加载关联数据以模拟 include
       const categoryIds = Array.from(
-        new Set(list.map((p: any) => p.categoryId).filter(Boolean)),
+        new Set(list.map((p) => p.categoryId).filter(Boolean)),
       );
       const authorIds = Array.from(
-        new Set(list.map((p: any) => p.authorId).filter(Boolean)),
+        new Set(list.map((p) => p.authorId).filter(Boolean)),
       );
       const coverIds = Array.from(
-        new Set(list.map((p: any) => p.coverId).filter(Boolean)),
+        new Set(list.map((p) => p.coverId).filter(Boolean)),
       );
       const mediaIds = Array.from(
         new Set(list.flatMap((p: any) => p.mediaId || [])),
@@ -125,19 +127,19 @@ export const postRouter = router({
               .select()
               .from(schema.category)
               .where(inArray(schema.category.id, categoryIds as any))
-          : Promise.resolve([] as any[]),
+          : Promise.resolve([]),
         authorIds.length
           ? ctx.db
               .select()
               .from(schema.user)
               .where(inArray(schema.user.id, authorIds as any))
-          : Promise.resolve([] as any[]),
+          : Promise.resolve([]),
         coverIds.length
           ? ctx.db
               .select()
               .from(schema.media)
               .where(inArray(schema.media.id, coverIds as any))
-          : Promise.resolve([] as any[]),
+          : Promise.resolve([]),
         mediaIds.length
           ? ctx.db
               .select()
@@ -148,12 +150,11 @@ export const postRouter = router({
       const categoryMap = Object.fromEntries(
         categories.map((c: any) => [c.id, c]),
       );
-      const authorMap = Object.fromEntries(authors.map((u: any) => [u.id, u]));
-      const coverMap = Object.fromEntries(covers.map((m: any) => [m.id, m]));
-      const mediaMap = Object.fromEntries(mediaList.map((m: any) => [m.id, m]));
+      const authorMap = Object.fromEntries(authors.map((u) => [u.id, u]));
+      const coverMap = Object.fromEntries(covers.map((m) => [m.id, m]));
+      const mediaMap = Object.fromEntries(mediaList.map((m) => [m.id, m]));
 
       const mapped = list.map((item: any) => {
-        const { content: _content, ...rest } = item;
         return {
           ...item,
           category: item.categoryId
@@ -162,7 +163,7 @@ export const postRouter = router({
           author: item.authorId ? (authorMap[item.authorId] ?? null) : null,
           cover: item.coverId ? (coverMap[item.coverId] ?? null) : null,
           media: item.mediaId ? (mediaMap[item.mediaId] ?? null) : null,
-        } as any;
+        };
       });
 
       const [countResult] = await ctx.db
@@ -228,12 +229,36 @@ export const postRouter = router({
           .limit(1);
       }
 
+      const [movieActors, movieDirectors, movieStyles, galleryStyles] =
+        await Promise.all([
+          getRelationTags(item?.movieActorIds ?? []),
+          getRelationTags(item?.movieDirectorIds ?? []),
+          getRelationTags(item?.movieStyleIds ?? []),
+          getRelationTags(item?.galleryStyleIds ?? []),
+        ]);
+
+      const imageUrls = getAllImageLinkFormMarkdown(
+        item?.content?.zh,
+      ) as string[];
+      let imagesInContent: MediaEntity[] = [];
+      if (imageUrls.length) {
+        imagesInContent = await ctx.db
+          .select()
+          .from(schema.media)
+          .where(inArray(schema.media.url, imageUrls));
+      }
+
       return {
         ...item,
         category,
         author,
         cover,
         thumbnail,
+        movieActors,
+        movieDirectors,
+        movieStyles,
+        galleryStyles,
+        imagesInContent,
       };
     }),
 

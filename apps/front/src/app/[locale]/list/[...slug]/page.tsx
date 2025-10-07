@@ -28,6 +28,7 @@ export default async function List(props: ListProps) {
   let queryParams = {
     status: [PostStatus.PUBLISHED],
     limit: PAGE_SIZE,
+    sortField: "createdAt",
   } as PostListQueryInput;
   let typeName = decodeURI(params?.slug?.pop() ?? "");
   switch (type) {

@@ -68,6 +68,8 @@ export default async function Archives(props: ArchivesProps) {
       break;
   }
 
+  console.log("postDetail", postDetail);
+
   return (
     <>
       <script

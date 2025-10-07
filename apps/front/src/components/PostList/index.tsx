@@ -16,8 +16,9 @@ import { MultiLang } from "@/types/Language";
 import { Loader } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
-import { PostType, PostTypeBgColor, PostTypeName } from "@honeycomb/db";
+import { PostType, PostTypeName } from "@honeycomb/db";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
+import { PostTypeBgColor } from "@/types/PostTypeBgColor";
 
 export interface PostListProps {
   queryParams: PostListQueryInput;
@@ -107,11 +108,13 @@ export default function PostList(props: PostListProps) {
             </Link>
           </ViewTransition>
           {item.excerpt?.[locale] && (
-            <ViewTransition name={`postExcerpt-${item.id}`}>
-              <div className="lg:my-2 lg:line-clamp-2">
-                {item.excerpt?.[locale]}
-              </div>
-            </ViewTransition>
+            <Link href={`/archives/${item.id}`}>
+              <ViewTransition name={`postExcerpt-${item.id}`}>
+                <div className="lg:my-2 lg:line-clamp-2">
+                  {item.excerpt?.[locale]}
+                </div>
+              </ViewTransition>
+            </Link>
           )}
           <PostInfo
             id={item.id}

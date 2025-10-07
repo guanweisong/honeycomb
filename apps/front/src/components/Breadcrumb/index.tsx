@@ -57,8 +57,6 @@ const Breadcrumb = (props: BreadCrumbProps) => {
       break;
   }
 
-  console.log("breadData", breadData);
-
   if (breadData.length === 1) {
     breadData.pop();
   }

@@ -1,4 +1,4 @@
-import { db as defaultDb, schema, type MultiLang } from "@honeycomb/db";
+import { db, schema, type MultiLang } from "@honeycomb/db";
 import { inArray } from "drizzle-orm";
 
 export interface RelationTag {
@@ -12,10 +12,9 @@ export interface RelationTag {
  */
 export const getRelationTags = async (
   ids: string[] = [],
-  dbc = defaultDb,
 ): Promise<RelationTag[]> => {
   if (ids.length === 0) return [];
-  return dbc
+  return db
     .select({ id: schema.tag.id, name: schema.tag.name as any })
     .from(schema.tag)
     .where(inArray(schema.tag.id, ids));

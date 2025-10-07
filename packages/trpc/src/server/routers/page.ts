@@ -15,6 +15,8 @@ import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql } from "drizzle-orm";
+import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
+import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 
 export const pageRouter = router({
   index: publicProcedure
@@ -96,7 +98,18 @@ export const pageRouter = router({
         author = authorData || null;
       }
 
-      return { ...item, author };
+      const imageUrls = getAllImageLinkFormMarkdown(
+        item?.content?.zh,
+      ) as string[];
+      let imagesInContent: MediaEntity[] = [];
+      if (imageUrls.length) {
+        imagesInContent = await ctx.db
+          .select()
+          .from(schema.media)
+          .where(inArray(schema.media.url, imageUrls));
+      }
+
+      return { ...item, author, imagesInContent };
     }),
 
   create: protectedProcedure(["ADMIN", "EDITOR"])

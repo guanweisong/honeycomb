@@ -6,14 +6,13 @@ import Card from "../Card";
 import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
 import PaginationResponse from "@/types/pagination.response";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { refreshPath } from "@/utils/refreshPath";
-import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CommentStatus, MenuType } from "@honeycomb/db";
-import { serverClient } from "@honeycomb/trpc/server";
 import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 import { CommentInsertInput } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc"; // ✅ 客户端 tRPC
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;
@@ -21,7 +20,7 @@ export interface CommentClientProps extends CommentProps {
 
 export interface User {
   author: string;
-  site: string;
+  site?: string;
   email: string;
 }
 
@@ -36,6 +35,9 @@ const CommentClient = (props: CommentClientProps) => {
   const t = useTranslations("Comment");
   const [user, setUser] = useState<User>();
 
+  // ✅ 使用 trpc 客户端 mutation
+  const mutation = trpc.comment.create.useMutation();
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -45,7 +47,6 @@ const CommentClient = (props: CommentClientProps) => {
 
   /**
    * 评论回复事件
-   * @param item
    */
   const handleReply = (item?: CommentEntity | null) => {
     if (item !== null) {
@@ -55,23 +56,29 @@ const CommentClient = (props: CommentClientProps) => {
   };
 
   /**
-   * 评论提交事件
+   * 评论提交事件（改为 trpc 客户端调用）
    */
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget;
     let userData = user;
+
     if (!userData) {
       userData = {
-        author: e.currentTarget.author.value,
-        email: e.currentTarget.email.value,
+        author: form.author.value,
+        email: form.email.value,
       } as User;
-      const site = e.currentTarget.site.value;
+      const site = form.site.value;
       if (site) {
         userData.site = site;
       }
     }
-    const data = { ...userData } as CommentInsertInput;
-    data.content = e.currentTarget.content.value;
+
+    const data: CommentInsertInput = {
+      ...userData,
+      content: form.content.value,
+    } as CommentInsertInput;
+
     switch (type) {
       case MenuType.CATEGORY:
         data.postId = id;
@@ -93,65 +100,67 @@ const CommentClient = (props: CommentClientProps) => {
         if (replyTo !== null) {
           data.parentId = replyTo.id;
         }
+
         console.log("handleSubmit", data);
         startTransition(async () => {
-          const result = await serverClient.comment.create(data);
-          if (result?.id) {
-            startTransition(() => refreshPath(pathname));
-            startTransition(router.refresh);
-            handleReply(null);
-            formRef.current?.reset();
-            localStorage.setItem("user", JSON.stringify(userData));
-            setUser(userData);
+          try {
+            const result = await mutation.mutateAsync(data); // ✅ 改为 trpc 客户端调用
+            if (result?.id) {
+              await refreshPath(pathname);
+              router.refresh();
+              handleReply(null);
+              formRef.current?.reset();
+              localStorage.setItem("user", JSON.stringify(userData));
+              setUser(userData);
+            }
+          } catch (error) {
+            console.error("Comment submit failed:", error);
           }
         });
       }
     });
-    captcha && captcha.show();
+    captcha?.show();
   };
 
   /**
    * 评论列表渲染
-   * @param data
    */
   const renderCommentList = (data: CommentEntity[]) => {
-    return data?.map((item) => {
-      return (
-        <li className="relative" key={item.id}>
-          <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
-            <div className="float-left w-12 h-12 mr-5">
-              <img src={item.avatar} className="w-full" />
+    return data?.map((item) => (
+      <li className="relative" key={item.id}>
+        <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
+          <div className="float-left w-12 h-12 mr-5">
+            <img src={item.avatar} className="w-full" />
+          </div>
+          <div className="overflow-hidden">
+            <div>
+              {item.site ? (
+                <a className="text-pink-500" href={item.site}>
+                  {item.author}
+                </a>
+              ) : (
+                item.author
+              )}
             </div>
-            <div className="overflow-hidden">
-              <div>
-                {item.site ? (
-                  <a className="text-pink-500" href={item.site}>
-                    {item.author}
-                  </a>
-                ) : (
-                  item.author
-                )}
-              </div>
-              <div className="mt-1 whitespace-pre-wrap">
-                {item.status !== CommentStatus.BAN
-                  ? item.content
-                  : t("banMessage")}
-              </div>
-            </div>
-            <div className="absolute right-2 top-4 text-auto-front-gray/50">
-              <span>{utcFormat(item.createdAt)}</span>
-              <span className="mx-1">/</span>
-              <a className="text-pink-500" onClick={() => handleReply(item)}>
-                {t("form.reply")}
-              </a>
+            <div className="mt-1 whitespace-pre-wrap">
+              {item.status !== CommentStatus.BAN
+                ? item.content
+                : t("banMessage")}
             </div>
           </div>
-          {item.children.length > 0 && (
-            <ul className="ml-10">{renderCommentList(item.children)}</ul>
-          )}
-        </li>
-      );
-    });
+          <div className="absolute right-2 top-4 text-auto-front-gray/50">
+            <span>{utcFormat(item.createdAt)}</span>
+            <span className="mx-1">/</span>
+            <a className="text-pink-500" onClick={() => handleReply(item)}>
+              {t("form.reply")}
+            </a>
+          </div>
+        </div>
+        {item.children.length > 0 && (
+          <ul className="ml-10">{renderCommentList(item.children)}</ul>
+        )}
+      </li>
+    ));
   };
 
   return (
@@ -198,24 +207,24 @@ const CommentClient = (props: CommentClientProps) => {
               <>
                 <input
                   className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
-                  type={"text"}
+                  type="text"
                   placeholder={t("form.name")}
-                  name={"author"}
+                  name="author"
                   maxLength={20}
                   required
                 />
                 <input
                   className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
-                  type={"url"}
+                  type="url"
                   placeholder={t("form.site")}
-                  name={"site"}
+                  name="site"
                   maxLength={30}
                 />
                 <input
                   className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
-                  type={"email"}
+                  type="email"
                   placeholder={t("form.email")}
-                  name={"email"}
+                  name="email"
                   required
                   maxLength={30}
                 />
@@ -225,14 +234,14 @@ const CommentClient = (props: CommentClientProps) => {
             <textarea
               className="block border-b-[0.5px]  border-auto-front-gray/40 w-full leading-6 pt-2 outline-0 focus:border-pink-400 mb-2 bg-transparent"
               placeholder={t("form.content")}
-              name={"content"}
+              name="content"
               required
               maxLength={200}
               rows={4}
             />
             <Button
-              type={"submit"}
-              disabled={isPending}
+              type="submit"
+              disabled={isPending || mutation.isPending}
               className="cursor-pointer"
             >
               {t("form.submit")}
