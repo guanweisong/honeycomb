@@ -17,7 +17,10 @@ export const authRouter = router({
       .select()
       .from(schema.user)
       .where(
-        and(eq(schema.user.name, name), eq(schema.user.password, password)),
+        and(
+          eq(schema.user.name, name as string),
+          eq(schema.user.password, password as string),
+        ),
       )
       .limit(1);
 

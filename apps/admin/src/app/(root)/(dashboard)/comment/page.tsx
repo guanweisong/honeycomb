@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
 import { CommentStatus } from "./types/CommentStatus";
 import type { CommentEntity } from "./types/comment.entity";
-import { TagIndexRequest } from "@/app/(root)/(dashboard)/tag/types/tag.index.request";
 import { Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
@@ -13,10 +12,11 @@ import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { TagListQueryInput } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 
 const Comment = () => {
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
-  const [searchParams, setSearchParams] = useState<TagIndexRequest>();
+  const [searchParams, setSearchParams] = useState<TagListQueryInput>();
   const { data, isLoading, isError, refetch } =
     trpc.comment.index.useQuery(searchParams);
   const updateComment = trpc.comment.update.useMutation();
@@ -159,7 +159,7 @@ const Comment = () => {
 
   return (
     <>
-      <DataTable<CommentEntity, TagIndexRequest>
+      <DataTable<CommentEntity, TagListQueryInput>
         columns={commentTableColumns}
         data={{
           list: data?.list ?? [],

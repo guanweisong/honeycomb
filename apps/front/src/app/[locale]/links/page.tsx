@@ -29,7 +29,7 @@ const Links = async (props: LinksProps) => {
         <div className="py-2 lg:py-4">
           {result.list.map((item, index) => (
             <a
-              href={item.url}
+              href={item.url as string}
               target="_blank"
               className={cn("flex items-center py-2", {
                 "border-t-0.5 border-dashed border-auto-front-gray/30":
@@ -70,7 +70,10 @@ const Links = async (props: LinksProps) => {
           <div>{t("applyStep.stepThree")}</div>
         </div>
       </div>
-      <Comment id={setting.customObjectId.link} type={MenuType.CUSTOM} />
+      <Comment
+        id={setting.customObjectId.link as string}
+        type={MenuType.CUSTOM}
+      />
     </div>
   );
 };

@@ -72,7 +72,7 @@ export default async function List(props: ListProps) {
         if (typeName) {
           title = `${typeName}_${setting.siteName?.[params.locale]}`;
         } else {
-          title = setting.siteName?.[params.locale];
+          title = setting.siteName?.[params.locale] as string;
         }
     }
     return title;
@@ -143,7 +143,7 @@ export async function generateMetadata(props: GenerateMetadataProps) {
         if (typeName) {
           title = `${typeName}_${setting?.siteName?.[locale]}`;
         } else {
-          title = setting?.siteName?.[locale];
+          title = setting?.siteName?.[locale] as string;
         }
     }
     return decodeURI(title);

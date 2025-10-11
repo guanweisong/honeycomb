@@ -11,9 +11,9 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@honeycomb/validation/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@honeycomb/validation/comment/schemas/comment.query.schema";
-// @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
+import { Resend } from "resend";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
@@ -21,6 +21,11 @@ import { eq, inArray, and, sql, InferInsertModel, asc } from "drizzle-orm";
 import { CommentStatus } from "@honeycomb/db/src/types";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
 import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
+import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/AdminCommentEmailMessage";
+import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
+import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const commentRouter = router({
   index: publicProcedure
@@ -91,7 +96,7 @@ export const commentRouter = router({
     .query(async ({ input, ctx }) => {
       const publishOrBan = ["PUBLISH", "BAN"] as const;
       // base where: status in publishOrBan
-      const baseWhere = inArray(schema.comment.status, publishOrBan as any);
+      const baseWhere = inArray(schema.comment.status, publishOrBan);
       let where = baseWhere as any;
       switch (input.type) {
         case "CATEGORY":
@@ -146,25 +151,11 @@ export const commentRouter = router({
         })
         .returning();
 
-      let [currentComment] = await ctx.db
+      const [currentComment] = await ctx.db
         .select({
-          id: schema.comment.id,
-          content: schema.comment.content,
-          email: schema.comment.email,
-          customId: schema.comment.customId,
-          parentId: schema.comment.parentId,
-          postId: schema.comment.postId,
-          pageId: schema.comment.pageId,
-          // 关联 post
-          post: {
-            id: schema.post.id,
-            title: schema.post.title,
-          },
-          // 关联 page
-          page: {
-            id: schema.page.id,
-            title: schema.page.title,
-          },
+          ...selectAllColumns(schema.comment),
+          post: { id: schema.post.id, title: schema.post.title },
+          page: { id: schema.page.id, title: schema.page.title },
         })
         .from(schema.comment)
         .leftJoin(schema.post, eq(schema.comment.postId, schema.post.id))
@@ -173,10 +164,10 @@ export const commentRouter = router({
 
       // ====== custom link ======
       const currentCustom = getCustomCommentLink(currentComment?.customId);
-      if (currentCustom) {
-        // @ts-ignore
-        currentComment = { ...currentComment, custom: currentCustom };
-      }
+      const currentCommentWithCustom = {
+        ...currentComment,
+        custom: currentCustom,
+      };
 
       // ====== setting ======
       const [setting] = await ctx.db.select().from(schema.setting);
@@ -184,63 +175,62 @@ export const commentRouter = router({
       const systemEmail = `notice@guanweisong.com`;
 
       // ====== 通知管理员 ======
-      // resend.emails
-      //   .send({
-      //     from: systemEmail,
-      //     to: "307761682@qq.com",
-      //     subject: `[${siteNameZh}]有一条新的评论`,
-      //     react: AdminCommentEmailMessage({
-      //       currentComment,
-      //       setting: setting!,
-      //     }),
-      //   })
-      //   .then((e) => {
-      //     console.log("SendEmail Success", e);
-      //   })
-      //   .catch((e) => {
-      //     console.log("SendEmail Error", e);
-      //   });
+      resend.emails
+        .send({
+          from: systemEmail,
+          to: "307761682@qq.com",
+          subject: `[${siteNameZh}]有一条新的评论`,
+          react: AdminCommentEmailMessage({
+            currentComment: currentCommentWithCustom,
+            setting: setting,
+          }),
+        })
+        .then((e) => {
+          console.log("SendEmail Success", e);
+        })
+        .catch((e) => {
+          console.log("SendEmail Error", e);
+        });
 
       // ====== 通知被评论人 ======
-      // if (rest.parentId) {
-      //   let [parentComment] = await ctx.db
-      //     .select({
-      //       id: schema.comment.id,
-      //       email: schema.comment.email,
-      //       customId: schema.comment.customId,
-      //       content: schema.comment.content,
-      //     })
-      //     .from(schema.comment)
-      //     .where(eq(schema.comment.id, rest.parentId));
-      //
-      //   const parentCustom = getCustomCommentLink(parentComment?.customId);
-      //   if (parentCustom) {
-      //     // @ts-ignore
-      //     parentComment = { ...parentComment, custom: parentCustom };
-      //   }
-      //
-      //   if (parentComment) {
-      //     resend.emails
-      //       .send({
-      //         from: systemEmail,
-      //         to: parentComment.email,
-      //         subject: `您在[${siteNameZh}]的评论有新的回复`,
-      //         react: ReplyCommentEmailMessage({
-      //           currentComment,
-      //           setting: setting!,
-      //           parentComment,
-      //         }),
-      //       })
-      //       .then((e) => {
-      //         console.log("SendEmail Success", e);
-      //       })
-      //       .catch((e) => {
-      //         console.log("SendEmail Error", e);
-      //       });
-      //   }
-      // }
+      if (rest.parentId) {
+        const [parentComment] = await ctx.db
+          .select({
+            id: schema.comment.id,
+            email: schema.comment.email,
+            customId: schema.comment.customId,
+            content: schema.comment.content,
+          })
+          .from(schema.comment)
+          .where(eq(schema.comment.id, rest.parentId));
 
-      return currentComment;
+        if (parentComment) {
+          const parentCustom = getCustomCommentLink(parentComment?.customId);
+          const parentCommentWithCustom = {
+            ...parentComment,
+            custom: parentCustom,
+          };
+          resend.emails
+            .send({
+              from: systemEmail,
+              to: parentComment.email as string,
+              subject: `您在[${siteNameZh}]的评论有新的回复`,
+              react: ReplyCommentEmailMessage({
+                currentComment: currentCommentWithCustom,
+                setting: setting,
+                parentComment: parentCommentWithCustom,
+              }),
+            })
+            .then((e) => {
+              console.log("SendEmail Success", e);
+            })
+            .catch((e) => {
+              console.log("SendEmail Error", e);
+            });
+        }
+      }
+
+      return currentCommentWithCustom;
     }),
 
   update: protectedProcedure(["ADMIN"])

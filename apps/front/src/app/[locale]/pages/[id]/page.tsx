@@ -25,9 +25,9 @@ export default async function Pages(props: PagesProps) {
       <PostInfo
         id={pageDetail?.id}
         author={pageDetail?.author.name}
-        date={pageDetail?.createdAt}
+        date={pageDetail?.createdAt as string}
         comments={commentsData?.total}
-        views={pageDetail?.views}
+        views={pageDetail?.views as number}
       />
       <div className="markdown-body my-3 lg:my-5">
         <Markdown

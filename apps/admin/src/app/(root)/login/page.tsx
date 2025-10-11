@@ -71,7 +71,7 @@ const Login = () => {
         width="100%"
       />
       <div className="fixed z-10 w-96 mx-auto left-0 right-0 top-[30%] text-white p-6 bg-white/20 backdrop-blur rounded overflow-hidden">
-        <h1 className="text-2xl">{setting?.siteName.zh}</h1>
+        <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
         <div className="opacity-80 mb-6">游客账号：guest 123456</div>
         <DynamicForm
           ref={form}

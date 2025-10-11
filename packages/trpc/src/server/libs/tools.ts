@@ -1,52 +1,5 @@
 class Tools {
   /**
-   * 根据controller的queries参数拼接prisma的查询条件
-   * @param {*} queries controller的参数
-   * @param {*} queryArray 允许查询的参数名数组
-   * @param {*} multiLangQueries controller的多语言参数
-   * @return {*} conditions 拼接完成prisma的查询条件
-   */
-  static getFindConditionsByQueries(
-    queries: any,
-    queryArray: string[],
-    multiLangQueries?: any,
-  ) {
-    const conditions = {} as any;
-    for (const item in queries) {
-      if (typeof queries[item] !== "undefined") {
-        const isEmptyArray =
-          Array.isArray(queries[item]) && queries[item].length === 0;
-        if (
-          queryArray.includes(item) &&
-          queries[item] !== "" &&
-          !isEmptyArray
-        ) {
-          conditions[item] = { in: queries[item] };
-        } else if (
-          !queryArray.includes(item) &&
-          queries[item] !== "" &&
-          !isEmptyArray
-        ) {
-          conditions[item] = { contains: queries[item] };
-        }
-      }
-    }
-
-    for (const item in multiLangQueries) {
-      if (typeof multiLangQueries[item] !== "undefined") {
-        const value = multiLangQueries[item];
-        conditions["OR"] = [
-          { [item]: { is: { zh: value } } },
-          { [item]: { is: { en: value } } },
-        ];
-      }
-    }
-
-    console.log("conditions", conditions);
-    return conditions;
-  }
-
-  /**
    * 子孙树，获取某个ID下的分类
    */
   static sonsTree(arr: any, id: string) {
@@ -70,7 +23,7 @@ class Tools {
 }
 
 // ===== Drizzle Helpers =====
-import { and, inArray, like, or, SQL, sql } from "drizzle-orm";
+import { and, inArray, like, SQL, sql } from "drizzle-orm";
 
 export function buildDrizzleWhere<T extends Record<string, any>>(
   table: T,
@@ -126,16 +79,17 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
 export function buildDrizzleOrderBy<T extends Record<string, any>>(
   table: T,
   sortField: string | undefined,
-  sortOrder: 'asc' | 'desc' = 'desc',
-  defaultField: keyof T = 'createdAt'
+  sortOrder: "asc" | "desc" = "desc",
+  defaultField: keyof T = "createdAt",
 ): SQL<unknown> {
-  const direction = sortOrder.toLowerCase() === 'asc' ? 'asc' : 'desc';
-  const field = (sortField && table[sortField as keyof T]) || table[defaultField];
-  
+  const direction = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
+  const field =
+    (sortField && table[sortField as keyof T]) || table[defaultField];
+
   if (!field) {
     throw new Error(`Invalid sort field: ${String(sortField)}`);
   }
-  
+
   return sql`${field} ${sql.raw(direction)}`;
 }
 
