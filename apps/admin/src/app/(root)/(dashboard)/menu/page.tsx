@@ -8,8 +8,8 @@ import SortableTree, {
   TreeItem,
   getFlatDataFromTree,
   getTreeFromFlatData,
-} from "react-sortable-tree";
-import "react-sortable-tree/style.css";
+} from "@nosferatu500/react-sortable-tree";
+import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";

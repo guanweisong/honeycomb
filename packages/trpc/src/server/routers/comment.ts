@@ -25,8 +25,6 @@ import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const commentRouter = router({
   index: publicProcedure
     .input(CommentListQuerySchema)
@@ -173,6 +171,8 @@ export const commentRouter = router({
       const [setting] = await ctx.db.select().from(schema.setting);
       const siteNameZh = setting?.siteName?.zh ?? "";
       const systemEmail = `notice@guanweisong.com`;
+
+      const resend = new Resend(process.env.RESEND_API_KEY);
 
       // ====== 通知管理员 ======
       resend.emails

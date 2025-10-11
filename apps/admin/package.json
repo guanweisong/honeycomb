@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next build --turbo",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -18,14 +18,13 @@
     "md5": "^2.3.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-simplemde-editor": "^5.2.0",
-    "react-sortable-tree": "^2.8.0",
+    "@nosferatu500/react-sortable-tree": "^3.0.3",
     "recharts": "^2.15.3",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@types/md5": "^2.3.5",
     "@types/react-copy-to-clipboard": "^5.0.7",
-    "@types/react-sortable-tree": "^0.3.23",
     "@types/showdown": "^2.0.1",
     "autoprefixer": "^10.4.17"
   }
