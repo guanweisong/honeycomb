@@ -9,28 +9,12 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
-  "dependencies": {
-    "@tanstack/react-table": "^8.21.3",
-    "@trpc/client": "^11.3.1",
-    "@trpc/react-query": "^11.3.1",
-    "@trpc/server": "^11.3.1",
-    "axios": "^1.8.4",
-    "dayjs": "^1.11.13",
-    "lucide-react": "^0.479.0",
-    "motion": "^12.9.2",
-    "next": "^15.5.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-hook-form": "^7.56.0",
-    "recharts": "^2.15.3",
-    "superjson": "^2.2.2",
-    "zod": "^4.1.11"
-  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.13",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/md5": "^2.3.5",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "sass": "^1.85.1",
@@ -50,5 +34,13 @@
   "main": "index.js",
   "repository": "https://github.com/guanweisong/honeycomb.git",
   "author": "guanweisong <307761682@qq.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "resolutions": {
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.1.11",
+    "typescript": "5.8.2",
+    "sonner": "^2.0.3"
+  }
 }
