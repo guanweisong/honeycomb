@@ -4,18 +4,34 @@ import { POST_TYPE, USER_LEVEL, COMMENT_STATUS } from "@honeycomb/db";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, sql } from "drizzle-orm";
 
+/**
+ * 统计数据接口类型定义。
+ */
 export interface StatisticsType {
-  postType: { item: PostType; count: number }[];
-  userType: { item: UserLevel; count: number }[];
-  userPost: { item: string; count: number }[];
-  commentStatus: { item: CommentStatus; count: number }[];
+  postType: { item: PostType; count: number }[]; // 按文章类型统计
+  userType: { item: UserLevel; count: number }[]; // 按用户等级统计
+  userPost: { item: string; count: number }[]; // 按用户统计文章数
+  commentStatus: { item: CommentStatus; count: number }[]; // 按评论状态统计
 }
 
+/**
+ * 统计数据相关的 tRPC 路由。
+ */
 export const statisticRouter = router({
+  /**
+   * 获取各类别的统计数据。
+   * (需要任意等级的登录权限)
+   * @returns {Promise<StatisticsType>} 返回一个包含多种统计数据的对象。
+   *
+   * @notice 性能警告：当前的实现方式是在多个 for 循环中 `await` 数据库查询，
+   * 这会导致串行的数据库请求，效率低下。未来应优化为使用 `Promise.all` 并行执行查询，
+   * 或者使用更高效的 SQL `GROUP BY` 聚合查询来一次性获取所有数据。
+   */
   index: protectedProcedure(["ADMIN", "EDITOR", "GUEST"]).query(
     async ({ ctx }) => {
       const result = {} as StatisticsType;
 
+      // 统计各类型文章数量
       const postArray = POST_TYPE;
       result.postType = [];
       for (let i = 0; i < postArray.length; i++) {
@@ -27,6 +43,7 @@ export const statisticRouter = router({
         result.postType.push({ item: postArray[i], count });
       }
 
+      // 统计各等级用户数量
       const userArray = USER_LEVEL;
       result.userType = [];
       for (let i = 0; i < userArray.length; i++) {
@@ -38,6 +55,7 @@ export const statisticRouter = router({
         result.userType.push({ item: userArray[i], count });
       }
 
+      // 统计各状态评论数量
       const commentArray = COMMENT_STATUS;
       result.commentStatus = [];
       for (let i = 0; i < commentArray.length; i++) {
@@ -49,6 +67,7 @@ export const statisticRouter = router({
         result.commentStatus.push({ item: commentArray[i], count });
       }
 
+      // 统计每个用户的文章数
       result.userPost = [];
       const userList = await ctx.db.select().from(schema.user);
       for (let i = 0; i < userList.length; i++) {

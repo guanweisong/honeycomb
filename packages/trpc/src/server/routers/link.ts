@@ -14,7 +14,15 @@ import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
+/**
+ * 友情链接相关的 tRPC 路由。
+ */
 export const linkRouter = router({
+  /**
+   * 查询友情链接列表（支持分页、筛选、排序）。
+   * @param {LinkListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含链接列表和总记录数的对象。
+   */
   index: publicProcedure
     .input(LinkListQuerySchema)
     .query(async ({ input, ctx }) => {
@@ -54,6 +62,12 @@ export const linkRouter = router({
       return { list, total };
     }),
 
+  /**
+   * 创建一个新的友情链接。
+   * (需要管理员权限)
+   * @param {LinkInsertSchema} input - 新链接的数据。
+   * @returns {Promise<Link>} 返回新创建的链接对象。
+   */
   create: protectedProcedure(["ADMIN"])
     .input(LinkInsertSchema)
     .mutation(async ({ input, ctx }) => {
@@ -64,6 +78,12 @@ export const linkRouter = router({
       return newLink;
     }),
 
+  /**
+   * 批量删除友情链接。
+   * (需要管理员权限)
+   * @param {DeleteBatchSchema} input - 包含要删除的链接 ID 数组。
+   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
+   */
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
@@ -73,6 +93,12 @@ export const linkRouter = router({
       return { success: true };
     }),
 
+  /**
+   * 更新一个友情链接。
+   * (需要管理员权限)
+   * @param {LinkUpdateSchema} input - 包含要更新的链接 ID 和新数据。
+   * @returns {Promise<Link>} 返回更新后的链接对象。
+   */
   update: protectedProcedure(["ADMIN"])
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {

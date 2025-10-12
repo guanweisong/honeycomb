@@ -25,7 +25,16 @@ import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 
+/**
+ * 评论相关的 tRPC 路由。
+ */
 export const commentRouter = router({
+  /**
+   * 查询评论列表（后台管理使用）。
+   * 支持分页、筛选和排序，并会附加关联的文章或页面信息。
+   * @param {CommentListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含评论列表和总记录数的对象。
+   */
   index: publicProcedure
     .input(CommentListQuerySchema)
     .query(async ({ input, ctx }) => {
@@ -88,7 +97,18 @@ export const commentRouter = router({
       return { list: listWithRefs, total };
     }),
 
-  // 针对某个资源(id + type)获取树形评论
+  /**
+   * 根据关联资源获取树状评论列表（前台展示使用）。
+   * @param {object} input - 包含资源 `id` 和 `type` (CATEGORY, PAGE, CUSTOM)。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含树状评论列表和总数的对象。
+   *
+   * 工作流程：
+   * 1. 只查询 `PUBLISH` 和 `BAN` 状态的评论。
+   * 2. 根据输入的 `type` 和 `id` 构建查询条件，找到特定资源下的所有评论。
+   * 3. 对查询结果进行处理，计算每个评论者的 Gravatar 头像 URL。
+   * 4. 使用 `list-to-tree-lite` 库将扁平的评论列表转换为树状结构。
+   * 5. 查询并返回总评论数。
+   */
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))
     .query(async ({ input, ctx }) => {
@@ -133,6 +153,19 @@ export const commentRouter = router({
       return { list, total };
     }),
 
+  /**
+   * 创建一条新评论，并触发邮件通知。
+   * @param {CommentInsertSchema} input - 新评论的数据。
+   * @returns {Promise<object>} 返回包含完整信息的新评论对象。
+   *
+   * 工作流程：
+   * 1. **插入评论**: 将评论数据存入数据库，并自动记录请求的 IP 地址和 User Agent。
+   * 2. **查询新评论**: 查询刚创建的评论及其关联的文章/页面信息。
+   * 3. **处理自定义链接**: 如果评论关联到自定义实体，生成对应的链接。
+   * 4. **获取设置**: 查询网站的全局设置，用于邮件内容。
+   * 5. **通知管理员**: 异步发送一封邮件通知管理员有新评论。
+   * 6. **通知被回复者**: 如果是回复别人的评论，则查询父评论信息，并异步发送邮件通知被回复者。
+   */
   create: publicProcedure
     .input(CommentInsertSchema)
     .mutation(async ({ ctx, input }) => {
@@ -174,11 +207,12 @@ export const commentRouter = router({
 
       const resend = new Resend(process.env.RESEND_API_KEY);
 
-      // ====== 通知管理员 ======
+      // 向管理员发送邮件通知
+      // 重要：管理员邮箱地址应在环境变量 `ADMIN_EMAIL` 中配置
       resend.emails
         .send({
           from: systemEmail,
-          to: "307761682@qq.com",
+          to: process.env.ADMIN_EMAIL!,
           subject: `[${siteNameZh}]有一条新的评论`,
           react: AdminCommentEmailMessage({
             currentComment: currentCommentWithCustom,
@@ -233,6 +267,12 @@ export const commentRouter = router({
       return currentCommentWithCustom;
     }),
 
+  /**
+   * 更新一条评论（通常是更新状态）。
+   * (需要管理员权限)
+   * @param {CommentUpdateSchema} input - 包含要更新的评论 ID 和新数据。
+   * @returns {Promise<Comment>} 返回更新后的评论对象。
+   */
   update: protectedProcedure(["ADMIN"])
     .input(CommentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
@@ -245,6 +285,12 @@ export const commentRouter = router({
       return updatedComment;
     }),
 
+  /**
+   * 批量删除评论。
+   * (需要管理员权限)
+   * @param {DeleteBatchSchema} input - 包含要删除的评论 ID 数组。
+   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
+   */
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {

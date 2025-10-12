@@ -32,6 +32,12 @@ const tagMap = {
   movieStyles: "movieStyleIds",
 } as const;
 
+/**
+ * 文章创建/编辑页面核心组件。
+ * 这是一个功能非常丰富的"超级表单"组件，用于处理所有类型的文章的新建和编辑操作。
+ * 它使用 `react-hook-form` 进行表单状态管理，使用 tRPC 与后端进行数据交互。
+ * 表单的结构会根据所选的 `PostType` (文章类型) 动态变化。
+ */
 const PostDetail = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,7 +61,12 @@ const PostDetail = () => {
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
 
-  // 初始化/同步表单数据
+  /**
+   * Effect hook: 用于在编辑模式下同步表单数据。
+   * 当 `detail` 数据从后端加载完毕后，此 effect 会被触发。
+   * 它使用 `form.reset` 方法将获取到的文章数据填充到表单的各个字段中。
+   * 对于标签这类关联数据，它会从对象数组中提取出 ID 数组再进行设置。
+   */
   useEffect(() => {
     if (detail) {
       form.reset({
@@ -85,6 +96,19 @@ const PostDetail = () => {
     return data;
   };
 
+  /**
+   * 表单提交处理器。
+   * 这是一个高阶函数，它根据提交的动作（发布、保存草稿等）返回一个可供表单使用的 `onSubmit` 函数。
+   * @param {PostStatus} status - 要设置给文章的状态（如 `PUBLISHED`, `DRAFT`）。
+   * @param {"create" | "update"} actionType - 当前的操作类型。
+   * @returns {Function} 一个由 `react-hook-form` 的 `handleSubmit` 包裹的异步函数。
+   *
+   * 内部逻辑：
+   * 1. 调用 `normalizeFormData` 验证并格式化表单数据。
+   * 2. 根据 `actionType` 调用 `createPost` 或 `updatePost` tRPC mutation。
+   * 3. 在 API 调用成功后，显示成功提示，并（在创建时）跳转到编辑页面。
+   * 4. 捕获并处理任何验证或 API 错误。
+   */
   const handleFormSubmit = (
     status: PostStatus,
     actionType: "create" | "update",
@@ -115,6 +139,15 @@ const PostDetail = () => {
     )();
   };
 
+  /**
+   * 根据文章的当前状态，动态渲染操作按钮。
+   * @returns {JSX.Element} 返回一个包含多个按钮的 React Fragment。
+   *
+   * 渲染逻辑：
+   * - **编辑模式 & 已发布**: 显示“更新”和“撤回为草稿”按钮。
+   * - **编辑模式 & 草稿**: 显示“保存”和“发布”按钮。
+   * - **新建模式**: 显示“发布”和“保存草稿”按钮。
+   */
   const getBtns = () => {
     const isEdit = !!detail?.id;
     const isDraft = detail?.status === PostStatus.DRAFT;
@@ -211,13 +244,16 @@ const PostDetail = () => {
       <Form {...form}>
         <form>
           <div className="lg:flex">
+            {/* 主内容区 */}
             <div className="lg:flex-1 flex flex-col gap-3 mb-3">
+              {/* 根据文章类型，动态渲染不同的核心字段 */}
               {([
                 PostType.ARTICLE,
                 PostType.MOVIE,
                 PostType.PHOTOGRAPH,
               ].includes(type) ||
                 !type) && (
+                // 文章、电影、摄影类型共有字段
                 <>
                   <DynamicField
                     name="title"
@@ -242,6 +278,7 @@ const PostDetail = () => {
                   />
                 </>
               )}
+              {/* 引用类型专属字段 */}
               {type === PostType.QUOTE && (
                 <>
                   <DynamicField
@@ -260,8 +297,11 @@ const PostDetail = () => {
               )}
             </div>
 
+            {/* 侧边栏设置区 */}
             <div className="lg:w-80 lg:ml-8 space-y-4">
+              {/* 操作按钮 */}
               <div className="flex gap-3 justify-end">{getBtns()}</div>
+              {/* 通用设置 */}
               <DynamicField
                 label="文章类型"
                 name="type"
@@ -288,10 +328,12 @@ const PostDetail = () => {
                 新建分类
               </Button>
 
+              {/* 特定类型专属设置 */}
               {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
                 type,
               ) && <PhotoPickerItem {...photoPickerProps} />}
 
+              {/* 电影类型专属字段 */}
               {type === PostType.MOVIE && (
                 <>
                   <DynamicField
@@ -306,6 +348,7 @@ const PostDetail = () => {
                 </>
               )}
 
+              {/* 摄影类型专属字段 */}
               {type === PostType.PHOTOGRAPH && (
                 <>
                   <DynamicField

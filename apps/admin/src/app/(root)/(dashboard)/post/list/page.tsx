@@ -14,22 +14,29 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
 import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 
+/**
+ * 文章列表管理页面。
+ * 该组件负责展示文章列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const PostList = () => {
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
   const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
   const router = useRouter();
+
+  // 使用 tRPC hook 获取文章列表数据
   const { data, isLoading, isError, refetch } =
     trpc.post.index.useQuery(searchParams);
+  // 使用 tRPC hook 创建删除文章的 mutation
   const destroyPost = trpc.post.destroy.useMutation();
 
   /**
-   * 删除事件
-   * @param ids
+   * 处理单个或多个文章的删除操作。
+   * @param {string[]} ids - 要删除的文章 ID 数组。
    */
   const handleDeleteItem = async (ids: string[]) => {
     try {
       await destroyPost.mutateAsync({ ids });
-      refetch();
+      refetch(); // 重新获取数据以更新列表
       toast.success("删除成功");
     } catch (e) {
       toast.error("删除失败");
@@ -37,12 +44,12 @@ const PostList = () => {
   };
 
   /**
-   * 批量删除
+   * 处理批量删除操作，获取选中行的 ID 并调用删除函数。
    */
   const handleDeleteBatch = async () => {
     const ids = selectedRows.map((item) => item.id);
     await handleDeleteItem(ids);
-    setSelectedRows([]);
+    setSelectedRows([]); // 清空选中行
   };
 
   return (
@@ -55,14 +62,15 @@ const PostList = () => {
         onChange={(params) => {
           setSearchParams(params);
         }}
+        columns={postListTableColumns}
         loading={isLoading}
         error={isError}
-        columns={postListTableColumns}
         selectableRows={true}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
+            {/* 工具栏左侧：新增和批量删除按钮 */}
             <div className="flex gap-1">
               <Button
                 onClick={() => router.push("/post/edit")}
@@ -86,6 +94,7 @@ const PostList = () => {
                 onOK={handleDeleteBatch}
               />
             </div>
+            {/* 工具栏右侧：搜索表单 */}
             <div className="flex gap-1">
               <DynamicForm
                 schema={PostListQuerySchema}
@@ -107,6 +116,7 @@ const PostList = () => {
           </div>
         }
         rowActions={(row) => (
+          // 每行右侧的操作按钮：编辑和删除
           <div className="flex gap-1">
             <Button
               variant="secondary"

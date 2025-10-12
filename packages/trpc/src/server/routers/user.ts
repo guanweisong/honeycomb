@@ -14,7 +14,15 @@ import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
+/**
+ * 用户相关的 tRPC 路由。
+ */
 export const userRouter = router({
+  /**
+   * 查询用户列表（支持分页、筛选、排序）。
+   * @param {UserListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含用户列表和总记录数的对象。
+   */
   index: publicProcedure
     .input(UserListQuerySchema.default({}))
     .query(async ({ input, ctx }) => {
@@ -48,6 +56,12 @@ export const userRouter = router({
       return { list, total };
     }),
 
+  /**
+   * 创建一个新用户。
+   * (需要管理员权限)
+   * @param {UserInsertSchema} input - 新用户的数据。
+   * @returns {Promise<User>} 返回新创建的用户对象。
+   */
   create: protectedProcedure(["ADMIN"])
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
@@ -58,6 +72,12 @@ export const userRouter = router({
       return newUser;
     }),
 
+  /**
+   * 批量删除用户。
+   * (需要管理员权限)
+   * @param {DeleteBatchSchema} input - 包含要删除的用户 ID 数组。
+   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
+   */
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
@@ -67,6 +87,12 @@ export const userRouter = router({
       return { success: true };
     }),
 
+  /**
+   * 更新一个用户。
+   * (需要管理员权限)
+   * @param {UserUpdateSchema} input - 包含要更新的用户 ID 和新数据。
+   * @returns {Promise<User>} 返回更新后的用户对象。
+   */
   update: protectedProcedure(["ADMIN"])
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {

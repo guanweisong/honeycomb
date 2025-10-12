@@ -14,7 +14,15 @@ import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.sc
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 
+/**
+ * 标签相关的 tRPC 路由。
+ */
 export const tagRouter = router({
+  /**
+   * 查询标签列表（支持分页、筛选、排序）。
+   * @param {TagListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含标签列表和总记录数的对象。
+   */
   index: publicProcedure
     .input(TagListQuerySchema)
     .query(async ({ input, ctx }) => {
@@ -52,6 +60,12 @@ export const tagRouter = router({
       return { list, total };
     }),
 
+  /**
+   * 创建一个新标签。
+   * (需要管理员或编辑权限)
+   * @param {TagInsertSchema} input - 新标签的数据。
+   * @returns {Promise<Tag>} 返回新创建的标签对象。
+   */
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
@@ -62,6 +76,12 @@ export const tagRouter = router({
       return newTag;
     }),
 
+  /**
+   * 批量删除标签。
+   * (需要管理员权限)
+   * @param {DeleteBatchSchema} input - 包含要删除的标签 ID 数组。
+   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
+   */
   destroy: protectedProcedure(["ADMIN"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
@@ -69,6 +89,12 @@ export const tagRouter = router({
       return { success: true };
     }),
 
+  /**
+   * 更新一个标签。
+   * (需要管理员或编辑权限)
+   * @param {TagUpdateSchema} input - 包含要更新的标签 ID 和新数据。
+   * @returns {Promise<Tag>} 返回更新后的标签对象。
+   */
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {

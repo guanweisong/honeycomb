@@ -4,7 +4,16 @@ import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.
 import * as schema from "@honeycomb/db/src/schema";
 import { sql } from "drizzle-orm";
 
+/**
+ * API Token 相关的 tRPC 路由。
+ */
 export const tokenRouter = router({
+  /**
+   * 查询 Token 列表（支持分页、筛选、排序）。
+   * (需要管理员权限)
+   * @param {TokenListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含 Token 列表和总记录数的对象。
+   */
   index: protectedProcedure(["ADMIN"])
     .input(TokenListQuerySchema)
     .query(async ({ input, ctx }) => {

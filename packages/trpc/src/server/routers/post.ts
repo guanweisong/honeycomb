@@ -19,7 +19,25 @@ import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.sc
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
 
+/**
+ * 文章相关的 tRPC 路由。
+ */
 export const postRouter = router({
+  /**
+   * 查询文章列表（支持分页、多种筛选、排序和关联数据加载）。
+   * @param {PostListQuerySchema} input - 查询参数。
+   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含文章列表和总记录数的对象。
+   *
+   * 筛选逻辑：
+   * - 支持对状态、类型、标题、内容的筛选。
+   * - **分类筛选**: 如果提供了 `categoryId`，会自动包含其所有子分类下的文章。
+   * - **标签筛选**: 如果提供了 `tagName`，会先查找标签 ID，然后在多个存储标签ID的字段中进行模糊匹配。
+   * - **作者筛选**: 如果提供了 `userName`，会先查找用户 ID，然后进行匹配。
+   *
+   * 数据关联：
+   * 为了避免 N+1 查询，该端点会先查询出文章列表，然后收集所有需要关联的 ID（如 authorId, categoryId 等），
+   * 最后通过一次性的批量查询将关联数据（作者、分类、封面图等）获取并合并到结果中。
+   */
   index: publicProcedure
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
@@ -175,6 +193,11 @@ export const postRouter = router({
       return { list: mapped, total };
     }),
 
+  /**
+   * 获取单篇文章的详细信息。
+   * @param {{ id: string }} input - 包含文章 ID 的对象。
+   * @returns {Promise<object | null>} 返回包含文章所有关联信息（分类、作者、封面、标签、内容图片等）的完整对象，如果找不到则返回 null。
+   */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .output(z.any())
@@ -262,6 +285,12 @@ export const postRouter = router({
       };
     }),
 
+  /**
+   * 创建一篇新文章。
+   * (需要管理员或编辑权限)
+   * @param {PostInsertSchema} input - 新文章的数据。
+   * @returns {Promise<Post>} 返回新创建的文章对象。
+   */
   create: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
@@ -276,6 +305,12 @@ export const postRouter = router({
       return newPost;
     }),
 
+  /**
+   * 批量删除文章。
+   * (需要管理员或编辑权限)
+   * @param {DeleteBatchSchema} input - 包含要删除的文章 ID 数组。
+   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
+   */
   destroy: protectedProcedure(["ADMIN", "EDITOR"])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
@@ -285,6 +320,12 @@ export const postRouter = router({
       return { success: true };
     }),
 
+  /**
+   * 更新一篇文章。
+   * (需要管理员或编辑权限)
+   * @param {PostUpdateSchema} input - 包含要更新的文章 ID 和新数据。
+   * @returns {Promise<Post>} 返回更新后的文章对象。
+   */
   update: protectedProcedure(["ADMIN", "EDITOR"])
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
@@ -297,6 +338,14 @@ export const postRouter = router({
       return updatedPost;
     }),
 
+  /**
+   * 在指定分类下随机获取文章。
+   * @param {{ categoryId: string }} input - 包含分类 ID 的对象。
+   * @returns {Promise<object[]>} 返回最多10篇随机文章的部分信息（id, title, quoteContent）。
+   *
+   * @notice 实现方式是获取分类下所有文章 ID，然后在内存中随机抽取。
+   * 对于文章数量非常庞大的分类，这可能会有性能问题。
+   */
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -336,6 +385,11 @@ export const postRouter = router({
       return posts;
     }),
 
+  /**
+   * 获取指定文章的浏览量。
+   * @param {{ id: string }} input - 包含文章 ID 的对象。
+   * @returns {Promise<{ views: number }>} 返回包含浏览量的对象。
+   */
   getViews: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -346,6 +400,11 @@ export const postRouter = router({
       return result ?? { views: 0 };
     }),
 
+  /**
+   * 将指定文章的浏览量加一。
+   * @param {{ id: string }} input - 包含文章 ID 的对象。
+   * @returns {Promise<{ views: number }>} 返回更新后的浏览量。
+   */
   incrementViews: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -360,6 +419,11 @@ export const postRouter = router({
       return updatedPage;
     }),
 
+  /**
+   * 获取指定文章的分类ID。
+   * @param {{ id: string }} input - 包含文章 ID 的对象。
+   * @returns {Promise<{ categoryId: string } | undefined>} 返回包含分类ID的对象，如果找不到则返回 undefined。
+   */
   getCategoryId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

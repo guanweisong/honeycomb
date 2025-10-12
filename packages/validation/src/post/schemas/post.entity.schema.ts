@@ -5,6 +5,15 @@ import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 import { UserEntitySchema } from "@honeycomb/validation/user/schemas/user.entity.schema";
 import { MediaEntitySchema } from "@honeycomb/validation/media/schemas/media.entity.schema";
 
+/**
+ * 文章实体 Zod schema。
+ * 该 schema 基于数据库 'post' 表的查询结果生成，并进行了扩展以包含关联数据和国际化字段。
+ *
+ * 扩展内容：
+ * - `title`, `quoteContent`, `quoteAuthor`, `excerpt`: 这些字段被定义为国际化 (i18n) 结构。
+ * - `author`: 字段被扩展为完整的 `UserEntitySchema`，代表关联的作者信息。
+ * - `cover`: 字段被扩展为完整的 `MediaEntitySchema`，代表关联的封面图信息。
+ */
 export const PostEntitySchema = createSelectSchema(post).extend({
   title: defaultI18nSchema,
   quoteContent: defaultI18nSchema,
@@ -14,4 +23,8 @@ export const PostEntitySchema = createSelectSchema(post).extend({
   cover: MediaEntitySchema,
 });
 
+/**
+ * 文章实体的 TypeScript 类型。
+ * 这是从 `PostEntitySchema` 推断出的包含完整关联数据的纯净 TypeScript 类型。
+ */
 export type PostEntity = CleanZod<typeof PostEntitySchema>;
