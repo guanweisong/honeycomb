@@ -14,10 +14,22 @@ import { Metadata } from "next";
 import { serverClient } from "@honeycomb/trpc/server";
 import { MenuType, PostType } from "@honeycomb/db";
 
+/**
+ * 归档页面组件的属性接口。
+ */
 export interface ArchivesProps {
+  /**
+   * 包含文章 ID 和当前语言环境的 Promise。
+   */
   params: Promise<{ id: string; locale: keyof MultiLang }>;
 }
 
+/**
+ * 归档页面组件。
+ * 用于显示单篇文章的详细内容，包括文章信息、标签、评论、相关文章等。
+ * @param {ArchivesProps} props - 组件属性。
+ * @returns {Promise<JSX.Element>} 归档页面。
+ */
 export default async function Archives(props: ArchivesProps) {
   const { id, locale } = await props.params;
   const postDetail = await serverClient.post.detail({ id });
@@ -30,10 +42,6 @@ export default async function Archives(props: ArchivesProps) {
     serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
     serverClient.post.incrementViews({ id }),
   ]);
-
-  /**
-   * 格式化文章标题
-   */
   const getTitle = () => {
     return postDetail.type === PostType.MOVIE
       ? `${postDetail.title?.[locale]} (${utcFormat(postDetail.movieTime!, "YYYY")})`
@@ -41,7 +49,8 @@ export default async function Archives(props: ArchivesProps) {
   };
 
   /**
-   * 计算 JSONLD
+   * 计算 JSONLD (JSON for Linking Data) 数据。
+   * 根据文章类型生成结构化数据，以优化搜索引擎抓取。
    */
   const jsonLd: any = {
     "@context": "https://schema.org",
@@ -149,11 +158,26 @@ export default async function Archives(props: ArchivesProps) {
   );
 }
 
+/**
+ * `generateMetadata` 函数的属性接口。
+ */
 type GenerateMetadataProps = {
+  /**
+   * 包含文章 ID 的 Promise。
+   */
   params: Promise<{ id: string }>;
+  /**
+   * 包含搜索参数的 Promise。
+   */
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+/**
+ * 为归档页面生成元数据。
+ * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
+ * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @returns {Promise<Metadata>} 页面元数据。
+ */
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
@@ -189,6 +213,11 @@ export async function generateMetadata(
   };
 }
 
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<any[]>} 静态参数数组。
+ */
 export async function generateStaticParams() {
   return [];
 }

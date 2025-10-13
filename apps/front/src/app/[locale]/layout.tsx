@@ -12,13 +12,32 @@ import { setRequestLocale } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
 import { NextIntlClientProvider } from "next-intl";
 
+/**
+ * 页面重新验证时间。
+ * 设置为 60 秒，表示页面内容每 60 秒重新生成一次。
+ */
 export const revalidate = 60;
 
+/**
+ * 国际化布局组件的属性接口。
+ */
 export interface LocaleLayoutProps {
+  /**
+   * 子组件，即页面内容。
+   */
   children: ReactNode;
+  /**
+   * 包含当前语言环境的 Promise。
+   */
   params: Promise<{ locale: keyof MultiLang }>;
 }
 
+/**
+ * 国际化布局组件。
+ * 该组件为所有国际化页面提供统一的布局结构，包括头部、底部、主题提供者和返回顶部按钮。
+ * @param {LocaleLayoutProps} { children, params } - 组件属性。
+ * @returns {Promise<JSX.Element>} 国际化布局。
+ */
 export default async function LocaleLayout({
   children,
   params,
@@ -58,6 +77,10 @@ export default async function LocaleLayout({
   );
 }
 
+/**
+ * 视口配置。
+ * 用于设置页面的响应式行为，确保在不同设备上显示良好。
+ */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

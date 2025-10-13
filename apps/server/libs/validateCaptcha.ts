@@ -2,6 +2,12 @@ import { NextRequest } from "next/server";
 import axios from "axios";
 import ResponseHandler from "@/libs/responseHandler";
 
+/**
+ * 验证腾讯防水墙验证码。
+ * @param {NextRequest} request - Next.js 请求对象。
+ * @param {() => void} onSuccess - 验证成功后的回调函数。
+ * @returns {Promise<NextResponse | void>} 验证结果响应或成功回调的返回值。
+ */
 export const validateCaptcha = async (
   request: NextRequest,
   onSuccess: () => void,

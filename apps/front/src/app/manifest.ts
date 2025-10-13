@@ -1,5 +1,10 @@
 import { MetadataRoute } from "next";
 import { serverClient } from "@honeycomb/trpc/server";
+/**
+ * 生成 Web App Manifest 文件。
+ * 用于定义渐进式 Web 应用 (PWA) 的元数据，如应用名称、图标、启动 URL 等。
+ * @returns {Promise<MetadataRoute.Manifest>} Web App Manifest 对象。
+ */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const setting = await serverClient.setting.index();
   return {

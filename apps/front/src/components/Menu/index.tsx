@@ -9,44 +9,91 @@ import { cn } from "@honeycomb/ui/lib/utils";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
+/**
+ * 菜单项接口。
+ */
 export interface MenuItem {
+  /**
+   * 菜单项的显示文本。
+   */
   label: React.ReactNode;
+  /**
+   * 菜单项的链接地址。
+   */
   link: any;
+  /**
+   * 子菜单项。
+   */
   children?: MenuItem[];
 }
 
+/**
+ * 菜单组件的属性接口。
+ */
 export interface MenuProps {
+  /**
+   * 树形结构的菜单数据。
+   */
   data: MenuItem[];
+  /**
+   * 扁平化的菜单数据。
+   */
   flatMenuData: MenuEntity[];
 }
 
+/**
+ * 导航菜单组件。
+ * 支持多级菜单，响应式布局，并根据当前路由高亮显示菜单项。
+ * @param {MenuProps} props - 组件属性。
+ * @returns {JSX.Element} 导航菜单。
+ */
 const Menu = (props: MenuProps) => {
   const { data, flatMenuData } = props;
   const ref1 = useRef<HTMLUListElement>(null);
   const ref2 = useRef<HTMLDivElement>(null);
+  /**
+   * 控制移动端菜单的显示与隐藏。
+   */
   const [visible, setVisible] = useState(false);
+  /**
+   * 当前激活的菜单分类路径。
+   */
   const [currentCategory, setCurrentCategory] = useState<string[]>([]);
 
   const pathname = usePathname();
   const segments = useSelectedLayoutSegments();
 
+  /**
+   * 获取文章详情的 tRPC 查询。
+   * 用于在文章详情页时，根据文章的分类 ID 来高亮显示菜单。
+   */
   const { data: postDetail } = trpc.post.getCategoryId.useQuery(
     { id: segments?.[1] ?? "" },
     { enabled: !!segments?.[1] }, // 只有有 id 时才请求
   );
 
+  /**
+   * 副作用钩子，用于在路由或文章详情变化时更新菜单的选中状态。
+   */
   useEffect(() => {
     setVisible(false);
     judgeCurrentMenu();
     // 依赖 postDetail：当异步数据到来时也会重新计算
   }, [pathname, postDetail]);
 
+  /**
+   * 监听点击外部事件，用于关闭移动端菜单。
+   */
   useClickAway(() => {
     setVisible(false);
   }, [ref1, ref2]);
 
   /**
    * 计算当前菜单值（不再使用 serverClient）
+   */
+  /**
+   * 计算当前菜单值。
+   * 根据当前路由路径和文章详情，判断并设置当前激活的菜单项。
    */
   const judgeCurrentMenu = () => {
     const segs = segments ?? [];
@@ -81,6 +128,11 @@ const Menu = (props: MenuProps) => {
     }
   };
 
+  /**
+   * 递归渲染菜单项。
+   * @param {MenuItem[]} data - 菜单项数据数组。
+   * @returns {JSX.Element} 渲染后的菜单列表。
+   */
   const renderItem = (data: MenuItem[]) => {
     return (
       <ul

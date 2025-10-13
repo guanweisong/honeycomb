@@ -20,15 +20,41 @@ import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { MenuTypeName } from "@/app/(root)/(dashboard)/menu/types/MenuType";
 
+/**
+ * 菜单管理页面。
+ * 允许管理员配置网站的导航菜单，支持从页面和分类中选择菜单项，并进行拖拽排序。
+ */
 const Menu = () => {
+  /**
+   * 保存所有菜单的 tRPC mutation。
+   */
   const saveAllMenu = trpc.menu.saveAll.useMutation();
 
+  /**
+   * 获取页面列表的 tRPC 查询。
+   * 用于在可选菜单中展示页面。
+   */
   const { data: pageList } = trpc.page.index.useQuery({ limit: 9999 });
+  /**
+   * 获取分类列表的 tRPC 查询。
+   * 用于在可选菜单中展示分类。
+   */
   const { data: categoryList } = trpc.category.index.useQuery({ limit: 9999 });
+  /**
+   * 获取已选菜单数据的 tRPC 查询。
+   * `checkedData` 包含已选菜单列表，`refetch` 用于手动重新获取数据。
+   */
   const { data: checkedData, refetch } = trpc.menu.index.useQuery(undefined);
 
+  /**
+   * 存储当前已选中的菜单项列表。
+   */
   const [checkedList, setCheckedList] = useState<MenuEntity[]>([]);
 
+  /**
+   * 副作用钩子，用于在 `checkedData` 变化时更新 `checkedList` 状态。
+   * 确保在菜单数据加载或更新后，本地状态与远程数据同步。
+   */
   useEffect(() => {
     // @ts-ignore
     setCheckedList(checkedData?.list ?? []);
@@ -37,6 +63,10 @@ const Menu = () => {
   /**
    * 可选菜单的取消选中事件
    * @param id
+   */
+  /**
+   * 从 `checkedList` 中移除指定 ID 的菜单项。
+   * @param {string} id - 要移除的菜单项的 ID。
    */
   const removeItem = (id: string) => {
     const newArr = [...checkedList];
@@ -54,6 +84,13 @@ const Menu = () => {
    * @param checked
    * @param type
    */
+  /**
+   * 处理可选菜单项的选中/取消选中事件。
+   * 根据 `checked` 状态将菜单项添加到 `checkedList` 或从其中移除。
+   * @param {MenuEntity} item - 被选中/取消选中的菜单项。
+   * @param {boolean} checked - 是否选中。
+   * @param {MenuType} type - 菜单项的类型（例如 `CATEGORY` 或 `PAGE`）。
+   */
   const onCheck = (item: MenuEntity, checked: boolean, type: MenuType) => {
     if (checked) {
       setCheckedList([...checkedList, { ...item, parent: "0", type }]);
@@ -66,6 +103,12 @@ const Menu = () => {
    * 获取可选菜单选中状态
    * @param item
    * @returns {boolean}
+   */
+  /**
+   * 获取可选菜单项的选中状态。
+   * 遍历 `checkedList` 判断当前菜单项是否已被选中。
+   * @param {CategoryEntity | PageEntity} item - 要检查的菜单项。
+   * @returns {boolean} 如果菜单项已被选中则返回 `true`，否则返回 `false`。
    */
   const getCheckedStatus = (item: CategoryEntity | PageEntity): boolean => {
     let checked = false;
@@ -82,6 +125,12 @@ const Menu = () => {
    * @param item
    * @returns {boolean}
    */
+  /**
+   * 获取可选菜单项的禁用状态。
+   * 如果当前菜单项是其他已选中菜单项的父级，则禁用该菜单项，防止循环引用。
+   * @param {CategoryEntity | PageEntity} item - 要检查的菜单项。
+   * @returns {boolean} 如果菜单项应被禁用则返回 `true`，否则返回 `false`。
+   */
   const getDisabledStatus = (item: CategoryEntity | PageEntity): boolean => {
     let disabled = false;
     checkedList?.forEach((m) => {
@@ -95,6 +144,11 @@ const Menu = () => {
   /**
    * 排序的回调
    * @param treeData
+   */
+  /**
+   * 拖拽排序结束时的回调函数。
+   * 将拖拽后的树形数据扁平化，并更新 `checkedList`，以反映新的排序和父子关系。
+   * @param {TreeItem[]} treeData - 拖拽后的树形数据。
    */
   const onDragEnd = (treeData: TreeItem[]) => {
     const listData = getFlatDataFromTree({
@@ -115,6 +169,10 @@ const Menu = () => {
   /**
    * 将菜单扁平数据转换为树组件输入数据
    * @returns {Object[]}
+   */
+  /**
+   * 将 `checkedList` 中的扁平菜单数据转换为 `react-sortable-tree` 组件所需的树形结构数据。
+   * @returns {Object[]} 格式化后的树形菜单数据。
    */
   const getMenuFormat = () => {
     const format: any[] = [];
@@ -140,6 +198,10 @@ const Menu = () => {
 
   /**
    * 保存数据
+   */
+  /**
+   * 提交菜单数据到后端保存。
+   * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
     const data: MenuEntity[] = [];

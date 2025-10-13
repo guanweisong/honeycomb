@@ -19,14 +19,30 @@ import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list
  * 该组件负责展示文章列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const PostList = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `PostEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
+  /**
+   * 存储文章列表的查询参数。
+   * 当这些参数变化时，会触发文章列表的重新加载。
+   */
   const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
   const router = useRouter();
 
   // 使用 tRPC hook 获取文章列表数据
+  /**
+   * 获取文章列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.post.index.useQuery(searchParams);
   // 使用 tRPC hook 创建删除文章的 mutation
+  /**
+   * 删除文章的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyPost = trpc.post.destroy.useMutation();
 
   /**

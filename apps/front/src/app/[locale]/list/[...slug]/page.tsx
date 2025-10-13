@@ -8,12 +8,27 @@ import { PostStatus } from "@honeycomb/db/src/types";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
+/**
+ * 页面大小常量，用于分页查询。
+ */
 const PAGE_SIZE = 10;
 
+/**
+ * 列表页面组件的属性接口。
+ */
 export interface ListProps {
+  /**
+   * 包含 slug 数组和当前语言环境的 Promise。
+   */
   params: Promise<{ slug: string[]; locale: keyof MultiLang }>;
 }
 
+/**
+ * 列表页面组件。
+ * 根据 URL 中的 slug 参数（如分类、标签、作者）显示相应的文章列表。
+ * @param {ListProps} props - 组件属性。
+ * @returns {Promise<JSX.Element>} 文章列表页面。
+ */
 export default async function List(props: ListProps) {
   const [setting, menu] = await Promise.all([
     serverClient.setting.index(),
@@ -56,9 +71,6 @@ export default async function List(props: ListProps) {
 
   const post = await serverClient.post.index(queryParams);
 
-  /**
-   * 获取页面标题
-   */
   const getTitle = () => {
     let title = "";
     switch (type) {
@@ -96,11 +108,26 @@ export default async function List(props: ListProps) {
   );
 }
 
+/**
+ * `generateMetadata` 函数的属性接口。
+ */
 type GenerateMetadataProps = {
+  /**
+   * 包含 slug 数组的 Promise。
+   */
   params: Promise<{ slug: string[] }>;
+  /**
+   * 包含搜索参数的 Promise。
+   */
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+/**
+ * 为列表页面生成元数据。
+ * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
+ * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @returns {Promise<Metadata>} 页面元数据。
+ */
 export async function generateMetadata(props: GenerateMetadataProps) {
   const [setting, menu, locale] = await Promise.all([
     serverClient.setting.index(),
@@ -165,6 +192,11 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   };
 }
 
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<any[]>} 静态参数数组。
+ */
 export async function generateStaticParams() {
   return [];
 }

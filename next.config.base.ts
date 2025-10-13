@@ -1,5 +1,9 @@
 import { NextConfig } from "next";
 
+/**
+ * Next.js 基础配置文件。
+ * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
+ */
 const baseNextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -27,4 +31,7 @@ const baseNextConfig: NextConfig = {
   },
 };
 
+/**
+ * 导出基础 Next.js 配置。
+ */
 export default baseNextConfig;

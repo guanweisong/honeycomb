@@ -20,10 +20,22 @@ import { PostType, PostTypeName } from "@honeycomb/db";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";
 
+/**
+ * 文章列表组件的属性接口。
+ */
 export interface PostListProps {
+  /**
+   * 查询文章列表的参数。
+   */
   queryParams: PostListQueryInput;
 }
 
+/**
+ * 文章列表组件。
+ * 用于展示文章列表，支持无限滚动加载更多文章。
+ * @param {PostListProps} props - 组件属性。
+ * @returns {JSX.Element} 文章列表。
+ */
 export default function PostList(props: PostListProps) {
   const { queryParams } = props;
   const scroll = useScroll(typeof document !== "undefined" ? document : null);
@@ -33,9 +45,19 @@ export default function PostList(props: PostListProps) {
   const t = useTranslations("PostList");
 
   const postList = data?.pages.flatMap((page) => page.list) ?? [];
+  /**
+   * 是否已加载所有文章。
+   */
   const isEnd = !hasNextPage;
+  /**
+   * 是否正在加载更多文章。
+   */
   const isLoadingMore = isFetchingNextPage;
 
+  /**
+   * 副作用钩子，用于实现无限滚动加载。
+   * 当用户滚动到页面底部附近时，自动加载下一页文章。
+   */
   useEffect(() => {
     if (typeof document !== "undefined" && !isLoadingMore && hasNextPage) {
       const { top = 0 } = scroll ?? {};
@@ -49,8 +71,10 @@ export default function PostList(props: PostListProps) {
   }, [scroll, isLoadingMore, hasNextPage, fetchNextPage]);
 
   /**
-   * 渲染列表卡片
-   * @param item
+   * 渲染文章列表中的单个卡片。
+   * 根据文章类型显示不同的布局和内容。
+   * @param {PostEntity} item - 文章实体。
+   * @returns {JSX.Element} 文章卡片。
    */
   const renderCard = (item: PostEntity) => {
     return (

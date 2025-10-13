@@ -16,12 +16,32 @@ import {
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 
+/**
+ * 页面列表管理页面。
+ * 该组件负责展示页面列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const Page = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `PageEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
+  /**
+   * 存储页面列表的查询参数。
+   * 当这些参数变化时，会触发页面列表的重新加载。
+   */
   const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
   const router = useRouter();
+  /**
+   * 获取页面列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.page.index.useQuery(searchParams);
+  /**
+   * 删除页面的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyPage = trpc.page.destroy.useMutation();
 
   /**

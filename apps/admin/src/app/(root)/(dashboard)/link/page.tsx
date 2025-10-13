@@ -19,9 +19,20 @@ import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert
 import { LinkStatus, linkStatusOptions } from "@honeycomb/db";
 import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
 
+/**
+ * 友情链接管理页面。
+ * 该组件负责展示友情链接列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const Link = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `LinkEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
 
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的链接记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -31,11 +42,28 @@ const Link = () => {
     open: false,
   });
 
+  /**
+   * 存储链接列表的查询参数。
+   * 当这些参数变化时，会触发链接列表的重新加载。
+   */
   const [searchParams, setSearchParams] = useState<LinkListQueryInput>({});
 
+  /**
+   * 创建链接的 tRPC mutation。
+   */
   const createLink = trpc.link.create.useMutation();
+  /**
+   * 更新链接的 tRPC mutation。
+   */
   const updateLink = trpc.link.update.useMutation();
+  /**
+   * 删除链接的 tRPC mutation。
+   */
   const destroyLink = trpc.link.destroy.useMutation();
+  /**
+   * 获取链接列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.link.index.useQuery(searchParams);
 

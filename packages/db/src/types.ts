@@ -90,6 +90,24 @@ export const CategoryStatus = Object.freeze({
   DISABLE: CATEGORY_STATUS[1],
 } as const);
 
+/** 分类状态对应的中文名称。 */
+export const CategoryStatusName = Object.freeze({
+  ENABLE: "启用",
+  DISABLE: "禁用",
+} as const);
+
+/** 用于在 UI 中显示分类状态的选项数组。 */
+export const categoryStatusOptions = [
+  {
+    label: CategoryStatusName.ENABLE,
+    value: CategoryStatus.ENABLE,
+  },
+  {
+    label: CategoryStatusName.DISABLE,
+    value: CategoryStatus.DISABLE,
+  },
+];
+
 // --- 评论 (Comment) ---
 
 /** 评论状态常量数组。 */
@@ -109,6 +127,34 @@ export const CommentStatus = Object.freeze({
   BAN: COMMENT_STATUS[3],
 } as const);
 
+/** 评论状态对应的中文名称。 */
+export const CommentStatusName = Object.freeze({
+  TO_AUDIT: "待审核",
+  PUBLISH: "已发布",
+  RUBBISH: "垃圾评论",
+  BAN: "已屏蔽",
+} as const);
+
+/** 用于在 UI 中显示评论状态的选项数组。 */
+export const commentStatusOptions = [
+  {
+    label: CommentStatusName.TO_AUDIT,
+    value: CommentStatus.TO_AUDIT,
+  },
+  {
+    label: CommentStatusName.PUBLISH,
+    value: CommentStatus.PUBLISH,
+  },
+  {
+    label: CommentStatusName.RUBBISH,
+    value: CommentStatus.RUBBISH,
+  },
+  {
+    label: CommentStatusName.BAN,
+    value: CommentStatus.BAN,
+  },
+];
+
 // --- 友情链接 (Link) ---
 
 /** 友情链接状态常量数组。 */
@@ -120,6 +166,13 @@ export const LinkStatus = Object.freeze({
   ENABLE: LINK_STATUS[0],
   DISABLE: LINK_STATUS[1],
 } as const);
+
+/** 友情链接状态对应的中文名称。 */
+export const LinkStatusName = Object.freeze({
+  ENABLE: "启用",
+  DISABLE: "禁用",
+} as const);
+
 /** 用于在 UI 中显示友情链接状态的选项数组。 */
 export const linkStatusOptions = [
   {
@@ -250,6 +303,24 @@ export const PostCommentStatus = Object.freeze({
   ENABLE: POST_COMMENT_STATUS[0],
   DISABLE: POST_COMMENT_STATUS[1],
 } as const);
+
+/** 文章评论状态对应的中文名称。 */
+export const PostCommentStatusName = Object.freeze({
+  ENABLE: "启用",
+  DISABLE: "禁用",
+} as const);
+
+/** 用于在 UI 中显示文章评论状态的选项数组。 */
+export const postCommentStatusOptions = [
+  {
+    label: PostCommentStatusName.ENABLE,
+    value: PostCommentStatus.ENABLE,
+  },
+  {
+    label: PostCommentStatusName.DISABLE,
+    value: PostCommentStatus.DISABLE,
+  },
+];
 
 // --- 菜单 (Menu) ---
 

@@ -4,22 +4,61 @@ import { utcFormat } from "@/utils/utcFormat";
 import { useTranslations } from "next-intl";
 import { cn } from "@honeycomb/ui/lib/utils";
 
+/**
+ * 对齐方式枚举。
+ */
 export enum Align {
+  /**
+   * 左对齐。
+   */
   Left = "left",
+  /**
+   * 居中对齐。
+   */
   Center = "center",
 }
 
+/**
+ * 文章信息组件的属性接口。
+ */
 export interface PostInfoProps {
+  /**
+   * 文章 ID。
+   */
   id?: string;
+  /**
+   * 文章作者。
+   */
   author?: string;
+  /**
+   * 文章发布日期。
+   */
   date?: string;
+  /**
+   * 评论数量。
+   */
   comments?: number;
+  /**
+   * 浏览量。
+   */
   views?: number;
+  /**
+   * 信息对齐方式。
+   */
   align?: Align;
 }
 
+/**
+ * 文章信息组件。
+ * 显示文章的作者、发布日期、评论数和浏览量。
+ * @param {PostInfoProps} props - 组件属性。
+ * @returns {JSX.Element | null} 文章信息组件或 null。
+ */
 const PostInfo = (props: PostInfoProps) => {
   const { id, author, date, views, comments, align = Align.Center } = props;
+  /**
+   * 存储要显示的文章信息项。
+   */
   const data = [];
   const t = useTranslations("PostInfo");
 

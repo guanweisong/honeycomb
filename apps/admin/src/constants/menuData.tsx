@@ -13,6 +13,10 @@ import {
   Settings,
 } from "lucide-react";
 
+/**
+ * 后台管理系统的菜单数据。
+ * 定义了侧边栏导航的结构和每个菜单项的属性，包括名称、路径、图标和子菜单。
+ */
 export const menu: MenuItem[] = [
   {
     name: "控制台",

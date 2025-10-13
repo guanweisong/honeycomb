@@ -6,16 +6,27 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 
+/**
+ * 网站设置页面。
+ * 允许管理员配置网站的各项全局设置，如站点名称、签名等。
+ * 使用 `react-hook-form` 管理表单状态，并通过 tRPC 与后端进行数据交互。
+ */
 const Setting = () => {
   const settingStore = useSettingStore();
 
   const { setting, querySetting } = settingStore;
 
   /**
-   * 保存事件
+   * 更新网站设置的 tRPC mutation。
+   * 用于向后端提交设置更改。
    */
   const updateSetting = trpc.setting.update.useMutation();
 
+  /**
+   * 表单提交处理器。
+   * 当用户提交设置表单时调用，将表单值发送到后端进行更新，并刷新本地设置缓存。
+   * @param {any} values - 表单提交的值。
+   */
   const handleSubmit = async (values: any) => {
     try {
       await updateSetting.mutateAsync({ id: setting!.id, ...values });

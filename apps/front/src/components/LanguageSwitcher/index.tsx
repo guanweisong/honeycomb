@@ -17,15 +17,30 @@ import { Theme } from "@/types/Theme";
 import { Language, MultiLang } from "@/types/Language";
 import { Link } from "@/i18n/navigation";
 
+/**
+ * 语言切换组件。
+ * 允许用户在不同的语言之间切换，并根据当前主题显示不同的语言图标。
+ * @returns {JSX.Element | null} 语言切换按钮或 null。
+ */
 const LanguageSwitcher = () => {
   const locale = useLocale() as keyof MultiLang;
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+  /**
+   * 组件是否已挂载。
+   * 用于解决 `next-themes` 在服务器端渲染时的 `resolvedTheme` 不匹配问题。
+   */
   const [mounted, setMounted] = useState(false);
 
+  /**
+   * 另一个语言环境。
+   */
   const otherLocale = locale === Language.En ? Language.Zh : Language.En;
 
+  /**
+   * 副作用钩子，用于在组件挂载后设置 `mounted` 状态。
+   */
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -34,6 +49,9 @@ const LanguageSwitcher = () => {
     return null;
   }
 
+  /**
+   * 根据当前主题和语言环境选择对应的语言图标。
+   */
   const localeIcon = {
     en: resolvedTheme === Theme.Dark ? enIconLight : enIcon,
     zh: resolvedTheme === Theme.Dark ? zhIconLight : zhIcon,

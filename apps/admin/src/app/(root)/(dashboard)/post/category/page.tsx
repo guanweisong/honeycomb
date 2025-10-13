@@ -17,8 +17,19 @@ import {
   CategoryListQuerySchema,
 } from "@honeycomb/validation/category/schemas/category.list.query.schema";
 
+/**
+ * 文章分类管理页面。
+ * 该组件负责展示文章分类列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const Category = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `CategoryEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -27,11 +38,23 @@ const Category = () => {
     type: ModalType.ADD,
     open: false,
   });
+  /**
+   * 存储分类列表的查询参数。
+   * 默认 `limit` 为 999，以获取所有分类用于层级展示。
+   */
   const [searchParams, setSearchParams] = useState<CategoryListQueryInput>({
     limit: 999,
   });
+  /**
+   * 获取分类列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.category.index.useQuery(searchParams);
+  /**
+   * 删除分类的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyCategory = trpc.category.destroy.useMutation();
 
   /**

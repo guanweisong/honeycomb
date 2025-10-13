@@ -5,12 +5,24 @@ import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Theme } from "@/types/Theme";
 import { flushSync } from "react-dom";
 
+/**
+ * 主题切换组件。
+ * 允许用户在亮色和暗色主题之间切换，并支持视图过渡动画。
+ * @returns {JSX.Element | null} 主题切换按钮或 null。
+ */
 export const ThemeSwitcher = () => {
+  /**
+   * 组件是否已挂载。
+   * 用于解决 `next-themes` 在服务器端渲染时的 `resolvedTheme` 不匹配问题。
+   */
   const [mounted, setMounted] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // 设置 <meta name="theme-color"> 动态更新
+  /**
+   * 副作用钩子，用于动态设置 `<meta name="theme-color">`。
+   * 根据当前主题更新主题颜色，以优化 PWA 体验。
+   */
   useEffect(() => {
     if (!mounted) return;
 
@@ -35,12 +47,20 @@ export const ThemeSwitcher = () => {
     }
   }, [resolvedTheme, mounted]);
 
+  /**
+   * 副作用钩子，用于在组件挂载后设置 `mounted` 状态。
+   */
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
 
+  /**
+   * 切换暗黑模式。
+   * 支持视图过渡动画，提供更平滑的用户体验。
+   * @param {boolean} checked - 是否启用暗黑模式。
+   */
   const toggleDarkMode = async (checked: boolean) => {
     // 动画增强部分
     const prefersReducedMotion = window.matchMedia(

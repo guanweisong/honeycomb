@@ -13,6 +13,7 @@ export const PageUpdateSchema = createUpdateSchema(page)
     description: true,
     content: true,
     id: true,
+    status: true,
   })
   .required({
     id: true,

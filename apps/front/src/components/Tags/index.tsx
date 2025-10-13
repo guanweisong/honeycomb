@@ -5,10 +5,22 @@ import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schem
 import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 import { MultiLang } from "@honeycomb/db";
 
+/**
+ * 标签组件。
+ * 用于显示文章相关的标签，如导演、演员、风格等，并提供跳转到对应标签列表页面的链接。
+ * @param {PostEntity} props - 包含文章详情的属性。
+ * @returns {JSX.Element} 标签列表。
+ */
 const Tag = (props: PostEntity) => {
   const t = useTranslations("Tag");
   const locale = useLocale() as keyof MultiLang;
 
+  /**
+   * 渲染标签列表。
+   * @param {TagEntity[] | undefined} item - 标签实体数组。
+   * @param {string} label - 标签组的标题。
+   * @returns {JSX.Element | undefined} 渲染后的标签列表项或 undefined。
+   */
   const getTags = (item: TagEntity[] | undefined, label: string) => {
     if (item && item.length > 0) {
       return (

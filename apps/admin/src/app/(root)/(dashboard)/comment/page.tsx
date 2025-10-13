@@ -14,12 +14,36 @@ import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/co
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { TagListQueryInput } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 
+/**
+ * 评论管理页面。
+ * 该组件负责展示评论列表，并提供搜索、状态管理（通过、驳回、屏蔽）、删除等功能。
+ */
 const Comment = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `CommentEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
+  /**
+   * 存储评论列表的查询参数。
+   * 当这些参数变化时，会触发评论列表的重新加载。
+   */
   const [searchParams, setSearchParams] = useState<TagListQueryInput>();
+  /**
+   * 获取评论列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.comment.index.useQuery(searchParams);
+  /**
+   * 更新评论的 tRPC mutation。
+   * 用于更新评论的状态。
+   */
   const updateComment = trpc.comment.update.useMutation();
+  /**
+   * 删除评论的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyComment = trpc.comment.destroy.useMutation();
 
   /**

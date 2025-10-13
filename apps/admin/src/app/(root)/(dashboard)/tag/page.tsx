@@ -18,8 +18,19 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 
+/**
+ * 标签管理页面。
+ * 该组件负责展示标签列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const Tag = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `TagEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的标签记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -29,10 +40,22 @@ const Tag = () => {
     open: false,
   });
 
+  /**
+   * 存储标签列表的查询参数。
+   * 使用 `useGetState` 钩子，可以在异步操作中获取最新的 `searchParams`。
+   */
   const [searchParams, setSearchParams] = useGetState<TagListQueryInput>({});
 
+  /**
+   * 获取标签列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.tag.index.useQuery(searchParams);
+  /**
+   * 删除标签的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyTag = trpc.tag.destroy.useMutation();
 
   /**

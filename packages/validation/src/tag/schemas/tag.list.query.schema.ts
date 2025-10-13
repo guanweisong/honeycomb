@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
 import { TagEntitySchema } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
-import { CleanZod } from "@honeycomb/validation/clean.od";
+import { CleanZod } from "@honeycomb/validation/clean.zod";
 
 /**
  * 获取标签列表时的查询参数验证 schema。

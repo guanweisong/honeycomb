@@ -25,8 +25,19 @@ import {
   userStatusOptions,
 } from "@honeycomb/db";
 
+/**
+ * 用户管理页面。
+ * 该组件负责展示用户列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const User = () => {
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `UserEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的用户记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -35,11 +46,28 @@ const User = () => {
     type: ModalType.ADD,
     open: false,
   });
+  /**
+   * 存储用户列表的查询参数。
+   * 当这些参数变化时，会触发用户列表的重新加载。
+   */
   const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
+  /**
+   * 获取用户列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
   const { data, isLoading, isError, refetch } =
     trpc.user.index.useQuery(searchParams);
+  /**
+   * 创建用户的 tRPC mutation。
+   */
   const createUser = trpc.user.create.useMutation();
+  /**
+   * 更新用户的 tRPC mutation。
+   */
   const updateUser = trpc.user.update.useMutation();
+  /**
+   * 删除用户的 tRPC mutation。
+   */
   const destroyUser = trpc.user.destroy.useMutation();
 
   /**

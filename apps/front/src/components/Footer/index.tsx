@@ -2,6 +2,11 @@ import dayjs from "dayjs";
 import { getLocale } from "next-intl/server";
 import { serverClient } from "@honeycomb/trpc/server";
 
+/**
+ * 网站底部组件。
+ * 显示网站的签名、版权信息和备案号等。
+ * @returns {Promise<JSX.Element>} 网站底部。
+ */
 export default async function Footer() {
   const [setting, locale] = await Promise.all([
     serverClient.setting.index(),

@@ -3,11 +3,26 @@ import { trpcClient } from "@honeycomb/trpc/client/trpc";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
+/**
+ * 文章列表查询结果的输出类型。
+ */
 type PostIndexOutput = {
+  /**
+   * 文章实体列表。
+   */
   list: PostEntity[];
+  /**
+   * 文章总数。
+   */
   total: number;
 };
 
+/**
+ * 获取文章列表的异步函数。
+ * @param {PostListQueryInput} queryParams - 查询参数。
+ * @param {number} [page=1] - 页码。
+ * @returns {Promise<PostIndexOutput>} 文章列表数据。
+ */
 const getPostList = async (
   queryParams: PostListQueryInput,
   page: number = 1,
@@ -16,6 +31,11 @@ const getPostList = async (
   return await trpcClient.post.index.query(params);
 };
 
+/**
+ * 用于无限滚动加载文章列表的 React Query Hook。
+ * @param {PostListQueryInput} queryParams - 查询参数。
+ * @returns {UseInfiniteQueryResult<PostIndexOutput, Error>} 无限查询结果。
+ */
 export default function useInfiniteQueryPostList(
   queryParams: PostListQueryInput,
 ) {

@@ -7,17 +7,47 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 
+/**
+ * 添加/编辑标签对话框的属性接口。
+ */
 export interface AddTagDialogProps {
+  /**
+   * 模态框的类型，表示是新增还是编辑。
+   */
   type?: ModalType;
+  /**
+   * 控制模态框的显示与隐藏。
+   */
   open: boolean;
+  /**
+   * 当前编辑的标签记录，仅在编辑模式下有效。
+   */
   record?: TagEntity;
+  /**
+   * 模态框关闭时的回调函数。
+   */
   onClose?: () => void;
+  /**
+   * 操作成功（添加或编辑成功）时的回调函数。
+   */
   onSuccess?: () => void;
 }
 
+/**
+ * 添加/编辑标签的对话框组件。
+ * 封装了标签的新增和编辑逻辑，包括表单渲染和数据提交。
+ * @param {AddTagDialogProps} props - 组件属性。
+ * @returns {JSX.Element} 添加/编辑标签的对话框。
+ */
 export default function AddTagDialog(props: AddTagDialogProps) {
   const { type = ModalType.ADD, open, record, onClose, onSuccess } = props;
+  /**
+   * 创建标签的 tRPC mutation。
+   */
   const createTag = trpc.tag.create.useMutation();
+  /**
+   * 更新标签的 tRPC mutation。
+   */
   const updateTag = trpc.tag.update.useMutation();
 
   /**

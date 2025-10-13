@@ -11,14 +11,35 @@ import {
   Cell,
 } from "recharts";
 
+/**
+ * 柱状图组件的属性接口。
+ */
 export interface BarProps {
+  /**
+   * 柱状图的标题。
+   */
   title: string;
+  /**
+   * 柱状图的数据，包含项目名称和对应的计数。
+   */
   data?: { item: string; count: number }[];
+  /**
+   * 柱状图使用的颜色数组。
+   */
   colors?: string[];
 }
 
+/**
+ * 默认的颜色数组，用于柱状图的颜色循环。
+ */
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50", "#a0e0f0"];
 
+/**
+ * 自定义柱状图组件。
+ * 用于展示统计数据，支持自定义标题、数据和颜色。
+ * @param {BarProps} { title, data, colors } - 组件属性。
+ * @returns {JSX.Element} 柱状图组件。
+ */
 const CustomBar = ({ title, data, colors = COLORS }: BarProps) => {
   return (
     <div className="w-[360px]">

@@ -14,21 +14,60 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 import { MediaIndexInput } from "@honeycomb/validation/media/schemas/media.list.query.schema";
 
+/**
+ * 媒体库组件的属性接口。
+ */
 export interface MediaProps {
+  /**
+   * 当选择媒体文件时触发的回调函数。
+   * @param {MediaEntity} media - 被选中的媒体实体。
+   */
   onSelect?: (media: MediaEntity) => void;
 }
 
+/**
+ * 媒体库组件。
+ * 负责展示媒体文件列表，并提供上传、删除、选择等功能。
+ * @param {MediaProps} { onSelect } - 组件属性，包含选择媒体文件的回调函数。
+ * @returns {JSX.Element} 媒体库界面。
+ */
 const Media = ({ onSelect }: MediaProps) => {
+  /**
+   * 当前选中的媒体项。
+   */
   const [currentItem, setCurrentItem] = useState<MediaEntity>();
+  /**
+   * 上传操作的加载状态。
+   */
   const [loading, setLoading] = useState(false);
+  /**
+   * 文件输入框的引用，用于触发文件选择对话框。
+   */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * 媒体列表的查询参数。
+   * 默认 `limit` 为 99999，以获取所有媒体文件。
+   */
   const [searchParams] = useState<MediaIndexInput>({
     limit: 99999,
   });
+  /**
+   * 获取媒体列表数据的 tRPC 查询。
+   * `data` 包含列表数据，`refetch` 用于手动重新获取数据。
+   */
   const { data, refetch } = trpc.media.index.useQuery(searchParams);
+  /**
+   * 删除媒体文件的 tRPC mutation。
+   * 用于执行删除操作。
+   */
   const destroyMedia = trpc.media.destroy.useMutation();
 
+  /**
+   * 处理文件上传。
+   * 将选中的文件通过 POST 请求上传到服务器，并处理上传结果。
+   * @param {FileList | null} files - 用户选择的文件列表。
+   */
   const handleUpload = async (files: FileList | null) => {
     if (!files) return;
     setLoading(true);
@@ -64,6 +103,11 @@ const Media = ({ onSelect }: MediaProps) => {
     }
   };
 
+  /**
+   * 处理文件删除。
+   * 调用 `destroyMedia` mutation 删除指定 ID 的媒体文件，并刷新列表。
+   * @param {string} id - 要删除的媒体文件 ID。
+   */
   const handleDelete = async (id: string) => {
     try {
       const res = await destroyMedia.mutateAsync({ ids: [id] });
@@ -77,6 +121,10 @@ const Media = ({ onSelect }: MediaProps) => {
     }
   };
 
+  /**
+   * 副作用钩子，用于在 `currentItem` 变化时触发 `onSelect` 回调。
+   * 如果 `onSelect` 存在且 `currentItem` 有值，则调用 `onSelect`。
+   */
   useEffect(() => {
     if (onSelect && currentItem) {
       onSelect(currentItem);

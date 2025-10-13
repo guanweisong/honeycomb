@@ -1,21 +1,14 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
+import "dotenv/config";
 
 /**
  * 创建 Turso/libSQL 数据库客户端。
- *
- * 重要提示：为了安全起见，数据库的 URL 和认证 Token (authToken)
- * 应该通过环境变量 (`process.env`) 来提供，而不应硬编码在代码中。
- *
- * @example
- * // .env.local
- * TURSO_URL="your_turso_db_url"
- * TURSO_TOKEN="your_turso_auth_token"
  */
 const client = createClient({
   url: process.env.TURSO_URL!,
-  authToken: process.env.TURSO_TOKEN!,
+  authToken: process.env.TURSO_TOKEN,
 });
 
 /**

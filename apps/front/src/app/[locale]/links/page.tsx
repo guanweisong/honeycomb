@@ -7,10 +7,22 @@ import { cn } from "@honeycomb/ui/lib/utils";
 import { LinkStatus, MenuType } from "@honeycomb/db";
 import { serverClient } from "@honeycomb/trpc/server";
 
+/**
+ * 友情链接页面组件的属性接口。
+ */
 export interface LinksProps {
+  /**
+   * 包含当前语言环境的 Promise。
+   */
   params: Promise<{ locale: keyof MultiLang }>;
 }
 
+/**
+ * 友情链接页面组件。
+ * 用于展示友情链接列表，并提供申请友链的说明。
+ * @param {LinksProps} props - 组件属性。
+ * @returns {Promise<JSX.Element>} 友情链接页面。
+ */
 const Links = async (props: LinksProps) => {
   const { locale } = await props.params;
   const t = await getTranslations("Link");
@@ -78,6 +90,11 @@ const Links = async (props: LinksProps) => {
   );
 };
 
+/**
+ * 为友情链接页面生成元数据。
+ * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
+ * @returns {Promise<Metadata>} 页面元数据。
+ */
 export async function generateMetadata() {
   const t = await getTranslations("Link");
   const setting = await serverClient.setting.index();
@@ -98,6 +115,11 @@ export async function generateMetadata() {
   };
 }
 
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<any[]>} 静态参数数组。
+ */
 export async function generateStaticParams() {
   return [];
 }

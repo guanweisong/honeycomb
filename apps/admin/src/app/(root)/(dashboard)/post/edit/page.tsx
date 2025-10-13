@@ -25,6 +25,10 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostType, PostStatus, postTypeOptions } from "@honeycomb/db/src/types";
 
+/**
+ * 标签类型与对应的表单字段名的映射关系。
+ * 用于将多选标签组件返回的标签类型，转换为表单中存储标签ID的字段名。
+ */
 const tagMap = {
   galleryStyles: "galleryStyleIds",
   movieDirectors: "movieDirectorIds",
@@ -80,6 +84,13 @@ const PostDetail = () => {
     }
   }, [detail, form]);
 
+  /**
+   * 规范化表单数据。
+   * 在提交前对表单数据进行处理，例如添加文章状态，并进行必要的验证。
+   * @param {any} values - 原始表单值。
+   * @param {PostStatus} status - 文章的状态（如 PUBLISHED, DRAFT）。
+   * @returns {any | null} 规范化后的数据，如果验证失败则返回 null。
+   */
   const normalizeFormData = (values: any, status: PostStatus) => {
     const data: any = { ...values, status };
 
@@ -215,6 +226,10 @@ const PostDetail = () => {
     );
   };
 
+  /**
+   * 封面图片选择器组件的属性。
+   * 包含封面ID、清除封面图片的回调函数、打开图片选择器的回调函数、标题和尺寸提示。
+   */
   const photoPickerProps: PhotoPickerItemProps = {
     coverId: form.watch("coverId"),
     handlePhotoClear: () =>
@@ -224,6 +239,12 @@ const PostDetail = () => {
     size: "1920*1080",
   };
 
+  /**
+   * 处理标签更新的回调函数。
+   * 当多选标签组件的标签发生变化时调用，将选中的标签ID更新到表单对应的字段中。
+   * @param {keyof typeof tagMap} name - 标签类型，对应 `tagMap` 中的键名。
+   * @param {Omit<TagEntity, "updatedAt" | "createdAt">[]} tags - 更新后的标签实体数组。
+   */
   const onUpdateTags = (
     name: keyof typeof tagMap,
     tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
@@ -235,6 +256,10 @@ const PostDetail = () => {
     );
   };
 
+  /**
+   * 传递给 `MultiTag` 组件的属性。
+   * 包含标签更新的回调函数。
+   */
   const tagProps = {
     onTagsChange: onUpdateTags,
   };

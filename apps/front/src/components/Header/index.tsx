@@ -11,6 +11,11 @@ import { getLocale } from "next-intl/server";
 import { serverClient } from "@honeycomb/trpc/server";
 import { MenuEntity, MenuType } from "@honeycomb/db/src/types";
 
+/**
+ * 网站头部组件。
+ * 显示网站名称、主题切换、语言切换和导航菜单。
+ * @returns {Promise<JSX.Element>} 网站头部。
+ */
 export default async function Header() {
   const [setting, menu, locale] = await Promise.all([
     serverClient.setting.index(),
@@ -19,7 +24,7 @@ export default async function Header() {
   ]);
 
   /**
-   * 补充菜单
+   * 包含所有菜单项的数组，包括首页和友情链接。
    */
   const allMenu: MenuEntity[] = [
     {
@@ -40,7 +45,7 @@ export default async function Header() {
   ];
 
   /**
-   * 把扁平树变换成树结构
+   * 将扁平化的菜单数据转换为树形结构。
    */
   const menuTree: MenuEntity[] = listToTree(allMenu, {
     idKey: "id",
@@ -48,11 +53,18 @@ export default async function Header() {
   });
 
   /**
-   * 计算菜单的Link
+   * 计算菜单的 Link。
+   * 将处理后的菜单数据格式化为 `MenuItem` 数组，用于 `Menu` 组件。
+   * @returns {MenuItem[]} 格式化后的菜单数据。
    */
   const getMenuData = () => {
     const result: MenuItem[] = [];
     const getItem = (data: MenuEntity) => {
+      /**
+       * 递归处理单个菜单项，生成 `MenuItem` 格式。
+       * @param {MenuEntity} data - 原始菜单实体数据。
+       * @returns {MenuItem} 格式化后的菜单项。
+       */
       const item = {
         label: data.title?.[locale],
       } as MenuItem;
@@ -85,6 +97,9 @@ export default async function Header() {
     return result;
   };
 
+  /**
+   * 格式化后的菜单数据，用于渲染导航菜单。
+   */
   const menuDataFormat = getMenuData();
 
   return (

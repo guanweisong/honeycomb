@@ -22,31 +22,75 @@ import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 
+/**
+ * 多标签选择组件的属性接口。
+ */
 export interface MultiTagProps {
+  /**
+   * 表单中用于存储标签ID的字段名称。
+   */
   name:
     | "galleryStyleIds"
     | "movieDirectorIds"
     | "movieActorIds"
     | "movieStyleIds";
+  /**
+   * 组件的标题，例如 "导演"、"演员" 等。
+   */
   title: string;
 }
 
+/**
+ * 多标签选择组件。
+ * 允许用户从现有标签中选择或创建新标签，并将其关联到表单字段。
+ * @param {MultiTagProps} { name, title } - 组件属性。
+ * @returns {JSX.Element} 多标签选择器。
+ */
 const MultiTag = ({ name, title }: MultiTagProps) => {
   const { control, setValue, watch } = useFormContext();
   const selectedIds: string[] = watch(name) ?? [];
 
+  /**
+   * 搜索输入框的值。
+   */
   const [input, setInput] = useState("");
+  /**
+   * 搜索结果中的标签选项列表。
+   */
   const [options, setOptions] = useState<TagReadOnly[]>([]);
+  /**
+   * 搜索或数据加载的加载状态。
+   */
   const [loading, setLoading] = useState(false);
+  /**
+   * Popover 组件的打开状态。
+   */
   const [open, setOpen] = useState(false);
+  /**
+   * 用于搜索防抖的定时器引用。
+   */
   const timeout = useRef<any>(null);
+  /**
+   * 标签列表查询参数。
+   */
   const [searchParams, setSearchParams] = useState<any>({});
+  /**
+   * 获取标签列表的 tRPC 查询。
+   * 用于搜索和展示可选标签。
+   */
   const listQuery = trpc.tag.index.useQuery(searchParams);
 
+  /**
+   * 控制添加标签对话框的显示状态。
+   */
   const [modalProps, setModalProps] = useState<{ open: boolean }>({
     open: false,
   });
 
+  /**
+   * 从已选标签列表中移除一个标签。
+   * @param {string} id - 要移除的标签ID。
+   */
   const removeTag = (id: string) => {
     setValue(
       name,
@@ -55,6 +99,11 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
     );
   };
 
+  /**
+   * 向已选标签列表中添加一个标签。
+   * 如果标签已存在，则不执行任何操作。
+   * @param {TagReadOnly} tag - 要添加的标签对象。
+   */
   const addTag = (tag: TagReadOnly) => {
     if (selectedIds.includes(tag.id)) return;
     setValue(name, [...selectedIds, tag.id], { shouldDirty: true });
@@ -62,6 +111,11 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
     setOpen(false);
   };
 
+  /**
+   * 处理搜索输入框的值变化。
+   * 实现搜索防抖，并在输入停止后触发标签搜索。
+   * @param {string} value - 搜索输入框的当前值。
+   */
   const handleSearch = (value: string) => {
     setInput(value);
     if (timeout.current) clearTimeout(timeout.current);

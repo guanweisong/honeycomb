@@ -11,6 +11,10 @@ import {
 import { toast } from "sonner";
 import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 
+/**
+ * 登录页面组件。
+ * 负责用户登录认证，包括表单输入、腾讯防水墙验证码集成以及登录成功后的重定向。
+ */
 const Login = () => {
   const captchaRef = useRef<any>(null);
   const form = useRef<DynamicFormRef>(null);
@@ -21,6 +25,13 @@ const Login = () => {
   const { setting } = settingStore;
   const targetUrl = searchParams.get("targetUrl");
 
+  /**
+   * 副作用钩子，用于初始化腾讯防水墙验证码和处理登录逻辑。
+   * 在组件挂载后，会延迟 1 秒初始化腾讯防水墙验证码。
+   * 当验证码验证成功后，会获取表单值，调用 `loginMutation` 进行登录，并处理登录结果。
+   * 登录成功后，会将 token 存储到 localStorage 并重定向到目标页面或首页。
+   * 在组件卸载时，会清除 `captchaRef.current`。
+   */
   useEffect(() => {
     setTimeout(() => {
       captchaRef.current = new TencentCaptcha(
@@ -55,6 +66,10 @@ const Login = () => {
     };
   }, []);
 
+  /**
+   * 表单提交处理器。
+   * 当用户点击登录按钮时，显示腾讯防水墙验证码。
+   */
   const onSubmit = () => {
     captchaRef.current.show();
   };
