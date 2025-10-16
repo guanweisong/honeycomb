@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MENU_TYPE } from "@honeycomb/db";
+import { MENU_TYPE } from "@honeycomb/db/src/types";
 
 /**
  * 从数据库常量 `MENU_TYPE` 创建的 Zod 枚举 schema。

@@ -1,4 +1,5 @@
-import { db, schema } from "@honeycomb/db";
+import * as schema from "@honeycomb/db/src/schema";
+import { db } from "@honeycomb/db/src/db";
 import { eq } from "drizzle-orm";
 
 /**

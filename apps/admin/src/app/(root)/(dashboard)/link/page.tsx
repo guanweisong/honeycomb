@@ -16,7 +16,7 @@ import {
 } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
-import { LinkStatus, linkStatusOptions } from "@honeycomb/db";
+import { LinkStatus, linkStatusOptions } from "@honeycomb/db/src/types";
 import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
 
 /**

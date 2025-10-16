@@ -4,7 +4,7 @@ import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
 import { Badge } from "@honeycomb/ui/components/badge";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
-import { pageStatusOptions } from "@honeycomb/db";
+import { pageStatusOptions } from "@honeycomb/db/src/types";
 
 /**
  * 页面列表的表格列定义。

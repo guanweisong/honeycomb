@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
-import { linkStatusOptions } from "@honeycomb/db";
+import { linkStatusOptions } from "@honeycomb/db/src/types";
 
 /**
  * 友情链接列表的表格列定义。

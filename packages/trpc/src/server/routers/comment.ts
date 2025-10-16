@@ -24,6 +24,7 @@ import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comme
 import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
+import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
 
 /**
  * 评论相关的 tRPC 路由。
@@ -170,6 +171,8 @@ export const commentRouter = router({
     .input(CommentInsertSchema)
     .mutation(async ({ ctx, input }) => {
       const { captcha, ...rest } = input;
+
+      await validateCaptcha(captcha);
 
       // 插入评论
       const [created] = await ctx.db

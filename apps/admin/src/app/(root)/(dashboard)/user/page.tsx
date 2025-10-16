@@ -23,7 +23,7 @@ import {
   userLevelOptions,
   UserStatus,
   userStatusOptions,
-} from "@honeycomb/db";
+} from "@honeycomb/db/src/types";
 
 /**
  * 用户管理页面。

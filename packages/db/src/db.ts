@@ -1,14 +1,14 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
-import "dotenv/config";
+import { env } from "@honeycomb/env";
 
 /**
  * 创建 Turso/libSQL 数据库客户端。
  */
 const client = createClient({
-  url: process.env.TURSO_URL!,
-  authToken: process.env.TURSO_TOKEN,
+  url: env.TURSO_URL!,
+  authToken: env.TURSO_TOKEN,
 });
 
 /**

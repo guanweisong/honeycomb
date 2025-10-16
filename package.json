@@ -21,8 +21,7 @@
     "tailwindcss": "^4.0.13",
     "turbo": "^2.5.0",
     "tw-animate-css": "^1.2.4",
-    "typescript": "5.8.2",
-    "dotenv": "17.2.3"
+    "typescript": "5.8.2"
   },
   "engines": {
     "node": ">=18"

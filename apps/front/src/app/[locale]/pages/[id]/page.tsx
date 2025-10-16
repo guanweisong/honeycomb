@@ -5,7 +5,7 @@ import Markdown from "@/components/Markdown";
 import PageTitle from "@/components/PageTitle";
 import { getLocale } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
-import { MenuType } from "@honeycomb/db";
+import { MenuType } from "@honeycomb/db/src/types";
 import { serverClient } from "@honeycomb/trpc/server";
 /**
  * 页面详情组件的属性接口。

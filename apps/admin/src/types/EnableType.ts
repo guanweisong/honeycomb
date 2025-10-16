@@ -1,4 +1,4 @@
-import { ENABLE_STATUS } from "@honeycomb/db";
+import { ENABLE_STATUS } from "@honeycomb/db/src/types";
 
 /**
  * 启用状态类型枚举。

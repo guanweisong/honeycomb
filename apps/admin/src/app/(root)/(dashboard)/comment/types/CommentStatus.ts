@@ -1,4 +1,7 @@
-import { COMMENT_STATUS, CommentStatus as CommentStatusType } from "@honeycomb/db";
+import {
+  COMMENT_STATUS,
+  CommentStatus as CommentStatusType,
+} from "@honeycomb/db/src/types";
 
 /**
  * 评论状态枚举。

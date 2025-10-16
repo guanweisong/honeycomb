@@ -11,7 +11,7 @@ import {
   PostTypeName,
   UserLevel,
   UserLevelName,
-} from "@honeycomb/db";
+} from "@honeycomb/db/src/types";
 
 /**
  * 后台管理主看板页面。

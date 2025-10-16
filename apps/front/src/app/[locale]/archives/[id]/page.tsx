@@ -12,7 +12,7 @@ import { MultiLang } from "@/types/Language";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { serverClient } from "@honeycomb/trpc/server";
-import { MenuType, PostType } from "@honeycomb/db";
+import { MenuType, PostType } from "@honeycomb/db/src/types";
 
 /**
  * 归档页面组件的属性接口。

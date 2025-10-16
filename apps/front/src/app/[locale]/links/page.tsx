@@ -4,7 +4,7 @@ import PageTitle from "@/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/types/Language";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { LinkStatus, MenuType } from "@honeycomb/db";
+import { LinkStatus, MenuType } from "@honeycomb/db/src/types";
 import { serverClient } from "@honeycomb/trpc/server";
 
 /**

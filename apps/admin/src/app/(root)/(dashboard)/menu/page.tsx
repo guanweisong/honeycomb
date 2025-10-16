@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
-import { MenuType } from "@honeycomb/db";
+import { MenuType } from "@honeycomb/db/src/types";
 import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { MenuTypeName } from "@/app/(root)/(dashboard)/menu/types/MenuType";

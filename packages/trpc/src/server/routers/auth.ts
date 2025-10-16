@@ -1,10 +1,12 @@
 import { publicProcedure, router } from "@honeycomb/trpc/server/core";
 import { z } from "zod";
-import { db } from "@honeycomb/db";
+import { db } from "@honeycomb/db/src/db";
 import crypto from "node:crypto";
 import * as schema from "@honeycomb/db/src/schema";
 import { and, eq } from "drizzle-orm";
 import { LoginSchema } from "@honeycomb/validation/auth/schemas/login.schema";
+import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
+import { TRPCError } from "@trpc/server";
 
 /**
  * 认证相关的 tRPC 路由。
@@ -31,7 +33,9 @@ export const authRouter = router({
    * 5. 返回新 token。
    */
   login: publicProcedure.input(LoginSchema).mutation(async ({ input }) => {
-    const { name, password } = input;
+    const { name, password, captcha } = input;
+    await validateCaptcha(captcha);
+
     const [user] = await db
       .select()
       .from(schema.user)
@@ -44,7 +48,10 @@ export const authRouter = router({
       .limit(1);
 
     if (!user) {
-      throw new Error("用户名或密码不正确");
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "用户名或密码不正确",
+      });
     }
 
     const token = crypto.randomUUID();

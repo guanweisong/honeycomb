@@ -4,6 +4,7 @@ import { Copy, File, Trash, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { env } from "@honeycomb/env";
 
 import { Button } from "@honeycomb/ui/components/button";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
@@ -77,16 +78,13 @@ const Media = ({ onSelect }: MediaProps) => {
     });
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_DOAMIN}/media`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            "x-auth-token": localStorage.getItem("token") || "",
-          },
+      const response = await fetch(`${env.NEXT_PUBLIC_API_DOMAIN}/media`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "x-auth-token": localStorage.getItem("token") || "",
         },
-      );
+      });
       const data = await response.json();
 
       if (response.ok) {

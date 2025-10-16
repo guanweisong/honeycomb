@@ -1,4 +1,4 @@
-import { MENU_TYPE, MenuType as MenuTypeType } from "@honeycomb/db";
+import { MENU_TYPE, MenuType as MenuTypeType } from "@honeycomb/db/src/types";
 
 /**
  * 菜单类型枚举。

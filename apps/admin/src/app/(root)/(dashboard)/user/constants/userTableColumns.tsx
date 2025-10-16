@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
-import { userLevelOptions, userStatusOptions } from "@honeycomb/db";
+import { userLevelOptions, userStatusOptions } from "@honeycomb/db/src/types";
 
 /**
  * 用户列表的表格列定义。

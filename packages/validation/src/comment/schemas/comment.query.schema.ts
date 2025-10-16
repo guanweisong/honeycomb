@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { enumFrom } from "../../schemas/enum.helpers";
-import { COMMENT_REF_TYPE } from "@honeycomb/db";
+import { COMMENT_REF_TYPE } from "@honeycomb/db/src/types";
 
 /**
  * 从数据库枚举 `COMMENT_REF_TYPE` 创建的 Zod 枚举 schema。

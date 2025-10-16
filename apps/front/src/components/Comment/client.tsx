@@ -6,13 +6,12 @@ import Card from "../Card";
 import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
 import PaginationResponse from "@/types/pagination.response";
-import { useRouter, usePathname } from "next/navigation";
 import { refreshPath } from "@/utils/refreshPath";
-import { useTranslations } from "next-intl";
-import { CommentStatus, MenuType } from "@honeycomb/db";
+import { CommentStatus, MenuType } from "@honeycomb/db/src/types";
 import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 import { CommentInsertInput } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
-import { trpc } from "@honeycomb/trpc/client/trpc"; // ✅ 客户端 tRPC
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { useTranslations } from "next-intl"; // ✅ 客户端 tRPC
 
 /**
  * 评论客户端组件的属性接口。
@@ -70,7 +69,8 @@ const CommentClient = (props: CommentClientProps) => {
    */
   const [user, setUser] = useState<User>();
 
-  // ✅ 使用 trpc 客户端 mutation
+  const t = useTranslations("Comment");
+
   /**
    * 创建评论的 tRPC mutation。
    */

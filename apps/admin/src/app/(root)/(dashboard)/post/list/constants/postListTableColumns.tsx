@@ -4,7 +4,7 @@ import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
 import { Badge } from "@honeycomb/ui/components/badge";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
-import { postStatusOptions, postTypeOptions } from "@honeycomb/db";
+import { postStatusOptions, postTypeOptions } from "@honeycomb/db/src/types";
 
 /**
  * 文章列表的表格列定义。
