@@ -6,7 +6,6 @@
   "license": "MIT",
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.13.8",
-    "zod": "^4.1.11",
-    "dotenv": "^17.2.3"
+    "zod": "^4.1.11"
   }
 }

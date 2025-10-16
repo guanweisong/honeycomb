@@ -4,7 +4,6 @@ import { Copy, File, Trash, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { env } from "@honeycomb/env";
 
 import { Button } from "@honeycomb/ui/components/button";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
@@ -63,6 +62,20 @@ const Media = ({ onSelect }: MediaProps) => {
    * 用于执行删除操作。
    */
   const destroyMedia = trpc.media.destroy.useMutation();
+  const uploadMedia = trpc.media.upload.useMutation();
+
+  /**
+   * 将 File 对象转换为 Base64 编码的字符串。
+   * @param {File} file - 要转换的文件。
+   * @returns {Promise<string>} 返回一个包含 Base64 数据的 Promise。
+   */
+  const toBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.onerror = (error) => reject(error);
+    });
 
   /**
    * 处理文件上传。
@@ -70,32 +83,27 @@ const Media = ({ onSelect }: MediaProps) => {
    * @param {FileList | null} files - 用户选择的文件列表。
    */
   const handleUpload = async (files: FileList | null) => {
-    if (!files) return;
+    if (!files || files.length === 0) return;
     setLoading(true);
-    const formData = new FormData();
-    Array.from(files).forEach((file) => {
-      formData.append("file", file);
-    });
 
     try {
-      const response = await fetch(`${env.NEXT_PUBLIC_API_DOMAIN}/media`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "x-auth-token": localStorage.getItem("token") || "",
-        },
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const base64 = await toBase64(file);
+        return uploadMedia.mutateAsync({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          base64,
+        });
       });
-      const data = await response.json();
 
-      if (response.ok) {
-        toast.success("上传成功");
-        setCurrentItem(data);
-        refetch();
-      } else {
-        toast.error(data.message || "上传失败");
-      }
-    } catch (e) {
-      toast.error("上传失败，请稍后再试");
+      const results = await Promise.all(uploadPromises);
+
+      toast.success(`成功上传 ${results.length} 个文件`);
+      setCurrentItem(results[results.length - 1]); // 将最新上传的设为当前项
+      refetch();
+    } catch (e: any) {
+      toast.error(e.message || "上传失败，请稍后再试");
     } finally {
       setLoading(false);
     }
@@ -197,8 +205,11 @@ const Media = ({ onSelect }: MediaProps) => {
           ))
         ) : (
           <div className="flex flex-wrap">
-            {Array.from({ length: 100 }).map(() => (
-              <Skeleton className="relative w-32 h-32 m-1 border-2 bg-gray-100 border-gray-100 rounded-none" />
+            {Array.from({ length: 100 }).map((_v, index) => (
+              <Skeleton
+                key={`media.skeleton${index}`}
+                className="relative w-32 h-32 m-1 border-2 bg-gray-100 border-gray-100 rounded-none"
+              />
             ))}
           </div>
         )}

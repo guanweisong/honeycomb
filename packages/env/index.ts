@@ -1,13 +1,5 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
-import dotenv from "dotenv";
-import path from "path";
-
-const root = process.cwd().includes("apps/")
-  ? path.resolve(process.cwd(), "../..")
-  : process.cwd();
-
-dotenv.config({ path: path.join(root, ".env") });
 
 export const env = createEnv({
   server: {
