@@ -17,6 +17,7 @@ import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 标签管理页面。
@@ -48,10 +49,15 @@ const Tag = () => {
 
   /**
    * 获取标签列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.tag.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.tag.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   /**
    * 删除标签的 tRPC mutation。
    * 用于执行删除操作。
@@ -113,7 +119,7 @@ const Tag = () => {
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         selectableRows
         selectedRows={selectedRows}

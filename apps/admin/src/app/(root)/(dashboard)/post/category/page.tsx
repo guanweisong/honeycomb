@@ -16,6 +16,7 @@ import {
   CategoryListQueryInput,
   CategoryListQuerySchema,
 } from "@honeycomb/validation/category/schemas/category.list.query.schema";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 文章分类管理页面。
@@ -47,10 +48,15 @@ const Category = () => {
   });
   /**
    * 获取分类列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.category.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.category.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   /**
    * 删除分类的 tRPC mutation。
    * 用于执行删除操作。
@@ -114,7 +120,7 @@ const Category = () => {
         onChange={(params) => {
           setSearchParams(params);
         }}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         selectableRows={true}
         selectedRows={selectedRows}

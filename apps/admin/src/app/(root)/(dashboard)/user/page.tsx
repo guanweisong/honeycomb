@@ -24,6 +24,7 @@ import {
   UserStatus,
   userStatusOptions,
 } from "@honeycomb/db/src/types";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 用户管理页面。
@@ -53,10 +54,15 @@ const User = () => {
   const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
   /**
    * 获取用户列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.user.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.user.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   /**
    * 创建用户的 tRPC mutation。
    */
@@ -162,7 +168,7 @@ const User = () => {
           total: data?.total ?? 0,
         }}
         columns={userTableColumns}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         selectableRows={true}
         disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}

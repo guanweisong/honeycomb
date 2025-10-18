@@ -9,6 +9,7 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
+import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import {
   LinkListQueryInput,
@@ -62,10 +63,15 @@ const Link = () => {
   const destroyLink = trpc.link.destroy.useMutation();
   /**
    * 获取链接列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示请求状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.link.index.useQuery(searchParams);
+  const { data, isError, refetch, isFetching } = trpc.link.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
 
   /**
    * 新增、编辑弹窗表单保存事件
@@ -161,7 +167,7 @@ const Link = () => {
         onChange={(params) => {
           setSearchParams(params);
         }}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         columns={linkTableColumns}
         selectableRows={true}

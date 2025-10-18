@@ -51,7 +51,7 @@ interface DataTableProps<TData, TRequest> {
   columns: ColumnDef<TData>[];
   data: DataSource<TData>;
 
-  loading?: boolean;
+  isFetching?: boolean;
   error?: boolean;
 
   selectableRows?: boolean;
@@ -72,7 +72,7 @@ export function DataTable<TData, TRequest>(
   const {
     columns,
     data,
-    loading,
+    isFetching,
     error,
     selectableRows = false,
     disabledRowSelectable,
@@ -294,7 +294,7 @@ export function DataTable<TData, TRequest>(
                   }
                   className="h-24 text-center text-muted-foreground"
                 >
-                  {loading ? "" : "暂无数据"}
+                  {isFetching ? "" : "暂无数据"}
                 </TableCell>
               </TableRow>
             ) : (
@@ -327,7 +327,7 @@ export function DataTable<TData, TRequest>(
             )}
           </TableBody>
         </Table>
-        {loading && (
+        {isFetching && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
             <span className="text-muted-foreground text-sm">正在加载中...</span>
           </div>
@@ -348,7 +348,7 @@ export function DataTable<TData, TRequest>(
                 page: pagination.page - 1,
               })
             }
-            disabled={pagination.page === 1 || loading}
+            disabled={pagination.page === 1 || isFetching}
           >
             上一页
           </Button>
@@ -362,7 +362,7 @@ export function DataTable<TData, TRequest>(
               })
             }
             disabled={
-              pagination.page * pagination.limit >= data.total || loading
+              pagination.page * pagination.limit >= data.total || isFetching
             }
           >
             下一页

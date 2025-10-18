@@ -15,6 +15,7 @@ import {
 } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 页面列表管理页面。
@@ -34,10 +35,15 @@ const Page = () => {
   const router = useRouter();
   /**
    * 获取页面列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.page.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.page.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   /**
    * 删除页面的 tRPC mutation。
    * 用于执行删除操作。
@@ -74,7 +80,7 @@ const Page = () => {
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         onChange={(params) => {
           setSearchParams(params);

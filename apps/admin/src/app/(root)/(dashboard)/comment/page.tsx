@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { TagListQueryInput } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 评论管理页面。
@@ -31,10 +32,15 @@ const Comment = () => {
   const [searchParams, setSearchParams] = useState<TagListQueryInput>();
   /**
    * 获取评论列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.comment.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.comment.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   /**
    * 更新评论的 tRPC mutation。
    * 用于更新评论的状态。
@@ -189,7 +195,7 @@ const Comment = () => {
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         onChange={(params) => {
           setSearchParams(params);

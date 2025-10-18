@@ -13,6 +13,7 @@ import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.lis
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
 import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
+import { keepPreviousData } from "@tanstack/react-query";
 
 /**
  * 文章列表管理页面。
@@ -34,10 +35,15 @@ const PostList = () => {
   // 使用 tRPC hook 获取文章列表数据
   /**
    * 获取文章列表数据的 tRPC 查询。
-   * `data` 包含列表数据和总数，`isLoading` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isLoading, isError, refetch } =
-    trpc.post.index.useQuery(searchParams);
+  const { data, isFetching, isError, refetch } = trpc.post.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
   // 使用 tRPC hook 创建删除文章的 mutation
   /**
    * 删除文章的 tRPC mutation。
@@ -79,7 +85,7 @@ const PostList = () => {
           setSearchParams(params);
         }}
         columns={postListTableColumns}
-        loading={isLoading}
+        isFetching={isFetching}
         error={isError}
         selectableRows={true}
         selectedRows={selectedRows}
