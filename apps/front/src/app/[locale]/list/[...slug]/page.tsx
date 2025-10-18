@@ -97,8 +97,7 @@ export default async function List(props: ListProps) {
       )}
       {post.list.length > 0 ? (
         <PostList
-          initData={post.list}
-          pageSize={PAGE_SIZE}
+          initData={post}
           queryParams={queryParams}
         />
       ) : (

@@ -21,6 +21,20 @@ import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";
 
 /**
+ * 文章列表查询结果的输出类型。
+ */
+type PostIndexOutput = {
+  /**
+   * 文章实体列表。
+   */
+  list: PostEntity[];
+  /**
+   * 文章总数。
+   */
+  total: number;
+};
+
+/**
  * 文章列表组件的属性接口。
  */
 export interface PostListProps {
@@ -28,6 +42,10 @@ export interface PostListProps {
    * 查询文章列表的参数。
    */
   queryParams: PostListQueryInput;
+  /**
+   * 初始文章列表数据。
+   */
+  initData?: PostIndexOutput;
 }
 
 /**
@@ -37,10 +55,10 @@ export interface PostListProps {
  * @returns {JSX.Element} 文章列表。
  */
 export default function PostList(props: PostListProps) {
-  const { queryParams } = props;
+  const { queryParams, initData } = props;
   const scroll = useScroll(typeof document !== "undefined" ? document : null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQueryPostList(queryParams);
+    useInfiniteQueryPostList(queryParams, initData);
   const locale = useLocale() as keyof MultiLang;
   const t = useTranslations("PostList");
 

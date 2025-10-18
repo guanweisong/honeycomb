@@ -38,6 +38,7 @@ const getPostList = async (
  */
 export default function useInfiniteQueryPostList(
   queryParams: PostListQueryInput,
+  initialData?: PostIndexOutput,
 ) {
   return useInfiniteQuery<PostIndexOutput, Error>({
     queryKey: ["posts", queryParams],
@@ -53,5 +54,8 @@ export default function useInfiniteQueryPostList(
       return allPages.length + 1;
     },
     initialPageParam: 1,
+    initialData: initialData
+      ? { pages: [initialData], pageParams: [1] }
+      : undefined,
   });
 }
