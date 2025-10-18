@@ -2,6 +2,7 @@ import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import type { AppRouter } from "../server";
 import superjson from "superjson";
+import { env } from "@honeycomb/env";
 
 /**
  * tRPC React 客户端实例。
@@ -20,7 +21,7 @@ export const trpc = createTRPCReact<AppRouter>();
 export const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "http://127.0.0.1:7002/api/trpc",
+      url: `${env.NEXT_PUBLIC_API_DOMAIN}/api/trpc`,
       transformer: superjson,
       headers() {
         const token =
