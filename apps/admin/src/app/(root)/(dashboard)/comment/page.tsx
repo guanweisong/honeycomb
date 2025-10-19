@@ -29,7 +29,7 @@ const Comment = () => {
    * 存储评论列表的查询参数。
    * 当这些参数变化时，会触发评论列表的重新加载。
    */
-  const [searchParams, setSearchParams] = useState<TagListQueryInput>();
+  const [searchParams, setSearchParams] = useState<TagListQueryInput>({});
   /**
    * 获取评论列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
@@ -59,7 +59,7 @@ const Comment = () => {
    */
   const handleSetStatus = async (id: string, type: CommentStatus) => {
     try {
-      await updateComment.mutateAsync({ id, data: { status: type } });
+      await updateComment.mutateAsync({ id, status: type });
       refetch();
       toast.success("更新成功");
     } catch (e) {

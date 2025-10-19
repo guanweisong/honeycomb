@@ -1,6 +1,7 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
+import { z } from "zod";
 
 /**
  * 获取友情链接列表时的查询参数验证 schema。
@@ -14,7 +15,11 @@ export const LinkListQuerySchema = PaginationQuerySchema.extend({
   url: LinkInsertSchema.shape.url,
   description: LinkInsertSchema.shape.description,
   status: LinkInsertSchema.shape.status,
-}).partial();
+})
+  .extend({
+    status: z.array(z.string()).optional(),
+  })
+  .partial();
 
 /**
  * 友情链接列表查询参数的 TypeScript 类型。

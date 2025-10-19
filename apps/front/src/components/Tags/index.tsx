@@ -35,7 +35,7 @@ const Tag = (props: PostEntity) => {
                   href={`/list/tags/${encodeURI(n.name[locale])}`}
                   className="link-light"
                 >
-                  {n.name[locale]}
+                  {n.name?.[locale]}
                 </Link>
               </span>
             );

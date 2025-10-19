@@ -6,7 +6,7 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  * 该 schema 扩展了通用的分页查询 schema (`PaginationQuerySchema`)，
  * 但未添加任何额外的筛选字段。因此，它只支持对媒体列表进行分页查询。
  */
-export const MediaListQuerySchema = PaginationQuerySchema.extend({});
+export const MediaListQuerySchema = PaginationQuerySchema.partial();
 
 /**
  * 媒体列表查询参数的 TypeScript 类型。

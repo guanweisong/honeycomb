@@ -4,6 +4,8 @@ import { post } from "@honeycomb/db/src/schema";
 import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 import { UserEntitySchema } from "@honeycomb/validation/user/schemas/user.entity.schema";
 import { MediaEntitySchema } from "@honeycomb/validation/media/schemas/media.entity.schema";
+import { TagEntitySchema } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { z } from "zod";
 
 /**
  * 文章实体 Zod schema。
@@ -13,6 +15,10 @@ import { MediaEntitySchema } from "@honeycomb/validation/media/schemas/media.ent
  * - `title`, `quoteContent`, `quoteAuthor`, `excerpt`: 这些字段被定义为国际化 (i18n) 结构。
  * - `author`: 字段被扩展为完整的 `UserEntitySchema`，代表关联的作者信息。
  * - `cover`: 字段被扩展为完整的 `MediaEntitySchema`，代表关联的封面图信息。
+ * - `movieDirectors`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
+ * - `movieActors`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
+ * - `movieStyles`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
+ * - `galleryStyles`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
  */
 export const PostEntitySchema = createSelectSchema(post).extend({
   title: defaultI18nSchema,
@@ -21,6 +27,10 @@ export const PostEntitySchema = createSelectSchema(post).extend({
   excerpt: defaultI18nSchema,
   author: UserEntitySchema,
   cover: MediaEntitySchema,
+  movieDirectors: z.array(TagEntitySchema),
+  movieActors: z.array(TagEntitySchema),
+  movieStyles: z.array(TagEntitySchema),
+  galleryStyles: z.array(TagEntitySchema),
 });
 
 /**
