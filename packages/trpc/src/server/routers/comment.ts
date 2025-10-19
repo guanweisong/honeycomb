@@ -17,7 +17,7 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
-import { eq, inArray, and, sql, InferInsertModel, asc } from "drizzle-orm";
+import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@honeycomb/db/src/types";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
 import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
@@ -25,6 +25,10 @@ import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
+import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
+import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
+import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 
 /**
  * 评论相关的 tRPC 路由。
@@ -39,7 +43,7 @@ export const commentRouter = router({
   index: publicProcedure
     .input(CommentListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input as any;
+      const { page, limit, sortField, sortOrder, ...rest } = input;
       const where = buildDrizzleWhere(schema.comment, rest, ["status"]);
 
       // 构建排序条件
@@ -51,11 +55,11 @@ export const commentRouter = router({
       );
 
       // 查询分页数据
-      const list = await ctx.db
+      const list: CommentEntity[] = await ctx.db
         .select()
         .from(schema.comment)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 
@@ -68,28 +72,29 @@ export const commentRouter = router({
 
       // attach minimal refs
       const postIds = Array.from(
-        new Set(list.map((c: any) => c.postId).filter(Boolean)),
-      );
+        new Set(list.map((c) => c.postId).filter(Boolean)),
+      ) as string[];
       const pageIds = Array.from(
-        new Set(list.map((c: any) => c.pageId).filter(Boolean)),
-      );
+        new Set(list.map((c) => c.pageId).filter(Boolean)),
+      ) as string[];
+
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
               .select()
               .from(schema.post)
-              .where(inArray(schema.post.id, postIds as any))
-          : Promise.resolve([] as any[]),
+              .where(inArray(schema.post.id, postIds))
+          : Promise.resolve([] as PostEntity[]),
         pageIds.length
           ? ctx.db
               .select()
               .from(schema.page)
-              .where(inArray(schema.page.id, pageIds as any))
-          : Promise.resolve([] as any[]),
+              .where(inArray(schema.page.id, pageIds))
+          : Promise.resolve([] as PageEntity[]),
       ]);
-      const postMap = Object.fromEntries(posts.map((p: any) => [p.id, p]));
-      const pageMap = Object.fromEntries(pages.map((p: any) => [p.id, p]));
-      const listWithRefs = list.map((c: any) => ({
+      const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
+      const pageMap = Object.fromEntries(pages.map((p) => [p.id, p]));
+      const listWithRefs = list.map((c) => ({
         ...c,
         post: c.postId ? (postMap[c.postId] ?? null) : null,
         page: c.pageId ? (pageMap[c.pageId] ?? null) : null,
@@ -116,7 +121,7 @@ export const commentRouter = router({
       const publishOrBan = ["PUBLISH", "BAN"] as const;
       // base where: status in publishOrBan
       const baseWhere = inArray(schema.comment.status, publishOrBan);
-      let where = baseWhere as any;
+      let where: SQL | undefined = baseWhere;
       switch (input.type) {
         case "CATEGORY":
           where = and(where, eq(schema.comment.postId, input.id));
@@ -136,10 +141,12 @@ export const commentRouter = router({
 
       const list = result.length
         ? listToTree(
-            result.map((item: any) => ({
+            result.map((item) => ({
               ...item,
               id: item.id.toString(),
-              avatar: `https://cravatar.cn/avatar/${md5(item.email.trim().toLowerCase())}?s=48&d=identicon`,
+              avatar: `https://cravatar.cn/avatar/${md5(
+                item.email!.trim().toLowerCase(),
+              )}?s=48&d=identicon`,
             })),
             { idKey: "id", parentKey: "parentId" },
           )
@@ -196,16 +203,21 @@ export const commentRouter = router({
         .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
         .where(eq(schema.comment.id, created.id));
 
+      // ====== setting ======
+      const [setting] = await ctx.db.select().from(schema.setting);
+
+      if (!currentComment || !setting) {
+        throw new Error("Comment or setting not found");
+      }
+
       // ====== custom link ======
-      const currentCustom = getCustomCommentLink(currentComment?.customId);
+      const currentCustom = getCustomCommentLink(currentComment.customId);
       const currentCommentWithCustom = {
         ...currentComment,
         custom: currentCustom,
       };
 
-      // ====== setting ======
-      const [setting] = await ctx.db.select().from(schema.setting);
-      const siteNameZh = setting?.siteName?.zh ?? "";
+      const siteNameZh = setting.siteName?.zh ?? "";
       const systemEmail = `notice@guanweisong.com`;
 
       const resend = new Resend(process.env.RESEND_API_KEY);
@@ -218,8 +230,8 @@ export const commentRouter = router({
           to: process.env.ADMIN_EMAIL!,
           subject: `[${siteNameZh}]有一条新的评论`,
           react: AdminCommentEmailMessage({
-            currentComment: currentCommentWithCustom,
-            setting: setting,
+            currentComment: currentCommentWithCustom as CommentEntity,
+            setting: setting as SettingEntity,
           }),
         })
         .then((e) => {
@@ -233,16 +245,17 @@ export const commentRouter = router({
       if (rest.parentId) {
         const [parentComment] = await ctx.db
           .select({
-            id: schema.comment.id,
-            email: schema.comment.email,
-            customId: schema.comment.customId,
-            content: schema.comment.content,
+            ...selectAllColumns(schema.comment),
+            post: { id: schema.post.id, title: schema.post.title },
+            page: { id: schema.page.id, title: schema.page.title },
           })
           .from(schema.comment)
+          .leftJoin(schema.post, eq(schema.comment.postId, schema.post.id))
+          .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
           .where(eq(schema.comment.id, rest.parentId));
 
         if (parentComment) {
-          const parentCustom = getCustomCommentLink(parentComment?.customId);
+          const parentCustom = getCustomCommentLink(parentComment.customId);
           const parentCommentWithCustom = {
             ...parentComment,
             custom: parentCustom,
@@ -253,9 +266,9 @@ export const commentRouter = router({
               to: parentComment.email as string,
               subject: `您在[${siteNameZh}]的评论有新的回复`,
               react: ReplyCommentEmailMessage({
-                currentComment: currentCommentWithCustom,
-                setting: setting,
-                parentComment: parentCommentWithCustom,
+                currentComment: currentCommentWithCustom as CommentEntity,
+                setting: setting as SettingEntity,
+                parentComment: parentCommentWithCustom as CommentEntity,
               }),
             })
             .then((e) => {
