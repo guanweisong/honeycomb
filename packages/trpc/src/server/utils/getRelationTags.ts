@@ -1,6 +1,6 @@
 import { db } from "@honeycomb/db/src/db";
 import * as schema from "@honeycomb/db/src/schema";
-import { type MultiLang } from "@honeycomb/db/src/types";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { inArray } from "drizzle-orm";
 
 /**

@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 import { setRequestLocale } from "next-intl/server";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { NextIntlClientProvider } from "next-intl";
 
 /**

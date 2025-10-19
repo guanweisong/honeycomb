@@ -23,7 +23,8 @@ import { creatCategoryTitleByDepth } from "@/utils/help";
 import { Plus } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { PostType, PostStatus, postTypeOptions } from "@honeycomb/db/src/types";
+import { PostStatus } from "@honeycomb/types/post/post.status";
+import { PostType, postTypeOptions } from "@honeycomb/types/post/post.type";
 
 /**
  * 标签类型与对应的表单字段名的映射关系。

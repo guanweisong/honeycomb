@@ -1,6 +1,6 @@
 import React from "react";
 import CommentClient from "@/components/Comment/client";
-import { MenuType } from "@honeycomb/db/src/types";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
 import { serverClient } from "@honeycomb/trpc/server";
 
 /**

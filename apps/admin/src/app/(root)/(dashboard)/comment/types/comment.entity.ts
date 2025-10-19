@@ -1,6 +1,6 @@
 import type { BaseEntity } from "@/types/BaseEntity";
-import { MultiLang } from "@/types/MulitLang";
-import type { CommentStatus } from "./CommentStatus";
+import type { CommentStatus } from "@honeycomb/types/comment/comment.status";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 
 /**
  * 评论实体接口。

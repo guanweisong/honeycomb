@@ -1,9 +1,7 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
-import type {
-  CommentStatus,
-  PostType,
-  UserLevel,
-} from "@honeycomb/db/src/types";
+import type { CommentStatus } from "@honeycomb/types/comment/comment.status";
+import { PostType } from "@honeycomb/types/post/post.type";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 import { POST_TYPE, USER_LEVEL, COMMENT_STATUS } from "@honeycomb/db/src/types";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, sql } from "drizzle-orm";

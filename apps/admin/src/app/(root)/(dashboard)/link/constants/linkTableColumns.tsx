@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
-import { linkStatusOptions } from "@honeycomb/db/src/types";
+import { enableStatusOptions } from "@honeycomb/types/enable.status";
 
 /**
  * 友情链接列表的表格列定义。
@@ -20,7 +20,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     header: "状态",
     accessorKey: "status",
     meta: {
-      filterOptions: linkStatusOptions,
+      filterOptions: enableStatusOptions,
     },
     cell: ({ row }) => {
       /**
@@ -28,7 +28,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
        * 将链接状态值映射为对应的中文标签。
        */
       const status = row.getValue("status");
-      return linkStatusOptions.find((opt) => opt.value === status)?.label;
+      return enableStatusOptions.find((opt) => opt.value === status)?.label;
     },
   },
   {

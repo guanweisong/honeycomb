@@ -1,11 +1,10 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
-import { MultiLang } from "@/types/MulitLang";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { creatCategoryTitleByDepth } from "@/utils/help";
-import { EnableTypeName } from "@/types/EnableType";
+import { EnableStatusName, EnableStatus } from "@honeycomb/types/enable.status";
 import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
-import { EnableStatus } from "@honeycomb/db";
 
 /**
  * 分类列表的表格列定义。
@@ -50,7 +49,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 将状态值映射为对应的中文名称。`
        */
       const status = row.getValue("status") as EnableStatus;
-      return EnableTypeName[status];
+      return EnableStatusName[status];
     },
   },
   {

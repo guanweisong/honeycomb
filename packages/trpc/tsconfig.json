@@ -6,12 +6,14 @@
     "paths": {
       "@honeycomb/db/*": ["../db/src/*"],
       "@honeycomb/validation/*": ["../validation/src/*"],
+      "@honeycomb/types/*": ["../types/src/*"],
       "@honeycomb/trpc/*": ["src/*"],
     }
   },
   "references": [
     { "path": "../validation" },
-    { "path": "../db" }
+    { "path": "../db" },
+    { "path": "../types" }
   ],
   "include": [
     "src",

@@ -12,11 +12,11 @@ import PostInfo, { Align } from "@/components/PostInfo";
 import Signature from "@/components/Signature";
 import { utcFormat } from "@/utils/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Loader } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
-import { PostType, PostTypeName } from "@honeycomb/db/src/types";
+import { PostType, PostTypeName } from "@honeycomb/types/post/post.type";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";
 

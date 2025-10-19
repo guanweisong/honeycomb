@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
-import { commentStatusOptions } from "../types/CommentStatus";
+import { commentStatusOptions } from "@honeycomb/types/comment/comment.status";
 import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 
 /**

@@ -1,4 +1,4 @@
-import { MultiLang, MultiLangEnum } from "@/types/MulitLang";
+import { MultiLang, MultiLangEnum } from "@honeycomb/types/multi.lang";
 import Image from "next/image";
 import { useState } from "react";
 import enIcon from "./img/en.svg";

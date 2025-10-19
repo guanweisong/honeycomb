@@ -2,10 +2,11 @@ import NoData from "@/components/NoData";
 import Comment from "@/components/Comment";
 import PageTitle from "@/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { LinkStatus, MenuType } from "@honeycomb/db/src/types";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
 import { serverClient } from "@honeycomb/trpc/server";
+import { EnableStatus } from "@honeycomb/types/enable.status";
 
 /**
  * 友情链接页面组件的属性接口。
@@ -29,7 +30,7 @@ const Links = async (props: LinksProps) => {
   const [result, setting] = await Promise.all([
     serverClient.link.index({
       limit: 999,
-      status: [LinkStatus.ENABLE],
+      status: [EnableStatus.ENABLE],
     }),
     serverClient.setting.index(),
   ]);

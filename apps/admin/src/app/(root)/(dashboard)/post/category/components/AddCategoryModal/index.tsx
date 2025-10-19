@@ -1,6 +1,6 @@
 "use client";
 
-import { enableOptions } from "@/types/EnableType";
+import { enableStatusOptions } from "@honeycomb/types/enable.status";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/types/ModalType";
 import { creatCategoryTitleByDepth } from "@/utils/help";
@@ -164,7 +164,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
             label: "状态",
             name: "status",
             type: "radio",
-            options: enableOptions,
+            options: enableStatusOptions,
           },
         ]}
         onSubmit={handleModalOk}

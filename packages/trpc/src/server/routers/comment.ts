@@ -18,7 +18,7 @@ import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
-import { CommentStatus } from "@honeycomb/db/src/types";
+import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
 import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
 import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/AdminCommentEmailMessage";

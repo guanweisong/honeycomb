@@ -8,11 +8,12 @@ import Markdown from "@/components/Markdown";
 import { utcFormat } from "@/utils/utcFormat";
 import PageTitle from "@/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { serverClient } from "@honeycomb/trpc/server";
-import { MenuType, PostType } from "@honeycomb/db/src/types";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
+import { PostType } from "@honeycomb/types/post/post.type";
 
 /**
  * 归档页面组件的属性接口。

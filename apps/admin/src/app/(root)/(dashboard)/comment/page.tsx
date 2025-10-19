@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
-import { CommentStatus } from "./types/CommentStatus";
+import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import type { CommentEntity } from "./types/comment.entity";
 import { Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";

@@ -2,9 +2,9 @@ import React from "react";
 import PostList from "@/components/PostList";
 import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { serverClient } from "@honeycomb/trpc/server";
-import { PostStatus } from "@honeycomb/db/src/types";
+import { PostStatus } from "@honeycomb/types/post/post.status";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
@@ -96,10 +96,7 @@ export default async function List(props: ListProps) {
         <div className="mb-2 lg:mb-4">{getTitle()}</div>
       )}
       {post.list.length > 0 ? (
-        <PostList
-          initData={post}
-          queryParams={queryParams}
-        />
+        <PostList initData={post} queryParams={queryParams} />
       ) : (
         <NoData title={t("emptyTip")} />
       )}

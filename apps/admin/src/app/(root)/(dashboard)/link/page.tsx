@@ -18,7 +18,10 @@ import {
 } from "@honeycomb/validation/link/schemas/link.list.query.schema";
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert.schema";
-import { LinkStatus, linkStatusOptions } from "@honeycomb/db/src/types";
+import {
+  EnableStatus,
+  enableStatusOptions,
+} from "@honeycomb/types/enable.status";
 import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
 
 /**
@@ -254,7 +257,7 @@ const Link = () => {
             defaultValues={
               modalProps.type === ModalType.ADD
                 ? {
-                    status: LinkStatus.ENABLE,
+                    status: EnableStatus.ENABLE,
                   }
                 : modalProps.record
             }
@@ -292,7 +295,7 @@ const Link = () => {
                 label: "状态",
                 name: "status",
                 type: "radio",
-                options: linkStatusOptions,
+                options: enableStatusOptions,
               },
             ]}
             onSubmit={handleModalOk}

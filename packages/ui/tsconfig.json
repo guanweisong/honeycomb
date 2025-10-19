@@ -5,7 +5,19 @@
     "baseUrl": ".",
     "paths": {
       "@honeycomb/ui/*": ["src/*"],
+      "@honeycomb/types/*": ["../types/src/*"],
     }
   },
-  "include": ["src"]
+  "references": [
+    {
+      "path": "../../packages/ui"
+    },
+    {
+      "path": "../../packages/types"
+    }
+  ],
+  "include": [
+    "src",
+    "../../.next/types/**/*.ts"
+  ]
 }

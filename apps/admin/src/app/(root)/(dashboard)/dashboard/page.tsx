@@ -3,15 +3,11 @@
 import {
   CommentStatus,
   CommentStatusName,
-} from "@/app/(root)/(dashboard)/comment/types/CommentStatus";
+} from "@honeycomb/types/comment/comment.status";
 import CustomPie from "./components/CustomPie";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import {
-  PostType,
-  PostTypeName,
-  UserLevel,
-  UserLevelName,
-} from "@honeycomb/db/src/types";
+import { PostType, PostTypeName } from "@honeycomb/types/post/post.type";
+import { UserLevel, UserLevelName } from "@honeycomb/types/user/user.level";
 
 /**
  * 后台管理主看板页面。

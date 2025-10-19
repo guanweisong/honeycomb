@@ -18,12 +18,11 @@ import {
 } from "@honeycomb/validation/user/schemas/user.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
+import { UserLevel, userLevelOptions } from "@honeycomb/types/user/user.level";
 import {
-  UserLevel,
-  userLevelOptions,
   UserStatus,
   userStatusOptions,
-} from "@honeycomb/db/src/types";
+} from "@honeycomb/types/user/user.status";
 import { keepPreviousData } from "@tanstack/react-query";
 import { z } from "zod";
 

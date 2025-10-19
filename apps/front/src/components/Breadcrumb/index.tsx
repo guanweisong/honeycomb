@@ -4,7 +4,7 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
-import { MultiLang } from "@/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 /**

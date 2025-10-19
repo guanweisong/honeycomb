@@ -14,7 +14,7 @@ import enIcon from "./img/en.svg";
 import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
 import { Theme } from "@/types/Theme";
-import { Language, MultiLang } from "@/types/Language";
+import { MultiLangEnum, MultiLang } from "@honeycomb/types/multi.lang";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -36,7 +36,8 @@ const LanguageSwitcher = () => {
   /**
    * 另一个语言环境。
    */
-  const otherLocale = locale === Language.En ? Language.Zh : Language.En;
+  const otherLocale =
+    locale === MultiLangEnum.En ? MultiLangEnum.Zh : MultiLangEnum.En;
 
   /**
    * 副作用钩子，用于在组件挂载后设置 `mounted` 状态。

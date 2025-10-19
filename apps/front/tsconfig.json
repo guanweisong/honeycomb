@@ -12,6 +12,9 @@
       "@honeycomb/trpc/*": [
         "../../packages/trpc/src/*"
       ],
+      "@honeycomb/types/*": [
+        "../../packages/types/src/*"
+      ],
       "@/*": [
         "src/*"
       ]
