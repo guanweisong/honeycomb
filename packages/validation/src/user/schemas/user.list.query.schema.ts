@@ -1,7 +1,6 @@
 import { createUpdateSchema } from "drizzle-zod";
 import { user } from "@honeycomb/db/src/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { z } from "zod";
 
 /**
  * 获取用户列表时的查询参数验证 schema。
@@ -18,10 +17,7 @@ export const UserListQuerySchema = createUpdateSchema(user)
     status: true,
     level: true,
   })
-  .extend({
-    status: z.array(z.string()).optional(),
-    level: z.array(z.number()).optional(),
-  });
+  .partial();
 
 /**
  * 用户列表查询参数的 TypeScript 类型。

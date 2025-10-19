@@ -12,7 +12,7 @@ export const CategoryListQuerySchema = PaginationQuerySchema.extend({
   title: CategoryUpdateSchema.shape.title,
   path: CategoryUpdateSchema.shape.path,
   status: CategoryUpdateSchema.shape.status,
-});
+}).partial();
 
 /**
  * 分类列表查询参数的 TypeScript 类型。

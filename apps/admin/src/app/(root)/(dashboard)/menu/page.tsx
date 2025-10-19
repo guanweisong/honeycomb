@@ -8,6 +8,7 @@ import SortableTree, {
   TreeItem,
   getFlatDataFromTree,
   getTreeFromFlatData,
+  // @ts-ignore
 } from "@nosferatu500/react-sortable-tree";
 import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";

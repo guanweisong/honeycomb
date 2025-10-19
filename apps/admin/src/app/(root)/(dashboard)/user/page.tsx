@@ -25,6 +25,7 @@ import {
   userStatusOptions,
 } from "@honeycomb/db/src/types";
 import { keepPreviousData } from "@tanstack/react-query";
+import { z } from "zod";
 
 /**
  * 用户管理页面。
@@ -116,11 +117,15 @@ const User = () => {
   /**
    * 新增、修改保存事件
    */
-  const handleModalOk = async (values) => {
+  const handleModalOk = async (
+    values: z.infer<typeof UserInsertSchema | typeof UserUpdateSchema>,
+  ) => {
     const { password, ...rest } = values;
-    const params = rest;
+    const params = rest as z.infer<
+      typeof UserInsertSchema | typeof UserUpdateSchema
+    >;
     if (password) {
-      params.password = md5(values.password);
+      params.password = md5(password);
     }
     switch (modalProps.type!) {
       case ModalType.ADD:
@@ -137,7 +142,7 @@ const User = () => {
         try {
           await updateUser.mutateAsync({
             ...params,
-            id: modalProps.record?.id,
+            id: modalProps.record?.id!,
           });
           refetch();
           toast.success("更新成功");

@@ -11,6 +11,7 @@ import { Button } from "@honeycomb/ui/components/button";
 import { toast } from "sonner";
 import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { z } from "zod";
 import {
   LinkListQueryInput,
   LinkListQuerySchema,
@@ -76,14 +77,18 @@ const Link = () => {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = async (values) => {
+  const handleModalOk = async (
+    values: z.infer<typeof LinkInsertSchema | typeof LinkUpdateSchema>,
+  ) => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createLink.mutateAsync(values);
+          await createLink.mutateAsync(
+            values as z.infer<typeof LinkInsertSchema>,
+          );
           refetch();
           toast.success("添加成功");
-          setModalProps({ open: false });
+          setModalProps((prevState) => ({ ...prevState, open: false }));
         } catch (error) {
           toast.error("添加失败");
         }
@@ -91,12 +96,12 @@ const Link = () => {
       case ModalType.EDIT:
         try {
           await updateLink.mutateAsync({
-            id: modalProps.record?.id,
+            id: modalProps.record?.id!,
             ...values,
           });
           refetch();
           toast.success("更新成功");
-          setModalProps({ open: false });
+          setModalProps((prevState) => ({ ...prevState, open: false }));
         } catch (error) {
           toast.error("更新失败");
         }
@@ -237,61 +242,63 @@ const Link = () => {
           </div>
         )}
       />
-      <Dialog
-        title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}链接`}
-        open={modalProps?.open}
-        onOpenChange={(open) =>
-          setModalProps((prevState) => ({ ...prevState, open }))
-        }
-      >
-        <DynamicForm
-          defaultValues={
-            modalProps.type === ModalType.ADD
-              ? {
-                  status: LinkStatus.ENABLE,
-                }
-              : modalProps.record
+      {modalProps.open && (
+        <Dialog
+          title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}链接`}
+          open={modalProps.open}
+          onOpenChange={(open) =>
+            setModalProps((prevState) => ({ ...prevState, open }))
           }
-          schema={
-            modalProps.type === ModalType.EDIT
-              ? LinkUpdateSchema
-              : LinkInsertSchema
-          }
-          fields={[
-            {
-              label: "链接名称",
-              name: "name",
-              type: "text",
-              placeholder: "请输入链接名称",
-            },
-            {
-              label: "链接URL",
-              name: "url",
-              type: "text",
-              placeholder: "请以http://或者https://开头",
-            },
-            {
-              label: "logo网址",
-              name: "logo",
-              type: "text",
-              placeholder: "请以http://或者https://开头",
-            },
-            {
-              label: "链接描述",
-              name: "description",
-              type: "textarea",
-              placeholder: "请输入链接描述",
-            },
-            {
-              label: "状态",
-              name: "status",
-              type: "radio",
-              options: linkStatusOptions,
-            },
-          ]}
-          onSubmit={handleModalOk}
-        />
-      </Dialog>
+        >
+          <DynamicForm
+            defaultValues={
+              modalProps.type === ModalType.ADD
+                ? {
+                    status: LinkStatus.ENABLE,
+                  }
+                : modalProps.record
+            }
+            schema={
+              modalProps.type === ModalType.EDIT
+                ? LinkUpdateSchema
+                : LinkInsertSchema
+            }
+            fields={[
+              {
+                label: "链接名称",
+                name: "name",
+                type: "text",
+                placeholder: "请输入链接名称",
+              },
+              {
+                label: "链接URL",
+                name: "url",
+                type: "text",
+                placeholder: "请以http://或者https://开头",
+              },
+              {
+                label: "logo网址",
+                name: "logo",
+                type: "text",
+                placeholder: "请以http://或者https://开头",
+              },
+              {
+                label: "链接描述",
+                name: "description",
+                type: "textarea",
+                placeholder: "请输入链接描述",
+              },
+              {
+                label: "状态",
+                name: "status",
+                type: "radio",
+                options: linkStatusOptions,
+              },
+            ]}
+            onSubmit={handleModalOk}
+          />
+        </Dialog>
+      )}
     </>
   );
 };

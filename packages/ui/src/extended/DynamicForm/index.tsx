@@ -5,10 +5,10 @@ import {
   useForm,
   FieldValues,
   UseFormReturn,
-  PathValue,
-  FieldPath,
+  DefaultValues,
+  Resolver,
 } from "react-hook-form";
-import { z, ZodTypeAny } from "zod";
+import { z, ZodObject } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Form } from "@honeycomb/ui/components/form";
@@ -24,21 +24,21 @@ export type DynamicFormRef<T extends FieldValues = any> = {
   submit: () => void | Promise<void>;
 };
 
-interface DynamicFormProps<TSchema extends ZodTypeAny> {
+interface DynamicFormProps<TSchema extends ZodObject<any>> {
   schema: TSchema;
   fields: FieldConfig[];
-  defaultValues?: Partial<z.infer<TSchema>>;
+  defaultValues?: DefaultValues<z.infer<TSchema>>;
   onSubmit: (values: z.infer<TSchema>) => void;
   inline?: boolean;
   submitProps?: React.ComponentProps<typeof Button>;
   renderSubmitButton?: boolean;
 }
 
-export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
+export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
   {
     schema,
     fields,
-    defaultValues = {},
+    defaultValues,
     onSubmit,
     inline = false,
     submitProps,
@@ -49,9 +49,9 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<TSchema>>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as unknown as Resolver<z.infer<TSchema>>,
     mode: "onBlur",
-    defaultValues: defaultValues as any,
+    defaultValues,
   });
 
   useImperativeHandle(ref, () => ({
@@ -60,11 +60,10 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
     reset: form.reset,
     setValues: (values) => {
       Object.entries(values).forEach(([key, value]) => {
-        form.setValue(
-          key as FieldPath<z.infer<TSchema>>,
-          value as PathValue<z.infer<TSchema>, FieldPath<z.infer<TSchema>>>,
-          { shouldValidate: true, shouldDirty: true },
-        );
+        form.setValue(key as any, value, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
       });
     },
     submit: () => {
@@ -78,7 +77,7 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodTypeAny>(
         onSubmit={form.handleSubmit(async (values) => {
           try {
             setLoading(true);
-            await onSubmit?.(values);
+            onSubmit?.(values);
           } finally {
             setLoading(false);
           }

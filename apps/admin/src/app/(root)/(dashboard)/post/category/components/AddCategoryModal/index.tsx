@@ -10,6 +10,7 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { CategoryInsertSchema } from "@honeycomb/validation/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { z } from "zod";
 
 /**
  * 模态框属性接口。
@@ -91,7 +92,9 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 确认按钮事件
    */
-  const handleModalOk = async (values: any) => {
+  const handleModalOk = async (
+    values: z.infer<typeof CategoryInsertSchema | typeof CategoryUpdateSchema>,
+  ) => {
     if (values.parent === "0") {
       delete values.parent;
     }
@@ -104,7 +107,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
         });
       case ModalType.EDIT:
         return updateCategory
-          .mutateAsync({ id: modalProps?.record?.id as string, data: values })
+          .mutateAsync({ ...values, id: modalProps?.record?.id })
           .then(() => {
             categoryQuery.refetch();
             toast.success("更新成功");

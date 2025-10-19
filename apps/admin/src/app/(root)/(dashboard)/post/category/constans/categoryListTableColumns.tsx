@@ -3,14 +3,15 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@/types/MulitLang";
 import { creatCategoryTitleByDepth } from "@/utils/help";
-import { EnableType, EnableTypeName } from "@/types/EnableType";
-import { CategoryEntity } from "../types/category.entity";
+import { EnableTypeName } from "@/types/EnableType";
+import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
+import { EnableStatus } from "@honeycomb/db";
 
 /**
  * 分类列表的表格列定义。
  * 定义了分类管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
  */
-export const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
+const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
   {
     accessorKey: "title",
     header: "分类名称",
@@ -46,10 +47,10 @@ export const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
     cell: ({ row }) => {
       /**
        * 渲染状态的单元格。
-       * 将状态值映射为对应的中文名称。
+       * 将状态值映射为对应的中文名称。`
        */
-      const status = row.getValue("status") as EnableType;
-      return EnableTypeName[EnableType[status] as keyof typeof EnableTypeName];
+      const status = row.getValue("status") as EnableStatus;
+      return EnableTypeName[status];
     },
   },
   {
@@ -87,3 +88,4 @@ export const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
     },
   },
 ];
+export default categoryListTableColumns;

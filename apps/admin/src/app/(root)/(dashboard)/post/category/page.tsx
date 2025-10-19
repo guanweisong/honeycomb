@@ -4,7 +4,7 @@ import { ModalType } from "@/types/ModalType";
 import { Button } from "@honeycomb/ui/components/button";
 import { useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
-import { categoryListTableColumns } from "./constans/categoryListTableColumns";
+import categoryListTableColumns from "./constans/categoryListTableColumns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";

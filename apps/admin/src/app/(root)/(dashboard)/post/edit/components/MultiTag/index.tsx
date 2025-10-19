@@ -17,7 +17,6 @@ import {
   CommandEmpty,
 } from "@honeycomb/ui/components/command";
 import { X, Loader2, Plus } from "lucide-react";
-import type { TagReadOnly } from "../../../types/post.entity";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
@@ -57,7 +56,7 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
   /**
    * 搜索结果中的标签选项列表。
    */
-  const [options, setOptions] = useState<TagReadOnly[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
   /**
    * 搜索或数据加载的加载状态。
    */
@@ -102,9 +101,9 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
   /**
    * 向已选标签列表中添加一个标签。
    * 如果标签已存在，则不执行任何操作。
-   * @param {TagReadOnly} tag - 要添加的标签对象。
+   * @param tag - 要添加的标签对象。
    */
-  const addTag = (tag: TagReadOnly) => {
+  const addTag = (tag: any) => {
     if (selectedIds.includes(tag.id)) return;
     setValue(name, [...selectedIds, tag.id], { shouldDirty: true });
     setInput("");

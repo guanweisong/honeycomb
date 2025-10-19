@@ -8,8 +8,8 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  * 允许通过 'name' 字段对标签列表进行筛选。
  */
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: TagEntitySchema.shape.name.optional(),
-});
+  name: TagEntitySchema.shape.name,
+}).partial();
 
 /**
  * 标签列表查询参数的 TypeScript 类型。

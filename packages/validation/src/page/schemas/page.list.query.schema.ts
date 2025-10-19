@@ -8,10 +8,10 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  * 允许通过 'title', 'content', 和 'status' 对页面列表进行筛选。
  */
 export const PageListQuerySchema = PaginationQuerySchema.extend({
-  title: PageInsertSchema.shape.title.optional(),
-  content: PageInsertSchema.shape.content.optional(),
-  status: PageInsertSchema.shape.status.optional(),
-});
+  title: PageInsertSchema.shape.title,
+  content: PageInsertSchema.shape.content,
+  status: PageInsertSchema.shape.status,
+}).partial();
 
 /**
  * 独立页面列表查询参数的 TypeScript 类型。
