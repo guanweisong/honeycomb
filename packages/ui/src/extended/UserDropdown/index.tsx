@@ -32,7 +32,7 @@ export const UserDropdown = (props: UserDropdownProps) => {
           <div className="flex-1 mx-3">
             <div>{user.name}</div>
             <div className="text-gray-500 text-xs">
-              {UserLevelName[user.level]}
+              {UserLevelName[user.level as keyof typeof UserLevelName]}
             </div>
           </div>
           <ChevronsUpDown size={18} strokeWidth={1.5} />
