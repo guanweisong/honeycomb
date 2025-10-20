@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { category } from "@honeycomb/db/src/schema";
+import { category } from "@honeycomb/db/schema";
 
 /**
  * 更新分类时的数据验证 schema。

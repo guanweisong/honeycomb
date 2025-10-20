@@ -11,7 +11,7 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { TagListQuerySchema } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@honeycomb/types/user/user.level";
 

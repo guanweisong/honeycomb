@@ -2,7 +2,7 @@ import { publicProcedure, router } from "@honeycomb/trpc/server/core";
 import { z } from "zod";
 import { db } from "@honeycomb/db/src/db";
 import crypto from "node:crypto";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { and, eq } from "drizzle-orm";
 import { LoginSchema } from "@honeycomb/validation/auth/schemas/login.schema";
 import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";

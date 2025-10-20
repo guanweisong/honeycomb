@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { comment } from "@honeycomb/db/src/schema";
+import { comment } from "@honeycomb/db/schema";
 import { CaptchaSchema } from "@honeycomb/validation/schemas/captcha.schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 

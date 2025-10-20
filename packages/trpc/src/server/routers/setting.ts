@@ -4,7 +4,7 @@ import {
   router,
 } from "@honeycomb/trpc/server/core";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@honeycomb/types/user/user.level";
 

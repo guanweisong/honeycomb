@@ -5,7 +5,7 @@ import {
 } from "@honeycomb/trpc/server/libs/tools";
 import { MediaListQuerySchema } from "@honeycomb/validation/media/schemas/media.list.query.schema";
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import {
   MediaEntity,

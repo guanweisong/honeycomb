@@ -11,7 +11,7 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";

@@ -8,7 +8,7 @@ import {
   buildDrizzleOrderBy,
 } from "@honeycomb/trpc/server/libs/tools";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@honeycomb/types/user/user.level";
 

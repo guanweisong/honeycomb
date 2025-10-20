@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { media } from "@honeycomb/db/src/schema";
+import { media } from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 import { z } from "zod";
 

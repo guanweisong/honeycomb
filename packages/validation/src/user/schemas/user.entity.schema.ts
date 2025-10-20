@@ -1,6 +1,6 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { user } from "@honeycomb/db/src/schema";
+import { user } from "@honeycomb/db/schema";
 
 /**
  * 用户实体 Zod schema。

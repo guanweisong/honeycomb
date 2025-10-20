@@ -1,7 +1,7 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
 import { buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { sql } from "drizzle-orm";
 import { UserLevel } from "@honeycomb/types/user/user.level";
 

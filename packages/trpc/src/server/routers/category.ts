@@ -11,7 +11,7 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { CategoryListQuerySchema } from "@honeycomb/validation/category/schemas/category.list.query.schema";
 import { CategoryInsertSchema } from "@honeycomb/validation/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/category.update.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import Tools from "@honeycomb/trpc/server/libs/tools";
 import { UserLevel } from "@honeycomb/types/user/user.level";

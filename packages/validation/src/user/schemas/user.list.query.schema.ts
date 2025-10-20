@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { user } from "@honeycomb/db/src/schema";
+import { user } from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 
 /**

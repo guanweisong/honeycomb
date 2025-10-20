@@ -16,7 +16,7 @@ import md5 from "md5";
 import { Resend } from "resend";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";

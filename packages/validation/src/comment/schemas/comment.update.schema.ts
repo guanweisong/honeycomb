@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { comment } from "@honeycomb/db/src/schema";
+import { comment } from "@honeycomb/db/schema";
 
 /**
  * 更新评论状态的数据验证 schema。

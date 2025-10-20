@@ -5,11 +5,13 @@
     "baseUrl": ".",
     "paths": {
       "@honeycomb/validation/*": ["src/*"],
-      "@honeycomb/types/*": ["../types/src/*"]
+      "@honeycomb/types/*": ["../types/src/*"],
+      "@honeycomb/db/*": ["../db/src/*"]
     }
   },
   "references": [
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../db" }
   ],
   "include": ["src"]
 }

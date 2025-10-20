@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { post } from "@honeycomb/db/src/schema";
+import { post } from "@honeycomb/db/schema";
 
 /**
  * 新增文章时的数据验证 schema。

@@ -13,7 +13,7 @@ import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";

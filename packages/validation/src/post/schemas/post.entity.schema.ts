@@ -1,6 +1,6 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { post } from "@honeycomb/db/src/schema";
+import { post } from "@honeycomb/db/schema";
 import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 import { UserEntitySchema } from "@honeycomb/validation/user/schemas/user.entity.schema";
 import { MediaEntitySchema } from "@honeycomb/validation/media/schemas/media.entity.schema";

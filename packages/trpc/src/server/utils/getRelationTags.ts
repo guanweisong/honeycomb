@@ -1,5 +1,5 @@
 import { db } from "@honeycomb/db/src/db";
-import * as schema from "@honeycomb/db/src/schema";
+import * as schema from "@honeycomb/db/schema";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { inArray } from "drizzle-orm";
 

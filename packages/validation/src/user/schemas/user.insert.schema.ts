@@ -1,4 +1,4 @@
-import { user } from "@honeycomb/db/src/schema";
+import { user } from "@honeycomb/db/schema";
 import { createInsertSchema } from "drizzle-zod";
 
 /**

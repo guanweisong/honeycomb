@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { page } from "@honeycomb/db/src/schema";
+import { page } from "@honeycomb/db/schema";
 
 /**
  * 更新独立页面时的数据验证 schema。

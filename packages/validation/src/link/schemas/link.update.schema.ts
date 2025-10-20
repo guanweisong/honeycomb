@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { link } from "@honeycomb/db/src/schema";
+import { link } from "@honeycomb/db/schema";
 
 /**
  * 更新友情链接时的数据验证 schema。

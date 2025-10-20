@@ -1,6 +1,6 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { media } from "@honeycomb/db/src/schema";
+import { media } from "@honeycomb/db/schema";
 
 /**
  * 媒体实体 Zod schema。
