@@ -16,10 +16,9 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
 import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
-import { MenuType } from "@honeycomb/types/menu/menu.type";
+import { MenuType, MenuTypeName } from "@honeycomb/types/menu/menu.type";
 import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
-import { MenuTypeName } from "@/app/(root)/(dashboard)/menu/types/MenuType";
 
 /**
  * 菜单管理页面。
@@ -57,7 +56,6 @@ const Menu = () => {
    * 确保在菜单数据加载或更新后，本地状态与远程数据同步。
    */
   useEffect(() => {
-    // @ts-ignore
     setCheckedList(checkedData?.list ?? []);
   }, [checkedData]);
 
@@ -180,8 +178,8 @@ const Menu = () => {
     checkedList?.forEach((item) => {
       format.push({
         ...item,
-        title: item.title.zh ?? item.title,
-        subtitle: MenuTypeName[MenuType[item.type]],
+        title: item.title?.zh ?? item.title,
+        subtitle: MenuTypeName[item.type as MenuType],
         expanded: true,
       });
     });
@@ -304,7 +302,7 @@ const Menu = () => {
         <div className="bg-gray-50 my-2 py-2">
           <SortableTree
             treeData={getMenuFormat()}
-            onChange={(treeData) => onDragEnd(treeData)}
+            onChange={onDragEnd}
             rowHeight={50}
             isVirtualized={false}
           />
