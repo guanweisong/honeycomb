@@ -29,6 +29,7 @@ import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.ent
 import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
 import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 评论相关的 tRPC 路由。
@@ -289,7 +290,7 @@ export const commentRouter = router({
    * @param {CommentUpdateSchema} input - 包含要更新的评论 ID 和新数据。
    * @returns {Promise<Comment>} 返回更新后的评论对象。
    */
-  update: protectedProcedure(["ADMIN"])
+  update: protectedProcedure([UserLevel.ADMIN])
     .input(CommentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
@@ -307,7 +308,7 @@ export const commentRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的评论 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN"])
+  destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db

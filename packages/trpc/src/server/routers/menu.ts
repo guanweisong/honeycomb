@@ -10,6 +10,7 @@ import {
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 菜单相关的 tRPC 路由。
@@ -77,7 +78,7 @@ export const menuRouter = router({
    * @param {MenuUpdateSchema} input - 一个包含所有菜单项的数组。
    * @returns {Promise<{ count: number }>} 返回新插入的菜单项数量。
    */
-  saveAll: protectedProcedure(["ADMIN", "EDITOR"])
+  saveAll: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db.delete(schema.menu);

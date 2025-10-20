@@ -3,6 +3,7 @@ import { buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { sql } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * API Token 相关的 tRPC 路由。
@@ -14,7 +15,7 @@ export const tokenRouter = router({
    * @param {TokenListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: any[], total: number }>} 返回一个包含 Token 列表和总记录数的对象。
    */
-  index: protectedProcedure(["ADMIN"])
+  index: protectedProcedure([UserLevel.ADMIN])
     .input(TokenListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;

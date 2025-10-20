@@ -6,6 +6,7 @@ import {
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 网站设置相关的 tRPC 路由。
@@ -31,7 +32,7 @@ export const settingRouter = router({
    * @param {SettingUpdateSchema} input - 包含要更新的设置 ID 和新数据。
    * @returns {Promise<Setting>} 返回更新后的设置对象。
    */
-  update: protectedProcedure(["ADMIN"])
+  update: protectedProcedure([UserLevel.ADMIN])
     .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

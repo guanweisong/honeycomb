@@ -18,6 +18,7 @@ import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -291,7 +292,7 @@ export const postRouter = router({
    * @param {PostInsertSchema} input - 新文章的数据。
    * @returns {Promise<Post>} 返回新创建的文章对象。
    */
-  create: protectedProcedure(["ADMIN", "EDITOR"])
+  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
@@ -311,7 +312,7 @@ export const postRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的文章 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN", "EDITOR"])
+  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db
@@ -326,7 +327,7 @@ export const postRouter = router({
    * @param {PostUpdateSchema} input - 包含要更新的文章 ID 和新数据。
    * @returns {Promise<Post>} 返回更新后的文章对象。
    */
-  update: protectedProcedure(["ADMIN", "EDITOR"])
+  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

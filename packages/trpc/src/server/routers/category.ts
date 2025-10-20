@@ -14,6 +14,7 @@ import { CategoryUpdateSchema } from "@honeycomb/validation/category/schemas/cat
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import Tools from "@honeycomb/trpc/server/libs/tools";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 分类相关的 tRPC 路由。
@@ -79,7 +80,7 @@ export const categoryRouter = router({
    * @param {CategoryInsertSchema} input - 新分类的数据。
    * @returns {Promise<Category>} 返回新创建的分类对象。
    */
-  create: protectedProcedure(["ADMIN", "EDITOR"])
+  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(CategoryInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const [newCategory] = await ctx.db
@@ -95,7 +96,7 @@ export const categoryRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的分类 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN", "EDITOR"])
+  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db
@@ -110,7 +111,7 @@ export const categoryRouter = router({
    * @param {CategoryUpdateSchema} input - 包含要更新的分类 ID 和新数据。
    * @returns {Promise<Category>} 返回更新后的分类对象。
    */
-  update: protectedProcedure(["ADMIN", "EDITOR"])
+  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(CategoryUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

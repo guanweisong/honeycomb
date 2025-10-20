@@ -17,6 +17,7 @@ import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -138,7 +139,7 @@ export const pageRouter = router({
    * @param {PageInsertSchema} input - 新页面的数据。
    * @returns {Promise<Page>} 返回新创建的页面对象。
    */
-  create: protectedProcedure(["ADMIN", "EDITOR"])
+  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
@@ -158,7 +159,7 @@ export const pageRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的页面 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN", "EDITOR"])
+  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db
@@ -173,7 +174,7 @@ export const pageRouter = router({
    * @param {PageUpdateSchema} input - 包含要更新的页面 ID 和新数据。
    * @returns {Promise<object>} 返回更新后的页面对象（已附加作者信息）。
    */
-  update: protectedProcedure(["ADMIN", "EDITOR"])
+  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

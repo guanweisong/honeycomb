@@ -11,7 +11,7 @@ import { PageInsertSchema } from "@honeycomb/validation/page/schemas/page.insert
 import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { PageStatus } from "@honeycomb/db/src/types";
+import { PageStatus } from "@honeycomb/types/page/page.status";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 
 /**

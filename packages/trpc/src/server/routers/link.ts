@@ -13,6 +13,7 @@ import { LinkInsertSchema } from "@honeycomb/validation/link/schemas/link.insert
 import { LinkUpdateSchema } from "@honeycomb/validation/link/schemas/link.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 友情链接相关的 tRPC 路由。
@@ -68,7 +69,7 @@ export const linkRouter = router({
    * @param {LinkInsertSchema} input - 新链接的数据。
    * @returns {Promise<Link>} 返回新创建的链接对象。
    */
-  create: protectedProcedure(["ADMIN"])
+  create: protectedProcedure([UserLevel.ADMIN])
     .input(LinkInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const [newLink] = await ctx.db
@@ -84,7 +85,7 @@ export const linkRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的链接 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN"])
+  destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db
@@ -99,7 +100,7 @@ export const linkRouter = router({
    * @param {LinkUpdateSchema} input - 包含要更新的链接 ID 和新数据。
    * @returns {Promise<Link>} 返回更新后的链接对象。
    */
-  update: protectedProcedure(["ADMIN"])
+  update: protectedProcedure([UserLevel.ADMIN])
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

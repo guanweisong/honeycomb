@@ -13,6 +13,7 @@ import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.sc
 import { TagUpdateSchema } from "@honeycomb/validation/tag/schemas/tag.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 标签相关的 tRPC 路由。
@@ -26,7 +27,7 @@ export const tagRouter = router({
   index: publicProcedure
     .input(TagListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, name, ...rest } = input;
+      const { page, limit, sortField, sortOrder, name, ...rest } = input as any;
       const where = buildDrizzleWhere(
         schema.tag,
         { ...rest, name },
@@ -66,7 +67,7 @@ export const tagRouter = router({
    * @param {TagInsertSchema} input - 新标签的数据。
    * @returns {Promise<Tag>} 返回新创建的标签对象。
    */
-  create: protectedProcedure(["ADMIN", "EDITOR"])
+  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const [newTag] = await ctx.db
@@ -82,7 +83,7 @@ export const tagRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的标签 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN"])
+  destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids));
@@ -95,7 +96,7 @@ export const tagRouter = router({
    * @param {TagUpdateSchema} input - 包含要更新的标签 ID 和新数据。
    * @returns {Promise<Tag>} 返回更新后的标签对象。
    */
-  update: protectedProcedure(["ADMIN", "EDITOR"])
+  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

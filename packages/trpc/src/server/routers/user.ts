@@ -13,6 +13,7 @@ import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert
 import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 用户相关的 tRPC 路由。
@@ -62,7 +63,7 @@ export const userRouter = router({
    * @param {UserInsertSchema} input - 新用户的数据。
    * @returns {Promise<User>} 返回新创建的用户对象。
    */
-  create: protectedProcedure(["ADMIN"])
+  create: protectedProcedure([UserLevel.ADMIN])
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const [newUser] = await ctx.db
@@ -78,7 +79,7 @@ export const userRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的用户 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN"])
+  destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await ctx.db
@@ -93,7 +94,7 @@ export const userRouter = router({
    * @param {UserUpdateSchema} input - 包含要更新的用户 ID 和新数据。
    * @returns {Promise<User>} 返回更新后的用户对象。
    */
-  update: protectedProcedure(["ADMIN"])
+  update: protectedProcedure([UserLevel.ADMIN])
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

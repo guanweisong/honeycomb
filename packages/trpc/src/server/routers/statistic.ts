@@ -29,59 +29,61 @@ export const statisticRouter = router({
    * 这会导致串行的数据库请求，效率低下。未来应优化为使用 `Promise.all` 并行执行查询，
    * 或者使用更高效的 SQL `GROUP BY` 聚合查询来一次性获取所有数据。
    */
-  index: protectedProcedure(["ADMIN", "EDITOR", "GUEST"]).query(
-    async ({ ctx }) => {
-      const result = {} as StatisticsType;
+  index: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ]).query(async ({ ctx }) => {
+    const result = {} as StatisticsType;
 
-      // 统计各类型文章数量
-      const postArray = POST_TYPE;
-      result.postType = [];
-      for (let i = 0; i < postArray.length; i++) {
-        const [postCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as("count") })
-          .from(schema.post)
-          .where(eq(schema.post.type, postArray[i] as any));
-        const count = Number(postCountResult?.count) || 0;
-        result.postType.push({ item: postArray[i], count });
-      }
+    // 统计各类型文章数量
+    const postArray = POST_TYPE;
+    result.postType = [];
+    for (let i = 0; i < postArray.length; i++) {
+      const [postCountResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.post)
+        .where(eq(schema.post.type, postArray[i] as any));
+      const count = Number(postCountResult?.count) || 0;
+      result.postType.push({ item: postArray[i], count });
+    }
 
-      // 统计各等级用户数量
-      const userArray = USER_LEVEL;
-      result.userType = [];
-      for (let i = 0; i < userArray.length; i++) {
-        const [userCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as("count") })
-          .from(schema.user)
-          .where(eq(schema.user.level, userArray[i] as any));
-        const count = Number(userCountResult?.count) || 0;
-        result.userType.push({ item: userArray[i], count });
-      }
+    // 统计各等级用户数量
+    const userArray = USER_LEVEL;
+    result.userType = [];
+    for (let i = 0; i < userArray.length; i++) {
+      const [userCountResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.user)
+        .where(eq(schema.user.level, userArray[i] as any));
+      const count = Number(userCountResult?.count) || 0;
+      result.userType.push({ item: userArray[i], count });
+    }
 
-      // 统计各状态评论数量
-      const commentArray = COMMENT_STATUS;
-      result.commentStatus = [];
-      for (let i = 0; i < commentArray.length; i++) {
-        const [commentCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as("count") })
-          .from(schema.comment)
-          .where(eq(schema.comment.status, commentArray[i] as any));
-        const count = Number(commentCountResult?.count) || 0;
-        result.commentStatus.push({ item: commentArray[i], count });
-      }
+    // 统计各状态评论数量
+    const commentArray = COMMENT_STATUS;
+    result.commentStatus = [];
+    for (let i = 0; i < commentArray.length; i++) {
+      const [commentCountResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.comment)
+        .where(eq(schema.comment.status, commentArray[i] as any));
+      const count = Number(commentCountResult?.count) || 0;
+      result.commentStatus.push({ item: commentArray[i], count });
+    }
 
-      // 统计每个用户的文章数
-      result.userPost = [];
-      const userList = await ctx.db.select().from(schema.user);
-      for (let i = 0; i < userList.length; i++) {
-        const [postCountResult] = await ctx.db
-          .select({ count: sql<number>`count(*)`.as("count") })
-          .from(schema.post)
-          .where(eq(schema.post.authorId, userList[i].id));
-        const count = Number(postCountResult?.count) || 0;
-        result.userPost.push({ item: userList[i].name as any, count });
-      }
+    // 统计每个用户的文章数
+    result.userPost = [];
+    const userList = await ctx.db.select().from(schema.user);
+    for (let i = 0; i < userList.length; i++) {
+      const [postCountResult] = await ctx.db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.post)
+        .where(eq(schema.post.authorId, userList[i].id));
+      const count = Number(postCountResult?.count) || 0;
+      result.userPost.push({ item: userList[i].name as any, count });
+    }
 
-      return result;
-    },
-  ),
+    return result;
+  }),
 });

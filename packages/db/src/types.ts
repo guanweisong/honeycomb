@@ -22,38 +22,6 @@ export const COMMENT_STATUS = [
 // --- 友情链接 (Link) ---
 // --- 独立页面 (Page) ---
 
-/** 独立页面状态常量数组。 */
-export const PAGE_STATUS = ["PUBLISHED", "DRAFT", "TO_AUDIT"] as const;
-/** 独立页面状态的 TypeScript 联合类型。 */
-export type PageStatus = (typeof PAGE_STATUS)[number];
-/** 独立页面状态的常量对象。 */
-export const PageStatus = Object.freeze({
-  PUBLISHED: PAGE_STATUS[0],
-  DRAFT: PAGE_STATUS[1],
-  TO_AUDIT: PAGE_STATUS[2],
-} as const);
-/** 独立页面状态对应的中文名称。 */
-export const PageStatusName = Object.freeze({
-  PUBLISHED: "已发布",
-  DRAFT: "草稿",
-  TO_AUDIT: "待审核",
-} as const);
-/** 用于在 UI 中显示独立页面状态的选项数组。 */
-export const pageStatusOptions = [
-  {
-    label: PageStatusName.PUBLISHED,
-    value: PageStatus.PUBLISHED,
-  },
-  {
-    label: PageStatusName.DRAFT,
-    value: PageStatus.DRAFT,
-  },
-  {
-    label: PageStatusName.TO_AUDIT,
-    value: PageStatus.TO_AUDIT,
-  },
-];
-
 // --- 文章 (Post) ---
 
 /** 文章类型常量数组。 */

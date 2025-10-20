@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import S3 from "@honeycomb/trpc/server/libs/S3";
 import sizeOf from "image-size";
 import { getColor } from "@honeycomb/trpc/server/libs/colorThief";
+import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  * 媒体文件相关的 tRPC 路由。
@@ -26,7 +27,11 @@ export const mediaRouter = router({
    * @param {MediaListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: any[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
    */
-  index: protectedProcedure(["ADMIN", "EDITOR", "GUEST"])
+  index: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(MediaListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page, limit, sortField, sortOrder, ...rest } = input as any;
@@ -65,7 +70,7 @@ export const mediaRouter = router({
    * @param {MediaInsertSchema} input - 包含文件信息的对象。
    * @returns {Promise<schema>} 返回创建后的媒体对象。
    */
-  upload: protectedProcedure(["ADMIN", "EDITOR"])
+  upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const data: Partial<MediaEntity> = {
@@ -111,7 +116,7 @@ export const mediaRouter = router({
    * @param {DeleteBatchSchema} input - 包含要删除的媒体文件 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure(["ADMIN", "EDITOR"])
+  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       // 1. 根据 IDs 从数据库中找出要删除的媒体对象
