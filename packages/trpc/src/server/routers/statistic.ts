@@ -1,8 +1,7 @@
 import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
-import type { CommentStatus } from "@honeycomb/types/comment/comment.status";
+import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { PostType } from "@honeycomb/types/post/post.type";
 import { UserLevel } from "@honeycomb/types/user/user.level";
-import { POST_TYPE, USER_LEVEL, COMMENT_STATUS } from "@honeycomb/db/src/types";
 import * as schema from "@honeycomb/db/src/schema";
 import { eq, sql } from "drizzle-orm";
 
@@ -37,7 +36,7 @@ export const statisticRouter = router({
     const result = {} as StatisticsType;
 
     // 统计各类型文章数量
-    const postArray = POST_TYPE;
+    const postArray = Object.values(PostType);
     result.postType = [];
     for (let i = 0; i < postArray.length; i++) {
       const [postCountResult] = await ctx.db
@@ -49,7 +48,7 @@ export const statisticRouter = router({
     }
 
     // 统计各等级用户数量
-    const userArray = USER_LEVEL;
+    const userArray = Object.values(UserLevel);
     result.userType = [];
     for (let i = 0; i < userArray.length; i++) {
       const [userCountResult] = await ctx.db
@@ -61,7 +60,7 @@ export const statisticRouter = router({
     }
 
     // 统计各状态评论数量
-    const commentArray = COMMENT_STATUS;
+    const commentArray = Object.values(CommentStatus);
     result.commentStatus = [];
     for (let i = 0; i < commentArray.length; i++) {
       const [commentCountResult] = await ctx.db

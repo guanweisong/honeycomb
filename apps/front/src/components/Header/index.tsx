@@ -9,8 +9,8 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
 import { serverClient } from "@honeycomb/trpc/server";
-import { MenuEntity } from "@honeycomb/db/src/types";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
+import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 /**
  * 网站头部组件。

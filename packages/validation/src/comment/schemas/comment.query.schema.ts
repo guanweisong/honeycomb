@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { enumFrom } from "../../schemas/enum.helpers";
-import { COMMENT_REF_TYPE } from "@honeycomb/db/src/types";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
 
 /**
- * 从数据库枚举 `COMMENT_REF_TYPE` 创建的 Zod 枚举 schema。
+ * 从数据库枚举 `MenuType` 创建的 Zod 枚举 schema。
  * 用于验证评论关联的实体类型（如 'post', 'page'）。
  */
-const CommentTypeEnum = enumFrom(COMMENT_REF_TYPE);
+const CommentTypeEnum = z.enum(MenuType);
 
 /**
  * 评论查询 schema，用于根据关联实体类型进行查询。
