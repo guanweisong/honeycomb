@@ -1,13 +1,13 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { link } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 友情链接实体 Zod schema。
  * 该 schema 是基于数据库中的 'link' 表结构自动生成的 (drizzle-zod)。
  * 它代表了从数据库查询友情链接时返回的完整对象结构。
  */
-export const LinkEntitySchema = createSelectSchema(link);
+export const LinkEntitySchema = createSelectSchema(schema.link);
 
 /**
  * 友情链接实体的 TypeScript 类型。

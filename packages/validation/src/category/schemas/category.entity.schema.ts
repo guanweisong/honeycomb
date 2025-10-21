@@ -1,13 +1,13 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { category } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 分类实体 Zod schema。
  * 该 schema 是基于数据库中的 'category' 表结构自动生成的 (drizzle-zod)。
  * 它代表了从数据库查询分类时返回的完整对象结构。
  */
-export const CategoryEntitySchema = createSelectSchema(category);
+export const CategoryEntitySchema = createSelectSchema(schema.category);
 
 /**
  * 分类实体的 TypeScript 类型。

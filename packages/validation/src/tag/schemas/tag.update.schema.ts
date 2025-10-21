@@ -1,4 +1,4 @@
-import { tag } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { createUpdateSchema } from "drizzle-zod";
 
 /**
@@ -8,7 +8,7 @@ import { createUpdateSchema } from "drizzle-zod";
  * 3. 使用 `.required()` 强制要求 'id' 和 'name' 在请求中都必须提供，
  *    以确保能定位到要更新的标签并明确其新的名称。
  */
-export const TagUpdateSchema = createUpdateSchema(tag)
+export const TagUpdateSchema = createUpdateSchema(schema.tag)
   .pick({
     id: true,
     name: true,

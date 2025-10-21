@@ -1,13 +1,13 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { menu } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 菜单实体 Zod schema。
  * 该 schema 是基于数据库中的 'menu' 表结构自动生成的 (drizzle-zod)。
  * 它代表了从数据库查询菜单项时返回的完整对象结构。
  */
-export const MenuEntitySchema = createSelectSchema(menu);
+export const MenuEntitySchema = createSelectSchema(schema.menu);
 
 /**
  * 菜单实体的 TypeScript 类型。

@@ -1,4 +1,4 @@
-import { user } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { createInsertSchema } from "drizzle-zod";
 
 /**
@@ -6,7 +6,7 @@ import { createInsertSchema } from "drizzle-zod";
  * 该 schema 基于数据库 'user' 表的插入操作 schema 生成 (drizzle-zod)。
  * 使用 `.pick()` 方法精确指定了创建新用户时允许传入的字段。
  */
-export const UserInsertSchema = createInsertSchema(user).pick({
+export const UserInsertSchema = createInsertSchema(schema.user).pick({
   name: true,
   email: true,
   status: true,

@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@honeycomb/validation": "workspace:*",
+    "@honeycomb/ui": "workspace:*",
+    "@honeycomb/trpc": "workspace:*",
+    "@honeycomb/types": "workspace:*",
     "@next/third-parties": "^14.1.0",
     "@radix-ui/react-label": "^2.1.4",
     "easymde": "^2.18.0",

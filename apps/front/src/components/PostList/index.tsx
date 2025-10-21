@@ -3,10 +3,7 @@
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/hooks/rq/post/use.infinite.query.post.list";
 import { useScroll } from "ahooks";
-import React, {
-  useEffect,
-  unstable_ViewTransition as ViewTransition,
-} from "react";
+import React, { useEffect, ViewTransition } from "react";
 import { Link } from "@/i18n/navigation";
 import PostInfo, { Align } from "@/components/PostInfo";
 import Signature from "@/components/Signature";

@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { user } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 更新用户时的数据验证 schema。
@@ -8,7 +8,7 @@ import { user } from "@honeycomb/db/schema";
  * 3. 使用 `.required({ id: true })` 强制要求 'id' 字段必须存在，以确保能定位到要更新的用户。
  *    注意：其他字段在此 schema 中不是必需的，允许部分更新。
  */
-export const UserUpdateSchema = createInsertSchema(user)
+export const UserUpdateSchema = createInsertSchema(schema.user)
   .pick({
     id: true,
     name: true,

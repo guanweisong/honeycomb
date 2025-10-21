@@ -1,12 +1,12 @@
 import { createInsertSchema } from "drizzle-zod";
-import { media } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 import { z } from "zod";
 
 /**
  * 新增上传文件时的数据验证 schema。
  */
-export const MediaInsertSchema = createInsertSchema(media).extend({
+export const MediaInsertSchema = createInsertSchema(schema.media).extend({
   base64: z.string(),
 });
 

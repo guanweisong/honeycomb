@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
-import { env } from "@honeycomb/env";
+import { env } from "@honeycomb/env/index";
 
 /**
  * 创建 Turso/libSQL 数据库客户端。

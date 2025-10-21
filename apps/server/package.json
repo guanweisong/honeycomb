@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@honeycomb/db": "workspace:*",
+    "@honeycomb/ui": "workspace:*",
+    "@honeycomb/trpc": "workspace:*",
+    "@trpc/server": "^11.3.1",
     "axios": "^1.8.4",
     "next": "^15.5.6",
     "zod": "^4.1.11"

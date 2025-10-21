@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { comment } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 更新评论状态的数据验证 schema。
@@ -9,7 +9,7 @@ import { comment } from "@honeycomb/db/schema";
  * 3. 使用 `.required()` 强制要求 'id' 和 'status' 在请求中必须提供，
  *    以确保能定位到要更新的评论并明确其新的状态。
  */
-export const CommentUpdateSchema = createUpdateSchema(comment)
+export const CommentUpdateSchema = createUpdateSchema(schema.comment)
   .pick({
     id: true,
     status: true,

@@ -2,7 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "paths": {
+      "@honeycomb/env/*": [
+        "../env/*"
+      ]
+    }
   },
+  "references": [
+    { "path": "../env" },
+  ],
   "include": ["src"]
 }

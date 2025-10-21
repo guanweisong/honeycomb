@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { user } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 
 /**
@@ -10,7 +10,7 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  *    这允许客户端通过提供多个状态或等级值来筛选用户，
  *    例如 `?status=normal&status=disabled`。
  */
-export const UserListQuerySchema = createUpdateSchema(user)
+export const UserListQuerySchema = createUpdateSchema(schema.user)
   .pick({
     name: true,
     email: true,

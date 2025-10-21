@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import { post } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 更新文章时的数据验证 schema。
@@ -11,7 +11,7 @@ import { post } from "@honeycomb/db/schema";
  *    - **图库类型文章字段**: galleryLocation, galleryStyleIds, galleryTime
  * 3. 使用 `.required({ id: true })` 强制要求 'id' 字段必须存在，以确保能定位到要更新的文章。
  */
-export const PostUpdateSchema = createUpdateSchema(post)
+export const PostUpdateSchema = createUpdateSchema(schema.post)
   .pick({
     title: true,
     content: true,

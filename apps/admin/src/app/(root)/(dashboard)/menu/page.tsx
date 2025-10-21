@@ -15,10 +15,10 @@ import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
-import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 import { MenuType, MenuTypeName } from "@honeycomb/types/menu/menu.type";
 import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { MenuItem } from "@honeycomb/types/menu/menu.item";
 
 /**
  * 菜单管理页面。
@@ -49,7 +49,7 @@ const Menu = () => {
   /**
    * 存储当前已选中的菜单项列表。
    */
-  const [checkedList, setCheckedList] = useState<MenuEntity[]>([]);
+  const [checkedList, setCheckedList] = useState<MenuItem[]>([]);
 
   /**
    * 副作用钩子，用于在 `checkedData` 变化时更新 `checkedList` 状态。
@@ -90,7 +90,7 @@ const Menu = () => {
    * @param {boolean} checked - 是否选中。
    * @param {MenuType} type - 菜单项的类型（例如 `CATEGORY` 或 `PAGE`）。
    */
-  const onCheck = (item: MenuEntity, checked: boolean, type: MenuType) => {
+  const onCheck = (item: MenuItem, checked: boolean, type: MenuType) => {
     if (checked) {
       setCheckedList([...checkedList, { ...item, parent: "0", type }]);
     } else {
@@ -203,13 +203,13 @@ const Menu = () => {
    * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
-    const data: MenuEntity[] = [];
+    const data: MenuItem[] = [];
     checkedList?.forEach((item, index) => {
       const menu = {
         id: item.id,
         type: item.type,
         power: index,
-      } as MenuEntity;
+      } as MenuItem;
       if (item.parent !== "0") {
         menu.parent = item.parent;
       }

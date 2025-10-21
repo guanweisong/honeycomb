@@ -5,6 +5,7 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
+    "@honeycomb/db": "workspace:*",
     "drizzle-zod": "^0.8.3",
     "zod": "^4.1.11"
   }

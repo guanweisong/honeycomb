@@ -58,6 +58,18 @@ importers:
 
   apps/admin:
     dependencies:
+      '@honeycomb/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      '@honeycomb/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@honeycomb/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@honeycomb/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
       '@next/third-parties':
         specifier: ^14.1.0
         version: 14.2.33(next@15.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.93.2))(react@19.2.0)
@@ -116,9 +128,24 @@ importers:
       autoprefixer:
         specifier: ^10.4.17
         version: 10.4.21(postcss@8.5.6)
+      dotenv-cli:
+        specifier: ^10.0.0
+        version: 10.0.0
 
   apps/front:
     dependencies:
+      '@honeycomb/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      '@honeycomb/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@honeycomb/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@honeycomb/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
       '@next/third-parties':
         specifier: ^15.2.2
         version: 15.5.6(next@15.5.6(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.93.2))(react@19.2.0)
@@ -143,6 +170,9 @@ importers:
       next-intl:
         specifier: ^4.0.2
         version: 4.3.12(next@15.5.6(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.93.2))(react@19.2.0)(typescript@5.8.2)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react:
         specifier: ^19.1.0
         version: 19.2.0
@@ -165,14 +195,29 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
+      dotenv-cli:
+        specifier: ^10.0.0
+        version: 10.0.0
 
   apps/server:
     dependencies:
+      '@honeycomb/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@honeycomb/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      '@honeycomb/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@trpc/server':
+        specifier: ^11.3.1
+        version: 11.6.0(typescript@5.8.2)
       axios:
         specifier: ^1.8.4
         version: 1.12.2
       next:
-        specifier: ^15.5.6
+        specifier: ^15.5.4
         version: 15.5.6(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.93.2)
       zod:
         specifier: ^4.1.11
@@ -214,6 +259,18 @@ importers:
       '@aws-sdk/client-s3':
         specifier: ^3.485.0
         version: 3.913.0
+      '@honeycomb/db':
+        specifier: workspace:*
+        version: link:../db
+      '@honeycomb/env':
+        specifier: workspace:*
+        version: link:../env
+      '@honeycomb/types':
+        specifier: workspace:*
+        version: link:../types
+      '@honeycomb/validation':
+        specifier: workspace:*
+        version: link:../validation
       '@react-email/components':
         specifier: ^0.5.6
         version: 0.5.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -232,6 +289,9 @@ importers:
       commonmark:
         specifier: ^0.30.0
         version: 0.30.0
+      dayjs:
+        specifier: ^1.11.18
+        version: 1.11.18
       drizzle-orm:
         specifier: ^0.44.6
         version: 0.44.6(@libsql/client@0.15.15)
@@ -362,6 +422,9 @@ importers:
 
   packages/validation:
     dependencies:
+      '@honeycomb/db':
+        specifier: workspace:*
+        version: link:../db
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.44.6(@libsql/client@0.15.15))(zod@4.1.12)

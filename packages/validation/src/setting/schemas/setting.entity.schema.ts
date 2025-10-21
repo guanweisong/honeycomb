@@ -1,5 +1,5 @@
 import { createSelectSchema } from "drizzle-zod";
-import { setting } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 
@@ -11,7 +11,7 @@ import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
  * - `siteName`, `siteSubName`, `siteCopyright`, `siteSignature`:
  *   这些字段被定义为国际化 (i18n) 结构，以支持多语言显示。
  */
-export const SettingEntitySchema = createSelectSchema(setting).extend({
+export const SettingEntitySchema = createSelectSchema(schema.setting).extend({
   siteName: defaultI18nSchema,
   siteSubName: defaultI18nSchema,
   siteCopyright: defaultI18nSchema,

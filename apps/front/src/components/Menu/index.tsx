@@ -6,26 +6,8 @@ import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-
-/**
- * 菜单项接口。
- */
-export interface MenuItem {
-  /**
-   * 菜单项的显示文本。
-   */
-  label: React.ReactNode;
-  /**
-   * 菜单项的链接地址。
-   */
-  link: any;
-  /**
-   * 子菜单项。
-   */
-  children?: MenuItem[];
-}
+import { MenuItem } from "@honeycomb/ui/extended/Menu";
 
 /**
  * 菜单组件的属性接口。
@@ -38,7 +20,7 @@ export interface MenuProps {
   /**
    * 扁平化的菜单数据。
    */
-  flatMenuData: MenuEntity[];
+  flatMenuData: MenuItem[];
 }
 
 /**
@@ -127,6 +109,8 @@ const Menu = (props: MenuProps) => {
         setCurrentCategory([allCategoryPath]);
     }
   };
+
+  console.log(323332, data);
 
   /**
    * 递归渲染菜单项。

@@ -1,11 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import {
-  useEffect,
-  useState,
-  unstable_ViewTransition as ViewTransition,
-} from "react";
+import { useEffect, useState, ViewTransition } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTheme } from "next-themes";

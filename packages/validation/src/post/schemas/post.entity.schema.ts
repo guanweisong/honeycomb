@@ -1,6 +1,6 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { post } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 import { UserEntitySchema } from "@honeycomb/validation/user/schemas/user.entity.schema";
 import { MediaEntitySchema } from "@honeycomb/validation/media/schemas/media.entity.schema";
@@ -20,7 +20,7 @@ import { z } from "zod";
  * - `movieStyles`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
  * - `galleryStyles`: 字段被扩展为完整的 `TagEntitySchema`数组，代表关联的标签
  */
-export const PostEntitySchema = createSelectSchema(post).extend({
+export const PostEntitySchema = createSelectSchema(schema.post).extend({
   title: defaultI18nSchema,
   quoteContent: defaultI18nSchema,
   quoteAuthor: defaultI18nSchema,

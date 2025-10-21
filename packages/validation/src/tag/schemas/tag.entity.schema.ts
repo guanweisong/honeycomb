@@ -1,5 +1,5 @@
 import { createSelectSchema } from "drizzle-zod";
-import { tag } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
 
@@ -10,7 +10,7 @@ import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
  * 扩展内容：
  * - `name`: 字段被定义为国际化 (i18n) 结构，以支持多语言显示。
  */
-export const TagEntitySchema = createSelectSchema(tag).extend({
+export const TagEntitySchema = createSelectSchema(schema.tag).extend({
   name: defaultI18nSchema,
 });
 

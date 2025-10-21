@@ -2,7 +2,7 @@ import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import type { AppRouter } from "../server";
 import superjson from "superjson";
-import { env } from "@honeycomb/env";
+import { env } from "@honeycomb/env/index";
 
 /**
  * tRPC React 客户端实例。

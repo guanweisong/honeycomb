@@ -7,12 +7,14 @@
       "@honeycomb/db/*": ["../db/src/*"],
       "@honeycomb/validation/*": ["../validation/src/*"],
       "@honeycomb/types/*": ["../types/src/*"],
+      "@honeycomb/env/*": ["../env/*"],
       "@honeycomb/trpc/*": ["src/*"],
     }
   },
   "references": [
     { "path": "../validation" },
     { "path": "../db" },
+    { "path": "../env" },
     { "path": "../types" }
   ],
   "include": [

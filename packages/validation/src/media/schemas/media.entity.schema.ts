@@ -1,13 +1,13 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { media } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 媒体实体 Zod schema。
  * 该 schema 是基于数据库中的 'media' 表结构自动生成的 (drizzle-zod)。
  * 它代表了从数据库查询媒体文件时返回的完整对象结构。
  */
-export const MediaEntitySchema = createSelectSchema(media);
+export const MediaEntitySchema = createSelectSchema(schema.media);
 
 /**
  * 媒体实体的 TypeScript 类型。

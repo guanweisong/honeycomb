@@ -1,13 +1,13 @@
 import { createSelectSchema } from "drizzle-zod";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { page } from "@honeycomb/db/schema";
+import * as schema from "@honeycomb/db/schema";
 
 /**
  * 独立页面实体 Zod schema。
  * 该 schema 是基于数据库中的 'page' 表结构自动生成的 (drizzle-zod)。
  * 它代表了从数据库查询独立页面时返回的完整对象结构。
  */
-export const PageEntitySchema = createSelectSchema(page);
+export const PageEntitySchema = createSelectSchema(schema.page);
 
 /**
  * 独立页面实体的 TypeScript 类型。
