@@ -1,6 +1,7 @@
 {
   "name": "front",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "dotenv -e ../../.env -- cross-env PORT=3100 next dev",
     "build": "next build",
