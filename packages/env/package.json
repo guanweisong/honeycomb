@@ -1,7 +1,9 @@
 {
   "name": "@honeycomb/env",
   "version": "1.0.0",
-  "main": "index.ts",
+  "exports": {
+    "./*": "./*"
+  },
   "type": "module",
   "license": "MIT",
   "dependencies": {

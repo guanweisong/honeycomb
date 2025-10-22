@@ -58,19 +58,23 @@ export const pageRouter = router({
 
       // 获取作者信息
       const authorIds = Array.from(
-        new Set(list.map((p: any) => p.authorId).filter(Boolean)),
+        new Set(
+          list
+            .map((p) => p.authorId)
+            .filter((id): id is NonNullable<typeof id> => !!id),
+        ),
       );
-      let authorMap: Record<string, any> = {};
+      let authorMap: Record<string, typeof schema.user.$inferSelect> = {};
       if (authorIds.length) {
         const authors = await ctx.db
           .select()
           .from(schema.user)
-          .where(inArray(schema.user.id, authorIds as any));
-        authorMap = Object.fromEntries(authors.map((u: any) => [u.id, u]));
+          .where(inArray(schema.user.id, authorIds));
+        authorMap = Object.fromEntries(authors.map((u) => [u.id, u]));
       }
 
       // 合并作者信息
-      const listWithAuthor = list.map((p: any) => ({
+      const listWithAuthor = list.map((p) => ({
         ...p,
         author: p.authorId ? (authorMap[p.authorId] ?? null) : null,
       }));

@@ -21,9 +21,11 @@ const withBundleAnalyzer = bundleAnalyzer({
  * 扩展了基础配置，并可以添加前端应用特有的配置。
  */
 const nextConfig: NextConfig = {
+  ...baseNextConfig,
   experimental: {
     viewTransition: true,
   },
+  // 在这里添加或覆盖 front 应用特有的配置
 };
 
 /**
@@ -31,6 +33,4 @@ const nextConfig: NextConfig = {
  * 将基础配置 (`baseNextConfig`) 与当前应用的特定配置 (`nextConfig`) 合并，
  * 并应用 `next-intl` 和 `next-bundle-analyzer` 插件。
  */
-export default withBundleAnalyzer(
-  withNextIntl({ ...baseNextConfig, ...nextConfig }),
-);
+export default withBundleAnalyzer(withNextIntl(nextConfig));

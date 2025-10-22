@@ -1,12 +1,14 @@
 {
   "name": "@honeycomb/db",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "exports": {
+    "./*": "./src/*"
+  },
   "type": "module",
   "license": "MIT",
   "dependencies": {
+    "@honeycomb/env": "workspace:*",
     "@libsql/client": "^0.15.15",
-    "bson": "^6.10.4",
     "drizzle-orm": "^0.44.5",
     "zod": "^4.1.11"
   }

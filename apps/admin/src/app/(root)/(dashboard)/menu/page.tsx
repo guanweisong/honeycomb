@@ -5,7 +5,6 @@ import { Tabs } from "@honeycomb/ui/extended/Tabs";
 import { Checkbox } from "@honeycomb/ui/extended/Checkbox";
 import { Button } from "@honeycomb/ui/components/button";
 import SortableTree, {
-  TreeItem,
   getFlatDataFromTree,
   getTreeFromFlatData,
   // @ts-ignore
@@ -147,21 +146,21 @@ const Menu = () => {
   /**
    * 拖拽排序结束时的回调函数。
    * 将拖拽后的树形数据扁平化，并更新 `checkedList`，以反映新的排序和父子关系。
-   * @param {TreeItem[]} treeData - 拖拽后的树形数据。
+   * @param {MenuItem[]} treeData - 拖拽后的树形数据。
    */
-  const onDragEnd = (treeData: TreeItem[]) => {
+  const onDragEnd = (treeData: MenuItem[]) => {
     const listData = getFlatDataFromTree({
       treeData,
-      // @ts-ignore
-      getNodeKey: (node) => node.id,
-    });
-    const list = listData.map(({ node, parentNode }) => ({
+      getNodeKey: ({ node }: { node: MenuItem }) => (node as MenuItem).id,
+      ignoreCollapsed: false,
+    }) as { node: MenuItem; parentNode: MenuItem | null }[];
+
+    const list: MenuItem[] = listData.map(({ node, parentNode }) => ({
       ...node,
-      // @ts-ignore
       parent: parentNode?.id ?? "0",
       expanded: !!node.children,
     }));
-    // @ts-ignore
+
     setCheckedList(list);
   };
 

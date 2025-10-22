@@ -1,11 +1,14 @@
 {
   "name": "@honeycomb/validation",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "exports": {
+    "./*": "./src/*"
+  },
   "type": "module",
   "license": "MIT",
   "dependencies": {
     "@honeycomb/db": "workspace:*",
+    "@honeycomb/types": "workspace:*",
     "drizzle-zod": "^0.8.3",
     "zod": "^4.1.11"
   }

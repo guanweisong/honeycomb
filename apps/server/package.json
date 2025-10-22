@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev --turbo",
+    "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev",
     "build": "next build",
     "start": "PORT=7002 next start",
     "lint": "next lint"
@@ -14,7 +14,7 @@
     "@honeycomb/trpc": "workspace:*",
     "@trpc/server": "^11.3.1",
     "axios": "^1.8.4",
-    "next": "^15.5.6",
+    "next": "^16.0.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {

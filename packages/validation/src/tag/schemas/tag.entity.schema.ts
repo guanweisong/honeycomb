@@ -1,7 +1,7 @@
 import { createSelectSchema } from "drizzle-zod";
 import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { defaultI18nSchema } from "@honeycomb/db/src/i18nField";
+import { defaultI18nSchema } from "@honeycomb/db/i18nField";
 
 /**
  * 标签实体 Zod schema。

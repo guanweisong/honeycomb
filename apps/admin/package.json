@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- next dev --turbo",
+    "dev": "dotenv -e ../../.env -- next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -19,10 +19,11 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-simplemde-editor": "^5.2.0",
     "@nosferatu500/react-sortable-tree": "^3.0.3",
+    "@tanstack/react-table": "^8.21.3",
     "zustand": "^4.5.0",
-    "next": "^15.5.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "@tanstack/react-query": "^5.80.6",
     "dayjs": "^1.11.13",
     "lucide-react": "^0.479.0",

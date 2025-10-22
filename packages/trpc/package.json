@@ -1,7 +1,9 @@
 {
   "name": "@honeycomb/trpc",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "exports": {
+    "./*": "./src/*"
+  },
   "type": "module",
   "license": "MIT",
   "dependencies": {

@@ -27,6 +27,12 @@
     },
     {
       "path": "../../packages/ui"
+    },
+    {
+      "path": "../../packages/types"
+    },
+    {
+      "path": "../../packages/trpc"
     }
   ],
   "include": [

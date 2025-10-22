@@ -1,7 +1,9 @@
 {
   "name": "@honeycomb/types",
   "version": "1.0.0",
-  "main": "index.ts",
+  "exports": {
+    "./*": "./src/*"
+  },
   "type": "module",
   "license": "MIT"
 }

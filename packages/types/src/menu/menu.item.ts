@@ -3,4 +3,5 @@ import { MultiLang } from "@honeycomb/types/multi.lang";
 
 export interface MenuItem extends MenuEntity {
   title: MultiLang;
+  children: MenuItem[];
 }

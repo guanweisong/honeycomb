@@ -5,6 +5,14 @@ import { NextConfig } from "next";
  * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
  */
 const baseNextConfig: NextConfig = {
+  transpilePackages: [
+    "@honeycomb/db",
+    "@honeycomb/env",
+    "@honeycomb/trpc",
+    "@honeycomb/types",
+    "@honeycomb/ui",
+    "@honeycomb/validation",
+  ],
   images: {
     remotePatterns: [
       {

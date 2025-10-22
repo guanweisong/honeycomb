@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { z } from "zod";
-import { env } from "@honeycomb/env";
+import { env } from "@honeycomb/env/index";
 
 export const CaptchaSchema = z.object({
   ticket: z.string(),
