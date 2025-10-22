@@ -1,4 +1,4 @@
-import { unstable_ViewTransition as ViewTransition } from "react";
+import { ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
 import Menu, { MenuItem } from "@/components/Menu";

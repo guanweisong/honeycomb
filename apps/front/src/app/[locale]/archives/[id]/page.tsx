@@ -1,4 +1,4 @@
-import React, { unstable_ViewTransition as ViewTransition } from "react";
+import React, { ViewTransition } from "react";
 import PostInfo from "@/components/PostInfo";
 import Tags from "@/components/Tags";
 import Card from "@/components/Card";

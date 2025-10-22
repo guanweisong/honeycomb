@@ -1,5 +1,5 @@
 import { Link } from "@/i18n/navigation";
-import React, { unstable_ViewTransition as ViewTransition } from "react";
+import React, { ViewTransition } from "react";
 import { utcFormat } from "@/utils/utcFormat";
 import { useTranslations } from "next-intl";
 import { cn } from "@honeycomb/ui/lib/utils";
