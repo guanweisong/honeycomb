@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
-import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
+import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
 import { userLevelOptions } from "@honeycomb/types/user/user.level";
 import { userStatusOptions } from "@honeycomb/types/user/user.status";
 

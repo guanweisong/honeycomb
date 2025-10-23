@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Badge } from "@honeycomb/ui/components/badge";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { postStatusOptions } from "@honeycomb/types/post/post.status";
 import { postTypeOptions } from "@honeycomb/types/post/post.type";
 

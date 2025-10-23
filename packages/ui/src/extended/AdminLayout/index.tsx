@@ -3,9 +3,9 @@
 import React, { ReactNode } from "react";
 import { Avatar } from "@honeycomb/ui/components/avatar";
 import { Menu, MenuItem } from "@honeycomb/ui/extended/Menu";
-import { UserEntity } from "admin/src/app/(root)/(dashboard)/user/types/user.entity";
 import { UserDropdown } from "@honeycomb/ui/extended/UserDropdown";
 import { usePathname } from "next/navigation";
+import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
 
 export interface AdminLayoutProps {
   children: ReactNode;
@@ -18,7 +18,6 @@ export interface AdminLayoutProps {
 
 export const AdminLayout = (props: AdminLayoutProps) => {
   const { children, title, footer, menu = [], user, onLogout } = props;
-  const pathname = usePathname();
 
   return (
     <div className="h-screen flex box-border p-[1px] bg-gray-100">

@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 

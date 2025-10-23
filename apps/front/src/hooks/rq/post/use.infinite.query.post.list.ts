@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@honeycomb/trpc/client/trpc";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
 /**

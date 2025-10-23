@@ -12,7 +12,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Loader } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PostType, PostTypeName } from "@honeycomb/types/post/post.type";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";

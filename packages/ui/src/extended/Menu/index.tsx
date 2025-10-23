@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { MenuTitle } from "./components/MenuTitle";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
-import { MenuItem } from "@honeycomb/types/menu/menu.item";
+
+export interface MenuItem {
+  name: string;
+  icon: React.ReactNode;
+  path: string;
+  children?: MenuItem[];
+}
 
 export interface MenuProps {
   data?: MenuItem[];
@@ -39,12 +45,15 @@ export const Menu = (props: MenuProps) => {
         <div key={item.path}>
           <motion.div
             initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{
-              duration: 0.25,
-              delay,
-              exitDelay,
+            animate={{
+              opacity: 1,
+              x: 0,
+              transition: { duration: 0.25, delay },
+            }}
+            exit={{
+              opacity: 0,
+              x: -16,
+              transition: { duration: 0.25, delay: exitDelay },
             }}
           >
             <MenuTitle
@@ -66,7 +75,7 @@ export const Menu = (props: MenuProps) => {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, easing: "ease-in-out" }}
+                transition={{ duration: 0.25 }}
                 style={{ overflow: "hidden" }}
               >
                 {renderMenu(item.children, depth + 1)}

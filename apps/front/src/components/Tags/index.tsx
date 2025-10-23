@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 

@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { MenuItem } from "@honeycomb/ui/extended/Menu";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { usePathname } from "next/navigation";
+import { MenuItem } from "@honeycomb/ui/extended/Menu";
 
 export interface MenuTitleProps {
   item: MenuItem;

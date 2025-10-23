@@ -17,7 +17,7 @@ import {
   UserListQuerySchema,
 } from "@honeycomb/validation/user/schemas/user.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { UserEntity } from "@honeycomb/validation/user/schemas/user.entity.schema";
+import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
 import { UserLevel, userLevelOptions } from "@honeycomb/types/user/user.level";
 import {
   UserStatus,

@@ -25,9 +25,9 @@ import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
-import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
 import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
-import { PostEntity } from "@honeycomb/validation/post/schemas/post.entity.schema";
+import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { UserLevel } from "@honeycomb/types/user/user.level";
 
