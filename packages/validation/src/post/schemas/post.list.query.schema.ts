@@ -3,6 +3,7 @@ import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert
 import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
 import { z } from "zod";
+import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.schema";
 
 /**
  * 获取文章列表时的查询参数验证 schema。
@@ -19,6 +20,7 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   type: PostInsertSchema.shape.type.optional(),
   categoryId: PostInsertSchema.shape.categoryId.optional(),
   userName: UserInsertSchema.shape.name.optional(),
+  tagName: TagInsertSchema.shape.name.optional(),
 }).extend({
   status: z.array(z.string()).optional(),
   type: z.array(z.string()).optional(),

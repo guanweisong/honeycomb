@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { getLocale } from "next-intl/server";
 import { serverClient } from "@honeycomb/trpc/server";
+import { MultiLangEnum } from "@honeycomb/types/multi.lang";
 
 /**
  * 网站底部组件。
@@ -15,9 +16,10 @@ export default async function Footer() {
 
   return (
     <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
-      <div>{setting?.siteSignature?.[locale]}</div>
+      <div>{setting?.siteSignature?.[locale as MultiLangEnum]}</div>
       <div>
-        ©{dayjs().format("YYYY")}&nbsp;{setting?.siteCopyright?.[locale]}
+        ©{dayjs().format("YYYY")}&nbsp;
+        {setting?.siteCopyright?.[locale as MultiLangEnum]}
       </div>
       <div>
         {setting?.siteRecordNo ? (

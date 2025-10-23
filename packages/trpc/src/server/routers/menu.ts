@@ -9,8 +9,9 @@ import {
 } from "@honeycomb/trpc/server/libs/tools";
 import { MenuUpdateSchema } from "@honeycomb/validation/menu/schemas/menu.update.schema";
 import * as schema from "@honeycomb/db/schema";
-import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 
 /**
  * 菜单相关的 tRPC 路由。
@@ -36,30 +37,37 @@ export const menuRouter = router({
       .select()
       .from(schema.menu)
       .where(where)
-      .orderBy(orderByClause as any);
+      .orderBy(orderByClause);
 
     const [categoryList, pageList] = await Promise.all([
       ctx.db.select().from(schema.category),
       ctx.db.select().from(schema.page),
     ]);
 
-    list.forEach((m: any) => {
+    const categoryMap = new Map(categoryList.map((c) => [c.id.toString(), c]));
+    const pageMap = new Map(pageList.map((p) => [p.id.toString(), p]));
+
+    const resultList = list.map((m) => {
+      let title: MultiLang | undefined | null;
+      let path: string | null | undefined = null;
+      let parent: string | null | undefined = null;
+
       if (m.type === "CATEGORY") {
-        categoryList.forEach((n: any) => {
-          if (m.id.toString() === n.id.toString()) {
-            (m as any).title = n.title;
-            (m as any).path = n.path;
-            (m as any).parent = n.parent;
-          }
-        });
+        const category = categoryMap.get(m.id.toString());
+        title = category?.title;
+        path = category?.path;
+        parent = category?.parent;
+      } else if (m.type === "PAGE") {
+        const page = pageMap.get(m.id.toString());
+        title = page?.title;
       }
-      if (m.type === "PAGE") {
-        pageList.forEach((n: any) => {
-          if (m.id.toString() === n.id.toString()) {
-            (m as any).title = n.title;
-          }
-        });
-      }
+
+      return {
+        ...m,
+        title,
+        path,
+        parent,
+      };
     });
 
     const [countResult] = await ctx.db
@@ -68,7 +76,7 @@ export const menuRouter = router({
       .where(where);
     const total = Number(countResult?.count) || 0;
 
-    return { list, total };
+    return { list: resultList, total };
   }),
 
   /**

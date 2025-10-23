@@ -98,7 +98,7 @@ export default function PostList(props: PostListProps) {
         key={item.id}
       >
         {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-          item.type,
+          item.type as PostType,
         ) &&
           item.cover?.url && (
             <Link
@@ -116,10 +116,10 @@ export default function PostList(props: PostListProps) {
                 <span
                   className={cn(
                     "absolute left-2 top-2 text-white text-base rounded py-0.5 px-1",
-                    [PostTypeBgColor[item.type]],
+                    [PostTypeBgColor[item.type as PostType]],
                   )}
                 >
-                  {PostTypeName[item.type]}
+                  {PostTypeName[item.type as PostType]}
                 </span>
               </ViewTransition>
             </Link>
@@ -135,9 +135,9 @@ export default function PostList(props: PostListProps) {
                   {item.title?.[locale]} ({utcFormat(item.movieTime!, "YYYY")})
                 </>
               )}
-              {[PostType.ARTICLE, PostType.PHOTOGRAPH].includes(item.type) && (
-                <>{item.title?.[locale]}</>
-              )}
+              {[PostType.ARTICLE, PostType.PHOTOGRAPH].includes(
+                item.type as PostType,
+              ) && <>{item.title?.[locale]}</>}
               {item.type === PostType.QUOTE && (
                 <>
                   “{item.quoteContent?.[locale]}” ——{" "}
@@ -157,10 +157,10 @@ export default function PostList(props: PostListProps) {
           )}
           <PostInfo
             id={item.id}
-            author={item.author.name}
-            date={item.createdAt}
+            author={item.author.name as string}
+            date={item.createdAt as string}
             comments={item.commentCount}
-            views={item.views}
+            views={item.views as number}
             align={Align.Left}
           />
         </div>

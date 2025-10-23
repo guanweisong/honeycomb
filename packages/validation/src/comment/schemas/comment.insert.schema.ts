@@ -18,6 +18,7 @@ export const CommentInsertSchema = createInsertSchema(schema.comment)
     parentId: true,
     postId: true,
     pageId: true,
+    customId: true,
   })
   .extend(CaptchaSchema.shape);
 

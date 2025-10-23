@@ -5,14 +5,17 @@ import { Button } from "@honeycomb/ui/components/button";
 import Card from "../Card";
 import { utcFormat } from "@/utils/utcFormat";
 import { CommentProps } from "./index";
-import PaginationResponse from "@/types/pagination.response";
 import { refreshPath } from "@/utils/refreshPath";
 import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
-import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 import { CommentInsertInput } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { useTranslations } from "next-intl"; // ✅ 客户端 tRPC
+import { useTranslations } from "next-intl";
+import {
+  CommentEntity,
+  CommentResponse,
+} from "@honeycomb/trpc/server/types/comment.entity";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 /**
  * 评论客户端组件的属性接口。
@@ -22,7 +25,7 @@ export interface CommentClientProps extends CommentProps {
   /**
    * 评论查询的 Promise，用于获取评论数据。
    */
-  queryCommentPromise: Promise<PaginationResponse<CommentEntity>>;
+  queryCommentPromise: Promise<CommentResponse>;
 }
 
 /**
@@ -71,6 +74,9 @@ const CommentClient = (props: CommentClientProps) => {
   const [user, setUser] = useState<User>();
 
   const t = useTranslations("Comment");
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   /**
    * 创建评论的 tRPC mutation。
@@ -122,7 +128,7 @@ const CommentClient = (props: CommentClientProps) => {
       }
     }
 
-    const data: CommentInsertInput = {
+    const data = {
       ...userData,
       content: form.content.value,
     } as CommentInsertInput;

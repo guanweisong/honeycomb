@@ -40,7 +40,7 @@ const Markdown = (props: MarkDownProps) => {
           return (
             <Image
               priority={true}
-              src={c.src!}
+              src={c.src as string}
               alt={currentMedia?.name!}
               width={currentMedia?.width!}
               height={currentMedia?.height!}

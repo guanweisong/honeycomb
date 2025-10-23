@@ -6,7 +6,6 @@ import { MultiLang } from "@honeycomb/types/multi.lang";
 import { serverClient } from "@honeycomb/trpc/server";
 import { PostStatus } from "@honeycomb/types/post/post.status";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
-import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
 
 /**
  * 页面大小常量，用于分页查询。
@@ -49,14 +48,12 @@ export default async function List(props: ListProps) {
   switch (type) {
     case "category":
       // 获取分类ID
-      const categoryId = menu?.list?.find(
-        (item: MenuEntity) => item.path === typeName,
-      )?.id;
+      const categoryId = menu?.list?.find((item) => item.path === typeName)?.id;
       if (typeof categoryId !== "undefined") {
         queryParams = { ...queryParams, categoryId: categoryId };
       }
       typeName =
-        menu?.list?.find((item: MenuEntity) => item.path === typeName)?.title?.[
+        menu?.list?.find((item) => item.path === typeName)?.title?.[
           params.locale
         ] || "";
       break;
@@ -141,9 +138,8 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   switch (type) {
     case "category":
       typeName =
-        menu?.list?.find((item: MenuEntity) => item.path === typeName)?.title?.[
-          locale
-        ] || "";
+        menu?.list?.find((item) => item.path === typeName)?.title?.[locale] ||
+        "";
       break;
     default:
       // 其他逻辑

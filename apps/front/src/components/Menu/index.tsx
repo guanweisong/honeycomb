@@ -7,7 +7,8 @@ import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { MenuItem } from "@honeycomb/ui/extended/Menu";
+import { MenuLocalEntity } from "@/types/menu.local.entity";
+import { MenuEntity } from "@honeycomb/trpc/server/types/menu.entity";
 
 /**
  * 菜单组件的属性接口。
@@ -16,11 +17,11 @@ export interface MenuProps {
   /**
    * 树形结构的菜单数据。
    */
-  data: MenuItem[];
+  data: MenuLocalEntity[];
   /**
    * 扁平化的菜单数据。
    */
-  flatMenuData: MenuItem[];
+  flatMenuData: MenuEntity[];
 }
 
 /**
@@ -33,6 +34,7 @@ const Menu = (props: MenuProps) => {
   const { data, flatMenuData } = props;
   const ref1 = useRef<HTMLUListElement>(null);
   const ref2 = useRef<HTMLDivElement>(null);
+
   /**
    * 控制移动端菜单的显示与隐藏。
    */
@@ -90,7 +92,7 @@ const Menu = (props: MenuProps) => {
           return;
         }
         allCategoryPath = `/list/category/${getCurrentPathOfMenu({
-          id: postDetail.categoryId,
+          id: postDetail.categoryId!,
           familyProp: "path",
           menu: flatMenuData,
         }).join("/")}`;
@@ -114,10 +116,10 @@ const Menu = (props: MenuProps) => {
 
   /**
    * 递归渲染菜单项。
-   * @param {MenuItem[]} data - 菜单项数据数组。
+   * @param {MenuLocalEntity[]} data - 菜单项数据数组。
    * @returns {JSX.Element} 渲染后的菜单列表。
    */
-  const renderItem = (data: MenuItem[]) => {
+  const renderItem = (data: MenuLocalEntity[]) => {
     return (
       <ul
         className={cn("absolute backdrop-blur lg:static lg:flex py-2 lg:py-0", {

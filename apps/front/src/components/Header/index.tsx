@@ -1,7 +1,7 @@
 import { ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
-import Menu, { MenuItem } from "@/components/Menu";
+import Menu from "@/components/Menu";
 import { Link } from "@/i18n/navigation";
 import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
 import Breadcrumb from "@/components/Breadcrumb";
@@ -9,8 +9,11 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
 import { serverClient } from "@honeycomb/trpc/server";
+import { MenuLocalEntity } from "@/types/menu.local.entity";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
-import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
+import { MenuEntityTree } from "@/types/menu.entity.tree";
+import { MultiLangEnum } from "@honeycomb/types/multi.lang";
+import { MenuEntity } from "@honeycomb/trpc/server/types/menu.entity";
 
 /**
  * 网站头部组件。
@@ -27,10 +30,9 @@ export default async function Header() {
   /**
    * 包含所有菜单项的数组，包括首页和友情链接。
    */
-  const allMenu: MenuEntity[] = [
+  const allMenu = [
     {
       title: { zh: "首页", en: "Home" },
-      isHome: true,
       id: "home",
       path: "/",
       children: [],
@@ -48,32 +50,29 @@ export default async function Header() {
   /**
    * 将扁平化的菜单数据转换为树形结构。
    */
-  const menuTree: MenuEntity[] = listToTree(allMenu, {
+  const menuTree = listToTree(allMenu, {
     idKey: "id",
     parentKey: "parent",
-  });
+  }) as MenuEntityTree[];
 
   /**
    * 计算菜单的 Link。
    * 将处理后的菜单数据格式化为 `MenuItem` 数组，用于 `Menu` 组件。
-   * @returns {MenuItem[]} 格式化后的菜单数据。
+   * @returns {MenuLocalEntity[]} 格式化后的菜单数据。
    */
   const getMenuData = () => {
-    const result: MenuItem[] = [];
-    const getItem = (data: MenuEntity) => {
+    const result: MenuLocalEntity[] = [];
+    const getItem = (data: MenuEntityTree) => {
       /**
        * 递归处理单个菜单项，生成 `MenuItem` 格式。
-       * @param {MenuEntity} data - 原始菜单实体数据。
-       * @returns {MenuItem} 格式化后的菜单项。
+       * @param {MenuEntityTree} data - 原始菜单实体数据。
+       * @returns 格式化后的菜单项。
        */
       const item = {
-        label: data.title?.[locale],
-      } as MenuItem;
-      if (data.isHome) {
+        label: data.title?.[locale as MultiLangEnum],
+      } as MenuLocalEntity;
+      if (data.id === "home") {
         item.link = "/list/category";
-      }
-      if (data.url) {
-        item.link = data.url;
       }
       switch (data.type) {
         case MenuType.PAGE:
@@ -115,7 +114,7 @@ export default async function Header() {
                   scroll={false}
                   className="text-pink-500 text-xl"
                 >
-                  {setting?.siteName?.[locale]}
+                  {setting?.siteName?.[locale as MultiLangEnum]}
                 </Link>
               </ViewTransition>
             </span>
@@ -132,7 +131,7 @@ export default async function Header() {
         </div>
       </div>
       <ViewTransition name="siteBreadcrumb">
-        <Breadcrumb menu={allMenu} />
+        <Breadcrumb menu={allMenu as MenuEntity[]} />
       </ViewTransition>
     </>
   );

@@ -5,13 +5,7 @@ import { usePathname } from "next/navigation";
 import { MenuTitle } from "./components/MenuTitle";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx } from "clsx";
-
-export interface MenuItem {
-  name: string;
-  path: string;
-  icon?: React.ReactNode;
-  children?: MenuItem[];
-}
+import { MenuItem } from "@honeycomb/types/menu/menu.item";
 
 export interface MenuProps {
   data?: MenuItem[];

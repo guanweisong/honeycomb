@@ -5,7 +5,7 @@ import React from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { MultiLang } from "@honeycomb/types/multi.lang";
-import { MenuEntity } from "@honeycomb/validation/menu/schemas/menu.entity.schema";
+import { MenuEntity } from "@honeycomb/trpc/server/types/menu.entity";
 
 /**
  * 面包屑组件的属性接口。
@@ -95,7 +95,7 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   return (
     <div className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50">
       {breadData?.map((item, index) => (
-        <span key={item.label}>
+        <span key={item.link}>
           {item.link ? (
             <Link href={item.link} key={item.link}>
               {item.label}
