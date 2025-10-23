@@ -11,12 +11,12 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
 import {
   CategoryListQueryInput,
   CategoryListQuerySchema,
 } from "@honeycomb/validation/category/schemas/category.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
+import { CategoryEntity } from "@honeycomb/trpc/server/types/category.entity";
 
 /**
  * 文章分类管理页面。

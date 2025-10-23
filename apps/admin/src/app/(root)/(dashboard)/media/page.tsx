@@ -11,8 +11,8 @@ import { Skeleton } from "@honeycomb/ui/components/skeleton";
 import { cn } from "@honeycomb/ui/lib/utils";
 
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 import { MediaIndexInput } from "@honeycomb/validation/media/schemas/media.list.query.schema";
+import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 媒体库组件的属性接口。

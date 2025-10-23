@@ -1,10 +1,10 @@
 "use client";
 
 import PhotoPickerPanel from "@/app/(root)/(dashboard)/media/page";
-import { MediaEntity } from "@/app/(root)/(dashboard)/media/types/media.entity";
 import { Sheet } from "@honeycomb/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 图片选择器模态框的属性接口。

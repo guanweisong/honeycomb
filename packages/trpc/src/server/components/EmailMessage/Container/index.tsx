@@ -13,7 +13,7 @@ import {
 } from "@react-email/components";
 import * as React from "react";
 import process from "process";
-import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
+import { SettingEntity } from "@honeycomb/trpc/server/types/setting.entity";
 
 export interface EmailContainerProps {
   previewText: string;

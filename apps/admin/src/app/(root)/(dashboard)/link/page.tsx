@@ -22,7 +22,7 @@ import {
   EnableStatus,
   enableStatusOptions,
 } from "@honeycomb/types/enable.status";
-import { LinkEntity } from "@honeycomb/validation/link/schemas/link.entity.schema";
+import { LinkEntity } from "@honeycomb/trpc/server/types/link.entity";
 
 /**
  * 友情链接管理页面。

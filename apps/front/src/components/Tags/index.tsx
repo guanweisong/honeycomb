@@ -2,8 +2,8 @@ import React from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
-import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 import { MultiLang } from "@honeycomb/types/multi.lang";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
 /**
  * 标签组件。

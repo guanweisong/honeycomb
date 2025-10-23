@@ -12,7 +12,7 @@ import { PageUpdateSchema } from "@honeycomb/validation/page/schemas/page.update
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PageStatus } from "@honeycomb/types/page/page.status";
-import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
  * 页面创建/编辑页面核心组件。

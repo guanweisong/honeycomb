@@ -26,10 +26,10 @@ import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
 import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
-import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
 import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
-import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { SettingEntity } from "@honeycomb/trpc/server/types/setting.entity";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
  * 评论相关的 tRPC 路由。
@@ -56,7 +56,7 @@ export const commentRouter = router({
       );
 
       // 查询分页数据
-      const list: CommentEntity[] = await ctx.db
+      const list = await ctx.db
         .select()
         .from(schema.comment)
         .where(where)

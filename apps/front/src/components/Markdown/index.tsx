@@ -1,7 +1,7 @@
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import React from "react";
-import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
+import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * Markdown 组件的属性接口。

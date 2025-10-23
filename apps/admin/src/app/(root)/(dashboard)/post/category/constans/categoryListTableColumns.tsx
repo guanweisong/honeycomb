@@ -4,7 +4,7 @@ import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { creatCategoryTitleByDepth } from "@/utils/help";
 import { EnableStatusName, EnableStatus } from "@honeycomb/types/enable.status";
-import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
+import { CategoryEntity } from "@honeycomb/trpc/server/types/category.entity";
 
 /**
  * 分类列表的表格列定义。

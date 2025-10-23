@@ -5,7 +5,7 @@ import { TagInsertSchema } from "@honeycomb/validation/tag/schemas/tag.insert.sc
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
 /**
  * 添加/编辑标签对话框的属性接口。

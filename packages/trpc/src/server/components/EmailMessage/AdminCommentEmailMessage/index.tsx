@@ -1,9 +1,9 @@
 import { Link, Text } from "@react-email/components";
 import * as React from "react";
 import EmailContainer from "../Container";
-import { SettingEntity } from "@honeycomb/validation/setting/schemas/setting.entity.schema";
-import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
 import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@honeycomb/trpc/server/utils/comment";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
+import { SettingEntity } from "@honeycomb/trpc/server/types/setting.entity";
 
 type AdminMessageEmailProps = {
   currentComment: CommentEntity;

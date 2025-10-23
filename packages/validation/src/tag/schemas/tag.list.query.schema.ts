@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
-import { TagEntitySchema } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
+import { defaultI18nSchema } from "@honeycomb/db/i18nField";
 
 /**
  * 获取标签列表时的查询参数验证 schema。
@@ -8,7 +8,7 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  * 允许通过 'name' 字段对标签列表进行筛选。
  */
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: TagEntitySchema.shape.name,
+  name: defaultI18nSchema,
 }).partial();
 
 /**

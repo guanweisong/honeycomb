@@ -1,6 +1,5 @@
 "use client";
 
-import type { TagEntity } from "@/app/(root)/(dashboard)/tag/types/tag.entity";
 import PhotoPickerModal from "@/components/PhotoPicker";
 import { ModalType } from "@/types/ModalType";
 import { Button } from "@honeycomb/ui/components/button";
@@ -25,6 +24,7 @@ import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostStatus } from "@honeycomb/types/post/post.status";
 import { PostType, postTypeOptions } from "@honeycomb/types/post/post.type";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
 /**
  * 标签类型与对应的表单字段名的映射关系。

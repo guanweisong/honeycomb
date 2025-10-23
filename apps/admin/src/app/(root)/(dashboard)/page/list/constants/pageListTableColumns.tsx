@@ -3,8 +3,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Badge } from "@honeycomb/ui/components/badge";
-import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { pageStatusOptions } from "@honeycomb/types/page/page.status";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
  * 页面列表的表格列定义。

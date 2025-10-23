@@ -16,8 +16,8 @@ import {
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useGetState } from "ahooks";
-import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
 import { keepPreviousData } from "@tanstack/react-query";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
 /**
  * 标签管理页面。

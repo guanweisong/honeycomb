@@ -15,9 +15,9 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
 import { MenuType, MenuTypeName } from "@honeycomb/types/menu/menu.type";
-import { CategoryEntity } from "@honeycomb/validation/category/schemas/category.entity.schema";
-import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { MenuItem } from "@honeycomb/types/menu/menu.item";
+import { CategoryEntity } from "@honeycomb/trpc/server/types/category.entity";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
  * 菜单管理页面。

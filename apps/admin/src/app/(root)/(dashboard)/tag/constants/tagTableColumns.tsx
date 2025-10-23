@@ -1,7 +1,7 @@
 import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
-import { TagEntity } from "@honeycomb/validation/tag/schemas/tag.entity.schema";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
 /**
  * 标签列表的表格列定义。

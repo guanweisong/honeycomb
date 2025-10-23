@@ -14,8 +14,8 @@ import {
   PageListQuerySchema,
 } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { PageEntity } from "@honeycomb/validation/page/schemas/page.entity.schema";
 import { keepPreviousData } from "@tanstack/react-query";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
  * 页面列表管理页面。

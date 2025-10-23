@@ -15,10 +15,10 @@ import * as schema from "@honeycomb/db/schema";
 import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
-import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 文章相关的 tRPC 路由。

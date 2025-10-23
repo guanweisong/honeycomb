@@ -16,8 +16,8 @@ import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
-import { MediaEntity } from "@honeycomb/validation/media/schemas/media.entity.schema";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 独立页面相关的 tRPC 路由。
