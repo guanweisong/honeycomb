@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -16,7 +16,7 @@ import { MultiLang } from "@honeycomb/types/multi.lang";
 /**
  * 菜单相关的 tRPC 路由。
  */
-export const menuRouter = router({
+export const menuRouter = createTRPCRouter({
   /**
    * 查询完整的菜单列表，并附加关联项（分类、页面）的信息。
    * @returns {Promise<{ list: any[], total: number }>} 返回一个包含完整菜单列表和总数的对象。

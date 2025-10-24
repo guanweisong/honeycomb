@@ -49,12 +49,12 @@ const Login = () => {
                   randstr: res.randstr,
                 },
               })
-              .then((result) => {
+              .then((result: any) => {
                 toast.success("登录成功");
-                localStorage.setItem("token", (result as any).token);
+                localStorage.setItem("token", result.token);
                 window.location.href = targetUrl || "/";
               })
-              .catch((e) => {
+              .catch((e: any) => {
                 toast.error(e?.message || "登录失败");
               });
           }

@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -34,7 +34,7 @@ import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 /**
  * 评论相关的 tRPC 路由。
  */
-export const commentRouter = router({
+export const commentRouter = createTRPCRouter({
   /**
    * 查询评论列表（后台管理使用）。
    * 支持分页、筛选和排序，并会附加关联的文章或页面信息。

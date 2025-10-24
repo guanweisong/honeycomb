@@ -1,4 +1,7 @@
-import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
+import {
+  protectedProcedure,
+  createTRPCRouter,
+} from "@honeycomb/trpc/server/core";
 import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { PostType } from "@honeycomb/types/post/post.type";
 import { UserLevel } from "@honeycomb/types/user/user.level";
@@ -18,7 +21,7 @@ export interface StatisticsType {
 /**
  * 统计数据相关的 tRPC 路由。
  */
-export const statisticRouter = router({
+export const statisticRouter = createTRPCRouter({
   /**
    * 获取各类别的统计数据。
    * (需要任意等级的登录权限)

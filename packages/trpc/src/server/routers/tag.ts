@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -18,7 +18,7 @@ import { UserLevel } from "@honeycomb/types/user/user.level";
 /**
  * 标签相关的 tRPC 路由。
  */
-export const tagRouter = router({
+export const tagRouter = createTRPCRouter({
   /**
    * 查询标签列表（支持分页、筛选、排序）。
    * @param {TagListQuerySchema} input - 查询参数。

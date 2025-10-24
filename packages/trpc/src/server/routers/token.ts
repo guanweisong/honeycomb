@@ -1,4 +1,7 @@
-import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
+import {
+  protectedProcedure,
+  createTRPCRouter,
+} from "@honeycomb/trpc/server/core";
 import { buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import * as schema from "@honeycomb/db/schema";
@@ -8,7 +11,7 @@ import { UserLevel } from "@honeycomb/types/user/user.level";
 /**
  * API Token 相关的 tRPC 路由。
  */
-export const tokenRouter = router({
+export const tokenRouter = createTRPCRouter({
   /**
    * 查询 Token 列表（支持分页、筛选、排序）。
    * (需要管理员权限)

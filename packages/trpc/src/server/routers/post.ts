@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -23,7 +23,7 @@ import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 /**
  * 文章相关的 tRPC 路由。
  */
-export const postRouter = router({
+export const postRouter = createTRPCRouter({
   /**
    * 查询文章列表（支持分页、多种筛选、排序和关联数据加载）。
    * @param {PostListQuerySchema} input - 查询参数。

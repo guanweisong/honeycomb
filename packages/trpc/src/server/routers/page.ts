@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -22,7 +22,7 @@ import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 /**
  * 独立页面相关的 tRPC 路由。
  */
-export const pageRouter = router({
+export const pageRouter = createTRPCRouter({
   /**
    * 查询独立页面列表（支持分页、筛选、排序）。
    * @param {PageListQuerySchema} input - 查询参数。

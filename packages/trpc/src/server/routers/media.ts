@@ -1,4 +1,7 @@
-import { protectedProcedure, router } from "@honeycomb/trpc/server/core";
+import {
+  protectedProcedure,
+  createTRPCRouter,
+} from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -20,7 +23,7 @@ import { UserLevel } from "@honeycomb/types/user/user.level";
 /**
  * 媒体文件相关的 tRPC 路由。
  */
-export const mediaRouter = router({
+export const mediaRouter = createTRPCRouter({
   /**
    * 查询媒体文件列表（支持分页、筛选、排序）。
    * (需要任意等级的登录权限)

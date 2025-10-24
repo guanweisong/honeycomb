@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
 import * as schema from "@honeycomb/db/schema";
@@ -11,7 +11,7 @@ import { UserLevel } from "@honeycomb/types/user/user.level";
 /**
  * 网站设置相关的 tRPC 路由。
  */
-export const settingRouter = router({
+export const settingRouter = createTRPCRouter({
   /**
    * 获取网站的全局设置。
    * @returns {Promise<object>} 返回一个包含所有设置的对象。

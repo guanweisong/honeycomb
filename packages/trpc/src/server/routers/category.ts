@@ -1,7 +1,7 @@
 import {
   protectedProcedure,
   publicProcedure,
-  router,
+  createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
 import {
   buildDrizzleWhere,
@@ -19,7 +19,7 @@ import { UserLevel } from "@honeycomb/types/user/user.level";
 /**
  * 分类相关的 tRPC 路由。
  */
-export const categoryRouter = router({
+export const categoryRouter = createTRPCRouter({
   /**
    * 查询分类列表（支持分页、筛选、排序和树状结构）。
    * @param {CategoryListQuerySchema} input - 查询参数，包括分页、排序和筛选条件。

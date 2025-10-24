@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "@honeycomb/trpc/server/core";
+import { publicProcedure, createTRPCRouter } from "@honeycomb/trpc/server/core";
 import { z } from "zod";
 import { db } from "@honeycomb/db/db";
 import crypto from "node:crypto";
@@ -11,7 +11,7 @@ import { TRPCError } from "@trpc/server";
 /**
  * 认证相关的 tRPC 路由。
  */
-export const authRouter = router({
+export const authRouter = createTRPCRouter({
   /**
    * 获取当前登录用户信息。
    * @returns {User | null} 如果用户已登录，则返回用户信息；否则返回 null。
@@ -55,9 +55,7 @@ export const authRouter = router({
     }
 
     const token = crypto.randomUUID();
-    await db
-      .insert(schema.token)
-      .values({ content: token, userId: user.id } as any);
+    await db.insert(schema.token).values({ content: token, userId: user.id });
 
     return { token };
   }),

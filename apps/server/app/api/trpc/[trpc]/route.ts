@@ -1,4 +1,4 @@
-import { appRouter } from "@honeycomb/trpc/server";
+import { appRouter } from "@honeycomb/trpc/server/appRouter";
 import { createContext } from "@honeycomb/trpc/server/context";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 

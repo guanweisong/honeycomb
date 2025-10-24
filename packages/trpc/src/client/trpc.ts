@@ -1,6 +1,6 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
-import type { AppRouter } from "../server";
+import type { AppRouter } from "../server/appRouter";
 import superjson from "superjson";
 import { env } from "@honeycomb/env/index";
 
