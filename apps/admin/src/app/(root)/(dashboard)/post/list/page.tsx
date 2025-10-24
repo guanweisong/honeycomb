@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
-import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 
@@ -22,9 +22,9 @@ import { keepPreviousData } from "@tanstack/react-query";
 const PostList = () => {
   /**
    * 存储用户在表格中选中的行。
-   * 类型为 `PostEntity` 数组。
+   * 类型为 `PostListItemEntity` 数组。
    */
-  const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
+  const [selectedRows, setSelectedRows] = useState<PostListItemEntity[]>([]);
   /**
    * 存储文章列表的查询参数。
    * 当这些参数变化时，会触发文章列表的重新加载。
@@ -76,7 +76,7 @@ const PostList = () => {
 
   return (
     <>
-      <DataTable<PostEntity, PageListQueryInput>
+      <DataTable<PostListItemEntity, PageListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

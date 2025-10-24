@@ -10,10 +10,7 @@ import { MediaListQuerySchema } from "@honeycomb/validation/media/schemas/media.
 import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.schema";
 import * as schema from "@honeycomb/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
-import {
-  MediaEntity,
-  MediaInsertSchema,
-} from "@honeycomb/validation/media/schemas/media.insert.schema";
+import { MediaInsertSchema } from "@honeycomb/validation/media/schemas/media.insert.schema";
 import dayjs from "dayjs";
 import S3 from "@honeycomb/trpc/server/libs/S3";
 import sizeOf from "image-size";
@@ -76,17 +73,9 @@ export const mediaRouter = createTRPCRouter({
   upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const data: Partial<MediaEntity> = {
-        name: input.name,
-        size: input.size,
-        type: input.type,
-      };
-
-      const keyContent = dayjs().format("YYYY/MM/DD/HHmmssSSS");
-      const filenameArray = input.name!.split(".");
-      const keySuffix = filenameArray[filenameArray.length - 1];
-      const key = `${keyContent}.${keySuffix}`;
       const fileBuffer = Buffer.from(input.base64, "base64");
+      const ext = input.name!.split(".").pop();
+      const key = `${dayjs().format("YYYY/MM/DD/HHmmssSSS")}.${ext}`;
 
       const url = await S3.putObject({
         Key: key,
@@ -94,20 +83,36 @@ export const mediaRouter = createTRPCRouter({
         ContentType: input.type,
       });
 
+      const data: InferInsertModel<typeof schema.media> = {
+        name: input.name,
+        size: input.size,
+        type: input.type,
+        key,
+        url,
+      };
+
+      // ✅ 图片类型额外注入元数据
       if (input.type?.startsWith("image")) {
-        const dimensions = sizeOf(fileBuffer);
-        data.width = dimensions.width;
-        data.height = dimensions.height;
-        const color = await getColor(url);
-        data.color = `rgb(${color.join(",")})`;
+        try {
+          const dim = sizeOf(fileBuffer);
+          data.width = dim.width ?? null;
+          data.height = dim.height ?? null;
+        } catch (err) {
+          console.warn("Failed to get image size", err);
+        }
+
+        try {
+          const color = await getColor(url);
+          data.color = `rgb(${color.join(",")})`;
+        } catch (err) {
+          console.warn("Failed to get image main color", err);
+        }
       }
 
-      data.url = url;
-      data.key = key;
-
+      // ✅ 强类型插入 + 自动返回 select 类型
       const [result] = await ctx.db
         .insert(schema.media)
-        .values(data as InferInsertModel<typeof schema.media>)
+        .values(data satisfies InferInsertModel<typeof schema.media>)
         .returning();
 
       return result;

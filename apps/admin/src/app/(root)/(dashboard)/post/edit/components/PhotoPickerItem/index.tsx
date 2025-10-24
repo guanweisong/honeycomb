@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@honeycomb/ui/components/button";
-import type { MediaReadOnly, PostEntity } from "../../../types/post.entity";
 import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 import React from "react";
+import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
 /**
  * 图片选择器项组件的属性接口。
@@ -14,7 +14,7 @@ export interface PhotoPickerItemProps {
   /**
    * 文章详情数据，用于显示当前封面图片。
    */
-  detail?: PostEntity;
+  detail?: PostDetailEntity;
   /**
    * 图片选择器项的标题。
    */
@@ -41,7 +41,7 @@ export interface PhotoPickerItemProps {
  */
 const PhotoPickerItem = (props: PhotoPickerItemProps) => {
   const { detail, title, size, handlePhotoClear, openPhotoPicker } = props;
-  const mediaObj = detail?.["cover"] as MediaReadOnly;
+  const mediaObj = detail?.["cover"];
   const { control } = useFormContext();
 
   return (

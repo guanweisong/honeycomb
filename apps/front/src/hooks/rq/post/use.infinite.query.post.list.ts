@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@honeycomb/trpc/client/trpc";
-import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
 /**
@@ -10,7 +10,7 @@ type PostIndexOutput = {
   /**
    * 文章实体列表。
    */
-  list: PostEntity[];
+  list: PostListItemEntity[];
   /**
    * 文章总数。
    */
@@ -34,6 +34,7 @@ const getPostList = async (
 /**
  * 用于无限滚动加载文章列表的 React Query Hook。
  * @param {PostListQueryInput} queryParams - 查询参数。
+ * @param initialData
  * @returns {UseInfiniteQueryResult<PostIndexOutput, Error>} 无限查询结果。
  */
 export default function useInfiniteQueryPostList(

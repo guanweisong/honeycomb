@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Badge } from "@honeycomb/ui/components/badge";
-import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { postStatusOptions } from "@honeycomb/types/post/post.status";
 import { postTypeOptions } from "@honeycomb/types/post/post.type";
 
@@ -11,7 +11,7 @@ import { postTypeOptions } from "@honeycomb/types/post/post.type";
  * 文章列表的表格列定义。
  * 定义了文章管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
  */
-export const postListTableColumns: ColumnDef<PostEntity>[] = [
+export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
   {
     accessorKey: "title",
     header: "文章名称",

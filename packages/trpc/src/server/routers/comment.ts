@@ -25,14 +25,10 @@ import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMes
 import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
 import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
-import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
-import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { UserLevel } from "@honeycomb/types/user/user.level";
-import { SettingEntity } from "@honeycomb/trpc/server/types/setting.entity";
-import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
 /**
- * 评论相关的 tRPC 路由。
+ commentRouter * 评论相关的 tRPC 路由。
  */
 export const commentRouter = createTRPCRouter({
   /**
@@ -85,13 +81,13 @@ export const commentRouter = createTRPCRouter({
               .select()
               .from(schema.post)
               .where(inArray(schema.post.id, postIds))
-          : Promise.resolve([] as PostEntity[]),
+          : Promise.resolve([]),
         pageIds.length
           ? ctx.db
               .select()
               .from(schema.page)
               .where(inArray(schema.page.id, pageIds))
-          : Promise.resolve([] as PageEntity[]),
+          : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
       const pageMap = Object.fromEntries(pages.map((p) => [p.id, p]));
@@ -99,6 +95,7 @@ export const commentRouter = createTRPCRouter({
         ...c,
         post: c.postId ? (postMap[c.postId] ?? null) : null,
         page: c.pageId ? (pageMap[c.pageId] ?? null) : null,
+        custom: c.customId ? (postMap[c.customId] ?? null) : null,
       }));
 
       return { list: listWithRefs, total };
@@ -231,8 +228,9 @@ export const commentRouter = createTRPCRouter({
           to: process.env.ADMIN_EMAIL!,
           subject: `[${siteNameZh}]有一条新的评论`,
           react: AdminCommentEmailMessage({
-            currentComment: currentCommentWithCustom as CommentEntity,
-            setting: setting as SettingEntity,
+            // @ts-ignore
+            currentComment: currentCommentWithCustom,
+            setting: setting,
           }),
         })
         .then((e) => {
@@ -267,9 +265,11 @@ export const commentRouter = createTRPCRouter({
               to: parentComment.email as string,
               subject: `您在[${siteNameZh}]的评论有新的回复`,
               react: ReplyCommentEmailMessage({
-                currentComment: currentCommentWithCustom as CommentEntity,
-                setting: setting as SettingEntity,
-                parentComment: parentCommentWithCustom as CommentEntity,
+                // @ts-ignore
+                currentComment: currentCommentWithCustom,
+                setting: setting,
+                // @ts-ignore
+                parentComment: parentCommentWithCustom,
               }),
             })
             .then((e) => {

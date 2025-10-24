@@ -1,5 +1,5 @@
 import { inferProcedureOutput } from "@trpc/server";
-import { appRouter } from "@honeycomb/trpc/server/appRouter";
+import { AppRouter } from "@honeycomb/trpc/server/appRouter";
 
 export type CommentResponse = inferProcedureOutput<
   AppRouter["comment"]["index"]

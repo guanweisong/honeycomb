@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
 import { CommentStatus } from "@honeycomb/types/comment/comment.status";
-import type { CommentEntity } from "./types/comment.entity";
 import { Trash } from "lucide-react";
 import { Dialog } from "@honeycomb/ui/extended/Dialog";
 import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
@@ -14,6 +13,7 @@ import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/co
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { TagListQueryInput } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
 
 /**
  * 评论管理页面。

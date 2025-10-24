@@ -1,6 +1,10 @@
 import { inferProcedureOutput } from "@trpc/server";
-import { appRouter } from "@honeycomb/trpc/server/appRouter";
+import { AppRouter } from "@honeycomb/trpc/server/appRouter";
 
-export type PostEntity = inferProcedureOutput<
+export type PostListItemEntity = inferProcedureOutput<
   AppRouter["post"]["index"]
 >["list"][number];
+
+export type PostDetailEntity = inferProcedureOutput<
+  AppRouter["post"]["detail"]
+>;

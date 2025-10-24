@@ -17,7 +17,6 @@ import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { UserLevel } from "@honeycomb/types/user/user.level";
-import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -126,13 +125,12 @@ export const pageRouter = createTRPCRouter({
       const imageUrls = getAllImageLinkFormMarkdown(
         item?.content?.zh,
       ) as string[];
-      let imagesInContent: MediaEntity[] = [];
-      if (imageUrls.length) {
-        imagesInContent = await ctx.db
-          .select()
-          .from(schema.media)
-          .where(inArray(schema.media.url, imageUrls));
-      }
+      const imagesInContent = imageUrls.length
+        ? await ctx.db
+            .select()
+            .from(schema.media)
+            .where(inArray(schema.media.url, imageUrls))
+        : [];
 
       return { ...item, author, imagesInContent };
     }),

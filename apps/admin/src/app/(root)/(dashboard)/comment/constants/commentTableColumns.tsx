@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
 import { commentStatusOptions } from "@honeycomb/types/comment/comment.status";
-import { CommentEntity } from "@honeycomb/validation/comment/schemas/comment.entity.schema";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
 
 /**
  * 评论列表的表格列定义。

@@ -12,7 +12,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { Loader } from "lucide-react";
 import { cn } from "@honeycomb/ui/lib/utils";
-import { PostEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PostType, PostTypeName } from "@honeycomb/types/post/post.type";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";
@@ -24,7 +24,7 @@ type PostIndexOutput = {
   /**
    * 文章实体列表。
    */
-  list: PostEntity[];
+  list: PostListItemEntity[];
   /**
    * 文章总数。
    */
@@ -88,10 +88,10 @@ export default function PostList(props: PostListProps) {
   /**
    * 渲染文章列表中的单个卡片。
    * 根据文章类型显示不同的布局和内容。
-   * @param {PostEntity} item - 文章实体。
+   * @param {PostListItemEntity} item - 文章实体。
    * @returns {JSX.Element} 文章卡片。
    */
-  const renderCard = (item: PostEntity) => {
+  const renderCard = (item: PostListItemEntity) => {
     return (
       <div
         className="mt-6 first:mt-2 lg:flex bg-auto-back-gray/60"
