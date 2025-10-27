@@ -45,7 +45,7 @@ export const statisticRouter = createTRPCRouter({
       const [postCountResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.post)
-        .where(eq(schema.post.type, postArray[i] as any));
+        .where(eq(schema.post.type, postArray[i]));
       const count = Number(postCountResult?.count) || 0;
       result.postType.push({ item: postArray[i], count });
     }
@@ -57,7 +57,7 @@ export const statisticRouter = createTRPCRouter({
       const [userCountResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.user)
-        .where(eq(schema.user.level, userArray[i] as any));
+        .where(eq(schema.user.level, userArray[i]));
       const count = Number(userCountResult?.count) || 0;
       result.userType.push({ item: userArray[i], count });
     }
@@ -69,7 +69,7 @@ export const statisticRouter = createTRPCRouter({
       const [commentCountResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.comment)
-        .where(eq(schema.comment.status, commentArray[i] as any));
+        .where(eq(schema.comment.status, commentArray[i]));
       const count = Number(commentCountResult?.count) || 0;
       result.commentStatus.push({ item: commentArray[i], count });
     }
@@ -83,7 +83,7 @@ export const statisticRouter = createTRPCRouter({
         .from(schema.post)
         .where(eq(schema.post.authorId, userList[i].id));
       const count = Number(postCountResult?.count) || 0;
-      result.userPost.push({ item: userList[i].name as any, count });
+      result.userPost.push({ item: userList[i].name, count });
     }
 
     return result;

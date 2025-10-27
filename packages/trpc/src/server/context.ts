@@ -30,16 +30,16 @@ interface CreateContextOptions {
  * 7. 返回一个包含用户核心信息（id, level, name）的对象。
  */
 async function getUserFromRequest(req?: Request): Promise<User | null> {
-  if (!req) return null as any;
+  if (!req) return null;
   const token = req.headers.get("x-auth-token");
-  if (!token) return null as any;
+  if (!token) return null;
 
   const tokenInfo = await db
     .select()
     .from(schema.token)
     .where(eq(schema.token.content, token))
     .limit(1);
-  if (!tokenInfo.length) return null as any;
+  if (!tokenInfo.length) return null;
 
   const users = await db
     .select()
@@ -47,7 +47,7 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
     .where(eq(schema.user.id, tokenInfo[0].userId!))
     .limit(1);
   if (!users.length) return null;
-  const u = users[0] as any;
+  const u = users[0];
   return { id: u.id, level: u.level, name: u.name } as User;
 }
 

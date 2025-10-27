@@ -2,7 +2,10 @@ import {
   protectedProcedure,
   createTRPCRouter,
 } from "@honeycomb/trpc/server/core";
-import { buildDrizzleOrderBy } from "@honeycomb/trpc/server/libs/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@honeycomb/trpc/server/libs/tools";
 import { TokenListQuerySchema } from "@honeycomb/validation/token/schemas/token.list.query.schema";
 import * as schema from "@honeycomb/db/schema";
 import { sql } from "drizzle-orm";
@@ -21,8 +24,8 @@ export const tokenRouter = createTRPCRouter({
   index: protectedProcedure([UserLevel.ADMIN])
     .input(TokenListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input as any;
-      const where = rest;
+      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
+      const where = buildDrizzleWhere(schema.token, rest, []);
 
       // 构建排序条件
       const orderByClause = buildDrizzleOrderBy(
@@ -37,7 +40,7 @@ export const tokenRouter = createTRPCRouter({
         .select()
         .from(schema.token)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

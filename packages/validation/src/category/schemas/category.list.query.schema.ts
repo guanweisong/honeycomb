@@ -12,6 +12,7 @@ export const CategoryListQuerySchema = PaginationQuerySchema.extend({
   title: CategoryUpdateSchema.shape.title,
   path: CategoryUpdateSchema.shape.path,
   status: CategoryUpdateSchema.shape.status,
+  id: CategoryUpdateSchema.shape.id,
 }).partial();
 
 /**

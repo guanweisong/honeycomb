@@ -31,7 +31,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author = row.getValue("author") as any;
+      const author = row.getValue("author");
       return author?.name ?? "-";
     },
   },

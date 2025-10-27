@@ -35,8 +35,15 @@ export const categoryRouter = createTRPCRouter({
   index: publicProcedure
     .input(CategoryListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { id, page, limit, sortField, sortOrder, title, ...rest } =
-        input as any;
+      const {
+        id,
+        page = 1,
+        limit = 10,
+        sortField,
+        sortOrder,
+        title,
+        ...rest
+      } = input;
       const where = buildDrizzleWhere(
         schema.category,
         { ...rest, title },
@@ -57,7 +64,7 @@ export const categoryRouter = createTRPCRouter({
         .select()
         .from(schema.category)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

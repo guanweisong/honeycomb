@@ -27,7 +27,14 @@ export const tagRouter = createTRPCRouter({
   index: publicProcedure
     .input(TagListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, name, ...rest } = input as any;
+      const {
+        page = 1,
+        limit = 10,
+        sortField,
+        sortOrder,
+        name,
+        ...rest
+      } = input;
       const where = buildDrizzleWhere(
         schema.tag,
         { ...rest, name },
@@ -47,7 +54,7 @@ export const tagRouter = createTRPCRouter({
         .select()
         .from(schema.tag)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

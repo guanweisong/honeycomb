@@ -8,21 +8,25 @@ class Tools {
   /**
    * 将一个扁平的数组（通常是分类列表）转换为具有层级关系的树状结构。
    *
-   * @param {any[]} arr - 包含 `id` 和 `parent` 字段的原始扁平数组。
-   * @param {string} id - 起始的父节点 ID。如果为 `undefined`，则从根节点（`parent` 为 `null`）开始。
-   * @returns {any[]} 返回一个根据父子关系排序后的新数组，并为每个节点添加了 `deepPath` 属性表示其深度。
+   * @param arr - 包含 `id` 和 `parent` 字段的原始扁平数组。
+   * @param id - 起始的父节点 ID。如果为 `undefined`，则从根节点（`parent` 为 `null`）开始。
+   * @returns 返回一个根据父子关系排序后的新数组，并为每个节点添加了 `deepPath` 属性表示其深度。
    */
-  static sonsTree(arr: any, id: string) {
-    const temp: any[] = [];
+  static sonsTree<T extends { id: string; parent: string | null }>(
+    arr: T[],
+    id?: string,
+  ): (T & { deepPath: number })[] {
+    const temp: (T & { deepPath: number })[] = [];
     let lev = 0;
-    const forFn = (arr: any, id: string, lev: number) => {
+    const forFn = (arr: T[], id: string | undefined, lev: number): void => {
       for (const value of arr) {
         if (
           (value.parent === null && id === undefined) ||
           value.parent?.toString() === id
         ) {
-          value.deepPath = lev;
-          temp.push(value);
+          const nodeWithValue = value as T & { deepPath: number };
+          nodeWithValue.deepPath = lev;
+          temp.push(nodeWithValue);
           forFn(arr, value.id, lev + 1);
         }
       }
@@ -68,7 +72,7 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
     const isEmptyArray = Array.isArray(value) && value.length === 0;
     if (value === "" || isEmptyArray) continue;
 
-    const col = (table as any)[key];
+    const col = table[key];
     if (!col) continue;
 
     if (queryArray.includes(key)) {
@@ -85,7 +89,7 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
     for (const k in multiLangQueries) {
       const v = multiLangQueries[k];
       if (typeof v === "undefined" || v === "") continue;
-      const col = (table as any)[k];
+      const col = table[k];
       if (!col) continue;
       clauses.push(like(col, `%${v}%`));
     }
@@ -93,7 +97,7 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
 
   if (!clauses.length) return undefined;
   if (clauses.length === 1) return clauses[0] as unknown as SQL;
-  return and(...(clauses as any));
+  return and(...clauses);
 }
 
 /**

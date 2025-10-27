@@ -40,7 +40,7 @@ export const commentRouter = createTRPCRouter({
   index: publicProcedure
     .input(CommentListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input;
+      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
       const where = buildDrizzleWhere(schema.comment, rest, ["status"]);
 
       // 构建排序条件

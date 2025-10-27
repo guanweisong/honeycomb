@@ -50,7 +50,7 @@ const PostDetail = () => {
   const [modalProps, setModalProps] = useState<ModalProps>();
   const [loading, setLoading] = useState(false);
 
-  const id = searchParams.get("id");
+  const id = searchParams.get("id") as string;
 
   const form = useForm({
     resolver: zodResolver(id ? PostUpdateSchema : PostInsertSchema),
@@ -124,7 +124,7 @@ const PostDetail = () => {
   const handleFormSubmit = (
     status: PostStatus,
     actionType: "create" | "update",
-  ) => {
+  ): Promise<void> => {
     return form.handleSubmit(
       async (values) => {
         const data = normalizeFormData(values, status);
@@ -133,11 +133,11 @@ const PostDetail = () => {
         setLoading(true);
         try {
           if (actionType === "create") {
-            const res = await createPost.mutateAsync(data as any);
+            const res = await createPost.mutateAsync(data);
             toast.success("添加成功");
-            router.push(`/post/edit?id=${(res as any).id}`);
+            router.push(`/post/edit?id=${res.id}`);
           } else if (actionType === "update" && detail?.id) {
-            await updatePost.mutateAsync({ id: detail.id, data: data as any });
+            await updatePost.mutateAsync({ ...data, id: detail.id });
             toast.success("更新成功");
             refetch();
           }
@@ -339,7 +339,7 @@ const PostDetail = () => {
                 name="categoryId"
                 type="select"
                 options={category?.list?.map((item) => ({
-                  label: creatCategoryTitleByDepth(item.title.zh, item),
+                  label: creatCategoryTitleByDepth(item.title?.zh, item),
                   value: item.id ?? "0",
                 }))}
               />

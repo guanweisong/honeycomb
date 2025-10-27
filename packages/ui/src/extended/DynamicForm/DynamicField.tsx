@@ -251,7 +251,7 @@ export function DynamicField(field: FieldConfig) {
             <TabsContent key={lang} value={lang}>
               <FormField
                 control={form.control}
-                name={`${field.name}.${lang}` as any}
+                name={`${field.name}.${lang}`}
                 render={({ field: controllerField }) => (
                   <>
                     <FormControl>
@@ -276,11 +276,11 @@ export function DynamicField(field: FieldConfig) {
       {field.label && <FormLabel>{field.label}</FormLabel>}
       <FormField
         control={form.control}
-        name={field.name as any}
+        name={field.name}
         render={({ field: controllerField }) => (
           <>
             <FormControl>
-              {renderSingleField(field.name as string, controllerField)}
+              {renderSingleField(field.name, controllerField)}
             </FormControl>
             <FormMessage />
           </>

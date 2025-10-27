@@ -53,7 +53,7 @@ export const postRouter = createTRPCRouter({
         tagName,
         userName,
         ...rest
-      } = input as any;
+      } = input;
 
       let where = buildDrizzleWhere(
         schema.post,
@@ -201,7 +201,6 @@ export const postRouter = createTRPCRouter({
    */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .output(z.any())
     .query(async ({ input, ctx }) => {
       const [item] = await ctx.db
         .select()
@@ -264,13 +263,12 @@ export const postRouter = createTRPCRouter({
       const imageUrls = getAllImageLinkFormMarkdown(
         item?.content?.zh,
       ) as string[];
-      let imagesInContent: MediaEntity[] = [];
-      if (imageUrls.length) {
-        imagesInContent = await ctx.db
-          .select()
-          .from(schema.media)
-          .where(inArray(schema.media.url, imageUrls));
-      }
+      const imagesInContent = imageUrls.length
+        ? await ctx.db
+            .select()
+            .from(schema.media)
+            .where(inArray(schema.media.url, imageUrls))
+        : [];
 
       return {
         ...item,

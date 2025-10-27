@@ -25,9 +25,9 @@ export const userRouter = createTRPCRouter({
    * @returns {Promise<{ list: any[], total: number }>} 返回一个包含用户列表和总记录数的对象。
    */
   index: publicProcedure
-    .input(UserListQuerySchema.default({}))
+    .input(UserListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input as any;
+      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
       const where = buildDrizzleWhere(schema.user, rest, ["status", "level"]);
 
       // 构建排序条件
@@ -43,7 +43,7 @@ export const userRouter = createTRPCRouter({
         .select()
         .from(schema.user)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

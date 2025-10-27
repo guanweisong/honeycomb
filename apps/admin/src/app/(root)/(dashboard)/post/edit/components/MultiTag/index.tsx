@@ -123,7 +123,7 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
       try {
         setSearchParams({ name: value });
         const { data } = await listQuery.refetch();
-        setOptions((data as any)?.list ?? []);
+        setOptions(data?.list ?? []);
       } finally {
         setLoading(false);
       }

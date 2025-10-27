@@ -90,12 +90,11 @@ const Page = () => {
           })
           .finally(() => setLoading(false));
       } else {
-        // @ts-ignore
         return createPage
-          .mutateAsync(data as any)
+          .mutateAsync(data)
           .then((result) => {
             toast.success("添加成功");
-            router.push(`/page/edit?id=${(result as any).id}`);
+            router.push(`/page/edit?id=${result.id}`);
           })
           .finally(() => setLoading(false));
       }

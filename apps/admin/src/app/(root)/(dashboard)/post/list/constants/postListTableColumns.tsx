@@ -48,7 +48,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染分类名称的单元格。
        * 显示多语言分类名称，如果不存在则显示 "-"。
        */
-      const category = row.getValue("category") as any;
+      const category = row.getValue("category");
       return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
   },
@@ -75,7 +75,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author = row.getValue("author") as any;
+      const author = row.getValue("author");
       return author?.name ?? "-";
     },
   },

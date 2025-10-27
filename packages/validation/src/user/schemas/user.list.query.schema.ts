@@ -1,6 +1,6 @@
-import { createUpdateSchema } from "drizzle-zod";
-import * as schema from "@honeycomb/db/schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
+import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
 
 /**
  * 获取用户列表时的查询参数验证 schema。
@@ -10,14 +10,10 @@ import { CleanZod } from "@honeycomb/validation/clean.zod";
  *    这允许客户端通过提供多个状态或等级值来筛选用户，
  *    例如 `?status=normal&status=disabled`。
  */
-export const UserListQuerySchema = createUpdateSchema(schema.user)
-  .pick({
-    name: true,
-    email: true,
-    status: true,
-    level: true,
-  })
-  .partial();
+export const UserListQuerySchema = PaginationQuerySchema.extend({
+  status: UserInsertSchema.shape.status,
+  level: UserInsertSchema.shape.level,
+});
 
 /**
  * 用户列表查询参数的 TypeScript 类型。

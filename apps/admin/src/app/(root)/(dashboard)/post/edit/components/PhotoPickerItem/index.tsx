@@ -58,7 +58,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
               <>
                 <div className="mb-2 text-center bg-gray-300">
                   <img
-                    src={mediaObj.url}
+                    src={mediaObj.url as string}
                     className="max-w-full max-h-full block"
                   />
                 </div>

@@ -34,7 +34,7 @@ export const mediaRouter = createTRPCRouter({
   ])
     .input(MediaListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input as any;
+      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
       const where = buildDrizzleWhere(schema.media, rest, []);
 
       // 构建排序条件
@@ -50,7 +50,7 @@ export const mediaRouter = createTRPCRouter({
         .select()
         .from(schema.media)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

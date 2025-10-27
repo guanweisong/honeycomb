@@ -23,7 +23,7 @@ export const getRelationTags = async (
 ): Promise<RelationTag[]> => {
   if (ids.length === 0) return [];
   return db
-    .select({ id: schema.tag.id, name: schema.tag.name as any })
+    .select({ id: schema.tag.id, name: schema.tag.name })
     .from(schema.tag)
     .where(inArray(schema.tag.id, ids));
 };

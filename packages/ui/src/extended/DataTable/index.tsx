@@ -96,7 +96,7 @@ export function DataTable<TData, TRequest>(
   });
 
   React.useEffect(() => {
-    let params = { ...pagination } as any;
+    let params = { ...pagination };
     if (sorting?.length) {
       params.sortField = sorting[0].id;
       params.sortOrder = sorting[0].desc ? "desc" : "asc";

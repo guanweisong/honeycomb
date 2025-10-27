@@ -26,7 +26,7 @@ export const publicProcedure = t.procedure;
 export const protectedProcedure = (levels: string[]) =>
   t.procedure.use(
     t.middleware(({ ctx, next }) => {
-      const user = ctx.user as any;
+      const user = ctx.user;
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
       if (!levels.includes(user.level)) {
         throw new TRPCError({ code: "FORBIDDEN" });

@@ -27,13 +27,13 @@ export const linkRouter = createTRPCRouter({
   index: publicProcedure
     .input(LinkListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, ...rest } = input as any;
-      const searchText = rest.title || rest.description;
+      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
+      const searchText = rest.name || rest.description;
       const where = buildDrizzleWhere(
         schema.link,
-        { ...rest, title: searchText },
+        { ...rest, name: searchText },
         ["status"],
-        { title: searchText },
+        { name: searchText },
       );
 
       // 构建排序条件
@@ -49,7 +49,7 @@ export const linkRouter = createTRPCRouter({
         .select()
         .from(schema.link)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 

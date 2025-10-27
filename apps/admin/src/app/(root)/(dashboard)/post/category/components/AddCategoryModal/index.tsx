@@ -77,7 +77,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   const updateCategory = trpc.category.update.useMutation();
 
   useEffect(() => {
-    if (categoryQuery.data) setList((categoryQuery.data as any).list ?? []);
+    if (categoryQuery.data) setList(categoryQuery.data.list ?? []);
   }, [modalProps?.open, categoryQuery.data]);
 
   /**

@@ -15,9 +15,9 @@ import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { useEffect, useState } from "react";
 import { MenuType, MenuTypeName } from "@honeycomb/types/menu/menu.type";
-import { MenuItem } from "@honeycomb/types/menu/menu.item";
 import { CategoryEntity } from "@honeycomb/trpc/server/types/category.entity";
 import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
+import { MenuEntityTree } from "@/types/menu.entity.tree";
 
 /**
  * 菜单管理页面。
@@ -48,7 +48,7 @@ const Menu = () => {
   /**
    * 存储当前已选中的菜单项列表。
    */
-  const [checkedList, setCheckedList] = useState<MenuItem[]>([]);
+  const [checkedList, setCheckedList] = useState<MenuEntityTree[]>([]);
 
   /**
    * 副作用钩子，用于在 `checkedData` 变化时更新 `checkedList` 状态。
@@ -89,7 +89,7 @@ const Menu = () => {
    * @param {boolean} checked - 是否选中。
    * @param {MenuType} type - 菜单项的类型（例如 `CATEGORY` 或 `PAGE`）。
    */
-  const onCheck = (item: MenuItem, checked: boolean, type: MenuType) => {
+  const onCheck = (item: MenuEntityTree, checked: boolean, type: MenuType) => {
     if (checked) {
       setCheckedList([...checkedList, { ...item, parent: "0", type }]);
     } else {
@@ -148,14 +148,14 @@ const Menu = () => {
    * 将拖拽后的树形数据扁平化，并更新 `checkedList`，以反映新的排序和父子关系。
    * @param {MenuItem[]} treeData - 拖拽后的树形数据。
    */
-  const onDragEnd = (treeData: MenuItem[]) => {
+  const onDragEnd = (treeData: MenuEntityTree[]) => {
     const listData = getFlatDataFromTree({
       treeData,
-      getNodeKey: ({ node }: { node: MenuItem }) => (node as MenuItem).id,
+      getNodeKey: ({ node }: { node: MenuEntityTree }) => node.id,
       ignoreCollapsed: false,
-    }) as { node: MenuItem; parentNode: MenuItem | null }[];
+    }) as { node: MenuEntityTree; parentNode: MenuEntityTree | null }[];
 
-    const list: MenuItem[] = listData.map(({ node, parentNode }) => ({
+    const list: MenuEntityTree[] = listData.map(({ node, parentNode }) => ({
       ...node,
       parent: parentNode?.id ?? "0",
       expanded: !!node.children,
@@ -202,20 +202,20 @@ const Menu = () => {
    * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
-    const data: MenuItem[] = [];
+    const data: MenuEntityTree[] = [];
     checkedList?.forEach((item, index) => {
       const menu = {
         id: item.id,
         type: item.type,
         power: index,
-      } as MenuItem;
+      } as MenuEntityTree;
       if (item.parent !== "0") {
         menu.parent = item.parent;
       }
       data.push(menu);
     });
     try {
-      await saveAllMenu.mutateAsync(data as any);
+      await saveAllMenu.mutateAsync(data);
       toast.success("更新成功");
       refetch();
     } catch (e) {
@@ -252,7 +252,7 @@ const Menu = () => {
                         }
                         checked={getCheckedStatus(item)}
                         disabled={getDisabledStatus(item)}
-                        label={creatCategoryTitleByDepth(item.title.zh, item)}
+                        label={creatCategoryTitleByDepth(item.title?.zh, item)}
                       />
                     </div>
                   ))}
@@ -278,7 +278,7 @@ const Menu = () => {
                         defaultChecked={getCheckedStatus(item)}
                         // @ts-ignore
                         disabled={getDisabledStatus(item)}
-                        label={item.title.zh}
+                        label={item.title?.zh}
                       />
                     </div>
                   ))}

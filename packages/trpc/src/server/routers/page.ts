@@ -30,8 +30,15 @@ export const pageRouter = createTRPCRouter({
   index: publicProcedure
     .input(PageListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const { page, limit, sortField, sortOrder, title, content, ...rest } =
-        input as any;
+      const {
+        page = 1,
+        limit = 10,
+        sortField,
+        sortOrder,
+        title,
+        content,
+        ...rest
+      } = input;
       const where = buildDrizzleWhere(
         schema.page,
         { ...rest, title, content },
@@ -51,7 +58,7 @@ export const pageRouter = createTRPCRouter({
         .select()
         .from(schema.page)
         .where(where)
-        .orderBy(orderByClause as any)
+        .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
 
