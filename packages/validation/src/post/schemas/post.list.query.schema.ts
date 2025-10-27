@@ -21,10 +21,12 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   categoryId: PostInsertSchema.shape.categoryId.optional(),
   userName: UserInsertSchema.shape.name.optional(),
   tagName: TagInsertSchema.shape.name.optional(),
-}).extend({
-  status: z.array(z.string()).optional(),
-  type: z.array(z.string()).optional(),
-});
+})
+  .extend({
+    status: z.array(z.string()).optional(),
+    type: z.array(z.string()).optional(),
+  })
+  .partial();
 
 /**
  * 文章列表查询参数的 TypeScript 类型。

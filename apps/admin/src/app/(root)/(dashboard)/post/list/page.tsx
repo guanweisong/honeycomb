@@ -9,10 +9,12 @@ import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
 import { DataTable } from "@honeycomb/ui/extended/DataTable";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { PostListQuerySchema } from "@honeycomb/validation/post/schemas/post.list.query.schema";
+import {
+  PostListQueryInput,
+  PostListQuerySchema,
+} from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
-import { PageListQueryInput } from "@honeycomb/validation/page/schemas/page.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 
 /**
@@ -29,7 +31,7 @@ const PostList = () => {
    * 存储文章列表的查询参数。
    * 当这些参数变化时，会触发文章列表的重新加载。
    */
-  const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
+  const [searchParams, setSearchParams] = useState<PostListQueryInput>({});
   const router = useRouter();
 
   // 使用 tRPC hook 获取文章列表数据
@@ -76,7 +78,7 @@ const PostList = () => {
 
   return (
     <>
-      <DataTable<PostListItemEntity, PageListQueryInput>
+      <DataTable<PostListItemEntity, PostListQueryInput>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

@@ -83,7 +83,7 @@ export const statisticRouter = createTRPCRouter({
         .from(schema.post)
         .where(eq(schema.post.authorId, userList[i].id));
       const count = Number(postCountResult?.count) || 0;
-      result.userPost.push({ item: userList[i].name, count });
+      result.userPost.push({ item: userList[i].name!, count });
     }
 
     return result;
