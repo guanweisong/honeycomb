@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@honeycomb/validation/schemas/pagination.query.schema";
 import { CleanZod } from "@honeycomb/validation/clean.zod";
-import { defaultI18nSchema } from "@honeycomb/db/i18nField";
+import { z } from "zod";
 
 /**
  * 获取标签列表时的查询参数验证 schema。
@@ -8,7 +8,7 @@ import { defaultI18nSchema } from "@honeycomb/db/i18nField";
  * 允许通过 'name' 字段对标签列表进行筛选。
  */
 export const TagListQuerySchema = PaginationQuerySchema.extend({
-  name: defaultI18nSchema,
+  name: z.string(),
 }).partial();
 
 /**

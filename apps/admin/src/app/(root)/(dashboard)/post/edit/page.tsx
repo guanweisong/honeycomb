@@ -25,17 +25,13 @@ import { trpc } from "@honeycomb/trpc/client/trpc";
 import { PostStatus } from "@honeycomb/types/post/post.status";
 import { PostType, postTypeOptions } from "@honeycomb/types/post/post.type";
 import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
+import { tagMap } from "@/constants/tagMap";
+import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
 /**
  * 标签类型与对应的表单字段名的映射关系。
  * 用于将多选标签组件返回的标签类型，转换为表单中存储标签ID的字段名。
  */
-const tagMap = {
-  galleryStyles: "galleryStyleIds",
-  movieDirectors: "movieDirectorIds",
-  movieActors: "movieActorIds",
-  movieStyles: "movieStyleIds",
-} as const;
 
 /**
  * 文章创建/编辑页面核心组件。
@@ -49,6 +45,8 @@ const PostDetail = () => {
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [modalProps, setModalProps] = useState<ModalProps>();
   const [loading, setLoading] = useState(false);
+  const [coverPreview, setCoverPreview] =
+    useState<PostDetailEntity["cover"]>(null);
 
   const id = searchParams.get("id") as string;
 
@@ -62,7 +60,9 @@ const PostDetail = () => {
   const type = (form.watch("type") as PostType) ?? PostType.ARTICLE;
 
   const { data: category } = trpc.category.index.useQuery({ limit: 9999 });
-  const { data: detail, refetch } = trpc.post.detail.useQuery({ id });
+  const { data: detail, refetch } = trpc.post.detail.useQuery({
+    id,
+  });
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
 
@@ -70,18 +70,11 @@ const PostDetail = () => {
    * Effect hook: 用于在编辑模式下同步表单数据。
    * 当 `detail` 数据从后端加载完毕后，此 effect 会被触发。
    * 它使用 `form.reset` 方法将获取到的文章数据填充到表单的各个字段中。
-   * 对于标签这类关联数据，它会从对象数组中提取出 ID 数组再进行设置。
    */
   useEffect(() => {
-    if (detail) {
-      form.reset({
-        ...detail,
-        galleryStyleIds: detail.galleryStyles?.map((t) => t.id),
-        movieDirectorIds: detail.movieDirectors?.map((t) => t.id),
-        movieActorIds: detail.movieActors?.map((t) => t.id),
-        movieStyleIds: detail.movieStyles?.map((t) => t.id),
-        coverId: detail.cover?.id,
-      });
+    if (detail && form) {
+      form.reset(detail);
+      setCoverPreview(detail.cover);
     }
   }, [detail, form]);
 
@@ -92,7 +85,7 @@ const PostDetail = () => {
    * @param {PostStatus} status - 文章的状态（如 PUBLISHED, DRAFT）。
    * @returns {any | null} 规范化后的数据，如果验证失败则返回 null。
    */
-  const normalizeFormData = (values: any, status: PostStatus) => {
+  const normalizeFormData = (values: any, status: PostStatus): any | null => {
     const data: any = { ...values, status };
 
     if (
@@ -129,20 +122,30 @@ const PostDetail = () => {
       async (values) => {
         const data = normalizeFormData(values, status);
         if (!data) return;
-
         setLoading(true);
-        try {
-          if (actionType === "create") {
-            const res = await createPost.mutateAsync(data);
-            toast.success("添加成功");
-            router.push(`/post/edit?id=${res.id}`);
-          } else if (actionType === "update" && detail?.id) {
-            await updatePost.mutateAsync({ ...data, id: detail.id });
-            toast.success("更新成功");
-            refetch();
-          }
-        } finally {
-          setLoading(false);
+        switch (actionType) {
+          case "create":
+            createPost
+              .mutateAsync(data)
+              .then((res) => {
+                if (res.id) {
+                  toast.success("添加成功");
+                  router.push(`/post/edit?id=${res.id}`);
+                }
+              })
+              .finally(() => setLoading(false));
+            break;
+          case "update":
+            updatePost
+              .mutateAsync({ ...data, id: detail!.id })
+              .then((res) => {
+                if (res) {
+                  toast.success("更新成功");
+                  refetch();
+                }
+              })
+              .finally(() => setLoading(false));
+            break;
         }
       },
       (errors) => {
@@ -232,9 +235,11 @@ const PostDetail = () => {
    * 包含封面ID、清除封面图片的回调函数、打开图片选择器的回调函数、标题和尺寸提示。
    */
   const photoPickerProps: PhotoPickerItemProps = {
-    coverId: form.watch("coverId"),
-    handlePhotoClear: () =>
-      form.setValue("coverId", undefined, { shouldDirty: true }),
+    cover: coverPreview,
+    handlePhotoClear: () => {
+      form.setValue("coverId", undefined, { shouldDirty: true });
+      setCoverPreview(null);
+    },
     openPhotoPicker: () => setShowPhotoPicker(true),
     title: "封面",
     size: "1920*1080",
@@ -406,6 +411,7 @@ const PostDetail = () => {
         showPhotoPicker={showPhotoPicker}
         handlePhotoPickerOk={(media) => {
           form.setValue("coverId", media.id, { shouldDirty: true });
+          setCoverPreview(media);
           setShowPhotoPicker(false);
         }}
         handlePhotoPickerCancel={() => setShowPhotoPicker(false)}

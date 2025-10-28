@@ -5,6 +5,7 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 import React from "react";
+
 import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
 /**
@@ -12,9 +13,9 @@ import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
  */
 export interface PhotoPickerItemProps {
   /**
-   * 文章详情数据，用于显示当前封面图片。
+   * 封面图片对象，用于显示预览。
    */
-  detail?: PostDetailEntity;
+  cover?: PostDetailEntity["cover"];
   /**
    * 图片选择器项的标题。
    */
@@ -40,8 +41,7 @@ export interface PhotoPickerItemProps {
  * @returns {JSX.Element} 图片选择器项。
  */
 const PhotoPickerItem = (props: PhotoPickerItemProps) => {
-  const { detail, title, size, handlePhotoClear, openPhotoPicker } = props;
-  const mediaObj = detail?.["cover"];
+  const { cover, title, size, handlePhotoClear, openPhotoPicker } = props;
   const { control } = useFormContext();
 
   return (
@@ -51,14 +51,14 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
       </div>
       <FormField
         control={control}
-        name="cover"
+        name="coverId"
         render={() => (
           <>
-            {mediaObj?.id ? (
+            {cover?.id ? (
               <>
                 <div className="mb-2 text-center bg-gray-300">
                   <img
-                    src={mediaObj.url as string}
+                    src={cover.url as string}
                     className="max-w-full max-h-full block"
                   />
                 </div>

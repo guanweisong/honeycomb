@@ -18,7 +18,6 @@ import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@honeycomb/types/user/user.level";
-import { MediaEntity } from "@honeycomb/trpc/server/types/media.entity";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -43,8 +42,8 @@ export const postRouter = createTRPCRouter({
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
       const {
-        page,
-        limit,
+        page = 1,
+        limit = 10,
         sortField,
         sortOrder,
         title,
@@ -163,7 +162,7 @@ export const postRouter = createTRPCRouter({
           ? ctx.db
               .select()
               .from(schema.media)
-              .where(inArray(schema.media.id, mediaIds as any))
+              .where(inArray(schema.media.id, mediaIds))
           : [],
       ]);
       const categoryMap = Object.fromEntries(
@@ -243,15 +242,6 @@ export const postRouter = createTRPCRouter({
           .limit(1);
       }
 
-      let thumbnail = null;
-      if (item.coverId) {
-        [thumbnail] = await ctx.db
-          .select()
-          .from(schema.media)
-          .where(eq(schema.media.id, item.coverId))
-          .limit(1);
-      }
-
       const [movieActors, movieDirectors, movieStyles, galleryStyles] =
         await Promise.all([
           getRelationTags(item?.movieActorIds ?? []),
@@ -275,7 +265,6 @@ export const postRouter = createTRPCRouter({
         category,
         author,
         cover,
-        thumbnail,
         movieActors,
         movieDirectors,
         movieStyles,

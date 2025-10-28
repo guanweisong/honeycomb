@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { JSX, useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Badge } from "@honeycomb/ui/components/badge";
 import { Button } from "@honeycomb/ui/components/button";
@@ -20,19 +20,16 @@ import { X, Loader2, Plus } from "lucide-react";
 import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@honeycomb/trpc/client/trpc";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
+import { tagMap } from "@/constants/tagMap";
 
 /**
  * 多标签选择组件的属性接口。
  */
 export interface MultiTagProps {
   /**
-   * 表单中用于存储标签ID的字段名称。
+   * 表单中用于存储标签的字段名称。
    */
-  name:
-    | "galleryStyleIds"
-    | "movieDirectorIds"
-    | "movieActorIds"
-    | "movieStyleIds";
+  name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles";
   /**
    * 组件的标题，例如 "导演"、"演员" 等。
    */
@@ -45,9 +42,9 @@ export interface MultiTagProps {
  * @param {MultiTagProps} { name, title } - 组件属性。
  * @returns {JSX.Element} 多标签选择器。
  */
-const MultiTag = ({ name, title }: MultiTagProps) => {
+const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
   const { control, setValue, watch } = useFormContext();
-  const selectedIds: string[] = watch(name) ?? [];
+  const selectedTags: any[] = watch(name) ?? [];
 
   /**
    * 搜索输入框的值。
@@ -77,7 +74,20 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
    * 获取标签列表的 tRPC 查询。
    * 用于搜索和展示可选标签。
    */
-  const listQuery = trpc.tag.index.useQuery(searchParams);
+  const { data: searchResult, isFetching: isSearching } =
+    trpc.tag.index.useQuery(searchParams, {
+      enabled: !!searchParams.name,
+    });
+
+  useEffect(() => {
+    setLoading(isSearching);
+  }, [isSearching]);
+
+  useEffect(() => {
+    if (searchResult) {
+      setOptions(searchResult.list ?? []);
+    }
+  }, [searchResult]);
 
   /**
    * 控制添加标签对话框的显示状态。
@@ -91,9 +101,11 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
    * @param {string} id - 要移除的标签ID。
    */
   const removeTag = (id: string) => {
+    const updatedTags = selectedTags.filter((tag) => tag.id !== id);
+    setValue(name, updatedTags, { shouldDirty: true });
     setValue(
-      name,
-      selectedIds.filter((tagId) => tagId !== id),
+      tagMap[name],
+      updatedTags.map((t) => t.id),
       { shouldDirty: true },
     );
   };
@@ -104,8 +116,14 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
    * @param tag - 要添加的标签对象。
    */
   const addTag = (tag: any) => {
-    if (selectedIds.includes(tag.id)) return;
-    setValue(name, [...selectedIds, tag.id], { shouldDirty: true });
+    if (selectedTags.some((t) => t.id === tag.id)) return;
+    const updatedTags = [...selectedTags, tag];
+    setValue(name, updatedTags, { shouldDirty: true });
+    setValue(
+      tagMap[name],
+      updatedTags.map((t) => t.id),
+      { shouldDirty: true },
+    );
     setInput("");
     setOpen(false);
   };
@@ -118,14 +136,12 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
   const handleSearch = (value: string) => {
     setInput(value);
     if (timeout.current) clearTimeout(timeout.current);
-    timeout.current = setTimeout(async () => {
-      setLoading(true);
-      try {
+    timeout.current = setTimeout(() => {
+      if (value) {
         setSearchParams({ name: value });
-        const { data } = await listQuery.refetch();
-        setOptions(data?.list ?? []);
-      } finally {
-        setLoading(false);
+      } else {
+        setOptions([]); // Clear options if search input is empty
+        setSearchParams({});
       }
     }, 300);
   };
@@ -139,25 +155,23 @@ const MultiTag = ({ name, title }: MultiTagProps) => {
         render={() => (
           <>
             <div className="flex flex-wrap gap-2 mb-2">
-              {options
-                .filter((opt) => selectedIds.includes(opt.id))
-                .map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="gap-1 text-sm"
+              {selectedTags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="gap-1 text-sm"
+                >
+                  {tag.name.zh}
+                  <Button
+                    onClick={() => removeTag(tag.id)}
+                    variant="ghost"
+                    size="icon"
+                    className="size-4"
                   >
-                    {tag.name.zh}
-                    <Button
-                      onClick={() => removeTag(tag.id)}
-                      variant="ghost"
-                      size="icon"
-                      className="size-4"
-                    >
-                      <X className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </Badge>
-                ))}
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                </Badge>
+              ))}
             </div>
             <FormMessage />
           </>
