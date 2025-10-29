@@ -12,6 +12,15 @@
       "@honeycomb/trpc/*": [
         "../../packages/trpc/src/*"
       ],
+      "@honeycomb/db/*": [
+        "../../packages/db/src/*"
+      ],
+      "@honeycomb/env/*": [
+        "../../packages/env/*"
+      ],
+      "@honeycomb/types/*": [
+        "../../packages/types/src/*"
+      ],
       "@/*": [
         "*"
       ]
@@ -21,6 +30,18 @@
   "references": [
     {
       "path": "../../packages/validation"
+    },
+    {
+      "path": "../../packages/trpc"
+    },
+    {
+      "path": "../../packages/db"
+    },
+    {
+      "path": "../../packages/env"
+    },
+    {
+      "path": "../../packages/types"
     }
   ],
   "include": [

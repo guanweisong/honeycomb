@@ -16,6 +16,7 @@ const ReplyCommentEmailMessage = (props: ReplyMessageEmailProps) => {
   const previewText = `您在${setting.siteName?.zh}的评论有新的回复`;
 
   const { postTitle, postLink } =
+    // @ts-ignore
     getPostOrPageOrCustomTitleAndLinkFromComment(parentComment);
 
   return (

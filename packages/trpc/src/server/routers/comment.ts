@@ -11,6 +11,7 @@ import { DeleteBatchSchema } from "@honeycomb/validation/schemas/delete.batch.sc
 import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@honeycomb/validation/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@honeycomb/validation/comment/schemas/comment.query.schema";
+// @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
 import { Resend } from "resend";
@@ -230,6 +231,7 @@ export const commentRouter = createTRPCRouter({
           react: AdminCommentEmailMessage({
             // @ts-ignore
             currentComment: currentCommentWithCustom,
+            // @ts-ignore
             setting: setting,
           }),
         })
@@ -267,6 +269,7 @@ export const commentRouter = createTRPCRouter({
               react: ReplyCommentEmailMessage({
                 // @ts-ignore
                 currentComment: currentCommentWithCustom,
+                // @ts-ignore
                 setting: setting,
                 // @ts-ignore
                 parentComment: parentCommentWithCustom,

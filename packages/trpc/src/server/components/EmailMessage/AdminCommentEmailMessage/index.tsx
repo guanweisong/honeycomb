@@ -14,6 +14,7 @@ const AdminCommentEmailMessage = (props: AdminMessageEmailProps) => {
   const { currentComment, setting } = props;
   const previewText = `${setting.siteName?.zh}有一条新的评论`;
   const { postTitle, postLink } =
+    // @ts-ignore
     getPostOrPageOrCustomTitleAndLinkFromComment(currentComment);
 
   return (

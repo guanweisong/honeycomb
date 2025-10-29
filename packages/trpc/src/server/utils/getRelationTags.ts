@@ -18,9 +18,7 @@ export interface RelationTag {
  * @param {string[]} [ids=[]] - 要获取的标签 ID 数组。
  * @returns {Promise<RelationTag[]>} 包含关联标签对象的数组。
  */
-export const getRelationTags = async (
-  ids: string[] = [],
-): Promise<RelationTag[]> => {
+export const getRelationTags = async (ids: string[] = []) => {
   if (ids.length === 0) return [];
   return db
     .select({ id: schema.tag.id, name: schema.tag.name })
