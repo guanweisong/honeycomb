@@ -18,6 +18,7 @@ import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import { getAllImageLinkFormMarkdown } from "@honeycomb/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@honeycomb/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { TRPCError } from "@trpc/server";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -135,11 +136,8 @@ export const postRouter = createTRPCRouter({
       const coverIds = Array.from(
         new Set(list.map((p) => p.coverId).filter(Boolean)),
       );
-      const mediaIds = Array.from(
-        new Set(list.flatMap((p: any) => p.mediaId || [])),
-      ).filter(Boolean);
 
-      const [categories, authors, covers, mediaList] = await Promise.all([
+      const [categories, authors, covers] = await Promise.all([
         categoryIds.length
           ? ctx.db
               .select()
@@ -158,31 +156,19 @@ export const postRouter = createTRPCRouter({
               .from(schema.media)
               .where(inArray(schema.media.id, coverIds as any))
           : Promise.resolve([]),
-        mediaIds.length
-          ? ctx.db
-              .select()
-              .from(schema.media)
-              .where(inArray(schema.media.id, mediaIds))
-          : [],
       ]);
       const categoryMap = Object.fromEntries(
         categories.map((c: any) => [c.id, c]),
       );
       const authorMap = Object.fromEntries(authors.map((u) => [u.id, u]));
       const coverMap = Object.fromEntries(covers.map((m) => [m.id, m]));
-      const mediaMap = Object.fromEntries(mediaList.map((m) => [m.id, m]));
 
-      const mapped = list.map((item: any) => {
-        return {
-          ...item,
-          category: item.categoryId
-            ? (categoryMap[item.categoryId] ?? null)
-            : null,
-          author: item.authorId ? (authorMap[item.authorId] ?? null) : null,
-          cover: item.coverId ? (coverMap[item.coverId] ?? null) : null,
-          media: item.mediaId ? (mediaMap[item.mediaId] ?? null) : null,
-        };
-      });
+      const mapped = list.map((item) => ({
+        ...item,
+        category: item.categoryId ? categoryMap[item.categoryId] : undefined,
+        author: item.authorId ? authorMap[item.authorId] : undefined,
+        cover: item.coverId ? coverMap[item.coverId] : undefined,
+      }));
 
       const [countResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
@@ -207,40 +193,43 @@ export const postRouter = createTRPCRouter({
         .where(eq(schema.post.id, input.id as string))
         .limit(1);
 
-      if (!item) return null;
+      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
       // 获取分类信息
-      let category = null;
-      if (item.categoryId) {
-        [category] = await ctx.db
-          .select()
-          .from(schema.category)
-          .where(eq(schema.category.id, item.categoryId))
-          .limit(1);
-      }
+      const category = item.categoryId
+        ? (
+            await ctx.db
+              .select()
+              .from(schema.category)
+              .where(eq(schema.category.id, item.categoryId))
+              .limit(1)
+          )?.[0]
+        : undefined;
 
       // 获取作者信息
-      let author = null;
-      if (item.authorId) {
-        [author] = await ctx.db
-          .select({
-            id: schema.user.id,
-            name: schema.user.name,
-          })
-          .from(schema.user)
-          .where(eq(schema.user.id, item.authorId))
-          .limit(1);
-      }
+      const author = item.authorId
+        ? (
+            await ctx.db
+              .select({
+                id: schema.user.id,
+                name: schema.user.name,
+              })
+              .from(schema.user)
+              .where(eq(schema.user.id, item.authorId))
+              .limit(1)
+          )?.[0]
+        : undefined;
 
       // 获取媒体信息
-      let cover = null;
-      if (item.coverId) {
-        [cover] = await ctx.db
-          .select()
-          .from(schema.media)
-          .where(eq(schema.media.id, item.coverId))
-          .limit(1);
-      }
+      const cover = item.coverId
+        ? (
+            await ctx.db
+              .select()
+              .from(schema.media)
+              .where(eq(schema.media.id, item.coverId))
+              .limit(1)
+          )?.[0]
+        : undefined;
 
       const [movieActors, movieDirectors, movieStyles, galleryStyles] =
         await Promise.all([

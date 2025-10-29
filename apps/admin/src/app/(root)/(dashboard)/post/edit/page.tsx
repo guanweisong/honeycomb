@@ -45,8 +45,7 @@ const PostDetail = () => {
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [modalProps, setModalProps] = useState<ModalProps>();
   const [loading, setLoading] = useState(false);
-  const [coverPreview, setCoverPreview] =
-    useState<PostDetailEntity["cover"]>(null);
+  const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
 
   const id = searchParams.get("id") as string;
 
@@ -238,7 +237,7 @@ const PostDetail = () => {
     cover: coverPreview,
     handlePhotoClear: () => {
       form.setValue("coverId", undefined, { shouldDirty: true });
-      setCoverPreview(null);
+      setCoverPreview(undefined);
     },
     openPhotoPicker: () => setShowPhotoPicker(true),
     title: "封面",

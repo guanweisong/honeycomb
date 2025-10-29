@@ -5,7 +5,6 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@honeycomb/ui/components/form";
 import React from "react";
-
 import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
 /**
