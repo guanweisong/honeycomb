@@ -64,7 +64,6 @@ export default async function List(props: ListProps) {
       queryParams = { ...queryParams, userName: typeName };
       break;
   }
-  console.log("queryParams", queryParams);
 
   const post = await serverClient.post.index(queryParams);
 

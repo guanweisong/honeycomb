@@ -112,8 +112,6 @@ const Menu = (props: MenuProps) => {
     }
   };
 
-  console.log(323332, data);
-
   /**
    * 递归渲染菜单项。
    * @param {MenuLocalEntity[]} data - 菜单项数据数组。

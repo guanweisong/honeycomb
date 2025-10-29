@@ -1,21 +1,24 @@
 {
   "extends": "./tsconfig.base.json",
-  "baseUrl": ".",
-  "paths": {
-    "@honeycomb/validation": ["packages/validation/src"],
-    "@honeycomb/ui":["packages/ui/src"],
-    "@honeycomb/db":["packages/db/src"],
-    "@honeycomb/trpc":["packages/trpc/src"],
-    "@honeycomb/env":["packages/env"],
-    "@honeycomb/types":["packages/types/src"]
+  "files": [],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@honeycomb/validation": ["packages/validation/src"],
+      "@honeycomb/ui":["packages/ui/src"],
+      "@honeycomb/db":["packages/db/src"],
+      "@honeycomb/trpc":["packages/trpc/src"],
+      "@honeycomb/env":["packages/env"],
+      "@honeycomb/types":["packages/types/src"]
+    }
   },
   "references": [
-    { "path": "packages/validation" },
-    { "path": "packages/ui" },
-    { "path": "packages/db" },
-    { "path": "packages/trpc" },
-    { "path": "packages/env" },
     { "path": "packages/types" },
+    { "path": "packages/env" },
+    { "path": "packages/db" },
+    { "path": "packages/validation" },
+    { "path": "packages/trpc" },
+    { "path": "packages/ui" },
     { "path": "apps/admin" },
     { "path": "apps/server" },
     { "path": "apps/front" }
