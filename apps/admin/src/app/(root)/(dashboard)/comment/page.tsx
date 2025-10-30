@@ -1,45 +1,56 @@
 "use client";
 
-import type { ActionType } from "@ant-design/pro-components";
-import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Popconfirm, message } from "antd";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
-import CommentService from "./service";
-import { CommentStatus } from "./types/CommentStatus";
-import type { CommentEntity } from "./types/comment.entity";
+import { CommentStatus } from "@honeycomb/types/comment/comment.status";
+import { Trash } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
+import { Button } from "@honeycomb/ui/components/button";
+import { toast } from "sonner";
+import { CommentListQuerySchema } from "@honeycomb/validation/comment/schemas/comment.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { TagListQueryInput } from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
+import { keepPreviousData } from "@tanstack/react-query";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
 
+/**
+ * 评论管理页面。
+ * 该组件负责展示评论列表，并提供搜索、状态管理（通过、驳回、屏蔽）、删除等功能。
+ */
 const Comment = () => {
-  const actionRef = useRef<ActionType>(null);
-  const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
-
   /**
-   * 列表查询方法
-   * @param params
+   * 存储用户在表格中选中的行。
+   * 类型为 `CommentEntity` 数组。
    */
-  const request = async (params: {
-    pageSize: number;
-    current: number;
-    content?: string;
-    status?: CommentStatus[];
-  }) => {
-    const { pageSize, current, status, content } = params;
-    const result = await CommentService.index({
-      status,
-      content,
-      page: current,
-      limit: pageSize,
-    });
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
+  /**
+   * 存储评论列表的查询参数。
+   * 当这些参数变化时，会触发评论列表的重新加载。
+   */
+  const [searchParams, setSearchParams] = useState<TagListQueryInput>({});
+  /**
+   * 获取评论列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
+  const { data, isFetching, isError, refetch } = trpc.comment.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
+  /**
+   * 更新评论的 tRPC mutation。
+   * 用于更新评论的状态。
+   */
+  const updateComment = trpc.comment.update.useMutation();
+  /**
+   * 删除评论的 tRPC mutation。
+   * 用于执行删除操作。
+   */
+  const destroyComment = trpc.comment.destroy.useMutation();
 
   /**
    * 评论状态操作
@@ -47,10 +58,12 @@ const Comment = () => {
    * @param type
    */
   const handleSetStatus = async (id: string, type: CommentStatus) => {
-    const result = await CommentService.update(id, { status: type });
-    if (result.status === 201) {
-      actionRef.current?.reload();
-      message.success("更新成功");
+    try {
+      await updateComment.mutateAsync({ id, status: type });
+      refetch();
+      toast.success("更新成功");
+    } catch (e) {
+      toast.error("更新失败");
     }
   };
 
@@ -59,63 +72,95 @@ const Comment = () => {
    * @param record
    */
   const renderOpt = (record: CommentEntity): React.ReactNode => {
-    let dom;
+    let dom = [];
     switch (record.status) {
       case CommentStatus.TO_AUDIT:
-        dom = (
-          <p>
-            <Popconfirm
-              title="确定要通过吗？"
-              onConfirm={() =>
-                handleSetStatus(record.id, CommentStatus.PUBLISH)
-              }
-            >
-              <a>通过</a>
-            </Popconfirm>
-            &nbsp;
-            <Popconfirm
-              title="确定要驳回吗？"
-              onConfirm={() =>
-                handleSetStatus(record.id, CommentStatus.RUBBISH)
-              }
-            >
-              <a>驳回</a>
-            </Popconfirm>
-          </p>
+        dom.push(
+          <Dialog
+            key="publish"
+            trigger={
+              <Button variant="secondary" size="sm">
+                通过
+              </Button>
+            }
+            type="warning"
+            title="确定要通过吗？"
+            onOK={() => handleSetStatus(record.id, CommentStatus.PUBLISH)}
+          />,
+        );
+        dom.push(
+          <Dialog
+            key="rubbish"
+            trigger={
+              <Button variant="secondary" size="sm">
+                驳回
+              </Button>
+            }
+            type="warning"
+            title="确定要驳回吗？"
+            onOK={() => handleSetStatus(record.id, CommentStatus.RUBBISH)}
+          />,
         );
         break;
       case CommentStatus.PUBLISH:
-        dom = (
-          <Popconfirm
+        dom.push(
+          <Dialog
+            key="ban"
+            trigger={
+              <Button variant="secondary" size="sm">
+                屏蔽
+              </Button>
+            }
+            type="warning"
             title="确定要屏蔽吗？"
-            onConfirm={() => handleSetStatus(record.id, CommentStatus.BAN)}
-          >
-            <a>屏蔽</a>
-          </Popconfirm>
+            onOK={() => handleSetStatus(record.id, CommentStatus.BAN)}
+          />,
         );
         break;
       case CommentStatus.RUBBISH:
-        dom = (
-          <Popconfirm
+        dom.push(
+          <Dialog
+            key="publish"
+            trigger={
+              <Button variant="secondary" size="sm">
+                通过
+              </Button>
+            }
+            type="warning"
             title="确定要通过吗？"
-            onConfirm={() => handleSetStatus(record.id, CommentStatus.PUBLISH)}
-          >
-            <a>通过</a>
-          </Popconfirm>
+            onOK={() => handleSetStatus(record.id, CommentStatus.PUBLISH)}
+          />,
         );
         break;
       case CommentStatus.BAN:
-        dom = (
-          <Popconfirm
+        dom.push(
+          <Dialog
+            trigger={
+              <Button variant="secondary" size="sm">
+                解除屏蔽
+              </Button>
+            }
+            type="warning"
             title="确定要解除屏蔽吗？"
-            onConfirm={() => handleSetStatus(record.id, CommentStatus.PUBLISH)}
-          >
-            <a>解除屏蔽</a>
-          </Popconfirm>
+            onOK={() => handleSetStatus(record.id, CommentStatus.PUBLISH)}
+          />,
         );
         break;
       default:
     }
+    dom.push(
+      <Dialog
+        key="delete"
+        trigger={
+          <Button variant="secondary" size="sm">
+            <Trash />
+          </Button>
+        }
+        type="danger"
+        title="确定要删除吗？"
+        onOK={() => handleDelete([record.id])}
+      />,
+    );
     return dom;
   };
 
@@ -124,10 +169,12 @@ const Comment = () => {
    * @param ids
    */
   const handleDelete = async (ids: string[]) => {
-    const result = await CommentService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
+    try {
+      await destroyComment.mutateAsync({ ids });
+      refetch();
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 
@@ -141,39 +188,62 @@ const Comment = () => {
   };
 
   return (
-    <PageContainer>
-      <ProTable<CommentEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        request={request}
-        actionRef={actionRef}
-        columns={commentTableColumns({
-          renderOpt,
-          handleDelete,
-        })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
+    <>
+      <DataTable<CommentEntity, TagListQueryInput>
+        columns={commentTableColumns}
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+        isFetching={isFetching}
+        error={isError}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-    </PageContainer>
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={CommentListQuerySchema}
+                fields={[
+                  {
+                    name: "content",
+                    type: "text",
+                    placeholder: "请输入评论内容进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => <div className="flex gap-1">{renderOpt(row)}</div>}
+      />
+    </>
   );
 };
 

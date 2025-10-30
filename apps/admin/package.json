@@ -3,30 +3,42 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build --turbo",
+    "dev": "dotenv -e ../../.env -- next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@ant-design/charts": "^2.0.3",
-    "@ant-design/icons": "^5.1.4",
-    "@ant-design/pro-components": "^2.6.49",
+    "@honeycomb/validation": "workspace:*",
+    "@honeycomb/ui": "workspace:*",
+    "@honeycomb/trpc": "workspace:*",
+    "@honeycomb/types": "workspace:*",
     "@next/third-parties": "^14.1.0",
-    "antd": "^5.24.3",
-    "classnames": "^2.5.1",
+    "@radix-ui/react-label": "^2.1.4",
     "easymde": "^2.18.0",
-    "md5": "^2.3.0",
     "react-copy-to-clipboard": "^5.1.0",
-    "react-simplemde-editor": "^5.2.0",
-    "react-sortable-tree": "^2.8.0",
-    "zustand": "^4.5.0"
+    "@nosferatu500/react-sortable-tree": "^3.0.3",
+    "@tanstack/react-table": "^8.21.3",
+    "@hookform/resolvers": "^5.0.1",
+    "react-hook-form": "^7.56.0",
+    "ahooks": "^3.7.4",
+    "@trpc/server": "^11.3.1",
+    "zustand": "^4.5.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "@tanstack/react-query": "^5.80.6",
+    "dayjs": "^1.11.13",
+    "lucide-react": "^0.479.0",
+    "md5": "^2.3.0",
+    "recharts": "^2.15.3",
+    "sonner": "^2.0.3",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/md5": "^2.3.5",
     "@types/react-copy-to-clipboard": "^5.0.7",
-    "@types/react-sortable-tree": "^0.3.23",
     "@types/showdown": "^2.0.1",
-    "autoprefixer": "^10.4.17"
+    "autoprefixer": "^10.4.17",
+    "dotenv-cli": "^10.0.0"
   }
 }

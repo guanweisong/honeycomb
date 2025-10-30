@@ -1,0 +1,37 @@
+{
+  "name": "@honeycomb/trpc",
+  "version": "1.0.0",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@honeycomb/db": "workspace:*",
+    "@honeycomb/env": "workspace:*",
+    "@honeycomb/validation": "workspace:*",
+    "@honeycomb/types": "workspace:*",
+    "@aws-sdk/client-s3": "^3.485.0",
+    "@react-email/components": "^0.5.6",
+    "@trpc/client": "^11.3.1",
+    "@trpc/react-query": "^11.3.1",
+    "@trpc/server": "^11.3.1",
+    "axios": "^1.12.2",
+    "commonmark": "^0.30.0",
+    "drizzle-orm": "^0.44.6",
+    "get-pixels": "^3.3.3",
+    "image-size": "^1.0.2",
+    "list-to-tree-lite": "^0.1.0",
+    "md5": "^2.3.0",
+    "next-auth": "^4.18.7",
+    "query-string": "^8.1.0",
+    "resend": "^4.1.2",
+    "superjson": "^2.2.2",
+    "zod": "^4.1.11",
+    "dayjs": "^1.11.18"
+  },
+  "devDependencies": {
+    "@types/commonmark": "^0.27.7",
+    "@types/md5": "^2.3.2"
+  }
+}

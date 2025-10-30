@@ -3,29 +3,24 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=7002 next dev --turbo",
+    "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev",
     "build": "next build",
     "start": "PORT=7002 next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@honeycomb/db": "workspace:*",
+    "@honeycomb/ui": "workspace:*",
+    "@honeycomb/trpc": "workspace:*",
     "@aws-sdk/client-s3": "^3.485.0",
-    "@prisma/client": "^4.10.1",
-    "@react-email/components": "^0.0.14",
-    "commonmark": "^0.30.0",
-    "get-pixels": "^3.3.3",
-    "image-size": "^1.0.2",
-    "list-to-tree-lite": "^0.1.0",
-    "md5": "^2.3.0",
-    "next-auth": "^4.18.7",
-    "prisma": "^4.11.0",
-    "query-string": "^8.1.0",
-    "resend": "^4.1.2",
-    "zod": "^3.21.4"
+    "@libsql/client": "^0.15.15",
+    "@trpc/server": "^11.3.1",
+    "axios": "^1.8.4",
+    "next": "^16.0.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@types/commonmark": "^0.27.7",
-    "@types/md5": "^2.3.2"
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^10.0.0"
   }
 }

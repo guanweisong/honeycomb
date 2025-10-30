@@ -1,50 +1,100 @@
 "use client";
 
-import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Form, Input } from "antd";
-import type { MediaReadOnly, PostEntity } from "../../../types/post.entity";
-import Block from "../Block";
+import { Button } from "@honeycomb/ui/components/button";
+import { Trash, Upload } from "lucide-react";
+import { useFormContext } from "react-hook-form";
+import { FormField, FormMessage } from "@honeycomb/ui/components/form";
+import React from "react";
+import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
-const FormItem = Form.Item;
-
+/**
+ * 图片选择器项组件的属性接口。
+ */
 export interface PhotoPickerItemProps {
-  detail: PostEntity;
+  /**
+   * 封面图片对象，用于显示预览。
+   */
+  cover?: PostDetailEntity["cover"];
+  /**
+   * 图片选择器项的标题。
+   */
   title: string;
+  /**
+   * 建议的图片尺寸。
+   */
   size: string;
+  /**
+   * 清除已选图片的回调函数。
+   */
   handlePhotoClear: () => void;
+  /**
+   * 打开图片选择器的回调函数。
+   */
   openPhotoPicker: () => void;
 }
 
+/**
+ * 图片选择器项组件。
+ * 用于在表单中展示和选择封面图片，并提供上传和清除功能。
+ * @param {PhotoPickerItemProps} props - 组件属性。
+ * @returns {JSX.Element} 图片选择器项。
+ */
 const PhotoPickerItem = (props: PhotoPickerItemProps) => {
-  const { detail, title, size, handlePhotoClear, openPhotoPicker } = props;
-  const mediaObj = detail["cover"] as MediaReadOnly;
+  const { cover, title, size, handlePhotoClear, openPhotoPicker } = props;
+  const { control } = useFormContext();
 
   return (
-    <Block title={title} tip={`（尺寸：${size}）`}>
-      <FormItem name={"cover"} style={{ display: "none" }}>
-        <Input type="text" />
-      </FormItem>
-      {mediaObj?.id ? (
-        <>
-          <div className="mb-2 text-center bg-gray-300">
-            <img src={mediaObj.url} className="max-w-full max-h-full block" />
-          </div>
-          <Button onClick={() => handlePhotoClear()} className="float-right">
-            <DeleteOutlined />
-            清除图片
-          </Button>
-          <Button onClick={() => openPhotoPicker()}>
-            <UploadOutlined />
-            重新上传
-          </Button>
-        </>
-      ) : (
-        <Button onClick={() => openPhotoPicker()}>
-          <UploadOutlined />
-          点击上传
-        </Button>
-      )}
-    </Block>
+    <div>
+      <div className="mb-2">
+        <span className="font-medium">{title}</span> {`（尺寸：${size}）`}
+      </div>
+      <FormField
+        control={control}
+        name="coverId"
+        render={() => (
+          <>
+            {cover?.id ? (
+              <>
+                <div className="mb-2 text-center bg-gray-300">
+                  <img
+                    src={cover.url as string}
+                    className="max-w-full max-h-full block"
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <Button
+                    type={"button"}
+                    variant="outline"
+                    onClick={() => openPhotoPicker()}
+                  >
+                    <Upload />
+                    重新上传
+                  </Button>
+                  <Button
+                    type={"button"}
+                    variant="outline"
+                    onClick={() => handlePhotoClear()}
+                  >
+                    <Trash />
+                    清除图片
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button
+                type={"button"}
+                variant={"outline"}
+                onClick={() => openPhotoPicker()}
+              >
+                <Upload />
+                点击上传
+              </Button>
+            )}
+            <FormMessage />
+          </>
+        )}
+      />
+    </div>
   );
 };
 

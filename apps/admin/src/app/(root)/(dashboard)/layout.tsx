@@ -1,165 +1,62 @@
 "use client";
 
-import { route } from "@/src/constants/menuData";
-import { useSettingStore } from "@/src/stores/useSettingStore";
-import { useUserStore } from "@/src/stores/useUserStore";
-import { GithubOutlined, IeOutlined, LogoutOutlined } from "@ant-design/icons";
-import { ProLayout } from "@ant-design/pro-components";
-import { Dropdown, message } from "antd";
-import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import LoginService from "../login/service";
+import { menu } from "@/constants/menuData";
+import { useSettingStore } from "@/stores/useSettingStore";
+import { useUserStore } from "@/stores/useUserStore";
+import { useRouter } from "next/navigation";
+import React from "react";
+import { AdminLayout } from "@honeycomb/ui/extended/AdminLayout";
+import { toast } from "sonner";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
-export interface MenuItem {
-  name: string;
-  path: string;
-  icon?: React.ReactNode;
-  children?: MenuItem[];
-}
-
+/**
+ * 后台管理界面的核心布局组件。
+ * 该组件包裹了所有仪表盘下的页面（如用户管理、文章管理等），
+ * 提供了统一的侧边栏、顶部导航和页脚。
+ *
+ * @param {{ children: React.ReactNode }} props - 包含子页面内容的 props。
+ * @returns {JSX.Element} 返回一个配置好的 `AdminLayout` 组件实例。
+ */
 export default ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const userStore = useUserStore();
   const settingStore = useSettingStore();
-  const pathname = usePathname();
 
   const { setting } = settingStore;
-  const { user, setUser } = userStore;
-
-  const [openKeys, setOpenKeys] = useState<string[]>([]);
-
-  /**
-   * 菜单选中事件
-   * @param key
-   */
-  const handleMenuSelect = ({ key }: { key: string }) => {
-    console.log("onMenuChange", key);
-    router.push(key);
-  };
+  const { user } = userStore;
+  const logoutMutation = trpc.auth.logout.useMutation();
 
   /**
-   * 菜单展开事件
-   */
-  const handleMenuOpen = (openKeys: string[]) => {
-    setOpenKeys(openKeys);
-  };
-
-  /**
-   * 初始化菜单展示
-   */
-  useEffect(() => {
-    const pathNameArray = pathname?.split("/") ?? [];
-    if (pathNameArray.length > 2) {
-      setOpenKeys([...openKeys, `/${pathNameArray[1]}`]);
-    }
-  }, [pathname]);
-
-  /**
-   * 退出登录
+   * 处理用户登出操作。
+   * 1. 调用后端的 `logout` API，并从 localStorage 中移除 token。
+   * 2. 无论 API 调用成功与否，都会清空本地 token 并重定向到登录页。
+   * 3. 显示成功登出的消息提示。
    */
   const handleLogout = async () => {
-    const result = await LoginService.logout();
-    if (result.status === 201 && result.data.isOk) {
-      message.success("登出成功");
+    const token = localStorage.getItem("token");
+    try {
+      if (token) await logoutMutation.mutateAsync({ token });
+      toast.success("登出成功");
+    } catch (e) {
+      // 即使 API 调用失败，也继续执行登出流程，确保前端状态被清理
+    } finally {
       localStorage.removeItem("token");
-      setUser(false);
       router.push("/login");
     }
   };
 
-  /**
-   * 扁平化菜单
-   */
-  const treeToList = (data: MenuItem[]) => {
-    const arr: MenuItem[] = [];
-    const formatData = (data: MenuItem[]) => {
-      data.forEach((item) => {
-        arr.push({ path: item.path, name: item.name });
-        if (item.children) {
-          formatData(item.children);
-        }
-      });
-    };
-    formatData(data);
-    return arr;
-  };
-
-  const flatMenu = treeToList(route.children as MenuItem[]);
-
-  /**
-   * 预加载菜单
-   */
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") {
-      flatMenu.forEach((item) => {
-        router.prefetch(item.path);
-      });
-    }
-  }, []);
-
+  // 使用从 @honeycomb/ui 包中导入的 AdminLayout 组件来构建 UI
+  // 将菜单数据、用户信息、网站设置和登出函数作为 props 传入
   return (
-    <ProLayout
-      logo="/logo.jpg"
-      route={route}
-      layout="mix"
-      title={setting?.siteName.zh}
-      pageTitleRender={false}
-      breadcrumbRender={() => []}
-      menuProps={{
-        onSelect: handleMenuSelect,
-        onOpenChange: handleMenuOpen,
-        selectedKeys: [pathname],
-        openKeys: openKeys,
-      }}
-      footerRender={() => (
-        <div className="text-gray-400 text-center pb-6">
-          {setting?.siteSignature.zh}
-        </div>
-      )}
-      waterMarkProps={{
-        // @ts-ignore
-        content: user.name,
-      }}
-      appList={[
-        {
-          icon: <IeOutlined style={{ fontSize: 32 }} />,
-          title: "博客前台",
-          url: "https://guanweisong.com",
-          target: "_blank",
-        },
-        {
-          icon: <GithubOutlined style={{ fontSize: 32 }} />,
-          title: "Github",
-          url: "https://github.com/guanweisong",
-          target: "_blank",
-        },
-      ]}
-      avatarProps={{
-        src: "https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg",
-        size: "small",
-        // @ts-ignore
-        title: user.name,
-        render: (props, dom) => {
-          return (
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: "logout",
-                    icon: <LogoutOutlined />,
-                    label: "退出登录",
-                    onClick: handleLogout,
-                  },
-                ],
-              }}
-            >
-              {dom}
-            </Dropdown>
-          );
-        },
-      }}
+    <AdminLayout
+      title={setting?.siteName?.zh}
+      menu={menu}
+      user={user}
+      footer={setting?.siteSignature?.zh}
+      onLogout={handleLogout}
     >
       {children}
-    </ProLayout>
+    </AdminLayout>
   );
 };
+

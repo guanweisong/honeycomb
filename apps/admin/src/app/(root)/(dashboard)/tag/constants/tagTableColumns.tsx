@@ -1,55 +1,46 @@
-import MultiLangText from "@/src/components/MultiLangText";
-import { MultiLang } from "@/src/types/MulitLang";
-import { SortOrder } from "@/src/types/SortOrder";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
+import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
-import type { TagEntity } from "../types/tag.entity";
+import { ColumnDef } from "@tanstack/react-table";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
-export interface TagTableColumnsProps {
-  handleEditItem: (record: TagEntity) => void;
-  handleDeleteItem: (ids: string[]) => void;
-}
-
-export const tagTableColumns = (props: TagTableColumnsProps) =>
-  [
-    {
-      title: "标签名称",
-      dataIndex: "name",
-      key: "name",
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+/**
+ * 标签列表的表格列定义。
+ * 定义了标签管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+export const tagTableColumns: ColumnDef<TagEntity>[] = [
+  {
+    accessorKey: "name",
+    header: "标签名称",
+    cell: ({ row }) => {
+      /**
+       * 渲染标签名称的单元格。
+       * 显示多语言标签名称。
+       */
+      return <MultiLangText text={row.getValue("name")} />;
     },
-    {
-      title: "添加时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "添加时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染创建时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      return dayjs(row.getValue("createdAt")).format("YYYY-MM-DD HH:mm:ss");
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      search: false,
-      sorter: true,
-      defaultSortOrder: SortOrder.descend,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染最后更新日期的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      return dayjs(row.getValue("updatedAt")).format("YYYY-MM-DD HH:mm:ss");
     },
-    {
-      title: "操作",
-      key: "operation",
-      width: 100,
-      search: false,
-      render: (_text, record) => (
-        <p>
-          <a onClick={() => props.handleEditItem(record)}>编辑</a>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
-    },
-  ] as ProColumns<TagEntity>[];
+  },
+];

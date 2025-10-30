@@ -1,120 +1,142 @@
-import {
-  CategoryReadOnly,
-  PostEntity,
-  UserReadOnly,
-} from "@/src/app/(root)/(dashboard)/post/types/post.entity";
-import MultiLangText from "@/src/components/MultiLangText";
-import { MultiLang } from "@/src/types/MulitLang";
-import { SortOrder } from "@/src/types/SortOrder";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
 import dayjs from "dayjs";
-import Link from "next/link";
-import { postStatusOptions } from "../../types/PostStatus";
-import { postTypeOptions } from "../../types/PostType";
+import { ColumnDef } from "@tanstack/react-table";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@honeycomb/types/multi.lang";
+import { Badge } from "@honeycomb/ui/components/badge";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { postStatusOptions } from "@honeycomb/types/post/post.status";
+import { postTypeOptions } from "@honeycomb/types/post/post.type";
 
-export interface PostListTableColumnsProps {
-  handleDeleteItem: (id: string[]) => void;
-}
-
-export const PostListTableColumns = (props: PostListTableColumnsProps) =>
-  [
-    {
-      title: "文章名称",
-      dataIndex: "title",
-      key: "title",
-      width: 200,
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+/**
+ * 文章列表的表格列定义。
+ * 定义了文章管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
+  {
+    accessorKey: "title",
+    header: "文章名称",
+    cell: ({ row }) => {
+      /**
+       * 渲染文章标题的单元格。
+       * 显示多语言标题。
+       */
+      const title = row.getValue("title") as MultiLang;
+      return <MultiLangText text={title} />;
     },
-    {
-      title: "引用内容",
-      dataIndex: "quoteContent",
-      key: "quoteContent",
-      search: false,
-      width: 200,
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+  },
+  {
+    accessorKey: "quoteContent",
+    header: "引用内容",
+    cell: ({ row }) => {
+      /**
+       * 渲染引用内容的单元格。
+       * 显示多语言引用内容，并限制宽度。
+       */
+      const quote = row.getValue("quoteContent") as MultiLang;
+      return (
+        <div className="max-w-60 whitespace-normal">
+          <MultiLangText text={quote} />
+        </div>
+      );
     },
-    {
-      title: "分类",
-      dataIndex: "category",
-      key: "category",
-      search: false,
-      width: 120,
-      render: (text: CategoryReadOnly) => <MultiLangText text={text.title} />,
+  },
+  {
+    accessorKey: "category",
+    header: "分类",
+    cell: ({ row }) => {
+      /**
+       * 渲染分类名称的单元格。
+       * 显示多语言分类名称，如果不存在则显示 "-"。
+       */
+      const category = row.getValue("category");
+      return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
-    {
-      title: "类型",
-      dataIndex: "type",
-      key: "type",
-      width: 70,
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: postTypeOptions,
-      },
+  },
+  {
+    accessorKey: "type",
+    header: "类型",
+    meta: {
+      filterOptions: postTypeOptions,
     },
-    {
-      title: "作者",
-      dataIndex: "author",
-      key: "author",
-      search: false,
-      width: 80,
-      render: (text: UserReadOnly) => text.name,
+    cell: ({ row }) => {
+      /**
+       * 渲染文章类型的单元格。
+       * 将文章类型值映射为对应的中文标签。
+       */
+      const type = row.getValue("type") as string;
+      return postTypeOptions.find((opt) => opt.value === type)?.label ?? type;
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      width: 70,
-      fieldProps: {
-        mode: "multiple",
-        options: postStatusOptions,
-      },
+  },
+  {
+    accessorKey: "author",
+    header: "作者",
+    cell: ({ row }) => {
+      /**
+       * 渲染作者名称的单元格。
+       * 如果作者信息不存在，则显示 "-"。
+       */
+      const author = row.getValue("author");
+      return author?.name ?? "-";
     },
-    {
-      title: "发表时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: true,
-      defaultSortOrder: SortOrder.descend,
-      search: false,
-      width: 180,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    meta: {
+      filterOptions: postStatusOptions,
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      sorter: true,
-      search: false,
-      width: 180,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) => {
+      /**
+       * 渲染文章状态的单元格。
+       * 将文章状态值映射为对应的中文标签，并根据状态显示不同样式的徽章。
+       */
+      const status = row.getValue("status") as string;
+      const label =
+        postStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      return (
+        <Badge variant={status === "published" ? "default" : "secondary"}>
+          {label}
+        </Badge>
+      );
     },
-    {
-      title: "点击量",
-      dataIndex: "views",
-      key: "views",
-      search: false,
-      sorter: true,
-      width: 80,
+  },
+  {
+    accessorKey: "createdAt",
+    header: "发表时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染发表时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "操作",
-      key: "operation",
-      search: false,
-      width: 80,
-      fixed: "right",
-      render: (_text, record) => (
-        <p>
-          <Link href={`/post/edit?id=${record.id}`}>编辑</Link>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染最后更新日期的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("updatedAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-  ] as ProColumns<PostEntity>[];
+  },
+  {
+    accessorKey: "views",
+    header: "点击量",
+    enableSorting: true,
+  },
+];

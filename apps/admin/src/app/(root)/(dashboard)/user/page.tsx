@@ -1,29 +1,44 @@
 "use client";
 
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType } from "@ant-design/pro-components";
-import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Form, Input, Modal, Popconfirm, Radio, message } from "antd";
-import type { RuleObject } from "antd/es/form";
+import { ModalType, ModalTypeName } from "@/types/ModalType";
 import md5 from "md5";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
-import UserService from "./service";
-import { UserLevel, userLevelOptions } from "./types/UserLevel";
-import { UserStatus, userStatusOptions } from "./types/UserStatus";
-import type { UserEntity } from "./types/user.entity";
-import type { UserIndexRequest } from "./types/user.index.request";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
+import { Button } from "@honeycomb/ui/components/button";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { toast } from "sonner";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { UserUpdateSchema } from "@honeycomb/validation/user/schemas/user.update.schema";
+import { UserInsertSchema } from "@honeycomb/validation/user/schemas/user.insert.schema";
+import {
+  UserListQueryInput,
+  UserListQuerySchema,
+} from "@honeycomb/validation/user/schemas/user.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
+import { UserLevel, userLevelOptions } from "@honeycomb/types/user/user.level";
+import {
+  UserStatus,
+  userStatusOptions,
+} from "@honeycomb/types/user/user.status";
+import { keepPreviousData } from "@tanstack/react-query";
+import { z } from "zod";
 
+/**
+ * 用户管理页面。
+ * 该组件负责展示用户列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const User = () => {
-  const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>(null);
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `UserEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的用户记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -32,55 +47,48 @@ const User = () => {
     type: ModalType.ADD,
     open: false,
   });
-
   /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
+   * 存储用户列表的查询参数。
+   * 当这些参数变化时，会触发用户列表的重新加载。
    */
-  const request = async (
-    params: {
-      pageSize: number;
-      current: number;
-      name?: string;
-      email?: string;
-      level?: UserLevel[];
-      status?: UserStatus[];
+  const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
+  /**
+   * 获取用户列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
+  const { data, isFetching, isError, refetch } = trpc.user.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
     },
-    sort: any = {},
-  ) => {
-    const { pageSize, current, name, email, level, status } = params;
-    const data: UserIndexRequest = {
-      name,
-      email,
-      status,
-      level,
-      page: current,
-      limit: pageSize,
-    };
-    const sortKeys = Object.keys(sort);
-    if (sortKeys.length > 0) {
-      data.sortField = sortKeys[0];
-      data.sortOrder = sort[sortKeys[0]];
-    }
-    const result = await UserService.index(data);
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  );
+  /**
+   * 创建用户的 tRPC mutation。
+   */
+  const createUser = trpc.user.create.useMutation();
+  /**
+   * 更新用户的 tRPC mutation。
+   */
+  const updateUser = trpc.user.update.useMutation();
+  /**
+   * 删除用户的 tRPC mutation。
+   */
+  const destroyUser = trpc.user.destroy.useMutation();
 
   /**
    * 删除事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await UserService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
+    try {
+      const res = await destroyUser.mutateAsync({ ids });
+      if (res.success) {
+        refetch();
+        toast.success("删除成功");
+      }
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 
@@ -98,7 +106,6 @@ const User = () => {
    * @param record
    */
   const handleEditItem = (record: UserEntity) => {
-    form.setFieldsValue(record);
     setModalProps({
       type: ModalType.EDIT,
       open: true,
@@ -109,47 +116,47 @@ const User = () => {
   /**
    * 新增、修改保存事件
    */
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then(async (values) => {
-        const { password, ...rest } = values;
-        const params = rest;
-        if (password) {
-          params.password = md5(values.password);
+  const handleModalOk = async (
+    values: z.infer<typeof UserInsertSchema | typeof UserUpdateSchema>,
+  ) => {
+    const { password, ...rest } = values;
+    const params = rest as z.infer<
+      typeof UserInsertSchema | typeof UserUpdateSchema
+    >;
+    if (password) {
+      params.password = md5(password);
+    }
+    switch (modalProps.type!) {
+      case ModalType.ADD:
+        try {
+          await createUser.mutateAsync(params);
+          refetch();
+          toast.success("添加成功");
+          setModalProps({ open: false });
+        } catch (e) {
+          toast.error("添加失败");
         }
-        switch (modalProps.type!) {
-          case ModalType.ADD:
-            const createResult = await UserService.create(params);
-            if (createResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("添加成功");
-            }
-            break;
-          case ModalType.EDIT:
-            const updateResult = await UserService.update(
-              modalProps.record?.id as string,
-              params,
-            );
-            if (updateResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("更新成功");
-            }
-            break;
+        break;
+      case ModalType.EDIT:
+        try {
+          await updateUser.mutateAsync({
+            ...params,
+            id: modalProps.record?.id!,
+          });
+          refetch();
+          toast.success("更新成功");
+          setModalProps({ open: false });
+        } catch (e) {
+          toast.error("更新失败");
         }
-        setModalProps({ open: false });
-      })
-      .catch((e) => {
-        console.error(e);
-      });
+        break;
+    }
   };
 
   /**
    * 新增事件
    */
   const handleAddNew = () => {
-    form.resetFields();
-    form.setFieldsValue({ level: UserLevel.EDITOR, status: UserStatus.ENABLE });
     setModalProps({
       type: ModalType.ADD,
       open: true,
@@ -157,164 +164,152 @@ const User = () => {
     });
   };
 
-  /**
-   * 查询唯一性
-   * @param user_name
-   * @param user_email
-   */
-  const checkExist = async ({
-    name,
-    email,
-  }: {
-    name?: string;
-    email?: string;
-  }) => {
-    console.log("users=>model=>checkExist", { name });
-    let exist = false;
-    const result = await UserService.index({ name, email });
-    const currentId = modalProps.record?.id;
-    if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-      exist = true;
-    }
-    return exist;
-  };
-
-  /**
-   * 校验用户名是否唯一
-   * @param _rule
-   * @param value
-   */
-  const validateUserName = async (_rule: RuleObject, value: string) => {
-    if (value && value.length > 0) {
-      const result = await checkExist({ name: value });
-      if (result) {
-        return Promise.reject("抱歉，用户名已存在，请换一个用户名");
-      }
-      return Promise.resolve();
-    }
-    return Promise.resolve();
-  };
-
-  /**
-   * 校验邮箱地址是否唯一
-   * @param _rule
-   * @param value
-   */
-  const validateUserEmail = async (_rule: RuleObject, value: string) => {
-    if (value && value.length > 0) {
-      const result = await checkExist({ email: value });
-      if (result) {
-        return Promise.reject("抱歉，用户邮箱已存在，请换一个用户邮箱");
-      }
-      return Promise.resolve();
-    }
-    return Promise.resolve();
-  };
-
   return (
-    <PageContainer>
-      <ProTable<UserEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        form={{ syncToUrl: true }}
-        request={request}
-        actionRef={actionRef}
-        columns={userTableColumns({ handleEditItem, handleDeleteItem })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
+    <>
+      <DataTable<UserEntity, UserListQueryInput>
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary" onClick={handleAddNew}>
-            <PlusOutlined /> 添加新用户
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+        columns={userTableColumns}
+        isFetching={isFetching}
+        error={isError}
+        selectableRows={true}
+        disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button onClick={handleAddNew} variant="outline">
+                <Plus />
+                添加新用户
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-      <Modal
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={UserListQuerySchema}
+                fields={[
+                  {
+                    name: "name",
+                    type: "text",
+                    placeholder: "请输入用户名进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleEditItem(row)}
+            >
+              <Pencil />
+            </Button>
+            {row.level !== UserLevel.ADMIN &&
+              row.status !== UserStatus.DELETED && (
+                <Dialog
+                  trigger={
+                    <Button variant="secondary" size="sm">
+                      <Trash />
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={() => handleDeleteItem([row.id])}
+                />
+              )}
+          </div>
+        )}
+      />
+      <Dialog
         title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}用户`}
         open={modalProps.open}
-        onOk={handleModalOk}
-        onCancel={() => setModalProps({ open: false })}
+        onOpenChange={(open) =>
+          setModalProps((prevState) => ({ ...prevState, open }))
+        }
       >
-        <Form form={form} onFinish={handleModalOk}>
-          <Form.Item
-            {...formItemLayout}
-            name="name"
-            label="用户名"
-            rules={[
-              { required: true, message: "请输入用户名" },
-              { validator: validateUserName },
-            ]}
-          >
-            <Input maxLength={20} />
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            name="password"
-            label="密码"
-            rules={[
-              {
-                required: modalProps.type === ModalType.ADD,
-                message: "请输入密码",
-              },
-            ]}
-          >
-            <Input
-              autoComplete="off"
-              type="password"
-              maxLength={20}
-              minLength={6}
-              placeholder={
-                modalProps.type === ModalType.EDIT ? "留空则为不修改" : ""
-              }
-            />
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            label="邮箱"
-            name="email"
-            rules={[
-              { required: true, message: "请输入用户邮箱" },
-              { type: "email", message: "请输入正确的邮箱" },
-              { validator: validateUserEmail },
-            ]}
-          >
-            <Input.TextArea rows={3} autoComplete="off" maxLength={20} />
-          </Form.Item>
-          <Form.Item {...formItemLayout} name="level" label="级别">
-            <Radio.Group
-              buttonStyle="solid"
-              disabled={modalProps.record?.level === UserLevel.ADMIN}
-              options={userLevelOptions}
-            />
-          </Form.Item>
-          <Form.Item {...formItemLayout} name="status" label="状态">
-            <Radio.Group
-              buttonStyle="solid"
-              disabled={modalProps.record?.level === UserLevel.ADMIN}
-              options={userStatusOptions}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </PageContainer>
+        <DynamicForm
+          defaultValues={
+            modalProps.type === ModalType.ADD
+              ? {
+                  status: UserStatus.ENABLE,
+                  level: UserLevel.EDITOR,
+                }
+              : modalProps.record
+          }
+          schema={
+            modalProps.type === ModalType.EDIT
+              ? UserUpdateSchema
+              : UserInsertSchema
+          }
+          fields={[
+            {
+              label: "用户名",
+              name: "name",
+              type: "text",
+              placeholder: "请输入用户名",
+            },
+            {
+              label: "密码",
+              name: "password",
+              type: "password",
+              placeholder:
+                modalProps.type === ModalType.EDIT
+                  ? "留空则为不修改"
+                  : "请输入密码",
+            },
+            {
+              label: "邮箱",
+              name: "email",
+              type: "text",
+              placeholder: "请输入邮箱",
+            },
+            {
+              label: "级别",
+              name: "level",
+              type: "radio",
+              options: userLevelOptions,
+              disabled: () => modalProps.record?.level === UserLevel.ADMIN,
+            },
+            {
+              label: "状态",
+              name: "status",
+              type: "radio",
+              options: userStatusOptions,
+              disabled: () => modalProps.record?.level === UserLevel.ADMIN,
+            },
+          ]}
+          onSubmit={handleModalOk}
+        />
+      </Dialog>
+    </>
   );
 };
 

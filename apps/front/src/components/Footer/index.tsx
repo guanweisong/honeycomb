@@ -1,20 +1,25 @@
 import dayjs from "dayjs";
-import SettingServer from "@/src/services/setting";
-import { MultiLang } from "@/src/types/Language";
 import { getLocale } from "next-intl/server";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MultiLangEnum } from "@honeycomb/types/multi.lang";
 
+/**
+ * 网站底部组件。
+ * 显示网站的签名、版权信息和备案号等。
+ * @returns {Promise<JSX.Element>} 网站底部。
+ */
 export default async function Footer() {
-  const [setting, locale] = (await Promise.all([
-    SettingServer.indexSetting(),
+  const [setting, locale] = await Promise.all([
+    serverClient.setting.index(),
     getLocale(),
-  ])) as [SettingEntity, keyof MultiLang];
+  ]);
 
   return (
     <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
-      <div>{setting?.siteSignature?.[locale]}</div>
+      <div>{setting?.siteSignature?.[locale as MultiLangEnum]}</div>
       <div>
-        ©{dayjs().format("YYYY")}&nbsp;{setting?.siteCopyright?.[locale]}
+        ©{dayjs().format("YYYY")}&nbsp;
+        {setting?.siteCopyright?.[locale as MultiLangEnum]}
       </div>
       <div>
         {setting?.siteRecordNo ? (

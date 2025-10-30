@@ -1,71 +1,50 @@
-import { enableOptions } from "@/src/types/EnableType";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
 import dayjs from "dayjs";
-import type { LinkEntity } from "../types/link.entity";
+import { ColumnDef } from "@tanstack/react-table";
+import { enableStatusOptions } from "@honeycomb/types/enable.status";
+import { LinkEntity } from "@honeycomb/trpc/server/types/link.entity";
 
-export interface LinkTableColumnsProps {
-  handleEditItem: (record: LinkEntity) => void;
-  handleDeleteItem: (ids: string[]) => void;
-}
-
-export const linkTableColumns = (props: LinkTableColumnsProps) =>
-  [
-    {
-      title: "链接名称",
-      dataIndex: "name",
-      key: "name",
+/**
+ * 友情链接列表的表格列定义。
+ * 定义了友情链接管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+export const linkTableColumns: ColumnDef<LinkEntity>[] = [
+  {
+    header: "链接名称",
+    accessorKey: "name",
+  },
+  {
+    header: "URL",
+    accessorKey: "url",
+  },
+  {
+    header: "状态",
+    accessorKey: "status",
+    meta: {
+      filterOptions: enableStatusOptions,
     },
-    {
-      title: "URL",
-      dataIndex: "url",
-      key: "url",
+    cell: ({ row }) => {
+      /**
+       * 渲染链接状态的单元格。
+       * 将链接状态值映射为对应的中文标签。
+       */
+      const status = row.getValue("status");
+      return enableStatusOptions.find((opt) => opt.value === status)?.label;
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: enableOptions,
-      },
+  },
+  {
+    header: "链接描述",
+    accessorKey: "description",
+  },
+  {
+    header: "添加时间",
+    accessorKey: "createdAt",
+    cell: ({ row }) => {
+      /**
+       * 渲染创建时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value: string = row.getValue("createdAt");
+      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
     },
-    {
-      title: "链接描述",
-      dataIndex: "description",
-      key: "description",
-      search: false,
-    },
-    {
-      title: "添加时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-      search: false,
-    },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-      search: false,
-    },
-    {
-      title: "操作",
-      key: "operation",
-      width: 100,
-      search: false,
-      render: (text: string, record: LinkEntity) => (
-        <p>
-          <a onClick={() => props.handleEditItem(record)}>编辑</a>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
-    },
-  ] as ProColumns<LinkEntity>[];
+  },
+];

@@ -1,14 +1,26 @@
 import React from "react";
-import { Link } from "@/src/i18n/navigation";
-import { TagEntity } from "@/src/types/tag/tag.entity";
-import { PostEntity } from "@/src/types/post/post.entity";
+import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/src/types/Language";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { MultiLang } from "@honeycomb/types/multi.lang";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
-const Tag = (props: PostEntity) => {
+/**
+ * 标签组件。
+ * 用于显示文章相关的标签，如导演、演员、风格等，并提供跳转到对应标签列表页面的链接。
+ * @param {PostListItemEntity} props - 包含文章详情的属性。
+ * @returns {JSX.Element} 标签列表。
+ */
+const Tag = (props: PostListItemEntity) => {
   const t = useTranslations("Tag");
   const locale = useLocale() as keyof MultiLang;
 
+  /**
+   * 渲染标签列表。
+   * @param {TagEntity[] | undefined} item - 标签实体数组。
+   * @param {string} label - 标签组的标题。
+   * @returns {JSX.Element | undefined} 渲染后的标签列表项或 undefined。
+   */
   const getTags = (item: TagEntity[] | undefined, label: string) => {
     if (item && item.length > 0) {
       return (
@@ -23,7 +35,7 @@ const Tag = (props: PostEntity) => {
                   href={`/list/tags/${encodeURI(n.name[locale])}`}
                   className="link-light"
                 >
-                  {n.name[locale]}
+                  {n.name?.[locale]}
                 </Link>
               </span>
             );

@@ -1,97 +1,86 @@
-import MultiLangText from "@/src/components/MultiLangText";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
+import { ColumnDef } from "@tanstack/react-table";
+import MultiLangText from "@/components/MultiLangText";
 import dayjs from "dayjs";
-import React from "react";
-import { commentStatusOptions } from "../types/CommentStatus";
-import type { CommentEntity } from "../types/comment.entity";
-export interface CommentTableColumnsProps {
-  handleDelete: (ids: string[]) => void;
-  renderOpt: (record: CommentEntity) => React.ReactNode;
-}
+import { commentStatusOptions } from "@honeycomb/types/comment/comment.status";
+import { CommentEntity } from "@honeycomb/trpc/server/types/comment.entity";
 
-export const commentTableColumns = (props: CommentTableColumnsProps) =>
-  [
-    {
-      title: "评论内容",
-      dataIndex: "content",
-      key: "content",
+/**
+ * 评论列表的表格列定义。
+ * 定义了评论管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+export const commentTableColumns: ColumnDef<CommentEntity>[] = [
+  {
+    accessorKey: "content",
+    header: "评论内容",
+  },
+  {
+    accessorKey: "postId",
+    header: "评论文章",
+    cell: ({ row }) => {
+      /**
+       * 渲染评论文章标题的单元格。
+       * 根据评论关联的文章、页面或自定义标题显示多语言标题。
+       */
+      const record = row.original;
+      const title =
+        record.post?.title || record.page?.title || record.custom?.title;
+      return <MultiLangText text={title!} />;
     },
-    {
-      title: "评论文章",
-      dataIndex: "postId",
-      key: "postId",
-      render: (text, record, index) => {
-        if (record.postId) {
-          return <MultiLangText text={record.post?.title!} />;
-        }
-        if (record.pageId) {
-          return <MultiLangText text={record.page?.title!} />;
-        }
-        if (record.custom) {
-          return <MultiLangText text={record.custom?.title!} />;
-        }
-      },
+  },
+  {
+    accessorKey: "author",
+    header: "评论人",
+  },
+  {
+    accessorKey: "email",
+    header: "评论人邮箱",
+  },
+  {
+    accessorKey: "site",
+    header: "评论人网站",
+  },
+  {
+    accessorKey: "ip",
+    header: "评论IP",
+  },
+  {
+    accessorKey: "status",
+    header: "评论状态",
+    cell: ({ row }) => {
+      /**
+       * 渲染评论状态的单元格。
+       * 将评论状态值映射为对应的中文标签。
+       */
+      const value = row.original.status;
+      const labels = commentStatusOptions
+        .filter((opt) => value?.includes(opt.value))
+        .map((opt) => opt.label)
+        .join(", ");
+      return <span>{labels || "—"}</span>;
     },
-    {
-      title: "评论人",
-      dataIndex: "author",
-      key: "author",
+  },
+  {
+    accessorKey: "createdAt",
+    header: "添加时间",
+    cell: ({ getValue }) => {
+      /**
+       * 渲染创建时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = getValue<string>();
+      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
     },
-    {
-      title: "评论人邮箱",
-      dataIndex: "email",
-      key: "email",
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    cell: ({ getValue }) => {
+      /**
+       * 渲染最后更新日期的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = getValue<string>();
+      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
     },
-    {
-      title: "评论人网站",
-      dataIndex: "site",
-      key: "site",
-    },
-    {
-      title: "评论IP",
-      dataIndex: "ip",
-      key: "ip",
-    },
-    {
-      title: "评论状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: commentStatusOptions,
-      },
-    },
-    {
-      title: "添加时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-    },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-    },
-    {
-      title: "操作",
-      key: "operation",
-      width: 120,
-      search: false,
-      render: (text, record) => (
-        <div>
-          {props.renderOpt(record)}&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDelete([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </div>
-      ),
-    },
-  ] as ProColumns<CommentEntity>[];
+  },
+];

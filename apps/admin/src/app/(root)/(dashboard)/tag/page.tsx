@@ -1,27 +1,37 @@
 "use client";
 
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { ModalType, ModalTypeName } from "@/src/types/ModalType";
-import { PlusOutlined } from "@ant-design/icons";
-import {
-  ActionType,
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Form, Input, Modal, Popconfirm, message } from "antd";
-import type { RuleObject } from "antd/es/form";
-import { useRef, useState } from "react";
+import { ModalType } from "@/types/ModalType";
+import { useState } from "react";
 import { tagTableColumns } from "./constants/tagTableColumns";
-import TagService from "./service";
-import type { TagEntity } from "./types/tag.entity";
-import { TagIndexRequest } from "./types/tag.index.request";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
+import { Button } from "@honeycomb/ui/components/button";
+import { toast } from "sonner";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { Pencil, Plus, Trash } from "lucide-react";
+import {
+  TagListQueryInput,
+  TagListQuerySchema,
+} from "@honeycomb/validation/tag/schemas/tag.list.query.schema";
+import AddTagDialog from "@/app/(root)/(dashboard)/tag/components/AddTagDialog";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { useGetState } from "ahooks";
+import { keepPreviousData } from "@tanstack/react-query";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
 
+/**
+ * 标签管理页面。
+ * 该组件负责展示标签列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const Tag = () => {
-  const [form] = Form.useForm();
-  const actionRef = useRef<ActionType>();
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `TagEntity` 数组。
+   */
   const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的标签记录。
+   */
   const [modalProps, setModalProps] = useState<{
     type?: ModalType;
     open: boolean;
@@ -32,35 +42,27 @@ const Tag = () => {
   });
 
   /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
+   * 存储标签列表的查询参数。
+   * 使用 `useGetState` 钩子，可以在异步操作中获取最新的 `searchParams`。
    */
-  const request = async (
-    params: { pageSize: number; current: number; name?: string },
-    sort: any = {},
-  ) => {
-    const { pageSize, current, name } = params;
-    const data: TagIndexRequest = {
-      page: current,
-      limit: pageSize,
-      name,
-    };
+  const [searchParams, setSearchParams] = useGetState<TagListQueryInput>({});
 
-    const sortKeys = Object.keys(sort);
-    if (sortKeys.length > 0) {
-      data.sortField = sortKeys[0];
-      data.sortOrder = sort[sortKeys[0]];
-    }
-
-    const result = await TagService.index(data);
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  /**
+   * 获取标签列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
+  const { data, isFetching, isError, refetch } = trpc.tag.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    },
+  );
+  /**
+   * 删除标签的 tRPC mutation。
+   * 用于执行删除操作。
+   */
+  const destroyTag = trpc.tag.destroy.useMutation();
 
   /**
    * 新增按钮事件
@@ -71,7 +73,6 @@ const Tag = () => {
       open: true,
       record: undefined,
     });
-    form.resetFields();
   };
 
   /**
@@ -79,10 +80,14 @@ const Tag = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await TagService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
+    try {
+      const res = await destroyTag.mutateAsync({ ids });
+      if (res.success) {
+        toast.success("删除成功");
+        refetch();
+      }
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 
@@ -97,130 +102,106 @@ const Tag = () => {
 
   /**
    * 编辑按钮事件
-   * @param record
    */
   const handleEditItem = (record: TagEntity) => {
-    form.setFieldsValue(record);
     setModalProps({
       type: ModalType.EDIT,
       open: true,
-      record: record,
+      record,
     });
   };
 
-  /**
-   * 新增、编辑弹窗表单保存事件
-   */
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then(async (values) => {
-        switch (modalProps.type!) {
-          case ModalType.ADD:
-            const createResult = await TagService.create(values);
-            if (createResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("添加成功");
-            }
-            break;
-          case ModalType.EDIT:
-            const updateResult = await TagService.update(
-              modalProps.record?.id as string,
-              values,
-            );
-            if (updateResult.status === 201) {
-              actionRef.current?.reload();
-              message.success("更新成功");
-            }
-            break;
-        }
-        setModalProps({ open: false });
-      })
-      .catch((e) => {
-        console.error(e);
-      });
-  };
-
-  /**
-   * 校验标签名是否存在
-   * @param rule
-   * @param value
-   */
-  const validateTagName = async (rule: RuleObject, value: string) => {
-    if (value && value.length > 0) {
-      let exist = false;
-      const result = await TagService.index({ name: value });
-      const currentId = modalProps.record?.id;
-      if (result.data.total > 0 && result.data.list[0].id !== currentId) {
-        exist = true;
-      }
-      if (exist) {
-        return Promise.reject("抱歉，标签已存在，请换一个标签");
-      }
-      return Promise.resolve();
-    }
-    return Promise.resolve();
-  };
-
   return (
-    <PageContainer>
-      <ProTable<TagEntity, any>
-        form={{ syncToUrl: true }}
-        defaultSize={"middle"}
-        rowKey="id"
-        request={request}
-        actionRef={actionRef}
-        columns={tagTableColumns({ handleEditItem, handleDeleteItem })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
+    <>
+      <DataTable<TagEntity, TagListQueryInput>
+        columns={tagTableColumns}
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary" onClick={handleAddNew}>
-            <PlusOutlined /> 添加新标签
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+        isFetching={isFetching}
+        error={isError}
+        selectableRows
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              <Button onClick={handleAddNew} variant="outline">
+                <Plus />
+                添加新标签
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-      <Modal
-        title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}标签`}
-        open={modalProps.open}
-        onOk={handleModalOk}
-        onCancel={() => setModalProps({ open: false })}
-      >
-        <Form form={form}>
-          <MultiLangFormItem>
-            <Form.Item
-              {...formItemLayout}
-              name={"name"}
-              label="标签名称"
-              rules={[
-                { required: true, message: "请输入标签名称" },
-                { validator: validateTagName },
-              ]}
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={TagListQuerySchema}
+                fields={[
+                  {
+                    name: "name",
+                    type: "text",
+                    placeholder: "请输入标签名进行搜索",
+                  },
+                ]}
+                onSubmit={(values) =>
+                  setSearchParams((prev) => ({ ...prev, ...values, page: 1 }))
+                }
+                inline
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleEditItem(row)}
             >
-              <Input maxLength={100} />
-            </Form.Item>
-          </MultiLangFormItem>
-        </Form>
-      </Modal>
-    </PageContainer>
+              <Pencil />
+            </Button>
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
+              title="确定要删除吗？"
+              onOK={() => handleDeleteItem([row.id])}
+            />
+          </div>
+        )}
+      />
+
+      <AddTagDialog
+        {...modalProps}
+        onClose={() => setModalProps((prev) => ({ ...prev, open: false }))}
+        onSuccess={() => {
+          refetch();
+        }}
+      />
+    </>
   );
 };
 

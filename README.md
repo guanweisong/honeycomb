@@ -1,84 +1,39 @@
-# Turborepo starter
+# Honeycomb
 
-This Turborepo starter is maintained by the Turborepo core team.
+本项目是 `honeycomb` 的 monorepo 仓库，使用 pnpm workspaces 和 Turborepo 进行管理。
 
-## Using this example
+## 技术架构
 
-Run the following command:
+- **Monorepo:**
+  - **pnpm workspaces:** 用于管理多项目依赖。
+  - **Turborepo:** 用于优化 monorepo 的构建流程。
+- **前端 (`apps/front`):**
+  - **Next.js:** React 服务端渲染框架。
+  - **TypeScript:** 提供静态类型。
+  - **Tailwind CSS:** CSS 框架。
+- **管理后台 (`apps/admin`):**
+  - 技术栈与前端应用一致，用于内容管理。
+- **服务端 (`apps/server`):**
+  - **Next.js (Route Handlers):** 用作后端 API 服务。
+  - **tRPC:** 用于实现类型安全的 API。
+- **数据库与 ORM (`packages/db`):**
+  - **Drizzle ORM:** TypeScript ORM。
+- **共享模块 (`packages/*`):**
+  - **`ui`:** 共享 UI 组件。
+  - **`types`:** 共享 TypeScript 类型定义。
+  - **`validation`:** 使用 Zod 定义数据验证 schema。
 
-```sh
-npx create-turbo@latest
-```
+## 业务架构
 
-## What's inside?
+`honeycomb` 是一个内容管理系统（CMS）。
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+- **`apps/front` (前台应用):**
+  - 面向用户的网站，用于展示文章、页面等内容。
+  - 功能包括多语言支持。
+- **`apps/admin` (后台管理):**
+  - 用于内容管理的后台界面。
+  - 提供对文章、页面、分类、标签、媒体等内容的增删改查（CRUD）功能。
+  - 包含用户权限和系统设置管理。
+- **`apps/server` (API 服务):**
+  - 为前台和后台应用提供数据接口。
+  - 处理用户认证、内容查询等业务逻辑。

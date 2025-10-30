@@ -1,27 +1,38 @@
 import React from "react";
-import { PostStatus } from "@/src/types/post/PostStatus";
-import { PostListQuery } from "@/src/types/post/post.list.query";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import PostServer from "@/src/services/post";
-import MenuServer from "@/src/services/menu";
-import SettingServer from "@/src/services/setting";
-import PostList from "@/src/components/PostList";
-import NoData from "@/src/components/NoData";
+import PostList from "@/components/PostList";
+import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
+import { serverClient } from "@honeycomb/trpc/server";
+import { PostStatus } from "@honeycomb/types/post/post.status";
+import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 
+/**
+ * 页面大小常量，用于分页查询。
+ */
 const PAGE_SIZE = 10;
 
+/**
+ * 列表页面组件的属性接口。
+ */
 export interface ListProps {
+  /**
+   * 包含 slug 数组和当前语言环境的 Promise。
+   */
   params: Promise<{ slug: string[]; locale: keyof MultiLang }>;
 }
 
+/**
+ * 列表页面组件。
+ * 根据 URL 中的 slug 参数（如分类、标签、作者）显示相应的文章列表。
+ * @param {ListProps} props - 组件属性。
+ * @returns {Promise<JSX.Element>} 文章列表页面。
+ */
 export default async function List(props: ListProps) {
   const [setting, menu] = await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+    serverClient.setting.index(),
+    serverClient.menu.index(),
   ]);
-
   const params = await props.params;
   const t = await getTranslations("PostList");
 
@@ -31,19 +42,18 @@ export default async function List(props: ListProps) {
   let queryParams = {
     status: [PostStatus.PUBLISHED],
     limit: PAGE_SIZE,
-  } as PostListQuery;
+    sortField: "createdAt",
+  } as PostListQueryInput;
   let typeName = decodeURI(params?.slug?.pop() ?? "");
   switch (type) {
     case "category":
       // 获取分类ID
-      const categoryId = menu?.find(
-        (item: MenuEntity) => item.path === typeName,
-      )?.id;
+      const categoryId = menu?.list?.find((item) => item.path === typeName)?.id;
       if (typeof categoryId !== "undefined") {
         queryParams = { ...queryParams, categoryId: categoryId };
       }
       typeName =
-        menu?.find((item: MenuEntity) => item.path === typeName)?.title?.[
+        menu?.list?.find((item) => item.path === typeName)?.title?.[
           params.locale
         ] || "";
       break;
@@ -54,13 +64,9 @@ export default async function List(props: ListProps) {
       queryParams = { ...queryParams, userName: typeName };
       break;
   }
-  console.log("queryParams", queryParams);
-  // 获取分类列表
-  const postList = await PostServer.indexPostList(queryParams);
 
-  /**
-   * 获取页面标题
-   */
+  const post = await serverClient.post.index(queryParams);
+
   const getTitle = () => {
     let title = "";
     switch (type) {
@@ -74,7 +80,7 @@ export default async function List(props: ListProps) {
         if (typeName) {
           title = `${typeName}_${setting.siteName?.[params.locale]}`;
         } else {
-          title = setting.siteName?.[params.locale];
+          title = setting.siteName?.[params.locale] as string;
         }
     }
     return title;
@@ -85,12 +91,8 @@ export default async function List(props: ListProps) {
       {["tags", "authors"].includes(type!) && (
         <div className="mb-2 lg:mb-4">{getTitle()}</div>
       )}
-      {postList.length > 0 ? (
-        <PostList
-          initData={postList}
-          pageSize={PAGE_SIZE}
-          queryParams={queryParams}
-        />
+      {post.list.length > 0 ? (
+        <PostList initData={post} queryParams={queryParams} />
       ) : (
         <NoData title={t("emptyTip")} />
       )}
@@ -98,15 +100,30 @@ export default async function List(props: ListProps) {
   );
 }
 
+/**
+ * `generateMetadata` 函数的属性接口。
+ */
 type GenerateMetadataProps = {
+  /**
+   * 包含 slug 数组的 Promise。
+   */
   params: Promise<{ slug: string[] }>;
+  /**
+   * 包含搜索参数的 Promise。
+   */
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+/**
+ * 为列表页面生成元数据。
+ * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
+ * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @returns {Promise<Metadata>} 页面元数据。
+ */
 export async function generateMetadata(props: GenerateMetadataProps) {
   const [setting, menu, locale] = await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+    serverClient.setting.index(),
+    serverClient.menu.index(),
     getLocale().then((res) => res as keyof MultiLang),
   ]);
   const t = await getTranslations("PostList");
@@ -120,9 +137,8 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   switch (type) {
     case "category":
       typeName =
-        menu?.find((item: MenuEntity) => item.path === typeName)?.title?.[
-          locale
-        ] || "";
+        menu?.list?.find((item) => item.path === typeName)?.title?.[locale] ||
+        "";
       break;
     default:
       // 其他逻辑
@@ -145,7 +161,7 @@ export async function generateMetadata(props: GenerateMetadataProps) {
         if (typeName) {
           title = `${typeName}_${setting?.siteName?.[locale]}`;
         } else {
-          title = setting?.siteName?.[locale];
+          title = setting?.siteName?.[locale] as string;
         }
     }
     return decodeURI(title);
@@ -167,6 +183,11 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   };
 }
 
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<any[]>} 静态参数数组。
+ */
 export async function generateStaticParams() {
   return [];
 }

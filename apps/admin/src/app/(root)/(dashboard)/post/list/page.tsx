@@ -1,127 +1,168 @@
 "use client";
 
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType } from "@ant-design/pro-components";
+import { useState } from "react";
+import { postListTableColumns } from "./constants/postListTableColumns";
+import { Button } from "@honeycomb/ui/components/button";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { DataTable } from "@honeycomb/ui/extended/DataTable";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
-  FooterToolbar,
-  PageContainer,
-  ProTable,
-} from "@ant-design/pro-components";
-import { Button, Popconfirm, message } from "antd";
-import Link from "next/link";
-import { useRef, useState } from "react";
-import PostService from "../service";
-import type { PostStatus } from "../types/PostStatus";
-import type { PostType } from "../types/PostType";
-import type { PostEntity } from "../types/post.entity";
-import type { PostIndexRequest } from "../types/post.index.request";
-import { PostListTableColumns } from "./constants/postListTableColumns";
+  PostListQueryInput,
+  PostListQuerySchema,
+} from "@honeycomb/validation/post/schemas/post.list.query.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
+import { keepPreviousData } from "@tanstack/react-query";
 
+/**
+ * 文章列表管理页面。
+ * 该组件负责展示文章列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
 const PostList = () => {
-  const actionRef = useRef<ActionType>();
-  const [selectedRows, setSelectedRows] = useState<PostEntity[]>([]);
-
   /**
-   * 列表查询方法
-   * @param params
-   * @param sort
-   * @param filter
+   * 存储用户在表格中选中的行。
+   * 类型为 `PostListItemEntity` 数组。
    */
-  const request = async (
-    params: {
-      pageSize: number;
-      current: number;
-      title?: string;
-      type?: PostType[];
-      status?: PostStatus[];
+  const [selectedRows, setSelectedRows] = useState<PostListItemEntity[]>([]);
+  /**
+   * 存储文章列表的查询参数。
+   * 当这些参数变化时，会触发文章列表的重新加载。
+   */
+  const [searchParams, setSearchParams] = useState<PostListQueryInput>({});
+  const router = useRouter();
+
+  // 使用 tRPC hook 获取文章列表数据
+  /**
+   * 获取文章列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
+  const { data, isFetching, isError, refetch } = trpc.post.index.useQuery(
+    searchParams,
+    {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
     },
-    sort: any = {},
-  ) => {
-    const { pageSize, current, title, type, status } = params;
-    const data: PostIndexRequest = {
-      title,
-      type,
-      status,
-      page: current,
-      limit: pageSize,
-    };
-    const sortKeys = Object.keys(sort);
-    if (sortKeys.length > 0) {
-      data.sortField = sortKeys[0];
-      data.sortOrder = sort[sortKeys[0]];
-    }
-    const result = await PostService.indexPostList(data);
-    return {
-      data: result.data.list,
-      success: true,
-      total: result.data.total,
-    };
-  };
+  );
+  // 使用 tRPC hook 创建删除文章的 mutation
+  /**
+   * 删除文章的 tRPC mutation。
+   * 用于执行删除操作。
+   */
+  const destroyPost = trpc.post.destroy.useMutation();
 
   /**
-   * 删除事件
-   * @param id
+   * 处理单个或多个文章的删除操作。
+   * @param {string[]} ids - 要删除的文章 ID 数组。
    */
   const handleDeleteItem = async (ids: string[]) => {
-    const result = await PostService.destroy(ids);
-    if (result.status === 204) {
-      actionRef.current?.reload();
-      message.success("删除成功");
+    try {
+      await destroyPost.mutateAsync({ ids });
+      refetch(); // 重新获取数据以更新列表
+      toast.success("删除成功");
+    } catch (e) {
+      toast.error("删除失败");
     }
   };
 
   /**
-   * 批量删除
+   * 处理批量删除操作，获取选中行的 ID 并调用删除函数。
    */
   const handleDeleteBatch = async () => {
     const ids = selectedRows.map((item) => item.id);
     await handleDeleteItem(ids);
-    setSelectedRows([]);
+    setSelectedRows([]); // 清空选中行
   };
 
   return (
-    <PageContainer>
-      <ProTable<PostEntity, any>
-        rowKey="id"
-        defaultSize={"middle"}
-        form={{ syncToUrl: true }}
-        request={request}
-        tableLayout="fixed"
-        scroll={{ x: "max-content" }}
-        actionRef={actionRef}
-        columns={PostListTableColumns({
-          handleDeleteItem,
-        })}
-        rowSelection={{
-          selectedRowKeys: selectedRows.map((item) => item.id),
-          onChange: (_, rows) => {
-            setSelectedRows(rows);
-          },
+    <>
+      <DataTable<PostListItemEntity, PostListQueryInput>
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
         }}
-        toolBarRender={() => [
-          <Button type="primary" key="primary">
-            <Link href="/post/edit">
-              <PlusOutlined /> 添加新文章
-            </Link>
-          </Button>,
-        ]}
-      />
-      {selectedRows?.length > 0 && (
-        <FooterToolbar
-          extra={
-            <div>
-              选择了
-              <a style={{ fontWeight: 600 }}>{selectedRows.length}</a>项
-              &nbsp;&nbsp;
+        onChange={(params) => {
+          setSearchParams(params);
+        }}
+        columns={postListTableColumns}
+        isFetching={isFetching}
+        error={isError}
+        selectableRows={true}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        toolBar={
+          <div className="flex justify-between">
+            {/* 工具栏左侧：新增和批量删除按钮 */}
+            <div className="flex gap-1">
+              <Button
+                onClick={() => router.push("/post/edit")}
+                variant="outline"
+              >
+                <Plus />
+                添加新文章
+              </Button>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             </div>
-          }
-        >
-          <Popconfirm title="确定要删除吗？" onConfirm={handleDeleteBatch}>
-            <Button type="primary">批量删除</Button>
-          </Popconfirm>
-        </FooterToolbar>
-      )}
-    </PageContainer>
+            {/* 工具栏右侧：搜索表单 */}
+            <div className="flex gap-1">
+              <DynamicForm
+                schema={PostListQuerySchema}
+                fields={[
+                  {
+                    name: "title",
+                    type: "text",
+                    placeholder: "请输入文章名称进行搜索",
+                  },
+                ]}
+                onSubmit={setSearchParams}
+                inline={true}
+                submitProps={{
+                  children: "查询",
+                  variant: "outline",
+                }}
+              />
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          // 每行右侧的操作按钮：编辑和删除
+          <div className="flex gap-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(`/post/edit?id=${row.id}`)}
+            >
+              <Pencil />
+            </Button>
+            <Dialog
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
+              type="danger"
+              title="确定要删除吗？"
+              onOK={() => handleDeleteItem([row.id])}
+            />
+          </div>
+        )}
+      />
+    </>
   );
 };
 

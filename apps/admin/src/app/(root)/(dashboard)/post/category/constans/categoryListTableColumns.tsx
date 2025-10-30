@@ -1,78 +1,90 @@
-import MultiLangText from "@/src/components/MultiLangText";
-import { EnableType, EnableTypeName } from "@/src/types/EnableType";
-import { MultiLang } from "@/src/types/MulitLang";
-import { creatCategoryTitleByDepth } from "@/src/utils/help";
-import { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
 import dayjs from "dayjs";
-import type { CategoryEntity } from "../types/category.entity";
+import { ColumnDef } from "@tanstack/react-table";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@honeycomb/types/multi.lang";
+import { creatCategoryTitleByDepth } from "@/utils/help";
+import { EnableStatusName, EnableStatus } from "@honeycomb/types/enable.status";
+import { CategoryEntity } from "@honeycomb/trpc/server/types/category.entity";
 
-export interface CategoryListTableColumnsProps {
-  handleEditItem: (record: CategoryEntity) => void;
-  handleDeleteItem: (ids: string[]) => void;
-}
-
-export const categoryListTableColumns = (
-  props: CategoryListTableColumnsProps,
-) =>
-  [
-    {
-      title: "分类名称",
-      dataIndex: "title",
-      key: "title",
-      width: 120,
-      render: (text: MultiLang, record) =>
-        creatCategoryTitleByDepth(<MultiLangText text={text} />, record),
+/**
+ * 分类列表的表格列定义。
+ * 定义了分类管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
+  {
+    accessorKey: "title",
+    header: "分类名称",
+    cell: ({ row }) => {
+      /**
+       * 渲染分类名称的单元格。
+       * 根据分类的深度添加前缀，并显示多语言标题。
+       */
+      const title = row.getValue("title") as MultiLang;
+      const record = row.original;
+      return creatCategoryTitleByDepth(<MultiLangText text={title} />, record);
     },
-    {
-      title: "路径",
-      dataIndex: "path",
-      key: "path",
+  },
+  {
+    accessorKey: "path",
+    header: "路径",
+  },
+  {
+    accessorKey: "description",
+    header: "分类描述",
+    cell: ({ row }) => {
+      /**
+       * 渲染分类描述的单元格。
+       * 显示多语言描述。
+       */
+      const description = row.getValue("description") as MultiLang;
+      return <MultiLangText text={description} />;
     },
-    {
-      title: "分类描述",
-      dataIndex: ["description"],
-      key: "description",
-      search: false,
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    cell: ({ row }) => {
+      /**
+       * 渲染状态的单元格。
+       * 将状态值映射为对应的中文名称。`
+       */
+      const status = row.getValue("status") as EnableStatus;
+      return EnableStatusName[status];
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      render: (text: EnableType) =>
-        EnableTypeName[EnableType[text] as keyof typeof EnableTypeName],
-      search: false,
+  },
+  {
+    accessorKey: "createdAt",
+    header: "添加时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染创建时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "添加时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-      search: false,
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染最后更新日期的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("updatedAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
-      search: false,
-    },
-    {
-      title: "操作",
-      key: "operation",
-      width: 100,
-      search: false,
-      render: (_text, record) => (
-        <p>
-          <a onClick={() => props.handleEditItem(record)}>编辑</a>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
-    },
-  ] as ProColumns<CategoryEntity>[];
+  },
+];
+export default categoryListTableColumns;

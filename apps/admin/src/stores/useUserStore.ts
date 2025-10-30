@@ -1,25 +1,19 @@
-import { UserEntity } from "@/src/app/(root)/(dashboard)/user/types/user.entity";
-import CommonService from "@/src/services/common";
-import { create } from "zustand";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
-type Store = {
-  user?: UserEntity | false;
-  setUser: (data: UserEntity | false) => void;
-  queryUser: () => void;
+/**
+ * 全局用户状态管理 Hook。
+ * 使用 tRPC 查询当前用户信息，并提供用户数据和刷新用户数据的方法。
+ * @returns {{ user: any | undefined; queryUser: () => void }} 包含用户数据和查询用户方法的对象。
+ */
+export const useUserStore = () => {
+  const { data, refetch } = trpc.auth.me.useQuery();
+  return {
+    user: data,
+    queryUser: () => {
+      /**
+       * 刷新用户数据。
+       */
+      refetch();
+    },
+  } as const;
 };
-
-export const useUserStore = create<Store>((set) => ({
-  user: undefined,
-  setUser: (data) => {
-    set(() => ({ user: data }));
-  },
-  queryUser: async () => {
-    CommonService.queryUser().then((result) => {
-      if (result.data.id) {
-        set(() => ({ user: result.data }));
-      } else {
-        set(() => ({ user: false }));
-      }
-    });
-  },
-}));

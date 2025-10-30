@@ -1,46 +1,48 @@
-import React, { unstable_ViewTransition as ViewTransition } from "react";
-import PostServer from "@/src/services/post";
-import { PostType } from "@/src/types/post/PostType";
-import PostInfo from "@/src/components/PostInfo";
-import Tags from "@/src/components/Tags";
-import Card from "@/src/components/Card";
-import { Link } from "@/src/i18n/navigation";
-import Comment from "@/src/components/Comment";
-import CommentServer from "@/src/services/comment";
-import Markdown from "@/src/components/Markdown";
-import SettingServer from "@/src/services/setting";
-import { utcFormat } from "@/src/utils/utcFormat";
-import PageTitle from "@/src/components/PageTitle";
-import ViewServer from "@/src/services/view";
-import { UpdateType } from "@/src/types/view/update.view";
+import React, { ViewTransition } from "react";
+import PostInfo from "@/components/PostInfo";
+import Tags from "@/components/Tags";
+import Card from "@/components/Card";
+import { Link } from "@/i18n/navigation";
+import Comment from "@/components/Comment";
+import Markdown from "@/components/Markdown";
+import { utcFormat } from "@/utils/utcFormat";
+import PageTitle from "@/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MenuType } from "@/src/types/menu/MenuType";
-import { MultiLang } from "@/src/types/Language";
+import { MultiLang } from "@honeycomb/types/multi.lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
+import { PostType } from "@honeycomb/types/post/post.type";
 
+/**
+ * 归档页面组件的属性接口。
+ */
 export interface ArchivesProps {
+  /**
+   * 包含文章 ID 和当前语言环境的 Promise。
+   */
   params: Promise<{ id: string; locale: keyof MultiLang }>;
 }
 
+/**
+ * 归档页面组件。
+ * 用于显示单篇文章的详细内容，包括文章信息、标签、评论、相关文章等。
+ * @param {ArchivesProps} props - 组件属性。
+ * @returns {Promise<JSX.Element>} 归档页面。
+ */
 export default async function Archives(props: ArchivesProps) {
   const { id, locale } = await props.params;
-  const postDetail = await PostServer.indexPostDetail(id);
+  const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
 
   const [randomPostsList, commentsData] = await Promise.all([
-    PostServer.indexRandomPostByCategoryId({
-      postCategory: postDetail.category.id,
-      postId: id,
-      number: 10,
+    serverClient.post.getRandomByCategory({
+      categoryId: postDetail.category.id,
     }),
-    CommentServer.index(id, MenuType.CATEGORY),
-    ViewServer.updateViews({ type: UpdateType.Post, id }),
+    serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
+    serverClient.post.incrementViews({ id }),
   ]);
-
-  /**
-   * 格式化文章标题
-   */
   const getTitle = () => {
     return postDetail.type === PostType.MOVIE
       ? `${postDetail.title?.[locale]} (${utcFormat(postDetail.movieTime!, "YYYY")})`
@@ -48,7 +50,8 @@ export default async function Archives(props: ArchivesProps) {
   };
 
   /**
-   * 计算 JSONLD
+   * 计算 JSONLD (JSON for Linking Data) 数据。
+   * 根据文章类型生成结构化数据，以优化搜索引擎抓取。
    */
   const jsonLd: any = {
     "@context": "https://schema.org",
@@ -156,18 +159,33 @@ export default async function Archives(props: ArchivesProps) {
   );
 }
 
+/**
+ * `generateMetadata` 函数的属性接口。
+ */
 type GenerateMetadataProps = {
+  /**
+   * 包含文章 ID 的 Promise。
+   */
   params: Promise<{ id: string }>;
+  /**
+   * 包含搜索参数的 Promise。
+   */
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+/**
+ * 为归档页面生成元数据。
+ * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
+ * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @returns {Promise<Metadata>} 页面元数据。
+ */
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
   const { id } = await props.params;
   const [setting, postDetail] = await Promise.all([
-    SettingServer.indexSetting(),
-    PostServer.indexPostDetail(id),
+    serverClient.setting.index(),
+    serverClient.post.detail({ id }),
   ]);
   const locale = (await getLocale()) as keyof MultiLang;
 
@@ -185,7 +203,7 @@ export async function generateMetadata(
   const openGraph = {
     title: title,
     type: "article",
-    images: postDetail.imagesInContent.map((item) => item.url),
+    images: postDetail.imagesInContent.map((item: any) => item.url),
     description: setting.siteName?.[locale],
   };
 
@@ -196,6 +214,11 @@ export async function generateMetadata(
   };
 }
 
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<any[]>} 静态参数数组。
+ */
 export async function generateStaticParams() {
   return [];
 }

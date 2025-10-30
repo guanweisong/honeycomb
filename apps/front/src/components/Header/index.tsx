@@ -1,39 +1,43 @@
-import { unstable_ViewTransition as ViewTransition } from "react";
+import { ViewTransition } from "react";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
-import { MenuEntity } from "@/src/types/menu/menu.entity";
-import Menu, { MenuItem } from "@/src/components/Menu";
-import { Link } from "@/src/i18n/navigation";
-import { MenuType } from "@/src/types/menu/MenuType";
-import SettingServer from "@/src/services/setting";
-import MenuServer from "@/src/services/menu";
-import { SettingEntity } from "@/src/types/setting/setting.entity";
-import getCurrentPathOfMenu from "@/src/utils/getCurrentPathOfMenu";
-import Breadcrumb from "@/src/components/Breadcrumb";
-import { ThemeSwitcher } from "@/src/components/ThemeSwitcher";
-import LanguageSwitcher from "@/src/components/LanguageSwitcher";
+import Menu from "@/components/Menu";
+import { Link } from "@/i18n/navigation";
+import getCurrentPathOfMenu from "@/utils/getCurrentPathOfMenu";
+import Breadcrumb from "@/components/Breadcrumb";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/src/types/Language";
+import { serverClient } from "@honeycomb/trpc/server";
+import { MenuLocalEntity } from "@/types/menu.local.entity";
+import { MenuType } from "@honeycomb/types/menu/menu.type";
+import { MenuEntityTree } from "@/types/menu.entity.tree";
+import { MultiLangEnum } from "@honeycomb/types/multi.lang";
+import { MenuEntity } from "@honeycomb/trpc/server/types/menu.entity";
 
+/**
+ * 网站头部组件。
+ * 显示网站名称、主题切换、语言切换和导航菜单。
+ * @returns {Promise<JSX.Element>} 网站头部。
+ */
 export default async function Header() {
-  const [setting, menu = [], locale] = (await Promise.all([
-    SettingServer.indexSetting(),
-    MenuServer.indexMenu(),
+  const [setting, menu, locale] = await Promise.all([
+    serverClient.setting.index(),
+    serverClient.menu.index(),
     getLocale(),
-  ])) as [SettingEntity, MenuEntity[], keyof MultiLang];
+  ]);
 
   /**
-   * 补充菜单
+   * 包含所有菜单项的数组，包括首页和友情链接。
    */
-  const allMenu: MenuEntity[] = [
+  const allMenu = [
     {
       title: { zh: "首页", en: "Home" },
-      isHome: true,
       id: "home",
       path: "/",
       children: [],
     },
-    ...menu,
+    ...menu?.list,
     {
       title: { zh: "比邻", en: "Links" },
       id: "links",
@@ -44,27 +48,31 @@ export default async function Header() {
   ];
 
   /**
-   * 把扁平树变换成树结构
+   * 将扁平化的菜单数据转换为树形结构。
    */
-  const menuTree: MenuEntity[] = listToTree(allMenu, {
+  const menuTree = listToTree(allMenu, {
     idKey: "id",
     parentKey: "parent",
-  });
+  }) as MenuEntityTree[];
 
   /**
-   * 计算菜单的Link
+   * 计算菜单的 Link。
+   * 将处理后的菜单数据格式化为 `MenuItem` 数组，用于 `Menu` 组件。
+   * @returns {MenuLocalEntity[]} 格式化后的菜单数据。
    */
   const getMenuData = () => {
-    const result: MenuItem[] = [];
-    const getItem = (data: MenuEntity) => {
+    const result: MenuLocalEntity[] = [];
+    const getItem = (data: MenuEntityTree) => {
+      /**
+       * 递归处理单个菜单项，生成 `MenuItem` 格式。
+       * @param {MenuEntityTree} data - 原始菜单实体数据。
+       * @returns 格式化后的菜单项。
+       */
       const item = {
-        label: data.title?.[locale],
-      } as MenuItem;
-      if (data.isHome) {
+        label: data.title?.[locale as MultiLangEnum],
+      } as MenuLocalEntity;
+      if (data.id === "home") {
         item.link = "/list/category";
-      }
-      if (data.url) {
-        item.link = data.url;
       }
       switch (data.type) {
         case MenuType.PAGE:
@@ -74,7 +82,7 @@ export default async function Header() {
           item.link = `/list/category/${getCurrentPathOfMenu({
             id: data.id,
             familyProp: "path",
-            menu,
+            menu: menu?.list,
           }).join("/")}`;
           break;
       }
@@ -89,6 +97,9 @@ export default async function Header() {
     return result;
   };
 
+  /**
+   * 格式化后的菜单数据，用于渲染导航菜单。
+   */
   const menuDataFormat = getMenuData();
 
   return (
@@ -103,7 +114,7 @@ export default async function Header() {
                   scroll={false}
                   className="text-pink-500 text-xl"
                 >
-                  {setting?.siteName?.[locale]}
+                  {setting?.siteName?.[locale as MultiLangEnum]}
                 </Link>
               </ViewTransition>
             </span>
@@ -115,12 +126,12 @@ export default async function Header() {
             </span>
           </div>
           <div className="h-full flex items-center">
-            <Menu data={menuDataFormat} flatMenuData={menu} />
+            <Menu data={menuDataFormat} flatMenuData={menu?.list} />
           </div>
         </div>
       </div>
       <ViewTransition name="siteBreadcrumb">
-        <Breadcrumb menu={allMenu} />
+        <Breadcrumb menu={allMenu as MenuEntity[]} />
       </ViewTransition>
     </>
   );

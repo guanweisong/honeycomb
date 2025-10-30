@@ -1,77 +1,98 @@
-import MultiLangText from "@/src/components/MultiLangText";
-import { MultiLang } from "@/src/types/MulitLang";
-import type { ProColumns } from "@ant-design/pro-components";
-import { Popconfirm } from "antd";
 import dayjs from "dayjs";
-import Link from "next/link";
-import type { UserReadOnly } from "../../../post/types/post.entity";
-import { pageStatusOptions } from "../../types/PageStatus";
-import type { PageEntity } from "../../types/page.entity";
+import { ColumnDef } from "@tanstack/react-table";
+import MultiLangText from "@/components/MultiLangText";
+import { MultiLang } from "@honeycomb/types/multi.lang";
+import { Badge } from "@honeycomb/ui/components/badge";
+import { pageStatusOptions } from "@honeycomb/types/page/page.status";
+import { PageEntity } from "@honeycomb/trpc/server/types/page.entity";
 
-export interface PageListTableColumnsProps {
-  handleDeleteItem: (ids: string[]) => void;
-}
-
-export const pageListTableColumns = (props: PageListTableColumnsProps) =>
-  [
-    {
-      title: "文章名称",
-      dataIndex: "title",
-      key: "title",
-      render: (text: MultiLang) => <MultiLangText text={text} />,
+/**
+ * 页面列表的表格列定义。
+ * 定义了页面管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
+ */
+export const pageListTableColumns: ColumnDef<PageEntity>[] = [
+  {
+    accessorKey: "title",
+    header: "文章名称",
+    cell: ({ row }) => {
+      /**
+       * 渲染文章标题的单元格。
+       * 显示多语言标题。
+       */
+      const title = row.getValue("title") as MultiLang;
+      return <MultiLangText text={title} />;
     },
-    {
-      title: "作者",
-      dataIndex: "author",
-      key: "author",
-      search: false,
-      render: (text: UserReadOnly) => text.name,
+  },
+  {
+    accessorKey: "author",
+    header: "作者",
+    cell: ({ row }) => {
+      /**
+       * 渲染作者名称的单元格。
+       * 如果作者信息不存在，则显示 "-"。
+       */
+      const author = row.getValue("author");
+      return author?.name ?? "-";
     },
-    {
-      title: "状态",
-      dataIndex: "status",
-      key: "status",
-      valueType: "select",
-      fieldProps: {
-        mode: "multiple",
-        options: pageStatusOptions,
-      },
+  },
+  {
+    accessorKey: "status",
+    header: "状态",
+    meta: {
+      filterOptions: pageStatusOptions,
     },
-    {
-      title: "发表时间",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+    cell: ({ row }) => {
+      /**
+       * 渲染页面状态的单元格。
+       * 将页面状态值映射为对应的中文标签，并根据状态显示不同样式的徽章。
+       */
+      const status = row.getValue("status") as string;
+      const label =
+        pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      return (
+        <Badge variant={status === "published" ? "default" : "secondary"}>
+          {label}
+        </Badge>
+      );
     },
-    {
-      title: "最后更新日期",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      search: false,
-      render: (text: string) => dayjs(text).format("YYYY-MM-DD HH:mm:ss"),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "发表时间",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染发表时间的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "点击量",
-      dataIndex: "views",
-      key: "views",
-      search: false,
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "最后更新日期",
+    enableSorting: true,
+    cell: ({ row }) => {
+      /**
+       * 渲染最后更新日期的单元格。
+       * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
+       */
+      const value = row.getValue("updatedAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+        </span>
+      );
     },
-    {
-      title: "操作",
-      key: "operation",
-      width: 100,
-      search: false,
-      render: (text, record) => (
-        <p>
-          <Link href={`/page/edit?id=${record.id}`}>编辑</Link>&nbsp;
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => props.handleDeleteItem([record.id])}
-          >
-            <a>删除</a>
-          </Popconfirm>
-        </p>
-      ),
-    },
-  ] as ProColumns<PageEntity>[];
+  },
+  {
+    accessorKey: "views",
+    header: "点击量",
+    enableSorting: true,
+  },
+];

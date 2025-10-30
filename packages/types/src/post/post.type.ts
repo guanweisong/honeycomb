@@ -1,0 +1,37 @@
+/**
+ * 文章的类型
+ */
+
+export enum PostType {
+  "ARTICLE" = "ARTICLE",
+  "MOVIE" = "MOVIE",
+  "PHOTOGRAPH" = "PHOTOGRAPH",
+  "QUOTE" = "QUOTE",
+}
+
+export enum PostTypeName {
+  "ARTICLE" = "文章",
+  "MOVIE" = "电影",
+  "PHOTOGRAPH" = "画廊",
+  "QUOTE" = "引用",
+}
+
+/** 用于在 UI 中显示文章类型的选项数组。 */
+export const postTypeOptions = [
+  {
+    label: PostTypeName.ARTICLE,
+    value: PostType.ARTICLE,
+  },
+  {
+    label: PostTypeName.MOVIE,
+    value: PostType.MOVIE,
+  },
+  {
+    label: PostTypeName.PHOTOGRAPH,
+    value: PostType.PHOTOGRAPH,
+  },
+  {
+    label: PostTypeName.QUOTE,
+    value: PostType.QUOTE,
+  },
+];

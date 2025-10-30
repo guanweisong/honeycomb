@@ -1,116 +1,92 @@
 "use client";
 
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import { formItemLayout } from "@/src/constants/formItemLayout";
-import { useSettingStore } from "@/src/stores/useSettingStore";
-import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
-import { Button, Card, Form, Input, Space, message } from "antd";
-import { useEffect } from "react";
-import SettingService from "./service";
+import { useSettingStore } from "@/stores/useSettingStore";
+import { toast } from "sonner";
+import { DynamicForm } from "@honeycomb/ui/extended/DynamicForm";
+import { SettingUpdateSchema } from "@honeycomb/validation/setting/schemas/setting.update.schema";
+import { trpc } from "@honeycomb/trpc/client/trpc";
 
+/**
+ * 网站设置页面。
+ * 允许管理员配置网站的各项全局设置，如站点名称、签名等。
+ * 使用 `react-hook-form` 管理表单状态，并通过 tRPC 与后端进行数据交互。
+ */
 const Setting = () => {
-  const [form] = Form.useForm();
   const settingStore = useSettingStore();
 
   const { setting, querySetting } = settingStore;
 
-  useEffect(() => {
-    form.setFieldsValue(setting);
-  }, [setting]);
+  /**
+   * 更新网站设置的 tRPC mutation。
+   * 用于向后端提交设置更改。
+   */
+  const updateSetting = trpc.setting.update.useMutation();
 
   /**
-   * 保存事件
+   * 表单提交处理器。
+   * 当用户提交设置表单时调用，将表单值发送到后端进行更新，并刷新本地设置缓存。
+   * @param {any} values - 表单提交的值。
    */
-  const handleSubmit = () => {
-    form.validateFields().then(async (values) => {
-      const result = await SettingService.update(setting!.id, values);
-      if (result.status === 201) {
-        await querySetting();
-        message.success("更新成功");
-      }
-    });
+  const handleSubmit = async (values: any) => {
+    try {
+      await updateSetting.mutateAsync({ id: setting!.id, ...values });
+      await querySetting();
+      toast.success("更新成功");
+    } catch (e) {
+      toast.error("更新失败");
+    }
   };
 
   return (
-    <PageContainer>
-      <Form form={form}>
-        <Space
-          direction={"vertical"}
-          style={{ width: "100%", display: "flex" }}
-        >
-          <Card title="基础信息">
-            <MultiLangFormItem>
-              <Form.Item
-                {...formItemLayout}
-                name={"siteName"}
-                label="站点名称"
-                rules={[{ required: true, message: "请填写站点名称" }]}
-              >
-                <Input placeholder="请填写站点名称" maxLength={50} />
-              </Form.Item>
-            </MultiLangFormItem>
-            <MultiLangFormItem>
-              <Form.Item
-                {...formItemLayout}
-                name={"siteSubName"}
-                label="副标题"
-                rules={[{ required: true, message: "请填写站点副标题" }]}
-              >
-                <Input placeholder="请填写站点副标题" maxLength={100} />
-              </Form.Item>
-            </MultiLangFormItem>
-            <MultiLangFormItem>
-              <Form.Item
-                {...formItemLayout}
-                name={"siteSignature"}
-                label="签名"
-                rules={[{ required: true, message: "请填写签名" }]}
-              >
-                <Input.TextArea
-                  rows={3}
-                  placeholder="请填写签名"
-                  maxLength={200}
-                />
-              </Form.Item>
-            </MultiLangFormItem>
-            <MultiLangFormItem>
-              <Form.Item
-                {...formItemLayout}
-                name={"siteCopyright"}
-                label="版权信息"
-                rules={[{ required: true, message: "请填写版权信息" }]}
-              >
-                <Input.TextArea
-                  rows={3}
-                  placeholder="请填写版权信息"
-                  maxLength={200}
-                />
-              </Form.Item>
-            </MultiLangFormItem>
-          </Card>
-          <Card title="备案信息">
-            <Form.Item {...formItemLayout} name="siteRecordNo" label="备案号">
-              <Input placeholder="用填写备案号" maxLength={100} />
-            </Form.Item>
-            <Form.Item
-              {...formItemLayout}
-              name="siteRecordUrl"
-              label="工信部网址"
-            >
-              <Input
-                placeholder="用填写工信部网址，有备案号时显示链接"
-                maxLength={100}
-              />
-            </Form.Item>
-          </Card>
-        </Space>
-      </Form>
-      <FooterToolbar>
-        <Button type="primary" onClick={handleSubmit}>
-          保存
-        </Button>
-      </FooterToolbar>
-    </PageContainer>
+    <div className="w-[60%] mx-auto">
+      <DynamicForm
+        defaultValues={setting}
+        schema={SettingUpdateSchema}
+        fields={[
+          {
+            label: "站点名称",
+            name: "siteName",
+            type: "text",
+            placeholder: "请填写站点名称",
+            multiLang: true,
+          },
+          {
+            label: "副标题",
+            name: "siteSubName",
+            type: "text",
+            placeholder: "请填写副标题",
+            multiLang: true,
+          },
+          {
+            label: "签名",
+            name: "siteSignature",
+            type: "textarea",
+            placeholder: "请填写签名",
+            multiLang: true,
+          },
+          {
+            label: "版权信息",
+            name: "siteCopyright",
+            type: "textarea",
+            placeholder: "请填写版权信息",
+            multiLang: true,
+          },
+          {
+            label: "备案号",
+            name: "siteRecordNo",
+            type: "text",
+            placeholder: "请填写备案号",
+          },
+          {
+            label: "工信部网址",
+            name: "siteRecordUrl",
+            type: "text",
+            placeholder: "请填写工信部网址",
+          },
+        ]}
+        onSubmit={handleSubmit}
+      />
+    </div>
   );
 };
 

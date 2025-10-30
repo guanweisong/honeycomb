@@ -1,532 +1,423 @@
 "use client";
 
-import type { MediaEntity } from "@/src/app/(root)/(dashboard)/media/types/media.entity";
-import PostService from "@/src/app/(root)/(dashboard)/post/service";
-import TagService from "@/src/app/(root)/(dashboard)/tag/service";
-import type { TagEntity } from "@/src/app/(root)/(dashboard)/tag/types/tag.entity";
-import MultiLangFormItem from "@/src/components/MultiLangFormItem";
-import PhotoPickerModal from "@/src/components/PhotoPicker";
-import { ModalType } from "@/src/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/src/utils/help";
-import { PlusOutlined } from "@ant-design/icons";
-import { FooterToolbar, PageContainer } from "@ant-design/pro-components";
-import {
-  Button,
-  Card,
-  DatePicker,
-  Form,
-  Input,
-  Popconfirm,
-  Select,
-  message,
-} from "antd";
-import dayjs from "dayjs";
-import dynamic from "next/dynamic";
+import PhotoPickerModal from "@/components/PhotoPicker";
+import { ModalType } from "@/types/ModalType";
+import { Button } from "@honeycomb/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import AddCategoryModal from "../category/components/AddCategoryModal";
-import CategoryService from "../category/service";
-import type { CategoryEntity } from "../category/types/category.entity";
-import Block from "../edit/components/Block";
-import { PostStatus } from "../types/PostStatus";
-import { PostType, postTypeOptions } from "../types/PostType";
-import type { PostEntity } from "../types/post.entity";
-import type { MultiTagProps } from "./components/MultiTag";
+import React, { useState, useEffect } from "react";
+import AddCategoryModal, {
+  ModalProps,
+} from "../category/components/AddCategoryModal";
 import MultiTag from "./components/MultiTag";
 import type { PhotoPickerItemProps } from "./components/PhotoPickerItem";
 import PhotoPickerItem from "./components/PhotoPickerItem";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { Form } from "@honeycomb/ui/components/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PostInsertSchema } from "@honeycomb/validation/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@honeycomb/validation/post/schemas/post.update.schema";
+import { DynamicField } from "@honeycomb/ui/extended/DynamicForm/DynamicField";
+import { creatCategoryTitleByDepth } from "@/utils/help";
+import { Plus } from "lucide-react";
+import { Dialog } from "@honeycomb/ui/extended/Dialog";
+import { trpc } from "@honeycomb/trpc/client/trpc";
+import { PostStatus } from "@honeycomb/types/post/post.status";
+import { PostType, postTypeOptions } from "@honeycomb/types/post/post.type";
+import { TagEntity } from "@honeycomb/trpc/server/types/tag.entity";
+import { tagMap } from "@/constants/tagMap";
+import { PostDetailEntity } from "@honeycomb/trpc/server/types/post.entity";
 
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
+/**
+ * 标签类型与对应的表单字段名的映射关系。
+ * 用于将多选标签组件返回的标签类型，转换为表单中存储标签ID的字段名。
+ */
 
-const FormItem = Form.Item;
-const { TextArea } = Input;
-
+/**
+ * 文章创建/编辑页面核心组件。
+ * 这是一个功能非常丰富的"超级表单"组件，用于处理所有类型的文章的新建和编辑操作。
+ * 它使用 `react-hook-form` 进行表单状态管理，使用 tRPC 与后端进行数据交互。
+ * 表单的结构会根据所选的 `PostType` (文章类型) 动态变化。
+ */
 const PostDetail = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  // @ts-ignore
-  const [detail, setDetail] = useState<PostEntity>({ type: PostType.ARTICLE });
-  const [list, setList] = useState<CategoryEntity[]>([]);
-  const [showPhotoPicker, setShowPhotoPicker] = useState<boolean>(false);
-  const [modalProps, setModalProps] = useState<{
-    type?: ModalType;
-    open: boolean;
-    record?: CategoryEntity;
-  }>({
-    type: ModalType.ADD,
-    open: false,
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const [modalProps, setModalProps] = useState<ModalProps>();
+  const [loading, setLoading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
+
+  const id = searchParams.get("id") as string;
+
+  const form = useForm({
+    resolver: zodResolver(id ? PostUpdateSchema : PostInsertSchema),
+    defaultValues: {
+      type: PostType.ARTICLE,
+    },
   });
 
-  const [form] = Form.useForm();
+  const type = (form.watch("type") as PostType) ?? PostType.ARTICLE;
 
-  const id = searchParams.get("id");
-
-  /**
-   * 分类列表获取
-   */
-  const index = async () => {
-    const result = await CategoryService.index({ limit: 9999 });
-    if (result.status === 200) {
-      setList(result.data.list);
-    }
-  };
+  const { data: category } = trpc.category.index.useQuery({ limit: 9999 });
+  const { data: detail, refetch } = trpc.post.detail.useQuery({
+    id,
+  });
+  const createPost = trpc.post.create.useMutation();
+  const updatePost = trpc.post.update.useMutation();
 
   /**
-   * 查询文章详情
-   * @param values
+   * Effect hook: 用于在编辑模式下同步表单数据。
+   * 当 `detail` 数据从后端加载完毕后，此 effect 会被触发。
+   * 它使用 `form.reset` 方法将获取到的文章数据填充到表单的各个字段中。
    */
-  const indexDetail = async (values: Partial<PostEntity>) => {
-    console.log("post=>model=>detail", values);
-    let result;
-    if (typeof values.id !== "undefined") {
-      result = await PostService.indexPostDetail(values);
-      result = result.data;
-      if (result.movieTime) {
-        // @ts-ignore
-        result.movieTime = dayjs(result.movieTime);
-      }
-      if (result.galleryTime) {
-        // @ts-ignore
-        result.galleryTime = dayjs(result.galleryTime);
-      }
-      setDetail(result);
-    }
-  };
-
   useEffect(() => {
-    if (id) {
-      indexDetail({ id });
+    if (detail && form) {
+      form.reset(detail);
+      setCoverPreview(detail.cover);
     }
-    return () => {
-      // @ts-ignore
-      setDetail({ type: PostType.ARTICLE });
-    };
-  }, [id]);
-
-  useEffect(() => {
-    index();
-  }, []);
-
-  useEffect(() => {
-    form.setFieldsValue(detail);
-  }, [detail]);
+  }, [detail, form]);
 
   /**
-   * 从tag对象数组中收集id数组
-   * @param values
+   * 规范化表单数据。
+   * 在提交前对表单数据进行处理，例如添加文章状态，并进行必要的验证。
+   * @param {any} values - 原始表单值。
+   * @param {PostStatus} status - 文章的状态（如 PUBLISHED, DRAFT）。
+   * @returns {any | null} 规范化后的数据，如果验证失败则返回 null。
    */
-  const getTagsValue = (
-    values: Omit<TagEntity, "createdAt" | "updatedAt">[],
-  ) => {
-    const result: string[] = [];
-    values.forEach((item) => {
-      result.push(item.id);
-    });
-    return result;
-  };
+  const normalizeFormData = (values: any, status: PostStatus): any | null => {
+    const data: any = { ...values, status };
 
-  /**
-   * 提交按钮事件
-   * @param status
-   * @param type
-   */
-  const handleSubmit = (status: PostStatus, type: "create" | "update") => {
-    form.validateFields().then(async (values) => {
-      const data = values;
-      console.log("values", data);
-      data.status = status;
-      if (data.galleryStyles) {
-        data.galleryStyleIds = getTagsValue(data.galleryStyles);
-        delete data.galleryStyles;
-      }
-      if (data.movieDirectors) {
-        data.movieDirectorIds = getTagsValue(data.movieDirectors);
-        delete data.movieDirectors;
-      }
-      if (data.movieActors) {
-        data.movieActorIds = getTagsValue(data.movieActors);
-        delete data.movieActors;
-      }
-      if (data.movieStyles) {
-        data.movieStyleIds = getTagsValue(data.movieStyles);
-        delete data.movieStyles;
-      }
-      if (
-        [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-          data.type,
-        ) &&
-        !data.cover?.id
-      ) {
-        message.error("请上传封面");
-        return;
-      }
-      if (data.cover) {
-        data.coverId = data.cover.id;
-        delete data.cover;
-      }
-      switch (type) {
-        case "create":
-          console.log("create", data);
-          const createResult = await PostService.create(data);
-          if (createResult.status === 201) {
-            message.success("添加成功");
-            router.push(`/post/edit?id=${createResult.data.id}`);
-          }
-          break;
-        case "update":
-          console.log("update", detail!.id, data);
-          const updateResult = await PostService.update(detail!.id, data);
-          if (updateResult.status === 201) {
-            message.success("更新成功");
-            indexDetail({ id: detail!.id });
-          }
-          break;
-        default:
-      }
-    });
-  };
-
-  /**
-   * 创建tag
-   * @param name
-   * @param tag_name
-   */
-  const onAddTag = async (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
-    tag_name: string,
-  ) => {
-    const result = await TagService.create({ name: { zh: tag_name, en: "" } });
-    if (result && result.status === 201) {
-      setDetail({
-        ...detail,
-        [name]: [
-          ...(detail[name] ?? []),
-          { id: result.data.id, name: result.data.name },
-        ],
-      } as PostEntity);
+    if (
+      [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
+        data.type,
+      ) &&
+      !data.coverId
+    ) {
+      toast.error("请上传封面");
+      return null;
     }
+
+    return data;
   };
 
   /**
-   * 更新tag
-   * @param name
-   * @param tags
+   * 表单提交处理器。
+   * 这是一个高阶函数，它根据提交的动作（发布、保存草稿等）返回一个可供表单使用的 `onSubmit` 函数。
+   * @param {PostStatus} status - 要设置给文章的状态（如 `PUBLISHED`, `DRAFT`）。
+   * @param {"create" | "update"} actionType - 当前的操作类型。
+   * @returns {Function} 一个由 `react-hook-form` 的 `handleSubmit` 包裹的异步函数。
+   *
+   * 内部逻辑：
+   * 1. 调用 `normalizeFormData` 验证并格式化表单数据。
+   * 2. 根据 `actionType` 调用 `createPost` 或 `updatePost` tRPC mutation。
+   * 3. 在 API 调用成功后，显示成功提示，并（在创建时）跳转到编辑页面。
+   * 4. 捕获并处理任何验证或 API 错误。
    */
-  const onUpdateTags = (
-    name: "movieActors" | "movieDirectors" | "movieStyles" | "galleryStyles",
-    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
-  ) => {
-    setDetail({
-      ...detail,
-      [name]: tags,
-    } as PostEntity);
+  const handleFormSubmit = (
+    status: PostStatus,
+    actionType: "create" | "update",
+  ): Promise<void> => {
+    return form.handleSubmit(
+      async (values) => {
+        const data = normalizeFormData(values, status);
+        if (!data) return;
+        setLoading(true);
+        switch (actionType) {
+          case "create":
+            createPost
+              .mutateAsync(data)
+              .then((res) => {
+                if (res.id) {
+                  toast.success("添加成功");
+                  router.push(`/post/edit?id=${res.id}`);
+                }
+              })
+              .finally(() => setLoading(false));
+            break;
+          case "update":
+            updatePost
+              .mutateAsync({ ...data, id: detail!.id })
+              .then((res) => {
+                if (res) {
+                  toast.success("更新成功");
+                  refetch();
+                }
+              })
+              .finally(() => setLoading(false));
+            break;
+        }
+      },
+      (errors) => {
+        console.error("validate errors", errors);
+      },
+    )();
   };
 
   /**
-   * 打开图片选择器事件
-   * @param type
+   * 根据文章的当前状态，动态渲染操作按钮。
+   * @returns {JSX.Element} 返回一个包含多个按钮的 React Fragment。
+   *
+   * 渲染逻辑：
+   * - **编辑模式 & 已发布**: 显示“更新”和“撤回为草稿”按钮。
+   * - **编辑模式 & 草稿**: 显示“保存”和“发布”按钮。
+   * - **新建模式**: 显示“发布”和“保存草稿”按钮。
    */
-  const openPhotoPicker = () => {
-    setShowPhotoPicker(true);
+  const getBtns = () => {
+    const isEdit = !!detail?.id;
+    const isDraft = detail?.status === PostStatus.DRAFT;
+    const isPublished = detail?.status === PostStatus.PUBLISHED;
+
+    return (
+      <>
+        {isEdit && isPublished && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() => handleFormSubmit(PostStatus.PUBLISHED, "update")}
+          >
+            更新
+          </Button>
+        )}
+
+        {isEdit && isPublished && (
+          <Dialog
+            trigger={
+              <Button type="button" variant="secondary" disabled={loading}>
+                撤回为草稿
+              </Button>
+            }
+            type="danger"
+            title="确定要撤回吗？"
+            onOK={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+          />
+        )}
+
+        {isEdit && isDraft && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() => handleFormSubmit(PostStatus.DRAFT, "update")}
+          >
+            保存
+          </Button>
+        )}
+
+        {((isEdit && isDraft) || !isEdit) && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() =>
+              handleFormSubmit(
+                PostStatus.PUBLISHED,
+                isEdit ? "update" : "create",
+              )
+            }
+          >
+            发布
+          </Button>
+        )}
+
+        {!isEdit && (
+          <Button
+            type="button"
+            onClick={() => handleFormSubmit(PostStatus.DRAFT, "create")}
+          >
+            保存草稿
+          </Button>
+        )}
+      </>
+    );
   };
 
   /**
-   * 关闭图片选择器
+   * 封面图片选择器组件的属性。
+   * 包含封面ID、清除封面图片的回调函数、打开图片选择器的回调函数、标题和尺寸提示。
    */
-  const handlePhotoPickerCancel = () => {
-    setShowPhotoPicker(false);
-  };
-
-  /**
-   * 图片选择器的确认事件
-   */
-  const handlePhotoPickerOk = (media: MediaEntity) => {
-    setDetail({ ...detail, cover: media, coverId: media.id } as PostEntity);
-    handlePhotoPickerCancel();
-  };
-
-  /**
-   * 清空图片选择器的图片
-   * @param type
-   */
-  const handlePhotoClear = () => {
-    const { cover, ...rest } = detail as PostEntity;
-    setDetail(rest);
-  };
-
-  /**
-   * 新增分类弹窗事件
-   */
-  const handleAddNewCategory = () => {
-    setModalProps({
-      open: true,
-      type: ModalType.ADD,
-    });
-  };
-
-  console.log("detail", detail);
-
-  /**
-   * 定义tag选择器的参数
-   */
-  const tagProps = {
-    detail,
-    onTagsChange: onUpdateTags,
-    onAddTag,
-  };
-  const galleryStyleProps: MultiTagProps = {
-    ...tagProps,
-    name: "galleryStyles",
-    title: "照片风格",
-  };
-  const movieDirectorProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieDirectors",
-    title: "导演",
-  };
-  const movieActorProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieActors",
-    title: "演员",
-  };
-  const movieStyleProps: MultiTagProps = {
-    ...tagProps,
-    name: "movieStyles",
-    title: "电影风格",
-  };
-
-  /**
-   * 定义图片选择的参数
-   */
-  const photoProps = {
-    detail,
-    form,
-    handlePhotoClear,
-    openPhotoPicker,
-  };
-
-  const postCoverProps: PhotoPickerItemProps = {
-    ...photoProps,
+  const photoPickerProps: PhotoPickerItemProps = {
+    cover: coverPreview,
+    handlePhotoClear: () => {
+      form.setValue("coverId", undefined, { shouldDirty: true });
+      setCoverPreview(undefined);
+    },
+    openPhotoPicker: () => setShowPhotoPicker(true),
     title: "封面",
     size: "1920*1080",
   };
 
   /**
-   * 计算按钮状态
+   * 处理标签更新的回调函数。
+   * 当多选标签组件的标签发生变化时调用，将选中的标签ID更新到表单对应的字段中。
+   * @param {keyof typeof tagMap} name - 标签类型，对应 `tagMap` 中的键名。
+   * @param {Omit<TagEntity, "updatedAt" | "createdAt">[]} tags - 更新后的标签实体数组。
    */
-  const getBtns = () => {
-    const btns = [];
-    if (!!detail?.id) {
-      if (detail.status === PostStatus.PUBLISHED) {
-        btns.push(
-          <Button
-            type="primary"
-            onClick={() => handleSubmit(PostStatus.PUBLISHED, "update")}
-          >
-            更新
-          </Button>,
-          <Popconfirm
-            title="确定要撤回吗？"
-            onConfirm={() => handleSubmit(PostStatus.DRAFT, "update")}
-          >
-            <Button type={"dashed"}>撤回为草稿</Button>
-          </Popconfirm>,
-        );
-      }
-      if (detail.status === PostStatus.DRAFT) {
-        btns.push(
-          <Button onClick={() => handleSubmit(PostStatus.DRAFT, "update")}>
-            保存
-          </Button>,
-          <Button
-            type="primary"
-            onClick={() => handleSubmit(PostStatus.PUBLISHED, "update")}
-          >
-            发布
-          </Button>,
-        );
-      }
-    } else {
-      btns.push(
-        <Button onClick={() => handleSubmit(PostStatus.DRAFT, "create")}>
-          保存草稿
-        </Button>,
-        <Button
-          type="primary"
-          onClick={() => handleSubmit(PostStatus.PUBLISHED, "create")}
-        >
-          发布
-        </Button>,
-      );
-    }
-    return btns;
+  const onUpdateTags = (
+    name: keyof typeof tagMap,
+    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
+  ) => {
+    form.setValue(
+      tagMap[name],
+      tags.map((t) => t.id),
+      { shouldValidate: true, shouldDirty: true },
+    );
+  };
+
+  /**
+   * 传递给 `MultiTag` 组件的属性。
+   * 包含标签更新的回调函数。
+   */
+  const tagProps = {
+    onTagsChange: onUpdateTags,
   };
 
   return (
-    <PageContainer>
-      <Card>
-        <Form
-          form={form}
-          onValuesChange={(changedValues) => {
-            setDetail({ ...detail, ...changedValues });
-          }}
-        >
+    <>
+      <Form {...form}>
+        <form>
           <div className="lg:flex">
-            <div className="lg:flex-1">
+            {/* 主内容区 */}
+            <div className="lg:flex-1 flex flex-col gap-3 mb-3">
+              {/* 根据文章类型，动态渲染不同的核心字段 */}
               {([
                 PostType.ARTICLE,
                 PostType.MOVIE,
                 PostType.PHOTOGRAPH,
-              ].includes(detail.type) ||
-                !detail.type) && (
+              ].includes(type) ||
+                !type) && (
+                // 文章、电影、摄影类型共有字段
                 <>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"title"}
-                      rules={[{ required: true, message: "请输入标题" }]}
-                    >
-                      <Input
-                        type="text"
-                        size="large"
-                        placeholder="在此输入文章标题"
-                        maxLength={20}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"content"}
-                      rules={[
-                        { max: 20000, message: "最多只能输入20000个字符" },
-                        { required: true, message: "请输入内容" },
-                      ]}
-                    >
-                      <SimpleMDE className="markdown-body" />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem name={"excerpt"}>
-                      <TextArea
-                        rows={4}
-                        placeholder="内容简介"
-                        maxLength={1000}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
+                  <DynamicField
+                    name="title"
+                    type="text"
+                    label="标题"
+                    placeholder="在此输入文章标题"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="content"
+                    type="richText"
+                    label="内容"
+                    placeholder="请输入内容"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="excerpt"
+                    type="textarea"
+                    label="简介"
+                    placeholder="内容简介"
+                    multiLang
+                  />
                 </>
               )}
-              {[PostType.QUOTE].includes(detail.type) && (
+              {/* 引用类型专属字段 */}
+              {type === PostType.QUOTE && (
                 <>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"quoteContent"}
-                      rules={[{ required: true, message: "请输入内容" }]}
-                    >
-                      <TextArea
-                        rows={4}
-                        placeholder="请输入话语"
-                        maxLength={500}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
-                  <MultiLangFormItem>
-                    <FormItem
-                      name={"quoteAuthor"}
-                      rules={[{ required: true, message: "请输入作者名" }]}
-                    >
-                      <Input
-                        type="text"
-                        size="large"
-                        placeholder="请输入作者"
-                        max={50}
-                      />
-                    </FormItem>
-                  </MultiLangFormItem>
+                  <DynamicField
+                    name="quoteContent"
+                    type="textarea"
+                    placeholder="请输入话语"
+                    multiLang
+                  />
+                  <DynamicField
+                    name="quoteAuthor"
+                    type="text"
+                    placeholder="请输入作者"
+                    multiLang
+                  />
                 </>
               )}
             </div>
-            <div className="lg:w-80 lg:ml-8">
-              <Block title="文章类型">
-                <FormItem name="type" className="mb-0">
-                  <Select options={postTypeOptions} />
-                </FormItem>
-              </Block>
-              <Block title="分类目录">
-                <FormItem
-                  name="categoryId"
-                  rules={[{ required: true, message: "请选择分类" }]}
-                >
-                  <Select
-                    showSearch
-                    optionFilterProp="children"
-                    placeholder="请选择"
-                    filterOption={(input, option) =>
-                      option?.props.value
-                        .toLowerCase()
-                        .indexOf(input.toLowerCase()) >= 0
-                    }
-                  >
-                    {list.map((option) => (
-                      <Select.Option value={option.id} key={option.id}>
-                        {creatCategoryTitleByDepth(option.title.zh, option)}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </FormItem>
-                <Button type="dashed" onClick={handleAddNewCategory}>
-                  <PlusOutlined />
-                  新建分类
-                </Button>
-              </Block>
+
+            {/* 侧边栏设置区 */}
+            <div className="lg:w-80 lg:ml-8 space-y-4">
+              {/* 操作按钮 */}
+              <div className="flex gap-3 justify-end">{getBtns()}</div>
+              {/* 通用设置 */}
+              <DynamicField
+                label="文章类型"
+                name="type"
+                type="select"
+                options={postTypeOptions}
+              />
+              <DynamicField
+                label="分类目录"
+                name="categoryId"
+                type="select"
+                options={category?.list?.map((item) => ({
+                  label: creatCategoryTitleByDepth(item.title?.zh, item),
+                  value: item.id ?? "0",
+                }))}
+              />
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() =>
+                  setModalProps({ open: true, type: ModalType.ADD })
+                }
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                新建分类
+              </Button>
+
+              {/* 特定类型专属设置 */}
               {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-                detail.type,
-              ) && <PhotoPickerItem {...postCoverProps} />}
-              {detail.type === PostType.MOVIE && (
+                type,
+              ) && <PhotoPickerItem {...photoPickerProps} />}
+
+              {/* 电影类型专属字段 */}
+              {type === PostType.MOVIE && (
                 <>
-                  <Block title="上映年代">
-                    <FormItem name="movieTime" className="mb-0">
-                      <DatePicker placeholder="请选择上映年代" />
-                    </FormItem>
-                  </Block>
-                  <MultiTag {...movieDirectorProps} />
-                  <MultiTag {...movieActorProps} />
-                  <MultiTag {...movieStyleProps} />
+                  <DynamicField
+                    label="上映年代"
+                    name="movieTime"
+                    type="calendar"
+                    placeholder="请选择上映时间"
+                  />
+                  <MultiTag {...tagProps} name="movieDirectors" title="导演" />
+                  <MultiTag {...tagProps} name="movieActors" title="演员" />
+                  <MultiTag {...tagProps} name="movieStyles" title="电影风格" />
                 </>
               )}
-              {detail.type === PostType.PHOTOGRAPH && (
+
+              {/* 摄影类型专属字段 */}
+              {type === PostType.PHOTOGRAPH && (
                 <>
-                  <Block title="拍摄地点">
-                    <MultiLangFormItem>
-                      <FormItem name="galleryLocation" className="mb-0">
-                        <Input type="text" placeholder="请填写地址" />
-                      </FormItem>
-                    </MultiLangFormItem>
-                  </Block>
-                  <Block title="拍摄时间">
-                    <FormItem name="galleryTime" className="mb-0">
-                      <DatePicker placeholder="请选择拍摄时间" />
-                    </FormItem>
-                  </Block>
-                  <MultiTag {...galleryStyleProps} />
+                  <DynamicField
+                    label="拍摄地点"
+                    name="galleryLocation"
+                    type="text"
+                    placeholder="请填写地址"
+                    multiLang
+                  />
+                  <DynamicField
+                    label="拍摄时间"
+                    name="galleryTime"
+                    type="calendar"
+                    placeholder="请选择拍摄时间"
+                  />
+                  <MultiTag
+                    {...tagProps}
+                    name="galleryStyles"
+                    title="照片风格"
+                  />
                 </>
               )}
             </div>
           </div>
-        </Form>
-        <PhotoPickerModal
-          showPhotoPicker={showPhotoPicker}
-          handlePhotoPickerOk={handlePhotoPickerOk}
-          handlePhotoPickerCancel={handlePhotoPickerCancel}
-        />
-        <AddCategoryModal
-          modalProps={modalProps}
-          setModalProps={setModalProps}
-        />
-      </Card>
-      <FooterToolbar>{getBtns()}</FooterToolbar>
-    </PageContainer>
+        </form>
+      </Form>
+
+      <PhotoPickerModal
+        showPhotoPicker={showPhotoPicker}
+        handlePhotoPickerOk={(media) => {
+          form.setValue("coverId", media.id, { shouldDirty: true });
+          setCoverPreview(media);
+          setShowPhotoPicker(false);
+        }}
+        handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
+      />
+
+      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+    </>
   );
 };
 
