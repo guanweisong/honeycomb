@@ -14,6 +14,7 @@
     "@honeycomb/db": "workspace:*",
     "@honeycomb/ui": "workspace:*",
     "@honeycomb/trpc": "workspace:*",
+    "@opennextjs/cloudflare": "^1.11.0",
     "@aws-sdk/client-s3": "^3.485.0",
     "@libsql/client": "^0.15.15",
     "@trpc/server": "^11.3.1",
@@ -22,7 +23,6 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^10.0.0"
   }

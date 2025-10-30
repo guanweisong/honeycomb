@@ -15,6 +15,7 @@
     "@honeycomb/ui": "workspace:*",
     "@honeycomb/trpc": "workspace:*",
     "@honeycomb/types": "workspace:*",
+    "@opennextjs/cloudflare": "^1.11.0",
     "@next/third-parties": "^14.1.0",
     "@radix-ui/react-label": "^2.1.4",
     "easymde": "^2.18.0",
@@ -38,7 +39,6 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
     "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/showdown": "^2.0.1",
     "autoprefixer": "^10.4.17",

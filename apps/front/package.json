@@ -15,6 +15,7 @@
     "@honeycomb/ui": "workspace:*",
     "@honeycomb/trpc": "workspace:*",
     "@honeycomb/types": "workspace:*",
+    "@opennextjs/cloudflare": "^1.11.0",
     "@next/third-parties": "^16.0.0",
     "@aws-sdk/client-s3": "^3.485.0",
     "@libsql/client": "^0.15.15",
@@ -33,7 +34,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
     "@next/bundle-analyzer": "^14.1.0",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^10.0.0"
