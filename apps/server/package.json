@@ -6,7 +6,9 @@
     "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev",
     "build": "next build",
     "start": "PORT=7002 next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:cloudflare": "opennext build",
+    "deploy:cloudflare": "opennext publish"
   },
   "dependencies": {
     "@honeycomb/db": "workspace:*",
@@ -20,6 +22,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.11.0",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^10.0.0"
   }
