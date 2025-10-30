@@ -12,7 +12,7 @@ export interface AdminLayoutProps {
   title?: ReactNode;
   footer?: ReactNode;
   menu?: MenuItem[];
-  user?: UserEntity | false;
+  user?: UserEntity | null;
   onLogout: () => void;
 }
 

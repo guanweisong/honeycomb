@@ -13,7 +13,7 @@ import { UserLevelName } from "@honeycomb/types/user/user.level";
 import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
 
 export interface UserDropdownProps {
-  user?: UserEntity | false;
+  user?: UserEntity | null;
   onLogout: () => void;
 }
 

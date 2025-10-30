@@ -3,7 +3,7 @@ import FullLoadingView from "@/components/FullLoadingView";
 import { useSettingStore } from "@/stores/useSettingStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 /**
  * 应用的核心布局和路由守卫。
@@ -37,21 +37,26 @@ export default ({ children }: { children: React.ReactNode }) => {
     Promise.all([queryUser(), querySetting()]);
   }, []);
 
+  useEffect(() => {
+    if (typeof user === "undefined") {
+    } else if (user) {
+      // 用户已登录
+      if (isLoginPage) {
+        // 如果已登录但访问的是登录页，重定向到主看板
+        return router.replace("/dashboard");
+      }
+    } else {
+      // 用户未登录
+      if (!isLoginPage) {
+        // 如果未登录但访问的不是登录页，重定向到登录页
+        return router.replace("/login");
+      }
+    }
+  }, [user]);
+
   // 用户信息仍在加载中，显示全屏加载动画
   if (typeof user === "undefined") {
     return <FullLoadingView />;
-  } else if (user) {
-    // 用户已登录
-    if (isLoginPage) {
-      // 如果已登录但访问的是登录页，重定向到主看板
-      return router.replace("/dashboard");
-    }
-  } else {
-    // 用户未登录
-    if (!isLoginPage) {
-      // 如果未登录但访问的不是登录页，重定向到登录页
-      return router.replace("/login");
-    }
   }
 
   // 所有检查通过，渲染子页面

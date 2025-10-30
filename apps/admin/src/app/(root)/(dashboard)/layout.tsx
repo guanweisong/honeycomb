@@ -8,6 +8,7 @@ import React from "react";
 import { AdminLayout } from "@honeycomb/ui/extended/AdminLayout";
 import { toast } from "sonner";
 import { trpc } from "@honeycomb/trpc/client/trpc";
+import { UserEntity } from "@honeycomb/trpc/server/types/user.entity";
 
 /**
  * 后台管理界面的核心布局组件。
@@ -51,7 +52,7 @@ export default ({ children }: { children: React.ReactNode }) => {
     <AdminLayout
       title={setting?.siteName?.zh}
       menu={menu}
-      user={user}
+      user={user as UserEntity}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
     >
@@ -59,4 +60,3 @@ export default ({ children }: { children: React.ReactNode }) => {
     </AdminLayout>
   );
 };
-
