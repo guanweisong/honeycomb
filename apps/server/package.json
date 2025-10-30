@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "PORT=7002 next start",
     "lint": "next lint",
-    "build:cloudflare": "npx opennext build",
-    "deploy:cloudflare": "npx opennext publish"
+    "build:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@honeycomb/db": "workspace:*",

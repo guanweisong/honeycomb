@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:cloudflare": "npx opennext build",
-    "deploy:cloudflare": "npx opennext publish"
+    "build:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@honeycomb/validation": "workspace:*",
