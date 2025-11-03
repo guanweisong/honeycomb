@@ -1,6 +1,6 @@
 # Honeycomb
 
-本项目是 `honeycomb` 的 monorepo 仓库，使用 pnpm workspaces 和 Turborepo 进行管理。
+本项目是 `honeycomb` 的 monorepo 仓库，使用 pnpm workspaces 和 Turborepo 进行管理，结合Drizzle ORM和tRPC实现了端到端类型安全的Serverless全栈项目。
 
 ## 技术架构
 
@@ -37,3 +37,11 @@
 - `apps/server` (API 服务):
   - 为前台和后台应用提供数据接口。
   - 处理用户认证、内容查询等业务逻辑。
+
+## 三方服务
+
+- 行为验证码 使用 腾讯防水墙服务
+- 对象存储 使用 [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)
+- 数据库托管 使用 [Turso](https://turso.tech)
+- 应用部署 使用 [Cloudflare Pages](https://pages.cloudflare.com)
+- 邮件服务 使用 [resend](https://resend.com)
