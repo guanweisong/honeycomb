@@ -95,7 +95,7 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   return (
     <div className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50">
       {breadData?.map((item, index) => (
-        <span key={item.link}>
+        <span key={`${item.link}_${index}`}>
           {item.link ? (
             <Link href={item.link} key={item.link}>
               {item.label}

@@ -53,7 +53,7 @@ const Menu = (props: MenuProps) => {
    */
   const { data: postDetail } = trpc.post.getCategoryId.useQuery(
     { id: segments?.[1] ?? "" },
-    { enabled: !!segments?.[1] }, // 只有有 id 时才请求
+    { enabled: !!segments?.[1] && segments?.[0] === "archives" }, // 只有有 id 时才请求
   );
 
   /**
@@ -147,7 +147,7 @@ const Menu = (props: MenuProps) => {
             {m.children && (
               <ul
                 className={cn(
-                  "pointer-events-none",
+                  "lg:pointer-events-none",
                   "lg:absolute ml-4 lg:ml-0",
                   "lg:opacity-0 lg:invisible",
                   "lg:bg-auto-back-gray/90 lg:border-t-2 lg:border-pink-700",

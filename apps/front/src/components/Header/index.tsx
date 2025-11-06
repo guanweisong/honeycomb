@@ -41,8 +41,7 @@ export default async function Header() {
     {
       title: { zh: "比邻", en: "Links" },
       id: "links",
-      path: "links",
-      url: "/links",
+      path: "/links",
       children: [],
     },
   ];
@@ -73,6 +72,8 @@ export default async function Header() {
       } as MenuLocalEntity;
       if (data.id === "home") {
         item.link = "/list/category";
+      } else if (data.id === "links") {
+        item.link = data.path!;
       }
       switch (data.type) {
         case MenuType.PAGE:

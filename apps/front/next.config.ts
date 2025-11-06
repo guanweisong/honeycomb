@@ -22,9 +22,6 @@ const withBundleAnalyzer = bundleAnalyzer({
  */
 const nextConfig: NextConfig = {
   ...baseNextConfig,
-  experimental: {
-    viewTransition: true,
-  },
   // 在这里添加或覆盖 front 应用特有的配置
 };
 

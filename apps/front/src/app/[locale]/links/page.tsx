@@ -42,6 +42,7 @@ const Links = async (props: LinksProps) => {
         <div className="py-2 lg:py-4">
           {result.list.map((item, index) => (
             <a
+              key={item.url}
               href={item.url as string}
               target="_blank"
               className={cn("flex items-center py-2", {
