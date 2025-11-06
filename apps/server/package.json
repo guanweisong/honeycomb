@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "PORT=7002 next start",
     "lint": "next lint",
     "build:cloudflare": "opennextjs-cloudflare build"

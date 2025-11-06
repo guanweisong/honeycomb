@@ -22,7 +22,7 @@ import Cors from "@/libs/cors";
  *   }
  * }
  */
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const res = NextResponse.next();
 
   console.log("request", req.url, req.body);
