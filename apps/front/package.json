@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "cross-env NODE_ENV=production PORT=3100 next start",
     "analyze": "cross-env ANALYZE=true next build",
-    "build:cloudflare": "dotenv -e ../../.env -- opennextjs-cloudflare build"
+    "build:cloudflare": "opennextjs-cloudflare build"
   },
   "dependencies": {
     "@honeycomb/validation": "workspace:*",
