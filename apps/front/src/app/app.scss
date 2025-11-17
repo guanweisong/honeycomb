@@ -19,9 +19,6 @@
   @media (width >= 64rem) {
     max-width: 64rem;
   }
-  @media (width >= 80rem) {
-    max-width: 80rem;
-  }
 }
 
 .light {
@@ -65,4 +62,19 @@ a {
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+.masonry-grid {
+  display: flex;
+  margin-left: -20px;
+  width: auto;
+}
+.masonry-grid_column {
+  padding-left: 20px;
+  background-clip: padding-box;
+}
+
+/* Style your items */
+.masonry-grid_column > div { /* change div to reference your elements you put in <Masonry> */
+  margin-bottom: 20px;
 }

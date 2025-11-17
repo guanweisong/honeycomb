@@ -120,10 +120,14 @@ const Menu = (props: MenuProps) => {
   const renderItem = (data: MenuLocalEntity[]) => {
     return (
       <ul
-        className={cn("absolute backdrop-blur lg:static lg:flex py-2 lg:py-0", {
-          "inset-x-0 top-full shadow-md bg-auto-back-gray/80": visible,
-          ["hidden"]: !visible,
-        })}
+        className={cn(
+          "absolute backdrop-blur bg-auto-back-gray/80 shadow",
+          "lg:static lg:flex py-2 lg:py-0 lg:rounded-full",
+          {
+            "inset-x-0 top-[38px]": visible,
+            ["hidden"]: !visible,
+          },
+        )}
         ref={ref1}
       >
         {data.map((m) => (
@@ -136,48 +140,13 @@ const Menu = (props: MenuProps) => {
               className={cn(
                 "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
                 {
-                  "text-pink-500": m.link === currentCategory[0],
-                  "group-hover:lg:text-pink-500 group-hover:lg:bg-auto-back-gray/90":
-                    m.link !== currentCategory[0],
+                  "text-teal-500": m.link === currentCategory[0],
+                  "group-hover:lg:text-teal-500": m.link !== currentCategory[0],
                 },
               )}
             >
               {m.label}
             </Link>
-            {m.children && (
-              <ul
-                className={cn(
-                  "lg:pointer-events-none",
-                  "lg:absolute ml-4 lg:ml-0",
-                  "lg:opacity-0 lg:invisible",
-                  "lg:bg-auto-back-gray/90 lg:border-t-2 lg:border-pink-700",
-                  "lg:z-10 lg:top-full lg:left-0 lg:right-0",
-                  "lg:transition-all lg:duration-300 lg:ease-in-out",
-                  "lg:translate-y-2",
-                  "group-hover:lg:translate-y-0 group-hover:lg:opacity-100 group-hover:lg:visible group-hover:lg:pointer-events-auto",
-                  "group-hover:lg:shadow-md",
-                )}
-              >
-                {m.children.map((n) => (
-                  <li
-                    className="inline-block lg:block"
-                    key={`second-level-${n.link}`}
-                  >
-                    <Link
-                      href={n.link ?? ""}
-                      className={cn(
-                        "block leading-10 lg:text-center hover:lg:text-pink-500 px-4 lg:px-0",
-                        {
-                          "text-pink-500": n.link === currentCategory[1],
-                        },
-                      )}
-                    >
-                      {n.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
           </li>
         ))}
       </ul>
@@ -187,7 +156,7 @@ const Menu = (props: MenuProps) => {
     <div className="flex h-full">
       <div
         ref={ref2}
-        className="w-10 px-2 cursor-pointer pt-2 lg:hidden"
+        className="w-10 px-2 cursor-pointer lg:hidden absolute left-0 -top-1"
         onClick={() => setVisible(!visible)}
       >
         {Array.from(new Array(3)).map((_item, index) => (

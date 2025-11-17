@@ -3,9 +3,8 @@
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/hooks/rq/post/use.infinite.query.post.list";
 import { useScroll } from "ahooks";
-import React, { useEffect, ViewTransition } from "react";
+import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/i18n/navigation";
-import PostInfo, { Align } from "@/components/PostInfo";
 import Signature from "@/components/Signature";
 import { utcFormat } from "@/utils/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
@@ -16,6 +15,7 @@ import { PostListItemEntity } from "@honeycomb/trpc/server/types/post.entity";
 import { PostType, PostTypeName } from "@honeycomb/types/post/post.type";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/types/PostTypeBgColor";
+import ResponsiveMasonry from "@/components/ResponsiveMasonry";
 
 /**
  * 文章列表查询结果的输出类型。
@@ -51,7 +51,7 @@ export interface PostListProps {
  * @param {PostListProps} props - 组件属性。
  * @returns {JSX.Element} 文章列表。
  */
-export default function PostList(props: PostListProps) {
+export default function PostList(props: PostListProps): JSX.Element {
   const { queryParams, initData } = props;
   const scroll = useScroll(typeof document !== "undefined" ? document : null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -91,31 +91,28 @@ export default function PostList(props: PostListProps) {
    * @param {PostListItemEntity} item - 文章实体。
    * @returns {JSX.Element} 文章卡片。
    */
-  const renderCard = (item: PostListItemEntity) => {
+  const renderCard = (item: PostListItemEntity): JSX.Element => {
     return (
       <div
-        className="mt-6 first:mt-2 lg:flex bg-auto-back-gray/60"
+        className="bg-auto-back-gray/60 rounded overflow-hidden shadow-xs"
         key={item.id}
       >
         {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
           item.type as PostType,
         ) &&
           item.cover?.url && (
-            <Link
-              href={`/archives/${item.id}`}
-              className="relative block lg:w-[250px] w-full lg:h-[150px] h-[200px]"
-            >
+            <Link href={`/archives/${item.id}`} className="relative block">
               <ViewTransition name={`postContent-${item.id}`}>
                 <Image
                   priority={true}
                   src={item.cover?.url ?? ""}
                   alt={item.title?.[locale] ?? ""}
-                  fill={true}
-                  className="object-cover flex-shrink-0"
+                  width={item.cover.width!}
+                  height={item.cover.height!}
                 />
                 <span
                   className={cn(
-                    "absolute left-2 top-2 text-white text-base rounded py-0.5 px-1",
+                    "absolute left-2 top-2 text-white text-sm rounded py-0.5 px-1",
                     [PostTypeBgColor[item.type as PostType]],
                   )}
                 >
@@ -128,7 +125,7 @@ export default function PostList(props: PostListProps) {
           <ViewTransition name={`postTitle-${item.id}`}>
             <Link
               href={`/archives/${item.id}`}
-              className="block font-normal text-lg"
+              className="block font-normal text-lg lg:text-base"
             >
               {item.type === PostType.MOVIE && (
                 <>
@@ -149,20 +146,12 @@ export default function PostList(props: PostListProps) {
           {item.excerpt?.[locale] && (
             <Link href={`/archives/${item.id}`}>
               <ViewTransition name={`postExcerpt-${item.id}`}>
-                <div className="lg:my-2 lg:line-clamp-2">
+                <div className="lg:my-1 lg:text-sm">
                   {item.excerpt?.[locale]}
                 </div>
               </ViewTransition>
             </Link>
           )}
-          <PostInfo
-            id={item.id}
-            author={item.author.name as string}
-            date={item.createdAt as string}
-            comments={item.commentCount}
-            views={item.views as number}
-            align={Align.Left}
-          />
         </div>
       </div>
     );
@@ -170,7 +159,9 @@ export default function PostList(props: PostListProps) {
 
   return (
     <>
-      <div>{postList.map((item) => renderCard(item))}</div>
+      <ResponsiveMasonry>
+        {postList.map((item) => renderCard(item))}
+      </ResponsiveMasonry>
       {isEnd && <Signature text={t("listEnd")} />}
       {isLoadingMore && (
         <div className="mt-4 flex justify-center">

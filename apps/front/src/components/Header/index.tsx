@@ -105,29 +105,28 @@ export default async function Header() {
 
   return (
     <>
-      <div className="mb-2 lg:mb-4 fixed left-0 right-0 top-0 before:content-[''] before:absolute before:inset-0 before:backdrop-blur before:bg-auto-back-gray/80 h-12 lg:h-20 z-50">
-        <div className="container relative box-border h-full flex justify-between items-center">
-          <div className="h-full flex items-center">
+      <div className="h-[72px] lg:h-[88px]" />
+      <div className="fixed top-0 left-0 right-0 z-50 py-4 lg:before:hidden before:content-[''] before:absolute before:inset-0 before:backdrop-blur before:bg-auto-back-gray/80">
+        <div className="container box-border flex justify-between items-center relative">
+          <div className="flex items-center">
             <span className="lg:ml-2 absolute inset-x-24 lg:static text-center">
               <ViewTransition name="siteTitle">
                 <Link
                   href={"/list/category"}
                   scroll={false}
-                  className="text-pink-500 text-xl"
+                  className="text-teal-500 text-lg"
                 >
                   {setting?.siteName?.[locale as MultiLangEnum]}
                 </Link>
               </ViewTransition>
             </span>
-            <span className="ml-4">
-              <ThemeSwitcher />
-            </span>
-            <span className="ml-4">
-              <LanguageSwitcher />
-            </span>
           </div>
-          <div className="h-full flex items-center">
+          <div className="flex items-center">
             <Menu data={menuDataFormat} flatMenuData={menu?.list} />
+          </div>
+          <div className="flex gap-3 mr-2">
+            <ThemeSwitcher />
+            <LanguageSwitcher />
           </div>
         </div>
       </div>

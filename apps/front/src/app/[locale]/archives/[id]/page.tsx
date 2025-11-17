@@ -98,7 +98,7 @@ export default async function Archives(props: ArchivesProps) {
         <div className="markdown-body my-3 lg:my-5">
           {postDetail.excerpt?.[locale] && (
             <ViewTransition name={`postExcerpt-${postDetail.id}`}>
-              <div className="mb-2 p-2 bg-auto-front-gray/5">
+              <div className="mb-2 p-2 bg-auto-front-gray/5 rounded">
                 {postDetail.excerpt?.[locale]}
               </div>
             </ViewTransition>

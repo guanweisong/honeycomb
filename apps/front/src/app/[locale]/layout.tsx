@@ -62,7 +62,7 @@ export default async function LocaleLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="min-h-full pt-14 lg:pt-24 text-base">
+          <div className="min-h-full text-base">
             <NextIntlClientProvider>
               <Header />
               <div className={"container px-2"}>{children}</div>
