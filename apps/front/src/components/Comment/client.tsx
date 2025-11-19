@@ -192,7 +192,7 @@ const CommentClient = (props: CommentClientProps) => {
           <div className="overflow-hidden">
             <div>
               {item.site ? (
-                <a className="text-pink-500" href={item.site}>
+                <a className="text-teal-500" href={item.site}>
                   {item.author}
                 </a>
               ) : (
@@ -208,7 +208,7 @@ const CommentClient = (props: CommentClientProps) => {
           <div className="absolute right-2 top-4 text-auto-front-gray/50">
             <span>{utcFormat(item.createdAt)}</span>
             <span className="mx-1">/</span>
-            <a className="text-pink-500" onClick={() => handleReply(item)}>
+            <a className="text-teal-500" onClick={() => handleReply(item)}>
               {t("form.reply")}
             </a>
           </div>
@@ -231,7 +231,7 @@ const CommentClient = (props: CommentClientProps) => {
         <>
           {!!replyTo && (
             <div className="leading-10">
-              <span className="text-pink-500">Reply to:</span>
+              <span className="text-teal-500">Reply to:</span>
               <span className="mx-2">{replyTo?.author}</span>
               <a
                 className="transition-all text-auto-front-gray/50"
@@ -250,7 +250,7 @@ const CommentClient = (props: CommentClientProps) => {
                 <span className="ml-2">
                   {t("notYou")}
                   <a
-                    className="text-pink-500"
+                    className="text-teal-500"
                     onClick={() => {
                       setUser(undefined);
                       localStorage.removeItem("user");

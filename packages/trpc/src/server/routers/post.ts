@@ -182,7 +182,7 @@ export const postRouter = createTRPCRouter({
   /**
    * 获取单篇文章的详细信息。
    * @param {{ id: string }} input - 包含文章 ID 的对象。
-   * @returns {Promise<object | null>} 返回包含文章所有关联信息（分类、作者、封面、标签、内容图片等）的完整对象，如果找不到则返回 null。
+   * @returns {Promise<object | null>} 返回包含文章所有关联信息（分类、作者、封面、标签、内容图片等）的完整对象
    */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))

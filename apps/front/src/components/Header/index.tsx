@@ -105,9 +105,9 @@ export default async function Header() {
 
   return (
     <>
-      <div className="h-[72px] lg:h-[88px]" />
-      <div className="fixed top-0 left-0 right-0 z-50 py-4 lg:before:hidden before:content-[''] before:absolute before:inset-0 before:backdrop-blur before:bg-auto-back-gray/80">
-        <div className="container box-border flex justify-between items-center relative">
+      <div className="h-[60px] lg:h-[120px]" />
+      <div className="fixed top-0 left-0 right-0 z-50 h-[48px] lg:h-[120px] lg:before:hidden before:content-[''] before:absolute before:inset-0 before:backdrop-blur before:bg-auto-back-gray/80">
+        <div className="container h-full box-border flex justify-between items-center relative">
           <div className="flex items-center">
             <span className="lg:ml-2 absolute inset-x-24 lg:static text-center">
               <ViewTransition name="siteTitle">

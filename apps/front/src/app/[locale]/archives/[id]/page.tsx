@@ -138,19 +138,22 @@ export default async function Archives(props: ArchivesProps) {
         </ul>
       )}
       <Tags {...postDetail} />
-      {randomPostsList.length > 0 && (
+      {randomPostsList.filter((item) => item.id !== postDetail?.id).length >
+        0 && (
         <Card title={t("guessWhatYouLike")}>
           <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-            {randomPostsList.map((item: any) => (
-              <li key={item.id} className="my-2">
-                <Link
-                  href={`/archives/${item.id}`}
-                  className="block link-light"
-                >
-                  {item.title?.[locale] || item.quoteContent?.[locale]}
-                </Link>
-              </li>
-            ))}
+            {randomPostsList
+              .filter((item) => item.id !== postDetail?.id)
+              .map((item: any) => (
+                <li key={item.id} className="my-2">
+                  <Link
+                    href={`/archives/${item.id}`}
+                    className="block link-light"
+                  >
+                    {item.title?.[locale] || item.quoteContent?.[locale]}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </Card>
       )}

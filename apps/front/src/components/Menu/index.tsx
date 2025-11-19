@@ -124,7 +124,7 @@ const Menu = (props: MenuProps) => {
           "absolute backdrop-blur bg-auto-back-gray/80 shadow",
           "lg:static lg:flex py-2 lg:py-0 lg:rounded-full",
           {
-            "inset-x-0 top-[38px]": visible,
+            "inset-x-0 top-full": visible,
             ["hidden"]: !visible,
           },
         )}
@@ -156,14 +156,14 @@ const Menu = (props: MenuProps) => {
     <div className="flex h-full">
       <div
         ref={ref2}
-        className="w-10 px-2 cursor-pointer lg:hidden absolute left-0 -top-1"
+        className="w-9 px-2 cursor-pointer lg:hidden absolute left-0 top-[50%] -translate-y-1/2"
         onClick={() => setVisible(!visible)}
       >
         {Array.from(new Array(3)).map((_item, index) => (
           <div
             key={`menu-trigger-${index}`}
-            className={cn("h-0.5 my-1.5 bg-gray-500 transition-all", {
-              "first:translate-y-2 first:rotate-45 even:opacity-0 last:-translate-y-2 last:-rotate-45":
+            className={cn("h-0.5 my-1 bg-gray-500 transition-all", {
+              "first:translate-y-1.5 first:rotate-45 even:opacity-0 last:-translate-y-1.5 last:-rotate-45":
                 visible,
             })}
           />
