@@ -3,7 +3,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "bun run build",
   "installCommand": "bun install --frozen-lockfile",
-  "framework": null,
-  "outputDirectory": null,
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
 }
