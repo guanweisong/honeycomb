@@ -1,4 +1,4 @@
-import process from "process";
+import { env } from "@honeycomb/env/index";
 
 /**
  * 根据自定义 ID 获取自定义评论链接信息。
@@ -6,7 +6,7 @@ import process from "process";
  * @returns {{ id: string; title: { zh: string; en: string; }; } | undefined} 自定义评论链接信息或 undefined。
  */
 export const getCustomCommentLink = (customId?: string | null) => {
-  if (customId === process.env.LINK_OBJECT_ID) {
+  if (customId === env.LINK_OBJECT_ID) {
     return {
       id: customId,
       title: {

@@ -11,7 +11,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
 import { PostType } from "@honeycomb/types/post/post.type";
 
@@ -32,6 +32,7 @@ export interface ArchivesProps {
  * @returns {Promise<JSX.Element>} 归档页面。
  */
 export default async function Archives(props: ArchivesProps) {
+  const serverClient = await createServerClient();
   const { id, locale } = await props.params;
   const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
@@ -185,6 +186,7 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
+  const serverClient = await createServerClient();
   const { id } = await props.params;
   const [setting, postDetail] = await Promise.all([
     serverClient.setting.index(),

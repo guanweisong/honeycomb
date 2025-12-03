@@ -12,10 +12,11 @@ import * as schema from "@honeycomb/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@honeycomb/validation/media/schemas/media.insert.schema";
 import dayjs from "dayjs";
-import S3 from "@honeycomb/trpc/server/libs/S3";
-import sizeOf from "image-size";
-import { getColor } from "@honeycomb/trpc/server/libs/colorThief";
+// import S3 from "@honeycomb/trpc/server/libs/S3";
+// import sizeOf from "image-size";
+// import { getColor } from "@honeycomb/trpc/server/libs/colorThief";
 import { UserLevel } from "@honeycomb/types/user/user.level";
+import { env } from "@honeycomb/env/index";
 
 /**
  * 媒体文件相关的 tRPC 路由。
@@ -73,49 +74,23 @@ export const mediaRouter = createTRPCRouter({
   upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const fileBuffer = Buffer.from(input.base64, "base64");
-      const ext = input.name!.split(".").pop();
-      const key = `${dayjs().format("YYYY/MM/DD/HHmmssSSS")}.${ext}`;
+      const apiUrl = `${env.NEXT_PUBLIC_API_DOMAIN}/api/media/upload`;
+      const secretKey = env.JWT_SECRET;
 
-      const url = await S3.putObject({
-        Key: key,
-        Body: fileBuffer,
-        ContentType: input.type,
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-secret-key": secretKey,
+        },
+        body: JSON.stringify(input),
       });
 
-      const data: InferInsertModel<typeof schema.media> = {
-        name: input.name,
-        size: input.size,
-        type: input.type,
-        key,
-        url,
-      };
-
-      // ✅ 图片类型额外注入元数据
-      if (input.type?.startsWith("image")) {
-        try {
-          const dim = sizeOf(fileBuffer);
-          data.width = dim.width ?? null;
-          data.height = dim.height ?? null;
-        } catch (err) {
-          console.warn("Failed to get image size", err);
-        }
-
-        try {
-          const color = await getColor(url);
-          data.color = `rgb(${color.join(",")})`;
-        } catch (err) {
-          console.warn("Failed to get image main color", err);
-        }
+      if (!response.ok) {
+        throw new Error("Failed to upload media");
       }
 
-      // ✅ 强类型插入 + 自动返回 select 类型
-      const [result] = await ctx.db
-        .insert(schema.media)
-        .values(data satisfies InferInsertModel<typeof schema.media>)
-        .returning();
-
-      return result;
+      return await response.json();
     }),
 
   /**
@@ -127,28 +102,22 @@ export const mediaRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      // 1. 根据 IDs 从数据库中找出要删除的媒体对象
-      const mediaToDelete = await ctx.db
-        .select({
-          key: schema.media.key,
-        })
-        .from(schema.media)
-        .where(inArray(schema.media.id, input.ids));
+      const apiUrl = `${env.NEXT_PUBLIC_API_DOMAIN}/api/media/delete`;
+      const secretKey = env.JWT_SECRET;
 
-      const keysToDelete = mediaToDelete
-        .map((item) => item.key)
-        .filter((key): key is string => !!key);
-
-      // 2. 从数据库中删除记录
-      await ctx.db
-        .delete(schema.media)
-        .where(inArray(schema.media.id, input.ids));
-
-      // 3. 从 S3 中删除文件
-      await S3.deleteMultipleObject({
-        Objects: keysToDelete.map((key) => ({ Key: key })),
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-secret-key": secretKey,
+        },
+        body: JSON.stringify(input),
       });
 
-      return { success: true };
+      if (!response.ok) {
+        throw new Error("Failed to delete media");
+      }
+
+      return await response.json();
     }),
 });

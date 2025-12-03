@@ -1,5 +1,5 @@
 import { appRouter } from "@honeycomb/trpc/server/appRouter";
-import { createContext } from "@honeycomb/trpc/server/context";
+import { createTrpcContext } from "@honeycomb/trpc/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 /**
@@ -7,6 +7,13 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
  * 这对于确保每次请求都重新执行函数而不是返回缓存的响应至关重要。
  */
 export const dynamic = "force-dynamic";
+
+/**
+ * 使用 Edge Runtime 运行此路由。
+ *
+ * 已移除 superjson transformer * 邮件发送逻辑已隔离到独立的 Node.js API 路由。
+ */
+export const runtime = "edge";
 
 /**
  * tRPC 请求处理函数。
@@ -19,14 +26,14 @@ export const dynamic = "force-dynamic";
  * - `endpoint`: tRPC API 的基础路径。
  * - `req`: 传入的请求对象。
  * - `router`: 从 `@honeycomb/trpc` 包导入的主路由 `appRouter`。
- * - `createContext`: 用于创建每个请求上下文的函数。
+ * - `createContext`: 用于创建每个请求上下文的函数，使用封装的 `createTrpcContext`。
  */
 const handler = (req: Request) =>
   fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
-    createContext,
+    createContext: () => createTrpcContext({ req }),
   });
 
 /**

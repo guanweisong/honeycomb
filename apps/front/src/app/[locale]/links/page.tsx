@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { cn } from "@honeycomb/ui/lib/utils";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 import { EnableStatus } from "@honeycomb/types/enable.status";
 
 /**
@@ -25,6 +25,7 @@ export interface LinksProps {
  * @returns {Promise<JSX.Element>} 友情链接页面。
  */
 const Links = async (props: LinksProps) => {
+  const serverClient = await createServerClient();
   const { locale } = await props.params;
   const t = await getTranslations("Link");
   const [result, setting] = await Promise.all([
@@ -98,6 +99,7 @@ const Links = async (props: LinksProps) => {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata() {
+  const serverClient = await createServerClient();
   const t = await getTranslations("Link");
   const setting = await serverClient.setting.index();
   const locale = (await getLocale()) as keyof MultiLang;

@@ -14,6 +14,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     TURSO_URL: z.string(),
     TURSO_TOKEN: z.string(),
+    LINK_OBJECT_ID: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -33,6 +34,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     TURSO_URL: process.env.TURSO_URL,
     TURSO_TOKEN: process.env.TURSO_TOKEN,
+    LINK_OBJECT_ID: process.env.LINK_OBJECT_ID,
     NEXT_PUBLIC_API_DOMAIN: process.env.NEXT_PUBLIC_API_DOMAIN,
     NODE_ENV: process.env.NODE_ENV,
   },

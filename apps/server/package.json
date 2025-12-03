@@ -3,22 +3,26 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- cross-env PORT=7002 next dev",
-    "build": "next build",
-    "start": "PORT=7002 next start",
+    "dev": "dotenv -e ../../.env -- cross-env PORT=7002 bun next dev",
+    "build": "bun --bun next build",
+    "start": "PORT=7002 bun --bun next start",
     "lint": "next lint",
     "build:cloudflare": "opennextjs-cloudflare build"
   },
   "dependencies": {
-    "@honeycomb/db": "workspace:*",
-    "@honeycomb/ui": "workspace:*",
-    "@honeycomb/trpc": "workspace:*",
-    "@opennextjs/cloudflare": "^1.11.0",
     "@aws-sdk/client-s3": "^3.485.0",
+    "@honeycomb/db": "workspace:*",
+    "@honeycomb/trpc": "workspace:*",
+    "@honeycomb/ui": "workspace:*",
     "@libsql/client": "^0.15.15",
+    "@opennextjs/cloudflare": "^1.11.0",
     "@trpc/server": "^11.3.1",
     "axios": "^1.8.4",
+    "dayjs": "^1.11.19",
+    "drizzle-orm": "^0.44.7",
+    "image-size": "^2.0.2",
     "next": "^16.0.0",
+    "resend": "^6.5.2",
     "zod": "^4.1.11"
   },
   "devDependencies": {

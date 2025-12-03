@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- cross-env PORT=3100 next dev",
-    "build": "next build",
-    "start": "cross-env NODE_ENV=production PORT=3100 next start",
+    "dev": "dotenv -e ../../.env -- cross-env PORT=3100 bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "cross-env NODE_ENV=production PORT=3100 bun --bun next start",
     "analyze": "cross-env ANALYZE=true next build",
     "build:cloudflare": "opennextjs-cloudflare build"
   },

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { getLocale } from "next-intl/server";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 import { MultiLangEnum } from "@honeycomb/types/multi.lang";
 
 /**
@@ -9,6 +9,7 @@ import { MultiLangEnum } from "@honeycomb/types/multi.lang";
  * @returns {Promise<JSX.Element>} 网站底部。
  */
 export default async function Footer() {
+  const serverClient = await createServerClient();
   const [setting, locale] = await Promise.all([
     serverClient.setting.index(),
     getLocale(),

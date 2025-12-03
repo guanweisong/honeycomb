@@ -1,7 +1,6 @@
 import { publicProcedure, createTRPCRouter } from "@honeycomb/trpc/server/core";
 import { z } from "zod";
 import { db } from "@honeycomb/db/db";
-import crypto from "node:crypto";
 import * as schema from "@honeycomb/db/schema";
 import { and, eq } from "drizzle-orm";
 import { LoginSchema } from "@honeycomb/validation/auth/schemas/login.schema";

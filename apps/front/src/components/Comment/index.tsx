@@ -1,7 +1,7 @@
 import React from "react";
 import CommentClient from "@/components/Comment/client";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 
 /**
  * 评论组件的属性接口。
@@ -23,7 +23,8 @@ export interface CommentProps {
  * @param {CommentProps} props - 组件属性。
  * @returns {JSX.Element} 评论客户端组件。
  */
-const Comment = (props: CommentProps) => {
+const Comment = async (props: CommentProps) => {
+  const serverClient = await createServerClient();
   const { id, type } = props;
   /**
    * 评论查询的 Promise。

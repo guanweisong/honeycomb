@@ -1,13 +1,14 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import superjson from "superjson";
 import type { Context } from "./context";
 
 /**
  * 初始化 tRPC 实例。
+ * 
+ * 注意：为了支持 Edge Runtime，已移除 superjson transformer。
+ * 这意味着无法自动序列化 Date、Map、Set 等特殊类型。
+ * 如需传输这些类型，请在应用层手动转换为 JSON 兼容格式。
  */
-const t = initTRPC.context<Context>().create({
-  transformer: superjson,
-});
+const t = initTRPC.context<Context>().create();
 
 /**
  * ✅ tRPC 路由创建器

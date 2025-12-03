@@ -14,19 +14,17 @@ import { CommentQuerySchema } from "@honeycomb/validation/comment/schemas/commen
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
-import { Resend } from "resend";
+import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
+import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
+import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
+import { UserLevel } from "@honeycomb/types/user/user.level";
+import { env } from "@honeycomb/env/index";
 import { z } from "zod";
 import { IdSchema } from "@honeycomb/validation/schemas/fields/id.schema";
 import * as schema from "@honeycomb/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@honeycomb/types/comment/comment.status";
 import { getCustomCommentLink } from "@honeycomb/trpc/server/utils/getCustomCommentLink";
-import { CommentInsertSchema } from "@honeycomb/validation/comment/schemas/comment.insert.schema";
-import AdminCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/AdminCommentEmailMessage";
-import ReplyCommentEmailMessage from "@honeycomb/trpc/server/components/EmailMessage/ReplyCommentEmailMessage";
-import { selectAllColumns } from "@honeycomb/trpc/server/utils/selectAllColumns";
-import { validateCaptcha } from "@honeycomb/trpc/server/libs/validateCaptcha";
-import { UserLevel } from "@honeycomb/types/user/user.level";
 
 /**
  commentRouter * 评论相关的 tRPC 路由。
@@ -79,15 +77,15 @@ export const commentRouter = createTRPCRouter({
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
-              .select()
-              .from(schema.post)
-              .where(inArray(schema.post.id, postIds))
+            .select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, postIds))
           : Promise.resolve([]),
         pageIds.length
           ? ctx.db
-              .select()
-              .from(schema.page)
-              .where(inArray(schema.page.id, pageIds))
+            .select()
+            .from(schema.page)
+            .where(inArray(schema.page.id, pageIds))
           : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
@@ -139,7 +137,9 @@ export const commentRouter = createTRPCRouter({
         .orderBy(asc(schema.comment.createdAt));
 
       const list = result.length
-        ? listToTree(
+        ? [] // listToTree(...) // Temporarily disabled for debugging
+        /*
+        listToTree(
             result.map((item) => ({
               ...item,
               id: item.id.toString(),
@@ -149,6 +149,7 @@ export const commentRouter = createTRPCRouter({
             })),
             { idKey: "id", parentKey: "parentId" },
           )
+        */
         : [];
 
       const [countResult] = await ctx.db
@@ -219,30 +220,28 @@ export const commentRouter = createTRPCRouter({
       const siteNameZh = setting.siteName?.zh ?? "";
       const systemEmail = `notice@guanweisong.com`;
 
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      // ====== 异步发送邮件通知 (通过 HTTP 调用 Node.js API) ======
+      // 这样做是为了让主 tRPC 路由可以运行在 Edge Runtime，而将不兼容 Edge 的邮件逻辑（@react-email）隔离在 Node.js API 中
+      const emailApiUrl = `${env.NEXT_PUBLIC_API_DOMAIN}/api/email/send`;
+      const secretKey = env.JWT_SECRET; // 使用 JWT_SECRET 作为简单的内部调用凭证
 
-      // 向管理员发送邮件通知
-      // 重要：管理员邮箱地址应在环境变量 `ADMIN_EMAIL` 中配置
-      resend.emails
-        .send({
-          from: systemEmail,
-          to: process.env.ADMIN_EMAIL!,
-          subject: `[${siteNameZh}]有一条新的评论`,
-          react: AdminCommentEmailMessage({
-            // @ts-ignore
+      // 1. 通知管理员
+      fetch(emailApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-secret-key": secretKey,
+        },
+        body: JSON.stringify({
+          type: "ADMIN_NOTICE",
+          payload: {
+            setting,
             currentComment: currentCommentWithCustom,
-            // @ts-ignore
-            setting: setting,
-          }),
-        })
-        .then((e) => {
-          console.log("SendEmail Success", e);
-        })
-        .catch((e) => {
-          console.log("SendEmail Error", e);
-        });
+          },
+        }),
+      }).catch((e) => console.error("Failed to trigger admin email:", e));
 
-      // ====== 通知被评论人 ======
+      // 2. 通知被回复者
       if (rest.parentId) {
         const [parentComment] = await ctx.db
           .select({
@@ -261,26 +260,22 @@ export const commentRouter = createTRPCRouter({
             ...parentComment,
             custom: parentCustom,
           };
-          resend.emails
-            .send({
-              from: systemEmail,
-              to: parentComment.email as string,
-              subject: `您在[${siteNameZh}]的评论有新的回复`,
-              react: ReplyCommentEmailMessage({
-                // @ts-ignore
+
+          fetch(emailApiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-secret-key": secretKey,
+            },
+            body: JSON.stringify({
+              type: "REPLY_NOTICE",
+              payload: {
+                setting,
                 currentComment: currentCommentWithCustom,
-                // @ts-ignore
-                setting: setting,
-                // @ts-ignore
                 parentComment: parentCommentWithCustom,
-              }),
-            })
-            .then((e) => {
-              console.log("SendEmail Success", e);
-            })
-            .catch((e) => {
-              console.log("SendEmail Error", e);
-            });
+              },
+            }),
+          }).catch((e) => console.error("Failed to trigger reply email:", e));
         }
       }
 

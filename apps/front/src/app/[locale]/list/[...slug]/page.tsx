@@ -3,7 +3,7 @@ import PostList from "@/components/PostList";
 import NoData from "@/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@honeycomb/types/multi.lang";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 import { PostStatus } from "@honeycomb/types/post/post.status";
 import { PostListQueryInput } from "@honeycomb/validation/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
@@ -30,6 +30,7 @@ export interface ListProps {
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
 export default async function List(props: ListProps) {
+  const serverClient = await createServerClient();
   const [setting, menu] = await Promise.all([
     serverClient.setting.index(),
     serverClient.menu.index(),
@@ -124,6 +125,7 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
+  const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
     serverClient.setting.index(),
     serverClient.menu.index(),

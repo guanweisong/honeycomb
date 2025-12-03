@@ -8,7 +8,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 import { MenuLocalEntity } from "@/types/menu.local.entity";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
 import { MenuEntityTree } from "@/types/menu.entity.tree";
@@ -21,6 +21,7 @@ import { MenuEntity } from "@honeycomb/trpc/server/types/menu.entity";
  * @returns {Promise<JSX.Element>} 网站头部。
  */
 export default async function Header() {
+  const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
     serverClient.setting.index(),
     serverClient.menu.index(),
@@ -110,15 +111,13 @@ export default async function Header() {
         <div className="container h-full box-border flex justify-between items-center relative">
           <div className="flex items-center">
             <span className="lg:ml-2 absolute inset-x-24 lg:static text-center">
-              <ViewTransition name="siteTitle">
-                <Link
-                  href={"/list/category"}
-                  scroll={false}
-                  className="text-teal-500 text-lg"
-                >
-                  {setting?.siteName?.[locale as MultiLangEnum]}
-                </Link>
-              </ViewTransition>
+              <Link
+                href={"/list/category"}
+                scroll={false}
+                className="text-teal-500 text-lg"
+              >
+                {setting?.siteName?.[locale as MultiLangEnum]}
+              </Link>
             </span>
           </div>
           <div className="flex items-center">

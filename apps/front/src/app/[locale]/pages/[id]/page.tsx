@@ -6,7 +6,7 @@ import PageTitle from "@/components/PageTitle";
 import { getLocale } from "next-intl/server";
 import { MultiLang } from "@honeycomb/types/multi.lang";
 import { MenuType } from "@honeycomb/types/menu/menu.type";
-import { serverClient } from "@honeycomb/trpc/server";
+import { createServerClient } from "@honeycomb/trpc/server";
 /**
  * 页面详情组件的属性接口。
  */
@@ -24,6 +24,7 @@ export interface PagesProps {
  * @returns {Promise<JSX.Element>} 页面详情。
  */
 export default async function Pages(props: PagesProps) {
+  const serverClient = await createServerClient();
   const { id, locale } = await props.params;
   const [pageDetail, commentsData] = await Promise.all([
     serverClient.page.detail({ id }),
@@ -72,6 +73,7 @@ type GenerateMetadataProps = {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(props: GenerateMetadataProps) {
+  const serverClient = await createServerClient();
   const { id } = await props.params;
   const [setting, pageDetail] = await Promise.all([
     serverClient.setting.index(),

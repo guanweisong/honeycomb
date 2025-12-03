@@ -12,7 +12,7 @@ import {
   Heading,
 } from "@react-email/components";
 import * as React from "react";
-import process from "process";
+import { env } from "@honeycomb/env/index";
 import { SettingEntity } from "@honeycomb/trpc/server/types/setting.entity";
 
 export interface EmailContainerProps {
@@ -50,7 +50,7 @@ const EmailContainer = (props: EmailContainerProps) => {
               {footer}
               <Text>
                 欢迎再次光临{" "}
-                <Link href={`https://${process.env.FRONT_DOMAIN}`}>
+                <Link href={env.NEXT_PUBLIC_API_DOMAIN}>
                   {setting.siteName?.zh}
                 </Link>
               </Text>
