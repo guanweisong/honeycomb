@@ -1,9 +1,0 @@
-{
-  "name": "@honeycomb/types",
-  "version": "1.0.0",
-  "exports": {
-    "./*": "./src/*"
-  },
-  "type": "module",
-  "license": "MIT"
-}
