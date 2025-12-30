@@ -1,6 +1,6 @@
 import { publicProcedure, createTRPCRouter } from "@/packages/trpc/server/core";
 import { z } from "zod";
-import { db } from "@/packages/db/db";
+import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { and, eq } from "drizzle-orm";
 import { LoginSchema } from "@/packages/validation/auth/schemas/login.schema";
@@ -34,6 +34,7 @@ export const authRouter = createTRPCRouter({
   login: publicProcedure.input(LoginSchema).mutation(async ({ input }) => {
     const { name, password, captcha } = input;
     await validateCaptcha(captcha);
+    const db = getDb();
 
     const [user] = await db
       .select()
@@ -70,6 +71,7 @@ export const authRouter = createTRPCRouter({
   logout: publicProcedure
     .input(z.object({ token: z.string().min(1) }))
     .mutation(async ({ input }) => {
+      const db = getDb();
       const { token } = input;
       await db.delete(schema.token).where(eq(schema.token.content, token));
       return { success: true };

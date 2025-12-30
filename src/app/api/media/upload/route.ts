@@ -5,12 +5,13 @@ import { getColor } from "@/packages/trpc/server/libs/colorThief";
 import dayjs from "dayjs";
 import { InferInsertModel } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
-import { db } from "@/packages/db/db";
+import { getDb } from "@/packages/db/db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const db = getDb();
   try {
     const authHeader = req.headers.get("x-secret-key");
     if (authHeader !== process.env.JWT_SECRET) {

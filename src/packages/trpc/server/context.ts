@@ -1,5 +1,5 @@
 import * as schema from "@/packages/db/schema";
-import { db } from "@/packages/db/db";
+import { getDb } from "@/packages/db/db";
 import { eq } from "drizzle-orm";
 
 /**
@@ -33,6 +33,7 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!req) return null;
   const token = req.headers.get("x-auth-token");
   if (!token) return null;
+  const db = getDb();
 
   const tokenInfo = await db
     .select()
@@ -63,6 +64,7 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
  */
 export const createContext = async (opts: CreateContextOptions) => {
   const user = await getUserFromRequest(opts.req);
+  const db = getDb();
   return {
     db,
     user,

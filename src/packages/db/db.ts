@@ -1,25 +1,33 @@
-import { createClient } from "@libsql/client/web";
+import { createClient, type Client } from "@libsql/client/web";
 import { drizzle } from "drizzle-orm/libsql/web";
 import * as schema from "./schema";
+import { LibSQLDatabase } from "drizzle-orm/libsql";
+
+let client: Client | null = null;
+let db: LibSQLDatabase<typeof schema> | null = null;
 
 /**
- * 创建 Turso/libSQL 数据库客户端。
- */
-const client = createClient({
-  url: process.env.TURSO_URL!,
-  authToken: process.env.TURSO_TOKEN,
-});
-
-/**
- * 初始化 Drizzle ORM 实例。
+ * 获取数据库实例（lazy init）
  *
- * 将数据库客户端 (`client`) 与定义的数据库 schema 绑定，
- * 创建一个功能完备的 ORM 实例，用于后续的数据库操作。
+ * - 不允许在模块顶层创建 client
+ * - 只在 runtime（API 请求）阶段执行
  */
-const dbInstance = drizzle(client, { schema });
+export function getDb() {
+  if (!db) {
+    const url = process.env.TURSO_URL;
+    const authToken = process.env.TURSO_TOKEN;
 
-/**
- * 导出的数据库实例。
- * 在整个应用程序中，应该使用此实例来执行所有数据库查询和操作。
- */
-export const db = dbInstance;
+    if (!url) {
+      throw new Error("TURSO_URL is missing");
+    }
+
+    client = createClient({
+      url,
+      authToken,
+    });
+
+    db = drizzle(client, { schema });
+  }
+
+  return db;
+}

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import S3 from "@/packages/trpc/server/libs/S3";
 import * as schema from "@/packages/db/schema";
-import { db } from "@/packages/db/db";
+import { getDb } from "@/packages/db/db";
 import { inArray } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const db = getDb();
   try {
     const authHeader = req.headers.get("x-secret-key");
     if (authHeader !== process.env.JWT_SECRET) {
