@@ -6,9 +6,8 @@ import ReplyCommentEmailMessage from "@/packages/trpc/server/components/EmailMes
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs"; // 明确指定 Node.js Runtime
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     // 简单的安全验证，防止未授权调用
     // 在生产环境中，建议使用更安全的机制，如 JWT 或 API Key
