@@ -18,7 +18,6 @@ import { CommentInsertSchema } from "@/packages/validation/comment/schemas/comme
 import { selectAllColumns } from "@/packages/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@/packages/trpc/server/libs/validateCaptcha";
 import { UserLevel } from "@/packages/types/user/user.level";
-import { env } from "@/lib/env";
 import { z } from "zod";
 import { IdSchema } from "@/packages/validation/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
@@ -223,7 +222,7 @@ export const commentRouter = createTRPCRouter({
       // ====== 异步发送邮件通知 (通过 HTTP 调用 Node.js API) ======
       // 这样做是为了让主 tRPC 路由可以运行在 Edge Runtime，而将不兼容 Edge 的邮件逻辑（@react-email）隔离在 Node.js API 中
       const emailApiUrl = `/api/email/send`;
-      const secretKey = env.JWT_SECRET; // 使用 JWT_SECRET 作为简单的内部调用凭证
+      const secretKey = process.env.JWT_SECRET; // 使用 JWT_SECRET 作为简单的内部调用凭证
 
       // 1. 通知管理员
       fetch(emailApiUrl, {

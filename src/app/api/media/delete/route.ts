@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env";
 import S3 from "@/packages/trpc/server/libs/S3";
 import * as schema from "@/packages/db/schema";
 import { db } from "@/packages/db/db";
@@ -11,7 +10,7 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("x-secret-key");
-    if (authHeader !== env.JWT_SECRET) {
+    if (authHeader !== process.env.JWT_SECRET) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

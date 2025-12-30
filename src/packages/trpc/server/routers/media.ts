@@ -16,7 +16,6 @@ import dayjs from "dayjs";
 // import sizeOf from "image-size";
 // import { getColor } from "@/packages/trpc/server/libs/colorThief";
 import { UserLevel } from "@/packages/types/user/user.level";
-import { env } from "@/lib/env";
 
 /**
  * 媒体文件相关的 tRPC 路由。
@@ -75,7 +74,7 @@ export const mediaRouter = createTRPCRouter({
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const apiUrl = "/api/media/upload";
-      const secretKey = env.JWT_SECRET;
+      const secretKey = process.env.JWT_SECRET;
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -103,7 +102,7 @@ export const mediaRouter = createTRPCRouter({
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       const apiUrl = "/api/media/delete";
-      const secretKey = env.JWT_SECRET;
+      const secretKey = process.env.JWT_SECRET;
 
       const response = await fetch(apiUrl, {
         method: "POST",
