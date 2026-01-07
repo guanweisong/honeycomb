@@ -20,5 +20,5 @@ export const config = {
    * - 以 `/api`, `/trpc`, `/_next`, `/_vercel` 开头的路径（通常是 API 或 Next.js 内部路由）。
    * - 包含 `.` 的路径（通常是静态文件，如 `favicon.ico`）。
    */
-  matcher: "/((?!api|trpc|_next|_vercel|.*\\..*).*)",
+  matcher: "/((?!api|trpc|_next|_vercel|admin|.*\\..*).*)",
 };
