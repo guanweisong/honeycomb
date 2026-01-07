@@ -1,5 +1,4 @@
 import { TRPCError } from "@trpc/server";
-import axios from "axios";
 import { z } from "zod";
 
 export const CaptchaSchema = z.object({
@@ -9,52 +8,55 @@ export const CaptchaSchema = z.object({
 
 export type Captcha = z.infer<typeof CaptchaSchema>;
 
+type TencentCaptchaResponse = {
+  response: string;
+};
+
 /**
  * Validates a Tencent Captcha.
- * @param captcha - The captcha data from the client.
- * @throws {TRPCError} If the captcha is missing or incorrect.
  */
 export const validateCaptcha = async (captcha: Captcha | undefined | null) => {
-  if (!captcha || !captcha.ticket || !captcha.randstr) {
+  if (!captcha?.ticket || !captcha?.randstr) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "请提供有效的验证码参数。",
     });
   }
 
+  const params = new URLSearchParams({
+    aid: process.env.CAPTCHA_AID ?? "",
+    AppSecretKey: process.env.CAPTCHA_APP_SECRET_KEY ?? "",
+    Ticket: captcha.ticket,
+    Randstr: captcha.randstr,
+  });
+
+  let data: TencentCaptchaResponse;
+
   try {
-    const response = await axios.get<{ response: string }>(
-      "https://ssl.captcha.qq.com/ticket/verify",
+    const res = await fetch(
+      `https://ssl.captcha.qq.com/ticket/verify?${params.toString()}`,
       {
-        params: {
-          aid: process.env.CAPTCHA_AID,
-          AppSecretKey: process.env.CAPTCHA_APP_SECRET_KEY,
-          Ticket: captcha.ticket,
-          Randstr: captcha.randstr,
-        },
+        method: "GET",
       },
     );
 
-    if (response.data.response !== "1") {
-      // The codes returned by Tencent are:
-      // 1: verification successful
-      // 7: Ticket is reused
-      // 8: Ticket is expired
-      // 9: Ticket is falsified
-      // 15: The Ticket is inconsistent with the Randstr
-      // 16: The AppSecretKey is inconsistent with the aid
-      // 100: The aid and AppSecretKey do not match the developer's account
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: `验证码不正确 (response: ${response.data.response})`,
-      });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
     }
+
+    data = (await res.json()) as TencentCaptchaResponse;
   } catch (error) {
-    console.error("Captcha validation error:", error);
-    // Re-throw as TRPCError to avoid leaking implementation details to the client
+    console.error("Captcha request failed:", error);
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "验证码服务出现问题。",
+    });
+  }
+
+  if (data.response !== "1") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `验证码不正确 (response: ${data.response})`,
     });
   }
 };

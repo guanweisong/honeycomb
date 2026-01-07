@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  *
  * 已移除 superjson transformer * 邮件发送逻辑已隔离到独立的 Node.js API 路由。
  */
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 /**
  * tRPC 请求处理函数。

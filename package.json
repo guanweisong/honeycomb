@@ -7,9 +7,11 @@
     "build": "bun next build",
     "start": "bun next start",
     "lint": "bun next lint",
+    "analyze": "npx next experimental-analyze",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "bun tsc --noEmit",
-    "build:cloudflare": "bun opennextjs-cloudflare build"
+    "build:cloudflare": "bun opennextjs-cloudflare build",
+    "deploy:cloudflare": "npx wrangler deploy --minify"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -34,9 +36,7 @@
     "@trpc/client": "^11.3.1",
     "@trpc/react-query": "^11.3.1",
     "@trpc/server": "^11.3.1",
-    "@t3-oss/env-nextjs": "^0.13.8",
     "ahooks": "^3.7.4",
-    "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -56,7 +56,6 @@
     "next-auth": "^4.18.7",
     "next-intl": "^4.0.2",
     "next-themes": "^0.4.6",
-    "query-string": "^8.1.0",
     "react": "^19.2.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-day-picker": "8.10.1",
@@ -76,7 +75,6 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^14.1.0",
     "@tailwindcss/postcss": "^4.1.15",
     "@types/commonmark": "^0.27.7",
     "@types/md5": "^2.3.6",
@@ -86,8 +84,6 @@
     "@types/react-dom": "^19.2.2",
     "@types/showdown": "^2.0.1",
     "autoprefixer": "^10.4.17",
-    "cross-env": "^7.0.3",
-    "dotenv-cli": "^10.0.0",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "sass": "^1.93.2",
