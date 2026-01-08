@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 /**
  * 使用 Edge Runtime 运行此路由。
  *
- * 已移除 superjson transformer * 邮件发送逻辑已隔离到独立的 Node.js API 路由。
+ * 已移除 superjson transformer
  */
 export const runtime = "nodejs";
 

@@ -24,6 +24,7 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@/packages/types/comment/comment.status";
 import { getCustomCommentLink } from "@/packages/trpc/server/utils/getCustomCommentLink";
+import { sendEmail } from "@/packages/trpc/server/utils/sendEmail";
 
 /**
  commentRouter * 评论相关的 tRPC 路由。
@@ -76,15 +77,15 @@ export const commentRouter = createTRPCRouter({
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
-              .select()
-              .from(schema.post)
-              .where(inArray(schema.post.id, postIds))
+            .select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, postIds))
           : Promise.resolve([]),
         pageIds.length
           ? ctx.db
-              .select()
-              .from(schema.page)
-              .where(inArray(schema.page.id, pageIds))
+            .select()
+            .from(schema.page)
+            .where(inArray(schema.page.id, pageIds))
           : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
@@ -149,7 +150,7 @@ export const commentRouter = createTRPCRouter({
             { idKey: "id", parentKey: "parentId" },
           )
         */
-          [];
+        [];
 
       const [countResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
@@ -216,29 +217,12 @@ export const commentRouter = createTRPCRouter({
         custom: currentCustom,
       };
 
-      const siteNameZh = setting.siteName?.zh ?? "";
-      const systemEmail = `notice@guanweisong.com`;
-
-      // ====== 异步发送邮件通知 (通过 HTTP 调用 Node.js API) ======
-      // 这样做是为了让主 tRPC 路由可以运行在 Edge Runtime，而将不兼容 Edge 的邮件逻辑（@react-email）隔离在 Node.js API 中
-      const emailApiUrl = `/api/email/send`;
-      const secretKey = process.env.JWT_SECRET; // 使用 JWT_SECRET 作为简单的内部调用凭证
-
+      // ====== 异步发送邮件通知 ======
       // 1. 通知管理员
-      fetch(emailApiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-secret-key": secretKey,
-        },
-        body: JSON.stringify({
-          type: "ADMIN_NOTICE",
-          payload: {
-            setting,
-            currentComment: currentCommentWithCustom,
-          },
-        }),
-      }).catch((e) => console.error("Failed to trigger admin email:", e));
+      sendEmail("ADMIN_NOTICE", {
+        setting,
+        currentComment: currentCommentWithCustom,
+      }).catch((e) => console.error("Failed to send admin email:", e));
 
       // 2. 通知被回复者
       if (rest.parentId) {
@@ -260,21 +244,11 @@ export const commentRouter = createTRPCRouter({
             custom: parentCustom,
           };
 
-          fetch(emailApiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-secret-key": secretKey,
-            },
-            body: JSON.stringify({
-              type: "REPLY_NOTICE",
-              payload: {
-                setting,
-                currentComment: currentCommentWithCustom,
-                parentComment: parentCommentWithCustom,
-              },
-            }),
-          }).catch((e) => console.error("Failed to trigger reply email:", e));
+          sendEmail("REPLY_NOTICE", {
+            setting,
+            currentComment: currentCommentWithCustom,
+            parentComment: parentCommentWithCustom,
+          }).catch((e) => console.error("Failed to send reply email:", e));
         }
       }
 
