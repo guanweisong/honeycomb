@@ -7,7 +7,7 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/server/libs/tools";
-import { MenuUpdateSchema } from "@/packages/validation/menu/schemas/menu.update.schema";
+import { MenuUpdateSchema } from "@/packages/validation/schemas/menu/menu.update.schema";
 import * as schema from "@/packages/db/schema";
 import { sql } from "drizzle-orm";
 import { UserLevel } from "@/packages/types/user/user.level";

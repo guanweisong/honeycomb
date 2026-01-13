@@ -3,7 +3,7 @@
 import { useSettingStore } from "@/app/admin/stores/useSettingStore";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { SettingUpdateSchema } from "@/packages/validation/setting/schemas/setting.update.schema";
+import { SettingUpdateSchema } from "@/packages/validation/schemas/setting/setting.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 /**

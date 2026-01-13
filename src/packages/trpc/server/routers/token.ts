@@ -6,7 +6,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/server/libs/tools";
-import { TokenListQuerySchema } from "@/packages/validation/token/schemas/token.list.query.schema";
+import { TokenListQuerySchema } from "@/packages/validation/schemas/token/token.list.query.schema";
 import * as schema from "@/packages/db/schema";
 import { sql } from "drizzle-orm";
 import { UserLevel } from "@/packages/types/user/user.level";

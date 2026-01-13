@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { and, eq } from "drizzle-orm";
-import { LoginSchema } from "@/packages/validation/auth/schemas/login.schema";
+import { LoginSchema } from "@/packages/validation/schemas/auth/login.schema";
 import { validateCaptcha } from "@/packages/trpc/server/libs/validateCaptcha";
 import { TRPCError } from "@trpc/server";
 

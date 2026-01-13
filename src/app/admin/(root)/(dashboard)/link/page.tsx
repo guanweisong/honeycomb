@@ -15,9 +15,9 @@ import { z } from "zod";
 import {
   LinkListQueryInput,
   LinkListQuerySchema,
-} from "@/packages/validation/link/schemas/link.list.query.schema";
-import { LinkUpdateSchema } from "@/packages/validation/link/schemas/link.update.schema";
-import { LinkInsertSchema } from "@/packages/validation/link/schemas/link.insert.schema";
+} from "@/packages/validation/schemas/link/link.list.query.schema";
+import { LinkUpdateSchema } from "@/packages/validation/schemas/link/link.update.schema";
+import { LinkInsertSchema } from "@/packages/validation/schemas/link/link.insert.schema";
 import {
   EnableStatus,
   enableStatusOptions,

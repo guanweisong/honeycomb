@@ -7,14 +7,14 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/server/libs/tools";
-import { DeleteBatchSchema } from "@/packages/validation/schemas/delete.batch.schema";
-import { PostListQuerySchema } from "@/packages/validation/post/schemas/post.list.query.schema";
-import { PostInsertSchema } from "@/packages/validation/post/schemas/post.insert.schema";
-import { PostUpdateSchema } from "@/packages/validation/post/schemas/post.update.schema";
+import { DeleteBatchSchema } from "@/packages/validation/utils/delete.batch.schema";
+import { PostListQuerySchema } from "@/packages/validation/schemas/post/post.list.query.schema";
+import { PostInsertSchema } from "@/packages/validation/schemas/post/post.insert.schema";
+import { PostUpdateSchema } from "@/packages/validation/schemas/post/post.update.schema";
 import * as schema from "@/packages/db/schema";
 import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
-import { IdSchema } from "@/packages/validation/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
 import { getAllImageLinkFormMarkdown } from "@/packages/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@/packages/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@/packages/types/user/user.level";
@@ -196,15 +196,13 @@ export const postRouter = createTRPCRouter({
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
       // 获取分类信息
-      const category = item.categoryId
-        ? (
-            await ctx.db
-              .select()
-              .from(schema.category)
-              .where(eq(schema.category.id, item.categoryId))
-              .limit(1)
-          )?.[0]
-        : undefined;
+      const category = (
+        await ctx.db
+          .select()
+          .from(schema.category)
+          .where(eq(schema.category.id, item.categoryId))
+          .limit(1)
+      )?.[0];
 
       // 获取作者信息
       const author = item.authorId

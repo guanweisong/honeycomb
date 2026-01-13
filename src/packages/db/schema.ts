@@ -11,10 +11,10 @@ import { withTimestamps } from "./timestamps";
 export const user = sqliteTable("user", {
   id: text("id").primaryKey().$defaultFn(objectId),
   email: text("email").unique(),
-  level: text("level").default("EDITOR"), // 用户等级，默认为编辑
+  level: text("level").default("EDITOR").notNull(), // 用户等级，默认为编辑
   name: text("name").unique(),
   password: text("password"),
-  status: text("status").default("ENABLE"), // 用户状态，默认启用
+  status: text("status").default("ENABLE").notNull(), // 用户状态，默认启用
   ...withTimestamps(),
 });
 
@@ -24,11 +24,11 @@ export const user = sqliteTable("user", {
  */
 export const category = sqliteTable("category", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  description: i18nField("description"), // 分类描述 (国际化)
-  title: i18nField("title"), // 分类标题 (国际化)
+  description: i18nField("description").notNull(), // 分类描述 (国际化)
+  title: i18nField("title").notNull(), // 分类标题 (国际化)
   parent: text("parent"), // 父分类ID，用于构建层级关系
-  status: text("status").default("ENABLE"), // 分类状态，默认启用
-  path: text("path"), // 分类的访问路径/slug
+  status: text("status").default("ENABLE").notNull(), // 分类状态，默认启用
+  path: text("path").notNull(), // 分类的访问路径/slug
   ...withTimestamps(),
 });
 
@@ -38,7 +38,7 @@ export const category = sqliteTable("category", {
  */
 export const post = sqliteTable("post", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  commentStatus: text("comment_status").default("ENABLE"), // 评论状态，默认启用
+  commentStatus: text("comment_status").default("ENABLE").notNull(), // 评论状态，默认启用
   // --- 图库类型字段 ---
   galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
   galleryStyleIds: arrayField<string>("gallery_style_ids"), // 图库风格ID列表
@@ -49,14 +49,14 @@ export const post = sqliteTable("post", {
   movieStyleIds: arrayField("movie_style_ids"), // 电影风格ID列表
   movieTime: text("movie_time"), // 电影上映时间
   // --- 核心字段 ---
-  authorId: text("author_id"), // 作者ID，关联到 user 表
-  categoryId: text("category_id"), // 分类ID，关联到 category 表
+  authorId: text("author_id").notNull(), // 作者ID，关联到 user 表
+  categoryId: text("category_id").notNull(), // 分类ID，关联到 category 表
   content: i18nField("content"), // 文章内容 (国际化)
   coverId: text("cover_id"), // 封面图ID，关联到 media 表
   excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
-  status: text("status").default("TO_AUDIT"), // 文章状态，默认待审核
+  status: text("status").default("TO_AUDIT").notNull(), // 文章状态，默认待审核
   title: i18nField("title"), // 文章标题 (国际化)
-  type: text("type").default("ARTICLE"), // 文章类型，默认普通文章
+  type: text("type").default("ARTICLE").notNull(), // 文章类型，默认普通文章
   views: integer("views").default(0), // 浏览次数
   // --- 引言类型字段 ---
   quoteAuthor: i18nField("quote_author"), // 引言作者 (国际化)
@@ -70,11 +70,11 @@ export const post = sqliteTable("post", {
  */
 export const page = sqliteTable("page", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  authorId: text("author_id"), // 作者ID
-  content: i18nField("content"), // 页面内容 (国际化)
-  status: text("status").default("TO_AUDIT"), // 页面状态，默认待审核
-  title: i18nField("title"), // 页面标题 (国际化)
-  views: integer("views").default(0), // 浏览次数
+  authorId: text("author_id").notNull(), // 作者ID
+  content: i18nField("content").notNull(), // 页面内容 (国际化)
+  status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
+  title: i18nField("title").notNull(), // 页面标题 (国际化)
+  views: integer("views").default(0).notNull(), // 浏览次数
   ...withTimestamps(),
 });
 
@@ -85,10 +85,10 @@ export const page = sqliteTable("page", {
 export const comment = sqliteTable("comment", {
   id: text("id").primaryKey().$defaultFn(objectId),
   userAgent: text("user_agent"), // 评论者的 User Agent
-  author: text("author"), // 评论者昵称
-  content: text("content"), // 评论内容
+  author: text("author").notNull(), // 评论者昵称
+  content: text("content").notNull(), // 评论内容
   site: text("site"), // 评论者网址
-  email: text("email"), // 评论者邮箱
+  email: text("email").notNull(), // 评论者邮箱
   ip: text("ip"), // 评论者IP地址
   parentId: text("parent_id"), // 父评论ID，用于实现嵌套评论
   postId: text("post_id"), // 关联的文章ID
@@ -104,11 +104,11 @@ export const comment = sqliteTable("comment", {
  */
 export const media = sqliteTable("media", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  key: text("key"), // 文件在对象存储中的 key
-  name: text("name"), // 文件名
-  size: integer("size"), // 文件大小 (字节)
-  type: text("type"), // 文件 MIME 类型
-  url: text("url"), // 文件的访问 URL
+  key: text("key").notNull(), // 文件在对象存储中的 key
+  name: text("name").notNull(), // 文件名
+  size: integer("size").notNull(), // 文件大小 (字节)
+  type: text("type").notNull(), // 文件 MIME 类型
+  url: text("url").notNull(), // 文件的访问 URL
   color: text("color"), // 图片主色调
   height: integer("height"), // 图片高度
   width: integer("width"), // 图片宽度
@@ -132,10 +132,10 @@ export const token = sqliteTable("token", {
  */
 export const setting = sqliteTable("setting", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  siteName: i18nField("site_name"), // 网站主名称 (国际化)
-  siteSubName: i18nField("site_sub_name"), // 网站副名称 (国际化)
-  siteSignature: i18nField("site_signature"), // 网站签名 (国际化)
-  siteCopyright: i18nField("site_copyright"), // 网站版权信息 (国际化)
+  siteName: i18nField("site_name").notNull(), // 网站主名称 (国际化)
+  siteSubName: i18nField("site_sub_name").notNull(), // 网站副名称 (国际化)
+  siteSignature: i18nField("site_signature").notNull(), // 网站签名 (国际化)
+  siteCopyright: i18nField("site_copyright").notNull(), // 网站版权信息 (国际化)
   siteRecordNo: text("site_record_no"), // 网站备案号
   siteRecordUrl: text("site_record_url"), // 备案号链接
   ...withTimestamps(),
@@ -148,8 +148,8 @@ export const setting = sqliteTable("setting", {
 export const menu = sqliteTable("menu", {
   id: text("id").primaryKey().$defaultFn(objectId),
   parent: text("parent"), // 父菜单项ID
-  power: integer("power"), // 排序权重
-  type: text("type"), // 菜单项类型 (CATEGORY, PAGE, CUSTOM)
+  power: integer("power").notNull(), // 排序权重
+  type: text("type").notNull(), // 菜单项类型 (CATEGORY, PAGE, CUSTOM)
   ...withTimestamps(),
 });
 
@@ -159,7 +159,7 @@ export const menu = sqliteTable("menu", {
  */
 export const tag = sqliteTable("tag", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  name: i18nField("name"), // 标签名称 (国际化)
+  name: i18nField("name").notNull(), // 标签名称 (国际化)
   ...withTimestamps(),
 });
 
@@ -169,9 +169,9 @@ export const tag = sqliteTable("tag", {
  */
 export const link = sqliteTable("link", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  url: text("url").unique(),
-  name: text("name"),
-  logo: text("logo"), // 链接 Logo URL
+  url: text("url").unique().notNull(),
+  name: text("name").notNull(),
+  logo: text("logo").notNull(), // 链接 Logo URL
   description: text("description"),
   status: text("status").default("ENABLE"), // 链接状态，默认启用
   ...withTimestamps(),

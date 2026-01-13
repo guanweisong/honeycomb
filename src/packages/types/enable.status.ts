@@ -3,12 +3,12 @@
  */
 export enum EnableStatus {
   ENABLE = "ENABLE",
-  DISABLED = "DISABLED",
+  DISABLE = "DISABLE",
 }
 
 export enum EnableStatusName {
   ENABLE = "启用",
-  DISABLED = "禁用",
+  DISABLE = "禁用",
 }
 
 export const enableStatusOptions = [
@@ -17,7 +17,7 @@ export const enableStatusOptions = [
     value: EnableStatus.ENABLE,
   },
   {
-    label: EnableStatusName.DISABLED,
-    value: EnableStatus.DISABLED,
+    label: EnableStatusName.DISABLE,
+    value: EnableStatus.DISABLE,
   },
 ];

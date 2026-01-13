@@ -7,8 +7,8 @@ import {
   DynamicForm,
   DynamicFormRef,
 } from "@/packages/ui/extended/DynamicForm";
-import { PageInsertSchema } from "@/packages/validation/page/schemas/page.insert.schema";
-import { PageUpdateSchema } from "@/packages/validation/page/schemas/page.update.schema";
+import { PageInsertSchema } from "@/packages/validation/schemas/page/page.insert.schema";
+import { PageUpdateSchema } from "@/packages/validation/schemas/page/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PageStatus } from "@/packages/types/page/page.status";

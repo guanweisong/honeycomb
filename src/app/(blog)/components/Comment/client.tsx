@@ -8,7 +8,7 @@ import { CommentProps } from "./index";
 import { refreshPath } from "@/lib/refreshPath";
 import { CommentStatus } from "@/packages/types/comment/comment.status";
 import { MenuType } from "@/packages/types/menu/menu.type";
-import { CommentInsertInput } from "@/packages/validation/comment/schemas/comment.insert.schema";
+import { CommentInsertInput } from "@/packages/validation/schemas/comment/comment.insert.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useTranslations } from "next-intl";
 import {

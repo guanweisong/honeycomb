@@ -9,9 +9,9 @@ import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Button } from "@/packages/ui/components/button";
 import { toast } from "sonner";
-import { CommentListQuerySchema } from "@/packages/validation/comment/schemas/comment.list.query.schema";
+import { CommentListQuerySchema } from "@/packages/validation/schemas/comment/comment.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagListQueryInput } from "@/packages/validation/tag/schemas/tag.list.query.schema";
+import { TagListQueryInput } from "@/packages/validation/schemas/tag/tag.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CommentEntity } from "@/packages/trpc/server/types/comment.entity";
 

@@ -13,7 +13,7 @@ import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
 import { PostListItemEntity } from "@/packages/trpc/server/types/post.entity";
 import { PostType, PostTypeName } from "@/packages/types/post/post.type";
-import { PostListQueryInput } from "@/packages/validation/post/schemas/post.list.query.schema";
+import { PostListQueryInput } from "@/packages/validation/schemas/post/post.list.query.schema";
 import { PostTypeBgColor } from "@/app/(blog)/types/PostTypeBgColor";
 
 /**

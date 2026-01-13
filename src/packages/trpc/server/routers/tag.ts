@@ -7,10 +7,10 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/server/libs/tools";
-import { DeleteBatchSchema } from "@/packages/validation/schemas/delete.batch.schema";
-import { TagListQuerySchema } from "@/packages/validation/tag/schemas/tag.list.query.schema";
-import { TagInsertSchema } from "@/packages/validation/tag/schemas/tag.insert.schema";
-import { TagUpdateSchema } from "@/packages/validation/tag/schemas/tag.update.schema";
+import { DeleteBatchSchema } from "@/packages/validation/utils/delete.batch.schema";
+import { TagListQuerySchema } from "@/packages/validation/schemas/tag/tag.list.query.schema";
+import { TagInsertSchema } from "@/packages/validation/schemas/tag/tag.insert.schema";
+import { TagUpdateSchema } from "@/packages/validation/schemas/tag/tag.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/types/user/user.level";

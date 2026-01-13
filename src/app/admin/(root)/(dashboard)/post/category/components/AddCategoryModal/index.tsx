@@ -7,8 +7,8 @@ import { creatCategoryTitleByDepth } from "@/lib/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { CategoryInsertSchema } from "@/packages/validation/category/schemas/category.insert.schema";
-import { CategoryUpdateSchema } from "@/packages/validation/category/schemas/category.update.schema";
+import { CategoryInsertSchema } from "@/packages/validation/schemas/category/category.insert.schema";
+import { CategoryUpdateSchema } from "@/packages/validation/schemas/category/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { z } from "zod";
 

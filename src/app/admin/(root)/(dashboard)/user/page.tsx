@@ -10,12 +10,12 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { UserUpdateSchema } from "@/packages/validation/user/schemas/user.update.schema";
-import { UserInsertSchema } from "@/packages/validation/user/schemas/user.insert.schema";
+import { UserUpdateSchema } from "@/packages/validation/schemas/user/user.update.schema";
+import { UserInsertSchema } from "@/packages/validation/schemas/user/user.insert.schema";
 import {
   UserListQueryInput,
   UserListQuerySchema,
-} from "@/packages/validation/user/schemas/user.list.query.schema";
+} from "@/packages/validation/schemas/user/user.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { UserEntity } from "@/packages/trpc/server/types/user.entity";
 import { UserLevel, userLevelOptions } from "@/packages/types/user/user.level";

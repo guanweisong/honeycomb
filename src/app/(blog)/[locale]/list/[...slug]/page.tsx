@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/types/multi.lang";
 import { createServerClient } from "@/packages/trpc/server";
 import { PostStatus } from "@/packages/types/post/post.status";
-import { PostListQueryInput } from "@/packages/validation/post/schemas/post.list.query.schema";
+import { PostListQueryInput } from "@/packages/validation/schemas/post/post.list.query.schema";
 import { Metadata } from "next";
 
 /**

@@ -7,19 +7,19 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/server/libs/tools";
-import { DeleteBatchSchema } from "@/packages/validation/schemas/delete.batch.schema";
-import { CommentListQuerySchema } from "@/packages/validation/comment/schemas/comment.list.query.schema";
-import { CommentUpdateSchema } from "@/packages/validation/comment/schemas/comment.update.schema";
-import { CommentQuerySchema } from "@/packages/validation/comment/schemas/comment.query.schema";
+import { DeleteBatchSchema } from "@/packages/validation/utils/delete.batch.schema";
+import { CommentListQuerySchema } from "@/packages/validation/schemas/comment/comment.list.query.schema";
+import { CommentUpdateSchema } from "@/packages/validation/schemas/comment/comment.update.schema";
+import { CommentQuerySchema } from "@/packages/validation/schemas/comment/comment.query.schema";
 // @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
-import { CommentInsertSchema } from "@/packages/validation/comment/schemas/comment.insert.schema";
+import { CommentInsertSchema } from "@/packages/validation/schemas/comment/comment.insert.schema";
 import { selectAllColumns } from "@/packages/trpc/server/utils/selectAllColumns";
 import { validateCaptcha } from "@/packages/trpc/server/libs/validateCaptcha";
 import { UserLevel } from "@/packages/types/user/user.level";
 import { z } from "zod";
-import { IdSchema } from "@/packages/validation/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@/packages/types/comment/comment.status";
@@ -77,15 +77,15 @@ export const commentRouter = createTRPCRouter({
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
-            .select()
-            .from(schema.post)
-            .where(inArray(schema.post.id, postIds))
+              .select()
+              .from(schema.post)
+              .where(inArray(schema.post.id, postIds))
           : Promise.resolve([]),
         pageIds.length
           ? ctx.db
-            .select()
-            .from(schema.page)
-            .where(inArray(schema.page.id, pageIds))
+              .select()
+              .from(schema.page)
+              .where(inArray(schema.page.id, pageIds))
           : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
@@ -150,7 +150,7 @@ export const commentRouter = createTRPCRouter({
             { idKey: "id", parentKey: "parentId" },
           )
         */
-        [];
+          [];
 
       const [countResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })

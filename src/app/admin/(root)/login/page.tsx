@@ -9,7 +9,7 @@ import {
   DynamicFormRef,
 } from "@/packages/ui/extended/DynamicForm";
 import { toast } from "sonner";
-import { UserInsertSchema } from "@/packages/validation/user/schemas/user.insert.schema";
+import { UserInsertSchema } from "@/packages/validation/schemas/user/user.insert.schema";
 
 /**
  * 登录页面组件。

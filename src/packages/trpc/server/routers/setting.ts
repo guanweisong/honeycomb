@@ -3,7 +3,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/server/core";
-import { SettingUpdateSchema } from "@/packages/validation/setting/schemas/setting.update.schema";
+import { SettingUpdateSchema } from "@/packages/validation/schemas/setting/setting.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/types/user/user.level";

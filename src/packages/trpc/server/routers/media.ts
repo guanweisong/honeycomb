@@ -6,11 +6,11 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/server/libs/tools";
-import { MediaListQuerySchema } from "@/packages/validation/media/schemas/media.list.query.schema";
-import { DeleteBatchSchema } from "@/packages/validation/schemas/delete.batch.schema";
+import { MediaListQuerySchema } from "@/packages/validation/schemas/media/media.list.query.schema";
+import { DeleteBatchSchema } from "@/packages/validation/utils/delete.batch.schema";
 import * as schema from "@/packages/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
-import { MediaInsertSchema } from "@/packages/validation/media/schemas/media.insert.schema";
+import { MediaInsertSchema } from "@/packages/validation/schemas/media/media.insert.schema";
 import dayjs from "dayjs";
 import S3 from "@/packages/trpc/server/libs/S3";
 import sizeOf from "image-size";

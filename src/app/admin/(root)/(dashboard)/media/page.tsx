@@ -11,7 +11,7 @@ import { Skeleton } from "@/packages/ui/components/skeleton";
 import { cn } from "@/packages/ui/lib/utils";
 
 import { trpc } from "@/packages/trpc/client/trpc";
-import { MediaIndexInput } from "@/packages/validation/media/schemas/media.list.query.schema";
+import { MediaIndexInput } from "@/packages/validation/schemas/media/media.list.query.schema";
 import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
 
 /**
