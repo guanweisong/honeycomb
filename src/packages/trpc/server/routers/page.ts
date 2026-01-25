@@ -15,7 +15,6 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { getAllImageLinkFormMarkdown } from "@/packages/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { UserLevel } from "@/packages/types/user/user.level";
 
 /**
@@ -103,7 +102,6 @@ export const pageRouter = createTRPCRouter({
    * 工作流程：
    * 1. 根据 ID 查询页面。
    * 2. 如果页面存在，则根据 `authorId` 关联查询作者信息。
-   * 3. 使用 `getAllImageLinkFormMarkdown` 从页面内容中提取所有图片 URL。
    * 4. 根据提取到的 URL 在 `media` 表中查询对应的媒体文件信息。
    * 5. 将作者信息和内容中的图片信息附加到最终结果中返回。
    */
@@ -129,17 +127,7 @@ export const pageRouter = createTRPCRouter({
         author = authorData || null;
       }
 
-      const imageUrls = getAllImageLinkFormMarkdown(
-        item?.content?.zh,
-      ) as string[];
-      const imagesInContent = imageUrls.length
-        ? await ctx.db
-            .select()
-            .from(schema.media)
-            .where(inArray(schema.media.url, imageUrls))
-        : [];
-
-      return { ...item, author, imagesInContent };
+      return { ...item, author };
     }),
 
   /**

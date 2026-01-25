@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../lib/utils";
 
 export interface AvatarProps extends React.ComponentProps<
   typeof AvatarPrimitive.Root

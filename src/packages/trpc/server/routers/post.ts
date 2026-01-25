@@ -15,7 +15,6 @@ import * as schema from "@/packages/db/schema";
 import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
-import { getAllImageLinkFormMarkdown } from "@/packages/trpc/server/utils/getAllImageLinkFormMarkdown";
 import { getRelationTags } from "@/packages/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@/packages/types/user/user.level";
 import { TRPCError } from "@trpc/server";
@@ -237,16 +236,6 @@ export const postRouter = createTRPCRouter({
           getRelationTags(item?.galleryStyleIds ?? []),
         ]);
 
-      const imageUrls = getAllImageLinkFormMarkdown(
-        item?.content?.zh,
-      ) as string[];
-      const imagesInContent = imageUrls.length
-        ? await ctx.db
-            .select()
-            .from(schema.media)
-            .where(inArray(schema.media.url, imageUrls))
-        : [];
-
       return {
         ...item,
         category,
@@ -256,7 +245,6 @@ export const postRouter = createTRPCRouter({
         movieDirectors,
         movieStyles,
         galleryStyles,
-        imagesInContent,
       };
     }),
 

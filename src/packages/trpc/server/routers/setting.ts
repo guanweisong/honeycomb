@@ -18,6 +18,7 @@ export const settingRouter = createTRPCRouter({
    * 该接口会额外附加一个 `customObjectId` 对象，其中包含了从环境变量读取的友情链接页面的 ID。
    */
   index: publicProcedure.query(async ({ ctx }) => {
+    console.log("DB URL:", process.env.TURSO_URL);
     const list = await ctx.db.select().from(schema.setting);
     const result = list[0];
     return {

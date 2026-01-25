@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../../../../lib/utils";
 import { usePathname } from "next/navigation";
 import { MenuItem } from "../../index";
 

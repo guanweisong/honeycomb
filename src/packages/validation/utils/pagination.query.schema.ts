@@ -28,4 +28,3 @@ export const PaginationQuerySchema = z.object({
   sortField: z.string().optional().default("updatedAt"),
   sortOrder: SortOrderEnum.optional().default(SortOrder.desc),
 });
-

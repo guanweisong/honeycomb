@@ -11,7 +11,7 @@ import {
   DialogFooter,
 } from "../../components/dialog";
 import { Button } from "../../components/button";
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../../lib/utils";
 
 import {
   AlertTriangle,

@@ -23,35 +23,25 @@ p {
   margin-top: 0;
 }
 
-.markdown-body {
-  position: relative;
-  img {
-    max-width: 100%;
-  }
-  .editor-toolbar.fullscreen {
-    z-index: 200;
-  }
-  .EasyMDEContainer .CodeMirror-fullscreen {
-    z-index: 200;
-  }
-}
-
 /* 可排序树 */
 .rst__moveHandle,
 .rst__loadingHandle,
 .rst__rowContents {
-  box-shadow: none!important;
+  box-shadow: none !important;
 }
+
 .rst__lineBlock,
 .rst__absoluteLineBlock,
 .rst__collapseButton,
 .rst__expandButton,
 .rst__lineChildren::after {
-  display: none!important;
+  display: none !important;
 }
+
 .rst__rowWrapper {
-  padding: 5px 10px 5px 0!important;
+  padding: 5px 10px 5px 0 !important;
 }
+
 .rst__node {
   left: -20px !important;
 }

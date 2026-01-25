@@ -32,14 +32,11 @@ import {
   TabsContent,
 } from "../../components/tabs";
 
-import dynamic from "next/dynamic";
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../../lib/utils";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { zhCN } from "date-fns/locale";
-const SimpleMDE = dynamic(() => import("react-simplemde-editor"), {
-  ssr: false,
-});
+import Tiptap from "../Tiptap";
 
 const supportedLangs = ["zh", "en"] as const;
 
@@ -208,8 +205,7 @@ export function DynamicField(field: FieldConfig) {
 
       case "richText":
         return (
-          <SimpleMDE
-            className="markdown-body"
+          <Tiptap
             onChange={controllerField.onChange}
             value={controllerField.value}
           />

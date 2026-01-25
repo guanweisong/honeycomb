@@ -1,7 +1,6 @@
 import React from "react";
 import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/app/(blog)/components/Comment";
-import Markdown from "@/app/(blog)/components/Markdown";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
 import { MultiLang } from "@/packages/types/multi.lang";
@@ -42,10 +41,12 @@ export default async function Pages(props: PagesProps) {
         comments={commentsData?.total}
         views={pageDetail?.views as number}
       />
-      <div className="markdown-body my-3 lg:my-5">
-        <Markdown
-          children={pageDetail?.content?.[locale]}
-          imagesInContent={pageDetail?.imagesInContent}
+      <div className="my-3 lg:my-5">
+        <div
+          className="prose-editor"
+          dangerouslySetInnerHTML={{
+            __html: pageDetail?.content?.[locale] ?? "",
+          }}
         />
       </div>
       <Comment id={id} type={MenuType.PAGE} />
@@ -87,7 +88,6 @@ export async function generateMetadata(props: GenerateMetadataProps) {
     title: title,
     type: "article",
     description: setting.siteName?.[local],
-    images: pageDetail?.imagesInContent?.map((item) => item.url),
   };
 
   return {

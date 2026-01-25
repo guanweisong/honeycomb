@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
  * - **`trpc.Provider`**: 为整个应用提供 tRPC 客户端实例，使其可以在任何组件中调用 API。
  * - **`QueryClientProvider`**: 提供 React Query 的客户端实例，用于数据缓存和状态管理。
  * - **`<Toaster />`**: 全局的消息提示组件。
- * - **第三方脚本**: 引入 EasyMDE (Markdown 编辑器) 的样式和腾讯防水墙的验证码脚本。
+ * - **第三方脚本**: 腾讯防水墙的验证码脚本。
  * - **Google Analytics**: 集成谷歌分析。
  * - **Viewport**: 设置移动设备友好的视口。
  */

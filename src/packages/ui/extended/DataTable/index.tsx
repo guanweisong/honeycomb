@@ -20,7 +20,7 @@ import {
 } from "../../components/table";
 import { Button } from "../../components/button";
 import { Checkbox } from "../../components/checkbox";
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../../lib/utils";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { MultiSelect } from "../MultiSelect";

@@ -4,7 +4,6 @@ import Tags from "@/app/(blog)/components/Tags";
 import Card from "@/app/(blog)/components/Card";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Comment from "@/app/(blog)/components/Comment";
-import Markdown from "@/app/(blog)/components/Markdown";
 import { utcFormat } from "@/lib/utcFormat";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -96,7 +95,7 @@ export default async function Archives(props: ArchivesProps) {
         views={postDetail.views}
       />
       {postDetail.type !== PostType.QUOTE && (
-        <div className="markdown-body my-3 lg:my-5">
+        <div className="my-3 lg:my-5">
           {postDetail.excerpt?.[locale] && (
             <ViewTransition name={`postExcerpt-${postDetail.id}`}>
               <div className="mb-2 p-2 bg-auto-front-gray/5">
@@ -105,9 +104,11 @@ export default async function Archives(props: ArchivesProps) {
             </ViewTransition>
           )}
           <ViewTransition name={`postContent-${postDetail.id}`}>
-            <Markdown
-              children={postDetail.content?.[locale]}
-              imagesInContent={postDetail.imagesInContent}
+            <div
+              className="prose-editor"
+              dangerouslySetInnerHTML={{
+                __html: postDetail?.content?.[locale] ?? "",
+              }}
             />
           </ViewTransition>
         </div>
@@ -208,7 +209,6 @@ export async function generateMetadata(
   const openGraph = {
     title: title,
     type: "article",
-    images: postDetail.imagesInContent.map((item: any) => item.url),
     description: setting.siteName?.[locale],
   };
 

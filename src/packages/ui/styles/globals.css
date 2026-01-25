@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
+
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
@@ -8,8 +11,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -41,16 +42,18 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
+  --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
+  --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -58,10 +61,10 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
+  --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -74,8 +77,8 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @theme inline {
@@ -115,13 +118,100 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ================================
+   Tiptap Editor Content Styles
+   ================================ */
+
+/* 外层：EditorContent 的 prose 容器 */
+.prose-editor {
+  @apply prose max-w-none  dark:prose-invert;
+}
+
+.prose-editor .tiptap {
+  @apply p-4 outline-0 min-h-[400px];
+}
+
+.prose-editor .tiptap p:first-child {
+  @apply mt-0;
+}
+
+.prose-editor .tiptap p:last-child {
+  @apply mb-0;
+}
+
+/* ================================
+   Task List 基础修复
+   ================================ */
+
+/* taskList：去掉列表样式 */
+.prose-editor ul[data-type="taskList"] {
+  @apply list-none;
+}
+
+/* taskItem：横向排列 checkbox + 文本 */
+.prose-editor ul[data-type="taskList"] li {
+  @apply flex items-center gap-2 my-1 rounded-md px-1;
+}
+
+.prose-editor ul[data-type="taskList"] p {
+  @apply m-0;
+}
+
+/* checkbox 区域 */
+.prose-editor ul[data-type="taskList"] li > label {
+  @apply flex items-center cursor-pointer;
+}
+
+/* 文本内容区域 */
+.prose-editor ul[data-type="taskList"] li > div {
+  @apply m-0 flex-1;
+}
+
+/* ================================
+   Checkbox 主题样式（shadcn/ui）
+   ================================ */
+
+.prose-editor input[type="checkbox"] {
+  @apply cursor-pointer;
+  accent-color: hsl(var(--primary));
+}
+
+/* ================================
+   已完成任务样式
+   ================================ */
+
+.prose-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+  @apply text-muted-foreground line-through;
+}
+
+/* ================================
+   Hover / Focus 交互
+   ================================ */
+
+.prose-editor ul[data-type="taskList"] li:hover {
+  @apply bg-muted;
+}
+
+.prose-editor ul[data-type="taskList"] li:has(input:focus-visible) {
+  @apply outline-2 outline-ring outline-offset-2;
+}
+
+.prose-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
 }

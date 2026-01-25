@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Checkbox as BaseCheckbox } from "../../components/checkbox"; // 根据实际路径调整
-import { cn } from "@/packages/ui/lib/utils";
+import { cn } from "../../lib/utils";
 
 interface LabeledCheckboxProps extends React.ComponentProps<
   typeof BaseCheckbox
