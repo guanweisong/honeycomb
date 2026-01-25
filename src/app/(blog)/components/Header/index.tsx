@@ -39,12 +39,12 @@ export default async function Header() {
       children: [],
     },
     ...menu?.list,
-    {
-      title: { zh: "比邻", en: "Links" },
-      id: "links",
-      path: "/links",
-      children: [],
-    },
+    // {
+    //   title: { zh: "比邻", en: "Links" },
+    //   id: "links",
+    //   path: "/links",
+    //   children: [],
+    // },
   ];
 
   /**
@@ -123,7 +123,7 @@ export default async function Header() {
           <div className="flex items-center">
             <Menu data={menuDataFormat} flatMenuData={menu?.list} />
           </div>
-          <div className="flex gap-3 mr-2">
+          <div className="flex gap-3 mr-2 w-16">
             <ThemeSwitcher />
             <LanguageSwitcher />
           </div>

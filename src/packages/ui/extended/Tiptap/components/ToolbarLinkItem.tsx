@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { Link as LinkIcon, Unlink } from "lucide-react";
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/packages/ui/components/popover";
+import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/packages/ui/components/button";
 import { Input } from "@/packages/ui/components/input";
+import { ToolbarButton } from "./ToolbarButton";
 
 export function ToolbarLinkItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
@@ -37,42 +32,35 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          size="icon"
-          variant={"ghost"}
-          className={editor.isActive("link") ? "!text-purple-600" : ""}
-        >
-          <LinkIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="start" className="w-72 p-3">
-        <div className="space-y-2">
-          <Input
-            placeholder="https://example.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-
-          <div className="flex justify-between gap-2">
-            {editor.isActive("link") && (
-              <Button size="sm" variant="ghost" className="text-red-600" onClick={removeLink}>
-                移除
-              </Button>
-            )}
-            <div className="flex gap-2 ml-auto">
-              <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-                取消
-              </Button>
-              <Button size="sm" onClick={apply}>
-                应用
-              </Button>
-            </div>
+    <ToolbarButton
+      icon={<LinkIcon className="h-4 w-4" />}
+      label="超链接"
+      active={editor.isActive("link")}
+      open={open}
+      onOpenChange={setOpen}
+    >
+      <div className="space-y-2">
+        <Input
+          placeholder="https://example.com"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <div className="flex justify-between gap-2">
+          {editor.isActive("link") && (
+            <Button size="sm" variant="ghost" className="text-red-600" onClick={removeLink}>
+              移除
+            </Button>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+              取消
+            </Button>
+            <Button size="sm" onClick={apply}>
+              应用
+            </Button>
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      </div>
+    </ToolbarButton>
   );
 }

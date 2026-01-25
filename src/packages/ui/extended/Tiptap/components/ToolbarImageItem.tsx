@@ -1,46 +1,36 @@
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { Button } from "@/packages/ui/components/button";
-import { Input } from "@/packages/ui/components/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/packages/ui/components/popover";
+import { ToolbarButton } from "./ToolbarButton";
 import { Image as ImageIcon } from "lucide-react";
+import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
+import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
 
 export function ToolbarImageItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
 
-  const apply = () => {
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+  const handlePhotoPickerOk = (media: MediaEntity) => {
+    if (media.url) {
+      editor.chain().focus().setImage({ src: media.url }).run();
+    }
+    setOpen(false);
+  };
+
+  const handlePhotoPickerCancel = () => {
     setOpen(false);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="icon" variant="ghost">
-          <ImageIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-3">
-        <Input
-          placeholder="输入图片 URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && apply()}
-        />
-        <div className="flex justify-end gap-2 mt-2">
-          <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
-            取消
-          </Button>
-          <Button size="sm" onClick={apply}>
-            应用
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <>
+      <ToolbarButton
+        icon={<ImageIcon className="h-4 w-4" />}
+        label="选择图片"
+        onClick={() => setOpen(true)}
+      />
+      <PhotoPickerModal
+        showPhotoPicker={open}
+        handlePhotoPickerOk={handlePhotoPickerOk}
+        handlePhotoPickerCancel={handlePhotoPickerCancel}
+      />
+    </>
   );
 }

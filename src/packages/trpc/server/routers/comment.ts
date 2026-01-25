@@ -137,9 +137,7 @@ export const commentRouter = createTRPCRouter({
         .orderBy(asc(schema.comment.createdAt));
 
       const list = result.length
-        ? [] // listToTree(...) // Temporarily disabled for debugging
-        : /*
-        listToTree(
+        ? listToTree(
             result.map((item) => ({
               ...item,
               id: item.id.toString(),
@@ -149,8 +147,7 @@ export const commentRouter = createTRPCRouter({
             })),
             { idKey: "id", parentKey: "parentId" },
           )
-        */
-          [];
+        : [];
 
       const [countResult] = await ctx.db
         .select({ count: sql<number>`count(*)`.as("count") })
