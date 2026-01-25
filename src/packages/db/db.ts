@@ -1,4 +1,4 @@
-import { createClient, type Client } from "@libsql/client/web";
+import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql/web";
 import * as schema from "./schema";
 import { LibSQLDatabase } from "drizzle-orm/libsql";
