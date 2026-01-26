@@ -18,6 +18,7 @@ import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
 import { getRelationTags } from "@/packages/trpc/server/utils/getRelationTags";
 import { UserLevel } from "@/packages/types/user/user.level";
 import { TRPCError } from "@trpc/server";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/server/utils/getAllImageLinkFormHtml";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -236,6 +237,14 @@ export const postRouter = createTRPCRouter({
           getRelationTags(item?.galleryStyleIds ?? []),
         ]);
 
+      const imageUrls = getAllImageLinkFormHtml(item?.content?.zh);
+      const imagesInContent = imageUrls.length
+        ? await ctx.db
+            .select()
+            .from(schema.media)
+            .where(inArray(schema.media.url, imageUrls))
+        : [];
+
       return {
         ...item,
         category,
@@ -245,6 +254,7 @@ export const postRouter = createTRPCRouter({
         movieDirectors,
         movieStyles,
         galleryStyles,
+        imagesInContent,
       };
     }),
 

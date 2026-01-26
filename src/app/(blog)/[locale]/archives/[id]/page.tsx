@@ -13,6 +13,7 @@ import { Metadata } from "next";
 import { createServerClient } from "@/packages/trpc/server";
 import { MenuType } from "@/packages/types/menu/menu.type";
 import { PostType } from "@/packages/types/post/post.type";
+import { RichText } from "@/app/(blog)/components/RichText";
 
 /**
  * 归档页面组件的属性接口。
@@ -104,12 +105,12 @@ export default async function Archives(props: ArchivesProps) {
             </ViewTransition>
           )}
           <ViewTransition name={`postContent-${postDetail.id}`}>
-            <div
-              className="prose-editor"
-              dangerouslySetInnerHTML={{
-                __html: postDetail?.content?.[locale] ?? "",
-              }}
-            />
+            <div className="prose-editor">
+              <RichText
+                html={postDetail?.content?.[locale]}
+                images={postDetail?.imagesInContent}
+              />
+            </div>
           </ViewTransition>
         </div>
       )}

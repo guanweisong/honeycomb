@@ -16,6 +16,7 @@ import { IdSchema } from "@/packages/validation/utils/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/types/user/user.level";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/server/utils/getAllImageLinkFormHtml";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -127,7 +128,15 @@ export const pageRouter = createTRPCRouter({
         author = authorData || null;
       }
 
-      return { ...item, author };
+      const imageUrls = getAllImageLinkFormHtml(item?.content?.zh);
+      const imagesInContent = imageUrls.length
+        ? await ctx.db
+            .select()
+            .from(schema.media)
+            .where(inArray(schema.media.url, imageUrls))
+        : [];
+
+      return { ...item, author, imagesInContent };
     }),
 
   /**

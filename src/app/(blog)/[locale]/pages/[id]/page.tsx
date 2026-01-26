@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 import { MultiLang } from "@/packages/types/multi.lang";
 import { MenuType } from "@/packages/types/menu/menu.type";
 import { createServerClient } from "@/packages/trpc/server";
+import { RichText } from "@/app/(blog)/components/RichText";
 /**
  * 页面详情组件的属性接口。
  */
@@ -42,12 +43,12 @@ export default async function Pages(props: PagesProps) {
         views={pageDetail?.views as number}
       />
       <div className="my-3 lg:my-5">
-        <div
-          className="prose-editor"
-          dangerouslySetInnerHTML={{
-            __html: pageDetail?.content?.[locale] ?? "",
-          }}
-        />
+        <div className="prose-editor">
+          <RichText
+            html={pageDetail?.content?.[locale]}
+            images={pageDetail?.imagesInContent}
+          />
+        </div>
       </div>
       <Comment id={id} type={MenuType.PAGE} />
     </>

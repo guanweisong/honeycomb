@@ -19,8 +19,8 @@ const nextConfig: NextConfig = {
     ],
     // unoptimized: true,
     formats: ["image/webp"],
-    deviceSizes: [640, 960, 1920], // fill 模式生成这几种宽度
-    imageSizes: [640, 960, 1920], // 用于有 width 的 Image
+    deviceSizes: [960, 1280, 1920], // fill 模式生成这几种宽度
+    imageSizes: [960, 1280, 1920], // 用于有 width 的 Image
     minimumCacheTTL: 31536000,
     dangerouslyAllowLocalIP: true,
   },

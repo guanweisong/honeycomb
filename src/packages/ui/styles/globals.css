@@ -154,9 +154,13 @@
   @apply mb-0;
 }
 
+.prose-editor img {
+  margin: 0;
+}
+
 /* ================================
-   Task List 基础修复
-   ================================ */
+     Task List 基础修复
+     ================================ */
 
 /* taskList：去掉列表样式 */
 .prose-editor ul[data-type="taskList"] {
