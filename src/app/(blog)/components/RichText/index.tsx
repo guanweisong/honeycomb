@@ -22,7 +22,7 @@ export function RichText({ html, images = [] }: Props) {
             width={image!.width!}
             height={image!.height!}
             sizes="
-              (max-width: 768px) 380px,
+              (max-width: 768px) 320px,
               846px
             "
           />

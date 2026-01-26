@@ -105,6 +105,10 @@ export default function PostList(props: PostListProps): JSX.Element {
                   alt={item.title?.[locale] ?? ""}
                   width={item.cover.width!}
                   height={item.cover.height!}
+                  sizes="
+                    (max-width: 768px) 320px,
+                    846px
+                  "
                 />
                 <span
                   className={cn(
