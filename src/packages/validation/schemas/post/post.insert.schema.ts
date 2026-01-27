@@ -1,6 +1,6 @@
 import { createInsertSchema } from "drizzle-zod";
 import * as schema from "@/packages/db/schema";
-import { NullableI18nSchema } from "@/packages/validation/utils/i18n.schema";
+import { OptionalI18nSchema } from "@/packages/validation/utils/i18n.schema";
 
 /**
  * 新增文章时的数据验证 schema。
@@ -34,9 +34,9 @@ export const PostInsertSchema = createInsertSchema(schema.post)
     galleryTime: true,
   })
   .extend({
-    title: NullableI18nSchema,
-    content: NullableI18nSchema,
-    excerpt: NullableI18nSchema,
-    quoteAuthor: NullableI18nSchema,
-    quoteContent: NullableI18nSchema,
+    title: OptionalI18nSchema,
+    content: OptionalI18nSchema,
+    excerpt: OptionalI18nSchema,
+    quoteAuthor: OptionalI18nSchema,
+    quoteContent: OptionalI18nSchema,
   });

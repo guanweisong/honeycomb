@@ -8,4 +8,12 @@ export const I18nSchema = z.object({
 
 export const NullableI18nSchema = I18nSchema.nullable();
 
+export const OptionalI18nSchema = z
+  .object({
+    en: z.string().optional(),
+    zh: z.string().optional(),
+  })
+  .nullable()
+  .optional();
+
 export type I18n = z.infer<typeof I18nSchema>;
