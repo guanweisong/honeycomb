@@ -6,9 +6,11 @@ import { requiredString } from "@/packages/validation/utils/required.string.sche
 /**
  * 新增上传文件时的数据验证 schema。
  */
-export const MediaInsertSchema = createInsertSchema(schema.media).extend({
-  base64: requiredString("图片不能为空"),
-});
+export const MediaInsertSchema = createInsertSchema(schema.media)
+  .extend({
+    base64: requiredString("图片不能为空"),
+  })
+  .omit({ key: true, url: true });
 
 /**
  * 媒体实体的 TypeScript 类型。

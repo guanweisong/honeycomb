@@ -10,8 +10,8 @@ export const NullableI18nSchema = I18nSchema.nullable();
 
 export const OptionalI18nSchema = z
   .object({
-    en: z.string().optional(),
-    zh: z.string().optional(),
+    en: z.string().optional().nullable(),
+    zh: z.string().optional().nullable(),
   })
   .nullable()
   .optional();
