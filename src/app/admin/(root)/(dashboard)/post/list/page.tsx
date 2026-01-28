@@ -80,7 +80,7 @@ const PostList = () => {
     <>
       <DataTable<PostListItemEntity, PostListQueryInput>
         data={{
-          list: data?.list ?? [],
+          list: (data?.list as PostListItemEntity[]) ?? [],
           total: data?.total ?? 0,
         }}
         onChange={(params) => {

@@ -1,6 +1,7 @@
 import { createInsertSchema } from "drizzle-zod";
 import * as schema from "@/packages/db/schema";
 import { requiredString } from "@/packages/validation/utils/required.string.schema";
+import { CleanZod } from "@/packages/validation/utils/clean.zod";
 import { z } from "zod";
 
 /**
@@ -22,3 +23,5 @@ export const LinkInsertSchema = createInsertSchema(schema.link)
     logo: requiredString("Logo 不能为空"),
     description: z.string().trim().optional(),
   });
+
+export type LinkInsert = CleanZod<typeof LinkInsertSchema>;

@@ -9,7 +9,7 @@ import { queryString } from "@/packages/validation/utils/query.string.schema";
  */
 export const TagListQuerySchema = PaginationQuerySchema.extend({
   name: queryString(),
-});
+}).partial();
 
 /**
  * 标签列表查询参数的 TypeScript 类型。

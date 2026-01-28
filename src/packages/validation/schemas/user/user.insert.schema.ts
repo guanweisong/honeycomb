@@ -1,6 +1,7 @@
 import * as schema from "@/packages/db/schema";
 import { createInsertSchema } from "drizzle-zod";
 import { requiredString } from "@/packages/validation/utils/required.string.schema";
+import { CleanZod } from "@/packages/validation/utils/clean.zod";
 
 /**
  * 新增用户时的数据验证 schema。
@@ -20,3 +21,5 @@ export const UserInsertSchema = createInsertSchema(schema.user)
     email: requiredString("用户邮箱不能为空"),
     password: requiredString("登陆密码不能为空"),
   });
+
+export type UserInsert = CleanZod<typeof UserInsertSchema>;

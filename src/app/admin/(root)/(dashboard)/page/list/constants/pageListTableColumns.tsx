@@ -5,6 +5,7 @@ import { MultiLang } from "@/packages/types/multi.lang";
 import { Badge } from "@/packages/ui/components/badge";
 import { pageStatusOptions } from "@/packages/types/page/page.status";
 import { PageEntity } from "@/packages/trpc/server/types/page.entity";
+import { UserEntity } from "@/packages/trpc/server/types/user.entity";
 
 /**
  * 页面列表的表格列定义。
@@ -31,7 +32,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author = row.getValue("author");
+      const author: UserEntity = row.getValue("author");
       return author?.name ?? "-";
     },
   },

@@ -7,8 +7,14 @@ import {
   DynamicForm,
   DynamicFormRef,
 } from "@/packages/ui/extended/DynamicForm";
-import { PageInsertSchema } from "@/packages/validation/schemas/page/page.insert.schema";
-import { PageUpdateSchema } from "@/packages/validation/schemas/page/page.update.schema";
+import {
+  PageInsert,
+  PageInsertSchema,
+} from "@/packages/validation/schemas/page/page.insert.schema";
+import {
+  PageUpdate,
+  PageUpdateSchema,
+} from "@/packages/validation/schemas/page/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PageStatus } from "@/packages/types/page/page.status";
@@ -83,7 +89,7 @@ const Page = () => {
       setLoading(true);
       if (detail?.id) {
         return updatePage
-          .mutateAsync({ id: detail.id, ...data })
+          .mutateAsync({ id: detail.id, ...data } as PageUpdate)
           .then(() => {
             toast.success("更新成功");
             refetch();
@@ -91,7 +97,7 @@ const Page = () => {
           .finally(() => setLoading(false));
       } else {
         return createPage
-          .mutateAsync(data)
+          .mutateAsync(data as PageInsert)
           .then((result) => {
             toast.success("添加成功");
             router.push(`/admin/page/edit?id=${result.id}`);

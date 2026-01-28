@@ -11,7 +11,7 @@ export const LinkListQuerySchema = PaginationQuerySchema.extend({
   url: queryString(),
   description: queryString(),
   status: z.array(z.string()).optional(),
-});
+}).partial();
 
 /**
  * 友情链接列表查询参数的 TypeScript 类型。

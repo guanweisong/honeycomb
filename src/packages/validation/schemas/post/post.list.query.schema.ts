@@ -14,7 +14,7 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   categoryId: queryString(),
   userName: queryString(),
   tagName: queryString(),
-});
+}).partial();
 
 /**
  * 文章列表查询参数的 TypeScript 类型。

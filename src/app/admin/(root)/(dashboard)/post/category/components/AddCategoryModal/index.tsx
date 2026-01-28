@@ -7,10 +7,15 @@ import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { CategoryInsertSchema } from "@/packages/validation/schemas/category/category.insert.schema";
-import { CategoryUpdateSchema } from "@/packages/validation/schemas/category/category.update.schema";
+import {
+  CategoryInsert,
+  CategoryInsertSchema,
+} from "@/packages/validation/schemas/category/category.insert.schema";
+import {
+  CategoryUpdate,
+  CategoryUpdateSchema,
+} from "@/packages/validation/schemas/category/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { z } from "zod";
 
 /**
  * 模态框属性接口。
@@ -92,15 +97,13 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 确认按钮事件
    */
-  const handleModalOk = async (
-    values: z.infer<typeof CategoryInsertSchema | typeof CategoryUpdateSchema>,
-  ) => {
+  const handleModalOk = async (values: CategoryInsert | CategoryUpdate) => {
     if (values.parent === "0") {
       delete values.parent;
     }
     switch (modalProps?.type!) {
       case ModalType.ADD:
-        return createCategory.mutateAsync(values).then(() => {
+        return createCategory.mutateAsync(values as CategoryInsert).then(() => {
           categoryQuery.refetch();
           toast.success("添加成功");
           handleModalCancel();
@@ -167,7 +170,9 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
             options: enableStatusOptions,
           },
         ]}
-        onSubmit={handleModalOk}
+        onSubmit={(values) =>
+          handleModalOk(values as CategoryInsert | CategoryUpdate)
+        }
       />
     </Dialog>
   );

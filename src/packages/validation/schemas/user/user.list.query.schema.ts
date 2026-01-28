@@ -10,7 +10,7 @@ export const UserListQuerySchema = PaginationQuerySchema.extend({
   status: z.array(z.string()).optional(),
   level: z.array(z.string()).optional(),
   name: queryString(),
-});
+}).partial();
 
 /**
  * 用户列表查询参数的 TypeScript 类型。

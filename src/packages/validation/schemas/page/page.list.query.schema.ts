@@ -10,7 +10,7 @@ export const PageListQuerySchema = PaginationQuerySchema.extend({
   title: queryString(),
   content: queryString(),
   status: z.array(z.string()).optional(),
-});
+}).partial();
 
 /**
  * 独立页面列表查询参数的 TypeScript 类型。

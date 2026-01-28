@@ -55,7 +55,7 @@ const Menu = () => {
    * 确保在菜单数据加载或更新后，本地状态与远程数据同步。
    */
   useEffect(() => {
-    setCheckedList(checkedData?.list ?? []);
+    setCheckedList((checkedData?.list as MenuEntityTree[]) ?? []);
   }, [checkedData]);
 
   /**
@@ -202,13 +202,13 @@ const Menu = () => {
    * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
-    const data: MenuEntityTree[] = [];
+    const data: any[] = [];
     checkedList?.forEach((item, index) => {
-      const menu = {
+      const menu: any = {
         id: item.id,
         type: item.type,
         power: index,
-      } as MenuEntityTree;
+      };
       if (item.parent !== "0") {
         menu.parent = item.parent;
       }

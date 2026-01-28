@@ -6,6 +6,8 @@ import { Badge } from "@/packages/ui/components/badge";
 import { PostListItemEntity } from "@/packages/trpc/server/types/post.entity";
 import { postStatusOptions } from "@/packages/types/post/post.status";
 import { postTypeOptions } from "@/packages/types/post/post.type";
+import { CategoryEntity } from "@/packages/trpc/server/types/category.entity";
+import { UserEntity } from "@/packages/trpc/server/types/user.entity";
 
 /**
  * 文章列表的表格列定义。
@@ -48,7 +50,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染分类名称的单元格。
        * 显示多语言分类名称，如果不存在则显示 "-"。
        */
-      const category = row.getValue("category");
+      const category: CategoryEntity = row.getValue("category");
       return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
   },
@@ -75,7 +77,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author = row.getValue("author");
+      const author: UserEntity = row.getValue("author");
       return author?.name ?? "-";
     },
   },

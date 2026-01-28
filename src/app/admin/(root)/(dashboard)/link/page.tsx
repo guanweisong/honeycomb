@@ -16,8 +16,14 @@ import {
   LinkListQueryInput,
   LinkListQuerySchema,
 } from "@/packages/validation/schemas/link/link.list.query.schema";
-import { LinkUpdateSchema } from "@/packages/validation/schemas/link/link.update.schema";
-import { LinkInsertSchema } from "@/packages/validation/schemas/link/link.insert.schema";
+import {
+  LinkUpdate,
+  LinkUpdateSchema,
+} from "@/packages/validation/schemas/link/link.update.schema";
+import {
+  LinkInsert,
+  LinkInsertSchema,
+} from "@/packages/validation/schemas/link/link.insert.schema";
 import {
   EnableStatus,
   enableStatusOptions,
@@ -80,9 +86,7 @@ const Link = () => {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = async (
-    values: z.infer<typeof LinkInsertSchema | typeof LinkUpdateSchema>,
-  ) => {
+  const handleModalOk = async (values: LinkInsert | LinkUpdate) => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
@@ -298,7 +302,9 @@ const Link = () => {
                 options: enableStatusOptions,
               },
             ]}
-            onSubmit={handleModalOk}
+            onSubmit={(values) =>
+              handleModalOk(values as LinkInsert | LinkUpdate)
+            }
           />
         </Dialog>
       )}

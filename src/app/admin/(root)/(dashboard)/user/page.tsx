@@ -10,8 +10,14 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { UserUpdateSchema } from "@/packages/validation/schemas/user/user.update.schema";
-import { UserInsertSchema } from "@/packages/validation/schemas/user/user.insert.schema";
+import {
+  UserUpdate,
+  UserUpdateSchema,
+} from "@/packages/validation/schemas/user/user.update.schema";
+import {
+  UserInsert,
+  UserInsertSchema,
+} from "@/packages/validation/schemas/user/user.insert.schema";
 import {
   UserListQueryInput,
   UserListQuerySchema,
@@ -24,7 +30,6 @@ import {
   userStatusOptions,
 } from "@/packages/types/user/user.status";
 import { keepPreviousData } from "@tanstack/react-query";
-import { z } from "zod";
 
 /**
  * 用户管理页面。
@@ -116,20 +121,18 @@ const User = () => {
   /**
    * 新增、修改保存事件
    */
-  const handleModalOk = async (
-    values: z.infer<typeof UserInsertSchema | typeof UserUpdateSchema>,
-  ) => {
+  const handleModalOk = async (values: UserInsert | UserUpdate) => {
     const { password, ...rest } = values;
-    const params = rest as z.infer<
-      typeof UserInsertSchema | typeof UserUpdateSchema
-    >;
+    const params = {
+      ...rest,
+    } as z.infer<typeof UserInsertSchema> | z.infer<typeof UserUpdateSchema>;
     if (password) {
       params.password = md5(password);
     }
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createUser.mutateAsync(params);
+          await createUser.mutateAsync(params as z.infer<typeof UserInsertSchema>);
           refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
@@ -213,7 +216,7 @@ const User = () => {
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
-                onSubmit={setSearchParams}
+                onSubmit={(values) => setSearchParams(values as UserListQueryInput)}
                 inline={true}
                 submitProps={{
                   children: "查询",
@@ -259,9 +262,9 @@ const User = () => {
           defaultValues={
             modalProps.type === ModalType.ADD
               ? {
-                  status: UserStatus.ENABLE,
-                  level: UserLevel.EDITOR,
-                }
+                status: UserStatus.ENABLE,
+                level: UserLevel.EDITOR,
+              }
               : modalProps.record
           }
           schema={
@@ -306,7 +309,7 @@ const User = () => {
               disabled: () => modalProps.record?.level === UserLevel.ADMIN,
             },
           ]}
-          onSubmit={handleModalOk}
+          onSubmit={(values) => handleModalOk(values as UserInsert | UserUpdate)}
         />
       </Dialog>
     </>
