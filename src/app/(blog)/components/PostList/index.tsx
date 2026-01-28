@@ -6,7 +6,7 @@ import { useScroll } from "ahooks";
 import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Signature from "../Signature";
-import { utcFormat } from "@/lib/utcFormat";
+import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@/packages/types/multi.lang";
 import { Loader } from "lucide-react";

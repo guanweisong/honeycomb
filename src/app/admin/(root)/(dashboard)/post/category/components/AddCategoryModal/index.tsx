@@ -3,7 +3,7 @@
 import { enableStatusOptions } from "@/packages/types/enable.status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/lib/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";

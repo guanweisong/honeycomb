@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { PostInsertSchema } from "@/packages/validation/schemas/post/post.insert.schema";
 import { PostUpdateSchema } from "@/packages/validation/schemas/post/post.update.schema";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
-import { creatCategoryTitleByDepth } from "@/lib/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { Plus } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { trpc } from "@/packages/trpc/client/trpc";

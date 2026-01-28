@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
 import { MultiLang } from "@/packages/types/multi.lang";
-import { creatCategoryTitleByDepth } from "@/lib/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { EnableStatusName, EnableStatus } from "@/packages/types/enable.status";
 import { CategoryEntity } from "@/packages/trpc/server/types/category.entity";
 

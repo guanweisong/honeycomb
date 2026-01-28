@@ -4,7 +4,7 @@ import Tags from "@/app/(blog)/components/Tags";
 import Card from "@/app/(blog)/components/Card";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Comment from "@/app/(blog)/components/Comment";
-import { utcFormat } from "@/lib/utcFormat";
+import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/types/multi.lang";

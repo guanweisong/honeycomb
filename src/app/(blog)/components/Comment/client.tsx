@@ -3,9 +3,9 @@
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
 import { Button } from "@/packages/ui/components/button";
 import Card from "../Card";
-import { utcFormat } from "@/lib/utcFormat";
+import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import { CommentProps } from "./index";
-import { refreshPath } from "@/lib/refreshPath";
+import { refreshPath } from "@/app/(blog)/libs/refreshPath";
 import { CommentStatus } from "@/packages/types/comment/comment.status";
 import { MenuType } from "@/packages/types/menu/menu.type";
 import { CommentInsertInput } from "@/packages/validation/schemas/comment/comment.insert.schema";

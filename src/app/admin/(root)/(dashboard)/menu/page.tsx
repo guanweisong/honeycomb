@@ -1,6 +1,6 @@
 "use client";
 
-import { creatCategoryTitleByDepth } from "@/lib/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { Tabs } from "@/packages/ui/extended/Tabs";
 import { Checkbox } from "@/packages/ui/extended/Checkbox";
 import { Button } from "@/packages/ui/components/button";
