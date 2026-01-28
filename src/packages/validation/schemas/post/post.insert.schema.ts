@@ -1,6 +1,7 @@
 import { createInsertSchema } from "drizzle-zod";
 import * as schema from "@/packages/db/schema";
 import { OptionalI18nSchema } from "@/packages/validation/utils/i18n.schema";
+import { requiredString } from "@/packages/validation/utils/required.string.schema";
 
 /**
  * 新增文章时的数据验证 schema。
@@ -34,6 +35,7 @@ export const PostInsertSchema = createInsertSchema(schema.post)
     galleryTime: true,
   })
   .extend({
+    categoryId: requiredString("分类目录不能为空"),
     title: OptionalI18nSchema,
     content: OptionalI18nSchema,
     excerpt: OptionalI18nSchema,

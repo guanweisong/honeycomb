@@ -342,6 +342,7 @@ const PostDetail = () => {
                 label="分类目录"
                 name="categoryId"
                 type="select"
+                placeholder="请选择"
                 options={category?.list?.map((item) => ({
                   label: creatCategoryTitleByDepth(item.title?.zh, item),
                   value: item.id ?? "0",
