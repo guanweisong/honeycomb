@@ -59,7 +59,10 @@ export default ({
   }, [user]);
 
   // 用户信息仍在加载中，显示全屏加载动画
-  if (typeof user === "undefined") {
+  if (
+    typeof user === "undefined" ||
+    (user === null && selectedLayoutSegments.includes("dashboard"))
+  ) {
     return <FullLoadingView />;
   }
 

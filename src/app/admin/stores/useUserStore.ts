@@ -15,5 +15,5 @@ export const useUserStore = () => {
        */
       refetch();
     },
-  } as const;
+  };
 };
