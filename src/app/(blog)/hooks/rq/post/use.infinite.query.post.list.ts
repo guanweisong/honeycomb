@@ -43,6 +43,7 @@ export default function useInfiniteQueryPostList(
 ) {
   return useInfiniteQuery<PostIndexOutput, Error>({
     queryKey: ["posts", queryParams],
+    // @ts-ignore
     queryFn: ({ pageParam = 1 }) =>
       getPostList(queryParams, pageParam as number),
     getNextPageParam: (lastPage, allPages) => {

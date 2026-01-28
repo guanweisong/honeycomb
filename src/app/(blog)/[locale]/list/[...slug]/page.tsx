@@ -20,7 +20,7 @@ export interface ListProps {
   /**
    * 包含 slug 数组和当前语言环境的 Promise。
    */
-  params: Promise<{ slug: string[]; locale: keyof MultiLang }>;
+  params: Promise<{ slug: string[]; locale: string }>;
 }
 
 /**
@@ -35,7 +35,10 @@ export default async function List(props: ListProps) {
     serverClient.setting.index(),
     serverClient.menu.index(),
   ]);
-  const params = await props.params;
+  const params = (await props.params) as {
+    slug: string[];
+    locale: keyof MultiLang;
+  };
   const t = await getTranslations("PostList");
 
   const type =
@@ -56,7 +59,7 @@ export default async function List(props: ListProps) {
       }
       typeName =
         menu?.list?.find((item) => item.path === typeName)?.title?.[
-          params.locale
+        params.locale
         ] || "";
       break;
     case "tags":

@@ -3,7 +3,7 @@
 import { useLocale } from "next-intl";
 import { useEffect, useState, ViewTransition } from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "@/app/(blog)/i18n/navigation";
+import { usePathname } from "@/app/(blog)/i18n/navigation";
 import { useTheme } from "next-themes";
 import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
@@ -21,7 +21,6 @@ import { Link } from "@/app/(blog)/i18n/navigation";
 const LanguageSwitcher = () => {
   const locale = useLocale() as keyof MultiLang;
   const pathname = usePathname();
-  const router = useRouter();
   const { resolvedTheme } = useTheme();
   /**
    * 组件是否已挂载。

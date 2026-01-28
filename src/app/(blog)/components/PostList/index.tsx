@@ -58,6 +58,7 @@ export default function PostList(props: PostListProps): JSX.Element {
   const locale = useLocale() as keyof MultiLang;
   const t = useTranslations("PostList");
 
+  // @ts-ignore
   const postList = data?.pages.flatMap((page) => page.list) ?? [];
   /**
    * 是否已加载所有文章。

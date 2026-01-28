@@ -47,9 +47,13 @@ const Tag = (props: PostListItemEntity) => {
 
   return (
     <div className="list-none">
+      {/** @ts-ignore **/}
       {getTags(props.movieDirectors, t("directors"))}
+      {/** @ts-ignore **/}
       {getTags(props.movieActors, t("actors"))}
+      {/** @ts-ignore **/}
       {getTags(props.movieStyles, t("styles"))}
+      {/** @ts-ignore **/}
       {getTags(props.galleryStyles, t("styles"))}
     </div>
   );

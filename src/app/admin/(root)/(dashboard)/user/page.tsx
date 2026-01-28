@@ -125,14 +125,14 @@ const User = () => {
     const { password, ...rest } = values;
     const params = {
       ...rest,
-    } as z.infer<typeof UserInsertSchema> | z.infer<typeof UserUpdateSchema>;
+    } as UserInsert | UserUpdate;
     if (password) {
       params.password = md5(password);
     }
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createUser.mutateAsync(params as z.infer<typeof UserInsertSchema>);
+          await createUser.mutateAsync(params as UserInsert);
           refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
@@ -216,7 +216,9 @@ const User = () => {
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
-                onSubmit={(values) => setSearchParams(values as UserListQueryInput)}
+                onSubmit={(values) =>
+                  setSearchParams(values as UserListQueryInput)
+                }
                 inline={true}
                 submitProps={{
                   children: "查询",
@@ -262,9 +264,9 @@ const User = () => {
           defaultValues={
             modalProps.type === ModalType.ADD
               ? {
-                status: UserStatus.ENABLE,
-                level: UserLevel.EDITOR,
-              }
+                  status: UserStatus.ENABLE,
+                  level: UserLevel.EDITOR,
+                }
               : modalProps.record
           }
           schema={
@@ -309,7 +311,9 @@ const User = () => {
               disabled: () => modalProps.record?.level === UserLevel.ADMIN,
             },
           ]}
-          onSubmit={(values) => handleModalOk(values as UserInsert | UserUpdate)}
+          onSubmit={(values) =>
+            handleModalOk(values as UserInsert | UserUpdate)
+          }
         />
       </Dialog>
     </>

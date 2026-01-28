@@ -14,7 +14,7 @@ export interface PagesProps {
   /**
    * 包含页面 ID 和当前语言环境的 Promise。
    */
-  params: Promise<{ id: string; locale: keyof MultiLang }>;
+  params: Promise<{ id: string; locale: string }>;
 }
 
 /**
@@ -25,7 +25,10 @@ export interface PagesProps {
  */
 export default async function Pages(props: PagesProps) {
   const serverClient = await createServerClient();
-  const { id, locale } = await props.params;
+  const { id, locale } = (await props.params) as {
+    id: string;
+    locale: keyof MultiLang;
+  };
   const [pageDetail, commentsData] = await Promise.all([
     serverClient.page.detail({ id }),
     serverClient.comment.listByRef({ id, type: MenuType.PAGE }),

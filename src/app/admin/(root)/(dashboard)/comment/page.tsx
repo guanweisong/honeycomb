@@ -14,6 +14,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { TagListQueryInput } from "@/packages/validation/schemas/tag/tag.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CommentEntity } from "@/packages/trpc/server/types/comment.entity";
+import { CommentUpdate } from "@/packages/validation/schemas/comment/comment.update.schema";
 
 /**
  * 评论管理页面。
@@ -59,7 +60,7 @@ const Comment = () => {
    */
   const handleSetStatus = async (id: string, type: CommentStatus) => {
     try {
-      await updateComment.mutateAsync({ id, status: type });
+      await updateComment.mutateAsync({ id, status: type } as CommentUpdate);
       refetch();
       toast.success("更新成功");
     } catch (e) {

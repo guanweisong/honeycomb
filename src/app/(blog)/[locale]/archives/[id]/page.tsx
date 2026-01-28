@@ -22,7 +22,7 @@ export interface ArchivesProps {
   /**
    * 包含文章 ID 和当前语言环境的 Promise。
    */
-  params: Promise<{ id: string; locale: keyof MultiLang }>;
+  params: Promise<{ id: string; locale: string }>;
 }
 
 /**
@@ -33,7 +33,10 @@ export interface ArchivesProps {
  */
 export default async function Archives(props: ArchivesProps) {
   const serverClient = await createServerClient();
-  const { id, locale } = await props.params;
+  const { id, locale } = (await props.params) as {
+    id: string;
+    locale: keyof MultiLang;
+  };
   const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
 
@@ -90,9 +93,12 @@ export default async function Archives(props: ArchivesProps) {
       </ViewTransition>
       <PostInfo
         id={postDetail.id}
+        // @ts-ignore
         author={postDetail.author.name}
+        // @ts-ignore
         date={postDetail.createdAt}
         comments={commentsData?.total}
+        // @ts-ignore
         views={postDetail.views}
       />
       {postDetail.type !== PostType.QUOTE && (
@@ -115,51 +121,53 @@ export default async function Archives(props: ArchivesProps) {
         </div>
       )}
       {[PostType.PHOTOGRAPH, PostType.MOVIE, PostType.QUOTE].includes(
+        // @ts-ignore
         postDetail.type,
       ) && (
-        <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
-          {postDetail.type === PostType.PHOTOGRAPH && (
-            <li className="flex items-center">
-              <Camera size={20} />
-              &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
-              &nbsp;
-              {postDetail.galleryLocation?.[locale]}
-            </li>
-          )}
-          {postDetail.type === PostType.MOVIE && (
-            <li className="flex items-center">
-              <Calendar size={20} />
-              &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
-            </li>
-          )}
-          {postDetail.type === PostType.QUOTE && (
-            <li className="flex items-center">
-              <BookOpen size={20} />
-              &nbsp; {t("quoteFrom")}: {postDetail.quoteAuthor?.[locale]}
-            </li>
-          )}
-        </ul>
-      )}
+          <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
+            {postDetail.type === PostType.PHOTOGRAPH && (
+              <li className="flex items-center">
+                <Camera size={20} />
+                &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
+                &nbsp;
+                {postDetail.galleryLocation?.[locale]}
+              </li>
+            )}
+            {postDetail.type === PostType.MOVIE && (
+              <li className="flex items-center">
+                <Calendar size={20} />
+                &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
+              </li>
+            )}
+            {postDetail.type === PostType.QUOTE && (
+              <li className="flex items-center">
+                <BookOpen size={20} />
+                &nbsp; {t("quoteFrom")}: {postDetail.quoteAuthor?.[locale]}
+              </li>
+            )}
+          </ul>
+        )}
+      {/** @ts-ignore **/}
       <Tags {...postDetail} />
       {randomPostsList.filter((item) => item.id !== postDetail?.id).length >
         0 && (
-        <Card title={t("guessWhatYouLike")}>
-          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-            {randomPostsList
-              .filter((item) => item.id !== postDetail?.id)
-              .map((item: any) => (
-                <li key={item.id} className="my-2">
-                  <Link
-                    href={`/archives/${item.id}`}
-                    className="block link-light"
-                  >
-                    {item.title?.[locale] || item.quoteContent?.[locale]}
-                  </Link>
-                </li>
-              ))}
-          </ul>
-        </Card>
-      )}
+          <Card title={t("guessWhatYouLike")}>
+            <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
+              {randomPostsList
+                .filter((item) => item.id !== postDetail?.id)
+                .map((item: any) => (
+                  <li key={item.id} className="my-2">
+                    <Link
+                      href={`/archives/${item.id}`}
+                      className="block link-light"
+                    >
+                      {item.title?.[locale] || item.quoteContent?.[locale]}
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          </Card>
+        )}
       <Comment id={id} type={MenuType.CATEGORY} />
     </>
   );

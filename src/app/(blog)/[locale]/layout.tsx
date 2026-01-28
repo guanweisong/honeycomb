@@ -28,7 +28,7 @@ export interface LocaleLayoutProps {
   /**
    * 包含当前语言环境的 Promise。
    */
-  params: Promise<{ locale: keyof MultiLang }>;
+  params: Promise<{ locale: string }>;
 }
 
 /**
@@ -41,7 +41,7 @@ export default async function LocaleLayout({
   children,
   params,
 }: LocaleLayoutProps) {
-  const { locale } = await params;
+  const { locale } = (await params) as { locale: keyof MultiLang };
 
   setRequestLocale(locale);
 

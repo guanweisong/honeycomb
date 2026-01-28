@@ -15,7 +15,7 @@ export interface LinksProps {
   /**
    * 包含当前语言环境的 Promise。
    */
-  params: Promise<{ locale: keyof MultiLang }>;
+  params: Promise<{ locale: string }>;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface LinksProps {
  */
 const Links = async (props: LinksProps) => {
   const serverClient = await createServerClient();
-  const { locale } = await props.params;
+  const { locale } = (await props.params) as { locale: keyof MultiLang };
   const t = await getTranslations("Link");
   const [result, setting] = await Promise.all([
     serverClient.link.index({

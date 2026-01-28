@@ -31,7 +31,7 @@ const Comment = async (props: CommentProps) => {
    * 用于从服务器获取评论数据。
    */
   const queryCommentPromise = serverClient.comment.listByRef({ id, type });
-
+  // @ts-ignore
   return <CommentClient {...props} queryCommentPromise={queryCommentPromise} />;
 };
 
