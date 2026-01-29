@@ -219,3 +219,7 @@
   color: hsl(var(--muted-foreground));
   text-decoration: line-through;
 }
+
+.prose-editor blockquote {
+  @apply font-normal;
+}

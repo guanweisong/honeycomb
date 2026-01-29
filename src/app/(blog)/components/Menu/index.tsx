@@ -122,7 +122,7 @@ const Menu = (props: MenuProps) => {
       <ul
         className={cn(
           "absolute backdrop-blur bg-auto-back-gray/80",
-          "lg:static lg:flex py-2 lg:py-0 lg:rounded-full",
+          "lg:static lg:flex py-2 lg:py-0 lg:px-2 lg:rounded-full",
           {
             "inset-x-0 top-full": visible,
             ["hidden"]: !visible,
@@ -146,6 +146,9 @@ const Menu = (props: MenuProps) => {
               )}
             >
               {m.label}
+              {m.link === currentCategory[0] && (
+                <span className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"></span>
+              )}
             </Link>
           </li>
         ))}
