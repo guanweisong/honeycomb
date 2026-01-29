@@ -15,12 +15,13 @@ export function RichText({ html, images = [] }: Props) {
       if (domNode.type === "tag" && domNode.name === "img") {
         const { src } = domNode.attribs;
         const image = images.find((img) => img.url === src);
+        if (!image) return null;
         return (
           <Image
             src={src}
-            alt={image!.name!}
-            width={image!.width!}
-            height={image!.height!}
+            alt={image.name!}
+            width={image.width!}
+            height={image.height!}
             sizes="
               (max-width: 768px) 320px,
               846px
