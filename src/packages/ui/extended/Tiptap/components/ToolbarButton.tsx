@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/packages/ui/components/popover";
 import { ReactNode } from "react";
+import { cn } from "@/packages/ui/lib/utils";
 
 interface ToolbarButtonProps {
   icon: ReactNode;
@@ -20,6 +21,7 @@ interface ToolbarButtonProps {
   children?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  className?: string;
 }
 
 export function ToolbarButton({
@@ -30,12 +32,13 @@ export function ToolbarButton({
   children,
   open,
   onOpenChange,
+  className,
 }: ToolbarButtonProps) {
   const button = (
     <Button
       type="button"
       size="icon"
-      className={active ? "!text-purple-600" : ""}
+      className={cn(active ? "!text-purple-600" : "", className)}
       variant={"ghost"}
       onClick={onClick}
     >
@@ -50,13 +53,11 @@ export function ToolbarButton({
         <Popover open={open} onOpenChange={onOpenChange}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                {button}
-              </PopoverTrigger>
+              <PopoverTrigger asChild>{button}</PopoverTrigger>
             </TooltipTrigger>
             <TooltipContent side="bottom">{label}</TooltipContent>
           </Tooltip>
-          <PopoverContent align="start" className="w-72 p-3">
+          <PopoverContent align="start" className="p-3">
             {children}
           </PopoverContent>
         </Popover>
@@ -68,9 +69,7 @@ export function ToolbarButton({
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {button}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent side="bottom">{label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>

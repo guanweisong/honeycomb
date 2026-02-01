@@ -9,8 +9,10 @@ import { toolbarItems } from "@/packages/ui/extended/Tiptap/config/toolbarItems"
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
+import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
+import { ToolbarGroupItem } from "./components/ToolbarGroupItem";
 
 interface TiptapProps {
   value?: string;
@@ -41,6 +43,7 @@ export default function Tiptap({ value, onChange }: TiptapProps = {}) {
       }),
       TextStyle,
       Color,
+      Highlight,
     ],
     content: value || "<p></p>",
     immediatelyRender: false,
@@ -74,7 +77,16 @@ export default function Tiptap({ value, onChange }: TiptapProps = {}) {
         {toolbarItems.map((group, index) => (
           <div key={index} className="flex items-center gap-1">
             {index > 0 && <div className="bg-gray-300 w-[1px] h-5" />}
-            {group.map((item) => {
+            {group.map((item, itemIndex) => {
+              if ("items" in item) {
+                return (
+                  <ToolbarGroupItem
+                    key={itemIndex}
+                    editor={editor}
+                    group={item}
+                  />
+                );
+              }
               if (item.render && editor) {
                 return <div key={item.label}>{item.render(editor)}</div>;
               }
