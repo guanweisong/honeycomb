@@ -272,7 +272,7 @@ const CommentClient = (props: CommentClientProps) => {
             ) : (
               <>
                 <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
+                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
                   type="text"
                   placeholder={t("form.name")}
                   name="author"
@@ -280,14 +280,14 @@ const CommentClient = (props: CommentClientProps) => {
                   required
                 />
                 <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
+                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
                   type="url"
                   placeholder={t("form.site")}
                   name="site"
                   maxLength={30}
                 />
                 <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-pink-400 bg-transparent"
+                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
                   type="email"
                   placeholder={t("form.email")}
                   name="email"
@@ -298,7 +298,7 @@ const CommentClient = (props: CommentClientProps) => {
             )}
 
             <textarea
-              className="block border-b-[0.5px]  border-auto-front-gray/40 w-full leading-6 pt-2 outline-0 focus:border-pink-400 mb-2 bg-transparent"
+              className="block border-b-[0.5px]  border-auto-front-gray/40 w-full leading-6 pt-2 outline-0 focus:border-teal-400 mb-2 bg-transparent"
               placeholder={t("form.content")}
               name="content"
               required
