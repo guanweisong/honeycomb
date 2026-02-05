@@ -1,6 +1,7 @@
 import parse, { HTMLReactParserOptions } from "html-react-parser";
 import Image from "next/image";
 import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
+import { FancyboxClient } from "@/app/(blog)/components/FancyBox";
 
 interface Props {
   html?: string;
@@ -17,20 +18,22 @@ export function RichText({ html, images = [] }: Props) {
         const image = images.find((img) => img.url === src);
         if (!image) return null;
         return (
-          <Image
-            src={src}
-            alt={image.name!}
-            width={image.width!}
-            height={image.height!}
-            sizes="
+          <a key={image.key} data-fancybox="gallery" href={src}>
+            <Image
+              src={src}
+              alt={image.name!}
+              width={image.width!}
+              height={image.height!}
+              sizes="
               (max-width: 768px) 320px,
               846px
             "
-          />
+            />
+          </a>
         );
       }
     },
   };
 
-  return <>{parse(html, options)}</>;
+  return <FancyboxClient>{parse(html, options)}</FancyboxClient>;
 }
