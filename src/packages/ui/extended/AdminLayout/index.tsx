@@ -25,13 +25,13 @@ export const AdminLayout = (props: AdminLayoutProps) => {
           <Avatar url="/logo.jpg" fallback={title} />
           <span className="ml-3">{title}</span>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-scroll">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <Menu data={menu} />
         </div>
         <UserDropdown user={user} onLogout={onLogout} />
       </div>
       <div className="my-3 mr-3 flex flex-col bg-white rounded-lg shadow flex-1">
-        <div className="box-border p-3 flex-1 min-h-0 overflow-y-scroll">
+        <div className="box-border p-3 flex-1 min-h-0 overflow-y-auto">
           {children}
         </div>
         {footer && (
