@@ -1,7 +1,7 @@
 import parse, { HTMLReactParserOptions } from "html-react-parser";
 import Image from "next/image";
 import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
-import { FancyboxClient } from "@/app/(blog)/components/FancyBox";
+import { PhotoSwipeClient } from "@/app/(blog)/components/PhotoSwipe";
 
 interface Props {
   html?: string;
@@ -18,7 +18,14 @@ export function RichText({ html, images = [] }: Props) {
         const image = images.find((img) => img.url === src);
         if (!image) return null;
         return (
-          <a key={image.key} data-fancybox="gallery" href={src}>
+          <a
+            key={image.key}
+            href={src}
+            data-pswp-width={image.width!}
+            data-pswp-height={image.height!}
+            target="_blank"
+            rel="noreferrer"
+          >
             <Image
               src={src}
               alt={image.name!}
@@ -35,5 +42,5 @@ export function RichText({ html, images = [] }: Props) {
     },
   };
 
-  return <FancyboxClient>{parse(html, options)}</FancyboxClient>;
+  return <PhotoSwipeClient>{parse(html, options)}</PhotoSwipeClient>;
 }

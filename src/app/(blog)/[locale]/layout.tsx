@@ -2,7 +2,6 @@ import React, { ReactNode } from "react";
 import Script from "next/script";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Viewport } from "next";
-import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "../app.scss";
 import BackToTop from "@/app/(blog)/components/BackToTop";
 import Header from "@/app/(blog)/components/Header";

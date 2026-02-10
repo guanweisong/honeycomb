@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
-    "@fancyapps/ui": "^6.1.10",
     "@hookform/resolvers": "^5.0.1",
     "@libsql/client": "^0.15.15",
     "@next/third-parties": "^16.1.1",
@@ -72,6 +71,7 @@
     "next-auth": "^4.18.7",
     "next-intl": "^4.0.2",
     "next-themes": "^0.4.6",
+    "photoswipe": "^5.4.4",
     "react": "^19.2.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-day-picker": "8.10.1",
