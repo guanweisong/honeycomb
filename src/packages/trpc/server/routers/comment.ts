@@ -77,15 +77,15 @@ export const commentRouter = createTRPCRouter({
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
-              .select()
-              .from(schema.post)
-              .where(inArray(schema.post.id, postIds))
+            .select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, postIds))
           : Promise.resolve([]),
         pageIds.length
           ? ctx.db
-              .select()
-              .from(schema.page)
-              .where(inArray(schema.page.id, pageIds))
+            .select()
+            .from(schema.page)
+            .where(inArray(schema.page.id, pageIds))
           : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
@@ -138,15 +138,15 @@ export const commentRouter = createTRPCRouter({
 
       const list = result.length
         ? listToTree(
-            result.map((item) => ({
-              ...item,
-              id: item.id.toString(),
-              avatar: `https://cravatar.cn/avatar/${md5(
-                item.email!.trim().toLowerCase(),
-              )}?s=48&d=identicon`,
-            })),
-            { idKey: "id", parentKey: "parentId" },
-          )
+          result.map((item) => ({
+            ...item,
+            id: item.id.toString(),
+            avatar: `https://cravatar.cn/avatar/${md5(
+              item.email!.trim().toLowerCase(),
+            )}?s=48&d=identicon`,
+          })),
+          { idKey: "id", parentKey: "parentId" },
+        )
         : [];
 
       const [countResult] = await ctx.db
@@ -174,9 +174,9 @@ export const commentRouter = createTRPCRouter({
   create: publicProcedure
     .input(CommentInsertSchema)
     .mutation(async ({ ctx, input }) => {
-      const { captcha, ...rest } = input;
+      const { captchaToken, ...rest } = input;
 
-      await validateCaptcha(captcha);
+      await validateCaptcha(captchaToken);
 
       // 插入评论
       const [created] = await ctx.db

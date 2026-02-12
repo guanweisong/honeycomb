@@ -1,42 +1,36 @@
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
-export const CaptchaSchema = z.object({
-  ticket: z.string(),
-  randstr: z.string(),
-});
-
-export type Captcha = z.infer<typeof CaptchaSchema>;
-
-type TencentCaptchaResponse = {
-  response: string;
-};
+interface TurnstileVerifyResponse {
+  success: boolean;
+  "error-codes"?: string[];
+}
 
 /**
- * Validates a Tencent Captcha.
+ * Validates a Cloudflare Turnstile captcha token.
  */
-export const validateCaptcha = async (captcha: Captcha | undefined | null) => {
-  if (!captcha?.ticket || !captcha?.randstr) {
+export const validateCaptcha = async (
+  captchaToken: string | undefined | null,
+) => {
+  if (!captchaToken) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "请提供有效的验证码参数。",
     });
   }
 
-  const params = new URLSearchParams({
-    aid: process.env.CAPTCHA_AID ?? "",
-    AppSecretKey: process.env.CAPTCHA_APP_SECRET_KEY ?? "",
-    Ticket: captcha.ticket,
-    Randstr: captcha.randstr,
+  const body = new URLSearchParams({
+    secret: process.env.TURNSTILE_SECRET_KEY ?? "",
+    response: captchaToken,
   });
 
-  let data: TencentCaptchaResponse;
+  let data: TurnstileVerifyResponse;
 
   try {
     const res = await fetch(
-      `https://ssl.captcha.qq.com/ticket/verify?${params.toString()}`,
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       {
-        method: "GET",
+        method: "POST",
+        body,
       },
     );
 
@@ -44,7 +38,7 @@ export const validateCaptcha = async (captcha: Captcha | undefined | null) => {
       throw new Error(`HTTP ${res.status}`);
     }
 
-    data = (await res.json()) as TencentCaptchaResponse;
+    data = (await res.json()) as TurnstileVerifyResponse;
   } catch (error) {
     console.error("Captcha request failed:", error);
     throw new TRPCError({
@@ -53,10 +47,10 @@ export const validateCaptcha = async (captcha: Captcha | undefined | null) => {
     });
   }
 
-  if (data.response !== "1") {
+  if (!data.success) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `验证码不正确 (response: ${data.response})`,
+      message: `验证码不正确 (errors: ${data["error-codes"]?.join(", ") ?? "unknown"})`,
     });
   }
 };

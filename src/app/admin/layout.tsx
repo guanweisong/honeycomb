@@ -1,7 +1,6 @@
 "use client";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
-import Script from "next/script";
 import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
@@ -43,11 +42,6 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
         />
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/easymde/dist/easymde.min.css"
-        />
-        <Script src="https://ssl.captcha.qq.com/TCaptcha.js" />
       </head>
       <body>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>

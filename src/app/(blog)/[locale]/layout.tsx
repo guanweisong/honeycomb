@@ -50,7 +50,7 @@ export default async function LocaleLayout({
       <head>
         <link rel="shortcut icon" href="/favicon.ico" />
         <Script
-          src="https://ssl.captcha.qq.com/TCaptcha.js"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
           strategy="lazyOnload"
         />
       </head>

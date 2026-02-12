@@ -2,7 +2,8 @@
 import { useSettingStore } from "@/app/admin/stores/useSettingStore";
 import md5 from "md5";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useRef, useState } from "react";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { trpc } from "@/packages/trpc/client/trpc";
 import {
   DynamicForm,
@@ -16,7 +17,8 @@ import { UserInsertSchema } from "@/packages/validation/schemas/user/user.insert
  * 负责用户登录认证，包括表单输入、腾讯防水墙验证码集成以及登录成功后的重定向。
  */
 const Login = () => {
-  const captchaRef = useRef<any>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const form = useRef<DynamicFormRef>(null);
   const searchParams = useSearchParams();
   const settingStore = useSettingStore();
@@ -26,52 +28,46 @@ const Login = () => {
   const targetUrl = searchParams.get("targetUrl");
 
   /**
-   * 副作用钩子，用于初始化腾讯防水墙验证码和处理登录逻辑。
-   * 在组件挂载后，会延迟 1 秒初始化腾讯防水墙验证码。
-   * 当验证码验证成功后，会获取表单值，调用 `loginMutation` 进行登录，并处理登录结果。
-   * 登录成功后，会将 token 存储到 localStorage 并重定向到目标页面或首页。
-   * 在组件卸载时，会清除 `captchaRef.current`。
+   * 重置验证码
    */
-  useEffect(() => {
-    setTimeout(() => {
-      captchaRef.current = new TencentCaptcha(
-        "2090829333",
-        async (res: any) => {
-          if (res.ret === 0) {
-            const values = form.current?.getValues();
-            const { name, password } = values;
-            loginMutation
-              .mutateAsync({
-                name,
-                password: md5(password),
-                captcha: {
-                  ticket: res.ticket,
-                  randstr: res.randstr,
-                },
-              })
-              .then((result: any) => {
-                toast.success("登录成功");
-                localStorage.setItem("token", result.token);
-                window.location.href = targetUrl || "/admin";
-              })
-              .catch((e: any) => {
-                toast.error(e?.message || "登录失败");
-              });
-          }
-        },
-      );
-    }, 1000);
-    return () => {
-      captchaRef.current = null;
-    };
-  }, []);
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
 
   /**
    * 表单提交处理器。
-   * 当用户点击登录按钮时，显示腾讯防水墙验证码。
+   * 当用户点击登录按钮时，如果验证码已就绪，则执行登录。
    */
   const onSubmit = () => {
-    captchaRef.current.show();
+    if (!captchaToken) {
+      toast.error("验证码加载中，请稍候");
+      return;
+    }
+
+    const values = form.current?.getValues();
+    const { name, password } = values;
+    loginMutation
+      .mutateAsync({
+        name,
+        password: md5(password),
+        captchaToken,
+      })
+      .then((result: any) => {
+        toast.success("登录成功");
+        localStorage.setItem("token", result.token);
+        window.location.href = targetUrl || "/admin";
+      })
+      .catch((e: any) => {
+        toast.error(e?.message || "登录失败");
+      })
+      .finally(() => {
+        resetCaptcha();
+      });
+  };
+
+  const onTurnstileSuccess = (data: string) => {
+    setCaptchaToken(data);
   };
 
   return (
@@ -96,6 +92,12 @@ const Login = () => {
             { name: "password", type: "password", placeholder: "密码" },
           ]}
           onSubmit={onSubmit}
+        />
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+          onSuccess={onTurnstileSuccess}
+          onExpire={resetCaptcha}
         />
       </div>
     </div>

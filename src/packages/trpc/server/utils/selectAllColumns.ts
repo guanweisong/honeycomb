@@ -1,4 +1,5 @@
 import { AnySQLiteTable } from "drizzle-orm/sqlite-core";
+import { getTableColumns } from "drizzle-orm";
 
 /**
  * 动态选择 Drizzle ORM 表的所有列。
@@ -9,8 +10,5 @@ import { AnySQLiteTable } from "drizzle-orm/sqlite-core";
  * @returns {Record<keyof T["_"]["columns"], T["_"]["columns"][keyof T["_"]["columns"]]>} 一个包含表所有列的对象。
  */
 export function selectAllColumns<T extends AnySQLiteTable>(table: T) {
-  return Object.fromEntries(Object.entries(table._.columns)) as Record<
-    keyof T["_"]["columns"],
-    T["_"]["columns"][keyof T["_"]["columns"]]
-  >;
+  return getTableColumns(table);
 }

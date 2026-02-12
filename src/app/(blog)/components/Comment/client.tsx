@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/packages/ui/components/button";
 import Card from "../Card";
 import { utcFormat } from "@/app/(blog)/libs/utcFormat";
@@ -55,6 +56,8 @@ export interface User {
  */
 const CommentClient = (props: CommentClientProps) => {
   const { id, type, queryCommentPromise } = props;
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   /**
    * 标识评论提交是否处于挂起状态。
    */
@@ -85,6 +88,18 @@ const CommentClient = (props: CommentClientProps) => {
   const mutation = trpc.comment.create.useMutation();
 
   /**
+   * 重置验证码
+   */
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
+
+  const onTurnstileSuccess = (data: string) => {
+    setCaptchaToken(data);
+  };
+
+  /**
    * 副作用钩子，用于从 localStorage 加载用户数据。
    * 在组件挂载时尝试从 localStorage 获取用户数据并设置到 `user` 状态。
    */
@@ -109,12 +124,18 @@ const CommentClient = (props: CommentClientProps) => {
 
   /**
    * 评论提交事件。
-   * 收集表单数据，集成腾讯防水墙验证码，并调用 tRPC mutation 提交评论。
+   * 收集表单数据，集成 Cloudflare Turnstile 验证码，并调用 tRPC mutation 提交评论。
    * 提交成功后刷新页面，清空表单，并保存用户数据到 localStorage。
    * @param {React.FormEvent<HTMLFormElement>} e - 表单提交事件对象。
    */
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!captchaToken) {
+      alert("请完成验证码验证");
+      return;
+    }
+
     const form = e.currentTarget;
     let userData = user;
 
@@ -132,6 +153,7 @@ const CommentClient = (props: CommentClientProps) => {
     const data = {
       ...userData,
       content: form.content.value,
+      captchaToken,
     } as CommentInsertInput;
 
     switch (type) {
@@ -146,35 +168,31 @@ const CommentClient = (props: CommentClientProps) => {
         break;
     }
 
-    const captcha = new TencentCaptcha("2090829333", async (res: any) => {
-      if (res.ret === 0) {
-        data.captcha = {
-          ticket: res.ticket,
-          randstr: res.randstr,
-        };
-        if (replyTo !== null) {
-          data.parentId = replyTo.id;
-        }
+    if (replyTo !== null) {
+      data.parentId = replyTo.id;
+    }
 
-        console.log("handleSubmit", data);
-        startTransition(async () => {
-          try {
-            const result = await mutation.mutateAsync(data); // ✅ 改为 trpc 客户端调用
-            if (result?.id) {
-              await refreshPath(pathname);
-              router.refresh();
-              handleReply(null);
-              formRef.current?.reset();
-              localStorage.setItem("user", JSON.stringify(userData));
-              setUser(userData);
-            }
-          } catch (error) {
-            console.error("Comment submit failed:", error);
+    console.log("handleSubmit", data);
+    startTransition(async () => {
+      mutation
+        .mutateAsync(data)
+        .then(async (result) => {
+          if (result?.id) {
+            await refreshPath(pathname);
+            router.refresh();
+            handleReply(null);
+            formRef.current?.reset();
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
           }
+        })
+        .catch((error) => {
+          console.error("Comment submit failed:", error);
+        })
+        .finally(() => {
+          resetCaptcha();
         });
-      }
     });
-    captcha?.show();
   };
 
   /**
@@ -315,6 +333,12 @@ const CommentClient = (props: CommentClientProps) => {
           </form>
         </>
       </Card>
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+        onSuccess={onTurnstileSuccess}
+        onExpire={resetCaptcha}
+      />
     </div>
   );
 };

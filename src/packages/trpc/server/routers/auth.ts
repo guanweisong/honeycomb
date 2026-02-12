@@ -32,8 +32,8 @@ export const authRouter = createTRPCRouter({
    * 5. 返回新 token。
    */
   login: publicProcedure.input(LoginSchema).mutation(async ({ input }) => {
-    const { name, password, captcha } = input;
-    await validateCaptcha(captcha);
+    const { name, password, captchaToken } = input;
+    await validateCaptcha(captchaToken);
     const db = getDb();
 
     const [user] = await db
