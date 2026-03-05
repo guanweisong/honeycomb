@@ -75,9 +75,9 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (values) => {
+          setLoading(true);
           try {
-            setLoading(true);
-            onSubmit?.(values);
+            await onSubmit?.(values);
           } finally {
             setLoading(false);
           }

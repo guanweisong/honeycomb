@@ -1,7 +1,7 @@
 "use client";
 import { useSettingStore } from "@/app/admin/stores/useSettingStore";
 import md5 from "md5";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { trpc } from "@/packages/trpc/client/trpc";
@@ -20,6 +20,7 @@ const Login = () => {
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const form = useRef<DynamicFormRef>(null);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const settingStore = useSettingStore();
   const loginMutation = trpc.auth.login.useMutation();
@@ -42,23 +43,23 @@ const Login = () => {
   const onSubmit = () => {
     if (!captchaToken) {
       toast.error("验证码加载中，请稍候");
-      return;
+      return Promise.reject("验证码未加载");
     }
 
     const values = form.current?.getValues();
     const { name, password } = values;
-    loginMutation
+    return loginMutation
       .mutateAsync({
         name,
         password: md5(password),
         captchaToken,
       })
-      .then((result: any) => {
+      .then((result: { token: string }) => {
         toast.success("登录成功");
         localStorage.setItem("token", result.token);
-        window.location.href = targetUrl || "/admin";
+        router.push(targetUrl || "/admin");
       })
-      .catch((e: any) => {
+      .catch((e: { message?: string }) => {
         toast.error(e?.message || "登录失败");
       })
       .finally(() => {
@@ -74,12 +75,10 @@ const Login = () => {
     <div className="min-h-screen box-border pt-48 text-center bg-green-700">
       <video
         src="https://static.guanweisong.com/common/rainAndBird.mp4"
-        className="fixed inset-0 object-fill"
+        className="fixed inset-0 w-full h-full object-cover"
         autoPlay={true}
         muted={true}
         loop={true}
-        height="100%"
-        width="100%"
       />
       <div className="fixed z-10 w-96 mx-auto left-0 right-0 top-[30%] text-white p-6 bg-white/20 backdrop-blur rounded overflow-hidden">
         <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
