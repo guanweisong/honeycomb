@@ -13,8 +13,8 @@ import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@/packages/validation/schemas/media/media.insert.schema";
 import dayjs from "dayjs";
 import S3 from "@/packages/trpc/server/libs/S3";
-import sizeOf from "image-size";
-import { getColor } from "@/packages/trpc/server/libs/colorThief";
+import { z } from "zod";
+import { requiredString } from "@/packages/validation/utils/required.string.schema";
 import { UserLevel } from "@/packages/types/user/user.level";
 
 /**
@@ -65,6 +65,32 @@ export const mediaRouter = createTRPCRouter({
     }),
 
   /**
+   * 获取预签名上传 URL。
+   */
+  getPresignedUrl: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(
+      z.object({
+        name: requiredString("文件名不能为空"),
+        type: requiredString("文件类型不能为空"),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { name, type } = input;
+      const ext = name.split(".").pop();
+      const key = `${dayjs().format("YYYY/MM/DD/HHmmssSSS")}.${ext}`;
+
+      const url = await S3.getPresignedUrl({
+        Key: key,
+        ContentType: type,
+      });
+
+      return {
+        url,
+        key,
+      };
+    }),
+
+  /**
    * 上传单个媒体文件。
    * (需要管理员或编辑权限)
    * @param {MediaInsertSchema} input - 包含文件信息的对象。
@@ -73,19 +99,9 @@ export const mediaRouter = createTRPCRouter({
   upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const { name, size, type, base64 } = input;
+      const { name, size, type, key, width, height, color } = input;
 
-      // 将 base64 转换为 Buffer
-      const fileBuffer = Buffer.from(base64, "base64");
-      const ext = name?.split(".").pop();
-      const key = `${dayjs().format("YYYY/MM/DD/HHmmssSSS")}.${ext}`;
-
-      // 上传到 S3
-      const url = await S3.putObject({
-        Key: key,
-        Body: fileBuffer,
-        ContentType: type,
-      });
+      const url = `https://static.guanweisong.com/${key}`;
 
       // 准备数据库插入数据
       const data: InferInsertModel<typeof schema.media> = {
@@ -94,25 +110,10 @@ export const mediaRouter = createTRPCRouter({
         type,
         key,
         url,
+        width,
+        height,
+        color,
       };
-
-      // 如果是图片，提取宽度、高度和主色调
-      if (type?.startsWith("image")) {
-        try {
-          const dim = sizeOf(fileBuffer);
-          data.width = dim.width ?? null;
-          data.height = dim.height ?? null;
-        } catch (err) {
-          console.warn("Failed to get image size", err);
-        }
-
-        try {
-          const color = await getColor(url);
-          data.color = `rgb(${color.join(",")})`;
-        } catch (err) {
-          console.warn("Failed to get image main color", err);
-        }
-      }
 
       // 插入数据库
       const [result] = await ctx.db

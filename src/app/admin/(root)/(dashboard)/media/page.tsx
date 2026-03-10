@@ -62,38 +62,99 @@ const Media = ({ onSelect }: MediaProps) => {
    * 用于执行删除操作。
    */
   const destroyMedia = trpc.media.destroy.useMutation();
+  const getPresignedUrl = trpc.media.getPresignedUrl.useMutation();
   const uploadMedia = trpc.media.upload.useMutation();
 
   /**
-   * 将 File 对象转换为 Base64 编码的字符串。
-   * @param {File} file - 要转换的文件。
-   * @returns {Promise<string>} 返回一个包含 Base64 数据的 Promise。
+   * 获取图片的元数据（尺寸和颜色）。
+   * @param {File} file - 图片文件。
+   * @returns {Promise<{ width: number; height: number; color?: string }>} 返回包含尺寸和颜色的对象。
    */
-  const toBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.onerror = (error) => reject(error);
-    });
+  const getImageMetadata = (
+    file: File,
+  ): Promise<{ width: number; height: number; color?: string }> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith("image/")) {
+        resolve({ width: 0, height: 0 });
+        return;
+      }
 
-  /**
-   * 处理文件上传。
-   * 将选中的文件通过 POST 请求上传到服务器，并处理上传结果。
-   * @param {FileList | null} files - 用户选择的文件列表。
-   */
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+
+        // 使用 canvas 获取主色调（简化版：获取中心像素颜色）
+        let color = undefined;
+        try {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            canvas.width = 1;
+            canvas.height = 1;
+            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            color = `rgb(${r},${g},${b})`;
+          }
+        } catch (e) {
+          console.warn("Failed to get image color on client", e);
+        }
+
+        resolve({
+          width: img.width,
+          height: img.height,
+          color,
+        });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: 0, height: 0 });
+      };
+      img.src = url;
+    });
+  };
+
+
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setLoading(true);
 
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
-        const base64 = await toBase64(file);
+        // 1. 获取元数据
+        let metadata = { width: 0, height: 0, color: undefined as string | undefined };
+        if (file.type.startsWith("image/")) {
+          metadata = await getImageMetadata(file);
+        }
+
+        // 2. 获取预签名 URL
+        const { url, key } = await getPresignedUrl.mutateAsync({
+          name: file.name,
+          type: file.type,
+        });
+
+        // 3. 直接上传到 S3
+        const uploadRes = await fetch(url, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`文件 ${file.name} 上传到存储失败`);
+        }
+
+        // 4. 通知后端完成上传并传递元数据
         return uploadMedia.mutateAsync({
           name: file.name,
           type: file.type,
           size: file.size,
-          base64,
+          key,
+          width: metadata.width || null,
+          height: metadata.height || null,
+          color: metadata.color || null,
         });
       });
 

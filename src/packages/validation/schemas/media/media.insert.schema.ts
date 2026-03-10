@@ -8,9 +8,9 @@ import { requiredString } from "@/packages/validation/utils/required.string.sche
  */
 export const MediaInsertSchema = createInsertSchema(schema.media)
   .extend({
-    base64: requiredString("图片不能为空"),
+    key: requiredString("Key 不能为空"),
   })
-  .omit({ key: true, url: true });
+  .omit({ url: true });
 
 /**
  * 媒体实体的 TypeScript 类型。

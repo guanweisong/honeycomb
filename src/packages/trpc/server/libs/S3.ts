@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 class S3 {
   /**
@@ -34,6 +35,23 @@ class S3 {
       }),
     );
     return `https://static.guanweisong.com/${Key}`;
+  };
+
+  /**
+   * 生成预签名上传 URL
+   * @param params
+   */
+  static getPresignedUrl = async (params: {
+    Key: string;
+    ContentType: string;
+  }): Promise<string> => {
+    const { Key, ContentType } = params;
+    const command = new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key,
+      ContentType,
+    });
+    return getSignedUrl(S3.S3() as any, command, { expiresIn: 3600 });
   };
 
   /**
