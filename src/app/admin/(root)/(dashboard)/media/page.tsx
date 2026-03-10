@@ -122,7 +122,7 @@ const Media = ({ onSelect }: MediaProps) => {
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         // 1. 获取元数据
-        let metadata = { width: 0, height: 0, color: undefined as string | undefined };
+        let metadata: { width: number; height: number; color?: string } = { width: 0, height: 0, color: undefined };
         if (file.type.startsWith("image/")) {
           metadata = await getImageMetadata(file);
         }

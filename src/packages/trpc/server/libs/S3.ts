@@ -51,7 +51,7 @@ class S3 {
       Key,
       ContentType,
     });
-    return getSignedUrl(S3.S3() as any, command, { expiresIn: 3600 });
+    return getSignedUrl(S3.S3() as any, command as any, { expiresIn: 3600 });
   };
 
   /**
