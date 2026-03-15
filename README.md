@@ -1,6 +1,6 @@
 # Honeycomb
 
-本博客是结合Drizzle ORM和tRPC实现了端到端类型安全的Serverless全栈项目。
+本博客是结合Drizzle ORM和tRPC实现了端到端类型安全的Serverless全栈CMS系统。
 
 ## 技术架构
 
@@ -37,8 +37,8 @@
 
 ## 三方服务
 
-- 行为验证码 使用 腾讯防水墙服务
+- 行为验证码 使用 [Cloudflare Turnstile](https://www.cloudflare.com/application-services/products/turnstile/)
 - 对象存储 使用 [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)
 - 数据库托管 使用 [Turso](https://turso.tech)
-- 应用部署 使用 [Cloudflare Workers](https://workers.cloudflare.com)
-- 邮件服务 使用 [resend](https://resend.com)
+- 应用部署 使用 [Vercel](https://vercel.com)
+- 邮件服务 使用 [Resend](https://resend.com)
