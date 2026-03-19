@@ -40,3 +40,5 @@ yarn-error.log*
 .open-next
 
 drizzle
+# next-agents-md
+.next-docs/
