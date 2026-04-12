@@ -23,6 +23,6 @@ export const SettingUpdateSchema = createUpdateSchema(schema.setting)
     siteSubName: I18nSchema.partial(),
     siteCopyright: I18nSchema.partial(),
     siteSignature: I18nSchema.partial(),
-    siteRecordNo: z.string().trim().optional(),
-    siteRecordUrl: z.string().trim().optional(),
+    siteRecordNo: z.string().trim().nullable().optional(),
+    siteRecordUrl: z.string().trim().nullable().optional(),
   });
