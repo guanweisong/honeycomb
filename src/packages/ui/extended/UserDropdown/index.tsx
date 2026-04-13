@@ -8,7 +8,7 @@ import {
 } from "../../components/dropdown-menu";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
-import { Avatar } from "../../components/avatar";
+import Avatar from "../Avatar";
 import { UserLevelName } from "@/packages/types/user/user.level";
 import { UserEntity } from "@/packages/trpc/server/types/user.entity";
 

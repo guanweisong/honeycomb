@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { Avatar } from "../../components/avatar";
+import Avatar from "../Avatar";
 import { Menu, MenuItem } from "../Menu";
 import { UserDropdown } from "../UserDropdown";
 import { UserEntity } from "@/packages/trpc/server/types/user.entity";
