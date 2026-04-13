@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { commentStatusOptions } from "@/packages/types/comment/comment.status";
 import { CommentEntity } from "@/packages/trpc/server/types/comment.entity";
 
@@ -68,7 +68,7 @@ export const commentTableColumns: ColumnDef<CommentEntity>[] = [
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value = getValue<string>();
-      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
+      return format(new Date(value), "yyyy-MM-dd HH:mm:ss");
     },
   },
   {
@@ -80,7 +80,7 @@ export const commentTableColumns: ColumnDef<CommentEntity>[] = [
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value = getValue<string>();
-      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
+      return format(new Date(value), "yyyy-MM-dd HH:mm:ss");
     },
   },
 ];

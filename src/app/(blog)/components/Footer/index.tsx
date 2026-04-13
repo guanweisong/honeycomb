@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { getLocale } from "next-intl/server";
 import { createServerClient } from "@/packages/trpc/server";
 import { MultiLangEnum } from "@/packages/types/multi.lang";
@@ -19,7 +19,7 @@ export default async function Footer() {
     <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[locale as MultiLangEnum]}</div>
       <div>
-        ©{dayjs().format("YYYY")}&nbsp;
+        ©{format(new Date(), "yyyy")}&nbsp;
         {setting?.siteCopyright?.[locale as MultiLangEnum]}
       </div>
       <div>

@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { enableStatusOptions } from "@/packages/types/enable.status";
 import { LinkEntity } from "@/packages/trpc/server/types/link.entity";
@@ -44,7 +44,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value: string = row.getValue("createdAt");
-      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
+      return format(new Date(value), "yyyy-MM-dd HH:mm:ss");
     },
   },
 ];

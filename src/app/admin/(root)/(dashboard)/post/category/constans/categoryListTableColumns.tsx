@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
 import { MultiLang } from "@/packages/types/multi.lang";
@@ -64,7 +64,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
       const value = row.getValue("createdAt") as string;
       return (
         <span className="whitespace-nowrap">
-          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
         </span>
       );
     },
@@ -81,7 +81,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
       const value = row.getValue("updatedAt") as string;
       return (
         <span className="whitespace-nowrap">
-          {dayjs(value).format("YYYY-MM-DD HH:mm:ss")}
+          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
         </span>
       );
     },

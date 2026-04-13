@@ -1,5 +1,5 @@
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { TagEntity } from "@/packages/trpc/server/types/tag.entity";
 
@@ -28,7 +28,10 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染创建时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return dayjs(row.getValue("createdAt")).format("YYYY-MM-DD HH:mm:ss");
+      return format(
+        new Date(row.getValue("createdAt")),
+        "yyyy-MM-dd HH:mm:ss",
+      );
     },
   },
   {
@@ -40,7 +43,10 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return dayjs(row.getValue("updatedAt")).format("YYYY-MM-DD HH:mm:ss");
+      return format(
+        new Date(row.getValue("updatedAt")),
+        "yyyy-MM-dd HH:mm:ss",
+      );
     },
   },
 ];

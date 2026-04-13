@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { UserEntity } from "@/packages/trpc/server/types/user.entity";
 import { userLevelOptions } from "@/packages/types/user/user.level";
@@ -57,7 +57,7 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value: string = row.getValue("createdAt");
-      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
+      return format(new Date(value), "yyyy-MM-dd HH:mm:ss");
     },
   },
   {
@@ -70,7 +70,7 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value: string = row.getValue("updatedAt");
-      return dayjs(value).format("YYYY-MM-DD HH:mm:ss");
+      return format(new Date(value), "yyyy-MM-dd HH:mm:ss");
     },
   },
 ];

@@ -11,7 +11,7 @@ import { DeleteBatchSchema } from "@/packages/validation/utils/delete.batch.sche
 import * as schema from "@/packages/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@/packages/validation/schemas/media/media.insert.schema";
-import dayjs from "dayjs";
+import { format } from "date-fns";
 import S3 from "@/packages/trpc/server/libs/S3";
 import { z } from "zod";
 import { requiredString } from "@/packages/validation/utils/required.string.schema";
@@ -77,7 +77,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const { name, type } = input;
       const ext = name.split(".").pop();
-      const key = `${dayjs().format("YYYY/MM/DD/HHmmssSSS")}.${ext}`;
+      const key = `${format(new Date(), "yyyy/MM/dd/HHmmssSSS")}.${ext}`;
 
       const url = await S3.getPresignedUrl({
         Key: key,
