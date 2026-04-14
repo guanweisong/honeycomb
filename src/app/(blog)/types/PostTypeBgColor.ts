@@ -1,4 +1,4 @@
-import { PostType } from "@/packages/types/post/post.type";
+import { PostType } from "@/packages/trpc/server/modules/post/types/post.type";
 
 /**
  * 文章类型对应的背景颜色映射。

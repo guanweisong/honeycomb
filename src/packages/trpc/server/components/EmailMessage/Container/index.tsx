@@ -11,7 +11,7 @@ import {
   Heading,
 } from "@react-email/components";
 import * as React from "react";
-import { SettingEntity } from "@/packages/trpc/server/types/setting.entity";
+import { SettingEntity } from "@/packages/trpc/server/modules/setting/types/setting.entity";
 
 export interface EmailContainerProps {
   previewText: string;

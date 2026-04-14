@@ -1,6 +1,6 @@
 import React from "react";
 import CommentClient from "@/app/(blog)/components/Comment/client";
-import { MenuType } from "@/packages/types/menu/menu.type";
+import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
 import { createServerClient } from "@/packages/trpc/server";
 
 /**

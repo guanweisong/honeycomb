@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import {
   PostListQueryInput,
   PostListQuerySchema,
-} from "@/packages/validation/schemas/post/post.list.query.schema";
+} from "@/packages/trpc/server/modules/post/schemas/post.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PostListItemEntity } from "@/packages/trpc/server/types/post.entity";
+import { PostListItemEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
 import { keepPreviousData } from "@tanstack/react-query";
 
 /**

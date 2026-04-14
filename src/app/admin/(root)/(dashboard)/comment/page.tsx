@@ -2,19 +2,19 @@
 
 import React, { useState } from "react";
 import { commentTableColumns } from "./constants/commentTableColumns";
-import { CommentStatus } from "@/packages/types/comment/comment.status";
+import { CommentStatus } from "@/packages/trpc/server/modules/comment/types/comment.status";
 import { Trash } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Button } from "@/packages/ui/components/button";
 import { toast } from "sonner";
-import { CommentListQuerySchema } from "@/packages/validation/schemas/comment/comment.list.query.schema";
+import { CommentListQuerySchema } from "@/packages/trpc/server/modules/comment/schemas/comment.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagListQueryInput } from "@/packages/validation/schemas/tag/tag.list.query.schema";
+import { TagListQueryInput } from "@/packages/trpc/server/modules/tag/schemas/tag.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
-import { CommentEntity } from "@/packages/trpc/server/types/comment.entity";
-import { CommentUpdate } from "@/packages/validation/schemas/comment/comment.update.schema";
+import { CommentEntity } from "@/packages/trpc/server/modules/comment/types/comment.entity";
+import { CommentUpdate } from "@/packages/trpc/server/modules/comment/schemas/comment.update.schema";
 
 /**
  * 评论管理页面。

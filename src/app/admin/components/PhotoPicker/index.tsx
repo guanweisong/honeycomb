@@ -4,7 +4,7 @@ import PhotoPickerPanel from "@/app/admin/(root)/(dashboard)/media/page";
 import { Sheet } from "@/packages/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
+import { MediaEntity } from "@/packages/trpc/server/modules/media/types/media.entity";
 
 /**
  * 图片选择器模态框的属性接口。

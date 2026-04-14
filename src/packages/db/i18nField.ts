@@ -2,7 +2,7 @@ import { customType } from "drizzle-orm/sqlite-core";
 import {
   type I18n,
   NullableI18nSchema,
-} from "@/packages/validation/utils/i18n.schema";
+} from "@/packages/trpc/server/schemas/i18n.schema";
 
 export function i18nField(name: string) {
   return customType<{

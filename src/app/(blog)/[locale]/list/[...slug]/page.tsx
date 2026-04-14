@@ -2,10 +2,10 @@ import React from "react";
 import PostList from "@/app/(blog)/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
 import { createServerClient } from "@/packages/trpc/server";
-import { PostStatus } from "@/packages/types/post/post.status";
-import { PostListQueryInput } from "@/packages/validation/schemas/post/post.list.query.schema";
+import { PostStatus } from "@/packages/trpc/server/modules/post/types/post.status";
+import { PostListQueryInput } from "@/packages/trpc/server/modules/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
 
 /**
@@ -59,7 +59,7 @@ export default async function List(props: ListProps) {
       }
       typeName =
         menu?.list?.find((item) => item.path === typeName)?.title?.[
-        params.locale
+          params.locale
         ] || "";
       break;
     case "tags":

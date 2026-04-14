@@ -1,7 +1,7 @@
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { inArray } from "drizzle-orm";
-import { MultiLang } from "@/packages/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
 
 /**
  * 关联标签接口。

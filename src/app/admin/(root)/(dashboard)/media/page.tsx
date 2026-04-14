@@ -11,8 +11,8 @@ import { Skeleton } from "@/packages/ui/components/skeleton";
 import { cn } from "@/packages/ui/lib/utils";
 
 import { trpc } from "@/packages/trpc/client/trpc";
-import { MediaIndexInput } from "@/packages/validation/schemas/media/media.list.query.schema";
-import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
+import { MediaIndexInput } from "@/packages/trpc/server/modules/media/schemas/media.list.query.schema";
+import { MediaEntity } from "@/packages/trpc/server/modules/media/types/media.entity";
 
 /**
  * 媒体库组件的属性接口。
@@ -114,7 +114,6 @@ const Media = ({ onSelect }: MediaProps) => {
     });
   };
 
-
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setLoading(true);
@@ -122,7 +121,11 @@ const Media = ({ onSelect }: MediaProps) => {
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         // 1. 获取元数据
-        let metadata: { width: number; height: number; color?: string } = { width: 0, height: 0, color: undefined };
+        let metadata: { width: number; height: number; color?: string } = {
+          width: 0,
+          height: 0,
+          color: undefined,
+        };
         if (file.type.startsWith("image/")) {
           metadata = await getImageMetadata(file);
         }

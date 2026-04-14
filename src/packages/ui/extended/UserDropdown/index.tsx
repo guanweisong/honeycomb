@@ -9,8 +9,8 @@ import {
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
 import Avatar from "../Avatar";
-import { UserLevelName } from "@/packages/types/user/user.level";
-import { UserEntity } from "@/packages/trpc/server/types/user.entity";
+import { UserLevelName } from "@/packages/trpc/server/modules/user/types/user.level";
+import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
 
 export interface UserDropdownProps {
   user?: UserEntity | null;

@@ -13,22 +13,25 @@ import { Pencil, Plus, Trash } from "lucide-react";
 import {
   UserUpdate,
   UserUpdateSchema,
-} from "@/packages/validation/schemas/user/user.update.schema";
+} from "@/packages/trpc/server/modules/user/schemas/user.update.schema";
 import {
   UserInsert,
   UserInsertSchema,
-} from "@/packages/validation/schemas/user/user.insert.schema";
+} from "@/packages/trpc/server/modules/user/schemas/user.insert.schema";
 import {
   UserListQueryInput,
   UserListQuerySchema,
-} from "@/packages/validation/schemas/user/user.list.query.schema";
+} from "@/packages/trpc/server/modules/user/schemas/user.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { UserEntity } from "@/packages/trpc/server/types/user.entity";
-import { UserLevel, userLevelOptions } from "@/packages/types/user/user.level";
+import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
+import {
+  UserLevel,
+  userLevelOptions,
+} from "@/packages/trpc/server/modules/user/types/user.level";
 import {
   UserStatus,
   userStatusOptions,
-} from "@/packages/types/user/user.status";
+} from "@/packages/trpc/server/modules/user/types/user.status";
 import { keepPreviousData } from "@tanstack/react-query";
 
 /**

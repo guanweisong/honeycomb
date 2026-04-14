@@ -8,7 +8,7 @@ import React from "react";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { UserEntity } from "@/packages/trpc/server/types/user.entity";
+import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
 
 /**
  * 后台管理界面的核心布局组件。

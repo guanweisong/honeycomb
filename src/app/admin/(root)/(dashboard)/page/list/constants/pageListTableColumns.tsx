@@ -1,11 +1,11 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import { MultiLang } from "@/packages/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
 import { Badge } from "@/packages/ui/components/badge";
-import { pageStatusOptions } from "@/packages/types/page/page.status";
-import { PageEntity } from "@/packages/trpc/server/types/page.entity";
-import { UserEntity } from "@/packages/trpc/server/types/user.entity";
+import { pageStatusOptions } from "@/packages/trpc/server/modules/page/types/page.status";
+import { PageEntity } from "@/packages/trpc/server/modules/page/types/page.entity";
+import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
 
 /**
  * 页面列表的表格列定义。

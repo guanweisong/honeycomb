@@ -10,15 +10,15 @@ import {
 import {
   PageInsert,
   PageInsertSchema,
-} from "@/packages/validation/schemas/page/page.insert.schema";
+} from "@/packages/trpc/server/modules/page/schemas/page.insert.schema";
 import {
   PageUpdate,
   PageUpdateSchema,
-} from "@/packages/validation/schemas/page/page.update.schema";
+} from "@/packages/trpc/server/modules/page/schemas/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PageStatus } from "@/packages/types/page/page.status";
-import { PageEntity } from "@/packages/trpc/server/types/page.entity";
+import { PageStatus } from "@/packages/trpc/server/modules/page/types/page.status";
+import { PageEntity } from "@/packages/trpc/server/modules/page/types/page.entity";
 
 /**
  * 页面创建/编辑页面核心组件。

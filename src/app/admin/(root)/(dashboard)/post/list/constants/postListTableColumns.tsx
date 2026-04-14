@@ -1,13 +1,13 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import { MultiLang } from "@/packages/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
 import { Badge } from "@/packages/ui/components/badge";
-import { PostListItemEntity } from "@/packages/trpc/server/types/post.entity";
-import { postStatusOptions } from "@/packages/types/post/post.status";
-import { postTypeOptions } from "@/packages/types/post/post.type";
-import { CategoryEntity } from "@/packages/trpc/server/types/category.entity";
-import { UserEntity } from "@/packages/trpc/server/types/user.entity";
+import { PostListItemEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
+import { postStatusOptions } from "@/packages/trpc/server/modules/post/types/post.status";
+import { postTypeOptions } from "@/packages/trpc/server/modules/post/types/post.type";
+import { CategoryEntity } from "@/packages/trpc/server/modules/category/types/category.entity";
+import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
 
 /**
  * 文章列表的表格列定义。

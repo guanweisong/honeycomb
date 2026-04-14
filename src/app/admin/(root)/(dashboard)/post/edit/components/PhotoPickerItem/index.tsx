@@ -5,7 +5,7 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@/packages/ui/components/form";
 import React from "react";
-import { PostDetailEntity } from "@/packages/trpc/server/types/post.entity";
+import { PostDetailEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
 
 /**
  * 图片选择器项组件的属性接口。

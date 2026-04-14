@@ -10,7 +10,10 @@ import enIcon from "./img/en.svg";
 import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
 import { Theme } from "@/app/(blog)/types/Theme";
-import { MultiLangEnum, MultiLang } from "@/packages/types/multi.lang";
+import {
+  MultiLangEnum,
+  MultiLang,
+} from "@/packages/trpc/server/types/multi.lang";
 import { Link } from "@/app/(blog)/i18n/navigation";
 
 /**

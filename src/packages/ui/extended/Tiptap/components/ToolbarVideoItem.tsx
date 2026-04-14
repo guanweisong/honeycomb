@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { ToolbarButton } from "./ToolbarButton";
 import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
-import { MediaEntity } from "@/packages/trpc/server/types/media.entity";
+import { MediaEntity } from "@/packages/trpc/server/modules/media/types/media.entity";
 import { Film } from "lucide-react";
 
 export function ToolbarVideoItem({ editor }: { editor: Editor }) {

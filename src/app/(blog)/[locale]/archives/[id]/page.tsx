@@ -7,12 +7,12 @@ import Comment from "@/app/(blog)/components/Comment";
 import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/packages/trpc/server";
-import { MenuType } from "@/packages/types/menu/menu.type";
-import { PostType } from "@/packages/types/post/post.type";
+import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
+import { PostType } from "@/packages/trpc/server/modules/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/RichText";
 
 /**
@@ -124,50 +124,50 @@ export default async function Archives(props: ArchivesProps) {
         // @ts-ignore
         postDetail.type,
       ) && (
-          <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
-            {postDetail.type === PostType.PHOTOGRAPH && (
-              <li className="flex items-center">
-                <Camera size={20} />
-                &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
-                &nbsp;
-                {postDetail.galleryLocation?.[locale]}
-              </li>
-            )}
-            {postDetail.type === PostType.MOVIE && (
-              <li className="flex items-center">
-                <Calendar size={20} />
-                &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
-              </li>
-            )}
-            {postDetail.type === PostType.QUOTE && (
-              <li className="flex items-center">
-                <BookOpen size={20} />
-                &nbsp; {t("quoteFrom")}: {postDetail.quoteAuthor?.[locale]}
-              </li>
-            )}
-          </ul>
-        )}
+        <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
+          {postDetail.type === PostType.PHOTOGRAPH && (
+            <li className="flex items-center">
+              <Camera size={20} />
+              &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
+              &nbsp;
+              {postDetail.galleryLocation?.[locale]}
+            </li>
+          )}
+          {postDetail.type === PostType.MOVIE && (
+            <li className="flex items-center">
+              <Calendar size={20} />
+              &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
+            </li>
+          )}
+          {postDetail.type === PostType.QUOTE && (
+            <li className="flex items-center">
+              <BookOpen size={20} />
+              &nbsp; {t("quoteFrom")}: {postDetail.quoteAuthor?.[locale]}
+            </li>
+          )}
+        </ul>
+      )}
       {/** @ts-ignore **/}
       <Tags {...postDetail} />
       {randomPostsList.filter((item) => item.id !== postDetail?.id).length >
         0 && (
-          <Card title={t("guessWhatYouLike")}>
-            <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-              {randomPostsList
-                .filter((item) => item.id !== postDetail?.id)
-                .map((item: any) => (
-                  <li key={item.id} className="my-2">
-                    <Link
-                      href={`/archives/${item.id}`}
-                      className="block link-light"
-                    >
-                      {item.title?.[locale] || item.quoteContent?.[locale]}
-                    </Link>
-                  </li>
-                ))}
-            </ul>
-          </Card>
-        )}
+        <Card title={t("guessWhatYouLike")}>
+          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
+            {randomPostsList
+              .filter((item) => item.id !== postDetail?.id)
+              .map((item: any) => (
+                <li key={item.id} className="my-2">
+                  <Link
+                    href={`/archives/${item.id}`}
+                    className="block link-light"
+                  >
+                    {item.title?.[locale] || item.quoteContent?.[locale]}
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </Card>
+      )}
       <Comment id={id} type={MenuType.CATEGORY} />
     </>
   );

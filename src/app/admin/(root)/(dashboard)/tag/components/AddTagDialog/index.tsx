@@ -1,11 +1,11 @@
 import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { TagUpdateSchema } from "@/packages/validation/schemas/tag/tag.update.schema";
-import { TagInsertSchema } from "@/packages/validation/schemas/tag/tag.insert.schema";
+import { TagUpdateSchema } from "@/packages/trpc/server/modules/tag/schemas/tag.update.schema";
+import { TagInsertSchema } from "@/packages/trpc/server/modules/tag/schemas/tag.insert.schema";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagEntity } from "@/packages/trpc/server/types/tag.entity";
+import { TagEntity } from "@/packages/trpc/server/modules/tag/types/tag.entity";
 
 /**
  * 添加/编辑标签对话框的属性接口。

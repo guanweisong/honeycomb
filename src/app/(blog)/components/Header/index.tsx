@@ -10,10 +10,10 @@ import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
 import { createServerClient } from "@/packages/trpc/server";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuType } from "@/packages/types/menu/menu.type";
+import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
-import { MultiLangEnum } from "@/packages/types/multi.lang";
-import { MenuEntity } from "@/packages/trpc/server/types/menu.entity";
+import { MultiLangEnum } from "@/packages/trpc/server/types/multi.lang";
+import { MenuEntity } from "@/packages/trpc/server/modules/menu/types/menu.entity";
 
 /**
  * 网站头部组件。

@@ -3,8 +3,8 @@ import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/app/(blog)/components/Comment";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/types/multi.lang";
-import { MenuType } from "@/packages/types/menu/menu.type";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
+import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
 import { createServerClient } from "@/packages/trpc/server";
 import { RichText } from "@/app/(blog)/components/RichText";
 /**

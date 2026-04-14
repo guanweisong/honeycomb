@@ -2,8 +2,8 @@ import { Link, Text } from "@react-email/components";
 import * as React from "react";
 import EmailContainer from "../Container";
 import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@/packages/trpc/server/utils/comment";
-import { CommentEntity } from "@/packages/trpc/server/types/comment.entity";
-import { SettingEntity } from "@/packages/trpc/server/types/setting.entity";
+import { CommentEntity } from "@/packages/trpc/server/modules/comment/types/comment.entity";
+import { SettingEntity } from "@/packages/trpc/server/modules/setting/types/setting.entity";
 
 type AdminMessageEmailProps = {
   currentComment: CommentEntity;

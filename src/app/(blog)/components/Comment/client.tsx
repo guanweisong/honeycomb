@@ -7,15 +7,15 @@ import Card from "../Card";
 import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import { CommentProps } from "./index";
 import { refreshPath } from "@/app/(blog)/libs/refreshPath";
-import { CommentStatus } from "@/packages/types/comment/comment.status";
-import { MenuType } from "@/packages/types/menu/menu.type";
-import { CommentInsertInput } from "@/packages/validation/schemas/comment/comment.insert.schema";
+import { CommentStatus } from "@/packages/trpc/server/modules/comment/types/comment.status";
+import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
+import { CommentInsertInput } from "@/packages/trpc/server/modules/comment/schemas/comment.insert.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useTranslations } from "next-intl";
 import {
   CommentEntity,
   CommentResponse,
-} from "@/packages/trpc/server/types/comment.entity";
+} from "@/packages/trpc/server/modules/comment/types/comment.entity";
 import { usePathname, useRouter } from "@/app/(blog)/i18n/navigation";
 
 /**

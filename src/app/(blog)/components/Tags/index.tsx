@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { PostListItemEntity } from "@/packages/trpc/server/types/post.entity";
-import { MultiLang } from "@/packages/types/multi.lang";
-import { TagEntity } from "@/packages/trpc/server/types/tag.entity";
+import { PostListItemEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
+import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
+import { TagEntity } from "@/packages/trpc/server/modules/tag/types/tag.entity";
 
 /**
  * 标签组件。

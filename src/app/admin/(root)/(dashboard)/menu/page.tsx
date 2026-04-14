@@ -14,9 +14,12 @@ import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useEffect, useState } from "react";
-import { MenuType, MenuTypeName } from "@/packages/types/menu/menu.type";
-import { CategoryEntity } from "@/packages/trpc/server/types/category.entity";
-import { PageEntity } from "@/packages/trpc/server/types/page.entity";
+import {
+  MenuType,
+  MenuTypeName,
+} from "@/packages/trpc/server/modules/menu/types/menu.type";
+import { CategoryEntity } from "@/packages/trpc/server/modules/category/types/category.entity";
+import { PageEntity } from "@/packages/trpc/server/modules/page/types/page.entity";
 import { MenuEntityTree } from "@/app/admin/types/menu.entity.tree";
 
 /**

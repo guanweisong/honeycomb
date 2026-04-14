@@ -1,4 +1,4 @@
-import { MenuEntity } from "@/packages/trpc/server/types/menu.entity";
+import { MenuEntity } from "@/packages/trpc/server/modules/menu/types/menu.entity";
 
 /**
  * 获取菜单当前路径属性的属性接口。

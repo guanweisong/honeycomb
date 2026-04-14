@@ -15,20 +15,20 @@ import { z } from "zod";
 import {
   LinkListQueryInput,
   LinkListQuerySchema,
-} from "@/packages/validation/schemas/link/link.list.query.schema";
+} from "@/packages/trpc/server/modules/link/schemas/link.list.query.schema";
 import {
   LinkUpdate,
   LinkUpdateSchema,
-} from "@/packages/validation/schemas/link/link.update.schema";
+} from "@/packages/trpc/server/modules/link/schemas/link.update.schema";
 import {
   LinkInsert,
   LinkInsertSchema,
-} from "@/packages/validation/schemas/link/link.insert.schema";
+} from "@/packages/trpc/server/modules/link/schemas/link.insert.schema";
 import {
   EnableStatus,
   enableStatusOptions,
-} from "@/packages/types/enable.status";
-import { LinkEntity } from "@/packages/trpc/server/types/link.entity";
+} from "@/packages/trpc/server/types/enable.status";
+import { LinkEntity } from "@/packages/trpc/server/modules/link/types/link.entity";
 
 /**
  * 友情链接管理页面。
