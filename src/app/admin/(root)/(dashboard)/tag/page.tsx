@@ -12,12 +12,12 @@ import { Pencil, Plus, Trash } from "lucide-react";
 import {
   TagListQueryInput,
   TagListQuerySchema,
-} from "@/packages/trpc/server/modules/tag/schemas/tag.list.query.schema";
+} from "@/packages/trpc/api/modules/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "@/app/admin/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
-import { TagEntity } from "@/packages/trpc/server/modules/tag/types/tag.entity";
+import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
 
 /**
  * 标签管理页面。

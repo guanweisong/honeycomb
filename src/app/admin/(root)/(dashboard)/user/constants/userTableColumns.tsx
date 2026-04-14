@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
-import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
-import { userLevelOptions } from "@/packages/trpc/server/modules/user/types/user.level";
-import { userStatusOptions } from "@/packages/trpc/server/modules/user/types/user.status";
+import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import { userLevelOptions } from "@/packages/trpc/api/modules/user/types/user.level";
+import { userStatusOptions } from "@/packages/trpc/api/modules/user/types/user.status";
 
 /**
  * 用户列表的表格列定义。

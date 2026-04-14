@@ -8,15 +8,15 @@ import { Link } from "@/app/(blog)/i18n/navigation";
 import Signature from "../Signature";
 import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
-import { PostListItemEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
+import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
 import {
   PostType,
   PostTypeName,
-} from "@/packages/trpc/server/modules/post/types/post.type";
-import { PostListQueryInput } from "@/packages/trpc/server/modules/post/schemas/post.list.query.schema";
+} from "@/packages/trpc/api/modules/post/types/post.type";
+import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/app/(blog)/types/PostTypeBgColor";
 
 /**

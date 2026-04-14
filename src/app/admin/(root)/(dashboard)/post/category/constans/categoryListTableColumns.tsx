@@ -1,13 +1,13 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import {
   EnableStatusName,
   EnableStatus,
-} from "@/packages/trpc/server/types/enable.status";
-import { CategoryEntity } from "@/packages/trpc/server/modules/category/types/category.entity";
+} from "@/packages/trpc/api/types/enable.status";
+import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
 
 /**
  * 分类列表的表格列定义。

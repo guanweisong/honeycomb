@@ -10,7 +10,7 @@ import {
   DynamicFormRef,
 } from "@/packages/ui/extended/DynamicForm";
 import { toast } from "sonner";
-import { UserInsertSchema } from "@/packages/trpc/server/modules/user/schemas/user.insert.schema";
+import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
 
 /**
  * 登录页面组件。

@@ -13,7 +13,7 @@ import { Theme } from "@/app/(blog)/types/Theme";
 import {
   MultiLangEnum,
   MultiLang,
-} from "@/packages/trpc/server/types/multi.lang";
+} from "@/packages/trpc/api/types/multi.lang";
 import { Link } from "@/app/(blog)/i18n/navigation";
 
 /**

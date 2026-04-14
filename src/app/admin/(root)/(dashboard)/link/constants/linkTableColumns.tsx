@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
-import { enableStatusOptions } from "@/packages/trpc/server/types/enable.status";
-import { LinkEntity } from "@/packages/trpc/server/modules/link/types/link.entity";
+import { enableStatusOptions } from "@/packages/trpc/api/types/enable.status";
+import { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
 
 /**
  * 友情链接列表的表格列定义。

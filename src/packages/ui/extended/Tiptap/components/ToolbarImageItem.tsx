@@ -3,7 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { ToolbarButton } from "./ToolbarButton";
 import { Image as ImageIcon } from "lucide-react";
 import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
-import { MediaEntity } from "@/packages/trpc/server/modules/media/types/media.entity";
+import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
 
 export function ToolbarImageItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);

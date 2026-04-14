@@ -8,12 +8,12 @@ import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
-import { createServerClient } from "@/packages/trpc/server";
+import { createServerClient } from "@/packages/trpc/api";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
-import { MultiLangEnum } from "@/packages/trpc/server/types/multi.lang";
-import { MenuEntity } from "@/packages/trpc/server/modules/menu/types/menu.entity";
+import { MultiLangEnum } from "@/packages/trpc/api/types/multi.lang";
+import { MenuEntity } from "@/packages/trpc/api/modules/menu/types/menu.entity";
 
 /**
  * 网站头部组件。

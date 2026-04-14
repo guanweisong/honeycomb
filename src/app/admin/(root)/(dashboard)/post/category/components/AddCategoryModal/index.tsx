@@ -1,6 +1,6 @@
 "use client";
 
-import { enableStatusOptions } from "@/packages/trpc/server/types/enable.status";
+import { enableStatusOptions } from "@/packages/trpc/api/types/enable.status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
@@ -10,11 +10,11 @@ import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import {
   CategoryInsert,
   CategoryInsertSchema,
-} from "@/packages/trpc/server/modules/category/schemas/category.insert.schema";
+} from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
 import {
   CategoryUpdate,
   CategoryUpdateSchema,
-} from "@/packages/trpc/server/modules/category/schemas/category.update.schema";
+} from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 /**

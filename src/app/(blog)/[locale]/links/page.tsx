@@ -2,11 +2,11 @@ import NoData from "@/app/(blog)/components/NoData";
 import Comment from "@/app/(blog)/components/Comment";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
+import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { cn } from "@/packages/ui/lib/utils";
-import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
-import { createServerClient } from "@/packages/trpc/server";
-import { EnableStatus } from "@/packages/trpc/server/types/enable.status";
+import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { createServerClient } from "@/packages/trpc/api";
+import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 
 /**
  * 友情链接页面组件的属性接口。

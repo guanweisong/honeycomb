@@ -4,7 +4,7 @@ import React, { ReactNode } from "react";
 import Avatar from "../Avatar";
 import { Menu, MenuItem } from "../Menu";
 import { UserDropdown } from "../UserDropdown";
-import { UserEntity } from "@/packages/trpc/server/modules/user/types/user.entity";
+import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
 
 export interface AdminLayoutProps {
   children: ReactNode;

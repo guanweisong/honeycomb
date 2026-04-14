@@ -17,9 +17,9 @@ import { useEffect, useState } from "react";
 import {
   MenuType,
   MenuTypeName,
-} from "@/packages/trpc/server/modules/menu/types/menu.type";
-import { CategoryEntity } from "@/packages/trpc/server/modules/category/types/category.entity";
-import { PageEntity } from "@/packages/trpc/server/modules/page/types/page.entity";
+} from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
+import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 import { MenuEntityTree } from "@/app/admin/types/menu.entity.tree";
 
 /**

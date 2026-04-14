@@ -1,8 +1,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
 import { format } from "date-fns";
-import { commentStatusOptions } from "@/packages/trpc/server/modules/comment/types/comment.status";
-import { CommentEntity } from "@/packages/trpc/server/modules/comment/types/comment.entity";
+import { commentStatusOptions } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
 
 /**
  * 评论列表的表格列定义。

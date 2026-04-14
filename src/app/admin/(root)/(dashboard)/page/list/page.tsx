@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 import {
   PageListQueryInput,
   PageListQuerySchema,
-} from "@/packages/trpc/server/modules/page/schemas/page.list.query.schema";
+} from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
-import { PageEntity } from "@/packages/trpc/server/modules/page/types/page.entity";
+import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 
 /**
  * 页面列表管理页面。

@@ -15,21 +15,21 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { Form } from "@/packages/ui/components/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PostInsertSchema } from "@/packages/trpc/server/modules/post/schemas/post.insert.schema";
-import { PostUpdateSchema } from "@/packages/trpc/server/modules/post/schemas/post.update.schema";
+import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { Plus } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PostStatus } from "@/packages/trpc/server/modules/post/types/post.status";
+import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 import {
   PostType,
   postTypeOptions,
-} from "@/packages/trpc/server/modules/post/types/post.type";
-import { TagEntity } from "@/packages/trpc/server/modules/tag/types/tag.entity";
+} from "@/packages/trpc/api/modules/post/types/post.type";
+import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
 import { tagMap } from "@/app/admin/constants/tagMap";
-import { PostDetailEntity } from "@/packages/trpc/server/modules/post/types/post.entity";
+import { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
 
 /**
  * 标签类型与对应的表单字段名的映射关系。

@@ -1,5 +1,5 @@
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { AppRouter } from "@/packages/trpc/server";
+import type { AppRouter } from "@/packages/trpc/api";
 import type { inferRouterOutputs } from "@trpc/server";
 
 /**

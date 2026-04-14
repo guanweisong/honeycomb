@@ -14,9 +14,9 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import {
   CategoryListQueryInput,
   CategoryListQuerySchema,
-} from "@/packages/trpc/server/modules/category/schemas/category.list.query.schema";
+} from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
-import { CategoryEntity } from "@/packages/trpc/server/modules/category/types/category.entity";
+import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
 
 /**
  * 文章分类管理页面。

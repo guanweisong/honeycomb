@@ -3,9 +3,9 @@ import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/app/(blog)/components/Comment";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
-import { MenuType } from "@/packages/trpc/server/modules/menu/types/menu.type";
-import { createServerClient } from "@/packages/trpc/server";
+import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
 /**
  * 页面详情组件的属性接口。

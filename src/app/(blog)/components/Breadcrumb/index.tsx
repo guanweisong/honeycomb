@@ -4,8 +4,8 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useLocale } from "next-intl";
-import { MultiLang } from "@/packages/trpc/server/types/multi.lang";
-import { MenuEntity } from "@/packages/trpc/server/modules/menu/types/menu.entity";
+import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { MenuEntity } from "@/packages/trpc/api/modules/menu/types/menu.entity";
 
 /**
  * 面包屑组件的属性接口。

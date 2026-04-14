@@ -3,17 +3,17 @@
 import {
   CommentStatus,
   CommentStatusName,
-} from "@/packages/trpc/server/modules/comment/types/comment.status";
+} from "@/packages/trpc/api/modules/comment/types/comment.status";
 import CustomPie from "./components/CustomPie";
 import { trpc } from "@/packages/trpc/client/trpc";
 import {
   PostType,
   PostTypeName,
-} from "@/packages/trpc/server/modules/post/types/post.type";
+} from "@/packages/trpc/api/modules/post/types/post.type";
 import {
   UserLevel,
   UserLevelName,
-} from "@/packages/trpc/server/modules/user/types/user.level";
+} from "@/packages/trpc/api/modules/user/types/user.level";
 
 /**
  * 后台管理主看板页面。

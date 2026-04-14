@@ -11,8 +11,8 @@ import { Skeleton } from "@/packages/ui/components/skeleton";
 import { cn } from "@/packages/ui/lib/utils";
 
 import { trpc } from "@/packages/trpc/client/trpc";
-import { MediaIndexInput } from "@/packages/trpc/server/modules/media/schemas/media.list.query.schema";
-import { MediaEntity } from "@/packages/trpc/server/modules/media/types/media.entity";
+import { MediaIndexInput } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
+import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
 
 /**
  * 媒体库组件的属性接口。

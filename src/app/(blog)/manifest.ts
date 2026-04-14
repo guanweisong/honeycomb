@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { createServerClient } from "@/packages/trpc/server";
+import { createServerClient } from "@/packages/trpc/api";
 /**
  * 生成 Web App Manifest 文件。
  * 用于定义渐进式 Web 应用 (PWA) 的元数据，如应用名称、图标、启动 URL 等。
