@@ -2,19 +2,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { categoryRouter } from './category.router'
 import * as schema from '@/packages/db/schema'
 import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
+import { UserStatus } from '@/packages/trpc/api/modules/user/types/user.status'
+import { TEST_IDS } from '@/tests/setup/test-constants'
 
 // Mock database and related modules
 vi.mock('@/packages/db/db', () => ({
   getDb: vi.fn(() => mockDb),
 }))
 
-vi.mock('@/packages/trpc/api/libs/tools', () => ({
-  buildDrizzleWhere: vi.fn(() => mockDb),
-  buildDrizzleOrderBy: vi.fn(() => mockDb),
-}))
-
-vi.mock('@/packages/trpc/api/libs/Tools', () => ({
-  sonsTree: vi.fn((list) => list),
+vi.mock('@/packages/trpc/api/utils/tools', () => ({
+  buildDrizzleWhere: vi.fn(() => ({})),
+  buildDrizzleOrderBy: vi.fn(() => ({})),
+  default: {
+    sonsTree: vi.fn((list, id) => list),
+  },
 }))
 
 const mockDb = {
@@ -40,8 +41,8 @@ describe('Category Router', () => {
   describe('index procedure', () => {
     it('should return category list', async () => {
       const mockCategories = [
-        { id: '111111111111111111111111', name: 'Category 1', status: 'active', createdAt: new Date() },
-        { id: '222222222222222222222222', name: 'Category 2', status: 'active', createdAt: new Date() },
+        { id: TEST_IDS.ID_1, title: { en: 'Category 1', zh: '分类1' }, status: UserStatus.ENABLE, createdAt: new Date() },
+        { id: TEST_IDS.ID_2, title: { en: 'Category 2', zh: '分类2' }, status: UserStatus.ENABLE, createdAt: new Date() },
       ]
       const mockCount = [{ count: '2' }]
 
@@ -75,7 +76,7 @@ describe('Category Router', () => {
 
   describe('create procedure', () => {
     it('should create category with admin permissions', async () => {
-      const newCategory = { id: '333333333333333333333333', name: 'New Category', status: 'active' }
+      const newCategory = { id: TEST_IDS.ID_3, title: { en: 'New Category', zh: '新分类' }, status: UserStatus.ENABLE }
 
       mockDb.insert.mockReturnValueOnce(mockDb)
       mockDb.values.mockReturnValueOnce(mockDb)
@@ -83,13 +84,15 @@ describe('Category Router', () => {
 
       const caller = categoryRouter.createCaller({
         db: mockDb as any,
-        user: { id: '1', level: 'ADMIN' },
+        user: { id: '1', level: UserLevel.ADMIN },
         header: new Headers(),
       })
 
       const result = await caller.create({
-        name: 'New Category',
-        status: 'active',
+        title: { en: 'New Category', zh: '新分类' },
+        description: { en: 'New category description', zh: '新分类描述' },
+        path: '/new-category',
+        status: UserStatus.ENABLE,
       })
 
       expect(result).toEqual(newCategory)
@@ -105,8 +108,10 @@ describe('Category Router', () => {
 
       await expect(
         caller.create({
-          name: 'New Category',
-          status: 'active',
+          title: { en: 'New Category', zh: '新分类' },
+          description: { en: 'New category description', zh: '新分类描述' },
+          path: '/new-category',
+          status: UserStatus.ENABLE,
         })
       ).rejects.toThrow()
     })
@@ -119,12 +124,12 @@ describe('Category Router', () => {
 
       const caller = categoryRouter.createCaller({
         db: mockDb as any,
-        user: { id: '1', level: 'ADMIN' },
+        user: { id: '1', level: UserLevel.ADMIN },
         header: new Headers(),
       })
 
       const result = await caller.destroy({ 
-        ids: ['111111111111111111111111', '222222222222222222222222'] 
+        ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] 
       })
 
       expect(result).toEqual({ success: true })
@@ -140,7 +145,7 @@ describe('Category Router', () => {
 
       await expect(
         caller.destroy({ 
-          ids: ['111111111111111111111111', '222222222222222222222222'] 
+          ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] 
         })
       ).rejects.toThrow()
     })
@@ -148,7 +153,7 @@ describe('Category Router', () => {
 
   describe('update procedure', () => {
     it('should update category with admin permissions', async () => {
-      const updatedCategory = { id: '111111111111111111111111', name: 'Updated Category', status: 'active' }
+      const updatedCategory = { id: TEST_IDS.ID_1, title: { en: 'Updated Category', zh: '更新的分类' }, status: UserStatus.ENABLE }
 
       mockDb.update.mockReturnValueOnce(mockDb)
       mockDb.set.mockReturnValueOnce(mockDb)
@@ -157,13 +162,15 @@ describe('Category Router', () => {
 
       const caller = categoryRouter.createCaller({
         db: mockDb as any,
-        user: { id: '1', level: 'ADMIN' },
+        user: { id: '1', level: UserLevel.ADMIN },
         header: new Headers(),
       })
 
       const result = await caller.update({ 
-        id: '111111111111111111111111', 
-        name: 'Updated Category' 
+        id: TEST_IDS.ID_1, 
+        title: { en: 'Updated Category', zh: '更新的分类' },
+        description: { en: 'Updated category description', zh: '更新的分类描述' },
+        path: '/updated-category'
       })
 
       expect(result).toEqual(updatedCategory)
@@ -178,9 +185,11 @@ describe('Category Router', () => {
       })
 
       await expect(
-        caller.update({ 
-          id: '111111111111111111111111', 
-          name: 'Updated Category' 
+        caller.update({
+          id: TEST_IDS.ID_1,
+          title: { en: 'Updated Category', zh: '更新的分类' },
+          description: { en: 'Updated category description', zh: '更新的分类描述' },
+          path: '/updated-category'
         })
       ).rejects.toThrow()
     })

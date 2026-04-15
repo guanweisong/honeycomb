@@ -3,22 +3,19 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/libs/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import * as schema from "@/packages/db/schema";
-import { and, eq, inArray, sql, or, like, InferInsertModel } from "drizzle-orm";
+import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { getRelationTags } from "@/packages/trpc/api/libs/getRelationTags";
+import { getRelationTags } from "@/packages/trpc/api/utils/getRelationTags";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/libs/getAllImageLinkFormHtml";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
+import { getPostList } from "./post.service";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -42,141 +39,7 @@ export const postRouter = createTRPCRouter({
   index: publicProcedure
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
-      const {
-        page = 1,
-        limit = 10,
-        sortField,
-        sortOrder,
-        title,
-        content,
-        categoryId,
-        tagName,
-        userName,
-        ...rest
-      } = input;
-
-      let where = buildDrizzleWhere(
-        schema.post,
-        { ...rest, title, content },
-        ["status", "type"],
-        { title, content },
-      );
-
-      // 分类树过滤
-      if (categoryId) {
-        // 使用简单的子分类查询替代 sonsTree
-        const subCategories = await ctx.db
-          .select()
-          .from(schema.category)
-          .where(eq(schema.category.parent, categoryId));
-        const ids = [categoryId, ...subCategories.map((c: any) => c.id)];
-        const catClause = or(
-          ...ids.map((id: string) => eq(schema.post.categoryId, id)),
-        );
-        where = where ? and(where, catClause) : catClause;
-      }
-
-      // 标签名过滤（通过在 tag 表查到 id，再对 JSON 文本字段做 LIKE）
-      if (tagName) {
-        const tagWhere = buildDrizzleWhere(schema.tag, { name: tagName }, [], {
-          name: tagName,
-        });
-        const tags = await ctx.db
-          .select()
-          .from(schema.tag)
-          .where(tagWhere)
-          .limit(1);
-        if (!tags.length) {
-          return { list: [], total: 0 };
-        }
-        const tagId = tags[0].id;
-        const idLike = `%${tagId}%`;
-        const tagClause = or(
-          like(schema.post.galleryStyleIds, idLike),
-          like(schema.post.movieActorIds, idLike),
-          like(schema.post.movieStyleIds, idLike),
-          like(schema.post.movieDirectorIds, idLike),
-        );
-        where = where ? and(where, tagClause) : tagClause;
-      }
-
-      // 作者名过滤 -> 查 user 再比对 authorId
-      if (userName) {
-        const users = await ctx.db
-          .select()
-          .from(schema.user)
-          .where(eq(schema.user.name, userName));
-        if (!users.length) return { list: [], total: 0 };
-        const authorClause = eq(schema.post.authorId, users[0].id);
-        where = where ? and(where, authorClause) : authorClause;
-      }
-
-      const orderByClause = buildDrizzleOrderBy(
-        schema.post,
-        sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
-      );
-
-      const list = await ctx.db
-        .select()
-        .from(schema.post)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
-
-      // 批量加载关联数据以模拟 include
-      const categoryIds = Array.from(
-        new Set(list.map((p) => p.categoryId).filter(Boolean)),
-      );
-      const authorIds = Array.from(
-        new Set(list.map((p) => p.authorId).filter(Boolean)),
-      );
-      const coverIds = Array.from(
-        new Set(list.map((p) => p.coverId).filter(Boolean)),
-      );
-
-      const [categories, authors, covers] = await Promise.all([
-        categoryIds.length
-          ? ctx.db
-              .select()
-              .from(schema.category)
-              .where(inArray(schema.category.id, categoryIds as any))
-          : Promise.resolve([]),
-        authorIds.length
-          ? ctx.db
-              .select()
-              .from(schema.user)
-              .where(inArray(schema.user.id, authorIds as any))
-          : Promise.resolve([]),
-        coverIds.length
-          ? ctx.db
-              .select()
-              .from(schema.media)
-              .where(inArray(schema.media.id, coverIds as any))
-          : Promise.resolve([]),
-      ]);
-      const categoryMap = Object.fromEntries(
-        categories.map((c: any) => [c.id, c]),
-      );
-      const authorMap = Object.fromEntries(authors.map((u) => [u.id, u]));
-      const coverMap = Object.fromEntries(covers.map((m) => [m.id, m]));
-
-      const mapped = list.map((item) => ({
-        ...item,
-        category: item.categoryId ? categoryMap[item.categoryId] : undefined,
-        author: item.authorId ? authorMap[item.authorId] : undefined,
-        cover: item.coverId ? coverMap[item.coverId] : undefined,
-      }));
-
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.post)
-        .where(where);
-      const total = Number(countResult?.count) || 0;
-
-      return { list: mapped, total };
+      return getPostList(ctx.db, input);
     }),
 
   /**

@@ -1,7 +1,14 @@
 import { and, or, eq, like, sql } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "@/packages/trpc/api/libs/tools";
-import { buildCategoryFilter, buildTagFilter, buildAuthorFilter } from "./utils/filters";
+import {
+  buildDrizzleWhere,
+  buildDrizzleOrderBy,
+} from "@/packages/trpc/api/utils/tools";
+import {
+  buildCategoryFilter,
+  buildTagFilter,
+  buildAuthorFilter,
+} from "./utils/filters";
 import { loadPostRelations } from "./utils/relations";
 
 /**

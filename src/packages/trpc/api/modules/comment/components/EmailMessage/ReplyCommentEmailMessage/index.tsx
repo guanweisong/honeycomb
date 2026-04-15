@@ -1,7 +1,7 @@
 import { Link, Text } from "@react-email/components";
 import * as React from "react";
 import EmailContainer from "../Container";
-import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@/packages/trpc/api/libs/comment";
+import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@/packages/trpc/api/utils/comment";
 import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
 import { SettingEntity } from "@/packages/trpc/api/modules/setting/types/setting.entity";
 

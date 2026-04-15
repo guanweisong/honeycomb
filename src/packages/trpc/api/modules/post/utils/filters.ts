@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
-import { buildDrizzleWhere } from "@/packages/trpc/api/libs/tools";
+import { buildDrizzleWhere } from "@/packages/trpc/api/utils/tools";
 
 /**
  * 构建分类筛选条件（包括子分类）
@@ -10,7 +10,7 @@ import { buildDrizzleWhere } from "@/packages/trpc/api/libs/tools";
  */
 export async function buildCategoryFilter(
   db: any,
-  categoryId: string
+  categoryId: string,
 ): Promise<string[]> {
   const subCategories = await db
     .select()
@@ -27,17 +27,13 @@ export async function buildCategoryFilter(
  */
 export async function buildTagFilter(
   db: any,
-  tagName: string
+  tagName: string,
 ): Promise<string | null> {
   const tagWhere = buildDrizzleWhere(schema.tag, { name: tagName }, [], {
     name: tagName,
   });
-  const tags = await db
-    .select()
-    .from(schema.tag)
-    .where(tagWhere)
-    .limit(1);
-  
+  const tags = await db.select().from(schema.tag).where(tagWhere).limit(1);
+
   if (!tags.length) {
     return null;
   }
@@ -52,13 +48,13 @@ export async function buildTagFilter(
  */
 export async function buildAuthorFilter(
   db: any,
-  userName: string
+  userName: string,
 ): Promise<string | null> {
   const users = await db
     .select()
     .from(schema.user)
     .where(eq(schema.user.name, userName));
-  
+
   if (!users.length) {
     return null;
   }

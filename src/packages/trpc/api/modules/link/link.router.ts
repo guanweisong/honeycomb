@@ -6,7 +6,7 @@ import {
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
-} from "@/packages/trpc/api/libs/tools";
+} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { LinkListQuerySchema } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";

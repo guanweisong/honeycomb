@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { authRouter } from './auth.router'
+import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
 import { TRPCError } from '@trpc/server'
+import { TEST_IDS } from '@/tests/setup/test-constants'
 
 // Mock database and related modules
 vi.mock('@/packages/db/db', () => ({
@@ -8,7 +10,7 @@ vi.mock('@/packages/db/db', () => ({
 }))
 
 // Mock validateCaptcha function
-vi.mock('@/packages/trpc/api/libs/validateCaptcha', () => ({
+vi.mock('@/packages/trpc/api/utils/validateCaptcha', () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -37,7 +39,7 @@ describe('Auth Router', () => {
 
   describe('me procedure', () => {
     it('should return current user when authenticated', async () => {
-      const mockUser = { id: '1', name: 'Test User', level: 'ADMIN' }
+      const mockUser = { id: TEST_IDS.ID_1, name: 'Test User', level: UserLevel.ADMIN }
       
       const caller = authRouter.createCaller({
         db: mockDb as any,
@@ -76,11 +78,11 @@ describe('Auth Router', () => {
       mockDb.select.mockReturnValueOnce(mockDb)
       mockDb.from.mockReturnValueOnce(mockDb)
       mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([mockUser])
+      mockDb.limit.mockResolvedValueOnce([mockUser] as any)
 
       // Setup mock for token insertion
       mockDb.insert.mockReturnValueOnce(mockDb)
-      mockDb.values.mockResolvedValueOnce(undefined)
+      mockDb.values.mockResolvedValueOnce(undefined as any)
 
       const caller = authRouter.createCaller({
         db: mockDb as any,
@@ -103,7 +105,7 @@ describe('Auth Router', () => {
       mockDb.select.mockReturnValueOnce(mockDb)
       mockDb.from.mockReturnValueOnce(mockDb)
       mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([])
+      mockDb.limit.mockResolvedValueOnce([] as any)
 
       const caller = authRouter.createCaller({
         db: mockDb as any,
@@ -125,7 +127,7 @@ describe('Auth Router', () => {
     it('should successfully logout with valid token', async () => {
       // Setup mock for token deletion
       mockDb.delete.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(undefined)
+      mockDb.where.mockResolvedValueOnce(undefined as any)
 
       const caller = authRouter.createCaller({
         db: mockDb as any,

@@ -4,7 +4,7 @@ import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { and, eq } from "drizzle-orm";
 import { LoginSchema } from "@/packages/trpc/api/modules/auth/schemas/login.schema";
-import { validateCaptcha } from "@/packages/trpc/api/libs/validateCaptcha";
+import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
 import { TRPCError } from "@trpc/server";
 
 /**

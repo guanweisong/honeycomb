@@ -6,7 +6,7 @@ import {
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
-} from "@/packages/trpc/api/libs/tools";
+} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
@@ -16,7 +16,7 @@ import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/libs/getAllImageLinkFormHtml";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 
 /**
  * 独立页面相关的 tRPC 路由。

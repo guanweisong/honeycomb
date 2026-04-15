@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { statisticRouter } from './statistic.router'
+import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
 
 // Mock database and related modules
 vi.mock('@/packages/db/db', () => ({
@@ -27,15 +28,35 @@ describe('Statistic Router', () => {
   })
 
   describe('index procedure', () => {
-    it('should create caller successfully', async () => {
+    it('should return statistics with admin permissions', async () => {
+      // Simplified mock - return empty arrays for all queries
+      mockDb.select.mockReturnValue(mockDb)
+      mockDb.from.mockReturnValue(mockDb)
+      mockDb.where.mockReturnValue(mockDb)
+      mockDb.where.mockResolvedValue([{ count: '0' }] as any)
+
+      const caller = statisticRouter.createCaller({
+        db: mockDb as any,
+        user: { id: '1', level: UserLevel.ADMIN },
+        header: new Headers(),
+      })
+
+      const result = await caller.index()
+
+      expect(result).toHaveProperty('postType')
+      expect(result).toHaveProperty('userType')
+      expect(result).toHaveProperty('commentStatus')
+      expect(result).toHaveProperty('userPost')
+    })
+
+    it('should throw error for non-authenticated users', async () => {
       const caller = statisticRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
       })
 
-      expect(caller).toBeDefined()
-      expect(typeof caller.index).toBe('function')
+      await expect(caller.index()).rejects.toThrow()
     })
   })
 })

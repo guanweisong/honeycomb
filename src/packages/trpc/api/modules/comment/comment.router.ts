@@ -6,7 +6,7 @@ import {
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
-} from "@/packages/trpc/api/libs/tools";
+} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
@@ -15,16 +15,16 @@ import { CommentQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
 import { CommentInsertSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
-import { selectAllColumns } from "@/packages/trpc/api/libs/selectAllColumns";
-import { validateCaptcha } from "@/packages/trpc/api/libs/validateCaptcha";
+import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
+import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
 import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
-import { getCustomCommentLink } from "@/packages/trpc/api/libs/getCustomCommentLink";
-import { sendEmail } from "@/packages/trpc/api/libs/sendEmail";
+import { getCustomCommentLink } from "@/packages/trpc/api/utils/getCustomCommentLink";
+import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
 
 /**
  commentRouter * 评论相关的 tRPC 路由。
