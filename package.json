@@ -14,7 +14,8 @@
     "deploy:cloudflare": "npx wrangler deploy --minify",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
@@ -101,6 +102,7 @@
     "@vitest/coverage-v8": "^4.1.4",
     "autoprefixer": "^10.4.17",
     "drizzle-kit": "^0.31.8",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
