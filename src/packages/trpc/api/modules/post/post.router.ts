@@ -8,14 +8,15 @@ import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/po
 import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import * as schema from "@/packages/db/schema";
-import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { eq, inArray, sql, and, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { getRelationTags } from "@/packages/trpc/api/utils/getRelationTags";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { getPostList } from "./post.service";
+import { loadPostRelations } from "./utils/relations";
+import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -58,49 +59,11 @@ export const postRouter = createTRPCRouter({
 
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
-      // 获取分类信息
-      const category = (
-        await ctx.db
-          .select()
-          .from(schema.category)
-          .where(eq(schema.category.id, item.categoryId))
-          .limit(1)
-      )?.[0];
+      // 复用 loadPostRelations 加载关联数据
+      const [result] = await loadPostRelations(ctx.db, [item]);
 
-      // 获取作者信息
-      const author = item.authorId
-        ? (
-            await ctx.db
-              .select({
-                id: schema.user.id,
-                name: schema.user.name,
-              })
-              .from(schema.user)
-              .where(eq(schema.user.id, item.authorId))
-              .limit(1)
-          )?.[0]
-        : undefined;
-
-      // 获取媒体信息
-      const cover = item.coverId
-        ? (
-            await ctx.db
-              .select()
-              .from(schema.media)
-              .where(eq(schema.media.id, item.coverId))
-              .limit(1)
-          )?.[0]
-        : undefined;
-
-      const [movieActors, movieDirectors, movieStyles, galleryStyles] =
-        await Promise.all([
-          getRelationTags(item?.movieActorIds ?? []),
-          getRelationTags(item?.movieDirectorIds ?? []),
-          getRelationTags(item?.movieStyleIds ?? []),
-          getRelationTags(item?.galleryStyleIds ?? []),
-        ]);
-
-      const imageUrls = getAllImageLinkFormHtml(item?.content?.zh);
+      // detail 特有的数据：内容中的图片
+      const imageUrls = getAllImageLinkFormHtml(result?.content?.zh);
       const imagesInContent = imageUrls.length
         ? await ctx.db
             .select()
@@ -109,14 +72,7 @@ export const postRouter = createTRPCRouter({
         : [];
 
       return {
-        ...item,
-        category,
-        author,
-        cover,
-        movieActors,
-        movieDirectors,
-        movieStyles,
-        galleryStyles,
+        ...result,
         imagesInContent,
       };
     }),
@@ -269,5 +225,21 @@ export const postRouter = createTRPCRouter({
         .where(eq(schema.post.id, input.id));
 
       return result;
+    }),
+
+  /**
+   * 更新文章标签关联
+   */
+  updateTags: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(z.object({ postId: IdSchema, tagIds: z.array(IdSchema), type: z.nativeEnum(TagType) }))
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.delete(schema.postTag).where(and(
+        eq(schema.postTag.postId, input.postId),
+        eq(schema.postTag.type, input.type)
+      ));
+      if (input.tagIds.length > 0) {
+        await ctx.db.insert(schema.postTag).values(input.tagIds.map(tagId => ({ postId: input.postId, tagId, type: input.type })));
+      }
+      return { success: true };
     }),
 });

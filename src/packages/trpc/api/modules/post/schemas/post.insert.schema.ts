@@ -11,8 +11,8 @@ import { requiredString } from "@/packages/trpc/api/schemas/required.string.sche
  * 包含的字段可以分为几类：
  * - **通用字段**: title, content, excerpt, status, type, categoryId, coverId, commentStatus
  * - **引言字段**: quoteAuthor, quoteContent
- * - **电影类型文章字段**: movieTime, movieStyleIds, movieActorIds, movieDirectorIds
- * - **图库类型文章字段**: galleryLocation, galleryStyleIds, galleryTime
+ * - **电影类型文章字段**: movieTime
+ * - **图库类型文章字段**: galleryLocation, galleryTime
  */
 export const PostInsertSchema = createInsertSchema(schema.post)
   .pick({
@@ -27,11 +27,7 @@ export const PostInsertSchema = createInsertSchema(schema.post)
     quoteAuthor: true,
     quoteContent: true,
     movieTime: true,
-    movieStyleIds: true,
-    movieActorIds: true,
-    movieDirectorIds: true,
     galleryLocation: true,
-    galleryStyleIds: true,
     galleryTime: true,
   })
   .extend({

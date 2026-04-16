@@ -1,4 +1,4 @@
-import { and, or, eq, like, sql } from "drizzle-orm";
+import { and, or, eq, like, sql, inArray } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
 import {
   buildDrizzleWhere,
@@ -41,9 +41,7 @@ export async function getPostList(db: any, input: any) {
   // 分类树过滤
   if (categoryId) {
     const ids = await buildCategoryFilter(db, categoryId);
-    const catClause = or(
-      ...ids.map((id: string) => eq(schema.post.categoryId, id)),
-    );
+    const catClause = inArray(schema.post.categoryId, ids);
     where = where ? and(where, catClause) : catClause;
   }
 
@@ -53,13 +51,18 @@ export async function getPostList(db: any, input: any) {
     if (!tagId) {
       return { list: [], total: 0 };
     }
-    const idLike = `%${tagId}%`;
-    const tagClause = or(
-      like(schema.post.galleryStyleIds, idLike),
-      like(schema.post.movieActorIds, idLike),
-      like(schema.post.movieStyleIds, idLike),
-      like(schema.post.movieDirectorIds, idLike),
-    );
+    // 使用 postTag 中间表查询
+    const postIds = await db
+      .select({ postId: schema.postTag.postId })
+      .from(schema.postTag)
+      .where(eq(schema.postTag.tagId, tagId));
+    
+    const postIdList = postIds.map((p: any) => p.postId);
+    if (postIdList.length === 0) {
+      return { list: [], total: 0 };
+    }
+    
+    const tagClause = inArray(schema.post.id, postIdList);
     where = where ? and(where, tagClause) : tagClause;
   }
 

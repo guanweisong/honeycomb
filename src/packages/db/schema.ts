@@ -1,6 +1,5 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { i18nField } from "./i18nField";
-import { arrayField } from "./arrayField";
 import { objectId } from "./objectId";
 import { withTimestamps } from "./timestamps";
 
@@ -41,12 +40,8 @@ export const post = sqliteTable("post", {
   commentStatus: text("comment_status").default("ENABLE").notNull(), // 评论状态，默认启用
   // --- 图库类型字段 ---
   galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
-  galleryStyleIds: arrayField<string>("gallery_style_ids"), // 图库风格ID列表
   galleryTime: text("gallery_time"), // 图库拍摄时间
   // --- 电影类型字段 ---
-  movieActorIds: arrayField("movie_actor_ids"), // 电影演员ID列表
-  movieDirectorIds: arrayField("movie_director_ids"), // 电影导演ID列表
-  movieStyleIds: arrayField("movie_style_ids"), // 电影风格ID列表
   movieTime: text("movie_time"), // 电影上映时间
   // --- 核心字段 ---
   authorId: text("author_id").notNull(), // 作者ID，关联到 user 表
@@ -162,6 +157,26 @@ export const tag = sqliteTable("tag", {
   name: i18nField("name").notNull(), // 标签名称 (国际化)
   ...withTimestamps(),
 });
+
+/**
+ * 文章-标签中间表 (post_tag)
+ * 存储文章与标签的多对多关系。
+ */
+export const postTag = sqliteTable(
+  "post_tag",
+  {
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tag.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // 标签类型：ACTOR, DIRECTOR, MOVIE_STYLE, GALLERY_STYLE
+  },
+  (table) => ({
+    postTagIdx: index("post_tag_post_tag_idx").on(table.postId, table.tagId),
+  }),
+);
 
 /**
  * 友情链接表 (link)

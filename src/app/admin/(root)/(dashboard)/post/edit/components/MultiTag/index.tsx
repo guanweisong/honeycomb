@@ -1,7 +1,6 @@
 "use client";
 
 import React, { JSX, useEffect, useRef, useState } from "react";
-import { useFormContext } from "react-hook-form";
 import { Badge } from "@/packages/ui/components/badge";
 import { Button } from "@/packages/ui/components/button";
 import {
@@ -17,34 +16,43 @@ import {
   CommandEmpty,
 } from "@/packages/ui/components/command";
 import { X, Loader2, Plus } from "lucide-react";
-import AddTagDialog from "@/app/admin/(root)/(dashboard)/tag/components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { FormField, FormMessage } from "@/packages/ui/components/form";
-import { tagMap } from "@/app/admin/constants/tagMap";
+import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 
 /**
  * 多标签选择组件的属性接口。
  */
 export interface MultiTagProps {
   /**
-   * 表单中用于存储标签的字段名称。
+   * 文章 ID，用于更新中间表
    */
-  name: "galleryStyles" | "movieDirectors" | "movieActors" | "movieStyles";
+  postId: string;
   /**
    * 组件的标题，例如 "导演"、"演员" 等。
    */
   title: string;
+  /**
+   * 标签类型：'actor', 'director', 'movie_style', 'gallery_style'
+   */
+  type: TagType;
+  /**
+   * 已选标签列表
+   */
+  value: any[];
+  /**
+   * 标签变化回调
+   */
+  onChange: (tags: any[]) => void;
 }
 
 /**
  * 多标签选择组件。
- * 允许用户从现有标签中选择或创建新标签，并将其关联到表单字段。
- * @param {MultiTagProps} { name, title } - 组件属性。
+ * 允许用户从现有标签中选择或创建新标签，并通过中间表关联到文章。
+ * @param {MultiTagProps} props - 组件属性。
  * @returns {JSX.Element} 多标签选择器。
  */
-const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
-  const { control, setValue, watch } = useFormContext();
-  const selectedTags: any[] = watch(name) ?? [];
+const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.Element => {
+  const selectedTags: any[] = value ?? [];
 
   /**
    * 搜索输入框的值。
@@ -70,14 +78,12 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
    * 标签列表查询参数。
    */
   const [searchParams, setSearchParams] = useState<any>({});
-  /**
-   * 获取标签列表的 tRPC 查询。
-   * 用于搜索和展示可选标签。
-   */
-  const { data: searchResult, isFetching: isSearching } =
-    trpc.tag.index.useQuery(searchParams, {
-      enabled: !!searchParams.name,
-    });
+
+  const { data: searchResult, isFetching: isSearching } = trpc.tag.index.useQuery(searchParams, {
+    enabled: !!searchParams.name,
+  });
+  const { mutateAsync: createTag, isPending: isCreating } = trpc.tag.create.useMutation();
+  const { mutateAsync: updateTags, isPending: isUpdating } = trpc.post.updateTags.useMutation();
 
   useEffect(() => {
     setLoading(isSearching);
@@ -90,24 +96,22 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
   }, [searchResult]);
 
   /**
-   * 控制添加标签对话框的显示状态。
-   */
-  const [modalProps, setModalProps] = useState<{ open: boolean }>({
-    open: false,
-  });
-
-  /**
    * 从已选标签列表中移除一个标签。
    * @param {string} id - 要移除的标签ID。
    */
-  const removeTag = (id: string) => {
+  const removeTag = async (id: string) => {
     const updatedTags = selectedTags.filter((tag) => tag.id !== id);
-    setValue(name, updatedTags, { shouldDirty: true });
-    setValue(
-      tagMap[name],
-      updatedTags.map((t) => t.id),
-      { shouldDirty: true },
-    );
+    onChange(updatedTags);
+
+    // 如果有 postId，更新中间表
+    if (postId) {
+      const ids = updatedTags.map((t) => t.id);
+      try {
+        await updateTags({ postId, tagIds: ids, type });
+      } catch (error) {
+        console.error("Failed to update tags:", error);
+      }
+    }
   };
 
   /**
@@ -115,17 +119,36 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
    * 如果标签已存在，则不执行任何操作。
    * @param tag - 要添加的标签对象。
    */
-  const addTag = (tag: any) => {
+  const addTag = async (tag: any) => {
     if (selectedTags.some((t) => t.id === tag.id)) return;
     const updatedTags = [...selectedTags, tag];
-    setValue(name, updatedTags, { shouldDirty: true });
-    setValue(
-      tagMap[name],
-      updatedTags.map((t) => t.id),
-      { shouldDirty: true },
-    );
+    onChange(updatedTags);
+
+    // 如果有 postId，更新中间表
+    if (postId) {
+      const ids = updatedTags.map((t) => t.id);
+      try {
+        await updateTags({ postId, tagIds: ids, type });
+      } catch (error) {
+        console.error("Failed to update tags:", error);
+      }
+    }
+
     setInput("");
     setOpen(false);
+  };
+
+  /**
+   * 创建新标签。
+   * @param name - 标签名称。
+   */
+  const createNewTag = async (name: string) => {
+    try {
+      const newTag = await createTag({ name: { zh: name, en: name } });
+      await addTag(newTag);
+    } catch (error) {
+      console.error("Failed to create tag:", error);
+    }
   };
 
   /**
@@ -140,7 +163,7 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
       if (value) {
         setSearchParams({ name: value });
       } else {
-        setOptions([]); // Clear options if search input is empty
+        setOptions([]);
         setSearchParams({});
       }
     }, 300);
@@ -149,34 +172,26 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
   return (
     <div>
       <div className="font-medium mb-1">{title}</div>
-      <FormField
-        name={name}
-        control={control}
-        render={() => (
-          <>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedTags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  variant="secondary"
-                  className="gap-1 text-sm"
-                >
-                  {tag.name.zh}
-                  <Button
-                    onClick={() => removeTag(tag.id)}
-                    variant="ghost"
-                    size="icon"
-                    className="size-4"
-                  >
-                    <X className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-            <FormMessage />
-          </>
-        )}
-      />
+      <div className="flex flex-wrap gap-2 mb-2">
+        {selectedTags.map((tag) => (
+          <Badge
+            key={tag.id}
+            variant="secondary"
+            className="gap-1 text-sm"
+          >
+            {tag.name.zh}
+            <Button
+              onClick={() => removeTag(tag.id)}
+              variant="ghost"
+              size="icon"
+              className="size-4"
+              disabled={isUpdating}
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </Button>
+          </Badge>
+        ))}
+      </div>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
@@ -210,9 +225,10 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
                         <Button
                           size="sm"
                           variant="link"
-                          onClick={() => setModalProps({ open: true })}
+                          onClick={() => createNewTag(input)}
+                          disabled={isCreating}
                         >
-                          新建标签
+                          {isCreating ? "创建中..." : "新建"}
                         </Button>
                       </div>
                     </CommandEmpty>
@@ -223,11 +239,6 @@ const MultiTag = ({ name, title }: MultiTagProps): JSX.Element => {
           </Command>
         </PopoverContent>
       </Popover>
-      <AddTagDialog
-        {...modalProps}
-        onClose={() => setModalProps({ open: false })}
-        onSuccess={() => setModalProps({ open: false })}
-      />
     </div>
   );
 };

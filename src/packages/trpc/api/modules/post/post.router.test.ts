@@ -10,6 +10,45 @@ vi.mock('@/packages/db/db', () => ({
   getDb: vi.fn(() => mockDb),
 }))
 
+// Mock loadPostRelations
+vi.mock('@/packages/trpc/api/modules/post/utils/relations', () => ({
+  loadPostRelations: vi.fn(async (db: any, posts: any[]) => {
+    // 对于 detail 测试，返回关联数据
+    if (posts.length === 1) {
+      return posts.map((post) => ({
+        ...post,
+        author: {
+          id: post.authorId,
+          name: "Test Author",
+        },
+        category: {
+          id: post.categoryId,
+          title: { en: "Category 1", zh: "分类1" },
+        },
+        cover: post.coverId ? {
+          id: post.coverId,
+          url: "https://example.com/cover.jpg",
+        } : undefined,
+        movieActors: [],
+        movieDirectors: [],
+        movieStyles: [],
+        galleryStyles: [],
+      }));
+    }
+    // 对于 list 测试，返回空关联数据
+    return posts.map((post) => ({
+      ...post,
+      author: undefined,
+      category: undefined,
+      cover: undefined,
+      movieActors: [],
+      movieDirectors: [],
+      movieStyles: [],
+      galleryStyles: [],
+    }));
+  }),
+}))
+
 const mockDb = {
   select: vi.fn(() => mockDb),
   from: vi.fn(() => mockDb),
@@ -40,21 +79,21 @@ describe('Post Router', () => {
   describe('index procedure', () => {
     it('should return post list with pagination', async () => {
       const mockPosts = [
-        { 
-          id: TEST_IDS.ID_1, 
-          title: { en: 'Post 1', zh: '文章1' }, 
-          content: { en: 'Content 1', zh: '内容1' }, 
-          status: PostStatus.PUBLISHED, 
-          type: 'ARTICLE', 
-          createdAt: new Date() 
+        {
+          id: TEST_IDS.ID_1,
+          title: { en: 'Post 1', zh: '文章1' },
+          content: { en: 'Content 1', zh: '内容1' },
+          status: PostStatus.PUBLISHED,
+          type: 'ARTICLE',
+          createdAt: new Date()
         },
-        { 
-          id: TEST_IDS.ID_2, 
-          title: { en: 'Post 2', zh: '文章2' }, 
-          content: { en: 'Content 2', zh: '内容2' }, 
-          status: PostStatus.PUBLISHED, 
-          type: 'ARTICLE', 
-          createdAt: new Date() 
+        {
+          id: TEST_IDS.ID_2,
+          title: { en: 'Post 2', zh: '文章2' },
+          content: { en: 'Content 2', zh: '内容2' },
+          status: PostStatus.PUBLISHED,
+          type: 'ARTICLE',
+          createdAt: new Date()
         }
       ]
       const mockCount = [{ count: '2' }]
@@ -81,7 +120,16 @@ describe('Post Router', () => {
       const result = await caller.index({ page: 1, limit: 10 })
 
       expect(result).toEqual({
-        list: mockPosts,
+        list: mockPosts.map((post) => ({
+          ...post,
+          author: undefined,
+          category: undefined,
+          cover: undefined,
+          movieActors: [],
+          movieDirectors: [],
+          movieStyles: [],
+          galleryStyles: [],
+        })),
         total: 2,
       })
     })

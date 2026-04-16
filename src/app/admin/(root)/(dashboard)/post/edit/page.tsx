@@ -27,14 +27,8 @@ import {
   PostType,
   postTypeOptions,
 } from "@/packages/trpc/api/modules/post/types/post.type";
-import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
-import { tagMap } from "@/app/admin/constants/tagMap";
 import { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
-
-/**
- * 标签类型与对应的表单字段名的映射关系。
- * 用于将多选标签组件返回的标签类型，转换为表单中存储标签ID的字段名。
- */
+import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 
 /**
  * 文章创建/编辑页面核心组件。
@@ -249,28 +243,24 @@ const PostDetail = () => {
 
   /**
    * 处理标签更新的回调函数。
-   * 当多选标签组件的标签发生变化时调用，将选中的标签ID更新到表单对应的字段中。
-   * @param {keyof typeof tagMap} name - 标签类型，对应 `tagMap` 中的键名。
-   * @param {Omit<TagEntity, "updatedAt" | "createdAt">[]} tags - 更新后的标签实体数组。
+   * 当多选标签组件的标签发生变化时调用。
    */
-  const onUpdateTags = (
-    name: keyof typeof tagMap,
-    tags: Omit<TagEntity, "updatedAt" | "createdAt">[],
-  ) => {
-    form.setValue(
-      tagMap[name],
-      tags.map((t) => t.id),
-      { shouldValidate: true, shouldDirty: true },
-    );
-  };
+  const [galleryStyles, setGalleryStyles] = useState<any[]>([]);
+  const [movieActors, setMovieActors] = useState<any[]>([]);
+  const [movieDirectors, setMovieDirectors] = useState<any[]>([]);
+  const [movieStyles, setMovieStyles] = useState<any[]>([]);
 
   /**
-   * 传递给 `MultiTag` 组件的属性。
-   * 包含标签更新的回调函数。
+   * 同步 detail 数据到标签状态
    */
-  const tagProps = {
-    onTagsChange: onUpdateTags,
-  };
+  useEffect(() => {
+    if (detail) {
+      setGalleryStyles(detail.galleryStyles || []);
+      setMovieActors(detail.movieActors || []);
+      setMovieDirectors(detail.movieDirectors || []);
+      setMovieStyles(detail.movieStyles || []);
+    }
+  }, [detail]);
 
   return (
     <>
@@ -376,9 +366,27 @@ const PostDetail = () => {
                     type="calendar"
                     placeholder="请选择上映时间"
                   />
-                  <MultiTag {...tagProps} name="movieDirectors" title="导演" />
-                  <MultiTag {...tagProps} name="movieActors" title="演员" />
-                  <MultiTag {...tagProps} name="movieStyles" title="电影风格" />
+                  <MultiTag
+                    postId={detail?.id || ""}
+                    title="导演"
+                    type={TagType.DIRECTOR}
+                    value={movieDirectors}
+                    onChange={setMovieDirectors}
+                  />
+                  <MultiTag
+                    postId={detail?.id || ""}
+                    title="演员"
+                    type={TagType.ACTOR}
+                    value={movieActors}
+                    onChange={setMovieActors}
+                  />
+                  <MultiTag
+                    postId={detail?.id || ""}
+                    title="电影风格"
+                    type={TagType.MOVIE_STYLE}
+                    value={movieStyles}
+                    onChange={setMovieStyles}
+                  />
                 </>
               )}
 
@@ -399,9 +407,11 @@ const PostDetail = () => {
                     placeholder="请选择拍摄时间"
                   />
                   <MultiTag
-                    {...tagProps}
-                    name="galleryStyles"
+                    postId={detail?.id || ""}
                     title="照片风格"
+                    type={TagType.GALLERY_STYLE}
+                    value={galleryStyles}
+                    onChange={setGalleryStyles}
                   />
                 </>
               )}

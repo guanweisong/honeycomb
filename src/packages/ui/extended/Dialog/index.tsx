@@ -104,7 +104,7 @@ export function Dialog({
             <div className="flex items-start gap-3">
               {Icon && (
                 <Icon
-                  className={cn("w-5 h-5 mt-0.5", {
+                  className={cn("w-5 h-5 mt-0.5 shrink-0", {
                     "text-destructive": type === "danger",
                     "text-green-500": type === "success",
                     "text-yellow-500": type === "warning",
@@ -112,8 +112,12 @@ export function Dialog({
                   })}
                 />
               )}
-              <div>
-                {title && <DialogTitle>{title}</DialogTitle>}
+              <div className="pr-5">
+                {title && (
+                  <DialogTitle className="mt-0.5 leading-normal">
+                    {title}
+                  </DialogTitle>
+                )}
                 {description && (
                   <DialogDescription className="!mt-3">
                     {description}
