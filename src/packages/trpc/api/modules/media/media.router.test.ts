@@ -1,20 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mediaRouter } from './media.router'
-import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
-import { TEST_IDS } from '@/tests/setup/test-constants'
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { mediaRouter } from "./media.router";
+import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 
 // Mock database and related modules
-vi.mock('@/packages/db/db', () => ({
+vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
-}))
+}));
 
 // Mock S3 module
-vi.mock('@/packages/trpc/api/utils/S3', () => ({
+vi.mock("@/packages/trpc/api/utils/S3", () => ({
   default: {
-    getPresignedUrl: vi.fn().mockResolvedValue('https://example.com/presigned-url'),
+    getPresignedUrl: vi
+      .fn()
+      .mockResolvedValue("https://example.com/presigned-url"),
     deleteMultipleObject: vi.fn().mockResolvedValue(undefined),
   },
-}))
+}));
 
 const mockDb = {
   select: vi.fn(() => mockDb),
@@ -29,133 +31,135 @@ const mockDb = {
   delete: vi.fn(() => mockDb),
   update: vi.fn(() => mockDb),
   set: vi.fn(() => mockDb),
-}
+};
 
-describe('Media Router', () => {
+describe("Media Router", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('index procedure', () => {
-    it('should create caller successfully', async () => {
+  describe("index procedure", () => {
+    it("should create caller successfully", async () => {
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      expect(caller).toBeDefined()
-      expect(typeof caller.index).toBe('function')
-    })
-  })
+      expect(caller).toBeDefined();
+      expect(typeof caller.index).toBe("function");
+    });
+  });
 
-  describe('getPresignedUrl procedure', () => {
-    it('should return presigned URL with admin permissions', async () => {
+  describe("getPresignedUrl procedure", () => {
+    it("should return presigned URL with admin permissions", async () => {
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
       const result = await caller.getPresignedUrl({
-        name: 'test.jpg',
-        type: 'image/jpeg',
-      })
+        name: "test.jpg",
+        type: "image/jpeg",
+      });
 
       expect(result).toEqual({
-        url: 'https://example.com/presigned-url',
+        url: "https://example.com/presigned-url",
         key: expect.any(String),
-      })
-    })
+      });
+    });
 
-    it('should throw error for non-admin users', async () => {
+    it("should throw error for non-admin users", async () => {
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
       await expect(
         caller.getPresignedUrl({
-          name: 'test.jpg',
-          type: 'image/jpeg',
-        })
-      ).rejects.toThrow()
-    })
-  })
+          name: "test.jpg",
+          type: "image/jpeg",
+        }),
+      ).rejects.toThrow();
+    });
+  });
 
-  describe('upload procedure', () => {
-    it('should upload media with admin permissions', async () => {
-      const mockMedia = { id: TEST_IDS.ID_1, name: 'test.jpg', url: 'https://example.com/test.jpg' }
+  describe("upload procedure", () => {
+    it("should upload media with admin permissions", async () => {
+      const mockMedia = {
+        id: TEST_IDS.ID_1,
+        name: "test.jpg",
+        url: "https://example.com/test.jpg",
+      };
 
-      mockDb.insert.mockReturnValueOnce(mockDb)
-      mockDb.values.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([mockMedia] as any)
+      mockDb.insert.mockReturnValueOnce(mockDb);
+      mockDb.values.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([mockMedia] as any);
 
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
       const result = await caller.upload({
-        name: 'test.jpg',
+        name: "test.jpg",
         size: 1024,
-        type: 'image/jpeg',
-        key: '2024/01/01/test.jpg',
-      })
+        type: "image/jpeg",
+        key: "2024/01/01/test.jpg",
+      });
 
-      expect(result).toEqual(mockMedia)
-    })
+      expect(result).toEqual(mockMedia);
+    });
 
-    it('should throw error for non-admin users', async () => {
+    it("should throw error for non-admin users", async () => {
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
       await expect(
         caller.upload({
-          name: 'test.jpg',
+          name: "test.jpg",
           size: 1024,
-          type: 'image/jpeg',
-          key: '2024/01/01/test.jpg',
-        })
-      ).rejects.toThrow()
-    })
-  })
+          type: "image/jpeg",
+          key: "2024/01/01/test.jpg",
+        }),
+      ).rejects.toThrow();
+    });
+  });
 
-  describe('destroy procedure', () => {
-    it('should delete media with admin permissions', async () => {
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([{ key: 'test.jpg' }] as any)
+  describe("destroy procedure", () => {
+    it("should delete media with admin permissions", async () => {
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([{ key: "test.jpg" }] as any);
 
-      mockDb.delete.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(undefined as any)
+      mockDb.delete.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(undefined as any);
 
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.destroy({ ids: [TEST_IDS.ID_1] })
+      const result = await caller.destroy({ ids: [TEST_IDS.ID_1] });
 
-      expect(result).toEqual({ success: true })
-    })
+      expect(result).toEqual({ success: true });
+    });
 
-    it('should throw error for non-admin users', async () => {
+    it("should throw error for non-admin users", async () => {
       const caller = mediaRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
-      await expect(
-        caller.destroy({ ids: [TEST_IDS.ID_1] })
-      ).rejects.toThrow()
-    })
-  })
-})
+      await expect(caller.destroy({ ids: [TEST_IDS.ID_1] })).rejects.toThrow();
+    });
+  });
+});

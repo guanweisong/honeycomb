@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { postRouter } from './post.router'
-import * as schema from '@/packages/db/schema'
-import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
-import { PostStatus } from './types/post.status'
-import { TEST_IDS } from '@/tests/setup/test-constants'
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { postRouter } from "./post.router";
+import * as schema from "@/packages/db/schema";
+import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { PostStatus } from "./types/post.status";
+import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 
 // Mock database and related modules
-vi.mock('@/packages/db/db', () => ({
+vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
-}))
+}));
 
 // Mock loadPostRelations
-vi.mock('@/packages/trpc/api/modules/post/utils/relations', () => ({
+vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
   loadPostRelations: vi.fn(async (db: any, posts: any[]) => {
     // 对于 detail 测试，返回关联数据
     if (posts.length === 1) {
@@ -25,10 +25,12 @@ vi.mock('@/packages/trpc/api/modules/post/utils/relations', () => ({
           id: post.categoryId,
           title: { en: "Category 1", zh: "分类1" },
         },
-        cover: post.coverId ? {
-          id: post.coverId,
-          url: "https://example.com/cover.jpg",
-        } : undefined,
+        cover: post.coverId
+          ? {
+              id: post.coverId,
+              url: "https://example.com/cover.jpg",
+            }
+          : undefined,
         movieActors: [],
         movieDirectors: [],
         movieStyles: [],
@@ -47,7 +49,7 @@ vi.mock('@/packages/trpc/api/modules/post/utils/relations', () => ({
       galleryStyles: [],
     }));
   }),
-}))
+}));
 
 const mockDb = {
   select: vi.fn(() => mockDb),
@@ -62,62 +64,62 @@ const mockDb = {
   delete: vi.fn(() => mockDb),
   update: vi.fn(() => mockDb),
   set: vi.fn(() => mockDb),
-}
+};
 
-describe('Post Router', () => {
+describe("Post Router", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     // 重置所有mock的调用历史
-    Object.values(mockDb).forEach(mock => {
-      if (mock && typeof mock.mockReset === 'function') {
-        mock.mockReset()
-        mock.mockReturnValue(mockDb)
+    Object.values(mockDb).forEach((mock) => {
+      if (mock && typeof mock.mockReset === "function") {
+        mock.mockReset();
+        mock.mockReturnValue(mockDb);
       }
-    })
-  })
+    });
+  });
 
-  describe('index procedure', () => {
-    it('should return post list with pagination', async () => {
+  describe("index procedure", () => {
+    it("should return post list with pagination", async () => {
       const mockPosts = [
         {
           id: TEST_IDS.ID_1,
-          title: { en: 'Post 1', zh: '文章1' },
-          content: { en: 'Content 1', zh: '内容1' },
+          title: { en: "Post 1", zh: "文章1" },
+          content: { en: "Content 1", zh: "内容1" },
           status: PostStatus.PUBLISHED,
-          type: 'ARTICLE',
-          createdAt: new Date()
+          type: "ARTICLE",
+          createdAt: new Date(),
         },
         {
           id: TEST_IDS.ID_2,
-          title: { en: 'Post 2', zh: '文章2' },
-          content: { en: 'Content 2', zh: '内容2' },
+          title: { en: "Post 2", zh: "文章2" },
+          content: { en: "Content 2", zh: "内容2" },
           status: PostStatus.PUBLISHED,
-          type: 'ARTICLE',
-          createdAt: new Date()
-        }
-      ]
-      const mockCount = [{ count: '2' }]
+          type: "ARTICLE",
+          createdAt: new Date(),
+        },
+      ];
+      const mockCount = [{ count: "2" }];
 
       // Setup mock chain for post list query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.orderBy.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockReturnValueOnce(mockDb)
-      mockDb.offset.mockResolvedValueOnce(mockPosts as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockReturnValueOnce(mockDb);
+      mockDb.offset.mockResolvedValueOnce(mockPosts as any);
 
       // Setup mock for count query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(mockCount as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(mockCount as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.index({ page: 1, limit: 10 })
+      const result = await caller.index({ page: 1, limit: 10 });
 
       expect(result).toEqual({
         list: mockPosts.map((post) => ({
@@ -131,279 +133,293 @@ describe('Post Router', () => {
           galleryStyles: [],
         })),
         total: 2,
-      })
-    })
+      });
+    });
 
-    it('should handle empty post list', async () => {
-      const mockPosts: any[] = []
-      const mockCount = [{ count: '0' }]
+    it("should handle empty post list", async () => {
+      const mockPosts: any[] = [];
+      const mockCount = [{ count: "0" }];
 
       // Setup mock chain for empty post list query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.orderBy.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockReturnValueOnce(mockDb)
-      mockDb.offset.mockResolvedValueOnce(mockPosts as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockReturnValueOnce(mockDb);
+      mockDb.offset.mockResolvedValueOnce(mockPosts as any);
 
       // Setup mock for count query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(mockCount as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(mockCount as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.index({ page: 1, limit: 10 })
+      const result = await caller.index({ page: 1, limit: 10 });
 
       expect(result).toEqual({
         list: [],
         total: 0,
-      })
-    })
+      });
+    });
 
-    it('should return empty list when tag not found', async () => {
+    it("should return empty list when tag not found", async () => {
       // Mock tag query returning empty
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.index({ page: 1, limit: 10, tagName: 'nonexistent-tag' })
+      const result = await caller.index({
+        page: 1,
+        limit: 10,
+        tagName: "nonexistent-tag",
+      });
 
-      expect(result).toEqual({ list: [], total: 0 })
-    })
+      expect(result).toEqual({ list: [], total: 0 });
+    });
 
-    it('should return empty list when author not found', async () => {
+    it("should return empty list when author not found", async () => {
       // Mock user query returning empty
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.index({ page: 1, limit: 10, userName: 'nonexistent-author' })
+      const result = await caller.index({
+        page: 1,
+        limit: 10,
+        userName: "nonexistent-author",
+      });
 
-      expect(result).toEqual({ list: [], total: 0 })
-    })
-  })
+      expect(result).toEqual({ list: [], total: 0 });
+    });
+  });
 
-  describe('create procedure', () => {
-    it('should create post with admin permissions', async () => {
+  describe("create procedure", () => {
+    it("should create post with admin permissions", async () => {
       const newPost = {
         id: TEST_IDS.ID_3,
-        title: { en: 'New Post', zh: '新文章' },
-        content: { en: 'New Content', zh: '新内容' }, 
-        status: 'PUBLISH', 
-        type: 'ARTICLE' 
-      }
+        title: { en: "New Post", zh: "新文章" },
+        content: { en: "New Content", zh: "新内容" },
+        status: "PUBLISH",
+        type: "ARTICLE",
+      };
 
-      mockDb.insert.mockReturnValueOnce(mockDb)
-      mockDb.values.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([newPost] as any)
+      mockDb.insert.mockReturnValueOnce(mockDb);
+      mockDb.values.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([newPost] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
       const result = await caller.create({
-        title: { en: 'New Post', zh: '新文章' }, 
-        content: { en: 'New Content', zh: '新内容' }, 
-        status: 'PUBLISH', 
-        type: 'ARTICLE',
-        categoryId: TEST_IDS.ID_1
-      })
+        title: { en: "New Post", zh: "新文章" },
+        content: { en: "New Content", zh: "新内容" },
+        status: "PUBLISH",
+        type: "ARTICLE",
+        categoryId: TEST_IDS.ID_1,
+      });
 
-      expect(result).toEqual(newPost)
-      expect(mockDb.insert).toHaveBeenCalledWith(schema.post)
-    })
+      expect(result).toEqual(newPost);
+      expect(mockDb.insert).toHaveBeenCalledWith(schema.post);
+    });
 
-    it('should throw UNAUTHORIZED error for non-admin users', async () => {
+    it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
       await expect(
         caller.create({
-          title: { en: 'New Post', zh: '新文章' }, 
-          content: { en: 'New Content', zh: '新内容' }, 
-          status: PostStatus.PUBLISHED, 
-          type: 'ARTICLE',
-          categoryId: TEST_IDS.ID_1
-        })
-      ).rejects.toThrow('FORBIDDEN')
-    })
+          title: { en: "New Post", zh: "新文章" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PostStatus.PUBLISHED,
+          type: "ARTICLE",
+          categoryId: TEST_IDS.ID_1,
+        }),
+      ).rejects.toThrow("FORBIDDEN");
+    });
 
-    it('should throw UNAUTHORIZED error for unauthenticated users', async () => {
+    it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
       await expect(
         caller.create({
-          title: { en: 'New Post', zh: '新文章' }, 
-          content: { en: 'New Content', zh: '新内容' }, 
-          status: PostStatus.PUBLISHED, 
-          type: 'ARTICLE',
-          categoryId: TEST_IDS.ID_1
-        })
-      ).rejects.toThrow('UNAUTHORIZED')
-    })
-  })
+          title: { en: "New Post", zh: "新文章" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PostStatus.PUBLISHED,
+          type: "ARTICLE",
+          categoryId: TEST_IDS.ID_1,
+        }),
+      ).rejects.toThrow("UNAUTHORIZED");
+    });
+  });
 
-  describe('destroy procedure', () => {
-    it('should delete posts with admin permissions', async () => {
-      mockDb.delete.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(undefined as any)
+  describe("destroy procedure", () => {
+    it("should delete posts with admin permissions", async () => {
+      mockDb.delete.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(undefined as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.destroy({ 
-        ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] 
-      })
+      const result = await caller.destroy({
+        ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+      });
 
-      expect(result).toEqual({ success: true })
-      expect(mockDb.delete).toHaveBeenCalledWith(schema.post)
-    })
+      expect(result).toEqual({ success: true });
+      expect(mockDb.delete).toHaveBeenCalledWith(schema.post);
+    });
 
-    it('should throw UNAUTHORIZED error for non-admin users', async () => {
+    it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
       await expect(
-        caller.destroy({ 
-          ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] 
-        })
-      ).rejects.toThrow('FORBIDDEN')
-    })
-  })
+        caller.destroy({
+          ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+        }),
+      ).rejects.toThrow("FORBIDDEN");
+    });
+  });
 
-  describe('update procedure', () => {
-    it('should update post with admin permissions', async () => {
+  describe("update procedure", () => {
+    it("should update post with admin permissions", async () => {
       const updatedPost = {
         id: TEST_IDS.ID_1,
-        title: { en: 'Updated Post', zh: '更新的文章' },
-        content: { en: 'Updated Content', zh: '更新的内容' },
-        status: 'PUBLISH',
-        type: 'ARTICLE'
-      }
+        title: { en: "Updated Post", zh: "更新的文章" },
+        content: { en: "Updated Content", zh: "更新的内容" },
+        status: "PUBLISH",
+        type: "ARTICLE",
+      };
 
-      mockDb.update.mockReturnValueOnce(mockDb)
-      mockDb.set.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([updatedPost] as any)
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedPost] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
         header: new Headers(),
-      })
+      });
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
-        title: { en: 'Updated Post', zh: '更新的文章' },
-        content: { en: 'Updated Content', zh: '更新的内容' },
-        status: 'PUBLISH',
-        type: 'ARTICLE'
-      })
+        title: { en: "Updated Post", zh: "更新的文章" },
+        content: { en: "Updated Content", zh: "更新的内容" },
+        status: "PUBLISH",
+        type: "ARTICLE",
+      });
 
-      expect(result).toEqual(updatedPost)
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post)
-    })
+      expect(result).toEqual(updatedPost);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
 
-    it('should throw UNAUTHORIZED error for non-admin users', async () => {
+    it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
       await expect(
-        caller.update({ 
-          id: TEST_IDS.ID_1, 
-          title: { en: 'Updated Post', zh: '更新的文章' }, 
-          content: { en: 'Updated Content', zh: '更新的内容' }, 
-          status: PostStatus.PUBLISHED, 
-          type: 'ARTICLE' 
-        })
-      ).rejects.toThrow('FORBIDDEN')
-    })
-  })
+        caller.update({
+          id: TEST_IDS.ID_1,
+          title: { en: "Updated Post", zh: "更新的文章" },
+          content: { en: "Updated Content", zh: "更新的内容" },
+          status: PostStatus.PUBLISHED,
+          type: "ARTICLE",
+        }),
+      ).rejects.toThrow("FORBIDDEN");
+    });
+  });
 
-  describe('detail procedure', () => {
-    it('should return post details with related data', async () => {
+  describe("detail procedure", () => {
+    it("should return post details with related data", async () => {
       const mockPost = {
         id: TEST_IDS.ID_1,
-        title: { en: 'Post 1', zh: '文章1' },
-        content: { en: 'Content 1', zh: '内容1' },
-        status: 'PUBLISH',
-        type: 'ARTICLE',
+        title: { en: "Post 1", zh: "文章1" },
+        content: { en: "Content 1", zh: "内容1" },
+        status: "PUBLISH",
+        type: "ARTICLE",
         categoryId: TEST_IDS.ID_1,
         authorId: TEST_IDS.ID_1,
         coverId: TEST_IDS.ID_1,
-        createdAt: new Date()
-      }
-      const mockCategory = { id: TEST_IDS.ID_1, title: { en: 'Category 1', zh: '分类1' } }
-      const mockAuthor = { id: TEST_IDS.ID_1, name: 'Test Author' }
-      const mockCover = { id: TEST_IDS.ID_1, url: 'https://example.com/cover.jpg' }
+        createdAt: new Date(),
+      };
+      const mockCategory = {
+        id: TEST_IDS.ID_1,
+        title: { en: "Category 1", zh: "分类1" },
+      };
+      const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
+      const mockCover = {
+        id: TEST_IDS.ID_1,
+        url: "https://example.com/cover.jpg",
+      };
 
       // Setup mock chain for post detail query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([mockPost] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([mockPost] as any);
 
       // Setup mock for category query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([mockCategory] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([mockCategory] as any);
 
       // Setup mock for author query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([mockAuthor] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([mockAuthor] as any);
 
       // Setup mock for cover query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([mockCover] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([mockCover] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.detail({ id: TEST_IDS.ID_1 })
+      const result = await caller.detail({ id: TEST_IDS.ID_1 });
 
       expect(result).toEqual({
         ...mockPost,
@@ -414,200 +430,206 @@ describe('Post Router', () => {
         movieDirectors: [],
         movieStyles: [],
         galleryStyles: [],
-        imagesInContent: []
-      })
-    })
+        imagesInContent: [],
+      });
+    });
 
-    it('should throw NOT_FOUND error for non-existent post', async () => {
+    it("should throw NOT_FOUND error for non-existent post", async () => {
       // Setup mock chain for non-existent post
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.limit.mockResolvedValueOnce([] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      await expect(caller.detail({ id: '999999999999999999999999' })).rejects.toThrow('NOT_FOUND')
-    })
-  })
+      await expect(
+        caller.detail({ id: "999999999999999999999999" }),
+      ).rejects.toThrow("NOT_FOUND");
+    });
+  });
 
-  describe('getViews procedure', () => {
-    it('should return post views', async () => {
-      const mockPost = { views: 100 }
+  describe("getViews procedure", () => {
+    it("should return post views", async () => {
+      const mockPost = { views: 100 };
 
       // Setup mock chain for post views query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([mockPost] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([mockPost] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.getViews({ id: TEST_IDS.ID_1 })
+      const result = await caller.getViews({ id: TEST_IDS.ID_1 });
 
-      expect(result).toEqual({ views: 100 })
-    })
+      expect(result).toEqual({ views: 100 });
+    });
 
-    it('should return 0 for non-existent post', async () => {
+    it("should return 0 for non-existent post", async () => {
       // Setup mock chain for non-existent post views
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.getViews({ id: '999999999999999999999999' })
+      const result = await caller.getViews({ id: "999999999999999999999999" });
 
-      expect(result).toEqual({ views: 0 })
-    })
-  })
+      expect(result).toEqual({ views: 0 });
+    });
+  });
 
-  describe('incrementViews procedure', () => {
-    it('should increment post views', async () => {
-      const updatedViews = { views: 101 }
+  describe("incrementViews procedure", () => {
+    it("should increment post views", async () => {
+      const updatedViews = { views: 101 };
 
       // Setup mock chain for increment views
-      mockDb.update.mockReturnValueOnce(mockDb)
-      mockDb.set.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any)
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 })
+      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
-      expect(result).toEqual(updatedViews)
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post)
-    })
+      expect(result).toEqual(updatedViews);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
 
-    it('should increment views for any user', async () => {
-      const updatedViews = { views: 101 }
+    it("should increment views for any user", async () => {
+      const updatedViews = { views: 101 };
 
       // Setup mock chain for increment views
-      mockDb.update.mockReturnValueOnce(mockDb)
-      mockDb.set.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any)
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: 'USER' },
+        user: { id: TEST_IDS.ID_2, level: "USER" },
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 })
+      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
-      expect(result).toEqual(updatedViews)
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post)
-    })
+      expect(result).toEqual(updatedViews);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
 
-    it('should increment views for unauthenticated users', async () => {
-      const updatedViews = { views: 101 }
+    it("should increment views for unauthenticated users", async () => {
+      const updatedViews = { views: 101 };
 
       // Setup mock chain for increment views
-      mockDb.update.mockReturnValueOnce(mockDb)
-      mockDb.set.mockReturnValueOnce(mockDb)
-      mockDb.where.mockReturnValueOnce(mockDb)
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any)
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 })
+      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
-      expect(result).toEqual(updatedViews)
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post)
-    })
-  })
+      expect(result).toEqual(updatedViews);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
+  });
 
-  describe('getCategoryId procedure', () => {
-    it('should return category id for post', async () => {
-      const mockPost = { categoryId: TEST_IDS.ID_1 }
+  describe("getCategoryId procedure", () => {
+    it("should return category id for post", async () => {
+      const mockPost = { categoryId: TEST_IDS.ID_1 };
 
       // Setup mock chain for category id query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([mockPost] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([mockPost] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.getCategoryId({ id: TEST_IDS.ID_1 })
+      const result = await caller.getCategoryId({ id: TEST_IDS.ID_1 });
 
-      expect(result).toEqual({ categoryId: TEST_IDS.ID_1 })
-    })
+      expect(result).toEqual({ categoryId: TEST_IDS.ID_1 });
+    });
 
-    it('should return undefined for non-existent post', async () => {
+    it("should return undefined for non-existent post", async () => {
       // Setup mock chain for non-existent post category id
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce([] as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.getCategoryId({ id: '999999999999999999999' })
+      const result = await caller.getCategoryId({
+        id: "999999999999999999999",
+      });
 
-      expect(result).toBeUndefined()
-    })
-  })
+      expect(result).toBeUndefined();
+    });
+  });
 
-  describe('getRandomByCategory procedure', () => {
-    it('should return random posts from category', async () => {
+  describe("getRandomByCategory procedure", () => {
+    it("should return random posts from category", async () => {
       const mockPosts = [
-        { id: TEST_IDS.ID_1, title: 'Post 1' },
-        { id: TEST_IDS.ID_2, title: 'Post 2' },
-        { id: TEST_IDS.ID_3, title: 'Post 3' }
-      ]
+        { id: TEST_IDS.ID_1, title: "Post 1" },
+        { id: TEST_IDS.ID_2, title: "Post 2" },
+        { id: TEST_IDS.ID_3, title: "Post 3" },
+      ];
 
       // Setup mock chain for random posts query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
-      mockDb.where.mockResolvedValueOnce(mockPosts as any)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(mockPosts as any);
 
       // Setup mock for specific posts query
-      mockDb.select.mockReturnValueOnce(mockDb)
-      mockDb.from.mockReturnValueOnce(mockDb)
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
-        { id: TEST_IDS.ID_1, title: 'Post 1' },
-        { id: TEST_IDS.ID_2, title: 'Post 2' }
-      ] as any)
+        { id: TEST_IDS.ID_1, title: "Post 1" },
+        { id: TEST_IDS.ID_2, title: "Post 2" },
+      ] as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
         user: null,
         header: new Headers(),
-      })
+      });
 
-      const result = await caller.getRandomByCategory({ categoryId: TEST_IDS.ID_1 })
+      const result = await caller.getRandomByCategory({
+        categoryId: TEST_IDS.ID_1,
+      });
 
-      expect(result).toHaveLength(2)
-      expect(result[0]).toHaveProperty('id')
-      expect(result[0]).toHaveProperty('title')
-    })
-  })
-})
+      expect(result).toHaveLength(2);
+      expect(result[0]).toHaveProperty("id");
+      expect(result[0]).toHaveProperty("title");
+    });
+  });
+});
