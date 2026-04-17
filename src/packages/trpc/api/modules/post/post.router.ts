@@ -138,28 +138,6 @@ export const postRouter = createTRPCRouter({
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // 先获取分类下的所有文章ID（只查询ID字段减少数据传输）
-      const allPosts = await ctx.db
-        .select({ id: schema.post.id })
-        .from(schema.post)
-        .where(eq(schema.post.categoryId, input.categoryId));
-
-      const allIds = allPosts.map((p) => p.id);
-
-      // Fisher-Yates 洗牌算法随机抽取
-      const shuffleAndPick = (arr: string[], num: number) => {
-        const copy = [...arr];
-        const length = Math.min(num, copy.length);
-        for (let i = copy.length - 1; i > copy.length - 1 - length; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        return copy.slice(copy.length - length);
-      };
-
-      const randomIds = shuffleAndPick(allIds, 10);
-
-      // 再查具体数据
       const posts = await ctx.db
         .select({
           id: schema.post.id,
@@ -167,7 +145,9 @@ export const postRouter = createTRPCRouter({
           quoteContent: schema.post.quoteContent,
         })
         .from(schema.post)
-        .where(inArray(schema.post.id, randomIds));
+        .where(eq(schema.post.categoryId, input.categoryId))
+        .orderBy(sql`RANDOM()`)
+        .limit(10);
 
       return posts;
     }),

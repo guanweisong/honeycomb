@@ -604,18 +604,12 @@ describe("Post Router", () => {
         { id: TEST_IDS.ID_3, title: "Post 3" },
       ];
 
-      // Setup mock chain for random posts query
+      // Setup mock chain for random posts query with orderBy
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockPosts as any);
-
-      // Setup mock for specific posts query
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { id: TEST_IDS.ID_1, title: "Post 1" },
-        { id: TEST_IDS.ID_2, title: "Post 2" },
-      ] as any);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce(mockPosts as any);
 
       const caller = postRouter.createCaller({
         db: mockDb as any,
@@ -627,7 +621,7 @@ describe("Post Router", () => {
         categoryId: TEST_IDS.ID_1,
       });
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty("id");
       expect(result[0]).toHaveProperty("title");
     });
