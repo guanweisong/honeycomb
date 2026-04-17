@@ -134,14 +134,11 @@ export const postRouter = createTRPCRouter({
    * 在指定分类下随机获取文章。
    * @param {{ categoryId: string }} input - 包含分类 ID 的对象。
    * @returns {Promise<object[]>} 返回最多10篇随机文章的部分信息（id, title, quoteContent）。
-   *
-   * @notice 实现方式是获取分类下所有文章 ID，然后在内存中随机抽取。
-   * 对于文章数量非常庞大的分类，这可能会有性能问题。
    */
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // 先拿到所有 post.id
+      // 先获取分类下的所有文章ID（只查询ID字段减少数据传输）
       const allPosts = await ctx.db
         .select({ id: schema.post.id })
         .from(schema.post)
@@ -149,20 +146,18 @@ export const postRouter = createTRPCRouter({
 
       const allIds = allPosts.map((p) => p.id);
 
-      // 随机抽取
-      const randomArr = (arr: string[], num: number) => {
-        const result: string[] = [];
+      // Fisher-Yates 洗牌算法随机抽取
+      const shuffleAndPick = (arr: string[], num: number) => {
         const copy = [...arr];
         const length = Math.min(num, copy.length);
-        for (let i = 0; i < length; i++) {
-          const idx = Math.floor(Math.random() * copy.length);
-          result.push(copy[idx]);
-          copy.splice(idx, 1);
+        for (let i = copy.length - 1; i > copy.length - 1 - length; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-        return result;
+        return copy.slice(copy.length - length);
       };
 
-      const randomIds = randomArr(allIds, 10);
+      const randomIds = shuffleAndPick(allIds, 10);
 
       // 再查具体数据
       const posts = await ctx.db
