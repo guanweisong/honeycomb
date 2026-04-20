@@ -187,8 +187,7 @@ export function DataTable<TData, TRequest>(
                 )}
                 {headerGroup.headers.map((header) => {
                   const column = header.column;
-                  // @ts-ignore
-                  const filterOptions = column.columnDef.meta?.filterOptions;
+                  const filterOptions = (column.columnDef.meta as { filterOptions?: Array<{ label: string; value: string }> })?.filterOptions;
                   const isSorted = column.getIsSorted();
                   const isFiltered = (column.getFilterValue() as string[])
                     ?.length;
@@ -223,7 +222,7 @@ export function DataTable<TData, TRequest>(
                             />
                           ))}
 
-                        {filterOptions?.length > 0 && (
+                        {filterOptions && filterOptions.length > 0 && (
                           <MultiSelect
                             trigger={
                               <Button

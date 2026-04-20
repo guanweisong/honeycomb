@@ -31,8 +31,7 @@ const Tag = (props: PostListItemEntity) => {
               <span key={n.id}>
                 {index !== 0 && "、"}
                 <Link
-                  // @ts-ignore
-                  href={`/list/tags/${encodeURI(n.name[locale])}`}
+                  href={`/list/tags/${encodeURI((n.name && n.name[locale as keyof typeof n.name]) || '')}`}
                   className="link-light"
                 >
                   {n.name?.[locale]}
@@ -47,13 +46,9 @@ const Tag = (props: PostListItemEntity) => {
 
   return (
     <div className="list-none">
-      {/** @ts-ignore **/}
       {getTags(props.movieDirectors, t("directors"))}
-      {/** @ts-ignore **/}
       {getTags(props.movieActors, t("actors"))}
-      {/** @ts-ignore **/}
       {getTags(props.movieStyles, t("styles"))}
-      {/** @ts-ignore **/}
       {getTags(props.galleryStyles, t("styles"))}
     </div>
   );

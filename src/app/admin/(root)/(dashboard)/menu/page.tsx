@@ -7,7 +7,6 @@ import { Button } from "@/packages/ui/components/button";
 import SortableTree, {
   getFlatDataFromTree,
   getTreeFromFlatData,
-  // @ts-ignore
 } from "@nosferatu500/react-sortable-tree";
 import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";
@@ -187,11 +186,8 @@ const Menu = () => {
     });
     const tree = getTreeFromFlatData({
       flatData: format,
-      // @ts-ignore
-      getKey: (node) => node.id,
-      // @ts-ignore
-      getParentKey: (node) => node.parent,
-      // @ts-ignore
+      getKey: (node: { id: string }) => node.id,
+      getParentKey: (node: { parent: string }) => node.parent,
       rootKey: null,
     });
     return tree;
@@ -205,20 +201,20 @@ const Menu = () => {
    * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
-    const data: any[] = [];
+    const data: Array<{ id: string; type: string; power: number; parent?: string }> = [];
     checkedList?.forEach((item, index) => {
-      const menu: any = {
+      const menu: { id: string; type: string; power: number; parent?: string } = {
         id: item.id,
         type: item.type,
         power: index,
       };
-      if (item.parent !== "0") {
+      if (item.parent !== "0" && item.parent) {
         menu.parent = item.parent;
       }
       data.push(menu);
     });
     try {
-      await saveAllMenu.mutateAsync(data);
+      await saveAllMenu.mutateAsync(data as any);
       toast.success("更新成功");
       refetch();
     } catch (e) {
@@ -250,8 +246,7 @@ const Menu = () => {
                     >
                       <Checkbox
                         onCheckedChange={(checked) =>
-                          // @ts-ignore
-                          onCheck(item, checked, MenuType.CATEGORY)
+                          onCheck(item as any, checked === true, MenuType.CATEGORY)
                         }
                         checked={getCheckedStatus(item)}
                         disabled={getDisabledStatus(item)}
@@ -274,13 +269,10 @@ const Menu = () => {
                     >
                       <Checkbox
                         onCheckedChange={(checked) =>
-                          // @ts-ignore
-                          onCheck(item, checked, MenuType.PAGE)
+                          onCheck(item as any, checked === true, MenuType.PAGE)
                         }
-                        // @ts-ignore
-                        defaultChecked={getCheckedStatus(item)}
-                        // @ts-ignore
-                        disabled={getDisabledStatus(item)}
+                        checked={getCheckedStatus(item as any)}
+                        disabled={getDisabledStatus(item as any)}
                         label={item.title?.zh}
                       />
                     </div>

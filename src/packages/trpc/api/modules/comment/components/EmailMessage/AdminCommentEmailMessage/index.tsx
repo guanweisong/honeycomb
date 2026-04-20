@@ -2,11 +2,11 @@ import { Link, Text } from "@react-email/components";
 import * as React from "react";
 import EmailContainer from "../Container";
 import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@/packages/trpc/api/utils/comment";
-import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import { CommentShape } from "@/packages/trpc/api/utils/comment";
 import { SettingEntity } from "@/packages/trpc/api/modules/setting/types/setting.entity";
 
 type AdminMessageEmailProps = {
-  currentComment: CommentEntity;
+  currentComment: CommentShape;
   setting: SettingEntity;
 };
 
@@ -14,7 +14,6 @@ const AdminCommentEmailMessage = (props: AdminMessageEmailProps) => {
   const { currentComment, setting } = props;
   const previewText = `${setting.siteName?.zh}有一条新的评论`;
   const { postTitle, postLink } =
-    // @ts-ignore
     getPostOrPageOrCustomTitleAndLinkFromComment(currentComment);
 
   return (

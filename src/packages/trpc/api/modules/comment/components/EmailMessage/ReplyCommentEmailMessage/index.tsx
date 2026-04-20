@@ -2,12 +2,12 @@ import { Link, Text } from "@react-email/components";
 import * as React from "react";
 import EmailContainer from "../Container";
 import { getPostOrPageOrCustomTitleAndLinkFromComment } from "@/packages/trpc/api/utils/comment";
-import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import { CommentShape } from "@/packages/trpc/api/utils/comment";
 import { SettingEntity } from "@/packages/trpc/api/modules/setting/types/setting.entity";
 
 type ReplyMessageEmailProps = {
-  currentComment: CommentEntity;
-  parentComment: CommentEntity;
+  currentComment: CommentShape;
+  parentComment: CommentShape;
   setting: SettingEntity;
 };
 
@@ -16,7 +16,6 @@ const ReplyCommentEmailMessage = (props: ReplyMessageEmailProps) => {
   const previewText = `您在${setting.siteName?.zh}的评论有新的回复`;
 
   const { postTitle, postLink } =
-    // @ts-ignore
     getPostOrPageOrCustomTitleAndLinkFromComment(parentComment);
 
   return (

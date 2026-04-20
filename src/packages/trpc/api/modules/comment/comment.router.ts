@@ -11,7 +11,6 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.query.schema";
-// @ts-ignore
 import listToTree from "list-to-tree-lite";
 import md5 from "md5";
 import { CommentInsertSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
@@ -217,8 +216,8 @@ export const commentRouter = createTRPCRouter({
       // ====== 异步发送邮件通知 ======
       // 1. 通知管理员
       sendEmail("ADMIN_NOTICE", {
-        setting,
-        currentComment: currentCommentWithCustom,
+        setting: setting as any,
+        currentComment: currentCommentWithCustom as any,
       }).catch((e) => console.error("Failed to send admin email:", e));
 
       // 2. 通知被回复者
@@ -242,9 +241,9 @@ export const commentRouter = createTRPCRouter({
           };
 
           sendEmail("REPLY_NOTICE", {
-            setting,
-            currentComment: currentCommentWithCustom,
-            parentComment: parentCommentWithCustom,
+            setting: setting as any,
+            currentComment: currentCommentWithCustom as any,
+            parentComment: parentCommentWithCustom as any,
           }).catch((e) => console.error("Failed to send reply email:", e));
         }
       }

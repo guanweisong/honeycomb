@@ -43,9 +43,8 @@ export default function useInfiniteQueryPostList(
 ) {
   return useInfiniteQuery<PostIndexOutput, Error>({
     queryKey: ["posts", queryParams],
-    // @ts-ignore
-    queryFn: ({ pageParam = 1 }) =>
-      getPostList(queryParams, pageParam as number),
+    queryFn: ({ pageParam }) =>
+      getPostList(queryParams, typeof pageParam === "number" ? pageParam : 1),
     getNextPageParam: (lastPage, allPages) => {
       const { list, total } = lastPage;
       const loadedCount = allPages.flatMap((page) => page.list).length;

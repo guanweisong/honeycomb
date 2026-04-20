@@ -24,25 +24,25 @@ export async function loadPostRelations(db: any, posts: any[]): Promise<any[]> {
       ? db
           .select()
           .from(schema.category)
-          .where(inArray(schema.category.id, categoryIds as any))
+          .where(inArray(schema.category.id, categoryIds))
       : Promise.resolve([]),
     authorIds.length
       ? db
           .select()
           .from(schema.user)
-          .where(inArray(schema.user.id, authorIds as any))
+          .where(inArray(schema.user.id, authorIds))
       : Promise.resolve([]),
     coverIds.length
       ? db
           .select()
           .from(schema.media)
-          .where(inArray(schema.media.id, coverIds as any))
+          .where(inArray(schema.media.id, coverIds))
       : Promise.resolve([]),
     postIds.length
       ? db
           .select()
           .from(schema.postTag)
-          .where(inArray(schema.postTag.postId, postIds as any))
+          .where(inArray(schema.postTag.postId, postIds))
       : Promise.resolve([]),
     postIds.length
       ? db

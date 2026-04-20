@@ -21,8 +21,7 @@ const BackToTop = () => {
    * 当页面滚动距离超过 300px 时，显示返回顶部按钮。
    */
   useEffect(() => {
-    // @ts-ignore
-    setShow(scroll?.top > 300);
+    setShow((scroll?.top ?? 0) > 300);
   }, [scroll?.top]);
 
   /**

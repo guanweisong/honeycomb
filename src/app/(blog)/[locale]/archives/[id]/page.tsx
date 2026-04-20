@@ -57,7 +57,7 @@ export default async function Archives(props: ArchivesProps) {
    * 计算 JSONLD (JSON for Linking Data) 数据。
    * 根据文章类型生成结构化数据，以优化搜索引擎抓取。
    */
-  const jsonLd: any = {
+  const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     name: getTitle(),
   };
@@ -93,13 +93,10 @@ export default async function Archives(props: ArchivesProps) {
       </ViewTransition>
       <PostInfo
         id={postDetail.id}
-        // @ts-ignore
-        author={postDetail.author.name}
-        // @ts-ignore
-        date={postDetail.createdAt}
+        author={postDetail.author?.name ?? ''}
+        date={postDetail.createdAt ?? ''}
         comments={commentsData?.total}
-        // @ts-ignore
-        views={postDetail.views}
+        views={postDetail.views ?? 0}
       />
       {postDetail.type !== PostType.QUOTE && (
         <div className="my-3 lg:my-5">
@@ -121,8 +118,7 @@ export default async function Archives(props: ArchivesProps) {
         </div>
       )}
       {[PostType.PHOTOGRAPH, PostType.MOVIE, PostType.QUOTE].includes(
-        // @ts-ignore
-        postDetail.type,
+        postDetail.type as PostType,
       ) && (
         <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
           {postDetail.type === PostType.PHOTOGRAPH && (
@@ -147,7 +143,6 @@ export default async function Archives(props: ArchivesProps) {
           )}
         </ul>
       )}
-      {/** @ts-ignore **/}
       <Tags {...postDetail} />
       {randomPostsList.filter((item) => item.id !== postDetail?.id).length >
         0 && (
@@ -155,7 +150,7 @@ export default async function Archives(props: ArchivesProps) {
           <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
             {randomPostsList
               .filter((item) => item.id !== postDetail?.id)
-              .map((item: any) => (
+              .map((item) => (
                 <li key={item.id} className="my-2">
                   <Link
                     href={`/archives/${item.id}`}

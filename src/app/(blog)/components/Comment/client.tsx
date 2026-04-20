@@ -206,8 +206,7 @@ const CommentClient = (props: CommentClientProps) => {
       <li className="relative" key={item.id}>
         <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
           <div className="float-left w-12 h-12 mr-5">
-            {/**@ts-ignore**/}
-            <img src={item.avatar} className="w-full" />
+            <img src={"avatar" in item ? (item.avatar as string) || '' : ''} className="w-full" />
           </div>
           <div className="overflow-hidden">
             <div>
@@ -226,21 +225,16 @@ const CommentClient = (props: CommentClientProps) => {
             </div>
           </div>
           <div className="absolute right-2 top-4 text-auto-front-gray/50">
-            {/**@ts-ignore**/}
-            <span>{utcFormat(item.createdAt)}</span>
+            <span>{utcFormat(item.createdAt || '')}</span>
             <span className="mx-1">/</span>
             <a className="text-teal-500" onClick={() => handleReply(item)}>
               {t("form.reply")}
             </a>
           </div>
         </div>
-        {/**@ts-ignore**/}
-        {item.children.length > 0 && (
+        {"children" in item && Array.isArray(item.children) && item.children.length > 0 && (
           <ul className="ml-10">
-            {
-              // @ts-ignore
-              renderCommentList(item.children)
-            }
+            {renderCommentList(item.children as CommentEntity[])}
           </ul>
         )}
       </li>

@@ -11,7 +11,7 @@ export interface GetCurrentPathProps {
   /**
    * 要获取的家族属性名称（例如 "path"）。
    */
-  familyProp: string;
+  familyProp: keyof MenuEntity;
   /**
    * 菜单数据数组。
    */
@@ -34,13 +34,17 @@ const getCurrentPathOfMenu = (props: GetCurrentPathProps) => {
        * @param {MenuEntity[]} data - 当前层级的菜单数据，用于查找父级。
        */
       if (data.length === 1) {
-        // @ts-ignore
-        path.push(data[0][familyProp]);
+        const value = data[0][familyProp];
+        if (typeof value === 'string') {
+          path.push(value);
+        }
       } else {
         data.forEach((item) => {
           if (item.id === id) {
-            // @ts-ignore
-            path.push(item[familyProp]);
+            const value = item[familyProp];
+            if (typeof value === 'string') {
+              path.push(value);
+            }
             if (item.parent !== "0") {
               find(data.filter((m) => m.id === item.parent));
             }

@@ -4,10 +4,13 @@ import ReplyCommentEmailMessage from "@/packages/trpc/api/modules/comment/compon
 
 type EmailType = "ADMIN_NOTICE" | "REPLY_NOTICE";
 
+import { CommentShape } from "./comment";
+import { SettingEntity } from "@/packages/trpc/api/modules/setting/types/setting.entity";
+
 interface EmailPayload {
-  setting: any; // 使用 any 以适配实际的 schema.setting 类型
-  currentComment: any;
-  parentComment?: any;
+  setting: SettingEntity;
+  currentComment: CommentShape;
+  parentComment?: CommentShape;
 }
 
 /**
@@ -30,9 +33,7 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
         to: adminEmail,
         subject: `[${siteNameZh}]有一条新的评论`,
         react: AdminCommentEmailMessage({
-          // @ts-ignore
           currentComment,
-          // @ts-ignore
           setting,
         }),
       });
@@ -43,11 +44,8 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
           to: parentComment.email,
           subject: `您在[${siteNameZh}]的评论有新的回复`,
           react: ReplyCommentEmailMessage({
-            // @ts-ignore
             currentComment,
-            // @ts-ignore
             setting,
-            // @ts-ignore
             parentComment,
           }),
         });

@@ -17,7 +17,9 @@ import { loadPostRelations } from "./utils/relations";
  * @param input - 查询参数
  * @returns 包含文章列表和总数的对象
  */
-export async function getPostList(db: any, input: any) {
+import { PostListQueryInput } from "./schemas/post.list.query.schema";
+
+export async function getPostList(db: any, input: PostListQueryInput) {
   const {
     page = 1,
     limit = 10,
@@ -57,7 +59,7 @@ export async function getPostList(db: any, input: any) {
       .from(schema.postTag)
       .where(eq(schema.postTag.tagId, tagId));
     
-    const postIdList = postIds.map((p: any) => p.postId);
+    const postIdList = postIds.map((p: { postId: string }) => p.postId);
     if (postIdList.length === 0) {
       return { list: [], total: 0 };
     }

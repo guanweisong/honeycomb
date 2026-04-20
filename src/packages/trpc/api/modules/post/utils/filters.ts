@@ -16,7 +16,7 @@ export async function buildCategoryFilter(
     .select()
     .from(schema.category)
     .where(eq(schema.category.parent, categoryId));
-  return [categoryId, ...subCategories.map((c: any) => c.id)];
+  return [categoryId, ...subCategories.map((c: { id: string }) => c.id)];
 }
 
 /**

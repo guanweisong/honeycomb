@@ -43,8 +43,7 @@ import { and, inArray, like, SQL, sql } from "drizzle-orm";
  * 动态构建 Drizzle ORM 的 WHERE 查询子句。
  * 根据传入的查询参数，智能地生成 `AND` 连接的 SQL 条件。
  *
- * @template T - Drizzle 的表 schema 类型。
- * @param {T} table - Drizzle 的表 schema 对象。
+ * @param {any} table - Drizzle 的表 schema 对象。
  * @param {any} queries - 包含简单键值对的查询对象。键对应表字段，值对应查询值。
  * @param {string[]} queryArray - 一个字符串数组，指定哪些 `queries` 中的键应该使用 `IN` 查询（精确匹配数组中的任何一个值）。
  * @param {any} [multiLangQueries] - （可选）用于多语言字段模糊查询的键值对对象。
@@ -57,8 +56,8 @@ import { and, inArray, like, SQL, sql } from "drizzle-orm";
  * 2. 遍历 `multiLangQueries` 对象，为每个非空值构建一个 `like(column, %value%)` 子句。
  * 3. 将所有生成的子句用 `and()` 连接起来返回。
  */
-export function buildDrizzleWhere<T extends Record<string, any>>(
-  table: T,
+export function buildDrizzleWhere(
+  table: any,
   queries: any,
   queryArray: string[],
   multiLangQueries?: any,
@@ -103,22 +102,21 @@ export function buildDrizzleWhere<T extends Record<string, any>>(
 /**
  * 构建 Drizzle ORM 的 ORDER BY 排序子句。
  *
- * @template T - Drizzle 的表 schema 类型。
- * @param {T} table - Drizzle 的表 schema 对象。
+ * @param {any} table - Drizzle 的表 schema 对象。
  * @param {string | undefined} sortField - 用于排序的字段名。
  * @param {"asc" | "desc"} [sortOrder="desc"] - 排序方向。
- * @param {keyof T} [defaultField="createdAt"] - 如果 `sortField` 无效或未提供，则使用的默认排序字段。
+ * @param {string} [defaultField="createdAt"] - 如果 `sortField` 无效或未提供，则使用的默认排序字段。
  * @returns {SQL} 返回一个 Drizzle 的 SQL 排序表达式。
  */
-export function buildDrizzleOrderBy<T extends Record<string, any>>(
-  table: T,
+export function buildDrizzleOrderBy(
+  table: any,
   sortField: string | undefined,
   sortOrder: "asc" | "desc" = "desc",
-  defaultField: keyof T = "createdAt",
+  defaultField: string = "createdAt",
 ): SQL<unknown> {
   const direction = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
   const field =
-    (sortField && table[sortField as keyof T]) || table[defaultField];
+    (sortField && table[sortField]) || table[defaultField];
 
   if (!field) {
     throw new Error(`Invalid sort field: ${String(sortField)}`);

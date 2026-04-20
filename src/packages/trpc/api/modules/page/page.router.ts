@@ -116,7 +116,7 @@ export const pageRouter = createTRPCRouter({
 
       if (!item) return null;
 
-      let author: any = null;
+      let author: { id: string; name: string | null } | null = null;
       if (item.authorId) {
         const [authorData] = await ctx.db
           .select({
@@ -190,7 +190,7 @@ export const pageRouter = createTRPCRouter({
         .where(eq(schema.page.id, id))
         .returning();
 
-      let author: any = null;
+      let author: { id: string; name: string | null } | null = null;
       if (updatedPage.authorId) {
         const [authorData] = await ctx.db
           .select({

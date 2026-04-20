@@ -1,5 +1,4 @@
 import { ViewTransition } from "react";
-// @ts-ignore
 import listToTree from "list-to-tree-lite";
 import Menu from "@/app/(blog)/components/Menu";
 import { Link } from "@/app/(blog)/i18n/navigation";

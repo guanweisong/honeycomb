@@ -7,9 +7,12 @@ export type CommentShape = {
   postId?: string | null;
   pageId?: string | null;
   customId?: string | null;
-  post?: { title?: { zh?: string; en?: string } } | null;
-  page?: { title?: { zh?: string; en?: string } } | null;
-  custom?: { title?: { zh?: string; en?: string } } | null;
+  post?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
+  page?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
+  custom?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
+  author?: string;
+  content?: string;
+  email?: string;
 };
 
 /**

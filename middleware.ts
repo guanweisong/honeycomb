@@ -1,4 +1,3 @@
-// @ts-ignore
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/app/(blog)/i18n/routing";
 
