@@ -1,5 +1,6 @@
 import { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import withSerwist from "@serwist/next";
 
 /**
  * Next.js 基础配置文件。
@@ -30,7 +31,15 @@ const nextConfig: NextConfig = {
 
 const withNextIntl = createNextIntlPlugin("./src/app/(blog)/i18n/request.ts");
 
+const withSerwistInit = withSerwist({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  cacheOnNavigation: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+});
+
 /**
  * 导出基础 Next.js 配置。
  */
-export default withNextIntl(nextConfig);
+export default withSerwistInit(withNextIntl(nextConfig));

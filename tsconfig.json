@@ -30,7 +30,8 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "alwaysStrict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["@serwist/next/worker"]
   },
   "exclude": [
     "node_modules"

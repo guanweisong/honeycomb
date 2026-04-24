@@ -50,5 +50,10 @@
       "cancel": "Cancel",
       "reply": "Reply"
     }
+  },
+  "Offline": {
+    "title": "You're offline",
+    "description": "Please check your internet connection and try again",
+    "retry": "Retry"
   }
 }

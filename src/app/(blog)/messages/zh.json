@@ -50,5 +50,10 @@
       "cancel": "取消",
       "reply": "回复"
     }
+  },
+  "Offline": {
+    "title": "你已离线",
+    "description": "请检查你的网络连接后重试",
+    "retry": "重试"
   }
 }
