@@ -64,7 +64,7 @@ export default async function LocaleLayout({
           <div className="min-h-full text-base">
             <NextIntlClientProvider>
               <Header />
-              <div className={"container px-2"}>{children}</div>
+              <main className="container px-2">{children}</main>
               <Footer />
               <BackToTop />
             </NextIntlClientProvider>
@@ -83,6 +83,4 @@ export default async function LocaleLayout({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };

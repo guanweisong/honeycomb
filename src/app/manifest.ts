@@ -35,5 +35,18 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         type: "image/png",
       },
     ],
+    screenshots: [
+      {
+        src: "/static/images/desktop.png",
+        sizes: "2560x1440",
+        type: "image/png",
+        form_factor: "wide",
+      },
+      {
+        src: "/static/images/mobile.png",
+        sizes: "780x1688",
+        type: "image/png",
+      },
+    ],
   };
 }

@@ -91,9 +91,11 @@ export default function PostList(props: PostListProps): JSX.Element {
    * 渲染文章列表中的单个卡片。
    * 根据文章类型显示不同的布局和内容。
    * @param {PostListItemEntity} item - 文章实体。
+   * @param {number} index - 文章在列表中的索引。
    * @returns {JSX.Element} 文章卡片。
    */
-  const renderCard = (item: PostListItemEntity): JSX.Element => {
+  const renderCard = (item: PostListItemEntity, index: number): JSX.Element => {
+    const isFirstItem = index === 0;
     return (
       <div className="bg-auto-back-gray/60" key={item.id}>
         {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
@@ -103,7 +105,7 @@ export default function PostList(props: PostListProps): JSX.Element {
             <Link href={`/archives/${item.id}`} className="relative block">
               <ViewTransition name={`postContent-${item.id}`}>
                 <Image
-                  priority={true}
+                  priority={isFirstItem}
                   src={item.cover?.url ?? ""}
                   alt={item.title?.[locale] ?? ""}
                   width={item.cover.width!}
@@ -163,7 +165,7 @@ export default function PostList(props: PostListProps): JSX.Element {
   return (
     <>
       <div className="flex flex-col gap-4">
-        {postList.map((item) => renderCard(item))}
+        {postList.map((item, index) => renderCard(item, index))}
       </div>
       {isEnd && <Signature text={t("listEnd")} />}
       {isLoadingMore && (
