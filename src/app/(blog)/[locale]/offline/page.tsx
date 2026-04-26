@@ -12,7 +12,7 @@ export default async function Offline() {
 
   return (
     <div
-      className="flex flex-col items-center justify-center min-h-screen py-20 px-4"
+      className="flex flex-col items-center justify-center py-28 px-4"
       role="alert"
       aria-live="polite"
     >
