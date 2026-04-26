@@ -7,17 +7,12 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": [
-      "DOM",
-      "ESNext"
-    ],
+    "lib": ["DOM", "ESNext"],
     "allowJs": true,
     "jsx": "react-jsx",
     "strict": true,
@@ -30,12 +25,9 @@
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "alwaysStrict": true,
-    "noEmit": true,
-    "types": ["@serwist/next/worker"]
+    "noEmit": true
   },
-  "exclude": [
-    "node_modules"
-  ],
+  "exclude": ["node_modules"],
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",

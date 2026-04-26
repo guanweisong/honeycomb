@@ -1,12 +1,13 @@
 import { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import withSerwist from "@serwist/next";
+import { withSerwist } from "@serwist/turbopack";
 
 /**
  * Next.js 基础配置文件。
  * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
  */
-const nextConfig: NextConfig = {
+const nextConfig: NextConfig = withSerwist({
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -27,19 +28,11 @@ const nextConfig: NextConfig = {
     LINK_OBJECT_ID: "5349b4ddd2781d08c09890f3",
     FRONT_DOMAIN: "www.guanweisong.com",
   },
-};
+});
 
 const withNextIntl = createNextIntlPlugin("./src/app/(blog)/i18n/request.ts");
-
-const withSerwistInit = withSerwist({
-  swSrc: "src/app/sw.ts",
-  swDest: "public/sw.js",
-  cacheOnNavigation: true,
-  reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development",
-});
 
 /**
  * 导出基础 Next.js 配置。
  */
-export default withSerwistInit(withNextIntl(nextConfig));
+export default withNextIntl(nextConfig);

@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
-import { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
+import { SerwistProvider } from "@serwist/turbopack/react";
 
 /**
  * 全局提供者组件。
@@ -20,8 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <ServiceWorkerRegistration />
-        {children}
+        <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );
