@@ -65,8 +65,14 @@ export default async function LocaleLayout({
         >
           <div className="min-h-full text-base">
             <NextIntlClientProvider>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-teal-500 focus:text-white focus:rounded"
+              >
+                Skip to main content
+              </a>
               <Header />
-              <main className="container px-2">{children}</main>
+              <main id="main-content" className="container px-2">{children}</main>
               <Footer />
               <BackToTop />
             </NextIntlClientProvider>

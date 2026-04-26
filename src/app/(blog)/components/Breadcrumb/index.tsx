@@ -93,7 +93,7 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   }
 
   return (
-    <div className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50">
+    <nav aria-label="Breadcrumb" className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50">
       {breadData?.map((item, index) => (
         <span key={`${item.link}_${index}`}>
           {item.link ? (
@@ -101,12 +101,12 @@ const Breadcrumb = (props: BreadCrumbProps) => {
               {item.label}
             </Link>
           ) : (
-            <span key={item.link}>{item.label}</span>
+            <span key={item.link} aria-current="page">{item.label}</span>
           )}
           {index !== breadData.length - 1 ? " / " : ""}
         </span>
       ))}
-    </div>
+    </nav>
   );
 };
 

@@ -16,7 +16,7 @@ export default async function Footer() {
   ]);
 
   return (
-    <div className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
+    <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[locale as MultiLangEnum]}</div>
       <div>
         ©{format(new Date(), "yyyy")}&nbsp;
@@ -30,6 +30,7 @@ export default async function Footer() {
               href={`${setting?.siteRecordUrl}`}
               target="_blank"
               rel="nofollow"
+              aria-label={`View site record: ${setting?.siteRecordNo}`}
             >
               {setting?.siteRecordNo}
             </a>
@@ -38,6 +39,6 @@ export default async function Footer() {
           )
         ) : null}
       </div>
-    </div>
+    </footer>
   );
 }

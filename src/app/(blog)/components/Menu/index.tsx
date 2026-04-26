@@ -33,7 +33,7 @@ export interface MenuProps {
 const Menu = (props: MenuProps) => {
   const { data, flatMenuData } = props;
   const ref1 = useRef<HTMLUListElement>(null);
-  const ref2 = useRef<HTMLDivElement>(null);
+  const ref2 = useRef<HTMLButtonElement>(null);
 
   /**
    * 控制移动端菜单的显示与隐藏。
@@ -120,6 +120,9 @@ const Menu = (props: MenuProps) => {
   const renderItem = (data: MenuLocalEntity[]) => {
     return (
       <ul
+        id="mobile-menu"
+        role="navigation"
+        aria-label="Main navigation"
         className={cn(
           "absolute backdrop-blur bg-auto-back-gray/80",
           "lg:static lg:flex py-2 lg:py-0 lg:px-2 lg:rounded-full",
@@ -137,6 +140,7 @@ const Menu = (props: MenuProps) => {
           >
             <Link
               href={m.link ?? ""}
+              aria-current={m.link === currentCategory[0] ? "page" : undefined}
               className={cn(
                 "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
                 {
@@ -147,7 +151,7 @@ const Menu = (props: MenuProps) => {
             >
               {m.label}
               {m.link === currentCategory[0] && (
-                <span className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"></span>
+                <span className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0" aria-hidden="true"></span>
               )}
             </Link>
           </li>
@@ -157,10 +161,13 @@ const Menu = (props: MenuProps) => {
   };
   return (
     <div className="flex h-full">
-      <div
+      <button
         ref={ref2}
-        className="w-9 px-2 cursor-pointer lg:hidden absolute left-0 top-[50%] -translate-y-1/2"
+        className="w-9 px-2 cursor-pointer lg:hidden absolute left-0 top-[50%] -translate-y-1/2 bg-transparent border-0"
         onClick={() => setVisible(!visible)}
+        aria-label={visible ? "Close menu" : "Open menu"}
+        aria-expanded={visible}
+        aria-controls="mobile-menu"
       >
         {Array.from(new Array(3)).map((_item, index) => (
           <div
@@ -171,7 +178,7 @@ const Menu = (props: MenuProps) => {
             })}
           />
         ))}
-      </div>
+      </button>
       {renderItem(data)}
     </div>
   );

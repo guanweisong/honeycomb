@@ -58,10 +58,10 @@ const LanguageSwitcher = () => {
 
   return (
     <ViewTransition name="siteLanguageSwitcher">
-      <Link href={pathname} locale={otherLocale} replace>
+      <Link href={pathname} locale={otherLocale} replace aria-label={`Switch to ${otherLocale === 'en' ? 'English' : '中文'}`}>
         <Image
           src={localeIcon[locale]}
-          alt="switch language"
+          alt={`Current language: ${locale === 'en' ? 'English' : '中文'}`}
           className="w-5 cursor-pointer"
         />
       </Link>
