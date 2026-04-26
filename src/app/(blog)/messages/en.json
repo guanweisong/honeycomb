@@ -55,5 +55,11 @@
     "title": "You're offline",
     "description": "Please check your internet connection and try again",
     "retry": "Retry"
+  },
+  "Error": {
+    "title": "Something went wrong!",
+    "description": "An error occurred while loading this page. Please try again later.",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
   }
 }

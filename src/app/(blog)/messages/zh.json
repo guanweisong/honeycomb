@@ -55,5 +55,11 @@
     "title": "你已离线",
     "description": "请检查你的网络连接后重试",
     "retry": "重试"
+  },
+  "Error": {
+    "title": "出错了！",
+    "description": "加载页面时发生错误，请稍后重试。",
+    "tryAgain": "重试",
+    "goHome": "返回首页"
   }
 }
