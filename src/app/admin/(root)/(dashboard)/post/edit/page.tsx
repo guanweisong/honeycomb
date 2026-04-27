@@ -17,6 +17,8 @@ import { Form } from "@/packages/ui/components/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
+import type { PostInsert } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
+import type { PostUpdate } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
 import { Plus } from "lucide-react";
@@ -29,6 +31,10 @@ import {
 } from "@/packages/trpc/api/modules/post/types/post.type";
 import { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
+import type { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+
+type PostTagOption = Pick<TagEntity, "id" | "name">;
+type PostFormValues = PostInsert | PostUpdate;
 
 /**
  * 文章创建/编辑页面核心组件。
@@ -77,16 +83,20 @@ const PostDetail = () => {
   /**
    * 规范化表单数据。
    * 在提交前对表单数据进行处理，例如添加文章状态，并进行必要的验证。
-   * @param {any} values - 原始表单值。
+   * @param {PostFormValues} values - 原始表单值。
    * @param {PostStatus} status - 文章的状态（如 PUBLISHED, DRAFT）。
-   * @returns {any | null} 规范化后的数据，如果验证失败则返回 null。
+   * @returns {PostFormValues | null} 规范化后的数据，如果验证失败则返回 null。
    */
-  const normalizeFormData = (values: any, status: PostStatus): any | null => {
-    const data: any = { ...values, status };
+  const normalizeFormData = (
+    values: PostFormValues,
+    status: PostStatus,
+  ): PostFormValues | null => {
+    const data: PostFormValues = { ...values, status };
+    const type = (data.type ?? PostType.ARTICLE) as PostType;
 
     if (
       [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-        data.type,
+        type,
       ) &&
       !data.coverId
     ) {
@@ -121,8 +131,13 @@ const PostDetail = () => {
         setLoading(true);
         switch (actionType) {
           case "create":
+            if (!data.categoryId) {
+              toast.error("请选择分类目录");
+              setLoading(false);
+              return;
+            }
             createPost
-              .mutateAsync(data)
+              .mutateAsync(data as PostInsert)
               .then((res) => {
                 if (res.id) {
                   toast.success("添加成功");
@@ -133,7 +148,7 @@ const PostDetail = () => {
             break;
           case "update":
             updatePost
-              .mutateAsync({ ...data, id: detail!.id })
+              .mutateAsync({ ...data, id: detail!.id } as PostUpdate)
               .then((res) => {
                 if (res) {
                   toast.success("更新成功");
@@ -245,10 +260,10 @@ const PostDetail = () => {
    * 处理标签更新的回调函数。
    * 当多选标签组件的标签发生变化时调用。
    */
-  const [galleryStyles, setGalleryStyles] = useState<any[]>([]);
-  const [movieActors, setMovieActors] = useState<any[]>([]);
-  const [movieDirectors, setMovieDirectors] = useState<any[]>([]);
-  const [movieStyles, setMovieStyles] = useState<any[]>([]);
+  const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
+  const [movieActors, setMovieActors] = useState<PostTagOption[]>([]);
+  const [movieDirectors, setMovieDirectors] = useState<PostTagOption[]>([]);
+  const [movieStyles, setMovieStyles] = useState<PostTagOption[]>([]);
 
   /**
    * 同步 detail 数据到标签状态

@@ -16,6 +16,7 @@ import {
   CategoryUpdateSchema,
 } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
+import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
 
 /**
  * 模态框属性接口。
@@ -33,7 +34,7 @@ export interface ModalProps {
   /**
    * 模态框关联的记录数据，通常在编辑模式下使用。
    */
-  record?: any;
+  record?: CategoryEntity;
 }
 
 /**
@@ -61,8 +62,15 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
    * 存储分类列表数据。
    * 用于在父级分类选择器中展示。
    */
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<CategoryEntity[]>([]);
   const { modalProps, setModalProps } = props;
+  const defaultValues = modalProps?.record
+    ? {
+        ...modalProps.record,
+        title: modalProps.record.title ?? undefined,
+        description: modalProps.record.description ?? undefined,
+      }
+    : undefined;
 
   /**
    * 分类列表获取
@@ -98,10 +106,14 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
    * 确认按钮事件
    */
   const handleModalOk = async (values: CategoryInsert | CategoryUpdate) => {
+    const modalType = modalProps?.type;
+    if (modalType === undefined) {
+      return;
+    }
     if (values.parent === "0") {
       delete values.parent;
     }
-    switch (modalProps?.type!) {
+    switch (modalType) {
       case ModalType.ADD:
         return createCategory.mutateAsync(values as CategoryInsert).then(() => {
           categoryQuery.refetch();
@@ -109,8 +121,11 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
           handleModalCancel();
         });
       case ModalType.EDIT:
+        if (!modalProps?.record?.id) {
+          return;
+        }
         return updateCategory
-          .mutateAsync({ ...values, id: modalProps?.record?.id })
+          .mutateAsync({ ...values, id: modalProps.record.id })
           .then(() => {
             categoryQuery.refetch();
             toast.success("更新成功");
@@ -121,12 +136,12 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
 
   return (
     <Dialog
-      title={`${ModalTypeName[ModalType[modalProps?.type!] as keyof typeof ModalTypeName]}分类`}
+      title={modalProps?.type ? `${ModalTypeName[ModalType[modalProps.type] as keyof typeof ModalTypeName]}分类` : "分类"}
       open={modalProps?.open}
       onOpenChange={(open) => setModalProps({ ...modalProps, open })}
     >
       <DynamicForm
-        defaultValues={modalProps?.record}
+        defaultValues={defaultValues}
         schema={
           modalProps?.type === ModalType.EDIT
             ? CategoryUpdateSchema
@@ -151,7 +166,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
             name: "parent",
             type: "select",
             options: list.map((option) => ({
-              label: creatCategoryTitleByDepth(option.title.zh, option),
+              label: creatCategoryTitleByDepth(option.title?.zh ?? "", option),
               value: option.id ?? "0",
             })),
             placeholder: "请选择父级分类",

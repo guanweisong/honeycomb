@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { Element } from "domhandler";
 
 /**
  * 从 HTML 字符串中获取所有图片链接
@@ -11,7 +12,7 @@ export function getAllImageLinkFormHtml(html?: string): string[] {
   const $ = cheerio.load(html);
   const imageLinks: string[] = [];
 
-  $("img").each((_: any, img: any) => {
+  $("img").each((_, img: Element) => {
     const src = $(img).attr("src");
     if (src) {
       imageLinks.push(src);

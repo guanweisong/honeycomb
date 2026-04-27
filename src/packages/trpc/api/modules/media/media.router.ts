@@ -22,7 +22,7 @@ export const mediaRouter = createTRPCRouter({
    * 查询媒体文件列表（支持分页、筛选、排序）。
    * (需要任意等级的登录权限)
    * @param {MediaListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
    */
   index: protectedProcedure([
     UserLevel.ADMIN,

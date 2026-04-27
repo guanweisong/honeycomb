@@ -2,6 +2,20 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { i18nField } from "./i18nField";
 import { objectId } from "./objectId";
 import { withTimestamps } from "./timestamps";
+import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+
+const userLevels = [
+  UserLevel.ADMIN,
+  UserLevel.EDITOR,
+  UserLevel.GUEST,
+] as const;
+
+const userStatuses = [
+  UserStatus.DELETED,
+  UserStatus.ENABLE,
+  UserStatus.DISABLE,
+] as const;
 
 /**
  * 用户表 (user)
@@ -10,10 +24,14 @@ import { withTimestamps } from "./timestamps";
 export const user = sqliteTable("user", {
   id: text("id").primaryKey().$defaultFn(objectId),
   email: text("email").unique(),
-  level: text("level").default("EDITOR").notNull(), // 用户等级，默认为编辑
+  level: text("level", { enum: userLevels })
+    .default(UserLevel.GUEST)
+    .notNull(), // 用户等级，默认为访客
   name: text("name").unique(),
   password: text("password"),
-  status: text("status").default("ENABLE").notNull(), // 用户状态，默认启用
+  status: text("status", { enum: userStatuses })
+    .default(UserStatus.ENABLE)
+    .notNull(), // 用户状态，默认启用
   ...withTimestamps(),
 });
 
@@ -107,17 +125,6 @@ export const media = sqliteTable("media", {
   color: text("color"), // 图片主色调
   height: integer("height"), // 图片高度
   width: integer("width"), // 图片宽度
-  ...withTimestamps(),
-});
-
-/**
- * Token 表 (token)
- * 存储用于特定目的的令牌，例如 API 访问令牌。
- */
-export const token = sqliteTable("token", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  content: text("content").unique(), // Token 内容
-  userId: text("user_id"), // 关联的用户ID
   ...withTimestamps(),
 });
 

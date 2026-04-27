@@ -6,9 +6,10 @@ import {
   FieldValues,
   UseFormReturn,
   DefaultValues,
+  Path,
   Resolver,
 } from "react-hook-form";
-import { z, ZodObject } from "zod";
+import { z, ZodObject, ZodRawShape } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Form } from "../../components/form";
@@ -16,7 +17,7 @@ import { Button } from "../../components/button";
 
 import { DynamicField, FieldConfig } from "./DynamicField";
 
-export type DynamicFormRef<T extends FieldValues = any> = {
+export type DynamicFormRef<T extends FieldValues = FieldValues> = {
   setValue: UseFormReturn<T>["setValue"];
   getValues: UseFormReturn<T>["getValues"];
   reset: UseFormReturn<T>["reset"];
@@ -24,7 +25,7 @@ export type DynamicFormRef<T extends FieldValues = any> = {
   submit: () => void | Promise<void>;
 };
 
-interface DynamicFormProps<TSchema extends ZodObject<any>> {
+interface DynamicFormProps<TSchema extends ZodObject<ZodRawShape>> {
   schema: TSchema;
   fields: FieldConfig[];
   defaultValues?: DefaultValues<z.infer<TSchema>>;
@@ -34,7 +35,7 @@ interface DynamicFormProps<TSchema extends ZodObject<any>> {
   renderSubmitButton?: boolean;
 }
 
-export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
+function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
   {
     schema,
     fields,
@@ -44,12 +45,12 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
     submitProps,
     renderSubmitButton = true,
   }: DynamicFormProps<TSchema>,
-  ref: React.Ref<DynamicFormRef<z.infer<TSchema>>>,
+  ref: React.ForwardedRef<DynamicFormRef<z.infer<TSchema>>>,
 ) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<TSchema>>({
-    resolver: zodResolver(schema) as unknown as Resolver<z.infer<TSchema>>,
+    resolver: zodResolver(schema) as Resolver<z.infer<TSchema>>,
     mode: "onBlur",
     defaultValues,
   });
@@ -60,15 +61,13 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
     reset: form.reset,
     setValues: (values) => {
       Object.entries(values).forEach(([key, value]) => {
-        form.setValue(key as any, value, {
+        form.setValue(key as Path<z.infer<TSchema>>, value as never, {
           shouldValidate: true,
           shouldDirty: true,
         });
       });
     },
-    submit: () => {
-      return form.handleSubmit(onSubmit)();
-    },
+    submit: () => form.handleSubmit(onSubmit)(),
   }));
 
   return (
@@ -103,4 +102,12 @@ export const DynamicForm = forwardRef(function <TSchema extends ZodObject<any>>(
       </form>
     </Form>
   );
-});
+}
+
+export const DynamicForm = forwardRef(DynamicFormInner) as <
+  TSchema extends ZodObject<ZodRawShape>,
+>(
+  props: DynamicFormProps<TSchema> & {
+    ref?: React.Ref<DynamicFormRef<z.infer<TSchema>>>;
+  },
+) => React.ReactElement;

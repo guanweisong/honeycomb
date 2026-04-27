@@ -23,7 +23,7 @@ export const categoryRouter = createTRPCRouter({
   /**
    * 查询分类列表（支持分页、筛选、排序和树状结构）。
    * @param {CategoryListQuerySchema} input - 查询参数，包括分页、排序和筛选条件。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含树状结构列表和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含树状结构列表和总记录数的对象。
    *
    * 工作流程：
    * 1. 使用 `buildDrizzleWhere` 根据输入参数动态构建筛选条件。

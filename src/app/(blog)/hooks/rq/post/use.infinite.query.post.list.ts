@@ -46,7 +46,7 @@ export default function useInfiniteQueryPostList(
     queryFn: ({ pageParam }) =>
       getPostList(queryParams, typeof pageParam === "number" ? pageParam : 1),
     getNextPageParam: (lastPage, allPages) => {
-      const { list, total } = lastPage;
+      const { total } = lastPage;
       const loadedCount = allPages.flatMap((page) => page.list).length;
 
       if (loadedCount >= total) {

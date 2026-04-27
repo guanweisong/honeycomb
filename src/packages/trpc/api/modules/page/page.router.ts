@@ -17,6 +17,7 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
+import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -25,7 +26,7 @@ export const pageRouter = createTRPCRouter({
   /**
    * 查询独立页面列表（支持分页、筛选、排序）。
    * @param {PageListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含页面列表（已附加作者信息）和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含页面列表（已附加作者信息）和总记录数的对象。
    */
   index: publicProcedure
     .input(PageListQuerySchema)
@@ -153,6 +154,10 @@ export const pageRouter = createTRPCRouter({
         .insert(schema.page)
         .values({
           ...input,
+          content: {
+            en: sanitizeRichText(input.content.en),
+            zh: sanitizeRichText(input.content.zh),
+          },
           authorId,
         } as InferInsertModel<typeof schema.page>)
         .returning();
@@ -184,9 +189,18 @@ export const pageRouter = createTRPCRouter({
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
+      const nextValues: Partial<InferInsertModel<typeof schema.page>> = {
+        ...rest,
+      };
+      if (rest.content) {
+        nextValues.content = {
+          en: sanitizeRichText(rest.content.en),
+          zh: sanitizeRichText(rest.content.zh),
+        };
+      }
       const [updatedPage] = await ctx.db
         .update(schema.page)
-        .set(rest as Partial<InferInsertModel<typeof schema.page>>)
+        .set(nextValues)
         .where(eq(schema.page.id, id))
         .returning();
 

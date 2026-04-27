@@ -1,14 +1,13 @@
 "use client";
 
 import { menu } from "@/app/admin/constants/menuData";
-import { useSettingStore } from "@/app/admin/stores/useSettingStore";
-import { useUserStore } from "@/app/admin/stores/useUserStore";
-import { useRouter } from "next/navigation";
+import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
+import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
 import React from "react";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { toast } from "sonner";
+import { signOut } from "next-auth/react";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
 
 /**
  * 后台管理界面的核心布局组件。
@@ -18,49 +17,45 @@ import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
  * @param {{ children: React.ReactNode }} props - 包含子页面内容的 props。
  * @returns {JSX.Element} 返回一个配置好的 `AdminLayout` 组件实例。
  */
-export default ({
+function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.ReactNode => {
-  const router = useRouter();
-  const userStore = useUserStore();
-  const settingStore = useSettingStore();
-
-  const { setting } = settingStore;
-  const { user } = userStore;
-  const logoutMutation = trpc.auth.logout.useMutation();
+}): React.ReactNode {
+  const { user } = useCurrentUser();
+  const { setting } = useSiteSetting();
+  const utils = trpc.useUtils();
 
   /**
    * 处理用户登出操作。
-   * 1. 调用后端的 `logout` API，并从 localStorage 中移除 token。
-   * 2. 无论 API 调用成功与否，都会清空本地 token 并重定向到登录页。
+   * 1. 调用 NextAuth 的登出逻辑清理会话。
+   * 2. 无论 API 调用成功与否，都会跳转回登录页。
    * 3. 显示成功登出的消息提示。
    */
   const handleLogout = async () => {
-    const token = localStorage.getItem("token");
     try {
-      if (token) await logoutMutation.mutateAsync({ token });
+      await signOut({ redirect: false });
+      utils.user.current.setData(undefined, undefined);
+      await utils.user.current.invalidate();
       toast.success("登出成功");
-    } catch (e) {
+    } catch {
       // 即使 API 调用失败，也继续执行登出流程，确保前端状态被清理
     } finally {
-      localStorage.removeItem("token");
-      router.push("/admin/login");
+      window.location.href = "/admin/login";
     }
   };
 
-  // 使用从 @honeycomb/ui 包中导入的 AdminLayout 组件来构建 UI
-  // 将菜单数据、用户信息、网站设置和登出函数作为 props 传入
   return (
     <AdminLayout
       title={setting?.siteName?.zh}
       menu={menu}
-      user={user as UserEntity}
+      user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
     >
       {children}
     </AdminLayout>
   );
-};
+}
+
+export default AdminDashboardLayout;

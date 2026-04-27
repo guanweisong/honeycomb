@@ -5,6 +5,7 @@ import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import "./globals.scss";
 
 // 创建一个 React Query 客户端实例
@@ -23,10 +24,10 @@ export const dynamic = "force-dynamic";
  * @returns {JSX.Element} 返回一个包含了全局提供者和基本 HTML 结构的布局。
  *
  * 全局配置包括：
+ * - **`SessionProvider`**: 为后台页面提供 NextAuth 会话上下文。
  * - **`trpc.Provider`**: 为整个应用提供 tRPC 客户端实例，使其可以在任何组件中调用 API。
  * - **`QueryClientProvider`**: 提供 React Query 的客户端实例，用于数据缓存和状态管理。
  * - **`<Toaster />`**: 全局的消息提示组件。
- * - **第三方脚本**: 腾讯防水墙的验证码脚本。
  * - **Google Analytics**: 集成谷歌分析。
  * - **Viewport**: 设置移动设备友好的视口。
  */
@@ -44,11 +45,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
-        </trpc.Provider>
+        <SessionProvider>
+          <trpc.Provider client={trpcClient} queryClient={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              {children}
+            </QueryClientProvider>
+          </trpc.Provider>
+        </SessionProvider>
         <Toaster />
       </body>
       <GoogleAnalytics gaId="G-15D5ZQ68JX" />

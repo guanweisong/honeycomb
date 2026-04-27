@@ -22,7 +22,7 @@ export const linkRouter = createTRPCRouter({
   /**
    * 查询友情链接列表（支持分页、筛选、排序）。
    * @param {LinkListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含链接列表和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含链接列表和总记录数的对象。
    */
   index: publicProcedure
     .input(LinkListQuerySchema)

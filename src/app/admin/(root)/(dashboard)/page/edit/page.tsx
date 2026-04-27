@@ -19,6 +19,25 @@ import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
+import { z } from "zod";
+
+type PageFormValues = z.infer<typeof PageInsertSchema>;
+
+function toPageFormValues(detail?: {
+  title?: PageFormValues["title"] | null;
+  content?: PageFormValues["content"] | null;
+  status?: PageFormValues["status"];
+} | null): Partial<PageFormValues> | undefined {
+  if (!detail) {
+    return undefined;
+  }
+
+  return {
+    title: detail.title ?? undefined,
+    content: detail.content ?? undefined,
+    status: detail.status ?? undefined,
+  };
+}
 
 /**
  * 页面创建/编辑页面核心组件。
@@ -28,7 +47,7 @@ import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 const Page = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const formRef = useRef<DynamicFormRef>(null);
+  const formRef = useRef<DynamicFormRef<PageInsert | PageUpdate>>(null);
   /**
    * 用于存储提交状态的引用，例如草稿或已发布。
    */
@@ -59,7 +78,7 @@ const Page = () => {
    */
   useEffect(() => {
     if (detail) {
-      formRef.current?.setValues(detail);
+      formRef.current?.setValues(toPageFormValues(detail) ?? {});
     } else {
       formRef.current?.reset();
     }

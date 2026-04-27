@@ -84,7 +84,7 @@ const Category = () => {
       await destroyCategory.mutateAsync({ ids });
       refetch();
       toast.success("删除成功");
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };

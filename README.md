@@ -37,8 +37,12 @@
 ### 状态管理与 API
 - **tRPC 11.3.1** - 端到端类型安全的 API 层
 - **TanStack Query 5.80.6** - 服务端状态管理
-- **Zustand 4.5.0** - 客户端状态管理
 - **Zod 4.1.11** - 数据验证 schema
+
+### 认证与授权
+- **NextAuth.js** - 后台认证，支持 Credentials / Google / GitHub / Apple 登录
+- **JWT Session** - 基于 HttpOnly Cookie 的会话机制
+- **bcryptjs** - 用户名密码登录的密码哈希校验
 
 ### 数据库与 ORM
 - **Drizzle ORM 0.44.7** - 现代化 TypeScript ORM
@@ -136,17 +140,33 @@ R2_BUCKET_NAME=your_bucket_name
 R2_PUBLIC_URL=your_public_url
 
 # Cloudflare Turnstile (验证码)
-TURNSTILE_SITE_KEY=your_site_key
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key
 TURNSTILE_SECRET_KEY=your_secret_key
 
 # Resend (邮件服务)
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_from_email
 
-# Next Auth
+# NextAuth
 NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=your_nextauth_url
+NEXTAUTH_URL=http://localhost:3000
+
+# OAuth Providers（按需配置；未配置则对应按钮不会显示）
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
+AUTH_GITHUB_ID=your_github_client_id
+AUTH_GITHUB_SECRET=your_github_client_secret
+AUTH_APPLE_ID=your_apple_service_id
+AUTH_APPLE_SECRET=your_apple_client_secret
 ```
+
+### 登录说明
+
+- 后台登录页为 `/admin/login`
+- 支持用户名密码登录，以及 Google / GitHub / Apple OAuth 登录
+- OAuth Provider 只有在对应环境变量存在时才会启用并展示按钮
+- 用户名密码登录会校验 Turnstile，并使用 `bcrypt` 哈希比对密码
+- 登录后的会话由 NextAuth 维护，权限判定以数据库中的用户状态和角色为准
 
 ### 数据库迁移
 
@@ -206,7 +226,6 @@ bun deploy:cloudflare     # 部署到 Cloudflare
 - **page** - 页面表（独立页面）
 - **comment** - 评论表（支持嵌套评论）
 - **media** - 媒体文件表（图片、视频等）
-- **token** - Token 表（认证令牌）
 - **setting** - 网站设置表
 - **menu** - 菜单表（导航菜单）
 - **tag** - 标签表
@@ -225,7 +244,7 @@ bun deploy:cloudflare     # 部署到 Cloudflare
 
 - **ADMIN** - 管理员，拥有所有权限
 - **EDITOR** - 编辑，可以管理内容
-- **GUEST** - 访客，只能查看内容
+- **GUEST** - 默认角色，可登录后台；高敏操作仍由接口级权限控制
 
 权限通过 tRPC middleware 实现：
 

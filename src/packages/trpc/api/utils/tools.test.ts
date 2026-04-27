@@ -72,7 +72,7 @@ describe("buildDrizzleWhere", () => {
 
   it("should handle undefined queries", () => {
     const table = { name: "name", status: "status" };
-    const result = buildDrizzleWhere(table, undefined as any, []);
+    const result = buildDrizzleWhere(table, {}, []);
     expect(result).toBeUndefined();
   });
 

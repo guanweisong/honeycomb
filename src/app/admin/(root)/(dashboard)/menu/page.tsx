@@ -21,6 +21,21 @@ import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/categ
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 import { MenuEntityTree } from "@/app/admin/types/menu.entity.tree";
 
+type SortableMenuNode = MenuEntityTree & {
+  title: string;
+  subtitle: string;
+  expanded: boolean;
+};
+
+type MenuSelectableItem = CategoryEntity | PageEntity;
+
+type MenuSaveItem = {
+  id: string;
+  type: MenuType;
+  power: number;
+  parent?: string;
+};
+
 /**
  * 菜单管理页面。
  * 允许管理员配置网站的导航菜单，支持从页面和分类中选择菜单项，并进行拖拽排序。
@@ -57,7 +72,7 @@ const Menu = () => {
    * 确保在菜单数据加载或更新后，本地状态与远程数据同步。
    */
   useEffect(() => {
-    setCheckedList((checkedData?.list as MenuEntityTree[]) ?? []);
+    setCheckedList((checkedData?.list ?? []) as MenuEntityTree[]);
   }, [checkedData]);
 
   /**
@@ -91,9 +106,23 @@ const Menu = () => {
    * @param {boolean} checked - 是否选中。
    * @param {MenuType} type - 菜单项的类型（例如 `CATEGORY` 或 `PAGE`）。
    */
-  const onCheck = (item: MenuEntityTree, checked: boolean, type: MenuType) => {
+  const onCheck = (item: MenuSelectableItem, checked: boolean, type: MenuType) => {
     if (checked) {
-      setCheckedList([...checkedList, { ...item, parent: "0", type }]);
+      const nextItem: MenuEntityTree = {
+        id: item.id,
+        title: item.title ?? null,
+        path: "path" in item ? item.path ?? null : null,
+        parent: "0",
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        power: checkedList.length,
+        type,
+      };
+
+      setCheckedList([
+        ...checkedList,
+        nextItem,
+      ]);
     } else {
       removeItem(item.id);
     }
@@ -150,7 +179,7 @@ const Menu = () => {
    * 将拖拽后的树形数据扁平化，并更新 `checkedList`，以反映新的排序和父子关系。
    * @param {MenuItem[]} treeData - 拖拽后的树形数据。
    */
-  const onDragEnd = (treeData: MenuEntityTree[]) => {
+  const onDragEnd = (treeData: SortableMenuNode[]) => {
     const listData = getFlatDataFromTree({
       treeData,
       getNodeKey: ({ node }: { node: MenuEntityTree }) => node.id,
@@ -160,7 +189,6 @@ const Menu = () => {
     const list: MenuEntityTree[] = listData.map(({ node, parentNode }) => ({
       ...node,
       parent: parentNode?.id ?? "0",
-      expanded: !!node.children,
     }));
 
     setCheckedList(list);
@@ -175,11 +203,12 @@ const Menu = () => {
    * @returns {Object[]} 格式化后的树形菜单数据。
    */
   const getMenuFormat = () => {
-    const format: any[] = [];
+    const format: SortableMenuNode[] = [];
     checkedList?.forEach((item) => {
       format.push({
         ...item,
-        title: item.title?.zh ?? item.title,
+        title:
+          typeof item.title === "string" ? item.title : (item.title?.zh ?? ""),
         subtitle: MenuTypeName[item.type as MenuType],
         expanded: true,
       });
@@ -201,11 +230,11 @@ const Menu = () => {
    * 将 `checkedList` 中的菜单项转换为后端所需的格式，并调用 `saveAllMenu` mutation 进行保存。
    */
   const submit = async () => {
-    const data: Array<{ id: string; type: string; power: number; parent?: string }> = [];
+    const data: MenuSaveItem[] = [];
     checkedList?.forEach((item, index) => {
-      const menu: { id: string; type: string; power: number; parent?: string } = {
+      const menu: MenuSaveItem = {
         id: item.id,
-        type: item.type,
+        type: item.type as MenuType,
         power: index,
       };
       if (item.parent !== "0" && item.parent) {
@@ -214,17 +243,13 @@ const Menu = () => {
       data.push(menu);
     });
     try {
-      await saveAllMenu.mutateAsync(data as any);
+      await saveAllMenu.mutateAsync(data);
       toast.success("更新成功");
       refetch();
-    } catch (e) {
+    } catch {
       toast.error("更新失败");
     }
   };
-
-  console.log("categoryList", categoryList);
-  console.log("checkedList", checkedList);
-  console.log("pageList", pageList);
 
   return (
     <div className="flex gap-6">
@@ -246,7 +271,7 @@ const Menu = () => {
                     >
                       <Checkbox
                         onCheckedChange={(checked) =>
-                          onCheck(item as any, checked === true, MenuType.CATEGORY)
+                          onCheck(item, checked === true, MenuType.CATEGORY)
                         }
                         checked={getCheckedStatus(item)}
                         disabled={getDisabledStatus(item)}
@@ -269,10 +294,10 @@ const Menu = () => {
                     >
                       <Checkbox
                         onCheckedChange={(checked) =>
-                          onCheck(item as any, checked === true, MenuType.PAGE)
+                          onCheck(item, checked === true, MenuType.PAGE)
                         }
-                        checked={getCheckedStatus(item as any)}
-                        disabled={getDisabledStatus(item as any)}
+                        checked={getCheckedStatus(item)}
+                        disabled={getDisabledStatus(item)}
                         label={item.title?.zh}
                       />
                     </div>

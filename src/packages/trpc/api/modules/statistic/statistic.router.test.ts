@@ -1,26 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { statisticRouter } from './statistic.router'
 import { UserLevel } from '@/packages/trpc/api/modules/user/types/user.level'
+import { createMockContext, createMockDb } from '../../../../../../tests/helpers/test-utils'
 
 // Mock database and related modules
 vi.mock('@/packages/db/db', () => ({
   getDb: vi.fn(() => mockDb),
 }))
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-}
+const mockDb = createMockDb()
 
 describe('Statistic Router', () => {
   beforeEach(() => {
@@ -33,13 +21,9 @@ describe('Statistic Router', () => {
       mockDb.select.mockReturnValue(mockDb)
       mockDb.from.mockReturnValue(mockDb)
       mockDb.where.mockReturnValue(mockDb)
-      mockDb.where.mockResolvedValue([{ count: '0' }] as any)
+      mockDb.where.mockResolvedValue([{ count: '0' }])
 
-      const caller = statisticRouter.createCaller({
-        db: mockDb as any,
-        user: { id: '1', level: UserLevel.ADMIN },
-        header: new Headers(),
-      })
+      const caller = statisticRouter.createCaller(createMockContext({ id: '1', level: UserLevel.ADMIN }, mockDb))
 
       const result = await caller.index()
 
@@ -50,11 +34,7 @@ describe('Statistic Router', () => {
     })
 
     it('should throw error for non-authenticated users', async () => {
-      const caller = statisticRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      })
+      const caller = statisticRouter.createCaller(createMockContext(null, mockDb))
 
       await expect(caller.index()).rejects.toThrow()
     })

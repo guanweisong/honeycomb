@@ -27,13 +27,13 @@ import { MultiSelect } from "../MultiSelect";
 
 export function normalizeFilters(
   filters: ColumnFiltersState,
-): Record<string, any> {
+): Record<string, unknown> {
   return filters.reduce(
     (acc, filter) => {
       acc[filter.id] = filter.value;
       return acc;
     },
-    {} as Record<string, any>,
+    {} as Record<string, unknown>,
   );
 }
 
@@ -47,7 +47,7 @@ interface DataSource<TData> {
   total: number;
 }
 
-interface DataTableProps<TData, TRequest> {
+interface DataTableProps<TData, TRequest extends Record<string, unknown>> {
   columns: ColumnDef<TData>[];
   data: DataSource<TData>;
 
@@ -66,7 +66,11 @@ interface DataTableProps<TData, TRequest> {
   onChange?: (params: TRequest) => void;
 }
 
-export function DataTable<TData, TRequest>(
+type ColumnMeta = {
+  filterOptions?: Array<{ label: string; value: string }>;
+};
+
+export function DataTable<TData, TRequest extends Record<string, unknown>>(
   props: DataTableProps<TData, TRequest>,
 ) {
   const {
@@ -94,18 +98,23 @@ export function DataTable<TData, TRequest>(
     page: 1,
     limit: 10,
   });
+  const onChangeRef = React.useRef(onChange);
 
   React.useEffect(() => {
-    let params: any = { ...pagination };
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  React.useEffect(() => {
+    const params: Record<string, unknown> = { ...pagination };
     if (sorting?.length) {
       params.sortField = sorting[0].id;
       params.sortOrder = sorting[0].desc ? "desc" : "asc";
     }
     if (columnFilters?.length) {
-      params = { ...params, ...normalizeFilters(columnFilters) };
+      Object.assign(params, normalizeFilters(columnFilters));
     }
-    onChange?.(params as TRequest);
-  }, [pagination, sorting, columnFilters]);
+    onChangeRef.current?.(params as TRequest);
+  }, [columnFilters, pagination, sorting]);
 
   const handlePaginationChange = (value: Pagination) => {
     setPagination(value);
@@ -187,7 +196,9 @@ export function DataTable<TData, TRequest>(
                 )}
                 {headerGroup.headers.map((header) => {
                   const column = header.column;
-                  const filterOptions = (column.columnDef.meta as { filterOptions?: Array<{ label: string; value: string }> })?.filterOptions;
+                  const filterOptions = (column.columnDef.meta as
+                    | ColumnMeta
+                    | undefined)?.filterOptions;
                   const isSorted = column.getIsSorted();
                   const isFiltered = (column.getFilterValue() as string[])
                     ?.length;

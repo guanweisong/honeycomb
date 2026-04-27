@@ -7,8 +7,8 @@ describe('getAllImageLinkFormHtml', () => {
     expect(result).toEqual([])
   })
 
-  it('should return empty array for null html', () => {
-    const result = getAllImageLinkFormHtml(null as any)
+  it('should return empty array for falsy html', () => {
+    const result = getAllImageLinkFormHtml(undefined)
     expect(result).toEqual([])
   })
 

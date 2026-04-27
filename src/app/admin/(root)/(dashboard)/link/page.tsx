@@ -30,6 +30,21 @@ import {
 } from "@/packages/trpc/api/types/enable.status";
 import { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
 
+function toLinkFormDefaults(record?: LinkEntity): Partial<LinkUpdate> | undefined {
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    id: record.id,
+    name: record.name,
+    url: record.url,
+    logo: record.logo,
+    description: record.description ?? undefined,
+    status: record.status ?? undefined,
+  };
+}
+
 /**
  * 友情链接管理页面。
  * 该组件负责展示友情链接列表，并提供搜索、新增、编辑、删除等管理功能。
@@ -90,26 +105,29 @@ const Link = () => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createLink.mutateAsync(
-            values as z.infer<typeof LinkInsertSchema>,
-          );
+          await createLink.mutateAsync(values as z.infer<typeof LinkInsertSchema>);
           refetch();
           toast.success("添加成功");
           setModalProps((prevState) => ({ ...prevState, open: false }));
-        } catch (error) {
+        } catch {
           toast.error("添加失败");
         }
         break;
       case ModalType.EDIT:
         try {
+          const recordId = modalProps.record?.id;
+          if (!recordId) {
+            toast.error("缺少记录ID");
+            return;
+          }
           await updateLink.mutateAsync({
-            id: modalProps.record?.id!,
+            id: recordId,
             ...values,
           });
           refetch();
           toast.success("更新成功");
           setModalProps((prevState) => ({ ...prevState, open: false }));
-        } catch (error) {
+        } catch {
           toast.error("更新失败");
         }
         break;
@@ -263,7 +281,7 @@ const Link = () => {
                 ? {
                     status: EnableStatus.ENABLE,
                   }
-                : modalProps.record
+                : toLinkFormDefaults(modalProps.record)
             }
             schema={
               modalProps.type === ModalType.EDIT

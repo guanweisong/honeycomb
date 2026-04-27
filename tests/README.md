@@ -9,9 +9,6 @@
 
 ```
 src/packages/trpc/api/modules/
-├── auth/
-│   ├── auth.router.ts
-│   └── auth.router.test.ts     # 认证相关测试
 ├── user/
 │   ├── user.router.ts
 │   └── user.router.test.ts     # 用户管理测试
@@ -40,7 +37,6 @@ tests/
 bun test
 
 # 运行特定模块测试
-bun test src/packages/trpc/api/modules/auth/auth.router.test.ts
 bun test src/packages/trpc/api/modules/user/user.router.test.ts
 
 # 监听模式
@@ -55,7 +51,6 @@ bun test:ui
 
 ## 测试覆盖的模块
 
-- ✅ **Auth Router** - 认证功能（登录、登出、获取当前用户）
 - ✅ **User Router** - 用户管理（CRUD操作、权限验证）
 - ✅ **Post Router** - 文章管理（基础功能测试）
 - 🔄 **Other Routers** - 其他模块待补充测试
@@ -70,5 +65,4 @@ bun test:ui
 ## 测试示例
 
 参考现有的测试文件：
-- `src/packages/trpc/api/modules/auth/auth.router.test.ts` - 完整的认证测试
 - `src/packages/trpc/api/modules/user/user.router.test.ts` - 用户管理测试

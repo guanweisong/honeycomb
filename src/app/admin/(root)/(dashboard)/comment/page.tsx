@@ -63,7 +63,7 @@ const Comment = () => {
       await updateComment.mutateAsync({ id, status: type } as CommentUpdate);
       refetch();
       toast.success("更新成功");
-    } catch (e) {
+    } catch {
       toast.error("更新失败");
     }
   };
@@ -73,7 +73,7 @@ const Comment = () => {
    * @param record
    */
   const renderOpt = (record: CommentEntity): React.ReactNode => {
-    let dom = [];
+    const dom = [];
     switch (record.status) {
       case CommentStatus.TO_AUDIT:
         dom.push(
@@ -174,7 +174,7 @@ const Comment = () => {
       await destroyComment.mutateAsync({ ids });
       refetch();
       toast.success("删除成功");
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };

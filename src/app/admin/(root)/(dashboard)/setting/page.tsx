@@ -1,10 +1,13 @@
 "use client";
 
-import { useSettingStore } from "@/app/admin/stores/useSettingStore";
+import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas/setting.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
+import { z } from "zod";
+
+type SettingFormValues = z.infer<typeof SettingUpdateSchema>;
 
 /**
  * 网站设置页面。
@@ -12,9 +15,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
  * 使用 `react-hook-form` 管理表单状态，并通过 tRPC 与后端进行数据交互。
  */
 const Setting = () => {
-  const settingStore = useSettingStore();
-
-  const { setting, querySetting } = settingStore;
+  const { setting, refreshSetting } = useSiteSetting();
 
   /**
    * 更新网站设置的 tRPC mutation。
@@ -25,14 +26,13 @@ const Setting = () => {
   /**
    * 表单提交处理器。
    * 当用户提交设置表单时调用，将表单值发送到后端进行更新，并刷新本地设置缓存。
-   * @param {any} values - 表单提交的值。
    */
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: SettingFormValues) => {
     try {
-      await updateSetting.mutateAsync({ id: setting!.id, ...values });
-      await querySetting();
+      await updateSetting.mutateAsync({ ...values, id: setting!.id });
+      await refreshSetting();
       toast.success("更新成功");
-    } catch (e) {
+    } catch {
       toast.error("更新失败");
     }
   };
@@ -40,7 +40,19 @@ const Setting = () => {
   return (
     <div className="w-[60%] mx-auto">
       <DynamicForm
-        defaultValues={setting}
+        defaultValues={
+          setting
+            ? {
+                id: setting.id,
+                siteName: setting.siteName ?? undefined,
+                siteSubName: setting.siteSubName ?? undefined,
+                siteSignature: setting.siteSignature ?? undefined,
+                siteCopyright: setting.siteCopyright ?? undefined,
+                siteRecordNo: setting.siteRecordNo ?? undefined,
+                siteRecordUrl: setting.siteRecordUrl ?? undefined,
+              }
+            : undefined
+        }
         schema={SettingUpdateSchema}
         fields={[
           {

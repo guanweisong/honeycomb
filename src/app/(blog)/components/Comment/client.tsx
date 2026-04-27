@@ -13,8 +13,8 @@ import { CommentInsertInput } from "@/packages/trpc/api/modules/comment/schemas/
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useTranslations } from "next-intl";
 import {
-  CommentEntity,
-  CommentResponse,
+  CommentTreeEntity,
+  CommentTreeResponse,
 } from "@/packages/trpc/api/modules/comment/types/comment.entity";
 import { usePathname, useRouter } from "@/app/(blog)/i18n/navigation";
 
@@ -26,7 +26,7 @@ export interface CommentClientProps extends CommentProps {
   /**
    * 评论查询的 Promise，用于获取评论数据。
    */
-  queryCommentPromise: Promise<CommentResponse>;
+  queryCommentPromise: Promise<CommentTreeResponse>;
 }
 
 /**
@@ -67,7 +67,7 @@ const CommentClient = (props: CommentClientProps) => {
   /**
    * 存储当前回复的评论对象。
    */
-  const [replyTo, setReplyTo] = useState<CommentEntity | null>(null);
+  const [replyTo, setReplyTo] = useState<CommentTreeEntity | null>(null);
   /**
    * 表单元素的引用。
    */
@@ -113,9 +113,9 @@ const CommentClient = (props: CommentClientProps) => {
   /**
    * 处理评论回复事件。
    * 设置 `replyTo` 状态，并滚动到评论表单。
-   * @param {CommentEntity | null} [item] - 要回复的评论对象，如果为 `null` 则取消回复。
+   * @param {CommentTreeEntity | null} [item] - 要回复的评论对象，如果为 `null` 则取消回复。
    */
-  const handleReply = (item?: CommentEntity | null) => {
+  const handleReply = (item?: CommentTreeEntity | null) => {
     if (item !== null) {
       window.scrollTo(0, 99999);
     }
@@ -198,10 +198,10 @@ const CommentClient = (props: CommentClientProps) => {
   /**
    * 评论列表渲染函数。
    * 递归渲染评论及其子评论，并处理评论状态显示。
-   * @param {CommentEntity[]} data - 评论数据数组。
+   * @param {CommentTreeEntity[]} data - 评论数据数组。
    * @returns {JSX.Element[]} 评论列表的 JSX 元素数组。
    */
-  const renderCommentList = (data: CommentEntity[]) => {
+  const renderCommentList = (data: CommentTreeEntity[]) => {
     return data?.map((item) => (
       <li className="relative" key={item.id}>
         <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
@@ -234,7 +234,7 @@ const CommentClient = (props: CommentClientProps) => {
         </div>
         {"children" in item && Array.isArray(item.children) && item.children.length > 0 && (
           <ul className="ml-10">
-            {renderCommentList(item.children as CommentEntity[])}
+            {renderCommentList(item.children as CommentTreeEntity[])}
           </ul>
         )}
       </li>

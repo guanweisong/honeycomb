@@ -194,7 +194,7 @@ export async function generateMetadata(
 /**
  * 生成静态页面参数。
  * 在构建时预渲染页面，提高性能。
- * @returns {Promise<any[]>} 静态参数数组。
+ * @returns {Promise<Array<{ slug: string[] }>>} 静态参数数组。
  */
 export async function generateStaticParams() {
   return [];

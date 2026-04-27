@@ -33,9 +33,9 @@ export const commentRouter = createTRPCRouter({
    * 查询评论列表（后台管理使用）。
    * 支持分页、筛选和排序，并会附加关联的文章或页面信息。
    * @param {CommentListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含评论列表和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含评论列表和总记录数的对象。
    */
-  index: publicProcedure
+  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(CommentListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -76,15 +76,15 @@ export const commentRouter = createTRPCRouter({
       const [posts, pages] = await Promise.all([
         postIds.length
           ? ctx.db
-              .select()
-              .from(schema.post)
-              .where(inArray(schema.post.id, postIds))
+            .select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, postIds))
           : Promise.resolve([]),
         pageIds.length
           ? ctx.db
-              .select()
-              .from(schema.page)
-              .where(inArray(schema.page.id, pageIds))
+            .select()
+            .from(schema.page)
+            .where(inArray(schema.page.id, pageIds))
           : Promise.resolve([]),
       ]);
       const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
@@ -102,7 +102,7 @@ export const commentRouter = createTRPCRouter({
   /**
    * 根据关联资源获取树状评论列表（前台展示使用）。
    * @param {object} input - 包含资源 `id` 和 `type` (CATEGORY, PAGE, CUSTOM)。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含树状评论列表和总数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含树状评论列表和总数的对象。
    *
    * 工作流程：
    * 1. 只查询 `PUBLISH` 和 `BAN` 状态的评论。
@@ -137,15 +137,15 @@ export const commentRouter = createTRPCRouter({
 
       const list = result.length
         ? listToTree(
-            result.map((item) => ({
-              ...item,
-              id: item.id.toString(),
-              avatar: `https://cravatar.cn/avatar/${md5(
-                item.email!.trim().toLowerCase(),
-              )}?s=48&d=identicon`,
-            })),
-            { idKey: "id", parentKey: "parentId" },
-          )
+          result.map((item) => ({
+            ...item,
+            id: item.id.toString(),
+            avatar: `https://cravatar.cn/avatar/${md5(
+              item.email!.trim().toLowerCase(),
+            )}?s=48&d=identicon`,
+          })),
+          { idKey: "id", parentKey: "parentId" },
+        )
         : [];
 
       const [countResult] = await ctx.db
@@ -206,6 +206,11 @@ export const commentRouter = createTRPCRouter({
         throw new Error("Comment or setting not found");
       }
 
+      const settingWithCustomObject = {
+        ...setting,
+        customObjectId: { link: process.env.LINK_OBJECT_ID },
+      };
+
       // ====== custom link ======
       const currentCustom = getCustomCommentLink(currentComment.customId);
       const currentCommentWithCustom = {
@@ -216,8 +221,8 @@ export const commentRouter = createTRPCRouter({
       // ====== 异步发送邮件通知 ======
       // 1. 通知管理员
       sendEmail("ADMIN_NOTICE", {
-        setting: setting as any,
-        currentComment: currentCommentWithCustom as any,
+        setting: settingWithCustomObject,
+        currentComment: currentCommentWithCustom,
       }).catch((e) => console.error("Failed to send admin email:", e));
 
       // 2. 通知被回复者
@@ -241,9 +246,9 @@ export const commentRouter = createTRPCRouter({
           };
 
           sendEmail("REPLY_NOTICE", {
-            setting: setting as any,
-            currentComment: currentCommentWithCustom as any,
-            parentComment: parentCommentWithCustom as any,
+            setting: settingWithCustomObject,
+            currentComment: currentCommentWithCustom,
+            parentComment: parentCommentWithCustom,
           }).catch((e) => console.error("Failed to send reply email:", e));
         }
       }

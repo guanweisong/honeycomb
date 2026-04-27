@@ -2,8 +2,14 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectsCommand,
+  type PutObjectCommandInput,
+  type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+interface DeleteMultipleObjectParams {
+  Objects: NonNullable<DeleteObjectsCommandInput["Delete"]>["Objects"];
+}
 
 class S3 {
   /**
@@ -24,7 +30,7 @@ class S3 {
    * 上传文件
    * @param params
    */
-  static putObject = async (params: any): Promise<string> => {
+  static putObject = async (params: PutObjectCommandInput): Promise<string> => {
     const { Key, Body, ContentType } = params;
     await S3.S3().send(
       new PutObjectCommand({
@@ -51,14 +57,14 @@ class S3 {
       Key,
       ContentType,
     });
-    return getSignedUrl(S3.S3() as any, command as any, { expiresIn: 3600 });
+    return getSignedUrl(S3.S3(), command, { expiresIn: 3600 });
   };
 
   /**
    * 删除文件
    * @param params
    */
-  static deleteMultipleObject = (params: any) => {
+  static deleteMultipleObject = (params: DeleteMultipleObjectParams) => {
     const { Objects } = params;
     return S3.S3().send(
       new DeleteObjectsCommand({

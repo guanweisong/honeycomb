@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
@@ -56,30 +56,7 @@ const Menu = (props: MenuProps) => {
     { enabled: !!segments?.[1] && segments?.[0] === "archives" }, // 只有有 id 时才请求
   );
 
-  /**
-   * 副作用钩子，用于在路由或文章详情变化时更新菜单的选中状态。
-   */
-  useEffect(() => {
-    setVisible(false);
-    judgeCurrentMenu();
-    // 依赖 postDetail：当异步数据到来时也会重新计算
-  }, [pathname, postDetail]);
-
-  /**
-   * 监听点击外部事件，用于关闭移动端菜单。
-   */
-  useClickAway(() => {
-    setVisible(false);
-  }, [ref1, ref2]);
-
-  /**
-   * 计算当前菜单值（不再使用 serverClient）
-   */
-  /**
-   * 计算当前菜单值。
-   * 根据当前路由路径和文章详情，判断并设置当前激活的菜单项。
-   */
-  const judgeCurrentMenu = () => {
+  const judgeCurrentMenu = useCallback(() => {
     const segs = segments ?? [];
     let allCategoryPath = `/${segs.join("/")}`;
 
@@ -110,7 +87,22 @@ const Menu = (props: MenuProps) => {
       default:
         setCurrentCategory([allCategoryPath]);
     }
-  };
+  }, [flatMenuData, postDetail, segments]);
+
+  /**
+   * 副作用钩子，用于在路由或文章详情变化时更新菜单的选中状态。
+   */
+  useEffect(() => {
+    setVisible(false);
+    judgeCurrentMenu();
+  }, [pathname, judgeCurrentMenu]);
+
+  /**
+   * 监听点击外部事件，用于关闭移动端菜单。
+   */
+  useClickAway(() => {
+    setVisible(false);
+  }, [ref1, ref2]);
 
   /**
    * 递归渲染菜单项。

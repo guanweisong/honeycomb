@@ -62,7 +62,7 @@ const PostList = () => {
       await destroyPost.mutateAsync({ ids });
       refetch(); // 重新获取数据以更新列表
       toast.success("删除成功");
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };

@@ -5,8 +5,14 @@ import {
 } from "@/packages/trpc/api/core";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
-import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
-import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
+import {
+  PostInsert,
+  PostInsertSchema,
+} from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
+import {
+  PostUpdate,
+  PostUpdateSchema,
+} from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, and, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
@@ -17,6 +23,53 @@ import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLi
 import { getPostList } from "./post.service";
 import { loadPostRelations } from "./utils/relations";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
+import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
+import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitizeHtml";
+
+type PostInsertValues = InferInsertModel<typeof schema.post>;
+type OptionalI18nInput = Partial<Record<keyof I18n, string | null>> | null | undefined;
+
+const normalizeOptionalI18n = (
+  value: unknown,
+): I18n | null | undefined => {
+  if (value == null) {
+    return value;
+  }
+  if (typeof value !== "object") {
+    return undefined;
+  }
+
+  const item = value as OptionalI18nInput;
+
+  return {
+    en: item?.en ?? "",
+    zh: item?.zh ?? "",
+  };
+};
+
+const toPostInsertValues = (
+  input: PostInsert,
+  authorId: string,
+): PostInsertValues => ({
+  ...input,
+  authorId,
+  galleryLocation: normalizeOptionalI18n(input.galleryLocation),
+  title: normalizeOptionalI18n(input.title),
+  content: sanitizeOptionalI18nHtml(normalizeOptionalI18n(input.content)),
+  excerpt: normalizeOptionalI18n(input.excerpt),
+  quoteAuthor: normalizeOptionalI18n(input.quoteAuthor),
+  quoteContent: normalizeOptionalI18n(input.quoteContent),
+});
+
+const toPostUpdateValues = (input: Omit<PostUpdate, "id">): Partial<PostInsertValues> => ({
+  ...input,
+  galleryLocation: normalizeOptionalI18n(input.galleryLocation),
+  title: normalizeOptionalI18n(input.title),
+  content: sanitizeOptionalI18nHtml(normalizeOptionalI18n(input.content)),
+  excerpt: normalizeOptionalI18n(input.excerpt),
+  quoteAuthor: normalizeOptionalI18n(input.quoteAuthor),
+  quoteContent: normalizeOptionalI18n(input.quoteContent),
+});
 
 /**
  * 文章相关的 tRPC 路由。
@@ -25,7 +78,7 @@ export const postRouter = createTRPCRouter({
   /**
    * 查询文章列表（支持分页、多种筛选、排序和关联数据加载）。
    * @param {PostListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含文章列表和总记录数的对象。
+   * @returns {Promise<{ list: PostWithRelations[], total: number }>} 返回一个包含文章列表和总记录数的对象。
    *
    * 筛选逻辑：
    * - 支持对状态、类型、标题、内容的筛选。
@@ -87,12 +140,12 @@ export const postRouter = createTRPCRouter({
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
+      if (!authorId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
       const [newPost] = await ctx.db
         .insert(schema.post)
-        .values({
-          ...input,
-          authorId,
-        } as any)
+        .values(toPostInsertValues(input, authorId))
         .returning();
       return newPost;
     }),
@@ -124,7 +177,7 @@ export const postRouter = createTRPCRouter({
       const { id, ...rest } = input;
       const [updatedPost] = await ctx.db
         .update(schema.post)
-        .set(rest as Partial<InferInsertModel<typeof schema.post>>)
+        .set(toPostUpdateValues(rest))
         .where(eq(schema.post.id, id))
         .returning();
       return updatedPost;

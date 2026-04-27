@@ -1,9 +1,9 @@
 "use client";
 import FullLoadingView from "@/app/admin/components/FullLoadingView";
-import { useSettingStore } from "@/app/admin/stores/useSettingStore";
-import { useUserStore } from "@/app/admin/stores/useUserStore";
+import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
+import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { useRouter, useSelectedLayoutSegments } from "next/navigation";
-import React, { useEffect, useLayoutEffect } from "react";
+import React, { useEffect } from "react";
 
 /**
  * 应用的核心布局和路由守卫。
@@ -14,58 +14,48 @@ import React, { useEffect, useLayoutEffect } from "react";
  * @returns {JSX.Element | null} 返回子页面、全局加载动画或执行重定向。
  *
  * 核心逻辑：
- * 1. **状态管理**: 使用 Zustand (`useUserStore`, `useSettingStore`) 来管理全局的用户和设置状态。
- * 2. **数据获取**: 在 `useLayoutEffect` 中，组件首次加载时异步获取当前用户信息和网站设置。
- * 3. **加载状态**: 在用户信息 (`user`) 未确定（`undefined`）时，显示一个全屏的加载动画，防止页面闪烁。
- * 4. **认证守卫**:
- *    - 如果用户 **已登录** (`user` 为真) 并且当前处于登录页，则自动重定向到 `/dashboard`。
- *    - 如果用户 **未登录** (`user` 为假) 并且当前不在登录页，则自动重定向到 `/login`。
- * 5. **内容渲染**: 如果通过了所有检查，则正常渲染 `children`，即当前应该显示的页面。
+ * 1. 在首次挂载时同步一次网站设置。
+ * 2. 使用 `user.current` 作为后台当前用户的单一事实来源。
+ * 3. 当前用户加载期间显示全屏 loading，防止后台壳层闪烁。
+ * 4. 根据当前用户和访问页面决定是否重定向。
  */
-export default ({
+function AdminRootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.ReactNode | null => {
+}): React.ReactNode | null {
   const router = useRouter();
-  const userStore = useUserStore();
-  const settingStore = useSettingStore();
+  const { user, isLoading: isCurrentUserLoading } = useCurrentUser();
+  const { refreshSetting } = useSiteSetting();
   const selectedLayoutSegments = useSelectedLayoutSegments();
-
-  const { user, queryUser } = userStore;
-  const { querySetting } = settingStore;
-
   const isLoginPage = selectedLayoutSegments.includes("login");
 
-  useLayoutEffect(() => {
-    Promise.all([queryUser(), querySetting()]);
+  /**
+   * 后台根布局首次挂载时同步一次全局 setting。
+   * Session 状态由 SessionProvider 自动管理，这里不再额外手动刷新。
+   */
+  useEffect(() => {
+    void refreshSetting();
+    // 这里只在后台根布局首次挂载时同步一次 setting。
+    // 把 refreshSetting 放进依赖会因为 hook 返回的函数引用变化导致重复触发。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (typeof user === "undefined") {
-    } else if (user) {
-      // 用户已登录
-      if (isLoginPage) {
-        // 如果已登录但访问的是登录页，重定向到主看板
-        return router.replace("/admin/dashboard");
-      }
-    } else {
-      // 用户未登录
-      if (!isLoginPage) {
-        // 如果未登录但访问的不是登录页，重定向到登录页
-        return router.replace("/admin/login");
-      }
+    if (isCurrentUserLoading) {
+      return;
     }
-  }, [user]);
 
-  // 用户信息仍在加载中，显示全屏加载动画
-  if (
-    typeof user === "undefined" ||
-    (user === null && selectedLayoutSegments.includes("dashboard"))
-  ) {
+    if (!user && !isLoginPage) {
+      return router.replace("/admin/login");
+    }
+  }, [isCurrentUserLoading, isLoginPage, router, user]);
+
+  if (isCurrentUserLoading && !isLoginPage) {
     return <FullLoadingView />;
   }
 
-  // 所有检查通过，渲染子页面
   return children;
-};
+}
+
+export default AdminRootLayout;
