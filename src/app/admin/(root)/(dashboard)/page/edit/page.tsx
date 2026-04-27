@@ -2,7 +2,7 @@
 
 import { Button } from "@/packages/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
   DynamicForm,
   DynamicFormRef,
@@ -44,7 +44,7 @@ function toPageFormValues(detail?: {
  * 这是一个用于处理页面新建和编辑操作的"超级表单"组件。
  * 它使用 `DynamicForm` 进行表单状态管理，使用 tRPC 与后端进行数据交互。
  */
-const Page = () => {
+const PageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<DynamicFormRef<PageInsert | PageUpdate>>(null);
@@ -229,6 +229,14 @@ const Page = () => {
       />
       <div className="flex justify-end gap-3 mt-3">{getBtns()}</div>
     </>
+  );
+};
+
+const Page = () => {
+  return (
+    <Suspense fallback={null}>
+      <PageContent />
+    </Suspense>
   );
 };
 

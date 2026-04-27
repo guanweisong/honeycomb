@@ -4,7 +4,7 @@ import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
 import { ModalType } from "@/app/admin/types/ModalType";
 import { Button } from "@/packages/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import AddCategoryModal, {
   ModalProps,
 } from "../category/components/AddCategoryModal";
@@ -42,7 +42,7 @@ type PostFormValues = PostInsert | PostUpdate;
  * 它使用 `react-hook-form` 进行表单状态管理，使用 tRPC 与后端进行数据交互。
  * 表单的结构会根据所选的 `PostType` (文章类型) 动态变化。
  */
-const PostDetail = () => {
+const PostDetailContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -447,6 +447,14 @@ const PostDetail = () => {
 
       <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
     </>
+  );
+};
+
+const PostDetail = () => {
+  return (
+    <Suspense fallback={null}>
+      <PostDetailContent />
+    </Suspense>
   );
 };
 

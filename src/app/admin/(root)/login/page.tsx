@@ -1,7 +1,7 @@
 "use client";
 import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   DynamicForm,
@@ -19,7 +19,7 @@ type AuthProviderMap = Awaited<ReturnType<typeof getProviders>>;
  * 登录页面组件。
  * 负责后台用户名密码登录、OAuth 登录、Turnstile 校验以及登录后的跳转。
  */
-const Login = () => {
+const LoginContent = () => {
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [providers, setProviders] = useState<AuthProviderMap>(null);
@@ -169,6 +169,14 @@ const Login = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Login = () => {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 };
 
