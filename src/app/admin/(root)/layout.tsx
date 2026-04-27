@@ -46,6 +46,10 @@ function AdminRootLayout({
       return;
     }
 
+    if (user && isLoginPage) {
+      return router.replace("/admin/dashboard");
+    }
+
     if (!user && !isLoginPage) {
       return router.replace("/admin/login");
     }
