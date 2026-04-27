@@ -5,9 +5,9 @@ import { useTranslations } from "next-intl";
 /**
  * 离线页面组件。
  * 当用户离线时显示友好的提示。
- * @returns {Promise<JSX.Element>} 离线页面。
+ * @returns {JSX.Element} 离线页面。
  */
-export default async function Offline() {
+export default function Offline() {
   const t = useTranslations("Offline");
 
   return (

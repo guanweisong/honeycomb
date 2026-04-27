@@ -3,6 +3,7 @@ import { linkRouter } from "./link.router";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -14,20 +15,7 @@ vi.mock("@/packages/trpc/api/utils/tools", () => ({
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("Link Router", () => {
   beforeEach(() => {
@@ -61,17 +49,13 @@ describe("Link Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockLinks as any);
+      mockDb.offset.mockResolvedValueOnce(mockLinks);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = linkRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = linkRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -93,13 +77,9 @@ describe("Link Router", () => {
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newLink] as any);
+      mockDb.returning.mockResolvedValueOnce([newLink]);
 
-      const caller = linkRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.create({
         name: "New Link",
@@ -115,13 +95,9 @@ describe("Link Router", () => {
   describe("destroy procedure", () => {
     it("should delete links with admin permissions", async () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined as any);
+      mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = linkRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -143,13 +119,9 @@ describe("Link Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedLink] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedLink]);
 
-      const caller = linkRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -163,11 +135,7 @@ describe("Link Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = linkRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({

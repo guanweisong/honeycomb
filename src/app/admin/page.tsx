@@ -14,7 +14,7 @@ const Home = () => {
 
   useLayoutEffect(() => {
     router.replace("/admin/dashboard");
-  }, []);
+  }, [router]);
 
   // 此处无需渲染任何内容，因为页面会立即跳转。
   return <></>;

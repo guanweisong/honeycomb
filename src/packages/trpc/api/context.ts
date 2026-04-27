@@ -1,13 +1,17 @@
-import * as schema from "@/packages/db/schema";
 import { getDb } from "@/packages/db/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/options";
+import * as schema from "@/packages/db/schema";
 import { eq } from "drizzle-orm";
+import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 
 /**
  * 上下文中的用户信息接口。
  */
 export interface User {
   id: string;
-  level: string; // 用户等级: "ADMIN" | "EDITOR" | "GUEST"
+  level: UserLevel;
   name?: string | null;
 }
 
@@ -21,40 +25,47 @@ interface CreateContextOptions {
  * @returns {Promise<User | null>} 如果验证成功，则返回用户信息对象；否则返回 null。
  *
  * 工作流程：
- * 1. 从请求头的 `x-auth-token` 字段中获取 token。
- * 2. 如果没有 token，返回 null。
- * 3. 在数据库的 `token` 表中查找该 token。
- * 4. 如果 token 不存在，返回 null。
- * 5. 使用 token 关联的 `userId` 在 `user` 表中查找用户。
- * 6. 如果用户不存在，返回 null。
- * 7. 返回一个包含用户核心信息（id, level, name）的对象。
+ * 1. 读取当前请求对应的 NextAuth session。
+ * 2. 如果 session 中没有用户信息，返回 null。
+ * 3. 根据 session.user.id 回库读取用户当前状态与权限等级。
+ * 4. 仅当用户仍然处于启用状态时，返回可用于后续鉴权的用户对象。
  */
 async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!req) return null;
-  const token = req.headers.get("x-auth-token");
-  if (!token) return null;
+  const session = await getServerSession(authOptions);
+  const sessionUser = session?.user;
+
+  if (!sessionUser?.id || !sessionUser.level) {
+    return null;
+  }
+
   const db = getDb();
-
-  const tokenInfo = await db
-    .select()
-    .from(schema.token)
-    .where(eq(schema.token.content, token))
-    .limit(1);
-  if (!tokenInfo.length) return null;
-
-  const users = await db
-    .select()
+  const [user] = await db
+    .select({
+      id: schema.user.id,
+      level: schema.user.level,
+      name: schema.user.name,
+      status: schema.user.status,
+    })
     .from(schema.user)
-    .where(eq(schema.user.id, tokenInfo[0].userId!))
+    .where(eq(schema.user.id, sessionUser.id))
     .limit(1);
-  if (!users.length) return null;
-  const u = users[0];
-  return { id: u.id, level: u.level, name: u.name } as User;
+
+  if (!user || user.status !== UserStatus.ENABLE) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    level: user.level,
+    name: user.name,
+  };
 }
 
 /**
  * 创建 tRPC 请求的上下文 (Context)。
  * 此函数在每个 tRPC 请求到达时被调用。
+ * 它会把数据库实例和当前请求对应的用户信息一起注入到 tRPC 上下文中。
  *
  * @param {CreateContextOptions} opts - 包含可选的请求对象 `req`。
  * @returns {Promise<Context>} 返回一个包含以下内容的上下文对象：

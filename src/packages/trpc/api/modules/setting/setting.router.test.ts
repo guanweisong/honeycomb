@@ -2,26 +2,14 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { settingRouter } from "./setting.router";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("Setting Router", () => {
   beforeEach(() => {
@@ -39,13 +27,9 @@ describe("Setting Router", () => {
       };
 
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce([mockSetting] as any);
+      mockDb.from.mockResolvedValueOnce([mockSetting]);
 
-      const caller = settingRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = settingRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index();
 
@@ -67,13 +51,9 @@ describe("Setting Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedSetting] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedSetting]);
 
-      const caller = settingRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = settingRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -87,11 +67,7 @@ describe("Setting Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = settingRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = settingRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({

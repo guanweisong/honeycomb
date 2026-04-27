@@ -44,6 +44,11 @@ const Media = ({ onSelect }: MediaProps) => {
    * 文件输入框的引用，用于触发文件选择对话框。
    */
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const onSelectRef = useRef(onSelect);
+
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
   /**
    * 媒体列表的查询参数。
@@ -166,8 +171,9 @@ const Media = ({ onSelect }: MediaProps) => {
       toast.success(`成功上传 ${results.length} 个文件`);
       setCurrentItem(results[results.length - 1]); // 将最新上传的设为当前项
       refetch();
-    } catch (e: any) {
-      toast.error(e.message || "上传失败，请稍后再试");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "上传失败，请稍后再试";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -186,7 +192,7 @@ const Media = ({ onSelect }: MediaProps) => {
         setCurrentItem(undefined);
         refetch();
       }
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };
@@ -196,8 +202,8 @@ const Media = ({ onSelect }: MediaProps) => {
    * 如果 `onSelect` 存在且 `currentItem` 有值，则调用 `onSelect`。
    */
   useEffect(() => {
-    if (onSelect && currentItem) {
-      onSelect(currentItem);
+    if (currentItem) {
+      onSelectRef.current?.(currentItem);
     }
   }, [currentItem]);
 

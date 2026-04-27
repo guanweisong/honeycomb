@@ -5,6 +5,7 @@ import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock the database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -17,24 +18,40 @@ vi.mock("@/packages/trpc/api/utils/tools", () => ({
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("User Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("current procedure", () => {
+    it("should return current user for authenticated users", async () => {
+      const currentUser = {
+        id: TEST_IDS.ID_1,
+        name: "User 1",
+        email: "user1@example.com",
+        level: UserLevel.ADMIN,
+        status: UserStatus.ENABLE,
+      };
+
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([currentUser]);
+
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+
+      const result = await caller.current();
+
+      expect(result).toEqual(currentUser);
+    });
+
+    it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
+      const caller = userRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(caller.current()).rejects.toThrow(TRPCError);
+    });
   });
 
   describe("index procedure", () => {
@@ -67,19 +84,17 @@ describe("User Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockUsers as any);
+      mockDb.offset.mockResolvedValueOnce(mockUsers);
 
       // Setup mock chain for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
       // Create caller with mock context
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(
+        createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb),
+      );
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -90,7 +105,7 @@ describe("User Router", () => {
     });
 
     it("should handle empty user list", async () => {
-      const mockUsers: any[] = [];
+      const mockUsers: unknown[] = [];
       const mockCount = [{ count: "0" }];
 
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -98,17 +113,15 @@ describe("User Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockUsers as any);
+      mockDb.offset.mockResolvedValueOnce(mockUsers);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(
+        createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb),
+      );
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -130,19 +143,15 @@ describe("User Router", () => {
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newUser] as any);
+      mockDb.returning.mockResolvedValueOnce([newUser]);
 
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.create({
         name: "New User",
         email: "newuser@example.com",
         password: "password123",
-        level: "EDITOR",
+        level: UserLevel.EDITOR,
         status: UserStatus.ENABLE,
       });
 
@@ -151,36 +160,28 @@ describe("User Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.create({
           name: "New User",
           email: "newuser@example.com",
           password: "password123",
-          level: "EDITOR",
+          level: UserLevel.EDITOR,
           status: UserStatus.ENABLE,
         }),
       ).rejects.toThrow(TRPCError);
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext(null, mockDb));
 
       await expect(
         caller.create({
           name: "New User",
           email: "newuser@example.com",
           password: "password123",
-          level: "EDITOR",
+          level: UserLevel.EDITOR,
           status: UserStatus.ENABLE,
         }),
       ).rejects.toThrow(TRPCError);
@@ -190,13 +191,9 @@ describe("User Router", () => {
   describe("destroy procedure", () => {
     it("should delete users with admin permissions", async () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined as any);
+      mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -207,11 +204,7 @@ describe("User Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.destroy({ ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] }),
@@ -231,17 +224,16 @@ describe("User Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedUser] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedUser]);
 
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
         name: "Updated User",
+        email: "updated@example.com",
+        level: UserLevel.EDITOR,
+        status: UserStatus.ENABLE,
       });
 
       expect(result).toEqual(updatedUser);
@@ -249,11 +241,7 @@ describe("User Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = userRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = userRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({ id: TEST_IDS.ID_2, name: "Updated User" }),

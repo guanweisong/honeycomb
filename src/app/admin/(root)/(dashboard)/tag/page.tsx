@@ -86,7 +86,7 @@ const Tag = () => {
         toast.success("删除成功");
         refetch();
       }
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };
@@ -160,7 +160,7 @@ const Tag = () => {
                   },
                 ]}
                 onSubmit={(values) =>
-                  setSearchParams((prev: any) => ({
+                  setSearchParams((prev) => ({
                     ...prev,
                     ...values,
                     page: 1,

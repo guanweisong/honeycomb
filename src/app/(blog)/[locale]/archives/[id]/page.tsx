@@ -40,6 +40,10 @@ export default async function Archives(props: ArchivesProps) {
   const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
 
+  if (!postDetail.category) {
+    throw new Error(`Post ${id} is missing category relation`);
+  }
+
   const [randomPostsList, commentsData] = await Promise.all([
     serverClient.post.getRandomByCategory({
       categoryId: postDetail.category.id,
@@ -226,7 +230,7 @@ export async function generateMetadata(
 /**
  * 生成静态页面参数。
  * 在构建时预渲染页面，提高性能。
- * @returns {Promise<any[]>} 静态参数数组。
+ * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
  */
 export async function generateStaticParams() {
   return [];

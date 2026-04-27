@@ -6,6 +6,8 @@ import { LibSQLDatabase } from "drizzle-orm/libsql";
 let client: Client | null = null;
 let db: LibSQLDatabase<typeof schema> | null = null;
 
+export type Database = LibSQLDatabase<typeof schema>;
+
 /**
  * 获取数据库实例（lazy init）
  *

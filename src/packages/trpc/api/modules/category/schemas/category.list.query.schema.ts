@@ -1,5 +1,4 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import { CleanZod } from "../../../schemas/clean.zod";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 

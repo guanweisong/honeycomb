@@ -24,7 +24,7 @@ interface ErrorProps {
  * @param {ErrorProps} props - 组件属性。
  * @returns {JSX.Element} 错误提示组件。
  */
-export default function Error({ error, reset }: ErrorProps) {
+export default function Error({ reset }: ErrorProps) {
   const t = useTranslations("Error");
 
   return (

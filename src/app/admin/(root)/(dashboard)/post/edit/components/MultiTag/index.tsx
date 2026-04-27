@@ -18,6 +18,9 @@ import {
 import { X, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
+import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+
+type PostTagOption = Pick<TagEntity, "id" | "name">;
 
 /**
  * 多标签选择组件的属性接口。
@@ -38,11 +41,11 @@ export interface MultiTagProps {
   /**
    * 已选标签列表
    */
-  value: any[];
+  value: PostTagOption[];
   /**
    * 标签变化回调
    */
-  onChange: (tags: any[]) => void;
+  onChange: (tags: PostTagOption[]) => void;
 }
 
 /**
@@ -52,7 +55,7 @@ export interface MultiTagProps {
  * @returns {JSX.Element} 多标签选择器。
  */
 const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.Element => {
-  const selectedTags: any[] = value ?? [];
+  const selectedTags = value ?? [];
 
   /**
    * 搜索输入框的值。
@@ -61,7 +64,7 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
   /**
    * 搜索结果中的标签选项列表。
    */
-  const [options, setOptions] = useState<any[]>([]);
+  const [options, setOptions] = useState<TagEntity[]>([]);
   /**
    * 搜索或数据加载的加载状态。
    */
@@ -73,11 +76,11 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
   /**
    * 用于搜索防抖的定时器引用。
    */
-  const timeout = useRef<any>(null);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * 标签列表查询参数。
    */
-  const [searchParams, setSearchParams] = useState<any>({});
+  const [searchParams, setSearchParams] = useState<{ name?: string }>({});
 
   const { data: searchResult, isFetching: isSearching } = trpc.tag.index.useQuery(searchParams, {
     enabled: !!searchParams.name,
@@ -119,7 +122,7 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
    * 如果标签已存在，则不执行任何操作。
    * @param tag - 要添加的标签对象。
    */
-  const addTag = async (tag: any) => {
+  const addTag = async (tag: PostTagOption) => {
     if (selectedTags.some((t) => t.id === tag.id)) return;
     const updatedTags = [...selectedTags, tag];
     onChange(updatedTags);
@@ -179,7 +182,7 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
             variant="secondary"
             className="gap-1 text-sm"
           >
-            {tag.name.zh}
+            {tag.name?.zh ?? ""}
             <Button
               onClick={() => removeTag(tag.id)}
               variant="ghost"
@@ -215,7 +218,7 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
                 <>
                   {options.map((tag) => (
                     <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
-                      {tag.name.zh}
+                      {tag.name?.zh ?? ""}
                     </CommandItem>
                   ))}
                   {options.length === 0 && input && (

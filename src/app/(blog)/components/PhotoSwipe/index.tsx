@@ -6,7 +6,6 @@ import "photoswipe/style.css";
 
 export function PhotoSwipeClient({
     children,
-    galleryId = "gallery",
 }: PropsWithChildren<{
     galleryId?: string;
 }>) {

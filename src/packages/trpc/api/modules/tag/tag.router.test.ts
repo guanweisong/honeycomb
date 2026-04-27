@@ -3,26 +3,14 @@ import { tagRouter } from "./tag.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("Tag Router", () => {
   beforeEach(() => {
@@ -51,18 +39,14 @@ describe("Tag Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockTags as any);
+      mockDb.offset.mockResolvedValueOnce(mockTags);
 
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -82,18 +66,14 @@ describe("Tag Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockTags as any);
+      mockDb.offset.mockResolvedValueOnce(mockTags);
 
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -113,13 +93,9 @@ describe("Tag Router", () => {
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newTag] as any);
+      mockDb.returning.mockResolvedValueOnce([newTag]);
 
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.create({
         name: { en: "New Tag", zh: "新标签" },
@@ -130,11 +106,7 @@ describe("Tag Router", () => {
     });
 
     it("should throw FORBIDDEN error for non-admin users", async () => {
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.create({
@@ -144,11 +116,7 @@ describe("Tag Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext(null, mockDb));
 
       await expect(
         caller.create({
@@ -161,13 +129,9 @@ describe("Tag Router", () => {
   describe("destroy procedure", () => {
     it("should delete tags with admin permissions", async () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined as any);
+      mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -178,11 +142,7 @@ describe("Tag Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.destroy({
@@ -202,13 +162,9 @@ describe("Tag Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedTag] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedTag]);
 
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -220,11 +176,7 @@ describe("Tag Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = tagRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = tagRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({

@@ -92,9 +92,12 @@ export function Dialog({
       {trigger && (
         <DialogTrigger asChild>
           {React.isValidElement(trigger)
-            ? React.cloneElement(trigger as React.ReactElement<any>, {
-                onClick: () => setOpen(true),
-              })
+            ? React.cloneElement(
+                trigger as React.ReactElement<{ onClick?: () => void }>,
+                {
+                  onClick: () => setOpen(true),
+                },
+              )
             : trigger}
         </DialogTrigger>
       )}

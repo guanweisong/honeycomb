@@ -1,7 +1,6 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
-import md5 from "md5";
 import { useState } from "react";
 import { userTableColumns } from "./constants/userTableColumns";
 import { DataTable } from "@/packages/ui/extended/DataTable";
@@ -33,6 +32,20 @@ import {
   userStatusOptions,
 } from "@/packages/trpc/api/modules/user/types/user.status";
 import { keepPreviousData } from "@tanstack/react-query";
+
+function toUserFormDefaults(record?: UserEntity): Partial<UserUpdate> | undefined {
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    id: record.id,
+    name: record.name ?? undefined,
+    email: record.email ?? undefined,
+    level: record.level,
+    status: record.status,
+  };
+}
 
 /**
  * 用户管理页面。
@@ -95,7 +108,7 @@ const User = () => {
         refetch();
         toast.success("删除成功");
       }
-    } catch (e) {
+    } catch {
       toast.error("删除失败");
     }
   };
@@ -125,34 +138,32 @@ const User = () => {
    * 新增、修改保存事件
    */
   const handleModalOk = async (values: UserInsert | UserUpdate) => {
-    const { password, ...rest } = values;
-    const params = {
-      ...rest,
-    } as UserInsert | UserUpdate;
-    if (password) {
-      params.password = md5(password);
-    }
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createUser.mutateAsync(params as UserInsert);
+          await createUser.mutateAsync(values as UserInsert);
           refetch();
           toast.success("添加成功");
           setModalProps({ open: false });
-        } catch (e) {
+        } catch {
           toast.error("添加失败");
         }
         break;
       case ModalType.EDIT:
         try {
+          const recordId = modalProps.record?.id;
+          if (!recordId) {
+            toast.error("缺少用户ID");
+            return;
+          }
           await updateUser.mutateAsync({
-            ...params,
-            id: modalProps.record?.id!,
+            ...values,
+            id: recordId,
           });
           refetch();
           toast.success("更新成功");
           setModalProps({ open: false });
-        } catch (e) {
+        } catch {
           toast.error("更新失败");
         }
         break;
@@ -220,7 +231,7 @@ const User = () => {
                   },
                 ]}
                 onSubmit={(values) =>
-                  setSearchParams(values as UserListQueryInput)
+                  setSearchParams(values)
                 }
                 inline={true}
                 submitProps={{
@@ -268,9 +279,9 @@ const User = () => {
             modalProps.type === ModalType.ADD
               ? {
                   status: UserStatus.ENABLE,
-                  level: UserLevel.EDITOR,
+                  level: UserLevel.GUEST,
                 }
-              : modalProps.record
+              : toUserFormDefaults(modalProps.record)
           }
           schema={
             modalProps.type === ModalType.EDIT

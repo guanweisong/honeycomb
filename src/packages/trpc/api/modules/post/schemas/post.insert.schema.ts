@@ -2,6 +2,7 @@ import { createInsertSchema } from "drizzle-zod";
 import * as schema from "@/packages/db/schema";
 import { OptionalI18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
+import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 
 /**
  * 新增文章时的数据验证 schema。
@@ -38,3 +39,5 @@ export const PostInsertSchema = createInsertSchema(schema.post)
     quoteAuthor: OptionalI18nSchema,
     quoteContent: OptionalI18nSchema,
   });
+
+export type PostInsert = CleanZod<typeof PostInsertSchema>;

@@ -22,7 +22,7 @@ export const tagRouter = createTRPCRouter({
   /**
    * 查询标签列表（支持分页、筛选、排序）。
    * @param {TagListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含标签列表和总记录数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含标签列表和总记录数的对象。
    */
   index: publicProcedure
     .input(TagListQuerySchema)

@@ -1,1 +1,1 @@
-bun check-types && bun test:run
+bun check-types && bun lint && bun test:run

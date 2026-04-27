@@ -17,7 +17,7 @@ class Tools {
     id?: string,
   ): (T & { deepPath: number })[] {
     const temp: (T & { deepPath: number })[] = [];
-    let lev = 0;
+    const lev = 0;
     const forFn = (arr: T[], id: string | undefined, lev: number): void => {
       for (const value of arr) {
         if (
@@ -37,16 +37,20 @@ class Tools {
 }
 
 // ===== Drizzle Helpers =====
-import { and, inArray, like, SQL, sql } from "drizzle-orm";
+import { and, inArray, like, SQL, sql, type AnyColumn } from "drizzle-orm";
+
+type QueryValue = string | number | boolean | Array<string | number | boolean>;
+type QueryRecord = Record<string, QueryValue | undefined>;
+type ColumnContainer = object;
 
 /**
  * 动态构建 Drizzle ORM 的 WHERE 查询子句。
  * 根据传入的查询参数，智能地生成 `AND` 连接的 SQL 条件。
  *
- * @param {any} table - Drizzle 的表 schema 对象。
- * @param {any} queries - 包含简单键值对的查询对象。键对应表字段，值对应查询值。
+ * @param {object} table - Drizzle 的表 schema 对象。
+ * @param {QueryRecord} queries - 包含简单键值对的查询对象。键对应表字段，值对应查询值。
  * @param {string[]} queryArray - 一个字符串数组，指定哪些 `queries` 中的键应该使用 `IN` 查询（精确匹配数组中的任何一个值）。
- * @param {any} [multiLangQueries] - （可选）用于多语言字段模糊查询的键值对对象。
+ * @param {QueryRecord} [multiLangQueries] - （可选）用于多语言字段模糊查询的键值对对象。
  * @returns {SQL | undefined} 返回一个 Drizzle 的 SQL 条件对象，如果没有有效的查询条件则返回 `undefined`。
  *
  * 工作流程：
@@ -57,12 +61,13 @@ import { and, inArray, like, SQL, sql } from "drizzle-orm";
  * 3. 将所有生成的子句用 `and()` 连接起来返回。
  */
 export function buildDrizzleWhere(
-  table: any,
-  queries: any,
+  table: ColumnContainer,
+  queries: QueryRecord,
   queryArray: string[],
-  multiLangQueries?: any,
+  multiLangQueries?: QueryRecord,
 ): SQL | undefined {
-  const clauses: SQL[] = [] as unknown as SQL[];
+  const clauses: SQL[] = [];
+  const columns = table as Record<string, AnyColumn | undefined>;
 
   // 处理普通查询和 IN 查询
   for (const key in queries) {
@@ -70,8 +75,7 @@ export function buildDrizzleWhere(
     if (typeof value === "undefined") continue;
     const isEmptyArray = Array.isArray(value) && value.length === 0;
     if (value === "" || isEmptyArray) continue;
-
-    const col = table[key];
+    const col = columns[key];
     if (!col) continue;
 
     if (queryArray.includes(key)) {
@@ -88,35 +92,35 @@ export function buildDrizzleWhere(
     for (const k in multiLangQueries) {
       const v = multiLangQueries[k];
       if (typeof v === "undefined" || v === "") continue;
-      const col = table[k];
+      const col = columns[k];
       if (!col) continue;
       clauses.push(like(col, `%${v}%`));
     }
   }
 
   if (!clauses.length) return undefined;
-  if (clauses.length === 1) return clauses[0] as unknown as SQL;
+  if (clauses.length === 1) return clauses[0];
   return and(...clauses);
 }
 
 /**
  * 构建 Drizzle ORM 的 ORDER BY 排序子句。
  *
- * @param {any} table - Drizzle 的表 schema 对象。
+ * @param {object} table - Drizzle 的表 schema 对象。
  * @param {string | undefined} sortField - 用于排序的字段名。
  * @param {"asc" | "desc"} [sortOrder="desc"] - 排序方向。
  * @param {string} [defaultField="createdAt"] - 如果 `sortField` 无效或未提供，则使用的默认排序字段。
  * @returns {SQL} 返回一个 Drizzle 的 SQL 排序表达式。
  */
 export function buildDrizzleOrderBy(
-  table: any,
+  table: ColumnContainer,
   sortField: string | undefined,
   sortOrder: "asc" | "desc" = "desc",
   defaultField: string = "createdAt",
 ): SQL<unknown> {
   const direction = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
-  const field =
-    (sortField && table[sortField]) || table[defaultField];
+  const columns = table as Record<string, AnyColumn | undefined>;
+  const field = (sortField && columns[sortField]) || columns[defaultField];
 
   if (!field) {
     throw new Error(`Invalid sort field: ${String(sortField)}`);

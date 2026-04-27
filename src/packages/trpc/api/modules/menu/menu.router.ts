@@ -19,7 +19,7 @@ import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 export const menuRouter = createTRPCRouter({
   /**
    * 查询完整的菜单列表，并附加关联项（分类、页面）的信息。
-   * @returns {Promise<{ list: any[], total: number }>} 返回一个包含完整菜单列表和总数的对象。
+   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含完整菜单列表和总数的对象。
    *
    * 工作流程：
    * 1. 查询 `menu` 表中的所有菜单项，按 `power` 字段升序排序。
@@ -97,7 +97,7 @@ export const menuRouter = createTRPCRouter({
 
       const newMenu = await ctx.db
         .insert(schema.menu)
-        .values(input.map(({ id, ...item }) => item))
+        .values(input.map(({ ...item }) => item))
         .returning();
       return { count: newMenu.length };
     }),

@@ -4,7 +4,7 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Video from "./components/VideoNode";
 import { ToolbarButton } from "./components/ToolbarButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toolbarItems } from "@/packages/ui/extended/Tiptap/config/toolbarItems";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -20,7 +20,12 @@ interface TiptapProps {
 }
 
 export default function Tiptap({ value, onChange }: TiptapProps = {}) {
-  const [updateCount, setUpdateCount] = useState(0);
+  const [, setUpdateCount] = useState(0);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   const editor = useEditor({
     extensions: [
@@ -48,7 +53,7 @@ export default function Tiptap({ value, onChange }: TiptapProps = {}) {
     content: value || "<p></p>",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange?.(editor.getHTML());
+      onChangeRef.current?.(editor.getHTML());
     },
   });
 

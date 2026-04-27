@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/db/db";
 import { buildDrizzleWhere } from "@/packages/trpc/api/utils/tools";
 
 /**
@@ -9,7 +10,7 @@ import { buildDrizzleWhere } from "@/packages/trpc/api/utils/tools";
  * @returns 分类ID数组（包括父分类和所有子分类）
  */
 export async function buildCategoryFilter(
-  db: any,
+  db: Database,
   categoryId: string,
 ): Promise<string[]> {
   const subCategories = await db
@@ -26,7 +27,7 @@ export async function buildCategoryFilter(
  * @returns 标签ID，如果标签不存在则返回null
  */
 export async function buildTagFilter(
-  db: any,
+  db: Database,
   tagName: string,
 ): Promise<string | null> {
   const tagWhere = buildDrizzleWhere(schema.tag, { name: tagName }, [], {
@@ -47,7 +48,7 @@ export async function buildTagFilter(
  * @returns 用户ID，如果用户不存在则返回null
  */
 export async function buildAuthorFilter(
-  db: any,
+  db: Database,
   userName: string,
 ): Promise<string | null> {
   const users = await db

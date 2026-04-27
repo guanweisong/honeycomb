@@ -6,6 +6,10 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+import { z } from "zod";
+
+type TagInsertValues = z.infer<typeof TagInsertSchema>;
+type TagUpdateValues = z.infer<typeof TagUpdateSchema>;
 
 /**
  * 添加/编辑标签对话框的属性接口。
@@ -53,28 +57,28 @@ export default function AddTagDialog(props: AddTagDialogProps) {
   /**
    * 新增、编辑弹窗表单保存事件
    */
-  const handleModalOk = async (values: any) => {
+  const handleModalOk = async (values: TagInsertValues | TagUpdateValues) => {
     switch (type) {
       case ModalType.ADD:
         try {
-          await createTag.mutateAsync(values);
+          await createTag.mutateAsync(values as TagInsertValues);
           onSuccess?.();
           toast.success("添加成功");
           onClose?.();
-        } catch (e) {
+        } catch {
           toast.error("添加失败");
         }
         break;
       case ModalType.EDIT:
         try {
           await updateTag.mutateAsync({
-            id: record?.id,
-            ...values,
+            ...(values as TagUpdateValues),
+            id: record!.id,
           });
           onSuccess?.();
           toast.success("更新成功");
           onClose?.();
-        } catch (e) {
+        } catch {
           toast.error("更新失败");
         }
         break;
@@ -88,7 +92,16 @@ export default function AddTagDialog(props: AddTagDialogProps) {
       onOpenChange={() => onClose?.()}
     >
       <DynamicForm
-        defaultValues={record}
+        defaultValues={
+          record
+            ? {
+                id: record.id,
+                name: record.name ?? undefined,
+                createdAt: record.createdAt,
+                updatedAt: record.updatedAt,
+              }
+            : undefined
+        }
         schema={type === ModalType.EDIT ? TagUpdateSchema : TagInsertSchema}
         fields={[
           {

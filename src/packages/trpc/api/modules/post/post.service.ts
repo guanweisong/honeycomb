@@ -1,5 +1,6 @@
-import { and, or, eq, like, sql, inArray } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/db/db";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -19,7 +20,7 @@ import { loadPostRelations } from "./utils/relations";
  */
 import { PostListQueryInput } from "./schemas/post.list.query.schema";
 
-export async function getPostList(db: any, input: PostListQueryInput) {
+export async function getPostList(db: Database, input: PostListQueryInput) {
   const {
     page = 1,
     limit = 10,

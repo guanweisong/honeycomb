@@ -1,20 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getRelationTags } from "./getRelationTags";
 import { TEST_IDS } from "../../../../../tests/helpers/test-constants";
+import { createMockDb } from "../../../../../tests/helpers/test-utils";
 
 // Mock database
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
-}));
-
-vi.mock("@/packages/db/schema", () => ({
-  tag: { id: "id", name: "name" },
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -33,7 +26,7 @@ describe("getRelationTags", () => {
   });
 
   it("should return empty array for undefined ids", async () => {
-    const result = await getRelationTags(undefined as any);
+    const result = await getRelationTags(undefined);
     expect(result).toEqual([]);
     expect(mockDb.select).not.toHaveBeenCalled();
   });
@@ -46,7 +39,7 @@ describe("getRelationTags", () => {
 
     mockDb.select.mockReturnValueOnce(mockDb);
     mockDb.from.mockReturnValueOnce(mockDb);
-    mockDb.where.mockResolvedValueOnce(mockTags as any);
+    mockDb.where.mockResolvedValueOnce(mockTags);
 
     const result = await getRelationTags([TEST_IDS.ID_1, TEST_IDS.ID_2]);
 
@@ -60,7 +53,7 @@ describe("getRelationTags", () => {
 
     mockDb.select.mockReturnValueOnce(mockDb);
     mockDb.from.mockReturnValueOnce(mockDb);
-    mockDb.where.mockResolvedValueOnce(mockTags as any);
+    mockDb.where.mockResolvedValueOnce(mockTags);
 
     const result = await getRelationTags([TEST_IDS.ID_1]);
 
@@ -70,7 +63,7 @@ describe("getRelationTags", () => {
   it("should handle empty result from database", async () => {
     mockDb.select.mockReturnValueOnce(mockDb);
     mockDb.from.mockReturnValueOnce(mockDb);
-    mockDb.where.mockResolvedValueOnce([] as any);
+    mockDb.where.mockResolvedValueOnce([]);
 
     const result = await getRelationTags([TEST_IDS.ID_1]);
 

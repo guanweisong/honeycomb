@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
 import { postRouter } from "./post.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { PostStatus } from "./types/post.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -12,7 +13,7 @@ vi.mock("@/packages/db/db", () => ({
 
 // Mock loadPostRelations
 vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
-  loadPostRelations: vi.fn(async (db: any, posts: any[]) => {
+  loadPostRelations: vi.fn(async (_db: unknown, posts: Array<Record<string, unknown>>) => {
     // 对于 detail 测试，返回关联数据
     if (posts.length === 1) {
       return posts.map((post) => ({
@@ -51,29 +52,17 @@ vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
   }),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("Post Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // 重置所有mock的调用历史
     Object.values(mockDb).forEach((mock) => {
+      const typedMock = mock as Mock;
       if (mock && typeof mock.mockReset === "function") {
-        mock.mockReset();
-        mock.mockReturnValue(mockDb);
+        typedMock.mockReset();
+        typedMock.mockReturnValue(mockDb);
       }
     });
   });
@@ -106,18 +95,14 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPosts as any);
+      mockDb.offset.mockResolvedValueOnce(mockPosts);
 
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -137,7 +122,7 @@ describe("Post Router", () => {
     });
 
     it("should handle empty post list", async () => {
-      const mockPosts: any[] = [];
+      const mockPosts: unknown[] = [];
       const mockCount = [{ count: "0" }];
 
       // Setup mock chain for empty post list query
@@ -146,18 +131,14 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPosts as any);
+      mockDb.offset.mockResolvedValueOnce(mockPosts);
 
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -172,13 +153,9 @@ describe("Post Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([] as any);
+      mockDb.limit.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({
         page: 1,
@@ -193,13 +170,9 @@ describe("Post Router", () => {
       // Mock user query returning empty
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([] as any);
+      mockDb.where.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({
         page: 1,
@@ -223,13 +196,9 @@ describe("Post Router", () => {
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newPost] as any);
+      mockDb.returning.mockResolvedValueOnce([newPost]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.create({
         title: { en: "New Post", zh: "新文章" },
@@ -244,11 +213,7 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.create({
@@ -262,11 +227,7 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       await expect(
         caller.create({
@@ -283,13 +244,9 @@ describe("Post Router", () => {
   describe("destroy procedure", () => {
     it("should delete posts with admin permissions", async () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined as any);
+      mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -300,11 +257,7 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.destroy({
@@ -327,13 +280,9 @@ describe("Post Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedPost] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedPost]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -348,11 +297,7 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({
@@ -393,31 +338,27 @@ describe("Post Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockPost] as any);
+      mockDb.limit.mockResolvedValueOnce([mockPost]);
 
       // Setup mock for category query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockCategory] as any);
+      mockDb.limit.mockResolvedValueOnce([mockCategory]);
 
       // Setup mock for author query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockAuthor] as any);
+      mockDb.limit.mockResolvedValueOnce([mockAuthor]);
 
       // Setup mock for cover query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockCover] as any);
+      mockDb.limit.mockResolvedValueOnce([mockCover]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.detail({ id: TEST_IDS.ID_1 });
 
@@ -439,13 +380,9 @@ describe("Post Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([] as any);
+      mockDb.limit.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       await expect(
         caller.detail({ id: "999999999999999999999999" }),
@@ -460,13 +397,9 @@ describe("Post Router", () => {
       // Setup mock chain for post views query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockPost] as any);
+      mockDb.where.mockResolvedValueOnce([mockPost]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getViews({ id: TEST_IDS.ID_1 });
 
@@ -477,13 +410,9 @@ describe("Post Router", () => {
       // Setup mock chain for non-existent post views
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([] as any);
+      mockDb.where.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getViews({ id: "999999999999999999999999" });
 
@@ -499,13 +428,9 @@ describe("Post Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
@@ -520,13 +445,9 @@ describe("Post Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: { id: TEST_IDS.ID_2, level: "USER" },
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
@@ -541,13 +462,9 @@ describe("Post Router", () => {
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedViews] as any);
+      mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
@@ -563,13 +480,9 @@ describe("Post Router", () => {
       // Setup mock chain for category id query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockPost] as any);
+      mockDb.where.mockResolvedValueOnce([mockPost]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getCategoryId({ id: TEST_IDS.ID_1 });
 
@@ -580,13 +493,9 @@ describe("Post Router", () => {
       // Setup mock chain for non-existent post category id
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([] as any);
+      mockDb.where.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getCategoryId({
         id: "999999999999999999999",
@@ -609,13 +518,9 @@ describe("Post Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce(mockPosts as any);
+      mockDb.limit.mockResolvedValueOnce(mockPosts);
 
-      const caller = postRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getRandomByCategory({
         categoryId: TEST_IDS.ID_1,

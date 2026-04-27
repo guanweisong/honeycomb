@@ -4,6 +4,7 @@ import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { CommentStatus } from "./types/comment.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -18,21 +19,7 @@ vi.mock("@/packages/trpc/api/utils/sendEmail", () => ({
   sendEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockDb = {
-  select: vi.fn(() => mockDb),
-  from: vi.fn(() => mockDb),
-  where: vi.fn(() => mockDb),
-  orderBy: vi.fn(() => mockDb),
-  limit: vi.fn(() => mockDb),
-  offset: vi.fn(() => mockDb),
-  insert: vi.fn(() => mockDb),
-  values: vi.fn(() => mockDb),
-  returning: vi.fn(() => mockDb),
-  delete: vi.fn(() => mockDb),
-  update: vi.fn(() => mockDb),
-  set: vi.fn(() => mockDb),
-  leftJoin: vi.fn(() => mockDb),
-};
+const mockDb = createMockDb();
 
 describe("Comment Router", () => {
   beforeEach(() => {
@@ -68,17 +55,15 @@ describe("Comment Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockComments as any);
+      mockDb.offset.mockResolvedValueOnce(mockComments);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(
+        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+      );
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -116,17 +101,13 @@ describe("Comment Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce(mockComments as any);
+      mockDb.orderBy.mockResolvedValueOnce(mockComments);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.listByRef({
         id: TEST_IDS.ID_1,
@@ -145,17 +126,13 @@ describe("Comment Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce([] as any);
+      mockDb.orderBy.mockResolvedValueOnce([]);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount as any);
+      mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.listByRef({
         id: TEST_IDS.ID_1,
@@ -179,24 +156,20 @@ describe("Comment Router", () => {
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newComment] as any);
+      mockDb.returning.mockResolvedValueOnce([newComment]);
 
       // Mock the second query for getting the created comment with refs
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([newComment] as any);
+      mockDb.where.mockResolvedValueOnce([newComment]);
 
       // Mock the setting query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockResolvedValueOnce([
         { id: "1", key: "comment_notify", value: "true" },
-      ] as any);
+      ]);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: null,
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.create({
         content: "New Comment",
@@ -222,13 +195,11 @@ describe("Comment Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([
         { ...updatedComment, id: TEST_IDS.ID_1 },
-      ] as any);
+      ]);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: { id: "1", level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(
+        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+      );
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -240,11 +211,7 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: { id: "2", level: "USER" },
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.update({
@@ -258,13 +225,9 @@ describe("Comment Router", () => {
   describe("destroy procedure", () => {
     it("should delete comments with admin permissions", async () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined as any);
+      mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: { id: "1", level: UserLevel.ADMIN },
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -275,11 +238,7 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller({
-        db: mockDb as any,
-        user: { id: "2", level: "USER" },
-        header: new Headers(),
-      });
+      const caller = commentRouter.createCaller(createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb));
 
       await expect(
         caller.destroy({

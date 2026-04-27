@@ -12,7 +12,7 @@ const Page = () => {
 
   useLayoutEffect(() => {
     router.replace("/admin/post/list");
-  }, []);
+  }, [router]);
 
   return <></>;
 };

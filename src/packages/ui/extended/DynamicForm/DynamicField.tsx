@@ -5,6 +5,7 @@ import {
   useFormContext,
   ControllerRenderProps,
   useWatch,
+  FieldValues,
 } from "react-hook-form";
 
 import { Input } from "../../components/input";
@@ -55,9 +56,11 @@ export type FieldConfig = {
     | "richText";
   options?:
     | { label: React.ReactNode; value: string }[]
-    | ((formValues: any) => { label: React.ReactNode; value: string }[]);
+    | ((
+        formValues: FieldValues,
+      ) => { label: React.ReactNode; value: string }[]);
   placeholder?: string;
-  disabled?: (formValues: any) => boolean;
+  disabled?: (formValues: FieldValues) => boolean;
   multiLang?: boolean;
 };
 
@@ -67,7 +70,7 @@ export function DynamicField(field: FieldConfig) {
 
   const renderSingleField = (
     name: string,
-    controllerField: ControllerRenderProps<any, string>,
+    controllerField: ControllerRenderProps<FieldValues, string>,
   ) => {
     const isDisabled =
       typeof field.disabled === "function" ? field.disabled(formValues) : false;
@@ -224,9 +227,12 @@ export function DynamicField(field: FieldConfig) {
             <FormLabel>{field.label}</FormLabel>
             <TabsList>
               {supportedLangs.map((lang) => {
-                const hasError = !!(form.formState.errors as any)?.[
-                  field.name
-                ]?.[lang];
+                const fieldErrors = form.formState.errors[
+                  field.name as keyof typeof form.formState.errors
+                ] as
+                  | Record<(typeof supportedLangs)[number], unknown>
+                  | undefined;
+                const hasError = !!fieldErrors?.[lang];
                 return (
                   <TabsTrigger
                     key={lang}

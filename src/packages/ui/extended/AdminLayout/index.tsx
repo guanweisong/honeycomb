@@ -4,14 +4,14 @@ import React, { ReactNode } from "react";
 import Avatar from "../Avatar";
 import { Menu, MenuItem } from "../Menu";
 import { UserDropdown } from "../UserDropdown";
-import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import { CurrentUser } from "@/packages/trpc/api/modules/user/types/user.entity";
 
 export interface AdminLayoutProps {
   children: ReactNode;
   title?: ReactNode;
   footer?: ReactNode;
   menu?: MenuItem[];
-  user?: UserEntity | null;
+  user?: CurrentUser | null;
   onLogout: () => void;
 }
 
