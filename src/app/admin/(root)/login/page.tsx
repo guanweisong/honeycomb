@@ -36,9 +36,11 @@ const LoginContent = () => {
    * 只有在服务端成功注册的 OAuth Provider 才会在这里显示。
    */
   useEffect(() => {
-    getProviders().then(setProviders).catch(() => {
-      setProviders(null);
-    });
+    getProviders()
+      .then(setProviders)
+      .catch(() => {
+        setProviders(null);
+      });
   }, []);
 
   /**
@@ -76,9 +78,8 @@ const LoginContent = () => {
         if (result?.error) {
           throw new Error("用户名或密码不正确");
         }
-
         toast.success("登录成功");
-        router.refresh();
+        router.replace("/admin/dashboard");
       })
       .catch((e: { message?: string }) => {
         toast.error(e?.message || "登录失败");
