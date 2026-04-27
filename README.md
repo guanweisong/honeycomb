@@ -13,18 +13,18 @@
 
 ## 特性
 
-- 🚀 **现代化技术栈** - Next.js 16 + React 19 + TypeScript 5.9
-- 🔒 **端到端类型安全** - tRPC + Drizzle ORM + Zod 实现全栈类型推断
-- 🌍 **国际化支持** - 基于 next-intl 的多语言支持
-- 🎨 **现代化 UI** - shadcn/ui + Radix UI + Tailwind CSS 4
-- 📝 **富文本编辑** - Tiptap 编辑器，支持图片、链接、高亮等
-- 🔐 **权限管理** - 基于角色的访问控制（ADMIN/EDITOR/GUEST）
-- 📱 **PWA 支持** - Serwist 提供离线能力
-- 🎯 **Serverless 架构** - 完全无服务器部署
-- 🗄️ **现代化数据库** - Turso (LibSQL) 高性能 SQLite
-- 📧 **邮件通知** - Resend 邮件服务集成
-- 🖼️ **对象存储** - Cloudflare R2 / AWS S3 支持
-- 🤖 **验证码** - Cloudflare Turnstile 行为验证
+- **现代化技术栈** - Next.js 16 + React 19 + TypeScript 5.9
+- **端到端类型安全** - tRPC + Drizzle ORM + Zod 实现全栈类型推断
+- **国际化支持** - 基于 next-intl 的多语言支持
+- **现代化 UI** - shadcn/ui + Radix UI + Tailwind CSS 4
+- **富文本编辑** - Tiptap 编辑器，支持图片、链接、高亮等
+- **权限管理** - 基于角色的访问控制（ADMIN/EDITOR/GUEST）
+- **PWA 支持** - Serwist 提供离线能力
+- **Serverless 架构** - 完全无服务器部署
+- **现代化数据库** - Turso (LibSQL) 高性能 SQLite
+- **邮件通知** - Resend 邮件服务集成
+- **对象存储** - Cloudflare R2 / AWS S3 支持
+- **验证码** - Cloudflare Turnstile 行为验证
 
 ## 技术架构
 
