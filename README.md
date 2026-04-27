@@ -166,7 +166,7 @@ bun dev
 
 访问 [http://localhost:3000](http://localhost:3000) 查看应用。
 
-## 📦 可用脚本
+## 可用脚本
 
 ```bash
 # 开发
@@ -196,7 +196,7 @@ bun build:cloudflare      # 构建 Cloudflare 版本
 bun deploy:cloudflare     # 部署到 Cloudflare
 ```
 
-## 🗄️ 数据库设计
+## 数据库设计
 
 项目使用 Drizzle ORM 定义了以下核心表：
 
@@ -241,7 +241,7 @@ protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
 - 字段级别的多语言支持（i18nField）
 - 自动根据浏览器语言切换
 
-## 📱 PWA 支持
+## PWA 支持
 
 项目集成了 Serwist（Service Worker）：
 
