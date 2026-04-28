@@ -29,15 +29,15 @@
 ## 技术架构
 
 ### 核心框架
-- **Next.js 16.2.0** - React 服务端渲染框架，使用 App Router
-- **React 19.2.4** - 最新版本 React
-- **TypeScript 5.9.3** - 严格模式，完整类型安全
-- **Bun 1.3.3** - 现代化包管理器和运行时
+- **Next.js** - React 服务端渲染框架，使用 App Router
+- **React** - 最新版本 React
+- **TypeScript** - 严格模式，完整类型安全
+- **Bun** - 现代化包管理器和运行时
 
 ### 状态管理与 API
-- **tRPC 11.3.1** - 端到端类型安全的 API 层
-- **TanStack Query 5.80.6** - 服务端状态管理
-- **Zod 4.1.11** - 数据验证 schema
+- **tRPC** - 端到端类型安全的 API 层
+- **TanStack Query** - 客户端状态管理
+- **Zod** - 数据验证 schema
 
 ### 认证与授权
 - **NextAuth.js** - 后台认证，支持 Credentials / Google / GitHub / Apple 登录
@@ -45,26 +45,26 @@
 - **bcryptjs** - 用户名密码登录的密码哈希校验
 
 ### 数据库与 ORM
-- **Drizzle ORM 0.44.7** - 现代化 TypeScript ORM
-- **Turso (LibSQL)** - Serverless SQLite 数据库
+- **Drizzle ORM** - 现代化 TypeScript ORM
+- **Turso** - Serverless SQLite 数据库
 - **Drizzle-Zod** - 自动生成 Zod schema
 
 ### UI 组件
 - **shadcn/ui** - 基于 Radix UI 的组件库
 - **Radix UI** - 无障碍 UI 组件
-- **Tailwind CSS 4.1.15** - 原子化 CSS 框架
+- **Tailwind CSS** - 原子化 CSS 框架
 - **Lucide React** - 图标库
-- **Motion 12.9.2** - 动画库
+- **Motion** - 动画库
 
 ### 富文本编辑
-- **Tiptap 3.15.3** - 现代化富文本编辑器
+- **Tiptap** - 现代化富文本编辑器
 - 支持扩展：图片、链接、高亮、任务列表、文本对齐、颜色等
 
 ### 功能特性
-- **next-intl 4.0.2** - 国际化支持
-- **Serwist 9.5.7** - PWA 支持
+- **next-intl** - 国际化支持
+- **Serwist** - PWA 支持
 - **Cloudflare Turnstile** - 验证码
-- **Resend 6.5.2** - 邮件服务
+- **Resend** - 邮件服务
 - **AWS S3 SDK** - 对象存储
 
 ## 项目结构
@@ -72,7 +72,7 @@
 ```
 honeycomb/
 ├── src/
-│   ├── app/                    # Next.js 应用
+│   ├── app/                   # Next.js 应用
 │   │   ├── (blog)/            # 前台应用
 │   │   │   ├── [locale]/      # 国际化路由
 │   │   │   ├── i18n/          # 国际化配置
@@ -158,6 +158,10 @@ AUTH_GITHUB_ID=your_github_client_id
 AUTH_GITHUB_SECRET=your_github_client_secret
 AUTH_APPLE_ID=your_apple_service_id
 AUTH_APPLE_SECRET=your_apple_client_secret
+
+# Upstash Redis（API 限流）
+UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 ```
 
 ### 登录说明
@@ -215,6 +219,21 @@ bun drizzle-kit studio    # 打开 Drizzle Studio
 bun build:cloudflare      # 构建 Cloudflare 版本
 bun deploy:cloudflare     # 部署到 Cloudflare
 ```
+
+## API 限流
+
+项目已在 Proxy 层启用 API 限流，基于 `Upstash Redis + @upstash/ratelimit`：
+
+- 入口文件：`src/proxy.ts`
+- 限流工具：`src/packages/trpc/api/utils/rate-limit.ts`
+- 当前策略：`120 requests / minute / IP`（滑动窗口）
+- 生效范围：`/api/:path*`
+
+当请求超过阈值时：
+
+- 返回 HTTP `429`
+- 响应体：`{"code":429,"message":"Too many requests, please try again later."}`
+- 响应头包含：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`
 
 ## 数据库设计
 
@@ -329,3 +348,4 @@ bun test:coverage
 - [Drizzle ORM](https://orm.drizzle.team/) - 现代化 ORM
 - [shadcn/ui](https://ui.shadcn.com/) - UI 组件库
 - [Turso](https://turso.tech/) - Serverless SQLite
+- [Upstash](https://upstash.com/) - Serverless Redis 与限流服务
