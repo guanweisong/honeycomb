@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  foreignKey,
+} from "drizzle-orm/sqlite-core";
 import { i18nField } from "./i18nField";
 import { objectId } from "./objectId";
 import { withTimestamps } from "./timestamps";
@@ -39,15 +45,24 @@ export const user = sqliteTable("user", {
  * 分类表 (category)
  * 存储文章或其他内容的分类信息。
  */
-export const category = sqliteTable("category", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  description: i18nField("description").notNull(), // 分类描述 (国际化)
-  title: i18nField("title").notNull(), // 分类标题 (国际化)
-  parent: text("parent"), // 父分类ID，用于构建层级关系
-  status: text("status").default("ENABLE").notNull(), // 分类状态，默认启用
-  path: text("path").notNull(), // 分类的访问路径/slug
-  ...withTimestamps(),
-});
+export const category = sqliteTable(
+  "category",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    description: i18nField("description").notNull(), // 分类描述 (国际化)
+    title: i18nField("title").notNull(), // 分类标题 (国际化)
+    parent: text("parent"), // 父分类ID，用于构建层级关系
+    status: text("status").default("ENABLE").notNull(), // 分类状态，默认启用
+    path: text("path").notNull(), // 分类的访问路径/slug
+    ...withTimestamps(),
+  },
+  (table) => ({
+    categoryParentFk: foreignKey({
+      columns: [table.parent],
+      foreignColumns: [table.id],
+    }).onDelete("set null"),
+  }),
+);
 
 /**
  * 文章表 (post)
@@ -62,10 +77,14 @@ export const post = sqliteTable("post", {
   // --- 电影类型字段 ---
   movieTime: text("movie_time"), // 电影上映时间
   // --- 核心字段 ---
-  authorId: text("author_id").notNull(), // 作者ID，关联到 user 表
-  categoryId: text("category_id").notNull(), // 分类ID，关联到 category 表
+  authorId: text("author_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "no action" }), // 作者ID，关联到 user 表
+  categoryId: text("category_id")
+    .notNull()
+    .references(() => category.id, { onDelete: "no action" }), // 分类ID，关联到 category 表
   content: i18nField("content"), // 文章内容 (国际化)
-  coverId: text("cover_id"), // 封面图ID，关联到 media 表
+  coverId: text("cover_id").references(() => media.id, { onDelete: "set null" }), // 封面图ID，关联到 media 表
   excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
   status: text("status").default("TO_AUDIT").notNull(), // 文章状态，默认待审核
   title: i18nField("title"), // 文章标题 (国际化)
@@ -83,7 +102,9 @@ export const post = sqliteTable("post", {
  */
 export const page = sqliteTable("page", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  authorId: text("author_id").notNull(), // 作者ID
+  authorId: text("author_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "no action" }), // 作者ID
   content: i18nField("content").notNull(), // 页面内容 (国际化)
   status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
   title: i18nField("title").notNull(), // 页面标题 (国际化)
@@ -95,21 +116,30 @@ export const page = sqliteTable("page", {
  * 评论表 (comment)
  * 存储针对文章、页面或其他内容的评论。
  */
-export const comment = sqliteTable("comment", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  userAgent: text("user_agent"), // 评论者的 User Agent
-  author: text("author").notNull(), // 评论者昵称
-  content: text("content").notNull(), // 评论内容
-  site: text("site"), // 评论者网址
-  email: text("email").notNull(), // 评论者邮箱
-  ip: text("ip"), // 评论者IP地址
-  parentId: text("parent_id"), // 父评论ID，用于实现嵌套评论
-  postId: text("post_id"), // 关联的文章ID
-  pageId: text("page_id"), // 关联的页面ID
-  customId: text("custom_id"), // 关联的自定义实体ID
-  status: text("status").default("PUBLISH"), // 评论状态，默认发布
-  ...withTimestamps(),
-});
+export const comment = sqliteTable(
+  "comment",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    userAgent: text("user_agent"), // 评论者的 User Agent
+    author: text("author").notNull(), // 评论者昵称
+    content: text("content").notNull(), // 评论内容
+    site: text("site"), // 评论者网址
+    email: text("email").notNull(), // 评论者邮箱
+    ip: text("ip"), // 评论者IP地址
+    parentId: text("parent_id"), // 父评论ID，用于实现嵌套评论
+    postId: text("post_id").references(() => post.id, { onDelete: "cascade" }), // 关联的文章ID
+    pageId: text("page_id").references(() => page.id, { onDelete: "cascade" }), // 关联的页面ID
+    customId: text("custom_id"), // 关联的自定义实体ID
+    status: text("status").default("PUBLISH"), // 评论状态，默认发布
+    ...withTimestamps(),
+  },
+  (table) => ({
+    commentParentFk: foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+    }).onDelete("set null"),
+  }),
+);
 
 /**
  * 媒体文件表 (media)
@@ -147,13 +177,22 @@ export const setting = sqliteTable("setting", {
  * 菜单表 (menu)
  * 存储网站导航菜单的结构。
  */
-export const menu = sqliteTable("menu", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  parent: text("parent"), // 父菜单项ID
-  power: integer("power").notNull(), // 排序权重
-  type: text("type").notNull(), // 菜单项类型 (CATEGORY, PAGE, CUSTOM)
-  ...withTimestamps(),
-});
+export const menu = sqliteTable(
+  "menu",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    parent: text("parent"), // 父菜单项ID
+    power: integer("power").notNull(), // 排序权重
+    type: text("type").notNull(), // 菜单项类型 (CATEGORY, PAGE, CUSTOM)
+    ...withTimestamps(),
+  },
+  (table) => ({
+    menuParentFk: foreignKey({
+      columns: [table.parent],
+      foreignColumns: [table.id],
+    }).onDelete("set null"),
+  }),
+);
 
 /**
  * 标签表 (tag)
