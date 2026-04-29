@@ -16,12 +16,10 @@ const nextConfig: NextConfig = withSerwist({
         port: "",
       },
     ],
-    // unoptimized: true,
     formats: ["image/webp"],
     deviceSizes: [960, 1280, 1920], // fill 模式生成这几种宽度
     imageSizes: [960, 1280, 1920], // 用于有 width 的 Image
     minimumCacheTTL: 31536000,
-    dangerouslyAllowLocalIP: true,
   },
   poweredByHeader: false,
   env: {
