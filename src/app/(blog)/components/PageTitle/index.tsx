@@ -18,7 +18,7 @@ export interface PageTitleProps {
  */
 const PageTitle = (props: PageTitleProps) => {
   return (
-    <h2 className="text-center font-normal text-xl mt-2 lg:mt-4">
+    <h2 className="text-center font-light text-xl mt-2 lg:mt-4">
       {props.children}
     </h2>
   );

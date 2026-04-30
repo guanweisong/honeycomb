@@ -130,7 +130,7 @@ export default function PostList(props: PostListProps): JSX.Element {
           <ViewTransition name={`postTitle-${item.id}`}>
             <Link
               href={`/archives/${item.id}`}
-              className="block font-normal text-lg lg:text-base"
+              className="block text-lg lg:text-base"
             >
               {item.type === PostType.MOVIE && (
                 <>
