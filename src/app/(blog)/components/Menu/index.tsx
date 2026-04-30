@@ -24,6 +24,38 @@ export interface MenuProps {
   flatMenuData: MenuEntity[];
 }
 
+const getActiveCategories = ({
+  segments,
+  postCategoryId,
+  flatMenuData,
+}: {
+  segments: string[];
+  postCategoryId?: string;
+  flatMenuData: MenuEntity[];
+}) => {
+  const allCategoryPath = `/${segments.join("/")}`;
+
+  if (segments[0] === "archives") {
+    if (!postCategoryId) {
+      return [allCategoryPath];
+    }
+
+    const categoryPath = `/list/category/${getCurrentPathOfMenu({
+      id: postCategoryId,
+      familyProp: "path",
+      menu: flatMenuData,
+    }).join("/")}`;
+
+    return [categoryPath.split("/").slice(0, 4).join("/"), categoryPath];
+  }
+
+  if (segments[0] === "list") {
+    return [allCategoryPath.split("/").slice(0, 4).join("/"), allCategoryPath];
+  }
+
+  return [allCategoryPath];
+};
+
 /**
  * 导航菜单组件。
  * 支持多级菜单，响应式布局，并根据当前路由高亮显示菜单项。
@@ -39,10 +71,6 @@ const Menu = (props: MenuProps) => {
    * 控制移动端菜单的显示与隐藏。
    */
   const [visible, setVisible] = useState(false);
-  /**
-   * 当前激活的菜单分类路径。
-   */
-  const [currentCategory, setCurrentCategory] = useState<string[]>([]);
 
   const pathname = usePathname();
   const segments = useSelectedLayoutSegments();
@@ -56,55 +84,15 @@ const Menu = (props: MenuProps) => {
     { enabled: !!segments?.[1] && segments?.[0] === "archives" }, // 只有有 id 时才请求
   );
 
-  const setCurrentCategorySafely = (next: string[]) => {
-    setCurrentCategory((prev) => {
-      if (prev.length === next.length && prev.every((item, index) => item === next[index])) {
-        return prev;
-      }
-      return next;
-    });
-  };
+  const activeCategories = getActiveCategories({
+    segments: segments ?? [],
+    postCategoryId: postDetail?.categoryId,
+    flatMenuData,
+  });
 
-  const judgeCurrentMenu = () => {
-    const segs = segments ?? [];
-    let allCategoryPath = `/${segs.join("/")}`;
-
-    switch (segs[0]) {
-      case "archives":
-        // postDetail 是 useQuery 的 data，可能还没来
-        if (!postDetail) {
-          // 还没拿到详情，先设为基础路径（或直接 return，视你的 UX 期望）
-          setCurrentCategorySafely([allCategoryPath]);
-          return;
-        }
-        allCategoryPath = `/list/category/${getCurrentPathOfMenu({
-          id: postDetail.categoryId!,
-          familyProp: "path",
-          menu: flatMenuData,
-        }).join("/")}`;
-        setCurrentCategorySafely([
-          allCategoryPath.split("/").slice(0, 4).join("/"),
-          allCategoryPath,
-        ]);
-        break;
-      case "list":
-        setCurrentCategorySafely([
-          allCategoryPath.split("/").slice(0, 4).join("/"),
-          allCategoryPath,
-        ]);
-        break;
-      default:
-        setCurrentCategorySafely([allCategoryPath]);
-    }
-  };
-
-  /**
-   * 副作用钩子，用于在路由或文章详情变化时更新菜单的选中状态。
-   */
   useEffect(() => {
     setVisible(false);
-    judgeCurrentMenu();
-  }, [pathname, postDetail, flatMenuData]);
+  }, [pathname]);
 
   /**
    * 监听点击外部事件，用于关闭移动端菜单。
@@ -141,18 +129,22 @@ const Menu = (props: MenuProps) => {
           >
             <Link
               href={m.link ?? ""}
-              aria-current={m.link === currentCategory[0] ? "page" : undefined}
+              aria-current={m.link === activeCategories[0] ? "page" : undefined}
               className={cn(
                 "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
                 {
-                  "text-teal-500": m.link === currentCategory[0],
-                  "group-hover:lg:text-teal-500": m.link !== currentCategory[0],
+                  "text-teal-500": m.link === activeCategories[0],
+                  "group-hover:lg:text-teal-500":
+                    m.link !== activeCategories[0],
                 },
               )}
             >
               {m.label}
-              {m.link === currentCategory[0] && (
-                <span className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0" aria-hidden="true"></span>
+              {m.link === activeCategories[0] && (
+                <span
+                  className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"
+                  aria-hidden="true"
+                ></span>
               )}
             </Link>
           </li>
