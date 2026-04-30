@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
@@ -56,7 +56,16 @@ const Menu = (props: MenuProps) => {
     { enabled: !!segments?.[1] && segments?.[0] === "archives" }, // 只有有 id 时才请求
   );
 
-  const judgeCurrentMenu = useCallback(() => {
+  const setCurrentCategorySafely = (next: string[]) => {
+    setCurrentCategory((prev) => {
+      if (prev.length === next.length && prev.every((item, index) => item === next[index])) {
+        return prev;
+      }
+      return next;
+    });
+  };
+
+  const judgeCurrentMenu = () => {
     const segs = segments ?? [];
     let allCategoryPath = `/${segs.join("/")}`;
 
@@ -65,7 +74,7 @@ const Menu = (props: MenuProps) => {
         // postDetail 是 useQuery 的 data，可能还没来
         if (!postDetail) {
           // 还没拿到详情，先设为基础路径（或直接 return，视你的 UX 期望）
-          setCurrentCategory([allCategoryPath]);
+          setCurrentCategorySafely([allCategoryPath]);
           return;
         }
         allCategoryPath = `/list/category/${getCurrentPathOfMenu({
@@ -73,21 +82,21 @@ const Menu = (props: MenuProps) => {
           familyProp: "path",
           menu: flatMenuData,
         }).join("/")}`;
-        setCurrentCategory([
+        setCurrentCategorySafely([
           allCategoryPath.split("/").slice(0, 4).join("/"),
           allCategoryPath,
         ]);
         break;
       case "list":
-        setCurrentCategory([
+        setCurrentCategorySafely([
           allCategoryPath.split("/").slice(0, 4).join("/"),
           allCategoryPath,
         ]);
         break;
       default:
-        setCurrentCategory([allCategoryPath]);
+        setCurrentCategorySafely([allCategoryPath]);
     }
-  }, [flatMenuData, postDetail, segments]);
+  };
 
   /**
    * 副作用钩子，用于在路由或文章详情变化时更新菜单的选中状态。
@@ -95,7 +104,7 @@ const Menu = (props: MenuProps) => {
   useEffect(() => {
     setVisible(false);
     judgeCurrentMenu();
-  }, [pathname, judgeCurrentMenu]);
+  }, [pathname, postDetail, flatMenuData]);
 
   /**
    * 监听点击外部事件，用于关闭移动端菜单。
