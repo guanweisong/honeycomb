@@ -107,7 +107,7 @@ export const ThemeSwitcher = () => {
   };
 
   return (
-    <span ref={buttonRef}>
+    <span ref={buttonRef} data-testid="theme-switcher">
       <DarkModeSwitch
         size={20}
         checked={resolvedTheme === Theme.Dark}

@@ -123,7 +123,9 @@ export default async function Header() {
             <Menu data={menuDataFormat} flatMenuData={menu?.list} />
           </div>
           <div className="flex gap-3 mr-2 w-16">
-            <ThemeSwitcher />
+            <div data-testid="theme-switcher">
+              <ThemeSwitcher />
+            </div>
             <LanguageSwitcher />
           </div>
         </div>
