@@ -41,6 +41,7 @@ export default async function Pages(props: PagesProps) {
       <PostInfo
         id={pageDetail?.id}
         author={pageDetail?.author?.name ?? ''}
+        authorId={pageDetail?.author?.id}
         date={pageDetail?.createdAt as string}
         comments={commentsData?.total}
         views={pageDetail?.views as number}

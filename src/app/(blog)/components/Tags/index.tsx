@@ -31,7 +31,7 @@ const Tag = (props: PostListItemEntity) => {
               <span key={n.id}>
                 {index !== 0 && "、"}
                 <Link
-                  href={`/list/tags/${encodeURI((n.name && n.name[locale as keyof typeof n.name]) || '')}`}
+                  href={`/list/tags/${n.id}`}
                   className="link-light"
                 >
                   {n.name?.[locale]}

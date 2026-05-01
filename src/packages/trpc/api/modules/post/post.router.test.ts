@@ -148,36 +148,46 @@ describe("Post Router", () => {
       });
     });
 
-    it("should return empty list when tag not found", async () => {
-      // Mock tag query returning empty
+    it("should return empty list when tagId has no posts", async () => {
+      // Mock postTag query returning no post ids, then count query.
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockDb.where.mockResolvedValueOnce([]);
+
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({
         page: 1,
         limit: 10,
-        tagName: "nonexistent-tag",
+        tagId: TEST_IDS.ID_4,
       });
 
       expect(result).toEqual({ list: [], total: 0 });
     });
 
-    it("should return empty list when author not found", async () => {
-      // Mock user query returning empty
+    it("should return empty list when authorId has no posts", async () => {
+      // Mock postTag-style lookup for author filter resulting in no posts
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockReturnValueOnce(mockDb);
+      mockDb.offset.mockResolvedValueOnce([]);
+
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index({
         page: 1,
         limit: 10,
-        userName: "nonexistent-author",
+        authorId: TEST_IDS.ID_5,
       });
 
       expect(result).toEqual({ list: [], total: 0 });
@@ -385,7 +395,7 @@ describe("Post Router", () => {
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       await expect(
-        caller.detail({ id: "999999999999999999999999" }),
+        caller.detail({ id: TEST_IDS.ID_NOT_FOUND }),
       ).rejects.toThrow("NOT_FOUND");
     });
   });
@@ -414,7 +424,7 @@ describe("Post Router", () => {
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
-      const result = await caller.getViews({ id: "999999999999999999999999" });
+      const result = await caller.getViews({ id: TEST_IDS.ID_NOT_FOUND });
 
       expect(result).toEqual({ views: 0 });
     });

@@ -7,8 +7,6 @@ import {
 } from "@/packages/trpc/api/utils/tools";
 import {
   buildCategoryFilter,
-  buildTagFilter,
-  buildAuthorFilter,
 } from "./utils/filters";
 import { loadPostRelations } from "./utils/relations";
 
@@ -29,8 +27,8 @@ export async function getPostList(db: Database, input: PostListQueryInput) {
     title,
     content,
     categoryId,
-    tagName,
-    userName,
+    tagId,
+    authorId,
     ...rest
   } = input;
 
@@ -48,12 +46,8 @@ export async function getPostList(db: Database, input: PostListQueryInput) {
     where = where ? and(where, catClause) : catClause;
   }
 
-  // 标签名过滤
-  if (tagName) {
-    const tagId = await buildTagFilter(db, tagName);
-    if (!tagId) {
-      return { list: [], total: 0 };
-    }
+  // 标签过滤
+  if (tagId) {
     // 使用 postTag 中间表查询
     const postIds = await db
       .select({ postId: schema.postTag.postId })
@@ -69,12 +63,8 @@ export async function getPostList(db: Database, input: PostListQueryInput) {
     where = where ? and(where, tagClause) : tagClause;
   }
 
-  // 作者名过滤
-  if (userName) {
-    const authorId = await buildAuthorFilter(db, userName);
-    if (!authorId) {
-      return { list: [], total: 0 };
-    }
+  // 作者过滤
+  if (authorId) {
     const authorClause = eq(schema.post.authorId, authorId);
     where = where ? and(where, authorClause) : authorClause;
   }

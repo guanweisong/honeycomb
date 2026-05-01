@@ -267,7 +267,7 @@ describe("Page Router", () => {
 
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
-      const result = await caller.detail({ id: "999999999999999999999999" });
+      const result = await caller.detail({ id: TEST_IDS.ID_NOT_FOUND });
 
       expect(result).toBeNull();
     });

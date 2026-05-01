@@ -1,5 +1,6 @@
 import {
   protectedProcedure,
+  publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
 import { TRPCError } from "@trpc/server";
@@ -15,6 +16,8 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { hash } from "bcryptjs";
+import { z } from "zod";
+import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -22,6 +25,21 @@ const BCRYPT_ROUNDS = 12;
  * 用户相关的 tRPC 路由。
  */
 export const userRouter = createTRPCRouter({
+  detail: publicProcedure
+    .input(z.object({ id: IdSchema }))
+    .query(async ({ ctx, input }) => {
+      const [user] = await ctx.db
+        .select({
+          id: schema.user.id,
+          name: schema.user.name,
+        })
+        .from(schema.user)
+        .where(eq(schema.user.id, input.id))
+        .limit(1);
+
+      return user ?? null;
+    }),
+
   /**
    * 获取当前登录用户的安全信息。
    * 该接口依赖 tRPC context 中已完成的 session 解析和数据库状态复核，

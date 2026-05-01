@@ -12,8 +12,8 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   status: z.array(z.string()).optional(),
   type: z.array(z.string()).optional(),
   categoryId: queryString(),
-  userName: queryString(),
-  tagName: queryString(),
+  tagId: queryString(),
+  authorId: queryString(),
 }).partial();
 
 /**

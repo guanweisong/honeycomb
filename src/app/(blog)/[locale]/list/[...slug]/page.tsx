@@ -49,7 +49,8 @@ export default async function List(props: ListProps) {
     limit: PAGE_SIZE,
     sortField: "createdAt",
   } as PostListQueryInput;
-  let typeName = decodeURI(params?.slug?.pop() ?? "");
+  const typeValue = params?.slug?.[params.slug.length - 1] ?? "";
+  let typeName = typeValue;
   switch (type) {
     case "category":
       // 获取分类ID
@@ -63,10 +64,29 @@ export default async function List(props: ListProps) {
         ] || "";
       break;
     case "tags":
-      queryParams = { ...queryParams, tagName: typeName };
+      const matchedTag = (
+        await serverClient.tag.index({ limit: 1, page: 1, id: [typeValue] })
+      )?.list?.[0];
+      if (matchedTag) {
+        queryParams = {
+          ...queryParams,
+          tagId: matchedTag.id,
+        };
+        typeName = matchedTag.name?.[params.locale] ?? "";
+      } else {
+        queryParams = { ...queryParams, tagId: typeValue };
+        typeName = "";
+      }
       break;
     case "authors":
-      queryParams = { ...queryParams, userName: typeName };
+      const matchedAuthor = await serverClient.user.detail({ id: typeValue });
+      if (matchedAuthor) {
+        queryParams = { ...queryParams, authorId: matchedAuthor.id };
+        typeName = matchedAuthor.name ?? "";
+      } else {
+        queryParams = { ...queryParams, authorId: typeValue };
+        typeName = "";
+      }
       break;
   }
 
@@ -140,13 +160,27 @@ export async function generateMetadata(
   // 获取第一个路径部分作为类型
   const type =
     typeof slug !== "undefined" && slug.length > 0 ? slug[0] : undefined;
-  let typeName = slug?.pop() ?? "";
+  const typeValue = slug?.[slug.length - 1] ?? "";
+  let typeName = typeValue;
   // 根据 `type` 和 `menu` 来查找类型名称
   switch (type) {
     case "category":
       typeName =
-        menu?.list?.find((item) => item.path === typeName)?.title?.[locale] ||
+        menu?.list?.find((item) => item.path === typeValue)?.title?.[locale] ||
         "";
+      break;
+    case "tags":
+      typeName =
+        (
+          await serverClient.tag.index({
+            limit: 1,
+            page: 1,
+            id: [typeValue],
+          })
+        )?.list?.[0]?.name?.[locale] ?? "";
+      break;
+    case "authors":
+      typeName = (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
       break;
     default:
       // 其他逻辑
@@ -172,7 +206,7 @@ export async function generateMetadata(
           title = setting?.siteName?.[locale] as string;
         }
     }
-    return decodeURI(title);
+    return title;
   };
 
   const title = getTitle();

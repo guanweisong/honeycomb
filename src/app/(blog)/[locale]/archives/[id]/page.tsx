@@ -98,6 +98,7 @@ export default async function Archives(props: ArchivesProps) {
       <PostInfo
         id={postDetail.id}
         author={postDetail.author?.name ?? ''}
+        authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ''}
         comments={commentsData?.total}
         views={postDetail.views ?? 0}

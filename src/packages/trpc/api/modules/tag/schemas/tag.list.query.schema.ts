@@ -1,6 +1,7 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { CleanZod } from "../../../schemas/clean.zod";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
+import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 
 /**
  * 获取标签列表时的查询参数验证 schema。
@@ -8,6 +9,7 @@ import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
  * 允许通过 'name' 字段对标签列表进行筛选。
  */
 export const TagListQuerySchema = PaginationQuerySchema.extend({
+  id: IdSchema.array().optional(),
   name: queryString(),
 }).partial();
 
