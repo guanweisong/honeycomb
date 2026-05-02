@@ -55,6 +55,9 @@ export default function useInfiniteQueryPostList(
       return allPages.length + 1;
     },
     initialPageParam: 1,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
     initialData: initialData
       ? { pages: [initialData], pageParams: [1] }
       : undefined,

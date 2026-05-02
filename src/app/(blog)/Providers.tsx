@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { SerwistProvider } from "@serwist/turbopack/react";
@@ -12,10 +12,7 @@ import { SerwistProvider } from "@serwist/turbopack/react";
  * @returns {JSX.Element} 包含提供者的组件。
  */
 export function Providers({ children }: { children: ReactNode }) {
-  /**
-   * React Query 客户端实例。
-   */
-  const queryClient = new QueryClient();
+  const [queryClient] = useState(() => new QueryClient());
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
