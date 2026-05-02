@@ -22,7 +22,8 @@ test.describe('blog theme', () => {
     const themeColor = page.locator('meta[name="theme-color"]');
     await expect(themeColor).toHaveCount(1);
 
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('main')).toBeVisible();
     const afterReload = await page.locator('html').getAttribute('class');
     expect(afterReload).toBe(after);
   });

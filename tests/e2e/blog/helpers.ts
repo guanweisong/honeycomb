@@ -4,8 +4,9 @@ export const BLOG_HOME_PATH = '/en/list/category';
 export const FAKE_ID = 'ffffffffffffffffffffffff';
 
 export async function openBlogHome(page: Page) {
-  await page.goto(BLOG_HOME_PATH, { waitUntil: 'networkidle' });
+  await page.goto(BLOG_HOME_PATH, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/en\/list\/category/);
+  await expect(page.locator('main')).toBeVisible();
 }
 
 export async function openFirstPostDetail(page: Page) {
@@ -15,4 +16,3 @@ export async function openFirstPostDetail(page: Page) {
   await firstPost.click();
   await expect(page).toHaveURL(/\/en\/archives\//);
 }
-
