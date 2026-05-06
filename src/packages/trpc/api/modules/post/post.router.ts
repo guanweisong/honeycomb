@@ -25,13 +25,20 @@ import { loadPostRelations } from "./utils/relations";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
 import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitizeHtml";
+import {
+  bumpCacheVersion,
+  getCacheVersion,
+  getCacheJSON,
+  setCacheJSON,
+} from "@/packages/trpc/api/utils/upstash-cache";
 
 type PostInsertValues = InferInsertModel<typeof schema.post>;
-type OptionalI18nInput = Partial<Record<keyof I18n, string | null>> | null | undefined;
+type OptionalI18nInput =
+  | Partial<Record<keyof I18n, string | null>>
+  | null
+  | undefined;
 
-const normalizeOptionalI18n = (
-  value: unknown,
-): I18n | null | undefined => {
+const normalizeOptionalI18n = (value: unknown): I18n | null | undefined => {
   if (value == null) {
     return value;
   }
@@ -61,7 +68,9 @@ const toPostInsertValues = (
   quoteContent: normalizeOptionalI18n(input.quoteContent),
 });
 
-const toPostUpdateValues = (input: Omit<PostUpdate, "id">): Partial<PostInsertValues> => ({
+const toPostUpdateValues = (
+  input: Omit<PostUpdate, "id">,
+): Partial<PostInsertValues> => ({
   ...input,
   galleryLocation: normalizeOptionalI18n(input.galleryLocation),
   title: normalizeOptionalI18n(input.title),
@@ -70,6 +79,8 @@ const toPostUpdateValues = (input: Omit<PostUpdate, "id">): Partial<PostInsertVa
   quoteAuthor: normalizeOptionalI18n(input.quoteAuthor),
   quoteContent: normalizeOptionalI18n(input.quoteContent),
 });
+
+const POST_INDEX_CACHE_VERSION_KEY = "cache:post:index:version";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -85,15 +96,25 @@ export const postRouter = createTRPCRouter({
    * - **分类筛选**: 如果提供了 `categoryId`，会自动包含其所有子分类下的文章。
    * - **标签筛选**: 如果提供了 `tagId`，会按标签 ID 进行匹配。
    * - **作者筛选**: 如果提供了 `authorId`，会按作者 ID 进行匹配。
-   *
-   * 数据关联：
-   * 为了避免 N+1 查询，该端点会先查询出文章列表，然后收集所有需要关联的 ID（如 authorId, categoryId 等），
-   * 最后通过一次性的批量查询将关联数据（作者、分类、封面图等）获取并合并到结果中。
    */
   index: publicProcedure
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
-      return getPostList(ctx.db, input);
+      const isAdminCall = Boolean(ctx.user);
+      if (isAdminCall) {
+        return getPostList(ctx.db, input);
+      }
+
+      const cacheVersion = await getCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      const cacheKey = `post:index:v${cacheVersion}:${JSON.stringify(input)}`;
+      const cached =
+        await getCacheJSON<Awaited<ReturnType<typeof getPostList>>>(cacheKey);
+      console.log(cacheKey, cached?.total);
+      if (cached) return cached;
+
+      const result = await getPostList(ctx.db, input);
+      await setCacheJSON(cacheKey, result, 60 * 60);
+      return result;
     }),
 
   /**
@@ -147,6 +168,7 @@ export const postRouter = createTRPCRouter({
         .insert(schema.post)
         .values(toPostInsertValues(input, authorId))
         .returning();
+      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
       return newPost;
     }),
 
@@ -162,6 +184,7 @@ export const postRouter = createTRPCRouter({
       await ctx.db
         .delete(schema.post)
         .where(inArray(schema.post.id, input.ids));
+      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
       return { success: true };
     }),
 
@@ -180,6 +203,7 @@ export const postRouter = createTRPCRouter({
         .set(toPostUpdateValues(rest))
         .where(eq(schema.post.id, id))
         .returning();
+      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
       return updatedPost;
     }),
 
@@ -259,14 +283,30 @@ export const postRouter = createTRPCRouter({
    * 更新文章标签关联
    */
   updateTags: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
-    .input(z.object({ postId: IdSchema, tagIds: z.array(IdSchema), type: z.nativeEnum(TagType) }))
+    .input(
+      z.object({
+        postId: IdSchema,
+        tagIds: z.array(IdSchema),
+        type: z.nativeEnum(TagType),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(schema.postTag).where(and(
-        eq(schema.postTag.postId, input.postId),
-        eq(schema.postTag.type, input.type)
-      ));
+      await ctx.db
+        .delete(schema.postTag)
+        .where(
+          and(
+            eq(schema.postTag.postId, input.postId),
+            eq(schema.postTag.type, input.type),
+          ),
+        );
       if (input.tagIds.length > 0) {
-        await ctx.db.insert(schema.postTag).values(input.tagIds.map(tagId => ({ postId: input.postId, tagId, type: input.type })));
+        await ctx.db.insert(schema.postTag).values(
+          input.tagIds.map((tagId) => ({
+            postId: input.postId,
+            tagId,
+            type: input.type,
+          })),
+        );
       }
       return { success: true };
     }),
