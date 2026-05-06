@@ -10,9 +10,13 @@ vi.mock("@/packages/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("drizzle-orm", () => ({
-  inArray: vi.fn((field, values) => ({ field, values })),
-}));
+vi.mock("drizzle-orm", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("drizzle-orm")>();
+  return {
+    ...actual,
+    inArray: vi.fn((field, values) => ({ field, values })),
+  };
+});
 
 describe("getRelationTags", () => {
   beforeEach(() => {

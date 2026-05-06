@@ -5,6 +5,7 @@ import {
   index,
   foreignKey,
 } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
 import { i18nField } from "./i18nField";
 import { objectId } from "./objectId";
 import { withTimestamps } from "./timestamps";
@@ -237,3 +238,81 @@ export const link = sqliteTable("link", {
   status: text("status").default("ENABLE"), // 链接状态，默认启用
   ...withTimestamps(),
 });
+
+/**
+ * 用户实体关系定义。
+ * 用于 Drizzle relational query（`db.query.*.findMany({ with: ... })`）
+ * 在查询用户时可关联其文章与独立页面。
+ */
+export const userRelations = relations(user, ({ many }) => ({
+  posts: many(post),
+  pages: many(page),
+}));
+
+/**
+ * 分类实体关系定义。
+ * - `posts`: 分类下的文章列表
+ * - `parentItem/children`: 分类自引用的父子层级关系
+ */
+export const categoryRelations = relations(category, ({ many, one }) => ({
+  posts: many(post),
+  parentItem: one(category, {
+    fields: [category.parent],
+    references: [category.id],
+    relationName: "category_parent",
+  }),
+  children: many(category, {
+    relationName: "category_parent",
+  }),
+}));
+
+/**
+ * 媒体实体关系定义。
+ * 用于关联“被哪篇文章作为封面使用”。
+ */
+export const mediaRelations = relations(media, ({ many }) => ({
+  coverPosts: many(post),
+}));
+
+/**
+ * 文章实体关系定义。
+ * 为文章提供作者、分类、封面以及 post_tag 中间表关联能力。
+ */
+export const postRelations = relations(post, ({ one, many }) => ({
+  author: one(user, {
+    fields: [post.authorId],
+    references: [user.id],
+  }),
+  category: one(category, {
+    fields: [post.categoryId],
+    references: [category.id],
+  }),
+  cover: one(media, {
+    fields: [post.coverId],
+    references: [media.id],
+  }),
+  postTags: many(postTag),
+}));
+
+/**
+ * 标签实体关系定义。
+ * 通过 post_tag 中间表关联到文章。
+ */
+export const tagRelations = relations(tag, ({ many }) => ({
+  postTags: many(postTag),
+}));
+
+/**
+ * 文章-标签中间表关系定义。
+ * 同时关联 `post` 与 `tag`，用于多对多关系查询。
+ */
+export const postTagRelations = relations(postTag, ({ one }) => ({
+  post: one(post, {
+    fields: [postTag.postId],
+    references: [post.id],
+  }),
+  tag: one(tag, {
+    fields: [postTag.tagId],
+    references: [tag.id],
+  }),
+}));
