@@ -10,6 +10,7 @@ import ThemeProvider from "@/app/(blog)/components/ThemeProvider";
 import { setRequestLocale } from "next-intl/server";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { NextIntlClientProvider } from "next-intl";
+import { Analytics } from "@vercel/analytics/next";
 
 /**
  * 页面重新验证时间。
@@ -78,6 +79,7 @@ export default async function LocaleLayout({
             </NextIntlClientProvider>
           </div>
         </ThemeProvider>
+        <Analytics />
       </body>
       <GoogleAnalytics gaId="G-F7GLX9X5VT" />
     </html>

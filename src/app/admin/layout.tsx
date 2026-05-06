@@ -6,6 +6,7 @@ import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 
 // 创建一个 React Query 客户端实例
@@ -53,6 +54,7 @@ export default function RootLayout({
           </trpc.Provider>
         </SessionProvider>
         <Toaster />
+        <Analytics />
       </body>
       <GoogleAnalytics gaId="G-15D5ZQ68JX" />
     </html>
