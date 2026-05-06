@@ -100,8 +100,9 @@ export const postRouter = createTRPCRouter({
   index: publicProcedure
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
+      const isBuildOrStaticCall = !ctx.hasRequest;
       const isAdminCall = Boolean(ctx.user);
-      if (isAdminCall) {
+      if (isBuildOrStaticCall || isAdminCall) {
         return getPostList(ctx.db, input);
       }
 

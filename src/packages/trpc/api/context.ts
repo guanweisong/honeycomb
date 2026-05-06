@@ -76,9 +76,11 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
 export const createContext = async (opts: CreateContextOptions) => {
   const user = await getUserFromRequest(opts.req);
   const db = getDb();
+  const hasRequest = Boolean(opts.req);
   return {
     db,
     user,
+    hasRequest,
     header: opts.req?.headers ?? new Headers(),
   } as const;
 };
