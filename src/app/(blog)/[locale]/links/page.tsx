@@ -5,8 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { cn } from "@/packages/ui/lib/utils";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import { createServerClient } from "@/packages/trpc/api";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
+import { getCachedLinks, getCachedSetting } from "./service";
 
 /**
  * 友情链接页面组件的属性接口。
@@ -25,16 +24,9 @@ export interface LinksProps {
  * @returns {Promise<JSX.Element>} 友情链接页面。
  */
 const Links = async (props: LinksProps) => {
-  const serverClient = await createServerClient();
   const { locale } = (await props.params) as { locale: keyof MultiLang };
   const t = await getTranslations("Link");
-  const [result, setting] = await Promise.all([
-    serverClient.link.index({
-      limit: 999,
-      status: [EnableStatus.ENABLE],
-    }),
-    serverClient.setting.index(),
-  ]);
+  const [result, setting] = await Promise.all([getCachedLinks(), getCachedSetting()]);
 
   return (
     <div>
@@ -99,9 +91,8 @@ const Links = async (props: LinksProps) => {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata() {
-  const serverClient = await createServerClient();
   const t = await getTranslations("Link");
-  const setting = await serverClient.setting.index();
+  const setting = await getCachedSetting();
   const locale = (await getLocale()) as keyof MultiLang;
   const title = t("title");
 
@@ -117,15 +108,6 @@ export async function generateMetadata() {
     description: setting.siteName?.[locale],
     openGraph,
   };
-}
-
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
 }
 
 export default Links;

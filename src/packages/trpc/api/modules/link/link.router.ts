@@ -14,6 +14,8 @@ import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { revalidateTag } from "next/cache";
+import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 
 /**
  * 友情链接相关的 tRPC 路由。
@@ -76,6 +78,7 @@ export const linkRouter = createTRPCRouter({
         .insert(schema.link)
         .values(input as InferInsertModel<typeof schema.link>)
         .returning();
+      revalidateTag(blogCacheTags.links(), "max");
       return newLink;
     }),
 
@@ -91,6 +94,7 @@ export const linkRouter = createTRPCRouter({
       await ctx.db
         .delete(schema.link)
         .where(inArray(schema.link.id, input.ids));
+      revalidateTag(blogCacheTags.links(), "max");
       return { success: true };
     }),
 
@@ -109,6 +113,7 @@ export const linkRouter = createTRPCRouter({
         .set(rest as Partial<InferInsertModel<typeof schema.link>>)
         .where(eq(schema.link.id, id))
         .returning();
+      revalidateTag(blogCacheTags.links(), "max");
       return updatedLink;
     }),
 });

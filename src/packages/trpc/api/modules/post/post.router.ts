@@ -19,6 +19,8 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
+import { revalidateTag } from "next/cache";
+import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { getPostList } from "./post.service";
 import { loadPostRelations } from "./utils/relations";
@@ -170,6 +172,9 @@ export const postRouter = createTRPCRouter({
         .values(toPostInsertValues(input, authorId))
         .returning();
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      revalidateTag(blogCacheTags.postList(), "max");
+      revalidateTag(blogCacheTags.postCategory(newPost.categoryId), "max");
+      revalidateTag(blogCacheTags.post(newPost.id), "max");
       return newPost;
     }),
 
@@ -182,10 +187,19 @@ export const postRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
+      const posts = await ctx.db
+        .select({ id: schema.post.id, categoryId: schema.post.categoryId })
+        .from(schema.post)
+        .where(inArray(schema.post.id, input.ids));
       await ctx.db
         .delete(schema.post)
         .where(inArray(schema.post.id, input.ids));
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      revalidateTag(blogCacheTags.postList(), "max");
+      for (const post of posts) {
+        revalidateTag(blogCacheTags.post(post.id), "max");
+        revalidateTag(blogCacheTags.postCategory(post.categoryId), "max");
+      }
       return { success: true };
     }),
 
@@ -205,6 +219,9 @@ export const postRouter = createTRPCRouter({
         .where(eq(schema.post.id, id))
         .returning();
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      revalidateTag(blogCacheTags.postList(), "max");
+      revalidateTag(blogCacheTags.post(updatedPost.id), "max");
+      revalidateTag(blogCacheTags.postCategory(updatedPost.categoryId), "max");
       return updatedPost;
     }),
 
@@ -309,6 +326,8 @@ export const postRouter = createTRPCRouter({
           })),
         );
       }
+      revalidateTag(blogCacheTags.postList(), "max");
+      revalidateTag(blogCacheTags.post(input.postId), "max");
       return { success: true };
     }),
 });

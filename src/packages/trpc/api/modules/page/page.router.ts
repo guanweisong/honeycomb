@@ -18,6 +18,8 @@ import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
+import { revalidateTag } from "next/cache";
+import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -161,6 +163,7 @@ export const pageRouter = createTRPCRouter({
           authorId,
         } as InferInsertModel<typeof schema.page>)
         .returning();
+      revalidateTag(blogCacheTags.page(newPage.id), "max");
       return newPage;
     }),
 
@@ -173,9 +176,16 @@ export const pageRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
+      const pages = await ctx.db
+        .select({ id: schema.page.id })
+        .from(schema.page)
+        .where(inArray(schema.page.id, input.ids as string[]));
       await ctx.db
         .delete(schema.page)
         .where(inArray(schema.page.id, input.ids as string[]));
+      for (const page of pages) {
+        revalidateTag(blogCacheTags.page(page.id), "max");
+      }
       return { success: true };
     }),
 
@@ -203,6 +213,7 @@ export const pageRouter = createTRPCRouter({
         .set(nextValues)
         .where(eq(schema.page.id, id))
         .returning();
+      revalidateTag(blogCacheTags.page(updatedPage.id), "max");
 
       let author: { id: string; name: string | null } | null = null;
       if (updatedPage.authorId) {

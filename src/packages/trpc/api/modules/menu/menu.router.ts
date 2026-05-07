@@ -12,6 +12,8 @@ import * as schema from "@/packages/db/schema";
 import { sql } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { revalidateTag } from "next/cache";
+import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 
 /**
  * 菜单相关的 tRPC 路由。
@@ -99,6 +101,8 @@ export const menuRouter = createTRPCRouter({
         .insert(schema.menu)
         .values(input.map(({ ...item }) => item))
         .returning();
+      revalidateTag(blogCacheTags.menu(), "max");
+      revalidateTag(blogCacheTags.postList(), "max");
       return { count: newMenu.length };
     }),
 });

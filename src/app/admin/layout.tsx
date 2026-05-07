@@ -13,11 +13,6 @@ import "./globals.scss";
 const queryClient = new QueryClient();
 
 /**
- * 强制 Next.js 将此布局视为动态渲染。
- */
-export const dynamic = "force-dynamic";
-
-/**
  * Admin 应用的根布局组件。
  * 该组件会包裹所有页面，并提供全局的上下文和资源。
  *

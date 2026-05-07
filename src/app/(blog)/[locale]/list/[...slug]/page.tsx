@@ -3,10 +3,16 @@ import PostList from "@/app/(blog)/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
-import { createServerClient } from "@/packages/trpc/api";
 import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
+import {
+  getCachedAuthorById,
+  getCachedMenu,
+  getCachedPostList,
+  getCachedSetting,
+  getCachedTagNameById,
+} from "./service";
 
 /**
  * 页面大小常量，用于分页查询。
@@ -30,15 +36,11 @@ export interface ListProps {
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
 export default async function List(props: ListProps) {
-  const serverClient = await createServerClient();
-  const [setting, menu] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.menu.index(),
-  ]);
   const params = (await props.params) as {
     slug: string[];
     locale: keyof MultiLang;
   };
+  const [setting, menu] = await Promise.all([getCachedSetting(), getCachedMenu()]);
   const t = await getTranslations("PostList");
 
   const type =
@@ -64,9 +66,7 @@ export default async function List(props: ListProps) {
         ] || "";
       break;
     case "tags":
-      const matchedTag = (
-        await serverClient.tag.index({ limit: 1, page: 1, id: [typeValue] })
-      )?.list?.[0];
+      const matchedTag = await getCachedTagNameById(typeValue);
       if (matchedTag) {
         queryParams = {
           ...queryParams,
@@ -79,7 +79,7 @@ export default async function List(props: ListProps) {
       }
       break;
     case "authors":
-      const matchedAuthor = await serverClient.user.detail({ id: typeValue });
+      const matchedAuthor = await getCachedAuthorById(typeValue);
       if (matchedAuthor) {
         queryParams = { ...queryParams, authorId: matchedAuthor.id };
         typeName = matchedAuthor.name ?? "";
@@ -90,7 +90,7 @@ export default async function List(props: ListProps) {
       break;
   }
 
-  const post = await serverClient.post.index(queryParams);
+  const post = await getCachedPostList(queryParams);
 
   const getTitle = () => {
     let title = "";
@@ -148,10 +148,9 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
-  const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.menu.index(),
+    getCachedSetting(),
+    getCachedMenu(),
     getLocale().then((res) => res as keyof MultiLang),
   ]);
   const t = await getTranslations("PostList");
@@ -170,17 +169,10 @@ export async function generateMetadata(
         "";
       break;
     case "tags":
-      typeName =
-        (
-          await serverClient.tag.index({
-            limit: 1,
-            page: 1,
-            id: [typeValue],
-          })
-        )?.list?.[0]?.name?.[locale] ?? "";
+      typeName = (await getCachedTagNameById(typeValue))?.name?.[locale] ?? "";
       break;
     case "authors":
-      typeName = (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
+      typeName = (await getCachedAuthorById(typeValue))?.name ?? "";
       break;
     default:
       // 其他逻辑
@@ -223,13 +215,4 @@ export async function generateMetadata(
     description: setting?.siteSubName?.[locale],
     openGraph,
   };
-}
-
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ slug: string[] }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
 }

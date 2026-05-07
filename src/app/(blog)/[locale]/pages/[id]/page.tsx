@@ -5,8 +5,13 @@ import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
+import {
+  getCachedPageDetail,
+  getCachedSetting,
+  getCommentListByRef,
+  incrementPageViews,
+} from "./service";
 /**
  * 页面详情组件的属性接口。
  */
@@ -24,15 +29,14 @@ export interface PagesProps {
  * @returns {Promise<JSX.Element>} 页面详情。
  */
 export default async function Pages(props: PagesProps) {
-  const serverClient = await createServerClient();
   const { id, locale } = (await props.params) as {
     id: string;
     locale: keyof MultiLang;
   };
   const [pageDetail, commentsData] = await Promise.all([
-    serverClient.page.detail({ id }),
-    serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
-    serverClient.page.incrementViews({ id }),
+    getCachedPageDetail(id),
+    getCommentListByRef(id, MenuType.PAGE),
+    incrementPageViews(id),
   ]);
 
   return (
@@ -79,11 +83,10 @@ type GenerateMetadataProps = {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(props: GenerateMetadataProps) {
-  const serverClient = await createServerClient();
   const { id } = await props.params;
   const [setting, pageDetail] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.page.detail({ id }),
+    getCachedSetting(),
+    getCachedPageDetail(id),
   ]);
   const local = (await getLocale()) as keyof MultiLang;
 
@@ -100,13 +103,4 @@ export async function generateMetadata(props: GenerateMetadataProps) {
     description: setting.siteName?.[local],
     openGraph,
   };
-}
-
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
 }

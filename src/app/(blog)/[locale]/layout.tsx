@@ -13,12 +13,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 
 /**
- * 页面重新验证时间。
- * 设置为 600 秒，表示页面内容每 600 秒重新生成一次。
- */
-export const revalidate = 600;
-
-/**
  * 国际化布局组件的属性接口。
  */
 export interface LocaleLayoutProps {

@@ -3,19 +3,6 @@ import { createTrpcContext } from "@/packages/trpc/api";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 /**
- * 强制 Next.js 将此路由视为动态路由。
- * 这对于确保每次请求都重新执行函数而不是返回缓存的响应至关重要。
- */
-export const dynamic = "force-dynamic";
-
-/**
- * 使用 Edge Runtime 运行此路由。
- *
- * 已移除 superjson transformer
- */
-export const runtime = "nodejs";
-
-/**
  * tRPC 请求处理函数。
  * 使用 `@trpc/server/adapters/fetch` 提供的 `fetchRequestHandler` 来适配 Next.js 的 Fetch API。
  *
