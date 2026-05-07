@@ -183,6 +183,13 @@ export const menu = sqliteTable(
   {
     id: text("id").primaryKey().$defaultFn(objectId),
     parent: text("parent"), // 父菜单项ID
+    categoryId: text("category_id").references(() => category.id, {
+      onDelete: "set null",
+    }), // 关联分类ID
+    pageId: text("page_id").references(() => page.id, {
+      onDelete: "set null",
+    }), // 关联页面ID
+    customId: text("custom_id"), // 关联自定义实体ID
     power: integer("power").notNull(), // 排序权重
     type: text("type").notNull(), // 菜单项类型 (CATEGORY, PAGE, CUSTOM)
     ...withTimestamps(),
@@ -314,5 +321,63 @@ export const postTagRelations = relations(postTag, ({ one }) => ({
   tag: one(tag, {
     fields: [postTag.tagId],
     references: [tag.id],
+  }),
+}));
+
+/**
+ * 独立页面实体关系定义。
+ * 为页面提供作者关联能力。
+ */
+export const pageRelations = relations(page, ({ one, many }) => ({
+  author: one(user, {
+    fields: [page.authorId],
+    references: [user.id],
+  }),
+  comments: many(comment),
+}));
+
+/**
+ * 评论实体关系定义。
+ * 为评论提供文章、页面、父评论及子评论关联能力。
+ */
+export const commentRelations = relations(comment, ({ one, many }) => ({
+  post: one(post, {
+    fields: [comment.postId],
+    references: [post.id],
+  }),
+  page: one(page, {
+    fields: [comment.pageId],
+    references: [page.id],
+  }),
+  parent: one(comment, {
+    fields: [comment.parentId],
+    references: [comment.id],
+    relationName: "comment_parent",
+  }),
+  children: many(comment, {
+    relationName: "comment_parent",
+  }),
+}));
+
+/**
+ * 菜单实体关系定义。
+ * 提供菜单自引用父子关系。
+ */
+export const menuRelations = relations(menu, ({ one, many }) => ({
+  parentItem: one(menu, {
+    fields: [menu.parent],
+    references: [menu.id],
+    relationName: "menu_parent",
+  }),
+  children: many(menu, {
+    relationName: "menu_parent",
+  }),
+  category: one(category, {
+    fields: [menu.categoryId],
+    references: [category.id],
+  }),
+  page: one(page, {
+    fields: [menu.pageId],
+    references: [page.id],
   }),
 }));

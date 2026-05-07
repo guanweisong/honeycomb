@@ -3,17 +3,14 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/utils/tools";
 import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
 import * as schema from "@/packages/db/schema";
-import { sql } from "drizzle-orm";
+import { asc } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { revalidateTag } from "next/cache";
 import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
+import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 
 /**
  * 菜单相关的 tRPC 路由。
@@ -32,51 +29,42 @@ export const menuRouter = createTRPCRouter({
    * 4. 查询并返回菜单项的总数。
    */
   index: publicProcedure.query(async ({ ctx }) => {
-    const where = buildDrizzleWhere(schema.menu, {}, [], {});
-    const orderByClause = buildDrizzleOrderBy(schema.menu, "power", "asc");
-
-    const list = await ctx.db
-      .select()
-      .from(schema.menu)
-      .where(where)
-      .orderBy(orderByClause);
-
-    const [categoryList, pageList] = await Promise.all([
-      ctx.db.select().from(schema.category),
-      ctx.db.select().from(schema.page),
-    ]);
-
-    const categoryMap = new Map(categoryList.map((c) => [c.id.toString(), c]));
-    const pageMap = new Map(pageList.map((p) => [p.id.toString(), p]));
+    const list = await ctx.db.query.menu.findMany({
+      orderBy: [asc(schema.menu.power)],
+      with: {
+        category: true,
+        page: true,
+      },
+    });
 
     const resultList = list.map((m) => {
       let title: MultiLang | undefined | null;
       let path: string | null | undefined = null;
       let parent: string | null | undefined = null;
 
-      if (m.type === "CATEGORY") {
-        const category = categoryMap.get(m.id.toString());
+      if (m.type === MenuType.CATEGORY) {
+        const category = m.category;
         title = category?.title;
         path = category?.path;
         parent = category?.parent;
-      } else if (m.type === "PAGE") {
-        const page = pageMap.get(m.id.toString());
+      } else if (m.type === MenuType.PAGE) {
+        const page = m.page;
         title = page?.title;
       }
 
       return {
-        ...m,
+        id: m.id,
+        parent: m.parent,
+        power: m.power,
+        type: m.type,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
         title,
         path,
-        parent,
       };
     });
 
-    const [countResult] = await ctx.db
-      .select({ count: sql<number>`count(*)`.as("count") })
-      .from(schema.menu)
-      .where(where);
-    const total = Number(countResult?.count) || 0;
+    const total = resultList.length;
 
     return { list: resultList, total };
   }),
@@ -99,7 +87,16 @@ export const menuRouter = createTRPCRouter({
 
       const newMenu = await ctx.db
         .insert(schema.menu)
-        .values(input.map(({ ...item }) => item))
+        .values(
+          input.map(({ id, type, parent, power }) => ({
+            parent,
+            power,
+            type,
+            categoryId: type === MenuType.CATEGORY ? id : null,
+            pageId: type === MenuType.PAGE ? id : null,
+            customId: type === MenuType.CUSTOM ? id : null,
+          })),
+        )
         .returning();
       revalidateTag(blogCacheTags.menu(), "max");
       revalidateTag(blogCacheTags.postList(), "max");

@@ -3,10 +3,6 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
@@ -16,10 +12,14 @@ import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 import { revalidateTag } from "next/cache";
 import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
+import {
+  getPageAuthorById,
+  getPageDetail,
+  getPageList,
+} from "@/packages/trpc/api/modules/page/page.service";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -32,71 +32,7 @@ export const pageRouter = createTRPCRouter({
    */
   index: publicProcedure
     .input(PageListQuerySchema)
-    .query(async ({ input, ctx }) => {
-      const {
-        page = 1,
-        limit = 10,
-        sortField,
-        sortOrder,
-        title,
-        content,
-        ...rest
-      } = input;
-      const where = buildDrizzleWhere(
-        schema.page,
-        { ...rest, title, content },
-        ["status"],
-        { title, content },
-      );
-      // 使用工具函数构建排序条件
-      const orderByClause = buildDrizzleOrderBy(
-        schema.page,
-        sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
-      );
-
-      // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.page)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
-
-      // 获取作者信息
-      const authorIds = Array.from(
-        new Set(
-          list
-            .map((p) => p.authorId)
-            .filter((id): id is NonNullable<typeof id> => !!id),
-        ),
-      );
-      let authorMap: Record<string, typeof schema.user.$inferSelect> = {};
-      if (authorIds.length) {
-        const authors = await ctx.db
-          .select()
-          .from(schema.user)
-          .where(inArray(schema.user.id, authorIds));
-        authorMap = Object.fromEntries(authors.map((u) => [u.id, u]));
-      }
-
-      // 合并作者信息
-      const listWithAuthor = list.map((p) => ({
-        ...p,
-        author: p.authorId ? (authorMap[p.authorId] ?? null) : null,
-      }));
-
-      // 查询总数
-      const countResult = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.page)
-        .where(where);
-      const total = Number(countResult[0]?.count) || 0;
-
-      return { list: listWithAuthor, total };
-    }),
+    .query(async ({ input, ctx }) => getPageList(ctx.db, input)),
 
   /**
    * 获取单个独立页面的详细信息。
@@ -111,36 +47,7 @@ export const pageRouter = createTRPCRouter({
    */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(async ({ input, ctx }) => {
-      const [item] = await ctx.db
-        .select()
-        .from(schema.page)
-        .where(eq(schema.page.id, input.id as string));
-
-      if (!item) return null;
-
-      let author: { id: string; name: string | null } | null = null;
-      if (item.authorId) {
-        const [authorData] = await ctx.db
-          .select({
-            id: schema.user.id,
-            name: schema.user.name,
-          })
-          .from(schema.user)
-          .where(eq(schema.user.id, item.authorId));
-        author = authorData || null;
-      }
-
-      const imageUrls = getAllImageLinkFormHtml(item?.content?.zh);
-      const imagesInContent = imageUrls.length
-        ? await ctx.db
-            .select()
-            .from(schema.media)
-            .where(inArray(schema.media.url, imageUrls))
-        : [];
-
-      return { ...item, author, imagesInContent };
-    }),
+    .query(async ({ input, ctx }) => getPageDetail(ctx.db, input.id as string)),
 
   /**
    * 创建一个新独立页面。
@@ -215,17 +122,9 @@ export const pageRouter = createTRPCRouter({
         .returning();
       revalidateTag(blogCacheTags.page(updatedPage.id), "max");
 
-      let author: { id: string; name: string | null } | null = null;
-      if (updatedPage.authorId) {
-        const [authorData] = await ctx.db
-          .select({
-            id: schema.user.id,
-            name: schema.user.name,
-          })
-          .from(schema.user)
-          .where(eq(schema.user.id, updatedPage.authorId));
-        author = authorData || null;
-      }
+      const author = updatedPage.authorId
+        ? await getPageAuthorById(ctx.db, updatedPage.authorId)
+        : null;
 
       return { ...updatedPage, author };
     }),

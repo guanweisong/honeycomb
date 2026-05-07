@@ -20,7 +20,7 @@ import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
-import { eq, inArray, and, sql, InferInsertModel, asc, SQL } from "drizzle-orm";
+import { eq, inArray, and, sql, InferInsertModel, asc, SQL, desc } from "drizzle-orm";
 import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
 import { getCustomCommentLink } from "@/packages/trpc/api/utils/getCustomCommentLink";
 import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
@@ -49,14 +49,43 @@ export const commentRouter = createTRPCRouter({
         "createdAt",
       );
 
-      // 查询分页数据
-      const list = await ctx.db
-        .select()
+      const commentIds = await ctx.db
+        .select({ id: schema.comment.id })
         .from(schema.comment)
         .where(where)
         .orderBy(orderByClause)
         .limit(limit)
         .offset((page - 1) * limit);
+
+      const idList = commentIds.map((item) => item.id);
+      const list = idList.length
+        ? await ctx.db.query.comment.findMany({
+          where: inArray(schema.comment.id, idList),
+          with: {
+            post: true,
+            page: true,
+          },
+        })
+        : [];
+      const orderMap = new Map(idList.map((id, idx) => [id, idx]));
+      const orderedList = list.sort(
+        (a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0),
+      );
+
+      const customIds = Array.from(
+        new Set(
+          orderedList
+            .map((c) => c.customId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      const customPosts = customIds.length
+        ? await ctx.db
+            .select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, customIds))
+        : [];
+      const customPostMap = Object.fromEntries(customPosts.map((p) => [p.id, p]));
 
       // 查询总数
       const [countResult] = await ctx.db
@@ -65,35 +94,9 @@ export const commentRouter = createTRPCRouter({
         .where(where);
       const total = Number(countResult?.count) || 0;
 
-      // attach minimal refs
-      const postIds = Array.from(
-        new Set(list.map((c) => c.postId).filter(Boolean)),
-      ) as string[];
-      const pageIds = Array.from(
-        new Set(list.map((c) => c.pageId).filter(Boolean)),
-      ) as string[];
-
-      const [posts, pages] = await Promise.all([
-        postIds.length
-          ? ctx.db
-            .select()
-            .from(schema.post)
-            .where(inArray(schema.post.id, postIds))
-          : Promise.resolve([]),
-        pageIds.length
-          ? ctx.db
-            .select()
-            .from(schema.page)
-            .where(inArray(schema.page.id, pageIds))
-          : Promise.resolve([]),
-      ]);
-      const postMap = Object.fromEntries(posts.map((p) => [p.id, p]));
-      const pageMap = Object.fromEntries(pages.map((p) => [p.id, p]));
-      const listWithRefs = list.map((c) => ({
+      const listWithRefs = orderedList.map((c) => ({
         ...c,
-        post: c.postId ? (postMap[c.postId] ?? null) : null,
-        page: c.pageId ? (pageMap[c.pageId] ?? null) : null,
-        custom: c.customId ? (postMap[c.customId] ?? null) : null,
+        custom: c.customId ? (customPostMap[c.customId] ?? null) : null,
       }));
 
       return { list: listWithRefs, total };
@@ -129,11 +132,13 @@ export const commentRouter = createTRPCRouter({
           where = and(where, eq(schema.comment.customId, input.id));
           break;
       }
-      const result = await ctx.db
-        .select()
-        .from(schema.comment)
-        .where(where)
-        .orderBy(asc(schema.comment.createdAt));
+      const result = await ctx.db.query.comment.findMany({
+        where,
+        orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)],
+        with: {
+          children: true,
+        },
+      });
 
       const list = result.length
         ? listToTree(
