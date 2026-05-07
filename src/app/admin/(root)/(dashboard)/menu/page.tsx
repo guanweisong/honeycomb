@@ -112,7 +112,7 @@ const Menu = () => {
         id: item.id,
         title: item.title ?? null,
         path: "path" in item ? item.path ?? null : null,
-        parent: "0",
+        parent: null,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
         power: checkedList.length,
@@ -188,7 +188,7 @@ const Menu = () => {
 
     const list: MenuEntityTree[] = listData.map(({ node, parentNode }) => ({
       ...node,
-      parent: parentNode?.id ?? "0",
+      parent: parentNode?.id ?? null,
     }));
 
     setCheckedList(list);
@@ -237,7 +237,7 @@ const Menu = () => {
         type: item.type as MenuType,
         power: index,
       };
-      if (item.parent !== "0" && item.parent) {
+      if (item.parent) {
         menu.parent = item.parent;
       }
       data.push(menu);

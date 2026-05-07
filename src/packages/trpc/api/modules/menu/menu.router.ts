@@ -5,7 +5,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
 import * as schema from "@/packages/db/schema";
-import { asc } from "drizzle-orm";
+import { asc, inArray } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { revalidateTag } from "next/cache";
@@ -29,32 +29,74 @@ export const menuRouter = createTRPCRouter({
    * 4. 查询并返回菜单项的总数。
    */
   index: publicProcedure.query(async ({ ctx }) => {
-    const list = await ctx.db.query.menu.findMany({
+    const menus = await ctx.db.query.menu.findMany({
       orderBy: [asc(schema.menu.power)],
-      with: {
-        category: true,
-        page: true,
-      },
     });
 
-    const resultList = list.map((m) => {
+    const categoryIds = menus
+      .filter((m) => m.type === MenuType.CATEGORY && Boolean(m.categoryId))
+      .map((m) => m.categoryId as string);
+    const pageIds = menus
+      .filter((m) => m.type === MenuType.PAGE && Boolean(m.pageId))
+      .map((m) => m.pageId as string);
+
+    const [categories, pages] = await Promise.all([
+      categoryIds.length
+        ? ctx.db
+            .select({
+              id: schema.category.id,
+              title: schema.category.title,
+              path: schema.category.path,
+            })
+            .from(schema.category)
+            .where(inArray(schema.category.id, categoryIds))
+        : Promise.resolve([]),
+      pageIds.length
+        ? ctx.db
+            .select({
+              id: schema.page.id,
+              title: schema.page.title,
+            })
+            .from(schema.page)
+            .where(inArray(schema.page.id, pageIds))
+        : Promise.resolve([]),
+    ]);
+
+    const categoryMap = new Map(categories.map((c) => [c.id, c]));
+    const pageMap = new Map(pages.map((p) => [p.id, p]));
+
+    const businessIdByRowId = new Map(
+      menus.map((m) => [
+        m.id,
+        m.type === MenuType.CATEGORY
+          ? m.categoryId
+          : m.type === MenuType.PAGE
+            ? m.pageId
+            : m.customId,
+      ]),
+    );
+
+    const resultList = menus.map((m) => {
       let title: MultiLang | undefined | null;
       let path: string | null | undefined = null;
-      let parent: string | null | undefined = null;
+      let id: string | null | undefined = m.id;
 
       if (m.type === MenuType.CATEGORY) {
-        const category = m.category;
+        const category = m.categoryId ? categoryMap.get(m.categoryId) : null;
+        id = m.categoryId ?? m.id;
         title = category?.title;
         path = category?.path;
-        parent = category?.parent;
       } else if (m.type === MenuType.PAGE) {
-        const page = m.page;
+        const page = m.pageId ? pageMap.get(m.pageId) : null;
+        id = m.pageId ?? m.id;
         title = page?.title;
+      } else if (m.type === MenuType.CUSTOM) {
+        id = m.customId ?? m.id;
       }
 
       return {
-        id: m.id,
-        parent: m.parent,
+        id,
+        parent: m.parent ? (businessIdByRowId.get(m.parent) ?? null) : null,
         power: m.power,
         type: m.type,
         createdAt: m.createdAt,
@@ -85,11 +127,14 @@ export const menuRouter = createTRPCRouter({
         return { count: 0 };
       }
 
+      const rowIdByBusinessId = new Map(input.map((item) => [item.id, crypto.randomUUID()]));
+
       const newMenu = await ctx.db
         .insert(schema.menu)
         .values(
           input.map(({ id, type, parent, power }) => ({
-            parent,
+            id: rowIdByBusinessId.get(id)!,
+            parent: parent ? rowIdByBusinessId.get(parent) ?? null : null,
             power,
             type,
             categoryId: type === MenuType.CATEGORY ? id : null,
