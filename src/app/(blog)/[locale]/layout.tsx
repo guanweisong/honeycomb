@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Viewport } from "next";
 import "../app.scss";
@@ -67,13 +68,16 @@ export default async function LocaleLayout({
                 Skip to main content
               </a>
               <Header />
-              <main id="main-content" className="container px-2">{children}</main>
+              <main id="main-content" className="container px-2">
+                {children}
+              </main>
               <Footer />
               <BackToTop />
             </NextIntlClientProvider>
           </div>
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
       <GoogleAnalytics gaId="G-F7GLX9X5VT" />
     </html>

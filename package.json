@@ -66,6 +66,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "ahooks": "^3.7.4",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",

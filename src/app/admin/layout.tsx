@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // 创建一个 React Query 客户端实例
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ export default function RootLayout({
         </SessionProvider>
         <Toaster />
         <Analytics />
+        <SpeedInsights />
       </body>
       <GoogleAnalytics gaId="G-15D5ZQ68JX" />
     </html>
