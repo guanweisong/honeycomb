@@ -7,8 +7,6 @@ import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas
 import * as schema from "@/packages/db/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { revalidateTag } from "next/cache";
-import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 
 /**
  * 网站设置相关的 tRPC 路由。
@@ -43,7 +41,6 @@ export const settingRouter = createTRPCRouter({
         .set(rest as Partial<InferInsertModel<typeof schema.setting>>)
         .where(eq(schema.setting.id, id))
         .returning();
-      revalidateTag(blogCacheTags.setting(), "max");
       return updatedSetting;
     }),
 });

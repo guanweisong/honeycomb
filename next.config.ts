@@ -7,14 +7,6 @@ import { withSerwist } from "@serwist/turbopack";
  * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
  */
 const nextConfig: NextConfig = withSerwist({
-  cacheComponents: true,
-  cacheLife: {
-    swrFixed: {
-      stale: 300,
-      revalidate: 60,
-      expire: 31536000,
-    },
-  },
   reactStrictMode: true,
   images: {
     remotePatterns: [

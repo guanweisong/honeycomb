@@ -10,16 +10,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
+import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/RichText";
-import {
-  getCachedPostDetail,
-  getCachedRandomPostsByCategory,
-  getCachedSetting,
-  getCommentListByRef,
-  incrementPostViews,
-} from "./service";
 
 /**
  * 归档页面组件的属性接口。
@@ -38,11 +32,12 @@ export interface ArchivesProps {
  * @returns {Promise<JSX.Element>} 归档页面。
  */
 export default async function Archives(props: ArchivesProps) {
+  const serverClient = await createServerClient();
   const { id, locale } = (await props.params) as {
     id: string;
     locale: keyof MultiLang;
   };
-  const postDetail = await getCachedPostDetail(id);
+  const postDetail = await serverClient.post.detail({ id });
   const t = await getTranslations("Archive");
 
   if (!postDetail.category) {
@@ -50,9 +45,11 @@ export default async function Archives(props: ArchivesProps) {
   }
 
   const [randomPostsList, commentsData] = await Promise.all([
-    getCachedRandomPostsByCategory(postDetail.category.id),
-    getCommentListByRef(id, MenuType.CATEGORY),
-    incrementPostViews(id),
+    serverClient.post.getRandomByCategory({
+      categoryId: postDetail.category.id,
+    }),
+    serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
+    serverClient.post.incrementViews({ id }),
   ]);
   const getTitle = () => {
     return postDetail.type === PostType.MOVIE
@@ -199,10 +196,11 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
+  const serverClient = await createServerClient();
   const { id } = await props.params;
   const [setting, postDetail] = await Promise.all([
-    getCachedSetting(),
-    getCachedPostDetail(id),
+    serverClient.setting.index(),
+    serverClient.post.detail({ id }),
   ]);
   const locale = (await getLocale()) as keyof MultiLang;
 
@@ -228,4 +226,13 @@ export async function generateMetadata(
     description: setting.siteName?.[locale],
     openGraph,
   };
+}
+
+/**
+ * 生成静态页面参数。
+ * 在构建时预渲染页面，提高性能。
+ * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
+ */
+export async function generateStaticParams() {
+  return [];
 }

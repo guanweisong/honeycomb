@@ -273,36 +273,6 @@ describe("Page Router", () => {
     });
   });
 
-  describe("getViews procedure", () => {
-    it("should return page views", async () => {
-      const mockPage = { views: 100 };
-
-      // Setup mock chain for page views query
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockPage]);
-
-      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
-
-      const result = await caller.getViews({ id: TEST_IDS.ID_1 });
-
-      expect(result).toEqual({ views: 100 });
-    });
-
-    it("should return 0 for non-existent page", async () => {
-      // Setup mock chain for non-existent page views
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
-
-      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
-
-      const result = await caller.getViews({ id: "999999999999999999999" });
-
-      expect(result).toEqual({ views: 0 });
-    });
-  });
-
   describe("incrementViews procedure", () => {
     it("should increment page views", async () => {
       const updatedViews = { views: 101 };

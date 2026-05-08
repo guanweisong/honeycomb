@@ -400,36 +400,6 @@ describe("Post Router", () => {
     });
   });
 
-  describe("getViews procedure", () => {
-    it("should return post views", async () => {
-      const mockPost = { views: 100 };
-
-      // Setup mock chain for post views query
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockPost]);
-
-      const caller = postRouter.createCaller(createMockContext(null, mockDb));
-
-      const result = await caller.getViews({ id: TEST_IDS.ID_1 });
-
-      expect(result).toEqual({ views: 100 });
-    });
-
-    it("should return 0 for non-existent post", async () => {
-      // Setup mock chain for non-existent post views
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
-
-      const caller = postRouter.createCaller(createMockContext(null, mockDb));
-
-      const result = await caller.getViews({ id: TEST_IDS.ID_NOT_FOUND });
-
-      expect(result).toEqual({ views: 0 });
-    });
-  });
-
   describe("incrementViews procedure", () => {
     it("should increment post views", async () => {
       const updatedViews = { views: 101 };

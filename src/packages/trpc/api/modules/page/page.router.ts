@@ -13,8 +13,6 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
-import { revalidateTag } from "next/cache";
-import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 import {
   getPageAuthorById,
   getPageDetail,
@@ -70,7 +68,6 @@ export const pageRouter = createTRPCRouter({
           authorId,
         } as InferInsertModel<typeof schema.page>)
         .returning();
-      revalidateTag(blogCacheTags.page(newPage.id), "max");
       return newPage;
     }),
 
@@ -91,7 +88,6 @@ export const pageRouter = createTRPCRouter({
         .delete(schema.page)
         .where(inArray(schema.page.id, input.ids as string[]));
       for (const page of pages) {
-        revalidateTag(blogCacheTags.page(page.id), "max");
       }
       return { success: true };
     }),
@@ -120,28 +116,12 @@ export const pageRouter = createTRPCRouter({
         .set(nextValues)
         .where(eq(schema.page.id, id))
         .returning();
-      revalidateTag(blogCacheTags.page(updatedPage.id), "max");
 
       const author = updatedPage.authorId
         ? await getPageAuthorById(ctx.db, updatedPage.authorId)
         : null;
 
       return { ...updatedPage, author };
-    }),
-
-  /**
-   * 获取指定页面的浏览量。
-   * @param {{ id: string }} input - 包含页面 ID 的对象。
-   * @returns {Promise<{ views: number }>} 返回包含浏览量的对象。
-   */
-  getViews: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const [result] = await ctx.db
-        .select({ views: schema.page.views })
-        .from(schema.page)
-        .where(eq(schema.page.id, input.id));
-      return result ?? { views: 0 };
     }),
 
   /**

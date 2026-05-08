@@ -19,8 +19,6 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
-import { revalidateTag } from "next/cache";
-import { blogCacheTags } from "@/packages/trpc/api/utils/blog-cache-tags";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { getPostList } from "./post.service";
 import { loadPostRelations } from "./utils/relations";
@@ -172,9 +170,6 @@ export const postRouter = createTRPCRouter({
         .values(toPostInsertValues(input, authorId))
         .returning();
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
-      revalidateTag(blogCacheTags.postList(), "max");
-      revalidateTag(blogCacheTags.postCategory(newPost.categoryId), "max");
-      revalidateTag(blogCacheTags.post(newPost.id), "max");
       return newPost;
     }),
 
@@ -195,10 +190,7 @@ export const postRouter = createTRPCRouter({
         .delete(schema.post)
         .where(inArray(schema.post.id, input.ids));
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
-      revalidateTag(blogCacheTags.postList(), "max");
       for (const post of posts) {
-        revalidateTag(blogCacheTags.post(post.id), "max");
-        revalidateTag(blogCacheTags.postCategory(post.categoryId), "max");
       }
       return { success: true };
     }),
@@ -219,9 +211,6 @@ export const postRouter = createTRPCRouter({
         .where(eq(schema.post.id, id))
         .returning();
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
-      revalidateTag(blogCacheTags.postList(), "max");
-      revalidateTag(blogCacheTags.post(updatedPost.id), "max");
-      revalidateTag(blogCacheTags.postCategory(updatedPost.categoryId), "max");
       return updatedPost;
     }),
 
@@ -245,21 +234,6 @@ export const postRouter = createTRPCRouter({
         .limit(10);
 
       return posts;
-    }),
-
-  /**
-   * 获取指定文章的浏览量。
-   * @param {{ id: string }} input - 包含文章 ID 的对象。
-   * @returns {Promise<{ views: number }>} 返回包含浏览量的对象。
-   */
-  getViews: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const [result] = await ctx.db
-        .select({ views: schema.post.views })
-        .from(schema.post)
-        .where(eq(schema.post.id, input.id));
-      return result ?? { views: 0 };
     }),
 
   /**
@@ -326,8 +300,6 @@ export const postRouter = createTRPCRouter({
           })),
         );
       }
-      revalidateTag(blogCacheTags.postList(), "max");
-      revalidateTag(blogCacheTags.post(input.postId), "max");
       return { success: true };
     }),
 });
