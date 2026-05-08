@@ -1,4 +1,4 @@
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { Providers } from "./Providers";
 
 /**
@@ -18,5 +18,5 @@ type Props = {
  * @returns {JSX.Element} 根布局。
  */
 export default function RootLayout({ children }: Props): ReactNode {
-  return <Suspense fallback={null}><Providers>{children}</Providers></Suspense>;
+  return <Providers>{children}</Providers>;
 }
