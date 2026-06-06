@@ -99,11 +99,17 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     limit: 10,
   });
   const onChangeRef = React.useRef(onChange);
+  const onSelectionChangeRef = React.useRef(onSelectionChange);
 
   React.useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
+  React.useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
+
+  // 1. 合并请求：每次当分页、排序或筛选更改时，触发 onChange
   React.useEffect(() => {
     const params: Record<string, unknown> = { ...pagination };
     if (sorting?.length) {
@@ -116,9 +122,32 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     onChangeRef.current?.(params as TRequest);
   }, [columnFilters, pagination, sorting]);
 
+  // 2. 翻页、筛选、排序变化时清空已勾选项
+  React.useEffect(() => {
+    onSelectionChangeRef.current?.([]);
+  }, [pagination, columnFilters, sorting]);
+
   const handlePaginationChange = (value: Pagination) => {
     setPagination(value);
   };
+
+  // 排序改变：更新排序，并同步强制重置页码为 1
+  const handleSortingChange = React.useCallback(
+    (updaterOrValue: React.SetStateAction<SortingState>) => {
+      setSorting(updaterOrValue);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    },
+    [],
+  );
+
+  // 筛选改变：更新筛选，并同步强制重置页码为 1
+  const handleColumnFiltersChange = React.useCallback(
+    (updaterOrValue: React.SetStateAction<ColumnFiltersState>) => {
+      setColumnFilters(updaterOrValue);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    },
+    [],
+  );
 
   const table = useReactTable({
     data: data.list,
@@ -139,25 +168,32 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const selectableRowsList = React.useMemo(
+    () => data.list.filter((row) => !disabledRowSelectable?.(row)),
+    [data.list, disabledRowSelectable],
+  );
+
+  const isAllSelectedOnCurrentPage = React.useMemo(() => {
+    if (selectableRowsList.length === 0) return false;
+    return selectableRowsList.every((row) => selectedRows.includes(row));
+  }, [selectableRowsList, selectedRows]);
+
   const handleSelectAll = React.useCallback(
     (checked: boolean) => {
       if (checked) {
-        const selectable = disabledRowSelectable
-          ? data.list.filter((row) => !disabledRowSelectable(row))
-          : data.list;
-        onSelectionChange?.(selectable);
+        onSelectionChange?.(selectableRowsList);
       } else {
         onSelectionChange?.([]);
       }
     },
-    [data.list, disabledRowSelectable, onSelectionChange],
+    [selectableRowsList, onSelectionChange],
   );
 
   const handleSelectRow = React.useCallback(
@@ -168,11 +204,6 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
       onSelectionChange?.(newSelectedRows);
     },
     [selectedRows, onSelectionChange],
-  );
-
-  const selectableRowsList = React.useMemo(
-    () => data.list.filter((row) => !disabledRowSelectable?.(row)),
-    [data.list, disabledRowSelectable],
   );
 
   return (
@@ -186,10 +217,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                 {selectableRows && (
                   <TableHead>
                     <Checkbox
-                      checked={
-                        selectableRowsList.length > 0 &&
-                        selectedRows.length === selectableRowsList.length
-                      }
+                      checked={isAllSelectedOnCurrentPage}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -280,14 +308,17 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                     <div>数据加载失败，请重试</div>
                     <Button
                       size="sm"
-                      onClick={
-                        () => {}
-                        // onChange?.({
-                        //   pagination,
-                        //   sorting,
-                        //   filters: normalizeFilters(columnFilters),
-                        // })
-                      }
+                      onClick={() => {
+                        const params: Record<string, unknown> = { ...pagination };
+                        if (sorting?.length) {
+                          params.sortField = sorting[0].id;
+                          params.sortOrder = sorting[0].desc ? "desc" : "asc";
+                        }
+                        if (columnFilters?.length) {
+                          Object.assign(params, normalizeFilters(columnFilters));
+                        }
+                        onChangeRef.current?.(params as TRequest);
+                      }}
                     >
                       重试
                     </Button>
@@ -345,7 +376,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
       </div>
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          第 {pagination.page} / {Math.ceil(data.total / pagination.limit)}{" "}
+          第 {data.total === 0 ? 0 : pagination.page} / {Math.max(1, Math.ceil(data.total / pagination.limit))}{" "}
           页，共 {data.total} 条
         </div>
         <div className="flex gap-2">
