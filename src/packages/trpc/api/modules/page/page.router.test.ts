@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "./page.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { PageStatus } from "./types/page.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
+import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -16,14 +16,7 @@ const mockDb = createMockDb();
 describe("Page Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 重置所有mock的调用历史
-    Object.values(mockDb).forEach((mock) => {
-      const typedMock = mock as Mock;
-      if (mock && typeof mock.mockReset === "function") {
-        typedMock.mockReset();
-        typedMock.mockReturnValue(mockDb);
-      }
-    });
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -56,6 +49,8 @@ describe("Page Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPages);
 
+      mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
+
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -66,7 +61,7 @@ describe("Page Router", () => {
       const result = await caller.index({ page: 1, limit: 10 });
 
       expect(result).toEqual({
-        list: mockPages,
+        list: mockPages.map((page) => ({ ...page, imagesInContent: [] })),
         total: 2,
       });
     });
@@ -82,6 +77,8 @@ describe("Page Router", () => {
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPages);
+
+      mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
 
       // Setup mock for count query
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -151,6 +148,9 @@ describe("Page Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete pages with admin permissions", async () => {
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
@@ -219,6 +219,7 @@ describe("Page Router", () => {
 
   describe("detail procedure", () => {
     it("should return page details with author info", async () => {
+      const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
       const mockPage = {
         id: TEST_IDS.ID_1,
         title: { en: "Page 1", zh: "页面1" },
@@ -227,7 +228,6 @@ describe("Page Router", () => {
         authorId: TEST_IDS.ID_1,
         createdAt: new Date(),
       };
-      const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
       const mockImages = [
         { id: "img1", url: "https://example.com/img1.jpg" },
         { id: "img2", url: "https://example.com/img2.jpg" },
@@ -237,6 +237,11 @@ describe("Page Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([mockPage]);
+
+      mockDb.query.page.findFirst.mockResolvedValueOnce({
+        ...mockPage,
+        author: mockAuthor,
+      });
 
       // Setup mock for author query
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -264,6 +269,8 @@ describe("Page Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([]);
+
+      mockDb.query.page.findFirst.mockResolvedValueOnce(null);
 
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 

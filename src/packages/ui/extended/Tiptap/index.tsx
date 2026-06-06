@@ -78,7 +78,7 @@ export default function Tiptap({ value, onChange }: TiptapProps = {}) {
 
   return (
     <div className="rounded-md border">
-      <div className="flex items-center gap-1 border-b p-1">
+      <div className="flex items-center gap-1 border-b p-1 sticky -top-3 left-0 right-0 z-20 bg-white">
         {toolbarItems.map((group, index) => (
           <div key={index} className="flex items-center gap-1">
             {index > 0 && <div className="bg-gray-300 w-[1px] h-5" />}

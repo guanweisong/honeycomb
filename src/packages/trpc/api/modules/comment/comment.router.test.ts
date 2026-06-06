@@ -4,7 +4,7 @@ import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { CommentStatus } from "./types/comment.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
+import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -24,6 +24,7 @@ const mockDb = createMockDb();
 describe("Comment Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -56,6 +57,8 @@ describe("Comment Router", () => {
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockComments);
+
+      mockDb.query.comment.findMany.mockResolvedValueOnce(mockComments);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -98,14 +101,11 @@ describe("Comment Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce(mockComments);
+      mockDb.query.comment.findMany.mockResolvedValueOnce(mockComments);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockImplementationOnce(async () => mockCount as never);
 
       const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 
@@ -123,14 +123,11 @@ describe("Comment Router", () => {
     it("should return empty list for non-existent ref", async () => {
       const mockCount = [{ count: "0" }];
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce([]);
+      mockDb.query.comment.findMany.mockResolvedValueOnce([]);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockImplementationOnce(async () => mockCount as never);
 
       const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 

@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "./post.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { PostStatus } from "./types/post.status";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
+import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -57,14 +57,7 @@ const mockDb = createMockDb();
 describe("Post Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 重置所有mock的调用历史
-    Object.values(mockDb).forEach((mock) => {
-      const typedMock = mock as Mock;
-      if (mock && typeof mock.mockReset === "function") {
-        typedMock.mockReset();
-        typedMock.mockReturnValue(mockDb);
-      }
-    });
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -253,6 +246,13 @@ describe("Post Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete posts with admin permissions", async () => {
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([
+        { id: TEST_IDS.ID_1, categoryId: TEST_IDS.ID_1 },
+        { id: TEST_IDS.ID_2, categoryId: TEST_IDS.ID_2 },
+      ]);
+
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 

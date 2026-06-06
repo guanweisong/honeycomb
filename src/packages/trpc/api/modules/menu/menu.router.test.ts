@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "./menu.router";
 import * as schema from "@/packages/db/schema";
 import { MenuType } from "./types/menu.type";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
+import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -16,14 +16,7 @@ const mockDb = createMockDb();
 describe("Menu Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 重置所有mock的调用历史
-    Object.values(mockDb).forEach((mock) => {
-      const typedMock = mock as Mock;
-      if (mock && typeof mock.mockReset === "function") {
-        typedMock.mockReset();
-        typedMock.mockReturnValue(mockDb);
-      }
-    });
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -32,16 +25,22 @@ describe("Menu Router", () => {
         {
           id: TEST_IDS.ID_1,
           type: MenuType.CATEGORY,
-          refId: TEST_IDS.ID_1,
+          categoryId: TEST_IDS.ID_1,
+          pageId: null,
+          customId: null,
           power: 1,
           createdAt: new Date(),
+          updatedAt: undefined,
         },
         {
           id: TEST_IDS.ID_2,
           type: MenuType.PAGE,
-          refId: TEST_IDS.ID_2,
+          categoryId: null,
+          pageId: TEST_IDS.ID_2,
+          customId: null,
           power: 2,
           createdAt: new Date(),
+          updatedAt: undefined,
         },
       ];
       const mockCategories = [
@@ -58,26 +57,17 @@ describe("Menu Router", () => {
           title: { en: "Page 1", zh: "页面1" },
         },
       ];
-      const mockCount = [{ count: "2" }];
-
-      // Setup mock chain for menu list query
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce(mockMenus);
+      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
 
       // Setup mock for categories query
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce(mockCategories);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(mockCategories);
 
       // Setup mock for pages query
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce(mockPages);
-
-      // Setup mock for count query
-      mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockResolvedValueOnce(mockPages);
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
@@ -86,16 +76,24 @@ describe("Menu Router", () => {
       expect(result).toEqual({
         list: [
           {
-            ...mockMenus[0],
+            id: mockCategories[0].id,
+            parent: null,
+            power: 1,
+            type: MenuType.CATEGORY,
+            createdAt: mockMenus[0].createdAt,
+            updatedAt: undefined,
             title: mockCategories[0].title,
             path: mockCategories[0].path,
-            parent: mockCategories[0].parent,
           },
           {
-            ...mockMenus[1],
+            id: mockPages[0].id,
+            parent: null,
+            power: 2,
+            type: MenuType.PAGE,
+            createdAt: mockMenus[1].createdAt,
+            updatedAt: undefined,
             title: mockPages[0].title,
             path: null,
-            parent: null,
           },
         ],
         total: 2,
@@ -106,26 +104,17 @@ describe("Menu Router", () => {
       const mockMenus: unknown[] = [];
       const mockCategories: unknown[] = [];
       const mockPages: unknown[] = [];
-      const mockCount = [{ count: "0" }];
-
-      // Setup mock chain for empty menu list query
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockResolvedValueOnce(mockMenus);
+      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
 
       // Setup mock for empty categories query
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce(mockCategories);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(mockCategories);
 
       // Setup mock for empty pages query
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce(mockPages);
-
-      // Setup mock for count query
-      mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockResolvedValueOnce(mockPages);
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
@@ -144,14 +133,18 @@ describe("Menu Router", () => {
         {
           id: TEST_IDS.ID_1,
           type: MenuType.CATEGORY,
-          refId: TEST_IDS.ID_1,
+          categoryId: TEST_IDS.ID_1,
+          pageId: null,
+          customId: null,
           power: 1,
           createdAt: new Date(),
         },
         {
           id: TEST_IDS.ID_2,
           type: MenuType.PAGE,
-          refId: TEST_IDS.ID_2,
+          categoryId: null,
+          pageId: TEST_IDS.ID_2,
+          customId: null,
           power: 2,
           createdAt: new Date(),
         },
@@ -195,7 +188,9 @@ describe("Menu Router", () => {
         {
           id: TEST_IDS.ID_1,
           type: MenuType.CATEGORY,
-          refId: TEST_IDS.ID_1,
+          categoryId: TEST_IDS.ID_1,
+          pageId: null,
+          customId: null,
           power: 1,
           createdAt: new Date(),
         },
@@ -211,7 +206,9 @@ describe("Menu Router", () => {
         {
           id: TEST_IDS.ID_1,
           type: MenuType.CATEGORY,
-          refId: TEST_IDS.ID_1,
+          categoryId: TEST_IDS.ID_1,
+          pageId: null,
+          customId: null,
           power: 1,
           createdAt: new Date(),
         },
