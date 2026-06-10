@@ -147,9 +147,9 @@ TURNSTILE_SECRET_KEY=your_secret_key
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_from_email
 
-# NextAuth
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
+# Auth.js
+AUTH_SECRET=your_auth_secret
+AUTH_URL=http://localhost:3000
 
 # OAuth Providers（按需配置；未配置则对应按钮不会显示）
 AUTH_GOOGLE_ID=your_google_client_id

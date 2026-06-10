@@ -1,10 +1,9 @@
 import { getDb } from "@/packages/db/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/options";
 import * as schema from "@/packages/db/schema";
 import { eq } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import { auth } from "@/auth";
 
 /**
  * 上下文中的用户信息接口。
@@ -32,7 +31,7 @@ interface CreateContextOptions {
  */
 async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!req) return null;
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const sessionUser = session?.user;
 
   if (!sessionUser?.id || !sessionUser.level) {
