@@ -25,7 +25,7 @@ function AdminRootLayout({
   children: React.ReactNode;
 }): React.ReactNode | null {
   const router = useRouter();
-  const { user, isLoading: isCurrentUserLoading } = useCurrentUser();
+  const { user, isLoading } = useCurrentUser();
   const { refreshSetting } = useSiteSetting();
   const selectedLayoutSegments = useSelectedLayoutSegments();
   const isLoginPage = selectedLayoutSegments.includes("login");
@@ -42,7 +42,7 @@ function AdminRootLayout({
   }, []);
 
   useEffect(() => {
-    if (isCurrentUserLoading) {
+    if (isLoading) {
       return;
     }
 
@@ -53,9 +53,9 @@ function AdminRootLayout({
     if (!user && !isLoginPage) {
       return router.replace("/admin/login");
     }
-  }, [isCurrentUserLoading, isLoginPage, router, user]);
+  }, [isLoading, isLoginPage, router, user]);
 
-  if (isCurrentUserLoading && !isLoginPage) {
+  if (isLoading && !isLoginPage) {
     return <FullLoadingView />;
   }
 

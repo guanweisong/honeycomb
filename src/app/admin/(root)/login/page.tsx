@@ -1,6 +1,6 @@
 "use client";
 import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import {
@@ -12,6 +12,7 @@ import { Button } from "@/packages/ui/components/button";
 import { getProviders, signIn } from "next-auth/react";
 import { providerIcons } from "./providerIcons";
 import { LoginSchema, type LoginValues } from "./login.schema";
+import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
 
 type AuthProviderMap = Awaited<ReturnType<typeof getProviders>>;
 
@@ -24,9 +25,9 @@ const LoginContent = () => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [providers, setProviders] = useState<AuthProviderMap>(null);
   const form = useRef<DynamicFormRef<LoginValues>>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { setting } = useSiteSetting();
+  const { refreshUser } = useCurrentUser();
 
   const targetUrl = searchParams.get("targetUrl");
   const callbackUrl = targetUrl || "/admin/dashboard";
@@ -79,7 +80,7 @@ const LoginContent = () => {
           throw new Error("用户名或密码不正确");
         }
         toast.success("登录成功");
-        router.replace("/admin/dashboard");
+        refreshUser();
       })
       .catch((e: { message?: string }) => {
         toast.error(e?.message || "登录失败");

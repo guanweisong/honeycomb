@@ -8,7 +8,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
  * @returns {{ user: CurrentUser | null; isLoading: boolean }} 当前登录用户和加载状态。
  */
 export const useCurrentUser = () => {
-  const { data, isLoading } = trpc.user.current.useQuery(undefined, {
+  const { data, isLoading, refetch } = trpc.user.current.useQuery(undefined, {
     retry: false,
     staleTime: 0,
     refetchOnWindowFocus: true,
@@ -18,5 +18,6 @@ export const useCurrentUser = () => {
   return {
     user: data ?? null,
     isLoading,
+    refreshUser: refetch,
   };
 };
