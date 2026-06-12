@@ -98,7 +98,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { name, size, type, key, width, height, color } = input;
 
-      const url = `https://static.guanweisong.com/${key}`;
+      const url = `${process.env.NEXT_PUBLIC_ASSET_URL}/${key}`;
 
       // 准备数据库插入数据
       const data: InferInsertModel<typeof schema.media> = {

@@ -44,7 +44,12 @@ const EmailContainer = (props: EmailContainerProps) => {
             )}
             {children}
             <Hr />
-            <Section className="text-gray-500 bg-no-repeat bg-right bg-contain bg-[url(https://guanweisong.com/static/images/logo.192.png)]">
+            <Section
+              className="text-gray-500 bg-no-repeat bg-right bg-contain"
+              style={{
+                backgroundImage: `url(${process.env.NEXT_PUBLIC_SITE_URL}/static/images/logo.192.png)`,
+              }}
+            >
               {footer}
               <Text>欢迎再次光临 {setting.siteName?.zh}</Text>
             </Section>

@@ -120,7 +120,7 @@ const LoginContent = () => {
   return (
     <div className="min-h-screen box-border pt-48 text-center bg-green-700">
       <video
-        src="https://static.guanweisong.com/common/rainAndBird.mp4"
+        src={`${process.env.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
         className="fixed inset-0 w-full h-full object-cover"
         autoPlay={true}
         muted={true}

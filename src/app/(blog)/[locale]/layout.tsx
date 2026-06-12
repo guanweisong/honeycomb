@@ -79,7 +79,9 @@ export default async function LocaleLayout({
         <Analytics />
         <SpeedInsights />
       </body>
-      <GoogleAnalytics gaId="G-F7GLX9X5VT" />
+      {process.env.NEXT_PUBLIC_GA_BLOG_ID ? (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_BLOG_ID} />
+      ) : null}
     </html>
   );
 }

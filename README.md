@@ -128,30 +128,39 @@ bun install
 创建 `.env.local` 文件：
 
 ```env
-# Turso 数据库
+# Turso 数据库（必填）
 TURSO_URL=your_turso_url
 TURSO_TOKEN=your_turso_token
 
-# Cloudflare R2 (对象存储)
+# 站点配置（必填）
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_ASSET_URL=https://static.example.com
+LINK_OBJECT_ID=your_links_object_id
+
+# Cloudflare R2（对象存储，必填）
 R2_ACCOUNT_ID=your_account_id
 R2_ACCESS_KEY_ID=your_access_key_id
 R2_SECRET_ACCESS_KEY=your_secret_access_key
 R2_BUCKET_NAME=your_bucket_name
-R2_PUBLIC_URL=your_public_url
 
-# Cloudflare Turnstile (验证码)
+# Cloudflare Turnstile（验证码，必填）
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key
 TURNSTILE_SECRET_KEY=your_secret_key
 
-# Resend (邮件服务)
+# Resend（邮件服务，评论邮件场景必填）
 RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_from_email
+ADMIN_EMAIL=your_admin_email
 
-# Auth.js
+# Auth.js（必填）
 AUTH_SECRET=your_auth_secret
 AUTH_URL=http://localhost:3000
 
-# OAuth Providers（按需配置；未配置则对应按钮不会显示）
+# Analytics（可选）
+NEXT_PUBLIC_GA_BLOG_ID=your_blog_ga_id
+NEXT_PUBLIC_GA_ADMIN_ID=your_admin_ga_id
+
+# OAuth Providers（可选；未配置则对应按钮不会显示）
 AUTH_GOOGLE_ID=your_google_client_id
 AUTH_GOOGLE_SECRET=your_google_client_secret
 AUTH_GITHUB_ID=your_github_client_id
@@ -159,7 +168,7 @@ AUTH_GITHUB_SECRET=your_github_client_secret
 AUTH_APPLE_ID=your_apple_service_id
 AUTH_APPLE_SECRET=your_apple_client_secret
 
-# Upstash Redis（API 限流）
+# Upstash Redis（API 限流，可选）
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 ```

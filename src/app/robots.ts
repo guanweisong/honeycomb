@@ -14,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/"],
       },
     ],
-    sitemap: "https://www.guanweisong.com/sitemap.xml",
+    sitemap: `${new URL(process.env.NEXT_PUBLIC_SITE_URL as string).origin}/sitemap.xml`,
   };
 }

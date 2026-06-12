@@ -75,8 +75,8 @@ const Links = async (props: LinksProps) => {
             <div>
               {t("applyStep.nameLabel")}: {setting.siteName?.[locale]}
             </div>
-            <div>{t("applyStep.linkLabel")}: https://guanweisong.com</div>
-            <div>Logo: https://guanweisong.com/static/images/logo.192.png</div>
+            <div>{t("applyStep.linkLabel")}: {process.env.NEXT_PUBLIC_SITE_URL}</div>
+            <div>Logo: {`${process.env.NEXT_PUBLIC_SITE_URL}/static/images/logo.192.png`}</div>
             <div>
               {t("applyStep.descLabel")}: {setting.siteSubName?.[locale]}
             </div>

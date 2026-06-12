@@ -20,15 +20,17 @@ export type CommentShape = {
  * 主要用于构建评论通知邮件中的跳转链接和标题。
  * @param {CommentShape} comment - 评论对象。
  * @param {object} [opts] - 可选参数。
- * @param {string} [opts.frontDomain] - 前端域名，默认为环境变量 `FRONT_DOMAIN`。
- * @param {string} [opts.linkObjectId] - 友情链接的 ObjectId，默认为环境变量 `LINK_OBJECT_ID`。
+ * @param {string} [opts.frontDomain] - 前端域名，默认为环境变量中的站点 host。
+ * @param {string} [opts.linkObjectId] - 友情链接的 ObjectId，默认为环境变量中的值。
  * @returns {{ postTitle: string; postLink: string }} 包含标题和链接的对象。
  */
 export const getPostOrPageOrCustomTitleAndLinkFromComment = (
   comment: CommentShape,
   opts?: { frontDomain?: string; linkObjectId?: string },
 ): { postTitle: string; postLink: string } => {
-  const frontDomain = opts?.frontDomain ?? process.env.FRONT_DOMAIN ?? "";
+  const frontDomain =
+    opts?.frontDomain ??
+    new URL(process.env.NEXT_PUBLIC_SITE_URL as string).host;
   const linkObjectId = opts?.linkObjectId ?? process.env.LINK_OBJECT_ID;
 
   let postTitle = "";

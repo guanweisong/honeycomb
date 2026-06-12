@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     serverClient.page.index({ page: 1, limit: 1000, status: [PageStatus.PUBLISHED] }),
   ]);
 
-  const baseUrl = "https://www.guanweisong.com";
+  const baseUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL as string).origin;
 
   const staticUrls: MetadataRoute.Sitemap = [
     {

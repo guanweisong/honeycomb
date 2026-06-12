@@ -23,8 +23,8 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
   const { setting, currentComment, parentComment } = payload;
 
   const siteNameZh = setting.siteName?.zh ?? "";
-  const systemEmail = `notice@guanweisong.com`;
-  const adminEmail = process.env.ADMIN_EMAIL || "guanweisong@gmail.com";
+  const systemEmail = process.env.RESEND_FROM_EMAIL as string;
+  const adminEmail = process.env.ADMIN_EMAIL as string;
 
   try {
     if (type === "ADMIN_NOTICE") {

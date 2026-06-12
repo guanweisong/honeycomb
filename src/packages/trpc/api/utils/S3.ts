@@ -12,6 +12,10 @@ interface DeleteMultipleObjectParams {
 }
 
 class S3 {
+  static getPublicAssetUrl = (key: string) => {
+    return `${process.env.NEXT_PUBLIC_ASSET_URL}/${key}`;
+  };
+
   /**
    * 实例初始化
    */
@@ -40,7 +44,7 @@ class S3 {
         Body,
       }),
     );
-    return `https://static.guanweisong.com/${Key}`;
+    return S3.getPublicAssetUrl(Key as string);
   };
 
   /**
