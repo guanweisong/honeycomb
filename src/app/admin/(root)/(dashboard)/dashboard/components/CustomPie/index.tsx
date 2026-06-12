@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/packages/ui/components/skeleton";
 import {
   PieChart,
   Pie,
@@ -22,6 +23,10 @@ export interface PieProps {
    * 饼图的数据，包含项目名称和对应的计数。
    */
   data?: { item: string; count: number }[];
+  /**
+   * 图表数据是否仍在加载中。
+   */
+  loading?: boolean;
   /**
    * 饼图使用的颜色数组。
    */
@@ -51,9 +56,42 @@ type PieDataItem = NonNullable<PieProps["data"]>[number];
  * @param {PieProps} { title, data, colors } - 组件属性。
  * @returns {JSX.Element} 饼图组件。
  */
-const CustomPie = ({ title, data, colors = COLORS }: PieProps) => {
+const CustomPie = ({
+  title,
+  data,
+  loading = false,
+  colors = COLORS,
+}: PieProps) => {
   // 按照 count 从大到小排序
   const sortedData = [...(data || [])].sort((a, b) => b.count - a.count);
+
+  if (loading) {
+    return (
+      <div
+        className="w-[380px] p-4 bg-white rounded-lg shadow-sm border border-gray-100"
+        aria-busy="true"
+      >
+        <div className="text-center font-bold text-gray-700 mb-4">{title}</div>
+        <div
+          className="h-[200px] flex items-center gap-4"
+          data-testid="custom-pie-loading-skeleton"
+        >
+          <Skeleton className="h-36 w-36 rounded-full shrink-0" />
+          <div className="flex-1 space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={`custom-pie-legend-skeleton-${index}`}
+                className="flex items-center gap-3"
+              >
+                <Skeleton className="h-3 w-3 rounded-full" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-[380px] p-4 bg-white rounded-lg shadow-sm border border-gray-100">

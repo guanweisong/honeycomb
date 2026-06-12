@@ -26,11 +26,12 @@ import {
  *    展示内容包括：文章类型分布、评论状态分布、用户等级分布和用户贡献分布。
  */
 const Dashboard = () => {
-  const { data: statistics } = trpc.statistic.index.useQuery();
+  const { data: statistics, isLoading } = trpc.statistic.index.useQuery();
 
   return (
     <div className="flex flex-wrap gap-3 p-3">
       <CustomPie
+        loading={isLoading}
         data={statistics?.postType?.map((n) => ({
           ...n,
           item: PostTypeName[
@@ -40,6 +41,7 @@ const Dashboard = () => {
         title={"文章"}
       />
       <CustomPie
+        loading={isLoading}
         data={statistics?.commentStatus?.map((n) => ({
           ...n,
           item: CommentStatusName[
@@ -49,6 +51,7 @@ const Dashboard = () => {
         title="评论"
       />
       <CustomPie
+        loading={isLoading}
         data={statistics?.userType?.map((n) => ({
           ...n,
           item: UserLevelName[
@@ -57,7 +60,7 @@ const Dashboard = () => {
         }))}
         title="用户"
       />
-      <CustomPie data={statistics?.userPost} title="贡献" />
+      <CustomPie loading={isLoading} data={statistics?.userPost} title="贡献" />
     </div>
   );
 };
