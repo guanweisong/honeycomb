@@ -9,6 +9,7 @@ import {
 } from "@/packages/ui/extended/DynamicForm";
 import { toast } from "sonner";
 import { Button } from "@/packages/ui/components/button";
+import { Skeleton } from "@/packages/ui/components/skeleton";
 import { getProviders, signIn } from "next-auth/react";
 import { providerIcons } from "./providerIcons";
 import { LoginSchema, type LoginValues } from "./login.schema";
@@ -24,9 +25,10 @@ const LoginContent = () => {
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [providers, setProviders] = useState<AuthProviderMap>(null);
+  const [isProvidersLoading, setIsProvidersLoading] = useState(true);
   const form = useRef<DynamicFormRef<LoginValues>>(null);
   const searchParams = useSearchParams();
-  const { setting } = useSiteSetting();
+  const { setting, isLoading: isSettingLoading } = useSiteSetting();
   const { refreshUser } = useCurrentUser();
 
   const targetUrl = searchParams.get("targetUrl");
@@ -41,6 +43,9 @@ const LoginContent = () => {
       .then(setProviders)
       .catch(() => {
         setProviders(null);
+      })
+      .finally(() => {
+        setIsProvidersLoading(false);
       });
   }, []);
 
@@ -122,7 +127,14 @@ const LoginContent = () => {
         loop={true}
       />
       <div className="fixed z-10 w-96 mx-auto left-0 right-0 top-[30%] text-white p-6 bg-white/20 backdrop-blur rounded overflow-hidden">
-        <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
+        {isSettingLoading ? (
+          <Skeleton
+            data-testid="login-site-name-skeleton"
+            className="mx-auto mb-1 h-8 w-40 bg-white/35"
+          />
+        ) : (
+          <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
+        )}
         <div className="opacity-80 mb-6">游客账号：guest 123456</div>
         <div className="space-y-4 [&_[data-slot=form-item]]:gap-1.5 [&_input[data-slot=input]]:h-10 [&_input[data-slot=input]]:rounded-md [&_input[data-slot=input]]:border-white/20 [&_input[data-slot=input]]:bg-white/80 [&_input[data-slot=input]]:px-4 [&_input[data-slot=input]]:text-black [&_input[data-slot=input]]:shadow-none [&_input[data-slot=input]]:placeholder:text-black/45 [&_input[data-slot=input]]:focus-visible:border-white [&_input[data-slot=input]]:focus-visible:ring-white/30 [&_[data-slot=form-message]]:text-left [&_[data-slot=form-message]]:text-red-200">
           <DynamicForm
@@ -145,21 +157,29 @@ const LoginContent = () => {
             <span>第三方登录</span>
             <span className="h-px flex-1 bg-white/20" />
           </div>
-          {oauthProviders.map((provider) => (
-            <Button
-              key={provider.id}
-              type="button"
-              variant="secondary"
-              size="lg"
-              className="w-full justify-center bg-black/80 px-4 text-white hover:bg-black"
-              onClick={() => handleOAuthLogin(provider.id)}
-            >
-              <span className="inline-flex items-center gap-2">
-                {providerIcons[provider.id]}
-                <span>使用{provider.name}登录</span>
-              </span>
-            </Button>
-          ))}
+          {isProvidersLoading
+            ? Array.from({ length: 2 }).map((_, index) => (
+                <Skeleton
+                  key={`provider-skeleton-${index}`}
+                  data-testid="login-provider-skeleton"
+                  className="h-11 w-full bg-white/25"
+                />
+              ))
+            : oauthProviders.map((provider) => (
+                <Button
+                  key={provider.id}
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full justify-center bg-black/80 px-4 text-white hover:bg-black"
+                  onClick={() => handleOAuthLogin(provider.id)}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {providerIcons[provider.id]}
+                    <span>使用{provider.name}登录</span>
+                  </span>
+                </Button>
+              ))}
         </div>
         <div className="mt-4 flex justify-center">
           <Turnstile
