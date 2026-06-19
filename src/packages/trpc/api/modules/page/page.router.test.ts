@@ -3,6 +3,7 @@ import { pageRouter } from "./page.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { PageStatus } from "./types/page.status";
+import { PageTemplate } from "./types/page.template";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 
@@ -27,6 +28,7 @@ describe("Page Router", () => {
           title: { en: "Page 1", zh: "页面1" },
           content: { en: "Content 1", zh: "内容1" },
           status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
           author: null,
           createdAt: new Date(),
         },
@@ -35,6 +37,7 @@ describe("Page Router", () => {
           title: { en: "Page 2", zh: "页面2" },
           content: { en: "Content 2", zh: "内容2" },
           status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
           author: null,
           createdAt: new Date(),
         },
@@ -103,6 +106,7 @@ describe("Page Router", () => {
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
         status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
       };
 
       mockDb.insert.mockReturnValueOnce(mockDb);
@@ -115,6 +119,7 @@ describe("Page Router", () => {
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
         status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
       });
 
       expect(result).toEqual(newPage);
@@ -124,24 +129,26 @@ describe("Page Router", () => {
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
-      await expect(
-        caller.create({
-          title: { en: "New Page", zh: "新页面" },
-          content: { en: "New Content", zh: "新内容" },
-          status: "PUBLISH",
-        }),
+        await expect(
+      caller.create({
+        title: { en: "New Page", zh: "新页面" },
+        content: { en: "New Content", zh: "新内容" },
+        status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
+      }),
       ).rejects.toThrow("FORBIDDEN");
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(
-        caller.create({
-          title: { en: "New Page", zh: "新页面" },
-          content: { en: "New Content", zh: "新内容" },
-          status: "PUBLISH",
-        }),
+        await expect(
+      caller.create({
+        title: { en: "New Page", zh: "新页面" },
+        content: { en: "New Content", zh: "新内容" },
+        status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
+      }),
       ).rejects.toThrow("UNAUTHORIZED");
     });
   });
@@ -182,6 +189,7 @@ describe("Page Router", () => {
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
         status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
         author: null,
       };
 
@@ -197,6 +205,7 @@ describe("Page Router", () => {
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
         status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
       });
 
       expect(result).toEqual(updatedPage);
@@ -206,13 +215,14 @@ describe("Page Router", () => {
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
 
-      await expect(
-        caller.update({
-          id: TEST_IDS.ID_1,
-          title: { en: "Updated Page", zh: "更新的页面" },
-          content: { en: "Updated Content", zh: "更新的内容" },
-          status: "PUBLISH",
-        }),
+        await expect(
+      caller.update({
+        id: TEST_IDS.ID_1,
+        title: { en: "Updated Page", zh: "更新的页面" },
+        content: { en: "Updated Content", zh: "更新的内容" },
+        status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
+      }),
       ).rejects.toThrow("FORBIDDEN");
     });
   });
@@ -225,6 +235,7 @@ describe("Page Router", () => {
         title: { en: "Page 1", zh: "页面1" },
         content: { en: "Content 1", zh: "内容1" },
         status: "PUBLISH",
+        template: PageTemplate.DEFAULT,
         authorId: TEST_IDS.ID_1,
         createdAt: new Date(),
       };

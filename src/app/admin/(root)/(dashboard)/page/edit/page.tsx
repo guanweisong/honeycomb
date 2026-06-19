@@ -2,11 +2,7 @@
 
 import { Button } from "@/packages/ui/components/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
-import {
-  DynamicForm,
-  DynamicFormRef,
-} from "@/packages/ui/extended/DynamicForm";
+import { Suspense, useEffect, useState } from "react";
 import {
   PageInsert,
   PageInsertSchema,
@@ -19,15 +15,27 @@ import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
+import { useForm } from "react-hook-form";
+import { Form } from "@/packages/ui/components/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
+import { Dialog } from "@/packages/ui/extended/Dialog";
+import {
+  PageTemplate,
+  pageTemplateOptions,
+} from "@/packages/trpc/api/modules/page/types/page.template";
 import { z } from "zod";
 
 type PageFormValues = z.infer<typeof PageInsertSchema>;
 
-function toPageFormValues(detail?: {
-  title?: PageFormValues["title"] | null;
-  content?: PageFormValues["content"] | null;
-  status?: PageFormValues["status"];
-} | null): Partial<PageFormValues> | undefined {
+function toPageFormValues(
+  detail?: {
+    title?: PageFormValues["title"] | null;
+    content?: PageFormValues["content"] | null;
+    status?: PageFormValues["status"];
+    template?: string | null;
+  } | null,
+): Partial<PageFormValues> | undefined {
   if (!detail) {
     return undefined;
   }
@@ -36,6 +44,8 @@ function toPageFormValues(detail?: {
     title: detail.title ?? undefined,
     content: detail.content ?? undefined,
     status: detail.status ?? undefined,
+    template:
+      (detail.template as PageTemplate | undefined) ?? PageTemplate.DEFAULT,
   };
 }
 
@@ -47,15 +57,18 @@ function toPageFormValues(detail?: {
 const PageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const formRef = useRef<DynamicFormRef<PageInsert | PageUpdate>>(null);
-  /**
-   * 用于存储提交状态的引用，例如草稿或已发布。
-   */
-  const submitStatusRef = useRef<PageStatus>(null);
   /**
    * 加载状态，控制按钮的禁用。
    */
   const [loading, setLoading] = useState<boolean>(false);
+  const form = useForm({
+    resolver: zodResolver(
+      searchParams.get("id") ? PageUpdateSchema : PageInsertSchema,
+    ),
+    defaultValues: {
+      template: PageTemplate.DEFAULT,
+    },
+  });
 
   const id = searchParams.get("id");
 
@@ -78,11 +91,13 @@ const PageContent = () => {
    */
   useEffect(() => {
     if (detail) {
-      formRef.current?.setValues(toPageFormValues(detail) ?? {});
+      form.reset(toPageFormValues(detail) ?? {});
     } else {
-      formRef.current?.reset();
+      form.reset({
+        template: PageTemplate.DEFAULT,
+      });
     }
-  }, [detail]);
+  }, [detail, form]);
 
   /**
    * 创建页面的 tRPC mutation。
@@ -135,8 +150,7 @@ const PageContent = () => {
    * @param {PageStatus} status - 页面状态（草稿或已发布）。
    */
   const handleBtnClick = (status: PageStatus) => {
-    submitStatusRef.current = status;
-    formRef.current?.submit();
+    void form.handleSubmit((values) => handleSubmit(values, status))();
   };
 
   /**
@@ -144,90 +158,98 @@ const PageContent = () => {
    * @returns {JSX.Element[]} 按钮数组。
    */
   const getBtns = () => {
-    const btns = [];
+    const isEdit = !!detail?.id;
+    const isDraft = detail?.status === PageStatus.DRAFT;
+    const isPublished = detail?.status === PageStatus.PUBLISHED;
 
-    if (detail?.id) {
-      if (detail.status === PageStatus.PUBLISHED) {
-        btns.push(
+    return (
+      <>
+        {isEdit && isPublished && (
           <Button
-            key="update"
+            type="button"
             disabled={loading}
             onClick={() => handleBtnClick(PageStatus.PUBLISHED)}
           >
             更新
-          </Button>,
-        );
-      }
-      if (detail.status === PageStatus.DRAFT) {
-        btns.push(
+          </Button>
+        )}
+
+        {isEdit && isPublished && (
+          <Dialog
+            trigger={
+              <Button type="button" variant="secondary" disabled={loading}>
+                撤回为草稿
+              </Button>
+            }
+            type="danger"
+            title="确定要撤回吗？"
+            onOK={() => handleBtnClick(PageStatus.DRAFT)}
+          />
+        )}
+
+        {isEdit && isDraft && (
           <Button
-            key="publish"
-            disabled={loading}
-            onClick={() => handleBtnClick(PageStatus.PUBLISHED)}
-          >
-            发布
-          </Button>,
-          <Button
-            key="save"
+            type="button"
             disabled={loading}
             onClick={() => handleBtnClick(PageStatus.DRAFT)}
           >
             保存
-          </Button>,
-        );
-      }
-    } else {
-      btns.push(
-        <Button
-          key="draft"
-          disabled={loading}
-          onClick={() => handleBtnClick(PageStatus.DRAFT)}
-          variant="secondary"
-        >
-          保存草稿
-        </Button>,
-        <Button
-          disabled={loading}
-          key="publish"
-          onClick={() => handleBtnClick(PageStatus.PUBLISHED)}
-        >
-          发布
-        </Button>,
-      );
-    }
+          </Button>
+        )}
 
-    return btns;
+        {((isEdit && isDraft) || !isEdit) && (
+          <Button
+            type="button"
+            disabled={loading}
+            onClick={() => handleBtnClick(PageStatus.PUBLISHED)}
+          >
+            发布
+          </Button>
+        )}
+
+        {!isEdit && (
+          <Button
+            type="button"
+            onClick={() => handleBtnClick(PageStatus.DRAFT)}
+          >
+            保存草稿
+          </Button>
+        )}
+      </>
+    );
   };
 
   return (
     <>
-      <DynamicForm
-        ref={formRef}
-        schema={id ? PageUpdateSchema : PageInsertSchema}
-        fields={[
-          {
-            name: "title",
-            placeholder: "在此输入文章标题",
-            type: "text",
-            multiLang: true,
-          },
-          {
-            name: "content",
-            type: "richText",
-            multiLang: true,
-          },
-        ]}
-        renderSubmitButton={false}
-        onSubmit={(values) => {
-          const status = submitStatusRef.current;
-          if (!status) {
-            toast.error("提交状态未定义");
-            return;
-          }
-          handleSubmit(values, status);
-        }}
-      />
-      <div className="flex justify-end gap-3 mt-3">{getBtns()}</div>
+      <Form {...form}>
+        <form className="lg:flex">
+          <div className="lg:flex-1 flex flex-col gap-3 mb-3">
+            <DynamicField
+              name="title"
+              type="text"
+              label="标题"
+              placeholder="在此输入文章标题"
+              multiLang
+            />
+            <DynamicField
+              name="content"
+              type="richText"
+              label="内容"
+              placeholder="请输入内容"
+              multiLang
+            />
+          </div>
+          <div className="lg:w-80 lg:ml-8 space-y-4">
+            <div className="flex gap-3 justify-end">{getBtns()}</div>
+            <DynamicField
+              name="template"
+              type="select"
+              label="模板类型"
+              options={pageTemplateOptions}
+            />
+          </div>
+        </form>
+      </Form>
     </>
   );
 };

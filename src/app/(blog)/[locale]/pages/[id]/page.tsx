@@ -7,6 +7,9 @@ import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
+import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
+import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
+import { cn } from "@/packages/ui/lib/utils";
 /**
  * 页面详情组件的属性接口。
  */
@@ -34,6 +37,13 @@ export default async function Pages(props: PagesProps) {
     serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
     serverClient.page.incrementViews({ id }),
   ]);
+  const links =
+    pageDetail?.template === PageTemplate.FRIENDLY_LINKS
+      ? await serverClient.link.index({
+          limit: 999,
+          status: [EnableStatus.ENABLE],
+        })
+      : null;
 
   return (
     <>
@@ -54,6 +64,36 @@ export default async function Pages(props: PagesProps) {
           />
         </div>
       </div>
+      {pageDetail?.template === PageTemplate.FRIENDLY_LINKS ? (
+        <div className="py-2 lg:py-4">
+          {links?.total ? (
+            links.list.map((item, index) => (
+              <a
+                key={item.url}
+                href={item.url as string}
+                target="_blank"
+                className={cn("flex items-center py-2", {
+                  "border-t-0.5 border-dashed border-auto-front-gray/30":
+                    index > 0,
+                })}
+              >
+                <span
+                  className="inline-block w-10 h-10 bg-no-repeat bg-center bg-contain mr-2"
+                  style={{ backgroundImage: `url(${item.logo})` }}
+                />
+                <div>
+                  <div>{item.name}</div>
+                  <div className="text-auto-front-gray/50 text-base">
+                    {item.description}
+                  </div>
+                </div>
+              </a>
+            ))
+          ) : (
+            <div className="text-auto-front-gray/60">暂无友情链接</div>
+          )}
+        </div>
+      ) : null}
       <Comment id={id} type={MenuType.PAGE} />
     </>
   );

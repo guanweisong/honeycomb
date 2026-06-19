@@ -108,6 +108,7 @@ export const page = sqliteTable("page", {
     .references(() => user.id, { onDelete: "no action" }), // 作者ID
   content: i18nField("content").notNull(), // 页面内容 (国际化)
   status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
+  template: text("template").default("default").notNull(), // 页面模板
   title: i18nField("title").notNull(), // 页面标题 (国际化)
   views: integer("views").default(0).notNull(), // 浏览次数
   ...withTimestamps(),
