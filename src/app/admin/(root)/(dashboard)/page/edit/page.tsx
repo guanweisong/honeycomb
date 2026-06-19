@@ -7,10 +7,7 @@ import {
   PageInsert,
   PageInsertSchema,
 } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
-import {
-  PageUpdate,
-  PageUpdateSchema,
-} from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
+import { PageUpdate } from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
@@ -62,9 +59,7 @@ const PageContent = () => {
    */
   const [loading, setLoading] = useState<boolean>(false);
   const form = useForm({
-    resolver: zodResolver(
-      searchParams.get("id") ? PageUpdateSchema : PageInsertSchema,
-    ),
+    resolver: zodResolver(PageInsertSchema),
     defaultValues: {
       template: PageTemplate.DEFAULT,
     },

@@ -188,7 +188,7 @@ export const menu = sqliteTable(
       onDelete: "set null",
     }), // 关联分类ID
     pageId: text("page_id").references(() => page.id, {
-      onDelete: "set null",
+      onDelete: "cascade",
     }), // 关联页面ID
     customId: text("custom_id"), // 关联自定义实体ID
     power: integer("power").notNull(), // 排序权重

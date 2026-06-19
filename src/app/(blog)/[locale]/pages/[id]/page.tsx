@@ -10,6 +10,7 @@ import { RichText } from "@/app/(blog)/components/RichText";
 import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
 import { cn } from "@/packages/ui/lib/utils";
+import { assertPublishedPost } from "./page.utils";
 /**
  * 页面详情组件的属性接口。
  */
@@ -37,6 +38,7 @@ export default async function Pages(props: PagesProps) {
     serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
     serverClient.page.incrementViews({ id }),
   ]);
+  assertPublishedPost(pageDetail);
   const links =
     pageDetail?.template === PageTemplate.FRIENDLY_LINKS
       ? await serverClient.link.index({
