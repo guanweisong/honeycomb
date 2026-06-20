@@ -8,6 +8,9 @@ schema: spec-driven
 #     Tech stack: TypeScript, React, Node.js
 #     We use conventional commits
 #     Domain: e-commerce platform
+context: |
+  所有 openspec 产物默认使用中文输出。
+  仅在规范要求或技术语义需要时保留必要英文术语，例如 MUST、SHALL、not-found。
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
@@ -18,3 +21,16 @@ schema: spec-driven
 #       - Always include a "Non-goals" section
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - 使用中文撰写所有标题、正文和列表项。
+    - 保持结构清晰，重点说明为什么要做这次变更。
+  design:
+    - 使用中文撰写所有标题、正文和列表项。
+    - 只保留必要的英文术语，不要混用整段英文描述。
+  specs:
+    - 使用中文撰写需求说明和场景描述。
+    - 保留规范词 MUST、SHALL 等英文大写术语以维持可测试性。
+  tasks:
+    - 使用中文撰写任务描述。
+    - 保持 checkbox 结构不变，便于后续 apply 流程解析。

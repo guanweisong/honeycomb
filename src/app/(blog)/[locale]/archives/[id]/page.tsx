@@ -14,6 +14,7 @@ import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/RichText";
+import { assertPostDetail, handlePostDetailError } from "./page.utils";
 
 /**
  * 归档页面组件的属性接口。
@@ -37,7 +38,12 @@ export default async function Archives(props: ArchivesProps) {
     id: string;
     locale: keyof MultiLang;
   };
-  const postDetail = await serverClient.post.detail({ id });
+  let postDetail: Awaited<ReturnType<typeof serverClient.post.detail>>;
+  try {
+    postDetail = assertPostDetail(await serverClient.post.detail({ id }));
+  } catch (error) {
+    handlePostDetailError(error);
+  }
   const t = await getTranslations("Archive");
 
   if (!postDetail.category) {
@@ -198,10 +204,17 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const serverClient = await createServerClient();
   const { id } = await props.params;
-  const [setting, postDetail] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.post.detail({ id }),
-  ]);
+  let setting: Awaited<ReturnType<typeof serverClient.setting.index>>;
+  let postDetail: Awaited<ReturnType<typeof serverClient.post.detail>>;
+  try {
+    [setting, postDetail] = await Promise.all([
+      serverClient.setting.index(),
+      serverClient.post.detail({ id }),
+    ]);
+    postDetail = assertPostDetail(postDetail);
+  } catch (error) {
+    handlePostDetailError(error);
+  }
   const locale = (await getLocale()) as keyof MultiLang;
 
   /**
