@@ -165,7 +165,7 @@ export default async function Archives(props: ArchivesProps) {
                 <li key={item.id} className="my-2">
                   <Link
                     href={`/archives/${item.id}`}
-                    className="block link-light"
+                    className="link-light"
                   >
                     {item.title?.[locale] || item.quoteContent?.[locale]}
                   </Link>
