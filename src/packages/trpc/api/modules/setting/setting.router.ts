@@ -15,15 +15,10 @@ export const settingRouter = createTRPCRouter({
   /**
    * 获取网站的全局设置。
    * @returns {Promise<object>} 返回一个包含所有设置的对象。
-   * 该接口会额外附加一个 `customObjectId` 对象，其中包含了从环境变量读取的友情链接页面的 ID。
    */
   index: publicProcedure.query(async ({ ctx }) => {
     const list = await ctx.db.select().from(schema.setting);
-    const result = list[0];
-    return {
-      ...result,
-      customObjectId: { link: process.env.LINK_OBJECT_ID },
-    };
+    return list[0];
   }),
 
   /**

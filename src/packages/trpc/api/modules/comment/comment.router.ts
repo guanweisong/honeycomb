@@ -22,7 +22,6 @@ import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL, desc } from "drizzle-orm";
 import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
-import { getCustomCommentLink } from "@/packages/trpc/api/utils/getCustomCommentLink";
 import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
 
 /**
@@ -211,23 +210,11 @@ export const commentRouter = createTRPCRouter({
         throw new Error("Comment or setting not found");
       }
 
-      const settingWithCustomObject = {
-        ...setting,
-        customObjectId: { link: process.env.LINK_OBJECT_ID },
-      };
-
-      // ====== custom link ======
-      const currentCustom = getCustomCommentLink(currentComment.customId);
-      const currentCommentWithCustom = {
-        ...currentComment,
-        custom: currentCustom,
-      };
-
       // ====== 异步发送邮件通知 ======
       // 1. 通知管理员
       sendEmail("ADMIN_NOTICE", {
-        setting: settingWithCustomObject,
-        currentComment: currentCommentWithCustom,
+        setting,
+        currentComment,
       }).catch((e) => console.error("Failed to send admin email:", e));
 
       // 2. 通知被回复者
@@ -244,21 +231,15 @@ export const commentRouter = createTRPCRouter({
           .where(eq(schema.comment.id, rest.parentId));
 
         if (parentComment) {
-          const parentCustom = getCustomCommentLink(parentComment.customId);
-          const parentCommentWithCustom = {
-            ...parentComment,
-            custom: parentCustom,
-          };
-
           sendEmail("REPLY_NOTICE", {
-            setting: settingWithCustomObject,
-            currentComment: currentCommentWithCustom,
-            parentComment: parentCommentWithCustom,
+            setting,
+            currentComment,
+            parentComment,
           }).catch((e) => console.error("Failed to send reply email:", e));
         }
       }
 
-      return currentCommentWithCustom;
+      return currentComment;
     }),
 
   /**

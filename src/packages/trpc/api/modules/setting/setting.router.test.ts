@@ -34,7 +34,7 @@ describe("Setting Router", () => {
       const result = await caller.index();
 
       expect(result).toHaveProperty("siteName");
-      expect(result).toHaveProperty("customObjectId");
+      expect(result).not.toHaveProperty("customObjectId");
     });
   });
 

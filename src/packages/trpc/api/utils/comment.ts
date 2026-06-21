@@ -21,17 +21,15 @@ export type CommentShape = {
  * @param {CommentShape} comment - 评论对象。
  * @param {object} [opts] - 可选参数。
  * @param {string} [opts.frontDomain] - 前端域名，默认为环境变量中的站点 host。
- * @param {string} [opts.linkObjectId] - 友情链接的 ObjectId，默认为环境变量中的值。
  * @returns {{ postTitle: string; postLink: string }} 包含标题和链接的对象。
  */
 export const getPostOrPageOrCustomTitleAndLinkFromComment = (
   comment: CommentShape,
-  opts?: { frontDomain?: string; linkObjectId?: string },
+  opts?: { frontDomain?: string },
 ): { postTitle: string; postLink: string } => {
   const frontDomain =
     opts?.frontDomain ??
     new URL(process.env.NEXT_PUBLIC_SITE_URL as string).host;
-  const linkObjectId = opts?.linkObjectId ?? process.env.LINK_OBJECT_ID;
 
   let postTitle = "";
   let postLink = "";
@@ -44,9 +42,6 @@ export const getPostOrPageOrCustomTitleAndLinkFromComment = (
     postLink = `https://${frontDomain}/pages/${comment.pageId}`;
   } else if (comment.customId) {
     postTitle = comment.custom?.title?.zh ?? "";
-    if (linkObjectId && comment.customId === linkObjectId) {
-      postLink = `https://${frontDomain}/links`;
-    }
   }
   return { postTitle, postLink };
 };

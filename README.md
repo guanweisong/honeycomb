@@ -135,7 +135,6 @@ TURSO_TOKEN=your_turso_token
 # 站点配置（必填）
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_ASSET_URL=https://static.example.com
-LINK_OBJECT_ID=your_links_object_id
 
 # Cloudflare R2（对象存储，必填）
 R2_ACCOUNT_ID=your_account_id

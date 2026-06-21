@@ -28,7 +28,7 @@ export default async function Header() {
   ]);
 
   /**
-   * 包含所有菜单项的数组，包括首页和友情链接。
+   * 包含所有菜单项的数组。
    */
   const allMenu = [
     {
@@ -38,12 +38,6 @@ export default async function Header() {
       children: [],
     },
     ...menu?.list,
-    // {
-    //   title: { zh: "比邻", en: "Links" },
-    //   id: "links",
-    //   path: "/links",
-    //   children: [],
-    // },
   ];
 
   /**
