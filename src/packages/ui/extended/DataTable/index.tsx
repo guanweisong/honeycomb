@@ -64,6 +64,7 @@ interface DataTableProps<TData, TRequest extends Record<string, unknown>> {
   className?: string;
 
   onChange?: (params: TRequest) => void;
+  pagination?: boolean;
 }
 
 type ColumnMeta = {
@@ -86,6 +87,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     toolBar,
     className,
     onChange,
+    pagination = true,
   } = props;
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -94,7 +96,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [pagination, setPagination] = React.useState<Pagination>({
+  const [paginationState, setPaginationState] = React.useState<Pagination>({
     page: 1,
     limit: 10,
   });
@@ -111,7 +113,10 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
 
   // 1. 合并请求：每次当分页、排序或筛选更改时，触发 onChange
   React.useEffect(() => {
-    const params: Record<string, unknown> = { ...pagination };
+    const params: Record<string, unknown> = {};
+    if (pagination) {
+      Object.assign(params, paginationState);
+    }
     if (sorting?.length) {
       params.sortField = sorting[0].id;
       params.sortOrder = sorting[0].desc ? "desc" : "asc";
@@ -120,33 +125,37 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
       Object.assign(params, normalizeFilters(columnFilters));
     }
     onChangeRef.current?.(params as TRequest);
-  }, [columnFilters, pagination, sorting]);
+  }, [columnFilters, pagination, paginationState, sorting]);
 
   // 2. 翻页、筛选、排序变化时清空已勾选项
   React.useEffect(() => {
     onSelectionChangeRef.current?.([]);
-  }, [pagination, columnFilters, sorting]);
+  }, [paginationState, columnFilters, sorting]);
 
   const handlePaginationChange = (value: Pagination) => {
-    setPagination(value);
+    setPaginationState(value);
   };
 
   // 排序改变：更新排序，并同步强制重置页码为 1
   const handleSortingChange = React.useCallback(
     (updaterOrValue: React.SetStateAction<SortingState>) => {
       setSorting(updaterOrValue);
-      setPagination((prev) => ({ ...prev, page: 1 }));
+      if (pagination) {
+        setPaginationState((prev) => ({ ...prev, page: 1 }));
+      }
     },
-    [],
+    [pagination],
   );
 
   // 筛选改变：更新筛选，并同步强制重置页码为 1
   const handleColumnFiltersChange = React.useCallback(
     (updaterOrValue: React.SetStateAction<ColumnFiltersState>) => {
       setColumnFilters(updaterOrValue);
-      setPagination((prev) => ({ ...prev, page: 1 }));
+      if (pagination) {
+        setPaginationState((prev) => ({ ...prev, page: 1 }));
+      }
     },
-    [],
+    [pagination],
   );
 
   const table = useReactTable({
@@ -159,12 +168,14 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
       sorting,
       columnFilters,
       columnVisibility,
-      pagination: {
-        pageIndex: pagination.page - 1,
-        pageSize: pagination.limit,
-      },
+      pagination: pagination
+        ? {
+            pageIndex: paginationState.page - 1,
+            pageSize: paginationState.limit,
+          }
+        : undefined,
     },
-    pageCount: Math.ceil(data.total / pagination.limit),
+    pageCount: pagination ? Math.ceil(data.total / paginationState.limit) : 1,
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
@@ -306,10 +317,13 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                 >
                   <div className="flex flex-col items-center gap-2">
                     <div>数据加载失败，请重试</div>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        const params: Record<string, unknown> = { ...pagination };
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                        const params: Record<string, unknown> = {};
+                        if (pagination) {
+                          Object.assign(params, paginationState);
+                        }
                         if (sorting?.length) {
                           params.sortField = sorting[0].id;
                           params.sortOrder = sorting[0].desc ? "desc" : "asc";
@@ -374,42 +388,46 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          第 {data.total === 0 ? 0 : pagination.page} / {Math.max(1, Math.ceil(data.total / pagination.limit))}{" "}
-          页，共 {data.total} 条
+      {pagination && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            第 {data.total === 0 ? 0 : paginationState.page} /{" "}
+            {Math.max(1, Math.ceil(data.total / paginationState.limit))} 页，
+            共 {data.total} 条
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                handlePaginationChange({
+                  ...paginationState,
+                  page: paginationState.page - 1,
+                })
+              }
+              disabled={paginationState.page === 1 || isFetching}
+            >
+              上一页
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                handlePaginationChange({
+                  ...paginationState,
+                  page: paginationState.page + 1,
+                })
+              }
+              disabled={
+                paginationState.page * paginationState.limit >= data.total ||
+                isFetching
+              }
+            >
+              下一页
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              handlePaginationChange({
-                ...pagination,
-                page: pagination.page - 1,
-              })
-            }
-            disabled={pagination.page === 1 || isFetching}
-          >
-            上一页
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              handlePaginationChange({
-                ...pagination,
-                page: pagination.page + 1,
-              })
-            }
-            disabled={
-              pagination.page * pagination.limit >= data.total || isFetching
-            }
-          >
-            下一页
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

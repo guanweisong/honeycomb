@@ -7,14 +7,9 @@ import AddCategoryModal from "./components/AddCategoryModal";
 import categoryListTableColumns from "./constans/categoryListTableColumns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import {
-  CategoryListQueryInput,
-  CategoryListQuerySchema,
-} from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
 
@@ -41,10 +36,12 @@ const Category = () => {
   });
   /**
    * 存储分类列表的查询参数。
-   * 默认 `limit` 为 999，以获取所有分类用于层级展示。
+   * 使用较大的 `limit` 让该页面一次性加载全部分类目录。
    */
-  const [searchParams, setSearchParams] = useState<CategoryListQueryInput>({
-    limit: 999,
+  const [searchParams, setSearchParams] = useState<{
+    limit: number;
+  }>({
+    limit: 9999,
   });
   /**
    * 获取分类列表数据的 tRPC 查询。
@@ -111,15 +108,13 @@ const Category = () => {
 
   return (
     <>
-      <DataTable<CategoryEntity, CategoryListQueryInput>
+      <DataTable<CategoryEntity, { limit: number }>
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
-        onChange={(params) => {
-          setSearchParams(params);
-        }}
+        pagination={false}
         isFetching={isFetching}
         error={isError}
         selectableRows={true}
@@ -145,24 +140,6 @@ const Category = () => {
                 type="danger"
                 title="确定要删除吗？"
                 onOK={handleDeleteBatch}
-              />
-            </div>
-            <div className="flex gap-1">
-              <DynamicForm
-                schema={CategoryListQuerySchema}
-                fields={[
-                  {
-                    name: "name",
-                    type: "text",
-                    placeholder: "请输入分类名进行搜索",
-                  },
-                ]}
-                onSubmit={setSearchParams}
-                inline={true}
-                submitProps={{
-                  children: "查询",
-                  variant: "outline",
-                }}
               />
             </div>
           </div>
