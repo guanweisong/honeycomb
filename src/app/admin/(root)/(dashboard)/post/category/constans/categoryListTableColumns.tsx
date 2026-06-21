@@ -3,11 +3,13 @@ import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
-import {
-  EnableStatusName,
-  EnableStatus,
-} from "@/packages/trpc/api/types/enable.status";
+import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
+import {
+  StatusBadge,
+  StatusBadgeTone,
+} from "@/packages/ui/extended/StatusBadge";
+import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/statusTone";
 
 /**
  * 分类列表的表格列定义。
@@ -49,10 +51,19 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
     cell: ({ row }) => {
       /**
        * 渲染状态的单元格。
-       * 将状态值映射为对应的中文名称。`
+       * 将状态值映射为对应的中文名称，并使用颜色徽章展示。
        */
       const status = row.getValue("status") as EnableStatus;
-      return EnableStatusName[status];
+      const toneMap = {
+        ENABLE: StatusBadgeTone.GREEN,
+        DISABLE: StatusBadgeTone.RED,
+      } as const;
+      return (
+        <StatusBadge
+          tone={getStatusBadgeTone(status, toneMap)}
+          label={status === "ENABLE" ? "启用" : "禁用"}
+        />
+      );
     },
   },
   {

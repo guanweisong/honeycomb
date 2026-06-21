@@ -3,6 +3,10 @@ import { ColumnDef } from "@tanstack/react-table";
 import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
 import { userLevelOptions } from "@/packages/trpc/api/modules/user/types/user.level";
 import { userStatusOptions } from "@/packages/trpc/api/modules/user/types/user.status";
+import {
+  StatusBadge,
+  StatusBadgeTone,
+} from "@/packages/ui/extended/StatusBadge";
 
 /**
  * 用户列表的表格列定义。
@@ -37,10 +41,12 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     cell: ({ row }) => {
       /**
        * 渲染用户状态的单元格。
-       * 将用户状态值映射为对应的中文标签。
-       */
+       * 将用户状态值映射为对应的中文标签，并使用颜色徽章展示。
+      */
       const status = row.getValue("status") as string;
-      return userStatusOptions.find((opt) => opt.value === status)?.label;
+      const label = userStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      const tone = getUserStatusTone(status);
+      return <StatusBadge tone={tone} label={label} />;
     },
   },
   {
@@ -74,3 +80,15 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     },
   },
 ];
+
+function getUserStatusTone(status: string) {
+  switch (status) {
+    case "ENABLE":
+      return StatusBadgeTone.GREEN;
+    case "DISABLE":
+      return StatusBadgeTone.RED;
+    case "DELETED":
+    default:
+      return StatusBadgeTone.GRAY;
+  }
+}

@@ -7,6 +7,11 @@ import { pageStatusOptions } from "@/packages/trpc/api/modules/page/types/page.s
 import { pageTemplateOptions } from "@/packages/trpc/api/modules/page/types/page.template";
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import {
+  StatusBadge,
+  StatusBadgeTone,
+} from "@/packages/ui/extended/StatusBadge";
+import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/statusTone";
 
 /**
  * 页面列表的表格列定义。
@@ -52,9 +57,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
       const label =
         pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
-        <Badge variant={status === "published" ? "default" : "secondary"}>
-          {label}
-        </Badge>
+        <StatusBadge tone={getStatusBadgeTone(status, pageStatusToneMap)} label={label} />
       );
     },
   },
@@ -111,3 +114,9 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
     enableSorting: true,
   },
 ];
+
+const pageStatusToneMap = {
+  PUBLISHED: StatusBadgeTone.GREEN,
+  DRAFT: StatusBadgeTone.GRAY,
+  TO_AUDIT: StatusBadgeTone.AMBER,
+} as const;

@@ -3,6 +3,11 @@ import MultiLangText from "@/app/admin/components/MultiLangText";
 import { format } from "date-fns";
 import { commentStatusOptions } from "@/packages/trpc/api/modules/comment/types/comment.status";
 import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import {
+  StatusBadge,
+  StatusBadgeTone,
+} from "@/packages/ui/extended/StatusBadge";
+import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/statusTone";
 
 /**
  * 评论列表的表格列定义。
@@ -49,14 +54,31 @@ export const commentTableColumns: ColumnDef<CommentEntity>[] = [
     cell: ({ row }) => {
       /**
        * 渲染评论状态的单元格。
-       * 将评论状态值映射为对应的中文标签。
+       * 将评论状态值映射为对应的中文标签，并使用颜色徽章展示。
        */
       const value = row.original.status;
-      const labels = commentStatusOptions
-        .filter((opt) => value?.includes(opt.value))
-        .map((opt) => opt.label)
-        .join(", ");
-      return <span>{labels || "—"}</span>;
+      const statuses = commentStatusOptions.filter((opt) => value?.includes(opt.value));
+      const toneMap = {
+        TO_AUDIT: StatusBadgeTone.AMBER,
+        PUBLISH: StatusBadgeTone.GREEN,
+        RUBBISH: StatusBadgeTone.GRAY,
+        BAN: StatusBadgeTone.RED,
+      } as const;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {statuses.length ? (
+            statuses.map((opt) => (
+              <StatusBadge
+                key={opt.value}
+                tone={getStatusBadgeTone(opt.value, toneMap)}
+                label={opt.label}
+              />
+            ))
+          ) : (
+            <span>—</span>
+          )}
+        </div>
+      );
     },
   },
   {

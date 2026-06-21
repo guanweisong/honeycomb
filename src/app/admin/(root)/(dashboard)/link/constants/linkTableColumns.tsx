@@ -2,6 +2,10 @@ import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { enableStatusOptions } from "@/packages/trpc/api/types/enable.status";
 import { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
+import {
+  StatusBadge,
+  StatusBadgeTone,
+} from "@/packages/ui/extended/StatusBadge";
 
 /**
  * 友情链接列表的表格列定义。
@@ -25,10 +29,12 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     cell: ({ row }) => {
       /**
        * 渲染链接状态的单元格。
-       * 将链接状态值映射为对应的中文标签。
+       * 将链接状态值映射为对应的中文标签，并使用颜色徽章展示。
        */
-      const status = row.getValue("status");
-      return enableStatusOptions.find((opt) => opt.value === status)?.label;
+      const status = row.getValue("status") as string;
+      const label = enableStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      const tone = getLinkStatusTone(status);
+      return <StatusBadge tone={tone} label={label} />;
     },
   },
   {
@@ -48,3 +54,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     },
   },
 ];
+
+function getLinkStatusTone(status: string) {
+  return status === "ENABLE" ? StatusBadgeTone.GREEN : StatusBadgeTone.RED;
+}
