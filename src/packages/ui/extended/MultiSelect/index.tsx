@@ -39,7 +39,7 @@ export function MultiSelect(props: MultiSelectProps) {
       content={
         <Command>
           <CommandInput placeholder="搜索" />
-          <CommandList>
+          <CommandList className="mt-2">
             {options.map((option) => (
               <CommandItem
                 key={option.value}
