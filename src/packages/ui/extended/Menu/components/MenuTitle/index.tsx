@@ -13,21 +13,29 @@ export interface MenuTitleProps {
   toggleMenu?: (path: string) => void;
   className?: string;
   style?: React.CSSProperties;
+  collapsed?: boolean;
 }
 
 export const MenuTitle = (props: MenuTitleProps) => {
-  const { item, openMenus, toggleMenu, className = "", style } = props;
+  const {
+    item,
+    openMenus,
+    toggleMenu,
+    className = "",
+    style,
+    collapsed = false,
+  } = props;
   const pathname = usePathname();
 
   const content = (
-    <div className="flex items-center gap-2 w-full">
+    <div className="flex items-center gap-2 w-full min-w-0">
       <span>{item.icon}</span>
-      <span className="text-sm">{item.name}</span>
+      {!collapsed && <span className="text-sm truncate">{item.name}</span>}
     </div>
   );
 
   const indicator = (
-    <span className="text-xs text-gray-500">
+    <span className="text-xs text-gray-500 shrink-0">
       {openMenus.includes(item.path) ? (
         <ChevronDown
           strokeWidth={1.5}

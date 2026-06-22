@@ -18,6 +18,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import {
+  useAdminLayoutActions,
+  useAdminLayoutPageTitle,
+} from "@/packages/ui/extended/AdminLayout";
+import {
   PageTemplate,
   pageTemplateOptions,
 } from "@/packages/trpc/api/modules/page/types/page.template";
@@ -214,16 +218,22 @@ const PageContent = () => {
     );
   };
 
+  const headerActions = <div className="flex flex-wrap gap-3">{getBtns()}</div>;
+  const pageHeaderTitle = id ? "修改页面" : "添加新页面";
+
+  useAdminLayoutPageTitle(pageHeaderTitle, `${id ?? "new"}:${loading}`);
+  useAdminLayoutActions(headerActions, `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`);
+
   return (
     <>
       <Form {...form}>
-        <form className="lg:flex">
+        <form className="lg:flex lg:gap-8">
           <div className="lg:flex-1 flex flex-col gap-3 mb-3">
             <DynamicField
               name="title"
               type="text"
               label="标题"
-              placeholder="在此输入文章标题"
+              placeholder="在此输入页面标题"
               multiLang
             />
             <DynamicField
@@ -234,8 +244,7 @@ const PageContent = () => {
               multiLang
             />
           </div>
-          <div className="lg:w-80 lg:ml-8 space-y-4">
-            <div className="flex gap-3 justify-end">{getBtns()}</div>
+          <div className="lg:w-80 space-y-4">
             <DynamicField
               name="template"
               type="select"

@@ -21,6 +21,10 @@ import type { PostInsert } from "@/packages/trpc/api/modules/post/schemas/post.i
 import type { PostUpdate } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
+import {
+  useAdminLayoutActions,
+  useAdminLayoutPageTitle,
+} from "@/packages/ui/extended/AdminLayout";
 import { Plus } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { trpc } from "@/packages/trpc/client/trpc";
@@ -277,13 +281,19 @@ const PostDetailContent = () => {
     }
   }, [detail]);
 
+  const headerActions = <div className="flex flex-wrap gap-3">{getBtns()}</div>;
+  const pageHeaderTitle = id ? "修改文章" : "添加新文章";
+
+  useAdminLayoutPageTitle(pageHeaderTitle, `${id ?? "new"}:${loading}`);
+  useAdminLayoutActions(headerActions, `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`);
+
   return (
     <>
       <Form {...form}>
         <form>
-          <div className="lg:flex">
-            {/* 主内容区 */}
-            <div className="lg:flex-1 flex flex-col gap-3 mb-3">
+          <div className="lg:flex lg:gap-8">
+              {/* 主内容区 */}
+              <div className="lg:flex-1 flex flex-col gap-3 mb-3">
               {/* 根据文章类型，动态渲染不同的核心字段 */}
               {([
                 PostType.ARTICLE,
@@ -333,104 +343,102 @@ const PostDetailContent = () => {
                   />
                 </>
               )}
-            </div>
+              </div>
 
-            {/* 侧边栏设置区 */}
-            <div className="lg:w-80 lg:ml-8 space-y-4">
-              {/* 操作按钮 */}
-              <div className="flex gap-3 justify-end">{getBtns()}</div>
-              {/* 通用设置 */}
-              <DynamicField
-                label="文章类型"
-                name="type"
-                type="select"
-                options={postTypeOptions}
-              />
-              <DynamicField
-                label="分类目录"
-                name="categoryId"
-                type="select"
-                placeholder="请选择"
-                options={category?.list?.map((item) => ({
-                  label: creatCategoryTitleByDepth(item.title?.zh, item),
-                  value: item.id ?? "0",
-                }))}
-              />
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() =>
-                  setModalProps({ open: true, type: ModalType.ADD })
-                }
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                新建分类
-              </Button>
+              {/* 侧边栏设置区 */}
+              <div className="lg:w-80 space-y-4">
+                {/* 通用设置 */}
+                <DynamicField
+                  label="文章类型"
+                  name="type"
+                  type="select"
+                  options={postTypeOptions}
+                />
+                <DynamicField
+                  label="分类目录"
+                  name="categoryId"
+                  type="select"
+                  placeholder="请选择"
+                  options={category?.list?.map((item) => ({
+                    label: creatCategoryTitleByDepth(item.title?.zh, item),
+                    value: item.id ?? "0",
+                  }))}
+                />
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() =>
+                    setModalProps({ open: true, type: ModalType.ADD })
+                  }
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  新建分类
+                </Button>
 
-              {/* 特定类型专属设置 */}
-              {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-                type,
-              ) && <PhotoPickerItem {...photoPickerProps} />}
+                {/* 特定类型专属设置 */}
+                {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
+                  type,
+                ) && <PhotoPickerItem {...photoPickerProps} />}
 
-              {/* 电影类型专属字段 */}
-              {type === PostType.MOVIE && (
-                <>
-                  <DynamicField
-                    label="上映年代"
-                    name="movieTime"
-                    type="calendar"
-                    placeholder="请选择上映时间"
-                  />
-                  <MultiTag
-                    postId={detail?.id || ""}
-                    title="导演"
-                    type={TagType.DIRECTOR}
-                    value={movieDirectors}
-                    onChange={setMovieDirectors}
-                  />
-                  <MultiTag
-                    postId={detail?.id || ""}
-                    title="演员"
-                    type={TagType.ACTOR}
-                    value={movieActors}
-                    onChange={setMovieActors}
-                  />
-                  <MultiTag
-                    postId={detail?.id || ""}
-                    title="电影风格"
-                    type={TagType.MOVIE_STYLE}
-                    value={movieStyles}
-                    onChange={setMovieStyles}
-                  />
-                </>
-              )}
+                {/* 电影类型专属字段 */}
+                {type === PostType.MOVIE && (
+                  <>
+                    <DynamicField
+                      label="上映年代"
+                      name="movieTime"
+                      type="calendar"
+                      placeholder="请选择上映时间"
+                    />
+                    <MultiTag
+                      postId={detail?.id || ""}
+                      title="导演"
+                      type={TagType.DIRECTOR}
+                      value={movieDirectors}
+                      onChange={setMovieDirectors}
+                    />
+                    <MultiTag
+                      postId={detail?.id || ""}
+                      title="演员"
+                      type={TagType.ACTOR}
+                      value={movieActors}
+                      onChange={setMovieActors}
+                    />
+                    <MultiTag
+                      postId={detail?.id || ""}
+                      title="电影风格"
+                      type={TagType.MOVIE_STYLE}
+                      value={movieStyles}
+                      onChange={setMovieStyles}
+                    />
+                  </>
+                )}
 
-              {/* 摄影类型专属字段 */}
-              {type === PostType.PHOTOGRAPH && (
-                <>
-                  <DynamicField
-                    label="拍摄地点"
-                    name="galleryLocation"
-                    type="text"
-                    placeholder="请填写地址"
-                    multiLang
-                  />
-                  <DynamicField
-                    label="拍摄时间"
-                    name="galleryTime"
-                    type="calendar"
-                    placeholder="请选择拍摄时间"
-                  />
-                  <MultiTag
-                    postId={detail?.id || ""}
-                    title="照片风格"
-                    type={TagType.GALLERY_STYLE}
-                    value={galleryStyles}
-                    onChange={setGalleryStyles}
-                  />
-                </>
-              )}
-            </div>
+                {/* 摄影类型专属字段 */}
+                {type === PostType.PHOTOGRAPH && (
+                  <>
+                    <DynamicField
+                      label="拍摄地点"
+                      name="galleryLocation"
+                      type="text"
+                      placeholder="请填写地址"
+                      multiLang
+                    />
+                    <DynamicField
+                      label="拍摄时间"
+                      name="galleryTime"
+                      type="calendar"
+                      placeholder="请选择拍摄时间"
+                    />
+                    <MultiTag
+                      postId={detail?.id || ""}
+                      title="照片风格"
+                      type={TagType.GALLERY_STYLE}
+                      value={galleryStyles}
+                      onChange={setGalleryStyles}
+                    />
+                  </>
+                )}
+              </div>
           </div>
         </form>
       </Form>

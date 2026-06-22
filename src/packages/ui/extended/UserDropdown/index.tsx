@@ -15,10 +15,11 @@ import { CurrentUser } from "@/packages/trpc/api/modules/user/types/user.entity"
 export interface UserDropdownProps {
   user?: CurrentUser | null;
   onLogout: () => void;
+  collapsed?: boolean;
 }
 
 export const UserDropdown = (props: UserDropdownProps) => {
-  const { user, onLogout } = props;
+  const { user, onLogout, collapsed = false } = props;
 
   if (!user) {
     return;
@@ -27,15 +28,17 @@ export const UserDropdown = (props: UserDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center hover:bg-gray-200 cursor-pointer transition px-3 py-1 rounded-sm">
+        <div className="flex items-center hover:bg-gray-200 cursor-pointer transition px-3 py-2 rounded-sm">
           <Avatar url="/logo.jpg" fallback={user.name} />
-          <div className="flex-1 mx-3">
-            <div>{user.name}</div>
-            <div className="text-gray-500 text-xs">
-              {UserLevelName[user.level as keyof typeof UserLevelName]}
+          {!collapsed && (
+            <div className="flex-1 mx-3 min-w-0">
+              <div className="truncate">{user.name}</div>
+              <div className="text-gray-500 text-xs truncate">
+                {UserLevelName[user.level as keyof typeof UserLevelName]}
+              </div>
             </div>
-          </div>
-          <ChevronsUpDown size={18} strokeWidth={1.5} />
+          )}
+          <ChevronsUpDown size={18} strokeWidth={1.5} className={collapsed ? "ml-2" : ""} />
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">

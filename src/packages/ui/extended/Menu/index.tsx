@@ -15,11 +15,12 @@ export interface MenuItem {
 
 export interface MenuProps {
   data?: MenuItem[];
+  collapsed?: boolean;
 }
 
 export const Menu = (props: MenuProps) => {
   const pathname = usePathname();
-  const { data = [] } = props;
+  const { data = [], collapsed = false } = props;
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   useEffect(() => {
@@ -60,12 +61,14 @@ export const Menu = (props: MenuProps) => {
               item={item}
               openMenus={openMenus}
               toggleMenu={toggleMenu}
+              collapsed={collapsed}
               className={clsx({
-                "pl-3": depth === 0,
-                "pl-8": depth === 1,
-                "pl-16": depth === 2,
-                "pl-24": depth === 3,
-                "pl-32": depth === 4,
+                "pl-3": depth === 0 && !collapsed,
+                "pl-8": depth === 1 && !collapsed,
+                "pl-16": depth === 2 && !collapsed,
+                "pl-24": depth === 3 && !collapsed,
+                "pl-32": depth === 4 && !collapsed,
+                "justify-center px-2": collapsed,
               })}
             />
           </motion.div>
