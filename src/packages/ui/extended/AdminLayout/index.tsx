@@ -40,30 +40,30 @@ export function useAdminLayoutActions(
   key: string,
 ) {
   const context = useContext(AdminLayoutActionsContext);
+  const setActions = context?.setActions;
 
   useEffect(() => {
-    if (!context) {
+    if (!setActions) {
       return;
     }
 
-    context.setActions(actions);
-    return () => context.setActions(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context, key]);
+    setActions(actions);
+    return () => setActions(null);
+  }, [setActions, key]);
 }
 
 export function useAdminLayoutPageTitle(pageTitle: ReactNode | null, key: string) {
   const context = useContext(AdminLayoutPageTitleContext);
+  const setPageTitle = context?.setPageTitle;
 
   useEffect(() => {
-    if (!context) {
+    if (!setPageTitle) {
       return;
     }
 
-    context.setPageTitle(pageTitle);
-    return () => context.setPageTitle(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context, key]);
+    setPageTitle(pageTitle);
+    return () => setPageTitle(null);
+  }, [setPageTitle, key]);
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
@@ -130,13 +130,18 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     pageTitle ?? findMenuTitle(menu, pathname) ?? title;
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
   const [headerPageTitle, setHeaderPageTitle] = useState<ReactNode | null>(null);
+  const [actionsContext] = useState(() => ({
+    setActions: (nextActions: ReactNode | null) => setHeaderActions(nextActions),
+  }));
+  const [pageTitleContext] = useState(() => ({
+    setPageTitle: (nextPageTitle: ReactNode | null) =>
+      setHeaderPageTitle(nextPageTitle),
+  }));
   const resolvedHeaderPageTitle = headerPageTitle ?? resolvedPageTitle;
 
   return (
-    <AdminLayoutActionsContext.Provider value={{ setActions: setHeaderActions }}>
-      <AdminLayoutPageTitleContext.Provider
-        value={{ setPageTitle: setHeaderPageTitle }}
-      >
+    <AdminLayoutActionsContext.Provider value={actionsContext}>
+      <AdminLayoutPageTitleContext.Provider value={pageTitleContext}>
         <div className="relative h-screen box-border bg-gray-100 p-[1px]">
           <div className="h-full flex">
             <div
