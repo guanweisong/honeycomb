@@ -113,90 +113,92 @@ const Tag = () => {
 
   return (
     <>
-      <DataTable<TagEntity, TagListQueryInput>
-        columns={tagTableColumns}
-        data={{
-          list: data?.list ?? [],
-          total: data?.total ?? 0,
-        }}
-        isFetching={isFetching}
-        error={isError}
-        selectableRows
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
-        onChange={(params) => {
-          setSearchParams(params);
-        }}
-        toolBar={
-          <div className="flex justify-between">
+      <div className="flex min-h-0 flex-col">
+        <DataTable<TagEntity, TagListQueryInput>
+          columns={tagTableColumns}
+          data={{
+            list: data?.list ?? [],
+            total: data?.total ?? 0,
+          }}
+          isFetching={isFetching}
+          error={isError}
+          selectableRows
+          selectedRows={selectedRows}
+          onSelectionChange={setSelectedRows}
+          onChange={(params) => {
+            setSearchParams(params);
+          }}
+          toolBar={
+            <div className="flex justify-between">
+              <div className="flex gap-1">
+                <Button onClick={handleAddNew} variant="outline">
+                  <Plus />
+                  添加新标签
+                </Button>
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              </div>
+              <div className="flex gap-1">
+                <DynamicForm
+                  schema={TagListQuerySchema}
+                  fields={[
+                    {
+                      name: "name",
+                      type: "text",
+                      placeholder: "请输入标签名进行搜索",
+                    },
+                  ]}
+                  onSubmit={(values) =>
+                    setSearchParams((prev) => ({
+                      ...prev,
+                      ...values,
+                      page: 1,
+                    }))
+                  }
+                  inline
+                  submitProps={{
+                    children: "查询",
+                    variant: "outline",
+                  }}
+                />
+              </div>
+            </div>
+          }
+          rowActions={(row) => (
             <div className="flex gap-1">
-              <Button onClick={handleAddNew} variant="outline">
-                <Plus />
-                添加新标签
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleEditItem(row)}
+              >
+                <Pencil />
               </Button>
               <Dialog
                 trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
+                  <Button variant="secondary" size="sm">
                     <Trash />
-                    批量删除
                   </Button>
                 }
                 type="danger"
                 title="确定要删除吗？"
-                onOK={handleDeleteBatch}
+                onOK={() => handleDeleteItem([row.id])}
               />
             </div>
-            <div className="flex gap-1">
-              <DynamicForm
-                schema={TagListQuerySchema}
-                fields={[
-                  {
-                    name: "name",
-                    type: "text",
-                    placeholder: "请输入标签名进行搜索",
-                  },
-                ]}
-                onSubmit={(values) =>
-                  setSearchParams((prev) => ({
-                    ...prev,
-                    ...values,
-                    page: 1,
-                  }))
-                }
-                inline
-                submitProps={{
-                  children: "查询",
-                  variant: "outline",
-                }}
-              />
-            </div>
-          </div>
-        }
-        rowActions={(row) => (
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => handleEditItem(row)}
-            >
-              <Pencil />
-            </Button>
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
-          </div>
-        )}
-      />
+          )}
+        />
+      </div>
 
       <AddTagDialog
         {...modalProps}

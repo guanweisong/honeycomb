@@ -114,6 +114,7 @@ const Category = () => {
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
+        maxHeightRem={12}
         pagination={false}
         isFetching={isFetching}
         error={isError}

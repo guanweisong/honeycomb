@@ -62,6 +62,8 @@ interface DataTableProps<TData, TRequest extends Record<string, unknown>> {
   rowActions?: (row: TData) => React.ReactNode;
   toolBar?: React.ReactNode;
   className?: string;
+  maxHeightRem?: number;
+  stickyHeader?: boolean;
 
   onChange?: (params: TRequest) => void;
   pagination?: boolean;
@@ -86,6 +88,8 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     rowActions,
     toolBar,
     className,
+    maxHeightRem = 15,
+    stickyHeader = true,
     onChange,
     pagination = true,
   } = props;
@@ -98,7 +102,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     React.useState<VisibilityState>({});
   const [paginationState, setPaginationState] = React.useState<Pagination>({
     page: 1,
-    limit: 10,
+    limit: 20,
   });
   const onChangeRef = React.useRef(onChange);
   const onSelectionChangeRef = React.useRef(onSelectionChange);
@@ -217,12 +221,33 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     [selectedRows, onSelectionChange],
   );
 
+  const tableWrapperClassName = cn(
+    "relative flex min-h-0 flex-col overflow-hidden rounded-md border",
+    stickyHeader && "overflow-hidden",
+  );
+
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("flex min-h-0 flex-col gap-2", className)}>
       {toolBar}
-      <div className="relative rounded-md border overflow-hidden">
-        <Table>
-          <TableHeader>
+      <div
+        className={tableWrapperClassName}
+        style={
+          stickyHeader
+            ? { maxHeight: `calc(100dvh - ${maxHeightRem}rem)` }
+            : undefined
+        }
+      >
+        <Table
+          containerClassName={
+            stickyHeader ? "min-h-0 overflow-auto" : "overflow-x-auto"
+          }
+          className={cn(
+            "w-full",
+            stickyHeader &&
+              "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10 [&_thead]:bg-background",
+          )}
+        >
+          <TableHeader className="[&_tr]:border-b">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {selectableRows && (
@@ -235,9 +260,9 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                 )}
                 {headerGroup.headers.map((header) => {
                   const column = header.column;
-                  const filterOptions = (column.columnDef.meta as
-                    | ColumnMeta
-                    | undefined)?.filterOptions;
+                  const filterOptions = (
+                    column.columnDef.meta as ColumnMeta | undefined
+                  )?.filterOptions;
                   const isSorted = column.getIsSorted();
                   const isFiltered = (column.getFilterValue() as string[])
                     ?.length;
@@ -317,9 +342,9 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                 >
                   <div className="flex flex-col items-center gap-2">
                     <div>数据加载失败，请重试</div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
+                    <Button
+                      size="sm"
+                      onClick={() => {
                         const params: Record<string, unknown> = {};
                         if (pagination) {
                           Object.assign(params, paginationState);
@@ -329,7 +354,10 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
                           params.sortOrder = sorting[0].desc ? "desc" : "asc";
                         }
                         if (columnFilters?.length) {
-                          Object.assign(params, normalizeFilters(columnFilters));
+                          Object.assign(
+                            params,
+                            normalizeFilters(columnFilters),
+                          );
                         }
                         onChangeRef.current?.(params as TRequest);
                       }}
@@ -392,8 +420,8 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             第 {data.total === 0 ? 0 : paginationState.page} /{" "}
-            {Math.max(1, Math.ceil(data.total / paginationState.limit))} 页，
-            共 {data.total} 条
+            {Math.max(1, Math.ceil(data.total / paginationState.limit))} 页， 共{" "}
+            {data.total} 条
           </div>
           <div className="flex gap-2">
             <Button
