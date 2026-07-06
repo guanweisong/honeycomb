@@ -12,7 +12,7 @@ import { Menu, MenuItem } from "../Menu";
 import { UserDropdown } from "../UserDropdown";
 import { CurrentUser } from "@/packages/trpc/api/modules/user/types/user.entity";
 import { Button } from "../../components/button";
-import { PanelLeft } from "lucide-react";
+import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { usePathname } from "next/navigation";
 
@@ -69,6 +69,15 @@ export function useAdminLayoutPageTitle(pageTitle: ReactNode | null, key: string
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
 const SIDEBAR_COLLAPSE_BREAKPOINT = 768;
 
+const getInitialIsMobile = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia(`(max-width: ${SIDEBAR_COLLAPSE_BREAKPOINT}px)`)
+    .matches;
+};
+
 const findMenuTitle = (
   items: MenuItem[],
   pathname: string,
@@ -105,6 +114,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     onLogout,
   } = props;
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(getInitialIsMobile);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -118,6 +128,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     return window.matchMedia(`(max-width: ${SIDEBAR_COLLAPSE_BREAKPOINT}px)`)
       .matches;
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -125,6 +136,35 @@ export const AdminLayout = (props: AdminLayoutProps) => {
       String(collapsed),
     );
   }, [collapsed]);
+
+  useEffect(() => {
+    const media = window.matchMedia(
+      `(max-width: ${SIDEBAR_COLLAPSE_BREAKPOINT}px)`,
+    );
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
+    };
+
+    setIsMobile(media.matches);
+    media.addEventListener?.("change", handleChange);
+
+    return () => {
+      media.removeEventListener?.("change", handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  }, [pathname, isMobile]);
 
   const resolvedPageTitle =
     pageTitle ?? findMenuTitle(menu, pathname) ?? title;
@@ -138,38 +178,64 @@ export const AdminLayout = (props: AdminLayoutProps) => {
       setHeaderPageTitle(nextPageTitle),
   }));
   const resolvedHeaderPageTitle = headerPageTitle ?? resolvedPageTitle;
+  const isDrawerOpen = isMobile && mobileMenuOpen;
+  const sidebarButtonLabel = isMobile
+    ? mobileMenuOpen
+      ? "关闭侧边栏"
+      : "打开侧边栏"
+    : collapsed
+      ? "展开侧边栏"
+      : "收起侧边栏";
+  const sidebarButtonIcon = isMobile ? (
+    mobileMenuOpen ? (
+      <X />
+    ) : (
+      <MenuIcon />
+    )
+  ) : (
+    <PanelLeft />
+  );
+
+  const sidebarContent = (
+    <>
+      <div className="flex items-center gap-3 p-3">
+        <Avatar url="/logo.jpg" fallback={title} />
+        <span className="min-w-0 truncate text-sm font-medium text-gray-900">
+          {title}
+        </span>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto px-2">
+        <Menu data={menu} />
+      </div>
+      <div className="p-3 pt-0">
+        <UserDropdown user={user} onLogout={onLogout} />
+      </div>
+    </>
+  );
 
   return (
     <AdminLayoutActionsContext.Provider value={actionsContext}>
       <AdminLayoutPageTitleContext.Provider value={pageTitleContext}>
         <div className="relative h-screen box-border bg-gray-100 p-[1px]">
           <div className="h-full flex">
-            <div
-              data-testid="admin-sidebar"
-              className={cn(
-                "shrink-0 box-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
-                collapsed
-                  ? "w-0 opacity-0 translate-x-[-8px] ml-0 my-3 pointer-events-none"
-                  : "w-[200px] opacity-100 translate-x-0 m-3",
-              )}
-            >
-              <div className="flex items-center gap-3 p-3">
-                <Avatar url="/logo.jpg" fallback={title} />
-                <span className="min-w-0 truncate text-sm font-medium text-gray-900">
-                  {title}
-                </span>
+            {!isMobile && (
+              <div
+                data-testid="admin-sidebar"
+                className={cn(
+                  "shrink-0 box-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
+                  collapsed
+                    ? "w-0 opacity-0 translate-x-[-8px] ml-0 my-3 pointer-events-none"
+                    : "w-[200px] opacity-100 translate-x-0 m-3",
+                )}
+              >
+                {sidebarContent}
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto px-2">
-                <Menu data={menu} />
-              </div>
-              <div className="p-3 pt-0">
-                <UserDropdown user={user} onLogout={onLogout} />
-              </div>
-            </div>
+            )}
             <div
               className={cn(
                 "my-3 mr-3 flex min-w-0 flex-1 flex-col rounded-lg bg-white shadow transition-all duration-300 ease-in-out",
-                collapsed && "ml-3",
+                !isMobile && collapsed && "ml-3",
+                isMobile && "m-3",
               )}
             >
               <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
@@ -178,10 +244,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                   variant="secondary"
                   size="icon-sm"
                   className="shrink-0"
-                  onClick={() => setCollapsed((prev) => !prev)}
-                  aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
+                  onClick={() =>
+                    isMobile
+                      ? setMobileMenuOpen((prev) => !prev)
+                      : setCollapsed((prev) => !prev)
+                  }
+                  aria-label={sidebarButtonLabel}
                 >
-                  <PanelLeft />
+                  {sidebarButtonIcon}
                 </Button>
                 <div className="min-w-0">
                   <div
@@ -205,6 +275,34 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                 <div className="text-gray-400 text-center p-3">{footer}</div>
               )}
             </div>
+            {isMobile && (
+              <>
+                <button
+                  type="button"
+                  aria-label="关闭侧边栏"
+                  aria-hidden={!isDrawerOpen}
+                  tabIndex={isDrawerOpen ? 0 : -1}
+                  className={cn(
+                    "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300",
+                    isDrawerOpen
+                      ? "opacity-100 pointer-events-auto"
+                      : "opacity-0 pointer-events-none",
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                />
+                <div
+                  data-testid="admin-sidebar-drawer"
+                  className={cn(
+                    "fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] box-border flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out",
+                    isDrawerOpen
+                      ? "translate-x-0"
+                      : "translate-x-[-100%] pointer-events-none",
+                  )}
+                >
+                  {sidebarContent}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </AdminLayoutPageTitleContext.Provider>

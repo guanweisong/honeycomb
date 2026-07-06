@@ -121,15 +121,31 @@ describe("AdminLayout", () => {
     matchMediaMatches = true;
     await renderLayout();
 
+    expect(container.querySelector('[data-testid="admin-sidebar"]')).toBeNull();
     expect(
       container
-        .querySelector('[data-testid="admin-sidebar"]')
-        ?.className.includes("w-0"),
+        .querySelector('[data-testid="admin-sidebar-drawer"]')
+        ?.className.includes("translate-x-[-100%]"),
     ).toBe(true);
     expect(container.querySelector('[data-testid="admin-page-title"]')?.textContent).toBe(
       "文章列表",
     );
-    expect(container.querySelector('button[aria-label="展开侧边栏"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="打开侧边栏"]')).not.toBeNull();
+  });
+
+  it("uses a drawer toggle on narrow screens", async () => {
+    matchMediaMatches = true;
+    await renderLayout();
+
+    const openButton = container.querySelector('button[aria-label="打开侧边栏"]');
+    expect(openButton).not.toBeNull();
+
+    await act(async () => {
+      openButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(container.querySelector('button[aria-label="关闭侧边栏"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="admin-sidebar-drawer"]')).not.toBeNull();
   });
 
   it("toggles visibility and persists it", async () => {
