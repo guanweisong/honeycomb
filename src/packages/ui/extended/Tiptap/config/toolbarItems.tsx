@@ -12,7 +12,7 @@ import {
   Strikethrough,
   Underline,
   TextQuote,
-  Image,
+  Image as ImageIcon,
   Link,
   Film,
   TextAlignStart,
@@ -275,7 +275,7 @@ export const toolbarItems: ToolbarItemOrGroup[][] = [
   ],
   [
     {
-      icon: <Image className="h-4 w-4" />,
+      icon: <ImageIcon className="h-4 w-4" aria-hidden />,
       label: "上传图片",
       render: (editor: Editor) => <ToolbarImageItem editor={editor} />,
     },

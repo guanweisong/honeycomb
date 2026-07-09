@@ -3,6 +3,7 @@
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/packages/ui/components/button";
+import { toast } from "sonner";
 import Card from "../Card";
 import { utcFormat } from "@/app/(blog)/libs/utcFormat";
 import { CommentProps } from "./index";
@@ -132,7 +133,7 @@ const CommentClient = (props: CommentClientProps) => {
     e.preventDefault();
 
     if (!captchaToken) {
-      alert("请完成验证码验证");
+      toast.error(t("captchaRequired"));
       return;
     }
 
@@ -206,7 +207,11 @@ const CommentClient = (props: CommentClientProps) => {
       <li className="relative" key={item.id}>
         <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
           <div className="float-left w-12 h-12 mr-5">
-            <img src={"avatar" in item ? (item.avatar as string) || '' : ''} className="w-full" />
+            <img
+              src={"avatar" in item ? (item.avatar as string) || '' : ''}
+              alt={t("avatarAlt", { name: item.author })}
+              className="w-full"
+            />
           </div>
           <div className="overflow-hidden">
             <div>

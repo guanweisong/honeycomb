@@ -39,7 +39,9 @@
     "summary": "{count, plural, =0 {# message} other {# messages}}",
     "banMessage": "This comment has been blocked",
     "welcomeBack": "Welcome back",
-    "notYou": "Not You？",
+    "notYou": "Not you?",
+    "avatarAlt": "{name}'s avatar",
+    "captchaRequired": "Please complete the captcha first",
     "quit": "Click to Quit",
     "form": {
       "name": "Please enter name（require）",

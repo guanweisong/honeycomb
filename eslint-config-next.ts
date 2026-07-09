@@ -13,10 +13,13 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    ".compare-head/**",
     ".open-next/**",
     "out/**",
     "build/**",
     "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
     "public/sw.js",
     "public/sw.js.map",
     "public/workbox-*.js",

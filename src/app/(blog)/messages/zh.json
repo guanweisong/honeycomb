@@ -40,6 +40,8 @@
     "banMessage": "该条评论已屏蔽",
     "welcomeBack": "欢迎回来",
     "notYou": "不是你？",
+    "avatarAlt": "{name} 的头像",
+    "captchaRequired": "请先完成验证码验证",
     "quit": "点击退出",
     "form": {
       "name": "请输入称呼（必填）",

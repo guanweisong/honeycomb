@@ -4,7 +4,7 @@ import {
   FileChartColumn,
   Gauge,
   NotepadText,
-  Image,
+  Image as ImageIcon,
   Menu,
   Tags,
   MessageSquareMore,
@@ -60,7 +60,7 @@ export const menu: MenuItem[] = [
   {
     name: "媒体",
     path: "/admin/media",
-    icon: <Image strokeWidth={1.5} size={18} />,
+    icon: <ImageIcon strokeWidth={1.5} size={18} aria-hidden />,
   },
   {
     name: "菜单",
