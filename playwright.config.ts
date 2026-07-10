@@ -1,8 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env.PORT ?? 3000);
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+const HOST = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? process.env.PORT ?? 3100);
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://${HOST}:${PORT}`;
 const USE_DEV_SERVER = process.env.PLAYWRIGHT_USE_DEV_SERVER === "1";
+const REUSE_EXISTING_SERVER =
+  process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === "1";
 const OUTPUT_DIR =
   process.env.PLAYWRIGHT_OUTPUT_DIR ?? "/private/tmp/honeycomb-e2e-results";
 const HTML_REPORT_DIR =
@@ -22,9 +25,11 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: USE_DEV_SERVER ? "bun run dev" : "bun run build && bun run start",
+    command: USE_DEV_SERVER
+      ? `bun next dev -p ${PORT} -H ${HOST}`
+      : `bun run build && bun next start -p ${PORT} -H ${HOST}`,
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: REUSE_EXISTING_SERVER,
     timeout: 240_000,
   },
   projects: [
