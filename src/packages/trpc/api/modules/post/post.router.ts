@@ -110,7 +110,6 @@ export const postRouter = createTRPCRouter({
       const cacheKey = `post:index:v${cacheVersion}:${JSON.stringify(input)}`;
       const cached =
         await getCacheJSON<Awaited<ReturnType<typeof getPostList>>>(cacheKey);
-      console.log(cacheKey, cached?.total);
       if (cached) return cached;
 
       const result = await getPostList(ctx.db, input);
@@ -182,16 +181,10 @@ export const postRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      const posts = await ctx.db
-        .select({ id: schema.post.id, categoryId: schema.post.categoryId })
-        .from(schema.post)
-        .where(inArray(schema.post.id, input.ids));
       await ctx.db
         .delete(schema.post)
         .where(inArray(schema.post.id, input.ids));
       await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
-      for (const post of posts) {
-      }
       return { success: true };
     }),
 
@@ -220,7 +213,7 @@ export const postRouter = createTRPCRouter({
    * @returns {Promise<object[]>} 返回最多10篇随机文章的部分信息（id, title, quoteContent）。
    */
   getRandomByCategory: publicProcedure
-    .input(z.object({ categoryId: z.string() }))
+    .input(z.object({ categoryId: IdSchema }))
     .query(async ({ ctx, input }) => {
       const posts = await ctx.db
         .select({
@@ -242,7 +235,7 @@ export const postRouter = createTRPCRouter({
    * @returns {Promise<{ views: number }>} 返回更新后的浏览量。
    */
   incrementViews: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: IdSchema }))
     .mutation(async ({ ctx, input }) => {
       const [updatedPage] = await ctx.db
         .update(schema.post)
@@ -261,7 +254,7 @@ export const postRouter = createTRPCRouter({
    * @returns {Promise<{ categoryId: string } | undefined>} 返回包含分类ID的对象，如果找不到则返回 undefined。
    */
   getCategoryId: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: IdSchema }))
     .query(async ({ ctx, input }) => {
       const [result] = await ctx.db
         .select({ categoryId: schema.post.categoryId })
@@ -283,23 +276,27 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.postTag)
-        .where(
-          and(
-            eq(schema.postTag.postId, input.postId),
-            eq(schema.postTag.type, input.type),
-          ),
-        );
-      if (input.tagIds.length > 0) {
-        await ctx.db.insert(schema.postTag).values(
-          input.tagIds.map((tagId) => ({
-            postId: input.postId,
-            tagId,
-            type: input.type,
-          })),
-        );
-      }
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .delete(schema.postTag)
+          .where(
+            and(
+              eq(schema.postTag.postId, input.postId),
+              eq(schema.postTag.type, input.type),
+            ),
+          );
+
+        if (input.tagIds.length > 0) {
+          await tx.insert(schema.postTag).values(
+            input.tagIds.map((tagId) => ({
+              postId: input.postId,
+              tagId,
+              type: input.type,
+            })),
+          );
+        }
+      });
+      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
       return { success: true };
     }),
 });

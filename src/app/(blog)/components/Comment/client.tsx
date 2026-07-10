@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, use, useTransition, useEffect } from "react";
+import Image from "next/image";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/packages/ui/components/button";
 import { toast } from "sonner";
@@ -173,7 +174,6 @@ const CommentClient = (props: CommentClientProps) => {
       data.parentId = replyTo.id;
     }
 
-    console.log("handleSubmit", data);
     startTransition(async () => {
       mutation
         .mutateAsync(data)
@@ -203,47 +203,63 @@ const CommentClient = (props: CommentClientProps) => {
    * @returns {JSX.Element[]} 评论列表的 JSX 元素数组。
    */
   const renderCommentList = (data: CommentTreeEntity[]) => {
-    return data?.map((item) => (
-      <li className="relative" key={item.id}>
-        <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
-          <div className="float-left w-12 h-12 mr-5">
-            <img
-              src={"avatar" in item ? (item.avatar as string) || '' : ''}
-              alt={t("avatarAlt", { name: item.author })}
-              className="w-full"
-            />
-          </div>
-          <div className="overflow-hidden">
-            <div>
-              {item.site ? (
-                <a className="text-teal-500" href={item.site}>
-                  {item.author}
-                </a>
-              ) : (
-                item.author
-              )}
+    return data?.map((item) => {
+      const avatarSrc =
+        "avatar" in item && typeof item.avatar === "string" && item.avatar
+          ? item.avatar
+          : "/logo.jpg";
+
+      return (
+        <li className="relative" key={item.id}>
+          <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
+            <div className="float-left w-12 h-12 mr-5">
+              <Image
+                src={avatarSrc}
+                alt={t("avatarAlt", { name: item.author })}
+                width={48}
+                height={48}
+                className="h-12 w-12"
+              />
             </div>
-            <div className="mt-1 whitespace-pre-wrap">
-              {item.status !== CommentStatus.BAN
-                ? item.content
-                : t("banMessage")}
+            <div className="overflow-hidden">
+              <div>
+                {item.site ? (
+                  <a
+                    className="text-teal-500"
+                    href={item.site}
+                    rel="nofollow noopener noreferrer"
+                    target="_blank"
+                  >
+                    {item.author}
+                  </a>
+                ) : (
+                  item.author
+                )}
+              </div>
+              <div className="mt-1 whitespace-pre-wrap">
+                {item.status !== CommentStatus.BAN
+                  ? item.content
+                  : t("banMessage")}
+              </div>
+            </div>
+            <div className="absolute right-2 top-4 text-auto-front-gray/50">
+              <span>{utcFormat(item.createdAt || "")}</span>
+              <span className="mx-1">/</span>
+              <a className="text-teal-500" onClick={() => handleReply(item)}>
+                {t("form.reply")}
+              </a>
             </div>
           </div>
-          <div className="absolute right-2 top-4 text-auto-front-gray/50">
-            <span>{utcFormat(item.createdAt || '')}</span>
-            <span className="mx-1">/</span>
-            <a className="text-teal-500" onClick={() => handleReply(item)}>
-              {t("form.reply")}
-            </a>
-          </div>
-        </div>
-        {"children" in item && Array.isArray(item.children) && item.children.length > 0 && (
-          <ul className="ml-10">
-            {renderCommentList(item.children as CommentTreeEntity[])}
-          </ul>
-        )}
-      </li>
-    ));
+          {"children" in item &&
+            Array.isArray(item.children) &&
+            item.children.length > 0 && (
+              <ul className="ml-10">
+                {renderCommentList(item.children as CommentTreeEntity[])}
+              </ul>
+            )}
+        </li>
+      );
+    });
   };
 
   return (

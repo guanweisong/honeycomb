@@ -162,6 +162,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     [pagination],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table uses mutable helpers; isolate the React Compiler opt-out here.
   const table = useReactTable({
     data: data.list,
     columns,

@@ -119,28 +119,32 @@ export const menuRouter = createTRPCRouter({
   saveAll: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(schema.menu);
+      return ctx.db.transaction(async (tx) => {
+        await tx.delete(schema.menu);
 
-      if (!input.length) {
-        return { count: 0 };
-      }
+        if (!input.length) {
+          return { count: 0 };
+        }
 
-      const rowIdByBusinessId = new Map(input.map((item) => [item.id, crypto.randomUUID()]));
+        const rowIdByBusinessId = new Map(
+          input.map((item) => [item.id, crypto.randomUUID()]),
+        );
 
-      const newMenu = await ctx.db
-        .insert(schema.menu)
-        .values(
-          input.map(({ id, type, parent, power }) => ({
-            id: rowIdByBusinessId.get(id)!,
-            parent: parent ? rowIdByBusinessId.get(parent) ?? null : null,
-            power,
-            type,
-            categoryId: type === MenuType.CATEGORY ? id : null,
-            pageId: type === MenuType.PAGE ? id : null,
-            customId: type === MenuType.CUSTOM ? id : null,
-          })),
-        )
-        .returning();
-      return { count: newMenu.length };
+        const newMenu = await tx
+          .insert(schema.menu)
+          .values(
+            input.map(({ id, type, parent, power }) => ({
+              id: rowIdByBusinessId.get(id)!,
+              parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
+              power,
+              type,
+              categoryId: type === MenuType.CATEGORY ? id : null,
+              pageId: type === MenuType.PAGE ? id : null,
+              customId: type === MenuType.CUSTOM ? id : null,
+            })),
+          )
+          .returning();
+        return { count: newMenu.length };
+      });
     }),
 });

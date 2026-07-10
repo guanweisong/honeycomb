@@ -6,6 +6,7 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@/packages/ui/components/form";
 import React from "react";
 import { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
+import Image from "next/image";
 
 /**
  * 图片选择器项组件的属性接口。
@@ -42,6 +43,8 @@ export interface PhotoPickerItemProps {
 const PhotoPickerItem = (props: PhotoPickerItemProps) => {
   const { cover, title, size, handlePhotoClear, openPhotoPicker } = props;
   const { control } = useFormContext();
+  const previewWidth = cover?.width ?? 960;
+  const previewHeight = cover?.height ?? 540;
 
   return (
     <div>
@@ -56,10 +59,13 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
             {cover?.id ? (
               <>
                 <div className="mb-2 text-center bg-gray-300">
-                  <img
+                  <Image
                     src={cover.url as string}
                     alt={`${title}预览`}
-                    className="max-w-full max-h-full block"
+                    width={previewWidth}
+                    height={previewHeight}
+                    sizes="(max-width: 768px) 100vw, 640px"
+                    className="mx-auto block h-auto max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div className="flex justify-between">

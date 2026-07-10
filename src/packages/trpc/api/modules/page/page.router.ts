@@ -80,15 +80,9 @@ export const pageRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      const pages = await ctx.db
-        .select({ id: schema.page.id })
-        .from(schema.page)
-        .where(inArray(schema.page.id, input.ids as string[]));
       await ctx.db
         .delete(schema.page)
         .where(inArray(schema.page.id, input.ids as string[]));
-      for (const page of pages) {
-      }
       return { success: true };
     }),
 
@@ -131,7 +125,7 @@ export const pageRouter = createTRPCRouter({
    * @returns {Promise<{ views: number }>} 返回更新后的浏览量。
    */
   incrementViews: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: IdSchema }))
     .mutation(async ({ ctx, input }) => {
       const [updatedPage] = await ctx.db
         .update(schema.page)

@@ -3,8 +3,13 @@ import { postRouter } from "./post.router";
 import * as schema from "@/packages/db/schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { PostStatus } from "./types/post.status";
+import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import {
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -13,43 +18,52 @@ vi.mock("@/packages/db/db", () => ({
 
 // Mock loadPostRelations
 vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
-  loadPostRelations: vi.fn(async (_db: unknown, posts: Array<Record<string, unknown>>) => {
-    // 对于 detail 测试，返回关联数据
-    if (posts.length === 1) {
+  loadPostRelations: vi.fn(
+    async (_db: unknown, posts: Array<Record<string, unknown>>) => {
+      // 对于 detail 测试，返回关联数据
+      if (posts.length === 1) {
+        return posts.map((post) => ({
+          ...post,
+          author: {
+            id: post.authorId,
+            name: "Test Author",
+          },
+          category: {
+            id: post.categoryId,
+            title: { en: "Category 1", zh: "分类1" },
+          },
+          cover: post.coverId
+            ? {
+                id: post.coverId,
+                url: "https://example.com/cover.jpg",
+              }
+            : undefined,
+          movieActors: [],
+          movieDirectors: [],
+          movieStyles: [],
+          galleryStyles: [],
+        }));
+      }
+      // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
         ...post,
-        author: {
-          id: post.authorId,
-          name: "Test Author",
-        },
-        category: {
-          id: post.categoryId,
-          title: { en: "Category 1", zh: "分类1" },
-        },
-        cover: post.coverId
-          ? {
-              id: post.coverId,
-              url: "https://example.com/cover.jpg",
-            }
-          : undefined,
+        author: undefined,
+        category: undefined,
+        cover: undefined,
         movieActors: [],
         movieDirectors: [],
         movieStyles: [],
         galleryStyles: [],
       }));
-    }
-    // 对于 list 测试，返回空关联数据
-    return posts.map((post) => ({
-      ...post,
-      author: undefined,
-      category: undefined,
-      cover: undefined,
-      movieActors: [],
-      movieDirectors: [],
-      movieStyles: [],
-      galleryStyles: [],
-    }));
-  }),
+    },
+  ),
+}));
+
+vi.mock("@/packages/trpc/api/utils/upstash-cache", () => ({
+  bumpCacheVersion: vi.fn().mockResolvedValue(1),
+  getCacheVersion: vi.fn().mockResolvedValue(1),
+  getCacheJSON: vi.fn().mockResolvedValue(null),
+  setCacheJSON: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockDb = createMockDb();
@@ -201,7 +215,12 @@ describe("Post Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newPost]);
 
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
 
       const result = await caller.create({
         title: { en: "New Post", zh: "新文章" },
@@ -216,7 +235,12 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
 
       await expect(
         caller.create({
@@ -256,7 +280,12 @@ describe("Post Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -267,7 +296,12 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
 
       await expect(
         caller.destroy({
@@ -292,7 +326,12 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedPost]);
 
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -307,7 +346,12 @@ describe("Post Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
 
       await expect(
         caller.update({
@@ -427,7 +471,12 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = postRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 
@@ -450,6 +499,14 @@ describe("Post Router", () => {
 
       expect(result).toEqual(updatedViews);
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
+
+    it("should reject invalid post ids", async () => {
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
+      mockDb.update.mockClear();
+
+      await expect(caller.incrementViews({ id: "bad-id" })).rejects.toThrow();
+      expect(mockDb.update).not.toHaveBeenCalled();
     });
   });
 
@@ -478,7 +535,7 @@ describe("Post Router", () => {
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.getCategoryId({
-        id: "999999999999999999999",
+        id: TEST_IDS.ID_NOT_FOUND,
       });
 
       expect(result).toBeUndefined();
@@ -509,6 +566,43 @@ describe("Post Router", () => {
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty("id");
       expect(result[0]).toHaveProperty("title");
+    });
+  });
+
+  describe("updateTags procedure", () => {
+    it("should update post tags inside a transaction", async () => {
+      const tx = createMockDb();
+      const insertError = new Error("insert failed");
+
+      tx.delete.mockReturnValueOnce(tx);
+      tx.where.mockResolvedValueOnce(undefined);
+      tx.insert.mockReturnValueOnce(tx);
+      tx.values.mockRejectedValueOnce(insertError);
+
+      mockDb.transaction.mockImplementationOnce(
+        async (callback: (txDb: typeof tx) => Promise<unknown>) => callback(tx),
+      );
+
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
+
+      await expect(
+        caller.updateTags({
+          postId: TEST_IDS.ID_1,
+          tagIds: [TEST_IDS.ID_2],
+          type: TagType.ACTOR,
+        }),
+      ).rejects.toThrow("insert failed");
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(tx.delete).toHaveBeenCalledWith(schema.postTag);
+      expect(tx.insert).toHaveBeenCalledWith(schema.postTag);
+      expect(mockDb.delete).not.toHaveBeenCalled();
+      expect(mockDb.insert).not.toHaveBeenCalled();
     });
   });
 });

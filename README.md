@@ -13,7 +13,7 @@
 
 ## 特性
 
-- **现代化技术栈** - Next.js 16 + React 19 + TypeScript 5.9
+- **现代化技术栈** - Next.js 16 + React 19 + TypeScript 6.0
 - **端到端类型安全** - tRPC + Drizzle ORM + Zod 实现全栈类型推断
 - **国际化支持** - 基于 next-intl 的多语言支持
 - **现代化 UI** - shadcn/ui + Radix UI + Tailwind CSS 4
@@ -29,27 +29,32 @@
 ## 技术架构
 
 ### 核心框架
+
 - **Next.js** - React 服务端渲染框架，使用 App Router
 - **React** - 最新版本 React
 - **TypeScript** - 严格模式，完整类型安全
 - **Bun** - 现代化包管理器和运行时
 
 ### 状态管理与 API
+
 - **tRPC** - 端到端类型安全的 API 层
 - **TanStack Query** - 客户端状态管理
 - **Zod** - 数据验证 schema
 
 ### 认证与授权
+
 - **NextAuth.js** - 后台认证，支持 Credentials / Google / GitHub / Apple 登录
 - **JWT Session** - 基于 HttpOnly Cookie 的会话机制
 - **bcryptjs** - 用户名密码登录的密码哈希校验
 
 ### 数据库与 ORM
+
 - **Drizzle ORM** - 现代化 TypeScript ORM
 - **Turso** - Serverless SQLite 数据库
 - **Drizzle-Zod** - 自动生成 Zod schema
 
 ### UI 组件
+
 - **shadcn/ui** - 基于 Radix UI 的组件库
 - **Radix UI** - 无障碍 UI 组件
 - **Tailwind CSS** - 原子化 CSS 框架
@@ -57,10 +62,12 @@
 - **Motion** - 动画库
 
 ### 富文本编辑
+
 - **Tiptap** - 现代化富文本编辑器
 - 支持扩展：图片、链接、高亮、任务列表、文本对齐、颜色等
 
 ### 功能特性
+
 - **next-intl** - 国际化支持
 - **Serwist** - PWA 支持
 - **Cloudflare Turnstile** - 验证码
@@ -111,7 +118,7 @@ honeycomb/
 
 ### 环境要求
 
-- Node.js >= 18
+- Node.js >= 20.9
 - Bun >= 1.3.3
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
@@ -210,13 +217,19 @@ bun start            # 启动生产服务器
 
 # 代码质量
 bun lint             # ESLint 检查
+bun lint:fix         # 自动修复可修复的 ESLint 问题
 bun format           # Prettier 格式化
 bun check-types      # TypeScript 类型检查
 
 # 测试
 bun test             # 运行测试（监听模式）
-bun test:run         # 运行测试（单次）
-bun test:coverage    # 生成测试覆盖率报告
+bun test:unit        # 运行单元测试（监听模式）
+bun test:unit:run    # 运行单元测试（单次）
+bun test:unit:coverage # 生成单元测试覆盖率报告
+bun test:e2e         # 运行 Playwright E2E 测试
+bun test:e2e:ui      # 打开 Playwright UI
+bun test:e2e:smoke   # 运行 smoke E2E 用例
+bun test:e2e:regression # 运行 regression E2E 用例
 
 # 数据库
 bun drizzle-kit generate  # 生成迁移文件
@@ -227,6 +240,11 @@ bun drizzle-kit studio    # 打开 Drizzle Studio
 bun build:cloudflare      # 构建 Cloudflare 版本
 bun deploy:cloudflare     # 部署到 Cloudflare
 ```
+
+E2E 测试默认把运行产物写入系统临时目录，避免项目目录内历史报告文件的权限问题：
+
+- `PLAYWRIGHT_OUTPUT_DIR` 默认 `/private/tmp/honeycomb-e2e-results`
+- `PLAYWRIGHT_HTML_REPORT` 默认 `/private/tmp/honeycomb-playwright-report`
 
 ## API 限流
 
@@ -276,7 +294,7 @@ bun deploy:cloudflare     # 部署到 Cloudflare
 权限通过 tRPC middleware 实现：
 
 ```typescript
-protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR]);
 ```
 
 ## 国际化

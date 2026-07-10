@@ -4,7 +4,11 @@ import * as schema from "@/packages/db/schema";
 import { MenuType } from "./types/menu.type";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import {
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -160,7 +164,12 @@ describe("Menu Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce(menuItems);
 
-      const caller = menuRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = menuRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
 
       const result = await caller.saveAll(menuItems);
 
@@ -175,12 +184,56 @@ describe("Menu Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = menuRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = menuRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
 
       const result = await caller.saveAll([]);
 
       expect(result).toEqual({ count: 0 });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.menu);
+    });
+
+    it("should save menu items inside a transaction", async () => {
+      const tx = createMockDb();
+      const insertError = new Error("insert failed");
+      const menuItems = [
+        {
+          id: TEST_IDS.ID_1,
+          type: MenuType.CATEGORY,
+          categoryId: TEST_IDS.ID_1,
+          pageId: null,
+          customId: null,
+          power: 1,
+          createdAt: new Date(),
+        },
+      ];
+
+      tx.delete.mockResolvedValueOnce(undefined);
+      tx.insert.mockReturnValueOnce(tx);
+      tx.values.mockReturnValueOnce(tx);
+      tx.returning.mockRejectedValueOnce(insertError);
+      mockDb.transaction.mockImplementationOnce(
+        async (callback: (txDb: typeof tx) => Promise<unknown>) => callback(tx),
+      );
+
+      const caller = menuRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
+
+      await expect(caller.saveAll(menuItems)).rejects.toThrow("insert failed");
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(tx.delete).toHaveBeenCalledWith(schema.menu);
+      expect(tx.insert).toHaveBeenCalledWith(schema.menu);
+      expect(mockDb.delete).not.toHaveBeenCalled();
+      expect(mockDb.insert).not.toHaveBeenCalled();
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
@@ -196,7 +249,12 @@ describe("Menu Router", () => {
         },
       ];
 
-      const caller = menuRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = menuRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
 
       await expect(caller.saveAll(menuItems)).rejects.toThrow("FORBIDDEN");
     });

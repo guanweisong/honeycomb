@@ -5,6 +5,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useEffectEvent,
   useState,
 } from "react";
 import Avatar from "../Avatar";
@@ -35,34 +36,46 @@ const AdminLayoutPageTitleContext = createContext<{
   setPageTitle: (pageTitle: ReactNode | null) => void;
 } | null>(null);
 
-export function useAdminLayoutActions(
-  actions: ReactNode | null,
-  key: string,
-) {
+export function useAdminLayoutActions(actions: ReactNode | null, key: string) {
   const context = useContext(AdminLayoutActionsContext);
   const setActions = context?.setActions;
+  const syncActions = useEffectEvent(() => {
+    setActions?.(actions);
+  });
+  const clearActions = useEffectEvent(() => {
+    setActions?.(null);
+  });
 
   useEffect(() => {
     if (!setActions) {
       return;
     }
 
-    setActions(actions);
-    return () => setActions(null);
+    syncActions();
+    return () => clearActions();
   }, [setActions, key]);
 }
 
-export function useAdminLayoutPageTitle(pageTitle: ReactNode | null, key: string) {
+export function useAdminLayoutPageTitle(
+  pageTitle: ReactNode | null,
+  key: string,
+) {
   const context = useContext(AdminLayoutPageTitleContext);
   const setPageTitle = context?.setPageTitle;
+  const syncPageTitle = useEffectEvent(() => {
+    setPageTitle?.(pageTitle);
+  });
+  const clearPageTitle = useEffectEvent(() => {
+    setPageTitle?.(null);
+  });
 
   useEffect(() => {
     if (!setPageTitle) {
       return;
     }
 
-    setPageTitle(pageTitle);
-    return () => setPageTitle(null);
+    syncPageTitle();
+    return () => clearPageTitle();
   }, [setPageTitle, key]);
 }
 
@@ -166,12 +179,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     }
   }, [pathname, isMobile]);
 
-  const resolvedPageTitle =
-    pageTitle ?? findMenuTitle(menu, pathname) ?? title;
+  const resolvedPageTitle = pageTitle ?? findMenuTitle(menu, pathname) ?? title;
   const [headerActions, setHeaderActions] = useState<ReactNode | null>(null);
-  const [headerPageTitle, setHeaderPageTitle] = useState<ReactNode | null>(null);
+  const [headerPageTitle, setHeaderPageTitle] = useState<ReactNode | null>(
+    null,
+  );
   const [actionsContext] = useState(() => ({
-    setActions: (nextActions: ReactNode | null) => setHeaderActions(nextActions),
+    setActions: (nextActions: ReactNode | null) =>
+      setHeaderActions(nextActions),
   }));
   const [pageTitleContext] = useState(() => ({
     setPageTitle: (nextPageTitle: ReactNode | null) =>

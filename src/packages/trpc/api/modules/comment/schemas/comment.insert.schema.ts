@@ -3,6 +3,29 @@ import * as schema from "@/packages/db/schema";
 import { CaptchaSchema } from "@/packages/trpc/api/schemas/captcha.schema";
 import { CleanZod } from "../../../schemas/clean.zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
+import { z } from "zod";
+
+const httpUrl = z
+  .string()
+  .trim()
+  .url("网址格式不正确")
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  }, "网址必须使用 http 或 https")
+  .max(200, "网址不能超过 200 个字符");
+
+const optionalHttpUrl = z
+  .union([
+    httpUrl,
+    z
+      .string()
+      .trim()
+      .length(0)
+      .transform(() => undefined),
+  ])
+  .nullable()
+  .optional();
 
 /**
  * 新增评论时的数据验证 schema。
@@ -23,9 +46,12 @@ export const CommentInsertSchema = createInsertSchema(schema.comment)
   })
   .extend(CaptchaSchema.shape)
   .extend({
-    author: requiredString("作者不能为空"),
-    content: requiredString("内容不能为空"),
-    email: requiredString("邮箱不能为空"),
+    author: requiredString("作者不能为空").max(20, "作者不能超过 20 个字符"),
+    content: requiredString("内容不能为空").max(200, "内容不能超过 200 个字符"),
+    email: requiredString("邮箱不能为空")
+      .email("邮箱格式不正确")
+      .max(254, "邮箱不能超过 254 个字符"),
+    site: optionalHttpUrl,
   });
 
 /**

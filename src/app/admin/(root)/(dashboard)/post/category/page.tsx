@@ -38,7 +38,7 @@ const Category = () => {
    * 存储分类列表的查询参数。
    * 使用较大的 `limit` 让该页面一次性加载全部分类目录。
    */
-  const [searchParams, setSearchParams] = useState<{
+  const [searchParams] = useState<{
     limit: number;
   }>({
     limit: 9999,

@@ -31,9 +31,7 @@ const userStatuses = [
 export const user = sqliteTable("user", {
   id: text("id").primaryKey().$defaultFn(objectId),
   email: text("email").unique(),
-  level: text("level", { enum: userLevels })
-    .default(UserLevel.GUEST)
-    .notNull(), // 用户等级，默认为访客
+  level: text("level", { enum: userLevels }).default(UserLevel.GUEST).notNull(), // 用户等级，默认为访客
   name: text("name").unique(),
   password: text("password"),
   status: text("status", { enum: userStatuses })
@@ -62,6 +60,9 @@ export const category = sqliteTable(
       columns: [table.parent],
       foreignColumns: [table.id],
     }).onDelete("set null"),
+    categoryPathIdx: index("category_path_idx").on(table.path),
+    categoryStatusIdx: index("category_status_idx").on(table.status),
+    categoryParentIdx: index("category_parent_idx").on(table.parent),
   }),
 );
 
@@ -69,50 +70,86 @@ export const category = sqliteTable(
  * 文章表 (post)
  * 存储各类文章内容，如普通文章、电影、摄影、引言等。
  */
-export const post = sqliteTable("post", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  commentStatus: text("comment_status").default("ENABLE").notNull(), // 评论状态，默认启用
-  // --- 图库类型字段 ---
-  galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
-  galleryTime: text("gallery_time"), // 图库拍摄时间
-  // --- 电影类型字段 ---
-  movieTime: text("movie_time"), // 电影上映时间
-  // --- 核心字段 ---
-  authorId: text("author_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "no action" }), // 作者ID，关联到 user 表
-  categoryId: text("category_id")
-    .notNull()
-    .references(() => category.id, { onDelete: "no action" }), // 分类ID，关联到 category 表
-  content: i18nField("content"), // 文章内容 (国际化)
-  coverId: text("cover_id").references(() => media.id, { onDelete: "set null" }), // 封面图ID，关联到 media 表
-  excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
-  status: text("status").default("TO_AUDIT").notNull(), // 文章状态，默认待审核
-  title: i18nField("title"), // 文章标题 (国际化)
-  type: text("type").default("ARTICLE").notNull(), // 文章类型，默认普通文章
-  views: integer("views").default(0), // 浏览次数
-  // --- 引言类型字段 ---
-  quoteAuthor: i18nField("quote_author"), // 引言作者 (国际化)
-  quoteContent: i18nField("quote_content"), // 引言内容 (国际化)
-  ...withTimestamps(),
-});
+export const post = sqliteTable(
+  "post",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    commentStatus: text("comment_status").default("ENABLE").notNull(), // 评论状态，默认启用
+    // --- 图库类型字段 ---
+    galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
+    galleryTime: text("gallery_time"), // 图库拍摄时间
+    // --- 电影类型字段 ---
+    movieTime: text("movie_time"), // 电影上映时间
+    // --- 核心字段 ---
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "no action" }), // 作者ID，关联到 user 表
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => category.id, { onDelete: "no action" }), // 分类ID，关联到 category 表
+    content: i18nField("content"), // 文章内容 (国际化)
+    coverId: text("cover_id").references(() => media.id, {
+      onDelete: "set null",
+    }), // 封面图ID，关联到 media 表
+    excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
+    status: text("status").default("TO_AUDIT").notNull(), // 文章状态，默认待审核
+    title: i18nField("title"), // 文章标题 (国际化)
+    type: text("type").default("ARTICLE").notNull(), // 文章类型，默认普通文章
+    views: integer("views").default(0), // 浏览次数
+    // --- 引言类型字段 ---
+    quoteAuthor: i18nField("quote_author"), // 引言作者 (国际化)
+    quoteContent: i18nField("quote_content"), // 引言内容 (国际化)
+    ...withTimestamps(),
+  },
+  (table) => ({
+    postStatusCategoryCreatedIdx: index("post_status_category_created_idx").on(
+      table.status,
+      table.categoryId,
+      table.createdAt,
+    ),
+    postStatusTypeCreatedIdx: index("post_status_type_created_idx").on(
+      table.status,
+      table.type,
+      table.createdAt,
+    ),
+    postAuthorCreatedIdx: index("post_author_created_idx").on(
+      table.authorId,
+      table.createdAt,
+    ),
+    postCoverIdx: index("post_cover_idx").on(table.coverId),
+  }),
+);
 
 /**
  * 独立页面表 (page)
  * 存储独立的、非文章性质的页面，如 "关于我"、"联系方式" 等。
  */
-export const page = sqliteTable("page", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  authorId: text("author_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "no action" }), // 作者ID
-  content: i18nField("content").notNull(), // 页面内容 (国际化)
-  status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
-  template: text("template").default("default").notNull(), // 页面模板
-  title: i18nField("title").notNull(), // 页面标题 (国际化)
-  views: integer("views").default(0).notNull(), // 浏览次数
-  ...withTimestamps(),
-});
+export const page = sqliteTable(
+  "page",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "no action" }), // 作者ID
+    content: i18nField("content").notNull(), // 页面内容 (国际化)
+    status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
+    template: text("template").default("default").notNull(), // 页面模板
+    title: i18nField("title").notNull(), // 页面标题 (国际化)
+    views: integer("views").default(0).notNull(), // 浏览次数
+    ...withTimestamps(),
+  },
+  (table) => ({
+    pageStatusTemplateCreatedIdx: index("page_status_template_created_idx").on(
+      table.status,
+      table.template,
+      table.createdAt,
+    ),
+    pageAuthorCreatedIdx: index("page_author_created_idx").on(
+      table.authorId,
+      table.createdAt,
+    ),
+  }),
+);
 
 /**
  * 评论表 (comment)
@@ -140,6 +177,20 @@ export const comment = sqliteTable(
       columns: [table.parentId],
       foreignColumns: [table.id],
     }).onDelete("set null"),
+    commentPostStatusCreatedIdx: index("comment_post_status_created_idx").on(
+      table.postId,
+      table.status,
+      table.createdAt,
+    ),
+    commentPageStatusCreatedIdx: index("comment_page_status_created_idx").on(
+      table.pageId,
+      table.status,
+      table.createdAt,
+    ),
+    commentCustomStatusCreatedIdx: index(
+      "comment_custom_status_created_idx",
+    ).on(table.customId, table.status, table.createdAt),
+    commentParentIdx: index("comment_parent_idx").on(table.parentId),
   }),
 );
 
@@ -147,18 +198,25 @@ export const comment = sqliteTable(
  * 媒体文件表 (media)
  * 存储上传的图片、视频等媒体文件信息。
  */
-export const media = sqliteTable("media", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  key: text("key").notNull(), // 文件在对象存储中的 key
-  name: text("name").notNull(), // 文件名
-  size: integer("size").notNull(), // 文件大小 (字节)
-  type: text("type").notNull(), // 文件 MIME 类型
-  url: text("url").notNull(), // 文件的访问 URL
-  color: text("color"), // 图片主色调
-  height: integer("height"), // 图片高度
-  width: integer("width"), // 图片宽度
-  ...withTimestamps(),
-});
+export const media = sqliteTable(
+  "media",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    key: text("key").notNull(), // 文件在对象存储中的 key
+    name: text("name").notNull(), // 文件名
+    size: integer("size").notNull(), // 文件大小 (字节)
+    type: text("type").notNull(), // 文件 MIME 类型
+    url: text("url").notNull(), // 文件的访问 URL
+    color: text("color"), // 图片主色调
+    height: integer("height"), // 图片高度
+    width: integer("width"), // 图片宽度
+    ...withTimestamps(),
+  },
+  (table) => ({
+    mediaKeyIdx: index("media_key_idx").on(table.key),
+    mediaCreatedIdx: index("media_created_idx").on(table.createdAt),
+  }),
+);
 
 /**
  * 网站设置表 (setting)
@@ -200,6 +258,9 @@ export const menu = sqliteTable(
       columns: [table.parent],
       foreignColumns: [table.id],
     }).onDelete("set null"),
+    menuParentIdx: index("menu_parent_idx").on(table.parent),
+    menuPowerIdx: index("menu_power_idx").on(table.power),
+    menuTypeIdx: index("menu_type_idx").on(table.type),
   }),
 );
 
@@ -230,6 +291,10 @@ export const postTag = sqliteTable(
   },
   (table) => ({
     postTagIdx: index("post_tag_post_tag_idx").on(table.postId, table.tagId),
+    postTagTagTypeIdx: index("post_tag_tag_type_idx").on(
+      table.tagId,
+      table.type,
+    ),
   }),
 );
 
@@ -237,15 +302,21 @@ export const postTag = sqliteTable(
  * 友情链接表 (link)
  * 存储友情链接信息。
  */
-export const link = sqliteTable("link", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  url: text("url").unique().notNull(),
-  name: text("name").notNull(),
-  logo: text("logo").notNull(), // 链接 Logo URL
-  description: text("description"),
-  status: text("status").default("ENABLE"), // 链接状态，默认启用
-  ...withTimestamps(),
-});
+export const link = sqliteTable(
+  "link",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    url: text("url").unique().notNull(),
+    name: text("name").notNull(),
+    logo: text("logo").notNull(), // 链接 Logo URL
+    description: text("description"),
+    status: text("status").default("ENABLE"), // 链接状态，默认启用
+    ...withTimestamps(),
+  },
+  (table) => ({
+    linkStatusIdx: index("link_status_idx").on(table.status),
+  }),
+);
 
 /**
  * 用户实体关系定义。

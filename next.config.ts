@@ -13,6 +13,11 @@ const nextConfig: NextConfig = withSerwist({
   reactStrictMode: true,
   images: {
     remotePatterns: [
+      {
+        protocol: "https" as const,
+        hostname: "cravatar.cn",
+        port: "",
+      },
       ...(assetHost
         ? [
             {

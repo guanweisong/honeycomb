@@ -1,17 +1,45 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+const API_RATE_LIMIT = 120;
+const API_RATE_LIMIT_WINDOW_MS = 60_000;
 
-export const apiRatelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(120, "1 m"),
-  analytics: true,
-  prefix: "ratelimit:api",
-});
+type ApiRateLimitResponse = {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+};
+
+type ApiRatelimit = {
+  limit: (identifier: string) => Promise<ApiRateLimitResponse>;
+};
+
+export function createApiRatelimit(): ApiRatelimit {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    return {
+      limit: async () => ({
+        success: true,
+        limit: API_RATE_LIMIT,
+        remaining: API_RATE_LIMIT,
+        reset: Date.now() + API_RATE_LIMIT_WINDOW_MS,
+      }),
+    };
+  }
+
+  const redis = new Redis({ url, token });
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(API_RATE_LIMIT, "1 m"),
+    analytics: true,
+    prefix: "ratelimit:api",
+  });
+}
+
+export const apiRatelimit = createApiRatelimit();
 
 export function getClientIp(request: Request): string {
   const xForwardedFor = request.headers.get("x-forwarded-for");
