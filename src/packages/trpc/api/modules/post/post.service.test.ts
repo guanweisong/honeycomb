@@ -9,8 +9,15 @@ import { createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-
 const mockDb = createMockDb();
 
 let getPostList: typeof import("./post.service").getPostList;
-let buildCategoryFilterMock: any;
-let loadPostRelationsMock: any;
+let buildCategoryFilterMock: {
+  mockResolvedValue: (value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>) => void;
+  mockResolvedValueOnce: (value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>) => void;
+};
+let loadPostRelationsMock: {
+  mockImplementation: (
+    impl: typeof relations.loadPostRelations,
+  ) => void;
+};
 
 describe("getPostList", () => {
   beforeEach(async () => {

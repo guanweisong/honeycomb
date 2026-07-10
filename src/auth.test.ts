@@ -1,28 +1,21 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { createMockDb } from "../tests/helpers/test-utils";
 import { TEST_IDS } from "../tests/helpers/test-constants";
 
 const mockDb = createMockDb();
 
-const { nextAuthMock, capturedAuthOptions, mockValidateCaptcha, mockCompare } =
-  vi.hoisted(() => {
-    const state = { authOptions: null as unknown };
-
-    return {
-      nextAuthMock: vi.fn((authOptions) => {
-        state.authOptions = authOptions;
-        return {
-          handlers: {},
-          auth: vi.fn(),
-          signIn: vi.fn(),
-          signOut: vi.fn(),
-        };
-      }),
-      capturedAuthOptions: state,
-      mockValidateCaptcha: vi.fn().mockResolvedValue(undefined),
-      mockCompare: vi.fn(),
-    };
-  });
+const capturedAuthOptions = { authOptions: null as unknown };
+const nextAuthMock = vi.fn((authOptions) => {
+  capturedAuthOptions.authOptions = authOptions;
+  return {
+    handlers: {},
+    auth: vi.fn(),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  };
+});
+const mockValidateCaptcha = vi.fn().mockResolvedValue(undefined);
+const mockCompare = vi.fn();
 
 const mockCredentialsProvider = vi.fn((config) => ({
   type: "credentials",
@@ -121,10 +114,7 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn((field: unknown, value: unknown) => ({ type: "eq", field, value })),
 }));
 
-async function loadAuthModule() {
-  vi.resetModules();
-  return await import("./auth");
-}
+let authModule: typeof import("./auth");
 
 describe("auth", () => {
   const originalEnv = {
@@ -138,11 +128,6 @@ describe("auth", () => {
   };
 
   beforeEach(() => {
-    nextAuthMock.mockClear();
-    mockCredentialsProvider.mockClear();
-    mockAppleProvider.mockClear();
-    mockGoogleProvider.mockClear();
-    mockGitHubProvider.mockClear();
     mockValidateCaptcha.mockReset();
     mockValidateCaptcha.mockResolvedValue(undefined);
     mockCompare.mockReset();
@@ -173,15 +158,19 @@ describe("auth", () => {
     process.env.AUTH_GITHUB_SECRET = originalEnv.githubSecret;
   });
 
-  it("builds configured providers and maps session fields", async () => {
+  beforeAll(async () => {
+    process.env.AUTH_SECRET = "auth-secret";
     process.env.AUTH_APPLE_ID = "apple-id";
     process.env.AUTH_APPLE_SECRET = "apple-secret";
     process.env.AUTH_GOOGLE_ID = "google-id";
     process.env.AUTH_GOOGLE_SECRET = "google-secret";
     process.env.AUTH_GITHUB_ID = "github-id";
     process.env.AUTH_GITHUB_SECRET = "github-secret";
+    authModule = await import("./auth");
+  });
 
-    await loadAuthModule();
+  it("builds configured providers and maps session fields", async () => {
+    void authModule;
     const options = capturedAuthOptions.authOptions as CapturedAuthOptions;
 
     expect(nextAuthMock).toHaveBeenCalledTimes(1);
@@ -236,10 +225,7 @@ describe("auth", () => {
   });
 
   it("syncs oauth users in signIn callback", async () => {
-    process.env.AUTH_GITHUB_ID = "github-id";
-    process.env.AUTH_GITHUB_SECRET = "github-secret";
-
-    await loadAuthModule();
+    void authModule;
     const options = capturedAuthOptions.authOptions as CapturedAuthOptions;
 
     mockDb.select.mockReturnValueOnce(mockDb);
@@ -288,7 +274,7 @@ describe("auth", () => {
   });
 
   it("authorizes credentials users after captcha and password checks", async () => {
-    await loadAuthModule();
+    void authModule;
     const options = capturedAuthOptions.authOptions as CapturedAuthOptions;
     const credentialsProvider = options.providers.find(
       (provider: { type: string }) => provider.type === "credentials",
@@ -311,7 +297,7 @@ describe("auth", () => {
     mockCompare.mockResolvedValueOnce(true);
 
     await expect(
-      credentialsProvider.authorize({
+      (credentialsProvider.authorize as NonNullable<typeof credentialsProvider.authorize>)({
         name: "Admin",
         password: "plain-password",
         captchaToken: "captcha-token",

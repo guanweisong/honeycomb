@@ -1,23 +1,50 @@
 import { describe, expect, it } from "vitest";
 import * as schema from "./schema";
 
+type ColumnView = {
+  config: {
+    name: string;
+    defaultFn?: () => unknown;
+    customTypeParams?: {
+      toDriver?: (value: { en: string; zh: string }) => string;
+      fromDriver?: (value: string) => { en: string; zh: string } | null;
+    };
+    onUpdateFn?: () => unknown;
+  };
+};
+
+type RelationHelpers = {
+  many: () => {
+    withFieldName(fieldName: string): { kind: "many"; fieldName: string };
+  };
+  one: () => {
+    withFieldName(fieldName: string): { kind: "one"; fieldName: string };
+  };
+};
+
+type RelationView = {
+  config: (helpers: RelationHelpers) => Record<string, { kind: string; fieldName: string }>;
+};
+
 describe("db schema helpers", () => {
   it("exposes the expected table column names", () => {
-    expect(schema.user.id.config.name).toBe("id");
-    expect(schema.category.title.config.name).toBe("title");
-    expect(schema.page.content.config.name).toBe("content");
-    expect(schema.menu.pageId.config.name).toBe("page_id");
+    expect((schema.user.id as unknown as ColumnView).config.name).toBe("id");
+    expect((schema.category.title as unknown as ColumnView).config.name).toBe("title");
+    expect((schema.page.content as unknown as ColumnView).config.name).toBe("content");
+    expect((schema.menu.pageId as unknown as ColumnView).config.name).toBe("page_id");
   });
 
   it("generates lowercase object ids", () => {
-    const sql = schema.user.id.config.defaultFn?.();
+    const sql = (schema.user.id as unknown as ColumnView).config.defaultFn?.();
 
-    expect(sql?.queryChunks[0]?.value?.[0]).toBe("lower(hex(randomblob(12)))");
+    expect((sql as unknown as { queryChunks?: Array<{ value?: unknown[] }> })?.queryChunks?.[0]?.value?.[0]).toBe(
+      "lower(hex(randomblob(12)))",
+    );
   });
 
   it("serializes and parses i18n fields", () => {
-    const toDriver = schema.category.title.config.customTypeParams?.toDriver;
-    const fromDriver = schema.category.title.config.customTypeParams?.fromDriver;
+    const toDriver = (schema.category.title as unknown as ColumnView).config.customTypeParams?.toDriver;
+    const fromDriver = (schema.category.title as unknown as ColumnView).config.customTypeParams?.fromDriver;
 
     expect(toDriver?.({ en: "hello", zh: "你好" })).toBe(
       JSON.stringify({ en: "hello", zh: "你好" }),
@@ -30,9 +57,9 @@ describe("db schema helpers", () => {
   });
 
   it("creates timestamp defaults and update handlers", () => {
-    const createdAt = schema.user.createdAt.config.defaultFn?.();
-    const updatedAt = schema.user.updatedAt.config.defaultFn?.();
-    const updateHandler = schema.user.updatedAt.config.onUpdateFn?.();
+    const createdAt = (schema.user.createdAt as unknown as ColumnView).config.defaultFn?.();
+    const updatedAt = (schema.user.updatedAt as unknown as ColumnView).config.defaultFn?.();
+    const updateHandler = (schema.user.updatedAt as unknown as ColumnView).config.onUpdateFn?.();
 
     expect(createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -40,7 +67,7 @@ describe("db schema helpers", () => {
   });
 
   it("exposes the expected relation graph", () => {
-    const helpers = {
+    const helpers: RelationHelpers = {
       many: () => ({
         withFieldName(fieldName: string) {
           return { kind: "many", fieldName };
@@ -53,42 +80,42 @@ describe("db schema helpers", () => {
       }),
     };
 
-    expect(schema.userRelations.config(helpers)).toEqual({
+    expect((schema.userRelations as unknown as RelationView).config(helpers)).toEqual({
       posts: { kind: "many", fieldName: "posts" },
       pages: { kind: "many", fieldName: "pages" },
     });
-    expect(schema.categoryRelations.config(helpers)).toEqual({
+    expect((schema.categoryRelations as unknown as RelationView).config(helpers)).toEqual({
       posts: { kind: "many", fieldName: "posts" },
       parentItem: { kind: "one", fieldName: "parentItem" },
       children: { kind: "many", fieldName: "children" },
     });
-    expect(schema.mediaRelations.config(helpers)).toEqual({
+    expect((schema.mediaRelations as unknown as RelationView).config(helpers)).toEqual({
       coverPosts: { kind: "many", fieldName: "coverPosts" },
     });
-    expect(schema.postRelations.config(helpers)).toEqual({
+    expect((schema.postRelations as unknown as RelationView).config(helpers)).toEqual({
       author: { kind: "one", fieldName: "author" },
       category: { kind: "one", fieldName: "category" },
       cover: { kind: "one", fieldName: "cover" },
       postTags: { kind: "many", fieldName: "postTags" },
     });
-    expect(schema.tagRelations.config(helpers)).toEqual({
+    expect((schema.tagRelations as unknown as RelationView).config(helpers)).toEqual({
       postTags: { kind: "many", fieldName: "postTags" },
     });
-    expect(schema.postTagRelations.config(helpers)).toEqual({
+    expect((schema.postTagRelations as unknown as RelationView).config(helpers)).toEqual({
       post: { kind: "one", fieldName: "post" },
       tag: { kind: "one", fieldName: "tag" },
     });
-    expect(schema.pageRelations.config(helpers)).toEqual({
+    expect((schema.pageRelations as unknown as RelationView).config(helpers)).toEqual({
       author: { kind: "one", fieldName: "author" },
       comments: { kind: "many", fieldName: "comments" },
     });
-    expect(schema.commentRelations.config(helpers)).toEqual({
+    expect((schema.commentRelations as unknown as RelationView).config(helpers)).toEqual({
       post: { kind: "one", fieldName: "post" },
       page: { kind: "one", fieldName: "page" },
       parent: { kind: "one", fieldName: "parent" },
       children: { kind: "many", fieldName: "children" },
     });
-    expect(schema.menuRelations.config(helpers)).toEqual({
+    expect((schema.menuRelations as unknown as RelationView).config(helpers)).toEqual({
       parentItem: { kind: "one", fieldName: "parentItem" },
       children: { kind: "many", fieldName: "children" },
       category: { kind: "one", fieldName: "category" },
