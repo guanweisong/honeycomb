@@ -33,7 +33,7 @@ const optionalHttpUrl = z
  * 2. 使用 `.pick()` 精确选择了用户可以提交的字段。
  * 3. 使用 `.extend()` 扩展了验证码 schema (`CaptchaSchema`)，用于防止机器人提交。
  */
-export const CommentInsertSchema = createInsertSchema(schema.comment)
+export const CommentInsertBaseSchema = createInsertSchema(schema.comment)
   .pick({
     author: true,
     content: true,
@@ -53,6 +53,15 @@ export const CommentInsertSchema = createInsertSchema(schema.comment)
       .max(254, "邮箱不能超过 254 个字符"),
     site: optionalHttpUrl,
   });
+
+export const CommentInsertSchema = CommentInsertBaseSchema.refine(
+    (input) =>
+      [input.postId, input.pageId, input.customId].filter(Boolean).length === 1,
+    {
+      message: "评论必须且只能关联一个目标",
+      path: ["postId"],
+    },
+);
 
 /**
  * 新增评论的 TypeScript 输入类型。

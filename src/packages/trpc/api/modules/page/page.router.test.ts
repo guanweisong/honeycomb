@@ -6,6 +6,7 @@ import { PageStatus } from "./types/page.status";
 import { PageTemplate } from "./types/page.template";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -330,6 +331,23 @@ describe("Page Router", () => {
 
       expect(result).toEqual(updatedViews);
       expect(mockDb.update).toHaveBeenCalledWith(schema.page);
+      const where = mockDb.where.mock.calls[0]?.[0];
+      expect(new SQLiteSyncDialect().sqlToQuery(where).params).toContain(
+        PageStatus.PUBLISHED,
+      );
+    });
+
+    it("returns NOT_FOUND when no published page is updated", async () => {
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([]);
+
+      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(
+        caller.incrementViews({ id: TEST_IDS.ID_NOT_FOUND }),
+      ).rejects.toThrow("NOT_FOUND");
     });
 
     it("should increment views for any user", async () => {

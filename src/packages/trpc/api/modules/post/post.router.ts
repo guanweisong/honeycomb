@@ -251,9 +251,15 @@ export const postRouter = createTRPCRouter({
         .set({
           views: sql`${schema.post.views} + 1`,
         })
-        .where(eq(schema.post.id, input.id))
+        .where(
+          and(
+            eq(schema.post.id, input.id),
+            eq(schema.post.status, PostStatus.PUBLISHED),
+          ),
+        )
         .returning({ views: schema.post.views });
 
+      if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
       return updatedPage;
     }),
 
@@ -268,7 +274,12 @@ export const postRouter = createTRPCRouter({
       const [result] = await ctx.db
         .select({ categoryId: schema.post.categoryId })
         .from(schema.post)
-        .where(eq(schema.post.id, input.id));
+        .where(
+          and(
+            eq(schema.post.id, input.id),
+            eq(schema.post.status, PostStatus.PUBLISHED),
+          ),
+        );
 
       return result;
     }),

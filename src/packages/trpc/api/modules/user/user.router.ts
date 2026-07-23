@@ -20,6 +20,15 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 
 const BCRYPT_ROUNDS = 12;
+const safeUserColumns = {
+  id: schema.user.id,
+  email: schema.user.email,
+  level: schema.user.level,
+  name: schema.user.name,
+  status: schema.user.status,
+  createdAt: schema.user.createdAt,
+  updatedAt: schema.user.updatedAt,
+};
 
 /**
  * 用户相关的 tRPC 路由。
@@ -78,7 +87,7 @@ export const userRouter = createTRPCRouter({
    * @param {UserListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: object[], total: number }>} 返回一个包含用户列表和总记录数的对象。
    */
-  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR, UserLevel.GUEST])
+  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(UserListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -137,7 +146,7 @@ export const userRouter = createTRPCRouter({
       const [newUser] = await ctx.db
         .insert(schema.user)
         .values(values as InferInsertModel<typeof schema.user>)
-        .returning();
+        .returning(safeUserColumns);
       return newUser;
     }),
 
@@ -178,7 +187,7 @@ export const userRouter = createTRPCRouter({
         .update(schema.user)
         .set(values as Partial<InferInsertModel<typeof schema.user>>)
         .where(eq(schema.user.id, id))
-        .returning();
+        .returning(safeUserColumns);
       return updatedUser;
     }),
 });

@@ -12,7 +12,6 @@ import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/sche
 import { CommentUpdateSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.query.schema";
 import listToTree from "list-to-tree-lite";
-import md5 from "md5";
 import { CommentInsertSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
 import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
 import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
@@ -23,6 +22,11 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, and, sql, InferInsertModel, asc, SQL, desc } from "drizzle-orm";
 import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
 import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
+import {
+  assertCommentParentMatches,
+  assertPublicCommentTarget,
+  toPublicComment,
+} from "./comment.service";
 
 /**
  commentRouter * 评论相关的 tRPC 路由。
@@ -116,6 +120,11 @@ export const commentRouter = createTRPCRouter({
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))
     .query(async ({ input, ctx }) => {
+      await assertPublicCommentTarget(ctx.db, {
+        postId: input.type === "CATEGORY" ? input.id : undefined,
+        pageId: input.type === "PAGE" ? input.id : undefined,
+        customId: input.type === "CUSTOM" ? input.id : undefined,
+      });
       const publishOrBan = ["PUBLISH", "BAN"] as const;
       // base where: status in publishOrBan
       const baseWhere = inArray(schema.comment.status, publishOrBan);
@@ -148,18 +157,7 @@ export const commentRouter = createTRPCRouter({
 
       const list = result.length
         ? listToTree(
-          result.map((item) => ({
-            id: item.id.toString(),
-            author: item.author,
-            content: item.content,
-            site: item.site,
-            parentId: item.parentId,
-            status: item.status,
-            createdAt: item.createdAt,
-            avatar: `https://cravatar.cn/avatar/${md5(
-              item.email.trim().toLowerCase(),
-            )}?s=48&d=identicon`,
-          })),
+          result.map(toPublicComment),
           { idKey: "id", parentKey: "parentId" },
         )
         : [];
@@ -192,6 +190,10 @@ export const commentRouter = createTRPCRouter({
       const { captchaToken, ...rest } = input;
 
       await validateCaptcha(captchaToken);
+      await assertPublicCommentTarget(ctx.db, rest);
+      if (rest.parentId) {
+        await assertCommentParentMatches(ctx.db, rest.parentId, rest);
+      }
 
       // 插入评论
       const [created] = await ctx.db
@@ -251,7 +253,7 @@ export const commentRouter = createTRPCRouter({
         }
       }
 
-      return currentComment;
+      return toPublicComment(currentComment);
     }),
 
   /**

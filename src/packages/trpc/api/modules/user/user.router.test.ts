@@ -55,6 +55,19 @@ describe("User Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects guest users to prevent email enumeration", async () => {
+      const caller = userRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
+
+      await expect(caller.index({ page: 1, limit: 10 })).rejects.toThrow(
+        "FORBIDDEN",
+      );
+    });
+
     it("should return user list with pagination", async () => {
       const mockUsers = [
         {
@@ -157,6 +170,9 @@ describe("User Router", () => {
 
       expect(result).toEqual(newUser);
       expect(mockDb.insert).toHaveBeenCalledWith(schema.user);
+      expect(mockDb.returning).toHaveBeenCalledWith(
+        expect.not.objectContaining({ password: expect.anything() }),
+      );
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
@@ -238,6 +254,9 @@ describe("User Router", () => {
 
       expect(result).toEqual(updatedUser);
       expect(mockDb.update).toHaveBeenCalledWith(schema.user);
+      expect(mockDb.returning).toHaveBeenCalledWith(
+        expect.not.objectContaining({ password: expect.anything() }),
+      );
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

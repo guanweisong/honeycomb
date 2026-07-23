@@ -10,7 +10,7 @@ import { PageUpdateSchema } from "@/packages/trpc/api/modules/page/schemas/page.
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
-import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 import {
@@ -19,6 +19,8 @@ import {
   getPageList,
 } from "@/packages/trpc/api/modules/page/page.service";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
+import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
+import { TRPCError } from "@trpc/server";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -149,9 +151,15 @@ export const pageRouter = createTRPCRouter({
         .set({
           views: sql`${schema.page.views} + 1`,
         })
-        .where(eq(schema.page.id, input.id))
+        .where(
+          and(
+            eq(schema.page.id, input.id),
+            eq(schema.page.status, PageStatus.PUBLISHED),
+          ),
+        )
         .returning({ views: schema.page.views });
 
+      if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
       return updatedPage;
     }),
 });

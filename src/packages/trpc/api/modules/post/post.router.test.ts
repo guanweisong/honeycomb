@@ -484,6 +484,10 @@ describe("Post Router", () => {
 
       expect(result).toEqual(updatedViews);
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+      const where = mockDb.where.mock.calls[0]?.[0];
+      expect(new SQLiteSyncDialect().sqlToQuery(where).params).toContain(
+        PostStatus.PUBLISHED,
+      );
     });
 
     it("should increment views for any user", async () => {
@@ -506,6 +510,19 @@ describe("Post Router", () => {
 
       expect(result).toEqual(updatedViews);
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+    });
+
+    it("returns NOT_FOUND when no published post is updated", async () => {
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([]);
+
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(
+        caller.incrementViews({ id: TEST_IDS.ID_NOT_FOUND }),
+      ).rejects.toThrow("NOT_FOUND");
     });
 
     it("should increment views for unauthenticated users", async () => {
@@ -548,6 +565,10 @@ describe("Post Router", () => {
       const result = await caller.getCategoryId({ id: TEST_IDS.ID_1 });
 
       expect(result).toEqual({ categoryId: TEST_IDS.ID_1 });
+      const where = mockDb.where.mock.calls[0]?.[0];
+      expect(new SQLiteSyncDialect().sqlToQuery(where).params).toContain(
+        PostStatus.PUBLISHED,
+      );
     });
 
     it("should return undefined for non-existent post", async () => {
