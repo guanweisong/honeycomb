@@ -23,6 +23,14 @@ describe("Link Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects unauthenticated callers from adminIndex", async () => {
+      const caller = linkRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(caller.adminIndex({ page: 1, limit: 10 })).rejects.toThrow(
+        "UNAUTHORIZED",
+      );
+    });
+
     it("should return link list", async () => {
       const mockLinks = [
         {

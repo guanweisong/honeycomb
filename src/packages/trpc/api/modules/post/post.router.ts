@@ -30,6 +30,7 @@ import {
   setCacheJSON,
 } from "@/packages/trpc/api/utils/upstash-cache";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
+import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 type OptionalI18nInput =
@@ -225,7 +226,12 @@ export const postRouter = createTRPCRouter({
           quoteContent: schema.post.quoteContent,
         })
         .from(schema.post)
-        .where(eq(schema.post.categoryId, input.categoryId))
+        .where(
+          and(
+            eq(schema.post.categoryId, input.categoryId),
+            eq(schema.post.status, PostStatus.PUBLISHED),
+          ),
+        )
         .orderBy(sql`RANDOM()`)
         .limit(10);
 

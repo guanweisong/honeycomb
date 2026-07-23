@@ -66,7 +66,7 @@ const PostDetailContent = () => {
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = (watchedType as PostType | undefined) ?? PostType.ARTICLE;
 
-  const { data: category } = trpc.category.index.useQuery({ limit: 9999 });
+  const { data: category } = trpc.category.adminIndex.useQuery({ limit: 9999 });
   const { data: detail, refetch } = trpc.post.adminDetail.useQuery({
     id,
   });

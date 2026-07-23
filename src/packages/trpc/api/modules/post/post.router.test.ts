@@ -10,6 +10,7 @@ import {
   createMockDb,
   resetMockDb,
 } from "../../../../../../tests/helpers/test-utils";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // Mock database and related modules
 vi.mock("@/packages/db/db", () => ({
@@ -589,6 +590,10 @@ describe("Post Router", () => {
       expect(result).toHaveLength(3);
       expect(result[0]).toHaveProperty("id");
       expect(result[0]).toHaveProperty("title");
+      const where = mockDb.where.mock.calls[0]?.[0];
+      expect(new SQLiteSyncDialect().sqlToQuery(where).params).toContain(
+        PostStatus.PUBLISHED,
+      );
     });
   });
 

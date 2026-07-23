@@ -57,12 +57,15 @@ const Menu = () => {
    * 获取分类列表的 tRPC 查询。
    * 用于在可选菜单中展示分类。
    */
-  const { data: categoryList } = trpc.category.index.useQuery({ limit: 9999 });
+  const { data: categoryList } = trpc.category.adminIndex.useQuery({
+    limit: 9999,
+  });
   /**
    * 获取已选菜单数据的 tRPC 查询。
    * `checkedData` 包含已选菜单列表，`refetch` 用于手动重新获取数据。
    */
-  const { data: checkedData, refetch } = trpc.menu.index.useQuery(undefined);
+  const { data: checkedData, refetch } =
+    trpc.menu.adminIndex.useQuery(undefined);
 
   /**
    * 存储当前已选中的菜单项列表。

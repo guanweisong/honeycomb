@@ -27,6 +27,16 @@ describe("Category Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects unauthenticated callers from adminIndex", async () => {
+      const caller = categoryRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
+
+      await expect(caller.adminIndex({ page: 1, limit: 10 })).rejects.toThrow(
+        "UNAUTHORIZED",
+      );
+    });
+
     it("should return category list", async () => {
       const mockCategories = [
         {

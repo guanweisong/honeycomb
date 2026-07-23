@@ -90,7 +90,7 @@ const Link = () => {
    * 获取链接列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示请求状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isError, refetch, isFetching } = trpc.link.index.useQuery(
+  const { data, isError, refetch, isFetching } = trpc.link.adminIndex.useQuery(
     searchParams,
     {
       placeholderData: keepPreviousData,

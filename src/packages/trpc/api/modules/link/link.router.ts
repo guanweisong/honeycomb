@@ -3,17 +3,15 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { LinkListQuerySchema } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
 import * as schema from "@/packages/db/schema";
-import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
+import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { getLinkList } from "@/packages/trpc/api/modules/link/link.service";
+import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
 
 /**
  * 友情链接相关的 tRPC 路由。
@@ -26,42 +24,15 @@ export const linkRouter = createTRPCRouter({
    */
   index: publicProcedure
     .input(LinkListQuerySchema)
-    .query(async ({ input, ctx }) => {
-      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
-      const searchText = rest.name || rest.description;
-      const where = buildDrizzleWhere(
-        schema.link,
-        { ...rest, name: searchText },
-        ["status"],
-        { name: searchText },
-      );
+    .query(({ input, ctx }) =>
+      getLinkList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
+    ),
 
-      // 构建排序条件
-      const orderByClause = buildDrizzleOrderBy(
-        schema.link,
-        sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
-      );
-
-      // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.link)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
-
-      // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.link)
-        .where(where);
-      const total = Number(countResult?.count) || 0;
-
-      return { list, total };
-    }),
+  adminIndex: protectedProcedure([UserLevel.ADMIN])
+    .input(LinkListQuerySchema)
+    .query(({ input, ctx }) =>
+      getLinkList(ctx.db, input, ResourceVisibility.ALL),
+    ),
 
   /**
    * 创建一个新的友情链接。

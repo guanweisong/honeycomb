@@ -24,6 +24,12 @@ describe("Menu Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects unauthenticated callers from adminIndex", async () => {
+      const caller = menuRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(caller.adminIndex()).rejects.toThrow("UNAUTHORIZED");
+    });
+
     it("should return menu list with categories and pages", async () => {
       const mockMenus = [
         {
@@ -128,6 +134,42 @@ describe("Menu Router", () => {
         list: [],
         total: 0,
       });
+    });
+
+    it("omits public menu branches with unavailable resources", async () => {
+      const mockMenus = [
+        {
+          id: TEST_IDS.ID_1,
+          parent: null,
+          type: MenuType.PAGE,
+          categoryId: null,
+          pageId: TEST_IDS.ID_1,
+          customId: null,
+          power: 1,
+          createdAt: new Date(),
+          updatedAt: undefined,
+        },
+        {
+          id: TEST_IDS.ID_2,
+          parent: TEST_IDS.ID_1,
+          type: MenuType.CUSTOM,
+          categoryId: null,
+          pageId: null,
+          customId: TEST_IDS.ID_2,
+          power: 2,
+          createdAt: new Date(),
+          updatedAt: undefined,
+        },
+      ];
+      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([]);
+
+      const caller = menuRouter.createCaller(createMockContext(null, mockDb));
+      const result = await caller.index();
+
+      expect(result).toEqual({ list: [], total: 0 });
     });
   });
 

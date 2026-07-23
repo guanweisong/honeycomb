@@ -79,7 +79,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
    * 获取分类列表的 tRPC 查询。
    * 用于填充父级分类选择器。
    */
-  const categoryQuery = trpc.category.index.useQuery({ limit: 9999 });
+  const categoryQuery = trpc.category.adminIndex.useQuery({ limit: 9999 });
   /**
    * 创建分类的 tRPC mutation。
    */

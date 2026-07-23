@@ -3,18 +3,15 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/utils/tools";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { CategoryListQuerySchema } from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
 import { CategoryInsertSchema } from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import * as schema from "@/packages/db/schema";
-import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import Tools from "@/packages/trpc/api/utils/tools";
+import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { getCategoryList } from "@/packages/trpc/api/modules/category/category.service";
+import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
 
 /**
  * 分类相关的 tRPC 路由。
@@ -34,52 +31,15 @@ export const categoryRouter = createTRPCRouter({
    */
   index: publicProcedure
     .input(CategoryListQuerySchema)
-    .query(async ({ input, ctx }) => {
-      const {
-        id,
-        page = 1,
-        limit = 10,
-        sortField,
-        sortOrder,
-        title,
-        ...rest
-      } = input;
-      const where = buildDrizzleWhere(
-        schema.category,
-        { ...rest, title },
-        ["status"],
-        { title },
-      );
+    .query(({ input, ctx }) =>
+      getCategoryList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
+    ),
 
-      // 构建排序条件
-      const orderByClause = buildDrizzleOrderBy(
-        schema.category,
-        sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
-      );
-
-      // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.category)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
-
-      // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.category)
-        .where(where);
-      const total = Number(countResult?.count) || 0;
-
-      return {
-        list: Tools.sonsTree(list, id),
-        total,
-      };
-    }),
+  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(CategoryListQuerySchema)
+    .query(({ input, ctx }) =>
+      getCategoryList(ctx.db, input, ResourceVisibility.ALL),
+    ),
 
   /**
    * 创建一个新分类。
