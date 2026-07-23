@@ -75,6 +75,14 @@ describe("Post Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects unauthenticated callers from adminIndex", async () => {
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(
+        caller.adminIndex({ page: 1, limit: 10 }),
+      ).rejects.toThrow("UNAUTHORIZED");
+    });
+
     it("should return post list with pagination", async () => {
       const mockPosts = [
         {
@@ -198,6 +206,21 @@ describe("Post Router", () => {
       });
 
       expect(result).toEqual({ list: [], total: 0 });
+    });
+  });
+
+  describe("detail procedure", () => {
+    it("rejects guest callers from adminDetail", async () => {
+      const caller = postRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
+
+      await expect(
+        caller.adminDetail({ id: TEST_IDS.ID_1 }),
+      ).rejects.toThrow("FORBIDDEN");
     });
   });
 

@@ -67,7 +67,7 @@ const PostDetailContent = () => {
   const type = (watchedType as PostType | undefined) ?? PostType.ARTICLE;
 
   const { data: category } = trpc.category.index.useQuery({ limit: 9999 });
-  const { data: detail, refetch } = trpc.post.detail.useQuery({
+  const { data: detail, refetch } = trpc.post.adminDetail.useQuery({
     id,
   });
   const createPost = trpc.post.create.useMutation();

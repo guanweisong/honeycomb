@@ -19,9 +19,7 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
-import { getPostList } from "./post.service";
-import { loadPostRelations } from "./utils/relations";
+import { getPostDetail, getPostList } from "./post.service";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
 import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitizeHtml";
@@ -31,6 +29,7 @@ import {
   getCacheJSON,
   setCacheJSON,
 } from "@/packages/trpc/api/utils/upstash-cache";
+import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 type OptionalI18nInput =
@@ -101,9 +100,8 @@ export const postRouter = createTRPCRouter({
     .input(PostListQuerySchema)
     .query(async ({ input, ctx }) => {
       const isBuildOrStaticCall = !ctx.hasRequest;
-      const isAdminCall = Boolean(ctx.user);
-      if (isBuildOrStaticCall || isAdminCall) {
-        return getPostList(ctx.db, input);
+      if (isBuildOrStaticCall) {
+        return getPostList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY);
       }
 
       const cacheVersion = await getCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
@@ -112,10 +110,20 @@ export const postRouter = createTRPCRouter({
         await getCacheJSON<Awaited<ReturnType<typeof getPostList>>>(cacheKey);
       if (cached) return cached;
 
-      const result = await getPostList(ctx.db, input);
+      const result = await getPostList(
+        ctx.db,
+        input,
+        ContentVisibility.PUBLISHED_ONLY,
+      );
       await setCacheJSON(cacheKey, result, 60 * 60);
       return result;
     }),
+
+  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(PostListQuerySchema)
+    .query(({ input, ctx }) =>
+      getPostList(ctx.db, input, ContentVisibility.ALL),
+    ),
 
   /**
    * 获取单篇文章的详细信息。
@@ -125,30 +133,25 @@ export const postRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const [item] = await ctx.db
-        .select()
-        .from(schema.post)
-        .where(eq(schema.post.id, input.id as string))
-        .limit(1);
+      const result = await getPostDetail(
+        ctx.db,
+        input.id,
+        ContentVisibility.PUBLISHED_ONLY,
+      );
+      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      return result;
+    }),
 
-      if (!item) throw new TRPCError({ code: "NOT_FOUND" });
-
-      // 复用 loadPostRelations 加载关联数据
-      const [result] = await loadPostRelations(ctx.db, [item]);
-
-      // detail 特有的数据：内容中的图片
-      const imageUrls = getAllImageLinkFormHtml(result?.content?.zh);
-      const imagesInContent = imageUrls.length
-        ? await ctx.db
-            .select()
-            .from(schema.media)
-            .where(inArray(schema.media.url, imageUrls))
-        : [];
-
-      return {
-        ...result,
-        imagesInContent,
-      };
+  adminDetail: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(z.object({ id: IdSchema }))
+    .query(async ({ input, ctx }) => {
+      const result = await getPostDetail(
+        ctx.db,
+        input.id,
+        ContentVisibility.ALL,
+      );
+      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      return result;
     }),
 
   /**

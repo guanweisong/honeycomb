@@ -50,7 +50,9 @@ const Menu = () => {
    * 获取页面列表的 tRPC 查询。
    * 用于在可选菜单中展示页面。
    */
-  const { data: pageList } = trpc.page.index.useQuery({ limit: 9999 });
+  const { data: pageList } = trpc.page.adminIndex.useQuery({
+    limit: 9999,
+  });
   /**
    * 获取分类列表的 tRPC 查询。
    * 用于在可选菜单中展示分类。

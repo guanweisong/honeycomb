@@ -18,6 +18,7 @@ import {
   getPageDetail,
   getPageList,
 } from "@/packages/trpc/api/modules/page/page.service";
+import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -30,7 +31,15 @@ export const pageRouter = createTRPCRouter({
    */
   index: publicProcedure
     .input(PageListQuerySchema)
-    .query(async ({ input, ctx }) => getPageList(ctx.db, input)),
+    .query(({ input, ctx }) =>
+      getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
+    ),
+
+  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(PageListQuerySchema)
+    .query(({ input, ctx }) =>
+      getPageList(ctx.db, input, ContentVisibility.ALL),
+    ),
 
   /**
    * 获取单个独立页面的详细信息。
@@ -45,7 +54,15 @@ export const pageRouter = createTRPCRouter({
    */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(async ({ input, ctx }) => getPageDetail(ctx.db, input.id as string)),
+    .query(({ input, ctx }) =>
+      getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY),
+    ),
+
+  adminDetail: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+    .input(z.object({ id: IdSchema }))
+    .query(({ input, ctx }) =>
+      getPageDetail(ctx.db, input.id, ContentVisibility.ALL),
+    ),
 
   /**
    * 创建一个新独立页面。

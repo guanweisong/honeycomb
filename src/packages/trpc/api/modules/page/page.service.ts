@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import {
@@ -7,6 +7,8 @@ import {
 } from "@/packages/trpc/api/utils/tools";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { PageListQueryInput } from "./schemas/page.list.query.schema";
+import { PageStatus } from "./types/page.status";
+import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 
 type AuthorRef = {
   id: string;
@@ -27,14 +29,16 @@ async function loadPageImages(db: Database, pages: PageRow[]) {
     ),
   );
 
-  if (!uniqueUrls.length) return new Map<string, typeof schema.media.$inferSelect>();
+  if (!uniqueUrls.length) {
+    return new Map<string, typeof schema.media.$inferSelect>();
+  }
 
   const medias = await db
     .select()
     .from(schema.media)
     .where(inArray(schema.media.url, uniqueUrls));
 
-  return new Map(medias.map((m) => [m.url, m]));
+  return new Map(medias.map((media) => [media.url, media]));
 }
 
 export async function mapPagesWithRelations(
@@ -45,7 +49,10 @@ export async function mapPagesWithRelations(
 
   const [relationRows, imageMap] = await Promise.all([
     db.query.page.findMany({
-      where: inArray(schema.page.id, pages.map((p) => p.id)),
+      where: inArray(
+        schema.page.id,
+        pages.map((page) => page.id),
+      ),
       with: {
         author: {
           columns: {
@@ -64,7 +71,9 @@ export async function mapPagesWithRelations(
     const imageUrls = getAllImageLinkFormHtml(page?.content?.zh);
     const imagesInContent = imageUrls
       .map((url) => imageMap.get(url))
-      .filter((img): img is typeof schema.media.$inferSelect => Boolean(img));
+      .filter((image): image is typeof schema.media.$inferSelect =>
+        Boolean(image),
+      );
 
     return {
       ...page,
@@ -74,7 +83,11 @@ export async function mapPagesWithRelations(
   });
 }
 
-export async function getPageList(db: Database, input: PageListQueryInput) {
+export async function getPageList(
+  db: Database,
+  input: PageListQueryInput,
+  visibility = ContentVisibility.PUBLISHED_ONLY,
+) {
   const {
     page = 1,
     limit = 10,
@@ -85,12 +98,17 @@ export async function getPageList(db: Database, input: PageListQueryInput) {
     ...rest
   } = input;
 
-  const where = buildDrizzleWhere(
+  let where = buildDrizzleWhere(
     schema.page,
     { ...rest, title, content },
     ["status"],
     { title, content },
   );
+  if (visibility === ContentVisibility.PUBLISHED_ONLY) {
+    const published = eq(schema.page.status, PageStatus.PUBLISHED);
+    where = where ? and(where, published) : published;
+  }
+
   const orderByClause = buildDrizzleOrderBy(
     schema.page,
     sortField,
@@ -116,9 +134,17 @@ export async function getPageList(db: Database, input: PageListQueryInput) {
   return { list: mapped, total };
 }
 
-export async function getPageDetail(db: Database, id: string) {
+export async function getPageDetail(
+  db: Database,
+  id: string,
+  visibility = ContentVisibility.PUBLISHED_ONLY,
+) {
+  const idFilter = eq(schema.page.id, id);
   const page = await db.query.page.findFirst({
-    where: eq(schema.page.id, id),
+    where:
+      visibility === ContentVisibility.ALL
+        ? idFilter
+        : and(idFilter, eq(schema.page.status, PageStatus.PUBLISHED)),
     with: {
       author: {
         columns: {

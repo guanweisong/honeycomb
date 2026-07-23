@@ -75,7 +75,7 @@ const PageContent = () => {
    * 获取页面详情的 tRPC 查询。
    * `data` 包含页面详情数据，`refetch` 用于手动重新获取数据。
    */
-  const { data: detail, refetch } = trpc.page.detail.useQuery(
+  const { data: detail, refetch } = trpc.page.adminDetail.useQuery(
     { id: id as string },
     {
       enabled: !!id,

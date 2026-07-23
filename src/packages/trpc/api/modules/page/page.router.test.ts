@@ -21,6 +21,14 @@ describe("Page Router", () => {
   });
 
   describe("index procedure", () => {
+    it("rejects unauthenticated callers from adminIndex", async () => {
+      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(
+        caller.adminIndex({ page: 1, limit: 10 }),
+      ).rejects.toThrow("UNAUTHORIZED");
+    });
+
     it("should return page list with pagination", async () => {
       const mockPages = [
         {
@@ -96,6 +104,21 @@ describe("Page Router", () => {
         list: [],
         total: 0,
       });
+    });
+  });
+
+  describe("detail procedure", () => {
+    it("rejects guest callers from adminDetail", async () => {
+      const caller = pageRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          mockDb,
+        ),
+      );
+
+      await expect(
+        caller.adminDetail({ id: TEST_IDS.ID_1 }),
+      ).rejects.toThrow("FORBIDDEN");
     });
   });
 

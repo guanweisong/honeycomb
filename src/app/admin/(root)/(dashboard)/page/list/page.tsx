@@ -37,7 +37,7 @@ const Page = () => {
    * 获取页面列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
-  const { data, isFetching, isError, refetch } = trpc.page.index.useQuery(
+  const { data, isFetching, isError, refetch } = trpc.page.adminIndex.useQuery(
     searchParams,
     {
       placeholderData: keepPreviousData,

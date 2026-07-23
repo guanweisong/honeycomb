@@ -9,6 +9,7 @@ import {
   buildCategoryFilter,
 } from "./utils/filters";
 import { loadPostRelations } from "./utils/relations";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 
 /**
  * 获取文章列表的业务逻辑
@@ -17,8 +18,14 @@ import { loadPostRelations } from "./utils/relations";
  * @returns 包含文章列表和总数的对象
  */
 import { PostListQueryInput } from "./schemas/post.list.query.schema";
+import { PostStatus } from "./types/post.status";
+import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 
-export async function getPostList(db: Database, input: PostListQueryInput) {
+export async function getPostList(
+  db: Database,
+  input: PostListQueryInput,
+  visibility = ContentVisibility.PUBLISHED_ONLY,
+) {
   const {
     page = 1,
     limit = 10,
@@ -38,6 +45,11 @@ export async function getPostList(db: Database, input: PostListQueryInput) {
     ["status", "type"],
     { title, content },
   );
+
+  if (visibility === ContentVisibility.PUBLISHED_ONLY) {
+    const publishedClause = eq(schema.post.status, PostStatus.PUBLISHED);
+    where = where ? and(where, publishedClause) : publishedClause;
+  }
 
   // 分类树过滤
   if (categoryId) {
@@ -94,4 +106,37 @@ export async function getPostList(db: Database, input: PostListQueryInput) {
   const total = Number(countResult?.count) || 0;
 
   return { list: mapped, total };
+}
+
+export async function getPostDetail(
+  db: Database,
+  id: string,
+  visibility = ContentVisibility.PUBLISHED_ONLY,
+) {
+  const idFilter = eq(schema.post.id, id);
+  const [item] = await db
+    .select()
+    .from(schema.post)
+    .where(
+      visibility === ContentVisibility.ALL
+        ? idFilter
+        : and(idFilter, eq(schema.post.status, PostStatus.PUBLISHED)),
+    )
+    .limit(1);
+
+  if (!item) return null;
+
+  const [result] = await loadPostRelations(db, [item]);
+  const imageUrls = getAllImageLinkFormHtml(result?.content?.zh);
+  const imagesInContent = imageUrls.length
+    ? await db
+        .select()
+        .from(schema.media)
+        .where(inArray(schema.media.url, imageUrls))
+    : [];
+
+  return {
+    ...result,
+    imagesInContent,
+  };
 }
