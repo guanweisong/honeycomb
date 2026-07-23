@@ -1,358 +1,76 @@
 "use client";
 
-import React, { useRef, useState, use, useTransition, useEffect } from "react";
-import Image from "next/image";
-import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
-import { Button } from "@/packages/ui/components/button";
-import { toast } from "sonner";
-import Card from "../Card";
-import { utcFormat } from "@/app/(blog)/libs/utcFormat";
-import { CommentProps } from "./index";
-import { refreshPath } from "@/app/(blog)/libs/refreshPath";
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import { CommentInsertInput } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
-import { trpc } from "@/packages/trpc/client/trpc";
+import { use, useRef, useState } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
-import {
+import Card from "../Card";
+import type { CommentProps } from "./index";
+import type {
   CommentTreeEntity,
   CommentTreeResponse,
 } from "@/packages/trpc/api/modules/comment/types/comment.entity";
-import { usePathname, useRouter } from "@/app/(blog)/i18n/navigation";
+import { CommentForm } from "./CommentForm";
+import { CommentTree } from "./CommentTree";
+import { useCommentIdentity } from "./hooks/useCommentIdentity";
+import { useCommentSubmission } from "./hooks/useCommentSubmission";
 
-/**
- * 评论客户端组件的属性接口。
- * 继承自 `CommentProps`，并增加了评论查询的 Promise。
- */
 export interface CommentClientProps extends CommentProps {
-  /**
-   * 评论查询的 Promise，用于获取评论数据。
-   */
   queryCommentPromise: Promise<CommentTreeResponse>;
 }
 
-/**
- * 用户信息接口。
- * 用于存储评论者的基本信息。
- */
-export interface User {
-  /**
-   * 评论作者。
-   */
-  author: string;
-  /**
-   * 评论作者的网站。
-   */
-  site?: string;
-  /**
-   * 评论作者的邮箱。
-   */
-  email: string;
-}
-
-/**
- * 评论客户端组件。
- * 负责评论的显示、回复、提交等交互逻辑。
- * @param {CommentClientProps} props - 组件属性。
- * @returns {JSX.Element} 评论组件。
- */
-const CommentClient = (props: CommentClientProps) => {
-  const { id, type, queryCommentPromise } = props;
-  const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  /**
-   * 标识评论提交是否处于挂起状态。
-   */
-  const [isPending, startTransition] = useTransition();
+const CommentClient = ({
+  id,
+  type,
+  queryCommentPromise,
+}: CommentClientProps) => {
   const comment = use(queryCommentPromise);
-
-  /**
-   * 存储当前回复的评论对象。
-   */
   const [replyTo, setReplyTo] = useState<CommentTreeEntity | null>(null);
-  /**
-   * 表单元素的引用。
-   */
   const formRef = useRef<HTMLFormElement | null>(null);
-  /**
-   * 存储当前评论用户信息。
-   */
-  const [user, setUser] = useState<User>();
-
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const t = useTranslations("Comment");
+  const { identity, persistIdentity, clearIdentity } = useCommentIdentity();
+  const submission = useCommentSubmission({
+    id,
+    type,
+    identity,
+    replyTo,
+    formRef,
+    turnstileRef,
+    persistIdentity,
+    clearReply: () => setReplyTo(null),
+  });
 
-  const router = useRouter();
-  const pathname = usePathname();
-
-  /**
-   * 创建评论的 tRPC mutation。
-   */
-  const mutation = trpc.comment.create.useMutation();
-
-  /**
-   * 重置验证码
-   */
-  const resetCaptcha = () => {
-    setCaptchaToken(null);
-    turnstileRef.current?.reset();
-  };
-
-  const onTurnstileSuccess = (data: string) => {
-    setCaptchaToken(data);
-  };
-
-  /**
-   * 副作用钩子，用于从 localStorage 加载用户数据。
-   * 在组件挂载时尝试从 localStorage 获取用户数据并设置到 `user` 状态。
-   */
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  /**
-   * 处理评论回复事件。
-   * 设置 `replyTo` 状态，并滚动到评论表单。
-   * @param {CommentTreeEntity | null} [item] - 要回复的评论对象，如果为 `null` 则取消回复。
-   */
-  const handleReply = (item?: CommentTreeEntity | null) => {
-    if (item !== null) {
-      window.scrollTo(0, 99999);
-    }
-    setReplyTo(item || null);
-  };
-
-  /**
-   * 评论提交事件。
-   * 收集表单数据，集成 Cloudflare Turnstile 验证码，并调用 tRPC mutation 提交评论。
-   * 提交成功后刷新页面，清空表单，并保存用户数据到 localStorage。
-   * @param {React.FormEvent<HTMLFormElement>} e - 表单提交事件对象。
-   */
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!captchaToken) {
-      toast.error(t("captchaRequired"));
-      return;
-    }
-
-    const form = e.currentTarget;
-    let userData = user;
-
-    if (!userData) {
-      userData = {
-        author: form.author.value,
-        email: form.email.value,
-      } as User;
-      const site = form.site.value;
-      if (site) {
-        userData.site = site;
-      }
-    }
-
-    const data = {
-      ...userData,
-      content: form.content.value,
-      captchaToken,
-    } as CommentInsertInput;
-
-    switch (type) {
-      case MenuType.CATEGORY:
-        data.postId = id;
-        break;
-      case MenuType.PAGE:
-        data.pageId = id;
-        break;
-      case MenuType.CUSTOM:
-        data.customId = id;
-        break;
-    }
-
-    if (replyTo !== null) {
-      data.parentId = replyTo.id;
-    }
-
-    startTransition(async () => {
-      mutation
-        .mutateAsync(data)
-        .then(async (result) => {
-          if (result?.id) {
-            await refreshPath(pathname);
-            router.refresh();
-            handleReply(null);
-            formRef.current?.reset();
-            localStorage.setItem("user", JSON.stringify(userData));
-            setUser(userData);
-          }
-        })
-        .catch((error) => {
-          console.error("Comment submit failed:", error);
-        })
-        .finally(() => {
-          resetCaptcha();
-        });
-    });
-  };
-
-  /**
-   * 评论列表渲染函数。
-   * 递归渲染评论及其子评论，并处理评论状态显示。
-   * @param {CommentTreeEntity[]} data - 评论数据数组。
-   * @returns {JSX.Element[]} 评论列表的 JSX 元素数组。
-   */
-  const renderCommentList = (data: CommentTreeEntity[]) => {
-    return data?.map((item) => {
-      const avatarSrc =
-        "avatar" in item && typeof item.avatar === "string" && item.avatar
-          ? item.avatar
-          : "/logo.jpg";
-
-      return (
-        <li className="relative" key={item.id}>
-          <div className="overflow-hidden py-4 border-b-0.5 border-dashed border-auto-front-gray/50">
-            <div className="float-left w-12 h-12 mr-5">
-              <Image
-                src={avatarSrc}
-                alt={t("avatarAlt", { name: item.author })}
-                width={48}
-                height={48}
-                className="h-12 w-12"
-              />
-            </div>
-            <div className="overflow-hidden">
-              <div>
-                {item.site ? (
-                  <a
-                    className="text-teal-500"
-                    href={item.site}
-                    rel="nofollow noopener noreferrer"
-                    target="_blank"
-                  >
-                    {item.author}
-                  </a>
-                ) : (
-                  item.author
-                )}
-              </div>
-              <div className="mt-1 whitespace-pre-wrap">
-                {item.status !== CommentStatus.BAN
-                  ? item.content
-                  : t("banMessage")}
-              </div>
-            </div>
-            <div className="absolute right-2 top-4 text-auto-front-gray/50">
-              <span>{utcFormat(item.createdAt || "")}</span>
-              <span className="mx-1">/</span>
-              <a className="text-teal-500" onClick={() => handleReply(item)}>
-                {t("form.reply")}
-              </a>
-            </div>
-          </div>
-          {"children" in item &&
-            Array.isArray(item.children) &&
-            item.children.length > 0 && (
-              <ul className="ml-10">
-                {renderCommentList(item.children as CommentTreeEntity[])}
-              </ul>
-            )}
-        </li>
-      );
-    });
+  const handleReply = (item: CommentTreeEntity) => {
+    window.scrollTo(0, 99999);
+    setReplyTo(item);
   };
 
   return (
     <div>
       {comment && comment.total !== 0 && (
         <Card title={t("summary", { count: comment.total })}>
-          <ul>{renderCommentList(comment.list)}</ul>
+          <ul>
+            <CommentTree comments={comment.list} onReply={handleReply} />
+          </ul>
         </Card>
       )}
       <Card title={t("title")}>
-        <>
-          {!!replyTo && (
-            <div className="leading-10">
-              <span className="text-teal-500">Reply to:</span>
-              <span className="mx-2">{replyTo?.author}</span>
-              <a
-                className="transition-all text-auto-front-gray/50"
-                onClick={() => handleReply(null)}
-              >
-                [{t("form.cancel")}]
-              </a>
-            </div>
-          )}
-          <form onSubmit={handleSubmit} ref={formRef}>
-            {user ? (
-              <div className="my-2 flex justify-between">
-                <span>
-                  {t("welcomeBack")}: {user.author}
-                </span>
-                <span className="ml-2">
-                  {t("notYou")}
-                  <a
-                    className="text-teal-500"
-                    onClick={() => {
-                      setUser(undefined);
-                      localStorage.removeItem("user");
-                    }}
-                  >
-                    [{t("quit")}]
-                  </a>
-                </span>
-              </div>
-            ) : (
-              <>
-                <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
-                  type="text"
-                  placeholder={t("form.name")}
-                  name="author"
-                  maxLength={20}
-                  required
-                />
-                <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
-                  type="url"
-                  placeholder={t("form.site")}
-                  name="site"
-                  maxLength={30}
-                />
-                <input
-                  className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
-                  type="email"
-                  placeholder={t("form.email")}
-                  name="email"
-                  required
-                  maxLength={30}
-                />
-              </>
-            )}
-
-            <textarea
-              className="block border-b-[0.5px]  border-auto-front-gray/40 w-full leading-6 pt-2 outline-0 focus:border-teal-400 mb-2 bg-transparent"
-              placeholder={t("form.content")}
-              name="content"
-              required
-              maxLength={200}
-              rows={4}
-            />
-            <Button
-              type="submit"
-              disabled={isPending || mutation.isPending}
-              className="cursor-pointer"
-            >
-              {t("form.submit")}
-            </Button>
-          </form>
-        </>
+        <CommentForm
+          identity={identity}
+          replyTo={replyTo}
+          formRef={formRef}
+          isPending={submission.isPending}
+          onSubmit={submission.handleSubmit}
+          onCancelReply={() => setReplyTo(null)}
+          onClearIdentity={clearIdentity}
+        />
       </Card>
       <Turnstile
         ref={turnstileRef}
         siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-        onSuccess={onTurnstileSuccess}
-        onExpire={resetCaptcha}
+        onSuccess={submission.onCaptchaSuccess}
+        onExpire={submission.resetCaptcha}
       />
     </div>
   );

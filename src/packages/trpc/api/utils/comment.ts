@@ -1,18 +1,33 @@
+import type { InferSelectModel } from "drizzle-orm";
+import * as schema from "@/packages/db/schema";
+import type { CommentRecord } from "@/packages/trpc/api/modules/comment/types/comment.model";
+
 /**
  * 评论形状类型定义。
  * 描述了评论对象及其关联的文章、页面或自定义内容的结构，主要用于邮件通知等场景。
  */
-export type CommentShape = {
-  id: string;
-  postId?: string | null;
-  pageId?: string | null;
-  customId?: string | null;
-  post?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
-  page?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
-  custom?: { title?: { zh?: string; en?: string } | null; id?: string } | null;
-  author?: string;
-  content?: string;
-  email?: string;
+type PostReference = Pick<
+  InferSelectModel<typeof schema.post>,
+  "id" | "title"
+>;
+type PageReference = Pick<
+  InferSelectModel<typeof schema.page>,
+  "id" | "title"
+>;
+
+export type CommentShape = Pick<
+  CommentRecord,
+  | "id"
+  | "postId"
+  | "pageId"
+  | "customId"
+  | "author"
+  | "content"
+  | "email"
+> & {
+  post?: PostReference | null;
+  page?: PageReference | null;
+  custom?: PostReference | null;
 };
 
 /**

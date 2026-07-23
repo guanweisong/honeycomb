@@ -2,6 +2,7 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
 
 const {
   mockToastError,
@@ -94,6 +95,7 @@ describe("CommentClient", () => {
       mutateAsync: vi.fn(),
       isPending: false,
     });
+    localStorage.clear();
     alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
   });
 
@@ -121,8 +123,9 @@ describe("CommentClient", () => {
       await Promise.resolve();
     });
 
-    (container.querySelector('input[name="author"]') as HTMLInputElement).value =
-      "Alice";
+    (
+      container.querySelector('input[name="author"]') as HTMLInputElement
+    ).value = "Alice";
     (container.querySelector('input[name="email"]') as HTMLInputElement).value =
       "alice@example.com";
     (
@@ -140,5 +143,106 @@ describe("CommentClient", () => {
 
     expect(mockToastError).toHaveBeenCalledWith("请先完成验证码验证");
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("restores and clears the saved identity using the existing user key", async () => {
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        author: "Alice",
+        email: "alice@example.com",
+        site: "https://example.com",
+      }),
+    );
+
+    await act(async () => {
+      root.render(
+        React.createElement(
+          React.Suspense,
+          { fallback: null },
+          React.createElement(CommentClient, {
+            id: "post-1",
+            type: MenuType.CATEGORY,
+            queryCommentPromise: commentPromise,
+          }),
+        ),
+      );
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("welcomeBack: Alice");
+    expect(container.querySelector('input[name="author"]')).toBeNull();
+
+    const quit = Array.from(container.querySelectorAll("a")).find((element) =>
+      element.textContent?.includes("quit"),
+    );
+    await act(async () => quit?.click());
+
+    expect(localStorage.getItem("user")).toBeNull();
+    expect(container.querySelector('input[name="author"]')).not.toBeNull();
+  });
+
+  it("renders nested comments, hides banned content, and selects a reply", async () => {
+    const scrollTo = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => undefined);
+    const treePromise = Promise.resolve({
+      total: 2,
+      list: [
+        {
+          id: "parent",
+          author: "Parent",
+          content: "visible content",
+          site: null,
+          parentId: null,
+          status: CommentStatus.PUBLISH,
+          createdAt: null,
+          avatar: "/logo.jpg",
+          children: [
+            {
+              id: "child",
+              author: "Child",
+              content: "hidden content",
+              site: null,
+              parentId: "parent",
+              status: CommentStatus.BAN,
+              createdAt: null,
+              avatar: "/logo.jpg",
+              children: [],
+            },
+          ],
+        },
+      ],
+    });
+
+    await act(async () => {
+      root.render(
+        React.createElement(
+          React.Suspense,
+          { fallback: null },
+          React.createElement(CommentClient, {
+            id: "post-1",
+            type: MenuType.CATEGORY,
+            queryCommentPromise: treePromise,
+          }),
+        ),
+      );
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("visible content");
+    expect(container.textContent).toContain("banMessage");
+    expect(container.textContent).not.toContain("hidden content");
+    expect(container.querySelector("ul ul")).not.toBeNull();
+
+    const reply = Array.from(container.querySelectorAll("a")).find(
+      (element) => element.textContent === "form.reply",
+    );
+    await act(async () => reply?.click());
+
+    expect(scrollTo).toHaveBeenCalledWith(0, 99999);
+    expect(container.textContent).toContain("Reply to:");
+    expect(container.textContent).toContain("Parent");
+    scrollTo.mockRestore();
   });
 });
