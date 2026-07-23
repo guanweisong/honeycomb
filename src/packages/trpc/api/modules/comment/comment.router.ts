@@ -132,20 +132,32 @@ export const commentRouter = createTRPCRouter({
           break;
       }
       const result = await ctx.db.query.comment.findMany({
+        columns: {
+          id: true,
+          author: true,
+          content: true,
+          site: true,
+          email: true,
+          parentId: true,
+          status: true,
+          createdAt: true,
+        },
         where,
         orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)],
-        with: {
-          children: true,
-        },
       });
 
       const list = result.length
         ? listToTree(
           result.map((item) => ({
-            ...item,
             id: item.id.toString(),
+            author: item.author,
+            content: item.content,
+            site: item.site,
+            parentId: item.parentId,
+            status: item.status,
+            createdAt: item.createdAt,
             avatar: `https://cravatar.cn/avatar/${md5(
-              item.email!.trim().toLowerCase(),
+              item.email.trim().toLowerCase(),
             )}?s=48&d=identicon`,
           })),
           { idKey: "id", parentKey: "parentId" },

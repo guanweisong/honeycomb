@@ -85,6 +85,8 @@ describe("Comment Router", () => {
           content: "Comment 1",
           status: "PUBLISH",
           email: "test1@example.com",
+          ip: "203.0.113.1",
+          userAgent: "Sensitive Browser",
           postId: TEST_IDS.ID_1,
           parentId: null,
           createdAt: new Date(),
@@ -94,6 +96,8 @@ describe("Comment Router", () => {
           content: "Comment 2",
           status: "PUBLISH",
           email: "test2@example.com",
+          ip: "203.0.113.2",
+          userAgent: "Sensitive Browser",
           postId: TEST_IDS.ID_1,
           parentId: TEST_IDS.ID_1,
           createdAt: new Date(),
@@ -118,6 +122,16 @@ describe("Comment Router", () => {
         list: expect.any(Array),
         total: 2,
       });
+      const rootComment = result.list[0]!;
+      const childComment = rootComment.children?.[0];
+      expect(childComment).toBeDefined();
+      if (!childComment) throw new Error("Expected nested public comment");
+      expect(rootComment).not.toHaveProperty("email");
+      expect(rootComment).not.toHaveProperty("ip");
+      expect(rootComment).not.toHaveProperty("userAgent");
+      expect(childComment).not.toHaveProperty("email");
+      expect(childComment).not.toHaveProperty("ip");
+      expect(childComment).not.toHaveProperty("userAgent");
     });
 
     it("should return empty list for non-existent ref", async () => {
