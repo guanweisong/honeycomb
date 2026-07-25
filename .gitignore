@@ -45,6 +45,7 @@ yarn-error.log*
 drizzle
 # next-agents-md
 .next-docs/
+.worktrees/
 
 *.tsbuildinfo
 
