@@ -37,7 +37,11 @@ export const pageRouter = createTRPCRouter({
       getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  adminIndex: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
       getPageList(ctx.db, input, ContentVisibility.ALL),
@@ -60,7 +64,11 @@ export const pageRouter = createTRPCRouter({
       getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminDetail: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  adminDetail: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) =>
       getPageDetail(ctx.db, input.id, ContentVisibility.ALL),

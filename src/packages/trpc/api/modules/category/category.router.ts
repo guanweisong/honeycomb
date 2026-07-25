@@ -35,7 +35,11 @@ export const categoryRouter = createTRPCRouter({
       getCategoryList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
     ),
 
-  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  adminIndex: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
       getCategoryList(ctx.db, input, ResourceVisibility.ALL),

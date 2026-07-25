@@ -30,9 +30,11 @@ export const menuRouter = createTRPCRouter({
     getMenuList(ctx.db, ResourceVisibility.PUBLIC_ONLY),
   ),
 
-  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR]).query(
-    ({ ctx }) => getMenuList(ctx.db, ResourceVisibility.ALL),
-  ),
+  adminIndex: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ]).query(({ ctx }) => getMenuList(ctx.db, ResourceVisibility.ALL)),
 
   /**
    * 覆盖式保存整个菜单结构。

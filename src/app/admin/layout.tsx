@@ -4,14 +4,13 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-// 创建一个 React Query 客户端实例
-const queryClient = new QueryClient();
+import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
+import { useRouter } from "next/navigation";
 
 /**
  * Admin 应用的根布局组件。
@@ -33,6 +32,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [queryClient] = React.useState(() =>
+    createAdminQueryClient({
+      onForbidden: () => router.replace("/admin/forbidden"),
+    }),
+  );
+
   return (
     <html lang="zh-cn">
       <head>

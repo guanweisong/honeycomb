@@ -28,7 +28,11 @@ export const linkRouter = createTRPCRouter({
       getLinkList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
     ),
 
-  adminIndex: protectedProcedure([UserLevel.ADMIN])
+  adminIndex: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(LinkListQuerySchema)
     .query(({ input, ctx }) =>
       getLinkList(ctx.db, input, ResourceVisibility.ALL),

@@ -120,7 +120,11 @@ export const postRouter = createTRPCRouter({
       return result;
     }),
 
-  adminIndex: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  adminIndex: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
       getPostList(ctx.db, input, ContentVisibility.ALL),
@@ -143,7 +147,11 @@ export const postRouter = createTRPCRouter({
       return result;
     }),
 
-  adminDetail: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  adminDetail: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
       const result = await getPostDetail(

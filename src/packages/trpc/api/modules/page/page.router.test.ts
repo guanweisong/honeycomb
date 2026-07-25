@@ -109,7 +109,16 @@ describe("Page Router", () => {
   });
 
   describe("detail procedure", () => {
-    it("rejects guest callers from adminDetail", async () => {
+    it("allows guest callers to read adminDetail", async () => {
+      mockDb.query.page.findFirst.mockResolvedValueOnce({
+        id: TEST_IDS.ID_1,
+        title: { en: "Page 1", zh: "页面1" },
+        content: { en: "Content 1", zh: "内容1" },
+        status: PageStatus.DRAFT,
+        template: PageTemplate.DEFAULT,
+        author: null,
+      });
+
       const caller = pageRouter.createCaller(
         createMockContext(
           { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
@@ -117,9 +126,9 @@ describe("Page Router", () => {
         ),
       );
 
-      await expect(
-        caller.adminDetail({ id: TEST_IDS.ID_1 }),
-      ).rejects.toThrow("FORBIDDEN");
+      const result = await caller.adminDetail({ id: TEST_IDS.ID_1 });
+
+      expect(result?.id).toBe(TEST_IDS.ID_1);
     });
   });
 

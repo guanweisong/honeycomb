@@ -211,7 +211,23 @@ describe("Post Router", () => {
   });
 
   describe("detail procedure", () => {
-    it("rejects guest callers from adminDetail", async () => {
+    it("allows guest callers to read adminDetail", async () => {
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([
+        {
+          id: TEST_IDS.ID_1,
+          title: { en: "Post 1", zh: "文章1" },
+          content: { en: "Content 1", zh: "内容1" },
+          status: PostStatus.DRAFT,
+          type: "ARTICLE",
+          authorId: TEST_IDS.ID_2,
+          categoryId: null,
+          coverId: null,
+        },
+      ]);
+
       const caller = postRouter.createCaller(
         createMockContext(
           { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
@@ -219,9 +235,9 @@ describe("Post Router", () => {
         ),
       );
 
-      await expect(
-        caller.adminDetail({ id: TEST_IDS.ID_1 }),
-      ).rejects.toThrow("FORBIDDEN");
+      const result = await caller.adminDetail({ id: TEST_IDS.ID_1 });
+
+      expect(result.id).toBe(TEST_IDS.ID_1);
     });
   });
 

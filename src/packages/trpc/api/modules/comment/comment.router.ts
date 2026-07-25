@@ -20,7 +20,11 @@ import {
 } from "./comment.service";
 
 export const commentRouter = createTRPCRouter({
-  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  index: protectedProcedure([
+    UserLevel.ADMIN,
+    UserLevel.EDITOR,
+    UserLevel.GUEST,
+  ])
     .input(CommentListQuerySchema)
     .query(({ input, ctx }) => listComments(ctx.db, input)),
 
