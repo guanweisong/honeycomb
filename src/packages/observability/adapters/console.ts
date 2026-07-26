@@ -1,4 +1,5 @@
 import type { Logger } from "../core/contracts";
+import { createSafeLogger } from "../core/safe-adapters";
 import { sanitizeContext } from "../core/sanitize";
 
 export interface ConsoleLoggerOptions {
@@ -11,14 +12,14 @@ export function createConsoleLogger(
   options: ConsoleLoggerOptions = {},
 ): Logger {
   const service = options.service ?? "honeycomb";
-  const environment = options.environment ?? process.env.NODE_ENV ?? "development";
+  const environment = options.environment ?? getEnvironment();
   const write = options.write ?? ((line: string) => console.log(line));
 
-  return {
+  return createSafeLogger({
     info: (event, context) => writeLog(write, "info", event, context, service, environment),
     warn: (event, context) => writeLog(write, "warn", event, context, service, environment),
     error: (event, context) => writeLog(write, "error", event, context, service, environment),
-  };
+  });
 }
 
 function writeLog(
@@ -39,4 +40,8 @@ function writeLog(
       environment,
     }),
   );
+}
+
+function getEnvironment(): string {
+  return typeof process === "undefined" ? "development" : process.env.NODE_ENV ?? "development";
 }

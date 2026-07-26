@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LogEvent } from "../core/names";
 import { createConsoleLogger } from "./console";
 
 describe("createConsoleLogger", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("writes a single-line JSON event with stable common fields", () => {
     const output: string[] = [];
     const logger = createConsoleLogger({
@@ -28,5 +32,23 @@ describe("createConsoleLogger", () => {
       requestId: "req-1",
       email: "[REDACTED]",
     });
+  });
+
+  it("fails open when its output sink throws", () => {
+    const logger = createConsoleLogger({
+      write: () => {
+        throw new Error("stdout unavailable");
+      },
+    });
+
+    expect(() => logger.info(LogEvent.requestStarted)).not.toThrow();
+  });
+
+  it("creates a logger without Node process globals", () => {
+    vi.stubGlobal("process", undefined);
+
+    expect(() =>
+      createConsoleLogger({ write: () => undefined }),
+    ).not.toThrow();
   });
 });

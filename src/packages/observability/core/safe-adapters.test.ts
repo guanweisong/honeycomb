@@ -25,6 +25,25 @@ describe("safe observability adapters", () => {
     ).not.toThrow();
   });
 
+  it("redacts sensitive error details before invoking a logger adapter", () => {
+    const captured: unknown[] = [];
+    const logger: Logger = {
+      info: () => undefined,
+      warn: () => undefined,
+      error: (_event, context) => captured.push(context),
+    };
+    const error = new Error("token=token-value email=person@example.com");
+    error.stack = "Error: authorization=Bearer bearer-token";
+
+    createSafeLogger(logger).error(LogEvent.serverError, { error });
+
+    const serialized = JSON.stringify(captured);
+    expect(serialized).toContain("[REDACTED]");
+    expect(serialized).not.toContain("token-value");
+    expect(serialized).not.toContain("person@example.com");
+    expect(serialized).not.toContain("bearer-token");
+  });
+
   it("swallows metrics adapter failures while discarding unsafe labels", () => {
     const seen: unknown[] = [];
     const failingMetrics: Metrics = {

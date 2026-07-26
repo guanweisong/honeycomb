@@ -40,9 +40,52 @@ describe("sanitizeContext", () => {
       self: "[Circular]",
     });
   });
+
+  it("blocks nested request bodies and database parameter containers", () => {
+    expect(
+      sanitizeContext({
+        request: {
+          body: { password: "hunter2" },
+          input: { token: "token-value" },
+          params: { email: "person@example.com" },
+          sqlParams: ["secret-value"],
+        },
+      }),
+    ).toEqual({
+      request: {
+        body: "[REDACTED]",
+        input: "[REDACTED]",
+        params: "[REDACTED]",
+        sqlParams: "[REDACTED]",
+      },
+    });
+  });
+
+  it("rejects unknown complex objects instead of traversing them", () => {
+    expect(sanitizeContext({ opaque: new Map([["token", "token-value"]]) })).toEqual({
+      opaque: "[Unsupported: Map]",
+    });
+  });
 });
 
 describe("serializeError", () => {
+  it("redacts sensitive values from an error message and stack", () => {
+    const error = new Error(
+      "email=person@example.com ip=203.0.113.7 token=token-value cookie=session=abc authorization=Bearer bearer-token secret=top-secret",
+    );
+    error.stack = "Error: email=person@example.com cookie=session=abc authorization=Bearer bearer-token";
+
+    const serialized = JSON.stringify(serializeError(error));
+
+    expect(serialized).toContain("[REDACTED]");
+    expect(serialized).not.toContain("person@example.com");
+    expect(serialized).not.toContain("203.0.113.7");
+    expect(serialized).not.toContain("token-value");
+    expect(serialized).not.toContain("session=abc");
+    expect(serialized).not.toContain("bearer-token");
+    expect(serialized).not.toContain("top-secret");
+  });
+
   it("keeps a bounded non-circular cause chain", () => {
     const root = new Error("root");
     root.name = "RootError";
