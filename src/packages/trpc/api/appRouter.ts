@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createTRPCRouter } from "./core";
 import { linkRouter } from "@/packages/trpc/api/modules/link/link.router";
 import { userRouter } from "@/packages/trpc/api/modules/user/user.router";

@@ -9,6 +9,7 @@ import { refreshPath } from "@/app/(blog)/libs/refreshPath";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import type { CommentTreeEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
 import { trpc } from "@/packages/trpc/client/trpc";
+import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./useCommentIdentity";
 import { buildCommentInput } from "../commentInput";
 
@@ -47,7 +48,7 @@ export function useCommentSubmission({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!captchaToken) {
+    if (clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
       toast.error(t("captchaRequired"));
       return;
     }
@@ -68,7 +69,7 @@ export function useCommentSubmission({
       type,
       identity: submittedIdentity,
       content: form.content.value,
-      captchaToken,
+      captchaToken: captchaToken ?? undefined,
       parentId: replyTo?.id,
     });
 

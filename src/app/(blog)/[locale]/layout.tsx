@@ -2,6 +2,7 @@ import React, { ReactNode } from "react";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { clientEnv } from "@/env/client";
 import type { Viewport } from "next";
 import "../app.scss";
 import BackToTop from "@/app/(blog)/components/BackToTop";
@@ -47,10 +48,12 @@ export default async function LocaleLayout({
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#FFFFFF" />
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-          strategy="lazyOnload"
-        />
+        {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+          <Script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+            strategy="lazyOnload"
+          />
+        ) : null}
       </head>
       <body>
         <ThemeProvider
@@ -79,8 +82,8 @@ export default async function LocaleLayout({
         <Analytics />
         <SpeedInsights />
       </body>
-      {process.env.NEXT_PUBLIC_GA_BLOG_ID ? (
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_BLOG_ID} />
+      {clientEnv.NEXT_PUBLIC_GA_BLOG_ID ? (
+        <GoogleAnalytics gaId={clientEnv.NEXT_PUBLIC_GA_BLOG_ID} />
       ) : null}
     </html>
   );

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { appRouter } from "./appRouter";
 import { createContext } from "./context";
 

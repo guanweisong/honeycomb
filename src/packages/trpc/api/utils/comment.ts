@@ -1,4 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { clientEnv } from "@/env/client";
 import * as schema from "@/packages/db/schema";
 import type { CommentRecord } from "@/packages/trpc/api/modules/comment/types/comment.model";
 
@@ -44,7 +45,7 @@ export const getPostOrPageOrCustomTitleAndLinkFromComment = (
 ): { postTitle: string; postLink: string } => {
   const frontDomain =
     opts?.frontDomain ??
-    new URL(process.env.NEXT_PUBLIC_SITE_URL as string).host;
+    new URL(clientEnv.NEXT_PUBLIC_SITE_URL as string).host;
 
   let postTitle = "";
   let postLink = "";

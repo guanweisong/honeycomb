@@ -7,7 +7,7 @@ interface BuildCommentInputOptions {
   type: MenuType;
   identity: CommentIdentity;
   content: string;
-  captchaToken: string;
+  captchaToken?: string;
   parentId?: string;
 }
 

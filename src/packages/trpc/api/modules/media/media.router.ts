@@ -1,3 +1,5 @@
+import "server-only";
+
 import { protectedProcedure, createTRPCRouter } from "@/packages/trpc/api/core";
 import {
   buildDrizzleWhere,
@@ -10,6 +12,7 @@ import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@/packages/trpc/api/modules/media/schemas/media.insert.schema";
 import { format } from "date-fns";
 import S3 from "@/packages/trpc/api/utils/S3";
+import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
@@ -98,7 +101,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { name, size, type, key, width, height, color } = input;
 
-      const url = `${process.env.NEXT_PUBLIC_ASSET_URL}/${key}`;
+      const url = `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${key}`;
 
       // 准备数据库插入数据
       const data: InferInsertModel<typeof schema.media> = {

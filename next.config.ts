@@ -1,9 +1,17 @@
 import { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { withSerwist } from "@serwist/turbopack";
+import {
+  createAssetRemotePattern,
+  createSecurityHeaderOptions,
+  createSecurityHeaders,
+} from "./src/packages/security/security-headers";
 
-const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL;
-const assetHost = assetUrl ? new URL(assetUrl).host : undefined;
+const securityHeaderOptions = createSecurityHeaderOptions(process.env);
+const assetRemotePattern = createAssetRemotePattern(
+  securityHeaderOptions.assetUrl,
+);
+const securityHeaders = createSecurityHeaders(securityHeaderOptions);
 
 /**
  * Next.js 基础配置文件。
@@ -18,15 +26,7 @@ const nextConfig: NextConfig = withSerwist({
         hostname: "cravatar.cn",
         port: "",
       },
-      ...(assetHost
-        ? [
-            {
-              protocol: "https" as const,
-              hostname: assetHost,
-              port: "",
-            },
-          ]
-        : []),
+      ...(assetRemotePattern ? [assetRemotePattern] : []),
     ],
     formats: ["image/webp"],
     deviceSizes: [960, 1280, 1920], // fill 模式生成这几种宽度
@@ -34,6 +34,14 @@ const nextConfig: NextConfig = withSerwist({
     minimumCacheTTL: 31536000,
   },
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
+  },
 });
 
 const withNextIntl = createNextIntlPlugin("./src/app/(blog)/i18n/request.ts");

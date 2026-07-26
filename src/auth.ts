@@ -1,4 +1,7 @@
+import "server-only";
+
 import NextAuth from "next-auth";
+import { getAuthEnv } from "@/env/server";
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
@@ -82,7 +85,9 @@ function buildCredentialsProvider() {
       captchaToken: { label: "Captcha Token", type: "text" },
     },
     async authorize(
-      credentials: Partial<Record<"name" | "password" | "captchaToken", unknown>>,
+      credentials: Partial<
+        Record<"name" | "password" | "captchaToken", unknown>
+      >,
     ): Promise<AuthUser | null> {
       const name =
         typeof credentials.name === "string" ? credentials.name.trim() : "";
@@ -95,7 +100,7 @@ function buildCredentialsProvider() {
           ? credentials.captchaToken.trim()
           : "";
 
-      if (!name || !password || !captchaToken) return null;
+      if (!name || !password) return null;
 
       await validateCaptcha(captchaToken);
 
@@ -104,7 +109,10 @@ function buildCredentialsProvider() {
         .select()
         .from(schema.user)
         .where(
-          and(eq(schema.user.name, name), eq(schema.user.status, UserStatus.ENABLE)),
+          and(
+            eq(schema.user.name, name),
+            eq(schema.user.status, UserStatus.ENABLE),
+          ),
         )
         .limit(1);
 
@@ -125,30 +133,31 @@ function buildCredentialsProvider() {
 
 function buildOAuthProviders() {
   const providers: NonNullable<NextAuthConfig["providers"]> = [];
+  const { apple, google, github } = getAuthEnv();
 
-  if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET) {
+  if (apple) {
     providers.push(
       AppleProvider({
-        clientId: process.env.AUTH_APPLE_ID,
-        clientSecret: process.env.AUTH_APPLE_SECRET,
+        clientId: apple.clientId,
+        clientSecret: apple.clientSecret,
       }),
     );
   }
 
-  if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+  if (google) {
     providers.push(
       GoogleProvider({
-        clientId: process.env.AUTH_GOOGLE_ID,
-        clientSecret: process.env.AUTH_GOOGLE_SECRET,
+        clientId: google.clientId,
+        clientSecret: google.clientSecret,
       }),
     );
   }
 
-  if (process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET) {
+  if (github) {
     providers.push(
       GitHubProvider({
-        clientId: process.env.AUTH_GITHUB_ID,
-        clientSecret: process.env.AUTH_GITHUB_SECRET,
+        clientId: github.clientId,
+        clientSecret: github.clientSecret,
       }),
     );
   }
@@ -157,7 +166,12 @@ function buildOAuthProviders() {
 }
 
 async function syncOAuthUser(params: {
-  user: { id?: string; name?: string | null; email?: string | null; level?: UserLevel };
+  user: {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    level?: UserLevel;
+  };
   profile?: { email?: string | null };
 }) {
   const email =
@@ -191,7 +205,7 @@ const authProviders: NonNullable<NextAuthConfig["providers"]> = [
 ];
 
 export const authOptions: NextAuthConfig = {
-  secret: process.env.AUTH_SECRET,
+  secret: getAuthEnv().AUTH_SECRET,
   session: {
     strategy: "jwt",
   },

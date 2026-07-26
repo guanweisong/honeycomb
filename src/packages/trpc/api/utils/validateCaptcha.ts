@@ -1,4 +1,7 @@
+import "server-only";
+
 import { TRPCError } from "@trpc/server";
+import { getTurnstileEnv } from "@/env/server";
 
 interface TurnstileVerifyResponse {
   success: boolean;
@@ -11,6 +14,9 @@ interface TurnstileVerifyResponse {
 export const validateCaptcha = async (
   captchaToken: string | undefined | null,
 ) => {
+  const turnstile = getTurnstileEnv();
+  if (!turnstile) return;
+
   if (!captchaToken) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -19,7 +25,7 @@ export const validateCaptcha = async (
   }
 
   const body = new URLSearchParams({
-    secret: process.env.TURNSTILE_SECRET_KEY ?? "",
+    secret: turnstile.secretKey,
     response: captchaToken,
   });
 

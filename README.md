@@ -89,7 +89,8 @@ honeycomb/
 │   │   ├── api/               # API 路由
 │   │   ├── manifest.ts        # PWA manifest
 │   │   ├── robots.ts          # SEO robots
-│   │   └── sitemap.ts         # SEO sitemap
+│   │   ├── sitemap.xml/       # 运行时 sitemap 索引
+│   │   └── sitemaps/          # 运行时 sitemap 分片
 │   └── packages/              # 共享包
 │       ├── db/                # 数据库层
 │       │   ├── schema.ts      # 数据库 schema
@@ -139,17 +140,17 @@ bun install
 TURSO_URL=your_turso_url
 TURSO_TOKEN=your_turso_token
 
-# 站点配置（必填）
+# 站点配置（NEXT_PUBLIC_SITE_URL 必填）
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_ASSET_URL=https://static.example.com
 
-# Cloudflare R2（对象存储，必填）
+# Cloudflare R2（对象存储，可选；启用时四项必须同时配置）
 R2_ACCOUNT_ID=your_account_id
 R2_ACCESS_KEY_ID=your_access_key_id
 R2_SECRET_ACCESS_KEY=your_secret_access_key
 R2_BUCKET_NAME=your_bucket_name
 
-# Cloudflare Turnstile（验证码，必填）
+# Cloudflare Turnstile（验证码，可选；启用时两项必须同时配置）
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=your_site_key
 TURNSTILE_SECRET_KEY=your_secret_key
 
@@ -177,7 +178,14 @@ AUTH_APPLE_SECRET=your_apple_client_secret
 # Upstash Redis（API 限流，可选）
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
+
+# CSP 发布模式（可选；生产环境设为 true 时只报告、不拦截）
+CSP_REPORT_ONLY=true
 ```
+
+生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 阶段不会连接数据库，也不会执行生产启动校验。
+
+R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。
 
 ### 登录说明
 
@@ -312,6 +320,23 @@ protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR]);
 - 离线访问支持
 - 自动更新
 - 缓存策略配置
+
+## 安全响应头与 CSP
+
+所有路由统一返回 CSP、`X-Content-Type-Options`、`Referrer-Policy`、`Permissions-Policy` 和防嵌入响应头；HTTPS 生产环境还会启用 HSTS。CSP 会根据 Analytics、Turnstile 和远程资源配置加入最小允许来源。
+
+建议先在生产环境设置 `CSP_REPORT_ONLY=true` 观察浏览器控制台和监控中的违规事件，完成下列检查后再删除该变量或设为 `false`，切换到强制模式：
+
+- 登录、前后台导航和表单提交正常
+- Analytics、Turnstile、远程图片与媒体正常加载
+- PWA manifest 和 Service Worker 正常注册
+- 不存在未解释的 CSP 违规；强制模式发布后再次执行 E2E 冒烟测试
+
+当前策略为保持静态渲染与 CDN 缓存兼容，脚本策略仍包含 `unsafe-inline`。`report-only` 模式只负责浏览器观察，本工程暂未配置 CSP 报告接收端点。
+
+## Sitemap 运行时策略
+
+`/sitemap.xml` 在请求时生成 sitemap 索引，内容按每片 1000 条分页，并缓存 5 分钟。数据库不可用时，索引和首片会降级到站点首页及中英文分类入口，不影响应用构建；动态内容恢复后会在缓存刷新时重新出现。
 
 ## 部署
 

@@ -2,6 +2,7 @@
 
 import { use, useRef, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
+import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
 import Card from "../Card";
@@ -66,12 +67,14 @@ const CommentClient = ({
           onClearIdentity={clearIdentity}
         />
       </Card>
-      <Turnstile
-        ref={turnstileRef}
-        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-        onSuccess={submission.onCaptchaSuccess}
-        onExpire={submission.resetCaptcha}
-      />
+      {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+          onSuccess={submission.onCaptchaSuccess}
+          onExpire={submission.resetCaptcha}
+        />
+      ) : null}
     </div>
   );
 };

@@ -13,6 +13,7 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    "**/.next/**",
     ".compare-head/**",
     ".open-next/**",
     "out/**",

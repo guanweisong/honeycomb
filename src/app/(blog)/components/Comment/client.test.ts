@@ -11,6 +11,7 @@ const {
   mockUseRouter,
   mockUsePathname,
   mockRefreshPath,
+  mockClientEnv,
 } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
   mockUseMutation: vi.fn(),
@@ -18,6 +19,13 @@ const {
   mockUseRouter: vi.fn(),
   mockUsePathname: vi.fn(),
   mockRefreshPath: vi.fn(),
+  mockClientEnv: {
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: undefined as string | undefined,
+  },
+}));
+
+vi.mock("@/env/client", () => ({
+  clientEnv: mockClientEnv,
 }));
 
 vi.mock("sonner", () => ({
@@ -83,6 +91,7 @@ describe("CommentClient", () => {
     mockUseRouter.mockReset();
     mockUsePathname.mockReset();
     mockRefreshPath.mockReset();
+    mockClientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY = undefined;
     mockUseTranslations.mockReturnValue((key: string) => {
       if (key === "captchaRequired") return "请先完成验证码验证";
       return key;
@@ -108,6 +117,8 @@ describe("CommentClient", () => {
   });
 
   it("shows a toast when captcha has not been completed", async () => {
+    mockClientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
+
     await act(async () => {
       root.render(
         React.createElement(
