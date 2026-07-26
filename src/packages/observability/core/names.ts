@@ -1,0 +1,35 @@
+export const LogEvent = {
+  requestStarted: "request.started",
+  requestCompleted: "request.completed",
+  requestFailed: "request.failed",
+  serverError: "server.error",
+  databaseOperation: "database.operation",
+  cacheOperation: "cache.operation",
+  externalServiceOperation: "external-service.operation",
+} as const;
+
+export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];
+
+export const MetricName = {
+  apiRequestsTotal: "api.requests.total",
+  apiRequestDurationMs: "api.request.duration_ms",
+  apiErrorsTotal: "api.errors.total",
+  databaseOperationsTotal: "database.operations.total",
+  databaseOperationDurationMs: "database.operation.duration_ms",
+  databaseErrorsTotal: "database.errors.total",
+  cacheOperationsTotal: "cache.operations.total",
+  externalServiceOperationsTotal: "external-service.operations.total",
+} as const;
+
+export type MetricName = (typeof MetricName)[keyof typeof MetricName];
+
+export const metricLabelNames = [
+  "procedure",
+  "method",
+  "outcome",
+  "queryName",
+  "operation",
+  "namespace",
+] as const;
+
+export type MetricLabelName = (typeof metricLabelNames)[number];

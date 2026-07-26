@@ -1,10 +1,10 @@
 ## 1. 观测核心
 
-- [ ] 1.1 在 `harden-runtime-foundations` 完成后建立 observability core、adapters 和 server 模块边界
-- [ ] 1.2 定义 Logger、Metrics、固定事件名、固定指标名和允许标签类型
-- [ ] 1.3 实现递归脱敏、安全错误序列化和循环引用处理并达到关键模块覆盖门槛
-- [ ] 1.4 实现单行 JSON console logger、noop metrics 和 memory test adapters
-- [ ] 1.5 实现不会递归报错的 adapter 安全包装，验证 adapter 故障不影响业务
+- [x] 1.1 在 `harden-runtime-foundations` 完成后建立 observability core、adapters 和 server 模块边界
+- [x] 1.2 定义 Logger、Metrics、固定事件名、固定指标名和允许标签类型
+- [x] 1.3 实现递归脱敏、安全错误序列化和循环引用处理并达到关键模块覆盖门槛
+- [x] 1.4 实现单行 JSON console logger、noop metrics 和 memory test adapters
+- [x] 1.5 实现不会递归报错的 adapter 安全包装，验证 adapter 故障不影响业务
 
 ## 2. 请求与错误捕获
 
@@ -25,7 +25,7 @@
 - [ ] 4.1 为 CAPTCHA、邮件和对象存储调用记录次数、耗时与失败
 - [ ] 4.2 将现有服务端及管理端直接 `console.*` 调用迁移到统一 Logger
 - [ ] 4.3 增加 ESLint 或静态检查，禁止受控目录新增直接 `console.*`
-- [ ] 4.4 为邮件地址、IP、token、cookie、authorization 和嵌套秘密增加脱敏回归测试
+- [x] 4.4 为邮件地址、IP、token、cookie、authorization 和嵌套秘密增加脱敏回归测试
 
 ## 5. 验证与文档
 
