@@ -10,8 +10,8 @@
 
 - [x] 2.1 在 Next.js instrumentation 初始化默认 adapters，并实现服务端请求错误捕获
 - [x] 2.2 在 tRPC context 建立 request ID，兼容传入标识和服务端生成
-- [ ] 2.3 新增 tRPC middleware 记录请求开始、完成、耗时、outcome 和未处理错误
-- [ ] 2.4 为成功、验证失败、权限拒绝和未知错误编写请求日志与 API 指标测试
+- [x] 2.3 新增 tRPC middleware 记录请求开始、完成、耗时、outcome 和未处理错误
+- [x] 2.4 为成功、验证失败、权限拒绝和未知错误编写请求日志与 API 指标测试
 
 ## 3. 数据库与缓存指标
 
