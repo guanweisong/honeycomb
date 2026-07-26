@@ -6,9 +6,9 @@ export {
 } from "./registry";
 export {
   createRequestContext,
-  getRequestContext,
+  getRequestIdFromHeaders,
   REQUEST_ID_HEADER,
-  runWithRequestContext,
   type CreateRequestContextOptions,
   type RequestContext,
+  type RequestHeaders,
 } from "./request-context";

@@ -6,6 +6,7 @@ import {
   configureObservability,
   getLogger,
 } from "./packages/observability/server/registry";
+import { createRequestContext } from "./packages/observability/server/request-context";
 
 export function register() {
   configureObservability();
@@ -24,7 +25,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   context,
 ) => {
   try {
-    const requestId = readRequestId(request.headers)?.trim() || crypto.randomUUID();
+    const { requestId } = createRequestContext({ headers: request.headers });
 
     getLogger().error(LogEvent.serverError, {
       route: context.routePath,
@@ -36,10 +37,3 @@ export const onRequestError: Instrumentation.onRequestError = async (
     // Error reporting must not change Next.js request error handling.
   }
 };
-
-function readRequestId(
-  headers: Readonly<Record<string, string | string[] | undefined>>,
-): string | undefined {
-  const value = headers["x-request-id"] ?? headers["X-Request-Id"];
-  return Array.isArray(value) ? value[0] : value;
-}

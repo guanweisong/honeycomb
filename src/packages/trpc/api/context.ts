@@ -6,6 +6,11 @@ import { eq } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 import { auth } from "@/auth";
+import {
+  createRequestContext,
+  type RequestContext,
+} from "@/packages/observability/server/request-context";
+import { getRequestContext } from "@/packages/observability/server/node-request-context";
 
 /**
  * 上下文中的用户信息接口。
@@ -16,8 +21,9 @@ export interface User {
   name?: string | null;
 }
 
-interface CreateContextOptions {
+export interface CreateContextOptions {
   req?: Request;
+  requestContext?: RequestContext;
 }
 
 /**
@@ -78,11 +84,15 @@ export const createContext = async (opts: CreateContextOptions) => {
   const user = await getUserFromRequest(opts.req);
   const db = getDb();
   const hasRequest = Boolean(opts.req);
+  const requestContext = opts.requestContext
+    ?? getRequestContext()
+    ?? createRequestContext({ headers: opts.req?.headers });
   return {
     db,
     user,
     hasRequest,
     header: opts.req?.headers ?? new Headers(),
+    requestId: requestContext.requestId,
   } as const;
 };
 

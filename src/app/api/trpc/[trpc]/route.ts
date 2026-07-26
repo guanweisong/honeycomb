@@ -1,5 +1,10 @@
 import { appRouter } from "@/packages/trpc/api/appRouter";
 import { createTrpcContext } from "@/packages/trpc/api";
+import {
+  createRequestContext,
+  REQUEST_ID_HEADER,
+} from "@/packages/observability/server/request-context";
+import { runWithRequestContext } from "@/packages/observability/server/node-request-context";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 /**
@@ -15,13 +20,21 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
  * - `router`: 从 `@honeycomb/trpc` 包导入的主路由 `appRouter`。
  * - `createContext`: 用于创建每个请求上下文的函数，使用封装的 `createTrpcContext`。
  */
-const handler = (req: Request) =>
-  fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req,
-    router: appRouter,
-    createContext: () => createTrpcContext({ req }),
+const handler = (req: Request) => {
+  const requestContext = createRequestContext({ headers: req.headers });
+
+  return runWithRequestContext(requestContext, async () => {
+    const response = await fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req,
+      router: appRouter,
+      createContext: () => createTrpcContext({ req, requestContext }),
+    });
+
+    response.headers.set(REQUEST_ID_HEADER, requestContext.requestId);
+    return response;
   });
+};
 
 /**
  * 导出 `handler` 以同时处理 GET 和 POST 请求。

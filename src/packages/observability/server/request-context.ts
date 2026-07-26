@@ -1,7 +1,3 @@
-import "server-only";
-
-import { AsyncLocalStorage } from "node:async_hooks";
-
 export const REQUEST_ID_HEADER = "x-request-id";
 
 export interface RequestContext {
@@ -10,30 +6,37 @@ export interface RequestContext {
 
 export interface CreateRequestContextOptions {
   requestId?: string;
-  headers?: Headers;
+  headers?: RequestHeaders;
 }
 
-const requestContextStorage = new AsyncLocalStorage<RequestContext>();
+export type RequestHeaders = Headers | Readonly<Record<string, string | string[] | undefined>>;
 
 export function createRequestContext(
   options: CreateRequestContextOptions = {},
 ): RequestContext {
   const requestId = normalizeRequestId(options.requestId)
-    ?? normalizeRequestId(options.headers?.get(REQUEST_ID_HEADER))
+    ?? getRequestIdFromHeaders(options.headers)
     ?? crypto.randomUUID();
 
   return { requestId };
 }
 
-export function runWithRequestContext<Result>(
-  context: RequestContext,
-  operation: () => Result,
-): Result {
-  return requestContextStorage.run(context, operation);
-}
+export function getRequestIdFromHeaders(
+  headers: RequestHeaders | undefined,
+): string | undefined {
+  if (!headers) return undefined;
 
-export function getRequestContext(): RequestContext | undefined {
-  return requestContextStorage.getStore();
+  if (typeof Headers !== "undefined" && headers instanceof Headers) {
+    return normalizeRequestId(headers.get(REQUEST_ID_HEADER));
+  }
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === REQUEST_ID_HEADER) {
+      return normalizeRequestId(Array.isArray(value) ? value[0] : value);
+    }
+  }
+
+  return undefined;
 }
 
 function normalizeRequestId(value: string | null | undefined): string | undefined {

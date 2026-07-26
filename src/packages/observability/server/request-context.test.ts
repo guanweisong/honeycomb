@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   createRequestContext,
+  getRequestIdFromHeaders,
+} from "./request-context";
+import {
   getRequestContext,
   runWithRequestContext,
-} from "./request-context";
+} from "./node-request-context";
+import * as publicObservability from "./index";
 
 describe("request context", () => {
   it("preserves an incoming request ID", () => {
@@ -19,6 +23,14 @@ describe("request context", () => {
     });
 
     expect(context).toEqual({ requestId: "req-header-provided" });
+  });
+
+  it("reads an explicit request ID from a header record with mixed casing", () => {
+    const requestId = getRequestIdFromHeaders({
+      "X-ReQuEsT-Id": "req-header-mixed-case",
+    });
+
+    expect(requestId).toBe("req-header-mixed-case");
   });
 
   it("generates a request ID when no identifier is provided", () => {
@@ -39,5 +51,10 @@ describe("request context", () => {
     });
 
     expect(getRequestContext()).toBeUndefined();
+  });
+
+  it("does not expose Node request storage from the cross-runtime entrypoint", () => {
+    expect(publicObservability).not.toHaveProperty("getRequestContext");
+    expect(publicObservability).not.toHaveProperty("runWithRequestContext");
   });
 });

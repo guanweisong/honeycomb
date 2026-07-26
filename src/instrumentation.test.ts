@@ -112,4 +112,26 @@ describe("instrumentation register", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
   });
+
+  it("reads an incoming request ID without assuming header casing", async () => {
+    const memory = createMemoryObservability();
+    configureObservability({ logger: memory.logger });
+
+    await onRequestError(
+      new Error("failure"),
+      {
+        path: "/api/posts",
+        method: "GET",
+        headers: { "X-ReQuEsT-Id": "req-mixed-case" },
+      },
+      {
+        routerKind: "App Router",
+        routePath: "/api/posts",
+        routeType: "route",
+        revalidateReason: undefined,
+      },
+    );
+
+    expect(memory.logEvents[0]?.context.requestId).toBe("req-mixed-case");
+  });
 });
