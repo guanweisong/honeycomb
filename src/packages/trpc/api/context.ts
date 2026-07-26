@@ -10,7 +10,6 @@ import {
   createRequestContext,
   type RequestContext,
 } from "@/packages/observability/server/request-context";
-import { getRequestContext } from "@/packages/observability/server/node-request-context";
 
 /**
  * 上下文中的用户信息接口。
@@ -85,7 +84,6 @@ export const createContext = async (opts: CreateContextOptions) => {
   const db = getDb();
   const hasRequest = Boolean(opts.req);
   const requestContext = opts.requestContext
-    ?? getRequestContext()
     ?? createRequestContext({ headers: opts.req?.headers });
   return {
     db,

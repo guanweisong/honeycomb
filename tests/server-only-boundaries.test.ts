@@ -62,6 +62,16 @@ describe("server-only module boundaries", () => {
     }
   });
 
+  it("keeps tRPC context independent of Node request storage", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/packages/trpc/api/context.ts"),
+      "utf8",
+    );
+
+    expect(source).not.toContain("node-request-context");
+    expect(source).not.toContain("node:async_hooks");
+  });
+
   it("makes Next.js reject a Client Component importing a protected server entry", () => {
     const fixture = resolve(
       process.cwd(),

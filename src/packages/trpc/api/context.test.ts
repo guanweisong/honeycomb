@@ -26,11 +26,14 @@ describe("createContext", () => {
     expect(context.requestId).toBe("req-trpc-client");
   });
 
-  it("uses the active request scope when a request has no ID", async () => {
+  it("generates a request ID without reading a Node request scope", async () => {
     await runWithRequestContext({ requestId: "req-trpc-scope" }, async () => {
       const context = await createContext({});
 
-      expect(context.requestId).toBe("req-trpc-scope");
+      expect(context.requestId).not.toBe("req-trpc-scope");
+      expect(context.requestId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
     });
   });
 
