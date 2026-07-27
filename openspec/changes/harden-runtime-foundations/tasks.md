@@ -29,6 +29,6 @@
 ## 5. 验证与发布
 
 - [x] 5.1 在数据库网络不可用的环境运行 `bun run build` 并确认构建成功
-- [ ] 5.2 运行类型检查、Lint、全量单测、相关 E2E 和 Cloudflare 构建
+- [x] 5.2 运行类型检查、Lint、全量单测、相关 E2E 和 Cloudflare 构建
 - [x] 5.3 更新 README 环境变量、可选集成、CSP 观察模式和 sitemap 降级说明
 - [ ] 5.4 先以 report-only 部署并记录验证清单，通过后切换生产强制 CSP
