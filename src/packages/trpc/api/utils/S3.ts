@@ -90,14 +90,18 @@ class S3 {
     const { Objects } = params;
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    return observeExternalServiceOperation("object-storage", "delete", () =>
-      S3.S3().send(
+    return observeExternalServiceOperation("object-storage", "delete", async () => {
+      const result = await S3.S3().send(
         new DeleteObjectsCommand({
           Bucket: r2.bucketName,
           Delete: { Objects },
         }),
-      )
-    );
+      );
+      if (result.Errors?.length) {
+        throw new Error("Object storage delete failed");
+      }
+      return result;
+    });
   };
 }
 

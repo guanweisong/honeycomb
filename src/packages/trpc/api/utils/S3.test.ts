@@ -61,4 +61,42 @@ describe("S3 observability", () => {
     ]);
     expect(JSON.stringify(memory.metricEvents)).not.toContain("user-123");
   });
+
+  it.each([
+    {
+      name: "partial",
+      response: {
+        Deleted: [{ Key: "public/ok.png" }],
+        Errors: [{ Key: "private/user-123.png", Message: "access denied" }],
+      },
+    },
+    {
+      name: "complete",
+      response: {
+        Errors: [
+          { Key: "private/user-123.png", Message: "access denied" },
+          { Key: "private/user-456.png", Message: "provider unavailable" },
+        ],
+      },
+    },
+  ])("records $name delete response errors as safe failures", async ({ response }) => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
+    send.mockResolvedValue(response);
+
+    await expect(S3.deleteMultipleObject({
+      Objects: [
+        { Key: "private/user-123.png" },
+        { Key: "private/user-456.png" },
+      ],
+    })).rejects.toThrow("Object storage delete failed");
+
+    expect(memory.metricEvents.map(({ name }) => name)).toEqual([
+      MetricName.externalServiceOperationsTotal,
+      MetricName.externalServiceErrorsTotal,
+      MetricName.externalServiceOperationDurationMs,
+    ]);
+    expect(JSON.stringify(memory.metricEvents)).not.toContain("user-123");
+    expect(JSON.stringify(memory.metricEvents)).not.toContain("access denied");
+  });
 });

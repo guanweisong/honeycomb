@@ -67,4 +67,26 @@ describe("sendEmail observability", () => {
     ]);
     expect(JSON.stringify(memory.metricEvents)).not.toContain("example.com");
   });
+
+  it("records a resolved provider error as a safe email failure", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
+    sendMock.mockResolvedValue({
+      data: null,
+      error: { message: "recipient admin@example.com rejected" },
+    });
+
+    await expect(sendEmail("ADMIN_NOTICE", payload)).rejects.toThrow(
+      "Email delivery failed",
+    );
+
+    expect(memory.metricEvents.map(({ name }) => name)).toEqual([
+      MetricName.externalServiceOperationsTotal,
+      MetricName.externalServiceErrorsTotal,
+      MetricName.externalServiceOperationDurationMs,
+    ]);
+    expect(JSON.stringify(memory.metricEvents)).not.toContain("example.com");
+    expect(JSON.stringify(memory.logEvents)).not.toContain("example.com");
+    expect(JSON.stringify(memory.logEvents)).not.toContain("rejected");
+  });
 });

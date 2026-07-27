@@ -39,18 +39,20 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
 
   try {
     if (type === "ADMIN_NOTICE") {
-      await observeExternalServiceOperation("email", "send", () =>
-        resend.emails.send({
+      await observeExternalServiceOperation("email", "send", async () => {
+        const result = await resend.emails.send({
           from: systemEmail,
           to: adminEmail,
           subject: `[${siteNameZh}]有一条新的评论`,
           react: AdminCommentEmailMessage({ currentComment, setting }),
-        })
-      );
+        });
+        if (result.error) throw new Error("Email delivery failed");
+        return result.data;
+      });
     } else if (type === "REPLY_NOTICE") {
       if (parentComment && parentComment.email) {
-        await observeExternalServiceOperation("email", "send", () =>
-          resend.emails.send({
+        await observeExternalServiceOperation("email", "send", async () => {
+          const result = await resend.emails.send({
             from: systemEmail,
             to: parentComment.email!,
             subject: `您在[${siteNameZh}]的评论有新的回复`,
@@ -59,8 +61,10 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
               setting,
               parentComment,
             }),
-          })
-        );
+          });
+          if (result.error) throw new Error("Email delivery failed");
+          return result.data;
+        });
       }
     } else {
       throw new Error("Invalid email type");

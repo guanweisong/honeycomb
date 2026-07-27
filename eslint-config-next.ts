@@ -12,9 +12,15 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/app/**/*.{ts,tsx}", "src/packages/trpc/**/*.{ts,tsx}"],
+    files: ["src/app/**/*.{ts,tsx}", "src/packages/**/*.{ts,tsx}"],
     rules: {
       "no-console": "error",
+    },
+  },
+  {
+    files: ["src/packages/observability/adapters/console.ts"],
+    rules: {
+      "no-console": "off",
     },
   },
   globalIgnores([
