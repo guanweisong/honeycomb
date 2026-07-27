@@ -48,7 +48,9 @@ describe("upstash cache", () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    const { cache } = await loadModule();
+    const { cache, registry, memory } = await loadModule();
+    const observed = memory.createMemoryObservability();
+    registry.configureObservability(observed);
 
     await expect(cache.getCacheJSON("post.index", "key")).resolves.toBeNull();
     await expect(cache.getCacheVersion("post.index", "version")).resolves.toBe(
@@ -61,6 +63,7 @@ describe("upstash cache", () => {
       cache.setCacheJSON("post.index", "key", { foo: "bar" }, 60),
     ).resolves.toBeUndefined();
     expect(redisCtor).not.toHaveBeenCalled();
+    expect(observed.metricEvents).toEqual([]);
   });
 
   it("reads and writes cache values when redis is configured", async () => {

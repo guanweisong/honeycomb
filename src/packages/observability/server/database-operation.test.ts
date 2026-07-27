@@ -94,6 +94,7 @@ describe("observeDbOperation", () => {
       "request.01JTESTREQUEST123",
       "SELECT * FROM user WHERE id = ?",
       "user.lookup.01JRESOURCE123",
+      "user.lookup.alphabeticresource",
     ]) {
       await expect(
         observeDbOperation(unsafeName as never, "select", async () => "ok"),

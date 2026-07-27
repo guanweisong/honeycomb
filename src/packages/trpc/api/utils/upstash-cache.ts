@@ -59,8 +59,8 @@ export async function getCacheJSON<T>(
   key: string,
 ): Promise<T | null> {
   const redis = getRedisClient();
+  if (!redis) return null;
   return observeCacheRead(namespace, async () => {
-    if (!redis) return null;
     return await redis.get<T>(key);
   });
 }
@@ -72,8 +72,9 @@ export async function setCacheJSON<T>(
   expireSeconds: number,
 ): Promise<void> {
   const redis = getRedisClient();
+  if (!redis) return;
   try {
-    if (redis) await redis.set(key, value, { ex: expireSeconds });
+    await redis.set(key, value, { ex: expireSeconds });
     recordCacheOperation(namespace, "write", "success");
   } catch (error) {
     recordCacheOperation(namespace, "write", "error");
@@ -87,8 +88,8 @@ export async function getCacheVersion(
   key: string,
 ): Promise<number> {
   const redis = getRedisClient();
+  if (!redis) return 1;
   const raw = await observeCacheRead<number | string>(namespace, async () => {
-    if (!redis) return null;
     return await redis.get<number | string>(key);
   });
   if (raw == null) return 1;
@@ -102,8 +103,9 @@ export async function bumpCacheVersion(
   key: string,
 ): Promise<number> {
   const redis = getRedisClient();
+  if (!redis) return 1;
   try {
-    const next = redis ? await redis.incr(key) : 1;
+    const next = await redis.incr(key);
     recordCacheOperation(namespace, "write", "success");
     return Number(next);
   } catch (error) {
