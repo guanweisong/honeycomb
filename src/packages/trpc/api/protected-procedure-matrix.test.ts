@@ -18,9 +18,25 @@ const ADMIN_ONLY = [UserLevel.ADMIN] as const;
 type RoleMatrixEntry = readonly [string, readonly UserLevel[]];
 
 interface RouterSource {
-  routerName: string;
+  moduleSpecifier: string;
   fileName: string;
   source: string;
+}
+
+interface RouterDeclaration {
+  exportSymbol: string;
+  routerObject: ts.ObjectLiteralExpression;
+}
+
+interface RouterImport {
+  moduleSpecifier: string;
+  importedSymbol: string;
+  localSymbol: string;
+}
+
+interface RouterRegistration {
+  registrationKey: string;
+  localSymbol: string;
 }
 
 const roleOrder = new Map<UserLevel, number>(
@@ -50,7 +66,27 @@ function normalizeRoleMatrix(
 
 function extractProtectedProcedureRoleMatrix(
   routerSources: readonly RouterSource[],
+  appRouterSource: string,
 ): RoleMatrixEntry[] {
+  const appSourceFile = ts.createSourceFile(
+    "appRouter.ts",
+    appRouterSource,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const routerImports = readRouterImports(appSourceFile);
+  const appDeclaration = findRouterDeclaration(appSourceFile, "appRouter.ts");
+  const registrations = readRouterRegistrations(
+    appDeclaration.routerObject,
+    "appRouter.ts",
+  );
+  validateRouterRegistrationBoundary(
+    routerSources,
+    routerImports,
+    registrations,
+  );
+
   const entries: RoleMatrixEntry[] = [];
 
   for (const routerSource of routerSources) {
@@ -61,19 +97,28 @@ function extractProtectedProcedureRoleMatrix(
       true,
       ts.ScriptKind.TS,
     );
-    const routerObjects = findRouterObjects(sourceFile, routerSource.fileName);
+    const routerDeclaration = findRouterDeclaration(
+      sourceFile,
+      routerSource.fileName,
+    );
+    const registrationKey = resolveRegistrationKey(
+      routerSource,
+      routerDeclaration.exportSymbol,
+      routerImports,
+      registrations,
+    );
+    const protectedCalls = findAllProtectedProcedureCalls(sourceFile);
+    const consumedCalls = new Map<ts.CallExpression, number>();
 
-    if (routerObjects.length !== 1) {
-      throw new Error(
-        `${routerSource.fileName} must declare exactly one createTRPCRouter object`,
-      );
-    }
-
-    for (const property of routerObjects[0].properties) {
+    for (const property of routerDeclaration.routerObject.properties) {
       if (!ts.isPropertyAssignment(property)) continue;
 
       const protectedCall = findProtectedProcedureCall(property.initializer);
       if (!protectedCall) continue;
+      consumedCalls.set(
+        protectedCall,
+        (consumedCalls.get(protectedCall) ?? 0) + 1,
+      );
 
       const procedureName = readProcedureName(property.name, routerSource.fileName);
       const roles = readProtectedRoles(
@@ -82,38 +127,196 @@ function extractProtectedProcedureRoleMatrix(
         procedureName,
       );
       entries.push([
-        `${routerSource.routerName}.${procedureName}`,
+        `${registrationKey}.${procedureName}`,
         roles,
       ]);
+    }
+
+    for (const protectedCall of protectedCalls) {
+      const consumptionCount = consumedCalls.get(protectedCall) ?? 0;
+      if (consumptionCount === 0) {
+        throw new Error(
+          `${routerSource.fileName} contains an unconsumed protectedProcedure call`,
+        );
+      }
+      if (consumptionCount !== 1) {
+        throw new Error(
+          `${routerSource.fileName} maps a protectedProcedure call more than once`,
+        );
+      }
     }
   }
 
   return normalizeRoleMatrix(entries);
 }
 
-function findRouterObjects(
+function findRouterDeclaration(
   sourceFile: ts.SourceFile,
   fileName: string,
-): ts.ObjectLiteralExpression[] {
-  const routerObjects: ts.ObjectLiteralExpression[] = [];
+): RouterDeclaration {
+  const declarations: RouterDeclaration[] = [];
 
   const visit = (node: ts.Node): void => {
     if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === "createTRPCRouter"
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      ts.isIdentifier(node.initializer.expression) &&
+      node.initializer.expression.text === "createTRPCRouter"
     ) {
-      const [routerObject] = node.arguments;
+      const [routerObject] = node.initializer.arguments;
       if (!routerObject || !ts.isObjectLiteralExpression(routerObject)) {
         throw new Error(`${fileName} must pass an object to createTRPCRouter`);
       }
-      routerObjects.push(routerObject);
+      declarations.push({
+        exportSymbol: node.name.text,
+        routerObject,
+      });
     }
     ts.forEachChild(node, visit);
   };
 
   visit(sourceFile);
-  return routerObjects;
+  if (declarations.length !== 1) {
+    throw new Error(
+      `${fileName} must declare exactly one createTRPCRouter variable`,
+    );
+  }
+  return declarations[0];
+}
+
+function findAllProtectedProcedureCalls(
+  sourceFile: ts.SourceFile,
+): ts.CallExpression[] {
+  const calls: ts.CallExpression[] = [];
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "protectedProcedure"
+    ) {
+      calls.push(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return calls;
+}
+
+function readRouterImports(sourceFile: ts.SourceFile): RouterImport[] {
+  return sourceFile.statements.flatMap((statement) => {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      !statement.moduleSpecifier.text.endsWith(".router") ||
+      !statement.importClause?.namedBindings ||
+      !ts.isNamedImports(statement.importClause.namedBindings)
+    ) {
+      return [];
+    }
+
+    const moduleSpecifier = statement.moduleSpecifier.text;
+    return statement.importClause.namedBindings.elements.map((element) => ({
+      moduleSpecifier,
+      importedSymbol: element.propertyName?.text ?? element.name.text,
+      localSymbol: element.name.text,
+    }));
+  });
+}
+
+function readRouterRegistrations(
+  routerObject: ts.ObjectLiteralExpression,
+  fileName: string,
+): RouterRegistration[] {
+  return routerObject.properties.map((property) => {
+    if (
+      !ts.isPropertyAssignment(property) ||
+      !ts.isIdentifier(property.initializer)
+    ) {
+      throw new Error(`${fileName} contains a dynamic router registration`);
+    }
+    return {
+      registrationKey: readProcedureName(property.name, fileName),
+      localSymbol: property.initializer.text,
+    };
+  });
+}
+
+function validateRouterRegistrationBoundary(
+  routerSources: readonly RouterSource[],
+  routerImports: readonly RouterImport[],
+  registrations: readonly RouterRegistration[],
+): void {
+  const sourceModules = new Set(routerSources.map(({ moduleSpecifier }) => moduleSpecifier));
+  if (sourceModules.size !== routerSources.length) {
+    throw new Error("Router sources contain a duplicate module specifier");
+  }
+
+  const registrationKeys = registrations.map(({ registrationKey }) => registrationKey);
+  if (new Set(registrationKeys).size !== registrationKeys.length) {
+    throw new Error("appRouter contains a duplicate registration key");
+  }
+
+  for (const routerImport of routerImports) {
+    if (!sourceModules.has(routerImport.moduleSpecifier)) {
+      throw new Error(
+        `Registered router import ${routerImport.localSymbol} has no source`,
+      );
+    }
+    const matches = registrations.filter(
+      ({ localSymbol }) => localSymbol === routerImport.localSymbol,
+    );
+    if (matches.length === 0) {
+      throw new Error(
+        `Router source ${routerImport.moduleSpecifier} is not registered`,
+      );
+    }
+    if (matches.length > 1) {
+      throw new Error(
+        `Router ${routerImport.localSymbol} is registered more than once`,
+      );
+    }
+  }
+
+  for (const registration of registrations) {
+    const matches = routerImports.filter(
+      ({ localSymbol }) => localSymbol === registration.localSymbol,
+    );
+    if (matches.length !== 1) {
+      throw new Error(
+        `Registration ${registration.registrationKey} has no unique router import`,
+      );
+    }
+  }
+}
+
+function resolveRegistrationKey(
+  routerSource: RouterSource,
+  exportSymbol: string,
+  routerImports: readonly RouterImport[],
+  registrations: readonly RouterRegistration[],
+): string {
+  const imports = routerImports.filter(
+    ({ moduleSpecifier, importedSymbol }) =>
+      moduleSpecifier === routerSource.moduleSpecifier &&
+      importedSymbol === exportSymbol,
+  );
+  if (imports.length !== 1) {
+    throw new Error(
+      `Router source ${routerSource.moduleSpecifier} is not registered by export symbol`,
+    );
+  }
+
+  const registration = registrations.find(
+    ({ localSymbol }) => localSymbol === imports[0].localSymbol,
+  );
+  if (!registration) {
+    throw new Error(
+      `Router source ${routerSource.moduleSpecifier} is not registered in appRouter`,
+    );
+  }
+  return registration.registrationKey;
 }
 
 function findProtectedProcedureCall(
@@ -220,6 +423,21 @@ const protectedProcedureRoleMatrix = [
   ["user.update", ADMIN_ONLY],
 ] as const;
 
+const sampleRouterSource: RouterSource = {
+  moduleSpecifier: "./sample.router",
+  fileName: "sample.router.ts",
+  source: `export const sampleRouter = createTRPCRouter({
+    read: protectedProcedure([UserLevel.ADMIN]).query(() => null),
+  });`,
+};
+
+const sampleAppRouterSource = `
+  import { sampleRouter } from "./sample.router";
+  export const appRouter = createTRPCRouter({
+    sample: sampleRouter,
+  });
+`;
+
 function createContext(level: UserLevel): Context {
   return {
     db: {} as Context["db"],
@@ -254,15 +472,19 @@ describe("legacy protected procedure role matrix", () => {
       return readdirSync(moduleDirectory)
         .filter((fileName) => fileName.endsWith(".router.ts"))
         .map((fileName) => ({
-          routerName: fileName.slice(0, -".router.ts".length),
+          moduleSpecifier: `@/packages/trpc/api/modules/${directory.name}/${fileName.slice(0, -3)}`,
           fileName,
           source: readFileSync(join(moduleDirectory, fileName), "utf8"),
         }));
     });
-
-    expect(extractProtectedProcedureRoleMatrix(routerSources)).toEqual(
-      normalizeRoleMatrix(protectedProcedureRoleMatrix),
+    const appRouterSource = readFileSync(
+      join(process.cwd(), "src/packages/trpc/api/appRouter.ts"),
+      "utf8",
     );
+
+    expect(
+      extractProtectedProcedureRoleMatrix(routerSources, appRouterSource),
+    ).toEqual(normalizeRoleMatrix(protectedProcedureRoleMatrix));
   });
 
   it.each([
@@ -301,8 +523,79 @@ describe("legacy protected procedure role matrix", () => {
     ];
 
     expect(extractProtectedProcedureRoleMatrix([
-      { routerName: "sample", fileName: "sample.router.ts", source },
-    ])).not.toEqual(normalizeRoleMatrix(fixtureBaseline));
+      {
+        moduleSpecifier: "./sample.router",
+        fileName: "sample.router.ts",
+        source,
+      },
+    ], sampleAppRouterSource)).not.toEqual(normalizeRoleMatrix(fixtureBaseline));
+  });
+
+  it.each([
+    [
+      "alias",
+      `const adminProcedure = protectedProcedure([UserLevel.ADMIN]);
+       export const sampleRouter = createTRPCRouter({
+         read: adminProcedure.query(() => null),
+       });`,
+    ],
+    [
+      "shared builder",
+      `const adminProcedure = protectedProcedure([UserLevel.ADMIN]);
+       export const sampleRouter = createTRPCRouter({
+         read: adminProcedure.query(() => null),
+         update: adminProcedure.mutation(() => null),
+       });`,
+    ],
+    [
+      "wrapper",
+      `const adminProcedure = () => protectedProcedure([UserLevel.ADMIN]);
+       export const sampleRouter = createTRPCRouter({
+         read: adminProcedure().query(() => null),
+       });`,
+    ],
+  ])("fails closed for an unconsumed protectedProcedure %s", (_case, source) => {
+    expect(() => extractProtectedProcedureRoleMatrix([
+      {
+        moduleSpecifier: "./sample.router",
+        fileName: "sample.router.ts",
+        source,
+      },
+    ], sampleAppRouterSource)).toThrow(/unconsumed protectedProcedure/i);
+  });
+
+  it("exposes an appRouter registration rename to the baseline comparison", () => {
+    const renamedMatrix = extractProtectedProcedureRoleMatrix(
+      [sampleRouterSource],
+      sampleAppRouterSource.replace("sample: sampleRouter", "renamed: sampleRouter"),
+    );
+
+    expect(renamedMatrix).toEqual([["renamed.read", [UserLevel.ADMIN]]]);
+    expect(renamedMatrix).not.toEqual([["sample.read", [UserLevel.ADMIN]]]);
+  });
+
+  it("fails when appRouter still registers a removed router source", () => {
+    expect(() => extractProtectedProcedureRoleMatrix(
+      [],
+      sampleAppRouterSource,
+    )).toThrow(/registered router.*source/i);
+  });
+
+  it("fails when appRouter registers the same router more than once", () => {
+    expect(() => extractProtectedProcedureRoleMatrix(
+      [sampleRouterSource],
+      sampleAppRouterSource.replace(
+        "sample: sampleRouter",
+        "sample: sampleRouter, duplicate: sampleRouter",
+      ),
+    )).toThrow(/registered.*more than once/i);
+  });
+
+  it("fails when a router source is not registered in appRouter", () => {
+    expect(() => extractProtectedProcedureRoleMatrix(
+      [sampleRouterSource],
+      sampleAppRouterSource.replace("sample: sampleRouter", ""),
+    )).toThrow(/router source.*not registered/i);
   });
 
   it.each(protectedProcedureRoleMatrix)(
