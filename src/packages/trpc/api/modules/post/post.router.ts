@@ -33,6 +33,7 @@ import {
 } from "@/packages/trpc/api/utils/upstash-cache";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
+import { observeDbOperation } from "@/packages/observability/server";
 
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 type OptionalI18nInput =
@@ -83,6 +84,7 @@ const toPostUpdateValues = (
 });
 
 const POST_INDEX_CACHE_VERSION_KEY = "cache:post:index:version";
+const POST_INDEX_CACHE_NAMESPACE = "post.index";
 
 /**
  * 文章相关的 tRPC 路由。
@@ -107,10 +109,14 @@ export const postRouter = createTRPCRouter({
         return getPostList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY);
       }
 
-      const cacheVersion = await getCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      const cacheVersion = await getCacheVersion(
+        POST_INDEX_CACHE_NAMESPACE,
+        POST_INDEX_CACHE_VERSION_KEY,
+      );
       const cacheKey = `post:index:v${cacheVersion}:${JSON.stringify(input)}`;
-      const cached =
-        await getCacheJSON<Awaited<ReturnType<typeof getPostList>>>(cacheKey);
+      const cached = await getCacheJSON<
+        Awaited<ReturnType<typeof getPostList>>
+      >(POST_INDEX_CACHE_NAMESPACE, cacheKey);
       if (cached) return cached;
 
       const result = await getPostList(
@@ -118,7 +124,7 @@ export const postRouter = createTRPCRouter({
         input,
         ContentVisibility.PUBLISHED_ONLY,
       );
-      await setCacheJSON(cacheKey, result, 60 * 60);
+      await setCacheJSON(POST_INDEX_CACHE_NAMESPACE, cacheKey, result, 60 * 60);
       return result;
     }),
 
@@ -178,11 +184,16 @@ export const postRouter = createTRPCRouter({
       if (!authorId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-      const [newPost] = await ctx.db
-        .insert(schema.post)
-        .values(toPostInsertValues(input, authorId))
-        .returning();
-      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      const [newPost] = await observeDbOperation("post.create", "insert", () =>
+        ctx.db
+          .insert(schema.post)
+          .values(toPostInsertValues(input, authorId))
+          .returning(),
+      );
+      await bumpCacheVersion(
+        POST_INDEX_CACHE_NAMESPACE,
+        POST_INDEX_CACHE_VERSION_KEY,
+      );
       return newPost;
     }),
 
@@ -195,10 +206,13 @@ export const postRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.post)
-        .where(inArray(schema.post.id, input.ids));
-      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      await observeDbOperation("post.destroy", "delete", () =>
+        ctx.db.delete(schema.post).where(inArray(schema.post.id, input.ids)),
+      );
+      await bumpCacheVersion(
+        POST_INDEX_CACHE_NAMESPACE,
+        POST_INDEX_CACHE_VERSION_KEY,
+      );
       return { success: true };
     }),
 
@@ -212,12 +226,20 @@ export const postRouter = createTRPCRouter({
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedPost] = await ctx.db
-        .update(schema.post)
-        .set(toPostUpdateValues(rest))
-        .where(eq(schema.post.id, id))
-        .returning();
-      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+      const [updatedPost] = await observeDbOperation(
+        "post.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.post)
+            .set(toPostUpdateValues(rest))
+            .where(eq(schema.post.id, id))
+            .returning(),
+      );
+      await bumpCacheVersion(
+        POST_INDEX_CACHE_NAMESPACE,
+        POST_INDEX_CACHE_VERSION_KEY,
+      );
       return updatedPost;
     }),
 
@@ -229,21 +251,26 @@ export const postRouter = createTRPCRouter({
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: IdSchema }))
     .query(async ({ ctx, input }) => {
-      const posts = await ctx.db
-        .select({
-          id: schema.post.id,
-          title: schema.post.title,
-          quoteContent: schema.post.quoteContent,
-        })
-        .from(schema.post)
-        .where(
-          and(
-            eq(schema.post.categoryId, input.categoryId),
-            eq(schema.post.status, PostStatus.PUBLISHED),
-          ),
-        )
-        .orderBy(sql`RANDOM()`)
-        .limit(10);
+      const posts = await observeDbOperation(
+        "post.random-by-category",
+        "select",
+        () =>
+          ctx.db
+            .select({
+              id: schema.post.id,
+              title: schema.post.title,
+              quoteContent: schema.post.quoteContent,
+            })
+            .from(schema.post)
+            .where(
+              and(
+                eq(schema.post.categoryId, input.categoryId),
+                eq(schema.post.status, PostStatus.PUBLISHED),
+              ),
+            )
+            .orderBy(sql`RANDOM()`)
+            .limit(10),
+      );
 
       return posts;
     }),
@@ -256,18 +283,23 @@ export const postRouter = createTRPCRouter({
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ ctx, input }) => {
-      const [updatedPage] = await ctx.db
-        .update(schema.post)
-        .set({
-          views: sql`${schema.post.views} + 1`,
-        })
-        .where(
-          and(
-            eq(schema.post.id, input.id),
-            eq(schema.post.status, PostStatus.PUBLISHED),
-          ),
-        )
-        .returning({ views: schema.post.views });
+      const [updatedPage] = await observeDbOperation(
+        "post.increment-views",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.post)
+            .set({
+              views: sql`${schema.post.views} + 1`,
+            })
+            .where(
+              and(
+                eq(schema.post.id, input.id),
+                eq(schema.post.status, PostStatus.PUBLISHED),
+              ),
+            )
+            .returning({ views: schema.post.views }),
+      );
 
       if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
       return updatedPage;
@@ -281,15 +313,20 @@ export const postRouter = createTRPCRouter({
   getCategoryId: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ ctx, input }) => {
-      const [result] = await ctx.db
-        .select({ categoryId: schema.post.categoryId })
-        .from(schema.post)
-        .where(
-          and(
-            eq(schema.post.id, input.id),
-            eq(schema.post.status, PostStatus.PUBLISHED),
-          ),
-        );
+      const [result] = await observeDbOperation(
+        "post.category-id",
+        "select",
+        () =>
+          ctx.db
+            .select({ categoryId: schema.post.categoryId })
+            .from(schema.post)
+            .where(
+              and(
+                eq(schema.post.id, input.id),
+                eq(schema.post.status, PostStatus.PUBLISHED),
+              ),
+            ),
+      );
 
       return result;
     }),
@@ -306,27 +343,32 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.transaction(async (tx) => {
-        await tx
-          .delete(schema.postTag)
-          .where(
-            and(
-              eq(schema.postTag.postId, input.postId),
-              eq(schema.postTag.type, input.type),
-            ),
-          );
+      await observeDbOperation("post.update-tags", "transaction", () =>
+        ctx.db.transaction(async (tx) => {
+          await tx
+            .delete(schema.postTag)
+            .where(
+              and(
+                eq(schema.postTag.postId, input.postId),
+                eq(schema.postTag.type, input.type),
+              ),
+            );
 
-        if (input.tagIds.length > 0) {
-          await tx.insert(schema.postTag).values(
-            input.tagIds.map((tagId) => ({
-              postId: input.postId,
-              tagId,
-              type: input.type,
-            })),
-          );
-        }
-      });
-      await bumpCacheVersion(POST_INDEX_CACHE_VERSION_KEY);
+          if (input.tagIds.length > 0) {
+            await tx.insert(schema.postTag).values(
+              input.tagIds.map((tagId) => ({
+                postId: input.postId,
+                tagId,
+                type: input.type,
+              })),
+            );
+          }
+        }),
+      );
+      await bumpCacheVersion(
+        POST_INDEX_CACHE_NAMESPACE,
+        POST_INDEX_CACHE_VERSION_KEY,
+      );
       return { success: true };
     }),
 });

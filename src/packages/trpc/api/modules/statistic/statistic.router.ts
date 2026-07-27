@@ -1,14 +1,12 @@
 import "server-only";
 
-import {
-  protectedProcedure,
-  createTRPCRouter,
-} from "@/packages/trpc/api/core";
+import { protectedProcedure, createTRPCRouter } from "@/packages/trpc/api/core";
 import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
 import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import * as schema from "@/packages/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 统计数据接口类型定义。
@@ -44,10 +42,15 @@ export const statisticRouter = createTRPCRouter({
     const postArray = Object.values(PostType);
     result.postType = [];
     for (let i = 0; i < postArray.length; i++) {
-      const [postCountResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.post)
-        .where(eq(schema.post.type, postArray[i]));
+      const [postCountResult] = await observeDbOperation(
+        "statistics.posts-by-type",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.post)
+            .where(eq(schema.post.type, postArray[i])),
+      );
       const count = Number(postCountResult?.count) || 0;
       result.postType.push({ item: postArray[i], count });
     }
@@ -56,10 +59,15 @@ export const statisticRouter = createTRPCRouter({
     const userArray = Object.values(UserLevel);
     result.userType = [];
     for (let i = 0; i < userArray.length; i++) {
-      const [userCountResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.user)
-        .where(eq(schema.user.level, userArray[i]));
+      const [userCountResult] = await observeDbOperation(
+        "statistics.users-by-level",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.user)
+            .where(eq(schema.user.level, userArray[i])),
+      );
       const count = Number(userCountResult?.count) || 0;
       result.userType.push({ item: userArray[i], count });
     }
@@ -68,22 +76,36 @@ export const statisticRouter = createTRPCRouter({
     const commentArray = Object.values(CommentStatus);
     result.commentStatus = [];
     for (let i = 0; i < commentArray.length; i++) {
-      const [commentCountResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.comment)
-        .where(eq(schema.comment.status, commentArray[i]));
+      const [commentCountResult] = await observeDbOperation(
+        "statistics.comments-by-status",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.comment)
+            .where(eq(schema.comment.status, commentArray[i])),
+      );
       const count = Number(commentCountResult?.count) || 0;
       result.commentStatus.push({ item: commentArray[i], count });
     }
 
     // 统计每个用户的文章数
     result.userPost = [];
-    const userList = await ctx.db.select().from(schema.user);
+    const userList = await observeDbOperation(
+      "statistics.user-list",
+      "select",
+      () => ctx.db.select().from(schema.user),
+    );
     for (let i = 0; i < userList.length; i++) {
-      const [postCountResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.post)
-        .where(eq(schema.post.authorId, userList[i].id));
+      const [postCountResult] = await observeDbOperation(
+        "statistics.posts-by-author",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.post)
+            .where(eq(schema.post.authorId, userList[i].id)),
+      );
       const count = Number(postCountResult?.count) || 0;
       result.userPost.push({ item: userList[i].name!, count });
     }

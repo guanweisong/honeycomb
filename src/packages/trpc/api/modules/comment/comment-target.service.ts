@@ -8,6 +8,7 @@ import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 import type { CommentRecord } from "./types/comment.model";
+import { observeDbOperation } from "@/packages/observability/server";
 
 export type CommentTarget = Partial<
   Pick<CommentRecord, "postId" | "pageId" | "customId">
@@ -18,11 +19,17 @@ export async function assertPublicCommentTarget(
   target: CommentTarget,
 ) {
   if (target.pageId) {
-    const [page] = await db
-      .select({ id: schema.page.id, status: schema.page.status })
-      .from(schema.page)
-      .where(eq(schema.page.id, target.pageId))
-      .limit(1);
+    const pageId = target.pageId;
+    const [page] = await observeDbOperation(
+      "comment.target.page",
+      "select",
+      () =>
+        db
+          .select({ id: schema.page.id, status: schema.page.status })
+          .from(schema.page)
+          .where(eq(schema.page.id, pageId))
+          .limit(1),
+    );
     if (!page || page.status !== PageStatus.PUBLISHED) {
       throw new TRPCError({ code: "NOT_FOUND" });
     }
@@ -33,15 +40,17 @@ export async function assertPublicCommentTarget(
   if (!postId) {
     throw new TRPCError({ code: "BAD_REQUEST" });
   }
-  const [post] = await db
-    .select({
-      id: schema.post.id,
-      status: schema.post.status,
-      commentStatus: schema.post.commentStatus,
-    })
-    .from(schema.post)
-    .where(eq(schema.post.id, postId))
-    .limit(1);
+  const [post] = await observeDbOperation("comment.target.post", "select", () =>
+    db
+      .select({
+        id: schema.post.id,
+        status: schema.post.status,
+        commentStatus: schema.post.commentStatus,
+      })
+      .from(schema.post)
+      .where(eq(schema.post.id, postId))
+      .limit(1),
+  );
   if (!post || post.status !== PostStatus.PUBLISHED) {
     throw new TRPCError({ code: "NOT_FOUND" });
   }
@@ -55,15 +64,20 @@ export async function assertCommentParentMatches(
   parentId: string,
   target: CommentTarget,
 ) {
-  const [parent] = await db
-    .select({
-      postId: schema.comment.postId,
-      pageId: schema.comment.pageId,
-      customId: schema.comment.customId,
-    })
-    .from(schema.comment)
-    .where(eq(schema.comment.id, parentId))
-    .limit(1);
+  const [parent] = await observeDbOperation(
+    "comment.target.parent",
+    "select",
+    () =>
+      db
+        .select({
+          postId: schema.comment.postId,
+          pageId: schema.comment.pageId,
+          customId: schema.comment.customId,
+        })
+        .from(schema.comment)
+        .where(eq(schema.comment.id, parentId))
+        .limit(1),
+  );
   if (
     !parent ||
     parent.postId !== (target.postId ?? null) ||

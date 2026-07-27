@@ -16,6 +16,7 @@ import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 媒体文件相关的 tRPC 路由。
@@ -46,19 +47,26 @@ export const mediaRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.media)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("media.list", "select", () =>
+        ctx.db
+          .select()
+          .from(schema.media)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.media)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "media.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.media)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -116,10 +124,9 @@ export const mediaRouter = createTRPCRouter({
       };
 
       // 插入数据库
-      const [result] = await ctx.db
-        .insert(schema.media)
-        .values(data)
-        .returning();
+      const [result] = await observeDbOperation("media.create", "insert", () =>
+        ctx.db.insert(schema.media).values(data).returning(),
+      );
 
       return result;
     }),
@@ -136,19 +143,26 @@ export const mediaRouter = createTRPCRouter({
       const { ids } = input;
 
       // 1. 根据 IDs 从数据库中找出要删除的媒体对象
-      const mediaToDelete = await ctx.db
-        .select({
-          key: schema.media.key,
-        })
-        .from(schema.media)
-        .where(inArray(schema.media.id, ids));
+      const mediaToDelete = await observeDbOperation(
+        "media.destroy.select",
+        "select",
+        () =>
+          ctx.db
+            .select({
+              key: schema.media.key,
+            })
+            .from(schema.media)
+            .where(inArray(schema.media.id, ids)),
+      );
 
       const keysToDelete = mediaToDelete
         .map((item) => item.key)
         .filter((key): key is string => !!key);
 
       // 2. 从数据库中删除记录
-      await ctx.db.delete(schema.media).where(inArray(schema.media.id, ids));
+      await observeDbOperation("media.destroy.delete", "delete", () =>
+        ctx.db.delete(schema.media).where(inArray(schema.media.id, ids)),
+      );
 
       // 3. 从 S3 中删除文件
       if (keysToDelete.length > 0) {

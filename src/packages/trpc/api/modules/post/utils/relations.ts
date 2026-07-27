@@ -3,6 +3,7 @@ import * as schema from "@/packages/db/schema";
 import type { Database } from "@/packages/db/db";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { InferSelectModel } from "drizzle-orm";
+import { observeDbOperation } from "@/packages/observability/server";
 
 type PostRecord = InferSelectModel<typeof schema.post>;
 type CategoryRecord = InferSelectModel<typeof schema.category>;
@@ -37,29 +38,34 @@ export async function loadPostRelations(
 
   if (!postIds.length) return [];
 
-  const relationRows = await db.query.post.findMany({
-    where: inArray(schema.post.id, postIds),
-    with: {
-      category: true,
-      author: {
-        columns: {
-          id: true,
-          email: true,
-          level: true,
-          name: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
-      cover: true,
-      postTags: {
+  const relationRows = await observeDbOperation(
+    "post.service.relations",
+    "select",
+    () =>
+      db.query.post.findMany({
+        where: inArray(schema.post.id, postIds),
         with: {
-          tag: true,
+          category: true,
+          author: {
+            columns: {
+              id: true,
+              email: true,
+              level: true,
+              name: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          cover: true,
+          postTags: {
+            with: {
+              tag: true,
+            },
+          },
         },
-      },
-    },
-  });
+      }),
+  );
 
   const relationMap = new Map(relationRows.map((row) => [row.id, row]));
 

@@ -5,6 +5,7 @@ import type { Database } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
 import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
+import { observeDbOperation } from "@/packages/observability/server";
 
 const commentNotificationSelection = {
   ...selectAllColumns(schema.comment),
@@ -13,12 +14,17 @@ const commentNotificationSelection = {
 };
 
 async function getNotificationComment(db: Database, id: string) {
-  const [comment] = await db
-    .select(commentNotificationSelection)
-    .from(schema.comment)
-    .leftJoin(schema.post, eq(schema.comment.postId, schema.post.id))
-    .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
-    .where(eq(schema.comment.id, id));
+  const [comment] = await observeDbOperation(
+    "comment.notification.detail",
+    "select",
+    () =>
+      db
+        .select(commentNotificationSelection)
+        .from(schema.comment)
+        .leftJoin(schema.post, eq(schema.comment.postId, schema.post.id))
+        .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
+        .where(eq(schema.comment.id, id)),
+  );
   return comment;
 }
 
@@ -28,7 +34,11 @@ export async function notifyCommentCreated(
   parentId?: string | null,
 ) {
   const currentComment = await getNotificationComment(db, commentId);
-  const [setting] = await db.select().from(schema.setting);
+  const [setting] = await observeDbOperation(
+    "comment.notification.setting",
+    "select",
+    () => db.select().from(schema.setting),
+  );
 
   if (!currentComment || !setting) {
     throw new Error("Comment or setting not found");

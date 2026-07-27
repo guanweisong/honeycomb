@@ -12,3 +12,8 @@ export {
   type RequestContext,
   type RequestHeaders,
 } from "./request-context";
+export {
+  observeDbOperation,
+  type DatabaseOperation,
+  type DatabaseQueryName,
+} from "./database-operation";

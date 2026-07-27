@@ -10,6 +10,7 @@ import {
   createRequestContext,
   type RequestContext,
 } from "@/packages/observability/server/request-context";
+import { observeDbOperation } from "@/packages/observability/server/database-operation";
 
 /**
  * 上下文中的用户信息接口。
@@ -46,16 +47,18 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
   }
 
   const db = getDb();
-  const [user] = await db
-    .select({
-      id: schema.user.id,
-      level: schema.user.level,
-      name: schema.user.name,
-      status: schema.user.status,
-    })
-    .from(schema.user)
-    .where(eq(schema.user.id, sessionUser.id))
-    .limit(1);
+  const [user] = await observeDbOperation("auth.context-user", "select", () =>
+    db
+      .select({
+        id: schema.user.id,
+        level: schema.user.level,
+        name: schema.user.name,
+        status: schema.user.status,
+      })
+      .from(schema.user)
+      .where(eq(schema.user.id, sessionUser.id))
+      .limit(1),
+  );
 
   if (!user || user.status !== UserStatus.ENABLE) {
     return null;
@@ -83,8 +86,8 @@ export const createContext = async (opts: CreateContextOptions) => {
   const user = await getUserFromRequest(opts.req);
   const db = getDb();
   const hasRequest = Boolean(opts.req);
-  const requestContext = opts.requestContext
-    ?? createRequestContext({ headers: opts.req?.headers });
+  const requestContext =
+    opts.requestContext ?? createRequestContext({ headers: opts.req?.headers });
   return {
     db,
     user,

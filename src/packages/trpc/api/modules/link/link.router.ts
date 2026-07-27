@@ -14,6 +14,7 @@ import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { getLinkList } from "@/packages/trpc/api/modules/link/link.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 友情链接相关的 tRPC 路由。
@@ -49,10 +50,12 @@ export const linkRouter = createTRPCRouter({
   create: protectedProcedure([UserLevel.ADMIN])
     .input(LinkInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const [newLink] = await ctx.db
-        .insert(schema.link)
-        .values(input as InferInsertModel<typeof schema.link>)
-        .returning();
+      const [newLink] = await observeDbOperation("link.create", "insert", () =>
+        ctx.db
+          .insert(schema.link)
+          .values(input as InferInsertModel<typeof schema.link>)
+          .returning(),
+      );
       return newLink;
     }),
 
@@ -65,9 +68,9 @@ export const linkRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.link)
-        .where(inArray(schema.link.id, input.ids));
+      await observeDbOperation("link.destroy", "delete", () =>
+        ctx.db.delete(schema.link).where(inArray(schema.link.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -81,11 +84,16 @@ export const linkRouter = createTRPCRouter({
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedLink] = await ctx.db
-        .update(schema.link)
-        .set(rest as Partial<InferInsertModel<typeof schema.link>>)
-        .where(eq(schema.link.id, id))
-        .returning();
+      const [updatedLink] = await observeDbOperation(
+        "link.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.link)
+            .set(rest as Partial<InferInsertModel<typeof schema.link>>)
+            .where(eq(schema.link.id, id))
+            .returning(),
+      );
       return updatedLink;
     }),
 });

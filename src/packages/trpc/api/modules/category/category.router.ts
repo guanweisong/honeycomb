@@ -14,6 +14,7 @@ import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { getCategoryList } from "@/packages/trpc/api/modules/category/category.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 分类相关的 tRPC 路由。
@@ -56,10 +57,15 @@ export const categoryRouter = createTRPCRouter({
   create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(CategoryInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const [newCategory] = await ctx.db
-        .insert(schema.category)
-        .values(input as InferInsertModel<typeof schema.category>)
-        .returning();
+      const [newCategory] = await observeDbOperation(
+        "category.create",
+        "insert",
+        () =>
+          ctx.db
+            .insert(schema.category)
+            .values(input as InferInsertModel<typeof schema.category>)
+            .returning(),
+      );
       return newCategory;
     }),
 
@@ -72,9 +78,11 @@ export const categoryRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.category)
-        .where(inArray(schema.category.id, input.ids as string[]));
+      await observeDbOperation("category.destroy", "delete", () =>
+        ctx.db
+          .delete(schema.category)
+          .where(inArray(schema.category.id, input.ids as string[])),
+      );
       return { success: true };
     }),
 
@@ -88,11 +96,16 @@ export const categoryRouter = createTRPCRouter({
     .input(CategoryUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedCategory] = await ctx.db
-        .update(schema.category)
-        .set(rest as Partial<InferInsertModel<typeof schema.category>>)
-        .where(eq(schema.category.id, id))
-        .returning();
+      const [updatedCategory] = await observeDbOperation(
+        "category.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.category)
+            .set(rest as Partial<InferInsertModel<typeof schema.category>>)
+            .where(eq(schema.category.id, id))
+            .returning(),
+      );
       return updatedCategory;
     }),
 });

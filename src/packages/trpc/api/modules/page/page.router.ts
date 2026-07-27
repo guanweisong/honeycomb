@@ -23,6 +23,7 @@ import {
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { TRPCError } from "@trpc/server";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -86,17 +87,19 @@ export const pageRouter = createTRPCRouter({
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const [newPage] = await ctx.db
-        .insert(schema.page)
-        .values({
-          ...input,
-          content: {
-            en: sanitizeRichText(input.content.en),
-            zh: sanitizeRichText(input.content.zh),
-          },
-          authorId,
-        } as InferInsertModel<typeof schema.page>)
-        .returning();
+      const [newPage] = await observeDbOperation("page.create", "insert", () =>
+        ctx.db
+          .insert(schema.page)
+          .values({
+            ...input,
+            content: {
+              en: sanitizeRichText(input.content.en),
+              zh: sanitizeRichText(input.content.zh),
+            },
+            authorId,
+          } as InferInsertModel<typeof schema.page>)
+          .returning(),
+      );
       return newPage;
     }),
 
@@ -109,9 +112,11 @@ export const pageRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.page)
-        .where(inArray(schema.page.id, input.ids as string[]));
+      await observeDbOperation("page.destroy", "delete", () =>
+        ctx.db
+          .delete(schema.page)
+          .where(inArray(schema.page.id, input.ids as string[])),
+      );
       return { success: true };
     }),
 
@@ -134,11 +139,16 @@ export const pageRouter = createTRPCRouter({
           zh: sanitizeRichText(rest.content.zh),
         };
       }
-      const [updatedPage] = await ctx.db
-        .update(schema.page)
-        .set(nextValues)
-        .where(eq(schema.page.id, id))
-        .returning();
+      const [updatedPage] = await observeDbOperation(
+        "page.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.page)
+            .set(nextValues)
+            .where(eq(schema.page.id, id))
+            .returning(),
+      );
 
       const author = updatedPage.authorId
         ? await getPageAuthorById(ctx.db, updatedPage.authorId)
@@ -156,18 +166,23 @@ export const pageRouter = createTRPCRouter({
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ ctx, input }) => {
-      const [updatedPage] = await ctx.db
-        .update(schema.page)
-        .set({
-          views: sql`${schema.page.views} + 1`,
-        })
-        .where(
-          and(
-            eq(schema.page.id, input.id),
-            eq(schema.page.status, PageStatus.PUBLISHED),
-          ),
-        )
-        .returning({ views: schema.page.views });
+      const [updatedPage] = await observeDbOperation(
+        "page.increment-views",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.page)
+            .set({
+              views: sql`${schema.page.views} + 1`,
+            })
+            .where(
+              and(
+                eq(schema.page.id, input.id),
+                eq(schema.page.status, PageStatus.PUBLISHED),
+              ),
+            )
+            .returning({ views: schema.page.views }),
+      );
 
       if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
       return updatedPage;

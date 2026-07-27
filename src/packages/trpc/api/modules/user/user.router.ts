@@ -20,6 +20,7 @@ import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { observeDbOperation } from "@/packages/observability/server";
 
 const BCRYPT_ROUNDS = 12;
 const safeUserColumns = {
@@ -39,14 +40,16 @@ export const userRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ ctx, input }) => {
-      const [user] = await ctx.db
-        .select({
-          id: schema.user.id,
-          name: schema.user.name,
-        })
-        .from(schema.user)
-        .where(eq(schema.user.id, input.id))
-        .limit(1);
+      const [user] = await observeDbOperation("user.detail", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            name: schema.user.name,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, input.id))
+          .limit(1),
+      );
 
       return user ?? null;
     }),
@@ -63,17 +66,19 @@ export const userRouter = createTRPCRouter({
     UserLevel.EDITOR,
     UserLevel.GUEST,
   ]).query(async ({ ctx }) => {
-    const [user] = await ctx.db
-      .select({
-        id: schema.user.id,
-        email: schema.user.email,
-        level: schema.user.level,
-        name: schema.user.name,
-        status: schema.user.status,
-      })
-      .from(schema.user)
-      .where(eq(schema.user.id, ctx.user.id))
-      .limit(1);
+    const [user] = await observeDbOperation("user.current", "select", () =>
+      ctx.db
+        .select({
+          id: schema.user.id,
+          email: schema.user.email,
+          level: schema.user.level,
+          name: schema.user.name,
+          status: schema.user.status,
+        })
+        .from(schema.user)
+        .where(eq(schema.user.id, ctx.user.id))
+        .limit(1),
+    );
 
     if (!user) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -104,27 +109,34 @@ export const userRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select({
-          id: schema.user.id,
-          email: schema.user.email,
-          level: schema.user.level,
-          name: schema.user.name,
-          status: schema.user.status,
-          createdAt: schema.user.createdAt,
-          updatedAt: schema.user.updatedAt,
-        })
-        .from(schema.user)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("user.list", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            email: schema.user.email,
+            level: schema.user.level,
+            name: schema.user.name,
+            status: schema.user.status,
+            createdAt: schema.user.createdAt,
+            updatedAt: schema.user.updatedAt,
+          })
+          .from(schema.user)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.user)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "user.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.user)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -145,10 +157,12 @@ export const userRouter = createTRPCRouter({
         ...input,
         password: await hash(input.password, BCRYPT_ROUNDS),
       };
-      const [newUser] = await ctx.db
-        .insert(schema.user)
-        .values(values as InferInsertModel<typeof schema.user>)
-        .returning(safeUserColumns);
+      const [newUser] = await observeDbOperation("user.create", "insert", () =>
+        ctx.db
+          .insert(schema.user)
+          .values(values as InferInsertModel<typeof schema.user>)
+          .returning(safeUserColumns),
+      );
       return newUser;
     }),
 
@@ -161,9 +175,9 @@ export const userRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.user)
-        .where(inArray(schema.user.id, input.ids));
+      await observeDbOperation("user.destroy", "delete", () =>
+        ctx.db.delete(schema.user).where(inArray(schema.user.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -185,11 +199,16 @@ export const userRouter = createTRPCRouter({
           ? { password: await hash(rest.password, BCRYPT_ROUNDS) }
           : {}),
       };
-      const [updatedUser] = await ctx.db
-        .update(schema.user)
-        .set(values as Partial<InferInsertModel<typeof schema.user>>)
-        .where(eq(schema.user.id, id))
-        .returning(safeUserColumns);
+      const [updatedUser] = await observeDbOperation(
+        "user.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.user)
+            .set(values as Partial<InferInsertModel<typeof schema.user>>)
+            .where(eq(schema.user.id, id))
+            .returning(safeUserColumns),
+      );
       return updatedUser;
     }),
 });

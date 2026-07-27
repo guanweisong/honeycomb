@@ -16,6 +16,7 @@ import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.upd
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 标签相关的 tRPC 路由。
@@ -52,19 +53,26 @@ export const tagRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.tag)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("tag.list", "select", () =>
+        ctx.db
+          .select()
+          .from(schema.tag)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.tag)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "tag.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.tag)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -79,10 +87,12 @@ export const tagRouter = createTRPCRouter({
   create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const [newTag] = await ctx.db
-        .insert(schema.tag)
-        .values(input as InferInsertModel<typeof schema.tag>)
-        .returning();
+      const [newTag] = await observeDbOperation("tag.create", "insert", () =>
+        ctx.db
+          .insert(schema.tag)
+          .values(input as InferInsertModel<typeof schema.tag>)
+          .returning(),
+      );
       return newTag;
     }),
 
@@ -95,7 +105,9 @@ export const tagRouter = createTRPCRouter({
   destroy: protectedProcedure([UserLevel.ADMIN])
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids));
+      await observeDbOperation("tag.destroy", "delete", () =>
+        ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -109,11 +121,16 @@ export const tagRouter = createTRPCRouter({
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedTag] = await ctx.db
-        .update(schema.tag)
-        .set(rest as Partial<InferInsertModel<typeof schema.tag>>)
-        .where(eq(schema.tag.id, id))
-        .returning();
+      const [updatedTag] = await observeDbOperation(
+        "tag.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.tag)
+            .set(rest as Partial<InferInsertModel<typeof schema.tag>>)
+            .where(eq(schema.tag.id, id))
+            .returning(),
+      );
       return updatedTag;
     }),
 });

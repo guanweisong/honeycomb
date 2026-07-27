@@ -9,6 +9,7 @@ import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas
 import * as schema from "@/packages/db/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 网站设置相关的 tRPC 路由。
@@ -19,7 +20,9 @@ export const settingRouter = createTRPCRouter({
    * @returns {Promise<object>} 返回一个包含所有设置的对象。
    */
   index: publicProcedure.query(async ({ ctx }) => {
-    const list = await ctx.db.select().from(schema.setting);
+    const list = await observeDbOperation("setting.get", "select", () =>
+      ctx.db.select().from(schema.setting),
+    );
     return list[0];
   }),
 
@@ -33,11 +36,16 @@ export const settingRouter = createTRPCRouter({
     .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedSetting] = await ctx.db
-        .update(schema.setting)
-        .set(rest as Partial<InferInsertModel<typeof schema.setting>>)
-        .where(eq(schema.setting.id, id))
-        .returning();
+      const [updatedSetting] = await observeDbOperation(
+        "setting.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.setting)
+            .set(rest as Partial<InferInsertModel<typeof schema.setting>>)
+            .where(eq(schema.setting.id, id))
+            .returning(),
+      );
       return updatedSetting;
     }),
 });

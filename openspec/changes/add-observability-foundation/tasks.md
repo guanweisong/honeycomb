@@ -15,10 +15,10 @@
 
 ## 3. 数据库与缓存指标
 
-- [ ] 3.1 实现命名数据库操作包装器，记录 operation、query name、outcome 和耗时
-- [ ] 3.2 为全部 Router service 和关键直接数据库调用分配稳定 query name 并接入包装器
-- [ ] 3.3 扩展 Upstash 缓存工具记录 read、hit、miss、write 和 error
-- [ ] 3.4 验证数据库和缓存指标不包含 SQL、参数、资源 ID、请求 ID或错误自由文本
+- [x] 3.1 实现命名数据库操作包装器，记录 operation、query name、outcome 和耗时
+- [x] 3.2 为全部 Router service 和关键直接数据库调用分配稳定 query name 并接入包装器
+- [x] 3.3 扩展 Upstash 缓存工具记录 read、hit、miss、write 和 error
+- [x] 3.4 验证数据库和缓存指标不包含 SQL、参数、资源 ID、请求 ID或错误自由文本
 
 ## 4. 外部服务与日志迁移
 
