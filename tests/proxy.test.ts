@@ -35,7 +35,7 @@ vi.mock("next/server", async () => {
   };
 });
 
-import proxy from "../src/proxy";
+import { middleware } from "../src/middleware";
 
 type ProxyRequestShape = Pick<NextRequest, "headers" | "nextUrl">;
 
@@ -48,7 +48,7 @@ function createProxyRequest(pathname: string): NextRequest {
   return req as NextRequest;
 }
 
-describe("proxy", () => {
+describe("middleware", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -63,7 +63,7 @@ describe("proxy", () => {
 
     const req = createProxyRequest("/api/trpc/post.list");
 
-    const res = await proxy(req);
+    const res = await middleware(req);
     const body = await res.json();
 
     expect(res.status).toBe(429);
@@ -79,7 +79,7 @@ describe("proxy", () => {
   it("delegates non-API request to i18n proxy", async () => {
     const req = createProxyRequest("/zh");
 
-    const res = await proxy(req);
+    const res = await middleware(req);
 
     expect(i18nHandlerMock).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(200);
@@ -97,7 +97,7 @@ describe("proxy", () => {
 
     const req = createProxyRequest("/api/trpc/post.list");
 
-    const res = await proxy(req);
+    const res = await middleware(req);
 
     expect(res.status).toBe(200);
     expect(res.headers.get("X-RateLimit-Limit")).toBe("120");

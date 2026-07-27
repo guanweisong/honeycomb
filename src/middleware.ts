@@ -3,9 +3,9 @@ import createMiddleware from "next-intl/middleware";
 import { routing } from "@/app/(blog)/i18n/routing";
 import { apiRatelimit, getClientIp } from "@/packages/trpc/api/utils/rate-limit";
 
-const i18nProxy = createMiddleware(routing);
+const i18nMiddleware = createMiddleware(routing);
 
-export default async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/")) {
     const identifier = getClientIp(req);
     const { success, limit, remaining, reset } = await apiRatelimit.limit(
@@ -37,7 +37,7 @@ export default async function proxy(req: NextRequest) {
     return response;
   }
 
-  return i18nProxy(req);
+  return i18nMiddleware(req);
 }
 
 export const config = {
