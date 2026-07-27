@@ -19,6 +19,8 @@ import { X, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+import { clientLogger } from "@/packages/observability/client";
+import { LogEvent } from "@/packages/observability/core/names";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 
@@ -111,8 +113,11 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
       const ids = updatedTags.map((t) => t.id);
       try {
         await updateTags({ postId, tagIds: ids, type });
-      } catch (error) {
-        console.error("Failed to update tags:", error);
+      } catch {
+        clientLogger.error(LogEvent.clientError, {
+          operation: "tag.remove",
+          outcome: "error",
+        });
       }
     }
   };
@@ -132,8 +137,11 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
       const ids = updatedTags.map((t) => t.id);
       try {
         await updateTags({ postId, tagIds: ids, type });
-      } catch (error) {
-        console.error("Failed to update tags:", error);
+      } catch {
+        clientLogger.error(LogEvent.clientError, {
+          operation: "tag.add",
+          outcome: "error",
+        });
       }
     }
 
@@ -149,8 +157,11 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
     try {
       const newTag = await createTag({ name: { zh: name, en: name } });
       await addTag(newTag);
-    } catch (error) {
-      console.error("Failed to create tag:", error);
+    } catch {
+      clientLogger.error(LogEvent.clientError, {
+        operation: "tag.create",
+        outcome: "error",
+      });
     }
   };
 

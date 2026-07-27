@@ -2,6 +2,11 @@ import "server-only";
 
 import { Resend } from "resend";
 import { getResendEnv } from "@/env/server";
+import { LogEvent } from "@/packages/observability/core/names";
+import {
+  getLogger,
+  observeExternalServiceOperation,
+} from "@/packages/observability/server";
 import AdminCommentEmailMessage from "@/packages/trpc/api/modules/comment/components/EmailMessage/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "@/packages/trpc/api/modules/comment/components/EmailMessage/ReplyCommentEmailMessage";
 
@@ -34,33 +39,39 @@ export async function sendEmail(type: EmailType, payload: EmailPayload) {
 
   try {
     if (type === "ADMIN_NOTICE") {
-      await resend.emails.send({
-        from: systemEmail,
-        to: adminEmail,
-        subject: `[${siteNameZh}]有一条新的评论`,
-        react: AdminCommentEmailMessage({
-          currentComment,
-          setting,
-        }),
-      });
+      await observeExternalServiceOperation("email", "send", () =>
+        resend.emails.send({
+          from: systemEmail,
+          to: adminEmail,
+          subject: `[${siteNameZh}]有一条新的评论`,
+          react: AdminCommentEmailMessage({ currentComment, setting }),
+        })
+      );
     } else if (type === "REPLY_NOTICE") {
       if (parentComment && parentComment.email) {
-        await resend.emails.send({
-          from: systemEmail,
-          to: parentComment.email,
-          subject: `您在[${siteNameZh}]的评论有新的回复`,
-          react: ReplyCommentEmailMessage({
-            currentComment,
-            setting,
-            parentComment,
-          }),
-        });
+        await observeExternalServiceOperation("email", "send", () =>
+          resend.emails.send({
+            from: systemEmail,
+            to: parentComment.email!,
+            subject: `您在[${siteNameZh}]的评论有新的回复`,
+            react: ReplyCommentEmailMessage({
+              currentComment,
+              setting,
+              parentComment,
+            }),
+          })
+        );
       }
     } else {
       throw new Error("Invalid email type");
     }
   } catch (error) {
-    console.error("Email send error:", error);
+    getLogger().error(LogEvent.externalServiceOperation, {
+      service: "email",
+      operation: "send",
+      outcome: "error",
+      error,
+    });
     throw error;
   }
 }

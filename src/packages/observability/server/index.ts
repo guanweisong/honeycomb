@@ -17,3 +17,8 @@ export {
   type DatabaseOperation,
   type DatabaseQueryName,
 } from "./database-operation";
+export {
+  observeExternalServiceOperation,
+  type ExternalService,
+  type ExternalServiceOperation,
+} from "./external-service-operation";

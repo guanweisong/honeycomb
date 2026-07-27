@@ -12,6 +12,8 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./useCommentIdentity";
 import { buildCommentInput } from "../commentInput";
+import { clientLogger } from "@/packages/observability/client";
+import { LogEvent } from "@/packages/observability/core/names";
 
 interface UseCommentSubmissionOptions {
   id: string;
@@ -85,8 +87,11 @@ export function useCommentSubmission({
             persistIdentity(submittedIdentity);
           }
         })
-        .catch((error) => {
-          console.error("Comment submit failed:", error);
+        .catch(() => {
+          clientLogger.error(LogEvent.clientError, {
+            operation: "comment.submit",
+            outcome: "error",
+          });
         })
         .finally(resetCaptcha);
     });

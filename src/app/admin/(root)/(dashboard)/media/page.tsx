@@ -13,6 +13,8 @@ import { cn } from "@/packages/ui/lib/utils";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { MediaIndexInput } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
 import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import { clientLogger } from "@/packages/observability/client";
+import { LogEvent } from "@/packages/observability/core/names";
 
 /**
  * 媒体库组件的属性接口。
@@ -101,8 +103,11 @@ const Media = ({ onSelect }: MediaProps) => {
             const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
             color = `rgb(${r},${g},${b})`;
           }
-        } catch (e) {
-          console.warn("Failed to get image color on client", e);
+        } catch {
+          clientLogger.warn(LogEvent.clientError, {
+            operation: "media.extract-image-color",
+            outcome: "error",
+          });
         }
 
         resolve({

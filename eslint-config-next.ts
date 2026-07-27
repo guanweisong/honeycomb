@@ -11,6 +11,12 @@ export default defineConfig([
       "react-hooks/immutability": "off",
     },
   },
+  {
+    files: ["src/app/**/*.{ts,tsx}", "src/packages/trpc/**/*.{ts,tsx}"],
+    rules: {
+      "no-console": "error",
+    },
+  },
   globalIgnores([
     ".next/**",
     "**/.next/**",

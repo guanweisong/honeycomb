@@ -6,6 +6,7 @@ export const LogEvent = {
   databaseOperation: "database.operation",
   cacheOperation: "cache.operation",
   externalServiceOperation: "external-service.operation",
+  clientError: "client.error",
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];
@@ -19,6 +20,9 @@ export const MetricName = {
   databaseErrorsTotal: "database.errors.total",
   cacheOperationsTotal: "cache.operations.total",
   externalServiceOperationsTotal: "external-service.operations.total",
+  externalServiceOperationDurationMs:
+    "external-service.operation.duration_ms",
+  externalServiceErrorsTotal: "external-service.errors.total",
 } as const;
 
 export type MetricName = (typeof MetricName)[keyof typeof MetricName];
@@ -30,6 +34,7 @@ export const metricLabelNames = [
   "queryName",
   "operation",
   "namespace",
+  "service",
 ] as const;
 
 export type MetricLabelName = (typeof metricLabelNames)[number];

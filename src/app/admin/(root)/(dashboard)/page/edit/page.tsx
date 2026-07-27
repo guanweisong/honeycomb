@@ -26,6 +26,8 @@ import {
   pageTemplateOptions,
 } from "@/packages/trpc/api/modules/page/types/page.template";
 import { z } from "zod";
+import { clientLogger } from "@/packages/observability/client";
+import { LogEvent } from "@/packages/observability/core/names";
 
 type PageFormValues = z.infer<typeof PageInsertSchema>;
 
@@ -137,8 +139,11 @@ const PageContent = () => {
           })
           .finally(() => setLoading(false));
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      clientLogger.error(LogEvent.clientError, {
+        operation: "page.submit",
+        outcome: "error",
+      });
       toast.error("提交失败，请检查表单内容");
     }
   };

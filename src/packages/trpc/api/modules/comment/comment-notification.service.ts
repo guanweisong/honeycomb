@@ -5,7 +5,8 @@ import type { Database } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
 import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
-import { observeDbOperation } from "@/packages/observability/server";
+import { LogEvent } from "@/packages/observability/core/names";
+import { getLogger, observeDbOperation } from "@/packages/observability/server";
 
 const commentNotificationSelection = {
   ...selectAllColumns(schema.comment),
@@ -44,9 +45,14 @@ export async function notifyCommentCreated(
     throw new Error("Comment or setting not found");
   }
 
-  sendEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) =>
-    console.error("Failed to send admin email:", error),
-  );
+  sendEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => {
+    getLogger().error(LogEvent.externalServiceOperation, {
+      service: "email",
+      operation: "send-admin-notification",
+      outcome: "error",
+      error,
+    });
+  });
 
   if (parentId) {
     const parentComment = await getNotificationComment(db, parentId);
@@ -55,7 +61,14 @@ export async function notifyCommentCreated(
         setting,
         currentComment,
         parentComment,
-      }).catch((error) => console.error("Failed to send reply email:", error));
+      }).catch((error) => {
+        getLogger().error(LogEvent.externalServiceOperation, {
+          service: "email",
+          operation: "send-reply-notification",
+          outcome: "error",
+          error,
+        });
+      });
     }
   }
 

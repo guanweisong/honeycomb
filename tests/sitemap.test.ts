@@ -200,8 +200,8 @@ describe("runtime sitemap", () => {
   it("returns only safe static URLs and reports the failure when dynamic data is unavailable", async () => {
     const error = new Error("Turso unavailable");
     postIndexMock.mockRejectedValue(error);
-    const errorSpy = vi
-      .spyOn(console, "error")
+    const logSpy = vi
+      .spyOn(console, "log")
       .mockImplementation(() => undefined);
 
     const sitemap = await sitemapShardRoute.GET(
@@ -218,9 +218,15 @@ describe("runtime sitemap", () => {
     expect(sitemap.headers.get("content-type")).toBe(
       "application/xml; charset=utf-8",
     );
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[sitemap] dynamic sitemap generation failed",
-      error,
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toEqual(
+      expect.objectContaining({
+        level: "error",
+        event: "server.error",
+        operation: "sitemap.generate",
+        outcome: "error",
+        error: expect.objectContaining({ message: "Turso unavailable" }),
+      }),
     );
   });
 
