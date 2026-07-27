@@ -2,6 +2,7 @@ export const LogEvent = {
   requestStarted: "request.started",
   requestCompleted: "request.completed",
   requestFailed: "request.failed",
+  authorizationDenied: "authorization.denied",
   serverError: "server.error",
   databaseOperation: "database.operation",
   cacheOperation: "cache.operation",

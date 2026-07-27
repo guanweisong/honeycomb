@@ -4,6 +4,10 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { LogEvent, MetricName } from "@/packages/observability/core/names";
 import { serializeError } from "@/packages/observability/core/sanitize";
 import { getLogger, getMetrics } from "@/packages/observability/server/registry";
+import {
+  can,
+  type Permission,
+} from "@/packages/auth/permissions";
 
 import type { Context } from "./context";
 
@@ -64,6 +68,54 @@ export const createTRPCRouter = t.router;
  * 公共 procedure
  */
 export const publicProcedure = t.procedure.use(requestObservabilityMiddleware);
+
+export type PermissionMode = "all" | "any";
+
+export interface PermissionsProcedureOptions {
+  mode?: PermissionMode;
+}
+
+export const permissionsProcedure = (
+  permissions: readonly Permission[],
+  options: PermissionsProcedureOptions = {},
+) => {
+  const requiredPermissions = [...permissions];
+  const mode = options.mode ?? "all";
+
+  return t.procedure.use(requestObservabilityMiddleware).use(
+    t.middleware(({ ctx, next, path }) => {
+      const user = ctx.user;
+      if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      const hasRequiredPermissions =
+        requiredPermissions.length > 0 &&
+        (mode === "all" || mode === "any") &&
+        (mode === "all"
+          ? requiredPermissions.every((permission) =>
+              can(user.level, permission),
+            )
+          : requiredPermissions.some((permission) =>
+              can(user.level, permission),
+            ));
+
+      if (!hasRequiredPermissions) {
+        getLogger().warn(LogEvent.authorizationDenied, {
+          requestId: ctx.requestId,
+          procedure: path,
+          requiredPermissions,
+          mode,
+          outcome: "FORBIDDEN",
+        });
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      return next({ ctx: { ...ctx, user } });
+    }),
+  );
+};
+
+export const permissionProcedure = (permission: Permission) =>
+  permissionsProcedure([permission]);
 
 /**
  * 受保护的 procedure

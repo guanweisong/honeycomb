@@ -1,15 +1,15 @@
 ## 1. 权限矩阵基线
 
-- [ ] 1.1 在 `add-observability-foundation` 完成后枚举全部受保护 tRPC procedure 及当前允许角色
-- [ ] 1.2 建立逐 procedure 的旧角色矩阵测试，锁定迁移前允许和拒绝行为
-- [ ] 1.3 根据实际业务动作定义完整 Permission 集合，避免路由名和无使用场景的权限
+- [x] 1.1 在 `add-observability-foundation` 完成后枚举全部受保护 tRPC procedure 及当前允许角色
+- [x] 1.2 建立逐 procedure 的旧角色矩阵测试，锁定迁移前允许和拒绝行为
+- [x] 1.3 根据实际业务动作定义完整 Permission 集合，避免路由名和无使用场景的权限
 
 ## 2. Capability 核心
 
-- [ ] 2.1 实现穷尽的 `ROLE_PERMISSIONS`、`can`、unknown role 默认拒绝和 ADMIN 全权限规则
-- [ ] 2.2 为 ADMIN、EDITOR、GUEST 建立完整能力快照和新增 Permission 遗漏测试
-- [ ] 2.3 实现 `permissionProcedure` 和显式 all/any 的 `permissionsProcedure`
-- [ ] 2.4 接入 capability 拒绝结构化日志与 API outcome 指标，且不记录用户隐私
+- [x] 2.1 实现穷尽的 `ROLE_PERMISSIONS`、`can`、unknown role 默认拒绝和 ADMIN 全权限规则
+- [x] 2.2 为 ADMIN、EDITOR、GUEST 建立完整能力快照和新增 Permission 遗漏测试
+- [x] 2.3 实现 `permissionProcedure` 和显式 all/any 的 `permissionsProcedure`
+- [x] 2.4 接入 capability 拒绝结构化日志与 API outcome 指标，且不记录用户隐私
 
 ## 3. Router 一步迁移
 

@@ -1,12 +1,19 @@
 import { z } from "zod";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryObservability } from "@/packages/observability/adapters/memory";
 import { LogEvent, MetricName } from "@/packages/observability/core/names";
 import { configureObservability } from "@/packages/observability/server/registry";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { Permission } from "@/packages/auth/permissions";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "./core";
+import {
+  createTRPCRouter,
+  permissionProcedure,
+  permissionsProcedure,
+  protectedProcedure,
+  publicProcedure,
+} from "./core";
 import type { Context } from "./context";
 
 const requestId = "req-trpc-observability";
@@ -199,5 +206,128 @@ describe("tRPC observability middleware", () => {
         outcome: "INTERNAL_SERVER_ERROR",
       },
     });
+  });
+});
+
+describe("capability procedures", () => {
+  afterEach(() => {
+    configureObservability();
+  });
+
+  it("allows a granted single permission", async () => {
+    const router = createTRPCRouter({
+      observed: permissionProcedure(Permission.postUpdate).query(() => "ok"),
+    });
+
+    await expect(
+      router.createCaller(createContext({
+        id: "editor-1",
+        level: UserLevel.EDITOR,
+      })).observed(),
+    ).resolves.toBe("ok");
+  });
+
+  it("denies a missing permission before the handler and records a private-safe outcome", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
+    const handler = vi.fn(() => "ok");
+    const router = createTRPCRouter({
+      observed: permissionProcedure(Permission.userManage).query(handler),
+    });
+
+    await expect(
+      router.createCaller(createContext({
+        id: "editor-private-id",
+        level: UserLevel.EDITOR,
+      })).observed(),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(memory.logEvents).toContainEqual({
+      level: "warn",
+      event: LogEvent.authorizationDenied,
+      context: {
+        requestId,
+        procedure: "observed",
+        requiredPermissions: [Permission.userManage],
+        mode: "all",
+        outcome: "FORBIDDEN",
+      },
+    });
+    expect(memory.metricEvents).toContainEqual({
+      type: "increment",
+      name: MetricName.apiErrorsTotal,
+      labels: { procedure: "observed", method: "query", outcome: "FORBIDDEN" },
+    });
+    expect(JSON.stringify(memory.logEvents)).not.toContain("editor-private-id");
+    expect(JSON.stringify(memory.logEvents)).not.toContain(UserLevel.EDITOR);
+  });
+
+  it("uses all mode by default for multiple permissions", async () => {
+    const router = createTRPCRouter({
+      observed: permissionsProcedure([
+        Permission.postUpdate,
+        Permission.userManage,
+      ]).query(() => "ok"),
+    });
+
+    await expect(
+      router.createCaller(createContext({
+        id: "editor-1",
+        level: UserLevel.EDITOR,
+      })).observed(),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("supports explicit all and any modes", async () => {
+    const router = createTRPCRouter({
+      all: permissionsProcedure(
+        [Permission.postUpdate, Permission.userManage],
+        { mode: "all" },
+      ).query(() => "all"),
+      any: permissionsProcedure(
+        [Permission.postUpdate, Permission.userManage],
+        { mode: "any" },
+      ).query(() => "any"),
+    });
+    const caller = router.createCaller(createContext({
+      id: "editor-1",
+      level: UserLevel.EDITOR,
+    }));
+
+    await expect(caller.all()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.any()).resolves.toBe("any");
+  });
+
+  it("denies unauthenticated, unknown-role, unknown-permission, and empty checks", async () => {
+    const router = createTRPCRouter({
+      authenticated: permissionProcedure(Permission.postUpdate).query(() => "ok"),
+      unknownPermission: permissionProcedure("future:permission" as never).query(
+        () => "ok",
+      ),
+      empty: permissionsProcedure([]).query(() => "ok"),
+    });
+
+    await expect(
+      router.createCaller(createContext()).authenticated(),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(
+      router.createCaller(createContext({
+        id: "unknown-role",
+        level: "OWNER" as UserLevel,
+      })).authenticated(),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      router.createCaller(createContext({
+        id: "admin-1",
+        level: UserLevel.ADMIN,
+      })).unknownPermission(),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      router.createCaller(createContext({
+        id: "admin-1",
+        level: UserLevel.ADMIN,
+      })).empty(),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
