@@ -1,16 +1,31 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
-describe("server console lint boundary", () => {
-  it("covers server packages and only exempts the console logger adapter", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "eslint-config-next.ts"),
-      "utf8",
-    );
+const eslint = new ESLint({
+  cwd: process.cwd(),
+  overrideConfigFile: "eslint-config-next.ts",
+});
 
-    expect(source).toContain('"src/packages/**/*.{ts,tsx}"');
-    expect(source).toContain('"src/packages/observability/adapters/console.ts"');
-    expect(source).toMatch(/files:[\s\S]*console\.ts[\s\S]*"no-console":\s*"off"/);
+async function lintConsoleAt(filePath: string) {
+  const [result] = await eslint.lintText("console.log('test');\n", { filePath });
+
+  return result.messages.filter((message) => message.ruleId === "no-console");
+}
+
+describe("console lint boundary", () => {
+  it.each([
+    "src/auth.ts",
+    "src/instrumentation.ts",
+    "src/env/server.ts",
+    "src/app/api/health/route.ts",
+    "src/packages/trpc/api/context.ts",
+  ])("forbids console usage in %s", async (filePath) => {
+    await expect(lintConsoleAt(filePath)).resolves.toHaveLength(1);
+  });
+
+  it("allows console usage only in the console logger adapter", async () => {
+    await expect(
+      lintConsoleAt("src/packages/observability/adapters/console.ts"),
+    ).resolves.toHaveLength(0);
   });
 });

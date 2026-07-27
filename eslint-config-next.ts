@@ -12,7 +12,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/app/**/*.{ts,tsx}", "src/packages/**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}"],
     rules: {
       "no-console": "error",
     },
