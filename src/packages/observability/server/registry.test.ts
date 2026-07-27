@@ -16,7 +16,9 @@ describe("observability server registry", () => {
 
     configureObservability({ logger: memory.logger, metrics: memory.metrics });
     getLogger().info(LogEvent.requestStarted, { requestId: "req-configured" });
-    getMetrics().increment(MetricName.apiRequestsTotal, { procedure: "post.list" });
+    getMetrics().increment(MetricName.apiRequestsTotal, {
+      procedure: "post.index",
+    });
 
     expect(memory.logEvents).toEqual([
       {
@@ -29,7 +31,7 @@ describe("observability server registry", () => {
       {
         type: "increment",
         name: MetricName.apiRequestsTotal,
-        labels: { procedure: "post.list" },
+        labels: { procedure: "post.index" },
       },
     ]);
   });
@@ -45,7 +47,9 @@ describe("observability server registry", () => {
       event: LogEvent.requestStarted,
       requestId: "req-default",
     });
-    expect(() => getMetrics().increment(MetricName.apiRequestsTotal)).not.toThrow();
+    expect(() =>
+      getMetrics().increment(MetricName.apiRequestsTotal),
+    ).not.toThrow();
   });
 
   it("keeps callers running when a configured adapter throws", () => {
@@ -72,6 +76,8 @@ describe("observability server registry", () => {
     configureObservability({ logger: failingLogger, metrics: failingMetrics });
 
     expect(() => getLogger().error(LogEvent.serverError)).not.toThrow();
-    expect(() => getMetrics().increment(MetricName.apiErrorsTotal)).not.toThrow();
+    expect(() =>
+      getMetrics().increment(MetricName.apiErrorsTotal),
+    ).not.toThrow();
   });
 });

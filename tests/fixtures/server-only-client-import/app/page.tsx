@@ -1,7 +1,7 @@
 "use client";
 
-import { getServerEnv } from "../../../../src/env/server";
+import { getLogger } from "../../../../src/packages/observability/server";
 
 export default function Page() {
-  return <p>{typeof getServerEnv}</p>;
+  return <p>{typeof getLogger}</p>;
 }

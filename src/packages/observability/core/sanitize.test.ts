@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeContext, serializeError } from "./sanitize";
+import {
+  sanitizeContext,
+  sanitizeMetricLabels,
+  serializeError,
+} from "./sanitize";
 
 describe("sanitizeContext", () => {
   it("recursively redacts credentials and personal data", () => {
@@ -62,9 +66,66 @@ describe("sanitizeContext", () => {
   });
 
   it("rejects unknown complex objects instead of traversing them", () => {
-    expect(sanitizeContext({ opaque: new Map([["token", "token-value"]]) })).toEqual({
+    expect(
+      sanitizeContext({ opaque: new Map([["token", "token-value"]]) }),
+    ).toEqual({
       opaque: "[Unsupported: Map]",
     });
+  });
+
+  it.each([
+    "2001:db8::1",
+    "::1",
+    "fe80::a%en0",
+    "::ffff:192.0.2.128",
+    "2001:0db8:0000:0000:0000:ff00:0042:8329",
+  ])(
+    "redacts the IPv6 address %s without damaging ordinary colon text",
+    (ip) => {
+      expect(
+        sanitizeContext({ detail: `client=${ip}; Error: retry: later` }),
+      ).toEqual({
+        detail: "client=[REDACTED]; Error: retry: later",
+      });
+    },
+  );
+});
+
+describe("sanitizeMetricLabels", () => {
+  it("keeps only cataloged low-cardinality label values", () => {
+    expect(
+      sanitizeMetricLabels({
+        procedure: "post.index",
+        method: "query",
+        outcome: "success",
+        queryName: "category.list",
+        operation: "select",
+        namespace: "post.index",
+        service: "email",
+      }),
+    ).toEqual({
+      procedure: "post.index",
+      method: "query",
+      outcome: "success",
+      queryName: "category.list",
+      operation: "select",
+      namespace: "post.index",
+      service: "email",
+    });
+  });
+
+  it("drops sensitive and high-cardinality values even for allowed keys", () => {
+    expect(
+      sanitizeMetricLabels({
+        procedure: "user_01JABCDEF1234567890",
+        method: "https://example.test/api/user/123",
+        outcome: "request-01JABCDEF1234567890",
+        queryName: "resource-550e8400-e29b-41d4-a716-446655440000",
+        operation: "permission denied for alice@example.test",
+        namespace: "tenant-customer-928374",
+        service: "arbitrary free text",
+      }),
+    ).toEqual({});
   });
 });
 
@@ -73,7 +134,8 @@ describe("serializeError", () => {
     const error = new Error(
       "email=person@example.com ip=203.0.113.7 token=token-value cookie=session=abc authorization=Bearer bearer-token secret=top-secret",
     );
-    error.stack = "Error: email=person@example.com cookie=session=abc authorization=Bearer bearer-token";
+    error.stack =
+      "Error: email=person@example.com cookie=session=abc authorization=Bearer bearer-token";
 
     const serialized = JSON.stringify(serializeError(error));
 
@@ -84,6 +146,23 @@ describe("serializeError", () => {
     expect(serialized).not.toContain("session=abc");
     expect(serialized).not.toContain("bearer-token");
     expect(serialized).not.toContain("top-secret");
+  });
+
+  it("redacts IPv6 addresses throughout message, stack, and causes", () => {
+    const cause = new Error("origin=::ffff:192.0.2.128");
+    cause.stack = "Cause: peer fe80::a%en0";
+    const error = new Error("client=2001:db8::1; Error: retry: later", {
+      cause,
+    });
+    error.stack = "Error: client [2001:0db8:0000:0000:0000:ff00:0042:8329]";
+
+    const serialized = JSON.stringify(serializeError(error));
+
+    expect(serialized).not.toContain("2001:db8::1");
+    expect(serialized).not.toContain("::ffff:192.0.2.128");
+    expect(serialized).not.toContain("fe80::a%en0");
+    expect(serialized).not.toContain("2001:0db8");
+    expect(serialized).toContain("Error: retry: later");
   });
 
   it("keeps a bounded non-circular cause chain", () => {

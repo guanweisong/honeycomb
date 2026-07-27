@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createConsoleLogger } from "../adapters/console";
 import { noopMetrics } from "../adapters/noop";
 import type { Logger, Metrics } from "../core/contracts";

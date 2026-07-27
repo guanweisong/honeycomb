@@ -9,12 +9,12 @@ describe("createMemoryObservability", () => {
 
     observability.logger.info(LogEvent.cacheOperation, { namespace: "blog" });
     observability.metrics.increment(MetricName.cacheOperationsTotal, {
-      namespace: "blog",
+      namespace: "post.index",
       operation: "read",
-      outcome: "hit",
+      outcome: "success",
     });
     observability.metrics.recordDuration(MetricName.apiRequestDurationMs, 23, {
-      procedure: "post.list",
+      procedure: "post.index",
       outcome: "success",
     });
 
@@ -29,13 +29,17 @@ describe("createMemoryObservability", () => {
       {
         type: "increment",
         name: "cache.operations.total",
-        labels: { namespace: "blog", operation: "read", outcome: "hit" },
+        labels: {
+          namespace: "post.index",
+          operation: "read",
+          outcome: "success",
+        },
       },
       {
         type: "duration",
         name: "api.request.duration_ms",
         value: 23,
-        labels: { procedure: "post.list", outcome: "success" },
+        labels: { procedure: "post.index", outcome: "success" },
       },
     ]);
   });

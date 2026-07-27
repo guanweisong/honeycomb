@@ -58,7 +58,7 @@ describe("safe observability adapters", () => {
 
     expect(() =>
       createSafeMetrics(failingMetrics).increment(MetricName.apiRequestsTotal, {
-        procedure: "post.list",
+        procedure: "post.index",
         userId: "usr-123",
         resourceId: "post-456",
         requestId: "req-789",
@@ -66,6 +66,6 @@ describe("safe observability adapters", () => {
         error: "free-form failure",
       }),
     ).not.toThrow();
-    expect(seen).toEqual([{ procedure: "post.list" }]);
+    expect(seen).toEqual([{ procedure: "post.index" }]);
   });
 });

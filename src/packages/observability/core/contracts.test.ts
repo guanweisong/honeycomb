@@ -17,7 +17,7 @@ describe("observability contracts", () => {
 
     logger.info(LogEvent.requestStarted, { requestId: "req-1" });
     metrics.recordDuration(MetricName.apiRequestDurationMs, 12, {
-      procedure: "post.list",
+      procedure: "post.index",
       outcome: "success",
     });
 

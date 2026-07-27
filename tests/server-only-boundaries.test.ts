@@ -8,6 +8,8 @@ const serverOnlyEntrypoints = [
   "src/auth.ts",
   "src/env/server.ts",
   "src/packages/db/db.ts",
+  "src/packages/observability/server/index.ts",
+  "src/packages/observability/server/registry.ts",
   "src/packages/trpc/api/appRouter.ts",
   "src/packages/trpc/api/context.ts",
   "src/packages/trpc/api/core.ts",
@@ -72,7 +74,21 @@ describe("server-only module boundaries", () => {
     expect(source).not.toContain("node:async_hooks");
   });
 
-  it("makes Next.js reject a Client Component importing a protected server entry", () => {
+  it("keeps the shared request context Edge-safe", () => {
+    const source = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/packages/observability/server/request-context.ts",
+      ),
+      "utf8",
+    );
+
+    expect(source).not.toContain("node-request-context");
+    expect(source).not.toContain("node:async_hooks");
+    expect(source).not.toContain('import "server-only"');
+  });
+
+  it("makes Next.js reject a Client Component importing observability/server", () => {
     const fixture = resolve(
       process.cwd(),
       "tests/fixtures/server-only-client-import",
