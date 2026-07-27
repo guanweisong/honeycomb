@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,css,scss}\"",
     "check-types": "bun tsc --noEmit",
     "build:cloudflare": "bun opennextjs-cloudflare build",
+    "test:cloudflare-build": "bun run build:cloudflare && bun scripts/verify-cloudflare-build.ts",
     "deploy:cloudflare": "npx wrangler deploy --minify",
     "prepare": "husky",
     "test": "vitest",
