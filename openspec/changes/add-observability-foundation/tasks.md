@@ -31,5 +31,5 @@
 
 - [ ] 5.1 运行类型检查、Lint、全量单测、生产构建和相关 E2E
 - [ ] 5.2 用 memory adapter 验证 API、数据库、缓存与外部服务成功/失败指标完整性
-- [ ] 5.3 更新 README，记录日志字段、指标目录、标签约束和 adapter 扩展方式
-- [ ] 5.4 输出未来接入 OpenTelemetry/Sentry/平台原生 adapter 的接口说明，但不引入供应商依赖
+- [x] 5.3 更新 README，记录日志字段、指标目录、标签约束和 adapter 扩展方式
+- [x] 5.4 输出未来接入 OpenTelemetry/Sentry/平台原生 adapter 的接口说明，但不引入供应商依赖

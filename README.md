@@ -334,6 +334,68 @@ protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR]);
 
 当前策略为保持静态渲染与 CDN 缓存兼容，脚本策略仍包含 `unsafe-inline`。`report-only` 模式只负责浏览器观察，本工程暂未配置 CSP 报告接收端点。
 
+## 可观测性
+
+项目的可观测性接口不绑定供应商。服务端默认向标准输出写入单行 JSON 日志，指标默认使用 noop adapter；部署环境可以注入自己的 `Logger` 和 `Metrics` 实现。日志或指标 adapter 抛错时会被安全包装器隔离，不会改变业务请求、数据库操作或外部服务调用的结果。
+
+### 结构化日志
+
+每条 console 日志固定包含以下字段：
+
+| 字段          | 含义                                                                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timestamp`   | ISO 8601 时间戳                                                                                                                                                   |
+| `level`       | `info`、`warn` 或 `error`                                                                                                                                         |
+| `event`       | `request.started`、`request.completed`、`request.failed`、`server.error`、`database.operation`、`cache.operation`、`external-service.operation` 或 `client.error` |
+| `service`     | 服务名，默认 `honeycomb`                                                                                                                                          |
+| `environment` | 运行环境，默认取 `NODE_ENV`，不可用时为 `development`                                                                                                             |
+
+请求日志还会带上 `requestId`、`procedure`、`method`，完成或失败时增加 `durationMs` 和 `outcome`。错误使用有界 `cause` 链序列化为 `name`、`message` 和可选 `stack`。所有 context 在输出前递归清洗：密码、token、cookie、authorization、secret、邮箱、IP、请求体、输入参数和 SQL 参数会被脱敏；循环引用和过深对象会转换为安全占位符。不要依赖脱敏来记录原始请求体、凭据或个人信息，调用方仍应避免传入这些数据。
+
+### 指标目录
+
+| 指标                                     | 类型     | 允许标签                            | 说明                                                                         |
+| ---------------------------------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------------- |
+| `api.requests.total`                     | counter  | `procedure`, `method`, `outcome`    | API 请求次数                                                                 |
+| `api.request.duration_ms`                | duration | `procedure`, `method`, `outcome`    | API 请求耗时（毫秒）                                                         |
+| `api.errors.total`                       | counter  | `procedure`, `method`, `outcome`    | API 失败次数                                                                 |
+| `database.operations.total`              | counter  | `queryName`, `operation`, `outcome` | 命名数据库操作次数                                                           |
+| `database.operation.duration_ms`         | duration | `queryName`, `operation`, `outcome` | 数据库操作耗时（毫秒）                                                       |
+| `database.errors.total`                  | counter  | `queryName`, `operation`, `outcome` | 数据库操作失败次数                                                           |
+| `cache.operations.total`                 | counter  | `namespace`, `operation`, `outcome` | 缓存 read、hit、miss、write 和 error 次数；`hit / (hit + miss)` 可计算命中率 |
+| `external-service.operations.total`      | counter  | `service`, `operation`, `outcome`   | 外部服务调用次数                                                             |
+| `external-service.operation.duration_ms` | duration | `service`, `operation`, `outcome`   | 外部服务调用耗时（毫秒）                                                     |
+| `external-service.errors.total`          | counter  | `service`, `operation`, `outcome`   | 外部服务调用失败次数                                                         |
+
+指标标签只允许字符串类型的 `procedure`、`method`、`outcome`、`queryName`、`operation`、`namespace` 和 `service`；其他名称或非字符串值会被丢弃。标签值必须来自稳定枚举或命名目录，禁止使用用户 ID、资源 ID、请求 ID、完整 URL、SQL、参数、错误消息及其他自由文本。API 的 `outcome` 为 `success` 或稳定的 tRPC 错误码；数据库和外部服务使用 `success`/`error`；缓存使用稳定 operation 和 `success`/`error`。
+
+### 接入自定义 adapter
+
+供应商接入只需实现 [`Logger`](src/packages/observability/core/contracts.ts) 和/或 [`Metrics`](src/packages/observability/core/contracts.ts)，并在服务端启动时配置：
+
+```ts
+import type { Logger, Metrics } from "@/packages/observability/core/contracts";
+import { configureObservability } from "@/packages/observability/server";
+
+const logger: Logger = {
+  info: (event, context) => platformLog("info", event, context),
+  warn: (event, context) => platformLog("warn", event, context),
+  error: (event, context) => platformLog("error", event, context),
+};
+
+const metrics: Metrics = {
+  increment: (name, labels) => platformCounter(name, labels),
+  recordDuration: (name, durationMs, labels) =>
+    platformHistogram(name, durationMs, labels),
+};
+
+configureObservability({ logger, metrics });
+```
+
+`configureObservability` 会对两个 adapter 自动应用脱敏、标签白名单和 fail-open 包装。adapter 内部不得反向调用 `getLogger()` 或 `getMetrics()` 报告自身错误，以免递归；其内部故障应由供应商 SDK 自身的诊断通道处理。若只替换其中一个 adapter，未提供的日志仍使用 console、指标仍使用 noop。
+
+未来接入 OpenTelemetry 时，可将 `increment` 映射到 Counter、将 `recordDuration` 映射到 Histogram，并把 labels 作为低基数 attributes；接入 Sentry 时，可将 `Logger.error` 映射为错误事件，将 `event` 和已清洗 context 映射为稳定 tag/context；Vercel、Cloudflare 等平台原生接入可直接转发结构化日志，并将固定指标名映射到平台计数器和耗时分布。所有实现都必须保留现有名称、毫秒单位、标签白名单和 fail-open 语义，不得在 adapter 中加入原始 SQL、参数、请求体、凭据或个人信息。本项目当前不引入 OpenTelemetry、Sentry 或平台 SDK；具体 SDK 初始化、批量发送、采样和关闭刷新应由后续独立 adapter 完成。
+
 ## Sitemap 运行时策略
 
 `/sitemap.xml` 在请求时生成 sitemap 索引，内容按每片 1000 条分页，并缓存 5 分钟。数据库不可用时，索引和首片会降级到站点首页及中英文分类入口，不影响应用构建；动态内容恢复后会在缓存刷新时重新出现。
