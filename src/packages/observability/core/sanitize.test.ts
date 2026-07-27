@@ -89,6 +89,27 @@ describe("sanitizeContext", () => {
       });
     },
   );
+
+  it.each([".", ",", ";", ")", "]"])(
+    "redacts an IPv6 address before the sentence boundary %s",
+    (boundary) => {
+      expect(
+        sanitizeContext({
+          detail: `peer=2001:db8::1${boundary} retry: later`,
+          mapped: `peer=::ffff:192.0.2.128${boundary} retry: later`,
+        }),
+      ).toEqual({
+        detail: `peer=[REDACTED]${boundary} retry: later`,
+        mapped: `peer=[REDACTED]${boundary} retry: later`,
+      });
+    },
+  );
+
+  it("does not redact ordinary colon-delimited prose near punctuation", () => {
+    expect(
+      sanitizeContext({ detail: "Error: retry: later. status: pending);" }),
+    ).toEqual({ detail: "Error: retry: later. status: pending);" });
+  });
 });
 
 describe("sanitizeMetricLabels", () => {
@@ -164,6 +185,21 @@ describe("serializeError", () => {
     expect(serialized).not.toContain("2001:0db8");
     expect(serialized).toContain("Error: retry: later");
   });
+
+  it.each([".", ",", ";", ")", "]"])(
+    "redacts IPv6 addresses before %s in error message, stack, and cause",
+    (boundary) => {
+      const cause = new Error(`origin=::ffff:192.0.2.128${boundary}`);
+      const error = new Error(`client=2001:db8::1${boundary}`, { cause });
+      error.stack = `Error: peer=2001:db8::2${boundary}`;
+
+      expect(serializeError(error)).toMatchObject({
+        message: `client=[REDACTED]${boundary}`,
+        stack: `Error: peer=[REDACTED]${boundary}`,
+        cause: { message: `origin=[REDACTED]${boundary}` },
+      });
+    },
+  );
 
   it("keeps a bounded non-circular cause chain", () => {
     const root = new Error("root");

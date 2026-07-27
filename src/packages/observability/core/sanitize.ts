@@ -145,7 +145,7 @@ function redactText(value: string): string {
   return value
     .replace(
       /[A-Fa-f0-9:.]*:[A-Fa-f0-9:.]*:[A-Fa-f0-9:.]*(?:%[A-Za-z0-9_.-]+)?/g,
-      (candidate) => (isIpv6(candidate) ? REDACTED : candidate),
+      redactIpv6Candidate,
     )
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, REDACTED)
     .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, REDACTED)
@@ -153,6 +153,15 @@ function redactText(value: string): string {
       /(?:authorization|password|token|cookie|secret)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi,
       REDACTED,
     );
+}
+
+function redactIpv6Candidate(candidate: string): string {
+  if (isIpv6(candidate)) return REDACTED;
+
+  const address = candidate.endsWith(".") ? candidate.slice(0, -1) : candidate;
+  return address !== candidate && isIpv6(address)
+    ? `${REDACTED}.`
+    : candidate;
 }
 
 function isIpv6(candidate: string): boolean {
