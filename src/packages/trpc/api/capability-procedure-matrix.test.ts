@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import * as ts from "typescript";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ALL_PERMISSIONS,
@@ -13,8 +13,27 @@ import { createMemoryObservability } from "@/packages/observability/adapters/mem
 import { configureObservability } from "@/packages/observability/server/registry";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 
-import { createTRPCRouter, permissionProcedure } from "./core";
+import { appRouter } from "./appRouter";
 import type { Context } from "./context";
+
+const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
+
+vi.mock("bcryptjs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("bcryptjs")>()),
+  hash: async () => {
+    externalBoundaries.hash += 1;
+    throw new Error("hash boundary reached");
+  },
+}));
+
+vi.mock("@/packages/trpc/api/utils/S3", () => ({
+  default: {
+    getPresignedUrl: async () => {
+      externalBoundaries.storage += 1;
+      throw new Error("storage boundary reached");
+    },
+  },
+}));
 
 const ALL_ROLES = [UserLevel.ADMIN, UserLevel.EDITOR, UserLevel.GUEST] as const;
 const ADMIN_EDITOR = [UserLevel.ADMIN, UserLevel.EDITOR] as const;
@@ -24,6 +43,8 @@ type CapabilityMatrixEntry = readonly [
   path: string,
   permission: PermissionValue,
   allowedRoles: readonly UserLevel[],
+  input: unknown,
+  firstBoundary: "database" | "hash" | "storage",
 ];
 type DeclarationEntry = readonly [path: string, permission: PermissionValue];
 
@@ -365,17 +386,361 @@ function readPermission(
   return permission;
 }
 
-function containsLevelAccess(node: ts.Node): boolean {
-  let found = false;
-  const visit = (child: ts.Node): void => {
-    if (ts.isPropertyAccessExpression(child) && child.name.text === "level") {
-      found = true;
-      return;
+function bindingIdentifiers(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+  return name.elements.flatMap((element) =>
+    ts.isOmittedExpression(element) ? [] : bindingIdentifiers(element.name),
+  );
+}
+
+function isCoreModuleSpecifier(specifier: string): boolean {
+  return specifier === "./core" || specifier.endsWith("/core");
+}
+
+function assertNoLegacyProcedureAuthorization(
+  fileName: string,
+  sourceFile: ts.SourceFile,
+): void {
+  const legacyBindings = new Set<string>();
+  const coreNamespaces = new Set<string>();
+  const violations = new Set<string>();
+
+  for (const statement of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      isCoreModuleSpecifier(statement.moduleSpecifier.text)
+    ) {
+      const bindings = statement.importClause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) {
+        for (const element of bindings.elements) {
+          const importedName = element.propertyName?.text ?? element.name.text;
+          if (importedName === "protectedProcedure") {
+            legacyBindings.add(element.name.text);
+            violations.add("imports the legacy protectedProcedure symbol");
+          }
+        }
+      } else if (bindings && ts.isNamespaceImport(bindings)) {
+        coreNamespaces.add(bindings.name.text);
+      }
     }
-    ts.forEachChild(child, visit);
+
+    if (
+      ts.isFunctionDeclaration(statement) &&
+      statement.name?.text === "protectedProcedure"
+    ) {
+      legacyBindings.add(statement.name.text);
+      violations.add("defines protectedProcedure");
+    }
+
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (
+          ts.isIdentifier(declaration.name) &&
+          declaration.name.text === "protectedProcedure"
+        ) {
+          legacyBindings.add(declaration.name.text);
+          violations.add("defines protectedProcedure");
+        }
+      }
+    }
+  }
+
+  const isLegacyReference = (node: ts.Node): boolean => {
+    let found = false;
+    const visit = (child: ts.Node): void => {
+      if (
+        ts.isIdentifier(child) &&
+        (child.text === "protectedProcedure" || legacyBindings.has(child.text))
+      ) {
+        found = true;
+        return;
+      }
+      if (
+        ts.isPropertyAccessExpression(child) &&
+        ts.isIdentifier(child.expression) &&
+        coreNamespaces.has(child.expression.text) &&
+        child.name.text === "protectedProcedure"
+      ) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(child, visit);
+    };
+    visit(node);
+    return found;
   };
-  visit(node);
-  return found;
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const visitAliases = (node: ts.Node): void => {
+      if (
+        ts.isVariableDeclaration(node) &&
+        node.initializer &&
+        isLegacyReference(node.initializer)
+      ) {
+        for (const identifier of bindingIdentifiers(node.name)) {
+          if (!legacyBindings.has(identifier)) {
+            legacyBindings.add(identifier);
+            changed = true;
+          }
+        }
+      }
+      if (
+        ts.isFunctionDeclaration(node) &&
+        node.name &&
+        node.body &&
+        isLegacyReference(node.body) &&
+        !legacyBindings.has(node.name.text)
+      ) {
+        legacyBindings.add(node.name.text);
+        changed = true;
+      }
+      ts.forEachChild(node, visitAliases);
+    };
+    visitAliases(sourceFile);
+  }
+
+  const visitUsage = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && isLegacyReference(node.expression)) {
+      violations.add(
+        "calls protectedProcedure through a direct, aliased, or wrapper binding",
+      );
+    }
+
+    if (ts.isExportDeclaration(node) && node.exportClause) {
+      if (ts.isNamedExports(node.exportClause)) {
+        for (const element of node.exportClause.elements) {
+          const localName = element.propertyName?.text ?? element.name.text;
+          if (
+            element.name.text === "protectedProcedure" ||
+            localName === "protectedProcedure" ||
+            legacyBindings.has(localName)
+          ) {
+            violations.add("exports the legacy protectedProcedure symbol");
+          }
+        }
+      }
+    }
+
+    if (
+      (ts.isFunctionDeclaration(node) || ts.isVariableStatement(node)) &&
+      node.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+      )
+    ) {
+      const names = ts.isFunctionDeclaration(node)
+        ? node.name
+          ? [node.name.text]
+          : []
+        : node.declarationList.declarations.flatMap((declaration) =>
+            bindingIdentifiers(declaration.name),
+          );
+      if (names.some((name) => legacyBindings.has(name))) {
+        violations.add(
+          "exports the legacy protectedProcedure symbol or wrapper",
+        );
+      }
+    }
+
+    ts.forEachChild(node, visitUsage);
+  };
+  visitUsage(sourceFile);
+
+  if (violations.size > 0) {
+    throw new Error(
+      `${fileName} restores legacy role authorization: ${[...violations].join("; ")}`,
+    );
+  }
+}
+
+function assertNoIdentityRoleAuthorization(
+  fileName: string,
+  sourceFile: ts.SourceFile,
+): void {
+  const identityContexts = new Set(["ctx", "context", "session"]);
+  const identityUsers = new Set<string>();
+  const identityLevels = new Set<string>();
+
+  const isIdentityContext = (node: ts.Expression): boolean =>
+    ts.isIdentifier(node) && identityContexts.has(node.text);
+
+  const isIdentityUser = (node: ts.Expression): boolean => {
+    if (ts.isIdentifier(node)) return identityUsers.has(node.text);
+    return (
+      ts.isPropertyAccessExpression(node) &&
+      node.name.text === "user" &&
+      isIdentityContext(node.expression)
+    );
+  };
+
+  const isIdentityLevel = (node: ts.Node): boolean => {
+    if (ts.isIdentifier(node)) return identityLevels.has(node.text);
+    return (
+      ts.isPropertyAccessExpression(node) &&
+      node.name.text === "level" &&
+      isIdentityUser(node.expression)
+    );
+  };
+
+  const containsIdentityLevel = (node: ts.Node): boolean => {
+    let found = false;
+    const visit = (child: ts.Node): void => {
+      if (isIdentityLevel(child)) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(child, visit);
+    };
+    visit(node);
+    return found;
+  };
+
+  const functionReturnsIdentityLevel = (
+    node: ts.ArrowFunction | ts.FunctionExpression | ts.FunctionDeclaration,
+  ): boolean => {
+    if (ts.isArrowFunction(node) && !ts.isBlock(node.body)) {
+      return containsIdentityLevel(node.body);
+    }
+    const body = node.body;
+    if (!body || !ts.isBlock(body)) return false;
+    let returnsIdentityLevel = false;
+    const visitReturn = (child: ts.Node): void => {
+      if (
+        ts.isReturnStatement(child) &&
+        child.expression &&
+        containsIdentityLevel(child.expression)
+      ) {
+        returnsIdentityLevel = true;
+        return;
+      }
+      ts.forEachChild(child, visitReturn);
+    };
+    visitReturn(body);
+    return returnsIdentityLevel;
+  };
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const visitAliases = (node: ts.Node): void => {
+      if (ts.isVariableDeclaration(node) && node.initializer) {
+        if (ts.isIdentifier(node.name)) {
+          const name = node.name.text;
+          if (
+            isIdentityContext(node.initializer) &&
+            !identityContexts.has(name)
+          ) {
+            identityContexts.add(name);
+            changed = true;
+          }
+          if (isIdentityUser(node.initializer) && !identityUsers.has(name)) {
+            identityUsers.add(name);
+            changed = true;
+          }
+          const initializerCarriesIdentityLevel =
+            ts.isArrowFunction(node.initializer) ||
+            ts.isFunctionExpression(node.initializer)
+              ? functionReturnsIdentityLevel(node.initializer)
+              : containsIdentityLevel(node.initializer);
+          if (initializerCarriesIdentityLevel && !identityLevels.has(name)) {
+            identityLevels.add(name);
+            changed = true;
+          }
+        } else if (ts.isObjectBindingPattern(node.name)) {
+          for (const element of node.name.elements) {
+            const propertyName = element.propertyName;
+            const sourceName =
+              propertyName && ts.isIdentifier(propertyName)
+                ? propertyName.text
+                : ts.isIdentifier(element.name)
+                  ? element.name.text
+                  : undefined;
+            const localNames = bindingIdentifiers(element.name);
+            if (sourceName === "user" && isIdentityContext(node.initializer)) {
+              for (const localName of localNames) {
+                if (!identityUsers.has(localName)) {
+                  identityUsers.add(localName);
+                  changed = true;
+                }
+              }
+            }
+            if (sourceName === "level" && isIdentityUser(node.initializer)) {
+              for (const localName of localNames) {
+                if (!identityLevels.has(localName)) {
+                  identityLevels.add(localName);
+                  changed = true;
+                }
+              }
+            }
+          }
+        }
+      }
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isIdentifier(node.left) &&
+        containsIdentityLevel(node.right) &&
+        !identityLevels.has(node.left.text)
+      ) {
+        identityLevels.add(node.left.text);
+        changed = true;
+      }
+      if (
+        ts.isFunctionDeclaration(node) &&
+        node.name &&
+        node.body &&
+        functionReturnsIdentityLevel(node) &&
+        !identityLevels.has(node.name.text)
+      ) {
+        identityLevels.add(node.name.text);
+        changed = true;
+      }
+      ts.forEachChild(node, visitAliases);
+    };
+    visitAliases(sourceFile);
+  }
+
+  const violations = new Set<string>();
+  const visitAuthorization = (node: ts.Node): void => {
+    if (
+      ts.isBinaryExpression(node) &&
+      [
+        ts.SyntaxKind.EqualsEqualsToken,
+        ts.SyntaxKind.EqualsEqualsEqualsToken,
+        ts.SyntaxKind.ExclamationEqualsToken,
+        ts.SyntaxKind.ExclamationEqualsEqualsToken,
+      ].includes(node.operatorToken.kind) &&
+      (containsIdentityLevel(node.left) || containsIdentityLevel(node.right))
+    ) {
+      violations.add("compares the current identity UserLevel");
+    }
+
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ["includes", "has"].includes(node.expression.name.text) &&
+      node.arguments.some(containsIdentityLevel)
+    ) {
+      violations.add("authorizes current identity through role membership");
+    }
+
+    if (ts.isSwitchStatement(node) && containsIdentityLevel(node.expression)) {
+      violations.add(
+        "switches authorization on the current identity UserLevel",
+      );
+    }
+
+    ts.forEachChild(node, visitAuthorization);
+  };
+  visitAuthorization(sourceFile);
+
+  if (violations.size > 0) {
+    throw new Error(
+      `${fileName} restores business UserLevel authorization: ${[...violations].join("; ")}`,
+    );
+  }
 }
 
 function assertNoLegacyAuthorization(fileName: string, source: string): void {
@@ -387,81 +752,267 @@ function assertNoLegacyAuthorization(fileName: string, source: string): void {
     ts.ScriptKind.TS,
   );
 
-  const visit = (node: ts.Node): void => {
-    if (ts.isIdentifier(node) && node.text === "protectedProcedure") {
-      throw new Error(
-        `${fileName} restores protectedProcedure role authorization`,
-      );
-    }
-
-    if (
-      ts.isBinaryExpression(node) &&
-      [
-        ts.SyntaxKind.EqualsEqualsToken,
-        ts.SyntaxKind.EqualsEqualsEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsEqualsToken,
-      ].includes(node.operatorToken.kind) &&
-      containsLevelAccess(node)
-    ) {
-      throw new Error(
-        `${fileName} compares a business UserLevel for authorization`,
-      );
-    }
-
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === "includes" &&
-      node.arguments.some(containsLevelAccess)
-    ) {
-      throw new Error(`${fileName} authorizes through a role membership check`);
-    }
-
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
+  assertNoLegacyProcedureAuthorization(fileName, sourceFile);
+  assertNoIdentityRoleAuthorization(fileName, sourceFile);
 }
 
+const TEST_ID = "0123456789abcdef01234567";
+const LIST_INPUT = {};
+const DELETE_INPUT = { ids: [TEST_ID] };
+const I18N_INPUT = { en: "Test", zh: "测试" };
+
 const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
-  ["category.adminIndex", Permission.categoryReadAll, ALL_ROLES],
-  ["category.create", Permission.categoryCreate, ADMIN_EDITOR],
-  ["category.destroy", Permission.categoryDelete, ADMIN_EDITOR],
-  ["category.update", Permission.categoryUpdate, ADMIN_EDITOR],
-  ["comment.index", Permission.commentReadAll, ALL_ROLES],
-  ["comment.update", Permission.commentModerate, ADMIN_ONLY],
-  ["comment.destroy", Permission.commentModerate, ADMIN_ONLY],
-  ["link.adminIndex", Permission.linkReadAll, ALL_ROLES],
-  ["link.create", Permission.linkCreate, ADMIN_ONLY],
-  ["link.destroy", Permission.linkDelete, ADMIN_ONLY],
-  ["link.update", Permission.linkUpdate, ADMIN_ONLY],
-  ["media.index", Permission.mediaReadAll, ALL_ROLES],
-  ["media.getPresignedUrl", Permission.mediaUpload, ADMIN_EDITOR],
-  ["media.upload", Permission.mediaUpload, ADMIN_EDITOR],
-  ["media.destroy", Permission.mediaDelete, ADMIN_EDITOR],
-  ["menu.adminIndex", Permission.menuReadAll, ALL_ROLES],
-  ["menu.saveAll", Permission.menuUpdate, ADMIN_EDITOR],
-  ["page.adminIndex", Permission.pageReadAll, ALL_ROLES],
-  ["page.adminDetail", Permission.pageReadAll, ALL_ROLES],
-  ["page.create", Permission.pageCreate, ADMIN_EDITOR],
-  ["page.destroy", Permission.pageDelete, ADMIN_EDITOR],
-  ["page.update", Permission.pageUpdate, ADMIN_EDITOR],
-  ["post.adminIndex", Permission.postReadAll, ALL_ROLES],
-  ["post.adminDetail", Permission.postReadAll, ALL_ROLES],
-  ["post.create", Permission.postCreate, ADMIN_EDITOR],
-  ["post.destroy", Permission.postDelete, ADMIN_EDITOR],
-  ["post.update", Permission.postUpdate, ADMIN_EDITOR],
-  ["post.updateTags", Permission.postManageTags, ADMIN_EDITOR],
-  ["setting.update", Permission.settingUpdate, ADMIN_ONLY],
-  ["statistic.index", Permission.statisticsRead, ALL_ROLES],
-  ["tag.create", Permission.tagCreate, ADMIN_EDITOR],
-  ["tag.destroy", Permission.tagDelete, ADMIN_ONLY],
-  ["tag.update", Permission.tagUpdate, ADMIN_EDITOR],
-  ["user.current", Permission.userReadSelf, ALL_ROLES],
-  ["user.index", Permission.userReadAll, ADMIN_EDITOR],
-  ["user.create", Permission.userManage, ADMIN_ONLY],
-  ["user.destroy", Permission.userManage, ADMIN_ONLY],
-  ["user.update", Permission.userManage, ADMIN_ONLY],
+  [
+    "category.adminIndex",
+    Permission.categoryReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
+    "category.create",
+    Permission.categoryCreate,
+    ADMIN_EDITOR,
+    {
+      title: I18N_INPUT,
+      description: I18N_INPUT,
+      path: "/test",
+      status: "ENABLE",
+    },
+    "database",
+  ],
+  [
+    "category.destroy",
+    Permission.categoryDelete,
+    ADMIN_EDITOR,
+    DELETE_INPUT,
+    "database",
+  ],
+  [
+    "category.update",
+    Permission.categoryUpdate,
+    ADMIN_EDITOR,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "comment.index",
+    Permission.commentReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
+    "comment.update",
+    Permission.commentModerate,
+    ADMIN_ONLY,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "comment.destroy",
+    Permission.commentModerate,
+    ADMIN_ONLY,
+    DELETE_INPUT,
+    "database",
+  ],
+  [
+    "link.adminIndex",
+    Permission.linkReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
+    "link.create",
+    Permission.linkCreate,
+    ADMIN_ONLY,
+    {
+      name: "Test",
+      url: "https://example.test",
+      logo: "https://example.test/logo.png",
+      status: "ENABLE",
+    },
+    "database",
+  ],
+  ["link.destroy", Permission.linkDelete, ADMIN_ONLY, DELETE_INPUT, "database"],
+  [
+    "link.update",
+    Permission.linkUpdate,
+    ADMIN_ONLY,
+    { id: TEST_ID },
+    "database",
+  ],
+  ["media.index", Permission.mediaReadAll, ALL_ROLES, LIST_INPUT, "database"],
+  [
+    "media.getPresignedUrl",
+    Permission.mediaUpload,
+    ADMIN_EDITOR,
+    { name: "test.jpg", type: "image/jpeg" },
+    "storage",
+  ],
+  [
+    "media.upload",
+    Permission.mediaUpload,
+    ADMIN_EDITOR,
+    { name: "test.jpg", size: 1, type: "image/jpeg", key: "test.jpg" },
+    "database",
+  ],
+  [
+    "media.destroy",
+    Permission.mediaDelete,
+    ADMIN_EDITOR,
+    DELETE_INPUT,
+    "database",
+  ],
+  ["menu.adminIndex", Permission.menuReadAll, ALL_ROLES, undefined, "database"],
+  ["menu.saveAll", Permission.menuUpdate, ADMIN_EDITOR, [], "database"],
+  [
+    "page.adminIndex",
+    Permission.pageReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
+    "page.adminDetail",
+    Permission.pageReadAll,
+    ALL_ROLES,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "page.create",
+    Permission.pageCreate,
+    ADMIN_EDITOR,
+    {
+      title: I18N_INPUT,
+      content: I18N_INPUT,
+      status: "PUBLISH",
+      template: "default",
+    },
+    "database",
+  ],
+  [
+    "page.destroy",
+    Permission.pageDelete,
+    ADMIN_EDITOR,
+    DELETE_INPUT,
+    "database",
+  ],
+  [
+    "page.update",
+    Permission.pageUpdate,
+    ADMIN_EDITOR,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "post.adminIndex",
+    Permission.postReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
+    "post.adminDetail",
+    Permission.postReadAll,
+    ALL_ROLES,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "post.create",
+    Permission.postCreate,
+    ADMIN_EDITOR,
+    {
+      title: I18N_INPUT,
+      content: I18N_INPUT,
+      status: "PUBLISH",
+      type: "ARTICLE",
+      categoryId: TEST_ID,
+    },
+    "database",
+  ],
+  [
+    "post.destroy",
+    Permission.postDelete,
+    ADMIN_EDITOR,
+    DELETE_INPUT,
+    "database",
+  ],
+  [
+    "post.update",
+    Permission.postUpdate,
+    ADMIN_EDITOR,
+    { id: TEST_ID },
+    "database",
+  ],
+  [
+    "post.updateTags",
+    Permission.postManageTags,
+    ADMIN_EDITOR,
+    { postId: TEST_ID, tagIds: [TEST_ID], type: "ACTOR" },
+    "database",
+  ],
+  [
+    "setting.update",
+    Permission.settingUpdate,
+    ADMIN_ONLY,
+    {
+      id: TEST_ID,
+      siteName: I18N_INPUT,
+      siteSubName: I18N_INPUT,
+      siteSignature: I18N_INPUT,
+      siteCopyright: I18N_INPUT,
+    },
+    "database",
+  ],
+  [
+    "statistic.index",
+    Permission.statisticsRead,
+    ALL_ROLES,
+    undefined,
+    "database",
+  ],
+  [
+    "tag.create",
+    Permission.tagCreate,
+    ADMIN_EDITOR,
+    { name: I18N_INPUT },
+    "database",
+  ],
+  ["tag.destroy", Permission.tagDelete, ADMIN_ONLY, DELETE_INPUT, "database"],
+  [
+    "tag.update",
+    Permission.tagUpdate,
+    ADMIN_EDITOR,
+    { id: TEST_ID },
+    "database",
+  ],
+  ["user.current", Permission.userReadSelf, ALL_ROLES, undefined, "database"],
+  ["user.index", Permission.userReadAll, ADMIN_EDITOR, LIST_INPUT, "database"],
+  [
+    "user.create",
+    Permission.userManage,
+    ADMIN_ONLY,
+    {
+      name: "Test",
+      email: "test@example.test",
+      password: "password123",
+      level: UserLevel.EDITOR,
+      status: "ENABLE",
+    },
+    "hash",
+  ],
+  ["user.destroy", Permission.userManage, ADMIN_ONLY, DELETE_INPUT, "database"],
+  [
+    "user.update",
+    Permission.userManage,
+    ADMIN_ONLY,
+    { id: TEST_ID },
+    "database",
+  ],
 ];
 
 const sampleRouterSource: RouterSource = {
@@ -496,9 +1047,41 @@ function loadRouterSources(): RouterSource[] {
   );
 }
 
-function createContext(level: UserLevel): Context {
+function loadProductionSources(): Array<{ fileName: string; source: string }> {
+  const sourceRoot = join(process.cwd(), "src");
+  const visitDirectory = (directoryPath: string): string[] =>
+    readdirSync(directoryPath, { withFileTypes: true }).flatMap((entry) => {
+      const entryPath = join(directoryPath, entry.name);
+      if (entry.isDirectory()) return visitDirectory(entryPath);
+      if (!entry.name.match(/\.(?:ts|tsx)$/)) return [];
+      if (entry.name.match(/\.(?:test|spec)\.(?:ts|tsx)$/)) return [];
+      return [entryPath];
+    });
+
+  return visitDirectory(sourceRoot).map((filePath) => ({
+    fileName: filePath.slice(process.cwd().length + 1),
+    source: readFileSync(filePath, "utf8"),
+  }));
+}
+
+interface BoundaryCounts {
+  database: number;
+  hash: number;
+  storage: number;
+}
+
+function createDatabaseBoundary(counts: BoundaryCounts): Context["db"] {
+  return new Proxy({} as Context["db"], {
+    get: (_target, property) => {
+      counts.database += 1;
+      throw new Error(`database boundary reached: ${String(property)}`);
+    },
+  });
+}
+
+function createContext(level: UserLevel, db: Context["db"]): Context {
   return {
-    db: {} as Context["db"],
+    db,
     user: { id: "matrix-user", level },
     hasRequest: true,
     header: new Headers(),
@@ -506,7 +1089,40 @@ function createContext(level: UserLevel): Context {
   };
 }
 
+function deniedRoleFor(allowedRoles: readonly UserLevel[]): UserLevel {
+  if (!allowedRoles.includes(UserLevel.EDITOR)) return UserLevel.EDITOR;
+  if (!allowedRoles.includes(UserLevel.GUEST)) return UserLevel.GUEST;
+  return "UNKNOWN_AUTHENTICATED_ROLE" as UserLevel;
+}
+
+function boundaryCounts(database = 0): BoundaryCounts {
+  return {
+    database,
+    hash: externalBoundaries.hash,
+    storage: externalBoundaries.storage,
+  };
+}
+
+function callActualProcedure(
+  path: string,
+  context: Context,
+  input: unknown,
+): Promise<unknown> {
+  const [routerName, procedureName] = path.split(".");
+  const caller = appRouter.createCaller(context) as unknown as Record<
+    string,
+    Record<string, (input?: unknown) => Promise<unknown>>
+  >;
+  const procedure = caller[routerName]?.[procedureName];
+  if (!procedure) throw new Error(`Unknown appRouter procedure: ${path}`);
+  return input === undefined ? procedure() : procedure(input);
+}
+
 describe("capability procedure matrix", () => {
+  beforeEach(() => {
+    externalBoundaries.hash = 0;
+    externalBoundaries.storage = 0;
+  });
   afterEach(() => configureObservability());
 
   it("maps all 38 protected procedures onto all 32 defined permissions", () => {
@@ -534,45 +1150,42 @@ describe("capability procedure matrix", () => {
   });
 
   it.each(capabilityProcedureMatrix)(
-    "%s preserves allowed roles and short-circuits denied handlers, DB, and services",
-    async (path, permission, allowedRoles) => {
+    "%s rejects a real caller before its handler reaches any boundary",
+    async (path, _permission, allowedRoles, input) => {
       configureObservability(createMemoryObservability());
-      const executions = { handler: 0, database: 0, service: 0 };
-      const databaseOperation = () => {
-        executions.database += 1;
-      };
-      const serviceOperation = () => {
-        executions.service += 1;
-        databaseOperation();
-      };
-      const router = createTRPCRouter({
-        [path]: permissionProcedure(permission).query(() => {
-          executions.handler += 1;
-          serviceOperation();
-          return "handled";
-        }),
-      });
+      const counts = boundaryCounts();
+      const db = createDatabaseBoundary(counts);
 
-      for (const level of ALL_ROLES) {
-        const before = { ...executions };
-        const caller = router.createCaller(createContext(level)) as Record<
-          string,
-          () => Promise<string>
-        >;
-        const call = caller[path]();
-        if (allowedRoles.includes(level)) {
-          await expect(call).resolves.toBe("handled");
-        } else {
-          await expect(call).rejects.toMatchObject({ code: "FORBIDDEN" });
-          expect(executions).toEqual(before);
-        }
-      }
+      await expect(
+        callActualProcedure(
+          path,
+          createContext(deniedRoleFor(allowedRoles), db),
+          input,
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
-      expect(executions).toEqual({
-        handler: allowedRoles.length,
-        database: allowedRoles.length,
-        service: allowedRoles.length,
+      expect(boundaryCounts(counts.database)).toEqual({
+        database: 0,
+        hash: 0,
+        storage: 0,
       });
+    },
+  );
+
+  it.each(capabilityProcedureMatrix)(
+    "%s reaches its real first boundary when authorization is allowed",
+    async (path, _permission, _allowedRoles, input, firstBoundary) => {
+      configureObservability(createMemoryObservability());
+      const counts = boundaryCounts();
+      const db = createDatabaseBoundary(counts);
+
+      await callActualProcedure(
+        path,
+        createContext(UserLevel.ADMIN, db),
+        input,
+      ).catch(() => undefined);
+
+      expect(boundaryCounts(counts.database)[firstBoundary]).toBeGreaterThan(0);
     },
   );
 
@@ -614,16 +1227,8 @@ describe("capability procedure matrix", () => {
 
 describe("capability authorization static gate", () => {
   it("contains no legacy procedure or business UserLevel authorization", () => {
-    const productionSources = [
-      ...loadRouterSources(),
-      {
-        fileName: "core.ts",
-        source: readFileSync(
-          join(process.cwd(), "src/packages/trpc/api/core.ts"),
-          "utf8",
-        ),
-      },
-    ];
+    const productionSources = loadProductionSources();
+    expect(productionSources.length).toBeGreaterThan(100);
 
     for (const { fileName, source } of productionSources) {
       expect(() => assertNoLegacyAuthorization(fileName, source)).not.toThrow();
@@ -647,9 +1252,65 @@ describe("capability authorization static gate", () => {
       "role membership helper",
       `if ([UserLevel.ADMIN].includes(ctx.user.level)) return next();`,
     ],
+    [
+      "aliased current-user membership",
+      `const current = ctx.user;
+       const role = current.level;
+       if ([UserLevel.ADMIN].includes(role)) return next();`,
+    ],
+    [
+      "aliased legacy wrapper",
+      `import { protectedProcedure as legacy } from "@/packages/trpc/api/core";
+       const adminOnly = () => legacy([UserLevel.ADMIN]);
+       const route = adminOnly().query(handler);`,
+    ],
+    [
+      "namespace legacy wrapper",
+      `import * as core from "./core";
+       const legacy = core.protectedProcedure;
+       const route = legacy([UserLevel.ADMIN]).query(handler);`,
+    ],
+    [
+      "legacy export alias",
+      `const legacy = (roles) => procedure.use(authorize(roles));
+       export { legacy as protectedProcedure };`,
+    ],
+    [
+      "legacy exported object definition",
+      `export const authorization = {
+         protectedProcedure: (roles) => procedure.use(authorize(roles)),
+       };`,
+    ],
+    [
+      "destructured session-user membership",
+      `const { user: current } = session;
+       const { level: role } = current;
+       if (allowedRoles.has(role)) return next();`,
+    ],
+    [
+      "assigned current-user role alias",
+      `let role;
+       role = ctx.user.level;
+       if (allowedRoles.includes(role)) return next();`,
+    ],
+    [
+      "current-user role reader wrapper",
+      `const readRole = () => session.user.level;
+       if (allowedRoles.has(readRole())) return next();`,
+    ],
   ])("fails closed if code restores %s authorization", (_case, source) => {
     expect(() => assertNoLegacyAuthorization("fixture.ts", source)).toThrow(
       /authorization|authorizes/i,
     );
+  });
+
+  it.each([
+    `const label = UserLevelName[data.level];`,
+    `const disabled = row.level === UserLevel.ADMIN;`,
+    `const levels = records.map((data) => data.level);`,
+  ])("allows non-identity level data usage", (source) => {
+    expect(() =>
+      assertNoLegacyAuthorization("fixture.tsx", source),
+    ).not.toThrow();
   });
 });
