@@ -15,12 +15,15 @@ import { TagListQueryInput } from "@/packages/trpc/api/modules/tag/schemas/tag.l
 import { keepPreviousData } from "@tanstack/react-query";
 import { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
 import { CommentUpdate } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 评论管理页面。
  * 该组件负责展示评论列表，并提供搜索、状态管理（通过、驳回、屏蔽）、删除等功能。
  */
 const Comment = () => {
+  const canModerateComments = useCan(Permission.commentModerate);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `CommentEntity` 数组。
@@ -201,27 +204,29 @@ const Comment = () => {
         onChange={(params) => {
           setSearchParams(params);
         }}
-        selectableRows={true}
+        selectableRows={canModerateComments}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
-            <div className="flex gap-1">
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
-            </div>
+            {canModerateComments && (
+              <div className="flex gap-1">
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              </div>
+            )}
             <div className="flex gap-1">
               <DynamicForm
                 schema={CommentListQuerySchema}
@@ -242,7 +247,11 @@ const Comment = () => {
             </div>
           </div>
         }
-        rowActions={(row) => <div className="flex gap-1">{renderOpt(row)}</div>}
+        rowActions={
+          canModerateComments
+            ? (row) => <div className="flex gap-1">{renderOpt(row)}</div>
+            : undefined
+        }
       />
     </>
   );

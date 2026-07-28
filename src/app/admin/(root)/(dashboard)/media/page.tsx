@@ -15,6 +15,8 @@ import { MediaIndexInput } from "@/packages/trpc/api/modules/media/schemas/media
 import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
 import { clientLogger } from "@/packages/observability/client";
 import { LogEvent } from "@/packages/observability/core/names";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 媒体库组件的属性接口。
@@ -34,6 +36,8 @@ export interface MediaProps {
  * @returns {JSX.Element} 媒体库界面。
  */
 const Media = ({ onSelect }: MediaProps) => {
+  const canUploadMedia = useCan(Permission.mediaUpload);
+  const canDeleteMedia = useCan(Permission.mediaDelete);
   /**
    * 当前选中的媒体项。
    */
@@ -214,22 +218,24 @@ const Media = ({ onSelect }: MediaProps) => {
 
   return (
     <div>
-      <div className="flex m-1">
-        <input
-          type="file"
-          multiple
-          hidden
-          ref={fileInputRef}
-          onChange={(e) => handleUpload(e.target.files)}
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
-        >
-          <UploadCloud />
-          {loading ? "正在上传中..." : "点击上传文件"}
-        </Button>
-      </div>
+      {canUploadMedia && (
+        <div className="flex m-1">
+          <input
+            type="file"
+            multiple
+            hidden
+            ref={fileInputRef}
+            onChange={(e) => handleUpload(e.target.files)}
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+          >
+            <UploadCloud />
+            {loading ? "正在上传中..." : "点击上传文件"}
+          </Button>
+        </div>
+      )}
       <div className="flex flex-wrap">
         {data?.list?.length ? (
           data?.list?.map((item) => (
@@ -265,16 +271,18 @@ const Media = ({ onSelect }: MediaProps) => {
                 >
                   <Copy />
                 </Button>
-                <Dialog
-                  trigger={
-                    <Button variant="secondary">
-                      <Trash />
-                    </Button>
-                  }
-                  type="danger"
-                  title="确定要删除吗？"
-                  onOK={() => handleDelete(item.id)}
-                />
+                {canDeleteMedia && (
+                  <Dialog
+                    trigger={
+                      <Button variant="secondary">
+                        <Trash />
+                      </Button>
+                    }
+                    type="danger"
+                    title="确定要删除吗？"
+                    onOK={() => handleDelete(item.id)}
+                  />
+                )}
               </div>
             </div>
           ))

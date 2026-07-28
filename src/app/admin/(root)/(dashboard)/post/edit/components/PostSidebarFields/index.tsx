@@ -13,6 +13,8 @@ import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import MultiTag from "../MultiTag";
 import PhotoPickerItem from "../PhotoPickerItem";
 import type { usePostEditor } from "../../hooks/usePostEditor";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 type Editor = ReturnType<typeof usePostEditor>;
 
@@ -36,6 +38,7 @@ interface PostSidebarFieldsProps {
 }
 
 export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
+  const canCreateCategory = useCan(Permission.categoryCreate);
   const {
     category,
     detail,
@@ -70,14 +73,16 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
           value: item.id ?? "0",
         }))}
       />
-      <Button
-        variant="outline"
-        type="button"
-        onClick={() => setModalProps({ open: true, type: ModalType.ADD })}
-      >
-        <Plus className="w-4 h-4 mr-1" />
-        新建分类
-      </Button>
+      {canCreateCategory && (
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => setModalProps({ open: true, type: ModalType.ADD })}
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          新建分类
+        </Button>
+      )}
 
       {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
         type,

@@ -1,6 +1,6 @@
 "use client";
 
-import { menu } from "@/app/admin/constants/menuData";
+import { getMenuForCapabilities } from "@/app/admin/constants/menuData";
 import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
 import React from "react";
@@ -48,7 +48,7 @@ function AdminDashboardLayout({
   return (
     <AdminLayout
       title={setting?.siteName?.zh}
-      menu={menu}
+      menu={getMenuForCapabilities(user?.level)}
       user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}

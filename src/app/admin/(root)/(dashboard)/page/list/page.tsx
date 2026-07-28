@@ -16,12 +16,17 @@ import {
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 页面列表管理页面。
  * 该组件负责展示页面列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const Page = () => {
+  const canCreatePage = useCan(Permission.pageCreate);
+  const canUpdatePage = useCan(Permission.pageUpdate);
+  const canDeletePage = useCan(Permission.pageDelete);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `PageEntity` 数组。
@@ -86,33 +91,37 @@ const Page = () => {
           setSearchParams(params);
         }}
         columns={pageListTableColumns}
-        selectableRows={true}
+        selectableRows={canDeletePage}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
-              <Button
-                onClick={() => router.push("/admin/page/edit")}
-                variant="outline"
-              >
-                <Plus />
-                添加新页面
-              </Button>
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
+              {canCreatePage && (
+                <Button
+                  onClick={() => router.push("/admin/page/edit")}
+                  variant="outline"
+                >
+                  <Plus />
+                  添加新页面
+                </Button>
+              )}
+              {canDeletePage && (
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              )}
             </div>
             <div className="flex gap-1">
               <DynamicForm
@@ -136,23 +145,27 @@ const Page = () => {
         }
         rowActions={(row) => (
           <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push(`/admin/page/edit?id=${row.id}`)}
-            >
-              <Pencil />
-            </Button>
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
+            {canUpdatePage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => router.push(`/admin/page/edit?id=${row.id}`)}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {canDeletePage && (
+              <Dialog
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Trash />
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={() => handleDeleteItem([row.id])}
+              />
+            )}
           </div>
         )}
       />

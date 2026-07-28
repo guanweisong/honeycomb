@@ -27,13 +27,17 @@ import {
   UserLevel,
   userLevelOptions,
 } from "@/packages/trpc/api/modules/user/types/user.level";
+import { Permission, can } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 import {
   UserStatus,
   userStatusOptions,
 } from "@/packages/trpc/api/modules/user/types/user.status";
 import { keepPreviousData } from "@tanstack/react-query";
 
-function toUserFormDefaults(record?: UserEntity): Partial<UserUpdate> | undefined {
+function toUserFormDefaults(
+  record?: UserEntity,
+): Partial<UserUpdate> | undefined {
   if (!record) {
     return undefined;
   }
@@ -52,6 +56,7 @@ function toUserFormDefaults(record?: UserEntity): Partial<UserUpdate> | undefine
  * 该组件负责展示用户列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const User = () => {
+  const canManageUsers = useCan(Permission.userManage);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `UserEntity` 数组。
@@ -191,8 +196,8 @@ const User = () => {
         columns={userTableColumns}
         isFetching={isFetching}
         error={isError}
-        selectableRows={true}
-        disabledRowSelectable={(row) => row.level === UserLevel.ADMIN}
+        selectableRows={canManageUsers}
+        disabledRowSelectable={(row) => can(row.level, Permission.userManage)}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         onChange={(params) => {
@@ -200,26 +205,28 @@ const User = () => {
         }}
         toolBar={
           <div className="flex justify-between">
-            <div className="flex gap-1">
-              <Button onClick={handleAddNew} variant="outline">
-                <Plus />
-                添加新用户
-              </Button>
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
-            </div>
+            {canManageUsers && (
+              <div className="flex gap-1">
+                <Button onClick={handleAddNew} variant="outline">
+                  <Plus />
+                  添加新用户
+                </Button>
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              </div>
+            )}
             <div className="flex gap-1">
               <DynamicForm
                 schema={UserListQuerySchema}
@@ -230,9 +237,7 @@ const User = () => {
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
-                onSubmit={(values) =>
-                  setSearchParams(values)
-                }
+                onSubmit={(values) => setSearchParams(values)}
                 inline={true}
                 submitProps={{
                   children: "查询",
@@ -242,30 +247,34 @@ const User = () => {
             </div>
           </div>
         }
-        rowActions={(row) => (
-          <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleEditItem(row)}
-            >
-              <Pencil />
-            </Button>
-            {row.level !== UserLevel.ADMIN &&
-              row.status !== UserStatus.DELETED && (
-                <Dialog
-                  trigger={
-                    <Button variant="secondary" size="sm">
-                      <Trash />
-                    </Button>
-                  }
-                  type="danger"
-                  title="确定要删除吗？"
-                  onOK={() => handleDeleteItem([row.id])}
-                />
-              )}
-          </div>
-        )}
+        rowActions={
+          canManageUsers
+            ? (row) => (
+                <div className="flex gap-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleEditItem(row)}
+                  >
+                    <Pencil />
+                  </Button>
+                  {!can(row.level, Permission.userManage) &&
+                    row.status !== UserStatus.DELETED && (
+                      <Dialog
+                        trigger={
+                          <Button variant="secondary" size="sm">
+                            <Trash />
+                          </Button>
+                        }
+                        type="danger"
+                        title="确定要删除吗？"
+                        onOK={() => handleDeleteItem([row.id])}
+                      />
+                    )}
+                </div>
+              )
+            : undefined
+        }
       />
       <Dialog
         title={`${ModalTypeName[ModalType[modalProps.type!] as keyof typeof ModalTypeName]}用户`}
@@ -315,14 +324,16 @@ const User = () => {
               name: "level",
               type: "radio",
               options: userLevelOptions,
-              disabled: () => modalProps.record?.level === UserLevel.ADMIN,
+              disabled: () =>
+                can(modalProps.record?.level, Permission.userManage),
             },
             {
               label: "状态",
               name: "status",
               type: "radio",
               options: userStatusOptions,
-              disabled: () => modalProps.record?.level === UserLevel.ADMIN,
+              disabled: () =>
+                can(modalProps.record?.level, Permission.userManage),
             },
           ]}
           onSubmit={(values) =>

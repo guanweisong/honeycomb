@@ -28,6 +28,8 @@ import {
 import { z } from "zod";
 import { clientLogger } from "@/packages/observability/client";
 import { LogEvent } from "@/packages/observability/core/names";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 type PageFormValues = z.infer<typeof PageInsertSchema>;
 
@@ -58,6 +60,8 @@ function toPageFormValues(
  * 它使用 `DynamicForm` 进行表单状态管理，使用 tRPC 与后端进行数据交互。
  */
 const PageContent = () => {
+  const canCreatePage = useCan(Permission.pageCreate);
+  const canUpdatePage = useCan(Permission.pageUpdate);
   const router = useRouter();
   const searchParams = useSearchParams();
   /**
@@ -168,7 +172,7 @@ const PageContent = () => {
 
     return (
       <>
-        {isEdit && isPublished && (
+        {canUpdatePage && isEdit && isPublished && (
           <Button
             type="button"
             disabled={loading}
@@ -178,7 +182,7 @@ const PageContent = () => {
           </Button>
         )}
 
-        {isEdit && isPublished && (
+        {canUpdatePage && isEdit && isPublished && (
           <Dialog
             trigger={
               <Button type="button" variant="secondary" disabled={loading}>
@@ -191,7 +195,7 @@ const PageContent = () => {
           />
         )}
 
-        {isEdit && isDraft && (
+        {canUpdatePage && isEdit && isDraft && (
           <Button
             type="button"
             disabled={loading}
@@ -201,7 +205,8 @@ const PageContent = () => {
           </Button>
         )}
 
-        {((isEdit && isDraft) || !isEdit) && (
+        {((canUpdatePage && isEdit && isDraft) ||
+          (canCreatePage && !isEdit)) && (
           <Button
             type="button"
             disabled={loading}
@@ -211,7 +216,7 @@ const PageContent = () => {
           </Button>
         )}
 
-        {!isEdit && (
+        {canCreatePage && !isEdit && (
           <Button
             type="button"
             onClick={() => handleBtnClick(PageStatus.DRAFT)}
@@ -227,7 +232,10 @@ const PageContent = () => {
   const pageHeaderTitle = id ? "修改页面" : "添加新页面";
 
   useAdminLayoutPageTitle(pageHeaderTitle, `${id ?? "new"}:${loading}`);
-  useAdminLayoutActions(headerActions, `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`);
+  useAdminLayoutActions(
+    headerActions,
+    `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`,
+  );
 
   return (
     <>

@@ -20,6 +20,8 @@ import {
 import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
 import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
 import { MenuEntityTree } from "@/app/admin/types/menu.entity.tree";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 type SortableMenuNode = MenuEntityTree & {
   title: string;
@@ -41,6 +43,7 @@ type MenuSaveItem = {
  * 允许管理员配置网站的导航菜单，支持从页面和分类中选择菜单项，并进行拖拽排序。
  */
 const Menu = () => {
+  const canUpdateMenu = useCan(Permission.menuUpdate);
   /**
    * 保存所有菜单的 tRPC mutation。
    */
@@ -111,12 +114,16 @@ const Menu = () => {
    * @param {boolean} checked - 是否选中。
    * @param {MenuType} type - 菜单项的类型（例如 `CATEGORY` 或 `PAGE`）。
    */
-  const onCheck = (item: MenuSelectableItem, checked: boolean, type: MenuType) => {
+  const onCheck = (
+    item: MenuSelectableItem,
+    checked: boolean,
+    type: MenuType,
+  ) => {
     if (checked) {
       const nextItem: MenuEntityTree = {
         id: item.id,
         title: item.title ?? null,
-        path: "path" in item ? item.path ?? null : null,
+        path: "path" in item ? (item.path ?? null) : null,
         parent: null,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
@@ -124,10 +131,7 @@ const Menu = () => {
         type,
       };
 
-      setCheckedList([
-        ...checkedList,
-        nextItem,
-      ]);
+      setCheckedList([...checkedList, nextItem]);
     } else {
       removeItem(item.id);
     }
@@ -320,9 +324,11 @@ const Menu = () => {
             ? "拖拽下方菜单进行排序"
             : "请先从左侧选择菜单"}
         </div>
-        <Button onClick={submit} className="mb-1 mt-2">
-          <Save /> 保存
-        </Button>
+        {canUpdateMenu && (
+          <Button onClick={submit} className="mb-1 mt-2">
+            <Save /> 保存
+          </Button>
+        )}
         <div className="bg-gray-50 my-2 py-2">
           <SortableTree
             treeData={getMenuFormat()}

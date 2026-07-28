@@ -555,39 +555,71 @@ function assertNoLegacyProcedureAuthorization(
   }
 }
 
-function assertNoIdentityRoleAuthorization(
+const ROLE_STRING_VALUES = new Set(["ADMIN", "EDITOR", "GUEST"]);
+const ROLE_VALUE_NAME = /(?:role|level)/i;
+const AUTHORIZATION_HELPER_NAME =
+  /(?:authori[sz]|auth|access|allow|permission|privilege|role|level)/i;
+const ROLE_POLICY_ALLOWLIST = new Set([
+  "src/packages/auth/permissions.ts",
+  "src/packages/db/schema.ts",
+  "src/packages/trpc/api/modules/user/types/user.level.ts",
+]);
+
+function assertNoRoleBasedAuthorization(
   fileName: string,
   sourceFile: ts.SourceFile,
 ): void {
-  const identityContexts = new Set(["ctx", "context", "session"]);
-  const identityUsers = new Set<string>();
-  const identityLevels = new Set<string>();
+  if (ROLE_POLICY_ALLOWLIST.has(fileName)) return;
 
-  const isIdentityContext = (node: ts.Expression): boolean =>
-    ts.isIdentifier(node) && identityContexts.has(node.text);
+  const roleEnumBindings = new Set(["UserLevel"]);
+  const roleValueBindings = new Set<string>();
+  const violations = new Set<string>();
 
-  const isIdentityUser = (node: ts.Expression): boolean => {
-    if (ts.isIdentifier(node)) return identityUsers.has(node.text);
-    return (
-      ts.isPropertyAccessExpression(node) &&
-      node.name.text === "user" &&
-      isIdentityContext(node.expression)
-    );
-  };
+  const isComputedRoleAccess = (node: ts.Node): boolean =>
+    ts.isElementAccessExpression(node) &&
+    ((ts.isIdentifier(node.expression) &&
+      roleEnumBindings.has(node.expression.text) &&
+      node.argumentExpression &&
+      ts.isStringLiteralLike(node.argumentExpression) &&
+      ROLE_STRING_VALUES.has(node.argumentExpression.text)) ||
+      (node.argumentExpression !== undefined &&
+        ts.isStringLiteralLike(node.argumentExpression) &&
+        node.argumentExpression.text === "level"));
 
-  const isIdentityLevel = (node: ts.Node): boolean => {
-    if (ts.isIdentifier(node)) return identityLevels.has(node.text);
-    return (
-      ts.isPropertyAccessExpression(node) &&
-      node.name.text === "level" &&
-      isIdentityUser(node.expression)
-    );
-  };
+  for (const statement of sourceFile.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text.endsWith("user.level")
+    ) {
+      const bindings = statement.importClause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) {
+        for (const element of bindings.elements) {
+          const importedName = element.propertyName?.text ?? element.name.text;
+          if (importedName === "UserLevel") {
+            roleEnumBindings.add(element.name.text);
+          }
+        }
+      } else if (bindings && ts.isNamespaceImport(bindings)) {
+        roleEnumBindings.add(bindings.name.text);
+      }
+    }
+  }
 
-  const containsIdentityLevel = (node: ts.Node): boolean => {
+  const isRoleExpression = (node: ts.Node): boolean => {
     let found = false;
     const visit = (child: ts.Node): void => {
-      if (isIdentityLevel(child)) {
+      if (
+        (ts.isStringLiteralLike(child) && ROLE_STRING_VALUES.has(child.text)) ||
+        (ts.isIdentifier(child) &&
+          (roleValueBindings.has(child.text) ||
+            ROLE_VALUE_NAME.test(child.text))) ||
+        (ts.isPropertyAccessExpression(child) &&
+          (child.name.text === "level" ||
+            (ts.isIdentifier(child.expression) &&
+              roleEnumBindings.has(child.expression.text)))) ||
+        isComputedRoleAccess(child)
+      ) {
         found = true;
         return;
       }
@@ -597,112 +629,51 @@ function assertNoIdentityRoleAuthorization(
     return found;
   };
 
-  const functionReturnsIdentityLevel = (
-    node: ts.ArrowFunction | ts.FunctionExpression | ts.FunctionDeclaration,
-  ): boolean => {
-    if (ts.isArrowFunction(node) && !ts.isBlock(node.body)) {
-      return containsIdentityLevel(node.body);
+  const isDirectRoleValue = (node: ts.Expression): boolean => {
+    if (ts.isParenthesizedExpression(node)) {
+      return isDirectRoleValue(node.expression);
     }
-    const body = node.body;
-    if (!body || !ts.isBlock(body)) return false;
-    let returnsIdentityLevel = false;
-    const visitReturn = (child: ts.Node): void => {
-      if (
-        ts.isReturnStatement(child) &&
-        child.expression &&
-        containsIdentityLevel(child.expression)
-      ) {
-        returnsIdentityLevel = true;
-        return;
-      }
-      ts.forEachChild(child, visitReturn);
-    };
-    visitReturn(body);
-    return returnsIdentityLevel;
+    if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
+      return isDirectRoleValue(node.expression);
+    }
+    if (ts.isArrayLiteralExpression(node)) {
+      return node.elements.some(
+        (element) => ts.isExpression(element) && isDirectRoleValue(element),
+      );
+    }
+    return (
+      (ts.isStringLiteralLike(node) && ROLE_STRING_VALUES.has(node.text)) ||
+      (ts.isIdentifier(node) &&
+        (roleValueBindings.has(node.text) ||
+          ROLE_VALUE_NAME.test(node.text))) ||
+      (ts.isPropertyAccessExpression(node) &&
+        (node.name.text === "level" ||
+          (ts.isIdentifier(node.expression) &&
+            roleEnumBindings.has(node.expression.text)))) ||
+      isComputedRoleAccess(node)
+    );
   };
 
   let changed = true;
   while (changed) {
     changed = false;
-    const visitAliases = (node: ts.Node): void => {
-      if (ts.isVariableDeclaration(node) && node.initializer) {
-        if (ts.isIdentifier(node.name)) {
-          const name = node.name.text;
-          if (
-            isIdentityContext(node.initializer) &&
-            !identityContexts.has(name)
-          ) {
-            identityContexts.add(name);
-            changed = true;
-          }
-          if (isIdentityUser(node.initializer) && !identityUsers.has(name)) {
-            identityUsers.add(name);
-            changed = true;
-          }
-          const initializerCarriesIdentityLevel =
-            ts.isArrowFunction(node.initializer) ||
-            ts.isFunctionExpression(node.initializer)
-              ? functionReturnsIdentityLevel(node.initializer)
-              : containsIdentityLevel(node.initializer);
-          if (initializerCarriesIdentityLevel && !identityLevels.has(name)) {
-            identityLevels.add(name);
-            changed = true;
-          }
-        } else if (ts.isObjectBindingPattern(node.name)) {
-          for (const element of node.name.elements) {
-            const propertyName = element.propertyName;
-            const sourceName =
-              propertyName && ts.isIdentifier(propertyName)
-                ? propertyName.text
-                : ts.isIdentifier(element.name)
-                  ? element.name.text
-                  : undefined;
-            const localNames = bindingIdentifiers(element.name);
-            if (sourceName === "user" && isIdentityContext(node.initializer)) {
-              for (const localName of localNames) {
-                if (!identityUsers.has(localName)) {
-                  identityUsers.add(localName);
-                  changed = true;
-                }
-              }
-            }
-            if (sourceName === "level" && isIdentityUser(node.initializer)) {
-              for (const localName of localNames) {
-                if (!identityLevels.has(localName)) {
-                  identityLevels.add(localName);
-                  changed = true;
-                }
-              }
-            }
-          }
-        }
-      }
+    const collectAliases = (node: ts.Node): void => {
       if (
-        ts.isBinaryExpression(node) &&
-        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-        ts.isIdentifier(node.left) &&
-        containsIdentityLevel(node.right) &&
-        !identityLevels.has(node.left.text)
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        isDirectRoleValue(node.initializer) &&
+        !roleValueBindings.has(node.name.text)
       ) {
-        identityLevels.add(node.left.text);
+        roleValueBindings.add(node.name.text);
         changed = true;
       }
-      if (
-        ts.isFunctionDeclaration(node) &&
-        node.name &&
-        node.body &&
-        functionReturnsIdentityLevel(node) &&
-        !identityLevels.has(node.name.text)
-      ) {
-        identityLevels.add(node.name.text);
-        changed = true;
-      }
-      ts.forEachChild(node, visitAliases);
+
+      ts.forEachChild(node, collectAliases);
     };
-    visitAliases(sourceFile);
+    collectAliases(sourceFile);
   }
 
-  const violations = new Set<string>();
   const visitAuthorization = (node: ts.Node): void => {
     if (
       ts.isBinaryExpression(node) &&
@@ -711,25 +682,50 @@ function assertNoIdentityRoleAuthorization(
         ts.SyntaxKind.EqualsEqualsEqualsToken,
         ts.SyntaxKind.ExclamationEqualsToken,
         ts.SyntaxKind.ExclamationEqualsEqualsToken,
+        ts.SyntaxKind.LessThanToken,
+        ts.SyntaxKind.LessThanEqualsToken,
+        ts.SyntaxKind.GreaterThanToken,
+        ts.SyntaxKind.GreaterThanEqualsToken,
       ].includes(node.operatorToken.kind) &&
-      (containsIdentityLevel(node.left) || containsIdentityLevel(node.right))
+      (isRoleExpression(node.left) || isRoleExpression(node.right))
     ) {
-      violations.add("compares the current identity UserLevel");
+      violations.add("compares a UserLevel or role value");
     }
 
     if (
       ts.isCallExpression(node) &&
       ts.isPropertyAccessExpression(node.expression) &&
       ["includes", "has"].includes(node.expression.name.text) &&
-      node.arguments.some(containsIdentityLevel)
+      (isRoleExpression(node.expression.expression) ||
+        node.arguments.some(isRoleExpression))
     ) {
-      violations.add("authorizes current identity through role membership");
+      violations.add("authorizes through UserLevel role membership");
     }
 
-    if (ts.isSwitchStatement(node) && containsIdentityLevel(node.expression)) {
-      violations.add(
-        "switches authorization on the current identity UserLevel",
-      );
+    if (
+      ts.isSwitchStatement(node) &&
+      (isRoleExpression(node.expression) ||
+        node.caseBlock.clauses.some(
+          (clause) =>
+            ts.isCaseClause(clause) && isRoleExpression(clause.expression),
+        ))
+    ) {
+      violations.add("switches on a UserLevel or role value");
+    }
+
+    if (ts.isCallExpression(node)) {
+      const helperName = ts.isIdentifier(node.expression)
+        ? node.expression.text
+        : ts.isPropertyAccessExpression(node.expression)
+          ? node.expression.name.text
+          : "";
+      if (
+        helperName !== "can" &&
+        AUTHORIZATION_HELPER_NAME.test(helperName) &&
+        node.arguments.some(isRoleExpression)
+      ) {
+        violations.add("calls a role-based authorization helper");
+      }
     }
 
     ts.forEachChild(node, visitAuthorization);
@@ -738,7 +734,7 @@ function assertNoIdentityRoleAuthorization(
 
   if (violations.size > 0) {
     throw new Error(
-      `${fileName} restores business UserLevel authorization: ${[...violations].join("; ")}`,
+      `${fileName} restores role-based authorization: ${[...violations].join("; ")}`,
     );
   }
 }
@@ -749,11 +745,11 @@ function assertNoLegacyAuthorization(fileName: string, source: string): void {
     source,
     ts.ScriptTarget.Latest,
     true,
-    ts.ScriptKind.TS,
+    fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
 
   assertNoLegacyProcedureAuthorization(fileName, sourceFile);
-  assertNoIdentityRoleAuthorization(fileName, sourceFile);
+  assertNoRoleBasedAuthorization(fileName, sourceFile);
 }
 
 const TEST_ID = "0123456789abcdef01234567";
@@ -1298,6 +1294,32 @@ describe("capability authorization static gate", () => {
       `const readRole = () => session.user.level;
        if (allowedRoles.has(readRole())) return next();`,
     ],
+    [
+      "generic role authorization helper",
+      `function legacyRoleCheck(level, allowed) { return allowed.includes(level); }
+       if (legacyRoleCheck(level, [UserLevel.ADMIN])) return next();`,
+    ],
+    [
+      "user reader wrapper role comparison",
+      `const readUser = () => repository.read();
+       if (readUser().level === UserLevel.ADMIN) return next();`,
+    ],
+    [
+      "imported and exported UserLevel aliases",
+      `import { UserLevel as Role } from "./user.level";
+       const administrator = Role.ADMIN;
+       export { administrator as privilegedRole };
+       if (account.level === administrator) return next();`,
+    ],
+    [
+      "non-identity UserLevel comparison",
+      `const disabled = row.level === UserLevel.ADMIN;`,
+    ],
+    [
+      "computed UserLevel membership",
+      `const admins = new Set([UserLevel["ADMIN"]]);
+       if (admins.has(ctx.user["level"])) return next();`,
+    ],
   ])("fails closed if code restores %s authorization", (_case, source) => {
     expect(() => assertNoLegacyAuthorization("fixture.ts", source)).toThrow(
       /authorization|authorizes/i,
@@ -1306,8 +1328,8 @@ describe("capability authorization static gate", () => {
 
   it.each([
     `const label = UserLevelName[data.level];`,
-    `const disabled = row.level === UserLevel.ADMIN;`,
     `const levels = records.map((data) => data.level);`,
+    `const allowed = can(user.level, Permission.userManage);`,
   ])("allows non-identity level data usage", (source) => {
     expect(() =>
       assertNoLegacyAuthorization("fixture.tsx", source),

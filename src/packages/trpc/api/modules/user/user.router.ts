@@ -5,7 +5,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission, can } from "@/packages/auth/permissions";
 import { TRPCError } from "@trpc/server";
 import {
   buildDrizzleWhere,
@@ -21,6 +21,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { observeDbOperation } from "@/packages/observability/server";
+import type { Database } from "@/packages/db/db";
 
 const BCRYPT_ROUNDS = 12;
 const safeUserColumns = {
@@ -32,6 +33,18 @@ const safeUserColumns = {
   createdAt: schema.user.createdAt,
   updatedAt: schema.user.updatedAt,
 };
+
+async function readManagedTargets(
+  ctx: { db: Database },
+  ids: readonly string[],
+) {
+  return observeDbOperation("user.list", "select", () =>
+    ctx.db
+      .select({ level: schema.user.level, status: schema.user.status })
+      .from(schema.user)
+      .where(inArray(schema.user.id, [...ids])),
+  );
+}
 
 /**
  * 用户相关的 tRPC 路由。
@@ -173,6 +186,10 @@ export const userRouter = createTRPCRouter({
   destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
+      const targets = await readManagedTargets(ctx, input.ids);
+      if (targets.some((target) => can(target.level, Permission.userManage))) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
       await observeDbOperation("user.destroy", "delete", () =>
         ctx.db.delete(schema.user).where(inArray(schema.user.id, input.ids)),
       );
@@ -191,6 +208,17 @@ export const userRouter = createTRPCRouter({
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
+      const [target] = await readManagedTargets(ctx, [id]);
+      if (
+        target &&
+        can(target.level, Permission.userManage) &&
+        (("level" in rest &&
+          rest.level &&
+          !can(rest.level, Permission.userManage)) ||
+          (rest.status !== undefined && rest.status !== target.status))
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
       const values = {
         ...rest,
         ...(rest.password

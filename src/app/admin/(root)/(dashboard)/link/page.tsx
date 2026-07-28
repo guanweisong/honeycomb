@@ -29,8 +29,12 @@ import {
   enableStatusOptions,
 } from "@/packages/trpc/api/types/enable.status";
 import { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
-function toLinkFormDefaults(record?: LinkEntity): Partial<LinkUpdate> | undefined {
+function toLinkFormDefaults(
+  record?: LinkEntity,
+): Partial<LinkUpdate> | undefined {
   if (!record) {
     return undefined;
   }
@@ -50,6 +54,9 @@ function toLinkFormDefaults(record?: LinkEntity): Partial<LinkUpdate> | undefine
  * 该组件负责展示友情链接列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const Link = () => {
+  const canCreateLink = useCan(Permission.linkCreate);
+  const canUpdateLink = useCan(Permission.linkUpdate);
+  const canDeleteLink = useCan(Permission.linkDelete);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `LinkEntity` 数组。
@@ -105,7 +112,9 @@ const Link = () => {
     switch (modalProps.type!) {
       case ModalType.ADD:
         try {
-          await createLink.mutateAsync(values as z.infer<typeof LinkInsertSchema>);
+          await createLink.mutateAsync(
+            values as z.infer<typeof LinkInsertSchema>,
+          );
           refetch();
           toast.success("添加成功");
           setModalProps((prevState) => ({ ...prevState, open: false }));
@@ -200,30 +209,34 @@ const Link = () => {
         isFetching={isFetching}
         error={isError}
         columns={linkTableColumns}
-        selectableRows={true}
+        selectableRows={canDeleteLink}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
-              <Button onClick={handleAddNew} variant="outline">
-                <Plus />
-                添加链接
-              </Button>
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
+              {canCreateLink && (
+                <Button onClick={handleAddNew} variant="outline">
+                  <Plus />
+                  添加链接
+                </Button>
+              )}
+              {canDeleteLink && (
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              )}
             </div>
             <div className="flex gap-1">
               <DynamicForm
@@ -247,23 +260,27 @@ const Link = () => {
         }
         rowActions={(row) => (
           <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleEditItem(row)}
-            >
-              <Pencil />
-            </Button>
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
+            {canUpdateLink && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleEditItem(row)}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {canDeleteLink && (
+              <Dialog
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Trash />
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={() => handleDeleteItem([row.id])}
+              />
+            )}
           </div>
         )}
       />

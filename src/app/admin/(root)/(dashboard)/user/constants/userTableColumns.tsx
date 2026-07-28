@@ -1,7 +1,10 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
-import { userLevelOptions } from "@/packages/trpc/api/modules/user/types/user.level";
+import {
+  UserLevelName,
+  userLevelOptions,
+} from "@/packages/trpc/api/modules/user/types/user.level";
 import { userStatusOptions } from "@/packages/trpc/api/modules/user/types/user.status";
 import {
   StatusBadge,
@@ -29,7 +32,7 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
        * 将用户级别值映射为对应的中文标签。
        */
       const level = row.getValue("level") as string;
-      return userLevelOptions.find((opt) => opt.value === level)?.label;
+      return UserLevelName[level as keyof typeof UserLevelName] ?? level;
     },
   },
   {
@@ -42,9 +45,10 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
       /**
        * 渲染用户状态的单元格。
        * 将用户状态值映射为对应的中文标签，并使用颜色徽章展示。
-      */
+       */
       const status = row.getValue("status") as string;
-      const label = userStatusOptions.find((opt) => opt.value === status)?.label ?? status;
+      const label =
+        userStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       const tone = getUserStatusTone(status);
       return <StatusBadge tone={tone} label={label} />;
     },

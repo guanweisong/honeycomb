@@ -18,12 +18,17 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
 import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 标签管理页面。
  * 该组件负责展示标签列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const Tag = () => {
+  const canCreateTag = useCan(Permission.tagCreate);
+  const canUpdateTag = useCan(Permission.tagUpdate);
+  const canDeleteTag = useCan(Permission.tagDelete);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `TagEntity` 数组。
@@ -122,7 +127,7 @@ const Tag = () => {
           }}
           isFetching={isFetching}
           error={isError}
-          selectableRows
+          selectableRows={canDeleteTag}
           selectedRows={selectedRows}
           onSelectionChange={setSelectedRows}
           onChange={(params) => {
@@ -131,24 +136,28 @@ const Tag = () => {
           toolBar={
             <div className="flex justify-between">
               <div className="flex gap-1">
-                <Button onClick={handleAddNew} variant="outline">
-                  <Plus />
-                  添加新标签
-                </Button>
-                <Dialog
-                  trigger={
-                    <Button
-                      variant="outline"
-                      disabled={selectedRows.length === 0}
-                    >
-                      <Trash />
-                      批量删除
-                    </Button>
-                  }
-                  type="danger"
-                  title="确定要删除吗？"
-                  onOK={handleDeleteBatch}
-                />
+                {canCreateTag && (
+                  <Button onClick={handleAddNew} variant="outline">
+                    <Plus />
+                    添加新标签
+                  </Button>
+                )}
+                {canDeleteTag && (
+                  <Dialog
+                    trigger={
+                      <Button
+                        variant="outline"
+                        disabled={selectedRows.length === 0}
+                      >
+                        <Trash />
+                        批量删除
+                      </Button>
+                    }
+                    type="danger"
+                    title="确定要删除吗？"
+                    onOK={handleDeleteBatch}
+                  />
+                )}
               </div>
               <div className="flex gap-1">
                 <DynamicForm
@@ -178,23 +187,27 @@ const Tag = () => {
           }
           rowActions={(row) => (
             <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => handleEditItem(row)}
-              >
-                <Pencil />
-              </Button>
-              <Dialog
-                trigger={
-                  <Button variant="secondary" size="sm">
-                    <Trash />
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={() => handleDeleteItem([row.id])}
-              />
+              {canUpdateTag && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleEditItem(row)}
+                >
+                  <Pencil />
+                </Button>
+              )}
+              {canDeleteTag && (
+                <Dialog
+                  trigger={
+                    <Button variant="secondary" size="sm">
+                      <Trash />
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={() => handleDeleteItem([row.id])}
+                />
+              )}
             </div>
           )}
         />

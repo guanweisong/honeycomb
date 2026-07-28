@@ -21,6 +21,8 @@ import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
 import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
 import { clientLogger } from "@/packages/observability/client";
 import { LogEvent } from "@/packages/observability/core/names";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 
@@ -56,7 +58,15 @@ export interface MultiTagProps {
  * @param {MultiTagProps} props - 组件属性。
  * @returns {JSX.Element} 多标签选择器。
  */
-const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.Element => {
+const MultiTag = ({
+  postId,
+  title,
+  type,
+  value,
+  onChange,
+}: MultiTagProps): JSX.Element => {
+  const canManagePostTags = useCan(Permission.postManageTags);
+  const canCreateTag = useCan(Permission.tagCreate);
   const selectedTags = value ?? [];
 
   /**
@@ -84,11 +94,14 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
    */
   const [searchParams, setSearchParams] = useState<{ name?: string }>({});
 
-  const { data: searchResult, isFetching: isSearching } = trpc.tag.index.useQuery(searchParams, {
-    enabled: !!searchParams.name,
-  });
-  const { mutateAsync: createTag, isPending: isCreating } = trpc.tag.create.useMutation();
-  const { mutateAsync: updateTags, isPending: isUpdating } = trpc.post.updateTags.useMutation();
+  const { data: searchResult, isFetching: isSearching } =
+    trpc.tag.index.useQuery(searchParams, {
+      enabled: !!searchParams.name,
+    });
+  const { mutateAsync: createTag, isPending: isCreating } =
+    trpc.tag.create.useMutation();
+  const { mutateAsync: updateTags, isPending: isUpdating } =
+    trpc.post.updateTags.useMutation();
 
   useEffect(() => {
     setLoading(isSearching);
@@ -188,71 +201,73 @@ const MultiTag = ({ postId, title, type, value, onChange }: MultiTagProps): JSX.
       <div className="font-medium mb-1">{title}</div>
       <div className="flex flex-wrap gap-2 mb-2">
         {selectedTags.map((tag) => (
-          <Badge
-            key={tag.id}
-            variant="secondary"
-            className="gap-1 text-sm"
-          >
+          <Badge key={tag.id} variant="secondary" className="gap-1 text-sm">
             {tag.name?.zh ?? ""}
-            <Button
-              onClick={() => removeTag(tag.id)}
-              variant="ghost"
-              size="icon"
-              className="size-4"
-              disabled={isUpdating}
-            >
-              <X className="h-3 w-3 text-muted-foreground" />
-            </Button>
+            {canManagePostTags && (
+              <Button
+                onClick={() => removeTag(tag.id)}
+                variant="ghost"
+                size="icon"
+                className="size-4"
+                disabled={isUpdating}
+              >
+                <X className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            )}
           </Badge>
         ))}
       </div>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            <Plus className="mr-1" />
-            添加
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="p-0 w-[220px]">
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="搜索标签"
-              value={input}
-              onValueChange={handleSearch}
-            />
-            <CommandList>
-              {loading ? (
-                <div className="flex items-center justify-center py-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  {options.map((tag) => (
-                    <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
-                      {tag.name?.zh ?? ""}
-                    </CommandItem>
-                  ))}
-                  {options.length === 0 && input && (
-                    <CommandEmpty>
-                      <div className="text-xs px-2 py-1">
-                        无匹配，你可以
-                        <Button
-                          size="sm"
-                          variant="link"
-                          onClick={() => createNewTag(input)}
-                          disabled={isCreating}
-                        >
-                          {isCreating ? "创建中..." : "新建"}
-                        </Button>
-                      </div>
-                    </CommandEmpty>
-                  )}
-                </>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      {canManagePostTags && (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+              <Plus className="mr-1" />
+              添加
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-0 w-[220px]">
+            <Command shouldFilter={false}>
+              <CommandInput
+                placeholder="搜索标签"
+                value={input}
+                onValueChange={handleSearch}
+              />
+              <CommandList>
+                {loading ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    {options.map((tag) => (
+                      <CommandItem key={tag.id} onSelect={() => addTag(tag)}>
+                        {tag.name?.zh ?? ""}
+                      </CommandItem>
+                    ))}
+                    {options.length === 0 && input && (
+                      <CommandEmpty>
+                        <div className="text-xs px-2 py-1">
+                          无匹配，你可以
+                          {canCreateTag && (
+                            <Button
+                              size="sm"
+                              variant="link"
+                              onClick={() => createNewTag(input)}
+                              disabled={isCreating}
+                            >
+                              {isCreating ? "创建中..." : "新建"}
+                            </Button>
+                          )}
+                        </div>
+                      </CommandEmpty>
+                    )}
+                  </>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 };
