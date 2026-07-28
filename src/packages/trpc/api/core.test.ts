@@ -11,7 +11,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   permissionsProcedure,
-  protectedProcedure,
   publicProcedure,
 } from "./core";
 import type { Context } from "./context";
@@ -122,11 +121,11 @@ describe("tRPC observability middleware", () => {
     });
   });
 
-  it("records a FORBIDDEN protected-procedure failure", async () => {
+  it("records a FORBIDDEN capability-procedure failure", async () => {
     const memory = createMemoryObservability();
     configureObservability(memory);
     const router = createTRPCRouter({
-      observed: protectedProcedure([UserLevel.ADMIN]).query(() => "ok"),
+      observed: permissionProcedure(Permission.userManage).query(() => "ok"),
     });
 
     await expect(router.createCaller(createContext({
@@ -139,6 +138,17 @@ describe("tRPC observability middleware", () => {
         level: "info",
         event: LogEvent.requestStarted,
         context: { requestId, procedure: "observed", method: "query" },
+      },
+      {
+        level: "warn",
+        event: LogEvent.authorizationDenied,
+        context: {
+          requestId,
+          procedure: "observed",
+          requiredPermissions: [Permission.userManage],
+          mode: "all",
+          outcome: "FORBIDDEN",
+        },
       },
       {
         level: "warn",

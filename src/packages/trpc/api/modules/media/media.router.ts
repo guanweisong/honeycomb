@@ -1,6 +1,10 @@
 import "server-only";
 
-import { protectedProcedure, createTRPCRouter } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
+import {
+  permissionProcedure,
+  createTRPCRouter,
+} from "@/packages/trpc/api/core";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -15,7 +19,6 @@ import S3 from "@/packages/trpc/api/utils/S3";
 import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { observeDbOperation } from "@/packages/observability/server";
 
 /**
@@ -28,11 +31,7 @@ export const mediaRouter = createTRPCRouter({
    * @param {MediaListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: object[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
    */
-  index: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -75,7 +74,7 @@ export const mediaRouter = createTRPCRouter({
   /**
    * 获取预签名上传 URL。
    */
-  getPresignedUrl: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(
       z.object({
         name: requiredString("文件名不能为空"),
@@ -104,7 +103,7 @@ export const mediaRouter = createTRPCRouter({
    * @param {MediaInsertSchema} input - 包含文件信息的对象。
    * @returns {Promise<schema>} 返回创建后的媒体对象。
    */
-  upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const { name, size, type, key, width, height, color } = input;
@@ -137,7 +136,7 @@ export const mediaRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的媒体文件 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       const { ids } = input;

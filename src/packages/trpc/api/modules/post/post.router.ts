@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import {
@@ -19,7 +20,6 @@ import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, and, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { TRPCError } from "@trpc/server";
 import { getPostDetail, getPostList } from "./post.service";
 import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
@@ -128,11 +128,7 @@ export const postRouter = createTRPCRouter({
       return result;
     }),
 
-  adminIndex: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminIndex: permissionProcedure(Permission.postReadAll)
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
       getPostList(ctx.db, input, ContentVisibility.ALL),
@@ -155,11 +151,7 @@ export const postRouter = createTRPCRouter({
       return result;
     }),
 
-  adminDetail: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminDetail: permissionProcedure(Permission.postReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
       const result = await getPostDetail(
@@ -177,7 +169,7 @@ export const postRouter = createTRPCRouter({
    * @param {PostInsertSchema} input - 新文章的数据。
    * @returns {Promise<Post>} 返回新创建的文章对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: permissionProcedure(Permission.postCreate)
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
@@ -203,7 +195,7 @@ export const postRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的文章 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: permissionProcedure(Permission.postDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await observeDbOperation("post.destroy", "delete", () =>
@@ -222,7 +214,7 @@ export const postRouter = createTRPCRouter({
    * @param {PostUpdateSchema} input - 包含要更新的文章 ID 和新数据。
    * @returns {Promise<Post>} 返回更新后的文章对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
@@ -334,7 +326,7 @@ export const postRouter = createTRPCRouter({
   /**
    * 更新文章标签关联
    */
-  updateTags: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  updateTags: permissionProcedure(Permission.postManageTags)
     .input(
       z.object({
         postId: IdSchema,

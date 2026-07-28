@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { TRPCError } from "@trpc/server";
 import {
   buildDrizzleWhere,
@@ -16,7 +17,6 @@ import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.
 import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
@@ -61,31 +61,29 @@ export const userRouter = createTRPCRouter({
    *
    * @returns {Promise<{ id: string; email: string | null; level: UserLevel; name: string | null; status: schema.user.$inferSelect["status"] }>} 当前登录用户信息。
    */
-  current: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ]).query(async ({ ctx }) => {
-    const [user] = await observeDbOperation("user.current", "select", () =>
-      ctx.db
-        .select({
-          id: schema.user.id,
-          email: schema.user.email,
-          level: schema.user.level,
-          name: schema.user.name,
-          status: schema.user.status,
-        })
-        .from(schema.user)
-        .where(eq(schema.user.id, ctx.user.id))
-        .limit(1),
-    );
+  current: permissionProcedure(Permission.userReadSelf).query(
+    async ({ ctx }) => {
+      const [user] = await observeDbOperation("user.current", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            email: schema.user.email,
+            level: schema.user.level,
+            name: schema.user.name,
+            status: schema.user.status,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, ctx.user.id))
+          .limit(1),
+      );
 
-    if (!user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
+      if (!user) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
 
-    return user;
-  }),
+      return user;
+    },
+  ),
 
   /**
    * 查询用户列表（支持分页、筛选、排序）。
@@ -94,7 +92,7 @@ export const userRouter = createTRPCRouter({
    * @param {UserListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: object[], total: number }>} 返回一个包含用户列表和总记录数的对象。
    */
-  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -150,7 +148,7 @@ export const userRouter = createTRPCRouter({
    * @param {UserInsertSchema} input - 新用户的数据。
    * @returns {Promise<User>} 返回新创建的用户对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN])
+  create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const values = {
@@ -172,7 +170,7 @@ export const userRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的用户 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN])
+  destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await observeDbOperation("user.destroy", "delete", () =>
@@ -189,7 +187,7 @@ export const userRouter = createTRPCRouter({
    * @param {UserUpdateSchema} input - 包含要更新的用户 ID 和新数据。
    * @returns {Promise<User>} 返回更新后的用户对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN])
+  update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

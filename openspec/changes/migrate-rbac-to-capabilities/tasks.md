@@ -13,11 +13,11 @@
 
 ## 3. Router 一步迁移
 
-- [ ] 3.1 迁移 post、page、category、tag 和 menu Router 的全部受保护 procedure
-- [ ] 3.2 迁移 comment、media、link、setting、statistic 和 user Router 的全部受保护 procedure
-- [ ] 3.3 逐 procedure 运行允许/拒绝矩阵，确认 handler 在授权失败时不执行
-- [ ] 3.4 删除旧 `protectedProcedure([roles])` 实现及全部调用，不保留 wrapper、feature flag 或双轨逻辑
-- [ ] 3.5 增加静态门禁，保证后续代码不能恢复角色数组授权
+- [x] 3.1 迁移 post、page、category、tag 和 menu Router 的全部受保护 procedure
+- [x] 3.2 迁移 comment、media、link、setting、statistic 和 user Router 的全部受保护 procedure
+- [x] 3.3 逐 procedure 运行允许/拒绝矩阵，确认 handler 在授权失败时不执行
+- [x] 3.4 删除旧 `protectedProcedure([roles])` 实现及全部调用，不保留 wrapper、feature flag 或双轨逻辑
+- [x] 3.5 增加静态门禁，保证后续代码不能恢复角色数组授权
 
 ## 4. 管理后台能力可见性
 

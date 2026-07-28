@@ -1,14 +1,14 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas/setting.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { observeDbOperation } from "@/packages/observability/server";
 
 /**
@@ -32,7 +32,7 @@ export const settingRouter = createTRPCRouter({
    * @param {SettingUpdateSchema} input - 包含要更新的设置 ID 和新数据。
    * @returns {Promise<Setting>} 返回更新后的设置对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN])
+  update: permissionProcedure(Permission.settingUpdate)
     .input(SettingUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;

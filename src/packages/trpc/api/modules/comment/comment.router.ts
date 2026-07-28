@@ -2,13 +2,13 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { CommentListQuerySchema } from "./schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "./schemas/comment.update.schema";
 import { CommentQuerySchema } from "./schemas/comment.query.schema";
@@ -22,11 +22,7 @@ import {
 } from "./comment.service";
 
 export const commentRouter = createTRPCRouter({
-  index: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  index: permissionProcedure(Permission.commentReadAll)
     .input(CommentListQuerySchema)
     .query(({ input, ctx }) => listComments(ctx.db, input)),
 
@@ -38,11 +34,11 @@ export const commentRouter = createTRPCRouter({
     .input(CommentInsertSchema)
     .mutation(({ ctx, input }) => createComment(ctx.db, ctx.header, input)),
 
-  update: protectedProcedure([UserLevel.ADMIN])
+  update: permissionProcedure(Permission.commentModerate)
     .input(CommentUpdateSchema)
     .mutation(({ input, ctx }) => updateComment(ctx.db, input)),
 
-  destroy: protectedProcedure([UserLevel.ADMIN])
+  destroy: permissionProcedure(Permission.commentModerate)
     .input(DeleteBatchSchema)
     .mutation(({ input, ctx }) => destroyComments(ctx.db, input)),
 });

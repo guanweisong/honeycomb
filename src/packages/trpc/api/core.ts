@@ -116,18 +116,3 @@ export const permissionsProcedure = (
 
 export const permissionProcedure = (permission: Permission) =>
   permissionsProcedure([permission]);
-
-/**
- * 受保护的 procedure
- */
-export const protectedProcedure = (levels: string[]) =>
-  t.procedure.use(requestObservabilityMiddleware).use(
-    t.middleware(({ ctx, next }) => {
-      const user = ctx.user;
-      if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
-      if (!levels.includes(user.level)) {
-        throw new TRPCError({ code: "FORBIDDEN" });
-      }
-      return next({ ctx: { ...ctx, user } });
-    }),
-  );

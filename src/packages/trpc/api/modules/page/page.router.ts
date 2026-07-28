@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
@@ -13,7 +14,6 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 import {
   getPageAuthorById,
@@ -40,11 +40,7 @@ export const pageRouter = createTRPCRouter({
       getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminIndex: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
       getPageList(ctx.db, input, ContentVisibility.ALL),
@@ -67,11 +63,7 @@ export const pageRouter = createTRPCRouter({
       getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminDetail: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) =>
       getPageDetail(ctx.db, input.id, ContentVisibility.ALL),
@@ -83,7 +75,7 @@ export const pageRouter = createTRPCRouter({
    * @param {PageInsertSchema} input - 新页面的数据。
    * @returns {Promise<Page>} 返回新创建的页面对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
@@ -109,7 +101,7 @@ export const pageRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的页面 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       await observeDbOperation("page.destroy", "delete", () =>
@@ -126,7 +118,7 @@ export const pageRouter = createTRPCRouter({
    * @param {PageUpdateSchema} input - 包含要更新的页面 ID 和新数据。
    * @returns {Promise<object>} 返回更新后的页面对象（已附加作者信息）。
    */
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
