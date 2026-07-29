@@ -180,7 +180,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/menu/page.tsx",
+    relativePath: "(root)/(dashboard)/menu/MenuPageShell.tsx",
     actions: [
       {
         id: "menu.update",
