@@ -86,7 +86,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/link/page.tsx",
+    relativePath: "(root)/(dashboard)/link/LinkPageShell.tsx",
     actions: [
       {
         id: "link.create",
@@ -1040,7 +1040,7 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects an unguarded batch delete while row delete stays guarded", () => {
-    const linkPath = "(root)/(dashboard)/link/page.tsx";
+    const linkPath = "(root)/(dashboard)/link/LinkPageShell.tsx";
 
     expect(
       findUnboundActionIds(linkPath, getActions(linkPath), (source) =>
