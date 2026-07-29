@@ -18,7 +18,7 @@
 - **国际化支持** - 基于 next-intl 的多语言支持
 - **现代化 UI** - shadcn/ui + Radix UI + Tailwind CSS 4
 - **富文本编辑** - Tiptap 编辑器，支持图片、链接、高亮等
-- **权限管理** - 基于角色的访问控制（ADMIN/EDITOR/GUEST）
+- **权限管理** - 集中式角色到 capability 映射（ADMIN/EDITOR/GUEST）
 - **PWA 支持** - Serwist 提供离线能力
 - **Serverless 架构** - 完全无服务器部署
 - **现代化数据库** - Turso (LibSQL) 高性能 SQLite
@@ -293,17 +293,23 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 
 ## 权限系统
 
-项目实现了基于角色的访问控制（RBAC）：
+项目使用 capability-based authorization。`ADMIN`、`EDITOR`、`GUEST` 仍是用户和会话中的身份属性，但角色只负责在唯一的 `ROLE_PERMISSIONS` 中映射业务能力；业务代码不得通过角色比较决定授权，也不会把权限数组写入 JWT。
 
 - **ADMIN** - 管理员，拥有所有权限
 - **EDITOR** - 编辑，可以管理内容
 - **GUEST** - 默认角色，可登录后台；高敏操作仍由接口级权限控制
 
-权限通过 tRPC middleware 实现：
+每个受保护的 tRPC procedure 必须声明所需 Permission。前端导航和按钮也使用同一映射控制可见性，但隐藏 UI 只改善体验，服务端 capability middleware 始终是最终授权边界：
 
 ```typescript
-protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR]);
+permissionProcedure(Permission.postUpdate);
+
+permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
+  mode: "all",
+});
 ```
+
+当前 32 项 Permission、完整角色矩阵和新增权限流程见 [权限矩阵](docs/permission-matrix.md)。
 
 ## 国际化
 

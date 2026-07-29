@@ -1,8 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { runWithRequestContext } from "../../observability/server/node-request-context";
+import { UserLevel } from "./modules/user/types/user.level";
+import { UserStatus } from "./modules/user/types/user.status";
 
-const database = {};
+const database = {
+  select: vi.fn(),
+  from: vi.fn(),
+  where: vi.fn(),
+  limit: vi.fn(),
+};
+
+database.select.mockReturnValue(database);
+database.from.mockReturnValue(database);
+database.where.mockReturnValue(database);
 
 vi.mock("@/auth", () => ({
   auth: vi.fn(async () => null),
@@ -12,8 +23,11 @@ vi.mock("@/packages/db/db", () => ({
   getDb: () => database,
 }));
 
+import { auth } from "@/auth";
 import { createContext } from "./context";
 import { createTrpcContext } from "./defaultContext";
+
+const authMock = vi.mocked(auth);
 
 describe("createContext", () => {
   it("keeps the request ID supplied by a tRPC request", async () => {
@@ -45,5 +59,28 @@ describe("createContext", () => {
     });
 
     expect(context.requestId).toBe("req-trpc-default-context");
+  });
+
+  it("rejects a disabled session user at the database-backed identity boundary", async () => {
+    authMock.mockResolvedValueOnce({
+      user: {
+        id: "disabled-user",
+        level: UserLevel.ADMIN,
+      },
+    } as never);
+    database.limit.mockResolvedValueOnce([
+      {
+        id: "disabled-user",
+        level: UserLevel.ADMIN,
+        name: "Disabled administrator",
+        status: UserStatus.DISABLE,
+      },
+    ]);
+
+    const context = await createContext({
+      req: new Request("https://honeycomb.test/api/trpc"),
+    });
+
+    expect(context.user).toBeNull();
   });
 });
