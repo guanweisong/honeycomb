@@ -8,11 +8,11 @@
 
 ## 2. DataTable 模块化
 
-- [ ] 2.1 为现有分页、排序、筛选、选择、禁用行、空状态和错误状态补充回归测试
-- [ ] 2.2 抽取 `useDataTableState`、参数归一化和页码/选择重置逻辑
-- [ ] 2.3 抽取 `useRowSelection` 并覆盖当前页全选、取消和禁用行行为
-- [ ] 2.4 抽取 Header、Body、Toolbar、Pagination 和公共 types 模块
-- [ ] 2.5 保留 DataTable facade props 和泛型接口，并验证全部现有消费者无需行为性修改
+- [x] 2.1 为现有分页、排序、筛选、选择、禁用行、空状态和错误状态补充回归测试
+- [x] 2.2 抽取 `useDataTableState`、参数归一化和页码/选择重置逻辑
+- [x] 2.3 抽取 `useRowSelection` 并覆盖当前页全选、取消和禁用行行为
+- [x] 2.4 抽取 Header、Body、Toolbar、Pagination 和公共 types 模块
+- [x] 2.5 保留 DataTable facade props 和泛型接口，并验证全部现有消费者无需行为性修改
 
 ## 3. 第一批管理页面
 
