@@ -58,7 +58,7 @@ export default defineConfig({
         // Tests are evidence, not production code in the coverage denominator.
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
-        // Serwist generates this service-worker entry during the build.
+        // This thin service-worker entry is exercised only by the real offline E2E.
         "src/app/sw.ts",
         // These files are unmodified shadcn primitives; extended/business UI stays covered.
         "src/packages/ui/components/**",

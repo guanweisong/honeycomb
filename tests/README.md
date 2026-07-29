@@ -58,7 +58,7 @@ bun test:ui
 | `**/*.d.ts` | TypeScript 声明没有可执行行为 |
 | `**/*.test.{ts,tsx}`、`**/*.spec.{ts,tsx}` | 测试是覆盖率证据，不是生产分母 |
 | `tests/**` | 跨模块测试、fixture 和测试配置不是生产源码 |
-| `src/app/sw.ts` | 该 service worker 入口由 Serwist 在构建时生成 |
+| `src/app/sw.ts` | E2E-only service worker 薄入口；`/en/offline` 由 Serwist route 显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
 | `src/packages/ui/components/**` | 未修改的 shadcn 基础组件；`extended` 和业务 UI 仍纳入统计 |
 
 业务页面、hooks、services、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
@@ -67,7 +67,7 @@ bun test:ui
 
 ### 2026-07-29 真实基线
 
-在 `12a6009` 上按上述完整 include、仅排除声明/测试/生成 service worker/shadcn 基础 UI，并且尚未启用门槛时：63 个测试文件、510 个测试通过。
+在 `12a6009` 上按上述完整 include、仅排除声明/测试/E2E-only service worker 薄入口/shadcn 基础 UI，并且尚未启用门槛时：63 个测试文件、510 个测试通过。
 
 | 指标 | 基线 | 通过全局门槛还需覆盖 |
 | --- | ---: | ---: |

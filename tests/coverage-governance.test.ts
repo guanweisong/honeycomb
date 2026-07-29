@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { glob } from "tinyglobby";
@@ -75,6 +76,21 @@ describe("coverage governance", () => {
 
     expect(requiredFiles.length).toBeGreaterThan(0);
     expect(requiredFiles.filter((file) => !coveredFiles.has(file))).toEqual([]);
+  });
+
+  it("backs the service-worker exclusion with a real offline navigation E2E", () => {
+    const pwaE2e = readFileSync(
+      resolve("tests/e2e/blog/pwa-offline.spec.ts"),
+      "utf8",
+    );
+
+    expect(coverage?.exclude).toContain("src/app/sw.ts");
+    expect(pwaE2e).toContain("navigator.serviceWorker.ready");
+    expect(pwaE2e).toContain("context.setOffline(true)");
+    expect(pwaE2e).toContain("page.goto(offlineTarget");
+    expect(pwaE2e).toContain("getByRole('alert')");
+    expect(pwaE2e).toContain("You're offline");
+    expect(pwaE2e).toMatch(/finally\s*{[\s\S]*context\.setOffline\(false\)/);
   });
 
   it("enforces the approved global thresholds", () => {
