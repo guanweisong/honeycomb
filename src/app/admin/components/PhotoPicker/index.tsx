@@ -41,7 +41,7 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
    * 当用户在 `PhotoPickerPanel` 中选择一张图片时调用，更新内部状态 `selectItem`。
    * @param {MediaEntity} media - 被选中的图片媒体实体。
    */
-  const onSelect = (media: MediaEntity | undefined) => {
+  const onSelect = (media: MediaEntity) => {
     setSelectItem(media);
   };
 

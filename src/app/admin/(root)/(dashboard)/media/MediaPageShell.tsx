@@ -11,7 +11,7 @@ import { useMediaActions } from "./mediaActions";
 import { useMediaQuery } from "./mediaQuery";
 
 export interface MediaProps {
-  onSelect?: (media: MediaEntity | undefined) => void;
+  onSelect?: (media: MediaEntity) => void;
 }
 
 export function MediaPageShell({ onSelect }: MediaProps) {
@@ -22,10 +22,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
   const actions = useMediaActions({
     refetch: query.refetch,
     onUploadComplete: setCurrentItem,
-    onDeleteComplete: () => {
-      setCurrentItem(undefined);
-      onSelectRef.current?.(undefined);
-    },
+    onDeleteComplete: () => setCurrentItem(undefined),
   });
   const { fileInputRef, handleDelete, handleUpload, loading } = actions;
 

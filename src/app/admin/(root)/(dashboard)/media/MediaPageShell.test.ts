@@ -201,7 +201,7 @@ describe("MediaPageShell", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it("deletes the selected media through the confirmation action and clears selection", async () => {
+  it("deletes the selected media and clears only its internal selection", async () => {
     allowedPermissions = new Set([Permission.mediaDelete]);
     const onSelect = vi.fn();
     trpcMocks.destroy.mockResolvedValue({ success: true });
@@ -223,8 +223,9 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.destroy).toHaveBeenCalledWith({ ids: ["media-1"] });
     expect(toastMocks.success).toHaveBeenCalledWith("删除成功");
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
-    expect(onSelect).toHaveBeenNthCalledWith(1, existingMedia);
-    expect(onSelect).toHaveBeenLastCalledWith(undefined);
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledWith(existingMedia);
+    expect(tile?.className).not.toContain("border-blue-500");
   });
 
   it("keeps selection intact when deletion fails", async () => {
