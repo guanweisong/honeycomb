@@ -145,7 +145,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/media/page.tsx",
+    relativePath: "(root)/(dashboard)/media/MediaPageShell.tsx",
     actions: [
       {
         id: "media.upload",
@@ -167,13 +167,18 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+    ],
+  },
+  {
+    relativePath: "(root)/(dashboard)/media/MediaGrid.tsx",
+    actions: [
       {
         id: "media.delete",
         permission: "mediaDelete",
         control: {
           tag: "Dialog",
           attribute: "onOK",
-          call: { callee: "handleDelete" },
+          call: { callee: "onDelete" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
