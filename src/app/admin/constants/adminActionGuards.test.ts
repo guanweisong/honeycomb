@@ -33,6 +33,7 @@ interface ActionGuardContract {
   permission: string;
   control: ActionControlIdentity;
   guard: GuardMode;
+  expectedCount?: number;
 }
 
 interface ActionGuardFile {
@@ -55,6 +56,30 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         guard: {
           kind: "attribute",
           attribute: "rowActions",
+          polarity: "positive",
+        },
+      },
+      {
+        id: "comment.delete-batch",
+        permission: "commentModerate",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "comment.selection",
+        permission: "commentModerate",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
           polarity: "positive",
         },
       },
@@ -93,6 +118,30 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+      {
+        id: "link.delete-batch",
+        permission: "linkDelete",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "link.selection",
+        permission: "linkDelete",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
     ],
   },
   {
@@ -105,6 +154,16 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           tag: "input",
           attribute: "onChange",
           call: { callee: "handleUpload" },
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "media.upload-trigger",
+        permission: "mediaUpload",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "fileInputRef.current?.click" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -150,6 +209,20 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         guard: { kind: "ancestor", polarity: "positive" },
       },
       {
+        id: "page-editor.create-publish",
+        permission: "pageCreate",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: {
+            callee: "handleBtnClick",
+            argument: "PageStatus.PUBLISHED",
+          },
+          label: "发布",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
         id: "page-editor.update",
         permission: "pageUpdate",
         control: {
@@ -160,6 +233,42 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
             argument: "PageStatus.PUBLISHED",
           },
           label: "更新",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "page-editor.update-withdraw",
+        permission: "pageUpdate",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          call: { callee: "handleBtnClick", argument: "PageStatus.DRAFT" },
+          label: "撤回为草稿",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "page-editor.update-draft",
+        permission: "pageUpdate",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "handleBtnClick", argument: "PageStatus.DRAFT" },
+          label: "保存",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "page-editor.update-publish",
+        permission: "pageUpdate",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: {
+            callee: "handleBtnClick",
+            argument: "PageStatus.PUBLISHED",
+          },
+          label: "发布",
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -201,6 +310,30 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+      {
+        id: "page-list.delete-batch",
+        permission: "pageDelete",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "page-list.selection",
+        permission: "pageDelete",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
     ],
   },
   {
@@ -236,6 +369,30 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+      {
+        id: "category.delete-batch",
+        permission: "categoryDelete",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "category.selection",
+        permission: "categoryDelete",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
     ],
   },
   {
@@ -248,6 +405,16 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           tag: "Button",
           attribute: "onClick",
           call: { callee: "removeTag" },
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "post-tags.add",
+        permission: "postManageTags",
+        control: {
+          tag: "CommandItem",
+          attribute: "onSelect",
+          call: { callee: "addTag" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -276,6 +443,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           call: { callee: "submit", argument: '"create"' },
         },
         guard: { kind: "ancestor", polarity: "positive" },
+        expectedCount: 2,
       },
       {
         id: "post-editor.update",
@@ -283,6 +451,17 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
+          call: { callee: "submit", argument: '"update"' },
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+        expectedCount: 3,
+      },
+      {
+        id: "post-editor.update-withdraw",
+        permission: "postUpdate",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
           call: { callee: "submit", argument: '"update"' },
         },
         guard: { kind: "ancestor", polarity: "positive" },
@@ -341,6 +520,30 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+      {
+        id: "post-list.delete-batch",
+        permission: "postDelete",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "post-list.selection",
+        permission: "postDelete",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
     ],
   },
   {
@@ -395,11 +598,89 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
+      {
+        id: "tag.delete-batch",
+        permission: "tagDelete",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "tag.selection",
+        permission: "tagDelete",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
     ],
   },
   {
     relativePath: "(root)/(dashboard)/user/page.tsx",
     actions: [
+      {
+        id: "user.create",
+        permission: "userManage",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          reference: "handleAddNew",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "user.update",
+        permission: "userManage",
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "handleEditItem" },
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "user.delete",
+        permission: "userManage",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          call: { callee: "handleDeleteItem" },
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "user.delete-batch",
+        permission: "userManage",
+        control: {
+          tag: "Dialog",
+          attribute: "onOK",
+          reference: "handleDeleteBatch",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "user.selection",
+        permission: "userManage",
+        control: {
+          tag: "DataTable",
+          attribute: "onSelectionChange",
+          reference: "setSelectedRows",
+        },
+        guard: {
+          kind: "attribute",
+          attribute: "selectableRows",
+          polarity: "positive",
+        },
+      },
       {
         id: "user.manage",
         permission: "userManage",
@@ -460,9 +741,9 @@ function collectGuardPolarities(
     return result;
   }
 
-  ts.forEachChild(node, (child) =>
-    collectGuardPolarities(child, guardName, negated, result),
-  );
+  ts.forEachChild(node, (child) => {
+    collectGuardPolarities(child, guardName, negated, result);
+  });
   return result;
 }
 
@@ -532,10 +813,18 @@ function matchesActionExpression(
       ts.isCallExpression(node) &&
       node.expression.getText(sourceFile) === identity.call!.callee &&
       (!identity.call!.argument ||
-        node.arguments.some(
-          (argument) =>
-            argument.getText(sourceFile) === identity.call!.argument,
-        ))
+        node.arguments.some((argument) => {
+          let foundArgument = false;
+          const findArgument = (child: ts.Node): void => {
+            if (child.getText(sourceFile) === identity.call!.argument) {
+              foundArgument = true;
+              return;
+            }
+            ts.forEachChild(child, findArgument);
+          };
+          findArgument(argument);
+          return foundArgument;
+        }))
     ) {
       matched = true;
       return;
@@ -544,6 +833,16 @@ function matchesActionExpression(
   };
   visit(expression);
   return matched;
+}
+
+function getControlLabel(node: ts.Node): string {
+  const text: string[] = [];
+  const visit = (child: ts.Node): void => {
+    if (ts.isJsxText(child)) text.push(child.text);
+    ts.forEachChild(child, visit);
+  };
+  visit(node);
+  return text.join(" ").replace(/\s+/g, " ").trim();
 }
 
 function findMatchingControls(
@@ -569,7 +868,7 @@ function findMatchingControls(
       if (
         actionExpression &&
         matchesActionExpression(actionExpression, identity, sourceFile) &&
-        (!identity.label || node.getText(sourceFile).includes(identity.label))
+        (!identity.label || getControlLabel(node) === identity.label)
       ) {
         controls.push(node as ts.JsxElement | ts.JsxSelfClosingElement);
       }
@@ -629,8 +928,10 @@ function findUnboundActionIds(
       const guardName = guardByPermission.get(action.permission);
       if (!guardName) return true;
 
-      return !findMatchingControls(sourceFile, action.control).some(
-        (control) => {
+      const controls = findMatchingControls(sourceFile, action.control);
+      return (
+        controls.length !== (action.expectedCount ?? 1) ||
+        !controls.every((control) => {
           if (action.guard.kind === "ancestor") {
             return isGuardedByAncestor(
               control,
@@ -650,7 +951,7 @@ function findUnboundActionIds(
             !!guardExpression &&
             hasGuardPolarity(guardExpression, guardName, action.guard.polarity)
           );
-        },
+        })
       );
     })
     .map((action) => action.id);
@@ -722,6 +1023,47 @@ describe("admin action capability guards", () => {
         ),
       ),
     ).toEqual(["setting.update"]);
+  });
+
+  it("rejects one unguarded submit among matching post update controls", () => {
+    const editorPath =
+      "(root)/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
+
+    expect(
+      findUnboundActionIds(editorPath, getActions(editorPath), (source) =>
+        source.replace(
+          "{canUpdatePost && isEdit && isPublished && (",
+          "{true && isEdit && isPublished && (",
+        ),
+      ),
+    ).toContain("post-editor.update");
+  });
+
+  it("rejects an unguarded batch delete while row delete stays guarded", () => {
+    const linkPath = "(root)/(dashboard)/link/page.tsx";
+
+    expect(
+      findUnboundActionIds(linkPath, getActions(linkPath), (source) =>
+        source.replace(
+          "{canDeleteLink && (\n                <Dialog",
+          "{true && (\n                <Dialog",
+        ),
+      ),
+    ).toContain("link.delete-batch");
+  });
+
+  it("rejects an unguarded add-tag entry while remove-tag stays guarded", () => {
+    const multiTagPath =
+      "(root)/(dashboard)/post/edit/components/MultiTag/index.tsx";
+
+    expect(
+      findUnboundActionIds(multiTagPath, getActions(multiTagPath), (source) =>
+        source.replace(
+          "{canManagePostTags && (\n        <Popover",
+          "{true && (\n        <Popover",
+        ),
+      ),
+    ).toContain("post-tags.add");
   });
 
   it.each(actionGuardMatrix)(
