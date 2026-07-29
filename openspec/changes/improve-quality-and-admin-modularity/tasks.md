@@ -1,10 +1,10 @@
 ## 1. 覆盖率真实口径
 
-- [ ] 1.1 在前三个 change 完成后将 coverage include 显式设置为全部生产 TypeScript/TSX 源码
-- [ ] 1.2 建立有理由的排除清单，并验证业务页面、hooks、services 和安全核心不被排除
-- [ ] 1.3 运行完整覆盖率获取真实基线，列出低于目标的关键模块并优先补测
-- [ ] 1.4 启用 statements/lines 70%、functions 65%、branches 60% 的全局门槛
-- [ ] 1.5 为权限、环境变量、脱敏、sitemap、缓存和观测核心启用 statements/lines 90%、branches 80% 门槛
+- [x] 1.1 在前三个 change 完成后将 coverage include 显式设置为全部生产 TypeScript/TSX 源码
+- [x] 1.2 建立有理由的排除清单，并验证业务页面、hooks、services 和安全核心不被排除
+- [x] 1.3 运行完整覆盖率获取真实基线，列出低于目标的关键模块并优先补测
+- [x] 1.4 启用 statements/lines 70%、functions 65%、branches 60% 的全局门槛
+- [x] 1.5 为权限、环境变量、脱敏、sitemap、缓存和观测核心启用 statements/lines 90%、branches 80% 门槛
 
 ## 2. DataTable 模块化
 
