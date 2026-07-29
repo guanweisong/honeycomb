@@ -17,7 +17,7 @@
 ## 3. 第一批管理页面
 
 - [x] 3.1 拆分 menu 页的 query、actions、树编辑和页面组合并运行 menu E2E
-- [ ] 3.2 拆分 user 页的 query、actions、columns、form/dialog 和页面组合并运行权限回归
+- [x] 3.2 拆分 user 页的 query、actions、columns、form/dialog 和页面组合并运行权限回归
 - [ ] 3.3 拆分 link 页的 query、actions、columns、form/dialog 和页面组合并运行 CRUD 回归
 
 ## 4. 第二批管理页面

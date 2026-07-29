@@ -625,7 +625,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/user/page.tsx",
+    relativePath: "(root)/(dashboard)/user/UserPageShell.tsx",
     actions: [
       {
         id: "user.create",
