@@ -1,3 +1,6 @@
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+
 import { glob } from "tinyglobby";
 import { describe, expect, it } from "vitest";
 import type { TestUserConfig } from "vitest/config";
@@ -96,5 +99,25 @@ describe("coverage governance", () => {
         branches: 80,
       });
     }
+  });
+
+  it("fails the real Vitest command when a critical file threshold is mutated", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        resolve("node_modules/vitest/vitest.mjs"),
+        "run",
+        "--coverage",
+        "--config",
+        "tests/fixtures/coverage-threshold-mutation.config.ts",
+      ],
+      { cwd: process.cwd(), encoding: "utf8", env: process.env },
+    );
+    const output = `${result.stdout}\n${result.stderr}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain(
+      'does not meet "src/packages/auth/permissions.ts" threshold (101%)',
+    );
   });
 });

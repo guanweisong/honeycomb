@@ -43,4 +43,16 @@ describe("createMemoryObservability", () => {
       },
     ]);
   });
+
+  it("uses an empty safe context when a log has no context", () => {
+    const observability = createMemoryObservability();
+
+    observability.logger.warn(LogEvent.serverError);
+    observability.logger.error(LogEvent.serverError);
+
+    expect(observability.logEvents).toEqual([
+      { level: "warn", event: "server.error", context: {} },
+      { level: "error", event: "server.error", context: {} },
+    ]);
+  });
 });

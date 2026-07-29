@@ -47,6 +47,7 @@ vi.mock("@/env/server", () => ({
 
 import * as sitemapIndexRoute from "../src/app/sitemap.xml/route";
 import * as sitemapShardRoute from "../src/app/sitemaps/[id]/route";
+import { toSitemapIndexXml, toSitemapXml } from "../src/app/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },
@@ -107,6 +108,21 @@ describe("runtime sitemap", () => {
     expect(first.headers.get("content-type")).toBe(
       "application/xml; charset=utf-8",
     );
+  });
+
+  it("falls back to one safe shard when sitemap index discovery fails", async () => {
+    postIndexMock.mockRejectedValue(new Error("database unavailable"));
+    const logSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
+
+    const response = await sitemapIndexRoute.GET();
+    const xml = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(xml).toContain("https://example.com/sitemaps/0.xml");
+    expect(xml).not.toContain("https://example.com/sitemaps/1.xml");
+    expect(logSpy).toHaveBeenCalledTimes(1);
   });
 
   it("reuses cached runtime data for repeated requests to the same sitemap shard", async () => {
@@ -270,5 +286,43 @@ describe("runtime sitemap", () => {
     expect(xml).toContain("https://example.com/en/archives/post-1001");
     expect(xml).toContain("https://example.com/zh/pages/page-1001");
     expect(xml).toContain("https://example.com/en/pages/page-1001");
+  });
+
+  it.each(["invalid", "-1"])("rejects the malformed shard id %s", async (id) => {
+    const response = await sitemapShardRoute.GET(
+      new Request(`https://example.com/sitemaps/${id}`),
+      { params: Promise.resolve({ id }) },
+    );
+
+    expect(response.status).toBe(404);
+    expect(createServerClientMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts a numeric shard id without an XML suffix", async () => {
+    const response = await sitemapShardRoute.GET(
+      new Request("https://example.com/sitemaps/0"),
+      { params: Promise.resolve({ id: "0" }) },
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it("escapes every XML entity and omits an absent modification date", () => {
+    const sitemap = toSitemapXml([
+      {
+        url: "https://example.com/<tag>?a=1&b='quoted'\"",
+        changeFrequency: "daily",
+        priority: 0.5,
+      },
+    ]);
+    const index = toSitemapIndexXml("https://example.com/<root>?a=1&b='x'\"", 1);
+
+    expect(sitemap).toContain(
+      "https://example.com/&lt;tag&gt;?a=1&amp;b=&apos;quoted&apos;&quot;",
+    );
+    expect(sitemap).not.toContain("<lastmod>");
+    expect(index).toContain(
+      "https://example.com/&lt;root&gt;?a=1&amp;b=&apos;x&apos;&quot;/sitemaps/0.xml",
+    );
   });
 });

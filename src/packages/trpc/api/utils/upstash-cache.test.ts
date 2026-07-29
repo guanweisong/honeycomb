@@ -169,4 +169,30 @@ describe("upstash cache", () => {
 
     expect(observed.metricEvents).toEqual([]);
   });
+
+  it("records failed writes and version bumps without leaking cache keys", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    const { cache, registry, memory } = await loadModule();
+    const observed = memory.createMemoryObservability();
+    registry.configureObservability(observed);
+
+    redisInstance.set.mockRejectedValueOnce(new Error("write failed"));
+    await expect(
+      cache.setCacheJSON("post.index", "cache:private-key", {}, 60),
+    ).rejects.toThrow("write failed");
+
+    redisInstance.incr.mockRejectedValueOnce(new Error("increment failed"));
+    await expect(
+      cache.bumpCacheVersion("post.index", "cache:private-version"),
+    ).rejects.toThrow("increment failed");
+
+    expect(observed.metricEvents.map(({ labels }) => labels)).toEqual([
+      { namespace: "post.index", operation: "write", outcome: "error" },
+      { namespace: "post.index", operation: "error", outcome: "error" },
+      { namespace: "post.index", operation: "write", outcome: "error" },
+      { namespace: "post.index", operation: "error", outcome: "error" },
+    ]);
+    expect(JSON.stringify(observed.metricEvents)).not.toContain("private");
+  });
 });

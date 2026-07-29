@@ -110,6 +110,33 @@ describe("sanitizeContext", () => {
       sanitizeContext({ detail: "Error: retry: later. status: pending);" }),
     ).toEqual({ detail: "Error: retry: later. status: pending);" });
   });
+
+  it("serializes uncommon values without leaking or traversing them", () => {
+    const deep: Record<string, unknown> = {};
+    let cursor = deep;
+    for (let depth = 0; depth < 9; depth += 1) {
+      cursor.next = {};
+      cursor = cursor.next as Record<string, unknown>;
+    }
+
+    expect(
+      sanitizeContext({
+        bigint: 42n,
+        missing: undefined,
+        symbol: Symbol("private"),
+        callback: () => "secret",
+        error: new Error("token=hidden"),
+        deep,
+      }),
+    ).toMatchObject({
+      bigint: "42",
+      missing: "[Undefined]",
+      symbol: "[Unsupported: symbol]",
+      callback: "[Unsupported: function]",
+      error: { message: "[REDACTED]" },
+    });
+    expect(JSON.stringify(sanitizeContext({ deep }))).toContain("[Truncated]");
+  });
 });
 
 describe("sanitizeMetricLabels", () => {
@@ -223,6 +250,20 @@ describe("serializeError", () => {
           cause: "[Truncated]",
         },
       },
+    });
+  });
+
+  it("serializes primitive and circular error causes safely", () => {
+    const circular = new Error("outer");
+    (circular as Error & { cause?: unknown }).cause = circular;
+
+    expect(serializeError("token=secret")).toEqual({
+      name: "Error",
+      message: "[REDACTED]",
+    });
+    expect(serializeError(circular)).toMatchObject({
+      message: "outer",
+      cause: "[Circular]",
     });
   });
 });

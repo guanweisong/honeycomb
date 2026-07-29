@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { z } from "zod";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EnvironmentValidationError, parseServerEnv } from "./schema";
 import { parseClientEnv } from "./client-schema";
+import { getDatabaseEnv } from "./server";
+import { parseSchema } from "./validation";
 
 const validCoreEnv = {
   NEXT_PUBLIC_SITE_URL: "https://honeycomb.example.com",
@@ -12,6 +15,10 @@ const validCoreEnv = {
 };
 
 describe("environment schemas", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("accepts valid site and integration URLs from an injected environment", () => {
     const client = parseClientEnv({
       NEXT_PUBLIC_SITE_URL: validCoreEnv.NEXT_PUBLIC_SITE_URL,
@@ -95,5 +102,21 @@ describe("environment schemas", () => {
       siteKey: "turnstile-site-key",
       secretKey: "turnstile-secret",
     });
+  });
+
+  it("reads database credentials from the process environment", () => {
+    vi.stubEnv("TURSO_URL", "libsql://honeycomb.turso.io");
+    vi.stubEnv("TURSO_TOKEN", "database-token");
+
+    expect(getDatabaseEnv()).toEqual({
+      TURSO_URL: "libsql://honeycomb.turso.io",
+      TURSO_TOKEN: "database-token",
+    });
+  });
+
+  it("names a root-level validation issue as the environment", () => {
+    expect(() => parseSchema(z.string(), {})).toThrow(
+      "environment: Invalid input: expected string, received object",
+    );
   });
 });
