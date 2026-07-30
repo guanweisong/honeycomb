@@ -33,7 +33,8 @@ export default defineConfig({
     timeout: 240_000,
     env: {
       NEXT_PUBLIC_SITE_URL: BASE_URL,
-      NEXT_PUBLIC_ASSET_URL: "https://assets.honeycomb.test",
+      NEXT_PUBLIC_ASSET_URL:
+        process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test",
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
       TURSO_URL: process.env.TURSO_URL ?? "http://127.0.0.1:1",
