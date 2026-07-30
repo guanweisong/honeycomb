@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.use({ bypassCSP: true });
+
 type MediaRecord = {
   id: string;
   key: string;
@@ -26,14 +28,41 @@ test.describe("admin media upload", () => {
     const uploadInputs: unknown[] = [];
     const destroyInputs: unknown[] = [];
     const storageRequests: { body: Buffer | null; contentType: string | null }[] = [];
+    const setting = {
+      id: "setting-1",
+      siteName: { en: "Honeycomb", zh: "蜂巢" },
+      siteSubName: { en: "Site", zh: "站点" },
+      siteSignature: { en: "Signature", zh: "签名" },
+      siteCopyright: { en: "Copyright", zh: "版权" },
+      siteRecordNo: null,
+      siteRecordUrl: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
 
     await page.route("https://upload.honeycomb.test/**", async (route) => {
       const request = route.request();
+      if (request.method() === "OPTIONS") {
+        await route.fulfill({
+          status: 204,
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-allow-methods": "PUT",
+            "access-control-allow-headers": "content-type",
+          },
+        });
+        return;
+      }
+      if (request.method() !== "PUT") return route.fallback();
+
       storageRequests.push({
         body: request.postDataBuffer(),
         contentType: await request.headerValue("content-type"),
       });
-      await route.fulfill({ status: 200 });
+      await route.fulfill({
+        status: 200,
+        headers: { "access-control-allow-origin": "*" },
+      });
     });
 
     await page.route("**/api/trpc/**", async (route) => {
@@ -46,8 +75,13 @@ test.describe("admin media upload", () => {
           : request.postData();
       const inputs = rawInput ? (JSON.parse(rawInput) as Record<string, unknown>) : {};
       const result = procedures.map((procedure, index) => {
-        const input = (inputs[String(index)] as { json?: unknown } | undefined)
-          ?.json;
+        const requestInput = inputs[String(index)];
+        const input =
+          requestInput &&
+          typeof requestInput === "object" &&
+          "json" in requestInput
+            ? (requestInput as { json?: unknown }).json
+            : requestInput;
 
         if (procedure === "user.current") {
           return {
@@ -64,6 +98,9 @@ test.describe("admin media upload", () => {
         }
         if (procedure === "media.index") {
           return { result: { data: { list: media, total: media.length } } };
+        }
+        if (procedure === "setting.index") {
+          return { result: { data: setting } };
         }
         if (procedure === "media.getPresignedUrl") {
           presignedInputs.push(input);
@@ -113,6 +150,23 @@ test.describe("admin media upload", () => {
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(file);
 
+    await expect.poll(() => presignedInputs).toEqual([
+      { name: file.name, type: file.mimeType },
+    ]);
+    await expect.poll(() => storageRequests).toEqual([
+      { body: file.buffer, contentType: file.mimeType },
+    ]);
+    await expect.poll(() => uploadInputs).toEqual([
+      {
+        name: file.name,
+        type: file.mimeType,
+        size: file.buffer.length,
+        key: "media/media-upload-contract.txt",
+        width: null,
+        height: null,
+        color: null,
+      },
+    ]);
     await expect(page.getByText("成功上传 1 个文件")).toBeVisible();
     expect(presignedInputs).toEqual([
       { name: file.name, type: file.mimeType },
