@@ -24,7 +24,7 @@
 
 - [x] 4.1 拆分 media 页的 query、上传 actions、媒体呈现和页面组合并运行上传回归
 - [x] 4.2 拆分 page edit 的数据编排、表单转换、actions 和编辑 UI 并运行创建/编辑回归
-- [ ] 4.3 拆分 comment 页的 query、moderation actions、columns 和页面组合并运行审核回归
+- [x] 4.3 拆分 comment 页的 query、moderation actions、columns 和页面组合并运行审核回归
 
 ## 5. 架构与质量验证
 

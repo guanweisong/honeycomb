@@ -43,7 +43,7 @@ interface ActionGuardFile {
 
 const actionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/comment/page.tsx",
+    relativePath: "(root)/(dashboard)/comment/CommentPageShell.tsx",
     actions: [
       {
         id: "comment.moderate",
