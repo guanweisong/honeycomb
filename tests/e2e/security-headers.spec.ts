@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const VERCEL_SCRIPT_ORIGIN = "https://va.vercel-scripts.com";
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
-const ASSET_ORIGIN = "https://assets.honeycomb.test";
+const ASSET_ORIGIN =
+  process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test";
 
 function getCsp(headers: Record<string, string>) {
   const enforced = headers["content-security-policy"];
