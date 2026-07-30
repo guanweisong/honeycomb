@@ -92,17 +92,17 @@ bun test:ui
 
 ### 2026-07-30 重构等价性审计
 
-审计基线为 `8932908`：它是首个模块化提交 `e4b3767` 的直接父提交；从质量门禁落地点 `12a6009` 到该基线，DataTable 与六个管理 feature 也没有代码差异。`8932908..HEAD` 的 tRPC routers 与权限核心无差异，所以下表同时对照客户端 procedure、输入构造、输出消费、capability guard、用户文案和主要交互，并结合对应 unit/E2E 回归证据。
+审计基线为 `8932908`：它是首个模块化提交 `e4b3767` 的直接父提交；从质量门禁落地点 `12a6009` 到该基线，DataTable 与六个管理 feature 也没有代码差异。静态审计确认路由文件位置不变、`8932908..HEAD` 的 tRPC routers 与权限核心无差异、客户端 procedure/输入构造/输出消费一致，且基线生产代码中的用户文案均保留。focused unit/component tests 再验证抽取后的 query、actions、转换、capability 和呈现行为。Playwright 证据只按下表“实际 Playwright 子集”列记录；它不是每个 feature 全部交互的穷举，未覆盖的流程由静态基线对比与 focused tests 支撑等价性结论。
 
-| 范围 | URL / facade | tRPC 输入与输出消费 | 权限与 action guard | 文案、交互与证据 |
-| --- | --- | --- | --- | --- |
-| DataTable | 公开 props、泛型及 import 不变 | `onChange` 仍输出分页、排序、筛选参数 | 禁用行仍不会被单选/全选 | 分页、排序、筛选、选择重置、空态、错误重试由 `index.test.ts` 及两个 hook 测试覆盖 |
-| menu | `/admin/menu` 不变 | `page.adminIndex({ limit: 9999 })`、`category.adminIndex({ limit: 9999 })`、`menu.adminIndex(undefined)` 与 `menu.saveAll([{ id, type, power, parent? }])` 不变；列表与刷新结果消费不变 | `menuUpdate` 仍只控制保存 action，服务端 guard 未变 | 分类/页面勾选、拖拽、保存及原文案由 transforms、query、actions、shell 单测和 menu E2E 覆盖 |
-| user | `/admin/user` 不变 | `user.index(params)`、`create(insert)`、`update({ id, ...values })`、`destroy({ ids })` 不变；列表 `{ list, total }` 和 mutation `success` 消费不变 | `userManage` 及高权限目标的禁选、禁删、表单字段禁用结果不变，服务端 guard 未变 | 搜索、新增、编辑、单删/批删及原文案由 query、actions、transforms、columns、shell 单测和 RBAC E2E 覆盖 |
-| link | `/admin/link` 不变 | `link.adminIndex(params)`、`create(insert)`、`update({ id, ...values })`、`destroy({ ids })` 不变；列表与 `success` 消费不变 | `linkCreate`、`linkUpdate`、`linkDelete` 仍分别控制对应 action，服务端 guard 未变 | 搜索、新增、编辑、单删/批删及原文案由 feature 单测和 link E2E 覆盖 |
-| media | `/admin/media` 不变 | `media.index({ limit: 99999 })`、`getPresignedUrl({ name, type })`、`upload({ name, type, size, key, width, height, color })`、`destroy({ ids })` 不变；URL/key、媒体实体与 `success` 消费不变 | `mediaUpload`、`mediaDelete` 仍分别控制上传和删除，服务端 guard 未变 | 选择、复制、预签名 PUT、上传、删除及原文案由 query、actions、grid、shell 单测和 production media E2E 覆盖 |
-| page edit | `/admin/page/edit?id=...` 不变 | `page.adminDetail({ id })`、`create({ ...values, status })`、`update({ id, ...values, status })` 不变；detail、新建 id 与 mutation 状态消费不变 | `pageCreate`、`pageUpdate` 仍按新建/编辑状态控制 action，服务端 guard 未变 | 新建、编辑、保存草稿、发布/撤回及原文案由 query、actions、transforms、buttons 单测和 production page-edit E2E 覆盖 |
-| comment | `/admin/comment` 不变 | `comment.index(params)`、`update({ id, status })`、`destroy({ ids })` 不变；列表 `{ list, total }` 与刷新结果消费不变 | `commentModerate` 仍控制选择、状态 action 和删除，服务端 guard 未变 | 搜索、通过/驳回/屏蔽/解禁、单删/批删及原文案由 query、actions、columns、shell 单测和 production comment E2E 覆盖 |
+| 范围 | 静态契约对比 | focused unit/component 证据 | 实际 Playwright 子集 |
+| --- | --- | --- | --- |
+| DataTable | 公开 props、泛型及 import 不变；`onChange` 仍输出分页、排序、筛选参数 | `index.test.ts` 与 state/selection hook 测试覆盖参数、重置、禁用行、单选/全选、空态和错误重试 | 无专用 DataTable E2E 声明 |
+| menu | `/admin/menu`；三个 admin query、`saveAll` 输入/输出消费和 `menuUpdate` guard 不变 | query/actions/transforms/editor/shell 测试覆盖固定输入、勾选、拖拽转换、保存 payload、反馈文案和 capability | 仅验证未登录访问重定向 `/admin/login`、登录按钮可见，且菜单编辑器文案未渲染；不覆盖拖拽或保存 |
+| user | `/admin/user`；`index/create/update/destroy` 契约、`userManage` 和高权限目标保护结果不变 | query/actions/transforms/columns/shell 测试覆盖搜索参数、CRUD action 状态、表单映射、资源保护、列文案和 capability | RBAC spec 仅验证未登录时 shell/用户导航不出现，以及直接调用 `user.index` 返回 401 `UNAUTHORIZED` 且不泄露 email；不覆盖用户 CRUD |
+| link | `/admin/link`；`adminIndex/create/update/destroy` 契约和 create/update/delete 三个 capability guard 不变 | query/actions/transforms/columns/shell 测试覆盖搜索参数、CRUD action 状态、表单 payload、列文案和 capability | 仅验证未登录访问重定向 `/admin/login`、登录按钮可见，且“添加链接”“批量删除”未渲染；不覆盖链接 CRUD |
+| media | `/admin/media`；`index/getPresignedUrl/upload/destroy` 契约和 upload/delete guard 不变 | query/actions/grid/shell 测试覆盖列表输入、元数据上传、失败状态、选择、删除和 capability | 使用 mocked tRPC/storage 的浏览器契约验证预签名输入、PUT body/content-type、upload payload、成功文案和删除 `{ ids }`；不代表真实后端/对象存储集成 |
+| page edit | `/admin/page/edit?id=...`；`adminDetail/create/update` 契约和 create/update guard 不变 | query/actions/transforms/buttons 测试覆盖 id/DTO 映射、创建/更新状态、失败、权限、草稿/发布/撤回按钮 | 使用 mocked tRPC 的浏览器契约仅验证创建 `DRAFT` 后跳转带 id、重新查询 detail，再更新为 `PUBLISHED`；不覆盖撤回 |
+| comment | `/admin/comment`；`index/update/destroy` 契约和 `commentModerate` guard 不变 | query/actions/columns/shell 测试覆盖筛选、状态/删除 action、失败、状态文案和 capability | 使用 mocked tRPC 的浏览器契约仅验证 `TO_AUDIT` 通过为 `PUBLISH`、刷新呈现和批量删除；不覆盖驳回、屏蔽、解禁、搜索或单删 |
 
 ## 测试覆盖的模块
 
