@@ -8,12 +8,6 @@ import { trpc } from "@/packages/trpc/client/trpc";
 
 export type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
 
-export function normalizeCommentQueryParams(
-  params: CommentListQueryInput,
-): CommentListQueryInput {
-  return params;
-}
-
 export function useCommentQuery() {
   const [searchParams, setSearchParams] = useState<CommentListQueryInput>({});
   const query = trpc.comment.index.useQuery(searchParams, {
@@ -26,7 +20,6 @@ export function useCommentQuery() {
     isFetching: query.isFetching,
     isError: query.isError,
     refetch: query.refetch,
-    setSearchParams: (params: CommentListQueryInput) =>
-      setSearchParams(normalizeCommentQueryParams(params)),
+    setSearchParams,
   };
 }

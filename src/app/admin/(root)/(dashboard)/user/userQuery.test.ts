@@ -84,6 +84,14 @@ describe("user query state", () => {
       });
     });
 
+    await act(async () => {
+      query?.setSearchParams({ name: "bob" });
+    });
+
+    await act(async () => {
+      query?.setSearchParams({});
+    });
+
     expect(trpcMocks.queryInputs).toEqual([
       {},
       {
@@ -92,6 +100,8 @@ describe("user query state", () => {
         name: "alice",
         level: [UserLevel.EDITOR],
       },
+      { name: "bob" },
+      {},
     ]);
   });
 });

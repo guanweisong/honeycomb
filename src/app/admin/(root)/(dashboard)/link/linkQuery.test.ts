@@ -72,8 +72,29 @@ describe("link query state", () => {
     expect(query?.isError).toBe(true);
     expect(query?.refetch).toBe(trpcMocks.refetch);
 
-    await act(async () => query?.setSearchParams({ page: 3, name: "OpenAI" }));
+    await act(async () =>
+      query?.setSearchParams({
+        page: 3,
+        limit: 25,
+        name: "OpenAI",
+        status: ["ENABLE"],
+      }),
+    );
 
-    expect(trpcMocks.queryInputs).toEqual([{}, { page: 3, name: "OpenAI" }]);
+    await act(async () => query?.setSearchParams({ name: "Example" }));
+
+    await act(async () => query?.setSearchParams({}));
+
+    expect(trpcMocks.queryInputs).toEqual([
+      {},
+      {
+        page: 3,
+        limit: 25,
+        name: "OpenAI",
+        status: ["ENABLE"],
+      },
+      { name: "Example" },
+      {},
+    ]);
   });
 });

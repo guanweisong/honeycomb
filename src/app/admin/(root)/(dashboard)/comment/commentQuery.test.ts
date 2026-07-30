@@ -25,13 +25,11 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-import {
-  normalizeCommentQueryParams,
-  useCommentQuery,
-} from "./commentQuery";
+import { useCommentQuery } from "./commentQuery";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 function CommentQueryHarness({
   onReady,
@@ -59,23 +57,7 @@ describe("comment query parameters", () => {
     container.remove();
   });
 
-  it("preserves the submitted filters and pagination input", () => {
-    expect(
-      normalizeCommentQueryParams({
-        content: "needs review",
-        status: ["TO_AUDIT"],
-        page: 2,
-        limit: 20,
-      }),
-    ).toEqual({
-      content: "needs review",
-      status: ["TO_AUDIT"],
-      page: 2,
-      limit: 20,
-    });
-  });
-
-  it("sends submitted filters and pagination to the real query hook on state updates", async () => {
+  it("replaces and clears submitted filters and pagination", async () => {
     let query: ReturnType<typeof useCommentQuery> | undefined;
 
     await act(async () => {
@@ -96,6 +78,14 @@ describe("comment query parameters", () => {
       });
     });
 
+    await act(async () => {
+      query?.setSearchParams({ content: "approved" });
+    });
+
+    await act(async () => {
+      query?.setSearchParams({});
+    });
+
     expect(trpcMocks.queryInputs).toEqual([
       {},
       {
@@ -104,6 +94,8 @@ describe("comment query parameters", () => {
         page: 2,
         limit: 20,
       },
+      { content: "approved" },
+      {},
     ]);
   });
 });

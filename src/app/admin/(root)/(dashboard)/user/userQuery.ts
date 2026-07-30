@@ -4,7 +4,6 @@ import { useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { UserListQueryInput } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { buildUserQueryParams } from "./userTransforms";
 
 export function useUserQuery() {
   const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
@@ -18,7 +17,6 @@ export function useUserQuery() {
     isFetching: query.isFetching,
     isError: query.isError,
     refetch: query.refetch,
-    setSearchParams: (params: UserListQueryInput) =>
-      setSearchParams(buildUserQueryParams(params)),
+    setSearchParams,
   };
 }

@@ -1,14 +1,7 @@
 import { Permission, can } from "@/packages/auth/permissions";
-import type { UserListQueryInput } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
 import type { UserUpdate } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
 import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
-
-export function buildUserQueryParams(
-  input: UserListQueryInput,
-): UserListQueryInput {
-  return { ...input };
-}
 
 export function toUserFormDefaults(
   record?: UserEntity,

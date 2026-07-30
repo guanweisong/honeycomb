@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { Permission, can } from "@/packages/auth/permissions";
-import { SortOrder } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
 
 import {
-  buildUserQueryParams,
   buildUserUpdateInput,
   canDeleteUserResource,
   isUserResourceProtected,
@@ -33,27 +31,6 @@ const editor = {
 } as UserEntity;
 
 describe("user transforms", () => {
-  it("preserves the exact replacement query input sent to user.index", () => {
-    expect(
-      buildUserQueryParams({
-        page: 3,
-        limit: 25,
-        name: "alice",
-        level: [UserLevel.EDITOR],
-        sortField: "createdAt",
-        sortOrder: SortOrder.desc,
-      }),
-    ).toEqual({
-      page: 3,
-      limit: 25,
-      name: "alice",
-      level: [UserLevel.EDITOR],
-      sortField: "createdAt",
-      sortOrder: SortOrder.desc,
-    });
-    expect(buildUserQueryParams({ name: "bob" })).toEqual({ name: "bob" });
-  });
-
   it("maps safe list DTO fields to edit defaults without inventing values", () => {
     expect(toUserFormDefaults(undefined)).toBeUndefined();
     expect(toUserFormDefaults(admin)).toEqual({
