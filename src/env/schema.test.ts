@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { EnvironmentValidationError, parseServerEnv } from "./schema";
+import {
+  EnvironmentValidationError,
+  parseR2Env,
+  parseServerEnv,
+} from "./schema";
 import { parseClientEnv } from "./client-schema";
 import { getDatabaseEnv } from "./server";
 import { parseSchema } from "./validation";
@@ -102,6 +106,17 @@ describe("environment schemas", () => {
       siteKey: "turnstile-site-key",
       secretKey: "turnstile-secret",
     });
+  });
+
+  it("rejects an R2 account ID that cannot be a Cloudflare account hostname", () => {
+    expect(() =>
+      parseR2Env({
+        R2_ACCOUNT_ID: "attacker.test; connect-src https://attacker.test",
+        R2_ACCESS_KEY_ID: "access-key",
+        R2_SECRET_ACCESS_KEY: "secret-key",
+        R2_BUCKET_NAME: "bucket",
+      }),
+    ).toThrow(/accountId/);
   });
 
   it("reads database credentials from the process environment", () => {

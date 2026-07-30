@@ -31,6 +31,22 @@ describe("Playwright web server configuration", () => {
     );
   });
 
+  it("passes complete configured R2 credentials to the managed web server", async () => {
+    vi.stubEnv("R2_ACCOUNT_ID", "0123456789abcdef0123456789abcdef");
+    vi.stubEnv("R2_ACCESS_KEY_ID", "playwright-access-key");
+    vi.stubEnv("R2_SECRET_ACCESS_KEY", "playwright-secret-key");
+    vi.stubEnv("R2_BUCKET_NAME", "playwright-bucket");
+
+    const environment = await loadWebServerEnvironment();
+
+    expect(environment).toMatchObject({
+      R2_ACCOUNT_ID: "0123456789abcdef0123456789abcdef",
+      R2_ACCESS_KEY_ID: "playwright-access-key",
+      R2_SECRET_ACCESS_KEY: "playwright-secret-key",
+      R2_BUCKET_NAME: "playwright-bucket",
+    });
+  });
+
   it("uses only the configured asset URL origin in security assertions", () => {
     expect(resolveAssetOrigin("https://cdn.example.test/uploads")).toBe(
       "https://cdn.example.test",

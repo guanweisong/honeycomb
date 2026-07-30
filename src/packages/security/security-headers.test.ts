@@ -9,6 +9,15 @@ function asRecord(headers: ReturnType<typeof createSecurityHeaders>) {
   return Object.fromEntries(headers.map(({ key, value }) => [key, value]));
 }
 
+function getDirectiveSources(csp: string, name: string) {
+  const directive = csp
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(`${name} `));
+
+  return directive?.split(/\s+/).slice(1) ?? [];
+}
+
 describe("createSecurityHeaders", () => {
   it("enforces a production CSP with only the enabled integration origins", () => {
     const headers = asRecord(
@@ -104,6 +113,38 @@ describe("createSecurityHeaders", () => {
     );
     expect(headers["Content-Security-Policy"]).not.toContain("not a URL");
   });
+
+  it("allows the exact R2 upload origin in connect-src", () => {
+    const headers = asRecord(
+      createSecurityHeaders({
+        environment: "production",
+        siteUrl: "https://honeycomb.example",
+        r2UploadOrigin:
+          "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+      }),
+    );
+
+    expect(
+      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+    ).toContain(
+      "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+    );
+  });
+
+  it("does not inject an untrusted R2 option into connect-src", () => {
+    const headers = asRecord(
+      createSecurityHeaders({
+        environment: "production",
+        r2UploadOrigin:
+          "https://safe.test; connect-src https://attacker.test",
+      }),
+    );
+
+    expect(
+      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+    ).toEqual(["'self'"]);
+    expect(headers["Content-Security-Policy"]).not.toContain("attacker.test");
+  });
 });
 
 describe("createSecurityHeaderOptions", () => {
@@ -138,6 +179,49 @@ describe("createSecurityHeaderOptions", () => {
       googleAnalyticsEnabled: false,
       turnstileEnabled: true,
     });
+  });
+
+  it("derives only the R2 upload origin from complete valid configuration", () => {
+    const options = createSecurityHeaderOptions({
+      R2_ACCOUNT_ID: "0123456789abcdef0123456789abcdef",
+      R2_ACCESS_KEY_ID: "access-key-must-not-leak",
+      R2_SECRET_ACCESS_KEY: "secret-key-must-not-leak",
+      R2_BUCKET_NAME: "bucket-must-not-leak",
+    });
+
+    expect(options).toMatchObject({
+      r2UploadOrigin:
+        "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+    });
+    expect(JSON.stringify(options)).not.toContain("access-key-must-not-leak");
+    expect(JSON.stringify(options)).not.toContain("secret-key-must-not-leak");
+    expect(JSON.stringify(options)).not.toContain("bucket-must-not-leak");
+  });
+
+  it.each([
+    {
+      name: "disabled",
+      environment: {},
+    },
+    {
+      name: "partially configured",
+      environment: {
+        R2_ACCOUNT_ID: "0123456789abcdef0123456789abcdef",
+      },
+    },
+    {
+      name: "invalid account ID",
+      environment: {
+        R2_ACCOUNT_ID: "attacker.example; connect-src https://attacker.test",
+        R2_ACCESS_KEY_ID: "access-key",
+        R2_SECRET_ACCESS_KEY: "secret-key",
+        R2_BUCKET_NAME: "bucket",
+      },
+    },
+  ])("does not derive an R2 origin when R2 is $name", ({ environment }) => {
+    expect(
+      createSecurityHeaderOptions(environment).r2UploadOrigin,
+    ).toBeUndefined();
   });
 });
 

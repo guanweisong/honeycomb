@@ -9,6 +9,10 @@ import {
 
 const requiredString = z.string().trim().min(1, "must not be empty");
 const requiredUrl = z.url("must be a valid URL");
+const r2AccountId = z
+  .string()
+  .trim()
+  .regex(/^[a-f0-9]{32}$/i, "must be a 32-character hexadecimal account ID");
 
 const coreServerEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: requiredUrl,
@@ -31,7 +35,7 @@ const oauthProviderSchema = z.object({
 });
 
 const r2Schema = z.object({
-  accountId: requiredString,
+  accountId: r2AccountId,
   accessKeyId: requiredString,
   secretAccessKey: requiredString,
   bucketName: requiredString,

@@ -1,3 +1,5 @@
+import { EnvironmentValidationError, parseR2Env } from "../../env/schema";
+
 export type SecurityHeader = {
   key: string;
   value: string;
@@ -9,6 +11,7 @@ export type SecurityHeadersOptions = {
   assetUrl?: string;
   googleAnalyticsEnabled?: boolean;
   turnstileEnabled?: boolean;
+  r2UploadOrigin?: string;
   cspReportOnly?: boolean;
 };
 
@@ -39,6 +42,38 @@ function isConfigured(value: string | undefined) {
   return Boolean(value?.trim());
 }
 
+function resolveR2UploadOrigin(environment: SecurityHeaderEnvironment) {
+  try {
+    const r2 = parseR2Env(environment);
+    if (!r2) return undefined;
+
+    const hostname = `${r2.accountId.toLowerCase()}.r2.cloudflarestorage.com`;
+    const url = new URL(`https://${hostname}`);
+
+    return url.protocol === "https:" && url.hostname === hostname
+      ? url.origin
+      : undefined;
+  } catch (error) {
+    if (error instanceof EnvironmentValidationError) return undefined;
+    throw error;
+  }
+}
+
+function parseR2UploadOrigin(value: string | undefined) {
+  if (!value) return undefined;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      url.origin === value &&
+      /^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$/.test(url.hostname)
+      ? url.origin
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function createSecurityHeaderOptions(
   environment: SecurityHeaderEnvironment,
 ): SecurityHeadersOptions {
@@ -50,6 +85,7 @@ export function createSecurityHeaderOptions(
       isConfigured(environment.NEXT_PUBLIC_GA_BLOG_ID) ||
       isConfigured(environment.NEXT_PUBLIC_GA_ADMIN_ID),
     turnstileEnabled: isConfigured(environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    r2UploadOrigin: resolveR2UploadOrigin(environment),
     cspReportOnly: environment.CSP_REPORT_ONLY === "true",
   };
 }
@@ -79,6 +115,7 @@ function createContentSecurityPolicy({
   assetUrl,
   googleAnalyticsEnabled,
   turnstileEnabled,
+  r2UploadOrigin,
 }: SecurityHeadersOptions) {
   const isDevelopment = environment === "development";
   const isProduction = environment === "production";
@@ -120,6 +157,11 @@ function createContentSecurityPolicy({
     scriptSources.push("https://challenges.cloudflare.com");
     connectSources.push("https://challenges.cloudflare.com");
     frameSources.push("https://challenges.cloudflare.com");
+  }
+
+  const safeR2UploadOrigin = parseR2UploadOrigin(r2UploadOrigin);
+  if (safeR2UploadOrigin) {
+    connectSources.push(safeR2UploadOrigin);
   }
 
   const directives = [

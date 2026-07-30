@@ -9,7 +9,7 @@ describe("S3 observability", () => {
 
   beforeEach(() => {
     send.mockReset();
-    process.env.R2_ACCOUNT_ID = "account";
+    process.env.R2_ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
     process.env.R2_ACCESS_KEY_ID = "access";
     process.env.R2_SECRET_ACCESS_KEY = "secret";
     process.env.R2_BUCKET_NAME = "bucket";

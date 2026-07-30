@@ -37,6 +37,14 @@ export default defineConfig({
         process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test",
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+      R2_ACCOUNT_ID:
+        process.env.R2_ACCOUNT_ID ?? "0123456789abcdef0123456789abcdef",
+      R2_ACCESS_KEY_ID:
+        process.env.R2_ACCESS_KEY_ID ?? "playwright-unused-r2-access-key",
+      R2_SECRET_ACCESS_KEY:
+        process.env.R2_SECRET_ACCESS_KEY ?? "playwright-unused-r2-secret-key",
+      R2_BUCKET_NAME:
+        process.env.R2_BUCKET_NAME ?? "playwright-unused-r2-bucket",
       TURSO_URL: process.env.TURSO_URL ?? "http://127.0.0.1:1",
       TURSO_TOKEN: process.env.TURSO_TOKEN ?? "playwright-unreachable-database",
       AUTH_SECRET: process.env.AUTH_SECRET ?? "playwright-production-secret",
