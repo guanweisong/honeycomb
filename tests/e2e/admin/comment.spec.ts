@@ -31,6 +31,7 @@ test.describe("admin comment moderation", () => {
         updatedAt: "2026-01-02T03:04:05.000Z",
       },
     ];
+    const commentIndexInputs: unknown[] = [];
     const updateInputs: unknown[] = [];
     const destroyInputs: unknown[] = [];
     const setting = {
@@ -84,6 +85,7 @@ test.describe("admin comment moderation", () => {
           return { result: { data: setting } };
         }
         if (procedure === "comment.index") {
+          commentIndexInputs.push(input);
           return { result: { data: { list: comments, total: comments.length } } };
         }
         if (procedure === "comment.update") {
@@ -117,6 +119,8 @@ test.describe("admin comment moderation", () => {
 
     await page.goto("/admin/comment", { waitUntil: "networkidle" });
     await expect(page.getByText("需要审核的评论")).toBeVisible();
+    const initialCommentIndexCallCount = commentIndexInputs.length;
+    expect(initialCommentIndexCallCount).toBeGreaterThan(0);
 
     await page.getByRole("button", { name: "通过" }).click();
     await page.getByRole("button", { name: "确定" }).click();
@@ -124,6 +128,13 @@ test.describe("admin comment moderation", () => {
       { id: "comment-1", status: "PUBLISH" },
     ]);
     await expect(page.getByText("更新成功")).toBeVisible();
+    await expect
+      .poll(() => commentIndexInputs.length)
+      .toBe(initialCommentIndexCallCount + 1);
+    await expect(page.getByText("已发布")).toBeVisible();
+    await expect(page.getByRole("button", { name: "屏蔽" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "通过" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "驳回" })).toHaveCount(0);
 
     await page.getByRole("checkbox").last().click();
     const batchDelete = page.getByRole("button", { name: "批量删除" });
