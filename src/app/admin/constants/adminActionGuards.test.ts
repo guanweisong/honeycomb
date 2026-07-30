@@ -200,7 +200,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/page/edit/page.tsx",
+    relativePath: "(root)/(dashboard)/page/edit/PageEditorActionButtons.tsx",
     actions: [
       {
         id: "page-editor.create",
@@ -208,7 +208,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
-          call: { callee: "handleBtnClick", argument: "PageStatus.DRAFT" },
+          call: { callee: "onSubmit", argument: "PageStatus.DRAFT" },
           label: "保存草稿",
         },
         guard: { kind: "ancestor", polarity: "positive" },
@@ -220,7 +220,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           tag: "Button",
           attribute: "onClick",
           call: {
-            callee: "handleBtnClick",
+            callee: "onSubmit",
             argument: "PageStatus.PUBLISHED",
           },
           label: "发布",
@@ -234,7 +234,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           tag: "Button",
           attribute: "onClick",
           call: {
-            callee: "handleBtnClick",
+            callee: "onSubmit",
             argument: "PageStatus.PUBLISHED",
           },
           label: "更新",
@@ -247,7 +247,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Dialog",
           attribute: "onOK",
-          call: { callee: "handleBtnClick", argument: "PageStatus.DRAFT" },
+          call: { callee: "onSubmit", argument: "PageStatus.DRAFT" },
           label: "撤回为草稿",
         },
         guard: { kind: "ancestor", polarity: "positive" },
@@ -258,7 +258,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
-          call: { callee: "handleBtnClick", argument: "PageStatus.DRAFT" },
+          call: { callee: "onSubmit", argument: "PageStatus.DRAFT" },
           label: "保存",
         },
         guard: { kind: "ancestor", polarity: "positive" },
@@ -270,7 +270,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
           tag: "Button",
           attribute: "onClick",
           call: {
-            callee: "handleBtnClick",
+            callee: "onSubmit",
             argument: "PageStatus.PUBLISHED",
           },
           label: "发布",
