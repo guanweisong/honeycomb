@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  createR2PresignedUploadUrl,
   resolveAssetOrigin,
   resolveR2UploadOrigin,
 } from "./security-headers-config";
@@ -13,6 +14,8 @@ const ASSET_ORIGIN = resolveAssetOrigin(CONFIGURED_ASSET_URL);
 const CONFIGURED_R2_ACCOUNT_ID =
   process.env.R2_ACCOUNT_ID ?? "0123456789abcdef0123456789abcdef";
 const R2_UPLOAD_ORIGIN = resolveR2UploadOrigin(CONFIGURED_R2_ACCOUNT_ID);
+const R2_UPLOAD_BUCKET = "playwright-bucket";
+const R2_UPLOAD_KEY = "csp-probe";
 
 function getCsp(headers: Record<string, string>) {
   const enforced = headers["content-security-policy"];
@@ -72,6 +75,17 @@ test.describe("security response headers", () => {
   }) => {
     const cspConsoleMessages: string[] = [];
     const interceptedRequests = new Set<string>();
+    const r2PresignedUploadUrl = await createR2PresignedUploadUrl({
+      accountId: CONFIGURED_R2_ACCOUNT_ID,
+      bucketName: R2_UPLOAD_BUCKET,
+      key: R2_UPLOAD_KEY,
+    });
+    const parsedR2UploadUrl = new URL(r2PresignedUploadUrl);
+
+    expect(parsedR2UploadUrl.origin).toBe(R2_UPLOAD_ORIGIN);
+    expect(parsedR2UploadUrl.pathname).toBe(
+      `/${R2_UPLOAD_BUCKET}/${R2_UPLOAD_KEY}`,
+    );
 
     page.on("console", (message) => {
       if (
@@ -123,7 +137,7 @@ test.describe("security response headers", () => {
         ),
       });
     });
-    await page.route(`${R2_UPLOAD_ORIGIN}/**`, async (route) => {
+    await page.route(`${parsedR2UploadUrl.origin}/**`, async (route) => {
       if (route.request().method() === "PUT") {
         interceptedRequests.add("r2-upload");
       }
@@ -167,7 +181,7 @@ test.describe("security response headers", () => {
         vercelScriptOrigin,
         turnstileOrigin,
         assetOrigin,
-        r2UploadOrigin,
+        r2PresignedUploadUrl,
       }) => {
         const loadScript = (src: string) =>
           new Promise<void>((resolve, reject) => {
@@ -200,7 +214,7 @@ test.describe("security response headers", () => {
           loadImage(`${assetOrigin}/csp-probe.png`),
           fetch("/_vercel/insights/csp-probe"),
           fetch("/_vercel/speed-insights/csp-probe"),
-          fetch(`${r2UploadOrigin}/playwright-bucket/csp-probe`, {
+          fetch(r2PresignedUploadUrl, {
             method: "PUT",
             body: "csp-probe",
           }),
@@ -210,7 +224,7 @@ test.describe("security response headers", () => {
         vercelScriptOrigin: VERCEL_SCRIPT_ORIGIN,
         turnstileOrigin: TURNSTILE_ORIGIN,
         assetOrigin: ASSET_ORIGIN,
-        r2UploadOrigin: R2_UPLOAD_ORIGIN,
+        r2PresignedUploadUrl,
       },
     );
 

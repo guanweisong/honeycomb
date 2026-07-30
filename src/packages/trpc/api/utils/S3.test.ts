@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@/packages/observability/adapters/memory";
 import { MetricName } from "@/packages/observability/core/names";
 import { configureObservability } from "@/packages/observability/server";
+import { createSecurityHeaderOptions } from "@/packages/security/security-headers";
 import S3 from "./S3";
 
 describe("S3 observability", () => {
@@ -42,6 +43,27 @@ describe("S3 observability", () => {
       event.labels.outcome === "success"
     )).toBe(true);
     expect(JSON.stringify(memory.metricEvents)).not.toContain("user-123");
+  });
+
+  it("keeps presigned uploads on the CSP account origin with bucket and key in the path", async () => {
+    vi.restoreAllMocks();
+
+    const presignedUrl = new URL(
+      await S3.getPresignedUrl({
+        Key: "uploads/csp-probe.png",
+        ContentType: "image/png",
+      }),
+    );
+    const securityOptions = createSecurityHeaderOptions(process.env);
+
+    expect(presignedUrl.origin).toBe(securityOptions.r2UploadOrigin);
+    expect(presignedUrl.origin).toBe(
+      "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+    );
+    expect(presignedUrl.pathname).toBe("/bucket/uploads/csp-probe.png");
+    expect(presignedUrl.searchParams.get("X-Amz-Algorithm")).toBe(
+      "AWS4-HMAC-SHA256",
+    );
   });
 
   it("records object storage delete failures and preserves the error", async () => {
