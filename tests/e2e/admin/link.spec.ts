@@ -9,7 +9,9 @@ test.describe("admin link", () => {
     await page.goto("/admin/link", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/admin\/login$/, { timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "登录" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "登录", exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("添加链接")).toHaveCount(0);
     await expect(page.getByText("批量删除")).toHaveCount(0);
   });

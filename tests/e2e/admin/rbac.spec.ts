@@ -9,7 +9,9 @@ test.describe("admin capability boundary", () => {
     await page.goto("/admin/user", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/admin\/login$/, { timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "登录" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "登录", exact: true }),
+    ).toBeVisible();
     await expect(page.locator('a[href="/admin/user"]')).toHaveCount(0);
   });
 
