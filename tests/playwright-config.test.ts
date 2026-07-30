@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { resolveAssetOrigin } from "./e2e/security-headers-config";
+
 async function loadWebServerEnvironment() {
   vi.resetModules();
 
@@ -26,6 +28,12 @@ describe("Playwright web server configuration", () => {
 
     expect(environment?.NEXT_PUBLIC_ASSET_URL).toBe(
       "https://static.integration.example.test",
+    );
+  });
+
+  it("uses only the configured asset URL origin in security assertions", () => {
+    expect(resolveAssetOrigin("https://cdn.example.test/uploads")).toBe(
+      "https://cdn.example.test",
     );
   });
 });

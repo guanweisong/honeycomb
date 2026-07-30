@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+import { resolveAssetOrigin } from "./security-headers-config";
+
 const VERCEL_SCRIPT_ORIGIN = "https://va.vercel-scripts.com";
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
-const ASSET_ORIGIN =
+const CONFIGURED_ASSET_URL =
   process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test";
+const ASSET_ORIGIN = resolveAssetOrigin(CONFIGURED_ASSET_URL);
 
 function getCsp(headers: Record<string, string>) {
   const enforced = headers["content-security-policy"];
