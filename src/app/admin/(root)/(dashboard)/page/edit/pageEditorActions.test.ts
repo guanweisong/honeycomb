@@ -46,5 +46,25 @@ describe("page editor action state", () => {
       ...values,
       status: PageStatus.PUBLISHED,
     });
+
+    update.mockResolvedValue(undefined);
+    await expect(
+      submitPageEditor({
+        pageId: "page-42",
+        values,
+        status: PageStatus.PUBLISHED,
+        create: vi.fn(),
+        update,
+      }),
+    ).resolves.toEqual({ state: "updated" });
+
+    await expect(
+      submitPageEditor({
+        values,
+        status: PageStatus.DRAFT,
+        create: vi.fn().mockRejectedValue(new Error("create failed")),
+        update: vi.fn(),
+      }),
+    ).resolves.toEqual({ state: "error" });
   });
 });

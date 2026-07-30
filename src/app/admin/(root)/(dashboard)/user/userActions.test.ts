@@ -115,6 +115,43 @@ describe("user action state", () => {
     expect(notifySuccess).toHaveBeenCalledWith("添加成功");
   });
 
+  it("reports create and update failures without refreshing", async () => {
+    const refetch = vi.fn();
+    const notifySuccess = vi.fn();
+    const notifyError = vi.fn();
+
+    await expect(
+      submitUserCreate({
+        values: {
+          name: "New User",
+          email: "new@example.test",
+          password: "password123",
+          level: UserLevel.GUEST,
+          status: UserStatus.ENABLE,
+        },
+        create: vi.fn().mockRejectedValue(new Error("create failed")),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(notifyError).toHaveBeenCalledWith("添加失败");
+
+    await expect(
+      submitUserUpdate({
+        record: editor,
+        values: { id: "forged-id", name: "Updated" },
+        update: vi.fn().mockRejectedValue(new Error("update failed")),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(notifyError).toHaveBeenCalledWith("更新失败");
+    expect(refetch).not.toHaveBeenCalled();
+    expect(notifySuccess).not.toHaveBeenCalled();
+  });
+
   it("only refreshes and reports delete success for a successful response", async () => {
     const refetch = vi.fn();
     const notifySuccess = vi.fn();
@@ -143,5 +180,17 @@ describe("user action state", () => {
       }),
     ).resolves.toBe("error");
     expect(notifyError).toHaveBeenCalledWith("删除失败");
+
+    await expect(
+      submitUserDelete({
+        ids: ["editor-1"],
+        destroy: vi.fn().mockResolvedValue({ success: true }),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("success");
+    expect(refetch).toHaveBeenCalledOnce();
+    expect(notifySuccess).toHaveBeenCalledWith("删除成功");
   });
 });

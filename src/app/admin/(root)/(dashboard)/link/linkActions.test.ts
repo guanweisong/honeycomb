@@ -73,6 +73,42 @@ describe("link action state", () => {
     expect(notifySuccess).toHaveBeenCalledWith("添加成功");
   });
 
+  it("reports create and update failures without refreshing", async () => {
+    const refetch = vi.fn();
+    const notifySuccess = vi.fn();
+    const notifyError = vi.fn();
+
+    await expect(
+      submitLinkCreate({
+        values: {
+          name: "OpenAI",
+          url: "https://openai.com",
+          logo: "https://openai.com/logo.png",
+          status: "ENABLE",
+        },
+        create: vi.fn().mockRejectedValue(new Error("create failed")),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(notifyError).toHaveBeenCalledWith("添加失败");
+
+    await expect(
+      submitLinkUpdate({
+        record: link,
+        values: { id: "forged-id", name: "Updated" },
+        update: vi.fn().mockRejectedValue(new Error("update failed")),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(notifyError).toHaveBeenCalledWith("更新失败");
+    expect(refetch).not.toHaveBeenCalled();
+    expect(notifySuccess).not.toHaveBeenCalled();
+  });
+
   it("updates only the selected target and fails closed without one", async () => {
     const update = vi.fn().mockResolvedValue(link);
     const refetch = vi.fn();
@@ -134,5 +170,28 @@ describe("link action state", () => {
     });
     expect(deleteItems).toHaveBeenCalledWith(["link-1", "link-2"]);
     expect(onSelectionChange).toHaveBeenCalledWith([]);
+
+    await expect(
+      submitLinkDelete({
+        ids: ["link-1"],
+        destroy: vi.fn().mockResolvedValue({ success: true }),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("success");
+    expect(refetch).toHaveBeenCalledOnce();
+    expect(notifySuccess).toHaveBeenCalledWith("删除成功");
+
+    await expect(
+      submitLinkDelete({
+        ids: ["link-1"],
+        destroy: vi.fn().mockRejectedValue(new Error("delete failed")),
+        refetch,
+        notifySuccess,
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(notifyError).toHaveBeenCalledWith("删除失败");
   });
 });

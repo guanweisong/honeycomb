@@ -84,4 +84,21 @@ describe("comment moderation actions", () => {
     expect(refetch).toHaveBeenCalledOnce();
     expect(notifySuccess).toHaveBeenCalledWith("删除成功");
   });
+
+  it("reports delete failures without refreshing", async () => {
+    const refetch = vi.fn();
+    const notifyError = vi.fn();
+
+    await expect(
+      submitCommentDelete({
+        ids: ["comment-1"],
+        destroy: vi.fn().mockRejectedValue(new Error("delete failed")),
+        refetch,
+        notifySuccess: vi.fn(),
+        notifyError,
+      }),
+    ).resolves.toBe("error");
+    expect(refetch).not.toHaveBeenCalled();
+    expect(notifyError).toHaveBeenCalledWith("删除失败");
+  });
 });

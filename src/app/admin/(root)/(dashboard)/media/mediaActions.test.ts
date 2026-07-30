@@ -77,5 +77,29 @@ describe("media action state", () => {
         destroy: vi.fn().mockResolvedValue({ success: false }),
       }),
     ).resolves.toEqual({ state: "noop" });
+
+    await expect(
+      submitMediaUpload({
+        files: [new File(["video"], "movie.mp4", { type: "video/mp4" })],
+        getImageMetadata: vi.fn(),
+        getPresignedUrl: vi.fn().mockRejectedValue(new Error("sign failed")),
+        uploadToStorage: vi.fn(),
+        createMedia: vi.fn(),
+      }),
+    ).resolves.toEqual({ state: "error", message: "sign failed" });
+
+    await expect(
+      submitMediaDelete({
+        id: "media-1",
+        destroy: vi.fn().mockResolvedValue({ success: true }),
+      }),
+    ).resolves.toEqual({ state: "success" });
+
+    await expect(
+      submitMediaDelete({
+        id: "media-1",
+        destroy: vi.fn().mockRejectedValue(new Error("delete failed")),
+      }),
+    ).resolves.toEqual({ state: "error" });
   });
 });
