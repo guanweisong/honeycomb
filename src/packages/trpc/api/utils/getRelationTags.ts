@@ -2,6 +2,7 @@ import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { inArray } from "drizzle-orm";
 import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 关联标签接口。
@@ -21,8 +22,10 @@ export interface RelationTag {
 export const getRelationTags = async (ids: string[] = []) => {
   if (ids.length === 0) return [];
   const db = getDb();
-  return db
-    .select({ id: schema.tag.id, name: schema.tag.name })
-    .from(schema.tag)
-    .where(inArray(schema.tag.id, ids));
+  return observeDbOperation("tag.relations", "select", () =>
+    db
+      .select({ id: schema.tag.id, name: schema.tag.name })
+      .from(schema.tag)
+      .where(inArray(schema.tag.id, ids)),
+  );
 };

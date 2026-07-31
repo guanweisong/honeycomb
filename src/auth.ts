@@ -14,6 +14,7 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import { observeDbOperation } from "@/packages/observability/server";
 
 type AuthUser = {
   id: string;
@@ -40,11 +41,9 @@ function isUniqueConstraintError(error: unknown) {
 
 async function findActiveUserByEmail(email: string) {
   const db = getDb();
-  const [user] = await db
-    .select()
-    .from(schema.user)
-    .where(eq(schema.user.email, email))
-    .limit(1);
+  const [user] = await observeDbOperation("auth.user-by-email", "select", () =>
+    db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1),
+  );
 
   if (!user || user.status !== UserStatus.ENABLE) return null;
   return user;
@@ -56,15 +55,20 @@ async function createOAuthUser(params: { email: string; name: string | null }) {
 
   for (let attempt = 0; attempt < 20; attempt += 1) {
     try {
-      const [createdUser] = await db
-        .insert(schema.user)
-        .values({
-          email: params.email,
-          name: buildUserNameCandidate(baseName, attempt),
-          level: UserLevel.GUEST,
-          status: UserStatus.ENABLE,
-        })
-        .returning();
+      const [createdUser] = await observeDbOperation(
+        "auth.oauth-user.create",
+        "insert",
+        () =>
+          db
+            .insert(schema.user)
+            .values({
+              email: params.email,
+              name: buildUserNameCandidate(baseName, attempt),
+              level: UserLevel.GUEST,
+              status: UserStatus.ENABLE,
+            })
+            .returning(),
+      );
 
       return createdUser;
     } catch (error) {
@@ -105,16 +109,21 @@ function buildCredentialsProvider() {
       await validateCaptcha(captchaToken);
 
       const db = getDb();
-      const [user] = await db
-        .select()
-        .from(schema.user)
-        .where(
-          and(
-            eq(schema.user.name, name),
-            eq(schema.user.status, UserStatus.ENABLE),
-          ),
-        )
-        .limit(1);
+      const [user] = await observeDbOperation(
+        "auth.credentials-user",
+        "select",
+        () =>
+          db
+            .select()
+            .from(schema.user)
+            .where(
+              and(
+                eq(schema.user.name, name),
+                eq(schema.user.status, UserStatus.ENABLE),
+              ),
+            )
+            .limit(1),
+      );
 
       if (!user?.password) return null;
 

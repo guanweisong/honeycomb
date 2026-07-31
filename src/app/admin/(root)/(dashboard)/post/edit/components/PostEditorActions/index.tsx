@@ -4,6 +4,8 @@ import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 import type { PostSubmitAction } from "../../hooks/usePostEditor";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 interface PostEditorActionsProps {
   id?: string;
@@ -18,13 +20,15 @@ export function PostEditorActions({
   status,
   submit,
 }: PostEditorActionsProps) {
+  const canCreatePost = useCan(Permission.postCreate);
+  const canUpdatePost = useCan(Permission.postUpdate);
   const isEdit = !!id;
   const isDraft = status === PostStatus.DRAFT;
   const isPublished = status === PostStatus.PUBLISHED;
 
   return (
     <>
-      {isEdit && isPublished && (
+      {canUpdatePost && isEdit && isPublished && (
         <Button
           type="button"
           disabled={loading}
@@ -33,7 +37,7 @@ export function PostEditorActions({
           更新
         </Button>
       )}
-      {isEdit && isPublished && (
+      {canUpdatePost && isEdit && isPublished && (
         <Dialog
           trigger={
             <Button type="button" variant="secondary" disabled={loading}>
@@ -45,7 +49,7 @@ export function PostEditorActions({
           onOK={() => submit(PostStatus.DRAFT, "update")}
         />
       )}
-      {isEdit && isDraft && (
+      {canUpdatePost && isEdit && isDraft && (
         <Button
           type="button"
           disabled={loading}
@@ -54,7 +58,7 @@ export function PostEditorActions({
           保存
         </Button>
       )}
-      {((isEdit && isDraft) || !isEdit) && (
+      {((canUpdatePost && isEdit && isDraft) || (canCreatePost && !isEdit)) && (
         <Button
           type="button"
           disabled={loading}
@@ -65,7 +69,7 @@ export function PostEditorActions({
           发布
         </Button>
       )}
-      {!isEdit && (
+      {canCreatePost && !isEdit && (
         <Button
           type="button"
           onClick={() => submit(PostStatus.DRAFT, "create")}

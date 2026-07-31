@@ -7,9 +7,7 @@ import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
 } from "@/packages/trpc/api/utils/tools";
-import {
-  buildCategoryFilter,
-} from "./utils/filters";
+import { buildCategoryFilter } from "./utils/filters";
 import { loadPostRelations } from "./utils/relations";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 
@@ -22,6 +20,7 @@ import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLi
 import { PostListQueryInput } from "./schemas/post.list.query.schema";
 import { PostStatus } from "./types/post.status";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 export async function getPostList(
   db: Database,
@@ -63,16 +62,21 @@ export async function getPostList(
   // 标签过滤
   if (tagId) {
     // 使用 postTag 中间表查询
-    const postIds = await db
-      .select({ postId: schema.postTag.postId })
-      .from(schema.postTag)
-      .where(eq(schema.postTag.tagId, tagId));
-    
+    const postIds = await observeDbOperation(
+      "post.service.ids-by-tag",
+      "select",
+      () =>
+        db
+          .select({ postId: schema.postTag.postId })
+          .from(schema.postTag)
+          .where(eq(schema.postTag.tagId, tagId)),
+    );
+
     const postIdList = postIds.map((p: { postId: string }) => p.postId);
     if (postIdList.length === 0) {
       return { list: [], total: 0 };
     }
-    
+
     const tagClause = inArray(schema.post.id, postIdList);
     where = where ? and(where, tagClause) : tagClause;
   }
@@ -90,21 +94,28 @@ export async function getPostList(
     "createdAt",
   );
 
-  const list = await db
-    .select()
-    .from(schema.post)
-    .where(where)
-    .orderBy(orderByClause)
-    .limit(limit)
-    .offset((page - 1) * limit);
+  const list = await observeDbOperation("post.service.list", "select", () =>
+    db
+      .select()
+      .from(schema.post)
+      .where(where)
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset((page - 1) * limit),
+  );
 
   // 加载关联数据
   const mapped = await loadPostRelations(db, list);
 
-  const [countResult] = await db
-    .select({ count: sql<number>`count(*)`.as("count") })
-    .from(schema.post)
-    .where(where);
+  const [countResult] = await observeDbOperation(
+    "post.service.count",
+    "select",
+    () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.post)
+        .where(where),
+  );
   const total = Number(countResult?.count) || 0;
 
   return { list: mapped, total };
@@ -116,25 +127,29 @@ export async function getPostDetail(
   visibility = ContentVisibility.PUBLISHED_ONLY,
 ) {
   const idFilter = eq(schema.post.id, id);
-  const [item] = await db
-    .select()
-    .from(schema.post)
-    .where(
-      visibility === ContentVisibility.ALL
-        ? idFilter
-        : and(idFilter, eq(schema.post.status, PostStatus.PUBLISHED)),
-    )
-    .limit(1);
+  const [item] = await observeDbOperation("post.service.detail", "select", () =>
+    db
+      .select()
+      .from(schema.post)
+      .where(
+        visibility === ContentVisibility.ALL
+          ? idFilter
+          : and(idFilter, eq(schema.post.status, PostStatus.PUBLISHED)),
+      )
+      .limit(1),
+  );
 
   if (!item) return null;
 
   const [result] = await loadPostRelations(db, [item]);
   const imageUrls = getAllImageLinkFormHtml(result?.content?.zh);
   const imagesInContent = imageUrls.length
-    ? await db
-        .select()
-        .from(schema.media)
-        .where(inArray(schema.media.url, imageUrls))
+    ? await observeDbOperation("post.service.detail-images", "select", () =>
+        db
+          .select()
+          .from(schema.media)
+          .where(inArray(schema.media.url, imageUrls)),
+      )
     : [];
 
   return {

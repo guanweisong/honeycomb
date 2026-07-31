@@ -10,6 +10,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { clientEnv } from "@/env/client";
 import { getR2Env } from "@/env/server";
+import { observeExternalServiceOperation } from "@/packages/observability/server";
 
 interface DeleteMultipleObjectParams {
   Objects: NonNullable<DeleteObjectsCommandInput["Delete"]>["Objects"];
@@ -30,6 +31,7 @@ class S3 {
     return new S3Client({
       region: "auto",
       endpoint: `https://${r2.accountId}.r2.cloudflarestorage.com`,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: r2.accessKeyId,
         secretAccessKey: r2.secretAccessKey,
@@ -45,13 +47,15 @@ class S3 {
     const { Key, Body, ContentType } = params;
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    await S3.S3().send(
-      new PutObjectCommand({
-        Bucket: r2.bucketName,
-        ContentType,
-        Key,
-        Body,
-      }),
+    await observeExternalServiceOperation("object-storage", "put", () =>
+      S3.S3().send(
+        new PutObjectCommand({
+          Bucket: r2.bucketName,
+          ContentType,
+          Key,
+          Body,
+        }),
+      )
     );
     return S3.getPublicAssetUrl(Key as string);
   };
@@ -72,7 +76,11 @@ class S3 {
       Key,
       ContentType,
     });
-    return getSignedUrl(S3.S3(), command, { expiresIn: 3600 });
+    return observeExternalServiceOperation(
+      "object-storage",
+      "presign",
+      () => getSignedUrl(S3.S3(), command, { expiresIn: 3600 }),
+    );
   };
 
   /**
@@ -83,12 +91,18 @@ class S3 {
     const { Objects } = params;
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    return S3.S3().send(
-      new DeleteObjectsCommand({
-        Bucket: r2.bucketName,
-        Delete: { Objects },
-      }),
-    );
+    return observeExternalServiceOperation("object-storage", "delete", async () => {
+      const result = await S3.S3().send(
+        new DeleteObjectsCommand({
+          Bucket: r2.bucketName,
+          Delete: { Objects },
+        }),
+      );
+      if (result.Errors?.length) {
+        throw new Error("Object storage delete failed");
+      }
+      return result;
+    });
   };
 }
 

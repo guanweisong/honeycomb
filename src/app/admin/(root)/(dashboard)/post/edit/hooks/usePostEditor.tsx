@@ -17,6 +17,8 @@ import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
 import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
 import type { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
 import { normalizePostForm } from "../utils/normalizePostForm";
+import { clientLogger } from "@/packages/observability/client";
+import { LogEvent } from "@/packages/observability/core/names";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 export type PostSubmitAction = "create" | "update";
@@ -95,7 +97,12 @@ export function usePostEditor(id: string) {
           })
           .finally(() => setLoading(false));
       },
-      (errors) => console.error("validate errors", errors),
+      () => {
+        clientLogger.warn(LogEvent.clientError, {
+          operation: "post.validate",
+          outcome: "error",
+        });
+      },
     )();
 
   const photoPickerProps: PhotoPickerItemProps = {

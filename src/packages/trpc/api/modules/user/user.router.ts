@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission, can } from "@/packages/auth/permissions";
 import { TRPCError } from "@trpc/server";
 import {
   buildDrizzleWhere,
@@ -16,10 +17,11 @@ import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.
 import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { observeDbOperation } from "@/packages/observability/server";
+import type { Database } from "@/packages/db/db";
 
 const BCRYPT_ROUNDS = 12;
 const safeUserColumns = {
@@ -32,6 +34,18 @@ const safeUserColumns = {
   updatedAt: schema.user.updatedAt,
 };
 
+async function readManagedTargets(
+  ctx: { db: Database },
+  ids: readonly string[],
+) {
+  return observeDbOperation("user.list", "select", () =>
+    ctx.db
+      .select({ level: schema.user.level, status: schema.user.status })
+      .from(schema.user)
+      .where(inArray(schema.user.id, [...ids])),
+  );
+}
+
 /**
  * 用户相关的 tRPC 路由。
  */
@@ -39,14 +53,16 @@ export const userRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ ctx, input }) => {
-      const [user] = await ctx.db
-        .select({
-          id: schema.user.id,
-          name: schema.user.name,
-        })
-        .from(schema.user)
-        .where(eq(schema.user.id, input.id))
-        .limit(1);
+      const [user] = await observeDbOperation("user.detail", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            name: schema.user.name,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, input.id))
+          .limit(1),
+      );
 
       return user ?? null;
     }),
@@ -58,29 +74,29 @@ export const userRouter = createTRPCRouter({
    *
    * @returns {Promise<{ id: string; email: string | null; level: UserLevel; name: string | null; status: schema.user.$inferSelect["status"] }>} 当前登录用户信息。
    */
-  current: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ]).query(async ({ ctx }) => {
-    const [user] = await ctx.db
-      .select({
-        id: schema.user.id,
-        email: schema.user.email,
-        level: schema.user.level,
-        name: schema.user.name,
-        status: schema.user.status,
-      })
-      .from(schema.user)
-      .where(eq(schema.user.id, ctx.user.id))
-      .limit(1);
+  current: permissionProcedure(Permission.userReadSelf).query(
+    async ({ ctx }) => {
+      const [user] = await observeDbOperation("user.current", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            email: schema.user.email,
+            level: schema.user.level,
+            name: schema.user.name,
+            status: schema.user.status,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, ctx.user.id))
+          .limit(1),
+      );
 
-    if (!user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
+      if (!user) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
 
-    return user;
-  }),
+      return user;
+    },
+  ),
 
   /**
    * 查询用户列表（支持分页、筛选、排序）。
@@ -89,7 +105,7 @@ export const userRouter = createTRPCRouter({
    * @param {UserListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: object[], total: number }>} 返回一个包含用户列表和总记录数的对象。
    */
-  index: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -104,27 +120,34 @@ export const userRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select({
-          id: schema.user.id,
-          email: schema.user.email,
-          level: schema.user.level,
-          name: schema.user.name,
-          status: schema.user.status,
-          createdAt: schema.user.createdAt,
-          updatedAt: schema.user.updatedAt,
-        })
-        .from(schema.user)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("user.list", "select", () =>
+        ctx.db
+          .select({
+            id: schema.user.id,
+            email: schema.user.email,
+            level: schema.user.level,
+            name: schema.user.name,
+            status: schema.user.status,
+            createdAt: schema.user.createdAt,
+            updatedAt: schema.user.updatedAt,
+          })
+          .from(schema.user)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.user)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "user.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.user)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -138,17 +161,19 @@ export const userRouter = createTRPCRouter({
    * @param {UserInsertSchema} input - 新用户的数据。
    * @returns {Promise<User>} 返回新创建的用户对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN])
+  create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const values = {
         ...input,
         password: await hash(input.password, BCRYPT_ROUNDS),
       };
-      const [newUser] = await ctx.db
-        .insert(schema.user)
-        .values(values as InferInsertModel<typeof schema.user>)
-        .returning(safeUserColumns);
+      const [newUser] = await observeDbOperation("user.create", "insert", () =>
+        ctx.db
+          .insert(schema.user)
+          .values(values as InferInsertModel<typeof schema.user>)
+          .returning(safeUserColumns),
+      );
       return newUser;
     }),
 
@@ -158,12 +183,16 @@ export const userRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的用户 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN])
+  destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.user)
-        .where(inArray(schema.user.id, input.ids));
+      const targets = await readManagedTargets(ctx, input.ids);
+      if (targets.some((target) => can(target.level, Permission.userManage))) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      await observeDbOperation("user.destroy", "delete", () =>
+        ctx.db.delete(schema.user).where(inArray(schema.user.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -175,21 +204,37 @@ export const userRouter = createTRPCRouter({
    * @param {UserUpdateSchema} input - 包含要更新的用户 ID 和新数据。
    * @returns {Promise<User>} 返回更新后的用户对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN])
+  update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
+      const [target] = await readManagedTargets(ctx, [id]);
+      if (
+        target &&
+        can(target.level, Permission.userManage) &&
+        (("level" in rest &&
+          rest.level &&
+          !can(rest.level, Permission.userManage)) ||
+          (rest.status !== undefined && rest.status !== target.status))
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
       const values = {
         ...rest,
         ...(rest.password
           ? { password: await hash(rest.password, BCRYPT_ROUNDS) }
           : {}),
       };
-      const [updatedUser] = await ctx.db
-        .update(schema.user)
-        .set(values as Partial<InferInsertModel<typeof schema.user>>)
-        .where(eq(schema.user.id, id))
-        .returning(safeUserColumns);
+      const [updatedUser] = await observeDbOperation(
+        "user.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.user)
+            .set(values as Partial<InferInsertModel<typeof schema.user>>)
+            .where(eq(schema.user.id, id))
+            .returning(safeUserColumns),
+      );
       return updatedUser;
     }),
 });

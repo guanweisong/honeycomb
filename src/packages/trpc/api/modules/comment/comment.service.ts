@@ -31,6 +31,7 @@ import {
 } from "./comment-target.service";
 import { notifyCommentCreated } from "./comment-notification.service";
 import { toPublicComment } from "./comment.dto";
+import { observeDbOperation } from "@/packages/observability/server";
 
 type CommentListInput = z.infer<typeof CommentListQuerySchema>;
 type DeleteBatchInput = z.infer<typeof DeleteBatchSchema>;
@@ -45,19 +46,26 @@ export async function listComments(db: Database, input: CommentListInput) {
     sortOrder as "asc" | "desc",
     "createdAt",
   );
-  const commentIds = await db
-    .select({ id: schema.comment.id })
-    .from(schema.comment)
-    .where(where)
-    .orderBy(orderBy)
-    .limit(limit)
-    .offset((page - 1) * limit);
+  const commentIds = await observeDbOperation(
+    "comment.service.ids",
+    "select",
+    () =>
+      db
+        .select({ id: schema.comment.id })
+        .from(schema.comment)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
+  );
   const ids = commentIds.map(({ id }) => id);
   const comments = ids.length
-    ? await db.query.comment.findMany({
-        where: inArray(schema.comment.id, ids),
-        with: { post: true, page: true },
-      })
+    ? await observeDbOperation("comment.service.list", "select", () =>
+        db.query.comment.findMany({
+          where: inArray(schema.comment.id, ids),
+          with: { post: true, page: true },
+        }),
+      )
     : [];
   const order = new Map(ids.map((id, index) => [id, index]));
   const ordered = comments.sort(
@@ -71,18 +79,22 @@ export async function listComments(db: Database, input: CommentListInput) {
     ),
   );
   const customPosts = customIds.length
-    ? await db
-        .select()
-        .from(schema.post)
-        .where(inArray(schema.post.id, customIds))
+    ? await observeDbOperation("comment.service.custom-posts", "select", () =>
+        db.select().from(schema.post).where(inArray(schema.post.id, customIds)),
+      )
     : [];
   const customPostMap = Object.fromEntries(
     customPosts.map((post) => [post.id, post]),
   );
-  const [countResult] = await db
-    .select({ count: sql<number>`count(*)`.as("count") })
-    .from(schema.comment)
-    .where(where);
+  const [countResult] = await observeDbOperation(
+    "comment.service.count",
+    "select",
+    () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.comment)
+        .where(where),
+  );
 
   return {
     list: ordered.map((comment) => ({
@@ -115,30 +127,40 @@ export async function listPublicCommentsByRef(
   } else {
     where = and(where, eq(schema.comment.customId, input.id));
   }
-  const result = await db.query.comment.findMany({
-    columns: {
-      id: true,
-      author: true,
-      content: true,
-      site: true,
-      email: true,
-      parentId: true,
-      status: true,
-      createdAt: true,
-    },
-    where,
-    orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)],
-  });
+  const result = await observeDbOperation(
+    "comment.service.public-list",
+    "select",
+    () =>
+      db.query.comment.findMany({
+        columns: {
+          id: true,
+          author: true,
+          content: true,
+          site: true,
+          email: true,
+          parentId: true,
+          status: true,
+          createdAt: true,
+        },
+        where,
+        orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)],
+      }),
+  );
   const list = result.length
     ? listToTree(result.map(toPublicComment), {
         idKey: "id",
         parentKey: "parentId",
       })
     : [];
-  const [countResult] = await db
-    .select({ count: sql<number>`count(*)`.as("count") })
-    .from(schema.comment)
-    .where(where);
+  const [countResult] = await observeDbOperation(
+    "comment.service.public-count",
+    "select",
+    () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.comment)
+        .where(where),
+  );
   return { list, total: Number(countResult?.count) || 0 };
 }
 
@@ -153,15 +175,20 @@ export async function createComment(
   if (comment.parentId) {
     await assertCommentParentMatches(db, comment.parentId, comment);
   }
-  const [created] = await db
-    .insert(schema.comment)
-    .values({
-      ...comment,
-      ip: headers.get("x-forwarded-for") ?? null,
-      userAgent: headers.get("user-agent") ?? null,
-      status: CommentStatus.PUBLISH,
-    })
-    .returning();
+  const [created] = await observeDbOperation(
+    "comment.service.create",
+    "insert",
+    () =>
+      db
+        .insert(schema.comment)
+        .values({
+          ...comment,
+          ip: headers.get("x-forwarded-for") ?? null,
+          userAgent: headers.get("user-agent") ?? null,
+          status: CommentStatus.PUBLISH,
+        })
+        .returning(),
+  );
   const currentComment = await notifyCommentCreated(
     db,
     created.id,
@@ -172,15 +199,22 @@ export async function createComment(
 
 export async function updateComment(db: Database, input: CommentUpdate) {
   const { id, ...changes } = input;
-  const [updated] = await db
-    .update(schema.comment)
-    .set(changes as Partial<InferInsertModel<typeof schema.comment>>)
-    .where(eq(schema.comment.id, id))
-    .returning();
+  const [updated] = await observeDbOperation(
+    "comment.service.update",
+    "update",
+    () =>
+      db
+        .update(schema.comment)
+        .set(changes as Partial<InferInsertModel<typeof schema.comment>>)
+        .where(eq(schema.comment.id, id))
+        .returning(),
+  );
   return updated;
 }
 
 export async function destroyComments(db: Database, input: DeleteBatchInput) {
-  await db.delete(schema.comment).where(inArray(schema.comment.id, input.ids));
+  await observeDbOperation("comment.service.destroy", "delete", () =>
+    db.delete(schema.comment).where(inArray(schema.comment.id, input.ids)),
+  );
   return { success: true };
 }

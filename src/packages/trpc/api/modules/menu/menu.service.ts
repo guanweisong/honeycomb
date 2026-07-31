@@ -8,14 +8,15 @@ import { MenuType } from "./types/menu.type";
 import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 export async function getMenuList(
   db: Database,
   visibility = ResourceVisibility.PUBLIC_ONLY,
 ) {
-  const menus = await db.query.menu.findMany({
-    orderBy: [asc(schema.menu.power)],
-  });
+  const menus = await observeDbOperation("menu.service.list", "select", () =>
+    db.query.menu.findMany({ orderBy: [asc(schema.menu.power)] }),
+  );
   const categoryIds = menus
     .filter((menu) => menu.type === MenuType.CATEGORY && menu.categoryId)
     .map((menu) => menu.categoryId as string);
@@ -25,37 +26,41 @@ export async function getMenuList(
 
   const [categories, pages] = await Promise.all([
     categoryIds.length
-      ? db
-          .select({
-            id: schema.category.id,
-            title: schema.category.title,
-            path: schema.category.path,
-          })
-          .from(schema.category)
-          .where(
-            visibility === ResourceVisibility.ALL
-              ? inArray(schema.category.id, categoryIds)
-              : and(
-                  inArray(schema.category.id, categoryIds),
-                  eq(schema.category.status, EnableStatus.ENABLE),
-                ),
-          )
+      ? observeDbOperation("menu.service.categories", "select", () =>
+          db
+            .select({
+              id: schema.category.id,
+              title: schema.category.title,
+              path: schema.category.path,
+            })
+            .from(schema.category)
+            .where(
+              visibility === ResourceVisibility.ALL
+                ? inArray(schema.category.id, categoryIds)
+                : and(
+                    inArray(schema.category.id, categoryIds),
+                    eq(schema.category.status, EnableStatus.ENABLE),
+                  ),
+            ),
+        )
       : Promise.resolve([]),
     pageIds.length
-      ? db
-          .select({
-            id: schema.page.id,
-            title: schema.page.title,
-          })
-          .from(schema.page)
-          .where(
-            visibility === ResourceVisibility.ALL
-              ? inArray(schema.page.id, pageIds)
-              : and(
-                  inArray(schema.page.id, pageIds),
-                  eq(schema.page.status, PageStatus.PUBLISHED),
-                ),
-          )
+      ? observeDbOperation("menu.service.pages", "select", () =>
+          db
+            .select({
+              id: schema.page.id,
+              title: schema.page.title,
+            })
+            .from(schema.page)
+            .where(
+              visibility === ResourceVisibility.ALL
+                ? inArray(schema.page.id, pageIds)
+                : and(
+                    inArray(schema.page.id, pageIds),
+                    eq(schema.page.status, PageStatus.PUBLISHED),
+                  ),
+            ),
+        )
       : Promise.resolve([]),
   ]);
 
@@ -125,9 +130,7 @@ export async function getMenuList(
 
     return {
       id,
-      parent: menu.parent
-        ? (businessIdByRowId.get(menu.parent) ?? null)
-        : null,
+      parent: menu.parent ? (businessIdByRowId.get(menu.parent) ?? null) : null,
       power: menu.power,
       type: menu.type,
       createdAt: menu.createdAt,

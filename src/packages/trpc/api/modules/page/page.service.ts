@@ -11,6 +11,7 @@ import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLi
 import { PageListQueryInput } from "./schemas/page.list.query.schema";
 import { PageStatus } from "./types/page.status";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 type AuthorRef = {
   id: string;
@@ -21,7 +22,7 @@ type PageRow = typeof schema.page.$inferSelect;
 
 export type PageWithRelations = PageRow & {
   author: AuthorRef | null;
-  imagesInContent: typeof schema.media.$inferSelect[];
+  imagesInContent: (typeof schema.media.$inferSelect)[];
 };
 
 async function loadPageImages(db: Database, pages: PageRow[]) {
@@ -35,10 +36,9 @@ async function loadPageImages(db: Database, pages: PageRow[]) {
     return new Map<string, typeof schema.media.$inferSelect>();
   }
 
-  const medias = await db
-    .select()
-    .from(schema.media)
-    .where(inArray(schema.media.url, uniqueUrls));
+  const medias = await observeDbOperation("page.service.images", "select", () =>
+    db.select().from(schema.media).where(inArray(schema.media.url, uniqueUrls)),
+  );
 
   return new Map(medias.map((media) => [media.url, media]));
 }
@@ -50,20 +50,22 @@ export async function mapPagesWithRelations(
   if (!pages.length) return [];
 
   const [relationRows, imageMap] = await Promise.all([
-    db.query.page.findMany({
-      where: inArray(
-        schema.page.id,
-        pages.map((page) => page.id),
-      ),
-      with: {
-        author: {
-          columns: {
-            id: true,
-            name: true,
+    observeDbOperation("page.service.relations", "select", () =>
+      db.query.page.findMany({
+        where: inArray(
+          schema.page.id,
+          pages.map((page) => page.id),
+        ),
+        with: {
+          author: {
+            columns: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    }),
+      }),
+    ),
     loadPageImages(db, pages),
   ]);
 
@@ -118,19 +120,26 @@ export async function getPageList(
     "createdAt",
   );
 
-  const list = await db
-    .select()
-    .from(schema.page)
-    .where(where)
-    .orderBy(orderByClause)
-    .limit(limit)
-    .offset((page - 1) * limit);
+  const list = await observeDbOperation("page.service.list", "select", () =>
+    db
+      .select()
+      .from(schema.page)
+      .where(where)
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset((page - 1) * limit),
+  );
 
   const mapped = await mapPagesWithRelations(db, list);
-  const [countResult] = await db
-    .select({ count: sql<number>`count(*)`.as("count") })
-    .from(schema.page)
-    .where(where);
+  const [countResult] = await observeDbOperation(
+    "page.service.count",
+    "select",
+    () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.page)
+        .where(where),
+  );
   const total = Number(countResult?.count) || 0;
 
   return { list: mapped, total };
@@ -142,28 +151,32 @@ export async function getPageDetail(
   visibility = ContentVisibility.PUBLISHED_ONLY,
 ) {
   const idFilter = eq(schema.page.id, id);
-  const page = await db.query.page.findFirst({
-    where:
-      visibility === ContentVisibility.ALL
-        ? idFilter
-        : and(idFilter, eq(schema.page.status, PageStatus.PUBLISHED)),
-    with: {
-      author: {
-        columns: {
-          id: true,
-          name: true,
+  const page = await observeDbOperation("page.service.detail", "select", () =>
+    db.query.page.findFirst({
+      where:
+        visibility === ContentVisibility.ALL
+          ? idFilter
+          : and(idFilter, eq(schema.page.status, PageStatus.PUBLISHED)),
+      with: {
+        author: {
+          columns: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-  });
+    }),
+  );
   if (!page) return null;
 
   const imageUrls = getAllImageLinkFormHtml(page?.content?.zh);
   const imagesInContent = imageUrls.length
-    ? await db
-        .select()
-        .from(schema.media)
-        .where(inArray(schema.media.url, imageUrls))
+    ? await observeDbOperation("page.service.detail-images", "select", () =>
+        db
+          .select()
+          .from(schema.media)
+          .where(inArray(schema.media.url, imageUrls)),
+      )
     : [];
 
   return {
@@ -174,12 +187,17 @@ export async function getPageDetail(
 }
 
 export async function getPageAuthorById(db: Database, authorId: string) {
-  const [author] = await db
-    .select({
-      id: schema.user.id,
-      name: schema.user.name,
-    })
-    .from(schema.user)
-    .where(eq(schema.user.id, authorId));
+  const [author] = await observeDbOperation(
+    "page.service.author",
+    "select",
+    () =>
+      db
+        .select({
+          id: schema.user.id,
+          name: schema.user.name,
+        })
+        .from(schema.user)
+        .where(eq(schema.user.id, authorId)),
+  );
   return author ?? null;
 }

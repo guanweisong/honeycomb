@@ -1,6 +1,10 @@
 import "server-only";
 
-import { protectedProcedure, createTRPCRouter } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
+import {
+  permissionProcedure,
+  createTRPCRouter,
+} from "@/packages/trpc/api/core";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -15,7 +19,7 @@ import S3 from "@/packages/trpc/api/utils/S3";
 import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 媒体文件相关的 tRPC 路由。
@@ -27,11 +31,7 @@ export const mediaRouter = createTRPCRouter({
    * @param {MediaListQuerySchema} input - 查询参数。
    * @returns {Promise<{ list: object[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
    */
-  index: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
     .query(async ({ input, ctx }) => {
       const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
@@ -46,19 +46,26 @@ export const mediaRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.media)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("media.list", "select", () =>
+        ctx.db
+          .select()
+          .from(schema.media)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.media)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "media.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.media)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -67,7 +74,7 @@ export const mediaRouter = createTRPCRouter({
   /**
    * 获取预签名上传 URL。
    */
-  getPresignedUrl: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(
       z.object({
         name: requiredString("文件名不能为空"),
@@ -96,7 +103,7 @@ export const mediaRouter = createTRPCRouter({
    * @param {MediaInsertSchema} input - 包含文件信息的对象。
    * @returns {Promise<schema>} 返回创建后的媒体对象。
    */
-  upload: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const { name, size, type, key, width, height, color } = input;
@@ -116,10 +123,9 @@ export const mediaRouter = createTRPCRouter({
       };
 
       // 插入数据库
-      const [result] = await ctx.db
-        .insert(schema.media)
-        .values(data)
-        .returning();
+      const [result] = await observeDbOperation("media.create", "insert", () =>
+        ctx.db.insert(schema.media).values(data).returning(),
+      );
 
       return result;
     }),
@@ -130,25 +136,32 @@ export const mediaRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的媒体文件 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
       const { ids } = input;
 
       // 1. 根据 IDs 从数据库中找出要删除的媒体对象
-      const mediaToDelete = await ctx.db
-        .select({
-          key: schema.media.key,
-        })
-        .from(schema.media)
-        .where(inArray(schema.media.id, ids));
+      const mediaToDelete = await observeDbOperation(
+        "media.destroy.select",
+        "select",
+        () =>
+          ctx.db
+            .select({
+              key: schema.media.key,
+            })
+            .from(schema.media)
+            .where(inArray(schema.media.id, ids)),
+      );
 
       const keysToDelete = mediaToDelete
         .map((item) => item.key)
         .filter((key): key is string => !!key);
 
       // 2. 从数据库中删除记录
-      await ctx.db.delete(schema.media).where(inArray(schema.media.id, ids));
+      await observeDbOperation("media.destroy.delete", "delete", () =>
+        ctx.db.delete(schema.media).where(inArray(schema.media.id, ids)),
+      );
 
       // 3. 从 S3 中删除文件
       if (keysToDelete.length > 0) {

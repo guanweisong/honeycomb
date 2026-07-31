@@ -1,16 +1,17 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
 import * as schema from "@/packages/db/schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
 import { getMenuList } from "@/packages/trpc/api/modules/menu/menu.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 菜单相关的 tRPC 路由。
@@ -32,11 +33,9 @@ export const menuRouter = createTRPCRouter({
     getMenuList(ctx.db, ResourceVisibility.PUBLIC_ONLY),
   ),
 
-  adminIndex: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ]).query(({ ctx }) => getMenuList(ctx.db, ResourceVisibility.ALL)),
+  adminIndex: permissionProcedure(Permission.menuReadAll).query(({ ctx }) =>
+    getMenuList(ctx.db, ResourceVisibility.ALL),
+  ),
 
   /**
    * 覆盖式保存整个菜单结构。
@@ -45,35 +44,37 @@ export const menuRouter = createTRPCRouter({
    * @param {MenuUpdateSchema} input - 一个包含所有菜单项的数组。
    * @returns {Promise<{ count: number }>} 返回新插入的菜单项数量。
    */
-  saveAll: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  saveAll: permissionProcedure(Permission.menuUpdate)
     .input(MenuUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      return ctx.db.transaction(async (tx) => {
-        await tx.delete(schema.menu);
+      return observeDbOperation("menu.save-all", "transaction", () =>
+        ctx.db.transaction(async (tx) => {
+          await tx.delete(schema.menu);
 
-        if (!input.length) {
-          return { count: 0 };
-        }
+          if (!input.length) {
+            return { count: 0 };
+          }
 
-        const rowIdByBusinessId = new Map(
-          input.map((item) => [item.id, crypto.randomUUID()]),
-        );
+          const rowIdByBusinessId = new Map(
+            input.map((item) => [item.id, crypto.randomUUID()]),
+          );
 
-        const newMenu = await tx
-          .insert(schema.menu)
-          .values(
-            input.map(({ id, type, parent, power }) => ({
-              id: rowIdByBusinessId.get(id)!,
-              parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
-              power,
-              type,
-              categoryId: type === MenuType.CATEGORY ? id : null,
-              pageId: type === MenuType.PAGE ? id : null,
-              customId: type === MenuType.CUSTOM ? id : null,
-            })),
-          )
-          .returning();
-        return { count: newMenu.length };
-      });
+          const newMenu = await tx
+            .insert(schema.menu)
+            .values(
+              input.map(({ id, type, parent, power }) => ({
+                id: rowIdByBusinessId.get(id)!,
+                parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
+                power,
+                type,
+                categoryId: type === MenuType.CATEGORY ? id : null,
+                pageId: type === MenuType.PAGE ? id : null,
+                customId: type === MenuType.CUSTOM ? id : null,
+              })),
+            )
+            .returning();
+          return { count: newMenu.length };
+        }),
+      );
     }),
 });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createContext } from "./context";
+import { createContext, type CreateContextOptions } from "./context";
 
 /**
  * 创建 tRPC 上下文的工厂函数
@@ -20,6 +20,6 @@ import { createContext } from "./context";
  *     createContext: () => createTrpcContext({ req }),
  *   });
  */
-export const createTrpcContext = async (opts?: { req?: Request }) => {
+export const createTrpcContext = async (opts: CreateContextOptions = {}) => {
   return createContext(opts ?? {});
 };

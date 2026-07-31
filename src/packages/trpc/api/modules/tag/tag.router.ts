@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -15,7 +16,7 @@ import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.ins
 import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 标签相关的 tRPC 路由。
@@ -52,19 +53,26 @@ export const tagRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await ctx.db
-        .select()
-        .from(schema.tag)
-        .where(where)
-        .orderBy(orderByClause)
-        .limit(limit)
-        .offset((page - 1) * limit);
+      const list = await observeDbOperation("tag.list", "select", () =>
+        ctx.db
+          .select()
+          .from(schema.tag)
+          .where(where)
+          .orderBy(orderByClause)
+          .limit(limit)
+          .offset((page - 1) * limit),
+      );
 
       // 查询总数
-      const [countResult] = await ctx.db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.tag)
-        .where(where);
+      const [countResult] = await observeDbOperation(
+        "tag.count",
+        "select",
+        () =>
+          ctx.db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.tag)
+            .where(where),
+      );
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -76,13 +84,15 @@ export const tagRouter = createTRPCRouter({
    * @param {TagInsertSchema} input - 新标签的数据。
    * @returns {Promise<Tag>} 返回新创建的标签对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: permissionProcedure(Permission.tagCreate)
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const [newTag] = await ctx.db
-        .insert(schema.tag)
-        .values(input as InferInsertModel<typeof schema.tag>)
-        .returning();
+      const [newTag] = await observeDbOperation("tag.create", "insert", () =>
+        ctx.db
+          .insert(schema.tag)
+          .values(input as InferInsertModel<typeof schema.tag>)
+          .returning(),
+      );
       return newTag;
     }),
 
@@ -92,10 +102,12 @@ export const tagRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的标签 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN])
+  destroy: permissionProcedure(Permission.tagDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids));
+      await observeDbOperation("tag.destroy", "delete", () =>
+        ctx.db.delete(schema.tag).where(inArray(schema.tag.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -105,15 +117,20 @@ export const tagRouter = createTRPCRouter({
    * @param {TagUpdateSchema} input - 包含要更新的标签 ID 和新数据。
    * @returns {Promise<Tag>} 返回更新后的标签对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: permissionProcedure(Permission.tagUpdate)
     .input(TagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedTag] = await ctx.db
-        .update(schema.tag)
-        .set(rest as Partial<InferInsertModel<typeof schema.tag>>)
-        .where(eq(schema.tag.id, id))
-        .returning();
+      const [updatedTag] = await observeDbOperation(
+        "tag.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.tag)
+            .set(rest as Partial<InferInsertModel<typeof schema.tag>>)
+            .where(eq(schema.tag.id, id))
+            .returning(),
+      );
       return updatedTag;
     }),
 });

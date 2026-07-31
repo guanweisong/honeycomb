@@ -1,6 +1,41 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "path";
 
+const criticalCoverageFiles = [
+  "src/packages/auth/permissions.ts",
+  "src/env/client-schema.ts",
+  "src/env/client.ts",
+  "src/env/schema.ts",
+  "src/env/server.ts",
+  "src/env/validation.ts",
+  "src/app/sitemap-data.ts",
+  "src/app/sitemap.xml/route.ts",
+  "src/app/sitemaps/[id]/route.ts",
+  "src/packages/trpc/api/utils/upstash-cache.ts",
+  "src/packages/observability/client.ts",
+  "src/packages/observability/adapters/console.ts",
+  "src/packages/observability/adapters/memory.ts",
+  "src/packages/observability/adapters/noop.ts",
+  "src/packages/observability/core/contracts.ts",
+  "src/packages/observability/core/metric-label-values.ts",
+  "src/packages/observability/core/names.ts",
+  "src/packages/observability/core/safe-adapters.ts",
+  "src/packages/observability/core/sanitize.ts",
+  "src/packages/observability/server/database-operation.ts",
+  "src/packages/observability/server/external-service-operation.ts",
+  "src/packages/observability/server/index.ts",
+  "src/packages/observability/server/node-request-context.ts",
+  "src/packages/observability/server/registry.ts",
+  "src/packages/observability/server/request-context.ts",
+] as const;
+
+const criticalCoverageThresholds = Object.fromEntries(
+  criticalCoverageFiles.map((file) => [
+    file,
+    { statements: 90, lines: 90, branches: 80 },
+  ]),
+);
+
 export default defineConfig({
   test: {
     globals: true,
@@ -16,14 +51,30 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
-        "node_modules",
-        "dist",
-        ".next",
-        "**/*.test.ts",
-        "**/*.spec.ts",
+        // TypeScript declarations contain contracts but no executable behavior.
+        "**/*.d.ts",
+        // Tests are evidence, not production code in the coverage denominator.
+        "**/*.test.{ts,tsx}",
+        "**/*.spec.{ts,tsx}",
+        // This thin service-worker entry is exercised only by the real offline E2E.
+        "src/app/sw.ts",
+        // These files are unmodified shadcn primitives; extended/business UI stays covered.
+        "src/packages/ui/components/**",
+        // Cross-module tests and fixtures are never production sources.
         "tests/**",
       ],
+      thresholds: {
+        statements: 70,
+        lines: 70,
+        functions: 65,
+        branches: 60,
+        // Vitest 4.1 applies top-level `perFile` to global thresholds too.
+        // Exact single-file patterns provide critical per-file gates without
+        // incorrectly imposing the global aggregate thresholds on every file.
+        ...criticalCoverageThresholds,
+      },
     },
   },
   resolve: {

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
 import type { Database } from "@/packages/db/db";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 构建分类筛选条件（包括子分类）
@@ -12,9 +13,14 @@ export async function buildCategoryFilter(
   db: Database,
   categoryId: string,
 ): Promise<string[]> {
-  const subCategories = await db
-    .select()
-    .from(schema.category)
-    .where(eq(schema.category.parent, categoryId));
+  const subCategories = await observeDbOperation(
+    "post.service.category-tree",
+    "select",
+    () =>
+      db
+        .select()
+        .from(schema.category)
+        .where(eq(schema.category.parent, categoryId)),
+  );
   return [categoryId, ...subCategories.map((c: { id: string }) => c.id)];
 }

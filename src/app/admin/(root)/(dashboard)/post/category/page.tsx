@@ -12,12 +12,17 @@ import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 文章分类管理页面。
  * 该组件负责展示文章分类列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const Category = () => {
+  const canCreateCategory = useCan(Permission.categoryCreate);
+  const canUpdateCategory = useCan(Permission.categoryUpdate);
+  const canDeleteCategory = useCan(Permission.categoryDelete);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `CategoryEntity` 数组。
@@ -48,13 +53,10 @@ const Category = () => {
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
   const { data, isFetching, isError, refetch } =
-    trpc.category.adminIndex.useQuery(
-      searchParams,
-      {
-        placeholderData: keepPreviousData,
-        staleTime: 60 * 1000, // 1 minutes
-      },
-    );
+    trpc.category.adminIndex.useQuery(searchParams, {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    });
   /**
    * 删除分类的 tRPC mutation。
    * 用于执行删除操作。
@@ -119,52 +121,60 @@ const Category = () => {
         pagination={false}
         isFetching={isFetching}
         error={isError}
-        selectableRows={true}
+        selectableRows={canDeleteCategory}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
             <div className="flex gap-1">
-              <Button onClick={handleAddNew} variant="outline">
-                <Plus />
-                添加新分类
-              </Button>
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
+              {canCreateCategory && (
+                <Button onClick={handleAddNew} variant="outline">
+                  <Plus />
+                  添加新分类
+                </Button>
+              )}
+              {canDeleteCategory && (
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              )}
             </div>
           </div>
         }
         rowActions={(row) => (
           <div className="flex gap-1">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => handleEditItem(row)}
-            >
-              <Pencil />
-            </Button>
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
+            {canUpdateCategory && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleEditItem(row)}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {canDeleteCategory && (
+              <Dialog
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Trash />
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={() => handleDeleteItem([row.id])}
+              />
+            )}
           </div>
         )}
       />

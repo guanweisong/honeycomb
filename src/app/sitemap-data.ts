@@ -3,6 +3,8 @@ import { unstable_cache } from "next/cache";
 import { getServerEnv } from "@/env/server";
 import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { LogEvent } from "@/packages/observability/core/names";
+import { getLogger } from "@/packages/observability/server";
 
 export const SITEMAP_BATCH_SIZE = 1000;
 export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
@@ -131,7 +133,11 @@ export const getCachedSitemapShardCount = unstable_cache(
 );
 
 export function reportSitemapError(error: unknown) {
-  console.error("[sitemap] dynamic sitemap generation failed", error);
+  getLogger().error(LogEvent.serverError, {
+    operation: "sitemap.generate",
+    outcome: "error",
+    error,
+  });
 }
 
 function escapeXml(value: string) {

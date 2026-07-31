@@ -16,12 +16,17 @@ import {
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
 import { keepPreviousData } from "@tanstack/react-query";
+import { Permission } from "@/packages/auth/permissions";
+import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**
  * 文章列表管理页面。
  * 该组件负责展示文章列表，并提供搜索、新增、编辑、删除等管理功能。
  */
 const PostList = () => {
+  const canCreatePost = useCan(Permission.postCreate);
+  const canUpdatePost = useCan(Permission.postUpdate);
+  const canDeletePost = useCan(Permission.postDelete);
   /**
    * 存储用户在表格中选中的行。
    * 类型为 `PostListItemEntity` 数组。
@@ -89,34 +94,38 @@ const PostList = () => {
         columns={postListTableColumns}
         isFetching={isFetching}
         error={isError}
-        selectableRows={true}
+        selectableRows={canDeletePost}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         toolBar={
           <div className="flex justify-between">
             {/* 工具栏左侧：新增和批量删除按钮 */}
             <div className="flex gap-1">
-              <Button
-                onClick={() => router.push("/admin/post/edit")}
-                variant="outline"
-              >
-                <Plus />
-                添加新文章
-              </Button>
-              <Dialog
-                trigger={
-                  <Button
-                    variant="outline"
-                    disabled={selectedRows.length === 0}
-                  >
-                    <Trash />
-                    批量删除
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
+              {canCreatePost && (
+                <Button
+                  onClick={() => router.push("/admin/post/edit")}
+                  variant="outline"
+                >
+                  <Plus />
+                  添加新文章
+                </Button>
+              )}
+              {canDeletePost && (
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              )}
             </div>
             {/* 工具栏右侧：搜索表单 */}
             <div className="flex gap-1">
@@ -142,23 +151,27 @@ const PostList = () => {
         rowActions={(row) => (
           // 每行右侧的操作按钮：编辑和删除
           <div className="flex gap-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
-            >
-              <Pencil />
-            </Button>
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
+            {canUpdatePost && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {canDeletePost && (
+              <Dialog
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Trash />
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={() => handleDeleteItem([row.id])}
+              />
+            )}
           </div>
         )}
       />

@@ -1,4 +1,8 @@
 import { trpc } from "@/packages/trpc/client/trpc";
+import {
+  can,
+  type Permission as PermissionValue,
+} from "@/packages/auth/permissions";
 
 /**
  * 后台当前用户 Hook。
@@ -20,4 +24,9 @@ export const useCurrentUser = () => {
     isLoading,
     refreshUser: refetch,
   };
+};
+
+export const useCan = (permission: PermissionValue): boolean => {
+  const { user } = useCurrentUser();
+  return can(user?.level, permission);
 };

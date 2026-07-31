@@ -1,10 +1,11 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
@@ -13,7 +14,6 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/db/schema";
 import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 import {
   getPageAuthorById,
@@ -23,6 +23,7 @@ import {
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
 import { TRPCError } from "@trpc/server";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 独立页面相关的 tRPC 路由。
@@ -39,11 +40,7 @@ export const pageRouter = createTRPCRouter({
       getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminIndex: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
       getPageList(ctx.db, input, ContentVisibility.ALL),
@@ -66,11 +63,7 @@ export const pageRouter = createTRPCRouter({
       getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY),
     ),
 
-  adminDetail: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) =>
       getPageDetail(ctx.db, input.id, ContentVisibility.ALL),
@@ -82,21 +75,23 @@ export const pageRouter = createTRPCRouter({
    * @param {PageInsertSchema} input - 新页面的数据。
    * @returns {Promise<Page>} 返回新创建的页面对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const authorId = ctx.user?.id;
-      const [newPage] = await ctx.db
-        .insert(schema.page)
-        .values({
-          ...input,
-          content: {
-            en: sanitizeRichText(input.content.en),
-            zh: sanitizeRichText(input.content.zh),
-          },
-          authorId,
-        } as InferInsertModel<typeof schema.page>)
-        .returning();
+      const [newPage] = await observeDbOperation("page.create", "insert", () =>
+        ctx.db
+          .insert(schema.page)
+          .values({
+            ...input,
+            content: {
+              en: sanitizeRichText(input.content.en),
+              zh: sanitizeRichText(input.content.zh),
+            },
+            authorId,
+          } as InferInsertModel<typeof schema.page>)
+          .returning(),
+      );
       return newPage;
     }),
 
@@ -106,12 +101,14 @@ export const pageRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的页面 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.page)
-        .where(inArray(schema.page.id, input.ids as string[]));
+      await observeDbOperation("page.destroy", "delete", () =>
+        ctx.db
+          .delete(schema.page)
+          .where(inArray(schema.page.id, input.ids as string[])),
+      );
       return { success: true };
     }),
 
@@ -121,7 +118,7 @@ export const pageRouter = createTRPCRouter({
    * @param {PageUpdateSchema} input - 包含要更新的页面 ID 和新数据。
    * @returns {Promise<object>} 返回更新后的页面对象（已附加作者信息）。
    */
-  update: protectedProcedure([UserLevel.ADMIN, UserLevel.EDITOR])
+  update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
@@ -134,11 +131,16 @@ export const pageRouter = createTRPCRouter({
           zh: sanitizeRichText(rest.content.zh),
         };
       }
-      const [updatedPage] = await ctx.db
-        .update(schema.page)
-        .set(nextValues)
-        .where(eq(schema.page.id, id))
-        .returning();
+      const [updatedPage] = await observeDbOperation(
+        "page.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.page)
+            .set(nextValues)
+            .where(eq(schema.page.id, id))
+            .returning(),
+      );
 
       const author = updatedPage.authorId
         ? await getPageAuthorById(ctx.db, updatedPage.authorId)
@@ -156,18 +158,23 @@ export const pageRouter = createTRPCRouter({
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ ctx, input }) => {
-      const [updatedPage] = await ctx.db
-        .update(schema.page)
-        .set({
-          views: sql`${schema.page.views} + 1`,
-        })
-        .where(
-          and(
-            eq(schema.page.id, input.id),
-            eq(schema.page.status, PageStatus.PUBLISHED),
-          ),
-        )
-        .returning({ views: schema.page.views });
+      const [updatedPage] = await observeDbOperation(
+        "page.increment-views",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.page)
+            .set({
+              views: sql`${schema.page.views} + 1`,
+            })
+            .where(
+              and(
+                eq(schema.page.id, input.id),
+                eq(schema.page.status, PageStatus.PUBLISHED),
+              ),
+            )
+            .returning({ views: schema.page.views }),
+      );
 
       if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
       return updatedPage;

@@ -1,5 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { validateCaptcha } from "./validateCaptcha";
+import { createMemoryObservability } from "@/packages/observability/adapters/memory";
+import { MetricName } from "@/packages/observability/core/names";
+import { configureObservability } from "@/packages/observability/server";
 
 describe("validateCaptcha", () => {
   const fetchMock = vi.fn();
@@ -14,6 +17,7 @@ describe("validateCaptcha", () => {
   });
 
   afterEach(() => {
+    configureObservability();
     vi.unstubAllGlobals();
     process.env.TURNSTILE_SECRET_KEY = originalSecret;
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = originalSiteKey;
@@ -36,6 +40,8 @@ describe("validateCaptcha", () => {
   });
 
   it("rejects when the verification service returns a failure", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -48,18 +54,38 @@ describe("validateCaptcha", () => {
       code: "BAD_REQUEST",
       message: "验证码不正确 (errors: invalid-input-response)",
     });
+    expect(memory.metricEvents.map(({ name }) => name)).toEqual([
+      MetricName.externalServiceOperationsTotal,
+      MetricName.externalServiceErrorsTotal,
+      MetricName.externalServiceOperationDurationMs,
+    ]);
   });
 
   it("rejects when the verification request fails", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
     fetchMock.mockRejectedValue(new Error("network down"));
 
     await expect(validateCaptcha("token")).rejects.toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
       message: "验证码服务出现问题。",
     });
+    expect(memory.metricEvents.map(({ name }) => name)).toEqual([
+      MetricName.externalServiceOperationsTotal,
+      MetricName.externalServiceErrorsTotal,
+      MetricName.externalServiceOperationDurationMs,
+    ]);
+    expect(memory.metricEvents.every((event) =>
+      event.labels.service === "captcha" &&
+      event.labels.operation === "validate" &&
+      event.labels.outcome === "error"
+    )).toBe(true);
+    expect(JSON.stringify(memory.metricEvents)).not.toContain("token");
   });
 
   it("resolves when the verification succeeds", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -68,5 +94,9 @@ describe("validateCaptcha", () => {
     });
 
     await expect(validateCaptcha("token")).resolves.toBeUndefined();
+    expect(memory.metricEvents.map(({ name }) => name)).toEqual([
+      MetricName.externalServiceOperationsTotal,
+      MetricName.externalServiceOperationDurationMs,
+    ]);
   });
 });

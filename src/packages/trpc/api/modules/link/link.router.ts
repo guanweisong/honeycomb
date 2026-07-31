@@ -1,19 +1,20 @@
 import "server-only";
 
 import {
-  protectedProcedure,
+  permissionProcedure,
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
+import { Permission } from "@/packages/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { LinkListQuerySchema } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, InferInsertModel } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
 import { getLinkList } from "@/packages/trpc/api/modules/link/link.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 /**
  * 友情链接相关的 tRPC 路由。
@@ -30,11 +31,7 @@ export const linkRouter = createTRPCRouter({
       getLinkList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
     ),
 
-  adminIndex: protectedProcedure([
-    UserLevel.ADMIN,
-    UserLevel.EDITOR,
-    UserLevel.GUEST,
-  ])
+  adminIndex: permissionProcedure(Permission.linkReadAll)
     .input(LinkListQuerySchema)
     .query(({ input, ctx }) =>
       getLinkList(ctx.db, input, ResourceVisibility.ALL),
@@ -46,13 +43,15 @@ export const linkRouter = createTRPCRouter({
    * @param {LinkInsertSchema} input - 新链接的数据。
    * @returns {Promise<Link>} 返回新创建的链接对象。
    */
-  create: protectedProcedure([UserLevel.ADMIN])
+  create: permissionProcedure(Permission.linkCreate)
     .input(LinkInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const [newLink] = await ctx.db
-        .insert(schema.link)
-        .values(input as InferInsertModel<typeof schema.link>)
-        .returning();
+      const [newLink] = await observeDbOperation("link.create", "insert", () =>
+        ctx.db
+          .insert(schema.link)
+          .values(input as InferInsertModel<typeof schema.link>)
+          .returning(),
+      );
       return newLink;
     }),
 
@@ -62,12 +61,12 @@ export const linkRouter = createTRPCRouter({
    * @param {DeleteBatchSchema} input - 包含要删除的链接 ID 数组。
    * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
    */
-  destroy: protectedProcedure([UserLevel.ADMIN])
+  destroy: permissionProcedure(Permission.linkDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      await ctx.db
-        .delete(schema.link)
-        .where(inArray(schema.link.id, input.ids));
+      await observeDbOperation("link.destroy", "delete", () =>
+        ctx.db.delete(schema.link).where(inArray(schema.link.id, input.ids)),
+      );
       return { success: true };
     }),
 
@@ -77,15 +76,20 @@ export const linkRouter = createTRPCRouter({
    * @param {LinkUpdateSchema} input - 包含要更新的链接 ID 和新数据。
    * @returns {Promise<Link>} 返回更新后的链接对象。
    */
-  update: protectedProcedure([UserLevel.ADMIN])
+  update: permissionProcedure(Permission.linkUpdate)
     .input(LinkUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
-      const [updatedLink] = await ctx.db
-        .update(schema.link)
-        .set(rest as Partial<InferInsertModel<typeof schema.link>>)
-        .where(eq(schema.link.id, id))
-        .returning();
+      const [updatedLink] = await observeDbOperation(
+        "link.update",
+        "update",
+        () =>
+          ctx.db
+            .update(schema.link)
+            .set(rest as Partial<InferInsertModel<typeof schema.link>>)
+            .where(eq(schema.link.id, id))
+            .returning(),
+      );
       return updatedLink;
     }),
 });

@@ -11,6 +11,7 @@ import Tools from "@/packages/trpc/api/utils/tools";
 import type { CategoryListQueryInput } from "./schemas/category.list.query.schema";
 import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
+import { observeDbOperation } from "@/packages/observability/server";
 
 export async function getCategoryList(
   db: Database,
@@ -48,17 +49,24 @@ export async function getCategoryList(
     sortOrder as "asc" | "desc",
     "createdAt",
   );
-  const list = await db
-    .select()
-    .from(schema.category)
-    .where(where)
-    .orderBy(orderBy)
-    .limit(limit)
-    .offset((page - 1) * limit);
-  const [countResult] = await db
-    .select({ count: sql<number>`count(*)`.as("count") })
-    .from(schema.category)
-    .where(where);
+  const list = await observeDbOperation("category.service.list", "select", () =>
+    db
+      .select()
+      .from(schema.category)
+      .where(where)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset((page - 1) * limit),
+  );
+  const [countResult] = await observeDbOperation(
+    "category.service.count",
+    "select",
+    () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.category)
+        .where(where),
+  );
 
   return {
     list: Tools.sonsTree(list, id),

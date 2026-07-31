@@ -1,8 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+import {
+  createR2PresignedUploadUrl,
+  resolveAssetOrigin,
+  resolveR2UploadOrigin,
+} from "./security-headers-config";
+
 const VERCEL_SCRIPT_ORIGIN = "https://va.vercel-scripts.com";
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
-const ASSET_ORIGIN = "https://assets.honeycomb.test";
+const CONFIGURED_ASSET_URL =
+  process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test";
+const ASSET_ORIGIN = resolveAssetOrigin(CONFIGURED_ASSET_URL);
+const CONFIGURED_R2_ACCOUNT_ID =
+  process.env.R2_ACCOUNT_ID ?? "0123456789abcdef0123456789abcdef";
+const R2_UPLOAD_ORIGIN = resolveR2UploadOrigin(CONFIGURED_R2_ACCOUNT_ID);
+const R2_UPLOAD_BUCKET = "playwright-bucket";
+const R2_UPLOAD_KEY = "csp-probe";
 
 function getCsp(headers: Record<string, string>) {
   const enforced = headers["content-security-policy"];
@@ -12,6 +25,15 @@ function getCsp(headers: Record<string, string>) {
   expect(Boolean(enforced) && Boolean(reportOnly)).toBe(false);
 
   return enforced ?? reportOnly ?? "";
+}
+
+function getDirectiveSources(csp: string, name: string) {
+  const directive = csp
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(`${name} `));
+
+  return directive?.split(/\s+/).slice(1) ?? [];
 }
 
 test.describe("security response headers", () => {
@@ -43,6 +65,9 @@ test.describe("security response headers", () => {
     const blogCsp = getCsp(blog.headers());
     expect(blogCsp).toContain("worker-src 'self' blob:");
     expect(blogCsp).toContain("manifest-src 'self'");
+    expect(getDirectiveSources(blogCsp, "connect-src")).toContain(
+      R2_UPLOAD_ORIGIN,
+    );
   });
 
   test("@regression browser routes remain usable without live third-party services", async ({
@@ -50,6 +75,17 @@ test.describe("security response headers", () => {
   }) => {
     const cspConsoleMessages: string[] = [];
     const interceptedRequests = new Set<string>();
+    const r2PresignedUploadUrl = await createR2PresignedUploadUrl({
+      accountId: CONFIGURED_R2_ACCOUNT_ID,
+      bucketName: R2_UPLOAD_BUCKET,
+      key: R2_UPLOAD_KEY,
+    });
+    const parsedR2UploadUrl = new URL(r2PresignedUploadUrl);
+
+    expect(parsedR2UploadUrl.origin).toBe(R2_UPLOAD_ORIGIN);
+    expect(parsedR2UploadUrl.pathname).toBe(
+      `/${R2_UPLOAD_BUCKET}/${R2_UPLOAD_KEY}`,
+    );
 
     page.on("console", (message) => {
       if (
@@ -101,6 +137,18 @@ test.describe("security response headers", () => {
         ),
       });
     });
+    await page.route(`${parsedR2UploadUrl.origin}/**`, async (route) => {
+      if (route.request().method() === "PUT") {
+        interceptedRequests.add("r2-upload");
+      }
+      await route.fulfill({
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "PUT, OPTIONS",
+        },
+      });
+    });
     await page.route("https://www.google.com/**", async (route) => {
       interceptedRequests.add("google-analytics-connect");
       await route.fulfill({ status: 204 });
@@ -124,9 +172,17 @@ test.describe("security response headers", () => {
     expect(blogCsp).toContain(VERCEL_SCRIPT_ORIGIN);
     expect(blogCsp).toContain(TURNSTILE_ORIGIN);
     expect(blogCsp).toContain(ASSET_ORIGIN);
+    expect(getDirectiveSources(blogCsp, "connect-src")).toContain(
+      R2_UPLOAD_ORIGIN,
+    );
 
     await page.evaluate(
-      async ({ vercelScriptOrigin, turnstileOrigin, assetOrigin }) => {
+      async ({
+        vercelScriptOrigin,
+        turnstileOrigin,
+        assetOrigin,
+        r2PresignedUploadUrl,
+      }) => {
         const loadScript = (src: string) =>
           new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
@@ -158,12 +214,17 @@ test.describe("security response headers", () => {
           loadImage(`${assetOrigin}/csp-probe.png`),
           fetch("/_vercel/insights/csp-probe"),
           fetch("/_vercel/speed-insights/csp-probe"),
+          fetch(r2PresignedUploadUrl, {
+            method: "PUT",
+            body: "csp-probe",
+          }),
         ]);
       },
       {
         vercelScriptOrigin: VERCEL_SCRIPT_ORIGIN,
         turnstileOrigin: TURNSTILE_ORIGIN,
         assetOrigin: ASSET_ORIGIN,
+        r2PresignedUploadUrl,
       },
     );
 
@@ -174,6 +235,7 @@ test.describe("security response headers", () => {
       "remote-asset",
       "vercel-analytics-connect",
       "vercel-speed-connect",
+      "r2-upload",
     ]) {
       expect(interceptedRequests).toContain(requestName);
     }

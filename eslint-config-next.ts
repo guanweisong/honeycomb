@@ -11,6 +11,18 @@ export default defineConfig([
       "react-hooks/immutability": "off",
     },
   },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-console": "error",
+    },
+  },
+  {
+    files: ["src/packages/observability/adapters/console.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
   globalIgnores([
     ".next/**",
     "**/.next/**",
