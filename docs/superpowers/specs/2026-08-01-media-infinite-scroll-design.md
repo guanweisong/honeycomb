@@ -1,46 +1,46 @@
-# Media Infinite Scroll Design
+# 媒体列表无限滚动设计
 
-## Goal
+## 目标
 
-Prevent the admin media page from loading and rendering the entire media table at once by loading media in pages as the user scrolls.
+将媒体文件按分页加载，避免管理后台媒体页一次性读取和渲染整张媒体表。
 
-## Scope
+## 范围
 
-- Keep the existing `media.index` backend query and response shape.
-- Change the media page client query from `limit: 99999` to fixed-size pagination.
-- Append later pages to the existing media list.
-- Use an `IntersectionObserver` sentinel to request the next page automatically.
-- Reset pagination after upload or deletion.
-- Preserve the current media selection, copy, delete, and upload behavior.
+- 保留现有 `media.index` 后端查询和响应结构。
+- 将媒体页客户端查询从 `limit: 99999` 改为固定大小的分页查询。
+- 将后续分页数据追加到已有媒体列表中。
+- 使用 `IntersectionObserver` 观察底部哨兵元素，自动请求下一页。
+- 上传或删除成功后重置分页状态。
+- 保留现有的媒体选择、复制、删除和上传行为。
 
-## Behavior
+## 行为
 
-- Each request loads 50 records.
-- The first request uses `page: 1` and `limit: 50`.
-- When the sentinel enters the viewport, the next page is requested if no request is active and `loadedCount < total`.
-- Results are appended in page order.
-- A loading indicator is shown while fetching another page.
-- Once all records are loaded, no additional request is made.
-- An empty result keeps the existing empty-state skeleton behavior.
-- Upload and delete success reset the list to page 1 and refetch the first page.
+- 每次请求加载 50 条记录。
+- 首次请求使用 `page: 1` 和 `limit: 50`。
+- 当哨兵元素进入视口时，如果当前没有请求正在进行且 `loadedCount < total`，则请求下一页。
+- 分页结果按页码顺序追加。
+- 加载下一页时显示加载状态。
+- 所有记录加载完成后不再发起请求。
+- 没有数据时保留现有的空列表骨架屏行为。
+- 上传或删除成功后将列表重置到第 1 页，并重新请求第一页数据。
 
-## Components
+## 组件职责
 
-- `mediaQuery.ts` owns page state, accumulated results, request coordination, and reset behavior.
-- `MediaPageShell.tsx` owns the sentinel element and observes it with `IntersectionObserver`.
-- `MediaGrid.tsx` remains responsible for rendering media items and receives the accumulated list.
-- Existing router pagination remains unchanged.
+- `mediaQuery.ts` 负责页码状态、已累积结果、请求协调和重置行为。
+- `MediaPageShell.tsx` 负责放置底部哨兵元素，并使用 `IntersectionObserver` 观察它。
+- `MediaGrid.tsx` 继续负责渲染媒体项目，并接收累积后的媒体列表。
+- 现有路由层分页逻辑保持不变。
 
-## Error Handling
+## 错误处理
 
-- Query errors continue to be surfaced by the existing tRPC query state.
-- A failed next-page request must not advance the page or discard already loaded items.
-- A later intersection event may retry the failed page.
-- Resetting after a mutation clears accumulated records before requesting page 1.
+- 查询错误继续通过现有 tRPC 查询状态暴露。
+- 下一页请求失败时不能推进页码，也不能丢弃已经加载的数据。
+- 后续哨兵元素再次进入视口时可以重试失败的页面。
+- mutation 成功后重置时，先清空累积记录，再请求第 1 页。
 
-## Testing
+## 测试
 
-- Update media query tests to assert the initial `{ page: 1, limit: 50 }` input and page advancement/reset behavior.
-- Add coverage for preventing concurrent next-page requests and stopping at `total`.
-- Keep the existing media grid tests passing.
-- Run the focused media tests and type checking.
+- 更新媒体查询测试，验证初始 `{ page: 1, limit: 50 }` 参数以及页码推进和重置行为。
+- 增加测试，验证不会并发请求下一页，并且达到 `total` 后停止加载。
+- 保证现有媒体网格测试继续通过。
+- 运行媒体相关的聚焦测试和 TypeScript 类型检查。
