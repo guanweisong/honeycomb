@@ -1,5 +1,8 @@
+import "server-only";
+
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { getUpstashEnv } from "@/env/server";
 
 const API_RATE_LIMIT = 120;
 const API_RATE_LIMIT_WINDOW_MS = 60_000;
@@ -16,10 +19,9 @@ type ApiRatelimit = {
 };
 
 export function createApiRatelimit(): ApiRatelimit {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const upstash = getUpstashEnv();
 
-  if (!url || !token) {
+  if (!upstash) {
     return {
       limit: async () => ({
         success: true,
@@ -30,7 +32,7 @@ export function createApiRatelimit(): ApiRatelimit {
     };
   }
 
-  const redis = new Redis({ url, token });
+  const redis = new Redis(upstash);
   return new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(API_RATE_LIMIT, "1 m"),

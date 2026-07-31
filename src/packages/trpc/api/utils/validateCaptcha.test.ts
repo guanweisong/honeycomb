@@ -4,16 +4,19 @@ import { validateCaptcha } from "./validateCaptcha";
 describe("validateCaptcha", () => {
   const fetchMock = vi.fn();
   const originalSecret = process.env.TURNSTILE_SECRET_KEY;
+  const originalSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   beforeEach(() => {
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
     process.env.TURNSTILE_SECRET_KEY = "secret";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "site-key";
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     process.env.TURNSTILE_SECRET_KEY = originalSecret;
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = originalSiteKey;
   });
 
   it("rejects when the token is missing", async () => {
@@ -21,6 +24,14 @@ describe("validateCaptcha", () => {
       code: "BAD_REQUEST",
       message: "请提供有效的验证码参数。",
     });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("skips verification when Turnstile is disabled", async () => {
+    delete process.env.TURNSTILE_SECRET_KEY;
+    delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+    await expect(validateCaptcha(undefined)).resolves.toBeUndefined();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

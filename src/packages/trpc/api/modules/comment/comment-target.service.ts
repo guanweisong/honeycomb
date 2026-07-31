@@ -1,3 +1,5 @@
+import "server-only";
+
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "@/packages/db/db";

@@ -1,4 +1,7 @@
+import "server-only";
+
 import { Resend } from "resend";
+import { getResendEnv } from "@/env/server";
 import AdminCommentEmailMessage from "@/packages/trpc/api/modules/comment/components/EmailMessage/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "@/packages/trpc/api/modules/comment/components/EmailMessage/ReplyCommentEmailMessage";
 
@@ -19,12 +22,15 @@ interface EmailPayload {
  * @param payload - 邮件数据载体
  */
 export async function sendEmail(type: EmailType, payload: EmailPayload) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resendEnv = getResendEnv();
+  if (!resendEnv) throw new Error("Resend integration is not configured");
+
+  const resend = new Resend(resendEnv.apiKey);
   const { setting, currentComment, parentComment } = payload;
 
   const siteNameZh = setting.siteName?.zh ?? "";
-  const systemEmail = process.env.RESEND_FROM_EMAIL as string;
-  const adminEmail = process.env.ADMIN_EMAIL as string;
+  const systemEmail = resendEnv.fromEmail;
+  const adminEmail = resendEnv.adminEmail;
 
   try {
     if (type === "ADMIN_NOTICE") {

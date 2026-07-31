@@ -8,5 +8,5 @@ import { z } from "zod";
  * - `captchaToken`: 由 Cloudflare Turnstile 生成的验证 token。
  */
 export const CaptchaSchema = z.object({
-  captchaToken: z.string().min(1).max(2048),
+  captchaToken: z.string().min(1).max(2048).optional(),
 });

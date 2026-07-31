@@ -1,6 +1,7 @@
 "use client";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { clientEnv } from "@/env/client";
 import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
@@ -59,8 +60,8 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
       </body>
-      {process.env.NEXT_PUBLIC_GA_ADMIN_ID ? (
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ADMIN_ID} />
+      {clientEnv.NEXT_PUBLIC_GA_ADMIN_ID ? (
+        <GoogleAnalytics gaId={clientEnv.NEXT_PUBLIC_GA_ADMIN_ID} />
       ) : null}
     </html>
   );

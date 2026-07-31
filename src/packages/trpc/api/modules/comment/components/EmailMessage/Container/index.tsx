@@ -11,6 +11,7 @@ import {
   Heading,
 } from "@react-email/components";
 import * as React from "react";
+import { clientEnv } from "@/env/client";
 import { SettingEntity } from "@/packages/trpc/api/modules/setting/types/setting.entity";
 
 export interface EmailContainerProps {
@@ -47,7 +48,7 @@ const EmailContainer = (props: EmailContainerProps) => {
             <Section
               className="text-gray-500 bg-no-repeat bg-right bg-contain"
               style={{
-                backgroundImage: `url(${process.env.NEXT_PUBLIC_SITE_URL}/static/images/logo.192.png)`,
+                backgroundImage: `url(${clientEnv.NEXT_PUBLIC_SITE_URL}/static/images/logo.192.png)`,
               }}
             >
               {footer}

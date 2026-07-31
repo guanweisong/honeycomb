@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { clientEnv } from "@/env/client";
 
 /**
  * 生成 robots.txt 文件。
@@ -14,6 +15,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/"],
       },
     ],
-    sitemap: `${new URL(process.env.NEXT_PUBLIC_SITE_URL as string).origin}/sitemap.xml`,
+    sitemap: `${new URL(clientEnv.NEXT_PUBLIC_SITE_URL as string).origin}/sitemap.xml`,
   };
 }

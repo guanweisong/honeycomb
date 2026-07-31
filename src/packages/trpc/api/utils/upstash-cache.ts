@@ -1,4 +1,7 @@
+import "server-only";
+
 import { Redis } from "@upstash/redis";
+import { getUpstashEnv } from "@/env/server";
 
 let redisClient: Redis | null = null;
 let initialized = false;
@@ -7,14 +10,13 @@ function getRedisClient(): Redis | null {
   if (initialized) return redisClient;
   initialized = true;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
+  const upstash = getUpstashEnv();
+  if (!upstash) {
     redisClient = null;
     return redisClient;
   }
 
-  redisClient = new Redis({ url, token });
+  redisClient = new Redis(upstash);
   return redisClient;
 }
 

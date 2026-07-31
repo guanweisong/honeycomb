@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { eq } from "drizzle-orm";

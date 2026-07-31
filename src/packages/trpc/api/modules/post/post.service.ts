@@ -1,3 +1,5 @@
+import "server-only";
+
 import { and, eq, sql, inArray } from "drizzle-orm";
 import * as schema from "@/packages/db/schema";
 import type { Database } from "@/packages/db/db";

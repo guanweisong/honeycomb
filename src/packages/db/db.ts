@@ -1,7 +1,10 @@
+import "server-only";
+
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql/web";
 import * as schema from "./schema";
 import { LibSQLDatabase } from "drizzle-orm/libsql";
+import { getDatabaseEnv } from "@/env/server";
 
 let client: Client | null = null;
 let db: LibSQLDatabase<typeof schema> | null = null;
@@ -16,12 +19,7 @@ export type Database = LibSQLDatabase<typeof schema>;
  */
 export function getDb() {
   if (!db) {
-    const url = process.env.TURSO_URL;
-    const authToken = process.env.TURSO_TOKEN;
-
-    if (!url) {
-      throw new Error("TURSO_URL is missing");
-    }
+    const { TURSO_URL: url, TURSO_TOKEN: authToken } = getDatabaseEnv();
 
     client = createClient({
       url,

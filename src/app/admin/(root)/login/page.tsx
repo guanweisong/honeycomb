@@ -3,6 +3,7 @@ import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
+import { clientEnv } from "@/env/client";
 import {
   DynamicForm,
   DynamicFormRef,
@@ -62,7 +63,7 @@ const LoginContent = () => {
    * 当用户点击登录按钮时，如果验证码已就绪，则调用 Credentials Provider 完成登录。
    */
   const onSubmit = () => {
-    if (!captchaToken) {
+    if (clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
       toast.error("验证码加载中，请稍候");
       return Promise.reject("验证码未加载");
     }
@@ -120,7 +121,7 @@ const LoginContent = () => {
   return (
     <div className="min-h-screen box-border pt-48 text-center bg-green-700">
       <video
-        src={`${process.env.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
+        src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
         className="fixed inset-0 w-full h-full object-cover"
         autoPlay={true}
         muted={true}
@@ -181,14 +182,16 @@ const LoginContent = () => {
                 </Button>
               ))}
         </div>
-        <div className="mt-4 flex justify-center">
-          <Turnstile
-            ref={turnstileRef}
-            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-            onSuccess={onTurnstileSuccess}
-            onExpire={resetCaptcha}
-          />
-        </div>
+        {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+          <div className="mt-4 flex justify-center">
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+              onSuccess={onTurnstileSuccess}
+              onExpire={resetCaptcha}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
