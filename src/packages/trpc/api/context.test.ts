@@ -15,19 +15,20 @@ database.select.mockReturnValue(database);
 database.from.mockReturnValue(database);
 database.where.mockReturnValue(database);
 
+const { getSession } = vi.hoisted(() => ({
+  getSession: vi.fn(async () => null),
+}));
+
 vi.mock("@/auth", () => ({
-  auth: vi.fn(async () => null),
+  auth: { api: { getSession } },
 }));
 
 vi.mock("@/packages/db/db", () => ({
   getDb: () => database,
 }));
 
-import { auth } from "@/auth";
 import { createContext } from "./context";
 import { createTrpcContext } from "./defaultContext";
-
-const authMock = vi.mocked(auth);
 
 describe("createContext", () => {
   it("keeps the request ID supplied by a tRPC request", async () => {
@@ -62,7 +63,7 @@ describe("createContext", () => {
   });
 
   it("rejects a disabled session user at the database-backed identity boundary", async () => {
-    authMock.mockResolvedValueOnce({
+    getSession.mockResolvedValueOnce({
       user: {
         id: "disabled-user",
         level: UserLevel.ADMIN,

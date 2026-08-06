@@ -32,19 +32,23 @@ export interface CreateContextOptions {
  * @returns {Promise<User | null>} 如果验证成功，则返回用户信息对象；否则返回 null。
  *
  * 工作流程：
- * 1. 读取当前请求对应的 NextAuth session。
+ * 1. 读取当前请求对应的 Better Auth session。
  * 2. 如果 session 中没有用户信息，返回 null。
  * 3. 根据 session.user.id 回库读取用户当前状态与权限等级。
  * 4. 仅当用户仍然处于启用状态时，返回可用于后续鉴权的用户对象。
  */
 async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!req) return null;
-  const session = await auth();
-  const sessionUser = session?.user;
+  const session = await auth.api.getSession({ headers: req.headers });
+  const sessionUser = session?.user as
+    | { id?: string; level?: UserLevel; name?: string | null }
+    | null
+    | undefined;
 
   if (!sessionUser?.id || !sessionUser.level) {
     return null;
   }
+  const sessionUserId = sessionUser.id;
 
   const db = getDb();
   const [user] = await observeDbOperation("auth.context-user", "select", () =>
@@ -56,7 +60,7 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
         status: schema.user.status,
       })
       .from(schema.user)
-      .where(eq(schema.user.id, sessionUser.id))
+      .where(eq(schema.user.id, sessionUserId))
       .limit(1),
   );
 

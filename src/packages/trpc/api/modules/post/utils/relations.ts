@@ -7,7 +7,10 @@ import { observeDbOperation } from "@/packages/observability/server";
 
 type PostRecord = InferSelectModel<typeof schema.post>;
 type CategoryRecord = InferSelectModel<typeof schema.category>;
-type UserRecord = Omit<InferSelectModel<typeof schema.user>, "password">;
+type UserRecord = Pick<
+  InferSelectModel<typeof schema.user>,
+  "id" | "email" | "level" | "name" | "status" | "createdAt" | "updatedAt"
+>;
 type MediaRecord = InferSelectModel<typeof schema.media>;
 type TagRecord = InferSelectModel<typeof schema.tag>;
 type PostTagRecord = InferSelectModel<typeof schema.postTag>;

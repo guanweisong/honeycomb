@@ -32,6 +32,10 @@ describe("db schema helpers", () => {
     expect((schema.category.title as unknown as ColumnView).config.name).toBe("title");
     expect((schema.page.content as unknown as ColumnView).config.name).toBe("content");
     expect((schema.menu.pageId as unknown as ColumnView).config.name).toBe("page_id");
+    expect((schema.user.username as unknown as ColumnView).config.name).toBe("username");
+    expect((schema.account.providerId as unknown as ColumnView).config.name).toBe("provider_id");
+    expect((schema.session.token as unknown as ColumnView).config.name).toBe("token");
+    expect((schema.verification.identifier as unknown as ColumnView).config.name).toBe("identifier");
   });
 
   it("generates lowercase object ids", () => {
@@ -83,6 +87,8 @@ describe("db schema helpers", () => {
     expect((schema.userRelations as unknown as RelationView).config(helpers)).toEqual({
       posts: { kind: "many", fieldName: "posts" },
       pages: { kind: "many", fieldName: "pages" },
+      accounts: { kind: "many", fieldName: "accounts" },
+      sessions: { kind: "many", fieldName: "sessions" },
     });
     expect((schema.categoryRelations as unknown as RelationView).config(helpers)).toEqual({
       posts: { kind: "many", fieldName: "posts" },

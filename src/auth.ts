@@ -1,253 +1,129 @@
 import "server-only";
 
-import NextAuth from "next-auth";
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { captcha, username } from "better-auth/plugins";
 import { getAuthEnv } from "@/env/server";
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
-import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
-import { and, eq } from "drizzle-orm";
-import type { NextAuthConfig } from "next-auth";
-import AppleProvider from "next-auth/providers/apple";
-import { compare } from "bcryptjs";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GitHubProvider from "next-auth/providers/github";
-import GoogleProvider from "next-auth/providers/google";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
-import { observeDbOperation } from "@/packages/observability/server";
+import { eq } from "drizzle-orm";
 
-type AuthUser = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  level: UserLevel;
-};
+const authEnv = getAuthEnv();
 
-function normalizeUserName(baseName: string) {
-  return baseName.trim().slice(0, 32) || "user";
-}
+function buildSocialProviders() {
+  const providers: Record<string, { clientId: string; clientSecret: string }> = {};
 
-function buildUserNameCandidate(baseName: string, attempt: number) {
-  if (attempt === 0) return baseName;
-  if (attempt < 10) return `${baseName}_${attempt}`;
-  return `${baseName}_${Date.now()}_${attempt}`;
-}
-
-function isUniqueConstraintError(error: unknown) {
-  const message =
-    error instanceof Error ? error.message : String(error ?? "unknown error");
-  return /unique/i.test(message);
-}
-
-async function findActiveUserByEmail(email: string) {
-  const db = getDb();
-  const [user] = await observeDbOperation("auth.user-by-email", "select", () =>
-    db.select().from(schema.user).where(eq(schema.user.email, email)).limit(1),
-  );
-
-  if (!user || user.status !== UserStatus.ENABLE) return null;
-  return user;
-}
-
-async function createOAuthUser(params: { email: string; name: string | null }) {
-  const db = getDb();
-  const baseName = normalizeUserName(params.name || params.email.split("@")[0]);
-
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    try {
-      const [createdUser] = await observeDbOperation(
-        "auth.oauth-user.create",
-        "insert",
-        () =>
-          db
-            .insert(schema.user)
-            .values({
-              email: params.email,
-              name: buildUserNameCandidate(baseName, attempt),
-              level: UserLevel.GUEST,
-              status: UserStatus.ENABLE,
-            })
-            .returning(),
-      );
-
-      return createdUser;
-    } catch (error) {
-      if (isUniqueConstraintError(error)) continue;
-      throw error;
-    }
-  }
-
-  throw new Error("无法为 OAuth 用户生成唯一用户名");
-}
-
-function buildCredentialsProvider() {
-  return CredentialsProvider({
-    name: "用户名密码",
-    credentials: {
-      name: { label: "用户名", type: "text" },
-      password: { label: "密码", type: "password" },
-      captchaToken: { label: "Captcha Token", type: "text" },
-    },
-    async authorize(
-      credentials: Partial<
-        Record<"name" | "password" | "captchaToken", unknown>
-      >,
-    ): Promise<AuthUser | null> {
-      const name =
-        typeof credentials.name === "string" ? credentials.name.trim() : "";
-      const password =
-        typeof credentials.password === "string"
-          ? credentials.password.trim()
-          : "";
-      const captchaToken =
-        typeof credentials.captchaToken === "string"
-          ? credentials.captchaToken.trim()
-          : "";
-
-      if (!name || !password) return null;
-
-      await validateCaptcha(captchaToken);
-
-      const db = getDb();
-      const [user] = await observeDbOperation(
-        "auth.credentials-user",
-        "select",
-        () =>
-          db
-            .select()
-            .from(schema.user)
-            .where(
-              and(
-                eq(schema.user.name, name),
-                eq(schema.user.status, UserStatus.ENABLE),
-              ),
-            )
-            .limit(1),
-      );
-
-      if (!user?.password) return null;
-
-      const passwordMatched = await compare(password, user.password);
-      if (!passwordMatched) return null;
-
-      return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        level: user.level,
-      };
-    },
-  });
-}
-
-function buildOAuthProviders() {
-  const providers: NonNullable<NextAuthConfig["providers"]> = [];
-  const { apple, google, github } = getAuthEnv();
-
-  if (apple) {
-    providers.push(
-      AppleProvider({
-        clientId: apple.clientId,
-        clientSecret: apple.clientSecret,
-      }),
-    );
-  }
-
-  if (google) {
-    providers.push(
-      GoogleProvider({
-        clientId: google.clientId,
-        clientSecret: google.clientSecret,
-      }),
-    );
-  }
-
-  if (github) {
-    providers.push(
-      GitHubProvider({
-        clientId: github.clientId,
-        clientSecret: github.clientSecret,
-      }),
-    );
-  }
+  if (authEnv.google) providers.google = authEnv.google;
+  if (authEnv.github) providers.github = authEnv.github;
+  if (authEnv.apple) providers.apple = authEnv.apple;
 
   return providers;
 }
 
-async function syncOAuthUser(params: {
-  user: {
-    id?: string;
-    name?: string | null;
-    email?: string | null;
-    level?: UserLevel;
-  };
-  profile?: { email?: string | null };
-}) {
-  const email =
-    params.user.email?.trim().toLowerCase() ||
-    params.profile?.email?.trim().toLowerCase();
+function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
+  const plugins: NonNullable<BetterAuthOptions["plugins"]> = [
+    username({
+      minUsernameLength: 1,
+      maxUsernameLength: 32,
+      usernameNormalization: false,
+      usernameValidator: (value) => value.trim().length > 0,
+    }),
+  ];
 
-  if (!email) return false;
-
-  const existingUser = await findActiveUserByEmail(email);
-  if (existingUser) {
-    params.user.id = existingUser.id;
-    params.user.name = existingUser.name;
-    params.user.level = existingUser.level;
-    return true;
+  if (authEnv.turnstile) {
+    plugins.push(
+      captcha({
+        provider: "cloudflare-turnstile",
+        secretKey: authEnv.turnstile.secretKey,
+        endpoints: ["/sign-in/username"],
+      }),
+    );
   }
 
-  const createdUser = await createOAuthUser({
-    email,
-    name: params.user.name ?? null,
-  });
-
-  params.user.id = createdUser.id;
-  params.user.name = createdUser.name;
-  params.user.level = createdUser.level;
-  return true;
+  return plugins;
 }
 
-const authProviders: NonNullable<NextAuthConfig["providers"]> = [
-  ...buildOAuthProviders(),
-  buildCredentialsProvider(),
-];
+const authOptions: BetterAuthOptions = {
+  baseURL: authEnv.AUTH_URL || "http://localhost:3000",
+  secret: authEnv.AUTH_SECRET,
+  database:
+    process.env.TURSO_URL && process.env.TURSO_TOKEN
+      ? drizzleAdapter(getDb(), {
+          provider: "sqlite",
+          schema,
+        })
+      : undefined,
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+  },
+  socialProviders: buildSocialProviders(),
+  user: {
+    additionalFields: {
+      level: {
+        type: "string",
+        required: false,
+        input: false,
+        returned: true,
+      },
+      status: {
+        type: "string",
+        required: false,
+        input: false,
+        returned: true,
+      },
+    },
+  },
+  account: {
+    accountLinking: {
+      trustedProviders: ["google", "github", "apple"],
+      requireLocalEmailVerified: false,
+    },
+  },
+  plugins: buildPlugins(),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const baseName =
+            user.name?.trim().slice(0, 32) || user.email.split("@")[0] || "user";
 
-export const authOptions: NextAuthConfig = {
-  secret: getAuthEnv().AUTH_SECRET,
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/admin/login",
-  },
-  providers: authProviders,
-  callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "credentials") return true;
-      return syncOAuthUser({ user, profile });
+          for (let attempt = 0; attempt < 20; attempt += 1) {
+            const candidate =
+              attempt === 0
+                ? baseName
+                : `${baseName.slice(0, Math.max(1, 32 - String(attempt).length - 1))}_${attempt}`;
+            const [existing] = await getDb()
+              .select({ id: schema.user.id })
+              .from(schema.user)
+              .where(eq(schema.user.name, candidate))
+              .limit(1);
+
+            if (!existing) return { data: { ...user, name: candidate } };
+          }
+
+          throw new Error("无法为 OAuth 用户生成唯一用户名");
+        },
+      },
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.level = user.level;
-        token.name = user.name;
-        token.email = user.email;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        const tokenEmail = typeof token.email === "string" ? token.email : null;
-        session.user.id = typeof token.id === "string" ? token.id : "";
-        session.user.level =
-          (token.level as UserLevel | undefined) ?? UserLevel.GUEST;
-        session.user.name = typeof token.name === "string" ? token.name : null;
-        session.user.email = tokenEmail ?? "";
-      }
-      return session;
+    session: {
+      create: {
+        before: async (session) => {
+          const [user] = await getDb()
+            .select({ status: schema.user.status })
+            .from(schema.user)
+            .where(eq(schema.user.id, session.userId))
+            .limit(1);
+
+          if (!user || user.status !== "ENABLE") {
+            return false;
+          }
+        },
+      },
     },
   },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
+export const auth = betterAuth(authOptions);
+
+export type AuthSession = typeof auth.$Infer.Session;

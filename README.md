@@ -43,8 +43,8 @@
 
 ### 认证与授权
 
-- **NextAuth.js** - 后台认证，支持 Credentials / Google / GitHub / Apple 登录
-- **JWT Session** - 基于 HttpOnly Cookie 的会话机制
+- **Better Auth** - 后台认证，支持用户名密码 / Google / GitHub / Apple 登录
+- **Database Session** - 基于 HttpOnly Cookie 的数据库会话机制
 - **bcryptjs** - 用户名密码登录的密码哈希校验
 
 ### 数据库与 ORM
@@ -159,7 +159,7 @@ RESEND_API_KEY=your_resend_api_key
 RESEND_FROM_EMAIL=your_from_email
 ADMIN_EMAIL=your_admin_email
 
-# Auth.js（必填）
+# Better Auth（必填）
 AUTH_SECRET=your_auth_secret
 AUTH_URL=http://localhost:3000
 
@@ -192,8 +192,10 @@ R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全
 - 后台登录页为 `/admin/login`
 - 支持用户名密码登录，以及 Google / GitHub / Apple OAuth 登录
 - OAuth Provider 只有在对应环境变量存在时才会启用并展示按钮
+- OAuth 回调地址为 `/api/auth/callback/google`、`/api/auth/callback/github` 和 `/api/auth/callback/apple`
 - 用户名密码登录会校验 Turnstile，并使用 `bcrypt` 哈希比对密码
-- 登录后的会话由 NextAuth 维护，权限判定以数据库中的用户状态和角色为准
+- 登录后的会话由 Better Auth 维护，权限判定以数据库中的用户状态和角色为准
+- 从 NextAuth 切换后旧 Cookie 不再兼容，首次发布后所有用户需要重新登录
 
 ### 数据库迁移
 

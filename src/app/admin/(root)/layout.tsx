@@ -32,7 +32,7 @@ function AdminRootLayout({
 
   /**
    * 后台根布局首次挂载时同步一次全局 setting。
-   * Session 状态由 SessionProvider 自动管理，这里不再额外手动刷新。
+   * Session 状态由 Better Auth Cookie 和 tRPC 当前用户查询共同管理。
    */
   useEffect(() => {
     void refreshSetting();

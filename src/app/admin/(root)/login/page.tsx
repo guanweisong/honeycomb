@@ -11,12 +11,12 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
-import { getProviders, signIn } from "next-auth/react";
+import { authClient } from "@/auth-client";
 import { providerIcons } from "./providerIcons";
 import { LoginSchema, type LoginValues } from "./login.schema";
 import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
 
-type AuthProviderMap = Awaited<ReturnType<typeof getProviders>>;
+type AuthProvider = { id: string; name: string };
 
 /**
  * 登录页面组件。
@@ -25,7 +25,7 @@ type AuthProviderMap = Awaited<ReturnType<typeof getProviders>>;
 const LoginContent = () => {
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [providers, setProviders] = useState<AuthProviderMap>(null);
+  const [providers, setProviders] = useState<AuthProvider[]>([]);
   const [isProvidersLoading, setIsProvidersLoading] = useState(true);
   const form = useRef<DynamicFormRef<LoginValues>>(null);
   const searchParams = useSearchParams();
@@ -40,10 +40,11 @@ const LoginContent = () => {
    * 只有在服务端成功注册的 OAuth Provider 才会在这里显示。
    */
   useEffect(() => {
-    getProviders()
-      .then(setProviders)
+    fetch("/api/auth/providers")
+      .then((response) => (response.ok ? response.json() : []))
+      .then((data: AuthProvider[]) => setProviders(data))
       .catch(() => {
-        setProviders(null);
+        setProviders([]);
       })
       .finally(() => {
         setIsProvidersLoading(false);
@@ -74,39 +75,35 @@ const LoginContent = () => {
       return Promise.reject("表单未初始化");
     }
     const { name, password } = values;
-    return signIn("credentials", {
-      redirect: false,
-      callbackUrl,
-      name,
+    return authClient.signIn.username({
+      username: name,
       password,
-      captchaToken,
-    })
-      .then((result) => {
-        if (result?.error) {
-          throw new Error("用户名或密码不正确");
-        }
-        toast.success("登录成功");
-        refreshUser();
-      })
-      .catch((e: { message?: string }) => {
-        toast.error(e?.message || "登录失败");
-      })
-      .finally(() => {
-        resetCaptcha();
-      });
+      fetchOptions: {
+        headers: captchaToken
+          ? { "x-captcha-response": captchaToken }
+          : undefined,
+      },
+    }).then((result) => {
+      if (result.error) throw new Error("用户名或密码不正确");
+      toast.success("登录成功");
+      refreshUser();
+      window.location.href = callbackUrl;
+    }).catch((e: { message?: string }) => {
+      toast.error(e?.message || "登录失败");
+    }).finally(() => {
+      resetCaptcha();
+    });
   };
 
-  const oauthProviders = Object.values(providers ?? {}).filter(
-    (provider) => provider.id !== "credentials",
-  );
+  const oauthProviders = providers;
 
   /**
    * 触发指定 OAuth Provider 的登录流程。
    *
-   * @param {string} providerId - Provider 在 NextAuth 中的唯一标识。
+   * @param {string} providerId - Provider 在 Better Auth 中的唯一标识。
    */
   const handleOAuthLogin = async (providerId: string) => {
-    await signIn(providerId, { callbackUrl });
+    await authClient.signIn.social({ provider: providerId, callbackURL: callbackUrl });
   };
 
   /**

@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 
 const mockUseSiteSetting = vi.fn();
 const mockRefreshUser = vi.fn();
-const mockGetProviders = vi.fn();
+const mockFetch = vi.fn();
 
 vi.mock("@/app/admin/hooks/useSiteSetting", () => ({
   useSiteSetting: () => mockUseSiteSetting(),
@@ -16,9 +16,14 @@ vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
   }),
 }));
 
-vi.mock("next-auth/react", () => ({
-  getProviders: (...args: unknown[]) => mockGetProviders(...args),
-  signIn: vi.fn(),
+vi.mock("@/auth-client", () => ({
+  authClient: {
+    signIn: {
+      username: vi.fn(),
+      social: vi.fn(),
+    },
+    signOut: vi.fn(),
+  },
 }));
 
 vi.mock("@marsidev/react-turnstile", () => ({
@@ -54,7 +59,8 @@ describe("admin login page", () => {
     root = createRoot(container);
     mockRefreshUser.mockReset();
     mockUseSiteSetting.mockReset();
-    mockGetProviders.mockReset();
+    mockFetch.mockReset();
+    vi.stubGlobal("fetch", mockFetch);
   });
 
   afterEach(async () => {
@@ -70,7 +76,7 @@ describe("admin login page", () => {
       isLoading: true,
       refreshSetting: vi.fn(),
     });
-    mockGetProviders.mockImplementation(
+    mockFetch.mockImplementation(
       () => new Promise(() => undefined),
     );
 
@@ -96,15 +102,9 @@ describe("admin login page", () => {
       isLoading: false,
       refreshSetting: vi.fn(),
     });
-    mockGetProviders.mockResolvedValue({
-      github: {
-        id: "github",
-        name: "GitHub",
-      },
-      credentials: {
-        id: "credentials",
-        name: "Credentials",
-      },
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => [{ id: "github", name: "GitHub" }],
     });
 
     await act(async () => {

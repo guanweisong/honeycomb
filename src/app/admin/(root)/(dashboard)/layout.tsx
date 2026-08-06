@@ -6,7 +6,7 @@ import { useCurrentUser } from "@/app/admin/hooks/useCurrentUser";
 import React from "react";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { toast } from "sonner";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/auth-client";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 /**
@@ -28,13 +28,13 @@ function AdminDashboardLayout({
 
   /**
    * 处理用户登出操作。
-   * 1. 调用 NextAuth 的登出逻辑清理会话。
+   * 1. 调用 Better Auth 的登出逻辑清理会话。
    * 2. 无论 API 调用成功与否，都会跳转回登录页。
    * 3. 显示成功登出的消息提示。
    */
   const handleLogout = async () => {
     try {
-      await signOut({ redirect: false });
+      await authClient.signOut();
       utils.user.current.setData(undefined, undefined);
       await utils.user.current.invalidate();
       toast.success("登出成功");

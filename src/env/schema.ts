@@ -27,7 +27,7 @@ const databaseEnvSchema = coreServerEnvSchema.pick({
   TURSO_TOKEN: true,
 });
 
-const authEnvSchema = coreServerEnvSchema.pick({ AUTH_SECRET: true });
+const authEnvSchema = coreServerEnvSchema.pick({ AUTH_SECRET: true, AUTH_URL: true });
 
 const oauthProviderSchema = z.object({
   clientId: requiredString,
@@ -117,6 +117,7 @@ export function parseAuthEnv(environment: Environment) {
       "AUTH_GITHUB_ID",
       "AUTH_GITHUB_SECRET",
     ),
+    turnstile: parseTurnstileEnv(environment),
   };
 }
 
@@ -132,9 +133,15 @@ export function parseBuildAuthEnv(environment: Environment) {
 
   return {
     AUTH_SECRET: environment.AUTH_SECRET,
+    AUTH_URL: environment.AUTH_URL,
     apple: readBuildOAuthProvider("AUTH_APPLE_ID", "AUTH_APPLE_SECRET"),
     google: readBuildOAuthProvider("AUTH_GOOGLE_ID", "AUTH_GOOGLE_SECRET"),
     github: readBuildOAuthProvider("AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET"),
+    turnstile:
+      environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
+      environment.TURNSTILE_SECRET_KEY
+        ? { secretKey: environment.TURNSTILE_SECRET_KEY }
+        : undefined,
   };
 }
 

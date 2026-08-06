@@ -6,7 +6,6 @@ import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -21,7 +20,7 @@ import { useRouter } from "next/navigation";
  * @returns {JSX.Element} 返回一个包含了全局提供者和基本 HTML 结构的布局。
  *
  * 全局配置包括：
- * - **`SessionProvider`**: 为后台页面提供 NextAuth 会话上下文。
+ * - Better Auth Cookie：为后台请求提供认证会话。
  * - **`trpc.Provider`**: 为整个应用提供 tRPC 客户端实例，使其可以在任何组件中调用 API。
  * - **`QueryClientProvider`**: 提供 React Query 的客户端实例，用于数据缓存和状态管理。
  * - **`<Toaster />`**: 全局的消息提示组件。
@@ -49,13 +48,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <SessionProvider>
-          <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            <QueryClientProvider client={queryClient}>
-              {children}
-            </QueryClientProvider>
-          </trpc.Provider>
-        </SessionProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </trpc.Provider>
         <Toaster />
         <Analytics />
         <SpeedInsights />
