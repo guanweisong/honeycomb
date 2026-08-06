@@ -19,6 +19,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
   const [currentItem, setCurrentItem] = useState<MediaEntity>();
   const onSelectRef = useRef(onSelect);
   const query = useMediaQuery();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const actions = useMediaActions({
     refetch: query.refetch,
     onUploadComplete: setCurrentItem,
@@ -33,6 +34,29 @@ export function MediaPageShell({ onSelect }: MediaProps) {
   useEffect(() => {
     if (currentItem) onSelectRef.current?.(currentItem);
   }, [currentItem]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (
+      !sentinel ||
+      !query.hasMore ||
+      typeof IntersectionObserver === "undefined"
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          query.loadMore();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [query.hasMore, query.loadMore]);
 
   return (
     <div>
@@ -60,6 +84,18 @@ export function MediaPageShell({ onSelect }: MediaProps) {
         onDelete={handleDelete}
         onSelect={setCurrentItem}
       />
+      <div
+        ref={loadMoreRef}
+        data-testid="media-load-more-sentinel"
+        aria-live="polite"
+        className="flex min-h-8 items-center justify-center text-sm text-gray-500"
+      >
+        {query.isFetchingMore
+          ? "正在加载更多..."
+          : !query.hasMore && query.data?.list.length
+            ? "已加载全部媒体"
+            : null}
+      </div>
     </div>
   );
 }

@@ -26,9 +26,16 @@ const uploadedMedia = {
   height: null,
   color: null,
 } as MediaEntity;
+const nextMedia = {
+  id: "media-3",
+  name: "next.png",
+  type: "image/png",
+  url: "https://cdn.example.test/next.png",
+} as MediaEntity;
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
   getPresignedUrl: vi.fn(),
+  input: undefined as { page?: number; limit?: number } | undefined,
   refetch: vi.fn(),
   upload: vi.fn(),
 }));
@@ -45,10 +52,17 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
     media: {
       index: {
-        useQuery: () => ({
-          data: { list: [existingMedia] },
+        useQuery: (input: { page?: number; limit?: number }) => {
+          trpcMocks.input = input;
+          return {
+          data: {
+            list: input.page === 2 ? [nextMedia] : [existingMedia],
+            total: 2,
+          },
+          isFetching: false,
           refetch: trpcMocks.refetch,
-        }),
+        };
+        },
       },
       destroy: { useMutation: () => ({ mutateAsync: trpcMocks.destroy }) },
       getPresignedUrl: {
@@ -97,6 +111,7 @@ describe("MediaPageShell", () => {
     allowedPermissions = new Set();
     trpcMocks.destroy.mockReset();
     trpcMocks.getPresignedUrl.mockReset();
+    trpcMocks.input = undefined;
     trpcMocks.refetch.mockReset();
     trpcMocks.upload.mockReset();
     toastMocks.error.mockReset();
@@ -121,6 +136,40 @@ describe("MediaPageShell", () => {
     await act(async () => root.render(React.createElement(MediaPageShell)));
     expect(container.textContent).toContain("点击上传文件");
     expect(container.querySelector('input[type="file"]')).not.toBeNull();
+  });
+
+  it("loads the next page when the bottom sentinel enters the viewport", async () => {
+    const observers: Array<{
+      callback: (entries: Array<IntersectionObserverEntry>) => void;
+      disconnect: ReturnType<typeof vi.fn>;
+      observe: ReturnType<typeof vi.fn>;
+    }> = [];
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        callback: (entries: Array<IntersectionObserverEntry>) => void;
+        disconnect = vi.fn();
+        observe = vi.fn();
+
+        constructor(callback: (entries: Array<IntersectionObserverEntry>) => void) {
+          this.callback = callback;
+          observers.push(this);
+        }
+      },
+    );
+
+    await act(async () => root.render(React.createElement(MediaPageShell)));
+    expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
+    expect(observers.length).toBeGreaterThan(0);
+
+    await act(async () => {
+      observers.at(-1)?.callback([
+        { isIntersecting: true } as IntersectionObserverEntry,
+      ]);
+    });
+
+    expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });
+    expect(container.querySelector('[title="next.png"]')).not.toBeNull();
   });
 
   it("uploads through the file input with loading, storage, selection, and refresh behavior", async () => {
@@ -225,7 +274,9 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
     expect(onSelect).toHaveBeenCalledOnce();
     expect(onSelect).toHaveBeenCalledWith(existingMedia);
-    expect(tile?.className).not.toContain("border-blue-500");
+    expect(container.querySelector('[title="cover.png"]')?.className).not.toContain(
+      "border-blue-500",
+    );
   });
 
   it("keeps selection intact when deletion fails", async () => {
