@@ -42,6 +42,12 @@ describe("createSecurityHeaders", () => {
     expect(headers["Content-Security-Policy"]).toContain(
       "https://www.googletagmanager.com",
     );
+    expect(
+      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+    ).toContain("https://www.googletagmanager.com");
+    expect(headers["Content-Security-Policy"]).toContain(
+      "https://static.cloudflareinsights.com",
+    );
     expect(headers["Content-Security-Policy"]).toContain(
       "https://www.google.com",
     );
@@ -131,6 +137,20 @@ describe("createSecurityHeaders", () => {
     );
   });
 
+  it("allows the configured asset origin in connect-src for fetched media", () => {
+    const headers = asRecord(
+      createSecurityHeaders({
+        environment: "production",
+        siteUrl: "https://honeycomb.example",
+        assetUrl: "https://static.honeycomb.example/common/rainAndBird.mp4",
+      }),
+    );
+
+    expect(
+      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+    ).toContain("https://static.honeycomb.example");
+  });
+
   it("does not inject an untrusted R2 option into connect-src", () => {
     const headers = asRecord(
       createSecurityHeaders({
@@ -142,7 +162,7 @@ describe("createSecurityHeaders", () => {
 
     expect(
       getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
-    ).toEqual(["'self'"]);
+    ).toEqual(["'self'", "https://static.cloudflareinsights.com"]);
     expect(headers["Content-Security-Policy"]).not.toContain("attacker.test");
   });
 });

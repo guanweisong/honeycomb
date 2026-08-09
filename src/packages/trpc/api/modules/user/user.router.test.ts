@@ -171,6 +171,12 @@ describe("User Router", () => {
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newUser]);
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([]);
+      mockDb.insert.mockReturnValueOnce(mockDb);
+      mockDb.values.mockReturnValueOnce(mockDb);
 
       const caller = userRouter.createCaller(
         createMockContext(
@@ -346,6 +352,50 @@ describe("User Router", () => {
       expect(mockDb.update).toHaveBeenCalledWith(schema.user);
       expect(mockDb.returning).toHaveBeenCalledWith(
         expect.not.objectContaining({ password: expect.anything() }),
+      );
+    });
+
+    it("should write a changed password to the Better Auth credential account", async () => {
+      const updatedUser = {
+        id: TEST_IDS.ID_2,
+        name: "Updated User",
+        level: UserLevel.EDITOR,
+        status: UserStatus.ENABLE,
+      };
+
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([
+        { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
+      ]);
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedUser]);
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([{ id: "credential-account" }]);
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce(undefined);
+
+      const caller = userRouter.createCaller(
+        createMockContext(
+          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          mockDb,
+        ),
+      );
+
+      const result = await caller.update({
+        id: TEST_IDS.ID_2,
+        password: "password123",
+      });
+
+      expect(result).toEqual(updatedUser);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.account);
+      expect(mockDb.set).toHaveBeenCalledWith(
+        expect.objectContaining({ password: expect.stringContaining(":") }),
       );
     });
 

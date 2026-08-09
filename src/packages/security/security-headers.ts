@@ -127,6 +127,7 @@ function createContentSecurityPolicy({
     "'self'",
     "'unsafe-inline'",
     "https://va.vercel-scripts.com",
+    "https://static.cloudflareinsights.com",
   ];
   const imageSources = ["'self'", "blob:", "data:", "https://cravatar.cn"];
   const connectSources = ["'self'"];
@@ -140,6 +141,7 @@ function createContentSecurityPolicy({
 
   if (assetOrigin) {
     imageSources.push(assetOrigin);
+    connectSources.push(assetOrigin);
     mediaSources.push(assetOrigin);
   }
 
@@ -150,8 +152,11 @@ function createContentSecurityPolicy({
       "https://www.google-analytics.com",
       "https://region1.google-analytics.com",
       "https://www.google.com",
+      "https://www.googletagmanager.com",
     );
   }
+
+  connectSources.push("https://static.cloudflareinsights.com");
 
   if (turnstileEnabled) {
     scriptSources.push("https://challenges.cloudflare.com");

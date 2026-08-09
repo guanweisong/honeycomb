@@ -17,13 +17,14 @@ import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.
 import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
 import * as schema from "@/packages/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { hash } from "bcryptjs";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { observeDbOperation } from "@/packages/observability/server";
 import type { Database } from "@/packages/db/db";
-
-const BCRYPT_ROUNDS = 12;
+import {
+  setCredentialPassword,
+  type CredentialStore,
+} from "@/packages/auth/credentials";
 const safeUserColumns = {
   id: schema.user.id,
   email: schema.user.email,
@@ -156,7 +157,7 @@ export const userRouter = createTRPCRouter({
   /**
    * 创建一个新用户。
    * (需要管理员权限)
-   * 在写入数据库前，会使用 bcrypt 对明文密码进行哈希处理。
+   * 创建用户和 Better Auth credential account 必须在同一个事务中完成。
    *
    * @param {UserInsertSchema} input - 新用户的数据。
    * @returns {Promise<User>} 返回新创建的用户对象。
@@ -164,17 +165,20 @@ export const userRouter = createTRPCRouter({
   create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
     .mutation(async ({ input, ctx }) => {
-      const values = {
-        ...input,
-        password: await hash(input.password, BCRYPT_ROUNDS),
-      };
-      const [newUser] = await observeDbOperation("user.create", "insert", () =>
-        ctx.db
-          .insert(schema.user)
-          .values(values as InferInsertModel<typeof schema.user>)
-          .returning(safeUserColumns),
-      );
-      return newUser;
+      const { password, ...userValues } = input;
+      return ctx.db.transaction(async (tx) => {
+        const [newUser] = await observeDbOperation(
+          "user.create",
+          "insert",
+          () =>
+            tx
+              .insert(schema.user)
+              .values(userValues as InferInsertModel<typeof schema.user>)
+              .returning(safeUserColumns),
+        );
+        await setCredentialPassword(tx, newUser.id, password);
+        return newUser;
+      });
     }),
 
   /**
@@ -199,7 +203,7 @@ export const userRouter = createTRPCRouter({
   /**
    * 更新一个用户。
    * (需要管理员权限)
-   * 当请求体中包含新密码时，会先使用 bcrypt 重新哈希，再写入数据库。
+   * 修改密码时同步更新 Better Auth credential account。
    *
    * @param {UserUpdateSchema} input - 包含要更新的用户 ID 和新数据。
    * @returns {Promise<User>} 返回更新后的用户对象。
@@ -207,7 +211,7 @@ export const userRouter = createTRPCRouter({
   update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, ...rest } = input;
+      const { id, password, ...rest } = input;
       const [target] = await readManagedTargets(ctx, [id]);
       if (
         target &&
@@ -219,22 +223,23 @@ export const userRouter = createTRPCRouter({
       ) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
-      const values = {
-        ...rest,
-        ...(rest.password
-          ? { password: await hash(rest.password, BCRYPT_ROUNDS) }
-          : {}),
+      const updateUser = async (db: CredentialStore) => {
+        const [updatedUser] = await observeDbOperation(
+          "user.update",
+          "update",
+          () =>
+            db
+              .update(schema.user)
+              .set(
+                rest as Partial<InferInsertModel<typeof schema.user>>,
+              )
+              .where(eq(schema.user.id, id))
+              .returning(safeUserColumns),
+        );
+        if (password) await setCredentialPassword(db, id, password);
+        return updatedUser;
       };
-      const [updatedUser] = await observeDbOperation(
-        "user.update",
-        "update",
-        () =>
-          ctx.db
-            .update(schema.user)
-            .set(values as Partial<InferInsertModel<typeof schema.user>>)
-            .where(eq(schema.user.id, id))
-            .returning(safeUserColumns),
-      );
-      return updatedUser;
+
+      return password ? ctx.db.transaction(updateUser) : updateUser(ctx.db);
     }),
 });
