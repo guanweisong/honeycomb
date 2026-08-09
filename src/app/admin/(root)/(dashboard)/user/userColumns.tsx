@@ -27,6 +27,18 @@ export function getUserStatusPresentation(status: string) {
   }
 }
 
+export function formatUserDate(value: string | number | Date | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : format(date, "yyyy-MM-dd HH:mm:ss");
+}
+
 export const userTableColumns: ColumnDef<UserEntity>[] = [
   {
     accessorKey: "name",
@@ -60,20 +72,12 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     accessorKey: "createdAt",
     header: "添加时间",
     enableSorting: true,
-    cell: ({ row }) =>
-      format(
-        new Date(row.getValue("createdAt") as string),
-        "yyyy-MM-dd HH:mm:ss",
-      ),
+    cell: ({ row }) => formatUserDate(row.getValue("createdAt")),
   },
   {
     accessorKey: "updatedAt",
     header: "最后更新日期",
     enableSorting: true,
-    cell: ({ row }) =>
-      format(
-        new Date(row.getValue("updatedAt") as string),
-        "yyyy-MM-dd HH:mm:ss",
-      ),
+    cell: ({ row }) => formatUserDate(row.getValue("updatedAt")),
   },
 ];

@@ -21,6 +21,7 @@ vi.mock("@/auth-client", () => ({
     signIn: {
       username: vi.fn(),
       social: vi.fn(),
+      passkey: vi.fn(),
     },
     signOut: vi.fn(),
   },
@@ -116,5 +117,24 @@ describe("admin login page", () => {
     expect(
       container.querySelector('[data-testid="login-site-name-skeleton"]'),
     ).toBeNull();
+  });
+
+  it("shows Passkey login when WebAuthn is supported", async () => {
+    vi.stubGlobal("PublicKeyCredential", class {});
+    mockUseSiteSetting.mockReturnValue({
+      setting: { siteName: { zh: "Honeycomb" } },
+      isLoading: false,
+      refreshSetting: vi.fn(),
+    });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
+    await act(async () => {
+      root.render(React.createElement(LoginPage));
+    });
+
+    expect(container.textContent).toContain("使用 Passkey 登录");
   });
 });

@@ -16,6 +16,7 @@ import {
   Users,
   Link,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 /**
@@ -116,6 +117,12 @@ export const menu: AdminMenuItem[] = [
     path: "/admin/setting",
     permission: Permission.settingUpdate,
     icon: <Settings strokeWidth={1.5} size={18} />,
+  },
+  {
+    name: "账号安全",
+    path: "/admin/account/security",
+    permission: Permission.userReadSelf,
+    icon: <ShieldCheck strokeWidth={1.5} size={18} />,
   },
 ];
 

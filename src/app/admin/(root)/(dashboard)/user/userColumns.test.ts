@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
 import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
 
-import { getUserStatusPresentation, userTableColumns } from "./userColumns";
+import {
+  formatUserDate,
+  getUserStatusPresentation,
+  userTableColumns,
+} from "./userColumns";
 
 describe("user columns", () => {
   it("keeps the visible column order, labels, and sortable timestamps", () => {
@@ -36,5 +40,10 @@ describe("user columns", () => {
       label: "UNKNOWN",
       tone: StatusBadgeTone.GRAY,
     });
+  });
+
+  it("renders a placeholder when a user timestamp is empty or invalid", () => {
+    expect(formatUserDate(null)).toBe("-");
+    expect(formatUserDate("not-a-date")).toBe("-");
   });
 });

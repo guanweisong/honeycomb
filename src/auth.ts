@@ -2,13 +2,16 @@ import "server-only";
 
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { passkey } from "@better-auth/passkey";
 import { captcha, username } from "better-auth/plugins";
 import { getAuthEnv } from "@/env/server";
 import { getDb } from "@/packages/db/db";
 import * as schema from "@/packages/db/schema";
 import { eq } from "drizzle-orm";
+import { getPasskeyConfig } from "@/packages/auth/passkey-config";
 
 const authEnv = getAuthEnv();
+const authBaseURL = authEnv.AUTH_URL || "http://localhost:3000";
 
 function buildSocialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> = {};
@@ -28,6 +31,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
       usernameNormalization: false,
       usernameValidator: (value) => value.trim().length > 0,
     }),
+    passkey(getPasskeyConfig(authBaseURL)),
   ];
 
   if (authEnv.turnstile) {
@@ -44,7 +48,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
 }
 
 const authOptions: BetterAuthOptions = {
-  baseURL: authEnv.AUTH_URL || "http://localhost:3000",
+  baseURL: authBaseURL,
   secret: authEnv.AUTH_SECRET,
   database:
     process.env.TURSO_URL && process.env.TURSO_TOKEN

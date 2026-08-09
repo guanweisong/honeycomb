@@ -27,6 +27,7 @@ const LoginContent = () => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [providers, setProviders] = useState<AuthProvider[]>([]);
   const [isProvidersLoading, setIsProvidersLoading] = useState(true);
+  const [isPasskeySupported, setIsPasskeySupported] = useState(false);
   const form = useRef<DynamicFormRef<LoginValues>>(null);
   const searchParams = useSearchParams();
   const { setting, isLoading: isSettingLoading } = useSiteSetting();
@@ -49,6 +50,13 @@ const LoginContent = () => {
       .finally(() => {
         setIsProvidersLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    setIsPasskeySupported(
+      typeof window !== "undefined" &&
+        typeof window.PublicKeyCredential !== "undefined",
+    );
   }, []);
 
   /**
@@ -106,6 +114,17 @@ const LoginContent = () => {
     await authClient.signIn.social({ provider: providerId, callbackURL: callbackUrl });
   };
 
+  const handlePasskeyLogin = async () => {
+    const result = await authClient.signIn.passkey();
+    if (result.error) {
+      toast.error(result.error.message || "Passkey 登录失败");
+      return;
+    }
+    toast.success("登录成功");
+    refreshUser();
+    window.location.href = callbackUrl;
+  };
+
   /**
    * 验证码通过后的回调。
    *
@@ -150,6 +169,17 @@ const LoginContent = () => {
             }}
             onSubmit={onSubmit}
           />
+          {isPasskeySupported ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="w-full bg-white/80 text-black hover:bg-white"
+              onClick={handlePasskeyLogin}
+            >
+              使用 Passkey 登录
+            </Button>
+          ) : null}
           <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-white/70">
             <span className="h-px flex-1 bg-white/20" />
             <span>第三方登录</span>

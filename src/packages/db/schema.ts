@@ -72,6 +72,25 @@ export const account = sqliteTable("account", {
   ),
 }));
 
+/** Better Auth Passkey 凭据表，保存 WebAuthn 公钥和认证器元数据。 */
+export const passkey = sqliteTable("passkey", {
+  id: text("id").primaryKey().$defaultFn(objectId),
+  name: text("name"),
+  publicKey: text("public_key").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  credentialID: text("credential_id").notNull().unique(),
+  counter: integer("counter").notNull(),
+  deviceType: text("device_type").notNull(),
+  backedUp: integer("backed_up", { mode: "boolean" }).notNull(),
+  transports: text("transports"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  aaguid: text("aaguid"),
+}, (table) => ({
+  passkeyUserIdx: index("passkey_user_id_idx").on(table.userId),
+}));
+
 /** Better Auth 数据库 session 表。 */
 export const session = sqliteTable("session", {
   id: text("id").primaryKey().$defaultFn(objectId),
@@ -388,6 +407,7 @@ export const userRelations = relations(user, ({ many }) => ({
   pages: many(page),
   accounts: many(account),
   sessions: many(session),
+  passkeys: many(passkey),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -400,6 +420,13 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
     fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const passkeyRelations = relations(passkey, ({ one }) => ({
+  user: one(user, {
+    fields: [passkey.userId],
     references: [user.id],
   }),
 }));

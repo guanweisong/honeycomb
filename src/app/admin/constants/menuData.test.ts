@@ -67,6 +67,7 @@ describe("admin capability navigation", () => {
         "/admin/user",
         "/admin/link",
         "/admin/setting",
+        "/admin/account/security",
       ],
     ],
     [
@@ -86,6 +87,7 @@ describe("admin capability navigation", () => {
         "/admin/comment",
         "/admin/user",
         "/admin/link",
+        "/admin/account/security",
       ],
     ],
     [
@@ -101,6 +103,7 @@ describe("admin capability navigation", () => {
         "/admin/menu",
         "/admin/comment",
         "/admin/link",
+        "/admin/account/security",
       ],
     ],
   ])("matches the %s service capability matrix", (role, expectedPaths) => {
