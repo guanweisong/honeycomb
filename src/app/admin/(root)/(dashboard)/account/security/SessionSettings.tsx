@@ -1,0 +1,126 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { authClient } from "@/auth-client";
+import { Button } from "@/packages/ui/components/button";
+import { toast } from "sonner";
+
+type SessionItem = {
+  id: string;
+  createdAt: Date | string;
+  expiresAt: Date | string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+};
+
+export function formatSessionDate(value: Date | string | undefined) {
+  if (!value) return "未知时间";
+  const numericValue =
+    typeof value === "string" && /^\d+(\.\d+)?$/.test(value)
+      ? Number(value)
+      : value;
+  const date = new Date(numericValue);
+  return Number.isNaN(date.getTime())
+    ? "未知时间"
+    : date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function getDeviceName(userAgent: string | null | undefined) {
+  if (!userAgent) return "未知设备";
+  if (/iphone|ipad/i.test(userAgent)) return "iPhone / iPad";
+  if (/android/i.test(userAgent)) return "Android 设备";
+  if (/macintosh|mac os/i.test(userAgent)) return "Mac 设备";
+  if (/windows/i.test(userAgent)) return "Windows 设备";
+  return "其他设备";
+}
+
+const SessionSettings = () => {
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRevoking, setIsRevoking] = useState(false);
+
+  const loadSessions = async () => {
+    setIsLoading(true);
+    try {
+      const result = await authClient.$fetch("/list-sessions");
+      if (result.error) {
+        toast.error(result.error.message || "登录会话加载失败");
+        return;
+      }
+      setSessions((result.data ?? []) as SessionItem[]);
+    } catch {
+      toast.error("登录会话加载失败，请稍后重试");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadSessions();
+  }, []);
+
+  const revokeOtherSessions = async () => {
+    if (!window.confirm("确定退出其他设备上的登录吗？")) return;
+    setIsRevoking(true);
+    try {
+      const result = await authClient.$fetch("/revoke-other-sessions", {
+        method: "POST",
+      });
+      if (result.error) {
+        toast.error(result.error.message || "退出其他设备失败");
+        return;
+      }
+      toast.success("其他设备已退出登录");
+      await loadSessions();
+    } catch {
+      toast.error("退出其他设备请求失败，请稍后重试");
+    } finally {
+      setIsRevoking(false);
+    }
+  };
+
+  return (
+    <section className="space-y-4 border-t pt-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold">登录会话</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            查看当前账号的有效登录设备。
+          </p>
+        </div>
+        <Button
+          data-testid="revoke-other-sessions-button"
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isRevoking || sessions.length < 2}
+          onClick={revokeOtherSessions}
+        >
+          退出其他设备
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">正在加载登录会话...</p>
+      ) : sessions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">暂无有效登录会话。</p>
+      ) : (
+        <ul className="space-y-3">
+          {sessions.map((session) => (
+            <li key={session.id} className="rounded-md border p-3 text-sm">
+              <p className="font-medium">{getDeviceName(session.userAgent)}</p>
+              <p className="mt-1 text-muted-foreground">
+                {session.ipAddress || "未知 IP"} · 登录于 {formatSessionDate(session.createdAt)}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                到期于 {formatSessionDate(session.expiresAt)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+};
+
+export default SessionSettings;

@@ -1,0 +1,64 @@
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
+
+vi.mock("@/auth-client", () => ({
+  authClient: { $fetch: mocks.fetch },
+}));
+
+import PasswordSettings from "./PasswordSettings";
+
+describe("PasswordSettings", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    mocks.fetch.mockResolvedValue({ data: {}, error: null });
+  });
+
+  afterEach(async () => {
+    await act(async () => root.unmount());
+    container.remove();
+    vi.clearAllMocks();
+  });
+
+  it("changes the password and revokes other sessions", async () => {
+    await act(async () => root.render(React.createElement(PasswordSettings)));
+
+    expect(container.querySelector("section")?.className).toContain("pb-6");
+
+    const setValue = (testId: string, value: string) => {
+      const input = container.querySelector<HTMLInputElement>(
+        `[data-testid="${testId}"]`,
+      );
+      expect(input).not.toBeNull();
+      input!.value = value;
+    };
+
+    setValue("current-password-input", "old-password");
+    setValue("new-password-input", "new-password");
+    setValue("confirm-password-input", "new-password");
+
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>(
+          '[data-testid="change-password-button"]',
+        )
+        ?.click();
+    });
+
+    expect(mocks.fetch).toHaveBeenCalledWith("/change-password", {
+      method: "POST",
+      body: {
+        currentPassword: "old-password",
+        newPassword: "new-password",
+        revokeOtherSessions: true,
+      },
+    });
+  });
+});

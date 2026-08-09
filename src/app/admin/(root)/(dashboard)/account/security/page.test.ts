@@ -5,6 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./PasskeySettings", () => ({
   default: () => React.createElement("div", null, "Passkey settings"),
 }));
+vi.mock("./PasswordSettings", () => ({
+  default: () => React.createElement("div", null, "Password settings"),
+}));
+vi.mock("./SessionSettings", () => ({
+  default: () => React.createElement("div", null, "Session settings"),
+}));
 
 import AccountSecurityPage from "./page";
 

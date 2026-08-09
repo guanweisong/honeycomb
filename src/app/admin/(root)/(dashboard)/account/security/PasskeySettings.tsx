@@ -73,7 +73,7 @@ const PasskeySettings = () => {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Passkey</h2>
+        <h2 className="text-base font-semibold">Passkey</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           使用设备指纹、面容、PIN 或安全密钥登录。
         </p>
