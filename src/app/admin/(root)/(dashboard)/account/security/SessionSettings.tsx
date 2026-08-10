@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { authClient } from "@/auth-client";
 import { Button } from "@/packages/ui/components/button";
+import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 
 type SessionItem = {
@@ -38,6 +39,7 @@ const SessionSettings = () => {
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRevoking, setIsRevoking] = useState(false);
+  const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
 
   const loadSessions = async () => {
     setIsLoading(true);
@@ -60,11 +62,11 @@ const SessionSettings = () => {
   }, []);
 
   const revokeOtherSessions = async () => {
-    if (!window.confirm("确定退出其他设备上的登录吗？")) return;
     setIsRevoking(true);
     try {
       const result = await authClient.$fetch("/revoke-other-sessions", {
         method: "POST",
+        body: {},
       });
       if (result.error) {
         toast.error(result.error.message || "退出其他设备失败");
@@ -94,7 +96,7 @@ const SessionSettings = () => {
           variant="outline"
           size="sm"
           disabled={isRevoking || sessions.length < 2}
-          onClick={revokeOtherSessions}
+          onClick={() => setIsRevokeDialogOpen(true)}
         >
           退出其他设备
         </Button>
@@ -119,6 +121,16 @@ const SessionSettings = () => {
           ))}
         </ul>
       )}
+
+      <Dialog
+        open={isRevokeDialogOpen}
+        onOpenChange={setIsRevokeDialogOpen}
+        title="退出其他设备"
+        description="确认后，其他设备上的登录会话将立即失效。当前设备不会退出。"
+        onOK={revokeOtherSessions}
+        OKProps={{ children: "确认退出" }}
+        type="danger"
+      />
     </section>
   );
 };

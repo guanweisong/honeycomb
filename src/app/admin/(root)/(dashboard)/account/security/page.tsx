@@ -4,7 +4,7 @@ import SessionSettings from "./SessionSettings";
 
 export default function AccountSecurityPage() {
   return (
-    <div className="w-[60%] mx-auto">
+    <div className="w-full mx-auto lg:w-[60%]">
       <PasskeySettings />
       <PasswordSettings />
       <SessionSettings />

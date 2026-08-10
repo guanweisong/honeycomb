@@ -41,7 +41,7 @@ const Setting = () => {
   };
 
   return (
-    <div className="w-[60%] mx-auto">
+    <div className="w-full mx-auto lg:w-[60%]">
       <DynamicForm
         defaultValues={
           setting

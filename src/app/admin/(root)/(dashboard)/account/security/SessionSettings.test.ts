@@ -42,7 +42,6 @@ describe("SessionSettings", () => {
       }
       return Promise.resolve({ data: { status: true }, error: null });
     });
-    vi.stubGlobal("confirm", vi.fn(() => true));
   });
 
   afterEach(async () => {
@@ -67,8 +66,21 @@ describe("SessionSettings", () => {
         ?.click();
     });
 
+    expect(mocks.fetch).not.toHaveBeenCalledWith("/revoke-other-sessions", {
+      method: "POST",
+      body: {},
+    });
+
+    await act(async () => {
+      const confirmButton = Array.from(document.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("确认退出"),
+      );
+      confirmButton?.click();
+    });
+
     expect(mocks.fetch).toHaveBeenCalledWith("/revoke-other-sessions", {
       method: "POST",
+      body: {},
     });
   });
 

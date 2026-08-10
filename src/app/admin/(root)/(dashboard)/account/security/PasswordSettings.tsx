@@ -68,8 +68,8 @@ const PasswordSettings = () => {
           name="newPassword"
           type="password"
           required
-          minLength={8}
-          placeholder="新密码（至少 8 位）"
+          minLength={6}
+          placeholder="新密码（至少 6 位）"
           className="h-10 w-full rounded-md border px-3 text-sm"
         />
         <input
@@ -77,7 +77,7 @@ const PasswordSettings = () => {
           name="confirmPassword"
           type="password"
           required
-          minLength={8}
+          minLength={6}
           placeholder="确认新密码"
           className="h-10 w-full rounded-md border px-3 text-sm"
         />

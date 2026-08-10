@@ -61,4 +61,19 @@ describe("PasswordSettings", () => {
       },
     });
   });
+
+  it("requires passwords to be at least 6 characters", async () => {
+    await act(async () => root.render(React.createElement(PasswordSettings)));
+
+    const newPassword = container.querySelector<HTMLInputElement>(
+      '[data-testid="new-password-input"]',
+    );
+    const confirmPassword = container.querySelector<HTMLInputElement>(
+      '[data-testid="confirm-password-input"]',
+    );
+
+    expect(newPassword?.minLength).toBe(6);
+    expect(confirmPassword?.minLength).toBe(6);
+    expect(newPassword?.placeholder).toContain("至少 6 位");
+  });
 });

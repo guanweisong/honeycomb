@@ -60,6 +60,7 @@ const authOptions: BetterAuthOptions = {
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
+    minPasswordLength: 6,
   },
   socialProviders: buildSocialProviders(),
   user: {

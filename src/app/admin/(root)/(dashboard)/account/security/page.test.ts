@@ -32,7 +32,9 @@ describe("AccountSecurityPage", () => {
   it("uses the same 60 percent centered content width as settings", async () => {
     await act(async () => root.render(React.createElement(AccountSecurityPage)));
 
-    expect(container.firstElementChild?.className).toBe("w-[60%] mx-auto");
+    expect(container.firstElementChild?.className).toBe(
+      "w-full mx-auto lg:w-[60%]",
+    );
     expect(container.querySelector("h1")).toBeNull();
   });
 });

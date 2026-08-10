@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { getAuthenticatorName } from "@better-auth/passkey";
 import { authClient } from "@/auth-client";
 import { Button } from "@/packages/ui/components/button";
+import { Skeleton } from "@/packages/ui/components/skeleton";
+import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 
 function formatCreatedAt(value: Date | string | undefined) {
@@ -15,6 +17,11 @@ const PasskeySettings = () => {
   const passkeysQuery = authClient.useListPasskeys();
   const nameInput = useRef<HTMLInputElement>(null);
   const [isSupported, setIsSupported] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [renameName, setRenameName] = useState("");
 
   useEffect(() => {
     setIsSupported(
@@ -35,17 +42,19 @@ const PasskeySettings = () => {
     toast.success("Passkey 注册成功");
   };
 
-  const renamePasskey = async (id: string, currentName: string) => {
-    const nextName = window.prompt("请输入新的 Passkey 名称", currentName);
-    if (!nextName?.trim()) return;
+  const renamePasskey = async () => {
+    if (!renameTarget || !renameName.trim()) return;
     const result = await authClient.$fetch("/passkey/update-passkey", {
       method: "POST",
-      body: { id, name: nextName.trim() },
+      body: { id: renameTarget.id, name: renameName.trim() },
     });
     if (result.error) {
       toast.error(result.error.message || "Passkey 重命名失败");
       return;
     }
+    await passkeysQuery.refetch();
+    setRenameTarget(null);
+    setRenameName("");
     toast.success("Passkey 已重命名");
   };
 
@@ -63,7 +72,22 @@ const PasskeySettings = () => {
   };
 
   if (passkeysQuery.isPending) {
-    return <p>正在加载 Passkey...</p>;
+    return (
+      <section className="space-y-6 pb-6" aria-label="正在加载 Passkey">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      </section>
+    );
   }
 
   if (!isSupported) {
@@ -71,7 +95,7 @@ const PasskeySettings = () => {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 pb-6">
       <div>
         <h2 className="text-base font-semibold">Passkey</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -112,10 +136,14 @@ const PasskeySettings = () => {
               </div>
               <div className="flex gap-2">
                 <Button
+                  data-testid="passkey-rename-button"
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => renamePasskey(passkey.id, label)}
+                  onClick={() => {
+                    setRenameTarget({ id: passkey.id, name: label });
+                    setRenameName(label);
+                  }}
                 >
                   重命名
                 </Button>
@@ -132,6 +160,31 @@ const PasskeySettings = () => {
           );
         })}
       </ul>
+
+      <Dialog
+        open={renameTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameTarget(null);
+            setRenameName("");
+          }
+        }}
+        title="重命名 Passkey"
+        onOK={renamePasskey}
+        OKProps={{
+          children: "保存",
+          disabled: !renameName.trim(),
+        }}
+      >
+        <input
+          key={renameTarget?.id ?? "rename-passkey"}
+          data-testid="passkey-rename-input"
+          value={renameName}
+          onChange={(event) => setRenameName(event.target.value)}
+          placeholder="请输入 Passkey 名称"
+          className="h-10 w-full rounded-md border px-3 text-sm"
+        />
+      </Dialog>
     </section>
   );
 };
