@@ -56,6 +56,8 @@ describe("PasskeySettings", () => {
     await act(async () => root.render(React.createElement(PasskeySettings)));
 
     expect(container.querySelector("section")?.className).toContain("pb-6");
+    expect(container.querySelector("section")?.className).not.toContain("pt-6");
+    expect(container.querySelector("h2")).toBeNull();
     expect(container.textContent).toContain("MacBook");
     const nameInput = container.querySelector<HTMLInputElement>(
       '[data-testid="passkey-name-input"]',

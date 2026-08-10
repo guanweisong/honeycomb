@@ -17,9 +17,15 @@ export interface TabsProps {
   }[];
   defaultValue?: string;
   className?: string;
+  contentClassName?: string;
 }
 
-export function Tabs({ tabs, defaultValue, className }: TabsProps) {
+export function Tabs({
+  tabs,
+  defaultValue,
+  className,
+  contentClassName,
+}: TabsProps) {
   return (
     <BaseTabs
       defaultValue={defaultValue || tabs[0]?.value}
@@ -33,7 +39,7 @@ export function Tabs({ tabs, defaultValue, className }: TabsProps) {
         ))}
       </TabsList>
       {tabs.map(({ value, content }) => (
-        <TabsContent key={value} value={value}>
+        <TabsContent key={value} value={value} className={contentClassName}>
           {content}
         </TabsContent>
       ))}

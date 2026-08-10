@@ -37,4 +37,19 @@ describe("AccountSecurityPage", () => {
     );
     expect(container.querySelector("h1")).toBeNull();
   });
+
+  it("organizes security settings into tabs with Passkey selected by default", async () => {
+    await act(async () => root.render(React.createElement(AccountSecurityPage)));
+
+    const tabs = container.querySelectorAll('[role="tab"]');
+    expect(tabs).toHaveLength(3);
+    expect(tabs[0]?.textContent).toContain("Passkey");
+    expect(tabs[1]?.textContent).toContain("修改密码");
+    expect(tabs[2]?.textContent).toContain("登录会话");
+    expect(tabs[0]?.getAttribute("data-state")).toBe("active");
+    expect(container.querySelector('[data-slot="tabs-content"]')?.className).toContain(
+      "pt-6",
+    );
+    expect(container.textContent).toContain("Passkey settings");
+  });
 });

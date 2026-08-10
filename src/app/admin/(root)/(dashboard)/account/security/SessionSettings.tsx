@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { authClient } from "@/auth-client";
 import { Button } from "@/packages/ui/components/button";
+import { Skeleton } from "@/packages/ui/components/skeleton";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 
@@ -82,11 +83,10 @@ const SessionSettings = () => {
   };
 
   return (
-    <section className="space-y-4 border-t pt-6">
+    <section className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold">登录会话</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             查看当前账号的有效登录设备。
           </p>
         </div>
@@ -103,7 +103,13 @@ const SessionSettings = () => {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">正在加载登录会话...</p>
+        <div
+          className="space-y-3"
+          aria-label="正在加载登录会话"
+        >
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
       ) : sessions.length === 0 ? (
         <p className="text-sm text-muted-foreground">暂无有效登录会话。</p>
       ) : (

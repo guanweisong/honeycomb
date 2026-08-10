@@ -91,14 +91,17 @@ const PasskeySettings = () => {
   }
 
   if (!isSupported) {
-    return <p>当前浏览器不支持 Passkey，请继续使用密码登录。</p>;
+    return (
+      <p>
+        当前浏览器不支持 Passkey，请继续使用密码登录。
+      </p>
+    );
   }
 
   return (
     <section className="space-y-6 pb-6">
       <div>
-        <h2 className="text-base font-semibold">Passkey</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           使用设备指纹、面容、PIN 或安全密钥登录。
         </p>
       </div>

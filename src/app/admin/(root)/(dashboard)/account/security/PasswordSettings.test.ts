@@ -30,7 +30,11 @@ describe("PasswordSettings", () => {
   it("changes the password and revokes other sessions", async () => {
     await act(async () => root.render(React.createElement(PasswordSettings)));
 
-    expect(container.querySelector("section")?.className).toContain("pb-6");
+    const section = container.querySelector("section");
+    expect(section?.className).toContain("pb-6");
+    expect(section?.className).not.toContain("border-t");
+    expect(section?.className).not.toContain("pt-6");
+    expect(container.querySelector("h2")).toBeNull();
 
     const setValue = (testId: string, value: string) => {
       const input = container.querySelector<HTMLInputElement>(

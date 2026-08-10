@@ -47,10 +47,9 @@ const PasswordSettings = () => {
   };
 
   return (
-    <section className="space-y-4 border-t pb-6 pt-6">
+    <section className="space-y-4 pb-6">
       <div>
-        <h2 className="text-base font-semibold">修改密码</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           修改密码后，其他设备上的登录会话将自动失效。
         </p>
       </div>

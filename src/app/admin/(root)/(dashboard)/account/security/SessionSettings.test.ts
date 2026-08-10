@@ -55,6 +55,10 @@ describe("SessionSettings", () => {
     await act(async () => root.render(React.createElement(SessionSettings)));
     await act(async () => Promise.resolve());
 
+    const section = container.querySelector("section");
+    expect(section?.className).not.toContain("border-t");
+    expect(section?.className).not.toContain("pt-6");
+    expect(container.querySelector("h2")).toBeNull();
     expect(container.textContent).toContain("Mac 设备");
     expect(container.textContent).toContain("Android 设备");
 
@@ -86,5 +90,13 @@ describe("SessionSettings", () => {
 
   it("formats millisecond timestamps returned as strings", () => {
     expect(formatSessionDate("1786288777627.0")).not.toBe("未知时间");
+  });
+
+  it("shows skeleton placeholders while sessions are loading", async () => {
+    mocks.fetch.mockReturnValueOnce(new Promise(() => {}));
+
+    await act(async () => root.render(React.createElement(SessionSettings)));
+
+    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
   });
 });
