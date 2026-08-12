@@ -16,6 +16,8 @@ export interface TabsProps {
     disabled?: boolean;
   }[];
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
   className?: string;
   contentClassName?: string;
 }
@@ -23,12 +25,16 @@ export interface TabsProps {
 export function Tabs({
   tabs,
   defaultValue,
+  value,
+  onValueChange,
   className,
   contentClassName,
 }: TabsProps) {
   return (
     <BaseTabs
       defaultValue={defaultValue || tabs[0]?.value}
+      value={value}
+      onValueChange={onValueChange}
       className={className}
     >
       <TabsList>

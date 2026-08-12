@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定义管理后台大型页面与 DataTable 的职责边界，并保持外部行为不变。
+定义管理后台大型页面、DataTable 和 feature 辅助代码的职责边界，并在重构过程中保持外部行为、接口和操作流程不变。
 
 ## Requirements
 
@@ -16,10 +16,15 @@
 - **THEN** 纯状态 hook 生成与现有 API 相同的请求参数并在必要时重置页码和选择
 
 ### Requirement: 大型管理页使用 feature 边界
-系统 SHALL 将 menu、user、link、media、page edit 和 comment 页面的查询、mutation、列定义、对话框、表单转换和页面组合职责分离。
+系统 SHALL 将 menu、user、link、media、page edit、comment、tag 和 post category 页面的查询、mutation、列定义、对话框、表单转换和页面组合职责分离。管理后台 feature 的共享辅助代码目录 MUST 使用 `lib` 或 `constants` 这类正确且一致的命名。
 #### Scenario: 打开管理页面
 - **WHEN** 用户进入任一已迁移管理页面
 - **THEN** page shell 组合 feature 模块且不直接承载全部请求、表单和对话框实现
+
+#### Scenario: 引用后台辅助代码
+
+- **WHEN** 管理后台 feature 引用本区域的帮助函数或常量
+- **THEN** 导入路径使用一致、正确的 `lib` 或 `constants` 目录名
 
 ### Requirement: 管理页重构保持外部行为
 系统 MUST 保持现有 URL、tRPC 输入输出、权限结果、视觉文案和用户操作流程。
