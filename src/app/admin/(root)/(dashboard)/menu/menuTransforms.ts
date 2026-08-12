@@ -5,7 +5,7 @@ import {
 import {
   MenuType,
   MenuTypeName,
-} from "@/packages/trpc/api/modules/menu/types/menu.type";
+} from "@/packages/domain/navigation/menu";
 
 export type MenuEntityTree = {
   id: string;

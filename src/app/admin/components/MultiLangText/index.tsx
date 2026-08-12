@@ -1,7 +1,7 @@
 import {
   MultiLang,
   MultiLangEnum,
-} from "@/packages/trpc/api/types/multi.lang";
+} from "@/packages/domain/localization/multi-lang";
 import Image from "next/image";
 import { useState } from "react";
 import enIcon from "./img/en.svg";

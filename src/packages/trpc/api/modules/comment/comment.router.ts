@@ -6,7 +6,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CommentListQuerySchema } from "./schemas/comment.list.query.schema";

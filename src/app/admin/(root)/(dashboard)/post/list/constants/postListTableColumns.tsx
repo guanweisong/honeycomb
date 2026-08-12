@@ -1,12 +1,12 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
-import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
-import { postStatusOptions } from "@/packages/trpc/api/modules/post/types/post.status";
-import { postTypeOptions } from "@/packages/trpc/api/modules/post/types/post.type";
-import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
-import { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { PostListItemEntity } from "@/packages/trpc/api/outputs";
+import { postStatusOptions } from "@/packages/domain/content/post-status";
+import { postTypeOptions } from "@/packages/domain/content/post";
+import { CategoryEntity } from "@/packages/trpc/api/outputs";
+import { UserEntity } from "@/packages/trpc/api/outputs";
 import {
   StatusBadge,
   StatusBadgeTone,

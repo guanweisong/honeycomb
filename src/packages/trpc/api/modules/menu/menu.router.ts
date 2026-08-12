@@ -5,13 +5,13 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
-import * as schema from "@/packages/db/schema";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import * as schema from "@/packages/infrastructure/db/schema";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { getMenuList } from "@/packages/trpc/api/modules/menu/menu.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 菜单相关的 tRPC 路由。

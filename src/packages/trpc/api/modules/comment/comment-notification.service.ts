@@ -1,12 +1,12 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
-import { sendEmail } from "@/packages/trpc/api/utils/sendEmail";
-import { LogEvent } from "@/packages/observability/core/names";
-import { getLogger, observeDbOperation } from "@/packages/observability/server";
+import { sendCommentEmail } from "@/packages/application/notifications/comment/comment-email";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { getLogger, observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 const commentNotificationSelection = {
   ...selectAllColumns(schema.comment),
@@ -45,7 +45,7 @@ export async function notifyCommentCreated(
     throw new Error("Comment or setting not found");
   }
 
-  sendEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => {
+  sendCommentEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => {
     getLogger().error(LogEvent.externalServiceOperation, {
       service: "email",
       operation: "send-admin-notification",
@@ -57,7 +57,7 @@ export async function notifyCommentCreated(
   if (parentId) {
     const parentComment = await getNotificationComment(db, parentId);
     if (parentComment) {
-      sendEmail("REPLY_NOTICE", {
+      sendCommentEmail("REPLY_NOTICE", {
         setting,
         currentComment,
         parentComment,

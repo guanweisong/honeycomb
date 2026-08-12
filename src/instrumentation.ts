@@ -1,12 +1,12 @@
 import type { Instrumentation } from "next";
 
 import { getServerEnv } from "./env/server";
-import { LogEvent } from "./packages/observability/core/names";
+import { LogEvent } from "./packages/infrastructure/observability/core/names";
 import {
   configureObservability,
   getLogger,
-} from "./packages/observability/server/registry";
-import { createRequestContext } from "./packages/observability/server/request-context";
+} from "./packages/infrastructure/observability/server/registry";
+import { createRequestContext } from "./packages/infrastructure/observability/server/request-context";
 
 export function register() {
   configureObservability();

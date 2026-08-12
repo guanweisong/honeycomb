@@ -28,8 +28,8 @@ async function loadModule() {
   vi.resetModules();
   const [cache, registry, memory] = await Promise.all([
     import("./upstash-cache"),
-    import("@/packages/observability/server/registry"),
-    import("@/packages/observability/adapters/memory"),
+    import("@/packages/infrastructure/observability/server/registry"),
+    import("@/packages/infrastructure/observability/adapters/memory"),
   ]);
   return { cache, registry, memory };
 }

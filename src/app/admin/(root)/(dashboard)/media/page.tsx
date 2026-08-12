@@ -1,1 +1,5 @@
-export { MediaPageShell as default } from "./MediaPageShell";
+import { MediaPageShell } from "./MediaPageShell";
+
+export default function MediaPage() {
+  return <MediaPageShell />;
+}

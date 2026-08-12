@@ -15,8 +15,8 @@ import {
 } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
-import { PageEntity } from "@/packages/trpc/api/modules/page/types/page.entity";
-import { Permission } from "@/packages/auth/permissions";
+import { PageEntity } from "@/packages/trpc/api/outputs";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**

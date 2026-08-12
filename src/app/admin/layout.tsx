@@ -11,6 +11,11 @@ import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
 import { useRouter } from "next/navigation";
+import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
+import {
+  TiptapMediaPickerProvider,
+  type MediaPickerRenderer,
+} from "@/packages/ui/extended/Tiptap/media-picker";
 
 /**
  * Admin 应用的根布局组件。
@@ -38,6 +43,17 @@ export default function RootLayout({
       onForbidden: () => router.replace("/admin/forbidden"),
     }),
   );
+  const renderMediaPicker: MediaPickerRenderer = ({
+    open,
+    onConfirm,
+    onCancel,
+  }) => (
+    <PhotoPickerModal
+      showPhotoPicker={open}
+      handlePhotoPickerOk={(media) => onConfirm({ url: media.url })}
+      handlePhotoPickerCancel={onCancel}
+    />
+  );
 
   return (
     <html lang="zh-cn">
@@ -49,7 +65,11 @@ export default function RootLayout({
       </head>
       <body>
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <QueryClientProvider client={queryClient}>
+            <TiptapMediaPickerProvider renderer={renderMediaPicker}>
+              {children}
+            </TiptapMediaPickerProvider>
+          </QueryClientProvider>
         </trpc.Provider>
         <Toaster />
         <Analytics />

@@ -1,4 +1,4 @@
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { createInsertSchema } from "drizzle-zod";
 import { I18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 

@@ -2,9 +2,9 @@
 
 import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
+import { PostStatus } from "@/packages/domain/content/post-status";
 import type { PostSubmitAction } from "../../hooks/usePostEditor";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 interface PostEditorActionsProps {

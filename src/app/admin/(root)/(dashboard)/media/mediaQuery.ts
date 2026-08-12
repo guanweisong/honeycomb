@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import type { MediaIndexInput } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 

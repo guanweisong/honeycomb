@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getConfiguredProviderIds } from "@/packages/auth/policy";
+import { getConfiguredProviderIds } from "@/packages/identity/auth/policy";
 
 describe("Better Auth integration", () => {
   it("keeps the supported social provider order stable", () => {

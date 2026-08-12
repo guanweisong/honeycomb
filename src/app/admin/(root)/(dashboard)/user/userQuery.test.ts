@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { UserLevel } from "@/packages/domain/identity/user";
 
 const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],

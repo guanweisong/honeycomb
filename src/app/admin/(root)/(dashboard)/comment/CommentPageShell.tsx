@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
-import type { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import type { CommentEntity } from "@/packages/trpc/api/outputs";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";

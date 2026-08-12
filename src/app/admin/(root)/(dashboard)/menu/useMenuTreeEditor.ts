@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import type { MenuType } from "@/packages/domain/navigation/menu";
 import {
   flattenMenuTree,
   formatMenuTree,

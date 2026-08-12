@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
-import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
 import { normalizePostForm } from "./normalizePostForm";
 
 describe("normalizePostForm", () => {

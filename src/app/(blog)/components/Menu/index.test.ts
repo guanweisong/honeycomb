@@ -46,7 +46,7 @@ vi.mock("@/app/(blog)/i18n/navigation", () => ({
 
 import Menu from "./index";
 import Breadcrumb from "../Breadcrumb";
-import getCurrentPathOfMenu from "../../libs/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "../../lib/getCurrentPathOfMenu";
 
 const flatMenu = [
   {

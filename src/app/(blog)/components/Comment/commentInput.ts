@@ -1,4 +1,4 @@
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import type { CommentInsertInput } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
 import type { CommentIdentity } from "./hooks/useCommentIdentity";
 

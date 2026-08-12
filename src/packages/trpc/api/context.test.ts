@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { runWithRequestContext } from "../../observability/server/node-request-context";
-import { UserLevel } from "./modules/user/types/user.level";
-import { UserStatus } from "./modules/user/types/user.status";
+import { runWithRequestContext } from "../../infrastructure/observability/server/node-request-context";
+import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 
 const database = {
   select: vi.fn(),
@@ -23,7 +22,7 @@ vi.mock("@/auth", () => ({
   auth: { api: { getSession } },
 }));
 
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: () => database,
 }));
 

@@ -2,8 +2,8 @@
 
 import { toast } from "sonner";
 import type { CommentUpdate } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
-import type { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
-import type { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import type { CommentEntity } from "@/packages/trpc/api/outputs";
+import type { CommentStatus } from "@/packages/domain/content/comment";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export type CommentActionState = "success" | "error";

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ModalType } from "@/app/admin/types/ModalType";
-import type { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
+import type { LinkEntity } from "@/packages/trpc/api/outputs";
 
 import {
   closeLinkDialog,

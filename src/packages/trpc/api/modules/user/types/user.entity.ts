@@ -1,8 +1,0 @@
-import { inferProcedureOutput } from "@trpc/server";
-import { AppRouter } from "@/packages/trpc/api/appRouter";
-
-export type UserEntity = inferProcedureOutput<
-  AppRouter["user"]["index"]
->["list"][number];
-
-export type CurrentUser = inferProcedureOutput<AppRouter["user"]["current"]>;

@@ -1,17 +1,17 @@
 import "server-only";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
 import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
 import { PageListQueryInput } from "./schemas/page.list.query.schema";
-import { PageStatus } from "./types/page.status";
+import { PageStatus } from "@/packages/domain/content/page";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 type AuthorRef = {
   id: string;

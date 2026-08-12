@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { utcFormat } from "@/app/(blog)/libs/utcFormat";
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
-import type { CommentTreeEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import { utcFormat } from "@/app/(blog)/lib/utcFormat";
+import { CommentStatus } from "@/packages/domain/content/comment";
+import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
 
 interface CommentTreeProps {
   comments: CommentTreeEntity[];

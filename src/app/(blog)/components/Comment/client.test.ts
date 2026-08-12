@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import { CommentStatus } from "@/packages/domain/content/comment";
 
 const {
   mockToastError,
@@ -53,7 +53,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/app/(blog)/libs/refreshPath", () => ({
+vi.mock("@/app/(blog)/lib/refreshPath", () => ({
   refreshPath: (...args: unknown[]) => mockRefreshPath(...args),
 }));
 

@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { clientLogger } from "@/packages/observability/client";
-import { LogEvent } from "@/packages/observability/core/names";
-import type { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import { clientLogger } from "@/packages/infrastructure/observability/client";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 type ImageMetadata = {

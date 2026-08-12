@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import * as schema from "@/packages/db/schema";
-import type { Database } from "@/packages/db/db";
-import { observeDbOperation } from "@/packages/observability/server";
+import * as schema from "@/packages/infrastructure/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 构建分类筛选条件（包括子分类）

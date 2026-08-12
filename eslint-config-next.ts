@@ -18,7 +18,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/packages/observability/adapters/console.ts"],
+    files: ["src/packages/infrastructure/observability/adapters/console.ts"],
     rules: {
       "no-console": "off",
     },
@@ -27,6 +27,8 @@ export default defineConfig([
     ".next/**",
     "**/.next/**",
     ".compare-head/**",
+    ".worktrees/**",
+    "worktrees/**",
     ".open-next/**",
     "out/**",
     "build/**",

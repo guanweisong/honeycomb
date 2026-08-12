@@ -1,14 +1,14 @@
 import "server-only";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
-import type { MultiLang } from "@/packages/trpc/api/types/multi.lang";
-import { MenuType } from "./types/menu.type";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
+import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { PageStatus } from "@/packages/domain/content/page";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 export async function getMenuList(
   db: Database,

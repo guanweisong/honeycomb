@@ -5,8 +5,8 @@ import { getTurnstileEnv } from "@/env/server";
 import {
   getLogger,
   observeExternalServiceOperation,
-} from "@/packages/observability/server";
-import { LogEvent } from "@/packages/observability/core/names";
+} from "@/packages/infrastructure/observability/server";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 
 interface TurnstileVerifyResponse {
   success: boolean;

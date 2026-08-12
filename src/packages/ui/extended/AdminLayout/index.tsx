@@ -11,7 +11,7 @@ import React, {
 import Avatar from "../Avatar";
 import { Menu, MenuItem } from "../Menu";
 import { UserDropdown } from "../UserDropdown";
-import { CurrentUser } from "@/packages/trpc/api/modules/user/types/user.entity";
+import type { CurrentUser } from "@/packages/domain/identity/user";
 import { Button } from "../../components/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "../../lib/utils";

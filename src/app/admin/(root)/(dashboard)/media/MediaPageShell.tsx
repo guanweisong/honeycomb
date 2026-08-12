@@ -3,8 +3,8 @@
 import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import { Permission } from "@/packages/auth/permissions";
-import type { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import { Permission } from "@/packages/identity/auth/permissions";
+import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import { Button } from "@/packages/ui/components/button";
 import { MediaGrid } from "./MediaGrid";
 import { useMediaActions } from "./mediaActions";

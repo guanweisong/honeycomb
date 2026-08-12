@@ -8,11 +8,11 @@ import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.
 import {
   UserLevel,
   userLevelOptions,
-} from "@/packages/trpc/api/modules/user/types/user.level";
+} from "@/packages/domain/identity/user";
 import {
   UserStatus,
   userStatusOptions,
-} from "@/packages/trpc/api/modules/user/types/user.status";
+} from "@/packages/domain/identity/user";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import type { UserDialogState } from "./userActions";

@@ -22,6 +22,7 @@ const PasskeySettings = () => {
     name: string;
   } | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => {
     setIsSupported(
@@ -58,16 +59,18 @@ const PasskeySettings = () => {
     toast.success("Passkey 已重命名");
   };
 
-  const deletePasskey = async (id: string) => {
-    if (!window.confirm("确定删除这个 Passkey 吗？")) return;
+  const deletePasskey = async () => {
+    if (!deleteTarget) return false;
     const result = await authClient.$fetch("/passkey/delete-passkey", {
       method: "POST",
-      body: { id },
+      body: { id: deleteTarget },
     });
     if (result.error) {
       toast.error(result.error.message || "Passkey 删除失败");
-      return;
+      return false;
     }
+    await passkeysQuery.refetch();
+    setDeleteTarget(null);
     toast.success("Passkey 已删除");
   };
 
@@ -151,10 +154,11 @@ const PasskeySettings = () => {
                   重命名
                 </Button>
                 <Button
+                  data-testid="passkey-delete-button"
                   type="button"
                   variant="destructive"
                   size="sm"
-                  onClick={() => deletePasskey(passkey.id)}
+                  onClick={() => setDeleteTarget(passkey.id)}
                 >
                   删除
                 </Button>
@@ -188,6 +192,21 @@ const PasskeySettings = () => {
           className="h-10 w-full rounded-md border px-3 text-sm"
         />
       </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="删除 Passkey"
+        description="删除后将无法使用此 Passkey 登录。"
+        type="danger"
+        onOK={deletePasskey}
+        OKProps={{
+          children: "删除",
+          id: "passkey-delete-confirm-button",
+        }}
+      />
     </section>
   );
 };

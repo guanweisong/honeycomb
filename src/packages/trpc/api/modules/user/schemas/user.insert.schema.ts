@@ -1,4 +1,4 @@
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { createInsertSchema } from "drizzle-zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";

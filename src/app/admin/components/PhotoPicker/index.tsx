@@ -1,10 +1,10 @@
 "use client";
 
-import PhotoPickerPanel from "@/app/admin/(root)/(dashboard)/media/page";
+import { MediaPageShell } from "@/app/admin/(root)/(dashboard)/media/MediaPageShell";
 import { Sheet } from "@/packages/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import { MediaEntity } from "@/packages/trpc/api/outputs";
 
 /**
  * 图片选择器模态框的属性接口。
@@ -66,7 +66,7 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
       onOpenChange={() => handlePhotoPickerCancel()}
       showFooter={true}
     >
-      <PhotoPickerPanel onSelect={onSelect} />
+      <MediaPageShell onSelect={onSelect} />
     </Sheet>
   );
 };

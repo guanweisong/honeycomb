@@ -10,7 +10,7 @@ import type { CommentProps } from "./index";
 import type {
   CommentTreeEntity,
   CommentTreeResponse,
-} from "@/packages/trpc/api/modules/comment/types/comment.entity";
+} from "@/packages/trpc/api/outputs";
 import { CommentForm } from "./CommentForm";
 import { CommentTree } from "./CommentTree";
 import { useCommentIdentity } from "./hooks/useCommentIdentity";

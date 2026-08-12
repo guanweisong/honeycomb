@@ -5,7 +5,7 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormMessage } from "@/packages/ui/components/form";
 import React from "react";
-import { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
+import { PostDetailEntity } from "@/packages/trpc/api/outputs";
 import Image from "next/image";
 
 /**

@@ -4,11 +4,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/libs/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "@/app/(blog)/lib/getCurrentPathOfMenu";
 import { cn } from "@/packages/ui/lib/utils";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuEntity } from "@/packages/trpc/api/modules/menu/types/menu.entity";
+import { MenuEntity } from "@/packages/trpc/api/outputs";
 
 /**
  * 菜单组件的属性接口。

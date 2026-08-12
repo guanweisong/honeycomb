@@ -1,16 +1,16 @@
 import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
 import type { LinkListQueryInput } from "./schemas/link.list.query.schema";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 export async function getLinkList(
   db: Database,

@@ -132,4 +132,52 @@ describe("PasskeySettings", () => {
     });
     expect(mocks.refetch).toHaveBeenCalled();
   });
+
+  it("confirms deletion through the shared dialog and refreshes the list", async () => {
+    await act(async () => root.render(React.createElement(PasskeySettings)));
+
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="passkey-delete-button"]')
+        ?.click();
+    });
+
+    expect(document.body.textContent).toContain("删除 Passkey");
+    expect(document.body.textContent).toContain("删除后将无法使用此 Passkey 登录。");
+
+    await act(async () => {
+      document
+        .querySelector<HTMLButtonElement>("#passkey-delete-confirm-button")
+        ?.click();
+    });
+
+    expect(mocks.fetch).toHaveBeenCalledWith("/passkey/delete-passkey", {
+      method: "POST",
+      body: { id: "passkey-1" },
+    });
+    expect(mocks.refetch).toHaveBeenCalled();
+  });
+
+  it("keeps the delete dialog open and does not refresh when deletion fails", async () => {
+    mocks.fetch.mockResolvedValueOnce({
+      data: null,
+      error: { message: "删除失败" },
+    });
+    await act(async () => root.render(React.createElement(PasskeySettings)));
+
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="passkey-delete-button"]')
+        ?.click();
+    });
+
+    await act(async () => {
+      document
+        .querySelector<HTMLButtonElement>("#passkey-delete-confirm-button")
+        ?.click();
+    });
+
+    expect(document.body.textContent).toContain("删除 Passkey");
+    expect(mocks.refetch).not.toHaveBeenCalled();
+  });
 });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 
 /**
  * 从数据库常量 MenuType 创建的 Zod 枚举 schema。

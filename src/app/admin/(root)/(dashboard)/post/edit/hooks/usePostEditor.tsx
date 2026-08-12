@@ -12,13 +12,13 @@ import type { PostInsert } from "@/packages/trpc/api/modules/post/schemas/post.i
 import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import type { PostUpdate } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { PostDetailEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
-import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
-import type { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+import type { PostDetailEntity } from "@/packages/trpc/api/outputs";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
+import type { TagEntity } from "@/packages/trpc/api/outputs";
 import { normalizePostForm } from "../utils/normalizePostForm";
-import { clientLogger } from "@/packages/observability/client";
-import { LogEvent } from "@/packages/observability/core/names";
+import { clientLogger } from "@/packages/infrastructure/observability/client";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 export type PostSubmitAction = "create" | "update";

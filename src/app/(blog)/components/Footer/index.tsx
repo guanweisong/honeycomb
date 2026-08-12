@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { getLocale } from "next-intl/server";
 import { createServerClient } from "@/packages/trpc/api";
-import { MultiLangEnum } from "@/packages/trpc/api/types/multi.lang";
+import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
 
 /**
  * 网站底部组件。

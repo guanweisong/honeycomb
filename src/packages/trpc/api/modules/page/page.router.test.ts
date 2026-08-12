@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "./page.router";
-import * as schema from "@/packages/db/schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { PageStatus } from "./types/page.status";
-import { PageTemplate } from "./types/page.template";
+import * as schema from "@/packages/infrastructure/db/schema";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { PageStatus } from "@/packages/domain/content/page";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // Mock database and related modules
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 

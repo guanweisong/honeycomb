@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
-import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
+import { PageStatus } from "@/packages/domain/content/page";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 import {
   getPageEditorId,
   toPageEditorFormValues,

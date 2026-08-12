@@ -6,16 +6,16 @@ import { useScroll } from "ahooks";
 import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Signature from "../Signature";
-import { utcFormat } from "@/app/(blog)/libs/utcFormat";
+import { utcFormat } from "@/app/(blog)/lib/utcFormat";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
-import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
+import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import {
   PostType,
   PostTypeName,
-} from "@/packages/trpc/api/modules/post/types/post.type";
+} from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/app/(blog)/types/PostTypeBgColor";
 

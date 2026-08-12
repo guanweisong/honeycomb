@@ -1,5 +1,5 @@
 import { defineRouting } from "next-intl/routing";
-import { MultiLangEnum } from "@/packages/trpc/api/types/multi.lang";
+import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
 
 /**
  * 国际化路由配置。

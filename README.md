@@ -383,11 +383,11 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 
 ### 接入自定义 adapter
 
-供应商接入只需实现 [`Logger`](src/packages/observability/core/contracts.ts) 和/或 [`Metrics`](src/packages/observability/core/contracts.ts)，并在服务端启动时配置：
+供应商接入只需实现 [`Logger`](src/packages/infrastructure/observability/core/contracts.ts) 和/或 [`Metrics`](src/packages/infrastructure/observability/core/contracts.ts)，并在服务端启动时配置：
 
 ```ts
-import type { Logger, Metrics } from "@/packages/observability/core/contracts";
-import { configureObservability } from "@/packages/observability/server";
+import type { Logger, Metrics } from "@/packages/infrastructure/observability/core/contracts";
+import { configureObservability } from "@/packages/infrastructure/observability/server";
 
 const logger: Logger = {
   info: (event, context) => platformLog("info", event, context),

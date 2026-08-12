@@ -5,7 +5,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -14,9 +14,9 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { TagListQuerySchema } from "@/packages/trpc/api/modules/tag/schemas/tag.list.query.schema";
 import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.update.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 标签相关的 tRPC 路由。

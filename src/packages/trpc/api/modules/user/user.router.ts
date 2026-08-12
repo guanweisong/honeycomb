@@ -5,7 +5,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission, can } from "@/packages/auth/permissions";
+import { Permission, can } from "@/packages/identity/auth/permissions";
 import { TRPCError } from "@trpc/server";
 import {
   buildDrizzleWhere,
@@ -15,16 +15,16 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { UserListQuerySchema } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
 import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
 import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { observeDbOperation } from "@/packages/observability/server";
-import type { Database } from "@/packages/db/db";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import type { Database } from "@/packages/infrastructure/db/db";
 import {
   setCredentialPassword,
   type CredentialStore,
-} from "@/packages/auth/credentials";
+} from "@/packages/identity/auth/credentials";
 const safeUserColumns = {
   id: schema.user.id,
   email: schema.user.email,

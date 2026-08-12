@@ -1,7 +1,7 @@
-import { Permission, can } from "@/packages/auth/permissions";
+import { Permission, can } from "@/packages/identity/auth/permissions";
 import type { UserUpdate } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
-import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import type { UserEntity } from "@/packages/trpc/api/outputs";
+import { UserStatus } from "@/packages/domain/identity/user";
 
 export function toUserFormDefaults(
   record?: UserEntity,

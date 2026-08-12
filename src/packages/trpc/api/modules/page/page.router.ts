@@ -5,14 +5,14 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
 import { PageUpdateSchema } from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
 import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
 import {
@@ -21,9 +21,9 @@ import {
   getPageList,
 } from "@/packages/trpc/api/modules/page/page.service";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
+import { PageStatus } from "@/packages/domain/content/page";
 import { TRPCError } from "@trpc/server";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 独立页面相关的 tRPC 路由。

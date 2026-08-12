@@ -24,16 +24,16 @@ const protectedProductionPatterns = [
   "src/app/**/page.tsx",
   "src/**/hooks/**/*.{ts,tsx}",
   "src/**/*service.ts",
-  "src/packages/auth/**/*.ts",
+  "src/packages/identity/auth/**/*.ts",
   "src/env/**/*.ts",
-  "src/packages/observability/**/*.ts",
+  "src/packages/infrastructure/observability/**/*.ts",
   "src/app/sitemap*.ts",
   "src/app/sitemap*/**/*.ts",
   "src/packages/trpc/api/utils/upstash-cache.ts",
 ];
 
 const criticalCoverageFiles = [
-  "src/packages/auth/permissions.ts",
+  "src/packages/identity/auth/permissions.ts",
   "src/env/client-schema.ts",
   "src/env/client.ts",
   "src/env/schema.ts",
@@ -43,21 +43,21 @@ const criticalCoverageFiles = [
   "src/app/sitemap.xml/route.ts",
   "src/app/sitemaps/[id]/route.ts",
   "src/packages/trpc/api/utils/upstash-cache.ts",
-  "src/packages/observability/client.ts",
-  "src/packages/observability/adapters/console.ts",
-  "src/packages/observability/adapters/memory.ts",
-  "src/packages/observability/adapters/noop.ts",
-  "src/packages/observability/core/contracts.ts",
-  "src/packages/observability/core/metric-label-values.ts",
-  "src/packages/observability/core/names.ts",
-  "src/packages/observability/core/safe-adapters.ts",
-  "src/packages/observability/core/sanitize.ts",
-  "src/packages/observability/server/database-operation.ts",
-  "src/packages/observability/server/external-service-operation.ts",
-  "src/packages/observability/server/index.ts",
-  "src/packages/observability/server/node-request-context.ts",
-  "src/packages/observability/server/registry.ts",
-  "src/packages/observability/server/request-context.ts",
+  "src/packages/infrastructure/observability/client.ts",
+  "src/packages/infrastructure/observability/adapters/console.ts",
+  "src/packages/infrastructure/observability/adapters/memory.ts",
+  "src/packages/infrastructure/observability/adapters/noop.ts",
+  "src/packages/infrastructure/observability/core/contracts.ts",
+  "src/packages/infrastructure/observability/core/metric-label-values.ts",
+  "src/packages/infrastructure/observability/core/names.ts",
+  "src/packages/infrastructure/observability/core/safe-adapters.ts",
+  "src/packages/infrastructure/observability/core/sanitize.ts",
+  "src/packages/infrastructure/observability/server/database-operation.ts",
+  "src/packages/infrastructure/observability/server/external-service-operation.ts",
+  "src/packages/infrastructure/observability/server/index.ts",
+  "src/packages/infrastructure/observability/server/node-request-context.ts",
+  "src/packages/infrastructure/observability/server/registry.ts",
+  "src/packages/infrastructure/observability/server/request-context.ts",
 ];
 
 describe("coverage governance", () => {
@@ -133,7 +133,7 @@ describe("coverage governance", () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain(
-      'does not meet "src/packages/auth/permissions.ts" threshold (101%)',
+      'does not meet "src/packages/identity/auth/permissions.ts" threshold (101%)',
     );
   });
 });

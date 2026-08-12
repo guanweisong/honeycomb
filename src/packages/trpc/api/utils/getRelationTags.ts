@@ -1,8 +1,8 @@
-import { getDb } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import { getDb } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { inArray } from "drizzle-orm";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
-import { observeDbOperation } from "@/packages/observability/server";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 关联标签接口。

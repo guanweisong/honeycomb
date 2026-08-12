@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
-import { enableStatusOptions } from "@/packages/trpc/api/types/enable.status";
+import type { LinkEntity } from "@/packages/trpc/api/outputs";
+import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
 import {
   StatusBadge,
   StatusBadgeTone,

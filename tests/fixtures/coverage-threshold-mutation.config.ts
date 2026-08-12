@@ -3,14 +3,14 @@ import type { TestUserConfig } from "vitest/config";
 
 import projectConfig from "../../vitest.config";
 
-const criticalFile = "src/packages/auth/permissions.ts";
+const criticalFile = "src/packages/identity/auth/permissions.ts";
 const projectTestConfig = projectConfig.test as TestUserConfig;
 
 export default defineConfig({
   ...projectConfig,
   test: {
     ...projectTestConfig,
-    include: ["src/packages/auth/permissions.test.ts"],
+    include: ["src/packages/identity/auth/permissions.test.ts"],
     coverage: {
       ...projectTestConfig.coverage,
       reporter: ["text-summary"],

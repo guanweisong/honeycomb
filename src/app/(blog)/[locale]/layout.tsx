@@ -10,7 +10,7 @@ import Header from "@/app/(blog)/components/Header";
 import Footer from "@/app/(blog)/components/Footer";
 import ThemeProvider from "@/app/(blog)/components/ThemeProvider";
 import { setRequestLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 

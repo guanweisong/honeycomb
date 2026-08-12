@@ -5,16 +5,16 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { LinkListQuerySchema } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { getLinkList } from "@/packages/trpc/api/modules/link/link.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 友情链接相关的 tRPC 路由。

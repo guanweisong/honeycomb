@@ -47,7 +47,7 @@ interface CustomDialogProps extends React.ComponentPropsWithoutRef<
   type?: DialogType;
   children?: React.ReactNode;
   className?: string;
-  onOK?: () => void | Promise<void>;
+  onOK?: () => void | boolean | Promise<void | boolean>;
   OKProps?: React.ComponentProps<typeof Button>;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -78,8 +78,8 @@ export function Dialog({
     if (!onOK) return;
     setLoading(true);
     try {
-      await onOK();
-      setOpen(false);
+      const shouldClose = await onOK();
+      if (shouldClose !== false) setOpen(false);
     } finally {
       setLoading(false);
     }

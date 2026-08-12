@@ -10,7 +10,7 @@ import {
 } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true;

@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import type { MediaEntity } from "@/packages/trpc/api/outputs";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
   true;

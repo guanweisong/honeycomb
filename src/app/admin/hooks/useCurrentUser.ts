@@ -2,7 +2,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import {
   can,
   type Permission as PermissionValue,
-} from "@/packages/auth/permissions";
+} from "@/packages/identity/auth/permissions";
 
 /**
  * 后台当前用户 Hook。

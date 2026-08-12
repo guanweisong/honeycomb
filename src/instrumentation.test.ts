@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMemoryObservability } from "./packages/observability/adapters/memory";
-import { configureObservability } from "./packages/observability/server/registry";
+import { createMemoryObservability } from "./packages/infrastructure/observability/adapters/memory";
+import { configureObservability } from "./packages/infrastructure/observability/server/registry";
 import { onRequestError, register } from "./instrumentation";
 
 const productionCoreEnv = {

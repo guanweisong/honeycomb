@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
-import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
+import { PageStatus } from "@/packages/domain/content/page";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success },
 }));
-vi.mock("@/packages/observability/client", () => ({
+vi.mock("@/packages/infrastructure/observability/client", () => ({
   clientLogger: { error: mocks.logger },
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({

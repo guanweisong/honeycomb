@@ -1,9 +1,9 @@
 import { inArray } from "drizzle-orm";
-import * as schema from "@/packages/db/schema";
-import type { Database } from "@/packages/db/db";
-import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
+import * as schema from "@/packages/infrastructure/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import { TagType } from "@/packages/domain/content/tag";
 import { InferSelectModel } from "drizzle-orm";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 type PostRecord = InferSelectModel<typeof schema.post>;
 type CategoryRecord = InferSelectModel<typeof schema.category>;

@@ -2,13 +2,13 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PageStatus } from "@/packages/domain/content/page";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import type { CommentRecord } from "./types/comment.model";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 export type CommentTarget = Partial<
   Pick<CommentRecord, "postId" | "pageId" | "customId">

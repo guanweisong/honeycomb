@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "./comment.router";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { CommentStatus } from "./types/comment.status";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 // Mock database and related modules
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
@@ -17,8 +17,8 @@ vi.mock("@/packages/trpc/api/utils/validateCaptcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/packages/trpc/api/utils/sendEmail", () => ({
-  sendEmail: vi.fn().mockResolvedValue(undefined),
+vi.mock("@/packages/application/notifications/comment/comment-email", () => ({
+  sendCommentEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockDb = createMockDb();

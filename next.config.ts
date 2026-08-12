@@ -5,7 +5,7 @@ import {
   createAssetRemotePattern,
   createSecurityHeaderOptions,
   createSecurityHeaders,
-} from "./src/packages/security/security-headers";
+} from "./src/packages/infrastructure/security/security-headers";
 
 const securityHeaderOptions = createSecurityHeaderOptions(process.env);
 const assetRemotePattern = createAssetRemotePattern(

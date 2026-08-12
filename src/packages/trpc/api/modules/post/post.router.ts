@@ -5,7 +5,7 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import {
@@ -16,13 +16,13 @@ import {
   PostUpdate,
   PostUpdateSchema,
 } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, inArray, sql, and, InferInsertModel } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { TRPCError } from "@trpc/server";
 import { getPostDetail, getPostList } from "./post.service";
-import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
+import { TagType } from "@/packages/domain/content/tag";
 import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
 import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitizeHtml";
 import {
@@ -32,8 +32,8 @@ import {
   setCacheJSON,
 } from "@/packages/trpc/api/utils/upstash-cache";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
-import { observeDbOperation } from "@/packages/observability/server";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 type OptionalI18nInput =

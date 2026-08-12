@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMemoryObservability } from "@/packages/observability/adapters/memory";
-import { LogEvent, MetricName } from "@/packages/observability/core/names";
-import { configureObservability } from "@/packages/observability/server/registry";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { Permission } from "@/packages/auth/permissions";
+import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { LogEvent, MetricName } from "@/packages/infrastructure/observability/core/names";
+import { configureObservability } from "@/packages/infrastructure/observability/server/registry";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { Permission } from "@/packages/identity/auth/permissions";
 
 import {
   createTRPCRouter,

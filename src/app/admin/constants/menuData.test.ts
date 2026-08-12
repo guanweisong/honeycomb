@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Permission, can } from "@/packages/auth/permissions";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import { Permission, can } from "@/packages/identity/auth/permissions";
+import { UserLevel } from "@/packages/domain/identity/user";
 
 import { getMenuForCapabilities, menu } from "./menuData";
 

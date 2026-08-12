@@ -1,9 +1,9 @@
 "use client";
 
-import { enableStatusOptions } from "@/packages/trpc/api/types/enable.status";
+import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
-import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
@@ -16,7 +16,7 @@ import {
   CategoryUpdateSchema,
 } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { CategoryEntity } from "@/packages/trpc/api/modules/category/types/category.entity";
+import { CategoryEntity } from "@/packages/trpc/api/outputs";
 
 /**
  * 模态框属性接口。

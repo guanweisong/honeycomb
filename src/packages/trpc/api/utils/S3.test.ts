@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createMemoryObservability } from "@/packages/observability/adapters/memory";
-import { MetricName } from "@/packages/observability/core/names";
-import { configureObservability } from "@/packages/observability/server";
-import { createSecurityHeaderOptions } from "@/packages/security/security-headers";
+import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { MetricName } from "@/packages/infrastructure/observability/core/names";
+import { configureObservability } from "@/packages/infrastructure/observability/server";
+import { createSecurityHeaderOptions } from "@/packages/infrastructure/security/security-headers";
 import S3 from "./S3";
 
 describe("S3 observability", () => {

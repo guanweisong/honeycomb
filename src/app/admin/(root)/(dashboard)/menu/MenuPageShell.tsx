@@ -3,10 +3,10 @@
 import SortableTree from "@nosferatu500/react-sortable-tree";
 import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";
-import { creatCategoryTitleByDepth } from "@/app/admin/libs/help";
+import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import { Permission } from "@/packages/auth/permissions";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { Permission } from "@/packages/identity/auth/permissions";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { Button } from "@/packages/ui/components/button";
 import { Checkbox } from "@/packages/ui/extended/Checkbox";
 import { Tabs } from "@/packages/ui/extended/Tabs";

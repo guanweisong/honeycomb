@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { Permission, can } from "@/packages/auth/permissions";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
-import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import { Permission, can } from "@/packages/identity/auth/permissions";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { UserStatus } from "@/packages/domain/identity/user";
+import type { UserEntity } from "@/packages/trpc/api/outputs";
 
 import {
   buildUserUpdateInput,

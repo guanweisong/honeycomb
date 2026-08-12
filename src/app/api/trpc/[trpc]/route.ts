@@ -3,8 +3,8 @@ import { createTrpcContext } from "@/packages/trpc/api";
 import {
   createRequestContext,
   REQUEST_ID_HEADER,
-} from "@/packages/observability/server/request-context";
-import { runWithRequestContext } from "@/packages/observability/server/node-request-context";
+} from "@/packages/infrastructure/observability/server/request-context";
+import { runWithRequestContext } from "@/packages/infrastructure/observability/server/node-request-context";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 /**

@@ -3,12 +3,12 @@ import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/app/(blog)/components/Comment";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
-import { EnableStatus } from "@/packages/trpc/api/types/enable.status";
-import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
 import { assertPublishedPost } from "./page.utils";
 /**

@@ -1,16 +1,16 @@
 import "server-only";
 
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import {
   permissionProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
-import { PostType } from "@/packages/trpc/api/modules/post/types/post.type";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import * as schema from "@/packages/db/schema";
+import { CommentStatus } from "@/packages/domain/content/comment";
+import { PostType } from "@/packages/domain/content/post";
+import { UserLevel } from "@/packages/domain/identity/user";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 统计数据接口类型定义。

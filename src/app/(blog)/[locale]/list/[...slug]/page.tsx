@@ -2,9 +2,9 @@ import React from "react";
 import PostList from "@/app/(blog)/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/trpc/api/types/multi.lang";
+import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { createServerClient } from "@/packages/trpc/api";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
+import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
 

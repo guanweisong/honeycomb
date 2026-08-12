@@ -14,9 +14,9 @@ import {
   PostListQuerySchema,
 } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
+import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import { keepPreviousData } from "@tanstack/react-query";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**

@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/app/admin/components/MultiLangText";
-import type { CommentEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
-import { commentStatusOptions } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import type { CommentEntity } from "@/packages/trpc/api/outputs";
+import { commentStatusOptions } from "@/packages/domain/content/comment";
 import {
   StatusBadge,
   StatusBadgeTone,

@@ -13,9 +13,9 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
 
-    const module = await import("./auth");
+    const authModule = await import("./auth");
 
-    expect(module.auth.api).toBeDefined();
+    expect(authModule.auth.api).toBeDefined();
   });
 
   it("uses a six-character minimum password policy", async () => {
@@ -25,11 +25,30 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
 
-    const module = await import("./auth");
-    const options = (module.auth as unknown as {
+    const authModule = await import("./auth");
+    const options = (authModule.auth as unknown as {
       options: { emailAndPassword: { minPasswordLength?: number } };
     }).options;
 
     expect(options.emailAndPassword.minPasswordLength).toBe(6);
+  });
+
+  it("requires explicit OAuth account linking", async () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    vi.stubEnv("AUTH_SECRET", "build-secret");
+    vi.stubEnv("AUTH_URL", "https://example.test");
+    vi.stubEnv("TURSO_URL", "");
+    vi.stubEnv("TURSO_TOKEN", "");
+
+    const authModule = await import("./auth");
+    const options = (authModule.auth as unknown as {
+      options: {
+        account: {
+          accountLinking: { disableImplicitLinking?: boolean };
+        };
+      };
+    }).options;
+
+    expect(options.account.accountLinking.disableImplicitLinking).toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@/packages/trpc/client/trpc";
-import { PostListItemEntity } from "@/packages/trpc/api/modules/post/types/post.entity";
+import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
 
 /**

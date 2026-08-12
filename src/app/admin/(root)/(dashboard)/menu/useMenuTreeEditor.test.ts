@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import {
   useMenuTreeEditor,
   type MenuTreeEditor,

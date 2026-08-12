@@ -5,16 +5,16 @@ import {
   publicProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { CategoryListQuerySchema } from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
 import { CategoryInsertSchema } from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq, inArray, InferInsertModel } from "drizzle-orm";
 import { getCategoryList } from "@/packages/trpc/api/modules/category/category.service";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 分类相关的 tRPC 路由。

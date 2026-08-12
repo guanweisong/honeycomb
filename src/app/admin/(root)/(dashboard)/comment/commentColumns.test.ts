@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
 import { getCommentStatusPresentation } from "./commentColumns";
 

@@ -8,8 +8,8 @@ import {
   PageInsertSchema,
   type PageInsert,
 } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
-import { PageTemplate } from "@/packages/trpc/api/modules/page/types/page.template";
+import { PageStatus } from "@/packages/domain/content/page";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import {
   permissionProcedure,
   createTRPCRouter,
@@ -11,7 +11,7 @@ import {
 } from "@/packages/trpc/api/utils/tools";
 import { MediaListQuerySchema } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@/packages/trpc/api/modules/media/schemas/media.insert.schema";
 import { format } from "date-fns";
@@ -19,7 +19,7 @@ import S3 from "@/packages/trpc/api/utils/S3";
 import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 /**
  * 媒体文件相关的 tRPC 路由。

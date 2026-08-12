@@ -25,7 +25,7 @@ describe("console lint boundary", () => {
 
   it("allows console usage only in the console logger adapter", async () => {
     await expect(
-      lintConsoleAt("src/packages/observability/adapters/console.ts"),
+      lintConsoleAt("src/packages/infrastructure/observability/adapters/console.ts"),
     ).resolves.toHaveLength(0);
   });
 });

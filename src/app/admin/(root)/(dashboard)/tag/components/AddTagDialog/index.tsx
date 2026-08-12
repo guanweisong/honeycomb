@@ -5,7 +5,7 @@ import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.ins
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
+import { TagEntity } from "@/packages/trpc/api/outputs";
 import { z } from "zod";
 
 type TagInsertValues = z.infer<typeof TagInsertSchema>;

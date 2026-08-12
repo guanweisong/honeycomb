@@ -4,6 +4,8 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { getUpstashEnv } from "@/env/server";
 
+export { getClientIp } from "@/packages/infrastructure/http/client-ip";
+
 const API_RATE_LIMIT = 120;
 const API_RATE_LIMIT_WINDOW_MS = 60_000;
 
@@ -42,18 +44,3 @@ export function createApiRatelimit(): ApiRatelimit {
 }
 
 export const apiRatelimit = createApiRatelimit();
-
-export function getClientIp(request: Request): string {
-  const xForwardedFor = request.headers.get("x-forwarded-for");
-  if (xForwardedFor) {
-    const [firstIp] = xForwardedFor.split(",");
-    return firstIp.trim();
-  }
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) {
-    return realIp.trim();
-  }
-
-  return "anonymous";
-}

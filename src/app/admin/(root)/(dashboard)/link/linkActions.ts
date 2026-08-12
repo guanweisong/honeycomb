@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ModalType } from "@/app/admin/types/ModalType";
 import type { LinkInsert } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import type { LinkUpdate } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
-import type { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
+import type { LinkEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "./linkTransforms";
 

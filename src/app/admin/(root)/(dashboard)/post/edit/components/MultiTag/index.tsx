@@ -17,11 +17,11 @@ import {
 } from "@/packages/ui/components/command";
 import { X, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagType } from "@/packages/trpc/api/modules/tag/types/tag.type";
-import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
-import { clientLogger } from "@/packages/observability/client";
-import { LogEvent } from "@/packages/observability/core/names";
-import { Permission } from "@/packages/auth/permissions";
+import { TagType } from "@/packages/domain/content/tag";
+import { TagEntity } from "@/packages/trpc/api/outputs";
+import { clientLogger } from "@/packages/infrastructure/observability/client";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;

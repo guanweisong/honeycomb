@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PostStatus } from "@/packages/trpc/api/modules/post/types/post.status";
+import { PostStatus } from "@/packages/domain/content/post-status";
 
 type PostDetailLike = {
   status?: PostStatus | string | null;

@@ -1,8 +1,8 @@
 import React from "react";
 import CommentClient from "@/app/(blog)/components/Comment/client";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
-import { CommentTreeResponse } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import { CommentTreeResponse } from "@/packages/trpc/api/outputs";
 
 /**
  * 评论组件的属性接口。

@@ -1,5 +1,5 @@
 import { createUpdateSchema } from "drizzle-zod";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { I18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 import { z } from "zod";

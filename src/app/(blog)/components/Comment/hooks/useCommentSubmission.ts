@@ -5,15 +5,15 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/app/(blog)/i18n/navigation";
-import { refreshPath } from "@/app/(blog)/libs/refreshPath";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
-import type { CommentTreeEntity } from "@/packages/trpc/api/modules/comment/types/comment.entity";
+import { refreshPath } from "@/app/(blog)/lib/refreshPath";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./useCommentIdentity";
 import { buildCommentInput } from "../commentInput";
-import { clientLogger } from "@/packages/observability/client";
-import { LogEvent } from "@/packages/observability/core/names";
+import { clientLogger } from "@/packages/infrastructure/observability/client";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 
 interface UseCommentSubmissionOptions {
   id: string;

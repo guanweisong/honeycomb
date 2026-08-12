@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { clientLogger } from "@/packages/observability/client";
-import { LogEvent } from "@/packages/observability/core/names";
+import { clientLogger } from "@/packages/infrastructure/observability/client";
+import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import type { PageInsert } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
 import type { PageUpdate } from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
-import { PageStatus } from "@/packages/trpc/api/modules/page/types/page.status";
+import { PageStatus } from "@/packages/domain/content/page";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useRouter } from "next/navigation";
 

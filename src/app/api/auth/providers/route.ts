@@ -1,5 +1,5 @@
 import { getAuthEnv } from "@/env/server";
-import { getConfiguredProviderIds } from "@/packages/auth/policy";
+import { getConfiguredProviderIds } from "@/packages/identity/auth/policy";
 
 const providerNames: Record<string, string> = {
   apple: "Apple",

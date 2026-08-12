@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as schema from "@/packages/db/schema";
+import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/trpc/api/utils/tools";
 import * as filters from "./utils/filters";
 import * as relations from "./utils/relations";

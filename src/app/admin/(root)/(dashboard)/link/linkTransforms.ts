@@ -1,5 +1,5 @@
 import type { LinkUpdate } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
-import type { LinkEntity } from "@/packages/trpc/api/modules/link/types/link.entity";
+import type { LinkEntity } from "@/packages/trpc/api/outputs";
 
 export function toLinkFormDefaults(
   record?: LinkEntity,

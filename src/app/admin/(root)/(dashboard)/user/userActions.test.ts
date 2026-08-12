@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ModalType } from "@/app/admin/types/ModalType";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
-import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { UserStatus } from "@/packages/domain/identity/user";
+import type { UserEntity } from "@/packages/trpc/api/outputs";
 
 import {
   closeUserDialog,

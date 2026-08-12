@@ -7,9 +7,9 @@ import { describe, expect, it } from "vitest";
 const serverOnlyEntrypoints = [
   "src/auth.ts",
   "src/env/server.ts",
-  "src/packages/db/db.ts",
-  "src/packages/observability/server/index.ts",
-  "src/packages/observability/server/registry.ts",
+  "src/packages/infrastructure/db/db.ts",
+  "src/packages/infrastructure/observability/server/index.ts",
+  "src/packages/infrastructure/observability/server/registry.ts",
   "src/packages/trpc/api/appRouter.ts",
   "src/packages/trpc/api/context.ts",
   "src/packages/trpc/api/core.ts",
@@ -17,7 +17,7 @@ const serverOnlyEntrypoints = [
   "src/packages/trpc/api/index.ts",
   "src/packages/trpc/api/utils/S3.ts",
   "src/packages/trpc/api/utils/rate-limit.ts",
-  "src/packages/trpc/api/utils/sendEmail.ts",
+  "src/packages/application/notifications/comment/comment-email.ts",
   "src/packages/trpc/api/utils/upstash-cache.ts",
   "src/packages/trpc/api/utils/validateCaptcha.ts",
 ] as const;
@@ -53,7 +53,7 @@ describe("server-only module boundaries", () => {
 
   it("keeps shared contracts free of the server-only boundary", () => {
     const sharedContracts = [
-      "src/packages/trpc/api/modules/user/types/user.level.ts",
+      "src/packages/domain/identity/user.ts",
       "src/packages/trpc/api/schemas/i18n.schema.ts",
       "src/packages/trpc/api/types/content-visibility.ts",
     ];
@@ -78,7 +78,7 @@ describe("server-only module boundaries", () => {
     const source = readFileSync(
       resolve(
         process.cwd(),
-        "src/packages/observability/server/request-context.ts",
+        "src/packages/infrastructure/observability/server/request-context.ts",
       ),
       "utf8",
     );

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { userRouter } from "./user.router";
-import * as schema from "@/packages/db/schema";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import * as schema from "@/packages/infrastructure/db/schema";
+import { UserLevel } from "@/packages/domain/identity/user";
+import { UserStatus } from "@/packages/domain/identity/user";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import {
@@ -11,7 +11,7 @@ import {
 } from "../../../../../../tests/helpers/test-utils";
 
 // Mock the database and related modules
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 

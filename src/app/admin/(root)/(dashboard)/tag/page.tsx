@@ -17,8 +17,8 @@ import AddTagDialog from "@/app/admin/(root)/(dashboard)/tag/components/AddTagDi
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
-import { TagEntity } from "@/packages/trpc/api/modules/tag/types/tag.entity";
-import { Permission } from "@/packages/auth/permissions";
+import { TagEntity } from "@/packages/trpc/api/outputs";
+import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
 
 /**

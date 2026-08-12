@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CommentStatus } from "@/packages/trpc/api/modules/comment/types/comment.status";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import {
   submitCommentBatchDelete,
   submitCommentDelete,

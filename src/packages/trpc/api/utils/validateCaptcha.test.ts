@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { validateCaptcha } from "./validateCaptcha";
-import { createMemoryObservability } from "@/packages/observability/adapters/memory";
-import { MetricName } from "@/packages/observability/core/names";
-import { configureObservability } from "@/packages/observability/server";
+import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { MetricName } from "@/packages/infrastructure/observability/core/names";
+import { configureObservability } from "@/packages/infrastructure/observability/server";
 
 describe("validateCaptcha", () => {
   const fetchMock = vi.fn();

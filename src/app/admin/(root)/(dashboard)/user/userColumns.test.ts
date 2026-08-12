@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import { UserStatus } from "@/packages/domain/identity/user";
 import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
 
 import {

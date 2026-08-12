@@ -1,16 +1,15 @@
 import "server-only";
 
-import { getDb } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import { getDb } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import { eq } from "drizzle-orm";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
-import { UserStatus } from "@/packages/trpc/api/modules/user/types/user.status";
+import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { auth } from "@/auth";
 import {
   createRequestContext,
   type RequestContext,
-} from "@/packages/observability/server/request-context";
-import { observeDbOperation } from "@/packages/observability/server/database-operation";
+} from "@/packages/infrastructure/observability/server/request-context";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server/database-operation";
 
 /**
  * 上下文中的用户信息接口。

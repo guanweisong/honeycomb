@@ -1,16 +1,18 @@
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { ToolbarButton } from "./ToolbarButton";
-import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
-import { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
 import { Film } from "lucide-react";
+import { useTiptapMediaPicker } from "../media-picker";
 
 export function ToolbarVideoItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
+  const renderMediaPicker = useTiptapMediaPicker();
 
-  const handlePhotoPickerOk = (media: MediaEntity) => {
-    if (media.url) {
-      editor.chain().focus().setVideo({ src: media.url }).run();
+  if (!renderMediaPicker) return null;
+
+  const handlePhotoPickerOk = (selection: { url?: string | null }) => {
+    if (selection.url) {
+      editor.chain().focus().setVideo({ src: selection.url }).run();
     }
     setOpen(false);
   };
@@ -26,11 +28,12 @@ export function ToolbarVideoItem({ editor }: { editor: Editor }) {
         label="插入视频"
         onClick={() => setOpen(true)}
       />
-      <PhotoPickerModal
-        showPhotoPicker={open}
-        handlePhotoPickerOk={handlePhotoPickerOk}
-        handlePhotoPickerCancel={handlePhotoPickerCancel}
-      />
+      {renderMediaPicker({
+        open,
+        kind: "video",
+        onConfirm: handlePhotoPickerOk,
+        onCancel: handlePhotoPickerCancel,
+      })}
     </>
   );
 }

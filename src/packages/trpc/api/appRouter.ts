@@ -12,6 +12,7 @@ import { mediaRouter } from "@/packages/trpc/api/modules/media/media.router";
 import { pageRouter } from "@/packages/trpc/api/modules/page/page.router";
 import { postRouter } from "@/packages/trpc/api/modules/post/post.router";
 import { commentRouter } from "@/packages/trpc/api/modules/comment/comment.router";
+import { accountSecurityRouter } from "@/packages/trpc/api/modules/account-security/account-security.router";
 
 export const appRouter = createTRPCRouter({
   link: linkRouter,
@@ -25,6 +26,7 @@ export const appRouter = createTRPCRouter({
   page: pageRouter,
   post: postRouter,
   comment: commentRouter,
+  accountSecurity: accountSecurityRouter,
 });
 
 export type AppRouter = typeof appRouter;

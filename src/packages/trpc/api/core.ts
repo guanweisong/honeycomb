@@ -1,13 +1,13 @@
 import "server-only";
 
 import { initTRPC, TRPCError } from "@trpc/server";
-import { LogEvent, MetricName } from "@/packages/observability/core/names";
-import { serializeError } from "@/packages/observability/core/sanitize";
-import { getLogger, getMetrics } from "@/packages/observability/server/registry";
+import { LogEvent, MetricName } from "@/packages/infrastructure/observability/core/names";
+import { serializeError } from "@/packages/infrastructure/observability/core/sanitize";
+import { getLogger, getMetrics } from "@/packages/infrastructure/observability/server/registry";
 import {
   can,
   type Permission,
-} from "@/packages/auth/permissions";
+} from "@/packages/identity/auth/permissions";
 
 import type { Context } from "./context";
 

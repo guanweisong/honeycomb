@@ -2,17 +2,17 @@ import { ViewTransition } from "react";
 import listToTree from "list-to-tree-lite";
 import Menu from "@/app/(blog)/components/Menu";
 import { Link } from "@/app/(blog)/i18n/navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/libs/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "@/app/(blog)/lib/getCurrentPathOfMenu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import { getLocale } from "next-intl/server";
 import { createServerClient } from "@/packages/trpc/api";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
-import { MultiLangEnum } from "@/packages/trpc/api/types/multi.lang";
-import { MenuEntity } from "@/packages/trpc/api/modules/menu/types/menu.entity";
+import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
+import { MenuEntity } from "@/packages/trpc/api/outputs";
 
 /**
  * 网站头部组件。

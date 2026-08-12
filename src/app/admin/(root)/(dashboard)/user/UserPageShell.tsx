@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import { Permission } from "@/packages/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { UserListQueryInput } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
 import { UserListQuerySchema } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
-import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import type { UserEntity } from "@/packages/trpc/api/outputs";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";

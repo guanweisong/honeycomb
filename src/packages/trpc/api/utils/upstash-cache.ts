@@ -2,8 +2,8 @@ import "server-only";
 
 import { Redis } from "@upstash/redis";
 import { getUpstashEnv } from "@/env/server";
-import { MetricName } from "@/packages/observability/core/names";
-import { getMetrics } from "@/packages/observability/server/registry";
+import { MetricName } from "@/packages/infrastructure/observability/core/names";
+import { getMetrics } from "@/packages/infrastructure/observability/server/registry";
 
 export type CacheNamespace = "post.index";
 const cacheNamespaces = new Set<CacheNamespace>(["post.index"]);

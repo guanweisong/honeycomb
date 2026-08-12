@@ -12,8 +12,8 @@ import {
 } from "drizzle-orm";
 import listToTree from "list-to-tree-lite";
 import type { z } from "zod";
-import type { Database } from "@/packages/db/db";
-import * as schema from "@/packages/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
 import type { CommentListQuerySchema } from "./schemas/comment.list.query.schema";
 import type { CommentInsertInput } from "./schemas/comment.insert.schema";
 import type { CommentUpdate } from "./schemas/comment.update.schema";
@@ -24,14 +24,14 @@ import {
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
 import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
-import { CommentStatus } from "./types/comment.status";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import {
   assertCommentParentMatches,
   assertPublicCommentTarget,
 } from "./comment-target.service";
 import { notifyCommentCreated } from "./comment-notification.service";
 import { toPublicComment } from "./comment.dto";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 type CommentListInput = z.infer<typeof CommentListQuerySchema>;
 type DeleteBatchInput = z.infer<typeof DeleteBatchSchema>;

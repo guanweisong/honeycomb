@@ -4,7 +4,7 @@ import {
   Permission,
   can,
   type Permission as PermissionValue,
-} from "@/packages/auth/permissions";
+} from "@/packages/identity/auth/permissions";
 import {
   FileChartColumn,
   Gauge,

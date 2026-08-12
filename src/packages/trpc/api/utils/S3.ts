@@ -10,7 +10,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { clientEnv } from "@/env/client";
 import { getR2Env } from "@/env/server";
-import { observeExternalServiceOperation } from "@/packages/observability/server";
+import { observeExternalServiceOperation } from "@/packages/infrastructure/observability/server";
 
 interface DeleteMultipleObjectParams {
   Objects: NonNullable<DeleteObjectsCommandInput["Delete"]>["Objects"];

@@ -8,10 +8,10 @@ import {
   ALL_PERMISSIONS,
   Permission,
   type Permission as PermissionValue,
-} from "@/packages/auth/permissions";
-import { createMemoryObservability } from "@/packages/observability/adapters/memory";
-import { configureObservability } from "@/packages/observability/server/registry";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+} from "@/packages/identity/auth/permissions";
+import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { configureObservability } from "@/packages/infrastructure/observability/server/registry";
+import { UserLevel } from "@/packages/domain/identity/user";
 
 import { appRouter } from "./appRouter";
 import type { Context } from "./context";
@@ -560,9 +560,9 @@ const ROLE_VALUE_NAME = /(?:role|level)/i;
 const AUTHORIZATION_HELPER_NAME =
   /(?:authori[sz]|auth|access|allow|permission|privilege|role|level)/i;
 const ROLE_POLICY_ALLOWLIST = new Set([
-  "src/packages/auth/permissions.ts",
-  "src/packages/db/schema.ts",
-  "src/packages/trpc/api/modules/user/types/user.level.ts",
+  "src/packages/identity/auth/permissions.ts",
+  "src/packages/infrastructure/db/schema.ts",
+  "src/packages/domain/identity/user.ts",
 ]);
 
 function assertNoRoleBasedAuthorization(
@@ -758,6 +758,13 @@ const DELETE_INPUT = { ids: [TEST_ID] };
 const I18N_INPUT = { en: "Test", zh: "测试" };
 
 const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
+  [
+    "accountSecurity.loginHistory",
+    Permission.userReadSelf,
+    ALL_ROLES,
+    undefined,
+    "database",
+  ],
   [
     "category.adminIndex",
     Permission.categoryReadAll,
@@ -999,7 +1006,7 @@ const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
       level: UserLevel.EDITOR,
       status: "ENABLE",
     },
-    "hash",
+    "database",
   ],
   ["user.destroy", Permission.userManage, ADMIN_ONLY, DELETE_INPUT, "database"],
   [
@@ -1121,10 +1128,10 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("maps all 38 protected procedures onto all 32 defined permissions", () => {
-    expect(capabilityProcedureMatrix).toHaveLength(38);
+  it("maps all 39 protected procedures onto all 32 defined permissions", () => {
+    expect(capabilityProcedureMatrix).toHaveLength(39);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
-      38,
+      39,
     );
     expect(
       new Set(capabilityProcedureMatrix.map(([, permission]) => permission)),

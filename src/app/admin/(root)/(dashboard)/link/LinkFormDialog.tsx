@@ -8,7 +8,7 @@ import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.
 import {
   EnableStatus,
   enableStatusOptions,
-} from "@/packages/trpc/api/types/enable.status";
+} from "@/packages/domain/shared/enable-status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import type { LinkDialogState } from "./linkActions";

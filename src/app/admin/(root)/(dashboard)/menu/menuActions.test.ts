@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { MenuType } from "@/packages/trpc/api/modules/menu/types/menu.type";
+import { MenuType } from "@/packages/domain/navigation/menu";
 import type { MenuEntityTree } from "./menuTransforms";
 import { submitMenuChanges } from "./menuActions";
 

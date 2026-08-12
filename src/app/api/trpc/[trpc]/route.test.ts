@@ -9,7 +9,7 @@ vi.mock("@/packages/trpc/api/appRouter", () => ({ appRouter: {} }));
 
 vi.mock("@/packages/trpc/api", async () => {
   const { getRequestContext } = await import(
-    "@/packages/observability/server/node-request-context"
+    "@/packages/infrastructure/observability/server/node-request-context"
   );
 
   return {
@@ -19,7 +19,7 @@ vi.mock("@/packages/trpc/api", async () => {
 
 vi.mock("@trpc/server/adapters/fetch", async () => {
   const { getRequestContext } = await import(
-    "@/packages/observability/server/node-request-context"
+    "@/packages/infrastructure/observability/server/node-request-context"
   );
 
   return {

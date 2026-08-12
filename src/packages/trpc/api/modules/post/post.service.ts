@@ -1,8 +1,8 @@
 import "server-only";
 
 import { and, eq, sql, inArray } from "drizzle-orm";
-import * as schema from "@/packages/db/schema";
-import type { Database } from "@/packages/db/db";
+import * as schema from "@/packages/infrastructure/db/schema";
+import type { Database } from "@/packages/infrastructure/db/db";
 import {
   buildDrizzleWhere,
   buildDrizzleOrderBy,
@@ -18,9 +18,9 @@ import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLi
  * @returns 包含文章列表和总数的对象
  */
 import { PostListQueryInput } from "./schemas/post.list.query.schema";
-import { PostStatus } from "./types/post.status";
+import { PostStatus } from "@/packages/domain/content/post-status";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
-import { observeDbOperation } from "@/packages/observability/server";
+import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
 export async function getPostList(
   db: Database,

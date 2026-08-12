@@ -6,7 +6,7 @@ import { createMockDb } from "../../../../../tests/helpers/test-utils";
 // Mock database
 const mockDb = createMockDb();
 
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "./menu.router";
-import * as schema from "@/packages/db/schema";
-import { MenuType } from "./types/menu.type";
-import { UserLevel } from "@/packages/trpc/api/modules/user/types/user.level";
+import * as schema from "@/packages/infrastructure/db/schema";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import {
   createMockContext,
@@ -11,7 +11,7 @@ import {
 } from "../../../../../../tests/helpers/test-utils";
 
 // Mock database and related modules
-vi.mock("@/packages/db/db", () => ({
+vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 

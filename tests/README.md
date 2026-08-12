@@ -78,7 +78,7 @@ bun test:ui
 | Functions | 39.85%（436/1094） | 276 |
 | Branches | 34.35%（696/2026） | 520 |
 
-基线中低于关键门槛的文件为 `src/env/server.ts`、`src/env/validation.ts`、`src/app/sitemap-data.ts`、`src/app/sitemap.xml/route.ts`、`src/app/sitemaps/[id]/route.ts`、`src/packages/trpc/api/utils/upstash-cache.ts`、`src/packages/observability/adapters/memory.ts` 和 `src/packages/observability/core/sanitize.ts`。补充分支与失败路径测试后，全部关键文件均通过逐文件 90/80 门槛。
+基线中低于关键门槛的文件为 `src/env/server.ts`、`src/env/validation.ts`、`src/app/sitemap-data.ts`、`src/app/sitemap.xml/route.ts`、`src/app/sitemaps/[id]/route.ts`、`src/packages/trpc/api/utils/upstash-cache.ts`、`src/packages/infrastructure/observability/adapters/memory.ts` 和 `src/packages/infrastructure/observability/core/sanitize.ts`。补充分支与失败路径测试后，全部关键文件均通过逐文件 90/80 门槛。
 
 补测后的完整结果为 statements 43.25%（1549/3581）、lines 43.02%（1464/3403）、functions 40.03%（438/1094）、branches 34.84%（706/2026）。coverage 命令当前只因四项全局门槛失败，剩余缺口分别为 statements 958、lines 919、functions 274、branches 510；主要集中在 DataTable/DynamicForm/Tiptap 等 extended UI、大型管理页面与列定义，以及 blog 页面和呈现组件。后续 DataTable 与管理 feature 拆分任务必须通过行为测试消化这些缺口，不得扩大 exclude 或降低门槛。
 

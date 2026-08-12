@@ -1,11 +1,11 @@
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { UserEntity } from "@/packages/trpc/api/modules/user/types/user.entity";
+import type { UserEntity } from "@/packages/trpc/api/outputs";
 import {
   UserLevelName,
   userLevelOptions,
-} from "@/packages/trpc/api/modules/user/types/user.level";
-import { userStatusOptions } from "@/packages/trpc/api/modules/user/types/user.status";
+} from "@/packages/domain/identity/user";
+import { userStatusOptions } from "@/packages/domain/identity/user";
 import {
   StatusBadge,
   StatusBadgeTone,

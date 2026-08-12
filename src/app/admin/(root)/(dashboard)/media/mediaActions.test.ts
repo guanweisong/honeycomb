@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { MediaEntity } from "@/packages/trpc/api/modules/media/types/media.entity";
+import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import { submitMediaDelete, submitMediaUpload } from "./mediaActions";
 
 const uploadedMedia = {
