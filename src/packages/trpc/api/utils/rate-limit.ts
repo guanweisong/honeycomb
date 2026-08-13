@@ -14,6 +14,7 @@ type ApiRateLimitResponse = {
   limit: number;
   remaining: number;
   reset: number;
+  unavailable?: boolean;
 };
 
 type ApiRatelimit = {
@@ -24,6 +25,18 @@ export function createApiRatelimit(): ApiRatelimit {
   const upstash = getUpstashEnv();
 
   if (!upstash) {
+    if (process.env.NODE_ENV === "production") {
+      return {
+        limit: async () => ({
+          success: false,
+          unavailable: true,
+          limit: API_RATE_LIMIT,
+          remaining: 0,
+          reset: Date.now() + API_RATE_LIMIT_WINDOW_MS,
+        }),
+      };
+    }
+
     return {
       limit: async () => ({
         success: true,

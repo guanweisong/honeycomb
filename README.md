@@ -160,7 +160,8 @@ RESEND_FROM_EMAIL=your_from_email
 ADMIN_EMAIL=your_admin_email
 
 # Better Auth（必填）
-AUTH_SECRET=your_auth_secret
+# 生产环境必须至少 32 个字符，且使用至少三类字符（大小写、数字、符号）
+AUTH_SECRET=your_high_entropy_auth_secret
 AUTH_URL=http://localhost:3000
 
 # Analytics（可选）
@@ -250,9 +251,6 @@ bun drizzle-kit generate  # 生成迁移文件
 bun drizzle-kit push      # 推送 schema
 bun drizzle-kit studio    # 打开 Drizzle Studio
 
-# 部署
-bun build:cloudflare      # 构建 Cloudflare 版本
-bun deploy:cloudflare     # 部署到 Cloudflare
 ```
 
 E2E 测试默认把运行产物写入系统临时目录，避免项目目录内历史报告文件的权限问题：
@@ -274,6 +272,10 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 - 返回 HTTP `429`
 - 响应体：`{"code":429,"message":"Too many requests, please try again later."}`
 - 响应头包含：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`
+
+生产环境必须完整配置 `UPSTASH_REDIS_REST_URL` 与
+`UPSTASH_REDIS_REST_TOKEN`；缺失或限流服务故障时，API 返回 HTTP `503`，
+不会静默跳过限流。开发和测试环境允许使用内存允许策略。
 
 ## 数据库设计
 
@@ -420,16 +422,6 @@ configureObservability({ logger, metrics });
 2. 在 Vercel 中导入项目
 3. 配置环境变量
 4. 部署
-
-### Cloudflare 部署
-
-```bash
-# 构建 Cloudflare 版本
-bun build:cloudflare
-
-# 部署到 Cloudflare
-bun deploy:cloudflare
-```
 
 ## 测试
 

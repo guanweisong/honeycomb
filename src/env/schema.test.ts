@@ -3,11 +3,25 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   EnvironmentValidationError,
+  parseAuthEnv,
+  parseBuildAuthEnv,
+  parseDatabaseEnv,
   parseR2Env,
+  parseResendEnv,
   parseServerEnv,
+  parseTurnstileEnv,
+  parseUpstashEnv,
 } from "./schema";
 import { parseClientEnv } from "./client-schema";
-import { getDatabaseEnv } from "./server";
+import {
+  getAuthEnv,
+  getDatabaseEnv,
+  getR2Env,
+  getResendEnv,
+  getServerEnv,
+  getTurnstileEnv,
+  getUpstashEnv,
+} from "./server";
 import { parseSchema } from "./validation";
 
 const validCoreEnv = {
@@ -59,6 +73,40 @@ describe("environment schemas", () => {
     expect(() => parseServerEnv({})).toThrow(/NEXT_PUBLIC_SITE_URL/);
   });
 
+  it("rejects a short production auth secret without echoing it", () => {
+    const unsafeValue = "short-production-secret";
+
+    expect(() =>
+      parseServerEnv({ ...validCoreEnv, AUTH_SECRET: unsafeValue, NODE_ENV: "production" }),
+    ).toThrow(/AUTH_SECRET/);
+
+    try {
+      parseServerEnv({ ...validCoreEnv, AUTH_SECRET: unsafeValue, NODE_ENV: "production" });
+    } catch (error) {
+      expect((error as Error).message).not.toContain(unsafeValue);
+    }
+  });
+
+  it("accepts a strong production auth secret", () => {
+    expect(() =>
+      parseServerEnv({
+        ...validCoreEnv,
+        AUTH_SECRET: "uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E",
+        NODE_ENV: "production",
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects a production auth secret with insufficient character diversity", () => {
+    expect(() =>
+      parseServerEnv({
+        ...validCoreEnv,
+        AUTH_SECRET: "a".repeat(32),
+        NODE_ENV: "production",
+      }),
+    ).toThrow(/AUTH_SECRET/);
+  });
+
   it("marks an entirely absent optional integration as disabled", () => {
     const environment = parseServerEnv(validCoreEnv);
 
@@ -108,6 +156,40 @@ describe("environment schemas", () => {
     });
   });
 
+  it("parses each optional integration independently", () => {
+    expect(parseTurnstileEnv({
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key",
+      TURNSTILE_SECRET_KEY: "secret-key",
+    })).toEqual({ siteKey: "site-key", secretKey: "secret-key" });
+    expect(parseResendEnv({
+      RESEND_API_KEY: "resend-key",
+      RESEND_FROM_EMAIL: "noreply@example.com",
+      ADMIN_EMAIL: "admin@example.com",
+    })).toEqual({
+      apiKey: "resend-key",
+      fromEmail: "noreply@example.com",
+      adminEmail: "admin@example.com",
+    });
+    expect(parseUpstashEnv({
+      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+    })).toEqual({ url: "https://example.upstash.io", token: "token" });
+  });
+
+  it("parses database, auth, and build auth environments", () => {
+    expect(parseDatabaseEnv(validCoreEnv)).toEqual({
+      TURSO_URL: validCoreEnv.TURSO_URL,
+      TURSO_TOKEN: validCoreEnv.TURSO_TOKEN,
+    });
+    expect(parseAuthEnv(validCoreEnv)).toMatchObject({ AUTH_SECRET: "auth-secret" });
+    expect(parseBuildAuthEnv({
+      AUTH_SECRET: "build-secret",
+      AUTH_URL: "https://example.com",
+      AUTH_GOOGLE_ID: "google-id",
+      AUTH_GOOGLE_SECRET: "google-secret",
+    }).google).toEqual({ clientId: "google-id", clientSecret: "google-secret" });
+  });
+
   it("rejects an R2 account ID that cannot be a Cloudflare account hostname", () => {
     expect(() =>
       parseR2Env({
@@ -127,6 +209,30 @@ describe("environment schemas", () => {
       TURSO_URL: "libsql://honeycomb.turso.io",
       TURSO_TOKEN: "database-token",
     });
+  });
+
+  it("reads all environment groups through server accessors", () => {
+    for (const [key, value] of Object.entries({
+      ...validCoreEnv,
+      R2_ACCOUNT_ID: "0123456789abcdef0123456789abcdef",
+      R2_ACCESS_KEY_ID: "access-key",
+      R2_SECRET_ACCESS_KEY: "secret-key",
+      R2_BUCKET_NAME: "bucket",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key",
+      TURNSTILE_SECRET_KEY: "turnstile-secret",
+      RESEND_API_KEY: "resend-key",
+      RESEND_FROM_EMAIL: "noreply@example.com",
+      ADMIN_EMAIL: "admin@example.com",
+      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "upstash-token",
+    })) vi.stubEnv(key, value);
+
+    expect(getServerEnv().r2?.bucketName).toBe("bucket");
+    expect(getAuthEnv().turnstile?.secretKey).toBe("turnstile-secret");
+    expect(getR2Env()?.bucketName).toBe("bucket");
+    expect(getTurnstileEnv()?.siteKey).toBe("site-key");
+    expect(getResendEnv()?.adminEmail).toBe("admin@example.com");
+    expect(getUpstashEnv()?.token).toBe("upstash-token");
   });
 
   it("names a root-level validation issue as the environment", () => {

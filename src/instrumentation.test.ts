@@ -8,7 +8,7 @@ const productionCoreEnv = {
   NEXT_PUBLIC_SITE_URL: "https://honeycomb.example.com",
   TURSO_URL: "libsql://honeycomb.turso.io",
   TURSO_TOKEN: "turso-token",
-  AUTH_SECRET: "auth-secret",
+  AUTH_SECRET: "uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E",
   AUTH_URL: "https://honeycomb.example.com",
 };
 
@@ -23,7 +23,7 @@ describe("instrumentation register", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://honeycomb.example.com");
     vi.stubEnv("TURSO_URL", "invalid-turso-url");
     vi.stubEnv("TURSO_TOKEN", "turso-token");
-    vi.stubEnv("AUTH_SECRET", "auth-secret");
+    vi.stubEnv("AUTH_SECRET", productionCoreEnv.AUTH_SECRET);
     vi.stubEnv("AUTH_URL", "https://honeycomb.example.com");
 
     expect(() => register()).toThrow(/TURSO_URL/);

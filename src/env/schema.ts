@@ -9,6 +9,7 @@ import {
 
 const requiredString = z.string().trim().min(1, "must not be empty");
 const requiredUrl = z.url("must be a valid URL");
+const minimumProductionAuthSecretLength = 32;
 const r2AccountId = z
   .string()
   .trim()
@@ -29,6 +30,21 @@ const databaseEnvSchema = coreServerEnvSchema.pick({
 
 const authEnvSchema = coreServerEnvSchema.pick({ AUTH_SECRET: true, AUTH_URL: true });
 
+function validateProductionAuthSecret(environment: Environment) {
+  if (environment.NODE_ENV !== "production") return;
+
+  const secret = environment.AUTH_SECRET ?? "";
+  const characterClasses = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(
+    (pattern) => pattern.test(secret),
+  ).length;
+
+  if (secret.length < minimumProductionAuthSecretLength || characterClasses < 3) {
+    throw new EnvironmentValidationError([
+      `AUTH_SECRET: must be at least ${minimumProductionAuthSecretLength} characters and use at least three character classes in production`,
+    ]);
+  }
+}
+
 const oauthProviderSchema = z.object({
   clientId: requiredString,
   clientSecret: requiredString,
@@ -45,6 +61,7 @@ const turnstileSchema = z.object({
   siteKey: requiredString,
   secretKey: requiredString,
 });
+
 
 const resendSchema = z.object({
   apiKey: requiredString,
@@ -104,6 +121,7 @@ export function parseDatabaseEnv(environment: Environment) {
 }
 
 export function parseAuthEnv(environment: Environment) {
+  validateProductionAuthSecret(environment);
   return {
     ...parseSchema(authEnvSchema, environment),
     apple: readOAuthProvider(environment, "AUTH_APPLE_ID", "AUTH_APPLE_SECRET"),
@@ -202,6 +220,7 @@ export function parseUpstashEnv(environment: Environment) {
 }
 
 export function parseServerEnv(environment: Environment) {
+  validateProductionAuthSecret(environment);
   return {
     ...parseClientEnv(environment),
     ...parseSchema(coreServerEnvSchema, environment),

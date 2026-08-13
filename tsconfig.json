@@ -6,9 +6,8 @@
       }
     ],
     "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "target": "ESNext",
     "module": "ESNext",

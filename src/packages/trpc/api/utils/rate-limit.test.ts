@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiRatelimit, getClientIp } from "./rate-limit";
 
 const originalEnv = {
@@ -10,6 +10,7 @@ describe("getClientIp", () => {
   beforeEach(() => {
     process.env.UPSTASH_REDIS_REST_URL = originalEnv.url;
     process.env.UPSTASH_REDIS_REST_TOKEN = originalEnv.token;
+    vi.unstubAllEnvs();
   });
 
   it("uses the first x-forwarded-for entry when available", () => {
@@ -59,5 +60,15 @@ describe("getClientIp", () => {
     const apiRatelimit = createApiRatelimit();
 
     expect(apiRatelimit.limit).toEqual(expect.any(Function));
+  });
+
+  it("reports unavailable instead of allowing production requests without Upstash", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const result = await createApiRatelimit().limit("127.0.0.1");
+
+    expect(result).toMatchObject({ success: false, unavailable: true });
   });
 });

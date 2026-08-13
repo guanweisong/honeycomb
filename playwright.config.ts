@@ -47,7 +47,8 @@ export default defineConfig({
         process.env.R2_BUCKET_NAME ?? "playwright-unused-r2-bucket",
       TURSO_URL: process.env.TURSO_URL ?? "http://127.0.0.1:1",
       TURSO_TOKEN: process.env.TURSO_TOKEN ?? "playwright-unreachable-database",
-      AUTH_SECRET: process.env.AUTH_SECRET ?? "playwright-production-secret",
+      AUTH_SECRET:
+        process.env.AUTH_SECRET ?? "uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E",
       AUTH_URL: BASE_URL,
       RESEND_API_KEY:
         process.env.RESEND_API_KEY ?? "playwright-unused-resend-key",

@@ -50,7 +50,7 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<TSchema>>({
-    resolver: zodResolver(schema) as Resolver<z.infer<TSchema>>,
+    resolver: zodResolver(schema) as unknown as Resolver<z.infer<TSchema>>,
     mode: "onBlur",
     defaultValues,
   });

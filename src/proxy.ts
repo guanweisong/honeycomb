@@ -6,20 +6,22 @@ import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 
 const i18nMiddleware = createMiddleware(routing);
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/")) {
     const identifier = getClientIp(req);
-    const { success, limit, remaining, reset } =
+    const { success, limit, remaining, reset, unavailable } =
       await apiRatelimit.limit(identifier);
 
     if (!success) {
       return new NextResponse(
         JSON.stringify({
-          code: 429,
-          message: "Too many requests, please try again later.",
+          code: unavailable ? 503 : 429,
+          message: unavailable
+            ? "API rate limiting is temporarily unavailable."
+            : "Too many requests, please try again later.",
         }),
         {
-          status: 429,
+          status: unavailable ? 503 : 429,
           headers: {
             "Content-Type": "application/json",
             "X-RateLimit-Limit": String(limit),
