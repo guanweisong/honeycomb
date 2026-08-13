@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { getLocale } from "next-intl/server";
-import { createServerClient } from "@/packages/trpc/api";
+import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
 
 /**
@@ -9,9 +9,8 @@ import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
  * @returns {Promise<JSX.Element>} 网站底部。
  */
 export default async function Footer() {
-  const serverClient = await createServerClient();
   const [setting, locale] = await Promise.all([
-    serverClient.setting.index(),
+    getSiteSetting(),
     getLocale(),
   ]);
 

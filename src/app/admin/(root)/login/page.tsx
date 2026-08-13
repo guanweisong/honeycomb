@@ -1,6 +1,6 @@
 import { getAdminUser } from "@/app/admin/lib/admin-auth";
 import { getAuthProviders } from "@/app/admin/lib/auth-providers";
-import { createServerClient } from "@/packages/trpc/api";
+import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
@@ -10,15 +10,15 @@ type LoginPageProps = {
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const user = await getAdminUser(await headers());
+  const requestHeaders = await headers();
+  const user = await getAdminUser(requestHeaders);
 
   if (user) {
     redirect("/admin/dashboard");
   }
 
-  const serverClient = await createServerClient();
   const [setting, providers] = await Promise.all([
-    serverClient.setting.index(),
+    getSiteSetting(requestHeaders),
     getAuthProviders(),
   ]);
   const targetUrl = (await searchParams).targetUrl;

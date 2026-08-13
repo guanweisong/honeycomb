@@ -1,10 +1,10 @@
 import { unstable_cache } from "next/cache";
 
 import { getServerEnv } from "@/env/server";
-import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
+import { createServerClient } from "@/packages/trpc/api";
 
 export const SITEMAP_BATCH_SIZE = 1000;
 export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;

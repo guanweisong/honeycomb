@@ -1,5 +1,5 @@
 import { getAdminUser } from "@/app/admin/lib/admin-auth";
-import { createServerClient } from "@/packages/trpc/api";
+import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardClientShell } from "./DashboardClientShell";
@@ -16,8 +16,7 @@ export default async function AdminDashboardLayout({
     redirect("/admin/login");
   }
 
-  const serverClient = await createServerClient();
-  const setting = await serverClient.setting.index();
+  const setting = await getSiteSetting(await headers());
 
   return (
     <AdminProviders>

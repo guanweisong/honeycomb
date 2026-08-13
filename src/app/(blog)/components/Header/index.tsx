@@ -6,6 +6,7 @@ import getCurrentPathOfMenu from "@/app/(blog)/lib/getCurrentPathOfMenu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
+import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { getLocale } from "next-intl/server";
 import { createServerClient } from "@/packages/trpc/api";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
@@ -22,7 +23,7 @@ import { MenuEntity } from "@/packages/trpc/api/outputs";
 export default async function Header() {
   const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
-    serverClient.setting.index(),
+    getSiteSetting(),
     serverClient.menu.index(),
     getLocale(),
   ]);
