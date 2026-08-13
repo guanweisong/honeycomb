@@ -1,4 +1,5 @@
 import React, { act } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,8 +53,16 @@ describe("SessionSettings", () => {
   });
 
   it("lists sessions and revokes other sessions", async () => {
-    await act(async () => root.render(React.createElement(SessionSettings)));
-    await act(async () => Promise.resolve());
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client: new QueryClient() },
+          React.createElement(SessionSettings),
+        ),
+      ),
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
     const section = container.querySelector("section");
     expect(section?.className).not.toContain("border-t");
@@ -95,7 +104,15 @@ describe("SessionSettings", () => {
   it("shows skeleton placeholders while sessions are loading", async () => {
     mocks.fetch.mockReturnValueOnce(new Promise(() => {}));
 
-    await act(async () => root.render(React.createElement(SessionSettings)));
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client: new QueryClient() },
+          React.createElement(SessionSettings),
+        ),
+      ),
+    );
 
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
   });

@@ -45,7 +45,11 @@ export function Tabs({
         ))}
       </TabsList>
       {tabs.map(({ value, content }) => (
-        <TabsContent key={value} value={value} className={contentClassName}>
+        <TabsContent
+          key={value}
+          value={value}
+          className={contentClassName}
+        >
           {content}
         </TabsContent>
       ))}

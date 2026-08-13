@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/auth-client";
 import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
@@ -37,30 +38,24 @@ function getDeviceName(userAgent: string | null | undefined) {
 }
 
 const SessionSettings = () => {
-  const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isRevoking, setIsRevoking] = useState(false);
   const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
-
-  const loadSessions = async () => {
-    setIsLoading(true);
-    try {
+  const queryClient = useQueryClient();
+  const sessionsQuery = useQuery({
+    queryKey: ["account-security", "sessions"],
+    queryFn: async () => {
       const result = await authClient.$fetch("/list-sessions");
-      if (result.error) {
-        toast.error(result.error.message || "登录会话加载失败");
-        return;
-      }
-      setSessions((result.data ?? []) as SessionItem[]);
-    } catch {
-      toast.error("登录会话加载失败，请稍后重试");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (result.error) throw new Error(result.error.message || "登录会话加载失败");
+      return (result.data ?? []) as SessionItem[];
+    },
+    staleTime: 0,
+  });
+  const sessions = sessionsQuery.data ?? [];
+  const isLoading = sessionsQuery.isPending && !sessionsQuery.data;
 
   useEffect(() => {
-    void loadSessions();
-  }, []);
+    if (sessionsQuery.error) toast.error("登录会话加载失败，请稍后重试");
+  }, [sessionsQuery.error]);
 
   const revokeOtherSessions = async () => {
     setIsRevoking(true);
@@ -74,7 +69,9 @@ const SessionSettings = () => {
         return;
       }
       toast.success("其他设备已退出登录");
-      await loadSessions();
+      await queryClient.invalidateQueries({
+        queryKey: ["account-security", "sessions"],
+      });
     } catch {
       toast.error("退出其他设备请求失败，请稍后重试");
     } finally {

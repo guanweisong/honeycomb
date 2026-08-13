@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/auth-client";
 import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
@@ -25,29 +26,27 @@ type Props = {
 };
 
 const LinkedAccountsSettings = ({ providers }: Props) => {
-  const [accounts, setAccounts] = useState<AccountItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [unlinkTarget, setUnlinkTarget] = useState<AccountItem | null>(null);
 
-  const loadAccounts = async () => {
-    setIsLoading(true);
-    try {
+  const queryClient = useQueryClient();
+  const accountsQuery = useQuery({
+    queryKey: ["account-security", "linked-accounts"],
+    queryFn: async () => {
       const result = await authClient.listAccounts();
-      if (result.error) {
-        toast.error(result.error.message || "关联账号加载失败");
-        return;
-      }
-      setAccounts((result.data ?? []) as AccountItem[]);
-    } catch {
-      toast.error("关联账号加载失败，请稍后重试");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      if (result.error) throw new Error(result.error.message || "关联账号加载失败");
+      return (result.data ?? []) as AccountItem[];
+    },
+    staleTime: 0,
+  });
+  const accounts = useMemo(
+    () => accountsQuery.data ?? [],
+    [accountsQuery.data],
+  );
+  const isLoading = accountsQuery.isPending && !accountsQuery.data;
 
   useEffect(() => {
-    void loadAccounts();
-  }, []);
+    if (accountsQuery.error) toast.error("关联账号加载失败，请稍后重试");
+  }, [accountsQuery.error]);
 
   const linkedProviderIds = useMemo(
     () => new Set(accounts.map((account) => account.providerId)),
@@ -80,7 +79,9 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
 
     setUnlinkTarget(null);
     toast.success("已解除账号关联");
-    await loadAccounts();
+    await queryClient.invalidateQueries({
+      queryKey: ["account-security", "linked-accounts"],
+    });
   };
 
   if (isLoading) {

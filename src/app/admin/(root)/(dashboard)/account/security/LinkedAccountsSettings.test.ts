@@ -1,4 +1,5 @@
 import React, { act } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -43,10 +44,14 @@ describe("LinkedAccountsSettings", () => {
   it("lists linked providers and refreshes after unlinking", async () => {
     await act(async () =>
       root.render(
-        React.createElement(LinkedAccountsSettings, { providers: ["github"] }),
+        React.createElement(
+          QueryClientProvider,
+          { client: new QueryClient() },
+          React.createElement(LinkedAccountsSettings, { providers: ["github"] }),
+        ),
       ),
     );
-    await act(async () => Promise.resolve());
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
     expect(container.textContent).toContain("GitHub");
     expect(container.textContent).toContain("已关联");
@@ -72,10 +77,14 @@ describe("LinkedAccountsSettings", () => {
   it("does not show providers that are not enabled", async () => {
     await act(async () =>
       root.render(
-        React.createElement(LinkedAccountsSettings, { providers: [] }),
+        React.createElement(
+          QueryClientProvider,
+          { client: new QueryClient() },
+          React.createElement(LinkedAccountsSettings, { providers: [] }),
+        ),
       ),
     );
-    await act(async () => Promise.resolve());
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
     expect(container.textContent).toContain("当前环境未配置");
     expect(container.textContent).not.toContain("GitHub");
