@@ -1,21 +1,10 @@
-"use client";
-
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
 import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
-import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
-import { useRouter } from "next/navigation";
-import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
-import {
-  TiptapMediaPickerProvider,
-  type MediaPickerRenderer,
-} from "@/packages/ui/extended/Tiptap/media-picker";
 
 /**
  * Admin 应用的根布局组件。
@@ -37,24 +26,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const [queryClient] = React.useState(() =>
-    createAdminQueryClient({
-      onForbidden: () => router.replace("/admin/forbidden"),
-    }),
-  );
-  const renderMediaPicker: MediaPickerRenderer = ({
-    open,
-    onConfirm,
-    onCancel,
-  }) => (
-    <PhotoPickerModal
-      showPhotoPicker={open}
-      handlePhotoPickerOk={(media) => onConfirm({ url: media.url })}
-      handlePhotoPickerCancel={onCancel}
-    />
-  );
-
   return (
     <html lang="zh-cn">
       <head>
@@ -64,13 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <trpc.Provider client={trpcClient} queryClient={queryClient}>
-          <QueryClientProvider client={queryClient}>
-            <TiptapMediaPickerProvider renderer={renderMediaPicker}>
-              {children}
-            </TiptapMediaPickerProvider>
-          </QueryClientProvider>
-        </trpc.Provider>
+        {children}
         <Toaster />
         <Analytics />
         <SpeedInsights />

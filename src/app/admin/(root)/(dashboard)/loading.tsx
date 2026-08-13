@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 
-export default function AdminLoading() {
+export default function DashboardLoading() {
   return (
     <main
       aria-busy="true"

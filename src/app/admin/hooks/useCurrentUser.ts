@@ -14,7 +14,9 @@ import {
 export const useCurrentUser = () => {
   const { data, isLoading, refetch } = trpc.user.current.useQuery(undefined, {
     retry: false,
-    staleTime: 0,
+    // dashboard layout 已在服务端校验并注入当前用户，短时间内复用该快照，
+    // 避免每个权限组件首次渲染都重复请求 user.current。
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });

@@ -552,7 +552,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/setting/page.tsx",
+    relativePath: "(root)/(dashboard)/setting/SettingClient.tsx",
     actions: [
       {
         id: "setting.update",
@@ -1009,7 +1009,7 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects a positive guard used as a disabled condition", () => {
-    const settingPath = "(root)/(dashboard)/setting/page.tsx";
+    const settingPath = "(root)/(dashboard)/setting/SettingClient.tsx";
     const [settingAction] = getActions(settingPath);
     const disabledAction: ActionGuardContract = {
       ...settingAction,

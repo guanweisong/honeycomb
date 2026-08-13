@@ -28,11 +28,22 @@ vi.mock("@/auth-client", () => ({
 }));
 
 vi.mock("@marsidev/react-turnstile", () => ({
+  DEFAULT_SCRIPT_ID: "cf-turnstile-script",
+  SCRIPT_URL: "https://challenges.cloudflare.com/turnstile/v0/api.js",
   Turnstile: () => null,
+}));
+
+vi.mock("next/script", () => ({
+  default: () => null,
 }));
 
 vi.mock("@/packages/ui/extended/DynamicForm", () => ({
   DynamicForm: () => React.createElement("form"),
+}));
+
+vi.mock("@/packages/ui/components/skeleton", () => ({
+  Skeleton: (props: React.HTMLAttributes<HTMLDivElement>) =>
+    React.createElement("div", props),
 }));
 
 vi.mock("sonner", () => ({
@@ -48,7 +59,7 @@ vi.mock("./providerIcons", () => ({
   },
 }));
 
-import LoginPage from "./page";
+import LoginClient from "./LoginClient";
 
 describe("admin login page", () => {
   let container: HTMLDivElement;
@@ -71,45 +82,34 @@ describe("admin login page", () => {
     container.remove();
   });
 
-  it("shows loading placeholders before setting and providers resolve", async () => {
-    mockUseSiteSetting.mockReturnValue({
-      setting: undefined,
-      isLoading: true,
-      refreshSetting: vi.fn(),
-    });
-    mockFetch.mockImplementation(
-      () => new Promise(() => undefined),
-    );
-
+  it("renders server-provided setting and providers immediately", async () => {
     await act(async () => {
-      root.render(React.createElement(LoginPage));
+      root.render(
+        React.createElement(LoginClient, {
+          setting: { siteName: { zh: "Honeycomb" } },
+          providers: [
+            { id: "github", name: "GitHub" },
+            { id: "google", name: "Google" },
+          ],
+        }),
+      );
     });
 
     expect(
       container.querySelector('[data-testid="login-site-name-skeleton"]'),
-    ).not.toBeNull();
-    expect(
-      container.querySelectorAll('[data-testid="login-provider-skeleton"]'),
-    ).toHaveLength(2);
+    ).toBeNull();
+    expect(container.textContent).toContain("Honeycomb");
+    expect(container.textContent).toContain("使用GitHub登录");
   });
 
   it("renders resolved setting and oauth providers after loading", async () => {
-    mockUseSiteSetting.mockReturnValue({
-      setting: {
-        siteName: {
-          zh: "Honeycomb",
-        },
-      },
-      isLoading: false,
-      refreshSetting: vi.fn(),
-    });
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => [{ id: "github", name: "GitHub" }],
-    });
-
     await act(async () => {
-      root.render(React.createElement(LoginPage));
+      root.render(
+        React.createElement(LoginClient, {
+          setting: { siteName: { zh: "Honeycomb" } },
+          providers: [{ id: "github", name: "GitHub" }],
+        }),
+      );
     });
 
     expect(container.textContent).toContain("Honeycomb");
@@ -121,18 +121,13 @@ describe("admin login page", () => {
 
   it("shows Passkey login when WebAuthn is supported", async () => {
     vi.stubGlobal("PublicKeyCredential", class {});
-    mockUseSiteSetting.mockReturnValue({
-      setting: { siteName: { zh: "Honeycomb" } },
-      isLoading: false,
-      refreshSetting: vi.fn(),
-    });
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
-
     await act(async () => {
-      root.render(React.createElement(LoginPage));
+      root.render(
+        React.createElement(LoginClient, {
+          setting: { siteName: { zh: "Honeycomb" } },
+          providers: [],
+        }),
+      );
     });
 
     expect(container.textContent).toContain("使用 Passkey 登录");
