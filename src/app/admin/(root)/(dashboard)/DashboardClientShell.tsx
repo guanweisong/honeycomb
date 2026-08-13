@@ -20,12 +20,6 @@ export function DashboardClientShell({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
-  trpc.user.current.useQuery(undefined, {
-    initialData: user,
-    staleTime: 30_000,
-    retry: false,
-  });
-
   const handleLogout = async () => {
     try {
       await authClient.signOut();

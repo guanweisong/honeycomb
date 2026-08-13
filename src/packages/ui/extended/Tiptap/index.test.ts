@@ -12,6 +12,17 @@ const tiptapMocks = vi.hoisted(() => ({
     off: vi.fn(),
     commands: { setContent: vi.fn() },
   },
+  toolbarItems: [
+    [{ label: "加粗", icon: null, onClick: vi.fn(), isActive: () => true }],
+    [
+      {
+        label: "更多",
+        icon: null,
+        items: [{ label: "子项", icon: null }],
+      },
+    ],
+    [{ label: "自定义", icon: null, render: () => React.createElement("span", { "data-testid": "custom" }) }],
+  ],
 }));
 
 vi.mock("@tiptap/react", () => ({
@@ -22,7 +33,17 @@ vi.mock("@tiptap/react", () => ({
   EditorContent: () => React.createElement("div", { "data-testid": "editor" }),
 }));
 
-vi.mock("./config/toolbarItems", () => ({ toolbarItems: [] }));
+vi.mock("./config/toolbarItems", () => ({ toolbarItems: tiptapMocks.toolbarItems }));
+
+vi.mock("./components/ToolbarButton", () => ({
+  ToolbarButton: ({ label, onClick }: { label: string; onClick?: () => void }) =>
+    React.createElement("button", { type: "button", onClick }, label),
+}));
+
+vi.mock("./components/ToolbarGroupItem", () => ({
+  ToolbarGroupItem: ({ group }: { group: { label: string } }) =>
+    React.createElement("button", { type: "button" }, group.label),
+}));
 
 import Tiptap from "./index";
 
@@ -79,5 +100,15 @@ describe("Tiptap", () => {
     expect(tiptapMocks.editor.commands.setContent).toHaveBeenCalledWith(
       "<p>外部内容</p>",
     );
+  });
+
+  it("renders toolbar buttons, groups, and custom items", async () => {
+    await act(async () => {
+      root.render(React.createElement(TiptapForTest));
+    });
+
+    expect(container.textContent).toContain("加粗");
+    expect(container.textContent).toContain("更多");
+    expect(container.querySelector('[data-testid="custom"]')).not.toBeNull();
   });
 });

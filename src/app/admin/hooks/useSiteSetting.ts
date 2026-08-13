@@ -7,7 +7,9 @@ import { trpc } from "@/packages/trpc/client/trpc";
  * @returns {{ setting: SettingData | undefined; isLoading: boolean; refreshSetting: () => Promise<unknown> }} 当前设置数据、加载状态和刷新方法。
  */
 export const useSiteSetting = () => {
-  const { data, refetch, isLoading } = trpc.setting.index.useQuery();
+  const { data, refetch, isLoading } = trpc.setting.index.useQuery(undefined, {
+    staleTime: 30_000,
+  });
   return {
     setting: data,
     isLoading,

@@ -10,16 +10,17 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAdminUser(await headers());
+  const requestHeaders = await headers();
+  const user = await getAdminUser(requestHeaders);
 
   if (!user) {
     redirect("/admin/login");
   }
 
-  const setting = await getSiteSetting(await headers());
+  const setting = await getSiteSetting(requestHeaders);
 
   return (
-    <AdminProviders>
+      <AdminProviders initialUser={user}>
       <DashboardClientShell user={user} setting={setting}>
         {children}
       </DashboardClientShell>

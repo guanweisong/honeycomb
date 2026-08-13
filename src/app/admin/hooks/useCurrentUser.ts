@@ -1,8 +1,44 @@
 import { trpc } from "@/packages/trpc/client/trpc";
+import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import {
   can,
   type Permission as PermissionValue,
 } from "@/packages/identity/auth/permissions";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useMemo,
+  type ReactNode,
+} from "react";
+
+const CurrentUserContext = createContext<{
+  user: AdminUser | null;
+  isLoading: boolean;
+  refreshUser: ReturnType<typeof trpc.user.current.useQuery>["refetch"];
+} | null>(null);
+
+export function CurrentUserProvider({
+  children,
+  initialUser,
+}: {
+  children?: ReactNode;
+  initialUser: AdminUser;
+}) {
+  const { data, isLoading, refetch } = trpc.user.current.useQuery(undefined, {
+    initialData: initialUser,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+  const value = useMemo(
+    () => ({ user: data ?? null, isLoading, refreshUser: refetch }),
+    [data, isLoading, refetch],
+  );
+
+  return createElement(CurrentUserContext.Provider, { value }, children);
+}
 
 /**
  * 后台当前用户 Hook。
@@ -12,20 +48,11 @@ import {
  * @returns {{ user: CurrentUser | null; isLoading: boolean }} 当前登录用户和加载状态。
  */
 export const useCurrentUser = () => {
-  const { data, isLoading, refetch } = trpc.user.current.useQuery(undefined, {
-    retry: false,
-    // dashboard layout 已在服务端校验并注入当前用户，短时间内复用该快照，
-    // 避免每个权限组件首次渲染都重复请求 user.current。
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
-
-  return {
-    user: data ?? null,
-    isLoading,
-    refreshUser: refetch,
-  };
+  const context = useContext(CurrentUserContext);
+  if (!context) {
+    throw new Error("useCurrentUser must be used inside CurrentUserProvider");
+  }
+  return context;
 };
 
 export const useCan = (permission: PermissionValue): boolean => {

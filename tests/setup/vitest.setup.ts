@@ -1,5 +1,10 @@
 import { vi } from 'vitest'
 
+// React 19 requires this flag before any test renderer is created.
+// Keeping it in the shared setup avoids every component test repeating it.
+;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
+  .IS_REACT_ACT_ENVIRONMENT = true
+
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
   useRouter() {

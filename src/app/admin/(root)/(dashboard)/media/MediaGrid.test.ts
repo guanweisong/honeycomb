@@ -12,8 +12,11 @@ vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
 }));
 
 vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) =>
-    React.createElement("img", props),
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean }) => {
+    const imageProps = { ...props };
+    delete imageProps.fill;
+    return React.createElement("img", imageProps);
+  },
 }));
 
 import { MediaGrid } from "./MediaGrid";

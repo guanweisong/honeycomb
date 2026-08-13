@@ -175,4 +175,12 @@ describe("AdminLayout", () => {
     expect(setItem).toHaveBeenCalledWith("admin-sidebar-collapsed", "false");
     expect(container.querySelector('button[aria-label="展开侧边栏"]')).not.toBeNull();
   });
+
+  it("restores a persisted collapsed sidebar preference", async () => {
+    storage["admin-sidebar-collapsed"] = "true";
+
+    await renderLayout();
+
+    expect(container.querySelector('button[aria-label="展开侧边栏"]')).not.toBeNull();
+  });
 });

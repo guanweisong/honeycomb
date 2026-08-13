@@ -4,11 +4,19 @@ import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
 import { TiptapMediaPickerProvider, type MediaPickerRenderer } from "@/packages/ui/extended/Tiptap/media-picker";
+import { CurrentUserProvider } from "./hooks/useCurrentUser";
+import type { AdminUser } from "./lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React from "react";
 
-export function AdminProviders({ children }: { children: React.ReactNode }) {
+export function AdminProviders({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser: AdminUser;
+}) {
   const router = useRouter();
   const [queryClient] = React.useState(() =>
     createAdminQueryClient({ onForbidden: () => router.replace("/admin/forbidden") }),
@@ -25,7 +33,9 @@ export function AdminProviders({ children }: { children: React.ReactNode }) {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <TiptapMediaPickerProvider renderer={renderMediaPicker}>
-          {children}
+          <CurrentUserProvider initialUser={initialUser}>
+            {children}
+          </CurrentUserProvider>
         </TiptapMediaPickerProvider>
       </QueryClientProvider>
     </trpc.Provider>

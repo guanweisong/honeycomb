@@ -119,4 +119,51 @@ describe("DynamicForm", () => {
     expect(container.querySelector("textarea")?.value).toBe("说明");
     expect(container.querySelector("textarea")?.disabled).toBe(true);
   });
+
+  it("renders select, radio, and multilingual fields", async () => {
+    const schema = z.object({
+      status: z.string(),
+      mode: z.string(),
+      title: z.object({ zh: z.string(), en: z.string() }),
+    });
+
+    await act(async () => {
+      root.render(
+        React.createElement(DynamicForm, {
+          schema,
+          fields: [
+            {
+              name: "status",
+              label: "状态",
+              type: "select",
+              options: [{ label: "启用", value: "enabled" }],
+            },
+            {
+              name: "mode",
+              label: "模式",
+              type: "radio",
+              options: [{ label: "自动", value: "auto" }],
+            },
+            { name: "title", label: "标题", type: "text", multiLang: true },
+          ],
+          defaultValues: {
+            status: "enabled",
+            mode: "auto",
+            title: { zh: "中文", en: "English" },
+          },
+          onSubmit: vi.fn(),
+          renderSubmitButton: false,
+        }),
+      );
+    });
+
+    expect(container.textContent).toContain("启用");
+    expect(container.textContent).toContain("自动");
+    expect(
+      Array.from(container.querySelectorAll<HTMLInputElement>("input")).some(
+        (input) => input.value === "中文",
+      ),
+    ).toBe(true);
+    expect(container.textContent).toContain("en");
+  });
 });
