@@ -1,10 +1,12 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { SettingEntity } from "@/packages/trpc/api/outputs";
 
 vi.mock("@/app/admin/hooks/useCurrentUser", () => ({ useCan: () => true }));
 vi.mock("@/app/admin/hooks/useSiteSetting", () => ({
-  useSiteSetting: () => ({ setting: undefined, refreshSetting: vi.fn() }),
+  useSiteSetting: () => ({
+    setting: { id: "setting-1", siteName: { en: "Honeycomb", zh: "Honeycomb" } },
+    refreshSetting: vi.fn(),
+  }),
 }));
 vi.mock("@/packages/ui/extended/DynamicForm", () => ({
   DynamicForm: ({ defaultValues }: { defaultValues?: { id?: string } }) =>
@@ -22,9 +24,7 @@ import SettingClient from "./SettingClient";
 
 describe("SettingClient", () => {
   it("uses the server-provided setting as form defaults", () => {
-    const element = SettingClient({
-      setting: { id: "setting-1", siteName: { en: "Honeycomb", zh: "Honeycomb" } } as SettingEntity,
-    });
+    const element = SettingClient();
 
     expect(element.props.children.props.defaultValues.id).toBe("setting-1");
   });

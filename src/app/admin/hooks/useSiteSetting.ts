@@ -1,4 +1,41 @@
+import { createContext, createElement, useContext, useState, type ReactNode } from "react";
 import { trpc } from "@/packages/trpc/client/trpc";
+import type { SettingEntity } from "@/packages/trpc/api/outputs";
+
+const SiteSettingContext = createContext<{
+  setting: SettingEntity;
+  refreshSetting: () => Promise<SettingEntity>;
+} | null>(null);
+
+export function SiteSettingProvider({
+  children,
+  setting,
+}: {
+  children?: ReactNode;
+  setting: SettingEntity;
+}) {
+  const [currentSetting, setCurrentSetting] = useState(setting);
+  const utils = trpc.useUtils();
+  const refreshSetting = async () => {
+    const nextSetting = await utils.setting.index.fetch();
+    setCurrentSetting(nextSetting);
+    return nextSetting;
+  };
+
+  return createContextProvider(children, currentSetting, refreshSetting);
+}
+
+function createContextProvider(
+  children: ReactNode,
+  setting: SettingEntity,
+  refreshSetting: () => Promise<SettingEntity>,
+) {
+  return createElement(
+    SiteSettingContext.Provider,
+    { value: { setting, refreshSetting } },
+    children,
+  );
+}
 
 /**
  * 后台全局站点设置 Hook。
@@ -7,12 +44,10 @@ import { trpc } from "@/packages/trpc/client/trpc";
  * @returns {{ setting: SettingData | undefined; isLoading: boolean; refreshSetting: () => Promise<unknown> }} 当前设置数据、加载状态和刷新方法。
  */
 export const useSiteSetting = () => {
-  const { data, refetch, isLoading } = trpc.setting.index.useQuery(undefined, {
-    staleTime: 30_000,
-  });
+  const context = useContext(SiteSettingContext);
   return {
-    setting: data,
-    isLoading,
-    refreshSetting: refetch,
+    setting: context?.setting,
+    isLoading: false,
+    refreshSetting: context?.refreshSetting ?? (async () => undefined),
   };
 };

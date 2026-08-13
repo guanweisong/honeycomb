@@ -20,8 +20,8 @@ export default async function AdminDashboardLayout({
   const setting = await getSiteSetting(requestHeaders);
 
   return (
-      <AdminProviders initialUser={user}>
-      <DashboardClientShell user={user} setting={setting}>
+      <AdminProviders initialUser={user} setting={setting}>
+      <DashboardClientShell user={user}>
         {children}
       </DashboardClientShell>
     </AdminProviders>

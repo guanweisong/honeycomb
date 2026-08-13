@@ -5,6 +5,7 @@ import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
 import { TiptapMediaPickerProvider, type MediaPickerRenderer } from "@/packages/ui/extended/Tiptap/media-picker";
 import { CurrentUserProvider } from "./hooks/useCurrentUser";
+import { SiteSettingProvider } from "./hooks/useSiteSetting";
 import type { AdminUser } from "./lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -13,9 +14,11 @@ import React from "react";
 export function AdminProviders({
   children,
   initialUser,
+  setting,
 }: {
   children: React.ReactNode;
   initialUser: AdminUser;
+  setting: import("@/packages/trpc/api/outputs").SettingEntity;
 }) {
   const router = useRouter();
   const [queryClient] = React.useState(() =>
@@ -34,7 +37,7 @@ export function AdminProviders({
       <QueryClientProvider client={queryClient}>
         <TiptapMediaPickerProvider renderer={renderMediaPicker}>
           <CurrentUserProvider initialUser={initialUser}>
-            {children}
+            <SiteSettingProvider setting={setting}>{children}</SiteSettingProvider>
           </CurrentUserProvider>
         </TiptapMediaPickerProvider>
       </QueryClientProvider>

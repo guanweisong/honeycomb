@@ -3,23 +3,22 @@
 import { getMenuForCapabilities } from "@/app/admin/constants/menuData";
 import { authClient } from "@/auth-client";
 import type { AdminUser } from "@/app/admin/lib/admin-auth";
-import type { SettingEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
+import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function DashboardClientShell({
   children,
   user,
-  setting,
 }: {
   children: React.ReactNode;
   user: AdminUser;
-  setting: SettingEntity | undefined;
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  const { setting } = useSiteSetting();
   const handleLogout = async () => {
     try {
       await authClient.signOut();

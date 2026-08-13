@@ -7,7 +7,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import type { SettingEntity } from "@/packages/trpc/api/outputs";
+import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
 
 type SettingFormValues = z.infer<typeof SettingUpdateSchema>;
 
@@ -16,9 +16,9 @@ type SettingFormValues = z.infer<typeof SettingUpdateSchema>;
  * 允许管理员配置网站的各项全局设置，如站点名称、签名等。
  * 使用 `react-hook-form` 管理表单状态，并通过 tRPC 与后端进行数据交互。
  */
-const Setting = ({ setting }: { setting: SettingEntity | undefined }) => {
+const Setting = () => {
+  const { setting, refreshSetting } = useSiteSetting();
   const canUpdateSetting = useCan(Permission.settingUpdate);
-  const utils = trpc.useUtils();
 
   /**
    * 更新网站设置的 tRPC mutation。
@@ -33,7 +33,7 @@ const Setting = ({ setting }: { setting: SettingEntity | undefined }) => {
   const handleSubmit = async (values: SettingFormValues) => {
     try {
       await updateSetting.mutateAsync({ ...values, id: setting!.id });
-      await utils.setting.index.invalidate();
+      await refreshSetting();
       toast.success("更新成功");
     } catch {
       toast.error("更新失败");
