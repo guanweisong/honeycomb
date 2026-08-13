@@ -29,6 +29,7 @@ export function useMediaQuery() {
   const requestedFromSignature = useRef<string | undefined>(undefined);
   const searchParams = getMediaQueryInput(page);
   const query = trpc.media.index.useQuery(searchParams);
+  const { refetch } = query;
 
   useEffect(() => {
     if (!query.data) return;
@@ -93,11 +94,11 @@ export function useMediaQuery() {
     setTotal(0);
 
     if (page === 1) {
-      void query.refetch();
+      void refetch();
     } else {
       setPage(1);
     }
-  }, [page, query.refetch]);
+  }, [page, refetch]);
 
   const hasMore =
     currentPageLoaded &&

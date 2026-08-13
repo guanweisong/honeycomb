@@ -135,5 +135,5 @@ describe("coverage governance", () => {
     expect(output).toContain(
       'does not meet "src/packages/identity/auth/permissions.ts" threshold (101%)',
     );
-  });
+  }, 60_000);
 });

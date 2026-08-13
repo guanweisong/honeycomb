@@ -4,8 +4,8 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.2.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2.5-blue?style=flat-square&logo=react)](https://react.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -92,10 +92,10 @@ honeycomb/
 │   │   ├── sitemap.xml/       # 运行时 sitemap 索引
 │   │   └── sitemaps/          # 运行时 sitemap 分片
 │   └── packages/              # 共享包
-│       ├── db/                # 数据库层
-│       │   ├── schema.ts      # 数据库 schema
-│       │   ├── db.ts          # 数据库连接
-│       │   └── *.ts           # 自定义字段类型
+│       ├── domain/            # 领域模型与领域契约
+│       ├── application/       # 应用服务与通知
+│       ├── identity/          # 认证、授权与账号安全
+│       ├── infrastructure/   # 数据库、HTTP、安全与可观测性
 │       ├── trpc/              # tRPC API 层
 │       │   ├── api/           # API 路由
 │       │   │   ├── core.ts    # tRPC 核心

@@ -19,6 +19,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
   const [currentItem, setCurrentItem] = useState<MediaEntity>();
   const onSelectRef = useRef(onSelect);
   const query = useMediaQuery();
+  const { hasMore, loadMore } = query;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const actions = useMediaActions({
     refetch: query.refetch,
@@ -39,7 +40,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
     const sentinel = loadMoreRef.current;
     if (
       !sentinel ||
-      !query.hasMore ||
+      !hasMore ||
       typeof IntersectionObserver === "undefined"
     ) {
       return;
@@ -48,7 +49,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          query.loadMore();
+          loadMore();
         }
       },
       { rootMargin: "200px" },
@@ -56,7 +57,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [query.hasMore, query.loadMore]);
+  }, [hasMore, loadMore]);
 
   return (
     <div>

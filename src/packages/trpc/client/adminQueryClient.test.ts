@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { getAuthErrorCode } from "./adminQueryClient";
+import { describe, expect, it, vi } from "vitest";
+import { createAdminQueryClient, getAuthErrorCode } from "./adminQueryClient";
 
 describe("getAuthErrorCode", () => {
   it.each(["UNAUTHORIZED", "FORBIDDEN"] as const)(
@@ -14,5 +14,31 @@ describe("getAuthErrorCode", () => {
       undefined,
     );
     expect(getAuthErrorCode(new Error("network error"))).toBe(undefined);
+  });
+
+  it("disables auth retries and keeps bounded retries for ordinary errors", () => {
+    const client = createAdminQueryClient();
+    const retry = client.getDefaultOptions().queries?.retry as (
+      failureCount: number,
+      error: unknown,
+    ) => boolean;
+
+    expect(retry(0, { data: { code: "UNAUTHORIZED" } })).toBe(false);
+    expect(retry(0, new Error("temporary"))).toBe(true);
+    expect(retry(2, new Error("temporary"))).toBe(true);
+    expect(retry(3, new Error("temporary"))).toBe(false);
+    expect(client.getDefaultOptions().mutations?.retry).toBe(false);
+  });
+
+  it("delegates forbidden handling to the provided callback", () => {
+    const onForbidden = vi.fn();
+    const client = createAdminQueryClient({ onForbidden });
+    const cache = client.getQueryCache();
+
+    cache.config.onError?.(
+      { data: { code: "FORBIDDEN" } } as never,
+      {} as never,
+    );
+    expect(onForbidden).toHaveBeenCalledOnce();
   });
 });

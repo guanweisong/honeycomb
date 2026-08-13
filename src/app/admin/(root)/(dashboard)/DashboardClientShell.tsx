@@ -6,6 +6,7 @@ import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import type { SettingEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function DashboardClientShell({
@@ -17,6 +18,7 @@ export function DashboardClientShell({
   user: AdminUser;
   setting: SettingEntity | undefined;
 }) {
+  const router = useRouter();
   const utils = trpc.useUtils();
   trpc.user.current.useQuery(undefined, {
     initialData: user,
@@ -33,7 +35,7 @@ export function DashboardClientShell({
     } catch {
       // 即使 API 调用失败，也继续执行登出流程，确保前端状态被清理。
     } finally {
-      window.location.href = "/admin/login";
+      router.push("/admin/login");
     }
   };
 
