@@ -94,28 +94,28 @@ export async function getPostList(
     "createdAt",
   );
 
-  const list = await observeDbOperation("post.service.list", "select", () =>
-    db
-      .select()
-      .from(schema.post)
-      .where(where)
-      .orderBy(orderByClause)
-      .limit(limit)
-      .offset((page - 1) * limit),
-  );
-
-  // 加载关联数据
-  const mapped = await loadPostRelations(db, list);
-
-  const [countResult] = await observeDbOperation(
-    "post.service.count",
-    "select",
-    () =>
+  const [list, countRows] = await Promise.all([
+    observeDbOperation("post.service.list", "select", () =>
+      db
+        .select()
+        .from(schema.post)
+        .where(where)
+        .orderBy(orderByClause)
+        .limit(limit)
+        .offset((page - 1) * limit),
+    ),
+    observeDbOperation("post.service.count", "select", () =>
       db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.post)
         .where(where),
-  );
+    ),
+  ]);
+
+  // 加载关联数据
+  const mapped = await loadPostRelations(db, list);
+
+  const [countResult] = countRows;
   const total = Number(countResult?.count) || 0;
 
   return { list: mapped, total };
