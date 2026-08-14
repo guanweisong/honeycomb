@@ -8,23 +8,15 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { PostListQuerySchema } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
-import {
-  PostInsert,
-  PostInsertSchema,
-} from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
-import {
-  PostUpdate,
-  PostUpdateSchema,
-} from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
+import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { eq, inArray, sql, and, InferInsertModel } from "drizzle-orm";
+import { eq, inArray, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { TRPCError } from "@trpc/server";
 import { getPostDetail, getPostList } from "./post.service";
 import { TagType } from "@/packages/domain/content/tag";
-import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
-import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitize-html";
 import {
   bumpCacheVersion,
   getCacheVersion,
@@ -34,54 +26,7 @@ import {
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-
-type PostInsertValues = InferInsertModel<typeof schema.post>;
-type OptionalI18nInput =
-  | Partial<Record<keyof I18n, string | null>>
-  | null
-  | undefined;
-
-const normalizeOptionalI18n = (value: unknown): I18n | null | undefined => {
-  if (value == null) {
-    return value;
-  }
-  if (typeof value !== "object") {
-    return undefined;
-  }
-
-  const item = value as OptionalI18nInput;
-
-  return {
-    en: item?.en ?? "",
-    zh: item?.zh ?? "",
-  };
-};
-
-const toPostInsertValues = (
-  input: PostInsert,
-  authorId: string,
-): PostInsertValues => ({
-  ...input,
-  authorId,
-  galleryLocation: normalizeOptionalI18n(input.galleryLocation),
-  title: normalizeOptionalI18n(input.title),
-  content: sanitizeOptionalI18nHtml(normalizeOptionalI18n(input.content)),
-  excerpt: normalizeOptionalI18n(input.excerpt),
-  quoteAuthor: normalizeOptionalI18n(input.quoteAuthor),
-  quoteContent: normalizeOptionalI18n(input.quoteContent),
-});
-
-const toPostUpdateValues = (
-  input: Omit<PostUpdate, "id">,
-): Partial<PostInsertValues> => ({
-  ...input,
-  galleryLocation: normalizeOptionalI18n(input.galleryLocation),
-  title: normalizeOptionalI18n(input.title),
-  content: sanitizeOptionalI18nHtml(normalizeOptionalI18n(input.content)),
-  excerpt: normalizeOptionalI18n(input.excerpt),
-  quoteAuthor: normalizeOptionalI18n(input.quoteAuthor),
-  quoteContent: normalizeOptionalI18n(input.quoteContent),
-});
+import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 
 const POST_INDEX_CACHE_VERSION_KEY = "cache:post:index:version";
 const POST_INDEX_CACHE_NAMESPACE = "post.index";
