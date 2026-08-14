@@ -120,26 +120,26 @@ export async function getPageList(
     "createdAt",
   );
 
-  const list = await observeDbOperation("page.service.list", "select", () =>
-    db
-      .select()
-      .from(schema.page)
-      .where(where)
-      .orderBy(orderByClause)
-      .limit(limit)
-      .offset((page - 1) * limit),
-  );
-
-  const mapped = await mapPagesWithRelations(db, list);
-  const [countResult] = await observeDbOperation(
-    "page.service.count",
-    "select",
-    () =>
+  const [list, countRows] = await Promise.all([
+    observeDbOperation("page.service.list", "select", () =>
+      db
+        .select()
+        .from(schema.page)
+        .where(where)
+        .orderBy(orderByClause)
+        .limit(limit)
+        .offset((page - 1) * limit),
+    ),
+    observeDbOperation("page.service.count", "select", () =>
       db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.page)
         .where(where),
-  );
+    ),
+  ]);
+
+  const mapped = await mapPagesWithRelations(db, list);
+  const [countResult] = countRows;
   const total = Number(countResult?.count) || 0;
 
   return { list: mapped, total };
