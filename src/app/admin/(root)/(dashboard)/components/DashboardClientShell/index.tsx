@@ -7,7 +7,6 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { useSiteSetting } from "@/app/admin/hooks/use-site-setting";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { toast } from "sonner";
 
 export function DashboardClientShell({
@@ -18,7 +17,6 @@ export function DashboardClientShell({
   user: AdminUser;
 }) {
   const router = useRouter();
-  const [isNavigating, startNavigation] = useTransition();
   const utils = trpc.useUtils();
   const { setting } = useSiteSetting();
   const handleLogout = async () => {
@@ -35,7 +33,7 @@ export function DashboardClientShell({
   };
 
   const handleNavigate = (path: string) => {
-    startNavigation(() => router.push(path));
+    router.push(path);
   };
 
   return (
@@ -47,17 +45,7 @@ export function DashboardClientShell({
       onLogout={handleLogout}
       onNavigate={handleNavigate}
     >
-      <div aria-busy={isNavigating}>
-        {children}
-        {isNavigating && (
-          <div
-            aria-live="polite"
-            className="pointer-events-none absolute inset-0 flex items-start justify-center bg-white/60 pt-8 text-sm text-muted-foreground"
-          >
-            正在加载
-          </div>
-        )}
-      </div>
+      {children}
     </AdminLayout>
   );
 }
