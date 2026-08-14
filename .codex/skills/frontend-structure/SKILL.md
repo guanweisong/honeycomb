@@ -14,6 +14,16 @@ description: 当在本 Next.js 前端工程中处理路由、页面、组件、�
 
 ## 目录与职责
 
+### 文件与目录命名
+
+- `src/app` 下的业务组件目录统一使用大驼峰，例如 `components/PageEditorForm/`；组件入口和测试固定为 `index.tsx`、`index.test.tsx`。
+- 非组件 TypeScript/TSX 文件统一使用短横线命名（kebab-case），例如 `page-editor-query.ts`、`admin-query-client.ts`、`security-headers.ts`。
+- 测试文件在被测文件名后追加 `.test`，例如 `page-editor-query.test.ts`；不要使用 `page.editor.query.test.ts` 这种多段点号拆词形式。
+- 同一模块的实现文件与测试文件必须保持完全相同的基础文件名；禁止一处使用小驼峰、另一处使用短横线。
+- React 组件的导出符号使用大驼峰，Hook 使用 `use` 加大驼峰；文件命名仍遵循所在目录规则，不以导出符号改变文件名规则。
+- Next.js 保留文件必须使用框架约定名称，例如 `page.tsx`、`layout.tsx`、`loading.tsx`、`error.tsx`、`route.ts`，不得改写为短横线或业务名称。
+- 公共入口使用 `index.ts`/`index.tsx`；只有组件目录入口和明确的目录模块入口使用 `index`，普通单文件模块不要为了命名统一而额外创建目录。
+
 下列目录是架构边界，不只是命名约定：
 
 | 目录 | 职责 | 可依赖方向 |
