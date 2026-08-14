@@ -121,34 +121,32 @@ export const userRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await observeDbOperation("user.list", "select", () =>
-        ctx.db
-          .select({
-            id: schema.user.id,
-            email: schema.user.email,
-            level: schema.user.level,
-            name: schema.user.name,
-            status: schema.user.status,
-            createdAt: schema.user.createdAt,
-            updatedAt: schema.user.updatedAt,
-          })
-          .from(schema.user)
-          .where(where)
-          .orderBy(orderByClause)
-          .limit(limit)
-          .offset((page - 1) * limit),
-      );
-
-      // 查询总数
-      const [countResult] = await observeDbOperation(
-        "user.count",
-        "select",
-        () =>
+      const [list, countRows] = await Promise.all([
+        observeDbOperation("user.list", "select", () =>
+          ctx.db
+            .select({
+              id: schema.user.id,
+              email: schema.user.email,
+              level: schema.user.level,
+              name: schema.user.name,
+              status: schema.user.status,
+              createdAt: schema.user.createdAt,
+              updatedAt: schema.user.updatedAt,
+            })
+            .from(schema.user)
+            .where(where)
+            .orderBy(orderByClause)
+            .limit(limit)
+            .offset((page - 1) * limit),
+        ),
+        observeDbOperation("user.count", "select", () =>
           ctx.db
             .select({ count: sql<number>`count(*)`.as("count") })
             .from(schema.user)
             .where(where),
-      );
+        ),
+      ]);
+      const [countResult] = countRows;
       const total = Number(countResult?.count) || 0;
 
       return { list, total };
@@ -230,9 +228,7 @@ export const userRouter = createTRPCRouter({
           () =>
             db
               .update(schema.user)
-              .set(
-                rest as Partial<InferInsertModel<typeof schema.user>>,
-              )
+              .set(rest as Partial<InferInsertModel<typeof schema.user>>)
               .where(eq(schema.user.id, id))
               .returning(safeUserColumns),
         );

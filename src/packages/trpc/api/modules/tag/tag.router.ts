@@ -53,26 +53,24 @@ export const tagRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await observeDbOperation("tag.list", "select", () =>
-        ctx.db
-          .select()
-          .from(schema.tag)
-          .where(where)
-          .orderBy(orderByClause)
-          .limit(limit)
-          .offset((page - 1) * limit),
-      );
-
-      // 查询总数
-      const [countResult] = await observeDbOperation(
-        "tag.count",
-        "select",
-        () =>
+      const [list, countRows] = await Promise.all([
+        observeDbOperation("tag.list", "select", () =>
+          ctx.db
+            .select()
+            .from(schema.tag)
+            .where(where)
+            .orderBy(orderByClause)
+            .limit(limit)
+            .offset((page - 1) * limit),
+        ),
+        observeDbOperation("tag.count", "select", () =>
           ctx.db
             .select({ count: sql<number>`count(*)`.as("count") })
             .from(schema.tag)
             .where(where),
-      );
+        ),
+      ]);
+      const [countResult] = countRows;
       const total = Number(countResult?.count) || 0;
 
       return { list, total };

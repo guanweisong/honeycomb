@@ -46,10 +46,8 @@ export async function listComments(db: Database, input: CommentListInput) {
     sortOrder as "asc" | "desc",
     "createdAt",
   );
-  const commentIds = await observeDbOperation(
-    "comment.service.ids",
-    "select",
-    () =>
+  const [commentIds, countRows] = await Promise.all([
+    observeDbOperation("comment.service.ids", "select", () =>
       db
         .select({ id: schema.comment.id })
         .from(schema.comment)
@@ -57,7 +55,14 @@ export async function listComments(db: Database, input: CommentListInput) {
         .orderBy(orderBy)
         .limit(limit)
         .offset((page - 1) * limit),
-  );
+    ),
+    observeDbOperation("comment.service.count", "select", () =>
+      db
+        .select({ count: sql<number>`count(*)`.as("count") })
+        .from(schema.comment)
+        .where(where),
+    ),
+  ]);
   const ids = commentIds.map(({ id }) => id);
   const comments = ids.length
     ? await observeDbOperation("comment.service.list", "select", () =>
@@ -86,15 +91,7 @@ export async function listComments(db: Database, input: CommentListInput) {
   const customPostMap = Object.fromEntries(
     customPosts.map((post) => [post.id, post]),
   );
-  const [countResult] = await observeDbOperation(
-    "comment.service.count",
-    "select",
-    () =>
-      db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.comment)
-        .where(where),
-  );
+  const [countResult] = countRows;
 
   return {
     list: ordered.map((comment) => ({

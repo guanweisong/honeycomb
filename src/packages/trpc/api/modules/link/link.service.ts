@@ -40,24 +40,24 @@ export async function getLinkList(
     sortOrder as "asc" | "desc",
     "createdAt",
   );
-  const list = await observeDbOperation("link.service.list", "select", () =>
-    db
-      .select()
-      .from(schema.link)
-      .where(where)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset((page - 1) * limit),
-  );
-  const [countResult] = await observeDbOperation(
-    "link.service.count",
-    "select",
-    () =>
+  const [list, countRows] = await Promise.all([
+    observeDbOperation("link.service.list", "select", () =>
+      db
+        .select()
+        .from(schema.link)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
+    ),
+    observeDbOperation("link.service.count", "select", () =>
       db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.link)
         .where(where),
-  );
+    ),
+  ]);
+  const [countResult] = countRows;
 
   return { list, total: Number(countResult?.count) || 0 };
 }

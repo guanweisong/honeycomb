@@ -46,26 +46,24 @@ export const mediaRouter = createTRPCRouter({
       );
 
       // 查询分页数据
-      const list = await observeDbOperation("media.list", "select", () =>
-        ctx.db
-          .select()
-          .from(schema.media)
-          .where(where)
-          .orderBy(orderByClause)
-          .limit(limit)
-          .offset((page - 1) * limit),
-      );
-
-      // 查询总数
-      const [countResult] = await observeDbOperation(
-        "media.count",
-        "select",
-        () =>
+      const [list, countRows] = await Promise.all([
+        observeDbOperation("media.list", "select", () =>
+          ctx.db
+            .select()
+            .from(schema.media)
+            .where(where)
+            .orderBy(orderByClause)
+            .limit(limit)
+            .offset((page - 1) * limit),
+        ),
+        observeDbOperation("media.count", "select", () =>
           ctx.db
             .select({ count: sql<number>`count(*)`.as("count") })
             .from(schema.media)
             .where(where),
-      );
+        ),
+      ]);
+      const [countResult] = countRows;
       const total = Number(countResult?.count) || 0;
 
       return { list, total };

@@ -49,24 +49,24 @@ export async function getCategoryList(
     sortOrder as "asc" | "desc",
     "createdAt",
   );
-  const list = await observeDbOperation("category.service.list", "select", () =>
-    db
-      .select()
-      .from(schema.category)
-      .where(where)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset((page - 1) * limit),
-  );
-  const [countResult] = await observeDbOperation(
-    "category.service.count",
-    "select",
-    () =>
+  const [list, countRows] = await Promise.all([
+    observeDbOperation("category.service.list", "select", () =>
+      db
+        .select()
+        .from(schema.category)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
+    ),
+    observeDbOperation("category.service.count", "select", () =>
       db
         .select({ count: sql<number>`count(*)`.as("count") })
         .from(schema.category)
         .where(where),
-  );
+    ),
+  ]);
+  const [countResult] = countRows;
 
   return {
     list: Tools.sonsTree(list, id),
