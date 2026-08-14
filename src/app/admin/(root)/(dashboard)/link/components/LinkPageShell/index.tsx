@@ -94,33 +94,37 @@ export function LinkPageShell() {
             </div>
           </div>
         }
-        rowActions={(row) => (
-          <div className="flex gap-1">
-            {canUpdateLink && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleEditItem(row)}
-              >
-                <Pencil />
-              </Button>
-            )}
-            {canDeleteLink && (
-              <Dialog
-                trigger={
-                  <Button variant="secondary" size="sm">
-                    <Trash />
-                  </Button>
-                }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={async () => {
-                  await handleDeleteItem([row.id]);
-                }}
-              />
-            )}
-          </div>
-        )}
+        rowActions={
+          canUpdateLink || canDeleteLink
+            ? (row) => (
+                <div className="flex gap-1">
+                  {canUpdateLink && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleEditItem(row)}
+                    >
+                      <Pencil />
+                    </Button>
+                  )}
+                  {canDeleteLink && (
+                    <Dialog
+                      trigger={
+                        <Button variant="secondary" size="sm">
+                          <Trash />
+                        </Button>
+                      }
+                      type="danger"
+                      title="确定要删除吗？"
+                      onOK={async () => {
+                        await handleDeleteItem([row.id]);
+                      }}
+                    />
+                  )}
+                </div>
+              )
+            : undefined
+        }
       />
       <LinkFormDialog
         state={dialogState}

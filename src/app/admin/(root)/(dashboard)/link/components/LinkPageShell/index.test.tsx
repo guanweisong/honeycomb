@@ -94,6 +94,7 @@ describe("LinkPageShell", () => {
     ).not.toBeNull();
     expect(container.textContent).not.toContain("添加链接");
     expect(container.textContent).not.toContain("批量删除");
+    expect(container.textContent).not.toContain("操作");
     expect(container.querySelectorAll('[role="checkbox"]')).toHaveLength(0);
   });
 
