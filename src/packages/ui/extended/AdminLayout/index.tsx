@@ -2,20 +2,25 @@
 
 import React, {
   ReactNode,
-  createContext,
-  useContext,
   useEffect,
-  useEffectEvent,
   useState,
 } from "react";
-import Avatar from "../Avatar";
-import { Menu, MenuItem } from "../Menu";
-import { UserDropdown } from "../UserDropdown";
+import { MenuItem } from "../Menu";
 import type { CurrentUser } from "@/packages/domain/identity/user";
 import { Button } from "../../components/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { usePathname } from "next/navigation";
+import {
+  AdminLayoutActionsContext,
+  AdminLayoutPageTitleContext,
+} from "./AdminLayoutContext";
+import { AdminSidebar } from "./AdminSidebar";
+
+export {
+  useAdminLayoutActions,
+  useAdminLayoutPageTitle,
+} from "./AdminLayoutContext";
 
 export interface AdminLayoutProps {
   children: ReactNode;
@@ -26,57 +31,6 @@ export interface AdminLayoutProps {
   menu?: MenuItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
-}
-
-const AdminLayoutActionsContext = createContext<{
-  setActions: (actions: ReactNode | null) => void;
-} | null>(null);
-
-const AdminLayoutPageTitleContext = createContext<{
-  setPageTitle: (pageTitle: ReactNode | null) => void;
-} | null>(null);
-
-export function useAdminLayoutActions(actions: ReactNode | null, key: string) {
-  const context = useContext(AdminLayoutActionsContext);
-  const setActions = context?.setActions;
-  const syncActions = useEffectEvent(() => {
-    setActions?.(actions);
-  });
-  const clearActions = useEffectEvent(() => {
-    setActions?.(null);
-  });
-
-  useEffect(() => {
-    if (!setActions) {
-      return;
-    }
-
-    syncActions();
-    return () => clearActions();
-  }, [setActions, key]);
-}
-
-export function useAdminLayoutPageTitle(
-  pageTitle: ReactNode | null,
-  key: string,
-) {
-  const context = useContext(AdminLayoutPageTitleContext);
-  const setPageTitle = context?.setPageTitle;
-  const syncPageTitle = useEffectEvent(() => {
-    setPageTitle?.(pageTitle);
-  });
-  const clearPageTitle = useEffectEvent(() => {
-    setPageTitle?.(null);
-  });
-
-  useEffect(() => {
-    if (!setPageTitle) {
-      return;
-    }
-
-    syncPageTitle();
-    return () => clearPageTitle();
-  }, [setPageTitle, key]);
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
@@ -211,23 +165,6 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     <PanelLeft />
   );
 
-  const sidebarContent = (
-    <>
-      <div className="flex items-center gap-3 p-3">
-        <Avatar url="/logo.jpg" fallback={title} />
-        <span className="min-w-0 truncate text-sm font-medium text-gray-900">
-          {title}
-        </span>
-      </div>
-      <div className="flex-1 min-h-0 overflow-y-auto px-2">
-        <Menu data={menu} />
-      </div>
-      <div className="p-3 pt-0">
-        <UserDropdown user={user} onLogout={onLogout} />
-      </div>
-    </>
-  );
-
   return (
     <AdminLayoutActionsContext.Provider value={actionsContext}>
       <AdminLayoutPageTitleContext.Provider value={pageTitleContext}>
@@ -243,7 +180,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                     : "w-[200px] opacity-100 translate-x-0 m-3",
                 )}
               >
-                {sidebarContent}
+                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
               </div>
             )}
             <div
@@ -314,7 +251,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                       : "translate-x-[-100%] pointer-events-none",
                   )}
                 >
-                  {sidebarContent}
+                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
                 </div>
               </>
             )}
