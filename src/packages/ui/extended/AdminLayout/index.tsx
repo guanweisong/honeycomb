@@ -31,6 +31,7 @@ export interface AdminLayoutProps {
   menu?: MenuItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
+  onNavigate?: (path: string) => void;
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
@@ -79,6 +80,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     menu = [],
     user,
     onLogout,
+    onNavigate,
   } = props;
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(getInitialIsMobile);
@@ -180,7 +182,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                     : "w-[200px] opacity-100 translate-x-0 m-3",
                 )}
               >
-                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
+                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} onNavigate={onNavigate} />
               </div>
             )}
             <div
@@ -220,7 +222,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                   </div>
                 )}
               </div>
-              <div className="box-border flex-1 min-h-0 overflow-y-auto px-4 py-3">
+              <div className="relative box-border flex-1 min-h-0 overflow-y-auto px-4 py-3">
                 {children}
               </div>
               {footer && (
@@ -251,7 +253,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                       : "translate-x-[-100%] pointer-events-none",
                   )}
                 >
-                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
+                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} onNavigate={onNavigate} />
                 </div>
               </>
             )}

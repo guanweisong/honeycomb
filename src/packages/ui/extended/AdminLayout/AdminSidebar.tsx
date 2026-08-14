@@ -11,6 +11,7 @@ interface AdminSidebarProps {
   menu: MenuItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
+  onNavigate?: (path: string) => void;
 }
 
 /** Admin 侧边栏内容，桌面侧栏和移动抽屉共用。 */
@@ -19,6 +20,7 @@ export function AdminSidebar({
   menu,
   user,
   onLogout,
+  onNavigate,
 }: AdminSidebarProps) {
   return (
     <>
@@ -29,7 +31,7 @@ export function AdminSidebar({
         </span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto px-2">
-        <Menu data={menu} />
+        <Menu data={menu} onNavigate={onNavigate} />
       </div>
       <div className="p-3 pt-0">
         <UserDropdown user={user} onLogout={onLogout} />
