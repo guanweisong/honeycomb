@@ -53,3 +53,6 @@ export function PostTypeFields({ type }: { type: PostType }) {
     </>
   );
 }
+/**
+ * 文章类型字段组件，负责根据文章类型渲染对应编辑字段。
+ */

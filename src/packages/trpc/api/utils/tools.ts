@@ -36,7 +36,7 @@ class Tools {
   }
 }
 
-// ===== Drizzle Helpers =====
+// ===== Drizzle 工具函数 =====
 import { and, inArray, like, SQL, sql, type AnyColumn } from "drizzle-orm";
 
 type QueryValue = string | number | boolean | Array<string | number | boolean>;

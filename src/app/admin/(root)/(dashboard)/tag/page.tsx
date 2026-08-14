@@ -60,7 +60,7 @@ const Tag = () => {
     searchParams,
     {
       placeholderData: keepPreviousData,
-      staleTime: 60 * 1000, // 1 minutes
+      staleTime: 60 * 1000, // 缓存 1 分钟。
     },
   );
   /**

@@ -1,0 +1,216 @@
+"use client";
+
+import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  DEFAULT_SCRIPT_ID,
+  SCRIPT_URL,
+  Turnstile,
+  TurnstileInstance,
+} from "@marsidev/react-turnstile";
+import { clientEnv } from "@/env/client";
+import {
+  DynamicForm,
+  DynamicFormRef,
+} from "@/packages/ui/extended/DynamicForm";
+import { toast } from "sonner";
+import { Button } from "@/packages/ui/components/button";
+import { Skeleton } from "@/packages/ui/components/skeleton";
+import { authClient } from "@/auth-client";
+import Script from "next/script";
+import { providerIcons } from "../../providerIcons";
+import { LoginSchema, type LoginValues } from "../../login.schema";
+
+type AuthProvider = { id: string; name: string };
+
+type LoginClientProps = {
+  setting: { siteName?: { zh?: string | null } | null } | undefined;
+  providers: AuthProvider[];
+  targetUrl?: string;
+};
+
+/**
+ * 登录页面组件。
+ * 负责后台用户名密码登录、OAuth 登录、Turnstile 校验以及登录后的跳转。
+ */
+const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isPasskeySupported, setIsPasskeySupported] = useState<boolean | null>(
+    null,
+  );
+  const form = useRef<DynamicFormRef<LoginValues>>(null);
+
+  const callbackUrl = targetUrl || "/admin/dashboard";
+
+  useEffect(() => {
+    setIsPasskeySupported(
+      typeof window !== "undefined" &&
+        typeof window.PublicKeyCredential !== "undefined",
+    );
+  }, []);
+
+  /**
+   * 重置验证码
+   */
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileRef.current?.reset();
+  };
+
+  /**
+   * 表单提交处理器。
+   * 当用户点击登录按钮时，如果验证码已就绪，则调用 Credentials Provider 完成登录。
+   */
+  const onSubmit = () => {
+    if (clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      toast.error("验证码加载中，请稍候");
+      return Promise.reject("验证码未加载");
+    }
+
+    const values = form.current?.getValues();
+    if (!values) {
+      toast.error("表单未初始化");
+      return Promise.reject("表单未初始化");
+    }
+    const { name, password } = values;
+    return authClient.signIn.username({
+      username: name,
+      password,
+      fetchOptions: {
+        headers: captchaToken
+          ? { "x-captcha-response": captchaToken }
+          : undefined,
+      },
+    }).then((result) => {
+      if (result.error) throw new Error("用户名或密码不正确");
+      toast.success("登录成功");
+      window.location.href = callbackUrl;
+    }).catch((e: { message?: string }) => {
+      toast.error(e?.message || "登录失败");
+    }).finally(() => {
+      resetCaptcha();
+    });
+  };
+
+  /**
+   * 触发指定 OAuth Provider 的登录流程。
+   *
+   * @param {string} providerId - Provider 在 Better Auth 中的唯一标识。
+   */
+  const handleOAuthLogin = async (providerId: string) => {
+    await authClient.signIn.social({ provider: providerId, callbackURL: callbackUrl });
+  };
+
+  const handlePasskeyLogin = async () => {
+    const result = await authClient.signIn.passkey();
+    if (result.error) {
+      toast.error(result.error.message || "Passkey 登录失败");
+      return;
+    }
+    toast.success("登录成功");
+    window.location.href = callbackUrl;
+  };
+
+  /**
+   * 验证码通过后的回调。
+   *
+   * @param {string} data - Turnstile 返回的验证码 token。
+   */
+  const onTurnstileSuccess = (data: string) => {
+    setCaptchaToken(data);
+  };
+
+  return (
+    <>
+      <Script
+        id={DEFAULT_SCRIPT_ID}
+        src={SCRIPT_URL}
+        strategy="afterInteractive"
+      />
+      <div className="min-h-screen box-border pt-48 text-center bg-green-700">
+      <video
+        src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
+        className="fixed inset-0 w-full h-full object-cover"
+        autoPlay={true}
+        muted={true}
+        loop={true}
+      />
+      <div className="fixed z-10 w-96 mx-auto left-0 right-0 top-[30%] text-white p-6 bg-white/20 backdrop-blur rounded overflow-hidden">
+        <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
+        <div className="opacity-80 mb-6">游客账号：guest 123456</div>
+        <div className="space-y-4 [&_[data-slot=form-item]]:gap-1.5 [&_input[data-slot=input]]:h-10 [&_input[data-slot=input]]:rounded-md [&_input[data-slot=input]]:border-white/20 [&_input[data-slot=input]]:bg-white/80 [&_input[data-slot=input]]:px-4 [&_input[data-slot=input]]:text-black [&_input[data-slot=input]]:shadow-none [&_input[data-slot=input]]:placeholder:text-black/45 [&_input[data-slot=input]]:focus-visible:border-white [&_input[data-slot=input]]:focus-visible:ring-white/30 [&_[data-slot=form-message]]:text-left [&_[data-slot=form-message]]:text-red-200">
+          <DynamicForm
+            ref={form}
+            schema={LoginSchema}
+            fields={[
+              { name: "name", type: "text", placeholder: "用户名" },
+              { name: "password", type: "password", placeholder: "密码" },
+            ]}
+            submitProps={{
+              children: "登录",
+              variant: "secondary",
+              size: "lg",
+              className: "w-full bg-white/80 text-black hover:bg-white",
+            }}
+            onSubmit={onSubmit}
+          />
+          <div className="min-h-11">
+            {isPasskeySupported === null ? (
+              <Skeleton className="h-11 w-full bg-white/35" />
+            ) : isPasskeySupported ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="w-full bg-white/80 text-black hover:bg-white"
+                onClick={handlePasskeyLogin}
+              >
+                使用 Passkey 登录
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-white/70">
+            <span className="h-px flex-1 bg-white/20" />
+            <span>第三方登录</span>
+            <span className="h-px flex-1 bg-white/20" />
+          </div>
+          {providers.map((provider) => (
+                <Button
+                  key={provider.id}
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full justify-center bg-black/80 px-4 text-white hover:bg-black"
+                  onClick={() => handleOAuthLogin(provider.id)}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {providerIcons[provider.id]}
+                    <span>使用{provider.name}登录</span>
+                  </span>
+                </Button>
+              ))}
+        </div>
+        {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+          <div className="mt-4 flex justify-center">
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+              injectScript={false}
+              onSuccess={onTurnstileSuccess}
+              onExpire={resetCaptcha}
+            />
+          </div>
+        ) : null}
+      </div>
+      </div>
+    </>
+  );
+};
+
+export default function LoginClient(props: LoginClientProps) {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent {...props} />
+    </Suspense>
+  );
+}

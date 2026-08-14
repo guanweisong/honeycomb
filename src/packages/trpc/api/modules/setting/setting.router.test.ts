@@ -4,7 +4,7 @@ import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));

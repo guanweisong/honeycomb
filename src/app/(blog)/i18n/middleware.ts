@@ -4,8 +4,8 @@ import { routing } from "./routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Match all pathnames except for
-  // - … if they start with `/api`, `/trpc`, `/_next` or `/_vercel`
-  // - … the ones containing a dot (e.g. `favicon.ico`)
+  // 匹配所有路径，但排除以下情况：
+  // - 以 `/api`、`/trpc`、`/_next` 或 `/_vercel` 开头的路径；
+  // - 包含点号的路径，例如 `favicon.ico`。
   matcher: "/((?!api|trpc|_next|_vercel|.*\\..*).*)",
 };

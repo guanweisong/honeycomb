@@ -80,3 +80,6 @@ export function PostEditorActions({
     </>
   );
 }
+/**
+ * 文章编辑操作按钮，负责根据文章状态和权限展示提交操作。
+ */

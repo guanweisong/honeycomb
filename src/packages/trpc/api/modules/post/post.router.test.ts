@@ -12,12 +12,12 @@ import {
 } from "../../../../../../tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-// Mock loadPostRelations
+// 模拟文章关联数据加载函数。
 vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
   loadPostRelations: vi.fn(
     async (_db: unknown, posts: Array<Record<string, unknown>>) => {
@@ -105,7 +105,7 @@ describe("Post Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // Setup mock chain for post list query
+      // 设置文章列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -113,7 +113,7 @@ describe("Post Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPosts);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
@@ -141,7 +141,7 @@ describe("Post Router", () => {
       const mockPosts: unknown[] = [];
       const mockCount = [{ count: "0" }];
 
-      // Setup mock chain for empty post list query
+      // 设置空文章列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -149,7 +149,7 @@ describe("Post Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPosts);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
@@ -165,7 +165,7 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when tagId has no posts", async () => {
-      // Mock postTag query returning no post ids, then count query.
+      // 模拟 postTag 查询不返回文章 ID，再执行总数查询。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([]);
@@ -186,7 +186,7 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when authorId has no posts", async () => {
-      // Mock postTag-style lookup for author filter resulting in no posts
+      // 模拟 postTag 风格的作者筛选查询不返回文章。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -428,25 +428,25 @@ describe("Post Router", () => {
         url: "https://example.com/cover.jpg",
       };
 
-      // Setup mock chain for post detail query
+      // 设置文章详情查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([mockPost]);
 
-      // Setup mock for category query
+      // 设置分类查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([mockCategory]);
 
-      // Setup mock for author query
+      // 设置作者查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([mockAuthor]);
 
-      // Setup mock for cover query
+      // 设置封面查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -470,7 +470,7 @@ describe("Post Router", () => {
     });
 
     it("should throw NOT_FOUND error for non-existent post", async () => {
-      // Setup mock chain for non-existent post
+      // 设置不存在文章查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -488,7 +488,7 @@ describe("Post Router", () => {
     it("should increment post views", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -509,7 +509,7 @@ describe("Post Router", () => {
     it("should increment views for any user", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -544,7 +544,7 @@ describe("Post Router", () => {
     it("should increment views for unauthenticated users", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -571,7 +571,7 @@ describe("Post Router", () => {
     it("should return category id for post", async () => {
       const mockPost = { categoryId: TEST_IDS.ID_1 };
 
-      // Setup mock chain for category id query
+      // 设置分类 ID 查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([mockPost]);
@@ -588,7 +588,7 @@ describe("Post Router", () => {
     });
 
     it("should return undefined for non-existent post", async () => {
-      // Setup mock chain for non-existent post category id
+      // 设置不存在文章分类 ID 的模拟查询调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([]);
@@ -611,7 +611,7 @@ describe("Post Router", () => {
         { id: TEST_IDS.ID_3, title: "Post 3" },
       ];
 
-      // Setup mock chain for random posts query with orderBy
+      // 设置带排序的随机文章查询模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);

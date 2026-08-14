@@ -139,3 +139,6 @@ export function usePostEditor(id: string) {
     type,
   };
 }
+/**
+ * 文章编辑 Hook，负责表单状态、文章查询和提交编排。
+ */

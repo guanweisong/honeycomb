@@ -15,8 +15,8 @@ export function PhotoSwipeClient({
     useEffect(() => {
         if (!rootRef.current) return;
 
-        // Initialize PhotoSwipe lightbox
-        // Only bind to image links (those with data-pswp-width attribute)
+        // 初始化 PhotoSwipe 灯箱交互。
+        // 只绑定带有 data-pswp-width 属性的图片链接。
         const lightbox = new PhotoSwipeLightbox({
             gallery: rootRef.current,
             children: "a[data-pswp-width]",
@@ -34,3 +34,6 @@ export function PhotoSwipeClient({
 
     return <div ref={rootRef}>{children}</div>;
 }
+/**
+ * PhotoSwipe 客户端组件，负责为文章图片提供浏览交互。
+ */

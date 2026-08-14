@@ -121,8 +121,8 @@ function createContentSecurityPolicy({
   const isProduction = environment === "production";
   const assetOrigin = parseHttpUrl(assetUrl)?.origin;
 
-  // Both installed Vercel clients use same-origin production scripts/endpoints,
-  // and va.vercel-scripts.com for development or DSN-backed scripts.
+  // 已安装的两个 Vercel 客户端在生产环境使用同源脚本/接口，
+  // 开发环境或使用 DSN 时使用 va.vercel-scripts.com。
   const scriptSources = [
     "'self'",
     "'unsafe-inline'",
@@ -135,7 +135,7 @@ function createContentSecurityPolicy({
   const frameSources = ["'self'"];
 
   if (isDevelopment) {
-    // React's development diagnostics rely on eval; production never receives it.
+    // React 开发诊断依赖 eval，生产环境不会启用该能力。
     scriptSources.push("'unsafe-eval'");
   }
 

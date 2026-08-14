@@ -4,12 +4,12 @@ import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-// Mock S3 module
+// 模拟 S3 模块。
 vi.mock("@/packages/trpc/api/utils/S3", () => ({
   default: {
     getPresignedUrl: vi

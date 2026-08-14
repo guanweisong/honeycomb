@@ -54,7 +54,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     onSelectionChange,
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table uses mutable helpers; isolate the React Compiler opt-out here.
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table 使用可变辅助对象，此处仅隔离 React Compiler 抑制范围。
   const table = useReactTable({
     data: data.list,
     columns,

@@ -11,7 +11,7 @@ import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./useCommentIdentity";
-import { buildCommentInput } from "../commentInput";
+import { buildCommentInput } from "../utils/commentInput";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 
@@ -104,3 +104,6 @@ export function useCommentSubmission({
     isPending: isPending || mutation.isPending,
   };
 }
+/**
+ * 评论提交 Hook，负责组装输入、调用 Mutation、刷新页面和处理验证码。
+ */

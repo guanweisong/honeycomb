@@ -30,3 +30,6 @@ export function useCommentIdentity() {
 
   return { identity, persistIdentity, clearIdentity };
 }
+/**
+ * 评论身份 Hook，负责在浏览器端读取和持久化评论者身份。
+ */

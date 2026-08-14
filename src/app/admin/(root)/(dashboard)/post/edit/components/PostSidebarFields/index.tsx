@@ -147,3 +147,6 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
     </>
   );
 }
+/**
+ * 文章编辑侧栏字段组件，负责渲染文章状态、分类和标签等辅助字段。
+ */

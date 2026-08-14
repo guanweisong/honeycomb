@@ -10,7 +10,7 @@ import {
   resetMockDb,
 } from "../../../../../../tests/helpers/test-utils";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
@@ -69,12 +69,12 @@ describe("Menu Router", () => {
       ];
       mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
 
-      // Setup mock for categories query
+      // 设置分类查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCategories);
 
-      // Setup mock for pages query
+      // 设置页面查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockPages);
@@ -116,12 +116,12 @@ describe("Menu Router", () => {
       const mockPages: unknown[] = [];
       mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
 
-      // Setup mock for empty categories query
+      // 设置空分类查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCategories);
 
-      // Setup mock for empty pages query
+      // 设置空页面查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockPages);
@@ -196,12 +196,12 @@ describe("Menu Router", () => {
         },
       ];
 
-      // Setup mock for delete operation
+      // 设置删除操作的模拟调用。
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      // Setup mock for insert operation
+      // 设置插入操作的模拟调用。
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce(menuItems);
@@ -221,7 +221,7 @@ describe("Menu Router", () => {
     });
 
     it("should return 0 count for empty input", async () => {
-      // Setup mock for delete operation
+      // 设置删除操作的模拟调用。
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);

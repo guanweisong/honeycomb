@@ -3,7 +3,7 @@ import { getAuthProviders } from "@/app/admin/lib/auth-providers";
 import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import LoginClient from "./LoginClient";
+import LoginClient from "./components/LoginClient";
 
 type LoginPageProps = {
   searchParams: Promise<{ targetUrl?: string }>;

@@ -3,7 +3,7 @@ import { statisticRouter } from './statistic.router'
 import { UserLevel } from '@/packages/domain/identity/user'
 import { createMockContext, createMockDb } from '../../../../../../tests/helpers/test-utils'
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock('@/packages/infrastructure/db/db', () => ({
   getDb: vi.fn(() => mockDb),
 }))
@@ -17,7 +17,7 @@ describe('Statistic Router', () => {
 
   describe('index procedure', () => {
     it('should return statistics with admin permissions', async () => {
-      // Simplified mock - return empty arrays for all queries
+      // 使用简化模拟，为所有查询返回空数组。
       mockDb.select.mockReturnValue(mockDb)
       mockDb.from.mockReturnValue(mockDb)
       mockDb.where.mockReturnValue(mockDb)

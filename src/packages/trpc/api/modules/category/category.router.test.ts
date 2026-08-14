@@ -6,7 +6,7 @@ import { UserStatus } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
@@ -54,7 +54,7 @@ describe("Category Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // Setup mock chain for category list query
+      // 设置分类列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -62,7 +62,7 @@ describe("Category Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockCategories);
 
-      // Setup mock chain for count query
+      // 设置总数查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);

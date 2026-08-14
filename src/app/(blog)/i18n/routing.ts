@@ -6,9 +6,9 @@ import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
  * 定义了应用支持的语言环境和默认语言。
  */
 export const routing = defineRouting({
-  // A list of all locales that are supported
+  // 所有受支持的语言环境列表。
   locales: [MultiLangEnum.En, MultiLangEnum.Zh],
 
-  // Used when no locale matches
+  // 没有匹配到语言环境时使用的默认语言。
   defaultLocale: MultiLangEnum.En,
 });

@@ -43,7 +43,7 @@ interface ActionGuardFile {
 
 const actionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/comment/CommentPageShell.tsx",
+    relativePath: "(root)/(dashboard)/comment/components/CommentPageShell/index.tsx",
     actions: [
       {
         id: "comment.moderate",
@@ -86,7 +86,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/link/LinkPageShell.tsx",
+    relativePath: "(root)/(dashboard)/link/components/LinkPageShell/index.tsx",
     actions: [
       {
         id: "link.create",
@@ -145,7 +145,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/media/MediaPageShell.tsx",
+    relativePath: "(root)/(dashboard)/media/components/MediaPageShell/index.tsx",
     actions: [
       {
         id: "media.upload",
@@ -170,7 +170,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/media/MediaGrid.tsx",
+    relativePath: "(root)/(dashboard)/media/components/MediaGrid/index.tsx",
     actions: [
       {
         id: "media.delete",
@@ -185,7 +185,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/menu/MenuPageShell.tsx",
+    relativePath: "(root)/(dashboard)/menu/components/MenuPageShell/index.tsx",
     actions: [
       {
         id: "menu.update",
@@ -200,7 +200,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/page/edit/PageEditorActionButtons.tsx",
+    relativePath: "(root)/(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx",
     actions: [
       {
         id: "page-editor.create",
@@ -552,7 +552,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/setting/SettingClient.tsx",
+    relativePath: "(root)/(dashboard)/setting/components/SettingClient/index.tsx",
     actions: [
       {
         id: "setting.update",
@@ -630,7 +630,7 @@ const actionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/user/UserPageShell.tsx",
+    relativePath: "(root)/(dashboard)/user/components/UserPageShell/index.tsx",
     actions: [
       {
         id: "user.create",
@@ -1009,7 +1009,7 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects a positive guard used as a disabled condition", () => {
-    const settingPath = "(root)/(dashboard)/setting/SettingClient.tsx";
+    const settingPath = "(root)/(dashboard)/setting/components/SettingClient/index.tsx";
     const [settingAction] = getActions(settingPath);
     const disabledAction: ActionGuardContract = {
       ...settingAction,
@@ -1045,7 +1045,7 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects an unguarded batch delete while row delete stays guarded", () => {
-    const linkPath = "(root)/(dashboard)/link/LinkPageShell.tsx";
+    const linkPath = "(root)/(dashboard)/link/components/LinkPageShell/index.tsx";
 
     expect(
       findUnboundActionIds(linkPath, getActions(linkPath), (source) =>

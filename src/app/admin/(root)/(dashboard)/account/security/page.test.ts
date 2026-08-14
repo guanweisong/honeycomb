@@ -2,19 +2,19 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./PasskeySettings", () => ({
+vi.mock("./components/PasskeySettings", () => ({
   default: () => React.createElement("div", null, "Passkey settings"),
 }));
-vi.mock("./PasswordSettings", () => ({
+vi.mock("./components/PasswordSettings", () => ({
   default: () => React.createElement("div", null, "Password settings"),
 }));
-vi.mock("./SessionSettings", () => ({
+vi.mock("./components/SessionSettings", () => ({
   default: () => React.createElement("div", null, "Session settings"),
 }));
-vi.mock("./LinkedAccountsSettings", () => ({
+vi.mock("./components/LinkedAccountsSettings", () => ({
   default: () => React.createElement("div", null, "Linked accounts settings"),
 }));
-vi.mock("./LoginHistorySettings", () => ({
+vi.mock("./components/LoginHistorySettings", () => ({
   default: () => React.createElement("div", null, "Login history settings"),
 }));
 vi.mock("@/packages/identity/auth/providers.server", () => ({

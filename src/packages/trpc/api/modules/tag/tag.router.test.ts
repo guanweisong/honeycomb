@@ -5,7 +5,7 @@ import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "../../../../../../tests/helpers/test-utils";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
@@ -33,7 +33,7 @@ describe("Tag Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // Setup mock chain for tag list query
+      // 设置标签列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -41,7 +41,7 @@ describe("Tag Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockTags);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
@@ -60,7 +60,7 @@ describe("Tag Router", () => {
       const mockTags: [] = [];
       const mockCount = [{ count: "0" }];
 
-      // Setup mock chain for empty tag list query
+      // 设置空标签列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -68,7 +68,7 @@ describe("Tag Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockTags);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);

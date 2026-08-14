@@ -24,6 +24,6 @@ function safely(operation: () => void): void {
   try {
     operation();
   } catch {
-    // Observability must never affect the caller or recursively report itself.
+    // 可观测性逻辑不能影响调用方，也不能递归记录自身产生的事件。
   }
 }

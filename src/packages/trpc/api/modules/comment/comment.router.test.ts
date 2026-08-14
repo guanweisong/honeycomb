@@ -8,7 +8,7 @@ import { createMockContext, createMockDb, resetMockDb } from "../../../../../../
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
@@ -315,12 +315,12 @@ describe("Comment Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newComment]);
 
-      // Mock the second query for getting the created comment with refs
+      // 模拟获取已创建评论及关联数据的第二次查询。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([newComment]);
 
-      // Mock the setting query
+      // 模拟站点设置查询。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockResolvedValueOnce([
         { id: "1", key: "comment_notify", value: "true" },

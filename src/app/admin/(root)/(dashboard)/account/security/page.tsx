@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AccountSecurityTabs } from "./AccountSecurityTabs";
+import { AccountSecurityTabs } from "./components/AccountSecurityTabs";
 import { getEnabledSocialProviders } from "@/packages/identity/auth/providers.server";
 
 export default function AccountSecurityPage() {

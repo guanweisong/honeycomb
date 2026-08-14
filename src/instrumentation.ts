@@ -34,6 +34,6 @@ export const onRequestError: Instrumentation.onRequestError = async (
       error,
     });
   } catch {
-    // Error reporting must not change Next.js request error handling.
+    // 错误上报不能改变 Next.js 请求错误处理行为。
   }
 };

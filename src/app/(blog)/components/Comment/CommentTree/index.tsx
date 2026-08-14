@@ -83,3 +83,6 @@ export function CommentTree({ comments, onReply }: CommentTreeProps) {
     <CommentItem key={comment.id} comment={comment} onReply={onReply} />
   ));
 }
+/**
+ * 评论树组件，负责递归展示评论及回复入口。
+ */

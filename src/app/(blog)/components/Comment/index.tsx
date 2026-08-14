@@ -1,5 +1,5 @@
 import React from "react";
-import CommentClient from "@/app/(blog)/components/Comment/client";
+import CommentClient from "@/app/(blog)/components/Comment/CommentClient";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
 import { CommentTreeResponse } from "@/packages/trpc/api/outputs";

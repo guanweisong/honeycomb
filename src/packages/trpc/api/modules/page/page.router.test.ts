@@ -8,7 +8,7 @@ import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
 import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
-// Mock database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
@@ -53,7 +53,7 @@ describe("Page Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // Setup mock chain for page list query
+      // 设置页面列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -63,7 +63,7 @@ describe("Page Router", () => {
 
       mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
@@ -82,7 +82,7 @@ describe("Page Router", () => {
       const mockPages: unknown[] = [];
       const mockCount = [{ count: "0" }];
 
-      // Setup mock chain for empty page list query
+      // 设置空页面列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -92,7 +92,7 @@ describe("Page Router", () => {
 
       mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
 
-      // Setup mock for count query
+      // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
@@ -277,7 +277,7 @@ describe("Page Router", () => {
         { id: "img2", url: "https://example.com/img2.jpg" },
       ];
 
-      // Setup mock chain for page detail query
+      // 设置页面详情查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([mockPage]);
@@ -287,12 +287,12 @@ describe("Page Router", () => {
         author: mockAuthor,
       });
 
-      // Setup mock for author query
+      // 设置作者查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([mockAuthor]);
 
-      // Setup mock for images query
+      // 设置图片查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockImages);
@@ -309,7 +309,7 @@ describe("Page Router", () => {
     });
 
     it("should return null for non-existent page", async () => {
-      // Setup mock chain for non-existent page
+      // 设置不存在页面查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([]);
@@ -328,7 +328,7 @@ describe("Page Router", () => {
     it("should increment page views", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -362,7 +362,7 @@ describe("Page Router", () => {
     it("should increment views for any user", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -379,7 +379,7 @@ describe("Page Router", () => {
     it("should increment views for unauthenticated users", async () => {
       const updatedViews = { views: 101 };
 
-      // Setup mock chain for increment views
+      // 设置增加浏览量查询的模拟调用链。
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);

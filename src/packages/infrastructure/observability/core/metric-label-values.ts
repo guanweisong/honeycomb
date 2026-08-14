@@ -142,7 +142,7 @@ const procedureNames = [
   "user.detail",
   "user.index",
   "user.update",
-  // Stable synthetic procedure name used by middleware contract tests.
+  // 为中间件契约测试提供稳定的合成过程名称。
   "observed",
 ] as const;
 

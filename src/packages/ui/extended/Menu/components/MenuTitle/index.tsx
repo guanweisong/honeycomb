@@ -69,3 +69,6 @@ export const MenuTitle = (props: MenuTitleProps) => {
     </Link>
   );
 };
+/**
+ * Admin 菜单标题扩展组件，负责统一菜单标题的展示样式。
+ */

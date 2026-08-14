@@ -44,3 +44,6 @@ export function RichText({ html, images = [] }: Props) {
 
   return <PhotoSwipeClient>{parse(html, options)}</PhotoSwipeClient>;
 }
+/**
+ * 富文本展示组件，负责解析并渲染经过清洗的 HTML 内容。
+ */

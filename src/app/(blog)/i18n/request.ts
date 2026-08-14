@@ -7,7 +7,7 @@ import { routing } from "./routing";
  * 根据请求的语言环境加载对应的消息文件，并处理语言回退逻辑。
  */
 export default getRequestConfig(async ({ requestLocale }) => {
-  // Typically corresponds to the `[locale]` segment
+  // 通常对应路由中的 `[locale]` 段。
   const requested = await requestLocale;
   const locale = hasLocale(routing.locales, requested)
     ? requested

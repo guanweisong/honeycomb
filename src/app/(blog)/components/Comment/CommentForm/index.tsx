@@ -96,3 +96,6 @@ export function CommentForm({
     </>
   );
 }
+/**
+ * 评论表单组件，负责评论内容、身份信息和回复取消操作。
+ */

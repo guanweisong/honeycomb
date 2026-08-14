@@ -1,6 +1,6 @@
 "use client";
 
-import { MediaPageShell } from "@/app/admin/(root)/(dashboard)/media/MediaPageShell";
+import { MediaPageShell } from "@/app/admin/(root)/(dashboard)/media/components/MediaPageShell";
 import { Sheet } from "@/packages/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";

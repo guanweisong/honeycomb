@@ -10,12 +10,12 @@ import {
   createMockDb,
 } from "../../../../../../tests/helpers/test-utils";
 
-// Mock the database and related modules
+// 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-// Mock the tools module
+// 模拟工具模块。
 vi.mock("@/packages/trpc/api/utils/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
@@ -99,7 +99,7 @@ describe("User Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // Setup mock chain for user list query
+      // 设置用户列表查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -107,12 +107,12 @@ describe("User Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockUsers);
 
-      // Setup mock chain for count query
+      // 设置总数查询的模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
 
-      // Create caller with mock context
+      // 使用模拟上下文创建调用方。
       const caller = userRouter.createCaller(
         createMockContext(
           { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },

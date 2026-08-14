@@ -3,7 +3,7 @@ import { getRelationTags } from "./getRelationTags";
 import { TEST_IDS } from "../../../../../tests/helpers/test-constants";
 import { createMockDb } from "../../../../../tests/helpers/test-utils";
 
-// Mock database
+// 模拟数据库。
 const mockDb = createMockDb();
 
 vi.mock("@/packages/infrastructure/db/db", () => ({
