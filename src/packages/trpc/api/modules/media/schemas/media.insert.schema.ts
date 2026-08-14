@@ -1,6 +1,6 @@
 import { createInsertSchema } from "drizzle-zod";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { CleanZod } from "../../../schemas/clean.zod";
+import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 
 /**

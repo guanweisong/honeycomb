@@ -1,5 +1,5 @@
-import { PaginationQuerySchema } from "../../../schemas/pagination.query.schema";
-import { CleanZod } from "../../../schemas/clean.zod";
+import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
+import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 
 /**
  * 获取媒体列表时的查询参数验证 schema。

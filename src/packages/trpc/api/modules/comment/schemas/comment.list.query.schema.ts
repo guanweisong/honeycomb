@@ -1,4 +1,4 @@
-import { PaginationQuerySchema } from "../../../schemas/pagination.query.schema";
+import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 import { z } from "zod";
 

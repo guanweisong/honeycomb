@@ -1,4 +1,4 @@
-import { CleanZod } from "../../../schemas/clean.zod";
+import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { z } from "zod";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
