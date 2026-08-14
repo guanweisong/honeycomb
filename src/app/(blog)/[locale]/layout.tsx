@@ -5,6 +5,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
 import type { Viewport } from "next";
 import "../app.scss";
+import "photoswipe/style.css";
 import BackToTop from "@/app/(blog)/components/BackToTop";
 import Header from "@/app/(blog)/components/Header";
 import Footer from "@/app/(blog)/components/Footer";

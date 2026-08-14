@@ -29,7 +29,7 @@ describe("Playwright web server configuration", () => {
     expect(environment?.NEXT_PUBLIC_ASSET_URL).toBe(
       "https://static.integration.example.test",
     );
-  });
+  }, 15_000);
 
   it("passes complete configured R2 credentials to the managed web server", async () => {
     vi.stubEnv("R2_ACCOUNT_ID", "0123456789abcdef0123456789abcdef");

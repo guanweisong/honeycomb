@@ -1,7 +1,6 @@
 "use client";
 
 import SortableTree from "@nosferatu500/react-sortable-tree";
-import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";
 import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
 import { useCan } from "@/app/admin/hooks/use-current-user";

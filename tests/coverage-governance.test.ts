@@ -102,6 +102,10 @@ describe("coverage governance", () => {
     });
   });
 
+  it("runs test files serially to isolate process-heavy governance tests", () => {
+    expect(config.fileParallelism).toBe(false);
+  });
+
   it("gives every critical module its own effective 90/80 file threshold", async () => {
     const thresholds = coverage?.thresholds as
       | Record<string, unknown>

@@ -4,6 +4,7 @@ import React from "react";
 import { Toaster } from "@/packages/ui/components/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
+import "@nosferatu500/react-sortable-tree/style.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 /**

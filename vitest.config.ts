@@ -40,6 +40,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    // 覆盖率治理测试会同步启动 Vitest 子进程；关闭文件级并行，避免重型测试争用进程和端口资源。
+    fileParallelism: false,
     setupFiles: ["./tests/setup/vitest.setup.ts"],
     include: [
       "src/**/*.test.ts",

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, PropsWithChildren } from "react";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
-import "photoswipe/style.css";
 
 export function PhotoSwipeClient({
     children,

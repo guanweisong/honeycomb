@@ -4,7 +4,6 @@ import { getDb } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { eq } from "drizzle-orm";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { auth } from "@/auth";
 import {
   createRequestContext,
   type RequestContext,
@@ -38,6 +37,9 @@ export interface CreateContextOptions {
  */
 async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!req) return null;
+  // 延迟加载认证实例，避免 tRPC Router 与 Better Auth Route Handler
+  // 在生产构建时形成循环模块初始化。
+  const { auth } = await import("@/auth");
   const session = await auth.api.getSession({ headers: req.headers });
   const sessionUser = session?.user as
     | { id?: string; level?: UserLevel; name?: string | null }

@@ -4,7 +4,6 @@ import { getServerEnv } from "@/env/server";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
-import { createServerClient } from "@/packages/trpc/api";
 
 export const SITEMAP_BATCH_SIZE = 1000;
 export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
@@ -47,6 +46,9 @@ export function getStaticSitemapUrls(baseUrl: string): SitemapUrl[] {
 
 export const getCachedSitemapShard = unstable_cache(
   async (baseUrl: string, shard: number) => {
+    // 延迟加载 tRPC，避免 sitemap -> tRPC context -> auth -> database hooks
+    // 与认证 Route Handler 之间在生产构建阶段形成循环模块初始化。
+    const { createServerClient } = await import("@/packages/trpc/api");
     const serverClient = await createServerClient();
     const page = shard + 1;
     const [menu, posts, pages] = await Promise.all([
@@ -117,6 +119,7 @@ export const getCachedSitemapShard = unstable_cache(
 export const getCachedSitemapShardCount = unstable_cache(
   async (baseUrl: string) => {
     void baseUrl;
+    const { createServerClient } = await import("@/packages/trpc/api");
     const serverClient = await createServerClient();
     const [posts, pages] = await Promise.all([
       serverClient.post.index({ page: 1, limit: 1 }),

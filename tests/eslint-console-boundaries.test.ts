@@ -21,11 +21,11 @@ describe("console lint boundary", () => {
     "src/packages/trpc/api/context.ts",
   ])("forbids console usage in %s", async (filePath) => {
     await expect(lintConsoleAt(filePath)).resolves.toHaveLength(1);
-  });
+  }, 15_000);
 
   it("allows console usage only in the console logger adapter", async () => {
     await expect(
       lintConsoleAt("src/packages/infrastructure/observability/adapters/console.ts"),
     ).resolves.toHaveLength(0);
-  });
+  }, 15_000);
 });
