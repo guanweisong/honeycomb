@@ -1,182 +1,67 @@
 import "server-only";
 
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
+  createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  createTRPCRouter,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
-import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
-import { PageUpdateSchema } from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
-import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitize-html";
+import { PageListQuerySchema } from "./schemas/page.list.query.schema";
+import { PageInsertSchema } from "./schemas/page.insert.schema";
+import { PageUpdateSchema } from "./schemas/page.update.schema";
+import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import {
-  getPageAuthorById,
+  createPage,
+  destroyPages,
   getPageDetail,
   getPageList,
-} from "@/packages/trpc/api/modules/page/page.service";
-import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
-import { PageStatus } from "@/packages/domain/content/page";
-import { TRPCError } from "@trpc/server";
-import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+  incrementPageViews,
+  updatePage,
+} from "./page.service";
 
-/**
- * 独立页面相关的 tRPC 路由。
- */
+/** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
-  /**
-   * 查询独立页面列表（支持分页、筛选、排序）。
-   * @param {PageListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含页面列表（已附加作者信息）和总记录数的对象。
-   */
   index: publicProcedure
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
       getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
     ),
-
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
       getPageList(ctx.db, input, ContentVisibility.ALL),
     ),
-
-  /**
-   * 获取单个独立页面的详细信息。
-   * @param {{ id: string }} input - 包含页面 ID 的对象。
-   * @returns {Promise<object | null>} 返回包含页面、作者和内容中图片信息的完整对象，如果找不到则返回 null。
-   *
-   * 工作流程：
-   * 1. 根据 ID 查询页面。
-   * 2. 如果页面存在，则根据 `authorId` 关联查询作者信息。
-   * 4. 根据提取到的 URL 在 `media` 表中查询对应的媒体文件信息。
-   * 5. 将作者信息和内容中的图片信息附加到最终结果中返回。
-   */
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(({ input, ctx }) =>
-      getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY),
-    ),
-
+    .query(async ({ input, ctx }) => {
+      return getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY);
+    }),
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
-    .query(({ input, ctx }) =>
-      getPageDetail(ctx.db, input.id, ContentVisibility.ALL),
-    ),
-
-  /**
-   * 创建一个新独立页面。
-   * (需要管理员或编辑权限)
-   * @param {PageInsertSchema} input - 新页面的数据。
-   * @returns {Promise<Page>} 返回新创建的页面对象。
-   */
+    .query(async ({ input, ctx }) => {
+      return getPageDetail(ctx.db, input.id, ContentVisibility.ALL);
+    }),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
-    .mutation(async ({ input, ctx }) => {
-      const authorId = ctx.user?.id;
-      const [newPage] = await observeDbOperation("page.create", "insert", () =>
-        ctx.db
-          .insert(schema.page)
-          .values({
-            ...input,
-            content: {
-              en: sanitizeRichText(input.content.en),
-              zh: sanitizeRichText(input.content.zh),
-            },
-            authorId,
-          } as InferInsertModel<typeof schema.page>)
-          .returning(),
-      );
-      return newPage;
+    .mutation(({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return createPage(ctx.db, input, ctx.user.id);
     }),
-
-  /**
-   * 批量删除独立页面。
-   * (需要管理员或编辑权限)
-   * @param {DeleteBatchSchema} input - 包含要删除的页面 ID 数组。
-   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
-   */
   destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
-    .mutation(async ({ input, ctx }) => {
-      await observeDbOperation("page.destroy", "delete", () =>
-        ctx.db
-          .delete(schema.page)
-          .where(inArray(schema.page.id, input.ids as string[])),
-      );
-      return { success: true };
-    }),
-
-  /**
-   * 更新一个独立页面。
-   * (需要管理员或编辑权限)
-   * @param {PageUpdateSchema} input - 包含要更新的页面 ID 和新数据。
-   * @returns {Promise<object>} 返回更新后的页面对象（已附加作者信息）。
-   */
+    .mutation(({ input, ctx }) => destroyPages(ctx.db, input.ids)),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
-    .mutation(async ({ input, ctx }) => {
-      const { id, ...rest } = input;
-      const nextValues: Partial<InferInsertModel<typeof schema.page>> = {
-        ...rest,
-      };
-      if (rest.content) {
-        nextValues.content = {
-          en: sanitizeRichText(rest.content.en),
-          zh: sanitizeRichText(rest.content.zh),
-        };
-      }
-      const [updatedPage] = await observeDbOperation(
-        "page.update",
-        "update",
-        () =>
-          ctx.db
-            .update(schema.page)
-            .set(nextValues)
-            .where(eq(schema.page.id, id))
-            .returning(),
-      );
-
-      const author = updatedPage.authorId
-        ? await getPageAuthorById(ctx.db, updatedPage.authorId)
-        : null;
-
-      return { ...updatedPage, author };
-    }),
-
-  /**
-   * 将指定页面的浏览量加一。
-   * 这是一个原子操作，直接在数据库层面执行 `views = views + 1`。
-   * @param {{ id: string }} input - 包含页面 ID 的对象。
-   * @returns {Promise<{ views: number }>} 返回更新后的浏览量。
-   */
+    .mutation(({ input, ctx }) => updatePage(ctx.db, input)),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .mutation(async ({ ctx, input }) => {
-      const [updatedPage] = await observeDbOperation(
-        "page.increment-views",
-        "update",
-        () =>
-          ctx.db
-            .update(schema.page)
-            .set({
-              views: sql`${schema.page.views} + 1`,
-            })
-            .where(
-              and(
-                eq(schema.page.id, input.id),
-                eq(schema.page.status, PageStatus.PUBLISHED),
-              ),
-            )
-            .returning({ views: schema.page.views }),
-      );
-
-      if (!updatedPage) throw new TRPCError({ code: "NOT_FOUND" });
-      return updatedPage;
+    .mutation(async ({ input, ctx }) => {
+      const page = await incrementPageViews(ctx.db, input.id);
+      if (!page) throw new TRPCError({ code: "NOT_FOUND" });
+      return page;
     }),
 });

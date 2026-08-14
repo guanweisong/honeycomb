@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import {
@@ -60,4 +60,39 @@ export async function getLinkList(
   const [countResult] = countRows;
 
   return { list, total: Number(countResult?.count) || 0 };
+}
+
+/** 创建链接。 */
+export async function createLink(db: Database, input: unknown) {
+  const [link] = await observeDbOperation("link.create", "insert", () =>
+    db
+      .insert(schema.link)
+      .values(input as typeof schema.link.$inferInsert)
+      .returning(),
+  );
+  return link;
+}
+
+/** 批量删除链接。 */
+export async function destroyLinks(db: Database, ids: string[]) {
+  await observeDbOperation("link.destroy", "delete", () =>
+    db.delete(schema.link).where(inArray(schema.link.id, ids)),
+  );
+  return { success: true as const };
+}
+
+/** 更新链接。 */
+export async function updateLink(
+  db: Database,
+  input: { id: string } & Record<string, unknown>,
+) {
+  const { id, ...rest } = input;
+  const [link] = await observeDbOperation("link.update", "update", () =>
+    db
+      .update(schema.link)
+      .set(rest as Partial<typeof schema.link.$inferInsert>)
+      .where(eq(schema.link.id, id))
+      .returning(),
+  );
+  return link;
 }

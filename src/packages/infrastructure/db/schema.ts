@@ -5,7 +5,7 @@ import {
   index,
   foreignKey,
 } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { defineRelations } from "./relations";
 import { i18nField } from "./i18n-field";
 import { objectId } from "./object-id";
 import { withTimestamps } from "./timestamps";
@@ -449,6 +449,8 @@ export const link = sqliteTable(
   }),
 );
 
+/* relations moved to relations.ts */
+/*
 export const userRelations = relations(user, ({ many }) => ({
   posts: many(post),
   pages: many(page),
@@ -524,3 +526,34 @@ export const menuRelations = relations(menu, ({ one, many }) => ({
   }),
   page: one(page, { fields: [menu.pageId], references: [page.id] }),
 }));
+*/
+
+export const {
+  userRelations,
+  accountRelations,
+  sessionRelations,
+  passkeyRelations,
+  loginHistoryRelations,
+  categoryRelations,
+  mediaRelations,
+  postRelations,
+  tagRelations,
+  postTagRelations,
+  pageRelations,
+  commentRelations,
+  menuRelations,
+} = defineRelations({
+  user,
+  account,
+  session,
+  passkey,
+  loginHistory,
+  category,
+  media,
+  post,
+  tag,
+  postTag,
+  page,
+  comment,
+  menu,
+});

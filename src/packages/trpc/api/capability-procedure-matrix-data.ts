@@ -1,9 +1,14 @@
 import { Permission, type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
 import { UserLevel } from "@/packages/domain/identity/user";
-
-const ALL_ROLES = [UserLevel.ADMIN, UserLevel.EDITOR, UserLevel.GUEST] as const;
-const ADMIN_EDITOR = [UserLevel.ADMIN, UserLevel.EDITOR] as const;
-const ADMIN_ONLY = [UserLevel.ADMIN] as const;
+import {
+  ADMIN_EDITOR,
+  ADMIN_ONLY,
+  ALL_ROLES,
+  DELETE_INPUT,
+  I18N_INPUT,
+  LIST_INPUT,
+  TEST_ID,
+} from "./capability-procedure-matrix-fixtures";
 
 type CapabilityMatrixEntry = readonly [
   path: string,
@@ -12,11 +17,6 @@ type CapabilityMatrixEntry = readonly [
   input: unknown,
   firstBoundary: "database" | "hash" | "storage",
 ];
-
-const TEST_ID = "0123456789abcdef01234567";
-const LIST_INPUT = {};
-const DELETE_INPUT = { ids: [TEST_ID] };
-const I18N_INPUT = { en: "Test", zh: "测试" };
 
 export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
   [
@@ -278,4 +278,3 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "database",
   ],
 ];
-

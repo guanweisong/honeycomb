@@ -14,8 +14,14 @@ import { configureObservability } from "@/packages/infrastructure/observability/
 import { UserLevel } from "@/packages/domain/identity/user";
 
 import { appRouter } from "./app-router";
-import type { Context } from "./context";
 import { capabilityProcedureMatrix } from "./capability-procedure-matrix-data";
+import {
+  boundaryCounts,
+  callActualProcedure,
+  createContext,
+  createDatabaseBoundary,
+  deniedRoleFor,
+} from "./capability-procedure-matrix-test-helpers";
 
 const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
 
@@ -408,62 +414,6 @@ function loadRouterSources(): RouterSource[] {
   );
 }
 
-
-
-interface BoundaryCounts {
-  database: number;
-  hash: number;
-  storage: number;
-}
-
-function createDatabaseBoundary(counts: BoundaryCounts): Context["db"] {
-  return new Proxy({} as Context["db"], {
-    get: (_target, property) => {
-      counts.database += 1;
-      throw new Error(`database boundary reached: ${String(property)}`);
-    },
-  });
-}
-
-function createContext(level: UserLevel, db: Context["db"]): Context {
-  return {
-    db,
-    user: { id: "matrix-user", level },
-    hasRequest: true,
-    header: new Headers(),
-    requestId: "req-capability-matrix",
-  };
-}
-
-function deniedRoleFor(allowedRoles: readonly UserLevel[]): UserLevel {
-  if (!allowedRoles.includes(UserLevel.EDITOR)) return UserLevel.EDITOR;
-  if (!allowedRoles.includes(UserLevel.GUEST)) return UserLevel.GUEST;
-  return "UNKNOWN_AUTHENTICATED_ROLE" as UserLevel;
-}
-
-function boundaryCounts(database = 0): BoundaryCounts {
-  return {
-    database,
-    hash: externalBoundaries.hash,
-    storage: externalBoundaries.storage,
-  };
-}
-
-function callActualProcedure(
-  path: string,
-  context: Context,
-  input: unknown,
-): Promise<unknown> {
-  const [routerName, procedureName] = path.split(".");
-  const caller = appRouter.createCaller(context) as unknown as Record<
-    string,
-    Record<string, (input?: unknown) => Promise<unknown>>
-  >;
-  const procedure = caller[routerName]?.[procedureName];
-  if (!procedure) throw new Error(`Unknown appRouter procedure: ${path}`);
-  return input === undefined ? procedure() : procedure(input);
-}
-
 describe("capability procedure matrix", () => {
   beforeEach(() => {
     externalBoundaries.hash = 0;
@@ -499,18 +449,19 @@ describe("capability procedure matrix", () => {
     "%s rejects a real caller before its handler reaches any boundary",
     async (path, _permission, allowedRoles, input) => {
       configureObservability(createMemoryObservability());
-      const counts = boundaryCounts();
+      const counts = boundaryCounts(externalBoundaries);
       const db = createDatabaseBoundary(counts);
 
       await expect(
         callActualProcedure(
+          appRouter,
           path,
           createContext(deniedRoleFor(allowedRoles), db),
           input,
         ),
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
-      expect(boundaryCounts(counts.database)).toEqual({
+      expect(boundaryCounts(externalBoundaries, counts.database)).toEqual({
         database: 0,
         hash: 0,
         storage: 0,
@@ -522,16 +473,19 @@ describe("capability procedure matrix", () => {
     "%s reaches its real first boundary when authorization is allowed",
     async (path, _permission, _allowedRoles, input, firstBoundary) => {
       configureObservability(createMemoryObservability());
-      const counts = boundaryCounts();
+      const counts = boundaryCounts(externalBoundaries);
       const db = createDatabaseBoundary(counts);
 
       await callActualProcedure(
+        appRouter,
         path,
         createContext(UserLevel.ADMIN, db),
         input,
       ).catch(() => undefined);
 
-      expect(boundaryCounts(counts.database)[firstBoundary]).toBeGreaterThan(0);
+      expect(
+        boundaryCounts(externalBoundaries, counts.database)[firstBoundary],
+      ).toBeGreaterThan(0);
     },
   );
 

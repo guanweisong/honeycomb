@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import {
@@ -12,6 +12,8 @@ import type { CategoryListQueryInput } from "./schemas/category.list.query.schem
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import type { CategoryInsert } from "./schemas/category.insert.schema";
+import type { CategoryUpdate } from "./schemas/category.update.schema";
 
 export async function getCategoryList(
   db: Database,
@@ -72,4 +74,33 @@ export async function getCategoryList(
     list: Tools.sonsTree(list, id),
     total: Number(countResult?.count) || 0,
   };
+}
+
+/** 创建分类。 */
+export async function createCategory(db: Database, input: CategoryInsert) {
+  const [category] = await observeDbOperation("category.create", "insert", () =>
+    db.insert(schema.category).values(input).returning(),
+  );
+  return category;
+}
+
+/** 批量删除分类。 */
+export async function destroyCategories(db: Database, ids: string[]) {
+  await observeDbOperation("category.destroy", "delete", () =>
+    db.delete(schema.category).where(inArray(schema.category.id, ids)),
+  );
+  return { success: true as const };
+}
+
+/** 更新分类。 */
+export async function updateCategory(db: Database, input: CategoryUpdate) {
+  const { id, ...rest } = input;
+  const [category] = await observeDbOperation("category.update", "update", () =>
+    db
+      .update(schema.category)
+      .set(rest)
+      .where(eq(schema.category.id, id))
+      .returning(),
+  );
+  return category;
 }

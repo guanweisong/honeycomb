@@ -1,77 +1,27 @@
 import "server-only";
 
+import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";
 import {
   permissionProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import {
-  buildDrizzleWhere,
-  buildDrizzleOrderBy,
-} from "@/packages/trpc/api/utils/tools";
-import { MediaListQuerySchema } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
+import { MediaListQuerySchema } from "./schemas/media.list.query.schema";
+import { MediaInsertSchema } from "./schemas/media.insert.schema";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { inArray, InferInsertModel, sql } from "drizzle-orm";
-import { MediaInsertSchema } from "@/packages/trpc/api/modules/media/schemas/media.insert.schema";
-import { format } from "date-fns";
-import S3 from "@/packages/trpc/api/utils/s3";
-import { clientEnv } from "@/env/client";
-import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
-import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import {
+  createMedia,
+  destroyMedia,
+  getMediaList,
+  getMediaPresignedUrl,
+} from "./media.service";
 
-/**
- * 媒体文件相关的 tRPC 路由。
- */
+/** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const mediaRouter = createTRPCRouter({
-  /**
-   * 查询媒体文件列表（支持分页、筛选、排序）。
-   * (需要任意等级的登录权限)
-   * @param {MediaListQuerySchema} input - 查询参数。
-   * @returns {Promise<{ list: object[], total: number }>} 返回一个包含媒体文件列表和总记录数的对象。
-   */
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
-    .query(async ({ input, ctx }) => {
-      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
-      const where = buildDrizzleWhere(schema.media, rest, []);
-
-      // 构建排序条件
-      const orderByClause = buildDrizzleOrderBy(
-        schema.media,
-        sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
-      );
-
-      // 查询分页数据
-      const [list, countRows] = await Promise.all([
-        observeDbOperation("media.list", "select", () =>
-          ctx.db
-            .select()
-            .from(schema.media)
-            .where(where)
-            .orderBy(orderByClause)
-            .limit(limit)
-            .offset((page - 1) * limit),
-        ),
-        observeDbOperation("media.count", "select", () =>
-          ctx.db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(schema.media)
-            .where(where),
-        ),
-      ]);
-      const [countResult] = countRows;
-      const total = Number(countResult?.count) || 0;
-
-      return { list, total };
-    }),
-
-  /**
-   * 获取预签名上传 URL。
-   */
+    .query(({ input, ctx }) => getMediaList(ctx.db, input)),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(
       z.object({
@@ -79,95 +29,11 @@ export const mediaRouter = createTRPCRouter({
         type: requiredString("文件类型不能为空"),
       }),
     )
-    .mutation(async ({ input }) => {
-      const { name, type } = input;
-      const ext = name.split(".").pop();
-      const key = `${format(new Date(), "yyyy/MM/dd/HHmmssSSS")}.${ext}`;
-
-      const url = await S3.getPresignedUrl({
-        Key: key,
-        ContentType: type,
-      });
-
-      return {
-        url,
-        key,
-      };
-    }),
-
-  /**
-   * 上传单个媒体文件。
-   * (需要管理员或编辑权限)
-   * @param {MediaInsertSchema} input - 包含文件信息的对象。
-   * @returns {Promise<schema>} 返回创建后的媒体对象。
-   */
+    .mutation(({ input }) => getMediaPresignedUrl(input.name, input.type)),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
-    .mutation(async ({ input, ctx }) => {
-      const { name, size, type, key, width, height, color } = input;
-
-      const url = `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${key}`;
-
-      // 准备数据库插入数据
-      const data: InferInsertModel<typeof schema.media> = {
-        name,
-        size,
-        type,
-        key,
-        url,
-        width,
-        height,
-        color,
-      };
-
-      // 插入数据库
-      const [result] = await observeDbOperation("media.create", "insert", () =>
-        ctx.db.insert(schema.media).values(data).returning(),
-      );
-
-      return result;
-    }),
-
-  /**
-   * 批量删除媒体文件。
-   * (需要管理员或编辑权限)
-   * @param {DeleteBatchSchema} input - 包含要删除的媒体文件 ID 数组。
-   * @returns {Promise<{ success: boolean }>} 返回表示操作成功的对象。
-   */
+    .mutation(({ input, ctx }) => createMedia(ctx.db, input)),
   destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
-    .mutation(async ({ input, ctx }) => {
-      const { ids } = input;
-
-      // 1. 根据 IDs 从数据库中找出要删除的媒体对象
-      const mediaToDelete = await observeDbOperation(
-        "media.destroy.select",
-        "select",
-        () =>
-          ctx.db
-            .select({
-              key: schema.media.key,
-            })
-            .from(schema.media)
-            .where(inArray(schema.media.id, ids)),
-      );
-
-      const keysToDelete = mediaToDelete
-        .map((item) => item.key)
-        .filter((key): key is string => !!key);
-
-      // 2. 从数据库中删除记录
-      await observeDbOperation("media.destroy.delete", "delete", () =>
-        ctx.db.delete(schema.media).where(inArray(schema.media.id, ids)),
-      );
-
-      // 3. 从 S3 中删除文件
-      if (keysToDelete.length > 0) {
-        await S3.deleteMultipleObject({
-          Objects: keysToDelete.map((key) => ({ Key: key })),
-        });
-      }
-
-      return { success: true };
-    }),
+    .mutation(({ input, ctx }) => destroyMedia(ctx.db, input.ids)),
 });

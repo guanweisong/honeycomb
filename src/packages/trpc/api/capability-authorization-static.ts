@@ -355,7 +355,10 @@ function assertNoRoleBasedAuthorization(
   }
 }
 
-export function assertNoLegacyAuthorization(fileName: string, source: string): void {
+export function assertNoLegacyAuthorization(
+  fileName: string,
+  source: string,
+): void {
   const sourceFile = ts.createSourceFile(
     fileName,
     source,
@@ -368,8 +371,10 @@ export function assertNoLegacyAuthorization(fileName: string, source: string): v
   assertNoRoleBasedAuthorization(fileName, sourceFile);
 }
 
-
-export function loadProductionSources(): Array<{ fileName: string; source: string }> {
+export function loadProductionSources(): Array<{
+  fileName: string;
+  source: string;
+}> {
   const sourceRoot = join(process.cwd(), "src");
   const visitDirectory = (directoryPath: string): string[] =>
     readdirSync(directoryPath, { withFileTypes: true }).flatMap((entry) => {
@@ -377,7 +382,13 @@ export function loadProductionSources(): Array<{ fileName: string; source: strin
       if (entry.isDirectory()) return visitDirectory(entryPath);
       if (!entry.name.match(/\.(?:ts|tsx)$/)) return [];
       if (entry.name.match(/\.(?:test|spec)\.(?:ts|tsx)$/)) return [];
-      if (entry.name === "capability-authorization-static.ts") return [];
+      // 权限矩阵的 AST 边界工具仅服务测试，不属于生产授权实现。
+      if (
+        entry.name === "capability-authorization-static.ts" ||
+        entry.name === "capability-procedure-matrix-test-helpers.ts" ||
+        entry.name === "capability-procedure-matrix-fixtures.ts"
+      )
+        return [];
       return [entryPath];
     });
 

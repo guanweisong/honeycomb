@@ -12,6 +12,9 @@ import { PageListQueryInput } from "./schemas/page.list.query.schema";
 import { PageStatus } from "@/packages/domain/content/page";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitize-html";
+import type { PageInsert } from "./schemas/page.insert.schema";
+import type { PageUpdate } from "./schemas/page.update.schema";
 
 type AuthorRef = {
   id: string;
@@ -200,4 +203,81 @@ export async function getPageAuthorById(db: Database, authorId: string) {
         .where(eq(schema.user.id, authorId)),
   );
   return author ?? null;
+}
+
+/** 创建独立页面并清洗富文本内容。 */
+export async function createPage(
+  db: Database,
+  input: PageInsert,
+  authorId: string,
+) {
+  const [page] = await observeDbOperation("page.create", "insert", () =>
+    db
+      .insert(schema.page)
+      .values({
+        ...input,
+        content: {
+          en: sanitizeRichText(input.content.en),
+          zh: sanitizeRichText(input.content.zh),
+        },
+        authorId,
+      })
+      .returning(),
+  );
+  return page;
+}
+
+/** 批量删除独立页面。 */
+export async function destroyPages(db: Database, ids: string[]) {
+  await observeDbOperation("page.destroy", "delete", () =>
+    db.delete(schema.page).where(inArray(schema.page.id, ids)),
+  );
+  return { success: true as const };
+}
+
+/** 更新独立页面并返回作者关联。 */
+export async function updatePage(db: Database, input: PageUpdate) {
+  const { id, ...rest } = input;
+  const nextValues = {
+    ...rest,
+    ...(rest.content
+      ? {
+          content: {
+            en: sanitizeRichText(rest.content.en),
+            zh: sanitizeRichText(rest.content.zh),
+          },
+        }
+      : {}),
+  };
+  const [page] = await observeDbOperation("page.update", "update", () =>
+    db
+      .update(schema.page)
+      .set(nextValues)
+      .where(eq(schema.page.id, id))
+      .returning(),
+  );
+  const author = page.authorId
+    ? await getPageAuthorById(db, page.authorId)
+    : null;
+  return { ...page, author };
+}
+
+/** 增加公开页面浏览量。 */
+export async function incrementPageViews(db: Database, id: string) {
+  const [page] = await observeDbOperation(
+    "page.increment-views",
+    "update",
+    () =>
+      db
+        .update(schema.page)
+        .set({ views: sql`${schema.page.views} + 1` })
+        .where(
+          and(
+            eq(schema.page.id, id),
+            eq(schema.page.status, PageStatus.PUBLISHED),
+          ),
+        )
+        .returning({ views: schema.page.views }),
+  );
+  return page;
 }
