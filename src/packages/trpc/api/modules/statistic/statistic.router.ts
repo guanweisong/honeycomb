@@ -31,87 +31,78 @@ export const statisticRouter = createTRPCRouter({
    * (需要任意等级的登录权限)
    * @returns {Promise<StatisticsType>} 返回一个包含多种统计数据的对象。
    *
-   * @notice 性能警告：当前的实现方式是在多个 for 循环中 `await` 数据库查询，
-   * 这会导致串行的数据库请求，效率低下。未来应优化为使用 `Promise.all` 并行执行查询，
-   * 或者使用更高效的 SQL `GROUP BY` 聚合查询来一次性获取所有数据。
+   * 独立维度并行统计，用户文章数使用单次 GROUP BY 聚合，避免 N+1 查询。
    */
   index: permissionProcedure(Permission.statisticsRead).query(
     async ({ ctx }) => {
-      const result = {} as StatisticsType;
-
-      // 统计各类型文章数量
-      const postArray = Object.values(PostType);
-      result.postType = [];
-      for (let i = 0; i < postArray.length; i++) {
-        const [postCountResult] = await observeDbOperation(
-          "statistics.posts-by-type",
-          "select",
-          () =>
+      const [postType, userType, commentStatus, userList, postCounts] =
+        await Promise.all([
+          countByValues(
+            Object.values(PostType),
+            schema.post,
+            schema.post.type,
+            "statistics.posts-by-type",
+          ),
+          countByValues(
+            Object.values(UserLevel),
+            schema.user,
+            schema.user.level,
+            "statistics.users-by-level",
+          ),
+          countByValues(
+            Object.values(CommentStatus),
+            schema.comment,
+            schema.comment.status,
+            "statistics.comments-by-status",
+          ),
+          observeDbOperation("statistics.user-list", "select", () =>
             ctx.db
-              .select({ count: sql<number>`count(*)`.as("count") })
+              .select({ id: schema.user.id, name: schema.user.name })
+              .from(schema.user),
+          ),
+          observeDbOperation("statistics.posts-by-author", "select", () =>
+            ctx.db
+              .select({
+                authorId: schema.post.authorId,
+                count: sql<number>`count(*)`.as("count"),
+              })
               .from(schema.post)
-              .where(eq(schema.post.type, postArray[i])),
-        );
-        const count = Number(postCountResult?.count) || 0;
-        result.postType.push({ item: postArray[i], count });
-      }
+              .groupBy(schema.post.authorId),
+          ),
+        ]);
 
-      // 统计各等级用户数量
-      const userArray = Object.values(UserLevel);
-      result.userType = [];
-      for (let i = 0; i < userArray.length; i++) {
-        const [userCountResult] = await observeDbOperation(
-          "statistics.users-by-level",
-          "select",
-          () =>
-            ctx.db
-              .select({ count: sql<number>`count(*)`.as("count") })
-              .from(schema.user)
-              .where(eq(schema.user.level, userArray[i])),
-        );
-        const count = Number(userCountResult?.count) || 0;
-        result.userType.push({ item: userArray[i], count });
-      }
-
-      // 统计各状态评论数量
-      const commentArray = Object.values(CommentStatus);
-      result.commentStatus = [];
-      for (let i = 0; i < commentArray.length; i++) {
-        const [commentCountResult] = await observeDbOperation(
-          "statistics.comments-by-status",
-          "select",
-          () =>
-            ctx.db
-              .select({ count: sql<number>`count(*)`.as("count") })
-              .from(schema.comment)
-              .where(eq(schema.comment.status, commentArray[i])),
-        );
-        const count = Number(commentCountResult?.count) || 0;
-        result.commentStatus.push({ item: commentArray[i], count });
-      }
-
-      // 统计每个用户的文章数
-      result.userPost = [];
-      const userList = await observeDbOperation(
-        "statistics.user-list",
-        "select",
-        () => ctx.db.select().from(schema.user),
+      const postCountByAuthor = new Map(
+        postCounts.map((row) => [row.authorId, Number(row.count) || 0]),
       );
-      for (let i = 0; i < userList.length; i++) {
-        const [postCountResult] = await observeDbOperation(
-          "statistics.posts-by-author",
-          "select",
-          () =>
-            ctx.db
-              .select({ count: sql<number>`count(*)`.as("count") })
-              .from(schema.post)
-              .where(eq(schema.post.authorId, userList[i].id)),
-        );
-        const count = Number(postCountResult?.count) || 0;
-        result.userPost.push({ item: userList[i].name!, count });
-      }
 
-      return result;
+      return {
+        postType,
+        userType,
+        commentStatus,
+        userPost: userList.map((user) => ({
+          item: user.name!,
+          count: postCountByAuthor.get(user.id) ?? 0,
+        })),
+      };
+
+      async function countByValues<T extends string>(
+        values: T[] | readonly T[],
+        table: typeof schema.post | typeof schema.user | typeof schema.comment,
+        column: Parameters<typeof eq>[0],
+        operation: Parameters<typeof observeDbOperation>[0],
+      ) {
+        return Promise.all(
+          values.map(async (item) => {
+            const [row] = await observeDbOperation(operation, "select", () =>
+              ctx.db
+                .select({ count: sql<number>`count(*)`.as("count") })
+                .from(table)
+                .where(eq(column, item)),
+            );
+            return { item, count: Number(row?.count) || 0 };
+          }),
+        );
+      }
     },
   ),
 });

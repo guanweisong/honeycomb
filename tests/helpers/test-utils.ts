@@ -18,6 +18,7 @@ export type MockDb = {
   select: Mock;
   from: Mock;
   where: Mock;
+  groupBy: Mock;
   leftJoin: Mock;
   orderBy: Mock;
   limit: Mock;
@@ -51,6 +52,7 @@ export const createMockDb = (): MockDb => {
   mockDb.select = vi.fn(chain);
   mockDb.from = vi.fn(chain);
   mockDb.where = vi.fn(chain);
+  mockDb.groupBy = vi.fn(chain);
   mockDb.leftJoin = vi.fn(chain);
   mockDb.orderBy = vi.fn(chain);
   mockDb.limit = vi.fn(chain);
@@ -106,6 +108,7 @@ export const resetMockDb = (mockDb: MockDb) => {
   reset(mockDb.select);
   reset(mockDb.from);
   reset(mockDb.where);
+  reset(mockDb.groupBy);
   reset(mockDb.leftJoin);
   reset(mockDb.orderBy);
   reset(mockDb.limit);
