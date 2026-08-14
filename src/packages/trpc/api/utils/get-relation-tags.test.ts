@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getRelationTags } from "./get-relation-tags";
-import { TEST_IDS } from "../../../../../tests/helpers/test-constants";
-import { createMockDb } from "../../../../../tests/helpers/test-utils";
+import { TEST_IDS } from "@tests/helpers/test-constants";
+import { createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库。
 const mockDb = createMockDb();

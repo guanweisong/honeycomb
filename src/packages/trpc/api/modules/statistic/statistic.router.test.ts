@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { statisticRouter } from './statistic.router'
 import { UserLevel } from '@/packages/domain/identity/user'
-import { createMockContext, createMockDb } from '../../../../../../tests/helpers/test-utils'
+import { createMockContext, createMockDb } from '@tests/helpers/test-utils'
 
 // 模拟数据库及相关模块。
 vi.mock('@/packages/infrastructure/db/db', () => ({

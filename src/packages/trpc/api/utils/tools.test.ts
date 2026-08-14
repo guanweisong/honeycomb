@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Tools, { buildDrizzleWhere, buildDrizzleOrderBy } from "./tools";
-import { TEST_IDS } from "../../../../../tests/helpers/test-constants";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 
 describe("Tools", () => {
   describe("sonsTree", () => {

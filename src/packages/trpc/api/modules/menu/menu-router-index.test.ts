@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "./menu.router";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,
   createMockDb,
   resetMockDb,
-} from "../../../../../../tests/helpers/test-utils";
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({

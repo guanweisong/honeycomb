@@ -4,12 +4,12 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TRPCError } from "@trpc/server";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,
   createMockDb,
   resetMockDb,
-} from "../../../../../../tests/helpers/test-utils";
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({

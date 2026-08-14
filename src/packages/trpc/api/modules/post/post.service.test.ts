@@ -3,8 +3,8 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/trpc/api/utils/tools";
 import * as filters from "./utils/filters";
 import * as relations from "./utils/relations";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import { TEST_IDS } from "@tests/helpers/test-constants";
+import { createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 const mockDb = createMockDb();
 

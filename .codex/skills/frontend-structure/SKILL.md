@@ -10,6 +10,7 @@ description: 当在本 Next.js 前端工程中处理路由、页面、组件、�
 - Next.js `16.3.0` App Router、React `19.2.8`、严格模式 TypeScript、Bun `1.3.3`，Node `>=20.9`。
 - 业务代码位于 `src/`，路由文件位于 `src/app/`；本工程不使用 Pages Router。
 - `@/*` 映射到 `src/*`，优先使用该别名，避免过深的相对路径。
+- `@tests/*` 映射到仓库根目录的 `tests/*`，测试代码引用共享夹具、测试工具和测试数据时优先使用该别名。
 - 主要技术栈：tRPC 11、TanStack Query 5、Better Auth、Drizzle、`next-intl`、Tailwind CSS 4、Sass、Radix UI、shadcn。
 
 ## 目录与职责
@@ -23,6 +24,13 @@ description: 当在本 Next.js 前端工程中处理路由、页面、组件、�
 - React 组件的导出符号使用大驼峰，Hook 使用 `use` 加大驼峰；文件命名仍遵循所在目录规则，不以导出符号改变文件名规则。
 - Next.js 保留文件必须使用框架约定名称，例如 `page.tsx`、`layout.tsx`、`loading.tsx`、`error.tsx`、`route.ts`，不得改写为短横线或业务名称。
 - 公共入口使用 `index.ts`/`index.tsx`；只有组件目录入口和明确的目录模块入口使用 `index`，普通单文件模块不要为了命名统一而额外创建目录。
+
+### 导入路径边界
+
+- 同一目录或同一功能模块内的近邻文件可以使用相对路径，例如 `./post-transforms`、`../hooks/use-comment-identity`。
+- 跨 package、跨业务层或跨 `src` 顶层目录时，必须优先使用 `@/*`，禁止新增三层及以上的 `../` 相对路径。
+- `src` 或 `tests` 中引用仓库根目录 `tests` 下的共享夹具、测试工具和测试数据时，统一使用 `@tests/*`，禁止使用 `../../../../tests/*` 形式的深层路径。
+- 新增别名必须同步更新 `tsconfig.json`、Vitest/构建工具解析配置和相关测试；别名只解决路径可读性，不得绕过包边界或服务端/客户端边界。
 
 下列目录是架构边界，不只是命名约定：
 

@@ -3,8 +3,8 @@ import { pageRouter } from "./page.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { PageTemplate } from "@/packages/domain/content/page-template";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import { TEST_IDS } from "@tests/helpers/test-constants";
+import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({

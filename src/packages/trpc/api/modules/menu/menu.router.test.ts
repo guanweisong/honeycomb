@@ -3,12 +3,12 @@ import { menuRouter } from "./menu.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { UserLevel } from "@/packages/domain/identity/user";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,
   createMockDb,
   resetMockDb,
-} from "../../../../../../tests/helpers/test-utils";
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({

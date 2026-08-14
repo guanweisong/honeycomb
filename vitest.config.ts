@@ -80,6 +80,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      "@tests": resolve(__dirname, "./tests"),
       "server-only": resolve(__dirname, "./tests/setup/server-only.ts"),
     },
   },

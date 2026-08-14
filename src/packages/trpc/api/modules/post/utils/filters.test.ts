@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { buildCategoryFilter } from "./filters";
-import { createMockDb, resetMockDb } from "../../../../../../../tests/helpers/test-utils";
-import { TEST_IDS } from "../../../../../../../tests/helpers/test-constants";
+import { createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 
 const mockDb = createMockDb();
 

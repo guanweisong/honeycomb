@@ -3,12 +3,12 @@ import { postRouter } from "./post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { PostStatus } from "@/packages/domain/content/post-status";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
+import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,
   createMockDb,
   resetMockDb,
-} from "../../../../../../tests/helpers/test-utils";
+} from "@tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // 模拟数据库及相关模块。

@@ -3,7 +3,7 @@ import { UserLevel } from "@/packages/domain/identity/user";
 import {
   createMockContext,
   createMockDb,
-} from "../../../../../../tests/helpers/test-utils";
+} from "@tests/helpers/test-utils";
 
 const mocks = vi.hoisted(() => ({
   listUserLoginHistory: vi.fn(),

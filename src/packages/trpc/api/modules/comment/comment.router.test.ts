@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "./comment.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { CommentStatus } from "@/packages/domain/content/comment";
-import { TEST_IDS } from "../../../../../../tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "../../../../../../tests/helpers/test-utils";
+import { TEST_IDS } from "@tests/helpers/test-constants";
+import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
