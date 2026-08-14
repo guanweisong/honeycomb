@@ -4,12 +4,12 @@
 
 ## Commit Workflow Convention
 
-- Commit workflow is defined in `.ai/skills/english-commit/SKILL.md`.
+- Commit workflow is defined in `.codex/skills/english-commit/SKILL.md`.
 - Agents MUST follow that skill definition when handling commit-related requests.
 
 ## AI Directory Convention
 
-- Workflow root directory is `.ai`.
-- Skill root directory is `.ai/skills`.
+- Workflow root directory is `.codex`.
+- Skill root directory is `.codex/skills`.
 - Each skill directory MUST contain a `SKILL.md`.
-- Commit skill path is `.ai/skills/english-commit/SKILL.md`.
+- Commit skill path is `.codex/skills/english-commit/SKILL.md`.
