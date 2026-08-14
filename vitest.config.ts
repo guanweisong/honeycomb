@@ -44,10 +44,10 @@ export default defineConfig({
     fileParallelism: false,
     setupFiles: ["./tests/setup/vitest.setup.ts"],
     include: [
-      "src/**/*.test.ts",
-      "src/**/*.spec.ts",
-      "tests/**/*.test.ts",
-      "tests/**/*.spec.ts",
+      "src/**/*.test.{ts,tsx}",
+      "src/**/*.spec.{ts,tsx}",
+      "tests/**/*.test.{ts,tsx}",
+      "tests/**/*.spec.{ts,tsx}",
     ],
     exclude: ["node_modules", "dist", ".next", "tests/e2e/**"],
     coverage: {

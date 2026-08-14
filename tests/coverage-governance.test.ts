@@ -66,6 +66,15 @@ describe("coverage governance", () => {
     expect(coverage?.exclude).toEqual(expectedExclusions);
   });
 
+  it("discovers both TypeScript and TSX tests", () => {
+    expect(config.include).toEqual([
+      "src/**/*.test.{ts,tsx}",
+      "src/**/*.spec.{ts,tsx}",
+      "tests/**/*.test.{ts,tsx}",
+      "tests/**/*.spec.{ts,tsx}",
+    ]);
+  });
+
   it("keeps business pages, hooks, services, and security cores in coverage", async () => {
     const requiredFiles = await glob(protectedProductionPatterns, {
       ignore: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.d.ts"],

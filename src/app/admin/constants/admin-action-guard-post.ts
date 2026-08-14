@@ -150,7 +150,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/post/list/page.tsx",
+    relativePath:
+      "(root)/(dashboard)/post/list/components/PostListClient/index.tsx",
     actions: [
       {
         id: "post-list.create",

@@ -275,7 +275,8 @@ function getActions(relativePath: string): readonly ActionGuardContract[] {
 }
 
 describe("admin action capability guards", () => {
-  const postListPath = "(root)/(dashboard)/post/list/page.tsx";
+  const postListPath =
+    "(root)/(dashboard)/post/list/components/PostListClient/index.tsx";
 
   it("rejects an unused permission declaration beside unconditional delete controls", () => {
     expect(
