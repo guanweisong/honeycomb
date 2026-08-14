@@ -14,6 +14,8 @@ export interface MenuTitleProps {
   className?: string;
   style?: React.CSSProperties;
   collapsed?: boolean;
+  isPending?: boolean;
+  onNavigateStart?: (path: string) => void;
 }
 
 export const MenuTitle = (props: MenuTitleProps) => {
@@ -24,13 +26,19 @@ export const MenuTitle = (props: MenuTitleProps) => {
     className = "",
     style,
     collapsed = false,
+    isPending = false,
+    onNavigateStart,
   } = props;
   const pathname = usePathname();
 
   const content = (
     <div className="flex items-center gap-2 w-full min-w-0">
       <span>{item.icon}</span>
-      {!collapsed && <span className="text-sm truncate">{item.name}</span>}
+      {!collapsed && (
+        <span className={cn("text-sm truncate", isPending && "shimmer")}>
+          {item.name}
+        </span>
+      )}
     </div>
   );
 
@@ -49,7 +57,7 @@ export const MenuTitle = (props: MenuTitleProps) => {
   );
 
   const containerClass = cn(
-    `flex justify-between items-center cursor-pointer transition rounded-sm hover:bg-gray-200 px-3 my-1.5 py-2`,
+    `flex justify-between items-center cursor-pointer transition-colors rounded-sm hover:bg-gray-200 px-3 my-1.5 py-2`,
     { "!bg-gray-800 text-white": pathname === item.path },
     className,
   );
@@ -67,6 +75,7 @@ export const MenuTitle = (props: MenuTitleProps) => {
     <Link
       className={containerClass}
       href={item.path}
+      onClick={() => onNavigateStart?.(item.path)}
     >
       {content}
     </Link>

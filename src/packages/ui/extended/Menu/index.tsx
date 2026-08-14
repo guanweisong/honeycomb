@@ -16,11 +16,13 @@ export interface MenuItem {
 export interface MenuProps {
   data?: MenuItem[];
   collapsed?: boolean;
+  pendingPath?: string | null;
+  onNavigateStart?: (path: string) => void;
 }
 
 export const Menu = (props: MenuProps) => {
   const pathname = usePathname();
-  const { data = [], collapsed = false } = props;
+  const { data = [], collapsed = false, pendingPath, onNavigateStart } = props;
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   useEffect(() => {
@@ -62,6 +64,8 @@ export const Menu = (props: MenuProps) => {
               openMenus={openMenus}
               toggleMenu={toggleMenu}
               collapsed={collapsed}
+              isPending={pendingPath === item.path}
+              onNavigateStart={onNavigateStart}
               className={clsx({
                 "pl-3": depth === 0 && !collapsed,
                 "pl-8": depth === 1 && !collapsed,

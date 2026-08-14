@@ -31,6 +31,8 @@ export interface AdminLayoutProps {
   menu?: MenuItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
+  pendingPath?: string | null;
+  onNavigateStart?: (path: string) => void;
 }
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
@@ -79,6 +81,8 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     menu = [],
     user,
     onLogout,
+    pendingPath,
+    onNavigateStart,
   } = props;
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(getInitialIsMobile);
@@ -180,7 +184,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                     : "w-[200px] opacity-100 translate-x-0 m-3",
                 )}
               >
-                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
+                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} pendingPath={pendingPath} onNavigateStart={onNavigateStart} />
               </div>
             )}
             <div
@@ -251,7 +255,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                       : "translate-x-[-100%] pointer-events-none",
                   )}
                 >
-                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} />
+                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} pendingPath={pendingPath} onNavigateStart={onNavigateStart} />
                 </div>
               </>
             )}
