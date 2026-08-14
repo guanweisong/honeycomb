@@ -1,10 +1,10 @@
 "use client";
 
-import { ModalType } from "@/app/admin/types/ModalType";
+import { ModalType } from "@/app/admin/types/modal-type";
 import { Button } from "@/packages/ui/components/button";
 import { useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
-import categoryListTableColumns from "./constants/categoryListTableColumns";
+import categoryListTableColumns from "./constants/category-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DataTable } from "@/packages/ui/extended/DataTable";
@@ -13,7 +13,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CategoryEntity } from "@/packages/trpc/api/outputs";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 /**
  * 文章分类管理页面。

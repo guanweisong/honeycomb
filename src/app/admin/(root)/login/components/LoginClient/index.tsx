@@ -17,7 +17,7 @@ import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
 import { authClient } from "@/auth-client";
 import Script from "next/script";
-import { providerIcons } from "../../providerIcons";
+import { providerIcons } from "../../provider-icons";
 import { LoginSchema, type LoginValues } from "../../login.schema";
 
 type AuthProvider = { id: string; name: string };

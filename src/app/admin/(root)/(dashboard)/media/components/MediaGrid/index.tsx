@@ -3,7 +3,7 @@
 import { Copy, File, Trash } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import { Button } from "@/packages/ui/components/button";

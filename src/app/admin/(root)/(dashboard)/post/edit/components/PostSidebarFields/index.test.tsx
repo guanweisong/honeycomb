@@ -8,7 +8,7 @@ import { PostType } from "@/packages/domain/content/post";
 
 const grantedPermissions = new Set<string>();
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 

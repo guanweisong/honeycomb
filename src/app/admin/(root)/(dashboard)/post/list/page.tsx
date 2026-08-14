@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { postListTableColumns } from "./constants/postListTableColumns";
+import { postListTableColumns } from "./constants/post-list-table-columns";
 import { Button } from "@/packages/ui/components/button";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
@@ -17,7 +17,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import { keepPreviousData } from "@tanstack/react-query";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 /**
  * 文章列表管理页面。

@@ -6,7 +6,7 @@ import { useScroll } from "ahooks";
 import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Signature from "../Signature";
-import { utcFormat } from "@/app/(blog)/lib/utcFormat";
+import { utcFormat } from "@/app/(blog)/lib/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { Loader } from "lucide-react";
@@ -17,7 +17,7 @@ import {
   PostTypeName,
 } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
-import { PostTypeBgColor } from "@/app/(blog)/types/PostTypeBgColor";
+import { PostTypeBgColor } from "@/app/(blog)/types/post-type-bg-color";
 
 /**
  * 文章列表查询结果的输出类型。

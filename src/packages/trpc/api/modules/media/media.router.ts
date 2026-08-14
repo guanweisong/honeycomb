@@ -15,7 +15,7 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { inArray, InferInsertModel, sql } from "drizzle-orm";
 import { MediaInsertSchema } from "@/packages/trpc/api/modules/media/schemas/media.insert.schema";
 import { format } from "date-fns";
-import S3 from "@/packages/trpc/api/utils/S3";
+import S3 from "@/packages/trpc/api/utils/s3";
 import { clientEnv } from "@/env/client";
 import { z } from "zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";

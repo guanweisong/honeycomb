@@ -27,7 +27,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 import { createContext } from "./context";
-import { createTrpcContext } from "./defaultContext";
+import { createTrpcContext } from "./default-context";
 
 describe("createContext", () => {
   it("keeps the request ID supplied by a tRPC request", async () => {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { UserListQueryInput } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
 import { UserListQuerySchema } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
@@ -12,13 +12,13 @@ import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { UserFormDialog } from "../UserFormDialog";
-import { useUserActions } from "../../actions/userActions";
-import { userTableColumns } from "../../columns/userColumns";
-import { useUserQuery } from "../../queries/userQuery";
+import { useUserActions } from "../../actions/user-actions";
+import { userTableColumns } from "../../columns/user-columns";
+import { useUserQuery } from "../../queries/user-query";
 import {
   canDeleteUserResource,
   isUserResourceProtected,
-} from "../../transforms/userTransforms";
+} from "../../transforms/user-transforms";
 
 export function UserPageShell() {
   const canManageUsers = useCan(Permission.userManage);

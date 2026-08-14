@@ -7,7 +7,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/get-all-image-link-form-html";
 import { PageListQueryInput } from "./schemas/page.list.query.schema";
 import { PageStatus } from "@/packages/domain/content/page";
 import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";

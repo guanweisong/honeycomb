@@ -9,7 +9,7 @@ const queryMocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
 }));
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({
   useCan: () => canUpdateMenu,
 }));
 

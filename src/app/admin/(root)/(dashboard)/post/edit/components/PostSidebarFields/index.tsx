@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/packages/ui/components/button";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
-import { ModalType } from "@/app/admin/types/ModalType";
+import { ModalType } from "@/app/admin/types/modal-type";
 import {
   PostType,
   postTypeOptions,
@@ -12,9 +12,9 @@ import {
 import { TagType } from "@/packages/domain/content/tag";
 import MultiTag from "../MultiTag";
 import PhotoPickerItem from "../PhotoPickerItem";
-import type { usePostEditor } from "../../hooks/usePostEditor";
+import type { usePostEditor } from "../../hooks/use-post-editor";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 type Editor = ReturnType<typeof usePostEditor>;
 

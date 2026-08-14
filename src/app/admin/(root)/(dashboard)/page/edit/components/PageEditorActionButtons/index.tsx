@@ -1,6 +1,6 @@
 import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { PageStatus } from "@/packages/domain/content/page";
 

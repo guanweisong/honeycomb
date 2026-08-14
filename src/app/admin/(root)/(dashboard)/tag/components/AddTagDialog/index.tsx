@@ -1,4 +1,4 @@
-import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
+import { ModalType, ModalTypeName } from "@/app/admin/types/modal-type";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.update.schema";
 import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.insert.schema";

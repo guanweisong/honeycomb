@@ -2,7 +2,7 @@
 
 import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
-import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
+import { ModalType, ModalTypeName } from "@/app/admin/types/modal-type";
 import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

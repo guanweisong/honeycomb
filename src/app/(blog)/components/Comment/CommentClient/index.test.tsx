@@ -53,7 +53,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/app/(blog)/lib/refreshPath", () => ({
+vi.mock("@/app/(blog)/lib/refresh-path", () => ({
   refreshPath: (...args: unknown[]) => mockRefreshPath(...args),
 }));
 

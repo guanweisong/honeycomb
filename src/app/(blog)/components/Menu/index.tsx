@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/lib/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { cn } from "@/packages/ui/lib/utils";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";

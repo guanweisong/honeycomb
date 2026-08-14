@@ -5,7 +5,7 @@ import Image from "@tiptap/extension-image";
 import Video from "./components/VideoNode";
 import { ToolbarButton } from "./components/ToolbarButton";
 import { useEffect, useRef, useState } from "react";
-import { toolbarItems } from "@/packages/ui/extended/Tiptap/config/toolbarItems";
+import { toolbarItems } from "@/packages/ui/extended/Tiptap/config/toolbar-items";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";

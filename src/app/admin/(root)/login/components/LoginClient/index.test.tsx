@@ -6,11 +6,11 @@ const mockUseSiteSetting = vi.fn();
 const mockRefreshUser = vi.fn();
 const mockFetch = vi.fn();
 
-vi.mock("@/app/admin/hooks/useSiteSetting", () => ({
+vi.mock("@/app/admin/hooks/use-site-setting", () => ({
   useSiteSetting: () => mockUseSiteSetting(),
 }));
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({
   useCurrentUser: () => ({
     refreshUser: mockRefreshUser,
   }),
@@ -53,7 +53,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("./providerIcons", () => ({
+vi.mock("./provider-icons", () => ({
   providerIcons: {
     github: React.createElement("span", null, "github"),
   },

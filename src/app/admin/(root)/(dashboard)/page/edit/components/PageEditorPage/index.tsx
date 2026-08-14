@@ -16,12 +16,12 @@ import {
 } from "@/packages/ui/extended/AdminLayout";
 import { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { PageEditorForm } from "../PageEditorForm";
-import { usePageEditorActions } from "../../actions/pageEditorActions";
-import { usePageEditorQuery } from "../../queries/pageEditorQuery";
+import { usePageEditorActions } from "../../actions/page-editor-actions";
+import { usePageEditorQuery } from "../../queries/page-editor-query";
 import {
   getPageEditorId,
   toPageEditorFormValues,
-} from "../../transforms/pageEditorTransforms";
+} from "../../transforms/page-editor-transforms";
 
 export function PageEditorPage() {
   const id = getPageEditorId(useSearchParams());

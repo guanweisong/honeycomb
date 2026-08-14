@@ -24,7 +24,7 @@ import { TRPCError } from "@trpc/server";
 import { getPostDetail, getPostList } from "./post.service";
 import { TagType } from "@/packages/domain/content/tag";
 import { I18n } from "@/packages/trpc/api/schemas/i18n.schema";
-import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitizeHtml";
+import { sanitizeOptionalI18nHtml } from "@/packages/trpc/api/utils/sanitize-html";
 import {
   bumpCacheVersion,
   getCacheVersion,

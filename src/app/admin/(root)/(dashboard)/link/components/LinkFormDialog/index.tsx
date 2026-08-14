@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
+import { ModalType, ModalTypeName } from "@/app/admin/types/modal-type";
 import type { LinkInsert } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import type { LinkUpdate } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
@@ -11,8 +11,8 @@ import {
 } from "@/packages/domain/shared/enable-status";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import type { LinkDialogState } from "../../actions/linkActions";
-import { toLinkFormDefaults } from "../../transforms/linkTransforms";
+import type { LinkDialogState } from "../../actions/link-actions";
+import { toLinkFormDefaults } from "../../transforms/link-transforms";
 
 type LinkFormDialogProps = {
   state: LinkDialogState;

@@ -1,8 +1,8 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({ useCan: () => true }));
-vi.mock("@/app/admin/hooks/useSiteSetting", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({ useCan: () => true }));
+vi.mock("@/app/admin/hooks/use-site-setting", () => ({
   useSiteSetting: () => ({
     setting: { id: "setting-1", siteName: { en: "Honeycomb", zh: "Honeycomb" } },
     refreshSetting: vi.fn(),

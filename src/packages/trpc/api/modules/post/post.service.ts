@@ -9,7 +9,7 @@ import {
 } from "@/packages/trpc/api/utils/tools";
 import { buildCategoryFilter } from "./utils/filters";
 import { loadPostRelations } from "./utils/relations";
-import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/getAllImageLinkFormHtml";
+import { getAllImageLinkFormHtml } from "@/packages/trpc/api/utils/get-all-image-link-form-html";
 
 /**
  * 获取文章列表的业务逻辑

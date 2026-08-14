@@ -3,7 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { selectAllColumns } from "@/packages/trpc/api/utils/selectAllColumns";
+import { selectAllColumns } from "@/packages/trpc/api/utils/select-all-columns";
 import { sendCommentEmail } from "@/packages/application/notifications/comment/comment-email";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger, observeDbOperation } from "@/packages/infrastructure/observability/server";

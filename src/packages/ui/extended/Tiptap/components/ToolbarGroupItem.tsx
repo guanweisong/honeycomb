@@ -1,5 +1,5 @@
 import { Editor } from "@tiptap/core";
-import { ToolbarGroup } from "../config/toolbarItems";
+import { ToolbarGroup } from "../config/toolbar-items";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
 import {

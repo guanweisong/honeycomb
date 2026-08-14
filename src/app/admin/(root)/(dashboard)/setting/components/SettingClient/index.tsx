@@ -6,8 +6,8 @@ import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas
 import { trpc } from "@/packages/trpc/client/trpc";
 import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
-import { useSiteSetting } from "@/app/admin/hooks/useSiteSetting";
+import { useCan } from "@/app/admin/hooks/use-current-user";
+import { useSiteSetting } from "@/app/admin/hooks/use-site-setting";
 
 type SettingFormValues = z.infer<typeof SettingUpdateSchema>;
 

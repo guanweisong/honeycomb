@@ -13,8 +13,8 @@ import type {
 } from "@/packages/trpc/api/outputs";
 import { CommentForm } from "../CommentForm";
 import { CommentTree } from "../CommentTree";
-import { useCommentIdentity } from "../hooks/useCommentIdentity";
-import { useCommentSubmission } from "../hooks/useCommentSubmission";
+import { useCommentIdentity } from "../hooks/use-comment-identity";
+import { useCommentSubmission } from "../hooks/use-comment-submission";
 
 export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<CommentTreeResponse>;

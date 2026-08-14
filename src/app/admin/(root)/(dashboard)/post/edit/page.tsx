@@ -12,7 +12,7 @@ import AddCategoryModal from "../category/components/AddCategoryModal";
 import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
-import { usePostEditor } from "./hooks/usePostEditor";
+import { usePostEditor } from "./hooks/use-post-editor";
 
 function PostDetailContent() {
   const id = useSearchParams().get("id") as string;

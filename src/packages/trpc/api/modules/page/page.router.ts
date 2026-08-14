@@ -14,7 +14,7 @@ import { z } from "zod";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { and, eq, inArray, sql, InferInsertModel } from "drizzle-orm";
-import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitizeHtml";
+import { sanitizeRichText } from "@/packages/trpc/api/utils/sanitize-html";
 import {
   getPageAuthorById,
   getPageDetail,

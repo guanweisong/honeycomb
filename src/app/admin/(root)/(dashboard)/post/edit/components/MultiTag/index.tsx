@@ -22,7 +22,7 @@ import { TagEntity } from "@/packages/trpc/api/outputs";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 

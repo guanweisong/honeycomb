@@ -5,8 +5,8 @@ import {
   index,
   foreignKey,
 } from "drizzle-orm/sqlite-core";
-import { i18nField } from "./i18nField";
-import { objectId } from "./objectId";
+import { i18nField } from "./i18n-field";
+import { objectId } from "./object-id";
 import { withTimestamps } from "./timestamps";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 

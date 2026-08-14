@@ -7,7 +7,7 @@ import type { MediaEntity } from "@/packages/trpc/api/outputs";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
   true;
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({
   useCan: () => false,
 }));
 

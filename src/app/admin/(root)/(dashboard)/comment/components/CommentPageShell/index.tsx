@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Trash } from "lucide-react";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
 import type { CommentEntity } from "@/packages/trpc/api/outputs";
@@ -11,9 +11,9 @@ import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { useCommentActions } from "../../actions/commentActions";
-import { commentTableColumns } from "../../columns/commentColumns";
-import { useCommentQuery, type CommentListQueryInput } from "../../queries/commentQuery";
+import { useCommentActions } from "../../actions/comment-actions";
+import { commentTableColumns } from "../../columns/comment-columns";
+import { useCommentQuery, type CommentListQueryInput } from "../../queries/comment-query";
 
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);

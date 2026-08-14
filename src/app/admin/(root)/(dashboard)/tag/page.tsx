@@ -1,8 +1,8 @@
 "use client";
 
-import { ModalType } from "@/app/admin/types/ModalType";
+import { ModalType } from "@/app/admin/types/modal-type";
 import { useState } from "react";
-import { tagTableColumns } from "./constants/tagTableColumns";
+import { tagTableColumns } from "./constants/tag-table-columns";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Button } from "@/packages/ui/components/button";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
 import { TagEntity } from "@/packages/trpc/api/outputs";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 /**
  * 标签管理页面。

@@ -33,7 +33,7 @@ vi.mock("@tiptap/react", () => ({
   EditorContent: () => React.createElement("div", { "data-testid": "editor" }),
 }));
 
-vi.mock("./config/toolbarItems", () => ({ toolbarItems: tiptapMocks.toolbarItems }));
+vi.mock("./config/toolbar-items", () => ({ toolbarItems: tiptapMocks.toolbarItems }));
 
 vi.mock("./components/ToolbarButton", () => ({
   ToolbarButton: ({ label, onClick }: { label: string; onClick?: () => void }) =>

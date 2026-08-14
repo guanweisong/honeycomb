@@ -4,15 +4,15 @@ import SortableTree from "@nosferatu500/react-sortable-tree";
 import "@nosferatu500/react-sortable-tree/style.css";
 import { Save } from "lucide-react";
 import { creatCategoryTitleByDepth } from "@/app/admin/lib/help";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { Button } from "@/packages/ui/components/button";
 import { Checkbox } from "@/packages/ui/extended/Checkbox";
 import { Tabs } from "@/packages/ui/extended/Tabs";
-import { useMenuActions } from "../../actions/menuActions";
-import { useMenuQuery } from "../../queries/menuQuery";
-import { useMenuTreeEditor } from "../../hooks/useMenuTreeEditor";
+import { useMenuActions } from "../../actions/menu-actions";
+import { useMenuQuery } from "../../queries/menu-query";
+import { useMenuTreeEditor } from "../../hooks/use-menu-tree-editor";
 
 export function MenuPageShell() {
   const canUpdateMenu = useCan(Permission.menuUpdate);

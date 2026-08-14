@@ -23,7 +23,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
-import { validateCaptcha } from "@/packages/trpc/api/utils/validateCaptcha";
+import { validateCaptcha } from "@/packages/trpc/api/utils/validate-captcha";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import {
   assertCommentParentMatches,

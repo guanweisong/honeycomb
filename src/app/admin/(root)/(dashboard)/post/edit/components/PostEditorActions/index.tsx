@@ -3,9 +3,9 @@
 import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { PostStatus } from "@/packages/domain/content/post-status";
-import type { PostSubmitAction } from "../../hooks/usePostEditor";
+import type { PostSubmitAction } from "../../hooks/use-post-editor";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 interface PostEditorActionsProps {
   id?: string;

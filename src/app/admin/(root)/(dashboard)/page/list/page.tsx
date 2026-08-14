@@ -2,7 +2,7 @@
 
 import { Button } from "@/packages/ui/components/button";
 import { useState } from "react";
-import { pageListTableColumns } from "./constants/pageListTableColumns";
+import { pageListTableColumns } from "./constants/page-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
@@ -17,7 +17,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { PageEntity } from "@/packages/trpc/api/outputs";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 
 /**
  * 页面列表管理页面。

@@ -1,5 +1,5 @@
 import type { inferProcedureOutput } from "@trpc/server";
-import type { AppRouter } from "./appRouter";
+import type { AppRouter } from "./app-router";
 
 export type CategoryEntity = inferProcedureOutput<
   AppRouter["category"]["index"]

@@ -13,7 +13,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/trpc/api/utils/validateCaptcha", () => ({
+vi.mock("@/packages/trpc/api/utils/validate-captcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 

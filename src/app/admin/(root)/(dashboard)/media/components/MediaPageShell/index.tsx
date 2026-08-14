@@ -2,13 +2,13 @@
 
 import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCan } from "@/app/admin/hooks/useCurrentUser";
+import { useCan } from "@/app/admin/hooks/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { MediaEntity } from "@/packages/trpc/api/outputs";
 import { Button } from "@/packages/ui/components/button";
 import { MediaGrid } from "../MediaGrid";
-import { useMediaActions } from "../../actions/mediaActions";
-import { useMediaQuery } from "../../queries/mediaQuery";
+import { useMediaActions } from "../../actions/media-actions";
+import { useMediaQuery } from "../../queries/media-query";
 
 export interface MediaProps {
   onSelect?: (media: MediaEntity) => void;

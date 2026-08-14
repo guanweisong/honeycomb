@@ -1,4 +1,4 @@
-import { appRouter } from "@/packages/trpc/api/appRouter";
+import { appRouter } from "@/packages/trpc/api/app-router";
 import { createTrpcContext } from "@/packages/trpc/api";
 import {
   createRequestContext,

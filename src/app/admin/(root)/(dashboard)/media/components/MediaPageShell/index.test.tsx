@@ -44,7 +44,7 @@ const toastMocks = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 
-vi.mock("@/app/admin/hooks/useCurrentUser", () => ({
+vi.mock("@/app/admin/hooks/use-current-user", () => ({
   useCan: (permission: Permission) => allowedPermissions.has(permission),
 }));
 

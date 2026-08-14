@@ -9,7 +9,7 @@ import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
 import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
-import { Theme } from "@/app/(blog)/types/Theme";
+import { Theme } from "@/app/(blog)/types/theme";
 import {
   MultiLangEnum,
   MultiLang,

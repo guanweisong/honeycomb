@@ -46,7 +46,7 @@ vi.mock("@/app/(blog)/i18n/navigation", () => ({
 
 import Menu from "./index";
 import Breadcrumb from "../Breadcrumb";
-import getCurrentPathOfMenu from "../../lib/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "../../lib/get-current-path-of-menu";
 
 const flatMenu = [
   {
@@ -201,7 +201,7 @@ describe("blog menu navigation", () => {
   });
 });
 
-describe("getCurrentPathOfMenu", () => {
+describe("get-current-path-of-menu", () => {
   it("returns ancestor paths from root to the selected item", () => {
     expect(
       getCurrentPathOfMenu({

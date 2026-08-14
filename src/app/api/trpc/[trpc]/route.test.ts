@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({
   scopeRequestId: undefined as string | undefined,
 }));
 
-vi.mock("@/packages/trpc/api/appRouter", () => ({ appRouter: {} }));
+vi.mock("@/packages/trpc/api/app-router", () => ({ appRouter: {} }));
 
 vi.mock("@/packages/trpc/api", async () => {
   const { getRequestContext } = await import(

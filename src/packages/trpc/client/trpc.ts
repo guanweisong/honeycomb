@@ -1,6 +1,6 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
-import type { AppRouter } from "@/packages/trpc/api/appRouter";
+import type { AppRouter } from "@/packages/trpc/api/app-router";
 
 /**
  * tRPC React 客户端实例。

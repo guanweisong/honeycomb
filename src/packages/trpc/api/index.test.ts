@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   createContext: vi.fn(async () => ({})),
 }));
 
-vi.mock("./appRouter", () => ({
+vi.mock("./app-router", () => ({
   appRouter: { createCaller: mocks.createCaller },
 }));
 vi.mock("./context", () => ({ createContext: mocks.createContext }));

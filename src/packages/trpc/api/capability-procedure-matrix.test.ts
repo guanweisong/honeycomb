@@ -13,7 +13,7 @@ import { createMemoryObservability } from "@/packages/infrastructure/observabili
 import { configureObservability } from "@/packages/infrastructure/observability/server/registry";
 import { UserLevel } from "@/packages/domain/identity/user";
 
-import { appRouter } from "./appRouter";
+import { appRouter } from "./app-router";
 import type { Context } from "./context";
 
 const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
@@ -26,7 +26,7 @@ vi.mock("bcryptjs", async (importOriginal) => ({
   },
 }));
 
-vi.mock("@/packages/trpc/api/utils/S3", () => ({
+vi.mock("@/packages/trpc/api/utils/s3", () => ({
   default: {
     getPresignedUrl: async () => {
       externalBoundaries.storage += 1;
@@ -90,17 +90,17 @@ function extractCapabilityProcedureMatrix(
   appRouterSource: string,
 ): DeclarationEntry[] {
   const appSourceFile = ts.createSourceFile(
-    "appRouter.ts",
+    "app-router.ts",
     appRouterSource,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TS,
   );
   const routerImports = readRouterImports(appSourceFile);
-  const appDeclaration = findRouterDeclaration(appSourceFile, "appRouter.ts");
+  const appDeclaration = findRouterDeclaration(appSourceFile, "app-router.ts");
   const registrations = readRouterRegistrations(
     appDeclaration.routerObject,
-    "appRouter.ts",
+    "app-router.ts",
   );
   validateRouterRegistrationBoundary(
     routerSources,
@@ -1140,7 +1140,7 @@ describe("capability procedure matrix", () => {
 
   it("matches direct capability declarations in every real registered router", () => {
     const appRouterSource = readFileSync(
-      join(process.cwd(), "src/packages/trpc/api/appRouter.ts"),
+      join(process.cwd(), "src/packages/trpc/api/app-router.ts"),
       "utf8",
     );
     const expected = capabilityProcedureMatrix.map(

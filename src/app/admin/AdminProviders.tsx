@@ -2,10 +2,10 @@
 
 import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
-import { createAdminQueryClient } from "@/packages/trpc/client/adminQueryClient";
+import { createAdminQueryClient } from "@/packages/trpc/client/admin-query-client";
 import { TiptapMediaPickerProvider, type MediaPickerRenderer } from "@/packages/ui/extended/Tiptap/media-picker";
-import { CurrentUserProvider } from "./hooks/useCurrentUser";
-import { SiteSettingProvider } from "./hooks/useSiteSetting";
+import { CurrentUserProvider } from "./hooks/use-current-user";
+import { SiteSettingProvider } from "./hooks/use-site-setting";
 import type { AdminUser } from "./lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";

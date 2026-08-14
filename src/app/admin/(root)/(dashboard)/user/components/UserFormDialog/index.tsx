@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/app/admin/types/ModalType";
+import { ModalType, ModalTypeName } from "@/app/admin/types/modal-type";
 import type { UserInsert } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
 import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
 import type { UserUpdate } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
@@ -15,8 +15,8 @@ import {
 } from "@/packages/domain/identity/user";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import type { UserDialogState } from "../../actions/userActions";
-import { isUserResourceProtected, toUserFormDefaults } from "../../transforms/userTransforms";
+import type { UserDialogState } from "../../actions/user-actions";
+import { isUserResourceProtected, toUserFormDefaults } from "../../transforms/user-transforms";
 
 type UserFormDialogProps = {
   state: UserDialogState;

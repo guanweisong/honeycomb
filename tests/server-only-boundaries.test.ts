@@ -10,16 +10,16 @@ const serverOnlyEntrypoints = [
   "src/packages/infrastructure/db/db.ts",
   "src/packages/infrastructure/observability/server/index.ts",
   "src/packages/infrastructure/observability/server/registry.ts",
-  "src/packages/trpc/api/appRouter.ts",
+  "src/packages/trpc/api/app-router.ts",
   "src/packages/trpc/api/context.ts",
   "src/packages/trpc/api/core.ts",
-  "src/packages/trpc/api/defaultContext.ts",
+  "src/packages/trpc/api/default-context.ts",
   "src/packages/trpc/api/index.ts",
-  "src/packages/trpc/api/utils/S3.ts",
+  "src/packages/trpc/api/utils/s3.ts",
   "src/packages/trpc/api/utils/rate-limit.ts",
   "src/packages/application/notifications/comment/comment-email.ts",
   "src/packages/trpc/api/utils/upstash-cache.ts",
-  "src/packages/trpc/api/utils/validateCaptcha.ts",
+  "src/packages/trpc/api/utils/validate-captcha.ts",
 ] as const;
 
 function findBackendModules(directory: string): string[] {

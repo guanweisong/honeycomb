@@ -2,7 +2,7 @@ import { ViewTransition } from "react";
 import listToTree from "list-to-tree-lite";
 import Menu from "@/app/(blog)/components/Menu";
 import { Link } from "@/app/(blog)/i18n/navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/lib/getCurrentPathOfMenu";
+import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
