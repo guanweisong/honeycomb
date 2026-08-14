@@ -10,7 +10,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 // 模拟 S3 模块。
-vi.mock("@/packages/trpc/api/utils/s3", () => ({
+vi.mock("@/packages/trpc/api/utils/S3", () => ({
   default: {
     getPresignedUrl: vi
       .fn()

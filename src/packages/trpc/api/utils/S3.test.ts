@@ -3,7 +3,7 @@ import { createMemoryObservability } from "@/packages/infrastructure/observabili
 import { MetricName } from "@/packages/infrastructure/observability/core/names";
 import { configureObservability } from "@/packages/infrastructure/observability/server";
 import { createSecurityHeaderOptions } from "@/packages/infrastructure/security/security-headers";
-import S3 from "./s3";
+import S3 from "./S3";
 
 describe("S3 observability", () => {
   const send = vi.fn();

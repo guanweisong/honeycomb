@@ -9,7 +9,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/trpc/api/utils/tools";
-import S3 from "@/packages/trpc/api/utils/s3";
+import S3 from "@/packages/trpc/api/utils/S3";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { MediaIndexInput } from "./schemas/media.list.query.schema";
 

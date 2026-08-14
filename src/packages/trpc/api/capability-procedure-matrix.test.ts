@@ -33,7 +33,7 @@ vi.mock("bcryptjs", async (importOriginal) => ({
   },
 }));
 
-vi.mock("@/packages/trpc/api/utils/s3", () => ({
+vi.mock("@/packages/trpc/api/utils/S3", () => ({
   default: {
     getPresignedUrl: async () => {
       externalBoundaries.storage += 1;

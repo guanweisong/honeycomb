@@ -15,7 +15,7 @@ const serverOnlyEntrypoints = [
   "src/packages/trpc/api/core.ts",
   "src/packages/trpc/api/default-context.ts",
   "src/packages/trpc/api/index.ts",
-  "src/packages/trpc/api/utils/s3.ts",
+  "src/packages/trpc/api/utils/S3.ts",
   "src/packages/trpc/api/utils/rate-limit.ts",
   "src/packages/application/notifications/comment/comment-email.ts",
   "src/packages/trpc/api/utils/upstash-cache.ts",

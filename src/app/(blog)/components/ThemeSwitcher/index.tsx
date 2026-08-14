@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useTheme } from "next-themes";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
-import { Theme } from "@/app/(blog)/types/theme";
+import { Theme } from "@/app/(blog)/types/Theme";
 import { flushSync } from "react-dom";
 
 /**
