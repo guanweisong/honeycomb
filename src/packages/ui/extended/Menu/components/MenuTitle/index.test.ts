@@ -59,22 +59,16 @@ describe("MenuTitle", () => {
     expect(toggleMenu).toHaveBeenCalledWith("/admin/content");
   });
 
-  it("uses the custom navigation callback for leaf items", async () => {
-    const navigate = vi.fn();
+  it("keeps leaf navigation on the link", async () => {
     await act(async () => {
       root.render(
         React.createElement(MenuTitle, {
-          item: { name: "自定义导航", path: "/admin/custom" },
+          item: { name: "链接导航", path: "/admin/custom" },
           openMenus: [],
-          onNavigate: navigate,
         }),
       );
     });
 
-    await act(async () =>
-      container.querySelector("a")?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
-    );
-
-    expect(navigate).toHaveBeenCalledWith("/admin/custom");
+    expect(container.querySelector("a")?.getAttribute("href")).toBe("/admin/custom");
   });
 });

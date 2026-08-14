@@ -16,12 +16,11 @@ export interface MenuItem {
 export interface MenuProps {
   data?: MenuItem[];
   collapsed?: boolean;
-  onNavigate?: (path: string) => void;
 }
 
 export const Menu = (props: MenuProps) => {
   const pathname = usePathname();
-  const { data = [], collapsed = false, onNavigate } = props;
+  const { data = [], collapsed = false } = props;
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   useEffect(() => {
@@ -62,7 +61,6 @@ export const Menu = (props: MenuProps) => {
               item={item}
               openMenus={openMenus}
               toggleMenu={toggleMenu}
-              onNavigate={onNavigate}
               collapsed={collapsed}
               className={clsx({
                 "pl-3": depth === 0 && !collapsed,

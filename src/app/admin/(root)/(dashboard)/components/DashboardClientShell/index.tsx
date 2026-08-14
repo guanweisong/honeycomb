@@ -32,10 +32,6 @@ export function DashboardClientShell({
     }
   };
 
-  const handleNavigate = (path: string) => {
-    router.push(path);
-  };
-
   return (
     <AdminLayout
       title={setting?.siteName?.zh}
@@ -43,7 +39,6 @@ export function DashboardClientShell({
       user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
-      onNavigate={handleNavigate}
     >
       {children}
     </AdminLayout>

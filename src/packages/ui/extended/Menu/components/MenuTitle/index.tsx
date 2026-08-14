@@ -14,7 +14,6 @@ export interface MenuTitleProps {
   className?: string;
   style?: React.CSSProperties;
   collapsed?: boolean;
-  onNavigate?: (path: string) => void;
 }
 
 export const MenuTitle = (props: MenuTitleProps) => {
@@ -25,7 +24,6 @@ export const MenuTitle = (props: MenuTitleProps) => {
     className = "",
     style,
     collapsed = false,
-    onNavigate,
   } = props;
   const pathname = usePathname();
 
@@ -69,11 +67,6 @@ export const MenuTitle = (props: MenuTitleProps) => {
     <Link
       className={containerClass}
       href={item.path}
-      onClick={(event) => {
-        if (!onNavigate) return;
-        event.preventDefault();
-        onNavigate(item.path);
-      }}
     >
       {content}
     </Link>
