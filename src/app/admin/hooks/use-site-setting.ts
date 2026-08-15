@@ -3,7 +3,7 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import type { SettingEntity } from "@/packages/trpc/api/outputs";
 
 const SiteSettingContext = createContext<{
-  setting: SettingEntity;
+  setting?: SettingEntity;
   refreshSetting: () => Promise<SettingEntity>;
 } | null>(null);
 
@@ -12,22 +12,29 @@ export function SiteSettingProvider({
   setting,
 }: {
   children?: ReactNode;
-  setting: SettingEntity;
+  setting?: SettingEntity;
 }) {
-  const [currentSetting, setCurrentSetting] = useState(setting);
+  const { data: fetchedSetting } = trpc.setting.index.useQuery(undefined, {
+    initialData: setting,
+    staleTime: 5 * 60 * 1000,
+  });
+  const [currentSetting, setCurrentSetting] = useState<SettingEntity | undefined>(
+    fetchedSetting,
+  );
   const utils = trpc.useUtils();
+  const resolvedSetting = fetchedSetting ?? currentSetting;
   const refreshSetting = async () => {
     const nextSetting = await utils.setting.index.fetch();
     setCurrentSetting(nextSetting);
     return nextSetting;
   };
 
-  return createContextProvider(children, currentSetting, refreshSetting);
+  return createContextProvider(children, resolvedSetting, refreshSetting);
 }
 
 function createContextProvider(
   children: ReactNode,
-  setting: SettingEntity,
+  setting: SettingEntity | undefined,
   refreshSetting: () => Promise<SettingEntity>,
 ) {
   return createElement(

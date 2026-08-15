@@ -6,8 +6,7 @@ import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { useSiteSetting } from "@/app/admin/hooks/use-site-setting";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function DashboardClientShell({
@@ -18,14 +17,9 @@ export function DashboardClientShell({
   user: AdminUser;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const utils = trpc.useUtils();
   const { setting } = useSiteSetting();
 
-  useEffect(() => {
-    setPendingPath(null);
-  }, [pathname]);
   const handleLogout = async () => {
     try {
       await authClient.signOut();
@@ -46,8 +40,6 @@ export function DashboardClientShell({
       user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
-      pendingPath={pendingPath}
-      onNavigateStart={setPendingPath}
     >
       {children}
     </AdminLayout>

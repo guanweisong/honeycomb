@@ -14,11 +14,9 @@ import React from "react";
 export function AdminProviders({
   children,
   initialUser,
-  setting,
 }: {
   children: React.ReactNode;
   initialUser: AdminUser;
-  setting: import("@/packages/trpc/api/outputs").SettingEntity;
 }) {
   const router = useRouter();
   const [queryClient] = React.useState(() =>
@@ -37,7 +35,7 @@ export function AdminProviders({
       <QueryClientProvider client={queryClient}>
         <TiptapMediaPickerProvider renderer={renderMediaPicker}>
           <CurrentUserProvider initialUser={initialUser}>
-            <SiteSettingProvider setting={setting}>{children}</SiteSettingProvider>
+            <SiteSettingProvider>{children}</SiteSettingProvider>
           </CurrentUserProvider>
         </TiptapMediaPickerProvider>
       </QueryClientProvider>

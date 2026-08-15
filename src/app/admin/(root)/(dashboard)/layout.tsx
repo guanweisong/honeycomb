@@ -1,5 +1,4 @@
 import { getAdminUser } from "@/app/admin/lib/admin-auth";
-import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardClientShell } from "./components/DashboardClientShell";
@@ -17,10 +16,8 @@ export default async function AdminDashboardLayout({
     redirect("/admin/login");
   }
 
-  const setting = await getSiteSetting(requestHeaders);
-
   return (
-      <AdminProviders initialUser={user} setting={setting}>
+      <AdminProviders initialUser={user}>
       <DashboardClientShell user={user}>
         {children}
       </DashboardClientShell>
