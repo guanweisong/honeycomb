@@ -2,11 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const push = vi.fn();
 const searchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
   useSearchParams: () => searchParams,
   usePathname: () => "/admin/account/security",
 }));
@@ -30,11 +28,12 @@ vi.mock("../LoginHistorySettings", () => ({
 import { AccountSecurityTabs } from "./index";
 
 describe("AccountSecurityTabs", () => {
+  let pushState: ReturnType<typeof vi.spyOn>;
   let container: HTMLDivElement;
   let root: Root;
 
   beforeEach(() => {
-    push.mockReset();
+    pushState = vi.spyOn(window.history, "pushState");
     searchParams.delete("tab");
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -42,6 +41,7 @@ describe("AccountSecurityTabs", () => {
   });
 
   afterEach(async () => {
+    pushState.mockRestore();
     await act(async () => root.unmount());
     container.remove();
   });
@@ -79,7 +79,7 @@ describe("AccountSecurityTabs", () => {
     );
   });
 
-  it("writes the selected tab to the URL without scrolling", async () => {
+  it("updates the selected tab without triggering router navigation", async () => {
     await act(async () =>
       root.render(
         React.createElement(AccountSecurityTabs, {
@@ -94,8 +94,10 @@ describe("AccountSecurityTabs", () => {
         ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
     });
 
-    expect(push).toHaveBeenCalledWith("/admin/account/security?tab=sessions", {
-      scroll: false,
-    });
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/admin/account/security?tab=sessions",
+    );
   });
 });

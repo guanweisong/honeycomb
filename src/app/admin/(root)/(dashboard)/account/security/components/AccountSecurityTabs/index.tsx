@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import PasskeySettings from "../PasskeySettings";
 import PasswordSettings from "../PasswordSettings";
 import SessionSettings from "../SessionSettings";
@@ -31,14 +31,13 @@ type Props = {
 
 export function AccountSecurityTabs({ socialProviders }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedTab = getAccountSecurityTab(searchParams.get("tab"));
 
   const onTabChange = (tab: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", tab);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    window.history.pushState(null, "", `${pathname}?${params.toString()}`);
   };
 
   return (
