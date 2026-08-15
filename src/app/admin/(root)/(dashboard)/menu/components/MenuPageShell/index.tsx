@@ -9,13 +9,22 @@ import { MenuType } from "@/packages/domain/navigation/menu";
 import { Button } from "@/packages/ui/components/button";
 import { Checkbox } from "@/packages/ui/extended/Checkbox";
 import { Tabs } from "@/packages/ui/extended/Tabs";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { useMenuActions } from "../../actions/menu-actions";
 import { useMenuQuery } from "../../queries/menu-query";
 import { useMenuTreeEditor } from "../../hooks/use-menu-tree-editor";
 
 export function MenuPageShell() {
   const canUpdateMenu = useCan(Permission.menuUpdate);
-  const { pageList, categoryList, checkedData, refetchMenu } = useMenuQuery();
+  const {
+    pageList,
+    categoryList,
+    checkedData,
+    pageLoading,
+    categoryLoading,
+    menuLoading,
+    refetchMenu,
+  } = useMenuQuery();
   const editor = useMenuTreeEditor(checkedData);
   const { submit } = useMenuActions(editor.checkedList, refetchMenu);
 
@@ -32,7 +41,7 @@ export function MenuPageShell() {
               value: "1",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {categoryList?.list?.map((item) => (
+                  {categoryLoading ? <LoadingState fullScreen={false} /> : categoryList?.list?.map((item) => (
                     <div
                       key={item.id}
                       className="px-3 leading-8 transition-all hover:bg-gray-100"
@@ -59,7 +68,7 @@ export function MenuPageShell() {
               value: "2",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {pageList?.list?.map((item) => (
+                  {pageLoading ? <LoadingState fullScreen={false} /> : pageList?.list?.map((item) => (
                     <div
                       key={item.id}
                       className="px-3 leading-8 transition-all hover:bg-gray-100"
@@ -93,12 +102,16 @@ export function MenuPageShell() {
           </Button>
         )}
         <div className="bg-gray-50 my-2 py-2">
-          <SortableTree
-            treeData={editor.menuTree}
-            onChange={editor.onDragEnd}
-            rowHeight={50}
-            isVirtualized={false}
-          />
+          {menuLoading ? (
+            <LoadingState fullScreen={false} />
+          ) : (
+            <SortableTree
+              treeData={editor.menuTree}
+              onChange={editor.onDragEnd}
+              rowHeight={50}
+              isVirtualized={false}
+            />
+          )}
         </div>
       </div>
     </div>

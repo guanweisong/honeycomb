@@ -20,6 +20,9 @@ export function useMenuQuery() {
     pageList: pageQuery.data,
     categoryList: categoryQuery.data,
     checkedData: menuQuery.data,
+    pageLoading: pageQuery.isLoading,
+    categoryLoading: categoryQuery.isLoading,
+    menuLoading: menuQuery.isLoading,
     refetchMenu: menuQuery.refetch,
   };
 }
