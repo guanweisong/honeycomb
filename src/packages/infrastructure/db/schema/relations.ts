@@ -1,0 +1,47 @@
+export const {
+  userRelations,
+  accountRelations,
+  sessionRelations,
+  passkeyRelations,
+  loginHistoryRelations,
+  categoryRelations,
+  mediaRelations,
+  postRelations,
+  tagRelations,
+  postTagRelations,
+  pageRelations,
+  commentRelations,
+  menuRelations,
+} = defineRelations({
+  user,
+  account,
+  session,
+  passkey,
+  loginHistory,
+  category,
+  media,
+  post,
+  tag,
+  postTag,
+  page,
+  comment,
+  menu,
+});
+import { defineRelations } from "../define-relations";
+import {
+  user,
+  account,
+  passkey,
+  session,
+  loginHistory,
+} from "./auth";
+import {
+  category,
+  media,
+  post,
+  tag,
+  postTag,
+  page,
+  comment,
+  menu,
+} from "./content";

@@ -7,7 +7,8 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { SettingUpdateSchema } from "./schemas/setting.update.schema";
-import { getSetting, updateSetting } from "./setting.service";
+import { getSetting } from "@/packages/application/settings/setting-queries";
+import { updateSetting } from "@/packages/application/settings/setting-commands";
 
 /** 网站设置 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const settingRouter = createTRPCRouter({

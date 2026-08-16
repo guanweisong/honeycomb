@@ -45,11 +45,14 @@ describe("comment email observability", () => {
       MetricName.externalServiceOperationsTotal,
       MetricName.externalServiceOperationDurationMs,
     ]);
-    expect(memory.metricEvents.every((event) =>
-      event.labels.service === "email" &&
-      event.labels.operation === "send" &&
-      event.labels.outcome === "success"
-    )).toBe(true);
+    expect(
+      memory.metricEvents.every(
+        (event) =>
+          event.labels.service === "email" &&
+          event.labels.operation === "send" &&
+          event.labels.outcome === "success",
+      ),
+    ).toBe(true);
     expect(JSON.stringify(memory.metricEvents)).not.toContain("example.com");
   });
 
@@ -59,7 +62,9 @@ describe("comment email observability", () => {
     const failure = new Error("recipient admin@example.com rejected");
     sendMock.mockRejectedValue(failure);
 
-    await expect(sendCommentEmail("ADMIN_NOTICE", payload)).rejects.toBe(failure);
+    await expect(sendCommentEmail("ADMIN_NOTICE", payload)).rejects.toBe(
+      failure,
+    );
     expect(memory.metricEvents.map(({ name }) => name)).toEqual([
       MetricName.externalServiceOperationsTotal,
       MetricName.externalServiceErrorsTotal,

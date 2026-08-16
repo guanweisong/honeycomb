@@ -12,7 +12,7 @@ const { limitMock, getClientIpMock, i18nHandlerMock } = vi.hoisted(() => ({
   i18nHandlerMock: vi.fn(() => new Response("i18n", { status: 200 })),
 }));
 
-vi.mock("@/packages/trpc/api/utils/rate-limit", () => ({
+vi.mock("@/packages/infrastructure/rate-limit/rate-limit", () => ({
   apiRatelimit: {
     limit: limitMock,
   },

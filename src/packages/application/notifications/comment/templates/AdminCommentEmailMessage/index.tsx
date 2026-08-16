@@ -15,8 +15,7 @@ type AdminMessageEmailProps = {
 const AdminCommentEmailMessage = (props: AdminMessageEmailProps) => {
   const { currentComment, setting } = props;
   const previewText = `${setting.siteName?.zh}有一条新的评论`;
-  const { postTitle, postLink } =
-    getCommentTarget(currentComment);
+  const { postTitle, postLink } = getCommentTarget(currentComment);
 
   return (
     <EmailContainer

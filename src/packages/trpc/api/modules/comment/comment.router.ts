@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   permissionProcedure,
   publicProcedure,
@@ -14,12 +15,22 @@ import { CommentUpdateSchema } from "./schemas/comment.update.schema";
 import { CommentQuerySchema } from "./schemas/comment.query.schema";
 import { CommentInsertSchema } from "./schemas/comment.insert.schema";
 import {
-  createComment,
   destroyComments,
-  listComments,
-  listPublicCommentsByRef,
   updateComment,
-} from "./comment.service";
+  createComment,
+} from "@/packages/application/comments/comment-commands";
+import { CommentTargetError } from "@/packages/application/comments/comment-target";
+import { listComments } from "@/packages/application/comments/comment-queries";
+import { listPublicCommentsByRef } from "@/packages/application/comments/comment-public-queries";
+
+function mapCommentTargetError(error: unknown): never {
+  if (error instanceof CommentTargetError)
+    throw new TRPCError({
+      code: error.code,
+      message: error.message || error.code,
+    });
+  throw error;
+}
 
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
@@ -28,11 +39,15 @@ export const commentRouter = createTRPCRouter({
 
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))
-    .query(({ input, ctx }) => listPublicCommentsByRef(ctx.db, input)),
+    .query(({ input, ctx }) =>
+      listPublicCommentsByRef(ctx.db, input).catch(mapCommentTargetError),
+    ),
 
   create: publicProcedure
     .input(CommentInsertSchema)
-    .mutation(({ ctx, input }) => createComment(ctx.db, ctx.header, input)),
+    .mutation(({ ctx, input }) =>
+      createComment(ctx.db, ctx.header, input).catch(mapCommentTargetError),
+    ),
 
   update: permissionProcedure(Permission.commentModerate)
     .input(CommentUpdateSchema)
@@ -40,5 +55,5 @@ export const commentRouter = createTRPCRouter({
 
   destroy: permissionProcedure(Permission.commentModerate)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyComments(ctx.db, input)),
+    .mutation(({ input, ctx }) => destroyComments(ctx.db, input.ids)),
 });

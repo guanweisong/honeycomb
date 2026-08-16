@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { Permission } from "@/packages/identity/auth/permissions";
 import {
   permissionProcedure,
@@ -12,14 +13,14 @@ import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { UserListQuerySchema } from "./schemas/user.list.query.schema";
 import { UserInsertSchema } from "./schemas/user.insert.schema";
 import { UserUpdateSchema } from "./schemas/user.update.schema";
-import {
-  getCurrentUser,
-  getUserDetail,
-  getUserList,
-  createUser,
-  destroyUsers,
-  updateUser,
-} from "./user.service";
+import { createUser, destroyUsers, updateUser, UserCommandError } from "@/packages/application/identity/user-commands";
+import { getCurrentUser, getUserDetail, getUserList, UserQueryError } from "@/packages/application/identity/user-queries";
+
+function mapUserCommandError(error: unknown): never {
+  if (error instanceof UserCommandError) throw new TRPCError({ code: error.code, message: error.message });
+  throw error;
+}
+function mapUserQueryError(error: unknown): never { if (error instanceof UserQueryError) throw new TRPCError({ code: error.code }); throw error; }
 
 /** 用户 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const userRouter = createTRPCRouter({
@@ -27,18 +28,18 @@ export const userRouter = createTRPCRouter({
     .input(z.object({ id: IdSchema }))
     .query(({ ctx, input }) => getUserDetail(ctx.db, input.id)),
   current: permissionProcedure(Permission.userReadSelf).query(({ ctx }) =>
-    getCurrentUser(ctx.db, ctx.user.id),
+    getCurrentUser(ctx.db, ctx.user.id).catch(mapUserQueryError),
   ),
   index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
     .query(({ input, ctx }) => getUserList(ctx.db, input)),
   create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
-    .mutation(({ input, ctx }) => createUser(ctx.db, input)),
+    .mutation(({ input, ctx }) => createUser(ctx.db, input).catch(mapUserCommandError)),
   destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyUsers(ctx.db, input.ids)),
+    .mutation(({ input, ctx }) => destroyUsers(ctx.db, input.ids).catch(mapUserCommandError)),
   update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
-    .mutation(({ input, ctx }) => updateUser(ctx.db, input)),
+    .mutation(({ input, ctx }) => updateUser(ctx.db, input).catch(mapUserCommandError)),
 });

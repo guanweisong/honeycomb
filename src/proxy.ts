@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/app/(blog)/i18n/routing";
-import { apiRatelimit } from "@/packages/trpc/api/utils/rate-limit";
+import { apiRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
 import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 
 const i18nMiddleware = createMiddleware(routing);

@@ -13,9 +13,9 @@ import { requiredString } from "@/packages/trpc/api/schemas/required.string.sche
 import {
   createMedia,
   destroyMedia,
-  getMediaList,
   getMediaPresignedUrl,
-} from "./media.service";
+} from "@/packages/application/media/media-commands";
+import { getMediaList } from "@/packages/application/media/media-queries";
 
 /** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const mediaRouter = createTRPCRouter({

@@ -177,7 +177,7 @@ const AUTHORIZATION_HELPER_NAME =
   /(?:authori[sz]|auth|access|allow|permission|privilege|role|level)/i;
 const ROLE_POLICY_ALLOWLIST = new Set([
   "src/packages/identity/auth/permissions.ts",
-  "src/packages/infrastructure/db/schema.ts",
+  "src/packages/infrastructure/db/schema/index.ts",
   "src/packages/domain/identity/user.ts",
 ]);
 

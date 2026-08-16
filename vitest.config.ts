@@ -11,7 +11,7 @@ const criticalCoverageFiles = [
   "src/app/sitemap-data.ts",
   "src/app/sitemap.xml/route.ts",
   "src/app/sitemaps/[id]/route.ts",
-  "src/packages/trpc/api/utils/upstash-cache.ts",
+  "src/packages/infrastructure/cache/upstash-cache.ts",
   "src/packages/infrastructure/observability/client.ts",
   "src/packages/infrastructure/observability/adapters/console.ts",
   "src/packages/infrastructure/observability/adapters/memory.ts",

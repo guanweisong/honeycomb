@@ -1,9 +1,19 @@
 import type { inferProcedureOutput } from "@trpc/server";
 import type { AppRouter } from "./app-router";
+import type {
+  CategoryViewModel,
+  LinkViewModel,
+  MediaViewModel,
+  MenuViewModel,
+  PageViewModel,
+  PostDetailViewModel,
+  PostListViewModel,
+  SettingViewModel,
+  TagViewModel,
+  UserViewModel,
+} from "@/packages/application/contracts";
 
-export type CategoryEntity = inferProcedureOutput<
-  AppRouter["category"]["index"]
->["list"][number];
+export type CategoryEntity = CategoryViewModel;
 
 export type CommentListResponse = inferProcedureOutput<
   AppRouter["comment"]["index"]
@@ -14,26 +24,12 @@ export type CommentTreeResponse = inferProcedureOutput<
 >;
 export type CommentTreeEntity = CommentTreeResponse["list"][number];
 
-export type LinkEntity = inferProcedureOutput<
-  AppRouter["link"]["index"]
->["list"][number];
-export type MediaEntity = inferProcedureOutput<
-  AppRouter["media"]["index"]
->["list"][number];
-export type MenuEntity = inferProcedureOutput<
-  AppRouter["menu"]["index"]
->["list"][number];
-export type PageEntity = inferProcedureOutput<
-  AppRouter["page"]["index"]
->["list"][number];
-export type PostListItemEntity = inferProcedureOutput<
-  AppRouter["post"]["index"]
->["list"][number];
-export type PostDetailEntity = inferProcedureOutput<AppRouter["post"]["detail"]>;
-export type SettingEntity = inferProcedureOutput<AppRouter["setting"]["index"]>;
-export type TagEntity = inferProcedureOutput<
-  AppRouter["tag"]["index"]
->["list"][number];
-export type UserEntity = inferProcedureOutput<
-  AppRouter["user"]["index"]
->["list"][number];
+export type LinkEntity = LinkViewModel;
+export type MediaEntity = MediaViewModel;
+export type MenuEntity = MenuViewModel;
+export type PageEntity = PageViewModel;
+export type PostListItemEntity = PostListViewModel;
+export type PostDetailEntity = PostDetailViewModel;
+export type SettingEntity = SettingViewModel;
+export type TagEntity = TagViewModel;
+export type UserEntity = UserViewModel;

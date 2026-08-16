@@ -16,7 +16,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 // 模拟工具模块。
-vi.mock("@/packages/trpc/api/utils/tools", () => ({
+vi.mock("@/packages/infrastructure/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));

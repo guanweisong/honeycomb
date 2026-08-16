@@ -17,8 +17,7 @@ const ReplyCommentEmailMessage = (props: ReplyMessageEmailProps) => {
   const { currentComment, parentComment, setting } = props;
   const previewText = `您在${setting.siteName?.zh}的评论有新的回复`;
 
-  const { postTitle, postLink } =
-    getCommentTarget(parentComment);
+  const { postTitle, postLink } = getCommentTarget(parentComment);
 
   return (
     <EmailContainer

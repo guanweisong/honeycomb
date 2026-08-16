@@ -11,7 +11,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/trpc/api/utils/tools", () => ({
+vi.mock("@/packages/infrastructure/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
   default: {

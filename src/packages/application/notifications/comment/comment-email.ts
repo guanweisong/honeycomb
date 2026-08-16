@@ -14,7 +14,10 @@ import type {
   CommentNotificationSetting,
 } from "./comment-notification";
 
-export type { CommentNotification, CommentNotificationSetting } from "./comment-notification";
+export type {
+  CommentNotification,
+  CommentNotificationSetting,
+} from "./comment-notification";
 
 type CommentEmailType = "ADMIN_NOTICE" | "REPLY_NOTICE";
 

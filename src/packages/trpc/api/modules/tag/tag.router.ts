@@ -10,7 +10,8 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { TagListQuerySchema } from "./schemas/tag.list.query.schema";
 import { TagInsertSchema } from "./schemas/tag.insert.schema";
 import { TagUpdateSchema } from "./schemas/tag.update.schema";
-import { createTag, destroyTags, getTagList, updateTag } from "./tag.service";
+import { getTagList } from "@/packages/application/content/catalog/tag-queries";
+import { createTag, destroyTags, updateTag } from "@/packages/application/content/catalog/tag-commands";
 
 /** 标签 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const tagRouter = createTRPCRouter({

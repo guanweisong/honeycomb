@@ -155,8 +155,7 @@ describe("createSecurityHeaders", () => {
     const headers = asRecord(
       createSecurityHeaders({
         environment: "production",
-        r2UploadOrigin:
-          "https://safe.test; connect-src https://attacker.test",
+        r2UploadOrigin: "https://safe.test; connect-src https://attacker.test",
       }),
     );
 

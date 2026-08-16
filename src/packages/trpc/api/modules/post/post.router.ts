@@ -14,19 +14,20 @@ import { PostListQuerySchema } from "./schemas/post.list.query.schema";
 import { PostInsertSchema } from "./schemas/post.insert.schema";
 import { PostUpdateSchema } from "./schemas/post.update.schema";
 import { TagType } from "@/packages/domain/content/tag";
-import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import {
   createPost,
   destroyPosts,
-  getCachedPostList,
-  getPostDetail,
-  getPostList,
-  getPublishedPostCategoryId,
-  getRandomPostsByCategory,
-  incrementPostViews,
   updatePost,
   updatePostTags,
-} from "./post.service";
+  incrementPostViews,
+} from "@/packages/application/content/post/post-commands";
+import { getPostList } from "@/packages/application/content/post/post-queries";
+import { getPostDetail } from "@/packages/application/content/post/post-detail-queries";
+import {
+  getCachedPostList,
+  getPublishedPostCategoryId,
+  getRandomPostsByCategory,
+} from "@/packages/application/content/post/post-special-queries";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({
@@ -35,23 +36,17 @@ export const postRouter = createTRPCRouter({
     .query(({ input, ctx }) =>
       ctx.hasRequest
         ? getCachedPostList(ctx.db, input)
-        : getPostList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
+        : getPostList(ctx.db, input, "PUBLISHED_ONLY"),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)
     .input(PostListQuerySchema)
-    .query(({ input, ctx }) =>
-      getPostList(ctx.db, input, ContentVisibility.ALL),
-    ),
+    .query(({ input, ctx }) => getPostList(ctx.db, input, "ALL")),
 
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(
-        ctx.db,
-        input.id,
-        ContentVisibility.PUBLISHED_ONLY,
-      );
+      const result = await getPostDetail(ctx.db, input.id, "PUBLISHED_ONLY");
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
     }),
@@ -59,11 +54,7 @@ export const postRouter = createTRPCRouter({
   adminDetail: permissionProcedure(Permission.postReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(
-        ctx.db,
-        input.id,
-        ContentVisibility.ALL,
-      );
+      const result = await getPostDetail(ctx.db, input.id, "ALL");
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
     }),
@@ -91,7 +82,11 @@ export const postRouter = createTRPCRouter({
 
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .mutation(({ input, ctx }) => incrementPostViews(ctx.db, input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const result = await incrementPostViews(ctx.db, input.id);
+      if (!result) throw new TRPCError({ code: "NOT_FOUND" });
+      return result;
+    }),
 
   getCategoryId: publicProcedure
     .input(z.object({ id: IdSchema }))

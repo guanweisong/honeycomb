@@ -17,7 +17,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 // 模拟文章关联数据加载函数。
-vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
+vi.mock("@/packages/application/content/post/post-relations", () => ({
   loadPostRelations: vi.fn(
     async (_db: unknown, posts: Array<Record<string, unknown>>) => {
       // 对于 detail 测试，返回关联数据
@@ -59,7 +59,7 @@ vi.mock("@/packages/trpc/api/modules/post/utils/relations", () => ({
   ),
 }));
 
-vi.mock("@/packages/trpc/api/utils/upstash-cache", () => ({
+vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
   bumpCacheVersion: vi.fn().mockResolvedValue(1),
   getCacheVersion: vi.fn().mockResolvedValue(1),
   getCacheJSON: vi.fn().mockResolvedValue(null),

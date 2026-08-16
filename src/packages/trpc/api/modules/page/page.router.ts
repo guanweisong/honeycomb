@@ -13,37 +13,35 @@ import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { PageListQuerySchema } from "./schemas/page.list.query.schema";
 import { PageInsertSchema } from "./schemas/page.insert.schema";
 import { PageUpdateSchema } from "./schemas/page.update.schema";
-import { ContentVisibility } from "@/packages/trpc/api/types/content-visibility";
 import {
   createPage,
   destroyPages,
-  getPageDetail,
-  getPageList,
   incrementPageViews,
   updatePage,
-} from "./page.service";
+} from "@/packages/application/content/page/page-commands";
+import { getPageDetail, getPageList } from "@/packages/application/content/page/page-queries";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
   index: publicProcedure
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(ctx.db, input, ContentVisibility.PUBLISHED_ONLY),
+      getPageList(ctx.db, input, "PUBLISHED_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(ctx.db, input, ContentVisibility.ALL),
+      getPageList(ctx.db, input, "ALL"),
     ),
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      return getPageDetail(ctx.db, input.id, ContentVisibility.PUBLISHED_ONLY);
+      return getPageDetail(ctx.db, input.id, "PUBLISHED_ONLY");
     }),
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      return getPageDetail(ctx.db, input.id, ContentVisibility.ALL);
+      return getPageDetail(ctx.db, input.id, "ALL");
     }),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)

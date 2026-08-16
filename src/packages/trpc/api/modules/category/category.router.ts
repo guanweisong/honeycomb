@@ -10,25 +10,20 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { CategoryListQuerySchema } from "./schemas/category.list.query.schema";
 import { CategoryInsertSchema } from "./schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "./schemas/category.update.schema";
-import { ResourceVisibility } from "@/packages/trpc/api/types/resource-visibility";
-import {
-  createCategory,
-  destroyCategories,
-  getCategoryList,
-  updateCategory,
-} from "./category.service";
+import { getCategoryList } from "@/packages/application/content/catalog/category-queries";
+import { createCategory, destroyCategories, updateCategory } from "@/packages/application/content/catalog/category-commands";
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const categoryRouter = createTRPCRouter({
   index: publicProcedure
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(ctx.db, input, ResourceVisibility.PUBLIC_ONLY),
+      getCategoryList(ctx.db, input, "PUBLIC_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.categoryReadAll)
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(ctx.db, input, ResourceVisibility.ALL),
+      getCategoryList(ctx.db, input, "ALL"),
     ),
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)
