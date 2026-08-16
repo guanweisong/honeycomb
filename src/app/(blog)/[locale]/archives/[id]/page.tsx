@@ -4,8 +4,8 @@ import Tags from "@/app/(blog)/components/Tags";
 import Card from "@/app/(blog)/components/Card";
 import { Link } from "@/app/(blog)/i18n/navigation";
 import Comment from "@/app/(blog)/components/Comment";
-import { utcFormat } from "@/app/(blog)/lib/utc-format";
 import PageTitle from "@/app/(blog)/components/PageTitle";
+import { utcFormat } from "@/app/(blog)/lib/utc-format";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
@@ -14,7 +14,12 @@ import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { PostType } from "@/packages/domain/content/post";
 import { RichText } from "@/app/(blog)/components/RichText";
-import { assertPostDetail, handlePostDetailError } from "./page.utils";
+import {
+  assertPostDetail,
+  createPostJsonLd,
+  getPostTitle,
+  handlePostDetailError,
+} from "./page.utils";
 
 /**
  * 归档页面组件的属性接口。
@@ -57,40 +62,8 @@ export default async function Archives(props: ArchivesProps) {
     serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
     serverClient.post.incrementViews({ id }),
   ]);
-  const getTitle = () => {
-    return postDetail.type === PostType.MOVIE
-      ? `${postDetail.title?.[locale]} (${utcFormat(postDetail.movieTime!, "YYYY")})`
-      : (postDetail.title?.[locale] ?? postDetail.quoteContent?.[locale]);
-  };
-
-  /**
-   * 计算 JSONLD (JSON for Linking Data) 数据。
-   * 根据文章类型生成结构化数据，以优化搜索引擎抓取。
-   */
-  const jsonLd: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    name: getTitle(),
-  };
-  switch (postDetail.type) {
-    case PostType.ARTICLE:
-      jsonLd["@type"] = "Article";
-      jsonLd.image = postDetail.cover?.url;
-      jsonLd.description = postDetail.excerpt?.[locale];
-      break;
-    case PostType.MOVIE:
-      jsonLd["@type"] = "Movie";
-      jsonLd.image = postDetail.cover?.url;
-      jsonLd.description = postDetail.excerpt?.[locale];
-      break;
-    case PostType.PHOTOGRAPH:
-      jsonLd["@type"] = "Photograph";
-      jsonLd.image = postDetail.cover?.url;
-      jsonLd.description = postDetail.excerpt?.[locale];
-      break;
-    case PostType.QUOTE:
-      jsonLd["@type"] = "Quotation";
-      break;
-  }
+  const title = getPostTitle(postDetail, locale);
+  const jsonLd = createPostJsonLd(postDetail, locale);
 
   return (
     <>
@@ -99,7 +72,7 @@ export default async function Archives(props: ArchivesProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ViewTransition name={`postTitle-${postDetail.id}`}>
-        <PageTitle>{getTitle()}</PageTitle>
+        <PageTitle>{title}</PageTitle>
       </ViewTransition>
       <PostInfo
         id={postDetail.id}
@@ -220,13 +193,7 @@ export async function generateMetadata(
   /**
    * 格式化文章标题
    */
-  const getTitle = () => {
-    return postDetail.type === PostType.MOVIE
-      ? `${postDetail.title?.[locale]} (${utcFormat(postDetail.movieTime!, "YYYY")})`
-      : (postDetail.title?.[locale] ?? postDetail.quoteContent?.[locale]);
-  };
-
-  const title = decodeURI(getTitle() as string);
+  const title = decodeURI(getPostTitle(postDetail, locale) as string);
 
   const openGraph = {
     title: title,

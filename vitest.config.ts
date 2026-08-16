@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "path";
+import { processHeavyTests } from "./vitest-test-groups";
 
 const criticalCoverageFiles = [
   "src/packages/identity/auth/permissions.ts",
@@ -36,20 +37,29 @@ const criticalCoverageThresholds = Object.fromEntries(
   ]),
 );
 
+const unitTestInclude = [
+  "src/**/*.test.{ts,tsx}",
+  "src/**/*.spec.{ts,tsx}",
+  "tests/**/*.test.{ts,tsx}",
+  "tests/**/*.spec.{ts,tsx}",
+];
+
 export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    // 覆盖率治理测试会同步启动 Vitest 子进程；关闭文件级并行，避免重型测试争用进程和端口资源。
-    fileParallelism: false,
     setupFiles: ["./tests/setup/vitest.setup.ts"],
-    include: [
-      "src/**/*.test.{ts,tsx}",
-      "src/**/*.spec.{ts,tsx}",
-      "tests/**/*.test.{ts,tsx}",
-      "tests/**/*.spec.{ts,tsx}",
+    include: unitTestInclude,
+    exclude: [
+      "node_modules",
+      "dist",
+      ".next",
+      "tests/e2e/**",
+      ...processHeavyTests,
     ],
-    exclude: ["node_modules", "dist", ".next", "tests/e2e/**"],
+    // 普通测试文件并行执行；进程型边界测试通过较低 worker 上限避免资源竞争。
+    fileParallelism: true,
+    maxWorkers: process.env.CI ? 2 : 4,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

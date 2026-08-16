@@ -111,8 +111,11 @@ describe("coverage governance", () => {
     });
   });
 
-  it("runs test files serially to isolate process-heavy governance tests", () => {
-    expect(config.fileParallelism).toBe(false);
+  it("runs test files in parallel with a bounded worker count", () => {
+    expect(config.fileParallelism).toBe(true);
+    expect(config.maxWorkers).toBe(4);
+    expect(config.exclude).toContain("tests/coverage-governance.test.ts");
+    expect(config.exclude).toContain("tests/server-only-boundaries.test.ts");
   });
 
   it("gives every critical module its own effective 90/80 file threshold", async () => {
