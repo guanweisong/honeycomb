@@ -63,6 +63,10 @@ const authOptions: BetterAuthOptions = {
     disableSignUp: true,
     minPasswordLength: 6,
   },
+  session: {
+    // 当前后台将登录会话列表视为普通的已登录用户信息，不要求重新认证。
+    freshAge: 0,
+  },
   socialProviders: buildSocialProviders(),
   user: {
     additionalFields: {
