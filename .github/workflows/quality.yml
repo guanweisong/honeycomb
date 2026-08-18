@@ -16,6 +16,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      TURSO_URL: http://127.0.0.1:1
+      TURSO_TOKEN: ci-unreachable-test-token
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
@@ -33,6 +39,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check-types
       - run: bun run lint
+      - run: bun run test:unit:run
       - run: bun run test:unit:coverage
       - run: bun run test:unit:process
       - uses: actions/upload-artifact@v4
@@ -43,13 +50,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - run: bun audit --audit-level=critical
-      - run: >-
-          NEXT_PUBLIC_SITE_URL=https://example.test
-          TURSO_URL=http://127.0.0.1:1
-          TURSO_TOKEN=unreachable-test-token
-          AUTH_SECRET=uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E
-          AUTH_URL=https://example.test
-          bun run build
+      - run: bun run build
+      - run: bun run analyze
       - run: bunx playwright install --with-deps chromium
       - run: >-
           bunx playwright test

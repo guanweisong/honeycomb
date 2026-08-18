@@ -204,18 +204,18 @@ R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全
 
 ```bash
 # 生成迁移文件
-bun drizzle-kit generate
+bunx drizzle-kit generate
 
 # 推送 schema 到数据库
-bun drizzle-kit push
+bunx drizzle-kit push
 ```
 
-Passkey 首次部署时需要先执行 `bun drizzle-kit push` 同步新增的 `passkey` 表，再部署启用 Passkey 插件的应用版本。生产环境必须使用带 `www` 的正式域名访问，否则 WebAuthn 的 RP ID 和 Origin 校验会失败。
+Passkey 首次部署时需要先执行 `bunx drizzle-kit push` 同步新增的 `passkey` 表，再部署启用 Passkey 插件的应用版本。生产环境必须使用带 `www` 的正式域名访问，否则 WebAuthn 的 RP ID 和 Origin 校验会失败。
 
 ### 启动开发服务器
 
 ```bash
-bun dev
+bun run dev
 ```
 
 访问 [http://localhost:3000](http://localhost:3000) 查看应用。
@@ -224,32 +224,32 @@ bun dev
 
 ```bash
 # 开发
-bun dev              # 启动开发服务器
+bun run dev          # 启动开发服务器
 
 # 构建
-bun build            # 构建生产版本
-bun start            # 启动生产服务器
+bun run build        # 构建生产版本
+bun run start        # 启动生产服务器
 
 # 代码质量
-bun lint             # ESLint 检查
-bun lint:fix         # 自动修复可修复的 ESLint 问题
-bun format           # Prettier 格式化
-bun check-types      # TypeScript 类型检查
+bun run lint             # ESLint 检查
+bun run lint:fix         # 自动修复可修复的 ESLint 问题
+bun run format           # Prettier 格式化
+bun run check-types      # TypeScript 类型检查
 
 # 测试
-bun test             # 运行测试（监听模式）
-bun test:unit        # 运行单元测试（监听模式）
-bun test:unit:run    # 运行单元测试（单次）
-bun test:unit:coverage # 生成单元测试覆盖率报告
-bun test:e2e         # 运行 Playwright E2E 测试
-bun test:e2e:ui      # 打开 Playwright UI
-bun test:e2e:smoke   # 运行 smoke E2E 用例
-bun test:e2e:regression # 运行 regression E2E 用例
+bun run test             # 运行测试（监听模式）
+bun run test:unit        # 运行单元测试（监听模式）
+bun run test:unit:run    # 运行单元测试（单次）
+bun run test:unit:coverage # 生成单元测试覆盖率报告
+bun run test:e2e         # 运行 Playwright E2E 测试
+bun run test:e2e:ui      # 打开 Playwright UI
+bun run test:e2e:smoke   # 运行 smoke E2E 用例
+bun run test:e2e:regression # 运行 regression E2E 用例
 
 # 数据库
-bun drizzle-kit generate  # 生成迁移文件
-bun drizzle-kit push      # 推送 schema
-bun drizzle-kit studio    # 打开 Drizzle Studio
+bunx drizzle-kit generate # 生成迁移文件
+bunx drizzle-kit push     # 推送 schema
+bunx drizzle-kit studio   # 打开 Drizzle Studio
 
 ```
 
@@ -263,8 +263,8 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 项目已在 Proxy 层启用 API 限流，基于 `Upstash Redis + @upstash/ratelimit`：
 
 - 入口文件：`src/proxy.ts`
-- 限流工具：`src/packages/trpc/api/utils/rate-limit.ts`
-- 当前策略：`120 requests / minute / IP`（滑动窗口）
+- 限流工具：`src/packages/infrastructure/rate-limit/rate-limit.ts`
+- 当前策略：由 `src/packages/infrastructure/rate-limit/rate-limit.ts` 中的 `Ratelimit` 配置决定
 - 生效范围：`/api/:path*`
 
 当请求超过阈值时：
@@ -428,14 +428,14 @@ configureObservability({ logger, metrics });
 项目使用 Vitest 进行单元测试：
 
 ```bash
-# 运行测试
-bun test
+# 运行单元测试
+bun run test:unit:run
 
 # 生成覆盖率报告
-bun test:coverage
+bun run test:unit:coverage
 ```
 
-测试文件位于 `src/packages/trpc/api/modules/*/` 目录下。
+测试文件按业务就近放置在 `src/`，跨模块测试工具和 E2E 测试位于 `tests/`。完整测试说明见 [`tests/README.md`](tests/README.md)。
 
 ## 贡献指南
 

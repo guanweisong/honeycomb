@@ -8,7 +8,7 @@
     "start": "bun next start",
     "lint": "bunx eslint -c eslint-config-next.ts .",
     "lint:fix": "bunx eslint -c eslint-config-next.ts . --fix",
-    "analyze": "npx next experimental-analyze",
+    "analyze": "bun next experimental-analyze",
     "format": "prettier --write \"**/*.{ts,tsx,md,css,scss}\"",
     "check-types": "bun tsc --noEmit",
     "prepare": "husky",

@@ -1,0 +1,34 @@
+# 任务
+
+- [x] 增强现有 GitHub Actions 质量工作流，保留原有测试、构建和 E2E 能力。
+- [x] 修正文档中的命令、路径、测试覆盖率和测试统计漂移。
+- [x] 新增文档一致性自动化测试。
+- [x] 新增质量工作流一致性自动化测试，锁定 Turbopack 构建入口和安全门禁。
+- [x] 补充 `MultiLangText` 组件行为测试并移除 TODO。
+- [x] 补充 `PhotoPicker` 组件行为测试并移除 TODO。
+- [x] 补充 `DashboardClientShell` 登出成功与失败回退测试并移除 TODO。
+- [x] 补充 `UserFormDialog` 新增、编辑默认值、受保护字段和提交转发测试并移除 TODO。
+- [x] 补充 `LinkFormDialog` 关闭态、新增默认值、编辑映射和提交转发测试并移除 TODO。
+- [x] 补充 `PageEditorForm` 标题、富文本内容和模板字段组合测试并移除 TODO。
+- [x] 补充 `PageEditorPage` 新建/编辑编排、详情重置和提交状态转发测试并移除 TODO。
+- [x] 补充 `AddTagDialog` 新增、编辑、成功和失败反馈测试并移除 TODO。
+- [x] 补充 `AddCategoryModal` 根分类 sentinel、编辑 ID 和成功关闭流程测试并移除 TODO。
+- [x] 补充 `PostTypeFields` 引用、普通内容和未知类型分支测试并移除 TODO。
+- [x] 补充 `CommentForm` 匿名、已保存身份、回复和提交状态测试并移除 TODO。
+- [x] 补充 `NoData` 和 `PageTitle` 前台基础状态/标题组件测试并移除 TODO。
+- [x] 补充 `LanguageSwitcher` 挂载态、语言切换路由和主题图标测试并移除 TODO。
+- [x] 补充 `BackToTop` 滚动阈值、可访问性和回顶操作测试并移除 TODO。
+- [x] 补充 `Breadcrumb` 多级分类导航和非列表路由隐藏测试并移除 TODO。
+- [x] 补充 `Tags` 本地化标签组、标签链接和空数据测试并移除 TODO。
+- [x] 补充 `PostInfo` 元信息顺序、对齐方式和空数据测试并移除 TODO。
+- [x] 补充 `PhotoSwipe` 灯箱初始化、配置和卸载清理测试并移除 TODO。
+- [x] 补充 `RichText` HTML 解析、媒体图片包装和空内容测试并移除 TODO。
+- [x] 补充 `CommentTree` 递归评论、屏蔽提示、头像和回复回调测试并移除 TODO。
+- [x] 补充 `Comment` 服务端查询创建、参数透传和客户端组件编排测试并移除 TODO。
+- [x] 补充 `Footer` 本地化签名、版权年份、备案链接和缺省配置测试并移除 TODO。
+- [x] 补充 `Signature` 文案、分隔线结构和空文本测试并移除 TODO。
+- [x] 补充 `Card` 标题、内容插槽和复杂子元素透传测试并移除 TODO。
+- [x] 补充 `ThemeProvider` 主题配置透传和子节点结构测试并移除 TODO。
+- [x] 执行类型检查、Lint、单元测试和覆盖率验证。
+- [x] 执行进程型边界测试（40 个测试通过）。
+- [x] 在具备 Turbopack 子进程权限的 runner 环境确认生产构建；Bundle 分析步骤已加入 CI 工作流并已在本地成功完成。

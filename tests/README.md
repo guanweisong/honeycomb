@@ -33,20 +33,20 @@ tests/
 ## 运行测试
 
 ```bash
-# 运行所有测试
-bun test
+# 运行所有单元测试（监听模式）
+bun run test:unit
 
 # 运行特定模块测试
-bun test src/packages/trpc/api/modules/user/user.router.test.ts
+bunx vitest src/packages/trpc/api/modules/user/user.router.test.ts
 
 # 监听模式
-bun test --watch
+bun run test:unit --watch
 
 # 一次性运行
-bun test --run
+bun run test:unit:run
 
-# 测试UI界面
-bun test:ui
+# 运行 Playwright UI 模式
+bun run test:e2e:ui
 ```
 
 ## 覆盖率治理
@@ -63,26 +63,22 @@ bun test:ui
 
 业务页面、hooks、services、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
-全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。Vitest 4.1.4 的顶层 `perFile` 会同时把全局门槛应用到每个文件，因此关键门槛使用“一文件一个精确 glob”；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
+全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。Vitest 4.1 的顶层 `perFile` 会同时把全局门槛应用到每个文件，因此关键门槛使用“一文件一个精确 glob”；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
 
 这套口径必须与 `vitest.config.ts` 同步维护：`include` 固定覆盖 `src/**/*.{ts,tsx}`；`exclude` 只允许上表中的声明、测试、E2E-only 薄入口、未修改 shadcn 基础组件和非生产测试资产。不得通过排除业务页面、feature hooks、services、权限或其他安全/基础设施核心来满足门槛。新增排除项必须同时给出可审查理由并更新 coverage governance 测试。
 
-### 2026-07-29 真实基线
+### 当前覆盖率基线（2026-08-17）
 
-在 `12a6009` 上按上述完整 include、仅排除声明/测试/E2E-only service worker 薄入口/shadcn 基础 UI，并且尚未启用门槛时：63 个测试文件、510 个测试通过。
+最近一次 `bun run test:unit:coverage` 在当前工作树上按上述完整 include 和排除规则执行：191 个测试文件通过、0 个测试文件跳过，880 个测试通过、0 个 TODO。
 
 | 指标 | 基线 | 通过全局门槛还需覆盖 |
 | --- | ---: | ---: |
-| Statements | 42.80%（1533/3581） | 974 |
-| Lines | 42.60%（1450/3403） | 933 |
-| Functions | 39.85%（436/1094） | 276 |
-| Branches | 34.35%（696/2026） | 520 |
+| Statements | 80.69%（3428/4248） | 已超过 70% |
+| Lines | 81.65%（3262/3995） | 已超过 70% |
+| Functions | 76.47%（1034/1352） | 已超过 65% |
+| Branches | 75.04%（1910/2545） | 已超过 60% |
 
-基线中低于关键门槛的文件为 `src/env/server.ts`、`src/env/validation.ts`、`src/app/sitemap-data.ts`、`src/app/sitemap.xml/route.ts`、`src/app/sitemaps/[id]/route.ts`、`src/packages/infrastructure/cache/upstash-cache.ts`、`src/packages/infrastructure/observability/adapters/memory.ts` 和 `src/packages/infrastructure/observability/core/sanitize.ts`。补充分支与失败路径测试后，全部关键文件均通过逐文件 90/80 门槛。
-
-补测后的完整结果为 statements 43.25%（1549/3581）、lines 43.02%（1464/3403）、functions 40.03%（438/1094）、branches 34.84%（706/2026）。coverage 命令当前只因四项全局门槛失败，剩余缺口分别为 statements 958、lines 919、functions 274、branches 510；主要集中在 DataTable/DynamicForm/Tiptap 等 extended UI、大型管理页面与列定义，以及 blog 页面和呈现组件。后续 DataTable 与管理 feature 拆分任务必须通过行为测试消化这些缺口，不得扩大 exclude 或降低门槛。
-
-完成补测与模块化后，验收覆盖率为 statements 70.23%、lines 70.48%、functions 66.14%、branches 62.27%；全局门槛及全部关键文件门槛均通过。
+关键文件仍使用逐文件 statements/lines 90%、branches 80% 门槛；本次覆盖率命令成功退出，说明全局门槛与关键文件门槛均通过。覆盖率仍存在分布不均：部分 Admin 页面入口、客户端 Shell、邮件组件和数据库 schema 的覆盖率较低，后续新增行为应优先补充这些模块的相邻测试，不得通过扩大 exclude 或降低门槛解决。
 
 ## 管理 feature 目录约定
 
@@ -106,9 +102,7 @@ bun test:ui
 
 ## 测试覆盖的模块
 
-- ✅ **User Router** - 用户管理（CRUD操作、权限验证）
-- ✅ **Post Router** - 文章管理（基础功能测试）
-- 🔄 **Other Routers** - 其他模块待补充测试
+当前测试覆盖包括认证与权限、tRPC Router、应用层查询与命令、环境变量、安全头、输入清理、限流、缓存、可观测性、sitemap、Blog 页面、Admin feature 和 UI extended 组件。具体覆盖率以 `bun run test:unit:coverage` 的终端报告及 `coverage/` 产物为准；不要在此维护容易过期的模块勾选清单。
 
 ## 编写测试的注意事项
 
