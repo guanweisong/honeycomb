@@ -18,11 +18,11 @@ vi.mock("next-intl", () => ({
       : `${values?.count ?? 0} 次浏览`,
 }));
 
-vi.mock("@/app/(blog)/lib/utc-format", () => ({
+vi.mock("@/packages/ui/blog/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),

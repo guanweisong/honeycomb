@@ -57,7 +57,7 @@ vi.mock("@/app/(blog)/components/Tags", () => ({
   default: () => React.createElement("div", { "data-testid": "tags" }),
 }));
 
-vi.mock("@/app/(blog)/components/Card", () => ({
+vi.mock("@/packages/ui/blog/Card", () => ({
   default: ({
     children,
     title,
@@ -67,7 +67,7 @@ vi.mock("@/app/(blog)/components/Card", () => ({
   }) => React.createElement("section", { "data-title": title }, children),
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({
     children,
     href,
@@ -77,7 +77,7 @@ vi.mock("@/app/(blog)/i18n/navigation", () => ({
   }) => React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/app/(blog)/components/Comment", () => ({
+vi.mock("@/features/comment/public/components", () => ({
   default: ({ id }: { id: string }) =>
     React.createElement("div", { "data-testid": "comment" }, id),
 }));

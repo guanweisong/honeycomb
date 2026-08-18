@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { routing } from "@/app/(blog)/i18n/routing";
+import { routing } from "@/packages/ui/navigation/routing";
 import { apiRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
 import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 

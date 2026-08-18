@@ -9,7 +9,7 @@ vi.mock("next-intl", () => ({
     ({ directors: "导演", actors: "演员", styles: "风格" })[key] ?? key,
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),

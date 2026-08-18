@@ -3,7 +3,7 @@
 import { useLocale } from "next-intl";
 import { useEffect, useState, ViewTransition } from "react";
 import Image from "next/image";
-import { usePathname } from "@/app/(blog)/i18n/navigation";
+import { usePathname } from "@/packages/ui/navigation/blog-navigation";
 import { useTheme } from "next-themes";
 import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
@@ -14,7 +14,7 @@ import {
   MultiLangEnum,
   MultiLang,
 } from "@/packages/domain/localization/multi-lang";
-import { Link } from "@/app/(blog)/i18n/navigation";
+import { Link } from "@/packages/ui/navigation/blog-navigation";
 
 /**
  * 语言切换组件。

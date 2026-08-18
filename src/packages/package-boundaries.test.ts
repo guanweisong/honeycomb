@@ -74,7 +74,7 @@ describe("package dependency boundaries", () => {
   });
 
   it("keeps shared layers independent from App Router and tRPC transport modules", () => {
-    const violations = ["identity", "application", "infrastructure", "ui"].flatMap(
+    const violations = ["identity", "infrastructure", "ui"].flatMap(
       (directory) =>
         importsMatching(
           join(sourceRoot, directory),

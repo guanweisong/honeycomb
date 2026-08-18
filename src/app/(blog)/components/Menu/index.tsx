@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "@/app/(blog)/i18n/navigation";
+import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { linkRouter } from "./link.router";
+import { linkRouter } from "@/features/link/transport/link.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";

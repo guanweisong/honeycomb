@@ -62,7 +62,7 @@ vi.mock("next/image", () => ({
     React.createElement("img", props),
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({
     children,
     href,

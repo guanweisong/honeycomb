@@ -27,7 +27,7 @@ vi.mock("next/image", () => ({
   ),
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   usePathname: () => mocks.pathname,
   Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     locale?: string;

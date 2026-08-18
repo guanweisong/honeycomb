@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commentRouter } from "./comment.router";
+import { commentRouter } from "@/features/comment/transport/comment.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
@@ -16,7 +16,7 @@ vi.mock("@/packages/infrastructure/security/validate-captcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/packages/application/notifications/comment/comment-email", () => ({
+vi.mock("@/features/comment/application/notifications/comment-email", () => ({
   sendCommentEmail: vi.fn().mockResolvedValue(undefined),
 }));
 

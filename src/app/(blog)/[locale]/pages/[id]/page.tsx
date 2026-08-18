@@ -1,6 +1,6 @@
 import React from "react";
 import PostInfo from "@/app/(blog)/components/PostInfo";
-import Comment from "@/app/(blog)/components/Comment";
+import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";

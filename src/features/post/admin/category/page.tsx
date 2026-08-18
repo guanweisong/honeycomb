@@ -1,0 +1,186 @@
+"use client";
+
+import { ModalType } from "@/packages/ui/admin/modal-type";
+import { Button } from "@/packages/ui/components/button";
+import { useState } from "react";
+import AddCategoryModal from "./components/AddCategoryModal";
+import categoryListTableColumns from "./constants/category-list-table-columns";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Dialog } from "@/packages/ui/extended/Dialog";
+import { DataTable } from "@/packages/ui/extended/DataTable";
+import { toast } from "sonner";
+import { trpc } from "@/packages/trpc/client/trpc";
+import { keepPreviousData } from "@tanstack/react-query";
+import { CategoryEntity } from "@/packages/trpc/api/outputs";
+import { Permission } from "@/packages/identity/auth/permissions";
+import { useCan } from "@/features/contracts/admin/use-current-user";
+
+/**
+ * 文章分类管理页面。
+ * 该组件负责展示文章分类列表，并提供搜索、新增、编辑、删除等管理功能。
+ */
+const Category = () => {
+  const canCreateCategory = useCan(Permission.categoryCreate);
+  const canUpdateCategory = useCan(Permission.categoryUpdate);
+  const canDeleteCategory = useCan(Permission.categoryDelete);
+  /**
+   * 存储用户在表格中选中的行。
+   * 类型为 `CategoryEntity` 数组。
+   */
+  const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
+  /**
+   * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
+   */
+  const [modalProps, setModalProps] = useState<{
+    type?: ModalType;
+    open: boolean;
+    record?: CategoryEntity;
+  }>({
+    type: ModalType.ADD,
+    open: false,
+  });
+  /**
+   * 存储分类列表的查询参数。
+   * 使用较大的 `limit` 让该页面一次性加载全部分类目录。
+   */
+  const [searchParams] = useState<{
+    limit: number;
+  }>({
+    limit: 9999,
+  });
+  /**
+   * 获取分类列表数据的 tRPC 查询。
+   * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
+   */
+  const { data, isFetching, isError, refetch } =
+    trpc.category.adminIndex.useQuery(searchParams, {
+      placeholderData: keepPreviousData,
+      staleTime: 60 * 1000, // 1 minutes
+    });
+  /**
+   * 删除分类的 tRPC mutation。
+   * 用于执行删除操作。
+   */
+  const destroyCategory = trpc.category.destroy.useMutation();
+
+  /**
+   * 编辑事件
+   * @param record
+   */
+  const handleEditItem = (record: CategoryEntity) => {
+    setModalProps({
+      record,
+      open: true,
+      type: ModalType.EDIT,
+    });
+  };
+
+  /**
+   * 删除事件
+   * @param ids
+   */
+  const handleDeleteItem = async (ids: string[]) => {
+    try {
+      await destroyCategory.mutateAsync({ ids });
+      refetch();
+      toast.success("删除成功");
+    } catch {
+      toast.error("删除失败");
+    }
+  };
+
+  /**
+   * 批量删除
+   */
+  const handleDeleteBatch = async () => {
+    const ids = selectedRows.map((item) => item.id);
+    await handleDeleteItem(ids);
+    setSelectedRows([]);
+  };
+
+  /**
+   * 新增事件
+   */
+  const handleAddNew = () => {
+    setModalProps({
+      open: true,
+      type: ModalType.ADD,
+      record: undefined,
+    });
+  };
+
+  return (
+    <>
+      <DataTable<CategoryEntity, { limit: number }>
+        columns={categoryListTableColumns}
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
+        }}
+        maxHeightRem={12}
+        pagination={false}
+        isFetching={isFetching}
+        error={isError}
+        selectableRows={canDeleteCategory}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        toolBar={
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              {canCreateCategory && (
+                <Button onClick={handleAddNew} variant="outline">
+                  <Plus />
+                  添加新分类
+                </Button>
+              )}
+              {canDeleteCategory && (
+                <Dialog
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={selectedRows.length === 0}
+                    >
+                      <Trash />
+                      批量删除
+                    </Button>
+                  }
+                  type="danger"
+                  title="确定要删除吗？"
+                  onOK={handleDeleteBatch}
+                />
+              )}
+            </div>
+          </div>
+        }
+        rowActions={(row) => (
+          <div className="flex gap-1">
+            {canUpdateCategory && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleEditItem(row)}
+              >
+                <Pencil />
+              </Button>
+            )}
+            {canDeleteCategory && (
+              <Dialog
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Trash />
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={() => handleDeleteItem([row.id])}
+              />
+            )}
+          </div>
+        )}
+      />
+      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+    </>
+  );
+};
+
+export default Category;

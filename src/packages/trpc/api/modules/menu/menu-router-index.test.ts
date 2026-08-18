@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { menuRouter } from "./menu.router";
+import { menuRouter } from "@/features/menu/transport/menu.router";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {

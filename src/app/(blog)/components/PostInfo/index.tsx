@@ -1,6 +1,6 @@
-import { Link } from "@/app/(blog)/i18n/navigation";
+import { Link } from "@/packages/ui/navigation/blog-navigation";
 import React, { ViewTransition } from "react";
-import { utcFormat } from "@/app/(blog)/lib/utc-format";
+import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { useTranslations } from "next-intl";
 import { cn } from "@/packages/ui/lib/utils";
 

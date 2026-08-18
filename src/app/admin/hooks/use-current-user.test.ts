@@ -15,7 +15,7 @@ import {
   CurrentUserProvider,
   useCan,
   useCurrentUser,
-} from "./use-current-user";
+} from "@/features/contracts/admin/use-current-user";
 
 function Probe() {
   useCurrentUser();

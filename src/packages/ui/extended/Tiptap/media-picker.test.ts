@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/admin/components/PhotoPicker", () => ({ default: () => null }));
+vi.mock("@/features/post/admin/edit/components/PhotoPicker", () => ({ default: () => null }));
 
 import {
   TiptapMediaPickerProvider,

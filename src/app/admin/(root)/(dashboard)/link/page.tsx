@@ -1,5 +1,1 @@
-import { LinkPageShell } from "./components/LinkPageShell";
-
-export default function LinkPage() {
-  return <LinkPageShell />;
-}
+export { default } from "@/features/link/admin/page";

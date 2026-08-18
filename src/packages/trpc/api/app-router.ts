@@ -1,18 +1,18 @@
 import "server-only";
 
 import { createTRPCRouter } from "./core";
-import { linkRouter } from "@/packages/trpc/api/modules/link/link.router";
-import { userRouter } from "@/packages/trpc/api/modules/user/user.router";
-import { categoryRouter } from "@/packages/trpc/api/modules/category/category.router";
-import { tagRouter } from "@/packages/trpc/api/modules/tag/tag.router";
-import { settingRouter } from "@/packages/trpc/api/modules/setting/setting.router";
-import { statisticRouter } from "@/packages/trpc/api/modules/statistic/statistic.router";
-import { menuRouter } from "@/packages/trpc/api/modules/menu/menu.router";
-import { mediaRouter } from "@/packages/trpc/api/modules/media/media.router";
-import { pageRouter } from "@/packages/trpc/api/modules/page/page.router";
-import { postRouter } from "@/packages/trpc/api/modules/post/post.router";
-import { commentRouter } from "@/packages/trpc/api/modules/comment/comment.router";
-import { accountSecurityRouter } from "@/packages/trpc/api/modules/account-security/account-security.router";
+import { linkRouter } from "@/features/link/transport/link.router";
+import { userRouter } from "@/features/user/transport/user.router";
+import { categoryRouter } from "@/features/category/transport/category.router";
+import { tagRouter } from "@/features/tag/transport/tag.router";
+import { settingRouter } from "@/features/setting/transport/setting.router";
+import { statisticRouter } from "@/features/setting/transport/statistic.router";
+import { menuRouter } from "@/features/menu/transport/menu.router";
+import { mediaRouter } from "@/features/media/transport/media.router";
+import { pageRouter } from "@/features/page/transport/page.router";
+import { postRouter } from "@/features/post/transport/post.router";
+import { commentRouter } from "@/features/comment/transport/comment.router";
+import { accountSecurityRouter } from "@/features/user/transport/account-security.router";
 
 export const appRouter = createTRPCRouter({
   link: linkRouter,

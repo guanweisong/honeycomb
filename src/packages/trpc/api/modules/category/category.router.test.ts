@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { categoryRouter } from "./category.router";
+import { categoryRouter } from "@/features/category/transport/category.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";

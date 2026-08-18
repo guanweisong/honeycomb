@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mediaRouter } from "./media.router";
+import { mediaRouter } from "@/features/media/transport/media.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";

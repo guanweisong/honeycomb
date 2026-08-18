@@ -1,1 +1,1 @@
-export { CommentPageShell as default } from "./components/CommentPageShell";
+export { default } from "@/features/comment/admin/page";

@@ -1,11 +1,12 @@
 "use client";
 
-import PhotoPickerModal from "@/app/admin/components/PhotoPicker";
+import PhotoPickerModal from "@/features/post/admin/edit/components/PhotoPicker";
+import { MediaPageShell } from "@/features/media/public";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { createAdminQueryClient } from "@/packages/trpc/client/admin-query-client";
 import { TiptapMediaPickerProvider, type MediaPickerRenderer } from "@/packages/ui/extended/Tiptap/media-picker";
-import { CurrentUserProvider } from "./hooks/use-current-user";
-import { SiteSettingProvider } from "./hooks/use-site-setting";
+import { CurrentUserProvider } from "@/features/contracts/admin/use-current-user";
+import { SiteSettingProvider } from "@/features/setting/admin/hooks-use-site-setting";
 import type { AdminUser } from "./lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ export function AdminProviders({
   );
   const renderMediaPicker: MediaPickerRenderer = ({ open, onConfirm, onCancel }) => (
     <PhotoPickerModal
+      pickerContent={(onSelect) => <MediaPageShell onSelect={onSelect} />}
       showPhotoPicker={open}
       handlePhotoPickerOk={(media) => onConfirm({ url: media.url })}
       handlePhotoPickerCancel={onCancel}

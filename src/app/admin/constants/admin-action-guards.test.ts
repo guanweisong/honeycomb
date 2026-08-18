@@ -225,7 +225,25 @@ function findUnboundActionIds(
   actions: readonly ActionGuardContract[],
   transformSource: (source: string) => string = (source) => source,
 ): string[] {
-  const fileName = join(process.cwd(), "src/app/admin", relativePath);
+  const featureMatch = relativePath.match(
+    /^\(root\)\/\(dashboard\)\/(comment|media|post|link|menu|page|setting|tag|user)\/(.+)$/,
+  );
+  const featureRelativePath = featureMatch
+    ? featureMatch[1] === "media"
+      ? featureMatch[2].replace(/^components\//, "")
+      : featureMatch[2]
+    : "";
+  const fileName = featureMatch
+    ? join(
+        process.cwd(),
+        "src/features",
+        featureMatch[1],
+        featureMatch[1] === "media" && featureMatch[2].startsWith("components/Media")
+          ? "shared"
+          : "admin",
+        featureRelativePath,
+      )
+    : join(process.cwd(), "src/app/admin", relativePath);
   const sourceFile = ts.createSourceFile(
     fileName,
     transformSource(readFileSync(fileName, "utf8")),

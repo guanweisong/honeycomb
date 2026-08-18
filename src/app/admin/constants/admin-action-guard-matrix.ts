@@ -1,21 +1,21 @@
-import type { ActionGuardFile } from "@/app/admin/constants/admin-action-guard-types";
+import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 export type {
   ActionControlIdentity,
   ActionGuardContract,
   ActionGuardFile,
   GuardMode,
   GuardPolarity,
-} from "@/app/admin/constants/admin-action-guard-types";
+} from "@/packages/identity/auth/admin-action-guard-types";
 
-import { commentActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/comment/constants/admin-action-guard";
-import { linkActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/link/constants/admin-action-guard";
-import { mediaActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/media/constants/admin-action-guard";
-import { menuActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/menu/constants/admin-action-guard";
-import { pageActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/page/constants/admin-action-guard";
-import { postActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/post/constants/admin-action-guard";
-import { settingActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/setting/constants/admin-action-guard";
-import { tagActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/tag/constants/admin-action-guard";
-import { userActionGuardMatrix } from "@/app/admin/(root)/(dashboard)/user/constants/admin-action-guard";
+import { commentActionGuardMatrix } from "@/features/comment/admin/constants/admin-action-guard";
+import { linkActionGuardMatrix } from "@/features/link/admin/constants/admin-action-guard";
+import { mediaActionGuardMatrix } from "@/features/media/admin/constants/admin-action-guard";
+import { menuActionGuardMatrix } from "@/features/menu/admin/constants/admin-action-guard";
+import { pageActionGuardMatrix } from "@/features/page/admin/constants/admin-action-guard";
+import { postActionGuardMatrix } from "@/features/post/admin/constants/admin-action-guard";
+import { settingActionGuardMatrix } from "@/features/setting/admin/constants/admin-action-guard";
+import { tagActionGuardMatrix } from "@/features/tag/admin/constants/admin-action-guard";
+import { userActionGuardMatrix } from "@/features/user/admin/constants/admin-action-guard";
 
 export const actionGuardMatrix: readonly ActionGuardFile[] = [
   ...commentActionGuardMatrix,

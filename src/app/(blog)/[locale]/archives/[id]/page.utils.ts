@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { notFound } from "next/navigation";
 import { PostType } from "@/packages/domain/content/post";
-import { utcFormat } from "@/app/(blog)/lib/utc-format";
+import { utcFormat } from "@/packages/ui/blog/utc-format";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 export function assertPostDetail<T>(postDetail: T | null | undefined): T {

@@ -1,5 +1,1 @@
-import { MenuPageShell } from "./components/MenuPageShell";
-
-export default function MenuPage() {
-  return <MenuPageShell />;
-}
+export { default } from "@/features/menu/admin/page";

@@ -11,7 +11,7 @@ import type {
   SettingViewModel,
   TagViewModel,
   UserViewModel,
-} from "@/packages/application/contracts";
+} from "@/features/contracts";
 
 export type CategoryEntity = CategoryViewModel;
 

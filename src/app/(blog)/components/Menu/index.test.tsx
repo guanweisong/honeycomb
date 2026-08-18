@@ -35,7 +35,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/app/(blog)/i18n/navigation", () => ({
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({
     children,
     href,

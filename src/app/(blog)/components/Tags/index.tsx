@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "@/app/(blog)/i18n/navigation";
+import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";

@@ -28,7 +28,7 @@ vi.mock("@/packages/trpc/api", () => ({
   }),
 }));
 
-vi.mock("@/app/(blog)/components/PostList", () => ({
+vi.mock("@/features/post/public/components/PostList", () => ({
   default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
     React.createElement(
       "output",

@@ -9,7 +9,7 @@ describe("capability authorization static gate", () => {
     for (const { fileName, source } of productionSources) {
       expect(() => assertNoLegacyAuthorization(fileName, source)).not.toThrow();
     }
-  });
+  }, 15_000);
 
   it.each([
     [

@@ -399,19 +399,46 @@ const sampleAppRouterSource = `
 
 function loadRouterSources(): RouterSource[] {
   const modulesDirectory = join(process.cwd(), "src/packages/trpc/api/modules");
-  return readdirSync(modulesDirectory, { withFileTypes: true }).flatMap(
+  const packageRouters = readdirSync(modulesDirectory, { withFileTypes: true }).flatMap(
     (directory) => {
       if (!directory.isDirectory()) return [];
       const moduleDirectory = join(modulesDirectory, directory.name);
       return readdirSync(moduleDirectory)
         .filter((fileName) => fileName.endsWith(".router.ts"))
-        .map((fileName) => ({
-          moduleSpecifier: `@/packages/trpc/api/modules/${directory.name}/${fileName.slice(0, -3)}`,
-          fileName,
-          source: readFileSync(join(moduleDirectory, fileName), "utf8"),
-        }));
+        .map((fileName) => {
+          return {
+            moduleSpecifier: `@/packages/trpc/api/modules/${directory.name}/${fileName.slice(0, -3)}`,
+            fileName,
+            source: readFileSync(join(moduleDirectory, fileName), "utf8"),
+          };
+        });
     },
   );
+
+  const featureRouterEntries = [
+    ["comment", "comment"],
+    ["post", "post"],
+    ["media", "media"],
+    ["link", "link"],
+    ["menu", "menu"],
+    ["page", "page"],
+    ["setting", "setting"],
+    ["setting", "statistic"],
+    ["tag", "tag"],
+    ["user", "user"],
+    ["user", "account-security"],
+    ["category", "category"],
+  ] as const;
+  const featureRouters = featureRouterEntries.map(([feature, router]) => ({
+    moduleSpecifier: `@/features/${feature}/transport/${router}.router`,
+    fileName: `${router}.router.ts`,
+    source: readFileSync(
+      join(process.cwd(), "src/features", feature, "transport", `${router}.router.ts`),
+      "utf8",
+    ),
+  }));
+
+  return [...packageRouters, ...featureRouters];
 }
 
 describe("capability procedure matrix", () => {

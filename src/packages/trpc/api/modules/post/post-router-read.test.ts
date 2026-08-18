@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { postRouter } from "./post.router";
+import { postRouter } from "@/features/post/transport/post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { PostStatus } from "@/packages/domain/content/post-status";
@@ -17,7 +17,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 // 模拟文章关联数据加载函数。
-vi.mock("@/packages/application/content/post/post-relations", () => ({
+vi.mock("@/features/post/application/post-relations", () => ({
   loadPostRelations: vi.fn(
     async (_db: unknown, posts: Array<Record<string, unknown>>) => {
       // 对于 detail 测试，返回关联数据

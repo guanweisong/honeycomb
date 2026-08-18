@@ -1,5 +1,5 @@
 import React from "react";
-import PostList from "@/app/(blog)/components/PostList";
+import PostList from "@/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";

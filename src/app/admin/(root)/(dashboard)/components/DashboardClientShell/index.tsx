@@ -5,7 +5,7 @@ import { authClient } from "@/auth-client";
 import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
-import { useSiteSetting } from "@/app/admin/hooks/use-site-setting";
+import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 

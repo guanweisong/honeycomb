@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   getAdminUser: vi.fn(),
 }));
 
-vi.mock("@/packages/application/identity/admin-user", () => ({
+vi.mock("@/features/user/application/admin-user", () => ({
   getAdminUser: mocks.getAdminUser,
 }));
 

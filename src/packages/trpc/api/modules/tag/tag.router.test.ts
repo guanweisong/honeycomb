@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { tagRouter } from "./tag.router";
+import { tagRouter } from "@/features/tag/transport/tag.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";

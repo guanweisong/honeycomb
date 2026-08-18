@@ -6,11 +6,11 @@ const mockUseSiteSetting = vi.fn();
 const mockRefreshUser = vi.fn();
 const mockFetch = vi.fn();
 
-vi.mock("@/app/admin/hooks/use-site-setting", () => ({
+vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   useSiteSetting: () => mockUseSiteSetting(),
 }));
 
-vi.mock("@/app/admin/hooks/use-current-user", () => ({
+vi.mock("@/features/contracts/admin/use-current-user", () => ({
   useCurrentUser: () => ({
     refreshUser: mockRefreshUser,
   }),

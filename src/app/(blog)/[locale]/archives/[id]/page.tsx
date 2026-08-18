@@ -1,11 +1,11 @@
 import React, { ViewTransition } from "react";
 import PostInfo from "@/app/(blog)/components/PostInfo";
 import Tags from "@/app/(blog)/components/Tags";
-import Card from "@/app/(blog)/components/Card";
-import { Link } from "@/app/(blog)/i18n/navigation";
-import Comment from "@/app/(blog)/components/Comment";
+import Card from "@/packages/ui/blog/Card";
+import { Link } from "@/packages/ui/navigation/blog-navigation";
+import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
-import { utcFormat } from "@/app/(blog)/lib/utc-format";
+import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
