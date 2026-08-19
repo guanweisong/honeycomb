@@ -49,4 +49,20 @@ describe("业务功能边界", () => {
 
     expect(violations).toEqual([]);
   });
+
+  it("禁止 application 直接依赖数据库实现", () => {
+    const violations = sourceFiles(featuresRoot)
+      .filter((path) => path.includes("/application/"))
+      .flatMap((path) => {
+        const source = readFileSync(path, "utf8");
+        const imports = source.match(
+          /from ["'](?:@\/packages\/infrastructure\/db|drizzle-orm)(?:[^"']*)["']/g,
+        );
+        return (imports ?? []).map(
+          (specifier) => `${relative(process.cwd(), path)}: ${specifier}`,
+        );
+      });
+
+    expect(violations).toEqual([]);
+  });
 });

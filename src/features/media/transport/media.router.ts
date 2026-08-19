@@ -16,12 +16,13 @@ import {
   getMediaPresignedUrl,
 } from "@/features/media/application";
 import { getMediaList } from "@/features/media/application";
+import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
 
 /** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const mediaRouter = createTRPCRouter({
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
-    .query(({ input, ctx }) => getMediaList(ctx.db, input)),
+    .query(({ input, ctx }) => getMediaList(createMediaRepository(ctx.db), input)),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(
       z.object({
@@ -32,8 +33,12 @@ export const mediaRouter = createTRPCRouter({
     .mutation(({ input }) => getMediaPresignedUrl(input.name, input.type)),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
-    .mutation(({ input, ctx }) => createMedia(ctx.db, input)),
+    .mutation(({ input, ctx }) =>
+      createMedia(createMediaRepository(ctx.db), input),
+    ),
   destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyMedia(ctx.db, input.ids)),
+    .mutation(({ input, ctx }) =>
+      destroyMedia(createMediaRepository(ctx.db), input.ids),
+    ),
 });

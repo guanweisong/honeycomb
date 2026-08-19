@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const settingActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const settingActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "setting.update",
-        permission: "settingUpdate",
+        permission: Permission.settingUpdate,
         control: {
           tag: "DynamicForm",
           attribute: "onSubmit",

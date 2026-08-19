@@ -5,6 +5,7 @@ import {
   can,
   type Permission as PermissionValue,
 } from "@/packages/identity/auth/permissions";
+import { isCapability } from "@/packages/identity/auth/capability-registry";
 import {
   FileChartColumn,
   Gauge,
@@ -125,6 +126,15 @@ export const menu: AdminMenuItem[] = [
     icon: <ShieldCheck strokeWidth={1.5} size={18} />,
   },
 ];
+
+function assertRegisteredMenuCapabilities(items: readonly AdminMenuItem[]): void {
+  for (const item of items) {
+    if (!isCapability(item.permission)) throw new Error(`菜单使用了未注册的能力: ${item.path}`);
+    if (item.children) assertRegisteredMenuCapabilities(item.children);
+  }
+}
+
+assertRegisteredMenuCapabilities(menu);
 
 export function getMenuForCapabilities(
   role: string | null | undefined,

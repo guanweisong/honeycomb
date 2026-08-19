@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/features/user/application/admin-user", () => ({
   getAdminUser: mocks.getAdminUser,
 }));
+vi.mock("@/packages/infrastructure/db/db", () => ({
+  getDb: vi.fn(() => ({})),
+}));
+vi.mock("@/features/user/infrastructure/user-repository", () => ({
+  createUserRepository: vi.fn(() => ({})),
+}));
 
 import { getAdminUser } from "./admin-auth";
 

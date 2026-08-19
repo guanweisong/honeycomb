@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "page-editor.create",
-        permission: "pageCreate",
+        permission: Permission.pageCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -17,7 +18,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.create-publish",
-        permission: "pageCreate",
+        permission: Permission.pageCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -31,7 +32,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update",
-        permission: "pageUpdate",
+        permission: Permission.pageUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -45,7 +46,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update-withdraw",
-        permission: "pageUpdate",
+        permission: Permission.pageUpdate,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -56,7 +57,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update-draft",
-        permission: "pageUpdate",
+        permission: Permission.pageUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -67,7 +68,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update-publish",
-        permission: "pageUpdate",
+        permission: Permission.pageUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -86,7 +87,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "page-list.create",
-        permission: "pageCreate",
+        permission: Permission.pageCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -96,7 +97,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-list.update",
-        permission: "pageUpdate",
+        permission: Permission.pageUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -109,7 +110,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-list.delete",
-        permission: "pageDelete",
+        permission: Permission.pageDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -119,7 +120,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-list.delete-batch",
-        permission: "pageDelete",
+        permission: Permission.pageDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -129,7 +130,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-list.selection",
-        permission: "pageDelete",
+        permission: Permission.pageDelete,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",

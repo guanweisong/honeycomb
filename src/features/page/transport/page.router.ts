@@ -20,45 +20,47 @@ import {
   updatePage,
 } from "@/features/page/application/page-commands";
 import { getPageDetail, getPageList } from "@/features/page/application/page-queries";
+import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
+import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
   index: publicProcedure
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(ctx.db, input, "PUBLISHED_ONLY"),
+      getPageList(createPageQueryRepository(ctx.db), input, "PUBLISHED_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(ctx.db, input, "ALL"),
+      getPageList(createPageQueryRepository(ctx.db), input, "ALL"),
     ),
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      return getPageDetail(ctx.db, input.id, "PUBLISHED_ONLY");
+      return getPageDetail(createPageQueryRepository(ctx.db), input.id, "PUBLISHED_ONLY");
     }),
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      return getPageDetail(ctx.db, input.id, "ALL");
+      return getPageDetail(createPageQueryRepository(ctx.db), input.id, "ALL");
     }),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
     .mutation(({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPage(ctx.db, input, ctx.user.id);
+      return createPage(createPageCommandRepository(ctx.db), input, ctx.user.id);
     }),
   destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyPages(ctx.db, input.ids)),
+    .mutation(({ input, ctx }) => destroyPages(createPageCommandRepository(ctx.db), input.ids)),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
-    .mutation(({ input, ctx }) => updatePage(ctx.db, input)),
+    .mutation(({ input, ctx }) => updatePage(createPageCommandRepository(ctx.db), input)),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ input, ctx }) => {
-      const page = await incrementPageViews(ctx.db, input.id);
+      const page = await incrementPageViews(createPageCommandRepository(ctx.db), input.id);
       if (!page) throw new TRPCError({ code: "NOT_FOUND" });
       return page;
     }),

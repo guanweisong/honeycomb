@@ -8,6 +8,7 @@ import {
   can,
   type Permission,
 } from "@/packages/identity/auth/permissions";
+import { isCapability } from "@/packages/identity/auth/capability-registry";
 
 import type { Context } from "./context";
 
@@ -80,6 +81,9 @@ export const permissionsProcedure = (
   options: PermissionsProcedureOptions = {},
 ) => {
   const requiredPermissions = [...permissions];
+  const hasUnknownCapability = requiredPermissions.some(
+    (permission) => !isCapability(permission),
+  );
   const mode = options.mode ?? "all";
 
   return t.procedure.use(requestObservabilityMiddleware).use(
@@ -88,6 +92,7 @@ export const permissionsProcedure = (
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       const hasRequiredPermissions =
+        !hasUnknownCapability &&
         requiredPermissions.length > 0 &&
         (mode === "all" || mode === "any") &&
         (mode === "all"

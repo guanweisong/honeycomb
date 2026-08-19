@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const userActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "user.create",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -16,7 +17,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "user.update",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -26,7 +27,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "user.delete",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -36,7 +37,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "user.delete-batch",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -46,7 +47,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "user.selection",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",
@@ -60,7 +61,7 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "user.manage",
-        permission: "userManage",
+        permission: Permission.userManage,
         control: {
           tag: "DataTable",
           attribute: "rowActions",

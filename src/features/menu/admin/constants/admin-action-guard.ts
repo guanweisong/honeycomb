@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const menuActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const menuActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "menu.update",
-        permission: "menuUpdate",
+        permission: Permission.menuUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",

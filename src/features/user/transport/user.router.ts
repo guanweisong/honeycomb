@@ -15,6 +15,7 @@ import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.
 import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
 import { createUser, destroyUsers, updateUser, UserCommandError } from "@/features/user/application/user-commands";
 import { getCurrentUser, getUserDetail, getUserList, UserQueryError } from "@/features/user/application/user-queries";
+import { createUserRepository } from "@/features/user/infrastructure/user-repository";
 
 function mapUserCommandError(error: unknown): never {
   if (error instanceof UserCommandError) throw new TRPCError({ code: error.code, message: error.message });
@@ -26,20 +27,20 @@ function mapUserQueryError(error: unknown): never { if (error instanceof UserQue
 export const userRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(({ ctx, input }) => getUserDetail(ctx.db, input.id)),
+    .query(({ ctx, input }) => getUserDetail(createUserRepository(ctx.db), input.id)),
   current: permissionProcedure(Permission.userReadSelf).query(({ ctx }) =>
-    getCurrentUser(ctx.db, ctx.user.id).catch(mapUserQueryError),
+    getCurrentUser(createUserRepository(ctx.db), ctx.user.id).catch(mapUserQueryError),
   ),
   index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
-    .query(({ input, ctx }) => getUserList(ctx.db, input)),
+    .query(({ input, ctx }) => getUserList(createUserRepository(ctx.db), input)),
   create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
-    .mutation(({ input, ctx }) => createUser(ctx.db, input).catch(mapUserCommandError)),
+    .mutation(({ input, ctx }) => createUser(createUserRepository(ctx.db), input).catch(mapUserCommandError)),
   destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyUsers(ctx.db, input.ids).catch(mapUserCommandError)),
+    .mutation(({ input, ctx }) => destroyUsers(createUserRepository(ctx.db), input.ids).catch(mapUserCommandError)),
   update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
-    .mutation(({ input, ctx }) => updateUser(ctx.db, input).catch(mapUserCommandError)),
+    .mutation(({ input, ctx }) => updateUser(createUserRepository(ctx.db), input).catch(mapUserCommandError)),
 });

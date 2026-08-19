@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "comment.moderate",
-        permission: "commentModerate",
+        permission: Permission.commentModerate,
         control: {
           tag: "DataTable",
           attribute: "rowActions",
@@ -20,7 +21,7 @@ export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "comment.delete-batch",
-        permission: "commentModerate",
+        permission: Permission.commentModerate,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -30,7 +31,7 @@ export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "comment.selection",
-        permission: "commentModerate",
+        permission: Permission.commentModerate,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",

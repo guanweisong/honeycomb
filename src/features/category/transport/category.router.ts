@@ -12,26 +12,27 @@ import { CategoryInsertSchema } from "@/packages/trpc/api/modules/category/schem
 import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
 import { getCategoryList } from "@/features/category/application/category-queries";
 import { createCategory, destroyCategories, updateCategory } from "@/features/category/application/category-commands";
+import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const categoryRouter = createTRPCRouter({
   index: publicProcedure
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(ctx.db, input, "PUBLIC_ONLY"),
+      getCategoryList(createCategoryRepository(ctx.db), input, "PUBLIC_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.categoryReadAll)
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(ctx.db, input, "ALL"),
+      getCategoryList(createCategoryRepository(ctx.db), input, "ALL"),
     ),
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)
-    .mutation(({ input, ctx }) => createCategory(ctx.db, input)),
+    .mutation(({ input, ctx }) => createCategory(createCategoryRepository(ctx.db), input)),
   destroy: permissionProcedure(Permission.categoryDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyCategories(ctx.db, input.ids)),
+    .mutation(({ input, ctx }) => destroyCategories(createCategoryRepository(ctx.db), input.ids)),
   update: permissionProcedure(Permission.categoryUpdate)
     .input(CategoryUpdateSchema)
-    .mutation(({ input, ctx }) => updateCategory(ctx.db, input)),
+    .mutation(({ input, ctx }) => updateCategory(createCategoryRepository(ctx.db), input)),
 });

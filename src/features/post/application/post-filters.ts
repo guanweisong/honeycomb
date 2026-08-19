@@ -1,26 +1,3 @@
-import { eq } from "drizzle-orm";
-import * as schema from "@/packages/infrastructure/db/schema";
-import type { Database } from "@/packages/infrastructure/db/db";
-import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-
-/**
- * 构建分类筛选条件（包括子分类）
- * @param db - 数据库实例
- * @param categoryId - 分类ID
- * @returns 分类ID数组（包括父分类和所有子分类）
- */
-export async function buildCategoryFilter(
-  db: Database,
-  categoryId: string,
-): Promise<string[]> {
-  const subCategories = await observeDbOperation(
-    "post.service.category-tree",
-    "select",
-    () =>
-      db
-        .select()
-        .from(schema.category)
-        .where(eq(schema.category.parent, categoryId)),
-  );
-  return [categoryId, ...subCategories.map((c: { id: string }) => c.id)];
-}
+import type { PostQueryRepository } from "../infrastructure/post-query-repository";
+/** 构建分类筛选条件。 */
+export function buildCategoryFilter(repository: PostQueryRepository, categoryId: string) { return repository.categoryFilter(categoryId); }

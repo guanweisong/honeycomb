@@ -24,7 +24,7 @@ export type GuardMode =
 
 export interface ActionGuardContract {
   id: string;
-  permission: string;
+  permission: CapabilityReference;
   control: ActionControlIdentity;
   guard: GuardMode;
   expectedCount?: number;
@@ -34,3 +34,4 @@ export interface ActionGuardFile {
   relativePath: string;
   actions: readonly ActionGuardContract[];
 }
+import type { CapabilityReference } from "./capability-registry";

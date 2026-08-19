@@ -27,6 +27,11 @@ src/packages  技术能力和共享基础设施
 - `admin`：管理端界面
 - `public`：公开页面和跨业务公开能力
 
+`application` 只编排业务用例和领域规则，不得导入 Drizzle、数据库连接、schema
+或 ORM 查询构造器。需要持久化时，必须依赖 feature 自己的窄端口；Drizzle adapter
+统一放在同一 feature 的 `infrastructure` 目录，并由 transport 或 app 入口注入。
+该约束由 `tests/feature-boundaries.test.ts` 持续检查。
+
 `features/media/shared` 存放媒体 UI 共享能力，供媒体管理页面和文章编辑器
 复用，避免文章功能直接依赖媒体管理端内部实现。
 
@@ -48,9 +53,15 @@ src/packages  技术能力和共享基础设施
 - `tests/server-only-boundaries.test.ts`
 - `src/packages/package-boundaries.test.ts`
 - `src/packages/trpc/api/capability-procedure-matrix.test.ts`
+- `tests/capability-entrypoint-boundaries.test.ts`
+- `src/packages/identity/auth/capability-registry.test.ts`
 
 这些检查用于阻止 feature 反向依赖 App Router、跨 feature 访问内部实现，以及
 技术包依赖路由层或传输细节。
+
+权限入口统一通过 `src/packages/identity/auth/capability-registry.ts` 登记。tRPC
+procedure、Admin Action、Admin route 和菜单只引用已登记 capability；registry 负责
+检查完整性、重复声明和入口消费者覆盖，权限矩阵仍负责表达具体角色结果。
 
 ## 运行环境注意事项
 

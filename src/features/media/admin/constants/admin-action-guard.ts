@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "media.upload",
-        permission: "mediaUpload",
+        permission: Permission.mediaUpload,
         control: {
           tag: "input",
           attribute: "onChange",
@@ -16,7 +17,7 @@ export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "media.upload-trigger",
-        permission: "mediaUpload",
+        permission: Permission.mediaUpload,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -31,7 +32,7 @@ export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "media.delete",
-        permission: "mediaDelete",
+        permission: Permission.mediaDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",

@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const postActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "category.create",
-        permission: "categoryCreate",
+        permission: Permission.categoryCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -16,7 +17,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "category.update",
-        permission: "categoryUpdate",
+        permission: Permission.categoryUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -26,7 +27,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "category.delete",
-        permission: "categoryDelete",
+        permission: Permission.categoryDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -36,7 +37,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "category.delete-batch",
-        permission: "categoryDelete",
+        permission: Permission.categoryDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -46,7 +47,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "category.selection",
-        permission: "categoryDelete",
+        permission: Permission.categoryDelete,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",
@@ -65,7 +66,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "post-tags.manage",
-        permission: "postManageTags",
+        permission: Permission.postManageTags,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -75,7 +76,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-tags.add",
-        permission: "postManageTags",
+        permission: Permission.postManageTags,
         control: {
           tag: "CommandItem",
           attribute: "onSelect",
@@ -85,7 +86,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-tags.create-tag",
-        permission: "tagCreate",
+        permission: Permission.tagCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -101,7 +102,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "post-editor.create",
-        permission: "postCreate",
+        permission: Permission.postCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -112,7 +113,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-editor.update",
-        permission: "postUpdate",
+        permission: Permission.postUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -123,7 +124,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-editor.update-withdraw",
-        permission: "postUpdate",
+        permission: Permission.postUpdate,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -139,7 +140,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "post-sidebar.create-category",
-        permission: "categoryCreate",
+        permission: Permission.categoryCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -155,7 +156,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "post-list.create",
-        permission: "postCreate",
+        permission: Permission.postCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -165,7 +166,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-list.update",
-        permission: "postUpdate",
+        permission: Permission.postUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -178,7 +179,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-list.delete",
-        permission: "postDelete",
+        permission: Permission.postDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -188,7 +189,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-list.delete-batch",
-        permission: "postDelete",
+        permission: Permission.postDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -198,7 +199,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "post-list.selection",
-        permission: "postDelete",
+        permission: Permission.postDelete,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",

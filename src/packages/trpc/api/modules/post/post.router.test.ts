@@ -17,8 +17,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 // 模拟文章关联数据加载函数。
-vi.mock("@/features/post/application/post-relations", () => ({
-  loadPostRelations: vi.fn(
+vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
+  const actual = await vi.importActual<typeof import("@/features/post/infrastructure/post-query-repository")>("@/features/post/infrastructure/post-query-repository");
+  const mockedLoadPostRelations = vi.fn(
     async (_db: unknown, posts: Array<Record<string, unknown>>) => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
@@ -56,8 +57,14 @@ vi.mock("@/features/post/application/post-relations", () => ({
         galleryStyles: [],
       }));
     },
-  ),
-}));
+  );
+  return {
+    ...actual,
+    createPostQueryRepository: (db: Parameters<typeof actual.createPostQueryRepository>[0]) =>
+      actual.createPostQueryRepository(db, { loadRelations: mockedLoadPostRelations as never }),
+    loadPostRelations: mockedLoadPostRelations,
+  };
+});
 
 vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
   bumpCacheVersion: vi.fn().mockResolvedValue(1),

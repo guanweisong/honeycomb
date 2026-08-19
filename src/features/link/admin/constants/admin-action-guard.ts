@@ -1,3 +1,4 @@
+import { Permission } from "@/packages/identity/auth/permissions";
 import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
 
 export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
@@ -6,7 +7,7 @@ export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
     actions: [
       {
         id: "link.create",
-        permission: "linkCreate",
+        permission: Permission.linkCreate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -16,7 +17,7 @@ export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "link.update",
-        permission: "linkUpdate",
+        permission: Permission.linkUpdate,
         control: {
           tag: "Button",
           attribute: "onClick",
@@ -26,7 +27,7 @@ export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "link.delete",
-        permission: "linkDelete",
+        permission: Permission.linkDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -36,7 +37,7 @@ export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "link.delete-batch",
-        permission: "linkDelete",
+        permission: Permission.linkDelete,
         control: {
           tag: "Dialog",
           attribute: "onOK",
@@ -46,7 +47,7 @@ export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "link.selection",
-        permission: "linkDelete",
+        permission: Permission.linkDelete,
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",

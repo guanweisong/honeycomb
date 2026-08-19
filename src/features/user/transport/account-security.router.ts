@@ -6,10 +6,11 @@ import {
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
 import { getLoginHistory } from "@/features/user/application/login-history";
+import { createUserRepository } from "@/features/user/infrastructure/user-repository";
 
 /** 账号安全 API 的传输层，只负责权限和业务服务编排。 */
 export const accountSecurityRouter = createTRPCRouter({
   loginHistory: permissionProcedure(Permission.userReadSelf).query(({ ctx }) =>
-    getLoginHistory(ctx.db, ctx.user.id),
+    getLoginHistory(createUserRepository(ctx.db), ctx.user.id),
   ),
 });

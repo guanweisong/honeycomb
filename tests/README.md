@@ -32,6 +32,15 @@ tests/
 
 ## 运行测试
 
+架构边界专项检查：
+
+```bash
+bunx vitest run tests/feature-boundaries.test.ts tests/capability-entrypoint-boundaries.test.ts
+```
+
+它会检查 feature application 不直接访问数据库实现，并检查权限矩阵、菜单和管理
+入口使用已登记的 capability。
+
 ```bash
 # 运行所有单元测试（监听模式）
 bun run test:unit

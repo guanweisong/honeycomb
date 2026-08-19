@@ -3,6 +3,7 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/infrastructure/db/query/tools";
 import * as filters from "@/features/post/application/post-filters";
 import * as relations from "@/features/post/application/post-relations";
+import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
@@ -20,6 +21,7 @@ let buildCategoryFilterMock: {
 let loadPostRelationsMock: {
   mockImplementation: (impl: typeof relations.loadPostRelations) => void;
 };
+let repository: ReturnType<typeof createPostQueryRepository>;
 
 describe("getPostList", () => {
   beforeEach(async () => {
@@ -49,6 +51,10 @@ describe("getPostList", () => {
           galleryStyles: [],
         })) as never,
     );
+    repository = createPostQueryRepository(mockDb as never, {
+      loadRelations: (db, posts) => (loadPostRelationsMock as unknown as (db: unknown, posts: unknown[]) => Promise<unknown[]>)(db, posts) as never,
+    });
+    repository.categoryFilter = (categoryId) => filters.buildCategoryFilter(mockDb as never, categoryId);
 
     ({ getPostList } =
       await import("@/features/post/application/post-queries"));
@@ -79,7 +85,7 @@ describe("getPostList", () => {
 
     await expect(
       getPostList(
-        mockDb as never,
+        repository,
         {
           page: 2,
           limit: 5,
@@ -150,7 +156,7 @@ describe("getPostList", () => {
     mockDb.where.mockResolvedValueOnce([{ count: "1" }]);
 
     const result = await getPostList(
-      mockDb as never,
+      repository,
       {
         page: 1,
         limit: 10,
@@ -169,7 +175,7 @@ describe("getPostList", () => {
     mockDb.where.mockResolvedValueOnce([]);
 
     const result = await getPostList(
-      mockDb as never,
+      repository,
       {
         page: 1,
         limit: 10,
@@ -206,7 +212,7 @@ describe("getPostList", () => {
     mockDb.where.mockResolvedValueOnce([{ count: "1" }]);
 
     const result = await getPostList(
-      mockDb as never,
+      repository,
       {
         page: 1,
         limit: 10,

@@ -115,6 +115,16 @@ honeycomb/
 └── package.json               # 项目依赖
 ```
 
+### Feature 分层约束
+
+每个业务 feature 的 `application` 目录只负责业务用例编排和领域规则，不得直接
+导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化端口定义在 feature 的
+`infrastructure` 目录，由 transport 或 app 入口创建 adapter 后注入 application。
+
+权限入口统一登记在 `src/packages/identity/auth/capability-registry.ts`。tRPC、Admin
+Action、Admin route 和后台菜单只能使用已登记的 capability；相关边界测试位于
+`tests/feature-boundaries.test.ts` 和 `tests/capability-entrypoint-boundaries.test.ts`。
+
 ## 快速开始
 
 ### 环境要求

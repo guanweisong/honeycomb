@@ -10,6 +10,7 @@ import {
   type ActionGuardContract,
   type GuardPolarity,
 } from "./admin-action-guard-matrix";
+import { Permission } from "@/packages/identity/auth/permissions";
 
 function getAttribute(
   element: ts.JsxOpeningLikeElement,
@@ -211,7 +212,8 @@ function collectPermissionGuards(
         ts.isIdentifier(permission.expression) &&
         permission.expression.text === "Permission"
       ) {
-        guardByPermission.set(permission.name.text, node.name.text);
+        const value = Permission[permission.name.text as keyof typeof Permission];
+        guardByPermission.set(value ?? permission.name.text, node.name.text);
       }
     }
     ts.forEachChild(node, visit);
