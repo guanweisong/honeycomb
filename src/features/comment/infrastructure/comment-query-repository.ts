@@ -9,16 +9,9 @@ import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructur
 import { toPublicComment } from "./comment-dto";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
-import type { CommentQueryRepository } from "../repository";
+import type { CommentQueryRepository, CommentListItem, PublicCommentNode } from "../repository";
 export type { CommentListInput, CommentQueryRepository, CommentRefInput } from "../repository";
-export type CommentListItem = typeof schema.comment.$inferSelect & {
-  post: typeof schema.post.$inferSelect | null;
-  page: typeof schema.page.$inferSelect | null;
-  custom: typeof schema.post.$inferSelect | null;
-};
-export type PublicCommentNode = ReturnType<typeof toPublicComment> & {
-  children?: PublicCommentNode[];
-};
+export type { CommentListItem, PublicCommentNode } from "../repository";
 
 export function createCommentQueryRepository(db: Database): CommentQueryRepository {
   return {
@@ -37,7 +30,7 @@ export function createCommentQueryRepository(db: Database): CommentQueryReposito
       const customIds = Array.from(new Set(ordered.map(({ customId }) => customId).filter((id): id is string => Boolean(id))));
       const customPosts = customIds.length ? await observeDbOperation("comment.service.custom-posts", "select", () => db.select().from(schema.post).where(inArray(schema.post.id, customIds))) : [];
       const customPostMap = Object.fromEntries(customPosts.map((post) => [post.id, post]));
-      return { list: ordered.map((comment) => ({ ...comment, custom: comment.customId ? (customPostMap[comment.customId] ?? null) : null })) as CommentListItem[], total: Number(countRows[0]?.count) || 0 };
+      return { list: ordered.map((comment) => ({ ...comment, custom: comment.customId ? (customPostMap[comment.customId] ?? null) : null })) as unknown as CommentListItem[], total: Number(countRows[0]?.count) || 0 };
     },
     async listPublicByRef(input) {
       const target = { postId: input.type === "CATEGORY" ? input.id : undefined, pageId: input.type === "PAGE" ? input.id : undefined, customId: input.type === "CUSTOM" ? input.id : undefined };
@@ -47,7 +40,7 @@ export function createCommentQueryRepository(db: Database): CommentQueryReposito
       else if (input.type === "PAGE") where = and(where, eq(schema.comment.pageId, input.id));
       else where = and(where, eq(schema.comment.customId, input.id));
       const result = await observeDbOperation("comment.service.public-list", "select", () => db.query.comment.findMany({ columns: { id: true, author: true, content: true, site: true, email: true, parentId: true, status: true, createdAt: true }, where, orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)] }));
-      const list = result.length ? listToTree(result.map(toPublicComment), { idKey: "id", parentKey: "parentId" }) as PublicCommentNode[] : [];
+      const list = result.length ? listToTree(result.map(toPublicComment), { idKey: "id", parentKey: "parentId" }) as unknown as PublicCommentNode[] : [];
       const [countResult] = await observeDbOperation("comment.service.public-count", "select", () => db.select({ count: sql<number>`count(*)`.as("count") }).from(schema.comment).where(where));
       return { list, total: Number(countResult?.count) || 0 };
     },

@@ -6,7 +6,6 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
-  type QueryRecord,
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { can, Permission } from "@/packages/identity/auth/permissions";
@@ -15,6 +14,7 @@ import {
   type CredentialStore,
 } from "@/packages/identity/auth/credentials";
 import { listUserLoginHistory } from "@/packages/identity/account-security/server/login-history.repository";
+import type { CurrentUserRecord, UserCommandInput, UserListInput, UserRecord } from "../ports";
 
 const safeUserColumns = {
   id: schema.user.id,
@@ -26,26 +26,7 @@ const safeUserColumns = {
   updatedAt: schema.user.updatedAt,
 };
 
-export type UserCommandInput = Pick<
-  typeof schema.user.$inferInsert,
-  "name" | "email" | "status" | "level"
-> & { password: string };
-
-export type UserListInput = {
-  page?: number;
-  limit?: number;
-  sortField?: string;
-  sortOrder?: string;
-} & QueryRecord;
-
-export type UserRecord = Pick<
-  typeof schema.user.$inferSelect,
-  "id" | "email" | "level" | "name" | "status" | "createdAt" | "updatedAt"
->;
-export type CurrentUserRecord = Pick<
-  UserRecord,
-  "id" | "email" | "level" | "name" | "status"
->;
+export type { CurrentUserRecord, UserCommandInput, UserListInput, UserRecord } from "../ports";
 export type LoginHistoryRecord = Awaited<
   ReturnType<typeof listUserLoginHistory>
 >[number];

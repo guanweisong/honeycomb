@@ -8,10 +8,9 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { PostQueryRepository, PostWithRelations } from "../repository";
+import type { PostQueryRepository, PostWithRelations, PostMediaRecord } from "../repository";
 export type { PostListInput, PostQueryRepository, PostVisibility, PostWithRelations } from "../repository";
 type PostRecord = typeof schema.post.$inferSelect;
-type MediaRecord = typeof schema.media.$inferSelect;
 type TagRecord = typeof schema.tag.$inferSelect;
 export async function loadPostRelations(db: Database, posts: PostRecord[]): Promise<PostWithRelations[]> {
   const postIds = Array.from(new Set(posts.map((post) => post.id).filter(Boolean)));
@@ -57,7 +56,7 @@ export function createPostQueryRepository(
       const [result] = await loadRelations(db, [item]);
       const urls = getAllImageLinkFormHtml(result?.content?.zh);
       const imagesInContent = urls.length ? await observeDbOperation("post.service.detail-images", "select", () => db.select().from(schema.media).where(inArray(schema.media.url, urls))) : [];
-      return { ...result, imagesInContent } as PostWithRelations & { imagesInContent: MediaRecord[] };
+      return { ...result, imagesInContent } as unknown as PostWithRelations & { imagesInContent: PostMediaRecord[] };
     },
   };
 }

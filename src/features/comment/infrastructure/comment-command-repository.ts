@@ -15,7 +15,7 @@ export function createCommentCommandRepository(db: Database): CommentCommandRepo
     async update(input) {
       const { id, ...changes } = input;
       const [updated] = await observeDbOperation("comment.service.update", "update", () => db.update(schema.comment).set(changes).where(eq(schema.comment.id, id)).returning());
-      return updated;
+      return updated as unknown as import("../repository").CommentRecord;
     },
     async destroy(ids) {
       await observeDbOperation("comment.service.destroy", "delete", () => db.delete(schema.comment).where(inArray(schema.comment.id, ids)));
@@ -27,7 +27,7 @@ export function createCommentCommandRepository(db: Database): CommentCommandRepo
       await targetRepository.assertPublic(target);
       if (input.parentId) await targetRepository.assertParent(input.parentId, target);
       const [created] = await observeDbOperation("comment.service.create", "insert", () => db.insert(schema.comment).values({ ...input, ip: headers.get("x-forwarded-for") ?? null, userAgent: headers.get("user-agent") ?? null, status: CommentStatus.PUBLISH }).returning());
-      return created;
+      return created as unknown as import("../repository").CommentRecord;
     },
   };
 }

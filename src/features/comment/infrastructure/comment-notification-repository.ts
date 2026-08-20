@@ -24,7 +24,7 @@ export function createCommentNotificationRepository(db: Database): CommentNotifi
           .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
           .where(eq(schema.comment.id, id)),
       );
-      return comment as NotificationComment | undefined;
+      return comment as unknown as NotificationComment | undefined;
     },
     async getSetting() {
       const [setting] = await observeDbOperation("comment.notification.setting", "select", () => db.select().from(schema.setting));
