@@ -16,10 +16,11 @@ import { PageUpdateSchema } from "@/packages/trpc/api/modules/page/schemas/page.
 import {
   createPage,
   destroyPages,
+  getPageDetail,
+  getPageList,
   incrementPageViews,
   updatePage,
-} from "@/features/page/application/page-commands";
-import { getPageDetail, getPageList } from "@/features/page/application/page-queries";
+} from "@/features/page/service";
 import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
 

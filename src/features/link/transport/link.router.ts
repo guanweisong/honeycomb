@@ -10,8 +10,7 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { LinkListQuerySchema } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
 import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
-import { getLinkList } from "@/features/link/application/link-queries";
-import { createLink, destroyLinks, updateLink } from "@/features/link/application/link-commands";
+import { getLinkList, createLink, destroyLinks, updateLink } from "@/features/link/service";
 import { createLinkRepository } from "@/features/link/infrastructure/link-repository";
 
 /** 友情链接 API 的传输层，只负责输入、权限和业务服务编排。 */

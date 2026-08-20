@@ -5,7 +5,7 @@ import {
   permissionProcedure,
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
-import { getStatistics } from "@/features/setting/application/statistics-queries";
+import { getStatistics } from "@/features/setting/service";
 import { createSettingRepository } from "@/features/setting/infrastructure/setting-repository";
 
 /** 统计 API 的传输层，只负责权限和业务服务编排。 */

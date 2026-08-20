@@ -29,8 +29,8 @@ const serverOnlyEntrypoints = [
   "src/features/category/transport/category.router.ts",
   "src/packages/infrastructure/storage/S3.ts",
   "src/packages/infrastructure/rate-limit/rate-limit.ts",
-  "src/features/comment/application/notifications/comment-email.ts",
-  "src/features/comment/application/notifications/comment-delivery.ts",
+  "src/features/comment/notifications/comment-email.ts",
+  "src/features/comment/notifications/comment-delivery.ts",
   "src/packages/infrastructure/cache/upstash-cache.ts",
   "src/packages/infrastructure/security/validate-captcha.ts",
 ] as const;

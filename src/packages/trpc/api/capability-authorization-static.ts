@@ -178,6 +178,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   "src/packages/identity/auth/permissions.ts",
   "src/packages/infrastructure/db/schema/index.ts",
   "src/packages/domain/identity/user.ts",
+  "src/features/user/domain/user.ts",
 ]);
 
 function assertNoRoleBasedAuthorization(

@@ -1,22 +1,14 @@
 import "server-only";
 
-import { eq, inArray, type InferInsertModel } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
-export type CommentUpdate = { id: string } & Partial<InferInsertModel<typeof schema.comment>>;
-export type PublicCommentInput = {
-  author: string; content: string; email: string; site?: string | null;
-  parentId?: string | null; postId?: string | null; pageId?: string | null; customId?: string | null;
-};
-export interface CommentCommandRepository {
-  update(input: CommentUpdate): Promise<typeof schema.comment.$inferSelect | undefined>;
-  destroy(ids: string[]): Promise<{ success: true }>;
-  create(headers: Headers, input: PublicCommentInput): Promise<typeof schema.comment.$inferSelect>;
-}
+import type { CommentCommandRepository } from "../repository";
+export type { CommentCommandRepository, CommentUpdate, PublicCommentInput } from "../repository";
 
 export function createCommentCommandRepository(db: Database): CommentCommandRepository {
   return {

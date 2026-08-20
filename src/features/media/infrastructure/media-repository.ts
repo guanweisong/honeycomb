@@ -6,25 +6,12 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
-  type QueryRecord,
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import S3 from "@/packages/infrastructure/storage/S3";
 import { clientEnv } from "@/env/client";
-
-export type MediaInsert = Pick<
-  typeof schema.media.$inferInsert,
-  "name" | "size" | "type" | "key" | "width" | "height" | "color"
->;
-
-export interface MediaRepository {
-  create(input: MediaInsert): Promise<typeof schema.media.$inferSelect>;
-  list(input: { page?: number; limit?: number; sortField?: string; sortOrder?: string } & QueryRecord): Promise<{
-    list: (typeof schema.media.$inferSelect)[];
-    total: number;
-  }>;
-  destroy(ids: string[]): Promise<{ success: true }>;
-}
+import type { MediaRecord, MediaRepository } from "../repository";
+export type { MediaInsert, MediaListInput, MediaRepository } from "../repository";
 
 export function createMediaRepository(db: Database): MediaRepository {
   return {
@@ -35,7 +22,7 @@ export function createMediaRepository(db: Database): MediaRepository {
           .values({
             ...input,
             url: `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${input.key}`,
-          })
+          } as typeof schema.media.$inferInsert)
           .returning(),
       );
       return media;
@@ -66,7 +53,7 @@ export function createMediaRepository(db: Database): MediaRepository {
             .where(where),
         ),
       ]);
-      return { list, total: Number(countRows[0]?.count) || 0 };
+      return { list: list as MediaRecord[], total: Number(countRows[0]?.count) || 0 };
     },
     async destroy(ids) {
       const media = await observeDbOperation("media.destroy.select", "select", () =>

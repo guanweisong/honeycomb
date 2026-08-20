@@ -5,14 +5,10 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { getCacheJSON, getCacheVersion, setCacheJSON } from "@/packages/infrastructure/cache/upstash-cache";
-import type { PostListInput, PostQueryRepository } from "./post-query-repository";
+import type { PostQueryRepository, PostSpecialRepository } from "../repository";
+export type { PostSpecialRepository } from "../repository";
 const namespace = "post.index";
 const versionKey = "cache:post:index:version";
-export interface PostSpecialRepository {
-  cachedList(input: PostListInput): Promise<Awaited<ReturnType<PostQueryRepository["list"]>>>;
-  randomByCategory(categoryId: string): Promise<{ id: string; title: typeof schema.post.$inferSelect.title; quoteContent: typeof schema.post.$inferSelect.quoteContent }[]>;
-  publishedCategoryId(id: string): Promise<{ categoryId?: string } | undefined>;
-}
 export function createPostSpecialRepository(db: Database, query: PostQueryRepository): PostSpecialRepository {
   return {
     async cachedList(input) {

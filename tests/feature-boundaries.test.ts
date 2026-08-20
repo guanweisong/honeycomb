@@ -27,10 +27,18 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe("业务功能边界", () => {
-  it("为核心业务提供 application、transport、admin 和 public 入口", () => {
+  it("为业务提供根部仓储协议、transport、admin 和 public 入口", () => {
     for (const feature of featureNames) {
-      for (const area of ["application", "transport", "admin", "public"]) {
-        expect(statSync(join(featuresRoot, feature, area, "index.ts"))).toBeTruthy();
+      const entry = ["post", "comment", "user"].includes(feature) ? `${feature}.service.ts` : "service.ts";
+      expect(statSync(join(featuresRoot, feature, entry))).toBeTruthy();
+      for (const area of ["transport", "admin", "public"]) expect(statSync(join(featuresRoot, feature, area))).toBeTruthy();
+    }
+  });
+
+  it("业务模块不重新引入历史分层目录", () => {
+    for (const feature of featureNames) {
+      for (const legacyDirectory of ["application", "interfaces", "contracts"]) {
+        expect(() => statSync(join(featuresRoot, feature, legacyDirectory))).toThrow();
       }
     }
   });
@@ -50,7 +58,7 @@ describe("业务功能边界", () => {
     expect(violations).toEqual([]);
   });
 
-  it("禁止 application 直接依赖数据库实现", () => {
+  it("禁止用例层直接依赖数据库实现", () => {
     const violations = sourceFiles(featuresRoot)
       .filter((path) => path.includes("/application/"))
       .flatMap((path) => {

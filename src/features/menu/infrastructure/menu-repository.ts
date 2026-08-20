@@ -9,15 +9,8 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-export type MenuInput = Array<{ id: string; type: MenuType; parent?: string | null; power: number }>;
-export type MenuVisibility = "PUBLIC_ONLY" | "ALL";
-export interface MenuRepository {
-  saveAll(input: MenuInput): Promise<{ count: number }>;
-  list(visibility: MenuVisibility): Promise<{ list: Array<{
-    id: string; parent: string | null; power: number; type: string;
-    createdAt: string | null; updatedAt: string | null; title?: MultiLang | null; path?: string | null;
-  }>; total: number }>;
-}
+import type { MenuRepository } from "../repository";
+export type { MenuInput, MenuRepository, MenuVisibility } from "../repository";
 
 export function createMenuRepository(db: Database): MenuRepository {
   return {

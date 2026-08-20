@@ -5,24 +5,14 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import type { Database } from "@/packages/infrastructure/db/db";
 import { TagType } from "@/packages/domain/content/tag";
 import { PostStatus } from "@/packages/domain/content/post-status";
-import { buildDrizzleOrderBy, buildDrizzleWhere, type QueryRecord } from "@/packages/infrastructure/db/query/tools";
+import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-
-export type PostVisibility = "PUBLISHED_ONLY" | "ALL";
-export type PostListInput = QueryRecord & { page?: number; limit?: number; sortField?: string; sortOrder?: string; categoryId?: string; tagId?: string; authorId?: string; title?: string; content?: string };
+import type { PostQueryRepository, PostWithRelations } from "../repository";
+export type { PostListInput, PostQueryRepository, PostVisibility, PostWithRelations } from "../repository";
 type PostRecord = typeof schema.post.$inferSelect;
-type CategoryRecord = typeof schema.category.$inferSelect;
-type UserRecord = Pick<typeof schema.user.$inferSelect, "id" | "email" | "level" | "name" | "status" | "createdAt" | "updatedAt">;
 type MediaRecord = typeof schema.media.$inferSelect;
 type TagRecord = typeof schema.tag.$inferSelect;
-export type PostWithRelations = PostRecord & { category?: CategoryRecord; author?: UserRecord; cover?: MediaRecord; movieActors: TagRecord[]; movieDirectors: TagRecord[]; movieStyles: TagRecord[]; galleryStyles: TagRecord[] };
-export interface PostQueryRepository {
-  list(input: PostListInput, visibility: PostVisibility): Promise<{ list: PostWithRelations[]; total: number }>;
-  detail(id: string, visibility: PostVisibility): Promise<(PostWithRelations & { imagesInContent: MediaRecord[] }) | null>;
-  categoryFilter(categoryId: string): Promise<string[]>;
-}
-
 export async function loadPostRelations(db: Database, posts: PostRecord[]): Promise<PostWithRelations[]> {
   const postIds = Array.from(new Set(posts.map((post) => post.id).filter(Boolean)));
   if (!postIds.length) return [];

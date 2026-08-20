@@ -10,8 +10,7 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { TagListQuerySchema } from "@/packages/trpc/api/modules/tag/schemas/tag.list.query.schema";
 import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.update.schema";
-import { getTagList } from "@/features/tag/application/tag-queries";
-import { createTag, destroyTags, updateTag } from "@/features/tag/application/tag-commands";
+import { getTagList, createTag, destroyTags, updateTag } from "@/features/tag/service";
 import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
 
 /** 标签 API 的传输层，只负责输入、权限和业务服务编排。 */

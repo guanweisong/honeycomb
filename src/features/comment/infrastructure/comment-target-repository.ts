@@ -8,13 +8,10 @@ import { PageStatus } from "@/packages/domain/content/page";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-export type CommentTarget = Partial<{ postId: string | null; pageId: string | null; customId: string | null }>;
+import type { CommentTargetRepository } from "../repository";
+export type { CommentTarget, CommentTargetRepository } from "../repository";
 export class CommentTargetError extends Error {
   constructor(public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN", message?: string) { super(message); this.name = "CommentTargetError"; }
-}
-export interface CommentTargetRepository {
-  assertPublic(target: CommentTarget): Promise<void>;
-  assertParent(parentId: string, target: CommentTarget): Promise<void>;
 }
 export function createCommentTargetRepository(db: Database): CommentTargetRepository {
   return {

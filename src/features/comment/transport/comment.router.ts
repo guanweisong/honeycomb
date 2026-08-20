@@ -18,12 +18,14 @@ import {
   destroyComments,
   updateComment,
   createComment,
-} from "@/features/comment/application";
-import { CommentTargetError, listComments, listPublicCommentsByRef } from "@/features/comment/application";
+  CommentTargetError,
+  listComments,
+  listPublicCommentsByRef,
+  notifyCommentCreated,
+} from "@/features/comment/comment.service";
 import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
-import { notifyCommentCreated } from "@/features/comment/application/notifications/comment-delivery";
 
 function mapCommentTargetError(error: unknown): never {
   if (error instanceof CommentTargetError)

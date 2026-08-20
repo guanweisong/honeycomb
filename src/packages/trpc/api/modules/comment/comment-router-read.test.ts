@@ -17,7 +17,7 @@ vi.mock("@/packages/infrastructure/security/validate-captcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@/features/comment/application/notifications/comment-email", () => ({
+vi.mock("@/features/comment/notifications/comment-email", () => ({
   sendCommentEmail: vi.fn().mockResolvedValue(undefined),
 }));
 

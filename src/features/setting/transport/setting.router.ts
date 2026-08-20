@@ -7,8 +7,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas/setting.update.schema";
-import { getSetting } from "@/features/setting/application/setting-queries";
-import { updateSetting } from "@/features/setting/application/setting-commands";
+import { getSetting, updateSetting } from "@/features/setting/service";
 import { createSettingRepository } from "@/features/setting/infrastructure/setting-repository";
 
 /** 网站设置 API 的传输层，只负责输入、权限和业务服务编排。 */

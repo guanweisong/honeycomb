@@ -6,15 +6,8 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { selectAllColumns } from "@/packages/infrastructure/db/query/select-all-columns";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-export type NotificationComment = typeof schema.comment.$inferSelect & {
-  post?: Pick<typeof schema.post.$inferSelect, "id" | "title"> | null;
-  page?: Pick<typeof schema.page.$inferSelect, "id" | "title"> | null;
-};
-export type NotificationSetting = Pick<typeof schema.setting.$inferSelect, "siteName">;
-export interface CommentNotificationRepository {
-  getComment(id: string): Promise<NotificationComment | undefined>;
-  getSetting(): Promise<NotificationSetting | undefined>;
-}
+import type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../repository";
+export type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../repository";
 
 const selection = {
   ...selectAllColumns(schema.comment),
@@ -35,7 +28,7 @@ export function createCommentNotificationRepository(db: Database): CommentNotifi
     },
     async getSetting() {
       const [setting] = await observeDbOperation("comment.notification.setting", "select", () => db.select().from(schema.setting));
-      return setting;
+      return setting as NotificationSetting | undefined;
     },
   };
 }

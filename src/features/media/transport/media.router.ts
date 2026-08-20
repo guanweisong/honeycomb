@@ -13,9 +13,9 @@ import { requiredString } from "@/packages/trpc/api/schemas/required.string.sche
 import {
   createMedia,
   destroyMedia,
+  getMediaList,
   getMediaPresignedUrl,
-} from "@/features/media/application";
-import { getMediaList } from "@/features/media/application";
+} from "@/features/media/service";
 import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
 
 /** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */

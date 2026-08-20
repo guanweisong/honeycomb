@@ -17,19 +17,18 @@ import { TagType } from "@/packages/domain/content/tag";
 import {
   createPost,
   destroyPosts,
+  getCachedPostList,
+  getPostDetail,
+  getPostList,
+  getPublishedPostCategoryId,
+  getRandomPostsByCategory,
   updatePost,
   updatePostTags,
   incrementPostViews,
-} from "@/features/post/application";
+} from "@/features/post/post.service";
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";
-import { getPostList, getPostDetail } from "@/features/post/application";
-import {
-  getCachedPostList,
-  getPublishedPostCategoryId,
-  getRandomPostsByCategory,
-} from "@/features/post/application";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({

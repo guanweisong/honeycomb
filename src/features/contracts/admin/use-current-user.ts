@@ -1,5 +1,5 @@
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { AdminUser } from "@/features/user/application/admin-user";
+import type { AdminUser } from "@/features/user/admin-user";
 import {
   can,
   type Permission as PermissionValue,

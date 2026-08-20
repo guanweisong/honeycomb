@@ -1,36 +1,23 @@
 import "server-only";
 
-import { and, eq, inArray, sql, type InferInsertModel } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { buildDrizzleOrderBy, buildDrizzleWhere, type QueryRecord, type QueryValue } from "@/packages/infrastructure/db/query/tools";
+import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-
-export type LinkInsert = typeof schema.link.$inferInsert;
-export type LinkUpdate = { id: string } & Partial<InferInsertModel<typeof schema.link>>;
-export type LinkListInput = QueryRecord & {
-  page?: number; limit?: number; sortField?: string; sortOrder?: string;
-  name?: string; description?: string; status?: QueryValue;
-};
-export type LinkVisibility = "PUBLIC_ONLY" | "ALL";
-
-export interface LinkRepository {
-  create(input: LinkInsert): Promise<typeof schema.link.$inferSelect>;
-  update(input: LinkUpdate): Promise<typeof schema.link.$inferSelect>;
-  destroy(ids: string[]): Promise<{ success: true }>;
-  list(input: LinkListInput, visibility: LinkVisibility): Promise<{ list: (typeof schema.link.$inferSelect)[]; total: number }>;
-}
+import type { LinkRepository } from "../repository";
+export type { LinkInsert, LinkListInput, LinkRepository, LinkUpdate, LinkVisibility } from "../repository";
 
 export function createLinkRepository(db: Database): LinkRepository {
   return {
     async create(input) {
-      const [value] = await observeDbOperation("link.create", "insert", () => db.insert(schema.link).values(input).returning());
+      const [value] = await observeDbOperation("link.create", "insert", () => db.insert(schema.link).values(input as typeof schema.link.$inferInsert).returning());
       return value;
     },
     async update(input) {
       const { id, ...changes } = input;
-      const [value] = await observeDbOperation("link.update", "update", () => db.update(schema.link).set(changes).where(eq(schema.link.id, id)).returning());
+      const [value] = await observeDbOperation("link.update", "update", () => db.update(schema.link).set(changes as Partial<typeof schema.link.$inferInsert>).where(eq(schema.link.id, id)).returning());
       return value;
     },
     async destroy(ids) {

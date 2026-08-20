@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createMedia, destroyMedia } from "@/features/media/application/media-commands";
-import { getMediaList } from "@/features/media/application/media-queries";
-import { createTag, destroyTags, getTagList, updateTag } from "@/features/tag/application";
-import { getUserDetail, getUserList } from "@/features/user/application/user-queries";
+import { createMedia, destroyMedia, getMediaList } from "@/features/media/service";
+import { createTag, destroyTags, getTagList, updateTag } from "@/features/tag/service";
+import { getUserDetail, getUserList } from "@/features/user/user-queries";
+import { createCategory, destroyCategories, getCategoryList } from "@/features/category/service";
+import { createLink, destroyLinks, getLinkList } from "@/features/link/service";
+import { getMenuList, saveAllMenus } from "@/features/menu/service";
+import { createPage, destroyPages, getPageDetail, getPageList } from "@/features/page/service";
+import { getSetting, updateSetting } from "@/features/setting/service";
 
 describe("feature repository 契约", () => {
   it("media application 只调用 repository", async () => {
@@ -46,5 +50,45 @@ describe("feature repository 契约", () => {
     await expect(getUserList(repository as never, { page: 1 })).resolves.toEqual({ list: [], total: 0 });
     expect(repository.detail).toHaveBeenCalledWith("user-1");
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
+  });
+
+  it("category、link、menu、page、setting application 只调用 repository", async () => {
+    const category = { create: vi.fn(), update: vi.fn(), destroy: vi.fn(), list: vi.fn().mockResolvedValue({ list: [], total: 0 }) };
+    await createCategory(category as never, {} as never);
+    await destroyCategories(category as never, ["category-1"]);
+    await getCategoryList(category as never, { page: 1 } as never);
+    expect(category.create).toHaveBeenCalled();
+    expect(category.destroy).toHaveBeenCalledWith(["category-1"]);
+    expect(category.list).toHaveBeenCalled();
+
+    const link = { create: vi.fn(), update: vi.fn(), destroy: vi.fn(), list: vi.fn().mockResolvedValue({ list: [], total: 0 }) };
+    await createLink(link as never, {} as never);
+    await destroyLinks(link as never, ["link-1"]);
+    await getLinkList(link as never, { page: 1 } as never);
+    expect(link.create).toHaveBeenCalled();
+    expect(link.destroy).toHaveBeenCalledWith(["link-1"]);
+    expect(link.list).toHaveBeenCalled();
+
+    const menu = { saveAll: vi.fn(), list: vi.fn().mockResolvedValue([]) };
+    await saveAllMenus(menu as never, [] as never);
+    await getMenuList(menu as never);
+    expect(menu.saveAll).toHaveBeenCalledWith([]);
+    expect(menu.list).toHaveBeenCalled();
+
+    const page = { create: vi.fn(), destroy: vi.fn(), update: vi.fn(), incrementViews: vi.fn(), list: vi.fn().mockResolvedValue({ list: [], total: 0 }), detail: vi.fn(), author: vi.fn() };
+    await createPage(page as never, {} as never, "user-1");
+    await destroyPages(page as never, ["page-1"]);
+    await getPageList(page as never, { page: 1 } as never);
+    await getPageDetail(page as never, "page-1");
+    expect(page.create).toHaveBeenCalledWith({}, "user-1");
+    expect(page.destroy).toHaveBeenCalledWith(["page-1"]);
+    expect(page.list).toHaveBeenCalled();
+    expect(page.detail).toHaveBeenCalledWith("page-1", "PUBLISHED_ONLY");
+
+    const setting = { get: vi.fn(), update: vi.fn(), statistics: vi.fn() };
+    await getSetting(setting as never);
+    await updateSetting(setting as never, {} as never);
+    expect(setting.get).toHaveBeenCalled();
+    expect(setting.update).toHaveBeenCalled();
   });
 });

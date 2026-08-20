@@ -10,8 +10,7 @@ import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.sche
 import { CategoryListQuerySchema } from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
 import { CategoryInsertSchema } from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
 import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
-import { getCategoryList } from "@/features/category/application/category-queries";
-import { createCategory, destroyCategories, updateCategory } from "@/features/category/application/category-commands";
+import { getCategoryList, createCategory, destroyCategories, updateCategory } from "@/features/category/service";
 import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */

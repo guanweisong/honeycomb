@@ -5,12 +5,12 @@ import listToTree from "list-to-tree-lite";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import { buildDrizzleOrderBy, buildDrizzleWhere, type QueryRecord } from "@/packages/infrastructure/db/query/tools";
+import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { toPublicComment } from "./comment-dto";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
-export type CommentListInput = { page?: number; limit?: number; sortField?: string; sortOrder?: string } & QueryRecord;
-export type CommentRefInput = { id: string; type: "CATEGORY" | "PAGE" | "CUSTOM" };
+import type { CommentQueryRepository } from "../repository";
+export type { CommentListInput, CommentQueryRepository, CommentRefInput } from "../repository";
 export type CommentListItem = typeof schema.comment.$inferSelect & {
   post: typeof schema.post.$inferSelect | null;
   page: typeof schema.page.$inferSelect | null;
@@ -19,10 +19,6 @@ export type CommentListItem = typeof schema.comment.$inferSelect & {
 export type PublicCommentNode = ReturnType<typeof toPublicComment> & {
   children?: PublicCommentNode[];
 };
-export interface CommentQueryRepository {
-  list(input: CommentListInput): Promise<{ list: CommentListItem[]; total: number }>;
-  listPublicByRef(input: CommentRefInput): Promise<{ list: PublicCommentNode[]; total: number }>;
-}
 
 export function createCommentQueryRepository(db: Database): CommentQueryRepository {
   return {

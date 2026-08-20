@@ -8,6 +8,6 @@ describe("Admin 身份查询边界", () => {
 
     expect(source).not.toContain("drizzle-orm");
     expect(source).not.toContain("drizzle-orm");
-    expect(source).toContain("features/user/application/admin-user");
+    expect(source).toContain("features/user/admin-user");
   });
 });

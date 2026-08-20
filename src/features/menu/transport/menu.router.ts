@@ -7,8 +7,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
-import { getMenuList } from "@/features/menu/application/menu-queries";
-import { saveAllMenus } from "@/features/menu/application/menu-commands";
+import { getMenuList, saveAllMenus } from "@/features/menu/service";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */

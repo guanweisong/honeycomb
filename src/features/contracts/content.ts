@@ -1,18 +1,18 @@
-import type { toPublicComment } from "@/features/comment/application/comment-dto";
+import type { toPublicComment } from "@/features/comment/comment.service";
 import type {
   getLinkList,
-} from "@/features/link/application/catalog";
-import type { getCategoryList } from "@/features/category/application/category-queries";
-import type { getTagList } from "@/features/tag/application/tag-queries";
+} from "@/features/link/service";
+import type { getCategoryList } from "@/features/category/service";
+import type { getTagList } from "@/features/tag/service";
 import type {
   getPostDetail,
   getPostList,
-} from "@/features/post/application";
-import type { getPageList } from "@/features/page/application/page-queries";
-import type { getMediaList } from "@/features/media/application/media-queries";
-import type { getMenuList } from "@/features/menu/application/menu-queries";
-import type { getSetting } from "@/features/setting/application/setting-queries";
-import type { getUserList } from "@/features/user/application/user-queries";
+} from "@/features/post/post.service";
+import type { getPageList } from "@/features/page/service";
+import type { getMediaList } from "@/features/media/service";
+import type { getMenuList } from "@/features/menu/service";
+import type { getSetting } from "@/features/setting/service";
+import type { getUserList } from "@/features/user/user.service";
 
 /** 公开评论 ViewModel。 */
 export type CommentViewModel = ReturnType<typeof toPublicComment>;
