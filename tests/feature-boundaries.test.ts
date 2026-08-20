@@ -27,11 +27,14 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe("业务功能边界", () => {
-  it("为业务提供根部仓储协议、transport、admin 和 public 入口", () => {
+  it("为业务提供仓储协议和按需的公开入口", () => {
     for (const feature of featureNames) {
       const entry = ["post", "comment", "user"].includes(feature) ? `${feature}.service.ts` : "service.ts";
       expect(statSync(join(featuresRoot, feature, entry))).toBeTruthy();
-      for (const area of ["transport", "admin", "public"]) expect(statSync(join(featuresRoot, feature, area))).toBeTruthy();
+      expect(statSync(join(featuresRoot, feature, "infrastructure"))).toBeTruthy();
+      if (["post", "comment", "user"].includes(feature)) {
+        expect(statSync(join(featuresRoot, feature, "domain"))).toBeTruthy();
+      }
     }
   });
 

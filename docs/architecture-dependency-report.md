@@ -20,16 +20,16 @@ src/packages  技术能力和共享基础设施
 `category`、`comment`、`link`、`media`、`menu`、`page`、`post`、`setting`、
 `tag` 和 `user`。
 
-每个业务功能统一提供以下入口：
+复杂业务功能提供以下边界；简单 CRUD 功能只保留实际需要的入口：
 
 - `service.ts`：简单 CRUD 的业务用例、查询和命令；复杂模块使用专门的 service/command/query 文件
-- `transport`：tRPC 路由和传输适配
-- `admin`：管理端界面
-- `public`：公开页面和跨业务公开能力
+- `transport` 或 feature 根部 router：tRPC 路由和传输适配
+- `admin`：管理端界面；只有多文件管理功能才保留目录
+- `public`：公开页面和跨业务公开能力；没有消费者时不创建目录
 
 模块根部用例只编排业务用例和领域规则，不得导入 Drizzle、数据库连接、schema
 或 ORM 查询构造器。需要持久化时，必须依赖 feature 自己的窄端口；Drizzle adapter
-统一放在同一 feature 的 `infrastructure` 目录，并由 transport 或 app 入口注入。
+统一放在同一 feature 的 `infrastructure` 目录，并由 router 或 app 入口注入。
 该约束由 `tests/feature-boundaries.test.ts` 持续检查。
 
 `features/media/shared` 存放媒体 UI 共享能力，供媒体管理页面和文章编辑器
@@ -55,7 +55,7 @@ transport / admin / public
 用例编排与事务边界；`infrastructure` 负责 Drizzle、存储、通知等外部适配；
 service 负责用例编排，entity/aggregate 负责业务不变量，repository 负责持久化
 边界。全部业务模块已移除历史 application、interfaces 目录；简单模块统一为
-`service.ts + repository.ts + infrastructure + transport`，复杂模块保留选择性 DDD。
+`service.ts + repository.ts + infrastructure + router`，复杂模块保留选择性 DDD。
 
 Post、Comment、User 使用完整聚合承载发布、审核和账号状态不变量；Category、
 Link、Media、Menu、Page、Setting、Tag 使用 service/repository 最小模板，避免把简单 CRUD

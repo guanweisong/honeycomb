@@ -429,14 +429,29 @@ function loadRouterSources(): RouterSource[] {
     ["user", "account-security"],
     ["category", "category"],
   ] as const;
-  const featureRouters = featureRouterEntries.map(([feature, router]) => ({
-    moduleSpecifier: `@/features/${feature}/transport/${router}.router`,
+  const flattenedFeatures = new Set([
+    "category",
+    "link",
+    "media",
+    "menu",
+    "page",
+    "setting",
+    "tag",
+    "comment",
+    "post",
+    "user",
+  ]);
+  const featureRouters = featureRouterEntries.map(([feature, router]) => {
+    const directory = flattenedFeatures.has(feature) ? "" : "transport/";
+    return {
+    moduleSpecifier: `@/features/${feature}/${directory}${router}.router`,
     fileName: `${router}.router.ts`,
     source: readFileSync(
-      join(process.cwd(), "src/features", feature, "transport", `${router}.router.ts`),
+      join(process.cwd(), "src/features", feature, directory, `${router}.router.ts`),
       "utf8",
     ),
-  }));
+    };
+  });
 
   return [...packageRouters, ...featureRouters];
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { menuRouter } from "@/features/menu/transport/menu.router";
+import { menuRouter } from "@/features/menu/menu.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { UserLevel } from "@/packages/domain/identity/user";

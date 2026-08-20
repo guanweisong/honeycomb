@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { pageRouter } from "@/features/page/transport/page.router";
+import { pageRouter } from "@/features/page/page.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { PageTemplate } from "@/packages/domain/content/page-template";

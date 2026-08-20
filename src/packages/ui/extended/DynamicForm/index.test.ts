@@ -65,6 +65,35 @@ describe("DynamicForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({ title: "更新后的标题" });
   });
 
+  it("resets fields when async default values arrive", async () => {
+    const schema = z.object({ title: z.string() });
+
+    await act(async () => {
+      root.render(
+        React.createElement(DynamicForm, {
+          schema,
+          fields: [{ name: "title", label: "标题", type: "text" }],
+          onSubmit: vi.fn(),
+        }),
+      );
+    });
+
+    await act(async () => {
+      root.render(
+        React.createElement(DynamicForm, {
+          schema,
+          fields: [{ name: "title", label: "标题", type: "text" }],
+          defaultValues: { title: "异步加载的标题" },
+          onSubmit: vi.fn(),
+        }),
+      );
+    });
+
+    expect(container.querySelector<HTMLInputElement>("input")?.value).toBe(
+      "异步加载的标题",
+    );
+  });
+
   it("shows validation feedback and does not submit invalid values", async () => {
     const onSubmit = vi.fn();
     const schema = z.object({ title: z.string().min(1, "标题不能为空") });

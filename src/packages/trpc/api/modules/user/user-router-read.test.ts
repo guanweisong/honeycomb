@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { userRouter } from "@/features/user/transport/user.router";
+import { userRouter } from "@/features/user/user.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TRPCError } from "@trpc/server";

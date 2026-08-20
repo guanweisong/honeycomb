@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useImperativeHandle, forwardRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, forwardRef, useState } from "react";
 import {
   useForm,
   FieldValues,
@@ -54,6 +54,10 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
     mode: "onBlur",
     defaultValues,
   });
+
+  useEffect(() => {
+    if (defaultValues) form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   useImperativeHandle(ref, () => ({
     setValue: form.setValue,

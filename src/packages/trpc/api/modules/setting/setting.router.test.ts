@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { settingRouter } from "@/features/setting/transport/setting.router";
+import { settingRouter } from "@/features/setting/setting.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";

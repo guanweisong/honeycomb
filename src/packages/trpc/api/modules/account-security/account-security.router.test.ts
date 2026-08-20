@@ -13,7 +13,7 @@ vi.mock("@/packages/identity/account-security/server/login-history.repository", 
   listUserLoginHistory: mocks.listUserLoginHistory,
 }));
 
-import { accountSecurityRouter } from "@/features/user/transport/account-security.router";
+import { accountSecurityRouter } from "@/features/user/account-security.router";
 
 describe("accountSecurityRouter", () => {
   beforeEach(() => {

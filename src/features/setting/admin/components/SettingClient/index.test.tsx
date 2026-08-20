@@ -9,8 +9,11 @@ vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   }),
 }));
 vi.mock("@/packages/ui/extended/DynamicForm", () => ({
-  DynamicForm: ({ defaultValues }: { defaultValues?: { id?: string } }) =>
-    React.createElement("div", { "data-setting-id": defaultValues?.id }),
+  DynamicForm: ({ defaultValues, ...props }: { defaultValues?: { id?: string }; key?: string }) =>
+    React.createElement("div", {
+      "data-setting-id": defaultValues?.id,
+      "data-form-key": props.key,
+    }),
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {

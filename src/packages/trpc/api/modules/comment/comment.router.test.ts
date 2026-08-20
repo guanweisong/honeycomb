@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commentRouter } from "@/features/comment/transport/comment.router";
+import { commentRouter } from "@/features/comment/comment.router";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
