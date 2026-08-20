@@ -57,7 +57,7 @@ describe("repository documentation consistency", () => {
     const testReadme = readRepositoryFile("tests/README.md");
 
     expect(testReadme).toContain("bun run test:unit:coverage");
-    expect(testReadme).toContain("209 个测试文件通过");
+    expect(testReadme).toContain("210 个测试文件通过");
     expect(testReadme).not.toContain("42.80%");
     expect(testReadme).not.toContain("43.25%");
     expect(testReadme).not.toContain("Other Routers");

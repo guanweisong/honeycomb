@@ -93,7 +93,6 @@ honeycomb/
 │   │   └── sitemaps/          # 运行时 sitemap 分片
 │   └── packages/              # 共享包
 │       ├── domain/            # 领域模型与领域契约
-│       ├── application/       # 应用服务与通知
 │       ├── identity/          # 认证、授权与账号安全
 │       ├── infrastructure/   # 数据库、HTTP、安全与可观测性
 │       ├── trpc/              # tRPC API 层
@@ -117,9 +116,9 @@ honeycomb/
 
 ### Feature 分层约束
 
-每个业务 feature 的 `application` 目录只负责业务用例编排和领域规则，不得直接
-导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化端口定义在 feature 的
-`infrastructure` 目录，由 transport 或 app 入口创建 adapter 后注入 application。
+每个业务 feature 的根部 service 或用例模块只负责业务用例编排和领域规则，不得直接
+导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化端口定义在 feature 根部，
+由同一 feature 的 router 或 app 入口创建 infrastructure adapter 后注入 service。
 
 权限入口统一登记在 `src/packages/identity/auth/capability-registry.ts`。tRPC、Admin
 Action、Admin route 和后台菜单只能使用已登记的 capability；相关边界测试位于

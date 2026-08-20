@@ -1,7 +1,4 @@
 /**
- * 通用工具类
- */
-/**
  * 通用工具类，包含各种静态辅助方法。
  */
 class Tools {
@@ -70,7 +67,7 @@ export function buildDrizzleWhere(
   const clauses: SQL[] = [];
   const columns = table as Record<string, AnyColumn | undefined>;
 
-  // 处理普通查询和 IN 查询
+  // 空值、空数组和未知字段不会生成查询条件。
   for (const key in queries) {
     const value = queries[key];
     if (typeof value === "undefined") continue;
@@ -80,15 +77,13 @@ export function buildDrizzleWhere(
     if (!col) continue;
 
     if (queryArray.includes(key)) {
-      // 精确匹配数组中的值 (IN)
       clauses.push(inArray(col, Array.isArray(value) ? value : [value]));
     } else {
-      // 模糊搜索 (LIKE)
       clauses.push(like(col, `%${value}%`));
     }
   }
 
-  // 处理多语言字段的模糊查询
+  // 多语言字段始终使用模糊匹配。
   if (multiLangQueries) {
     for (const k in multiLangQueries) {
       const v = multiLangQueries[k];

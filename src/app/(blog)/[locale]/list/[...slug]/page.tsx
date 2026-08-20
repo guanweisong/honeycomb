@@ -182,14 +182,8 @@ export async function generateMetadata(
     case "authors":
       typeName = (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
       break;
-    default:
-      // 其他逻辑
-      break;
   }
 
-  /**
-   * 获取页面标题
-   */
   const getTitle = () => {
     let title = "";
     switch (type) {

@@ -11,7 +11,7 @@ src/packages  技术能力和共享基础设施
 ```
 
 跨业务复用必须通过 `features/*/public` 或 `features/contracts` 完成。其他业务
-不得直接依赖某个 feature 的 `admin`、用例或 `transport` 内部实现。
+不得直接依赖某个 feature 的 `admin`、用例、根部 router 或 `transport` 内部实现。
 
 ## 业务功能
 
@@ -23,7 +23,7 @@ src/packages  技术能力和共享基础设施
 复杂业务功能提供以下边界；简单 CRUD 功能只保留实际需要的入口：
 
 - `service.ts`：简单 CRUD 的业务用例、查询和命令；复杂模块使用专门的 service/command/query 文件
-- `transport` 或 feature 根部 router：tRPC 路由和传输适配
+- feature 根部 router 或按需保留的 `transport`：tRPC 路由和传输适配
 - `admin`：管理端界面；只有多文件管理功能才保留目录
 - `public`：公开页面和跨业务公开能力；没有消费者时不创建目录
 
@@ -40,15 +40,15 @@ src/packages  技术能力和共享基础设施
 核心业务模块采用以下轻量边界；外围 CRUD 模块不强制复制全部目录：
 
 ```text
-transport / admin / public
-            ↓
-          service
-            ↓
-     entity / aggregate
-            ↓
-        repository
-            ↓
-      infrastructure
+feature router / transport / admin / public
+                    ↓
+                  service
+                    ↓
+             entity / aggregate
+                    ↓
+                repository
+                    ↓
+              infrastructure
 ```
 
 `domain` 只包含业务状态、不变量、聚合行为和领域事件；模块根部用例负责
@@ -64,8 +64,9 @@ Link、Media、Menu、Page、Setting、Tag 使用 service/repository 最小模�
 
 ## DDD 迁移记录
 
-- 已为全部十个业务模块建立 `infrastructure`、`transport`、`admin` 和 `public` 边界；
-  Post、Comment、User 保留 `domain`，其余模块采用最小 service/repository 模板。
+- 已为全部十个业务模块建立 `infrastructure` 和按需的公开、管理、传输边界；简单模块
+  使用 feature 根部 router，Post、Comment、User 保留 `domain`，其余模块采用最小
+  service/repository 模板。
 - 已将核心命令接入 Post、Comment、User 聚合及领域事件。
 - 已增加领域边界、聚合状态机、fake repository、事件失败重试和幂等测试。
 - 保留现有 tRPC、Admin Action 和公开页面入口，未改变外部输入输出契约。
@@ -73,8 +74,9 @@ Link、Media、Menu、Page、Setting、Tag 使用 service/repository 最小模�
 
 ## 验证记录
 
-最近一次验证结果：类型检查、Lint、生产构建通过；全量单测 209 个测试文件、
-920 个测试通过；当前覆盖率为语句 81.23%、分支 75.32%、函数 77.50%、行 82.19%。
+最近一次验证结果：类型检查、Lint、Webpack 生产构建通过；全量单测 210 个测试文件、
+922 个测试通过；覆盖率基线为语句 81.23%、分支 75.32%、函数 77.50%、行 82.19%。
+本地 Turbopack 构建曾因受限环境无法创建子进程而失败，不代表应用代码构建失败。
 Playwright 已在提升权限环境执行 24 项：20 项通过，3 个 Admin 合同测试因缺少真实
 登录会话重定向到 `/admin/login`，1 个 PWA 离线 fallback 在导航阶段返回 `ERR_FAILED`。
 因此未将 E2E 标记为全量通过。

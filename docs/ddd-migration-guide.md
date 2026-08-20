@@ -26,7 +26,7 @@ Post 聚合负责发布与撤回；Comment 聚合负责审核状态流转；User
 2. 在模块根部 `repository.ts` 中定义 repository 端口和读写模型类型。
 3. 简单模块在 `service.ts` 编写注入端口的命令和查询；复杂模块才拆分文件。
 4. 在 `infrastructure` 中实现数据库映射，禁止把 Drizzle 类型泄漏到 domain 或 service。
-5. 在 transport/admin/public 中接入现有入口。
+5. 在 feature 根部 router，或按需保留的 transport/admin/public 入口中接入现有入口。
 6. 增加 fake repository、边界测试和至少一个失败路径测试。
 
 ## 稳定性原则
