@@ -1,11 +1,11 @@
 import "server-only";
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import {
   permissionProcedure,
   publicProcedure,
   createTRPCRouter,
+  mapApplicationError,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
@@ -18,7 +18,6 @@ import {
   destroyComments,
   updateComment,
   createComment,
-  CommentTargetError,
   listComments,
   listPublicCommentsByRef,
   notifyCommentCreated,
@@ -26,15 +25,6 @@ import {
 import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
-
-function mapCommentTargetError(error: unknown): never {
-  if (error instanceof CommentTargetError)
-    throw new TRPCError({
-      code: error.code,
-      message: error.message || error.code,
-    });
-  throw error;
-}
 
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
@@ -44,7 +34,7 @@ export const commentRouter = createTRPCRouter({
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))
     .query(({ input, ctx }) =>
-      listPublicCommentsByRef(createCommentQueryRepository(ctx.db), input).catch(mapCommentTargetError),
+      listPublicCommentsByRef(createCommentQueryRepository(ctx.db), input).catch(mapApplicationError),
     ),
 
   create: publicProcedure
@@ -52,7 +42,7 @@ export const commentRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       createComment(createCommentCommandRepository(ctx.db), ctx.header, input, (commentId, parentId) =>
         notifyCommentCreated(createCommentNotificationRepository(ctx.db), commentId, parentId),
-      ).catch(mapCommentTargetError),
+      ).catch(mapApplicationError),
     ),
 
   update: permissionProcedure(Permission.commentModerate)

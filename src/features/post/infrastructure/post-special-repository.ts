@@ -20,7 +20,9 @@ export function createPostSpecialRepository(db: Database, query: PostQueryReposi
       await setCacheJSON(namespace, key, result, 60 * 60);
       return result;
     },
-    randomByCategory(categoryId) { return observeDbOperation("post.random-by-category", "select", () => db.select({ id: schema.post.id, title: schema.post.title, quoteContent: schema.post.quoteContent }).from(schema.post).where(and(eq(schema.post.categoryId, categoryId), eq(schema.post.status, PostStatus.PUBLISHED))).orderBy(sql`RANDOM()`).limit(10)); },
+    randomByCategory(categoryId) {
+      return observeDbOperation("post.random-by-category", "select", () => db.select({ id: schema.post.id, title: schema.post.title, quoteContent: schema.post.quoteContent }).from(schema.post).where(and(eq(schema.post.categoryId, categoryId), eq(schema.post.status, PostStatus.PUBLISHED))).orderBy(sql`abs(random())`).limit(10));
+    },
     async publishedCategoryId(id) { const [result] = await observeDbOperation("post.category-id", "select", () => db.select({ categoryId: schema.post.categoryId }).from(schema.post).where(and(eq(schema.post.id, id), eq(schema.post.status, PostStatus.PUBLISHED)))); return result ? { categoryId: result.categoryId ?? undefined } : result; },
   };
 }

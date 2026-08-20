@@ -9,6 +9,7 @@ import {
   type Permission,
 } from "@/packages/identity/auth/permissions";
 import { isCapability } from "@/packages/identity/auth/capability-registry";
+import { ApplicationError } from "@/packages/application/errors";
 
 import type { Context } from "./context";
 
@@ -121,3 +122,11 @@ export const permissionsProcedure = (
 
 export const permissionProcedure = (permission: Permission) =>
   permissionsProcedure([permission]);
+
+/** 将应用层错误统一转换为 tRPC 错误，保留未知错误交给全局错误处理。 */
+export function mapApplicationError(error: unknown): never {
+  if (error instanceof ApplicationError) {
+    throw new TRPCError({ code: error.code, message: error.message });
+  }
+  throw error;
+}

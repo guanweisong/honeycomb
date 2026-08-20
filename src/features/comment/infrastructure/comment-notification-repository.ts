@@ -6,7 +6,7 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { selectAllColumns } from "@/packages/infrastructure/db/query/select-all-columns";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-import type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../repository";
+import type { CommentNotificationRepository, NotificationSetting } from "../repository";
 export type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../repository";
 
 const selection = {
@@ -24,7 +24,12 @@ export function createCommentNotificationRepository(db: Database): CommentNotifi
           .leftJoin(schema.page, eq(schema.comment.pageId, schema.page.id))
           .where(eq(schema.comment.id, id)),
       );
-      return comment as unknown as NotificationComment | undefined;
+      return comment ? {
+        id: comment.id, author: comment.author, content: comment.content, site: comment.site, email: comment.email,
+        parentId: comment.parentId, postId: comment.postId, pageId: comment.pageId, customId: comment.customId,
+        status: comment.status, createdAt: comment.createdAt, updatedAt: comment.updatedAt,
+        userAgent: comment.userAgent, ip: comment.ip, post: comment.post, page: comment.page,
+      } : undefined;
     },
     async getSetting() {
       const [setting] = await observeDbOperation("comment.notification.setting", "select", () => db.select().from(schema.setting));

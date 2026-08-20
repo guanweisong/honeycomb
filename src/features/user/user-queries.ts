@@ -4,10 +4,11 @@ import type {
   UserListInput,
   UserQueryPort,
 } from "./repository";
+import { ApplicationError } from "@/packages/application/errors";
 
 export type { UserListInput } from "./repository";
 
-export class UserQueryError extends Error {
+export class UserQueryError extends ApplicationError {
   constructor(public readonly code: "UNAUTHORIZED") {
     super(code);
   }
@@ -23,7 +24,7 @@ export async function getCurrentUser(repository: UserQueryPort, id: string) {
   try {
     return await repository.current(id);
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+    if (error instanceof ApplicationError && error.code === "UNAUTHORIZED") {
       throw new UserQueryError("UNAUTHORIZED");
     }
     throw error;

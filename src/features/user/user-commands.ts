@@ -4,12 +4,13 @@ import type {
   UserCommandInput,
   UserCommandPort,
 } from "./repository";
+import { ApplicationError } from "@/packages/application/errors";
 
 export type { UserCommandInput } from "./repository";
 
-export class UserCommandError extends Error {
+export class UserCommandError extends ApplicationError {
   constructor(public readonly code: "FORBIDDEN", message = code) {
-    super(message);
+    super(code, message);
   }
 }
 
@@ -23,7 +24,7 @@ export async function destroyUsers(repository: UserCommandPort, ids: string[]) {
   try {
     return await repository.destroy(ids);
   } catch (error) {
-    if (error instanceof Error && error.message === "FORBIDDEN") {
+    if (error instanceof ApplicationError && error.code === "FORBIDDEN") {
       throw new UserCommandError("FORBIDDEN");
     }
     throw error;
@@ -38,7 +39,7 @@ export async function updateUser(
   try {
     return await repository.update(input);
   } catch (error) {
-    if (error instanceof Error && error.message === "FORBIDDEN") {
+    if (error instanceof ApplicationError && error.code === "FORBIDDEN") {
       throw new UserCommandError("FORBIDDEN");
     }
     throw error;

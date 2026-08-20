@@ -11,7 +11,10 @@ import { getPasskeyConfig } from "@/packages/identity/auth/passkey-config";
 import { createAuthDatabaseHooks } from "@/packages/identity/auth/server/auth-hooks";
 
 const authEnv = getAuthEnv();
-const authBaseURL = authEnv.AUTH_URL || "http://localhost:3000";
+const authBaseURL = authEnv.AUTH_URL;
+if (!authBaseURL && process.env.NODE_ENV === "production") {
+  throw new Error("AUTH_URL is required in production");
+}
 
 function buildSocialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> =
@@ -32,7 +35,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
       usernameNormalization: false,
       usernameValidator: (value) => value.trim().length > 0,
     }),
-    passkey(getPasskeyConfig(authBaseURL)),
+  passkey(getPasskeyConfig(authBaseURL || "http://localhost:3000")),
   ];
 
   if (authEnv.turnstile) {
@@ -49,7 +52,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
 }
 
 const authOptions: BetterAuthOptions = {
-  baseURL: authBaseURL,
+  baseURL: authBaseURL || "http://localhost:3000",
   secret: authEnv.AUTH_SECRET,
   database:
     process.env.TURSO_URL && process.env.TURSO_TOKEN

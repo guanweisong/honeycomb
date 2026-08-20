@@ -7,11 +7,12 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import { ApplicationError } from "@/packages/application/errors";
 
 import type { CommentTargetRepository } from "../repository";
 export type { CommentTarget, CommentTargetRepository } from "../repository";
-export class CommentTargetError extends Error {
-  constructor(public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN", message?: string) { super(message); this.name = "CommentTargetError"; }
+export class CommentTargetError extends ApplicationError {
+  constructor(public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN", message?: string) { super(code, message); this.name = "CommentTargetError"; }
 }
 export function createCommentTargetRepository(db: Database): CommentTargetRepository {
   return {

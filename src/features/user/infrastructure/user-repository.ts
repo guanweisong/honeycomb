@@ -15,6 +15,7 @@ import {
 } from "@/packages/identity/auth/credentials";
 import { listUserLoginHistory } from "@/packages/identity/account-security/server/login-history.repository";
 import type { CurrentUserRecord, UserCommandInput, UserListInput, UserRecord } from "../ports";
+import { ApplicationError } from "@/packages/application/errors";
 
 const safeUserColumns = {
   id: schema.user.id,
@@ -63,7 +64,7 @@ export function createUserRepository(db: Database): UserRepository {
           status: schema.user.status,
         }).from(schema.user).where(eq(schema.user.id, id)).limit(1),
       );
-      if (!user) throw new Error("UNAUTHORIZED");
+      if (!user) throw new ApplicationError("UNAUTHORIZED");
       return user;
     },
     async list(input) {
@@ -100,7 +101,7 @@ export function createUserRepository(db: Database): UserRepository {
       const targets = await db.select({ level: schema.user.level }).from(schema.user)
         .where(inArray(schema.user.id, ids));
       if (targets.some((target) => can(target.level, Permission.userManage))) {
-        throw new Error("FORBIDDEN");
+        throw new ApplicationError("FORBIDDEN");
       }
       await observeDbOperation("user.destroy", "delete", () =>
         db.delete(schema.user).where(inArray(schema.user.id, ids)),
@@ -115,7 +116,7 @@ export function createUserRepository(db: Database): UserRepository {
         target && can(target.level, Permission.userManage) &&
         (("level" in rest && rest.level && !can(rest.level as string, Permission.userManage)) ||
           (rest.status !== undefined && rest.status !== target.status))
-      ) throw new Error("FORBIDDEN");
+      ) throw new ApplicationError("FORBIDDEN");
       const update = async (store: CredentialStore) => {
         const [user] = await observeDbOperation("user.update", "update", () =>
           store.update(schema.user).set(rest).where(eq(schema.user.id, id)).returning(safeUserColumns),

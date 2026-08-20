@@ -1,4 +1,6 @@
 import type { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+export type { CredentialPort } from "./credential-port";
+export type { LoginHistoryPort } from "./login-history-port";
 
 export type QueryValue = string | number | boolean | Array<string | number | boolean>;
 export type UserCommandInput = {
@@ -34,15 +36,4 @@ export interface UserQueryPort {
   detail(id: string): Promise<{ id: string; name: string | null } | null>;
   current(id: string): Promise<CurrentUserRecord>;
   list(input: UserListInput): Promise<{ list: UserRecord[]; total: number }>;
-}
-export interface CredentialPort { update(input: { id: string; password: string }): Promise<UserRecord> }
-export interface LoginHistoryPort {
-  loginHistory(userId: string): Promise<ReadonlyArray<{
-    id: string;
-    event: "LOGIN_SUCCESS" | "LOGIN_FAILURE" | "SIGN_OUT" | "REVOKE_OTHER_SESSIONS";
-    provider: string | null;
-    ipAddress: string | null;
-    userAgent: string | null;
-    createdAt: Date;
-  }>>;
 }

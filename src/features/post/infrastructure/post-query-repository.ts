@@ -8,10 +8,25 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { PostQueryRepository, PostWithRelations, PostMediaRecord } from "../repository";
+import type { PostQueryRepository, PostWithRelations, PostMediaRecord, PostAuthorRecord, PostCategoryRecord, PostTagRecord } from "../repository";
 export type { PostListInput, PostQueryRepository, PostVisibility, PostWithRelations } from "../repository";
 type PostRecord = typeof schema.post.$inferSelect;
 type TagRecord = typeof schema.tag.$inferSelect;
+
+function toMediaRecord(media: typeof schema.media.$inferSelect): PostMediaRecord {
+  return { id: media.id, key: media.key, name: media.name, size: media.size, type: media.type, url: media.url, color: media.color, height: media.height, width: media.width, createdAt: media.createdAt, updatedAt: media.updatedAt };
+}
+
+function toPostViewModel(post: PostRecord, relations: { category?: typeof schema.category.$inferSelect | null; author?: PostAuthorRecord | null; cover?: typeof schema.media.$inferSelect | null; movieActors: PostTagRecord[]; movieDirectors: PostTagRecord[]; movieStyles: PostTagRecord[]; galleryStyles: PostTagRecord[] }): PostWithRelations {
+  const category = relations.category;
+  return {
+    ...post,
+    category: category ? { id: category.id, title: category.title, description: category.description, parent: category.parent, status: category.status, path: category.path, createdAt: category.createdAt, updatedAt: category.updatedAt } satisfies PostCategoryRecord : undefined,
+    author: relations.author ?? undefined,
+    cover: relations.cover ? toMediaRecord(relations.cover) : undefined,
+    movieActors: relations.movieActors, movieDirectors: relations.movieDirectors, movieStyles: relations.movieStyles, galleryStyles: relations.galleryStyles,
+  } as PostWithRelations;
+}
 export async function loadPostRelations(db: Database, posts: PostRecord[]): Promise<PostWithRelations[]> {
   const postIds = Array.from(new Set(posts.map((post) => post.id).filter(Boolean)));
   if (!postIds.length) return [];
@@ -21,7 +36,8 @@ export async function loadPostRelations(db: Database, posts: PostRecord[]): Prom
     const row = relationMap.get(item.id);
     const tags = row?.postTags ?? [];
     const mapTags = (type: TagType) => tags.filter((postTag) => postTag.type === type).map((postTag) => postTag.tag).filter((tag): tag is TagRecord => Boolean(tag));
-    return { ...item, category: row?.category ?? undefined, author: row?.author ?? undefined, cover: row?.cover ?? undefined, movieActors: mapTags(TagType.ACTOR), movieDirectors: mapTags(TagType.DIRECTOR), movieStyles: mapTags(TagType.MOVIE_STYLE), galleryStyles: mapTags(TagType.GALLERY_STYLE) };
+    const mapTag = (tag: TagRecord): PostTagRecord => ({ id: tag.id, name: tag.name, createdAt: tag.createdAt, updatedAt: tag.updatedAt });
+    return toPostViewModel(item, { category: row?.category, author: row?.author ? { id: row.author.id, email: row.author.email, level: row.author.level, name: row.author.name, status: row.author.status, createdAt: row.author.createdAt, updatedAt: row.author.updatedAt } : null, cover: row?.cover, movieActors: mapTags(TagType.ACTOR).map(mapTag), movieDirectors: mapTags(TagType.DIRECTOR).map(mapTag), movieStyles: mapTags(TagType.MOVIE_STYLE).map(mapTag), galleryStyles: mapTags(TagType.GALLERY_STYLE).map(mapTag) });
   });
 }
 
@@ -56,7 +72,7 @@ export function createPostQueryRepository(
       const [result] = await loadRelations(db, [item]);
       const urls = getAllImageLinkFormHtml(result?.content?.zh);
       const imagesInContent = urls.length ? await observeDbOperation("post.service.detail-images", "select", () => db.select().from(schema.media).where(inArray(schema.media.url, urls))) : [];
-      return { ...result, imagesInContent } as unknown as PostWithRelations & { imagesInContent: PostMediaRecord[] };
+      return { ...result, imagesInContent: imagesInContent.map(toMediaRecord) };
     },
   };
 }
