@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
+  createGuestUser,
   createMockContext,
   createMockDb,
   resetMockDb,
@@ -101,7 +101,7 @@ describe("Post Router", () => {
 
       const caller = postRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );
@@ -224,7 +224,7 @@ describe("Post Router", () => {
 
       const caller = postRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );

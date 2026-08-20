@@ -5,6 +5,8 @@ import { UserStatus } from "@/packages/domain/identity/user";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
+  createAdminUser,
+  createGuestUser,
   createMockContext,
   createMockDb,
   resetMockDb,
@@ -46,7 +48,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -67,7 +69,7 @@ describe("User Router", () => {
     it("rejects guest users to prevent email enumeration", async () => {
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );
@@ -116,7 +118,7 @@ describe("User Router", () => {
       // 使用模拟上下文创建调用方。
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -146,7 +148,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );

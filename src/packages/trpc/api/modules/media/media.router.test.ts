@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mediaRouter } from "@/features/media/media.router";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -37,7 +36,7 @@ describe("Media Router", () => {
 
   describe("getPresignedUrl procedure", () => {
     it("should return presigned URL with admin permissions", async () => {
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.getPresignedUrl({
         name: "test.jpg",
@@ -51,7 +50,7 @@ describe("Media Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(
         caller.getPresignedUrl({
@@ -74,7 +73,7 @@ describe("Media Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([mockMedia]);
 
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.upload({
         name: "test.jpg",
@@ -87,7 +86,7 @@ describe("Media Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(
         caller.upload({
@@ -109,7 +108,7 @@ describe("Media Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.destroy({ ids: [TEST_IDS.ID_1] });
 
@@ -117,7 +116,7 @@ describe("Media Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = mediaRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(caller.destroy({ ids: [TEST_IDS.ID_1] })).rejects.toThrow();
     });

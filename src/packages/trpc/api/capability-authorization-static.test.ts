@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { assertNoLegacyAuthorization, loadProductionSources } from "./capability-authorization-static";
 
 describe("capability authorization static gate", () => {
+  it("只加载非测试 TypeScript 源码并排除授权测试工具自身", () => {
+    const files = loadProductionSources().map(({ fileName }) => fileName);
+
+    expect(files.some((file) => /\.test\.(ts|tsx)$/.test(file))).toBe(false);
+    expect(files).not.toContain(
+      "src/packages/trpc/api/capability-authorization-static.ts",
+    );
+    expect(files).not.toContain(
+      "src/packages/trpc/api/capability-authorization-sources.ts",
+    );
+  });
+
   it("contains no legacy procedure or business UserLevel authorization", () => {
     const productionSources = loadProductionSources();
     expect(productionSources.length).toBeGreaterThan(100);

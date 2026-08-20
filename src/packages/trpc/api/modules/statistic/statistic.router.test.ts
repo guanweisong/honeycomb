@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { statisticRouter } from "@/features/setting/statistic.router";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -31,7 +30,7 @@ describe("Statistic Router", () => {
       mockDb.groupBy.mockResolvedValue([]);
 
       const caller = statisticRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.index();

@@ -1,6 +1,7 @@
 import { vi, type Mock } from "vitest";
 import type { User } from "@/packages/trpc/api/context";
 import type { Context } from "@/packages/trpc/api/context";
+import { UserLevel } from "@/packages/domain/identity/user";
 
 type MockQueryModel = {
   findMany: Mock;
@@ -151,3 +152,13 @@ export const createMockContext = (user?: User | null, db?: MockDb) =>
     user: user ?? null,
     header: new Headers(),
   }) as Context;
+
+export const createAdminUser = (id: string): User => ({
+  id,
+  level: UserLevel.ADMIN,
+});
+
+export const createGuestUser = (id: string): User => ({
+  id,
+  level: UserLevel.GUEST,
+});

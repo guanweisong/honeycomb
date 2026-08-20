@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { linkRouter } from "@/features/link/link.router";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -87,7 +86,7 @@ describe("Link Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newLink]);
 
-      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = linkRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.create({
         name: "New Link",
@@ -105,7 +104,7 @@ describe("Link Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = linkRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -129,7 +128,7 @@ describe("Link Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedLink]);
 
-      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = linkRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -143,7 +142,7 @@ describe("Link Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = linkRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = linkRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(
         caller.update({

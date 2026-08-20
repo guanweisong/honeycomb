@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { categoryRouter } from "@/features/category/category.router";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -91,7 +90,7 @@ describe("Category Router", () => {
       mockDb.returning.mockResolvedValueOnce([newCategory]);
 
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.create({
@@ -107,7 +106,7 @@ describe("Category Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb),
+        createMockContext(createGuestUser("2"), mockDb),
       );
 
       await expect(
@@ -127,7 +126,7 @@ describe("Category Router", () => {
       mockDb.where.mockResolvedValueOnce(undefined);
 
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.destroy({
@@ -140,7 +139,7 @@ describe("Category Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb),
+        createMockContext(createGuestUser("2"), mockDb),
       );
 
       await expect(
@@ -165,7 +164,7 @@ describe("Category Router", () => {
       mockDb.returning.mockResolvedValueOnce([updatedCategory]);
 
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.update({
@@ -184,7 +183,7 @@ describe("Category Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = categoryRouter.createCaller(
-        createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb),
+        createMockContext(createGuestUser("2"), mockDb),
       );
 
       await expect(

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -17,6 +19,13 @@ vi.mock("@/features/user/infrastructure/user-repository", () => ({
 import { getAdminUser } from "./admin-auth";
 
 describe("getAdminUser", () => {
+  it("keeps database access behind the user feature boundary", () => {
+    const source = readFileSync(resolve("src/app/admin/lib/admin-auth.ts"), "utf8");
+
+    expect(source).not.toContain("drizzle-orm");
+    expect(source).toContain("features/user/admin-user");
+  });
+
   it("returns the enabled user from the current request session", async () => {
     mocks.getAdminUser.mockResolvedValueOnce({
       id: "user-1", email: null, level: "ADMIN", name: "Admin", status: "ENABLE",
@@ -37,9 +46,4 @@ describe("getAdminUser", () => {
     await expect(getAdminUser(new Headers())).resolves.toBeNull();
   });
 
-  it("returns null when the user is disabled", async () => {
-    mocks.getAdminUser.mockResolvedValueOnce(null);
-
-    await expect(getAdminUser(new Headers())).resolves.toBeNull();
-  });
 });

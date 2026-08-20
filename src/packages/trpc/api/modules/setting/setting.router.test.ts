@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { settingRouter } from "@/features/setting/setting.router";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -53,7 +52,7 @@ describe("Setting Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedSetting]);
 
-      const caller = settingRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = settingRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -67,7 +66,7 @@ describe("Setting Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = settingRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = settingRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(
         caller.update({

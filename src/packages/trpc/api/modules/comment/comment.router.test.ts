@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "@/features/comment/comment.router";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
@@ -164,7 +163,7 @@ describe("Comment Router", () => {
       ]);
 
       const caller = commentRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.update({
@@ -177,7 +176,7 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller(createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb));
+      const caller = commentRouter.createCaller(createMockContext(createGuestUser("2"), mockDb));
 
       await expect(
         caller.update({
@@ -193,7 +192,7 @@ describe("Comment Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = commentRouter.createCaller(createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb));
+      const caller = commentRouter.createCaller(createMockContext(createAdminUser("1"), mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -204,7 +203,7 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller(createMockContext({ id: "2", level: UserLevel.GUEST }, mockDb));
+      const caller = commentRouter.createCaller(createMockContext(createGuestUser("2"), mockDb));
 
       await expect(
         caller.destroy({

@@ -5,7 +5,7 @@ import { UserLevel } from "@/packages/domain/identity/user";
 import { PageStatus } from "@/packages/domain/content/page";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // 模拟数据库及相关模块。
@@ -240,7 +240,7 @@ describe("Page Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 

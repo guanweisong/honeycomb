@@ -6,6 +6,8 @@ import { UserStatus } from "@/packages/domain/identity/user";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
+  createAdminUser,
+  createGuestUser,
   createMockContext,
   createMockDb,
   resetMockDb,
@@ -51,7 +53,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -74,7 +76,7 @@ describe("User Router", () => {
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );
@@ -115,7 +117,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -138,7 +140,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -154,7 +156,7 @@ describe("User Router", () => {
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );
@@ -175,7 +177,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -206,7 +208,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -253,7 +255,7 @@ describe("User Router", () => {
 
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -273,7 +275,7 @@ describe("User Router", () => {
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );

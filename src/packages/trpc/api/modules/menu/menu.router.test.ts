@@ -2,9 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/menu.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
+  createAdminUser,
+  createGuestUser,
   createMockContext,
   createMockDb,
   resetMockDb,
@@ -58,7 +59,7 @@ describe("Menu Router", () => {
 
       const caller = menuRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -78,7 +79,7 @@ describe("Menu Router", () => {
 
       const caller = menuRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -114,7 +115,7 @@ describe("Menu Router", () => {
 
       const caller = menuRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_1, level: UserLevel.ADMIN },
+          createAdminUser(TEST_IDS.ID_1),
           mockDb,
         ),
       );
@@ -143,7 +144,7 @@ describe("Menu Router", () => {
 
       const caller = menuRouter.createCaller(
         createMockContext(
-          { id: TEST_IDS.ID_2, level: UserLevel.GUEST },
+          createGuestUser(TEST_IDS.ID_2),
           mockDb,
         ),
       );

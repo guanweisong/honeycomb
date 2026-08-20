@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const featuresRoot = join(process.cwd(), "src/features");
@@ -27,6 +27,25 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe("业务功能边界", () => {
+  it("核心 feature 具备 domain、service 和 repository 边界", () => {
+    for (const feature of ["post", "comment", "user"]) {
+      expect(existsSync(join(featuresRoot, feature, "domain"))).toBe(true);
+      expect(existsSync(join(featuresRoot, feature, `${feature}.service.ts`))).toBe(true);
+      expect(existsSync(join(featuresRoot, feature, "repository.ts"))).toBe(true);
+    }
+  });
+
+  it("domain 不依赖 infrastructure 或数据库实现", () => {
+    const violations = ["post", "comment", "user"].flatMap((feature) =>
+      sourceFiles(join(featuresRoot, feature, "domain")).filter((path) =>
+        /infrastructure\/|drizzle-orm|packages\/infrastructure/.test(
+          readFileSync(path, "utf8"),
+        ),
+      ),
+    );
+
+    expect(violations).toEqual([]);
+  });
   it("为业务提供仓储协议和按需的公开入口", () => {
     for (const feature of featureNames) {
       const entry = ["post", "comment", "user"].includes(feature) ? `${feature}.service.ts` : "service.ts";

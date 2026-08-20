@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "@/features/comment/comment.router";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
@@ -67,7 +66,7 @@ describe("Comment Router", () => {
       mockDb.where.mockResolvedValueOnce(mockCount);
 
       const caller = commentRouter.createCaller(
-        createMockContext({ id: "1", level: UserLevel.ADMIN }, mockDb),
+        createMockContext(createAdminUser("1"), mockDb),
       );
 
       const result = await caller.index({ page: 1, limit: 10 });

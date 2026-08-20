@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import * as ts from "typescript";
@@ -21,6 +21,8 @@ import {
   createContext,
   createDatabaseBoundary,
   deniedRoleFor,
+  loadRouterSources,
+  normalizeDeclarationMatrix,
 } from "./capability-procedure-matrix-test-helpers";
 
 const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
@@ -41,8 +43,6 @@ vi.mock("@/packages/infrastructure/storage/S3", () => ({
     },
   },
 }));
-
-type DeclarationEntry = readonly [path: string, permission: PermissionValue];
 
 interface RouterSource {
   moduleSpecifier: string;
@@ -66,25 +66,10 @@ interface RouterRegistration {
   localSymbol: string;
 }
 
-function normalizeDeclarationMatrix(
-  matrix: readonly DeclarationEntry[],
-): DeclarationEntry[] {
-  const seenPaths = new Set<string>();
-  return matrix
-    .map(([path, permission]) => {
-      if (seenPaths.has(path)) {
-        throw new Error(`Duplicate protected procedure path: ${path}`);
-      }
-      seenPaths.add(path);
-      return [path, permission] as const;
-    })
-    .sort(([left], [right]) => left.localeCompare(right));
-}
-
 function extractCapabilityProcedureMatrix(
   routerSources: readonly RouterSource[],
   appRouterSource: string,
-): DeclarationEntry[] {
+): readonly [string, PermissionValue][] {
   const appSourceFile = ts.createSourceFile(
     "app-router.ts",
     appRouterSource,
@@ -104,7 +89,7 @@ function extractCapabilityProcedureMatrix(
     registrations,
   );
 
-  const entries: DeclarationEntry[] = [];
+  const entries: [string, PermissionValue][] = [];
 
   for (const routerSource of routerSources) {
     const sourceFile = ts.createSourceFile(
@@ -396,65 +381,6 @@ const sampleAppRouterSource = `
     sample: sampleRouter,
   });
 `;
-
-function loadRouterSources(): RouterSource[] {
-  const modulesDirectory = join(process.cwd(), "src/packages/trpc/api/modules");
-  const packageRouters = readdirSync(modulesDirectory, { withFileTypes: true }).flatMap(
-    (directory) => {
-      if (!directory.isDirectory()) return [];
-      const moduleDirectory = join(modulesDirectory, directory.name);
-      return readdirSync(moduleDirectory)
-        .filter((fileName) => fileName.endsWith(".router.ts"))
-        .map((fileName) => {
-          return {
-            moduleSpecifier: `@/packages/trpc/api/modules/${directory.name}/${fileName.slice(0, -3)}`,
-            fileName,
-            source: readFileSync(join(moduleDirectory, fileName), "utf8"),
-          };
-        });
-    },
-  );
-
-  const featureRouterEntries = [
-    ["comment", "comment"],
-    ["post", "post"],
-    ["media", "media"],
-    ["link", "link"],
-    ["menu", "menu"],
-    ["page", "page"],
-    ["setting", "setting"],
-    ["setting", "statistic"],
-    ["tag", "tag"],
-    ["user", "user"],
-    ["user", "account-security"],
-    ["category", "category"],
-  ] as const;
-  const flattenedFeatures = new Set([
-    "category",
-    "link",
-    "media",
-    "menu",
-    "page",
-    "setting",
-    "tag",
-    "comment",
-    "post",
-    "user",
-  ]);
-  const featureRouters = featureRouterEntries.map(([feature, router]) => {
-    const directory = flattenedFeatures.has(feature) ? "" : "transport/";
-    return {
-    moduleSpecifier: `@/features/${feature}/${directory}${router}.router`,
-    fileName: `${router}.router.ts`,
-    source: readFileSync(
-      join(process.cwd(), "src/features", feature, directory, `${router}.router.ts`),
-      "utf8",
-    ),
-    };
-  });
-
-  return [...packageRouters, ...featureRouters];
-}
 
 describe("capability procedure matrix", () => {
   beforeEach(() => {

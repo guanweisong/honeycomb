@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "@/features/page/page.router";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { UserLevel } from "@/packages/domain/identity/user";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -33,7 +32,7 @@ describe("Page Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newPage]);
 
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.create({
         title: { en: "New Page", zh: "新页面" },
@@ -47,7 +46,7 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
         await expect(
       caller.create({
@@ -81,7 +80,7 @@ describe("Page Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -92,7 +91,7 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
       await expect(
         caller.destroy({
@@ -118,7 +117,7 @@ describe("Page Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedPage]);
 
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_1, level: UserLevel.ADMIN }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -133,7 +132,7 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext({ id: TEST_IDS.ID_2, level: UserLevel.GUEST }, mockDb));
+      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
 
         await expect(
       caller.update({
