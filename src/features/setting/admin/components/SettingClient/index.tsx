@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { SettingUpdateSchema } from "@/packages/trpc/api/modules/setting/schemas/setting.update.schema";
+import { SettingUpdateSchema } from "@/features/setting/schemas/setting.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";

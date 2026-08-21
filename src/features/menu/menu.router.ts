@@ -6,7 +6,7 @@ import {
   publicProcedure,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { MenuUpdateSchema } from "@/packages/trpc/api/modules/menu/schemas/menu.update.schema";
+import { MenuUpdateSchema } from "@/features/menu/schemas/menu.update.schema";
 import { getMenuList, saveAllMenus } from "@/features/menu/service";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
 

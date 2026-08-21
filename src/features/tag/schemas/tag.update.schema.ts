@@ -1,4 +1,4 @@
-import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.insert.schema";
+import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 
 /**

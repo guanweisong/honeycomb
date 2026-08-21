@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import type { UserListQueryInput } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
+import type { UserListQueryInput } from "@/features/user/schemas/user.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export function useUserQuery() {

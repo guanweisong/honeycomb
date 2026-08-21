@@ -55,7 +55,7 @@ function findBackendModules(directory: string): string[] {
 describe("server-only module boundaries", () => {
   const protectedModules = [
     ...serverOnlyEntrypoints,
-    ...findBackendModules("src/packages/trpc/api/modules"),
+    ...findBackendModules("src/features"),
   ];
 
   it.each(protectedModules)("%s declares the server-only boundary", (path) => {

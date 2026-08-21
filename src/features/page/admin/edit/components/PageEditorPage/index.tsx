@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import {
   PageInsertSchema,
   type PageInsert,
-} from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
+} from "@/features/page/schemas/page.insert.schema";
 import { PageStatus } from "@/packages/domain/content/page";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import {

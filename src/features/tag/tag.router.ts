@@ -7,9 +7,9 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { TagListQuerySchema } from "@/packages/trpc/api/modules/tag/schemas/tag.list.query.schema";
-import { TagInsertSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.insert.schema";
-import { TagUpdateSchema } from "@/packages/trpc/api/modules/tag/schemas/tag.update.schema";
+import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.query.schema";
+import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
+import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
 import { getTagList, createTag, destroyTags, updateTag } from "@/features/tag/service";
 import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
 

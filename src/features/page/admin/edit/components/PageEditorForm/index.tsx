@@ -1,7 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/packages/ui/components/form";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
-import type { PageInsert } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
+import type { PageInsert } from "@/features/page/schemas/page.insert.schema";
 import { pageTemplateOptions } from "@/packages/domain/content/page-template";
 
 type PageEditorFormProps = { form: UseFormReturn<PageInsert> };

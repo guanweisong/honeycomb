@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 
 type PageEditorFormValues = z.infer<typeof PageInsertSchema>;

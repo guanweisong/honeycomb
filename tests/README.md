@@ -8,13 +8,11 @@
 测试文件直接放在对应的业务模块旁边，便于维护和理解：
 
 ```
-src/packages/trpc/api/modules/
+src/features/
 ├── user/
-│   ├── user.router.ts
-│   └── user.router.test.ts     # 用户管理测试
+│   └── tests/user.router.test.ts # 用户管理测试
 ├── post/
-│   ├── post.router.ts
-│   └── post.router.test.ts     # 文章管理测试
+│   └── tests/post.router.test.ts # 文章管理测试
 └── ...
 ```
 
@@ -38,7 +36,7 @@ tests/
 bunx vitest run tests/feature-boundaries.test.ts tests/capability-entrypoint-boundaries.test.ts
 ```
 
-它会检查 feature application 不直接访问数据库实现，并检查权限矩阵、菜单和管理
+它会检查 feature service 不直接访问数据库实现，并检查权限矩阵、菜单和管理
 入口使用已登记的 capability。
 
 ```bash
@@ -46,7 +44,7 @@ bunx vitest run tests/feature-boundaries.test.ts tests/capability-entrypoint-bou
 bun run test:unit
 
 # 运行特定模块测试
-bunx vitest src/packages/trpc/api/modules/user/user.router.test.ts
+bunx vitest src/features/user/tests/user.router.test.ts
 
 # 监听模式
 bun run test:unit --watch
@@ -123,4 +121,4 @@ bun run test:e2e:ui
 ## 测试示例
 
 参考现有的测试文件：
-- `src/packages/trpc/api/modules/user/user.router.test.ts` - 用户管理测试
+- `src/features/user/tests/user.router.test.ts` - 用户管理测试

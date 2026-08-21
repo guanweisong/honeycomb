@@ -1,5 +1,7 @@
 import { UserLevel } from "@/packages/domain/identity/user";
 import type { Context } from "./context";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface RouterSource {
   moduleSpecifier: string;
@@ -85,35 +87,15 @@ export function callActualProcedure(
 
 /** 加载已注册的 package 与 feature Router 源码，供静态矩阵断言使用。 */
 export function loadRouterSources(): RouterSource[] {
-  const modulesDirectory = join(process.cwd(), "src/packages/trpc/api/modules");
-  const packageRouters = readdirSync(modulesDirectory, { withFileTypes: true }).flatMap(
-    (directory) => {
-      if (!directory.isDirectory()) return [];
-      const moduleDirectory = join(modulesDirectory, directory.name);
-      return readdirSync(moduleDirectory)
-        .filter((fileName) => fileName.endsWith(".router.ts"))
-        .map((fileName) => ({
-          moduleSpecifier: `@/packages/trpc/api/modules/${directory.name}/${fileName.slice(0, -3)}`,
-          fileName,
-          source: readFileSync(join(moduleDirectory, fileName), "utf8"),
-        }));
-    },
-  );
-
   const featureRouterEntries = [
     ["comment", "comment"], ["post", "post"], ["media", "media"],
     ["link", "link"], ["menu", "menu"], ["page", "page"],
     ["setting", "setting"], ["setting", "statistic"], ["tag", "tag"],
     ["user", "user"], ["user", "account-security"], ["category", "category"],
   ] as const;
-  return [
-    ...packageRouters,
-    ...featureRouterEntries.map(([feature, router]) => ({
+  return featureRouterEntries.map(([feature, router]) => ({
       moduleSpecifier: `@/features/${feature}/${router}.router`,
       fileName: `${router}.router.ts`,
       source: readFileSync(join(process.cwd(), "src/features", feature, `${router}.router.ts`), "utf8"),
-    })),
-  ];
+    }));
 }
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";

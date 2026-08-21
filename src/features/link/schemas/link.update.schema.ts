@@ -1,4 +1,4 @@
-import { LinkInsertSchema } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
+import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 

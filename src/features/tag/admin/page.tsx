@@ -12,7 +12,7 @@ import { Pencil, Plus, Trash } from "lucide-react";
 import {
   TagListQueryInput,
   TagListQuerySchema,
-} from "@/packages/trpc/api/modules/tag/schemas/tag.list.query.schema";
+} from "@/features/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "./components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useGetState } from "ahooks";

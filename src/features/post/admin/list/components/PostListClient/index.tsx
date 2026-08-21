@@ -13,7 +13,7 @@ import { DataTable } from "@/packages/ui/extended/DataTable";
 import {
   PostListQueryInput,
   PostListQuerySchema,
-} from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
+} from "@/features/post/schemas/post.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { PostListItemEntity } from "@/packages/trpc/api/outputs";
 import { Permission } from "@/packages/identity/auth/permissions";

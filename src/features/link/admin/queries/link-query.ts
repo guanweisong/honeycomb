@@ -2,7 +2,7 @@
 
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState } from "react";
-import type { LinkListQueryInput } from "@/packages/trpc/api/modules/link/schemas/link.list.query.schema";
+import type { LinkListQueryInput } from "@/features/link/schemas/link.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export function useLinkQuery() {

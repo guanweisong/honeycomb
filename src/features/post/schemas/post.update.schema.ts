@@ -1,4 +1,4 @@
-import { PostInsertSchema } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 

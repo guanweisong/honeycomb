@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
+import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import type { CommentEntity } from "@/packages/trpc/api/outputs";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { Button } from "@/packages/ui/components/button";

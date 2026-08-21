@@ -1,4 +1,4 @@
-import { CommentInsertBaseSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
+import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 

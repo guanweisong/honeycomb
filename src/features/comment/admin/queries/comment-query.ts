@@ -3,7 +3,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState } from "react";
 import type { z } from "zod";
-import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
+import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;

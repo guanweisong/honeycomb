@@ -1,4 +1,4 @@
-import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 

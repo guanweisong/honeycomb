@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
-import type { CommentUpdate } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
+import type { CommentUpdate } from "@/features/comment/schemas/comment.update.schema";
 import type { CommentEntity } from "@/packages/trpc/api/outputs";
 import type { CommentStatus } from "@/packages/domain/content/comment";
 import { trpc } from "@/packages/trpc/client/trpc";

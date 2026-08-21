@@ -1,5 +1,5 @@
 import { Permission, can } from "@/packages/identity/auth/permissions";
-import type { UserUpdate } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
+import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
 import type { UserEntity } from "@/packages/trpc/api/outputs";
 import { UserStatus } from "@/packages/domain/identity/user";
 

@@ -10,10 +10,10 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { CommentListQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.list.query.schema";
-import { CommentUpdateSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.update.schema";
-import { CommentQuerySchema } from "@/packages/trpc/api/modules/comment/schemas/comment.query.schema";
-import { CommentInsertSchema } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
+import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
+import { CommentUpdateSchema } from "@/features/comment/schemas/comment.update.schema";
+import { CommentQuerySchema } from "@/features/comment/schemas/comment.query.schema";
+import { CommentInsertSchema } from "@/features/comment/schemas/comment.insert.schema";
 import {
   destroyComments,
   updateComment,

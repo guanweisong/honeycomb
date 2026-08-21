@@ -1,4 +1,4 @@
-import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
+import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 

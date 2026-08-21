@@ -10,11 +10,11 @@ import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import {
   CategoryInsert,
   CategoryInsertSchema,
-} from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
+} from "@/features/category/schemas/category.insert.schema";
 import {
   CategoryUpdate,
   CategoryUpdateSchema,
-} from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
+} from "@/features/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { CategoryEntity } from "@/packages/trpc/api/outputs";
 

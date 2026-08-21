@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { ModalType } from "@/packages/ui/admin/modal-type";
-import type { LinkInsert } from "@/packages/trpc/api/modules/link/schemas/link.insert.schema";
-import type { LinkUpdate } from "@/packages/trpc/api/modules/link/schemas/link.update.schema";
+import type { LinkInsert } from "@/features/link/schemas/link.insert.schema";
+import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
 import type { LinkEntity } from "@/packages/trpc/api/outputs";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "../transforms/link-transforms";

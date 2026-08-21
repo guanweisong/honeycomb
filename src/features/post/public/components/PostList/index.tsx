@@ -16,7 +16,7 @@ import {
   PostType,
   PostTypeName,
 } from "@/packages/domain/content/post";
-import { PostListQueryInput } from "@/packages/trpc/api/modules/post/schemas/post.list.query.schema";
+import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
 
 /**

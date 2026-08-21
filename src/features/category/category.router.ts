@@ -7,9 +7,9 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { CategoryListQuerySchema } from "@/packages/trpc/api/modules/category/schemas/category.list.query.schema";
-import { CategoryInsertSchema } from "@/packages/trpc/api/modules/category/schemas/category.insert.schema";
-import { CategoryUpdateSchema } from "@/packages/trpc/api/modules/category/schemas/category.update.schema";
+import { CategoryListQuerySchema } from "@/features/category/schemas/category.list.query.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
 import { getCategoryList, createCategory, destroyCategories, updateCategory } from "@/features/category/service";
 import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
 

@@ -10,7 +10,7 @@ import { createPage, destroyPages, getPageDetail, getPageList } from "@/features
 import { getSetting, updateSetting } from "@/features/setting/service";
 
 describe("feature repository 契约", () => {
-  it("media application 只调用 repository", async () => {
+  it("media service 只调用 repository", async () => {
     const repository = {
       create: vi.fn().mockResolvedValue({ id: "media-1" }),
       destroy: vi.fn().mockResolvedValue({ success: true }),
@@ -24,7 +24,7 @@ describe("feature repository 契约", () => {
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
   });
 
-  it("tag application 只调用 repository", async () => {
+  it("tag service 只调用 repository", async () => {
     const repository = {
       create: vi.fn().mockResolvedValue({ id: "tag-1" }),
       update: vi.fn().mockResolvedValue({ id: "tag-1" }),
@@ -41,7 +41,7 @@ describe("feature repository 契约", () => {
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
   });
 
-  it("user application 只调用 repository", async () => {
+  it("user service 只调用 repository", async () => {
     const repository = {
       detail: vi.fn().mockResolvedValue({ id: "user-1", name: "管理员" }),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
@@ -52,7 +52,7 @@ describe("feature repository 契约", () => {
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
   });
 
-  it("category、link、menu、page、setting application 只调用 repository", async () => {
+  it("category、link、menu、page、setting service 只调用 repository", async () => {
     const category = { create: vi.fn(), update: vi.fn(), destroy: vi.fn(), list: vi.fn().mockResolvedValue({ list: [], total: 0 }) };
     await createCategory(category as never, {} as never);
     await destroyCategories(category as never, ["category-1"]);

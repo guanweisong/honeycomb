@@ -10,9 +10,9 @@ import {
 } from "@/packages/trpc/api/core";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { UserListQuerySchema } from "@/packages/trpc/api/modules/user/schemas/user.list.query.schema";
-import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
-import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
+import { UserListQuerySchema } from "@/features/user/schemas/user.list.query.schema";
+import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
 import { createUser, destroyUsers, updateUser, getCurrentUser, getUserDetail, getUserList } from "@/features/user/user.service";
 import { createUserRepository } from "@/features/user/infrastructure/user-repository";
 import { toUserCommandPort, toUserQueryPort } from "@/features/user/infrastructure/user-repository-adapter";

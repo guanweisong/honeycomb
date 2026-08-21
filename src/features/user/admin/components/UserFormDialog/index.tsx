@@ -1,10 +1,10 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
-import type { UserInsert } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
-import { UserInsertSchema } from "@/packages/trpc/api/modules/user/schemas/user.insert.schema";
-import type { UserUpdate } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
-import { UserUpdateSchema } from "@/packages/trpc/api/modules/user/schemas/user.update.schema";
+import type { UserInsert } from "@/features/user/schemas/user.insert.schema";
+import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
+import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
 import {
   UserLevel,
   userLevelOptions,

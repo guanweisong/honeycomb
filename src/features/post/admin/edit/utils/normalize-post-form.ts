@@ -1,5 +1,5 @@
-import type { PostInsert } from "@/packages/trpc/api/modules/post/schemas/post.insert.schema";
-import type { PostUpdate } from "@/packages/trpc/api/modules/post/schemas/post.update.schema";
+import type { PostInsert } from "@/features/post/schemas/post.insert.schema";
+import type { PostUpdate } from "@/features/post/schemas/post.update.schema";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 

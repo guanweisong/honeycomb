@@ -10,9 +10,9 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
-import { PageListQuerySchema } from "@/packages/trpc/api/modules/page/schemas/page.list.query.schema";
-import { PageInsertSchema } from "@/packages/trpc/api/modules/page/schemas/page.insert.schema";
-import { PageUpdateSchema } from "@/packages/trpc/api/modules/page/schemas/page.update.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import {
   createPage,
   destroyPages,

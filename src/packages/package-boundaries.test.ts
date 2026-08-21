@@ -43,13 +43,11 @@ function importsMatching(directory: string, pattern: RegExp) {
   });
 }
 
-function filesMatching(directory: string, pattern: RegExp): string[] {
-  return sourceFiles(directory)
-    .map((path) => relative(process.cwd(), path))
-    .filter((path) => pattern.test(path));
-}
-
 describe("package dependency boundaries", () => {
+  it("keeps business router tests out of the tRPC infrastructure package", () => {
+    expect(existsSync(join(sourceRoot, "trpc", "api", "modules"))).toBe(false);
+  });
+
   it("uses the six stable package layers", () => {
     const legacyLayers = [
       "account-security",
@@ -97,11 +95,6 @@ describe("package dependency boundaries", () => {
   });
 
   it("keeps tRPC procedure-derived output contracts at the transport boundary", () => {
-    expect(
-      filesMatching(
-        join(sourceRoot, "trpc", "api", "modules"),
-        /\.(entity|output)\.ts$/,
-      ),
-    ).toEqual([]);
+    expect(existsSync(join(sourceRoot, "trpc", "api", "modules"))).toBe(false);
   });
 });

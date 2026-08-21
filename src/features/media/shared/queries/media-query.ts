@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import type { MediaEntity } from "@/packages/trpc/api/outputs";
-import type { MediaIndexInput } from "@/packages/trpc/api/modules/media/schemas/media.list.query.schema";
+import type { MediaIndexInput } from "@/features/media/schemas/media.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export const MEDIA_PAGE_SIZE = 50;

@@ -1,5 +1,5 @@
 import { MenuType } from "@/packages/domain/navigation/menu";
-import type { CommentInsertInput } from "@/packages/trpc/api/modules/comment/schemas/comment.insert.schema";
+import type { CommentInsertInput } from "@/features/comment/schemas/comment.insert.schema";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 
 interface BuildCommentInputOptions {
