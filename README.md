@@ -87,19 +87,27 @@ honeycomb/
 │   │   ├── admin/             # 后台管理
 │   │   │   └── (root)/        # 管理后台路由
 │   │   ├── api/               # API 路由
-│   │   ├── manifest.ts        # PWA manifest
-│   │   ├── robots.ts          # SEO robots
+│   │   ├── serwist/           # PWA Service Worker 路由
 │   │   ├── sitemap.xml/       # 运行时 sitemap 索引
 │   │   └── sitemaps/          # 运行时 sitemap 分片
-│   └── packages/              # 共享包
+│   ├── features/              # 业务功能模块（业务代码唯一归属边界）
+│   │   ├── category/          # 分类
+│   │   ├── comment/           # 评论
+│   │   ├── link/              # 友链
+│   │   ├── media/             # 媒体
+│   │   ├── menu/              # 菜单
+│   │   ├── page/              # 页面
+│   │   ├── post/              # 文章
+│   │   ├── setting/           # 设置
+│   │   ├── tag/               # 标签
+│   │   └── user/              # 用户
+│   └── packages/              # 跨业务共享包
+│       ├── application/       # 应用层共享能力
 │       ├── domain/            # 领域模型与领域契约
 │       ├── identity/          # 认证、授权与账号安全
-│       ├── infrastructure/   # 数据库、HTTP、安全与可观测性
-│       ├── trpc/              # tRPC API 层
-│       │   ├── api/           # API 路由
-│       │   │   ├── core.ts    # tRPC 核心
-│       │   │   ├── context.ts # 请求上下文
-│       │   │   └── modules/   # 业务模块
+│       ├── infrastructure/    # 数据库、HTTP、安全与可观测性
+│       ├── trpc/              # tRPC 核心、上下文与客户端绑定
+│       │   ├── api/           # tRPC 服务端核心
 │       │   └── client/        # 客户端配置
 │       └── ui/                # UI 组件库
 │           ├── components/    # 基础组件
