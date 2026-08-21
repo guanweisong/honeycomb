@@ -10,7 +10,10 @@ vi.mock("next-intl", () => ({
 }));
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
-  Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),
 }));
@@ -49,14 +52,21 @@ describe("Tags", () => {
     expect(container.textContent).toContain("导演：导演甲");
     expect(container.textContent).toContain("演员：演员甲、演员乙");
     expect(container.textContent).toContain("风格：剧情");
-    expect(container.querySelectorAll('a[href^="/list/tags/"]')).toHaveLength(4);
-    expect(container.querySelector('a[href="/list/tags/actor-2"]')?.textContent).toBe(
-      "演员乙",
+    expect(container.querySelectorAll('a[href^="/list/tags/"]')).toHaveLength(
+      4,
     );
+    expect(
+      container.querySelector('a[href="/list/tags/actor-2"]')?.textContent,
+    ).toBe("演员乙");
   });
 
   it("omits empty tag groups", () => {
-    render({ movieDirectors: [], movieActors: [], movieStyles: [], galleryStyles: [] });
+    render({
+      movieDirectors: [],
+      movieActors: [],
+      movieStyles: [],
+      galleryStyles: [],
+    });
 
     expect(container.querySelectorAll("li")).toHaveLength(0);
     expect(container.textContent).toBe("");

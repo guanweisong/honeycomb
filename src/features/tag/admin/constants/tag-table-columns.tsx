@@ -1,7 +1,7 @@
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
-import { TagEntity } from "@/packages/trpc/api/outputs";
+import type { TagViewModel as TagEntity } from "../../presentation/tag-view-model";
 
 /**
  * 标签列表的表格列定义。

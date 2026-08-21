@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 type ImageMetadata = {
@@ -31,12 +31,12 @@ type SubmitMediaUploadOptions = {
     key: string;
   }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  createMedia: (input: MediaUploadInput) => Promise<MediaEntity>;
+  createMedia: (input: MediaUploadInput) => Promise<MediaViewModel>;
 };
 
 export type MediaUploadActionResult =
   | { state: "empty" }
-  | { state: "success"; media: MediaEntity[] }
+  | { state: "success"; media: MediaViewModel[] }
   | { state: "error"; message: string };
 
 export async function submitMediaUpload({
@@ -88,9 +88,7 @@ type SubmitMediaDeleteOptions = {
 };
 
 export type MediaDeleteActionResult =
-  | { state: "success" }
-  | { state: "noop" }
-  | { state: "error" };
+  { state: "success" } | { state: "noop" } | { state: "error" };
 
 export async function submitMediaDelete({
   id,
@@ -158,7 +156,7 @@ async function uploadToStorage(url: string, file: File) {
 
 type UseMediaActionsOptions = {
   refetch: () => unknown;
-  onUploadComplete: (media: MediaEntity) => void;
+  onUploadComplete: (media: MediaViewModel) => void;
   onDeleteComplete: () => void;
 };
 

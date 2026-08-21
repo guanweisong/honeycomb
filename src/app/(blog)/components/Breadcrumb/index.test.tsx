@@ -14,7 +14,10 @@ vi.mock("next-intl", () => ({
 }));
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
-  Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),
 }));
@@ -49,13 +52,13 @@ describe("Breadcrumb", () => {
 
     const navigation = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(navigation?.textContent).toBe("首页 / 父分类 / 子分类");
-    expect(navigation?.querySelector('a[href="/list/category"]')?.textContent).toBe(
-      "首页",
-    );
     expect(
-      Array.from(navigation?.querySelectorAll('[aria-current="page"]') ?? [])
-        .at(-1)
-        ?.textContent,
+      navigation?.querySelector('a[href="/list/category"]')?.textContent,
+    ).toBe("首页");
+    expect(
+      Array.from(
+        navigation?.querySelectorAll('[aria-current="page"]') ?? [],
+      ).at(-1)?.textContent,
     ).toBe("子分类");
   });
 

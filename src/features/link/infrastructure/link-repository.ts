@@ -6,8 +6,8 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { LinkRepository } from "../repository";
-export type { LinkInsert, LinkListInput, LinkRepository, LinkUpdate, LinkVisibility } from "../repository";
+import type { LinkRepository } from "../application/repository";
+export type { LinkInsert, LinkListInput, LinkRepository, LinkUpdate, LinkVisibility } from "../application/repository";
 
 export function createLinkRepository(db: Database): LinkRepository {
   return {

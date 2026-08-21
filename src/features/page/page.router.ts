@@ -20,7 +20,7 @@ import {
   getPageList,
   incrementPageViews,
   updatePage,
-} from "@/features/page/service";
+} from "@/features/page/application/page-use-cases";
 import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
 
@@ -39,7 +39,11 @@ export const pageRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      return getPageDetail(createPageQueryRepository(ctx.db), input.id, "PUBLISHED_ONLY");
+      return getPageDetail(
+        createPageQueryRepository(ctx.db),
+        input.id,
+        "PUBLISHED_ONLY",
+      );
     }),
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
@@ -50,18 +54,29 @@ export const pageRouter = createTRPCRouter({
     .input(PageInsertSchema)
     .mutation(({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPage(createPageCommandRepository(ctx.db), input, ctx.user.id);
+      return createPage(
+        createPageCommandRepository(ctx.db),
+        input,
+        ctx.user.id,
+      );
     }),
   destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyPages(createPageCommandRepository(ctx.db), input.ids)),
+    .mutation(({ input, ctx }) =>
+      destroyPages(createPageCommandRepository(ctx.db), input.ids),
+    ),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
-    .mutation(({ input, ctx }) => updatePage(createPageCommandRepository(ctx.db), input)),
+    .mutation(({ input, ctx }) =>
+      updatePage(createPageCommandRepository(ctx.db), input),
+    ),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ input, ctx }) => {
-      const page = await incrementPageViews(createPageCommandRepository(ctx.db), input.id);
+      const page = await incrementPageViews(
+        createPageCommandRepository(ctx.db),
+        input.id,
+      );
       if (!page) throw new TRPCError({ code: "NOT_FOUND" });
       return page;
     }),

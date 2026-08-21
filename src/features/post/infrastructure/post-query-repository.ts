@@ -8,8 +8,8 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { PostQueryRepository, PostWithRelations, PostMediaRecord, PostAuthorRecord, PostCategoryRecord, PostTagRecord } from "../repository";
-export type { PostListInput, PostQueryRepository, PostVisibility, PostWithRelations } from "../repository";
+import type { PostQueryRepository, PostWithRelations, PostMediaRecord, PostAuthorRecord, PostCategoryRecord, PostTagRecord } from "../application/repository";
+export type { PostListInput, PostQueryRepository, PostVisibility, PostWithRelations } from "../application/repository";
 type PostRecord = typeof schema.post.$inferSelect;
 type TagRecord = typeof schema.tag.$inferSelect;
 

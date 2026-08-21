@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Permission, can } from "@/packages/identity/auth/permissions";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 
 import {
   buildUserUpdateInput,

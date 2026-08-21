@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { LinkEntity } from "@/packages/trpc/api/outputs";
+import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 
 import { buildLinkUpdateInput, toLinkFormDefaults } from "./link-transforms";
 

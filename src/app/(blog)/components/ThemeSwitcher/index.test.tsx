@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 let resolvedTheme = "light";
 let locale = "zh";
@@ -105,15 +106,18 @@ describe("blog appearance controls", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    document.head.querySelectorAll('meta[name="theme-color"]').forEach((meta) =>
-      meta.remove(),
-    );
+    document.head
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => meta.remove());
     resolvedTheme = "light";
     locale = "zh";
     pathname = "/archives/post-1";
     scrollTop = undefined;
     themeChanges.length = 0;
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: false })),
+    );
     Object.defineProperty(document, "startViewTransition", {
       configurable: true,
       value: undefined,
@@ -129,11 +133,13 @@ describe("blog appearance controls", () => {
   it("mounts the light theme control and creates the PWA theme meta", async () => {
     await act(async () => root.render(React.createElement(ThemeSwitcher)));
 
-    expect(container.querySelector('[aria-label="Toggle theme"]')).not.toBeNull();
     expect(
-      document.head.querySelector('meta[name="theme-color"]')?.getAttribute(
-        "content",
-      ),
+      container.querySelector('[aria-label="Toggle theme"]'),
+    ).not.toBeNull();
+    expect(
+      document.head
+        .querySelector('meta[name="theme-color"]')
+        ?.getAttribute("content"),
     ).toBe("white");
   });
 
@@ -262,7 +268,9 @@ describe("blog appearance controls", () => {
 
     expect(container.textContent).toContain("导演：导演甲、导演乙");
     expect(container.textContent).toContain("风格：人像");
-    expect(container.querySelector('a[href="/list/tags/director-2"]')).not.toBeNull();
+    expect(
+      container.querySelector('a[href="/list/tags/director-2"]'),
+    ).not.toBeNull();
     expect(container.querySelectorAll("li")).toHaveLength(2);
   });
 });

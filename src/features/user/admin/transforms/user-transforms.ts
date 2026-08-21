@@ -1,6 +1,7 @@
-import { Permission, can } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
+import { authorize } from "@/packages/identity/auth/authorize";
 import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { UserStatus } from "@/packages/domain/identity/user";
 
 export function toUserFormDefaults(
@@ -25,7 +26,7 @@ export function buildUserUpdateInput(
 }
 
 export function isUserResourceProtected(record?: UserEntity): boolean {
-  return can(record?.level, Permission.userManage);
+  return authorize({ role: record?.level, permission: Permission.userManage });
 }
 
 export function canDeleteUserResource(record: UserEntity): boolean {

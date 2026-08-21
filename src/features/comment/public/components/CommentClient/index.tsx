@@ -8,9 +8,9 @@ import { useTranslations } from "next-intl";
 import Card from "@/packages/ui/blog/Card";
 import type { CommentProps } from "../index";
 import type {
-  CommentTreeEntity,
-  CommentTreeResponse,
-} from "@/packages/trpc/api/outputs";
+  CommentTreeViewModel as CommentTreeEntity,
+  CommentTreeViewResponse as CommentTreeResponse,
+} from "../../../presentation/comment-view-model";
 import { CommentForm } from "../CommentForm";
 import { CommentTree } from "../CommentTree";
 import { useCommentIdentity } from "../hooks/use-comment-identity";

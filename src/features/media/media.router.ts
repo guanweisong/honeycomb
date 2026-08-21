@@ -15,14 +15,17 @@ import {
   destroyMedia,
   getMediaList,
   getMediaPresignedUrl,
-} from "@/features/media/service";
+} from "@/features/media/application/media-use-cases";
 import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
+import S3 from "@/packages/infrastructure/storage/S3";
 
 /** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const mediaRouter = createTRPCRouter({
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
-    .query(({ input, ctx }) => getMediaList(createMediaRepository(ctx.db), input)),
+    .query(({ input, ctx }) =>
+      getMediaList(createMediaRepository(ctx.db), input),
+    ),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(
       z.object({
@@ -30,7 +33,7 @@ export const mediaRouter = createTRPCRouter({
         type: requiredString("文件类型不能为空"),
       }),
     )
-    .mutation(({ input }) => getMediaPresignedUrl(input.name, input.type)),
+    .mutation(({ input }) => getMediaPresignedUrl(S3, input.name, input.type)),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(({ input, ctx }) =>

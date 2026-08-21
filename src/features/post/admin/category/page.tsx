@@ -11,7 +11,7 @@ import { DataTable } from "@/packages/ui/extended/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
-import { CategoryEntity } from "@/packages/trpc/api/outputs";
+import type { CategoryViewModel as CategoryEntity } from "../../../category/presentation/category-view-model";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 

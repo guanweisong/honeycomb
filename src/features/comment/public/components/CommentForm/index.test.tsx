@@ -24,11 +24,15 @@ describe("CommentForm", () => {
     container?.remove();
   });
 
-  function render(props: Partial<React.ComponentProps<typeof CommentForm>> = {}) {
+  function render(
+    props: Partial<React.ComponentProps<typeof CommentForm>> = {},
+  ) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    const formRef = { current: null } as React.RefObject<HTMLFormElement | null>;
+    const formRef = {
+      current: null,
+    } as React.RefObject<HTMLFormElement | null>;
     const onSubmit = vi.fn();
     act(() =>
       root.render(
@@ -57,11 +61,16 @@ describe("CommentForm", () => {
 
   it("renders welcome text and clears identity controls for a known commenter", () => {
     const onClearIdentity = vi.fn();
-    render({ identity: { author: "Alice", email: "alice@example.test" }, onClearIdentity });
+    render({
+      identity: { author: "Alice", email: "alice@example.test" },
+      onClearIdentity,
+    });
 
     expect(container.textContent).toContain("welcomeBack");
     expect(container.querySelector('input[name="author"]')).toBeNull();
-    container.querySelector("a")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    container
+      .querySelector("a")
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onClearIdentity).toHaveBeenCalledTimes(1);
   });
 
@@ -74,10 +83,13 @@ describe("CommentForm", () => {
     });
 
     expect(container.textContent).toContain("Bob");
-    container.querySelector("a")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    container
+      .querySelector("a")
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onCancelReply).toHaveBeenCalledTimes(1);
     expect(
-      container.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled,
+      container.querySelector<HTMLButtonElement>('button[type="submit"]')
+        ?.disabled,
     ).toBe(true);
   });
 
@@ -85,7 +97,11 @@ describe("CommentForm", () => {
     const { onSubmit } = render();
 
     act(() =>
-      container.querySelector("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      container
+        .querySelector("form")
+        ?.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true }),
+        ),
     );
 
     expect(onSubmit).toHaveBeenCalledTimes(1);

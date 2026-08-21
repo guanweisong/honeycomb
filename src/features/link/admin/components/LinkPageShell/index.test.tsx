@@ -12,8 +12,9 @@ import { createRoot, type Root } from "react-dom/client";
 
 import { Permission } from "@/packages/identity/auth/permissions";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 beforeAll(() => {
   globalThis.ResizeObserver = class {
@@ -108,9 +109,8 @@ describe("LinkPageShell", () => {
     expect(batchButton).toBeDefined();
     expect((batchButton as HTMLButtonElement).disabled).toBe(true);
 
-    const checkboxes = container.querySelectorAll<HTMLElement>(
-      '[role="checkbox"]',
-    );
+    const checkboxes =
+      container.querySelectorAll<HTMLElement>('[role="checkbox"]');
     expect(checkboxes).toHaveLength(2);
     await act(async () => checkboxes[1].click());
     expect((batchButton as HTMLButtonElement).disabled).toBe(false);

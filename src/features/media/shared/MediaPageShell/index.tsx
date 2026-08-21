@@ -4,19 +4,19 @@ import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 import { Button } from "@/packages/ui/components/button";
 import { MediaGrid } from "../MediaGrid";
 import { useMediaActions } from "../actions/media-actions";
 import { useMediaQuery } from "../queries/media-query";
 
 export interface MediaProps {
-  onSelect?: (media: MediaEntity) => void;
+  onSelect?: (media: MediaViewModel) => void;
 }
 
 export function MediaPageShell({ onSelect }: MediaProps) {
   const canUploadMedia = useCan(Permission.mediaUpload);
-  const [currentItem, setCurrentItem] = useState<MediaEntity>();
+  const [currentItem, setCurrentItem] = useState<MediaViewModel>();
   const onSelectRef = useRef(onSelect);
   const query = useMediaQuery();
   const { hasMore, loadMore } = query;
@@ -38,11 +38,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
-    if (
-      !sentinel ||
-      !hasMore ||
-      typeof IntersectionObserver === "undefined"
-    ) {
+    if (!sentinel || !hasMore || typeof IntersectionObserver === "undefined") {
       return;
     }
 

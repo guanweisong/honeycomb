@@ -6,7 +6,7 @@ import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { LinkListQueryInput } from "@/features/link/schemas/link.list.query.schema";
 import { LinkListQuerySchema } from "@/features/link/schemas/link.list.query.schema";
-import type { LinkEntity } from "@/packages/trpc/api/outputs";
+import type { LinkViewModel as LinkEntity } from "../../../presentation/link-view-model";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";

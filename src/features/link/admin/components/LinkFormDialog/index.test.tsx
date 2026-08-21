@@ -72,20 +72,18 @@ describe("LinkFormDialog", () => {
   });
 
   it("maps an existing link and forwards submitted values", () => {
-    const onSubmit = render(
-      {
-        type: ModalType.EDIT,
-        open: true,
-        record: {
-          id: "link-1",
-          name: "Honeycomb",
-          url: "https://example.test",
-          logo: "https://example.test/logo.png",
-          description: "A link",
-          status: EnableStatus.DISABLE,
-        },
+    const onSubmit = render({
+      type: ModalType.EDIT,
+      open: true,
+      record: {
+        id: "link-1",
+        name: "Honeycomb",
+        url: "https://example.test",
+        logo: "https://example.test/logo.png",
+        description: "A link",
+        status: EnableStatus.DISABLE,
       },
-    );
+    });
     const values = { name: "Updated", url: "https://updated.test" };
 
     expect(mocks.formProps?.defaultValues).toMatchObject({

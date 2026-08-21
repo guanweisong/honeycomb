@@ -1,5 +1,3 @@
-import { createInsertSchema } from "drizzle-zod";
-import * as schema from "@/packages/infrastructure/db/schema";
 import { CaptchaSchema } from "@/packages/trpc/api/schemas/captcha.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
@@ -29,29 +27,20 @@ const optionalHttpUrl = z
 
 /**
  * 新增评论时的数据验证 schema。
- * 1. 基于数据库 'comment' 表的插入 schema 生成。
- * 2. 使用 `.pick()` 精确选择了用户可以提交的字段。
- * 3. 使用 `.extend()` 扩展了验证码 schema (`CaptchaSchema`)，用于防止机器人提交。
+ * 只定义用户可提交的输入字段，并扩展验证码校验，避免依赖数据库表结构。
  */
-export const CommentInsertBaseSchema = createInsertSchema(schema.comment)
-  .pick({
-    author: true,
-    content: true,
-    email: true,
-    site: true,
-    parentId: true,
-    postId: true,
-    pageId: true,
-    customId: true,
-  })
-  .extend(CaptchaSchema.shape)
-  .extend({
+export const CommentInsertBaseSchema = z.object({
     author: requiredString("作者不能为空").max(20, "作者不能超过 20 个字符"),
     content: requiredString("内容不能为空").max(200, "内容不能超过 200 个字符"),
     email: requiredString("邮箱不能为空")
       .email("邮箱格式不正确")
       .max(254, "邮箱不能超过 254 个字符"),
     site: optionalHttpUrl,
+    parentId: z.string().nullable().optional(),
+    postId: z.string().nullable().optional(),
+    pageId: z.string().nullable().optional(),
+    customId: z.string().nullable().optional(),
+    ...CaptchaSchema.shape,
   });
 
 export const CommentInsertSchema = CommentInsertBaseSchema.refine(

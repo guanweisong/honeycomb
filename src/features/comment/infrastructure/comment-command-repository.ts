@@ -7,9 +7,9 @@ import { observeDbOperation } from "@/packages/infrastructure/observability/serv
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
-import type { CommentCommandRepository } from "../repository";
-export type { CommentCommandRepository, CommentUpdate, PublicCommentInput } from "../repository";
-import type { CommentRecord } from "../repository";
+import type { CommentCommandRepository } from "../application/repository";
+export type { CommentCommandRepository, CommentUpdate, PublicCommentInput } from "../application/repository";
+import type { CommentRecord } from "../application/repository";
 
 function toCommentRecord(comment: typeof schema.comment.$inferSelect): CommentRecord {
   return { id: comment.id, author: comment.author, content: comment.content, site: comment.site, email: comment.email, parentId: comment.parentId, postId: comment.postId, pageId: comment.pageId, customId: comment.customId, status: comment.status, createdAt: comment.createdAt, updatedAt: comment.updatedAt, userAgent: comment.userAgent, ip: comment.ip };

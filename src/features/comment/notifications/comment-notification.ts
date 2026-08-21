@@ -1,6 +1,6 @@
 import { clientEnv } from "@/env/client";
-export type { NotificationComment as CommentNotification, NotificationSetting as CommentNotificationSetting } from "../repository";
-import type { NotificationComment } from "../repository";
+export type { NotificationComment as CommentNotification, NotificationSetting as CommentNotificationSetting } from "../application/repository";
+import type { NotificationComment } from "../application/repository";
 /** 根据评论关联内容生成邮件展示目标。 */
 export function getCommentTarget(comment: NotificationComment) {
   const frontDomain = new URL(clientEnv.NEXT_PUBLIC_SITE_URL ?? "").host;

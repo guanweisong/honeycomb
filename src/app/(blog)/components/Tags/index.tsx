@@ -1,9 +1,11 @@
 import React from "react";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { PostListItemEntity } from "@/packages/trpc/api/outputs";
+import type {
+  PostListViewModel as PostListItemEntity,
+  TagViewModel as TagEntity,
+} from "@/features/contracts";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
-import { TagEntity } from "@/packages/trpc/api/outputs";
 
 /**
  * 标签组件。
@@ -30,10 +32,7 @@ const Tag = (props: PostListItemEntity) => {
             return (
               <span key={n.id}>
                 {index !== 0 && "、"}
-                <Link
-                  href={`/list/tags/${n.id}`}
-                  className="link-light"
-                >
+                <Link href={`/list/tags/${n.id}`} className="link-light">
                   {n.name?.[locale]}
                 </Link>
               </span>

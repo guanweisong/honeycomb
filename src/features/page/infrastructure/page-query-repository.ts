@@ -3,20 +3,13 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
 import type { Database } from "@/packages/infrastructure/db/db";
-import { buildDrizzleOrderBy, buildDrizzleWhere, type QueryRecord } from "@/packages/infrastructure/db/query/tools";
+import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import type { PageQueryRepository, PageWithRelations } from "../application/repository";
 
-export type PageVisibility = "PUBLISHED_ONLY" | "ALL";
-export type PageInput = { page?: number; limit?: number; sortField?: string; sortOrder?: string; title?: string; content?: string } & QueryRecord;
-export type PageRow = typeof schema.page.$inferSelect;
-export type PageWithRelations = PageRow & { author: { id: string; name: string | null } | null; imagesInContent: (typeof schema.media.$inferSelect)[] };
-export interface PageQueryRepository {
-  list(input: PageInput, visibility: PageVisibility): Promise<{ list: PageWithRelations[]; total: number }>;
-  detail(id: string, visibility: PageVisibility): Promise<(PageWithRelations & { author: { id: string; name: string | null } | null }) | null>;
-  author(id: string): Promise<{ id: string; name: string | null } | null>;
-}
+type PageRow = typeof schema.page.$inferSelect;
 
 async function mapRelations(db: Database, pages: PageRow[]): Promise<PageWithRelations[]> {
   if (!pages.length) return [];
@@ -27,7 +20,7 @@ async function mapRelations(db: Database, pages: PageRow[]): Promise<PageWithRel
   ]);
   const rowMap = new Map(rows.map((row) => [row.id, row]));
   const imageMap = new Map(medias.map((media) => [media.url, media]));
-  return pages.map((page) => ({ ...page, author: rowMap.get(page.id)?.author ?? null, imagesInContent: getAllImageLinkFormHtml(page.content?.zh).map((url) => imageMap.get(url)).filter((image): image is typeof schema.media.$inferSelect => Boolean(image)) }));
+  return pages.map((page) => ({ ...page, author: rowMap.get(page.id)?.author ?? null, imagesInContent: getAllImageLinkFormHtml(page.content?.zh).map((url) => imageMap.get(url)).filter((image): image is typeof schema.media.$inferSelect => Boolean(image)) })) as PageWithRelations[];
 }
 
 export function createPageQueryRepository(db: Database): PageQueryRepository {

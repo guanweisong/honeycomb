@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 let pathname = "/list/category/parent/child";
 let segments = ["list", "category/parent/child"];
@@ -112,9 +113,9 @@ describe("blog menu navigation", () => {
         .querySelector('a[href="/list/category/parent"]')
         ?.getAttribute("aria-current"),
     ).toBe("page");
-    expect(container.querySelector('a[href="/pages/about"]')?.className).toContain(
-      "group-hover:lg:text-teal-500",
-    );
+    expect(
+      container.querySelector('a[href="/pages/about"]')?.className,
+    ).toContain("group-hover:lg:text-teal-500");
   });
 
   it("opens and closes the mobile menu", async () => {
@@ -125,16 +126,18 @@ describe("blog menu navigation", () => {
       toggle?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(
-      container.querySelector('button[aria-label="Close menu"]')?.getAttribute(
-        "aria-expanded",
-      ),
+      container
+        .querySelector('button[aria-label="Close menu"]')
+        ?.getAttribute("aria-expanded"),
     ).toBe("true");
     expect(container.querySelector("#mobile-menu")?.className).toContain(
       "inset-x-0",
     );
 
     await act(async () => clickAway?.());
-    expect(container.querySelector('button[aria-label="Open menu"]')).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="Open menu"]'),
+    ).not.toBeNull();
   });
 
   it("uses the post category ancestry on archive routes", async () => {
@@ -172,7 +175,9 @@ describe("blog menu navigation", () => {
 
     await renderMenu();
 
-    expect(container.querySelector('button[aria-label="Open menu"]')).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="Open menu"]'),
+    ).not.toBeNull();
   });
 
   it("renders localized breadcrumbs for both category levels", async () => {
@@ -182,11 +187,13 @@ describe("blog menu navigation", () => {
 
     const navigation = container.querySelector('nav[aria-label="Breadcrumb"]');
     expect(navigation?.textContent).toBe("首页 / 父分类 / 子分类");
-    expect(navigation?.querySelector('a[href="/list/category"]')).not.toBeNull();
     expect(
-      Array.from(navigation?.querySelectorAll('[aria-current="page"]') ?? [])
-        .at(-1)
-        ?.textContent,
+      navigation?.querySelector('a[href="/list/category"]'),
+    ).not.toBeNull();
+    expect(
+      Array.from(
+        navigation?.querySelectorAll('[aria-current="page"]') ?? [],
+      ).at(-1)?.textContent,
     ).toBe("子分类");
   });
 

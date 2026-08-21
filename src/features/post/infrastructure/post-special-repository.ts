@@ -5,8 +5,8 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { getCacheJSON, getCacheVersion, setCacheJSON } from "@/packages/infrastructure/cache/upstash-cache";
-import type { PostQueryRepository, PostSpecialRepository } from "../repository";
-export type { PostSpecialRepository } from "../repository";
+import type { PostQueryRepository, PostSpecialRepository } from "../application/repository";
+export type { PostSpecialRepository } from "../application/repository";
 const namespace = "post.index";
 const versionKey = "cache:post:index:version";
 export function createPostSpecialRepository(db: Database, query: PostQueryRepository): PostSpecialRepository {

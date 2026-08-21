@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
-import { moderateComment } from "./comment-command-handlers";
+import { moderateComment } from "./application/comment-command-handlers";
 
 describe("Comment command handlers", () => {
   it("审核成功后派发事件", async () => {

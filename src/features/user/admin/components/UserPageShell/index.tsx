@@ -6,7 +6,7 @@ import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { UserListQueryInput } from "@/features/user/schemas/user.list.query.schema";
 import { UserListQuerySchema } from "@/features/user/schemas/user.list.query.schema";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../../presentation/user-view-model";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";

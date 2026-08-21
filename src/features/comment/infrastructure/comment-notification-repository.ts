@@ -6,8 +6,8 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { selectAllColumns } from "@/packages/infrastructure/db/query/select-all-columns";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-import type { CommentNotificationRepository, NotificationSetting } from "../repository";
-export type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../repository";
+import type { CommentNotificationRepository, NotificationSetting } from "../application/repository";
+export type { CommentNotificationRepository, NotificationComment, NotificationSetting } from "../application/repository";
 
 const selection = {
   ...selectAllColumns(schema.comment),

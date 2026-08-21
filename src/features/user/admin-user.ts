@@ -2,8 +2,8 @@ import "server-only";
 
 import { auth } from "@/auth";
 import { UserStatus, type CurrentUser, type UserLevel } from "@/packages/domain/identity/user";
-import { getCurrentUser, UserQueryError } from "./user-queries";
-import type { UserRepository } from "./repository";
+import { getCurrentUser, UserQueryError } from "./application/user-queries";
+import type { UserRepository } from "./application/repository";
 
 export interface AdminUser extends CurrentUser {
   id: string;

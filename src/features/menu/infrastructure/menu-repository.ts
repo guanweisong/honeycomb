@@ -9,8 +9,8 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 
-import type { MenuRepository } from "../repository";
-export type { MenuInput, MenuRepository, MenuVisibility } from "../repository";
+import type { MenuRepository } from "../application/repository";
+export type { MenuInput, MenuRepository, MenuVisibility } from "../application/repository";
 
 export function createMenuRepository(db: Database): MenuRepository {
   return {

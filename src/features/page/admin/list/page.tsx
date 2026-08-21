@@ -15,7 +15,7 @@ import {
 } from "@/features/page/schemas/page.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
-import { PageEntity } from "@/packages/trpc/api/outputs";
+import type { PageViewModel as PageEntity } from "../../presentation/page-view-model";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 

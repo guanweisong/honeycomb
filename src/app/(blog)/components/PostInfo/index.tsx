@@ -59,7 +59,15 @@ export interface PostInfoProps {
  * @returns {JSX.Element | null} 文章信息组件或 null。
  */
 const PostInfo = (props: PostInfoProps) => {
-  const { id, author, authorId, date, views, comments, align = Align.Center } = props;
+  const {
+    id,
+    author,
+    authorId,
+    date,
+    views,
+    comments,
+    align = Align.Center,
+  } = props;
   /**
    * 存储要显示的文章信息项。
    */

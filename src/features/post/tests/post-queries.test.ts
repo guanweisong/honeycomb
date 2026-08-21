@@ -9,7 +9,7 @@ import { createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 const mockDb = createMockDb();
 
-let getPostList: typeof import("@/features/post/post-queries").getPostList;
+let getPostList: typeof import("@/features/post/application/post-queries").getPostList;
 let buildCategoryFilterMock: {
   mockResolvedValue: (
     value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>,
@@ -57,7 +57,7 @@ describe("getPostList", () => {
     repository.categoryFilter = (categoryId) => filters.buildCategoryFilter(mockDb as never, categoryId);
 
     ({ getPostList } =
-      await import("@/features/post/post-queries"));
+      await import("@/features/post/application/post-queries"));
   });
 
   it("returns a paginated list and total count", async () => {

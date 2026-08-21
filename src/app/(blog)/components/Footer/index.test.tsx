@@ -52,11 +52,15 @@ describe("Footer", () => {
   it("renders localized signature, copyright year, and record link", async () => {
     await render();
 
-    expect(container.querySelector("footer")?.textContent).toContain("站点签名");
+    expect(container.querySelector("footer")?.textContent).toContain(
+      "站点签名",
+    );
     expect(container.querySelector("footer")?.textContent).toContain(
       `${new Date().getFullYear()}`,
     );
-    expect(container.querySelector("footer")?.textContent).toContain("保留所有权利");
+    expect(container.querySelector("footer")?.textContent).toContain(
+      "保留所有权利",
+    );
     const recordLink = container.querySelector(
       'a[aria-label="View site record: 京ICP备00000000号"]',
     );
@@ -69,14 +73,22 @@ describe("Footer", () => {
     await render();
 
     expect(container.textContent).toContain("京ICP备00000000号");
-    expect(container.querySelector('a[aria-label^="View site record"]')).toBeNull();
+    expect(
+      container.querySelector('a[aria-label^="View site record"]'),
+    ).toBeNull();
   });
 
   it("does not render a record placeholder when no record number exists", async () => {
-    mocks.setting = { ...mocks.setting, siteRecordNo: undefined, siteRecordUrl: undefined };
+    mocks.setting = {
+      ...mocks.setting,
+      siteRecordNo: undefined,
+      siteRecordUrl: undefined,
+    };
     await render();
 
-    expect(container.querySelector("footer")?.textContent).not.toContain("备案");
+    expect(container.querySelector("footer")?.textContent).not.toContain(
+      "备案",
+    );
     expect(container.querySelectorAll("a")).toHaveLength(0);
   });
 });

@@ -36,7 +36,7 @@ tests/
 bunx vitest run tests/feature-boundaries.test.ts tests/capability-entrypoint-boundaries.test.ts
 ```
 
-它会检查 feature service 不直接访问数据库实现，并检查权限矩阵、菜单和管理
+它会检查 feature Application/transport 不直接访问数据库实现，并检查权限矩阵、菜单和管理
 入口使用已登记的 capability。
 
 ```bash
@@ -74,16 +74,16 @@ bun run test:e2e:ui
 
 这套口径必须与 `vitest.config.ts` 同步维护：`include` 固定覆盖 `src/**/*.{ts,tsx}`；`exclude` 只允许上表中的声明、测试、E2E-only 薄入口、未修改 shadcn 基础组件和非生产测试资产。不得通过排除业务页面、feature hooks、services、权限或其他安全/基础设施核心来满足门槛。新增排除项必须同时给出可审查理由并更新 coverage governance 测试。
 
-### 当前覆盖率基线（2026-08-17）
+### 当前覆盖率基线（2026-08-21）
 
-最近一次全量单元测试在当前工作树上执行：210 个测试文件通过、0 个测试文件跳过，922 个测试通过、0 个 TODO。
+最近一次全量单元测试在当前工作树上执行：213 个测试文件通过、0 个测试文件跳过，940 个测试通过、0 个 TODO。
 
 | 指标 | 基线 | 通过全局门槛还需覆盖 |
 | --- | ---: | ---: |
- | Statements | 81.23%（3637/4477） | 已超过 70% |
- | Lines | 82.19%（3343/4067） | 已超过 70% |
- | Functions | 77.50%（1144/1476） | 已超过 65% |
- | Branches | 75.32%（1966/2610） | 已超过 60% |
+ | Statements | 81.34%（3662/4502） | 已超过 70% |
+ | Lines | 82.26%（3367/4093） | 已超过 70% |
+ | Functions | 77.70%（1157/1489） | 已超过 65% |
+ | Branches | 75.23%（1972/2621） | 已超过 60% |
 
 关键文件仍使用逐文件 statements/lines 90%、branches 80% 门槛；本次覆盖率命令成功退出，说明全局门槛与关键文件门槛均通过。覆盖率仍存在分布不均：部分 Admin 页面入口、客户端 Shell、邮件组件和数据库 schema 的覆盖率较低，后续新增行为应优先补充这些模块的相邻测试，不得通过扩大 exclude 或降低门槛解决。
 

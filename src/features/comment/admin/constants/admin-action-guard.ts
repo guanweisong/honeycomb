@@ -3,7 +3,8 @@ import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guar
 
 export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/comment/components/CommentPageShell/index.tsx",
+    relativePath:
+      "(root)/(dashboard)/comment/components/CommentPageShell/index.tsx",
     actions: [
       {
         id: "comment.moderate",

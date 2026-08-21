@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { CommentStatus } from "@/packages/domain/content/comment";
-import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
+import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 
 interface CommentTreeProps {
   comments: CommentTreeEntity[];

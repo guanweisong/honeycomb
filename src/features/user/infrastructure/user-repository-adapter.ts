@@ -1,5 +1,5 @@
-import type { UserRepository } from "./user-repository";
-import type { CredentialPort, LoginHistoryPort, UserCommandPort, UserQueryPort } from "../repository";
+import type { UserRepository } from "../application/repository";
+import type { CredentialPort, LoginHistoryPort, UserCommandPort, UserQueryPort } from "../application/repository";
 
 /** 将组合 repository 适配为用例使用的窄端口。 */
 export function toUserCommandPort(repository: UserRepository): UserCommandPort {

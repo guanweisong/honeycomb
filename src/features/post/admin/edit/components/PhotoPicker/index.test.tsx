@@ -3,11 +3,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel as MediaEntity } from "../../../../../media/shared/media-view-model";
 
 const { toastInfo, selectMediaRef } = vi.hoisted(() => ({
   toastInfo: vi.fn(),
-  selectMediaRef: { current: undefined as ((media: MediaEntity) => void) | undefined },
+  selectMediaRef: {
+    current: undefined as ((media: MediaEntity) => void) | undefined,
+  },
 }));
 
 vi.mock("sonner", () => ({
@@ -33,15 +35,12 @@ vi.mock("@/packages/ui/extended/Sheet", () => ({
   ),
 }));
 
-vi.mock(
-  "@/features/media/shared/MediaPageShell",
-  () => ({
-    MediaPageShell: (props: { onSelect: (media: MediaEntity) => void }) => {
-      selectMediaRef.current = props.onSelect;
-      return <div>media-page</div>;
-    },
-  }),
-);
+vi.mock("@/features/media/shared/MediaPageShell", () => ({
+  MediaPageShell: (props: { onSelect: (media: MediaEntity) => void }) => {
+    selectMediaRef.current = props.onSelect;
+    return <div>media-page</div>;
+  },
+}));
 
 import PhotoPickerModal from ".";
 
@@ -56,7 +55,10 @@ describe("PhotoPickerModal", () => {
     selectMediaRef.current = undefined;
   });
 
-  function render(handlePhotoPickerOk = vi.fn(), handlePhotoPickerCancel = vi.fn()) {
+  function render(
+    handlePhotoPickerOk = vi.fn(),
+    handlePhotoPickerCancel = vi.fn(),
+  ) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -79,21 +81,20 @@ describe("PhotoPickerModal", () => {
   it("asks the user to select an image before confirming", () => {
     render();
 
-    act(() =>
-      container.querySelector<HTMLButtonElement>("button")?.click(),
-    );
+    act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 
     expect(toastInfo).toHaveBeenCalledWith("请选择图片");
   });
 
   it("returns the selected media on confirmation", () => {
-    const media = { id: "media-1", url: "https://example.test/image.jpg" } as MediaEntity;
+    const media = {
+      id: "media-1",
+      url: "https://example.test/image.jpg",
+    } as MediaEntity;
     const { handlePhotoPickerOk } = render();
 
     act(() => selectMediaRef.current?.(media));
-    act(() =>
-      container.querySelector<HTMLButtonElement>("button")?.click(),
-    );
+    act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 
     expect(handlePhotoPickerOk).toHaveBeenCalledWith(media);
   });

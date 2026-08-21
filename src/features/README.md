@@ -4,7 +4,7 @@
 
 每个 feature 使用以下入口：
 
-- `service.ts` 或 `<feature>.service.ts`：业务用例编排
+- `application/*-use-cases.ts`：业务用例编排
 - `repository.ts`：最小持久化端口
 - `infrastructure/`：Drizzle、存储和外部服务适配器
 - `schemas/`：该 feature 的输入校验和传输类型

@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { LinkEntity } from "@/packages/trpc/api/outputs";
+import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
 import {
   StatusBadge,
@@ -12,8 +12,7 @@ export function getLinkStatusPresentation(status: string) {
     label:
       enableStatusOptions.find((option) => option.value === status)?.label ??
       status,
-    tone:
-      status === "ENABLE" ? StatusBadgeTone.GREEN : StatusBadgeTone.RED,
+    tone: status === "ENABLE" ? StatusBadgeTone.GREEN : StatusBadgeTone.RED,
   };
 }
 

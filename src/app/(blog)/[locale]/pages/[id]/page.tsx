@@ -52,7 +52,7 @@ export default async function Pages(props: PagesProps) {
       <PageTitle>{pageDetail?.title?.[locale]}</PageTitle>
       <PostInfo
         id={pageDetail?.id}
-        author={pageDetail?.author?.name ?? ''}
+        author={pageDetail?.author?.name ?? ""}
         authorId={pageDetail?.author?.id}
         date={pageDetail?.createdAt as string}
         comments={commentsData?.total}

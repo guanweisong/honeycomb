@@ -23,7 +23,10 @@ vi.mock("@/packages/ui/blog/utc-format", () => ({
 }));
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
-  Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a {...props}>{children}</a>
   ),
 }));
@@ -59,16 +62,18 @@ describe("PostInfo", () => {
     expect(container.textContent).toBe(
       "作者甲/formatted:2026-08-18T00:00:00.000Z/3 条评论/42 次浏览",
     );
-    expect(container.querySelector('a[href="/list/authors/author-1"]')?.textContent).toBe(
-      "作者甲",
-    );
+    expect(
+      container.querySelector('a[href="/list/authors/author-1"]')?.textContent,
+    ).toBe("作者甲");
   });
 
   it("applies left alignment when requested", () => {
     render({ author: "作者甲", align: Align.Left });
 
     expect(container.firstElementChild?.className).toContain("justify-start");
-    expect(container.firstElementChild?.className).not.toContain("justify-center");
+    expect(container.firstElementChild?.className).not.toContain(
+      "justify-center",
+    );
   });
 
   it("renders nothing when no metadata is provided", () => {

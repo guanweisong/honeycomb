@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/auth", () => ({ auth: { api: { getSession: mocks.getSession } } }));
-vi.mock("./user-queries", () => ({ getCurrentUser: mocks.getCurrentUser }));
+vi.mock("./application/user-queries", () => ({ getCurrentUser: mocks.getCurrentUser }));
 
 import { getAdminUser } from "./admin-user";
 

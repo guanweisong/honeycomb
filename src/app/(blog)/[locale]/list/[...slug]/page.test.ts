@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockGetLocale = vi.fn();
 const mockGetTranslations = vi.fn();
@@ -42,10 +43,7 @@ vi.mock("@/app/(blog)/components/NoData", () => ({
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));
 
-import List, {
-  generateMetadata,
-  generateStaticParams,
-} from "./page";
+import List, { generateMetadata, generateStaticParams } from "./page";
 
 describe("blog list page", () => {
   let container: HTMLDivElement;
@@ -57,14 +55,14 @@ describe("blog list page", () => {
     root = createRoot(container);
 
     mockGetLocale.mockReset().mockResolvedValue("zh");
-    mockGetTranslations.mockReset().mockResolvedValue(
-      (key: string, values?: Record<string, string>) => {
+    mockGetTranslations
+      .mockReset()
+      .mockResolvedValue((key: string, values?: Record<string, string>) => {
         if (key === "postUnderTag") return `标签：${values?.tag ?? ""}`;
         if (key === "postUnderAuthor") return `作者：${values?.author ?? ""}`;
         if (key === "emptyTip") return "暂无文章";
         return key;
-      },
-    );
+      });
     mockSettingIndex.mockReset().mockResolvedValue({
       siteName: { zh: "蜂巢" },
       siteSubName: { zh: "记录值得分享的事" },
@@ -140,9 +138,9 @@ describe("blog list page", () => {
     await renderList(["tags", "unknown-tag"]);
 
     expect(container.textContent).toContain("标签：");
-    expect(container.querySelector('[data-testid="no-data"]')?.textContent).toBe(
-      "暂无文章",
-    );
+    expect(
+      container.querySelector('[data-testid="no-data"]')?.textContent,
+    ).toBe("暂无文章");
   });
 
   it("uses the resolved author id and author heading", async () => {

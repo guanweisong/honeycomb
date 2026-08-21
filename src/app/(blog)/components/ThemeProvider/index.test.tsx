@@ -10,7 +10,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next-themes", () => ({
   ThemeProvider: ({ children, ...props }: Record<string, unknown>) => {
     mocks.props = props;
-    return <div data-testid="next-themes-provider">{children as React.ReactNode}</div>;
+    return (
+      <div data-testid="next-themes-provider">
+        {children as React.ReactNode}
+      </div>
+    );
   },
 }));
 
@@ -43,16 +47,22 @@ describe("ThemeProvider", () => {
       defaultTheme: "system",
       enableSystem: true,
     });
-    expect(container.querySelector('[data-testid="content"]')?.textContent).toBe(
-      "内容",
-    );
+    expect(
+      container.querySelector('[data-testid="content"]')?.textContent,
+    ).toBe("内容");
   });
 
   it("does not alter child structure when no theme options are provided", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => root.render(<ThemeProvider><span>子节点</span></ThemeProvider>));
+    act(() =>
+      root.render(
+        <ThemeProvider>
+          <span>子节点</span>
+        </ThemeProvider>,
+      ),
+    );
 
     expect(mocks.props).toEqual({});
     expect(container.textContent).toBe("子节点");

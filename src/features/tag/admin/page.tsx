@@ -1,6 +1,7 @@
 "use client";
 
 import { ModalType } from "@/packages/ui/admin/modal-type";
+import type { TagViewModel as TagEntity } from "../presentation/tag-view-model";
 import { useState } from "react";
 import { tagTableColumns } from "./constants/tag-table-columns";
 import { DataTable } from "@/packages/ui/extended/DataTable";
@@ -17,7 +18,6 @@ import AddTagDialog from "./components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
-import { TagEntity } from "@/packages/trpc/api/outputs";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 

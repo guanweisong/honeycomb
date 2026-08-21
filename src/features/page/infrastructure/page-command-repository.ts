@@ -5,15 +5,9 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { sanitizeRichText } from "@/packages/infrastructure/security/sanitize-html";
+import type { PageCommandRepository } from "../application/repository";
 
-export type PageCommandInput = { title?: unknown; content?: unknown; status?: string; template?: string };
 function sanitizeContent(value: unknown) { const content = value as { en?: string; zh?: string }; return { en: sanitizeRichText(content.en), zh: sanitizeRichText(content.zh) }; }
-export interface PageCommandRepository {
-  create(input: PageCommandInput, authorId: string): Promise<typeof schema.page.$inferSelect>;
-  destroy(ids: string[]): Promise<{ success: true }>;
-  update(input: PageCommandInput & { id: string }): Promise<typeof schema.page.$inferSelect>;
-  incrementViews(id: string): Promise<{ views: number } | undefined>;
-}
 export function createPageCommandRepository(db: Database): PageCommandRepository {
   return {
     async create(input, authorId) { const [page] = await observeDbOperation("page.create", "insert", () => db.insert(schema.page).values({ ...input, content: sanitizeContent(input.content), authorId } as typeof schema.page.$inferInsert).returning()); return page; },

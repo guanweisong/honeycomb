@@ -2,7 +2,7 @@ import React from "react";
 import CommentClient from "./CommentClient";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
-import { CommentTreeResponse } from "@/packages/trpc/api/outputs";
+import type { CommentTreeViewResponse as CommentTreeResponse } from "../../presentation/comment-view-model";
 
 /**
  * 评论组件的属性接口。

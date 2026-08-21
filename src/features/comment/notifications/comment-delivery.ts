@@ -2,7 +2,7 @@ import "server-only";
 import { sendCommentEmail } from "./comment-email";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
-import type { CommentNotificationRepository } from "../repository";
+import type { CommentNotificationRepository } from "../application/repository";
 
 /** 编排新评论的管理员通知和回复通知。邮件失败只记录日志，不阻断评论写入。 */
 export async function notifyCommentCreated(repository: CommentNotificationRepository, commentId: string, parentId?: string | null) {

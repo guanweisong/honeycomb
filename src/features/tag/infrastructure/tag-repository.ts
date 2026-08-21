@@ -5,8 +5,8 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { TagRecord, TagRepository } from "../repository";
-export type { TagInsert, TagListInput, TagRepository, TagUpdate } from "../repository";
+import type { TagRecord, TagRepository } from "../application/repository";
+export type { TagInsert, TagListInput, TagRepository, TagUpdate } from "../application/repository";
 
 export function createTagRepository(db: Database): TagRepository {
   return {

@@ -2,11 +2,11 @@ import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
-import { PostListItemEntity } from "@/packages/trpc/api/outputs";
+import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
 import { postStatusOptions } from "@/packages/domain/content/post-status";
 import { postTypeOptions } from "@/packages/domain/content/post";
-import { CategoryEntity } from "@/packages/trpc/api/outputs";
-import { UserEntity } from "@/packages/trpc/api/outputs";
+import type { CategoryViewModel as CategoryEntity } from "../../../../category/presentation/category-view-model";
+import type { UserViewModel as UserEntity } from "../../../../user/presentation/user-view-model";
 import {
   StatusBadge,
   StatusBadgeTone,
@@ -100,7 +100,10 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
       const label =
         postStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
-        <StatusBadge tone={getStatusBadgeTone(status, postStatusToneMap)} label={label} />
+        <StatusBadge
+          tone={getStatusBadgeTone(status, postStatusToneMap)}
+          label={label}
+        />
       );
     },
   },

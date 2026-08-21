@@ -48,19 +48,25 @@ describe("RichText", () => {
       images: [image],
     });
 
-    expect(container.querySelector('[data-testid="photo-swipe"]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-testid="photo-swipe"]'),
+    ).not.toBeNull();
     expect(container.querySelector("p")?.textContent).toBe("正文");
-    const link = container.querySelector('a[href="https://cdn.example.test/cover.jpg"]');
+    const link = container.querySelector(
+      'a[href="https://cdn.example.test/cover.jpg"]',
+    );
     expect(link?.getAttribute("data-pswp-width")).toBe("1200");
     expect(link?.getAttribute("data-pswp-height")).toBe("800");
     expect(link?.querySelector("img")?.alt).toBe("封面图");
   });
 
   it("does not promote images absent from the media list to a gallery item", () => {
-    render({ html: '<p>正文</p><img src="https://cdn.example.test/missing.jpg" />' });
+    render({
+      html: '<p>正文</p><img src="https://cdn.example.test/missing.jpg" />',
+    });
 
     expect(container.querySelector("p")?.textContent).toBe("正文");
-    expect(container.querySelector('a[data-pswp-width]')).toBeNull();
+    expect(container.querySelector("a[data-pswp-width]")).toBeNull();
     expect(container.querySelector("img")?.getAttribute("src")).toBe(
       "https://cdn.example.test/missing.jpg",
     );

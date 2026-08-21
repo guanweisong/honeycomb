@@ -180,7 +180,8 @@ export async function generateMetadata(
         )?.list?.[0]?.name?.[locale] ?? "";
       break;
     case "authors":
-      typeName = (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
+      typeName =
+        (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
       break;
   }
 

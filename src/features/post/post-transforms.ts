@@ -1,2 +1,2 @@
 export { toPostInsertValues, toPostUpdateValues } from "./infrastructure/post-transforms";
-export type { PostCommandInput } from "./repository";
+export type { PostCommandInput } from "./application/repository";

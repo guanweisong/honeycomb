@@ -1,6 +1,12 @@
-import { createContext, createElement, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { SettingEntity } from "@/packages/trpc/api/outputs";
+import type { SettingViewModel as SettingEntity } from "@/features/contracts";
 
 const SiteSettingContext = createContext<{
   setting?: SettingEntity;
@@ -18,9 +24,9 @@ export function SiteSettingProvider({
     initialData: setting,
     staleTime: 5 * 60 * 1000,
   });
-  const [currentSetting, setCurrentSetting] = useState<SettingEntity | undefined>(
-    fetchedSetting,
-  );
+  const [currentSetting, setCurrentSetting] = useState<
+    SettingEntity | undefined
+  >(fetchedSetting);
   const utils = trpc.useUtils();
   const resolvedSetting = fetchedSetting ?? currentSetting;
   const refreshSetting = async () => {

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),

@@ -1,5 +1,3 @@
-import { createUpdateSchema } from "drizzle-zod";
-import * as schema from "@/packages/infrastructure/db/schema";
 import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
 import { I18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 import { z } from "zod";
@@ -7,17 +5,7 @@ import { z } from "zod";
 /**
  * 更新网站设置时的数据验证 schema。
  */
-export const SettingUpdateSchema = createUpdateSchema(schema.setting)
-  .pick({
-    id: true,
-    siteName: true,
-    siteSubName: true,
-    siteCopyright: true,
-    siteSignature: true,
-    siteRecordNo: true,
-    siteRecordUrl: true,
-  })
-  .extend({
+export const SettingUpdateSchema = z.object({
     id: IdSchema,
     siteName: I18nSchema.partial(),
     siteSubName: I18nSchema.partial(),

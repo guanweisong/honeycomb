@@ -2,9 +2,9 @@ import React from "react";
 import { MenuItem } from "@/packages/ui/extended/Menu";
 import {
   Permission,
-  can,
   type Permission as PermissionValue,
 } from "@/packages/identity/auth/permissions";
+import { authorize } from "@/packages/identity/auth/authorize";
 import { isCapability } from "@/packages/identity/auth/capability-registry";
 import {
   FileChartColumn,
@@ -127,9 +127,12 @@ export const menu: AdminMenuItem[] = [
   },
 ];
 
-function assertRegisteredMenuCapabilities(items: readonly AdminMenuItem[]): void {
+function assertRegisteredMenuCapabilities(
+  items: readonly AdminMenuItem[],
+): void {
   for (const item of items) {
-    if (!isCapability(item.permission)) throw new Error(`菜单使用了未注册的能力: ${item.path}`);
+    if (!isCapability(item.permission))
+      throw new Error(`菜单使用了未注册的能力: ${item.path}`);
     if (item.children) assertRegisteredMenuCapabilities(item.children);
   }
 }
@@ -141,7 +144,7 @@ export function getMenuForCapabilities(
   items: readonly AdminMenuItem[] = menu,
 ): AdminMenuItem[] {
   return items.flatMap((item) => {
-    if (!can(role, item.permission)) return [];
+    if (!authorize({ role, permission: item.permission })) return [];
     const children = item.children
       ? getMenuForCapabilities(role, item.children)
       : undefined;

@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { TagType } from "@/packages/domain/content/tag";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const grantedPermissions = new Set<string>();
 const queryInputs: Array<{ name?: string }> = [];
@@ -193,7 +194,9 @@ describe("MultiTag", () => {
 
     expect(container.textContent).toContain("已有");
     expect(findButton("添加")).toBeUndefined();
-    expect(container.querySelector('[data-testid="tag-badge"] button')).toBeNull();
+    expect(
+      container.querySelector('[data-testid="tag-badge"] button'),
+    ).toBeNull();
   });
 
   it("removes a selected tag and persists the remaining ids", async () => {

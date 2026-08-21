@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import {
   UserLevelName,
   userLevelOptions,
@@ -27,7 +27,9 @@ export function getUserStatusPresentation(status: string) {
   }
 }
 
-export function formatUserDate(value: string | number | Date | null | undefined) {
+export function formatUserDate(
+  value: string | number | Date | null | undefined,
+) {
   if (value === null || value === undefined || value === "") {
     return "-";
   }

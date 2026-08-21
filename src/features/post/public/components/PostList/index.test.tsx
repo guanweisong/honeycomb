@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const fetches: string[] = [];
 let scrollState: { top?: number } | undefined;
@@ -36,21 +37,19 @@ vi.mock("ahooks", () => ({
   useScroll: () => scrollState,
 }));
 
-vi.mock("@/features/post/public/hooks/rq/post/use.infinite.query.post.list", () => ({
-  default: () => ({
-    ...listState,
-    fetchNextPage: () => fetches.push("next"),
+vi.mock(
+  "@/features/post/public/hooks/rq/post/use.infinite.query.post.list",
+  () => ({
+    default: () => ({
+      ...listState,
+      fetchNextPage: () => fetches.push("next"),
+    }),
   }),
-}));
+);
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
-  Link: ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => React.createElement("a", { href }, children),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
+    React.createElement("a", { href }, children),
 }));
 
 vi.mock("next-intl", () => ({
@@ -143,9 +142,9 @@ describe("PostList", () => {
     expect(container.querySelector("img")?.getAttribute("data-priority")).toBe(
       "true",
     );
-    expect(container.querySelectorAll('a[href="/archives/article"]')).toHaveLength(
-      3,
-    );
+    expect(
+      container.querySelectorAll('a[href="/archives/article"]'),
+    ).toHaveLength(3);
     expect(container.textContent).toContain("已经到底了");
   });
 

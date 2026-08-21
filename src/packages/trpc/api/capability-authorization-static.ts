@@ -176,6 +176,13 @@ const AUTHORIZATION_HELPER_NAME =
   /(?:authori[sz]|auth|access|allow|permission|privilege|role|level)/i;
 const ROLE_POLICY_ALLOWLIST = new Set([
   "src/packages/identity/auth/permissions.ts",
+  "src/packages/identity/auth/authorize.ts",
+  // tRPC transport adapter 只负责把会话映射为统一授权 context。
+  "src/packages/trpc/api/core.ts",
+  "src/app/admin/constants/menu-data.tsx",
+  "src/features/contracts/admin/use-current-user.ts",
+  "src/features/user/infrastructure/user-repository.ts",
+  "src/features/user/admin/transforms/user-transforms.ts",
   "src/packages/infrastructure/db/schema/index.ts",
   "src/packages/domain/identity/user.ts",
   "src/features/user/domain/user.ts",

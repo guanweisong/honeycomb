@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { UserInsert } from "@/features/user/schemas/user.insert.schema";
 import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
-import type { UserEntity } from "@/packages/trpc/api/outputs";
+import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildUserUpdateInput } from "../transforms/user-transforms";
 

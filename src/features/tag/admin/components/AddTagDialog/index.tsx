@@ -5,7 +5,7 @@ import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { TagEntity } from "@/packages/trpc/api/outputs";
+import type { TagViewModel as TagEntity } from "../../../presentation/tag-view-model";
 import { z } from "zod";
 
 type TagInsertValues = z.infer<typeof TagInsertSchema>;
@@ -97,8 +97,6 @@ export default function AddTagDialog(props: AddTagDialogProps) {
             ? {
                 id: record.id,
                 name: record.name ?? undefined,
-                createdAt: record.createdAt,
-                updatedAt: record.updatedAt,
               }
             : undefined
         }

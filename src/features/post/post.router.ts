@@ -25,7 +25,7 @@ import {
   updatePost,
   updatePostTags,
   incrementPostViews,
-} from "@/features/post/post.service";
+} from "@/features/post/application/post-use-cases";
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";
@@ -36,18 +36,34 @@ export const postRouter = createTRPCRouter({
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
       ctx.hasRequest
-        ? getCachedPostList(createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)), input)
-        : getPostList(createPostQueryRepository(ctx.db), input, "PUBLISHED_ONLY"),
+        ? getCachedPostList(
+            createPostSpecialRepository(
+              ctx.db,
+              createPostQueryRepository(ctx.db),
+            ),
+            input,
+          )
+        : getPostList(
+            createPostQueryRepository(ctx.db),
+            input,
+            "PUBLISHED_ONLY",
+          ),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)
     .input(PostListQuerySchema)
-    .query(({ input, ctx }) => getPostList(createPostQueryRepository(ctx.db), input, "ALL")),
+    .query(({ input, ctx }) =>
+      getPostList(createPostQueryRepository(ctx.db), input, "ALL"),
+    ),
 
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(createPostQueryRepository(ctx.db), input.id, "PUBLISHED_ONLY");
+      const result = await getPostDetail(
+        createPostQueryRepository(ctx.db),
+        input.id,
+        "PUBLISHED_ONLY",
+      );
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
     }),
@@ -55,7 +71,11 @@ export const postRouter = createTRPCRouter({
   adminDetail: permissionProcedure(Permission.postReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(createPostQueryRepository(ctx.db), input.id, "ALL");
+      const result = await getPostDetail(
+        createPostQueryRepository(ctx.db),
+        input.id,
+        "ALL",
+      );
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
     }),
@@ -64,34 +84,53 @@ export const postRouter = createTRPCRouter({
     .input(PostInsertSchema)
     .mutation(({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPost(createPostCommandRepository(ctx.db), input, ctx.user.id);
+      return createPost(
+        createPostCommandRepository(ctx.db),
+        input,
+        ctx.user.id,
+      );
     }),
 
   destroy: permissionProcedure(Permission.postDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyPosts(createPostCommandRepository(ctx.db), input.ids)),
+    .mutation(({ input, ctx }) =>
+      destroyPosts(createPostCommandRepository(ctx.db), input.ids),
+    ),
 
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
-    .mutation(({ input, ctx }) => updatePost(createPostCommandRepository(ctx.db), input)),
+    .mutation(({ input, ctx }) =>
+      updatePost(createPostCommandRepository(ctx.db), input),
+    ),
 
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: IdSchema }))
     .query(({ input, ctx }) =>
-      getRandomPostsByCategory(createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)), input.categoryId),
+      getRandomPostsByCategory(
+        createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)),
+        input.categoryId,
+      ),
     ),
 
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ input, ctx }) => {
-      const result = await incrementPostViews(createPostCommandRepository(ctx.db), input.id);
+      const result = await incrementPostViews(
+        createPostCommandRepository(ctx.db),
+        input.id,
+      );
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
     }),
 
   getCategoryId: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(({ input, ctx }) => getPublishedPostCategoryId(createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)), input.id)),
+    .query(({ input, ctx }) =>
+      getPublishedPostCategoryId(
+        createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)),
+        input.id,
+      ),
+    ),
 
   updateTags: permissionProcedure(Permission.postManageTags)
     .input(
@@ -101,5 +140,7 @@ export const postRouter = createTRPCRouter({
         type: z.nativeEnum(TagType),
       }),
     )
-    .mutation(({ input, ctx }) => updatePostTags(createPostCommandRepository(ctx.db), input)),
+    .mutation(({ input, ctx }) =>
+      updatePostTags(createPostCommandRepository(ctx.db), input),
+    ),
 });

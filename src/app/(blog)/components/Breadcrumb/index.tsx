@@ -5,7 +5,7 @@ import React from "react";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useLocale } from "next-intl";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
-import { MenuEntity } from "@/packages/trpc/api/outputs";
+import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
  * 面包屑组件的属性接口。
@@ -93,7 +93,10 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   }
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50">
+    <nav
+      aria-label="Breadcrumb"
+      className="mb-2 lg:mb-4 container box-border px-2 text-auto-front-gray/50"
+    >
       {breadData?.map((item, index) => (
         <span key={`${item.link}_${index}`}>
           {item.link ? (
@@ -101,7 +104,9 @@ const Breadcrumb = (props: BreadCrumbProps) => {
               {item.label}
             </Link>
           ) : (
-            <span key={item.link} aria-current="page">{item.label}</span>
+            <span key={item.link} aria-current="page">
+              {item.label}
+            </span>
           )}
           {index !== breadData.length - 1 ? " / " : ""}
         </span>

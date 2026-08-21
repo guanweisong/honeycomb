@@ -1,16 +1,16 @@
-import type { toPublicComment } from "@/features/comment/comment.service";
-import type { CategoryRepository } from "@/features/category/repository";
-import type { LinkRepository } from "@/features/link/repository";
-import type { TagRepository } from "@/features/tag/repository";
-import type { PageQueryRepository } from "@/features/page/repository";
-import type { MediaRepository } from "@/features/media/repository";
-import type { MenuRepository } from "@/features/menu/repository";
-import type { SettingRepository } from "@/features/setting/repository";
+import type { toPublicComment } from "@/features/comment/application/comment-use-cases";
+import type { CategoryRepository } from "@/features/category/application/repository";
+import type { LinkRepository } from "@/features/link/application/repository";
+import type { TagRepository } from "@/features/tag/application/repository";
+import type { PageQueryRepository } from "@/features/page/application/repository";
+import type { MediaRepository } from "@/features/media/application/repository";
+import type { MenuRepository } from "@/features/menu/application/repository";
+import type { SettingRepository } from "@/features/setting/application/repository";
 import type {
   getPostDetail,
   getPostList,
-} from "@/features/post/post.service";
-import type { getUserList } from "@/features/user/user.service";
+} from "@/features/post/application/post-use-cases";
+import type { getUserList } from "@/features/user/application/user-use-cases";
 
 /** 公开评论 ViewModel。 */
 export type CommentViewModel = ReturnType<typeof toPublicComment>;

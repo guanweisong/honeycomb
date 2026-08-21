@@ -4,10 +4,13 @@ import { type FormEvent, type RefObject, useState, useTransition } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/packages/ui/navigation/blog-navigation";
+import {
+  usePathname,
+  useRouter,
+} from "@/packages/ui/navigation/blog-navigation";
 import { refreshPath } from "@/packages/infrastructure/refresh-path";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
+import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./use-comment-identity";

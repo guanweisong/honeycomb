@@ -77,9 +77,10 @@ describe("CommentTree", () => {
     );
 
     expect(container.querySelectorAll("li")).toHaveLength(3);
-    expect(container.querySelector('a[href="https://example.test/author"]')?.textContent).toBe(
-      "作者甲",
-    );
+    expect(
+      container.querySelector('a[href="https://example.test/author"]')
+        ?.textContent,
+    ).toBe("作者甲");
     expect(container.textContent).toContain("回复内容");
     expect(container.textContent).toContain("该评论已被屏蔽");
     expect(container.querySelector('img[alt="作者甲 的头像"]')).not.toBeNull();
@@ -99,9 +100,9 @@ describe("CommentTree", () => {
     );
 
     act(() =>
-      Array.from(container.querySelectorAll("a")).find(
-        (link) => link.textContent === "回复",
-      )?.click(),
+      Array.from(container.querySelectorAll("a"))
+        .find((link) => link.textContent === "回复")
+        ?.click(),
     );
 
     expect(onReply).toHaveBeenCalledWith(comments[0]);

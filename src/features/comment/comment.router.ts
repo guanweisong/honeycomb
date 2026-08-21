@@ -21,35 +21,54 @@ import {
   listComments,
   listPublicCommentsByRef,
   notifyCommentCreated,
-} from "@/features/comment/comment.service";
+} from "@/features/comment/application/comment-use-cases";
 import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
+import { validateCaptcha } from "@/packages/infrastructure/security/validate-captcha";
 
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
     .input(CommentListQuerySchema)
-    .query(({ input, ctx }) => listComments(createCommentQueryRepository(ctx.db), input)),
+    .query(({ input, ctx }) =>
+      listComments(createCommentQueryRepository(ctx.db), input),
+    ),
 
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))
     .query(({ input, ctx }) =>
-      listPublicCommentsByRef(createCommentQueryRepository(ctx.db), input).catch(mapApplicationError),
+      listPublicCommentsByRef(
+        createCommentQueryRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError),
     ),
 
   create: publicProcedure
     .input(CommentInsertSchema)
     .mutation(({ ctx, input }) =>
-      createComment(createCommentCommandRepository(ctx.db), ctx.header, input, (commentId, parentId) =>
-        notifyCommentCreated(createCommentNotificationRepository(ctx.db), commentId, parentId),
+      createComment(
+        createCommentCommandRepository(ctx.db),
+        ctx.header,
+        input,
+        validateCaptcha,
+        (commentId, parentId) =>
+          notifyCommentCreated(
+            createCommentNotificationRepository(ctx.db),
+            commentId,
+            parentId,
+          ),
       ).catch(mapApplicationError),
     ),
 
   update: permissionProcedure(Permission.commentModerate)
     .input(CommentUpdateSchema)
-    .mutation(({ input, ctx }) => updateComment(createCommentCommandRepository(ctx.db), input)),
+    .mutation(({ input, ctx }) =>
+      updateComment(createCommentCommandRepository(ctx.db), input),
+    ),
 
   destroy: permissionProcedure(Permission.commentModerate)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) => destroyComments(createCommentCommandRepository(ctx.db), input.ids)),
+    .mutation(({ input, ctx }) =>
+      destroyComments(createCommentCommandRepository(ctx.db), input.ids),
+    ),
 });

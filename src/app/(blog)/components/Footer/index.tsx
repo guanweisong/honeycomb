@@ -9,10 +9,7 @@ import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
  * @returns {Promise<JSX.Element>} 网站底部。
  */
 export default async function Footer() {
-  const [setting, locale] = await Promise.all([
-    getSiteSetting(),
-    getLocale(),
-  ]);
+  const [setting, locale] = await Promise.all([getSiteSetting(), getLocale()]);
 
   return (
     <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">

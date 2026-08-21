@@ -7,8 +7,8 @@ import { CommentStatus } from "@/packages/domain/content/comment";
 import { PostType } from "@/packages/domain/content/post";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { SettingRecord, SettingRepository } from "../repository";
-export type { SettingRecord, SettingRepository, SettingUpdate, StatisticsType } from "../repository";
+import type { SettingRecord, SettingRepository } from "../application/repository";
+export type { SettingRecord, SettingRepository, SettingUpdate, StatisticsType } from "../application/repository";
 
 export function createSettingRepository(db: Database): SettingRepository {
   return {

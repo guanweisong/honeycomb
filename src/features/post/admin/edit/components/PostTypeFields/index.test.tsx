@@ -36,8 +36,16 @@ describe("PostTypeFields", () => {
     render(PostType.QUOTE);
 
     expect(fields).toEqual([
-      expect.objectContaining({ name: "quoteContent", type: "textarea", multiLang: true }),
-      expect.objectContaining({ name: "quoteAuthor", type: "text", multiLang: true }),
+      expect.objectContaining({
+        name: "quoteContent",
+        type: "textarea",
+        multiLang: true,
+      }),
+      expect.objectContaining({
+        name: "quoteAuthor",
+        type: "text",
+        multiLang: true,
+      }),
     ]);
   });
 

@@ -8,7 +8,7 @@ import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { cn } from "@/packages/ui/lib/utils";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuEntity } from "@/packages/trpc/api/outputs";
+import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
  * 菜单组件的属性接口。

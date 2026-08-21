@@ -1,9 +1,7 @@
 import { trpc } from "@/packages/trpc/client/trpc";
 import type { AdminUser } from "@/features/user/admin-user";
-import {
-  can,
-  type Permission as PermissionValue,
-} from "@/packages/identity/auth/permissions";
+import { type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
+import { authorize } from "@/packages/identity/auth/authorize";
 import {
   createContext,
   createElement,
@@ -57,5 +55,5 @@ export const useCurrentUser = () => {
 
 export const useCan = (permission: PermissionValue): boolean => {
   const { user } = useCurrentUser();
-  return can(user?.level, permission);
+  return authorize({ role: user?.level, permission });
 };

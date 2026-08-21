@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 import { submitMediaDelete, submitMediaUpload } from "./media-actions";
 
 const uploadedMedia = {
@@ -15,7 +15,7 @@ const uploadedMedia = {
   color: "rgb(1,2,3)",
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: null,
-} as MediaEntity;
+} as MediaViewModel;
 
 describe("media action state", () => {
   it("uploads image metadata through the existing presigned URL flow", async () => {

@@ -10,8 +10,8 @@ import {
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import S3 from "@/packages/infrastructure/storage/S3";
 import { clientEnv } from "@/env/client";
-import type { MediaRecord, MediaRepository } from "../repository";
-export type { MediaInsert, MediaListInput, MediaRepository } from "../repository";
+import type { MediaRecord, MediaRepository } from "../application/repository";
+export type { MediaInsert, MediaListInput, MediaRepository } from "../application/repository";
 
 export function createMediaRepository(db: Database): MediaRepository {
   return {

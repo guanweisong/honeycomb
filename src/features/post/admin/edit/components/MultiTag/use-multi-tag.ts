@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TagType } from "@/packages/domain/content/tag";
-import { TagEntity } from "@/packages/trpc/api/outputs";
+import type { TagViewModel as TagEntity } from "../../../../../tag/presentation/tag-view-model";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { trpc } from "@/packages/trpc/client/trpc";
@@ -38,7 +38,10 @@ export function useMultiTag({
     if (searchResult) setOptions(searchResult.list ?? []);
   }, [searchResult]);
 
-  const updateTagRelation = async (tags: PostTagOption[], operation: string) => {
+  const updateTagRelation = async (
+    tags: PostTagOption[],
+    operation: string,
+  ) => {
     onChange(tags);
     if (!postId) return;
     try {

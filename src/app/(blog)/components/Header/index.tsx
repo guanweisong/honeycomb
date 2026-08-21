@@ -13,7 +13,7 @@ import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
 import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
-import { MenuEntity } from "@/packages/trpc/api/outputs";
+import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
  * 网站头部组件。

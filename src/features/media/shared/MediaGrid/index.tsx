@@ -5,17 +5,17 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { cn } from "@/packages/ui/lib/utils";
 
 type MediaGridProps = {
-  media?: MediaEntity[];
-  currentItem?: MediaEntity;
+  media?: MediaViewModel[];
+  currentItem?: MediaViewModel;
   onDelete: (id: string) => void;
-  onSelect: (media: MediaEntity) => void;
+  onSelect: (media: MediaViewModel) => void;
 };
 
 export function MediaGrid({

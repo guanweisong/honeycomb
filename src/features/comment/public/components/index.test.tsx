@@ -28,7 +28,10 @@ describe("Comment", () => {
 
     const result = await Comment({ id: "post-1", type: "POST" as never });
 
-    expect(mocks.listByRef).toHaveBeenCalledWith({ id: "post-1", type: "POST" });
+    expect(mocks.listByRef).toHaveBeenCalledWith({
+      id: "post-1",
+      type: "POST",
+    });
     expect((result as React.ReactElement).props).toMatchObject({
       id: "post-1",
       type: "POST",
@@ -42,9 +45,12 @@ describe("Comment", () => {
 
     const result = await Comment({ id: "page-1", type: "PAGE" as never });
 
-    expect(mocks.listByRef).toHaveBeenCalledWith({ id: "page-1", type: "PAGE" });
-    expect((result as React.ReactElement<Record<string, unknown>>).props.type).toBe(
-      "PAGE",
-    );
+    expect(mocks.listByRef).toHaveBeenCalledWith({
+      id: "page-1",
+      type: "PAGE",
+    });
+    expect(
+      (result as React.ReactElement<Record<string, unknown>>).props.type,
+    ).toBe("PAGE");
   });
 });

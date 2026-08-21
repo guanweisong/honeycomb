@@ -1,4 +1,4 @@
-import { MenuEntity } from "@/packages/trpc/api/outputs";
+import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
  * 获取菜单当前路径属性的属性接口。
@@ -35,14 +35,14 @@ const getCurrentPathOfMenu = (props: GetCurrentPathProps) => {
        */
       if (data.length === 1) {
         const value = data[0][familyProp];
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           path.push(value);
         }
       } else {
         data.forEach((item) => {
           if (item.id === id) {
             const value = item[familyProp];
-            if (typeof value === 'string') {
+            if (typeof value === "string") {
               path.push(value);
             }
             if (item.parent !== "0") {

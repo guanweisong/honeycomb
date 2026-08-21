@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
-import { changeUserStatus } from "./user-command-handlers";
+import { changeUserStatus } from "./application/user-command-handlers";
 
 describe("User command handlers", () => {
   it("账号状态变更成功后派发事件", async () => {

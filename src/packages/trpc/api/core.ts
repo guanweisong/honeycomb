@@ -1,14 +1,18 @@
 import "server-only";
 
 import { initTRPC, TRPCError } from "@trpc/server";
-import { LogEvent, MetricName } from "@/packages/infrastructure/observability/core/names";
-import { serializeError } from "@/packages/infrastructure/observability/core/sanitize";
-import { getLogger, getMetrics } from "@/packages/infrastructure/observability/server/registry";
 import {
-  can,
-  type Permission,
-} from "@/packages/identity/auth/permissions";
+  LogEvent,
+  MetricName,
+} from "@/packages/infrastructure/observability/core/names";
+import { serializeError } from "@/packages/infrastructure/observability/core/sanitize";
+import {
+  getLogger,
+  getMetrics,
+} from "@/packages/infrastructure/observability/server/registry";
+import type { Permission } from "@/packages/identity/auth/permissions";
 import { isCapability } from "@/packages/identity/auth/capability-registry";
+import { authorize } from "@/packages/identity/auth/authorize";
 import { ApplicationError } from "@/packages/application/errors";
 
 import type { Context } from "./context";
@@ -22,43 +26,49 @@ import type { Context } from "./context";
  */
 const t = initTRPC.context<Context>().create();
 
-const requestObservabilityMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
-  const startedAt = Date.now();
-  const baseContext = {
-    requestId: ctx.requestId,
-    procedure: path,
-    method: type,
-  };
+const requestObservabilityMiddleware = t.middleware(
+  async ({ ctx, next, path, type }) => {
+    const startedAt = Date.now();
+    const baseContext = {
+      requestId: ctx.requestId,
+      procedure: path,
+      method: type,
+    };
 
-  getLogger().info(LogEvent.requestStarted, baseContext);
+    getLogger().info(LogEvent.requestStarted, baseContext);
 
-  const result = await next();
-  const durationMs = Date.now() - startedAt;
-  const outcome = result.ok ? "success" : result.error.code;
-  const labels = { procedure: path, method: type, outcome };
-  const completedContext = { ...baseContext, durationMs, outcome };
+    const result = await next();
+    const durationMs = Date.now() - startedAt;
+    const outcome = result.ok ? "success" : result.error.code;
+    const labels = { procedure: path, method: type, outcome };
+    const completedContext = { ...baseContext, durationMs, outcome };
 
-  getMetrics().increment(MetricName.apiRequestsTotal, labels);
-  getMetrics().recordDuration(MetricName.apiRequestDurationMs, durationMs, labels);
+    getMetrics().increment(MetricName.apiRequestsTotal, labels);
+    getMetrics().recordDuration(
+      MetricName.apiRequestDurationMs,
+      durationMs,
+      labels,
+    );
 
-  if (result.ok) {
-    getLogger().info(LogEvent.requestCompleted, completedContext);
+    if (result.ok) {
+      getLogger().info(LogEvent.requestCompleted, completedContext);
+      return result;
+    }
+
+    getMetrics().increment(MetricName.apiErrorsTotal, labels);
+
+    if (outcome === "INTERNAL_SERVER_ERROR") {
+      getLogger().error(LogEvent.requestFailed, {
+        ...completedContext,
+        error: serializeError(result.error.cause ?? result.error),
+      });
+    } else {
+      getLogger().warn(LogEvent.requestFailed, completedContext);
+    }
+
     return result;
-  }
-
-  getMetrics().increment(MetricName.apiErrorsTotal, labels);
-
-  if (outcome === "INTERNAL_SERVER_ERROR") {
-    getLogger().error(LogEvent.requestFailed, {
-      ...completedContext,
-      error: serializeError(result.error.cause ?? result.error),
-    });
-  } else {
-    getLogger().warn(LogEvent.requestFailed, completedContext);
-  }
-
-  return result;
-});
+  },
+);
 
 /**
  * ✅ tRPC 路由创建器
@@ -98,10 +108,10 @@ export const permissionsProcedure = (
         (mode === "all" || mode === "any") &&
         (mode === "all"
           ? requiredPermissions.every((permission) =>
-              can(user.level, permission),
+              authorize({ role: user.level, permission }),
             )
           : requiredPermissions.some((permission) =>
-              can(user.level, permission),
+              authorize({ role: user.level, permission }),
             ));
 
       if (!hasRequiredPermissions) {

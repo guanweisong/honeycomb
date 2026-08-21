@@ -22,9 +22,9 @@ describe("assertPublishedPost", () => {
   });
 
   it("throws notFound for draft page detail", () => {
-    expect(() =>
-      assertPublishedPost({ status: PostStatus.DRAFT }),
-    ).toThrow("NEXT_NOT_FOUND");
+    expect(() => assertPublishedPost({ status: PostStatus.DRAFT })).toThrow(
+      "NEXT_NOT_FOUND",
+    );
     expect(mockNotFound).toHaveBeenCalledTimes(1);
   });
 

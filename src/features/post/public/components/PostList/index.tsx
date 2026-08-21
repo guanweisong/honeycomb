@@ -11,11 +11,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
-import { PostListItemEntity } from "@/packages/trpc/api/outputs";
-import {
-  PostType,
-  PostTypeName,
-} from "@/packages/domain/content/post";
+import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
+import { PostType, PostTypeName } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
 

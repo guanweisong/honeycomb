@@ -9,9 +9,9 @@ import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructur
 import { toPublicComment } from "./comment-dto";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
-import type { CommentQueryRepository, CommentListItem, PublicCommentNode, CommentRecord, CommentRelatedRecord } from "../repository";
-export type { CommentListInput, CommentQueryRepository, CommentRefInput } from "../repository";
-export type { CommentListItem, PublicCommentNode } from "../repository";
+import type { CommentQueryRepository, CommentListItem, PublicCommentNode, CommentRecord, CommentRelatedRecord } from "../application/repository";
+export type { CommentListInput, CommentQueryRepository, CommentRefInput } from "../application/repository";
+export type { CommentListItem, PublicCommentNode } from "../application/repository";
 
 function toCommentRecord(comment: typeof schema.comment.$inferSelect): CommentRecord {
   return { id: comment.id, author: comment.author, content: comment.content, site: comment.site, email: comment.email, parentId: comment.parentId, postId: comment.postId, pageId: comment.pageId, customId: comment.customId, status: comment.status, createdAt: comment.createdAt, updatedAt: comment.updatedAt, userAgent: comment.userAgent, ip: comment.ip };

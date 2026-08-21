@@ -7,7 +7,10 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { MenuUpdateSchema } from "@/features/menu/schemas/menu.update.schema";
-import { getMenuList, saveAllMenus } from "@/features/menu/service";
+import {
+  getMenuList,
+  saveAllMenus,
+} from "@/features/menu/application/menu-use-cases";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */
@@ -20,5 +23,7 @@ export const menuRouter = createTRPCRouter({
   ),
   saveAll: permissionProcedure(Permission.menuUpdate)
     .input(MenuUpdateSchema)
-    .mutation(({ input, ctx }) => saveAllMenus(createMenuRepository(ctx.db), input)),
+    .mutation(({ input, ctx }) =>
+      saveAllMenus(createMenuRepository(ctx.db), input),
+    ),
 });

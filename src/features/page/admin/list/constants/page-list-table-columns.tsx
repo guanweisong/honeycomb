@@ -5,8 +5,8 @@ import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { Badge } from "@/packages/ui/components/badge";
 import { pageStatusOptions } from "@/packages/domain/content/page";
 import { pageTemplateOptions } from "@/packages/domain/content/page-template";
-import { PageEntity } from "@/packages/trpc/api/outputs";
-import { UserEntity } from "@/packages/trpc/api/outputs";
+import type { PageViewModel as PageEntity } from "../../../presentation/page-view-model";
+import type { UserViewModel as UserEntity } from "../../../../user/presentation/user-view-model";
 import {
   StatusBadge,
   StatusBadgeTone,
@@ -57,7 +57,10 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
       const label =
         pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
-        <StatusBadge tone={getStatusBadgeTone(status, pageStatusToneMap)} label={label} />
+        <StatusBadge
+          tone={getStatusBadgeTone(status, pageStatusToneMap)}
+          label={label}
+        />
       );
     },
   },

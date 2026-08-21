@@ -3,7 +3,7 @@
 import type { FormEventHandler, RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/packages/ui/components/button";
-import type { CommentTreeEntity } from "@/packages/trpc/api/outputs";
+import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 
 interface CommentFormProps {

@@ -8,7 +8,12 @@ const mocks = vi.hoisted(() => ({
   pathname: "/archives/1",
   resolvedTheme: "light",
   linkProps: undefined as
-    | { href?: string; locale?: string; replace?: boolean; "aria-label"?: string }
+    | {
+        href?: string;
+        locale?: string;
+        replace?: boolean;
+        "aria-label"?: string;
+      }
     | undefined,
 }));
 
@@ -29,7 +34,10 @@ vi.mock("next/image", () => ({
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   usePathname: () => mocks.pathname,
-  Link: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     locale?: string;
     replace?: boolean;
   }) => {

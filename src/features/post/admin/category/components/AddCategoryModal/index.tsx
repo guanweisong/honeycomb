@@ -16,7 +16,7 @@ import {
   CategoryUpdateSchema,
 } from "@/features/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { CategoryEntity } from "@/packages/trpc/api/outputs";
+import type { CategoryViewModel as CategoryEntity } from "../../../../../category/presentation/category-view-model";
 
 /**
  * 模态框属性接口。

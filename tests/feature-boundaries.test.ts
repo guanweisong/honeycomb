@@ -39,15 +39,20 @@ describe("业务功能边界", () => {
   });
 
   it("共享公开契约不依赖普通 CRUD feature 的 service", () => {
-    const source = readFileSync(join(featuresRoot, "contracts", "content.ts"), "utf8");
-    expect(source).not.toMatch(/features\/(category|link|tag|page|media|menu|setting)\/service/);
+    const source = readFileSync(
+      join(featuresRoot, "contracts", "content.ts"),
+      "utf8",
+    );
+    expect(source).not.toMatch(
+      /features\/(category|link|tag|page|media|menu|setting)\/service/,
+    );
   });
 
-  it("核心 feature 具备 domain、service 和 repository 边界", () => {
+  it("核心 feature 具备 domain、application 和 repository 边界", () => {
     for (const feature of ["post", "comment", "user"]) {
       expect(existsSync(join(featuresRoot, feature, "domain"))).toBe(true);
-      expect(existsSync(join(featuresRoot, feature, `${feature}.service.ts`))).toBe(true);
-      expect(existsSync(join(featuresRoot, feature, "repository.ts"))).toBe(true);
+      expect(existsSync(join(featuresRoot, feature, "application"))).toBe(true);
+      expect(existsSync(join(featuresRoot, feature, "application", "repository.ts"))).toBe(true);
     }
   });
 
@@ -64,9 +69,12 @@ describe("业务功能边界", () => {
   });
   it("为业务提供仓储协议和按需的公开入口", () => {
     for (const feature of featureNames) {
-      const entry = ["post", "comment", "user"].includes(feature) ? `${feature}.service.ts` : "service.ts";
-      expect(statSync(join(featuresRoot, feature, entry))).toBeTruthy();
-      expect(statSync(join(featuresRoot, feature, "infrastructure"))).toBeTruthy();
+      expect(
+        statSync(join(featuresRoot, feature, "application")).isDirectory(),
+      ).toBe(true);
+      expect(
+        statSync(join(featuresRoot, feature, "infrastructure")),
+      ).toBeTruthy();
       if (["post", "comment", "user"].includes(feature)) {
         expect(statSync(join(featuresRoot, feature, "domain"))).toBeTruthy();
       }
@@ -75,8 +83,10 @@ describe("业务功能边界", () => {
 
   it("业务模块不重新引入历史分层目录", () => {
     for (const feature of featureNames) {
-      for (const legacyDirectory of ["application", "interfaces", "contracts"]) {
-        expect(() => statSync(join(featuresRoot, feature, legacyDirectory))).toThrow();
+      for (const legacyDirectory of ["interfaces", "contracts"]) {
+        expect(() =>
+          statSync(join(featuresRoot, feature, legacyDirectory)),
+        ).toThrow();
       }
     }
   });
@@ -85,9 +95,13 @@ describe("业务功能边界", () => {
     const violations = sourceFiles(featuresRoot).flatMap((path) => {
       const source = readFileSync(path, "utf8");
       return featureNames.flatMap((target) => {
-        const current = featureNames.find((feature) => path.includes(`/features/${feature}/`));
+        const current = featureNames.find((feature) =>
+          path.includes(`/features/${feature}/`),
+        );
         if (!current || current === target) return [];
-        return new RegExp(`@/features/${target}/(application|transport|admin)/`).test(source)
+        return new RegExp(
+          `@/features/${target}/(application|transport|admin)/`,
+        ).test(source)
           ? [`${relative(process.cwd(), path)} -> ${target}`]
           : [];
       });
@@ -108,6 +122,21 @@ describe("业务功能边界", () => {
           (specifier) => `${relative(process.cwd(), path)}: ${specifier}`,
         );
       });
+
+    expect(violations).toEqual([]);
+  });
+
+  it("核心 feature 的 transport 使用 application 用例入口", () => {
+    const violations = ["post", "comment", "user"].flatMap((feature) =>
+      sourceFiles(join(featuresRoot, feature))
+        .filter((path) => path.endsWith(".router.ts"))
+        .filter((path) =>
+          readFileSync(path, "utf8").includes(
+            `features/${feature}/${feature}.service`,
+          ),
+        )
+        .map((path) => relative(process.cwd(), path)),
+    );
 
     expect(violations).toEqual([]);
   });

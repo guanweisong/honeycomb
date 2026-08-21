@@ -1,6 +1,6 @@
 import parse, { HTMLReactParserOptions } from "html-react-parser";
 import Image from "next/image";
-import { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel as MediaEntity } from "@/features/contracts";
 import { PhotoSwipeClient } from "@/app/(blog)/components/PhotoSwipe";
 
 interface Props {

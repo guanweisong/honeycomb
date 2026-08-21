@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 describe("PostListClient boundary", () => {
   it("keeps list queries and mutations in the client shell", () => {
     const source = readFileSync(
-      resolve("src/features/post/admin/list/components/PostListClient/index.tsx"),
+      resolve(
+        "src/features/post/admin/list/components/PostListClient/index.tsx",
+      ),
       "utf8",
     );
     expect(source).toContain('"use client"');

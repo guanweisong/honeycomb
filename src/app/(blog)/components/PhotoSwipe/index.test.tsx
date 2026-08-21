@@ -68,7 +68,13 @@ describe("PhotoSwipeClient", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
-    act(() => root.render(<PhotoSwipeClient><p>正文</p></PhotoSwipeClient>));
+    act(() =>
+      root.render(
+        <PhotoSwipeClient>
+          <p>正文</p>
+        </PhotoSwipeClient>,
+      ),
+    );
 
     expect(container.textContent).toBe("正文");
     expect(mocks.instances[0].options.children).toBe("a[data-pswp-width]");

@@ -3,7 +3,7 @@
 import { Sheet } from "@/packages/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel as MediaEntity } from "../../../../../media/shared/media-view-model";
 
 /**
  * 图片选择器模态框的属性接口。
@@ -32,8 +32,12 @@ export interface PhotoPickerModalProps {
  * @returns {JSX.Element} 图片选择器模态框。
  */
 const PhotoPickerModal = (props: PhotoPickerModalProps) => {
-  const { showPhotoPicker, handlePhotoPickerOk, handlePhotoPickerCancel, pickerContent } =
-    props;
+  const {
+    showPhotoPicker,
+    handlePhotoPickerOk,
+    handlePhotoPickerCancel,
+    pickerContent,
+  } = props;
   const [selectItem, setSelectItem] = useState<MediaEntity>();
 
   /**

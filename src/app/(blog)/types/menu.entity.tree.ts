@@ -1,4 +1,4 @@
-import { MenuEntity } from "@/packages/trpc/api/outputs";
+import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 export type MenuEntityTree = MenuEntity & {
   children?: MenuEntityTree[];

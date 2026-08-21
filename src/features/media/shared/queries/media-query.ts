@@ -1,19 +1,13 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { MediaViewModel } from "../media-view-model";
 import type { MediaIndexInput } from "@/features/media/schemas/media.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
 export const MEDIA_PAGE_SIZE = 50;
 
-function getPageSignature(page: MediaEntity[]) {
+function getPageSignature(page: MediaViewModel[]) {
   return page.map((item) => item?.id ?? String(item)).join("|");
 }
 
@@ -23,7 +17,7 @@ export function getMediaQueryInput(page = 1): MediaIndexInput {
 
 export function useMediaQuery() {
   const [page, setPage] = useState(1);
-  const [pages, setPages] = useState<Record<number, MediaEntity[]>>({});
+  const [pages, setPages] = useState<Record<number, MediaViewModel[]>>({});
   const [total, setTotal] = useState(0);
   const requestedPage = useRef<number | undefined>(undefined);
   const requestedFromSignature = useRef<string | undefined>(undefined);
@@ -85,7 +79,14 @@ export function useMediaQuery() {
     requestedPage.current = nextPage;
     requestedFromSignature.current = getPageSignature(query.data.list);
     setPage(nextPage);
-  }, [currentPageLoaded, list.length, page, query.data, query.isFetching, total]);
+  }, [
+    currentPageLoaded,
+    list.length,
+    page,
+    query.data,
+    query.isFetching,
+    total,
+  ]);
 
   const reset = useCallback(() => {
     requestedPage.current = undefined;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { PostStatus } from "@/packages/domain/content/post-status";
-import { publishPost, withdrawPost } from "./post-command-handlers";
+import { publishPost, withdrawPost } from "./application/post-command-handlers";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
 const input = { id: "post-1", status: PostStatus.DRAFT } as never;

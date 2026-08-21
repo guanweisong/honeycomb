@@ -8,14 +8,15 @@ import {
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import { can, Permission } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/packages/identity/auth/permissions";
+import { authorize } from "@/packages/identity/auth/authorize";
 import {
   setCredentialPassword,
   type CredentialStore,
 } from "@/packages/identity/auth/credentials";
 import { listUserLoginHistory } from "@/packages/identity/account-security/server/login-history.repository";
-import type { CurrentUserRecord, UserCommandInput, UserListInput, UserRecord } from "../ports";
 import { ApplicationError } from "@/packages/application/errors";
+import type { UserRepository } from "../application/repository";
 
 const safeUserColumns = {
   id: schema.user.id,
@@ -27,42 +28,35 @@ const safeUserColumns = {
   updatedAt: schema.user.updatedAt,
 };
 
-export type { CurrentUserRecord, UserCommandInput, UserListInput, UserRecord } from "../ports";
 export type LoginHistoryRecord = Awaited<
   ReturnType<typeof listUserLoginHistory>
 >[number];
-
-export interface UserRepository {
-  detail(id: string): Promise<{ id: string; name: string | null } | null>;
-  current(id: string): Promise<CurrentUserRecord>;
-  list(input: UserListInput): Promise<{ list: UserRecord[]; total: number }>;
-  create(input: UserCommandInput): Promise<UserRecord>;
-  destroy(ids: string[]): Promise<{ success: true }>;
-  update(input: {
-    id: string;
-    password?: string;
-  } & Partial<Omit<UserCommandInput, "password">>): Promise<UserRecord>;
-  loginHistory(userId: string): Promise<readonly LoginHistoryRecord[]>;
-}
 
 export function createUserRepository(db: Database): UserRepository {
   return {
     async detail(id) {
       const [user] = await observeDbOperation("user.detail", "select", () =>
-        db.select({ id: schema.user.id, name: schema.user.name })
-          .from(schema.user).where(eq(schema.user.id, id)).limit(1),
+        db
+          .select({ id: schema.user.id, name: schema.user.name })
+          .from(schema.user)
+          .where(eq(schema.user.id, id))
+          .limit(1),
       );
       return user ?? null;
     },
     async current(id) {
       const [user] = await observeDbOperation("user.current", "select", () =>
-        db.select({
-          id: schema.user.id,
-          email: schema.user.email,
-          level: schema.user.level,
-          name: schema.user.name,
-          status: schema.user.status,
-        }).from(schema.user).where(eq(schema.user.id, id)).limit(1),
+        db
+          .select({
+            id: schema.user.id,
+            email: schema.user.email,
+            level: schema.user.level,
+            name: schema.user.name,
+            status: schema.user.status,
+          })
+          .from(schema.user)
+          .where(eq(schema.user.id, id))
+          .limit(1),
       );
       if (!user) throw new ApplicationError("UNAUTHORIZED");
       return user;
@@ -78,11 +72,19 @@ export function createUserRepository(db: Database): UserRepository {
       );
       const [list, counts] = await Promise.all([
         observeDbOperation("user.list", "select", () =>
-          db.select(safeUserColumns).from(schema.user).where(where)
-            .orderBy(orderBy).limit(limit).offset((page - 1) * limit),
+          db
+            .select(safeUserColumns)
+            .from(schema.user)
+            .where(where)
+            .orderBy(orderBy)
+            .limit(limit)
+            .offset((page - 1) * limit),
         ),
         observeDbOperation("user.count", "select", () =>
-          db.select({ count: sql<number>`count(*)`.as("count") }).from(schema.user).where(where),
+          db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.user)
+            .where(where),
         ),
       ]);
       return { list, total: Number(counts[0]?.count) || 0 };
@@ -98,9 +100,15 @@ export function createUserRepository(db: Database): UserRepository {
       });
     },
     async destroy(ids) {
-      const targets = await db.select({ level: schema.user.level }).from(schema.user)
+      const targets = await db
+        .select({ level: schema.user.level })
+        .from(schema.user)
         .where(inArray(schema.user.id, ids));
-      if (targets.some((target) => can(target.level, Permission.userManage))) {
+      if (
+        targets.some((target) =>
+          authorize({ role: target.level, permission: Permission.userManage }),
+        )
+      ) {
         throw new ApplicationError("FORBIDDEN");
       }
       await observeDbOperation("user.destroy", "delete", () =>
@@ -110,16 +118,29 @@ export function createUserRepository(db: Database): UserRepository {
     },
     async update(input) {
       const { id, password, ...rest } = input;
-      const [target] = await db.select({ level: schema.user.level, status: schema.user.status })
-        .from(schema.user).where(eq(schema.user.id, id));
+      const [target] = await db
+        .select({ level: schema.user.level, status: schema.user.status })
+        .from(schema.user)
+        .where(eq(schema.user.id, id));
       if (
-        target && can(target.level, Permission.userManage) &&
-        (("level" in rest && rest.level && !can(rest.level as string, Permission.userManage)) ||
+        target &&
+        authorize({ role: target.level, permission: Permission.userManage }) &&
+        (("level" in rest &&
+          rest.level &&
+          !authorize({
+            role: rest.level as string,
+            permission: Permission.userManage,
+          })) ||
           (rest.status !== undefined && rest.status !== target.status))
-      ) throw new ApplicationError("FORBIDDEN");
+      )
+        throw new ApplicationError("FORBIDDEN");
       const update = async (store: CredentialStore) => {
         const [user] = await observeDbOperation("user.update", "update", () =>
-          store.update(schema.user).set(rest).where(eq(schema.user.id, id)).returning(safeUserColumns),
+          store
+            .update(schema.user)
+            .set(rest)
+            .where(eq(schema.user.id, id))
+            .returning(safeUserColumns),
         );
         if (password) await setCredentialPassword(store, id, password);
         return user;

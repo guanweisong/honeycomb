@@ -5,10 +5,7 @@ import { Button } from "@/packages/ui/components/button";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
 import { ModalType } from "@/packages/ui/admin/modal-type";
-import {
-  PostType,
-  postTypeOptions,
-} from "@/packages/domain/content/post";
+import { PostType, postTypeOptions } from "@/packages/domain/content/post";
 import { TagType } from "@/packages/domain/content/tag";
 import MultiTag from "../MultiTag";
 import PhotoPickerItem from "../PhotoPickerItem";

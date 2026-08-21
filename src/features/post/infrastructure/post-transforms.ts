@@ -1,8 +1,8 @@
 import type { InferInsertModel } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
 import type { I18n } from "@/packages/domain/localization/i18n";
-import type { PostCommandInput } from "../repository";
-export type { PostCommandInput } from "../repository";
+import type { PostCommandInput } from "../application/repository";
+export type { PostCommandInput } from "../application/repository";
 import { sanitizeOptionalI18nHtml } from "@/packages/infrastructure/security/sanitize-html";
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 type OptionalI18nInput = Partial<Record<keyof I18n, string | null>> | null | undefined;

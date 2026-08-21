@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { PostType } from "@/packages/domain/content/post";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const grantedPermissions = new Set<string>();
 
@@ -17,8 +18,10 @@ vi.mock("@/packages/ui/components/button", () => ({
     children,
     variant: _variant,
     ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) =>
-    (void _variant, React.createElement("button", props, children)),
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) => (
+    void _variant,
+    React.createElement("button", props, children)
+  ),
 }));
 
 vi.mock("@/packages/ui/extended/DynamicForm/DynamicField", () => ({
@@ -115,12 +118,12 @@ describe("post editor type-specific fields", () => {
     await renderSidebar(PostType.ARTICLE);
 
     expect(container.querySelector('[data-field="type"]')).not.toBeNull();
-    expect(container.querySelector('[data-field="categoryId"]')?.textContent).toContain(
-      "—— ——  子分类",
-    );
-    expect(container.querySelector('[data-testid="photo-picker"]')?.textContent).toBe(
-      "封面",
-    );
+    expect(
+      container.querySelector('[data-field="categoryId"]')?.textContent,
+    ).toContain("—— ——  子分类");
+    expect(
+      container.querySelector('[data-testid="photo-picker"]')?.textContent,
+    ).toBe("封面");
     await act(async () => {
       Array.from(container.querySelectorAll("button"))
         .find((button) => button.textContent?.includes("新建分类"))
@@ -138,17 +141,23 @@ describe("post editor type-specific fields", () => {
         (item) => item.textContent,
       ),
     ).toEqual(["导演", "演员", "电影风格"]);
-    expect(container.querySelector('[data-testid="photo-picker"]')).not.toBeNull();
+    expect(
+      container.querySelector('[data-testid="photo-picker"]'),
+    ).not.toBeNull();
   });
 
   it("renders photograph metadata and its gallery style relationship", async () => {
     await renderSidebar(PostType.PHOTOGRAPH);
 
-    expect(container.querySelector('[data-field="galleryLocation"]')).not.toBeNull();
-    expect(container.querySelector('[data-field="galleryTime"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="multi-tag"]')?.textContent).toBe(
-      "照片风格",
-    );
+    expect(
+      container.querySelector('[data-field="galleryLocation"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('[data-field="galleryTime"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('[data-testid="multi-tag"]')?.textContent,
+    ).toBe("照片风格");
   });
 
   it("does not offer covers or tag relationships for quotes", async () => {

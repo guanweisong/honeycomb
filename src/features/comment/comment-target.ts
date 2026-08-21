@@ -1,6 +1,6 @@
 import "server-only";
-import type { CommentTarget, CommentTargetRepository } from "./repository";
-export type { CommentTarget } from "./repository";
+import type { CommentTarget, CommentTargetRepository } from "./application/repository";
+export type { CommentTarget } from "./application/repository";
 export { CommentTargetError } from "./infrastructure/comment-target-repository";
 /** 校验公开评论目标是否存在且允许评论。 */
 export function assertPublicCommentTarget(repository: CommentTargetRepository, target: CommentTarget) { return repository.assertPublic(target); }

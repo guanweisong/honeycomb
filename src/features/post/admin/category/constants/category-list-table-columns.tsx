@@ -4,7 +4,7 @@ import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { CategoryEntity } from "@/packages/trpc/api/outputs";
+import type { CategoryViewModel as CategoryEntity } from "../../../../category/presentation/category-view-model";
 import {
   StatusBadge,
   StatusBadgeTone,

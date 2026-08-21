@@ -7,8 +7,8 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { buildDrizzleOrderBy, buildDrizzleWhere, type QueryValue } from "@/packages/infrastructure/db/query/tools";
 import Tools from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { CategoryRepository } from "../repository";
-export type { CategoryInsert, CategoryListInput, CategoryUpdate, CategoryVisibility, CategoryRepository } from "../repository";
+import type { CategoryRepository } from "../application/repository";
+export type { CategoryInsert, CategoryListInput, CategoryUpdate, CategoryVisibility, CategoryRepository } from "../application/repository";
 
 export function createCategoryRepository(db: Database): CategoryRepository {
   return {

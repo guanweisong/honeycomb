@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("react-hook-form", () => ({
   useFormContext: () => ({ control: { name: "form-control" } }),
@@ -19,16 +20,20 @@ vi.mock("@/packages/ui/components/button", () => ({
     children,
     variant: _variant,
     ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) =>
-    (void _variant, React.createElement("button", props, children)),
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) => (
+    void _variant,
+    React.createElement("button", props, children)
+  ),
 }));
 
 vi.mock("next/image", () => ({
   default: ({
     priority: _priority,
     ...props
-  }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) =>
-    (void _priority, React.createElement("img", props)),
+  }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => (
+    void _priority,
+    React.createElement("img", props)
+  ),
 }));
 
 import PhotoPickerItem from "./index";

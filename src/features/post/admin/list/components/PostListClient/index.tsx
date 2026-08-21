@@ -15,7 +15,7 @@ import {
   PostListQuerySchema,
 } from "@/features/post/schemas/post.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PostListItemEntity } from "@/packages/trpc/api/outputs";
+import type { PostListViewModel as PostListItemEntity } from "../../../../presentation/post-view-model";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 
@@ -52,7 +52,10 @@ export default function PostListClient() {
 
   return (
     <DataTable<PostListItemEntity, PostListQueryInput>
-      data={{ list: (data?.list as PostListItemEntity[]) ?? [], total: data?.total ?? 0 }}
+      data={{
+        list: (data?.list as PostListItemEntity[]) ?? [],
+        total: data?.total ?? 0,
+      }}
       onChange={setSearchParams}
       columns={postListTableColumns}
       isFetching={isFetching}
@@ -64,13 +67,20 @@ export default function PostListClient() {
         <div className="flex justify-between">
           <div className="flex gap-1">
             {canCreatePost && (
-              <Button onClick={() => router.push("/admin/post/edit")} variant="outline">
+              <Button
+                onClick={() => router.push("/admin/post/edit")}
+                variant="outline"
+              >
                 <Plus /> 添加新文章
               </Button>
             )}
             {canDeletePost && (
               <Dialog
-                trigger={<Button variant="outline" disabled={!selectedRows.length}><Trash /> 批量删除</Button>}
+                trigger={
+                  <Button variant="outline" disabled={!selectedRows.length}>
+                    <Trash /> 批量删除
+                  </Button>
+                }
                 type="danger"
                 title="确定要删除吗？"
                 onOK={handleDeleteBatch}
@@ -79,7 +89,13 @@ export default function PostListClient() {
           </div>
           <DynamicForm
             schema={PostListQuerySchema}
-            fields={[{ name: "title", type: "text", placeholder: "请输入文章名称进行搜索" }]}
+            fields={[
+              {
+                name: "title",
+                type: "text",
+                placeholder: "请输入文章名称进行搜索",
+              },
+            ]}
             onSubmit={setSearchParams}
             inline
             submitProps={{ children: "查询", variant: "outline" }}
@@ -89,13 +105,21 @@ export default function PostListClient() {
       rowActions={(row) => (
         <div className="flex gap-1">
           {canUpdatePost && (
-            <Button variant="secondary" size="sm" onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
+            >
               <Pencil />
             </Button>
           )}
           {canDeletePost && (
             <Dialog
-              trigger={<Button variant="secondary" size="sm"><Trash /></Button>}
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <Trash />
+                </Button>
+              }
               type="danger"
               title="确定要删除吗？"
               onOK={() => handleDeleteItem([row.id])}

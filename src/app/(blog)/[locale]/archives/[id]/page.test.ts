@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockGetLocale = vi.fn();
 const mockGetTranslations = vi.fn();
@@ -68,13 +69,8 @@ vi.mock("@/packages/ui/blog/Card", () => ({
 }));
 
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
-  Link: ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => React.createElement("a", { href }, children),
+  Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
+    React.createElement("a", { href }, children),
 }));
 
 vi.mock("@/features/comment/public/components", () => ({
@@ -92,10 +88,7 @@ vi.mock("@/app/(blog)/components/RichText", () => ({
     React.createElement("article", { "data-testid": "rich-text" }, html),
 }));
 
-import Archives, {
-  generateMetadata,
-  generateStaticParams,
-} from "./page";
+import Archives, { generateMetadata, generateStaticParams } from "./page";
 
 type DetailFixture = Record<string, unknown> & {
   category?: { id: string };
@@ -163,7 +156,9 @@ describe("archives page", () => {
   }
 
   function structuredData() {
-    const script = container.querySelector('script[type="application/ld+json"]');
+    const script = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
     if (!script) throw new Error("Expected JSON-LD structured data");
     return JSON.parse(script.textContent ?? "") as Record<string, unknown>;
   }
@@ -179,12 +174,12 @@ describe("archives page", () => {
       name: "文章标题",
     });
     expect(container.querySelector("h1")?.textContent).toBe("文章标题");
-    expect(container.querySelector('[data-testid="rich-text"]')?.textContent).toBe(
-      "文章正文",
-    );
-    expect(container.querySelector('a[href="/archives/post-2"]')?.textContent).toBe(
-      "推荐文章",
-    );
+    expect(
+      container.querySelector('[data-testid="rich-text"]')?.textContent,
+    ).toBe("文章正文");
+    expect(
+      container.querySelector('a[href="/archives/post-2"]')?.textContent,
+    ).toBe("推荐文章");
     expect(container.querySelector('a[href="/archives/post-1"]')).toBeNull();
     expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
   });

@@ -76,9 +76,9 @@ export default async function Archives(props: ArchivesProps) {
       </ViewTransition>
       <PostInfo
         id={postDetail.id}
-        author={postDetail.author?.name ?? ''}
+        author={postDetail.author?.name ?? ""}
         authorId={postDetail.authorId}
-        date={postDetail.createdAt ?? ''}
+        date={postDetail.createdAt ?? ""}
         comments={commentsData?.total}
         views={postDetail.views ?? 0}
       />
@@ -136,10 +136,7 @@ export default async function Archives(props: ArchivesProps) {
               .filter((item) => item.id !== postDetail?.id)
               .map((item) => (
                 <li key={item.id} className="my-2">
-                  <Link
-                    href={`/archives/${item.id}`}
-                    className="link-light"
-                  >
+                  <Link href={`/archives/${item.id}`} className="link-light">
                     {item.title?.[locale] || item.quoteContent?.[locale]}
                   </Link>
                 </li>

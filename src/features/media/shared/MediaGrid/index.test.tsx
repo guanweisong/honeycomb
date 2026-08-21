@@ -2,17 +2,20 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
-  true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("@/features/contracts/admin/use-current-user", () => ({
   useCan: () => false,
 }));
 
 vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean }) => {
+  default: (
+    props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean },
+  ) => {
     const imageProps = { ...props };
     delete imageProps.fill;
     return React.createElement("img", imageProps);
@@ -26,7 +29,7 @@ const imageMedia = {
   name: "cover.png",
   type: "image/png",
   url: "https://cdn.example.test/cover.png",
-} as MediaEntity;
+} as MediaViewModel;
 
 describe("MediaGrid", () => {
   let container: HTMLDivElement;

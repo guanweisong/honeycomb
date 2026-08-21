@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const coreContracts = [
-  "src/features/post/repository.ts",
-  "src/features/comment/repository.ts",
-  "src/features/comment/comment.service.ts",
+  "src/features/post/application/repository.ts",
+  "src/features/comment/application/repository.ts",
+  "src/features/comment/application/comment-use-cases.ts",
   "src/features/user/ports.ts",
 ];
 

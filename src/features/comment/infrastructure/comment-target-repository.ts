@@ -9,8 +9,8 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { ApplicationError } from "@/packages/application/errors";
 
-import type { CommentTargetRepository } from "../repository";
-export type { CommentTarget, CommentTargetRepository } from "../repository";
+import type { CommentTargetRepository } from "../application/repository";
+export type { CommentTarget, CommentTargetRepository } from "../application/repository";
 export class CommentTargetError extends ApplicationError {
   constructor(public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN", message?: string) { super(code, message); this.name = "CommentTargetError"; }
 }

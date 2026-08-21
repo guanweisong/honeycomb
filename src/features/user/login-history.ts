@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { LoginHistoryPort } from "./repository";
+import type { LoginHistoryPort } from "./application/repository";
 
 /** 查询并转换当前用户的登录历史。 */
 export async function getLoginHistory(repository: LoginHistoryPort, userId: string) {

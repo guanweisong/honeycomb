@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("react", async (importOriginal) => {
   const original = await importOriginal<typeof import("react")>();
@@ -149,16 +150,18 @@ describe("blog Header", () => {
     const element = await Header();
     await act(async () => root.render(element));
 
-    expect(container.querySelector('a[href="/list/category"]')?.textContent).toBe(
-      "蜂巢博客",
+    expect(
+      container.querySelector('a[href="/list/category"]')?.textContent,
+    ).toBe("蜂巢博客");
+    expect(container.querySelectorAll('a[href="/list/category"]')).toHaveLength(
+      2,
     );
-    expect(container.querySelectorAll('a[href="/list/category"]')).toHaveLength(2);
-    expect(container.querySelector('a[href="/friend-links"]')?.textContent).toBe(
-      "友链",
-    );
-    expect(container.querySelector('a[href="/pages/page-1"]')?.textContent).toBe(
-      "关于",
-    );
+    expect(
+      container.querySelector('a[href="/friend-links"]')?.textContent,
+    ).toBe("友链");
+    expect(
+      container.querySelector('a[href="/pages/page-1"]')?.textContent,
+    ).toBe("关于");
     expect(
       container.querySelector('a[href="/list/category/parent"]')?.textContent,
     ).toBe("父分类");
@@ -166,9 +169,9 @@ describe("blog Header", () => {
       container.querySelector('a[href="/list/category/parent/child"]')
         ?.textContent,
     ).toBe("子分类");
-    expect(container.querySelector("nav")?.getAttribute("data-flat-count")).toBe(
-      "4",
-    );
+    expect(
+      container.querySelector("nav")?.getAttribute("data-flat-count"),
+    ).toBe("4");
     expect(
       container
         .querySelector("[data-breadcrumb-count]")

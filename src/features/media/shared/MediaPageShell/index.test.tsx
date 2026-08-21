@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
 import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaEntity } from "@/packages/trpc/api/outputs";
+import type { MediaViewModel } from "../media-view-model";
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT =
-  true;
+(
+  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 let allowedPermissions = new Set<Permission>();
 const existingMedia = {
@@ -14,7 +15,7 @@ const existingMedia = {
   name: "cover.png",
   type: "image/png",
   url: "https://cdn.example.test/cover.png",
-} as MediaEntity;
+} as MediaViewModel;
 const uploadedMedia = {
   id: "media-2",
   name: "movie.mp4",
@@ -25,13 +26,13 @@ const uploadedMedia = {
   width: null,
   height: null,
   color: null,
-} as MediaEntity;
+} as MediaViewModel;
 const nextMedia = {
   id: "media-3",
   name: "next.png",
   type: "image/png",
   url: "https://cdn.example.test/next.png",
-} as MediaEntity;
+} as MediaViewModel;
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
   getPresignedUrl: vi.fn(),
@@ -55,13 +56,13 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
         useQuery: (input: { page?: number; limit?: number }) => {
           trpcMocks.input = input;
           return {
-          data: {
-            list: input.page === 2 ? [nextMedia] : [existingMedia],
-            total: 2,
-          },
-          isFetching: false,
-          refetch: trpcMocks.refetch,
-        };
+            data: {
+              list: input.page === 2 ? [nextMedia] : [existingMedia],
+              total: 2,
+            },
+            isFetching: false,
+            refetch: trpcMocks.refetch,
+          };
         },
       },
       destroy: { useMutation: () => ({ mutateAsync: trpcMocks.destroy }) },
@@ -151,7 +152,9 @@ describe("MediaPageShell", () => {
         disconnect = vi.fn();
         observe = vi.fn();
 
-        constructor(callback: (entries: Array<IntersectionObserverEntry>) => void) {
+        constructor(
+          callback: (entries: Array<IntersectionObserverEntry>) => void,
+        ) {
           this.callback = callback;
           observers.push(this);
         }
@@ -163,9 +166,9 @@ describe("MediaPageShell", () => {
     expect(observers.length).toBeGreaterThan(0);
 
     await act(async () => {
-      observers.at(-1)?.callback([
-        { isIntersecting: true } as IntersectionObserverEntry,
-      ]);
+      observers
+        .at(-1)
+        ?.callback([{ isIntersecting: true } as IntersectionObserverEntry]);
     });
 
     expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });
@@ -187,7 +190,8 @@ describe("MediaPageShell", () => {
       root.render(React.createElement(MediaPageShell, { onSelect })),
     );
 
-    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]');
     const file = new File(["movie"], "movie.mp4", { type: "video/mp4" });
     expect(input).not.toBeNull();
     await changeFile(input!, file);
@@ -207,7 +211,9 @@ describe("MediaPageShell", () => {
       storageResponse.resolve(new Response(null, { status: 200 }));
       await Promise.resolve();
     });
-    await vi.waitFor(() => expect(toastMocks.success).toHaveBeenCalledWith("成功上传 1 个文件"));
+    await vi.waitFor(() =>
+      expect(toastMocks.success).toHaveBeenCalledWith("成功上传 1 个文件"),
+    );
 
     expect(trpcMocks.upload).toHaveBeenCalledWith({
       name: "movie.mp4",
@@ -232,7 +238,8 @@ describe("MediaPageShell", () => {
       root.render(React.createElement(MediaPageShell, { onSelect })),
     );
 
-    const input = container.querySelector<HTMLInputElement>('input[type="file"]');
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]');
     await changeFile(
       input!,
       new File(["movie"], "movie.mp4", { type: "video/mp4" }),
@@ -243,7 +250,9 @@ describe("MediaPageShell", () => {
       presignedUrl.reject(new Error("上传服务不可用"));
       await Promise.resolve();
     });
-    await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith("上传服务不可用"));
+    await vi.waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith("上传服务不可用"),
+    );
 
     expect(container.textContent).toContain("点击上传文件");
     expect(trpcMocks.refetch).not.toHaveBeenCalled();
@@ -259,12 +268,16 @@ describe("MediaPageShell", () => {
     );
 
     const tile = container.querySelector('[title="cover.png"]');
-    await act(async () => tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-    const deleteButton = Array.from(container.querySelectorAll("button")).at(-1);
-    await act(async () => deleteButton?.click());
-    const confirmButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent === "确定",
+    await act(async () =>
+      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
     );
+    const deleteButton = Array.from(container.querySelectorAll("button")).at(
+      -1,
+    );
+    await act(async () => deleteButton?.click());
+    const confirmButton = Array.from(
+      document.body.querySelectorAll("button"),
+    ).find((button) => button.textContent === "确定");
     expect(confirmButton).toBeDefined();
     await act(async () => confirmButton?.click());
     await vi.waitFor(() => expect(trpcMocks.destroy).toHaveBeenCalledOnce());
@@ -274,9 +287,9 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
     expect(onSelect).toHaveBeenCalledOnce();
     expect(onSelect).toHaveBeenCalledWith(existingMedia);
-    expect(container.querySelector('[title="cover.png"]')?.className).not.toContain(
-      "border-blue-500",
-    );
+    expect(
+      container.querySelector('[title="cover.png"]')?.className,
+    ).not.toContain("border-blue-500");
   });
 
   it("keeps selection intact when deletion fails", async () => {
@@ -288,14 +301,20 @@ describe("MediaPageShell", () => {
     );
 
     const tile = container.querySelector('[title="cover.png"]');
-    await act(async () => tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-    const deleteButton = Array.from(container.querySelectorAll("button")).at(-1);
-    await act(async () => deleteButton?.click());
-    const confirmButton = Array.from(document.body.querySelectorAll("button")).find(
-      (button) => button.textContent === "确定",
+    await act(async () =>
+      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
     );
+    const deleteButton = Array.from(container.querySelectorAll("button")).at(
+      -1,
+    );
+    await act(async () => deleteButton?.click());
+    const confirmButton = Array.from(
+      document.body.querySelectorAll("button"),
+    ).find((button) => button.textContent === "确定");
     await act(async () => confirmButton?.click());
-    await vi.waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith("删除失败"));
+    await vi.waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith("删除失败"),
+    );
 
     expect(trpcMocks.refetch).not.toHaveBeenCalled();
     expect(onSelect).toHaveBeenCalledTimes(1);
