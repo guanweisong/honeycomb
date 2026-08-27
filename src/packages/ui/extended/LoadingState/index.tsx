@@ -23,7 +23,7 @@ export default function LoadingState({
       aria-live="polite"
       className={
         fullScreen
-          ? "flex min-h-screen w-full -translate-y-[20%] items-center justify-center bg-background text-muted-foreground"
+          ? "flex min-h-screen w-full -translate-y-[20%] items-center justify-center text-muted-foreground"
           : "flex min-h-32 w-full items-center justify-center text-muted-foreground"
       }
     >
