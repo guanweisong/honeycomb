@@ -1,10 +1,6 @@
 "use client";
 
-import React, {
-  ReactNode,
-  useEffect,
-  useState,
-} from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { MenuItem } from "../Menu";
 import type { CurrentUser } from "@/packages/domain/identity/user";
 import { Button } from "../../components/button";
@@ -37,15 +33,6 @@ export interface AdminLayoutProps {
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
 const SIDEBAR_COLLAPSE_BREAKPOINT = 768;
-
-const getInitialIsMobile = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.matchMedia(`(max-width: ${SIDEBAR_COLLAPSE_BREAKPOINT}px)`)
-    .matches;
-};
 
 const findMenuTitle = (
   items: MenuItem[],
@@ -85,28 +72,21 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     onNavigateStart,
   } = props;
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(getInitialIsMobile);
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
-    if (saved !== null) {
-      return saved === "true";
-    }
-
-    return window.matchMedia(`(max-width: ${SIDEBAR_COLLAPSE_BREAKPOINT}px)`)
-      .matches;
-  });
+  const [isMobile, setIsMobile] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [layoutHydrated, setLayoutHydrated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (!layoutHydrated) {
+      return;
+    }
+
     window.localStorage.setItem(
       SIDEBAR_COLLAPSED_STORAGE_KEY,
       String(collapsed),
     );
-  }, [collapsed]);
+  }, [collapsed, layoutHydrated]);
 
   useEffect(() => {
     const media = window.matchMedia(
@@ -118,6 +98,9 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     };
 
     setIsMobile(media.matches);
+    const saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    setCollapsed(saved !== null ? saved === "true" : media.matches);
+    setLayoutHydrated(true);
     media.addEventListener?.("change", handleChange);
 
     return () => {
@@ -184,7 +167,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                     : "w-[200px] opacity-100 translate-x-0 m-3",
                 )}
               >
-                <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} pendingPath={pendingPath} onNavigateStart={onNavigateStart} />
+                <AdminSidebar
+                  title={title}
+                  menu={menu}
+                  user={user}
+                  onLogout={onLogout}
+                  pendingPath={pendingPath}
+                  onNavigateStart={onNavigateStart}
+                />
               </div>
             )}
             <div
@@ -255,7 +245,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                       : "translate-x-[-100%] pointer-events-none",
                   )}
                 >
-                  <AdminSidebar title={title} menu={menu} user={user} onLogout={onLogout} pendingPath={pendingPath} onNavigateStart={onNavigateStart} />
+                  <AdminSidebar
+                    title={title}
+                    menu={menu}
+                    user={user}
+                    onLogout={onLogout}
+                    pendingPath={pendingPath}
+                    onNavigateStart={onNavigateStart}
+                  />
                 </div>
               </>
             )}
