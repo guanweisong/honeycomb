@@ -17,6 +17,7 @@ vi.mock("@/auth-client", () => ({
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mocks.push }),
+  usePathname: () => "/admin/dashboard",
 }));
 
 vi.mock("sonner", () => ({

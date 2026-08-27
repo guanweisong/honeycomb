@@ -7,7 +7,25 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
+
+function findMenuTitle(
+  items: ReturnType<typeof getMenuForCapabilities>,
+  pathname: string,
+): string | undefined {
+  for (const item of items) {
+    if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
+      if (item.children) {
+        const childTitle = findMenuTitle(item.children, pathname);
+        if (childTitle) return childTitle;
+      }
+      return item.name;
+    }
+  }
+  return undefined;
+}
 
 export function DashboardClientShell({
   children,
@@ -17,8 +35,16 @@ export function DashboardClientShell({
   user: AdminUser;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const utils = trpc.useUtils();
   const { setting } = useSiteSetting();
+  const adminMenu = useMemo(() => getMenuForCapabilities(user.level), [user.level]);
+
+  useEffect(() => {
+    const pageTitle = findMenuTitle(adminMenu, pathname) ?? "管理后台";
+    const siteName = setting?.siteName?.zh;
+    document.title = siteName ? `${pageTitle} - ${siteName}` : pageTitle;
+  }, [adminMenu, pathname, setting?.siteName?.zh]);
 
   const handleLogout = async () => {
     try {
@@ -36,7 +62,7 @@ export function DashboardClientShell({
   return (
     <AdminLayout
       title={setting?.siteName?.zh}
-      menu={getMenuForCapabilities(user.level)}
+      menu={adminMenu}
       user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
