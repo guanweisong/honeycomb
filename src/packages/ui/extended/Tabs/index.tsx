@@ -37,7 +37,7 @@ export function Tabs({
       onValueChange={onValueChange}
       className={className}
     >
-      <TabsList>
+      <TabsList className="max-w-full overflow-x-auto [&>*]:shrink-0">
         {tabs.map(({ value, label, disabled }) => (
           <TabsTrigger key={value} value={value} disabled={disabled}>
             {label}
