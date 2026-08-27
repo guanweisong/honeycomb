@@ -37,7 +37,7 @@ export function Tabs({
       onValueChange={onValueChange}
       className={className}
     >
-      <TabsList className="max-w-full overflow-x-auto [&>*]:shrink-0">
+      <TabsList className="max-w-full justify-start overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0">
         {tabs.map(({ value, label, disabled }) => (
           <TabsTrigger key={value} value={value} disabled={disabled}>
             {label}
