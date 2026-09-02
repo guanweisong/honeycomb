@@ -17,6 +17,12 @@ function toCommentRecord(comment: typeof schema.comment.$inferSelect): CommentRe
 
 export function createCommentCommandRepository(db: Database): CommentCommandRepository {
   return {
+    async findStatus(id) {
+      const [comment] = await observeDbOperation("comment.service.update", "select", () =>
+        db.select({ status: schema.comment.status }).from(schema.comment).where(eq(schema.comment.id, id)).limit(1),
+      );
+      return (comment?.status as CommentStatus | undefined) ?? null;
+    },
     async update(input) {
       const { id, ...changes } = input;
       const [updated] = await observeDbOperation("comment.service.update", "update", () => db.update(schema.comment).set(changes).where(eq(schema.comment.id, id)).returning());

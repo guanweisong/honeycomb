@@ -93,6 +93,10 @@ describe("Category Router", () => {
         createMockContext(createAdminUser("1"), mockDb),
       );
 
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([]);
       const result = await caller.create({
         title: { en: "New Category", zh: "新分类" },
         description: { en: "New category description", zh: "新分类描述" },
@@ -167,6 +171,16 @@ describe("Category Router", () => {
         createMockContext(createAdminUser("1"), mockDb),
       );
 
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([
+        { id: TEST_IDS.ID_1, parent: null, path: "old", status: UserStatus.ENABLE },
+      ]);
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([]);
       const result = await caller.update({
         id: TEST_IDS.ID_1,
         title: { en: "Updated Category", zh: "更新的分类" },

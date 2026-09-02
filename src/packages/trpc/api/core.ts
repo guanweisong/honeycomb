@@ -14,6 +14,7 @@ import type { Permission } from "@/packages/identity/auth/permissions";
 import { isCapability } from "@/packages/identity/auth/capability-registry";
 import { authorize } from "@/packages/identity/auth/authorize";
 import { ApplicationError } from "@/packages/application/errors";
+import { DomainError } from "@/packages/domain/core/domain-error";
 
 import type { Context } from "./context";
 
@@ -137,6 +138,14 @@ export const permissionProcedure = (permission: Permission) =>
 export function mapApplicationError(error: unknown): never {
   if (error instanceof ApplicationError) {
     throw new TRPCError({ code: error.code, message: error.message });
+  }
+  if (error instanceof DomainError) {
+    const code = error.code.includes("NOT_FOUND")
+      ? "NOT_FOUND"
+      : error.code === "PROTECTED_USER"
+        ? "FORBIDDEN"
+        : "BAD_REQUEST";
+    throw new TRPCError({ code, message: error.message });
   }
   throw error;
 }

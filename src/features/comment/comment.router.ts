@@ -63,7 +63,7 @@ export const commentRouter = createTRPCRouter({
   update: permissionProcedure(Permission.commentModerate)
     .input(CommentUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateComment(createCommentCommandRepository(ctx.db), input),
+      updateComment(createCommentCommandRepository(ctx.db), input).catch(mapApplicationError),
     ),
 
   destroy: permissionProcedure(Permission.commentModerate)

@@ -6,6 +6,7 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
+  mapApplicationError,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
@@ -68,7 +69,7 @@ export const pageRouter = createTRPCRouter({
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updatePage(createPageCommandRepository(ctx.db), input),
+      updatePage(createPageCommandRepository(ctx.db), input).catch(mapApplicationError),
     ),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))

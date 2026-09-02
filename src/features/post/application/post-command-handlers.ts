@@ -23,3 +23,24 @@ export async function withdrawPost(repository: PostCommandRepository, input: Pos
   for (const event of aggregate.pullEvents()) await bus?.publish(event);
   return result;
 }
+
+/** 更新文章；状态变更必须经过 Post 聚合。 */
+export async function updatePost(
+  repository: PostCommandRepository,
+  input: PostCommandInput & { id: string },
+  bus?: InProcessEventBus,
+) {
+  if (input.status === undefined) return repository.update(input);
+
+  const currentStatus = await repository.findStatus(input.id);
+  if (!currentStatus) throw new DomainError("文章不存在", "POST_NOT_FOUND");
+  if (currentStatus === input.status) return repository.update(input);
+
+  if (input.status === PostStatus.PUBLISHED) {
+    return publishPost(repository, { ...input, status: currentStatus }, bus);
+  }
+  if (input.status === PostStatus.DRAFT) {
+    return withdrawPost(repository, { ...input, status: currentStatus }, bus);
+  }
+  throw new DomainError(`文章不支持变更为 ${input.status}`, "INVALID_POST_STATUS");
+}

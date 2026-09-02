@@ -5,6 +5,7 @@ import type {
   PageQueryRepository,
   PageVisibility,
 } from "./repository";
+import { updatePage as updatePageThroughAggregate } from "./page-command-handlers";
 
 /** 创建独立页面用例。 */
 export function createPage(
@@ -23,7 +24,7 @@ export function updatePage(
   repository: PageCommandRepository,
   input: PageCommandInput & { id: string },
 ) {
-  return repository.update(input);
+  return updatePageThroughAggregate(repository, input);
 }
 /** 增加公开页面浏览量用例。 */
 export function incrementPageViews(

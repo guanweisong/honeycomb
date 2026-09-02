@@ -6,6 +6,7 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
+  mapApplicationError,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
@@ -100,7 +101,7 @@ export const postRouter = createTRPCRouter({
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updatePost(createPostCommandRepository(ctx.db), input),
+      updatePost(createPostCommandRepository(ctx.db), input).catch(mapApplicationError),
     ),
 
   getRandomByCategory: publicProcedure

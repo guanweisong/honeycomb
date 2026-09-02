@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { publishPost, withdrawPost } from "./application/post-command-handlers";
+import { updatePost } from "./application/post-commands";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
 const input = { id: "post-1", status: PostStatus.DRAFT } as never;
@@ -25,5 +26,34 @@ describe("Post command handlers", () => {
     const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.DRAFT });
     await withdrawPost({ update } as never, { id: "post-1", status: PostStatus.PUBLISHED } as never);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: PostStatus.DRAFT }));
+  });
+
+  it("更新文章状态时必须先经过文章聚合", async () => {
+    const findStatus = vi.fn().mockResolvedValue(PostStatus.DRAFT);
+    const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.PUBLISHED });
+
+    await updatePost(
+      { findStatus, update } as never,
+      { id: "post-1", title: { zh: "标题" }, status: PostStatus.PUBLISHED } as never,
+    );
+
+    expect(findStatus).toHaveBeenCalledWith("post-1");
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "post-1", status: PostStatus.PUBLISHED }),
+    );
+  });
+
+  it("拒绝文章聚合不支持的状态流转", async () => {
+    const findStatus = vi.fn().mockResolvedValue(PostStatus.PUBLISHED);
+    const update = vi.fn();
+
+    await expect(
+      updatePost(
+        { findStatus, update } as never,
+        { id: "post-1", status: PostStatus.TO_AUDIT } as never,
+      ),
+    ).rejects.toThrow();
+
+    expect(update).not.toHaveBeenCalled();
   });
 });

@@ -201,6 +201,11 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce([
         { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
       ]);
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([
+        { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
+      ]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);

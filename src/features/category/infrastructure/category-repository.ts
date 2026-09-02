@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
@@ -12,6 +12,24 @@ export type { CategoryInsert, CategoryListInput, CategoryUpdate, CategoryVisibil
 
 export function createCategoryRepository(db: Database): CategoryRepository {
   return {
+    async find(id) {
+      const [value] = await observeDbOperation("category.update", "select", () =>
+        db.select({ id: schema.category.id, parent: schema.category.parent, path: schema.category.path, status: schema.category.status })
+          .from(schema.category)
+          .where(eq(schema.category.id, id))
+          .limit(1),
+      );
+      return value ?? null;
+    },
+    async pathExists(path, excludeId) {
+      const [value] = await observeDbOperation("category.update", "select", () =>
+        db.select({ id: schema.category.id })
+          .from(schema.category)
+          .where(excludeId ? and(eq(schema.category.path, path), ne(schema.category.id, excludeId)) : eq(schema.category.path, path))
+          .limit(1),
+      );
+      return Boolean(value);
+    },
     async create(input) {
       const [value] = await observeDbOperation("category.create", "insert", () => db.insert(schema.category).values(input as typeof schema.category.$inferInsert).returning());
       return value;

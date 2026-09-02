@@ -1,3 +1,5 @@
+import type { PageStatus } from "@/packages/domain/content/page";
+
 export type LocalizedText = { en: string; zh: string };
 
 export type PageCommandInput = {
@@ -34,6 +36,7 @@ export interface PageWithRelations extends PageRecord {
 export interface PageCommandRepository {
   create(input: PageCommandInput, authorId: string): Promise<{ id: string }>;
   destroy(ids: string[]): Promise<{ success: true }>;
+  findStatus(id: string): Promise<PageStatus | null>;
   update(input: PageCommandInput & { id: string }): Promise<{ id: string }>;
   incrementViews(id: string): Promise<{ views: number } | undefined>;
 }

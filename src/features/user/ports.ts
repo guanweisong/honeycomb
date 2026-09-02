@@ -29,6 +29,7 @@ export type CurrentUserRecord = Pick<UserRecord, "id" | "email" | "level" | "nam
 /** 用户用例使用的窄端口，避免新代码依赖组合式 UserRepository。 */
 export interface UserCommandPort {
   create(input: UserCommandInput): Promise<UserRecord>;
+  getStatus(id: string): Promise<Pick<UserRecord, "status" | "level"> | null>;
   update(input: { id: string; password?: string } & Partial<Omit<UserCommandInput, "password">>): Promise<UserRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
 }

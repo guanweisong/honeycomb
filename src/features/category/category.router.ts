@@ -4,6 +4,7 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
+  mapApplicationError,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
@@ -33,7 +34,7 @@ export const categoryRouter = createTRPCRouter({
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)
     .mutation(({ input, ctx }) =>
-      createCategory(createCategoryRepository(ctx.db), input),
+      createCategory(createCategoryRepository(ctx.db), input).catch(mapApplicationError),
     ),
   destroy: permissionProcedure(Permission.categoryDelete)
     .input(DeleteBatchSchema)
@@ -43,6 +44,6 @@ export const categoryRouter = createTRPCRouter({
   update: permissionProcedure(Permission.categoryUpdate)
     .input(CategoryUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateCategory(createCategoryRepository(ctx.db), input),
+      updateCategory(createCategoryRepository(ctx.db), input).catch(mapApplicationError),
     ),
 });

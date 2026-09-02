@@ -34,6 +34,15 @@ export type LoginHistoryRecord = Awaited<
 
 export function createUserRepository(db: Database): UserRepository {
   return {
+    async getStatus(id) {
+      const [user] = await observeDbOperation("user.update", "select", () =>
+        db
+          .select({ status: schema.user.status, level: schema.user.level })
+          .from(schema.user)
+          .where(eq(schema.user.id, id)),
+      );
+      return user ? { status: user.status, level: user.level } : null;
+    },
     async detail(id) {
       const [user] = await observeDbOperation("user.detail", "select", () =>
         db

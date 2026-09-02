@@ -24,7 +24,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_3,
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       };
 
@@ -37,7 +37,7 @@ describe("Page Router", () => {
       const result = await caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       });
 
@@ -52,7 +52,7 @@ describe("Page Router", () => {
       caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("FORBIDDEN");
@@ -65,7 +65,7 @@ describe("Page Router", () => {
       caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("UNAUTHORIZED");
@@ -107,7 +107,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
         author: null,
       };
@@ -119,11 +119,15 @@ describe("Page Router", () => {
 
       const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
 
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([{ status: "DRAFT" }]);
       const result = await caller.update({
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       });
 
@@ -139,7 +143,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISH",
+        status: "PUBLISHED",
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("FORBIDDEN");

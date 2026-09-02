@@ -63,7 +63,7 @@ export const userRouter = createTRPCRouter({
   update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateUser(toUserCommandPort(createUserRepository(ctx.db)), input).catch(
+      updateUser(toUserCommandPort(createUserRepository(ctx.db)), input, ctx.user.level).catch(
         mapApplicationError,
       ),
     ),

@@ -19,6 +19,7 @@ export type CategoryListInput = {
   status?: string;
 };
 export type CategoryVisibility = "PUBLIC_ONLY" | "ALL";
+export type CategoryNode = { id: string; parent: string | null; path: string; status: string };
 export type CategoryRecord = Record<string, any> & {
   id: string;
   title?: { zh: string; en: string } | null;
@@ -31,6 +32,8 @@ export type CategoryRecord = Record<string, any> & {
 
 export interface CategoryRepository {
   create(input: CategoryInsert): Promise<CategoryRecord>;
+  find(id: string): Promise<CategoryNode | null>;
+  pathExists(path: string, excludeId?: string): Promise<boolean>;
   update(input: CategoryUpdate): Promise<CategoryRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
   list(input: CategoryListInput, visibility: CategoryVisibility): Promise<{

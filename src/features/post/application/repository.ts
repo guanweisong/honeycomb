@@ -1,4 +1,5 @@
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import type { PostStatus } from "@/packages/domain/content/post-status";
 export type PostCommandInput = Partial<{
   title: unknown; content: unknown; excerpt: unknown; status: string; type: string;
   categoryId: string; coverId: string | null; commentStatus: string; quoteAuthor: unknown;
@@ -35,6 +36,7 @@ import type { TagType } from "@/packages/domain/content/tag";
 export interface PostCommandRepository {
   create(input: PostCommandInput, authorId: string): Promise<{ id: string }>;
   destroy(ids: string[]): Promise<{ success: true }>;
+  findStatus(id: string): Promise<PostStatus | null>;
   update(input: PostCommandInput & { id: string }): Promise<{ id: string }>;
   updateTags(input: { postId: string; tagIds: string[]; type: TagType }): Promise<{ success: true }>;
   incrementViews(id: string): Promise<{ views: number | null } | undefined>;

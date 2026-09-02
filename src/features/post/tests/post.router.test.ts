@@ -333,10 +333,14 @@ describe("Post Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Post", zh: "更新的文章" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISH",
+        status: PostStatus.PUBLISHED,
         type: "ARTICLE",
       };
 
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([{ status: PostStatus.DRAFT }]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -353,7 +357,7 @@ describe("Post Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Post", zh: "更新的文章" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISH",
+        status: PostStatus.PUBLISHED,
         type: "ARTICLE",
       });
 

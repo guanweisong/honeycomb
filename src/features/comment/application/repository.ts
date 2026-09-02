@@ -11,7 +11,7 @@ export interface CommentListItem extends CommentRecord { post: CommentRelatedRec
 export interface PublicCommentNode { id: string; author: string; content: string; site: string | null; parentId: string | null; status: CommentStatus | string | null; createdAt: string | null; avatar: string; children?: PublicCommentNode[] }
 export type CommentUpdate = { id: string } & Partial<Pick<CommentRecord, "author" | "content" | "site" | "email" | "parentId" | "postId" | "pageId" | "customId" | "status">>;
 export interface PublicCommentInput { author: string; content: string; email: string; site?: string | null; parentId?: string | null; postId?: string | null; pageId?: string | null; customId?: string | null }
-export interface CommentCommandRepository { update(input: CommentUpdate): Promise<CommentRecord>; destroy(ids: string[]): Promise<{ success: true }>; create(headers: Headers, input: PublicCommentInput): Promise<CommentRecord> }
+export interface CommentCommandRepository { findStatus(id: string): Promise<CommentStatus | null>; update(input: CommentUpdate): Promise<CommentRecord>; destroy(ids: string[]): Promise<{ success: true }>; create(headers: Headers, input: PublicCommentInput): Promise<CommentRecord> }
 export type CommentListInput = Record<string, string | number | boolean | Array<string | number | boolean> | undefined> & { page?: number; limit?: number; sortField?: string; sortOrder?: string };
 export type CommentRefInput = { id: string; type: "CATEGORY" | "PAGE" | "CUSTOM" };
 export interface CommentQueryRepository { list(input: CommentListInput): Promise<{ list: CommentListItem[]; total: number }>; listPublicByRef(input: CommentRefInput): Promise<{ list: PublicCommentNode[]; total: number }> }
