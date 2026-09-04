@@ -27,8 +27,14 @@ export type MediaListInput = Record<string, string | number | boolean | Array<st
   page?: number; limit?: number; sortField?: string; sortOrder?: "asc" | "desc";
 };
 
+export interface MediaDeleteTarget {
+  id: string;
+  key: string;
+}
+
 export interface MediaRepository {
   create(input: MediaInsert): Promise<MediaRecord>;
   list(input: MediaListInput): Promise<{ list: MediaRecord[]; total: number }>;
-  destroy(ids: string[]): Promise<{ success: true }>;
+  findDeleteTargets(ids: string[]): Promise<MediaDeleteTarget[]>;
+  deleteRecords(ids: string[]): Promise<{ success: true }>;
 }

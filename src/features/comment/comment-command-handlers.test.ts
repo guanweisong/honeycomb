@@ -2,9 +2,72 @@ import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { moderateComment } from "./application/comment-command-handlers";
-import { updateComment } from "./application/comment-commands";
+import { createComment, updateComment } from "./application/comment-commands";
 
 describe("Comment command handlers", () => {
+  const createdComment = {
+    id: "comment-1",
+    author: "Visitor",
+    content: "Hello",
+    site: null,
+    email: "visitor@example.test",
+    parentId: null,
+    postId: "post-1",
+    pageId: null,
+    customId: null,
+    status: CommentStatus.PUBLISH,
+    createdAt: null,
+    updatedAt: null,
+    userAgent: "sensitive agent",
+    ip: "203.0.113.10",
+  };
+
+  it("通知失败时仍返回已创建的脱敏评论", async () => {
+    const notify = vi.fn().mockRejectedValue(new Error("notification failed"));
+    const logNotificationFailure = vi.fn();
+
+    const result = await createComment(
+      { create: vi.fn().mockResolvedValue(createdComment) },
+      new Headers(),
+      {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        postId: createdComment.postId,
+      },
+      vi.fn().mockResolvedValue(undefined),
+      notify,
+      logNotificationFailure,
+    );
+
+    expect(result).toMatchObject({ id: createdComment.id, author: "Visitor" });
+    expect(result).not.toHaveProperty("email");
+    expect(logNotificationFailure).toHaveBeenCalledWith(
+      expect.any(Error),
+    );
+  });
+
+  it("数据库创建失败时不调用通知", async () => {
+    const notify = vi.fn();
+
+    await expect(
+      createComment(
+        { create: vi.fn().mockRejectedValue(new Error("database failed")) },
+        new Headers(),
+        {
+          author: createdComment.author,
+          content: createdComment.content,
+          email: createdComment.email,
+          postId: createdComment.postId,
+        },
+        vi.fn().mockResolvedValue(undefined),
+        notify,
+      ),
+    ).rejects.toThrow("database failed");
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it("审核成功后派发事件", async () => {
     const update = vi.fn().mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
     const bus = new InProcessEventBus();

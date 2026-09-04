@@ -107,6 +107,12 @@ class S3 {
       },
     );
   };
+
+  /** 删除一组对象。S3/R2 对不存在的 key 也按成功处理，因此可安全重试。 */
+  static deleteObjects = async (keys: readonly string[]): Promise<void> => {
+    if (keys.length === 0) return;
+    await S3.deleteMultipleObject({ Objects: keys.map((Key) => ({ Key })) });
+  };
 }
 
 export default S3;

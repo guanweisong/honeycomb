@@ -34,11 +34,16 @@ export async function createComment(
   headers: Headers,
   input: PublicCommentInput & { captchaToken?: string },
   validateCaptcha: (token?: string) => Promise<void>,
-  notify: (commentId: string, parentId?: string | null) => Promise<Parameters<typeof toPublicComment>[0]>,
+  notify: (commentId: string, parentId?: string | null) => Promise<void>,
+  logNotificationFailure: (error: unknown) => void = () => undefined,
 ) {
   const { captchaToken, ...comment } = input;
   await validateCaptcha(captchaToken);
   const created = await repository.create(headers, comment);
-  const currentComment = await notify(created.id, comment.parentId);
-  return toPublicComment(currentComment);
+  try {
+    await notify(created.id, comment.parentId);
+  } catch (error) {
+    logNotificationFailure(error);
+  }
+  return toPublicComment(created);
 }

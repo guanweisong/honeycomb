@@ -42,6 +42,6 @@ export const mediaRouter = createTRPCRouter({
   destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
     .mutation(({ input, ctx }) =>
-      destroyMedia(createMediaRepository(ctx.db), input.ids),
+      destroyMedia(createMediaRepository(ctx.db), S3, input.ids),
     ),
 });

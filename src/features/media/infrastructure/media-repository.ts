@@ -8,7 +8,6 @@ import {
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import S3 from "@/packages/infrastructure/storage/S3";
 import { clientEnv } from "@/env/client";
 import type { MediaRepository } from "../application/repository";
 export type { MediaInsert, MediaListInput, MediaRepository } from "../application/repository";
@@ -55,22 +54,18 @@ export function createMediaRepository(db: Database): MediaRepository {
       ]);
       return { list, total: Number(countRows[0]?.count) || 0 };
     },
-    async destroy(ids) {
-      const media = await observeDbOperation("media.destroy.select", "select", () =>
+    async findDeleteTargets(ids) {
+      return observeDbOperation("media.destroy.select", "select", () =>
         db
-          .select({ key: schema.media.key })
+          .select({ id: schema.media.id, key: schema.media.key })
           .from(schema.media)
           .where(inArray(schema.media.id, ids)),
       );
+    },
+    async deleteRecords(ids) {
       await observeDbOperation("media.destroy.delete", "delete", () =>
         db.delete(schema.media).where(inArray(schema.media.id, ids)),
       );
-      const keys = media
-        .map((item) => item.key)
-        .filter((key): key is string => Boolean(key));
-      if (keys.length) {
-        await S3.deleteMultipleObject({ Objects: keys.map((Key) => ({ Key })) });
-      }
       return { success: true } as const;
     },
   };

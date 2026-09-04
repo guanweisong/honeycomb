@@ -9,7 +9,10 @@ export * from "./comment-public-queries";
 export * from "../comment-target";
 export * from "../comment-dto";
 export { moderateComment } from "./comment-command-handlers";
-export { notifyCommentCreated } from "../notifications/comment-delivery";
+export {
+  logCommentNotificationFailure,
+  notifyCommentCreated,
+} from "../notifications/comment-delivery";
 
 /** Comment 用例入口；审核状态由 Comment 聚合负责。 */
 export const commentUseCases = {

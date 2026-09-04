@@ -89,6 +89,17 @@ describe("S3 observability", () => {
     expect(JSON.stringify(memory.metricEvents)).not.toContain("user-123");
   });
 
+  it("maps keys through the idempotent storage deletion port", async () => {
+    send.mockResolvedValue({ Deleted: [] });
+
+    await expect(S3.deleteObjects(["already-missing.png"])).resolves.toBeUndefined();
+
+    expect(send).toHaveBeenCalledOnce();
+    expect(send.mock.calls[0]?.[0].input.Delete.Objects).toEqual([
+      { Key: "already-missing.png" },
+    ]);
+  });
+
   it.each([
     {
       name: "partial",

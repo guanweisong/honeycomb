@@ -4,15 +4,28 @@ import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
 import type { CommentNotificationRepository } from "../application/repository";
 
+function errorType(error: unknown) {
+  return error instanceof Error ? error.name : "UnknownError";
+}
+
+/** 记录通知编排失败；仅保留固定字段和错误类型，避免泄露评论及用户数据。 */
+export function logCommentNotificationFailure(error: unknown) {
+  getLogger().error(LogEvent.externalServiceOperation, {
+    service: "email",
+    operation: "prepare-comment-notification",
+    outcome: "error",
+    errorType: errorType(error),
+  });
+}
+
 /** 编排新评论的管理员通知和回复通知。邮件失败只记录日志，不阻断评论写入。 */
 export async function notifyCommentCreated(repository: CommentNotificationRepository, commentId: string, parentId?: string | null) {
   const currentComment = await repository.getComment(commentId);
   const setting = await repository.getSetting();
   if (!currentComment || !setting) throw new Error("Comment or setting not found");
-  sendCommentEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-admin-notification", outcome: "error", error }));
+  sendCommentEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-admin-notification", outcome: "error", errorType: errorType(error) }));
   if (parentId) {
     const parentComment = await repository.getComment(parentId);
-    if (parentComment) sendCommentEmail("REPLY_NOTICE", { setting, currentComment, parentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-reply-notification", outcome: "error", error }));
+    if (parentComment) sendCommentEmail("REPLY_NOTICE", { setting, currentComment, parentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-reply-notification", outcome: "error", errorType: errorType(error) }));
   }
-  return currentComment;
 }

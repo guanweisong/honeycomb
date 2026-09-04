@@ -21,6 +21,7 @@ import {
   listComments,
   listPublicCommentsByRef,
   notifyCommentCreated,
+  logCommentNotificationFailure,
 } from "@/features/comment/application/comment-use-cases";
 import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
@@ -57,6 +58,7 @@ export const commentRouter = createTRPCRouter({
             commentId,
             parentId,
           ),
+        logCommentNotificationFailure,
       ).catch(mapApplicationError),
     ),
 

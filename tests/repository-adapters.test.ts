@@ -3,9 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/packages/infrastructure/observability/server", () => ({
   observeDbOperation: vi.fn(async (_name: string, _kind: string, operation: () => unknown) => operation()),
 }));
-vi.mock("@/packages/infrastructure/storage/S3", () => ({
-  default: { deleteMultipleObject: vi.fn().mockResolvedValue(undefined) },
-}));
 vi.mock("@/env/client", () => ({ clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" } }));
 vi.mock("@/packages/infrastructure/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => undefined),
@@ -41,6 +38,24 @@ describe("Drizzle repository adapter 行为", () => {
 
     expect(result).toEqual({ id: "media-1", url: "https://assets.test/a.png" });
     expect(returning).toHaveBeenCalled();
+  });
+
+  it("media delete adapter only reads targets and deletes database records", async () => {
+    const db = fakeDb();
+    const targets = [{ id: "media-1", key: "a.png" }];
+    const selectWhere = vi.fn().mockResolvedValue(targets);
+    db.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({ where: selectWhere }),
+    });
+    const deleteWhere = vi.fn().mockResolvedValue(undefined);
+    db.delete.mockReturnValue({ where: deleteWhere });
+    const repository = createMediaRepository(asMockDatabase(db));
+
+    await expect(repository.findDeleteTargets(["media-1"])).resolves.toEqual(targets);
+    await expect(repository.deleteRecords(["media-1"])).resolves.toEqual({ success: true });
+
+    expect(selectWhere).toHaveBeenCalledOnce();
+    expect(deleteWhere).toHaveBeenCalledOnce();
   });
 
   it("tag destroy 使用批量删除并返回成功", async () => {

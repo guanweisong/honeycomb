@@ -41,9 +41,11 @@ describe("feature repository 契约", () => {
   it("media service 只调用 repository", async () => {
     const repository = {
       create: vi.fn().mockResolvedValue({ id: "media-1" }),
-      destroy: vi.fn().mockResolvedValue({ success: true }),
+      findDeleteTargets: vi.fn().mockResolvedValue([{ id: "media-1", key: "a" }]),
+      deleteRecords: vi.fn().mockResolvedValue({ success: true }),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
+    const storage = { deleteObjects: vi.fn().mockResolvedValue(undefined) };
     await expect(
       createMedia(
         repository,
@@ -51,13 +53,14 @@ describe("feature repository 契约", () => {
       ),
     ).resolves.toEqual({ id: "media-1" });
     await expect(
-      destroyMedia(repository, ["media-1"]),
+      destroyMedia(repository, storage, ["media-1"]),
     ).resolves.toEqual({ success: true });
     await expect(
       getMediaList(repository, { page: 1 }),
     ).resolves.toEqual({ list: [], total: 0 });
     expect(repository.create).toHaveBeenCalled();
-    expect(repository.destroy).toHaveBeenCalledWith(["media-1"]);
+    expect(storage.deleteObjects).toHaveBeenCalledWith(["a"]);
+    expect(repository.deleteRecords).toHaveBeenCalledWith(["media-1"]);
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
   });
 

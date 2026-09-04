@@ -14,7 +14,7 @@ vi.mock("@/packages/infrastructure/storage/S3", () => ({
     getPresignedUrl: vi
       .fn()
       .mockResolvedValue("https://example.com/presigned-url"),
-    deleteMultipleObject: vi.fn().mockResolvedValue(undefined),
+    deleteObjects: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -103,7 +103,7 @@ describe("Media Router", () => {
     it("should delete media with admin permissions", async () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([{ key: "test.jpg" }]);
+      mockDb.where.mockResolvedValueOnce([{ id: TEST_IDS.ID_1, key: "test.jpg" }]);
 
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
