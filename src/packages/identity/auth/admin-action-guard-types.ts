@@ -1,3 +1,5 @@
+import type { Permission } from "./permissions";
+
 export type GuardPolarity = "positive" | "negative";
 
 export interface ActionControlIdentity {
@@ -24,7 +26,7 @@ export type GuardMode =
 
 export interface ActionGuardContract {
   id: string;
-  permission: CapabilityReference;
+  permission: Permission;
   control: ActionControlIdentity;
   guard: GuardMode;
   expectedCount?: number;
@@ -34,4 +36,3 @@ export interface ActionGuardFile {
   relativePath: string;
   actions: readonly ActionGuardContract[];
 }
-import type { CapabilityReference } from "./capability-registry";

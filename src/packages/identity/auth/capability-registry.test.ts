@@ -30,7 +30,7 @@ describe("能力注册表", () => {
 
   it("拒绝未注册的能力字符串", () => {
     expect(isCapability(Permission.postReadAll)).toBe(true);
-    expect(isCapability("postReadAll")).toBe(true);
+    expect(isCapability("postReadAll")).toBe(false);
     expect(isCapability("post:unknown")).toBe(false);
   });
 

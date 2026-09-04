@@ -1,4 +1,7 @@
 import { Permission, type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
+import { authorize } from "@/packages/identity/auth/authorize";
+
+export const ADMIN_PATHNAME_HEADER = "x-honeycomb-admin-pathname";
 
 /** 后台页面与最低 capability 的静态登记表，防止新增页面遗漏权限设计。 */
 export const adminRouteCapabilities = {
@@ -22,3 +25,20 @@ export const adminRouteCapabilities = {
 } as const satisfies Record<string, PermissionValue>;
 
 export type AdminRoutePath = keyof typeof adminRouteCapabilities;
+
+export function getAdminRoutePermission(
+  pathname: string,
+): PermissionValue | undefined {
+  if (!Object.prototype.hasOwnProperty.call(adminRouteCapabilities, pathname)) {
+    return undefined;
+  }
+  return adminRouteCapabilities[pathname as AdminRoutePath];
+}
+
+export function canAccessAdminRoute(
+  role: string | null | undefined,
+  pathname: string,
+): boolean {
+  const permission = getAdminRoutePermission(pathname);
+  return permission !== undefined && authorize({ role, permission });
+}

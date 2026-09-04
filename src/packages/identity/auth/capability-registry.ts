@@ -51,14 +51,9 @@ export const capabilityRegistry = {
 } as const satisfies Record<PermissionValue, CapabilityDefinition>;
 
 export type Capability = keyof typeof capabilityRegistry;
-export type CapabilityReference = PermissionValue | keyof typeof Permission;
 
-const legacyCapabilityNames = new Set<keyof typeof Permission>(
-  Object.keys(Permission) as (keyof typeof Permission)[],
-);
-
-export function isCapability(value: string): value is CapabilityReference {
-  return Object.prototype.hasOwnProperty.call(capabilityRegistry, value) || legacyCapabilityNames.has(value as keyof typeof Permission);
+export function isCapability(value: string): value is Capability {
+  return Object.prototype.hasOwnProperty.call(capabilityRegistry, value);
 }
 
 export function getCapabilityDefinition(

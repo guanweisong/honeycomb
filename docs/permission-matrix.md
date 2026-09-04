@@ -1,8 +1,10 @@
 # 权限矩阵
 
-Honeycomb 使用 capability-based authorization。用户数据和会话中只保存 `ADMIN`、`EDITOR`、`GUEST` 角色，角色在请求时通过 `src/packages/identity/auth/permissions.ts` 中唯一的 `ROLE_PERMISSIONS` 映射为 Permission；权限数组不会固化进 JWT。
+Honeycomb 使用 capability-based authorization。用户数据和会话中只保存 `ADMIN`、`EDITOR`、`GUEST` 角色，角色在请求时通过 `src/packages/identity/auth/permissions.ts` 中唯一的 `ROLE_PERMISSIONS` 映射为 Permission；权限数组不会固化进 JWT。Capability 只接受登记表中的稳定 `resource:action` 值，旧属性名（例如 `postReadAll`）不再作为兼容输入。
 
-前端通过共享的 `can` / `useCan` 隐藏无权访问的导航和操作，但这不是安全边界。每个受保护的 tRPC procedure 都必须使用 `permissionProcedure` 或 `permissionsProcedure` 在 handler 执行前检查 capability；绕过或伪造前端请求仍会由服务端以 `UNAUTHORIZED` 或 `FORBIDDEN` 拒绝。禁用用户会在请求上下文回库时被移除，unknown role、unknown Permission 和空 Permission 集均默认拒绝。
+前端通过共享的 `can` / `useCan` 隐藏无权访问的导航和操作，但这不是安全边界。后台 route 由服务端 template 根据 proxy 注入并覆盖的 pathname 执行同一 capability 检查；每个受保护的 tRPC procedure 仍必须使用 `permissionProcedure` 或 `permissionsProcedure` 在 handler 执行前检查 capability。绕过或伪造前端请求会由服务端以重定向、`UNAUTHORIZED` 或 `FORBIDDEN` 拒绝。禁用用户会在请求上下文回库时被移除，unknown route、unknown role、unknown Permission 和空 Permission 集均默认拒绝。
+
+用户账号保护属于 User 领域规则：管理员账号不能被删除或降级；具备 `user:manage` 的管理员可以修改其他管理员账号的启用状态。Repository 只负责读取和持久化，不推断这些业务规则；调用方必须显式传入操作者级别，不使用访客默认值。
 
 ## 角色矩阵
 

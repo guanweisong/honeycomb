@@ -112,7 +112,11 @@ describe("User Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
-        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        {
+          id: TEST_IDS.ID_1,
+          level: UserLevel.ADMIN,
+          status: UserStatus.ENABLE,
+        },
       ]);
 
       const caller = userRouter.createCaller(
@@ -132,8 +136,16 @@ describe("User Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
-        { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
-        { level: UserLevel.GUEST, status: UserStatus.ENABLE },
+        {
+          id: TEST_IDS.ID_1,
+          level: UserLevel.EDITOR,
+          status: UserStatus.ENABLE,
+        },
+        {
+          id: TEST_IDS.ID_2,
+          level: UserLevel.GUEST,
+          status: UserStatus.ENABLE,
+        },
       ]);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
@@ -201,11 +213,6 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce([
         { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
       ]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
-      ]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -241,11 +248,6 @@ describe("User Router", () => {
         status: UserStatus.ENABLE,
       };
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
-      ]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -275,6 +277,36 @@ describe("User Router", () => {
       expect(mockDb.set).toHaveBeenCalledWith(
         expect.objectContaining({ password: expect.stringContaining(":") }),
       );
+    });
+
+    it("allows an admin to change another admin account status", async () => {
+      const updatedUser = {
+        id: TEST_IDS.ID_2,
+        name: "Admin 2",
+        level: UserLevel.ADMIN,
+        status: UserStatus.DISABLE,
+      };
+
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+      ]);
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([updatedUser]);
+
+      const caller = userRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
+
+      await expect(
+        caller.update({
+          id: TEST_IDS.ID_2,
+          status: UserStatus.DISABLE,
+        }),
+      ).resolves.toEqual(updatedUser);
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

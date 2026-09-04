@@ -84,6 +84,7 @@ export const databaseQueryNames = [
   "user.destroy",
   "user.detail",
   "user.list",
+  "user.states",
   "user.update",
 ] as const;
 

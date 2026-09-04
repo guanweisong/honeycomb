@@ -35,7 +35,7 @@ vi.mock("next/server", async () => {
   };
 });
 
-import { proxy } from "../src/proxy";
+import { createAdminRequestHeaders, proxy } from "../src/proxy";
 
 type ProxyRequestShape = Pick<NextRequest, "headers" | "nextUrl">;
 
@@ -84,6 +84,22 @@ describe("proxy", () => {
     expect(i18nHandlerMock).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("i18n");
+    expect(limitMock).not.toHaveBeenCalled();
+  });
+
+  it("把可信后台 pathname 写入上游请求头并覆盖客户端伪造值", () => {
+    const incoming = new Headers({ "x-honeycomb-admin-pathname": "/admin/user" });
+
+    const result = createAdminRequestHeaders(incoming, "/admin/tag");
+
+    expect(result.get("x-honeycomb-admin-pathname")).toBe("/admin/tag");
+  });
+
+  it("后台请求绕过 i18n 并进入服务端 route guard", async () => {
+    const res = await proxy(createProxyRequest("/admin/tag"));
+
+    expect(res.status).toBe(200);
+    expect(i18nHandlerMock).not.toHaveBeenCalled();
     expect(limitMock).not.toHaveBeenCalled();
   });
 

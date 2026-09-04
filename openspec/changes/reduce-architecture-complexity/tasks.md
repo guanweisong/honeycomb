@@ -34,6 +34,7 @@
 - [x] 5.2 将 procedure、Admin Action、Admin route 和菜单权限接入统一授权服务
 - [x] 5.3 清理页面、hook、router 和 action 中重复的角色判断与权限推断
 - [x] 5.4 增加 capability 登记完整性、多入口结果一致性和服务端强制授权测试
+- [x] 5.5 删除 capability 旧属性名兼容、接通 Admin route 服务端授权，并将用户账号保护规则收敛到领域模型
 
 ## 6. 收敛共享层与依赖
 

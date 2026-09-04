@@ -8,8 +8,6 @@ import {
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { authorize } from "@/packages/identity/auth/authorize";
 import {
   setCredentialPassword,
   type CredentialStore,
@@ -42,6 +40,19 @@ export function createUserRepository(db: Database): UserRepository {
           .where(eq(schema.user.id, id)),
       );
       return user ? { status: user.status, level: user.level } : null;
+    },
+    async getStates(ids) {
+      if (ids.length === 0) return [];
+      return observeDbOperation("user.states", "select", () =>
+        db
+          .select({
+            id: schema.user.id,
+            status: schema.user.status,
+            level: schema.user.level,
+          })
+          .from(schema.user)
+          .where(inArray(schema.user.id, ids)),
+      );
     },
     async detail(id) {
       const [user] = await observeDbOperation("user.detail", "select", () =>
@@ -109,17 +120,6 @@ export function createUserRepository(db: Database): UserRepository {
       });
     },
     async destroy(ids) {
-      const targets = await db
-        .select({ level: schema.user.level })
-        .from(schema.user)
-        .where(inArray(schema.user.id, ids));
-      if (
-        targets.some((target) =>
-          authorize({ role: target.level, permission: Permission.userManage }),
-        )
-      ) {
-        throw new ApplicationError("FORBIDDEN");
-      }
       await observeDbOperation("user.destroy", "delete", () =>
         db.delete(schema.user).where(inArray(schema.user.id, ids)),
       );
@@ -127,22 +127,6 @@ export function createUserRepository(db: Database): UserRepository {
     },
     async update(input) {
       const { id, password, ...rest } = input;
-      const [target] = await db
-        .select({ level: schema.user.level, status: schema.user.status })
-        .from(schema.user)
-        .where(eq(schema.user.id, id));
-      if (
-        target &&
-        authorize({ role: target.level, permission: Permission.userManage }) &&
-        (("level" in rest &&
-          rest.level &&
-          !authorize({
-            role: rest.level as string,
-            permission: Permission.userManage,
-          })) ||
-          (rest.status !== undefined && rest.status !== target.status))
-      )
-        throw new ApplicationError("FORBIDDEN");
       const update = async (store: CredentialStore) => {
         const [user] = await observeDbOperation("user.update", "update", () =>
           store

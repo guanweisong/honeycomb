@@ -1,8 +1,7 @@
-import { Permission } from "@/packages/identity/auth/permissions";
-import { authorize } from "@/packages/identity/auth/authorize";
 import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { UserStatus } from "@/packages/domain/identity/user";
+import { isProtectedUser } from "../../domain/user";
 
 export function toUserFormDefaults(
   record?: UserEntity,
@@ -26,7 +25,7 @@ export function buildUserUpdateInput(
 }
 
 export function isUserResourceProtected(record?: UserEntity): boolean {
-  return authorize({ role: record?.level, permission: Permission.userManage });
+  return record ? isProtectedUser(record.level) : false;
 }
 
 export function canDeleteUserResource(record: UserEntity): boolean {
