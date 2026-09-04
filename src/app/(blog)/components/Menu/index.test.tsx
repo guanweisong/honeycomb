@@ -9,7 +9,6 @@ import { createRoot, type Root } from "react-dom/client";
 let pathname = "/list/category/parent/child";
 let segments = ["list", "category/parent/child"];
 let categoryId: string | undefined;
-let clickAway: (() => void) | undefined;
 
 vi.mock("next/navigation", () => ({
   usePathname: () => pathname,
@@ -18,12 +17,6 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next-intl", () => ({
   useLocale: () => "zh",
-}));
-
-vi.mock("ahooks", () => ({
-  useClickAway: (callback: () => void) => {
-    clickAway = callback;
-  },
 }));
 
 vi.mock("@/packages/trpc/client/trpc", () => ({
@@ -100,7 +93,6 @@ describe("blog menu navigation", () => {
     pathname = "/list/category/parent/child";
     segments = ["list", "category/parent/child"];
     categoryId = undefined;
-    clickAway = undefined;
   });
 
   afterEach(async () => {
@@ -148,7 +140,11 @@ describe("blog menu navigation", () => {
       "inset-x-0",
     );
 
-    await act(async () => clickAway?.());
+    await act(async () => {
+      document.body.dispatchEvent(
+        new MouseEvent("pointerdown", { bubbles: true }),
+      );
+    });
     expect(
       container.querySelector('button[aria-label="Open menu"]'),
     ).not.toBeNull();

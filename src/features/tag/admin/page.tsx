@@ -16,7 +16,6 @@ import {
 } from "@/features/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "./components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { useGetState } from "ahooks";
 import { keepPreviousData } from "@tanstack/react-query";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
@@ -50,7 +49,7 @@ const Tag = () => {
    * 存储标签列表的查询参数。
    * 使用 `useGetState` 钩子，可以在异步操作中获取最新的 `searchParams`。
    */
-  const [searchParams, setSearchParams] = useGetState<TagListQueryInput>({});
+  const [searchParams, setSearchParams] = useState<TagListQueryInput>({});
 
   /**
    * 获取标签列表数据的 tRPC 查询。

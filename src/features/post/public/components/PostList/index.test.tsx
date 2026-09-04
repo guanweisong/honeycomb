@@ -33,8 +33,8 @@ vi.mock("next/image", () => ({
     }),
 }));
 
-vi.mock("ahooks", () => ({
-  useScroll: () => scrollState,
+vi.mock("@/packages/ui/hooks/use-scroll-position", () => ({
+  useScrollPosition: () => ({ left: 0, top: scrollState?.top ?? 0 }),
 }));
 
 vi.mock(

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
-import { useClickAway } from "ahooks";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { cn } from "@/packages/ui/lib/utils";
@@ -94,12 +93,20 @@ const Menu = (props: MenuProps) => {
     setVisible(false);
   }, [pathname]);
 
-  /**
-   * 监听点击外部事件，用于关闭移动端菜单。
-   */
-  useClickAway(() => {
-    setVisible(false);
-  }, [ref1, ref2]);
+  useEffect(() => {
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) return;
+      if (
+        !ref1.current?.contains(event.target) &&
+        !ref2.current?.contains(event.target)
+      ) {
+        setVisible(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, []);
 
   /**
    * 递归渲染菜单项。

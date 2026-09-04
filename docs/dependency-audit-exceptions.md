@@ -1,12 +1,24 @@
-# 依赖审计例外
+# Dependency Audit Exceptions
 
-最后复核：2026-08-13；下次复核：2026-09-13。
+The production audit blocks every reachable High or Critical advisory unless an
+entry exactly matches both its advisory ID and its fully versioned dependency
+path. Exceptions are rejected when their owner or mitigation is empty, their
+path contains a wildcard, or their expiry has passed.
 
-`bun audit --audit-level=critical` 为合并阻断门禁。`high` 级别公告仍需每月复核；本次剩余项均位于开发工具链或由上游包锁定，且不存在可在不引入未验证破坏性升级的前提下单独覆盖的修复版本。
+## Active
 
-| 依赖族 | 影响范围 | 处置 |
-| --- | --- | --- |
-| Vite/Vitest、ESLint、Sass、Next 构建链 | 仅构建、测试或本地开发 | 已升级到当前兼容版本；等待上游发布兼容修复。 |
-| `react-toggle-dark-mode` 间接 React Native 链 | 客户端主题切换依赖 | 保持已验证主版本，后续以替换组件或上游修复消除。 |
-| `ahooks`、Recharts 间接 Lodash | 客户端 UI 工具 | 保持已验证主版本；禁止使用不受信任输入调用 `_.template`。 |
-| `@libsql/client` 间接 `ws` | 数据库客户端传输 | 已升级直接客户端；等待其传递依赖修复。 |
+### GHSA-c2c7-rcm5-vvqj
+
+- Path: `next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3`
+- Expires: 2026-12-01
+- Owner: maintainer
+- Reason: `@parcel/watcher` and this `picomatch` path watch trusted source paths
+  during local/build tooling. Production requests do not invoke it or supply its
+  glob patterns. Bun does not support nested overrides, while a global
+  `picomatch@4` override would violate unrelated consumers that require v2.
+- Follow-up: remove the exception as soon as `next-intl` or `@parcel/watcher`
+  resolves `picomatch >=4.0.4`.
+
+The machine-readable source is
+`scripts/dependency-audit-exceptions.json`; this document must be updated with
+it.

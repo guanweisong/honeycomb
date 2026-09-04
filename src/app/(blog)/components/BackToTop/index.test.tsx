@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 let scrollTop: number | undefined;
 
-vi.mock("ahooks", () => ({
-  useScroll: () => ({ top: scrollTop }),
+vi.mock("@/packages/ui/hooks/use-scroll-position", () => ({
+  useScrollPosition: () => ({ left: 0, top: scrollTop ?? 0 }),
 }));
 
 import BackToTop from ".";

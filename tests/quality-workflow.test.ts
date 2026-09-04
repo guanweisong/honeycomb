@@ -27,12 +27,13 @@ describe("quality workflow", () => {
       "bun run test:unit:run",
       "bun run test:unit:coverage",
       "bun run test:unit:process",
-      "bun audit --audit-level=critical",
+      "bun run audit:production",
       "tests/e2e/security-headers.spec.ts",
       "tests/e2e/admin/rbac.spec.ts",
       "tests/e2e/blog/pwa-offline.spec.ts",
     ]) {
       expect(workflow).toContain(command);
     }
+    expect(workflow).not.toContain("bun audit --audit-level=critical");
   });
 });

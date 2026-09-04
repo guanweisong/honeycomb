@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useTheme } from "next-themes";
-import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Theme } from "@/app/(blog)/types/Theme";
 import { flushSync } from "react-dom";
+import { Moon, Sun } from "lucide-react";
 
 /**
  * 主题切换组件。
@@ -106,15 +106,19 @@ export const ThemeSwitcher = () => {
     );
   };
 
+  const dark = resolvedTheme === Theme.Dark;
   return (
-    <span ref={buttonRef} data-testid="theme-switcher">
-      <DarkModeSwitch
-        size={20}
-        checked={resolvedTheme === Theme.Dark}
-        onChange={toggleDarkMode}
-        sunColor="#333"
-        moonColor="#ccc"
-      />
-    </span>
+    <button
+      ref={buttonRef}
+      type="button"
+      aria-label="Toggle theme"
+      aria-pressed={dark}
+      data-checked={dark}
+      data-testid="theme-switcher"
+      onClick={() => toggleDarkMode(!dark)}
+      className="inline-flex size-5 items-center justify-center"
+    >
+      {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+    </button>
   );
 };

@@ -1,0 +1,9 @@
+[
+  {
+    "advisory": "GHSA-c2c7-rcm5-vvqj",
+    "dependencyPath": "next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3",
+    "mitigation": "@parcel/watcher is used only by next-intl tooling while watching source files; production request data never reaches picomatch.",
+    "owner": "maintainer",
+    "expiresOn": "2026-12-01"
+  }
+]

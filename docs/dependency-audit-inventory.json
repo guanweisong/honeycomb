@@ -1,0 +1,29 @@
+{
+  "generatedOn": "2026-09-04",
+  "findings": [
+    {
+      "advisory": "GHSA-3v7f-55p6-f55p",
+      "dependencyPath": "next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3",
+      "packageName": "picomatch",
+      "severity": "moderate",
+      "title": "Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching"
+    },
+    {
+      "advisory": "GHSA-c2c7-rcm5-vvqj",
+      "dependencyPath": "next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3",
+      "packageName": "picomatch",
+      "severity": "high",
+      "title": "Picomatch has a ReDoS vulnerability via extglob quantifiers"
+    }
+  ],
+  "blocking": [],
+  "accepted": [
+    {
+      "advisory": "GHSA-c2c7-rcm5-vvqj",
+      "dependencyPath": "next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3",
+      "packageName": "picomatch",
+      "severity": "high",
+      "title": "Picomatch has a ReDoS vulnerability via extglob quantifiers"
+    }
+  ]
+}

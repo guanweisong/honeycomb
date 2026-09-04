@@ -89,8 +89,8 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   usePathname: () => pathname,
 }));
 
-vi.mock("ahooks", () => ({
-  useScroll: () => ({ top: scrollTop }),
+vi.mock("@/packages/ui/hooks/use-scroll-position", () => ({
+  useScrollPosition: () => ({ left: 0, top: scrollTop ?? 0 }),
 }));
 
 import { ThemeSwitcher } from "./index";

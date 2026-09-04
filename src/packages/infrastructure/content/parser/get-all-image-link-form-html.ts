@@ -1,5 +1,4 @@
-import * as cheerio from "cheerio";
-import type { Element } from "domhandler";
+import { DomUtils, parseDocument } from "htmlparser2";
 
 /**
  * 从 HTML 字符串中获取所有图片链接
@@ -10,15 +9,9 @@ import type { Element } from "domhandler";
 export function getAllImageLinkFormHtml(html?: string): string[] {
   if (!html) return [];
 
-  const $ = cheerio.load(html);
-  const imageLinks: string[] = [];
-
-  $("img").each((_, img: Element) => {
-    const src = $(img).attr("src");
-    if (src) {
-      imageLinks.push(src);
-    }
-  });
-
-  return imageLinks;
+  const document = parseDocument(html);
+  return DomUtils.findAll(
+    (element) => element.type === "tag" && element.name === "img",
+    document.children,
+  ).flatMap((image) => (image.attribs.src ? [image.attribs.src] : []));
 }

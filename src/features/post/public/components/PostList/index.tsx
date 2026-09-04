@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/hooks/rq/post/use.infinite.query.post.list";
-import { useScroll } from "ahooks";
 import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 import Signature from "@/packages/ui/blog/Signature";
@@ -15,6 +14,7 @@ import type { PostListViewModel as PostListItemEntity } from "../../../presentat
 import { PostType, PostTypeName } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
+import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";
 
 /**
  * 文章列表查询结果的输出类型。
@@ -52,7 +52,7 @@ export interface PostListProps {
  */
 export default function PostList(props: PostListProps): JSX.Element {
   const { queryParams, initData } = props;
-  const scroll = useScroll(typeof document !== "undefined" ? document : null);
+  const { top: scrollTop } = useScrollPosition();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQueryPostList(queryParams, initData);
   const locale = normalizeMultiLangLocale(useLocale());
@@ -74,15 +74,14 @@ export default function PostList(props: PostListProps): JSX.Element {
    */
   useEffect(() => {
     if (typeof document !== "undefined" && !isLoadingMore && hasNextPage) {
-      const { top = 0 } = scroll ?? {};
       const documentHeight = document.body.scrollHeight;
-      const scrollTop = top + window.innerHeight;
-      const difference = documentHeight - scrollTop;
+      const viewportBottom = scrollTop + window.innerHeight;
+      const difference = documentHeight - viewportBottom;
       if (difference < 300) {
         fetchNextPage();
       }
     }
-  }, [scroll, isLoadingMore, hasNextPage, fetchNextPage]);
+  }, [scrollTop, isLoadingMore, hasNextPage, fetchNextPage]);
 
   /**
    * 渲染文章列表中的单个卡片。

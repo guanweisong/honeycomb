@@ -13,6 +13,19 @@ describe("sanitizeRichText", () => {
 
     expect(sanitizeRichText(html)).toBe("<p>Hello<strong>world</strong></p>");
   });
+
+  it.each([
+    '<svg><animate href="javascript:alert(1)"></animate></svg>',
+    '<a href="javascript:alert(1)" onclick="alert(2)">unsafe</a>',
+    '<img src="data:text/html,<script>alert(1)</script>" onerror="alert(2)">',
+    '<div __proto__="polluted" constructor="alert(1)">safe</div>',
+  ])("removes executable markup from %s", (html) => {
+    const sanitized = sanitizeRichText(html);
+
+    expect(sanitized).not.toMatch(
+      /(?:javascript:|data:text\/html|onerror|onclick|__proto__|constructor|<svg|<animate)/i,
+    );
+  });
 });
 
 describe("sanitizeOptionalI18nHtml", () => {

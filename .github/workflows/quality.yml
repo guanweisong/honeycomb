@@ -52,7 +52,7 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
           retention-days: 14
-      - run: bun audit --audit-level=critical
+      - run: bun run audit:production
       - run: bun run build
       - run: bun run analyze
       - run: bunx playwright install --with-deps chromium
