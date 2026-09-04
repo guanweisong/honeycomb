@@ -1,0 +1,25 @@
+## MODIFIED Requirements
+
+### Requirement: 直接依赖漏洞修复和开发工具隔离
+
+系统 MUST 使用不受已知 High 或 Critical 公告影响的直接运行时依赖版本，将只在开发中调用的工具保留在开发依赖中，并对无法立即修复的传递风险使用精确且有期限的例外。
+
+#### Scenario: 安装生产依赖
+
+- **WHEN** 生产部署安装依赖
+- **THEN** 不安装 `shadcn` CLI，且富文本清洗、数据库、国际化和 CSS 直接依赖使用已修复版本
+
+#### Scenario: 发现生产 High 或 Critical 漏洞
+
+- **WHEN** 依赖审计发现生产可达的 High 或 Critical 公告
+- **THEN** CI MUST 失败，除非该 advisory 的精确依赖路径存在未过期且包含补偿措施的例外
+
+#### Scenario: 例外到期
+
+- **WHEN** 安全例外的到期日早于当前日期
+- **THEN** CI MUST 失败并要求重新修复或复核该风险
+
+#### Scenario: 开发工具传递漏洞
+
+- **WHEN** 漏洞仅存在于不进入生产安装或运行时的开发工具链
+- **THEN** 系统 SHALL 单独记录其范围，且不得把它误报为生产运行时风险
