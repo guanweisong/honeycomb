@@ -220,14 +220,23 @@ R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全
 ### 数据库迁移
 
 ```bash
-# 生成迁移文件
-bunx drizzle-kit generate
+# 修改 schema 后生成并提交迁移文件
+bun run db:generate
 
-# 推送 schema 到数据库
+# 仅在可丢弃的本地数据库快速同步 schema
 bunx drizzle-kit push
+
+# 在新环境或已接管 migration ledger 的共享环境执行版本化迁移
+bun run db:migrate
+
+# 验证 journal、SQL 跟踪状态及 schema/迁移是否共同变更
+bun run db:migrations:check
 ```
 
-Passkey 首次部署时需要先执行 `bunx drizzle-kit push` 同步新增的 `passkey` 表，再部署启用 Passkey 插件的应用版本。生产环境必须使用带 `www` 的正式域名访问，否则 WebAuthn 的 RP ID 和 Origin 校验会失败。
+生产和共享环境禁止使用 `drizzle-kit push`。当前 `0000_production_baseline`
+仅用于初始化空数据库；现有生产库在完成 migration ledger 接管前不得执行
+`db:migrate`。备份、接管和回滚步骤见
+[`docs/database-migration-runbook.md`](docs/database-migration-runbook.md)。
 
 ### 启动开发服务器
 
@@ -264,9 +273,12 @@ bun run test:e2e:smoke   # 运行 smoke E2E 用例
 bun run test:e2e:regression # 运行 regression E2E 用例
 
 # 数据库
-bunx drizzle-kit generate # 生成迁移文件
-bunx drizzle-kit push     # 推送 schema
-bunx drizzle-kit studio   # 打开 Drizzle Studio
+bun run db:generate          # 生成版本化迁移
+bun run db:migrate           # 执行已审查迁移
+bun run db:migrations:check  # 检查迁移治理规则
+bun run db:schema:audit      # 只读生成生产结构报告
+bunx drizzle-kit push        # 仅限可丢弃本地库
+bunx drizzle-kit studio      # 打开 Drizzle Studio
 
 ```
 

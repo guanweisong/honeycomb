@@ -20,7 +20,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:smoke": "playwright test --grep @smoke",
-    "test:e2e:regression": "playwright test --grep @regression"
+    "test:e2e:regression": "playwright test --grep @regression",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:migrate": "bunx drizzle-kit migrate",
+    "db:schema:audit": "bun scripts/audit-production-schema.ts --output docs/production-schema-baseline-report.md",
+    "db:migrations:check": "bun scripts/check-migrations.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1108.0",

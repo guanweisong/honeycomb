@@ -42,7 +42,6 @@ yarn-error.log*
 *.pem
 .open-next
 
-drizzle
 # next-agents-md
 .next-docs/
 .worktrees/
