@@ -2,7 +2,7 @@ import { PageStatus } from "@/packages/domain/content/page";
 import { DomainError } from "@/packages/domain/core/domain-error";
 import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { PageAggregate } from "../domain/page";
-import type { PageCommandInput, PageCommandRepository } from "./repository";
+import type { PageCommandRepository, PageUpdateCommand } from "./repository";
 
 function isPageStatus(status: string): status is PageStatus {
   return status === PageStatus.PUBLISHED || status === PageStatus.DRAFT || status === PageStatus.TO_AUDIT;
@@ -10,7 +10,7 @@ function isPageStatus(status: string): status is PageStatus {
 
 export async function publishPage(
   repository: Pick<PageCommandRepository, "update">,
-  input: PageCommandInput & { id: string },
+  input: PageUpdateCommand & { status: PageStatus },
   bus?: InProcessEventBus,
 ) {
   if (!input.status) throw new DomainError("发布页面必须提供当前状态", "MISSING_PAGE_STATUS");
@@ -24,7 +24,7 @@ export async function publishPage(
 
 export async function withdrawPage(
   repository: Pick<PageCommandRepository, "update">,
-  input: PageCommandInput & { id: string },
+  input: PageUpdateCommand & { status: PageStatus },
   bus?: InProcessEventBus,
 ) {
   if (!input.status) throw new DomainError("撤回页面必须提供当前状态", "MISSING_PAGE_STATUS");
@@ -39,7 +39,7 @@ export async function withdrawPage(
 /** 更新页面；状态变更必须经过 Page 聚合。 */
 export async function updatePage(
   repository: Pick<PageCommandRepository, "findStatus" | "update">,
-  input: PageCommandInput & { id: string },
+  input: PageUpdateCommand,
   bus?: InProcessEventBus,
 ) {
   if (input.status === undefined) return repository.update(input);

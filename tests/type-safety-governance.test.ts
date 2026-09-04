@@ -30,6 +30,38 @@ function applicationRepositoryFiles(): string[] {
 }
 
 describe("类型安全治理", () => {
+  it("Post/Page command DTO 使用封闭且明确的字段类型", () => {
+    const commandContracts = [
+      "src/features/post/application/repository.ts",
+      "src/features/page/application/repository.ts",
+    ];
+    const violations = commandContracts.flatMap((path) => {
+      const source = readFileSync(path, "utf8");
+      const commandSection = source.split("export type PostVisibility")[0]
+        ?.split("export type PageVisibility")[0] ?? source;
+      return /\bunknown\b|\[key:\s*string\]|Record<string/.test(commandSection)
+        ? [path]
+        : [];
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it("Post/Page command mapper 不使用整体 Drizzle model 断言", () => {
+    const mapperFiles = [
+      "src/features/post/infrastructure/post-transforms.ts",
+      "src/features/page/infrastructure/page-command-repository.ts",
+    ];
+    const violations = mapperFiles.flatMap((path) => {
+      const source = readFileSync(path, "utf8");
+      return /\bas\s+(?:PostInsertValues|typeof\s+schema\.(?:post|page)\.\$inferInsert)\b/.test(source)
+        ? [path]
+        : [];
+    });
+
+    expect(violations).toEqual([]);
+  });
+
   it("Application Repository 契约不使用显式 any 或规则抑制", () => {
     const violations = applicationRepositoryFiles().flatMap((path) => {
       const source = readFileSync(path, "utf8");

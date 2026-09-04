@@ -192,7 +192,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     {
       title: I18N_INPUT,
       content: I18N_INPUT,
-      status: "PUBLISH",
+      status: "PUBLISHED",
       type: "ARTICLE",
       categoryId: TEST_ID,
     },

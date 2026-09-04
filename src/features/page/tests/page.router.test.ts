@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "@/features/page/page.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { PageTemplate } from "@/packages/domain/content/page-template";
+import { PageStatus } from "@/packages/domain/content/page";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
@@ -24,7 +25,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_3,
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       };
 
@@ -37,7 +38,7 @@ describe("Page Router", () => {
       const result = await caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       });
 
@@ -52,7 +53,7 @@ describe("Page Router", () => {
       caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("FORBIDDEN");
@@ -65,7 +66,7 @@ describe("Page Router", () => {
       caller.create({
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("UNAUTHORIZED");
@@ -122,12 +123,12 @@ describe("Page Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([{ status: "DRAFT" }]);
+      mockDb.limit.mockResolvedValueOnce([{ status: PageStatus.DRAFT }]);
       const result = await caller.update({
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       });
 
@@ -143,7 +144,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
-        status: "PUBLISHED",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       }),
       ).rejects.toThrow("FORBIDDEN");

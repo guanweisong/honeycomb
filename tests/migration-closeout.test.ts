@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const coreContracts = [
   "src/features/post/application/repository.ts",
+  "src/features/page/application/repository.ts",
   "src/features/comment/application/repository.ts",
   "src/features/comment/application/comment-use-cases.ts",
   "src/features/user/ports.ts",

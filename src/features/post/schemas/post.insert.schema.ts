@@ -2,6 +2,10 @@ import { OptionalI18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { z } from "zod";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import type { PostCreateCommand } from "../application/repository";
 
 /**
  * 新增文章时的数据验证 schema。
@@ -14,11 +18,11 @@ import { z } from "zod";
  * - **图库类型文章字段**: galleryLocation, galleryTime
  */
 export const PostInsertSchema = z.object({
-    status: z.string().optional(),
-    type: z.string().optional(),
+    status: z.enum(PostStatus).optional(),
+    type: z.enum(PostType).optional(),
     categoryId: requiredString("分类目录不能为空"),
     coverId: z.string().nullable().optional(),
-    commentStatus: z.string().optional(),
+    commentStatus: z.enum(EnableStatus).optional(),
     movieTime: z.string().nullable().optional(),
     galleryTime: z.string().nullable().optional(),
     title: OptionalI18nSchema,
@@ -30,3 +34,8 @@ export const PostInsertSchema = z.object({
   });
 
 export type PostInsert = CleanZod<typeof PostInsertSchema>;
+
+type Assert<T extends true> = T;
+export type PostInsertOutputMatchesCommand = Assert<
+  z.output<typeof PostInsertSchema> extends PostCreateCommand ? true : false
+>;

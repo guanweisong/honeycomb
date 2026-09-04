@@ -3,6 +3,7 @@ import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { z } from "zod";
 import { PageStatus } from "@/packages/domain/content/page";
+import type { PageCreateCommand } from "../application/repository";
 
 /**
  * 新增独立页面时的数据验证 schema，不依赖数据库表结构。
@@ -10,11 +11,13 @@ import { PageStatus } from "@/packages/domain/content/page";
 export const PageInsertSchema = z.object({
     title: I18nSchema,
     content: I18nSchema,
-    status: z.string().refine(
-      (value) => Object.values(PageStatus).includes(value as PageStatus),
-      "页面状态不合法",
-    ).optional(),
-    template: z.enum([PageTemplate.DEFAULT, PageTemplate.FRIENDLY_LINKS]),
+    status: z.enum(PageStatus).optional(),
+    template: z.enum(PageTemplate),
   });
 
 export type PageInsert = CleanZod<typeof PageInsertSchema>;
+
+type Assert<T extends true> = T;
+export type PageInsertOutputMatchesCommand = Assert<
+  z.output<typeof PageInsertSchema> extends PageCreateCommand ? true : false
+>;

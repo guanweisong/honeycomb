@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
 import { TagType } from "@/packages/domain/content/tag";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
@@ -223,8 +224,8 @@ describe("Post Router", () => {
         id: TEST_IDS.ID_3,
         title: { en: "New Post", zh: "新文章" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
-        type: "ARTICLE",
+        status: PostStatus.PUBLISHED,
+        type: PostType.ARTICLE,
       };
 
       mockDb.insert.mockReturnValueOnce(mockDb);
@@ -241,8 +242,8 @@ describe("Post Router", () => {
       const result = await caller.create({
         title: { en: "New Post", zh: "新文章" },
         content: { en: "New Content", zh: "新内容" },
-        status: "PUBLISH",
-        type: "ARTICLE",
+        status: PostStatus.PUBLISHED,
+        type: PostType.ARTICLE,
         categoryId: TEST_IDS.ID_1,
       });
 
@@ -263,7 +264,7 @@ describe("Post Router", () => {
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
           status: PostStatus.PUBLISHED,
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
           categoryId: TEST_IDS.ID_1,
         }),
       ).rejects.toThrow("FORBIDDEN");
@@ -277,7 +278,7 @@ describe("Post Router", () => {
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
           status: PostStatus.PUBLISHED,
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
           categoryId: TEST_IDS.ID_1,
         }),
       ).rejects.toThrow("UNAUTHORIZED");
@@ -334,7 +335,7 @@ describe("Post Router", () => {
         title: { en: "Updated Post", zh: "更新的文章" },
         content: { en: "Updated Content", zh: "更新的内容" },
         status: PostStatus.PUBLISHED,
-        type: "ARTICLE",
+        type: PostType.ARTICLE,
       };
 
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -358,7 +359,7 @@ describe("Post Router", () => {
         title: { en: "Updated Post", zh: "更新的文章" },
         content: { en: "Updated Content", zh: "更新的内容" },
         status: PostStatus.PUBLISHED,
-        type: "ARTICLE",
+        type: PostType.ARTICLE,
       });
 
       expect(result).toEqual(updatedPost);
@@ -379,7 +380,7 @@ describe("Post Router", () => {
           title: { en: "Updated Post", zh: "更新的文章" },
           content: { en: "Updated Content", zh: "更新的内容" },
           status: PostStatus.PUBLISHED,
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
         }),
       ).rejects.toThrow("FORBIDDEN");
     });

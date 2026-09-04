@@ -1,6 +1,7 @@
 import type {
-  PageCommandInput,
+  PageCreateCommand,
   PageCommandRepository,
+  PageUpdateCommand,
   PageInput,
   PageQueryRepository,
   PageVisibility,
@@ -10,7 +11,7 @@ import { updatePage as updatePageThroughAggregate } from "./page-command-handler
 /** 创建独立页面用例。 */
 export function createPage(
   repository: Pick<PageCommandRepository, "create">,
-  input: PageCommandInput,
+  input: PageCreateCommand,
   authorId: string,
 ) {
   return repository.create(input, authorId);
@@ -22,7 +23,7 @@ export function destroyPages(repository: Pick<PageCommandRepository, "destroy">,
 /** 更新独立页面用例。 */
 export function updatePage(
   repository: Pick<PageCommandRepository, "findStatus" | "update">,
-  input: PageCommandInput & { id: string },
+  input: PageUpdateCommand,
 ) {
   return updatePageThroughAggregate(repository, input);
 }

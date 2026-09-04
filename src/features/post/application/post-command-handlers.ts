@@ -1,7 +1,7 @@
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { DomainError } from "@/packages/domain/core/domain-error";
 import { PostAggregate } from "../domain/post";
-import type { PostCommandInput, PostCommandRepository } from "./repository";
+import type { PostCommandRepository, PostUpdateCommand } from "./repository";
 import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
 function isPostStatus(status: string): status is PostStatus {
@@ -9,7 +9,7 @@ function isPostStatus(status: string): status is PostStatus {
 }
 
 /** 通过 Post 聚合执行发布命令，再交给 repository 持久化。 */
-export async function publishPost(repository: Pick<PostCommandRepository, "update">, input: PostCommandInput & { id: string }, bus?: InProcessEventBus) {
+export async function publishPost(repository: Pick<PostCommandRepository, "update">, input: PostUpdateCommand & { status: PostStatus }, bus?: InProcessEventBus) {
   if (!input.status) throw new DomainError("发布文章必须提供当前状态", "MISSING_POST_STATUS");
   if (!isPostStatus(input.status)) throw new DomainError("文章当前状态不合法", "INVALID_POST_STATUS");
   const aggregate = PostAggregate.rehydrate(input.id, input.status);
@@ -20,7 +20,7 @@ export async function publishPost(repository: Pick<PostCommandRepository, "updat
 }
 
 /** 通过 Post 聚合执行撤回命令，再交给 repository 持久化。 */
-export async function withdrawPost(repository: Pick<PostCommandRepository, "update">, input: PostCommandInput & { id: string }, bus?: InProcessEventBus) {
+export async function withdrawPost(repository: Pick<PostCommandRepository, "update">, input: PostUpdateCommand & { status: PostStatus }, bus?: InProcessEventBus) {
   if (!input.status) throw new DomainError("撤回文章必须提供当前状态", "MISSING_POST_STATUS");
   if (!isPostStatus(input.status)) throw new DomainError("文章当前状态不合法", "INVALID_POST_STATUS");
   const aggregate = PostAggregate.rehydrate(input.id, input.status);
@@ -33,7 +33,7 @@ export async function withdrawPost(repository: Pick<PostCommandRepository, "upda
 /** 更新文章；状态变更必须经过 Post 聚合。 */
 export async function updatePost(
   repository: Pick<PostCommandRepository, "findStatus" | "update">,
-  input: PostCommandInput & { id: string },
+  input: PostUpdateCommand,
   bus?: InProcessEventBus,
 ) {
   if (input.status === undefined) return repository.update(input);

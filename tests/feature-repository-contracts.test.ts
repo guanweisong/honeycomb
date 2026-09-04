@@ -36,6 +36,7 @@ import {
   getSetting,
   updateSetting,
 } from "@/features/setting/application/setting-use-cases";
+import { PageTemplate } from "@/packages/domain/content/page-template";
 
 describe("feature repository 契约", () => {
   it("media service 只调用 repository", async () => {
@@ -140,11 +141,16 @@ describe("feature repository 契约", () => {
       detail: vi.fn(),
       author: vi.fn(),
     };
-    await createPage(page, {}, "user-1");
+    const pageInput = {
+      title: { en: "About", zh: "关于" },
+      content: { en: "Content", zh: "内容" },
+      template: PageTemplate.DEFAULT,
+    };
+    await createPage(page, pageInput, "user-1");
     await destroyPages(page, ["page-1"]);
     await getPageList(page, { page: 1 });
     await getPageDetail(page, "page-1");
-    expect(page.create).toHaveBeenCalledWith({}, "user-1");
+    expect(page.create).toHaveBeenCalledWith(pageInput, "user-1");
     expect(page.destroy).toHaveBeenCalledWith(["page-1"]);
     expect(page.list).toHaveBeenCalled();
     expect(page.detail).toHaveBeenCalledWith("page-1", "PUBLISHED_ONLY");

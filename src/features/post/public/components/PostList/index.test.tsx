@@ -60,13 +60,16 @@ vi.mock("next-intl", () => ({
 
 import PostList from "./index";
 import type { PostListViewModel } from "../../../presentation/post-view-model";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const makePost = (
   overrides: Partial<PostListViewModel> & Pick<PostListViewModel, "id" | "type">,
 ): PostListViewModel => ({
   authorId: "author-1",
   categoryId: "category-1",
-  commentStatus: "ENABLE",
+  commentStatus: EnableStatus.ENABLE,
   content: null,
   coverId: null,
   createdAt: null,
@@ -80,7 +83,7 @@ const makePost = (
   movieTime: null,
   quoteAuthor: null,
   quoteContent: null,
-  status: "PUBLISHED",
+  status: PostStatus.PUBLISHED,
   title: null,
   updatedAt: null,
   views: 0,
@@ -107,26 +110,26 @@ const posts = [
     excerpt: { zh: "文章摘要" },
     id: "article",
     title: { zh: "文章标题" },
-    type: "ARTICLE",
+    type: PostType.ARTICLE,
   }),
   makePost({
     cover: makeCover("/movie.jpg"),
     id: "movie",
     movieTime: "2020-05-06T00:00:00.000Z",
     title: { zh: "电影标题" },
-    type: "MOVIE",
+    type: PostType.MOVIE,
   }),
   makePost({
     cover: makeCover("/photo.jpg"),
     id: "photo",
     title: { zh: "照片标题" },
-    type: "PHOTOGRAPH",
+    type: PostType.PHOTOGRAPH,
   }),
   makePost({
     id: "quote",
     quoteAuthor: { zh: "引用作者" },
     quoteContent: { zh: "引用正文" },
-    type: "QUOTE",
+    type: PostType.QUOTE,
   }),
 ];
 

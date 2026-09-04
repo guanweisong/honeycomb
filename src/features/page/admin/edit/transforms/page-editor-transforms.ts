@@ -8,7 +8,7 @@ type PageEditorDetail = {
   title?: PageEditorFormValues["title"] | null;
   content?: PageEditorFormValues["content"] | null;
   status?: PageEditorFormValues["status"];
-  template?: string | null;
+  template?: PageTemplate | null;
 } | null;
 
 export function getPageEditorId(searchParams: Pick<URLSearchParams, "get">) {
@@ -24,8 +24,7 @@ export function toPageEditorFormValues(
     title: detail.title ?? undefined,
     content: detail.content ?? undefined,
     status: detail.status ?? undefined,
-    template:
-      (detail.template as PageTemplate | undefined) ?? PageTemplate.DEFAULT,
+    template: detail.template ?? PageTemplate.DEFAULT,
   };
 }
 /**
