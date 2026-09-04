@@ -23,10 +23,7 @@ function CommentItem({
     "avatar" in comment && typeof comment.avatar === "string" && comment.avatar
       ? comment.avatar
       : "/logo.jpg";
-  const children =
-    "children" in comment && Array.isArray(comment.children)
-      ? (comment.children as CommentTreeEntity[])
-      : [];
+  const children = Array.isArray(comment.children) ? comment.children : [];
 
   return (
     <li className="relative">

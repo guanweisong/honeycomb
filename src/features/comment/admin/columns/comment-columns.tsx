@@ -37,7 +37,7 @@ export const commentTableColumns: ColumnDef<CommentEntity>[] = [
       const record = row.original;
       const title =
         record.post?.title || record.page?.title || record.custom?.title;
-      return <MultiLangText text={title!} />;
+      return <MultiLangText text={title} />;
     },
   },
   {

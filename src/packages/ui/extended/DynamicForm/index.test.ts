@@ -49,6 +49,7 @@ describe("DynamicForm", () => {
 
     const input = container.querySelector<HTMLInputElement>("input");
     expect(input?.value).toBe("初始标题");
+    if (!input) throw new Error("dynamic form input was not rendered");
 
     await act(async () => {
       const setValue = Object.getOwnPropertyDescriptor(
@@ -56,7 +57,7 @@ describe("DynamicForm", () => {
         "value",
       )?.set;
       setValue?.call(input, "更新后的标题");
-      input!.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
       container
         .querySelector<HTMLButtonElement>('button[type="submit"]')
         ?.click();

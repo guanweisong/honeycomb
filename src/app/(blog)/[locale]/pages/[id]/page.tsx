@@ -3,7 +3,7 @@ import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { getLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
@@ -29,18 +29,16 @@ export interface PagesProps {
  */
 export default async function Pages(props: PagesProps) {
   const serverClient = await createServerClient();
-  const { id, locale } = (await props.params) as {
-    id: string;
-    locale: keyof MultiLang;
-  };
+  const { id, locale: rawLocale } = await props.params;
+  const locale = normalizeMultiLangLocale(rawLocale);
   const [pageDetail, commentsData] = await Promise.all([
     serverClient.page.detail({ id }),
     serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
     serverClient.page.incrementViews({ id }),
   ]);
-  assertPublishedPost(pageDetail);
+  const publishedPage = assertPublishedPost(pageDetail);
   const links =
-    pageDetail?.template === PageTemplate.FRIENDLY_LINKS
+    publishedPage.template === PageTemplate.FRIENDLY_LINKS
       ? await serverClient.link.index({
           limit: 999,
           status: [EnableStatus.ENABLE],
@@ -49,30 +47,30 @@ export default async function Pages(props: PagesProps) {
 
   return (
     <>
-      <PageTitle>{pageDetail?.title?.[locale]}</PageTitle>
+      <PageTitle>{publishedPage.title?.[locale]}</PageTitle>
       <PostInfo
-        id={pageDetail?.id}
-        author={pageDetail?.author?.name ?? ""}
-        authorId={pageDetail?.author?.id}
-        date={pageDetail?.createdAt as string}
+        id={publishedPage.id}
+        author={publishedPage.author?.name ?? ""}
+        authorId={publishedPage.author?.id}
+        date={publishedPage.createdAt ?? ""}
         comments={commentsData?.total}
-        views={pageDetail?.views as number}
+        views={publishedPage.views ?? 0}
       />
       <div className="my-3 lg:my-5">
         <div className="prose-editor">
           <RichText
-            html={pageDetail?.content?.[locale]}
-            images={pageDetail?.imagesInContent}
+            html={publishedPage.content?.[locale]}
+            images={publishedPage.imagesInContent}
           />
         </div>
       </div>
-      {pageDetail?.template === PageTemplate.FRIENDLY_LINKS ? (
+      {publishedPage.template === PageTemplate.FRIENDLY_LINKS ? (
         <div className="py-2 lg:py-4">
           {links?.total ? (
             links.list.map((item, index) => (
               <a
                 key={item.url}
-                href={item.url as string}
+                href={item.url}
                 target="_blank"
                 className={cn("flex items-center py-2", {
                   "border-t-0.5 border-dashed border-auto-front-gray/30":
@@ -127,19 +125,19 @@ export async function generateMetadata(props: GenerateMetadataProps) {
     serverClient.setting.index(),
     serverClient.page.detail({ id }),
   ]);
-  const local = (await getLocale()) as keyof MultiLang;
+  const local = normalizeMultiLangLocale(await getLocale());
 
   const title = pageDetail?.title?.[local];
 
   const openGraph = {
     title: title,
     type: "article",
-    description: setting.siteName?.[local],
+    description: setting?.siteName?.[local],
   };
 
   return {
     title,
-    description: setting.siteName?.[local],
+    description: setting?.siteName?.[local],
     openGraph,
   };
 }

@@ -5,7 +5,7 @@ import type {
   PostListViewModel as PostListItemEntity,
   TagViewModel as TagEntity,
 } from "@/features/contracts";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 
 /**
  * 标签组件。
@@ -15,7 +15,7 @@ import { MultiLang } from "@/packages/domain/localization/multi-lang";
  */
 const Tag = (props: PostListItemEntity) => {
   const t = useTranslations("Tag");
-  const locale = useLocale() as keyof MultiLang;
+  const locale = normalizeMultiLangLocale(useLocale());
 
   /**
    * 渲染标签列表。

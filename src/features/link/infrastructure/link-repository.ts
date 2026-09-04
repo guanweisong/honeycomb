@@ -12,12 +12,12 @@ export type { LinkInsert, LinkListInput, LinkRepository, LinkUpdate, LinkVisibil
 export function createLinkRepository(db: Database): LinkRepository {
   return {
     async create(input) {
-      const [value] = await observeDbOperation("link.create", "insert", () => db.insert(schema.link).values(input as typeof schema.link.$inferInsert).returning());
+      const [value] = await observeDbOperation("link.create", "insert", () => db.insert(schema.link).values(input).returning());
       return value;
     },
     async update(input) {
       const { id, ...changes } = input;
-      const [value] = await observeDbOperation("link.update", "update", () => db.update(schema.link).set(changes as Partial<typeof schema.link.$inferInsert>).where(eq(schema.link.id, id)).returning());
+      const [value] = await observeDbOperation("link.update", "update", () => db.update(schema.link).set(changes).where(eq(schema.link.id, id)).returning());
       return value;
     },
     async destroy(ids) {
@@ -32,7 +32,7 @@ export function createLinkRepository(db: Database): LinkRepository {
         const enabled = eq(schema.link.status, EnableStatus.ENABLE);
         where = where ? and(where, enabled) : enabled;
       }
-      const orderBy = buildDrizzleOrderBy(schema.link, sortField, sortOrder as "asc" | "desc", "createdAt");
+      const orderBy = buildDrizzleOrderBy(schema.link, sortField, sortOrder, "createdAt");
       const [list, countRows] = await Promise.all([
         observeDbOperation("link.service.list", "select", () => db.select().from(schema.link).where(where).orderBy(orderBy).limit(limit).offset((page - 1) * limit)),
         observeDbOperation("link.service.count", "select", () => db.select({ count: sql<number>`count(*)`.as("count") }).from(schema.link).where(where)),

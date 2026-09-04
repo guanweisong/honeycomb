@@ -45,6 +45,7 @@ class S3 {
    */
   static putObject = async (params: PutObjectCommandInput): Promise<string> => {
     const { Key, Body, ContentType } = params;
+    if (!Key) throw new Error("Object storage key is required");
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
     await observeExternalServiceOperation("object-storage", "put", () =>
@@ -57,7 +58,7 @@ class S3 {
         }),
       ),
     );
-    return S3.getPublicAssetUrl(Key as string);
+    return S3.getPublicAssetUrl(Key);
   };
 
   /**

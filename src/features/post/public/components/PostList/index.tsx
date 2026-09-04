@@ -8,7 +8,7 @@ import { Link } from "@/packages/ui/navigation/blog-navigation";
 import Signature from "@/packages/ui/blog/Signature";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { useLocale, useTranslations } from "next-intl";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
 import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
@@ -55,7 +55,7 @@ export default function PostList(props: PostListProps): JSX.Element {
   const scroll = useScroll(typeof document !== "undefined" ? document : null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQueryPostList(queryParams, initData);
-  const locale = useLocale() as keyof MultiLang;
+  const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
 
   const postList = data?.pages.flatMap((page) => page?.list ?? []) ?? [];
@@ -93,20 +93,22 @@ export default function PostList(props: PostListProps): JSX.Element {
    */
   const renderCard = (item: PostListItemEntity, index: number): JSX.Element => {
     const isFirstItem = index === 0;
+    const postType = Object.values(PostType).find((type) => type === item.type);
     return (
       <div className="bg-auto-back-gray/60" key={item.id}>
-        {[PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(
-          item.type as PostType,
-        ) &&
-          item.cover?.url && (
+        {postType !== undefined &&
+          postType !== PostType.QUOTE &&
+          item.cover?.url &&
+          item.cover.width != null &&
+          item.cover.height != null && (
             <Link href={`/archives/${item.id}`} className="relative block">
               <ViewTransition name={`postContent-${item.id}`}>
                 <Image
                   priority={isFirstItem}
                   src={item.cover?.url ?? ""}
                   alt={item.title?.[locale] ?? ""}
-                  width={item.cover.width!}
-                  height={item.cover.height!}
+                  width={item.cover.width}
+                  height={item.cover.height}
                   sizes="
                     (max-width: 768px) 320px,
                     846px
@@ -115,10 +117,10 @@ export default function PostList(props: PostListProps): JSX.Element {
                 <span
                   className={cn(
                     "absolute left-2 top-2 text-white text-sm rounded py-0.5 px-1",
-                    [PostTypeBgColor[item.type as PostType]],
+                    [PostTypeBgColor[postType]],
                   )}
                 >
-                  {PostTypeName[item.type as PostType]}
+                  {PostTypeName[postType]}
                 </span>
               </ViewTransition>
             </Link>
@@ -131,12 +133,12 @@ export default function PostList(props: PostListProps): JSX.Element {
             >
               {item.type === PostType.MOVIE && (
                 <>
-                  {item.title?.[locale]} ({utcFormat(item.movieTime!, "YYYY")})
+                  {item.title?.[locale]}
+                  {item.movieTime ? ` (${utcFormat(item.movieTime, "YYYY")})` : ""}
                 </>
               )}
-              {[PostType.ARTICLE, PostType.PHOTOGRAPH].includes(
-                item.type as PostType,
-              ) && <>{item.title?.[locale]}</>}
+              {(item.type === PostType.ARTICLE ||
+                item.type === PostType.PHOTOGRAPH) && <>{item.title?.[locale]}</>}
               {item.type === PostType.QUOTE && (
                 <>
                   “{item.quoteContent?.[locale]}” ——{" "}

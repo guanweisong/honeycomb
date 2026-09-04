@@ -10,7 +10,7 @@ describe("User command handlers", () => {
     const bus = new InProcessEventBus();
     const handler = vi.fn();
     bus.subscribe("user.status-changed", handler);
-    await changeUserStatus({ update } as never, { id: "user-1", currentStatus: UserStatus.ENABLE, status: UserStatus.DISABLE, level: UserLevel.EDITOR, actorLevel: UserLevel.ADMIN }, bus);
+    await changeUserStatus({ update }, { id: "user-1", currentStatus: UserStatus.ENABLE, status: UserStatus.DISABLE, level: UserLevel.EDITOR, actorLevel: UserLevel.ADMIN }, bus);
     expect(update).toHaveBeenCalledWith({ id: "user-1", status: UserStatus.DISABLE });
     expect(handler).toHaveBeenCalledOnce();
   });
@@ -23,7 +23,7 @@ describe("User command handlers", () => {
     const update = vi.fn().mockResolvedValue({ id: "user-1", status: UserStatus.DISABLE });
 
     await updateUser(
-      { getStatus, update } as never,
+      { getStatus, update },
       { id: "user-1", status: UserStatus.DISABLE },
       UserLevel.ADMIN,
     );
@@ -41,7 +41,7 @@ describe("User command handlers", () => {
 
     await expect(
       updateUser(
-        { getStatus, update } as never,
+        { getStatus, update },
         { id: "user-1", status: UserStatus.DISABLE },
         UserLevel.EDITOR,
       ),

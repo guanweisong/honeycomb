@@ -27,13 +27,13 @@ function validateMenuTree(input: MenuInput): void {
 }
 
 /** 覆盖式保存完整菜单结构用例。 */
-export async function saveAllMenus(repository: MenuRepository, input: MenuInput) {
+export async function saveAllMenus(repository: Pick<MenuRepository, "saveAll">, input: MenuInput) {
   validateMenuTree(input);
   return repository.saveAll(input);
 }
 /** 查询并过滤菜单树用例。 */
 export function getMenuList(
-  repository: MenuRepository,
+  repository: Pick<MenuRepository, "list">,
   visibility: MenuVisibility = "PUBLIC_ONLY",
 ) {
   return repository.list(visibility);

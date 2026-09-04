@@ -8,7 +8,7 @@ describe("Page command use cases", () => {
     const update = vi.fn().mockResolvedValue({ id: "page-1" });
 
     await updatePage(
-      { findStatus, update } as never,
+      { findStatus, update },
       { id: "page-1", title: { en: "About", zh: "关于" }, status: PageStatus.PUBLISHED },
     );
 
@@ -23,7 +23,7 @@ describe("Page command use cases", () => {
     const update = vi.fn().mockResolvedValue({ id: "page-1" });
 
     await updatePage(
-      { findStatus, update } as never,
+      { findStatus, update },
       { id: "page-1", status: PageStatus.DRAFT },
     );
 
@@ -37,7 +37,7 @@ describe("Page command use cases", () => {
 
     await expect(
       updatePage(
-        { findStatus, update } as never,
+        { findStatus, update },
         { id: "page-1", status: PageStatus.TO_AUDIT },
       ),
     ).rejects.toThrow();

@@ -6,18 +6,18 @@ import type {
 } from "./repository";
 
 /** 创建标签用例。 */
-export function createTag(repository: TagRepository, input: TagInsert) {
+export function createTag(repository: Pick<TagRepository, "create">, input: TagInsert) {
   return repository.create(input);
 }
 /** 更新标签用例。 */
-export function updateTag(repository: TagRepository, input: TagUpdate) {
+export function updateTag(repository: Pick<TagRepository, "update">, input: TagUpdate) {
   return repository.update(input);
 }
 /** 批量删除标签用例。 */
-export function destroyTags(repository: TagRepository, ids: string[]) {
+export function destroyTags(repository: Pick<TagRepository, "destroy">, ids: string[]) {
   return repository.destroy(ids);
 }
 /** 查询标签列表用例。 */
-export function getTagList(repository: TagRepository, input: TagListInput) {
+export function getTagList(repository: Pick<TagRepository, "list">, input: TagListInput) {
   return repository.list(input);
 }

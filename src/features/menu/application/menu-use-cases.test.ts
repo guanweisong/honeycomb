@@ -18,7 +18,7 @@ describe("Menu use cases", () => {
   ])("拒绝%s", async (_name, input) => {
     const saveAll = vi.fn();
 
-    await expect(saveAllMenus({ saveAll } as never, input)).rejects.toThrow();
+    await expect(saveAllMenus({ saveAll }, input)).rejects.toThrow();
     expect(saveAll).not.toHaveBeenCalled();
   });
 
@@ -26,7 +26,7 @@ describe("Menu use cases", () => {
     const saveAll = vi.fn().mockResolvedValue({ count: 2 });
     const input = [item("a"), item("b", "a")];
 
-    await expect(saveAllMenus({ saveAll } as never, input)).resolves.toEqual({ count: 2 });
+    await expect(saveAllMenus({ saveAll }, input)).resolves.toEqual({ count: 2 });
     expect(saveAll).toHaveBeenCalledWith(input);
   });
 });

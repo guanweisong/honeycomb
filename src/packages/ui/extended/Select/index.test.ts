@@ -75,8 +75,9 @@ describe("Select", () => {
     expect(container.textContent).toContain("已发布");
 
     await act(async () => {
-      const select = container.querySelector("select")!;
-      (select as HTMLSelectElement).value = "published";
+      const select = container.querySelector<HTMLSelectElement>("select");
+      if (!select) throw new Error("select element was not rendered");
+      select.value = "published";
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
 

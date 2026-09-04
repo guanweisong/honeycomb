@@ -4,7 +4,7 @@ import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useLocale } from "next-intl";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
@@ -42,7 +42,7 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   const segments = useSelectedLayoutSegments();
   const segmentType = segments[0];
   const segmentTypePath = segments[1]?.split("/") ?? [];
-  const locale = useLocale() as keyof MultiLang;
+  const locale = normalizeMultiLangLocale(useLocale());
 
   /**
    * 首页菜单项。

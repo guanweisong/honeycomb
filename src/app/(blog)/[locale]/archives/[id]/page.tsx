@@ -7,7 +7,7 @@ import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/packages/trpc/api";
@@ -39,10 +39,8 @@ export interface ArchivesProps {
  */
 export default async function Archives(props: ArchivesProps) {
   const serverClient = await createServerClient();
-  const { id, locale } = (await props.params) as {
-    id: string;
-    locale: keyof MultiLang;
-  };
+  const { id, locale: rawLocale } = await props.params;
+  const locale = normalizeMultiLangLocale(rawLocale);
   let postDetail: Awaited<ReturnType<typeof serverClient.post.detail>>;
   try {
     postDetail = assertPostDetail(await serverClient.post.detail({ id }));
@@ -101,22 +99,22 @@ export default async function Archives(props: ArchivesProps) {
           </ViewTransition>
         </div>
       )}
-      {[PostType.PHOTOGRAPH, PostType.MOVIE, PostType.QUOTE].includes(
-        postDetail.type as PostType,
-      ) && (
+      {(postDetail.type === PostType.PHOTOGRAPH ||
+        postDetail.type === PostType.MOVIE ||
+        postDetail.type === PostType.QUOTE) && (
         <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
-          {postDetail.type === PostType.PHOTOGRAPH && (
+          {postDetail.type === PostType.PHOTOGRAPH && postDetail.galleryTime && (
             <li className="flex items-center">
               <Camera size={20} />
-              &nbsp;{utcFormat(postDetail.galleryTime!)}&nbsp; {t("shotIn")}
+              &nbsp;{utcFormat(postDetail.galleryTime)}&nbsp; {t("shotIn")}
               &nbsp;
               {postDetail.galleryLocation?.[locale]}
             </li>
           )}
-          {postDetail.type === PostType.MOVIE && (
+          {postDetail.type === PostType.MOVIE && postDetail.movieTime && (
             <li className="flex items-center">
               <Calendar size={20} />
-              &nbsp; {t("released")}: {utcFormat(postDetail.movieTime!)}
+              &nbsp; {t("released")}: {utcFormat(postDetail.movieTime)}
             </li>
           )}
           {postDetail.type === PostType.QUOTE && (
@@ -185,22 +183,22 @@ export async function generateMetadata(
   } catch (error) {
     handlePostDetailError(error);
   }
-  const locale = (await getLocale()) as keyof MultiLang;
+  const locale = normalizeMultiLangLocale(await getLocale());
 
   /**
    * 格式化文章标题
    */
-  const title = decodeURI(getPostTitle(postDetail, locale) as string);
+  const title = decodeURI(getPostTitle(postDetail, locale) ?? "");
 
   const openGraph = {
     title: title,
     type: "article",
-    description: setting.siteName?.[locale],
+    description: setting?.siteName?.[locale],
   };
 
   return {
     title,
-    description: setting.siteName?.[locale],
+    description: setting?.siteName?.[locale],
     openGraph,
   };
 }

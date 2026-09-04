@@ -27,6 +27,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { ModalType } from "@/packages/ui/admin/modal-type";
 import { UserFormDialog } from ".";
+import type { UserDialogState } from "../../actions/user-actions";
 
 describe("UserFormDialog", () => {
   let container: HTMLDivElement;
@@ -39,11 +40,7 @@ describe("UserFormDialog", () => {
   });
 
   function render(
-    state: {
-      type: ModalType;
-      open: boolean;
-      record?: Record<string, unknown>;
-    },
+    state: UserDialogState,
     onSubmit = vi.fn(),
   ) {
     container = document.createElement("div");
@@ -52,7 +49,7 @@ describe("UserFormDialog", () => {
     act(() =>
       root.render(
         <UserFormDialog
-          state={state as never}
+          state={state}
           onOpenChange={vi.fn()}
           onSubmit={onSubmit}
         />,
@@ -83,6 +80,8 @@ describe("UserFormDialog", () => {
         email: "admin@example.test",
         level: UserLevel.ADMIN,
         status: UserStatus.ENABLE,
+        createdAt: null,
+        updatedAt: null,
       },
     });
 

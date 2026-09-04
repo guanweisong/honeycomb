@@ -41,7 +41,8 @@ describe("PasswordSettings", () => {
         `[data-testid="${testId}"]`,
       );
       expect(input).not.toBeNull();
-      input!.value = value;
+      if (!input) throw new Error(`${testId} was not rendered`);
+      input.value = value;
     };
 
     setValue("current-password-input", "old-password");

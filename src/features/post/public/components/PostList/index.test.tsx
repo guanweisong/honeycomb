@@ -59,34 +59,75 @@ vi.mock("next-intl", () => ({
 }));
 
 import PostList from "./index";
+import type { PostListViewModel } from "../../../presentation/post-view-model";
+
+const makePost = (
+  overrides: Partial<PostListViewModel> & Pick<PostListViewModel, "id" | "type">,
+): PostListViewModel => ({
+  authorId: "author-1",
+  categoryId: "category-1",
+  commentStatus: "ENABLE",
+  content: null,
+  coverId: null,
+  createdAt: null,
+  excerpt: null,
+  galleryLocation: null,
+  galleryStyles: [],
+  galleryTime: null,
+  movieActors: [],
+  movieDirectors: [],
+  movieStyles: [],
+  movieTime: null,
+  quoteAuthor: null,
+  quoteContent: null,
+  status: "PUBLISHED",
+  title: null,
+  updatedAt: null,
+  views: 0,
+  ...overrides,
+});
+
+const makeCover = (url: string) => ({
+  color: null,
+  createdAt: null,
+  height: 600,
+  id: `media-${url}`,
+  key: url,
+  name: url,
+  size: 1024,
+  type: "image/jpeg",
+  updatedAt: null,
+  url,
+  width: 800,
+});
 
 const posts = [
-  {
-    cover: { height: 600, url: "/article.jpg", width: 800 },
+  makePost({
+    cover: makeCover("/article.jpg"),
     excerpt: { zh: "文章摘要" },
     id: "article",
     title: { zh: "文章标题" },
     type: "ARTICLE",
-  },
-  {
-    cover: { height: 600, url: "/movie.jpg", width: 800 },
+  }),
+  makePost({
+    cover: makeCover("/movie.jpg"),
     id: "movie",
     movieTime: "2020-05-06T00:00:00.000Z",
     title: { zh: "电影标题" },
     type: "MOVIE",
-  },
-  {
-    cover: { height: 600, url: "/photo.jpg", width: 800 },
+  }),
+  makePost({
+    cover: makeCover("/photo.jpg"),
     id: "photo",
     title: { zh: "照片标题" },
     type: "PHOTOGRAPH",
-  },
-  {
+  }),
+  makePost({
     id: "quote",
     quoteAuthor: { zh: "引用作者" },
     quoteContent: { zh: "引用正文" },
     type: "QUOTE",
-  },
+  }),
 ];
 
 describe("PostList", () => {
@@ -123,7 +164,7 @@ describe("PostList", () => {
     await act(async () => {
       root.render(
         React.createElement(PostList, {
-          initData: { list: posts as never[], total: posts.length },
+          initData: { list: posts, total: posts.length },
           queryParams: { limit: 10 },
         }),
       );
@@ -146,6 +187,26 @@ describe("PostList", () => {
       container.querySelectorAll('a[href="/archives/article"]'),
     ).toHaveLength(3);
     expect(container.textContent).toContain("已经到底了");
+  });
+
+  it("omits unsafe media promotion and date formatting for incomplete data", async () => {
+    listState.data = {
+      pages: [{
+        list: [{
+          cover: { height: 600, url: "/incomplete.jpg", width: null },
+          id: "incomplete",
+          movieTime: null,
+          title: { zh: "未完整电影" },
+          type: "MOVIE",
+        }],
+      }],
+    };
+
+    await renderList();
+
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toContain("未完整电影");
+    expect(container.textContent).not.toContain("Invalid Date");
   });
 
   it("loads the next page when scrolling within 300px of the bottom", async () => {

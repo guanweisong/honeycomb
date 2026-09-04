@@ -8,7 +8,9 @@ type PostDetailLike =
   | null
   | undefined;
 
-export function assertPublishedPost(postDetail: PostDetailLike) {
+export function assertPublishedPost<T extends NonNullable<PostDetailLike>>(
+  postDetail: T | null | undefined,
+): T {
   if (!postDetail || postDetail.status !== PostStatus.PUBLISHED) {
     notFound();
   }

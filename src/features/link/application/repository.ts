@@ -1,9 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- tRPC schema 约束动态链接字段。 */
-export type LinkInsert = Record<string, any>;
-export type LinkUpdate = { id: string } & Partial<Record<string, any>>;
-export type LinkListInput = Record<string, any> & { page?: number; limit?: number; sortField?: string; sortOrder?: string; name?: string; description?: string; status?: any };
+export type LinkInsert = {
+  url: string;
+  name: string;
+  logo: string;
+  description?: string;
+  status?: string;
+};
+export type LinkUpdate = { id: string } & Partial<LinkInsert>;
+export type LinkListInput = {
+  page?: number;
+  limit?: number;
+  sortField?: string;
+  sortOrder?: "asc" | "desc";
+  name?: string;
+  url?: string;
+  description?: string;
+  status?: string[];
+};
 export type LinkVisibility = "PUBLIC_ONLY" | "ALL";
-export type LinkRecord = Record<string, any> & { id: string };
+export type LinkRecord = {
+  id: string;
+  url: string;
+  name: string;
+  logo: string;
+  description: string | null;
+  status: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
 export interface LinkRepository {
   create(input: LinkInsert): Promise<LinkRecord>;
   update(input: LinkUpdate): Promise<LinkRecord>;

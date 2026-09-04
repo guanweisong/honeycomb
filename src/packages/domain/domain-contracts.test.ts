@@ -5,7 +5,10 @@ import { PageStatus, pageStatusOptions } from "./content/page";
 import { PostStatus, postStatusOptions } from "./content/post-status";
 import { PostType, postTypeOptions } from "./content/post";
 import { TagType } from "./content/tag";
-import { MultiLangEnum } from "./localization/multi-lang";
+import {
+  MultiLangEnum,
+  normalizeMultiLangLocale,
+} from "./localization/multi-lang";
 import { MenuType } from "./navigation/menu";
 import { EnableStatus, enableStatusOptions } from "./shared/enable-status";
 
@@ -64,5 +67,11 @@ describe("domain contracts", () => {
     expect(enableStatusOptions.map((option) => option.value)).toEqual(
       Object.values(EnableStatus),
     );
+  });
+
+  it("normalizes external locale strings to a supported language key", () => {
+    expect(normalizeMultiLangLocale("zh")).toBe(MultiLangEnum.Zh);
+    expect(normalizeMultiLangLocale("en")).toBe(MultiLangEnum.En);
+    expect(normalizeMultiLangLocale("unsupported")).toBe(MultiLangEnum.En);
   });
 });

@@ -89,6 +89,15 @@ describe("AddTagDialog", () => {
     expect(mocks.success).toHaveBeenCalledWith("更新成功");
   });
 
+  it("rejects an edit submission when the tag record is missing", async () => {
+    render({ type: ModalType.EDIT, open: true });
+
+    await act(async () => mocks.formSubmit?.({ name: { zh: "更新标签" } }));
+
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith("标签不存在，无法更新");
+  });
+
   it("reports a failed create without closing the dialog", async () => {
     mocks.create.mockRejectedValueOnce(new Error("network error"));
     const onClose = vi.fn();

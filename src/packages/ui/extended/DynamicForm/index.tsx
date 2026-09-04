@@ -7,6 +7,7 @@ import {
   UseFormReturn,
   DefaultValues,
   Path,
+  FieldPathValue,
   Resolver,
 } from "react-hook-form";
 import { z, ZodObject, ZodRawShape } from "zod";
@@ -50,6 +51,7 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<TSchema>>({
+    // Zod 版本间 input/output 泛型差异无法由 resolver 当前类型表达；断言限制在此适配边界。
     resolver: zodResolver(schema) as unknown as Resolver<z.infer<TSchema>>,
     mode: "onBlur",
     defaultValues,
@@ -64,8 +66,15 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
     getValues: form.getValues,
     reset: form.reset,
     setValues: (values) => {
-      Object.entries(values).forEach(([key, value]) => {
-        form.setValue(key as Path<z.infer<TSchema>>, value as never, {
+      // Object.entries 会丢失路径与值之间的关联；在 react-hook-form 适配边界恢复该关系。
+      const entries = Object.entries(values) as Array<
+        [
+          Path<z.infer<TSchema>>,
+          FieldPathValue<z.infer<TSchema>, Path<z.infer<TSchema>>>,
+        ]
+      >;
+      entries.forEach(([key, value]) => {
+        form.setValue(key, value, {
           shouldValidate: true,
           shouldDirty: true,
         });

@@ -26,6 +26,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
 import { ModalType } from "@/packages/ui/admin/modal-type";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { LinkFormDialog } from ".";
+import type { LinkDialogState } from "../../actions/link-actions";
 
 describe("LinkFormDialog", () => {
   let container: HTMLDivElement;
@@ -38,7 +39,7 @@ describe("LinkFormDialog", () => {
   });
 
   function render(
-    state: { type: ModalType; open: boolean; record?: Record<string, unknown> },
+    state: LinkDialogState,
     onSubmit = vi.fn(),
   ) {
     container = document.createElement("div");
@@ -47,7 +48,7 @@ describe("LinkFormDialog", () => {
     act(() =>
       root.render(
         <LinkFormDialog
-          state={state as never}
+          state={state}
           onOpenChange={vi.fn()}
           onSubmit={onSubmit}
         />,
@@ -82,6 +83,8 @@ describe("LinkFormDialog", () => {
         logo: "https://example.test/logo.png",
         description: "A link",
         status: EnableStatus.DISABLE,
+        createdAt: null,
+        updatedAt: null,
       },
     });
     const values = { name: "Updated", url: "https://updated.test" };

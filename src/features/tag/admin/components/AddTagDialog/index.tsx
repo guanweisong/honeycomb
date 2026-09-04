@@ -70,10 +70,14 @@ export default function AddTagDialog(props: AddTagDialogProps) {
         }
         break;
       case ModalType.EDIT:
+        if (!record) {
+          toast.error("标签不存在，无法更新");
+          return;
+        }
         try {
           await updateTag.mutateAsync({
             ...(values as TagUpdateValues),
-            id: record!.id,
+            id: record.id,
           });
           onSuccess?.();
           toast.success("更新成功");
@@ -87,7 +91,7 @@ export default function AddTagDialog(props: AddTagDialogProps) {
 
   return (
     <Dialog
-      title={`${ModalTypeName[ModalType[type] as keyof typeof ModalTypeName]}标签`}
+      title={`${type === ModalType.EDIT ? ModalTypeName.EDIT : ModalTypeName.ADD}标签`}
       open={open}
       onOpenChange={() => onClose?.()}
     >

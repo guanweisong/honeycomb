@@ -25,9 +25,9 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
 import Breadcrumb from ".";
 
 const menu = [
-  { id: "home", path: "/", title: { zh: "首页" } },
-  { id: "parent", path: "parent", title: { zh: "父分类" } },
-  { id: "child", path: "child", title: { zh: "子分类" } },
+  { id: "home", path: "/", title: { zh: "首页" }, parent: null, power: 0, type: "CUSTOM", createdAt: null, updatedAt: null },
+  { id: "parent", path: "parent", title: { zh: "父分类" }, parent: null, power: 1, type: "CATEGORY", createdAt: null, updatedAt: null },
+  { id: "child", path: "child", title: { zh: "子分类" }, parent: "parent", power: 2, type: "CATEGORY", createdAt: null, updatedAt: null },
 ];
 
 describe("Breadcrumb", () => {
@@ -44,7 +44,7 @@ describe("Breadcrumb", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => root.render(<Breadcrumb menu={menu as never} />));
+    act(() => root.render(<Breadcrumb menu={menu} />));
   };
 
   it("renders localized links and current item for nested categories", () => {

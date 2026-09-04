@@ -5,7 +5,7 @@ import type {
   UserCommandPort,
 } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
-import { UserLevel, type UserStatus } from "@/packages/domain/identity/user";
+import { UserLevel } from "@/packages/domain/identity/user";
 import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { changeUserStatus } from "./user-command-handlers";
 
@@ -18,12 +18,12 @@ export class UserCommandError extends ApplicationError {
 }
 
 /** 创建用户及凭据。 */
-export function createUser(repository: UserCommandPort, input: UserCommandInput) {
+export function createUser(repository: Pick<UserCommandPort, "create">, input: UserCommandInput) {
   return repository.create(input);
 }
 
 /** 删除用户并阻止删除具备用户管理权限的目标。 */
-export async function destroyUsers(repository: UserCommandPort, ids: string[]) {
+export async function destroyUsers(repository: Pick<UserCommandPort, "destroy">, ids: string[]) {
   try {
     return await repository.destroy(ids);
   } catch (error) {
@@ -36,7 +36,7 @@ export async function destroyUsers(repository: UserCommandPort, ids: string[]) {
 
 /** 更新用户及可选凭据。 */
 export async function updateUser(
-  repository: UserCommandPort,
+  repository: Pick<UserCommandPort, "getStatus" | "update">,
   input: { id: string; password?: string } & Partial<Omit<UserCommandInput, "password">>,
   actorLevel?: UserLevel,
   bus?: InProcessEventBus,
@@ -51,9 +51,9 @@ export async function updateUser(
           repository,
           {
             id,
-            currentStatus: current.status as UserStatus,
-            status: status as UserStatus,
-            level: current.level as UserLevel,
+            currentStatus: current.status,
+            status,
+            level: current.level,
             actorLevel: actorLevel ?? UserLevel.GUEST,
           },
           bus,

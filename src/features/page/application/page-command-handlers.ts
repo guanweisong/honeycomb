@@ -4,13 +4,18 @@ import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { PageAggregate } from "../domain/page";
 import type { PageCommandInput, PageCommandRepository } from "./repository";
 
+function isPageStatus(status: string): status is PageStatus {
+  return status === PageStatus.PUBLISHED || status === PageStatus.DRAFT || status === PageStatus.TO_AUDIT;
+}
+
 export async function publishPage(
-  repository: PageCommandRepository,
+  repository: Pick<PageCommandRepository, "update">,
   input: PageCommandInput & { id: string },
   bus?: InProcessEventBus,
 ) {
   if (!input.status) throw new DomainError("发布页面必须提供当前状态", "MISSING_PAGE_STATUS");
-  const aggregate = PageAggregate.rehydrate(input.id, input.status as PageStatus);
+  if (!isPageStatus(input.status)) throw new DomainError("页面当前状态不合法", "INVALID_PAGE_STATUS");
+  const aggregate = PageAggregate.rehydrate(input.id, input.status);
   aggregate.publish();
   const result = await repository.update({ ...input, status: PageStatus.PUBLISHED });
   for (const event of aggregate.pullEvents()) await bus?.publish(event);
@@ -18,12 +23,13 @@ export async function publishPage(
 }
 
 export async function withdrawPage(
-  repository: PageCommandRepository,
+  repository: Pick<PageCommandRepository, "update">,
   input: PageCommandInput & { id: string },
   bus?: InProcessEventBus,
 ) {
   if (!input.status) throw new DomainError("撤回页面必须提供当前状态", "MISSING_PAGE_STATUS");
-  const aggregate = PageAggregate.rehydrate(input.id, input.status as PageStatus);
+  if (!isPageStatus(input.status)) throw new DomainError("页面当前状态不合法", "INVALID_PAGE_STATUS");
+  const aggregate = PageAggregate.rehydrate(input.id, input.status);
   aggregate.withdraw();
   const result = await repository.update({ ...input, status: PageStatus.DRAFT });
   for (const event of aggregate.pullEvents()) await bus?.publish(event);
@@ -32,7 +38,7 @@ export async function withdrawPage(
 
 /** 更新页面；状态变更必须经过 Page 聚合。 */
 export async function updatePage(
-  repository: PageCommandRepository,
+  repository: Pick<PageCommandRepository, "findStatus" | "update">,
   input: PageCommandInput & { id: string },
   bus?: InProcessEventBus,
 ) {

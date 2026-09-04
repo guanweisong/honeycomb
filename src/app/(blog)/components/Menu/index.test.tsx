@@ -48,31 +48,45 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
 import Menu from "./index";
 import Breadcrumb from "../Breadcrumb";
 import getCurrentPathOfMenu from "../../lib/get-current-path-of-menu";
+import type { MenuViewModel } from "@/features/contracts";
+import type { MenuLocalEntity } from "../../types/menu.local.entity";
 
-const flatMenu = [
+const flatMenu: MenuViewModel[] = [
   {
     id: "home",
     parent: "0",
     path: "/",
     title: { zh: "首页" },
+    power: 0,
+    type: "CUSTOM",
+    createdAt: null,
+    updatedAt: null,
   },
   {
     id: "parent-id",
     parent: "0",
     path: "parent",
     title: { zh: "父分类" },
+    power: 1,
+    type: "CATEGORY",
+    createdAt: null,
+    updatedAt: null,
   },
   {
     id: "child-id",
     parent: "parent-id",
     path: "child",
     title: { zh: "子分类" },
+    power: 2,
+    type: "CATEGORY",
+    createdAt: null,
+    updatedAt: null,
   },
 ];
 
-const menuData = [
-  { label: "父分类", link: "/list/category/parent" },
-  { label: "关于", link: "/pages/about" },
+const menuData: MenuLocalEntity[] = [
+  { label: "父分类", link: "/list/category/parent", children: [] },
+  { label: "关于", link: "/pages/about", children: [] },
 ];
 
 describe("blog menu navigation", () => {
@@ -98,8 +112,8 @@ describe("blog menu navigation", () => {
     await act(async () => {
       root.render(
         React.createElement(Menu, {
-          data: menuData as never,
-          flatMenuData: flatMenu as never,
+          data: menuData,
+          flatMenuData: flatMenu,
         }),
       );
     });
@@ -182,7 +196,7 @@ describe("blog menu navigation", () => {
 
   it("renders localized breadcrumbs for both category levels", async () => {
     await act(async () => {
-      root.render(React.createElement(Breadcrumb, { menu: flatMenu as never }));
+      root.render(React.createElement(Breadcrumb, { menu: flatMenu }));
     });
 
     const navigation = container.querySelector('nav[aria-label="Breadcrumb"]');
@@ -201,7 +215,7 @@ describe("blog menu navigation", () => {
     segments = ["archives", "post-1"];
 
     await act(async () => {
-      root.render(React.createElement(Breadcrumb, { menu: flatMenu as never }));
+      root.render(React.createElement(Breadcrumb, { menu: flatMenu }));
     });
 
     expect(container.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
@@ -214,7 +228,7 @@ describe("get-current-path-of-menu", () => {
       getCurrentPathOfMenu({
         familyProp: "path",
         id: "child-id",
-        menu: flatMenu as never,
+        menu: flatMenu,
       }),
     ).toEqual(["parent", "child"]);
   });
@@ -224,20 +238,20 @@ describe("get-current-path-of-menu", () => {
       getCurrentPathOfMenu({
         familyProp: "path",
         id: "missing",
-        menu: flatMenu as never,
+        menu: flatMenu,
       }),
     ).toEqual([]);
     expect(
       getCurrentPathOfMenu({
         familyProp: "title",
         id: "child-id",
-        menu: flatMenu as never,
+        menu: flatMenu,
       }),
     ).toEqual([]);
     expect(
       getCurrentPathOfMenu({
         familyProp: "path",
-        menu: flatMenu as never,
+        menu: flatMenu,
       }),
     ).toEqual([]);
   });
@@ -247,7 +261,7 @@ describe("get-current-path-of-menu", () => {
       getCurrentPathOfMenu({
         familyProp: "path",
         id: "only",
-        menu: [{ id: "only", parent: "0", path: "root" }] as never,
+        menu: [{ id: "only", parent: "0", path: "root", power: 0, type: "CUSTOM", createdAt: null, updatedAt: null }],
       }),
     ).toEqual(["root"]);
   });

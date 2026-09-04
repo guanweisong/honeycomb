@@ -4,12 +4,12 @@ import { publishPost, withdrawPost } from "./application/post-command-handlers";
 import { updatePost } from "./application/post-commands";
 import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
-const input = { id: "post-1", status: PostStatus.DRAFT } as never;
+const input = { id: "post-1", status: PostStatus.DRAFT };
 
 describe("Post command handlers", () => {
   it("通过聚合发布文章", async () => {
     const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.PUBLISHED });
-    await publishPost({ update } as never, input);
+    await publishPost({ update }, input);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: PostStatus.PUBLISHED }));
   });
 
@@ -18,13 +18,13 @@ describe("Post command handlers", () => {
     const bus = new InProcessEventBus();
     const handler = vi.fn();
     bus.subscribe("post.published", handler);
-    await publishPost({ update } as never, input, bus);
+    await publishPost({ update }, input, bus);
     expect(handler).toHaveBeenCalledOnce();
   });
 
   it("通过聚合撤回文章", async () => {
     const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.DRAFT });
-    await withdrawPost({ update } as never, { id: "post-1", status: PostStatus.PUBLISHED } as never);
+    await withdrawPost({ update }, { id: "post-1", status: PostStatus.PUBLISHED });
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: PostStatus.DRAFT }));
   });
 
@@ -33,8 +33,8 @@ describe("Post command handlers", () => {
     const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.PUBLISHED });
 
     await updatePost(
-      { findStatus, update } as never,
-      { id: "post-1", title: { zh: "标题" }, status: PostStatus.PUBLISHED } as never,
+      { findStatus, update },
+      { id: "post-1", title: { zh: "标题" }, status: PostStatus.PUBLISHED },
     );
 
     expect(findStatus).toHaveBeenCalledWith("post-1");
@@ -49,8 +49,8 @@ describe("Post command handlers", () => {
 
     await expect(
       updatePost(
-        { findStatus, update } as never,
-        { id: "post-1", status: PostStatus.TO_AUDIT } as never,
+        { findStatus, update },
+        { id: "post-1", status: PostStatus.TO_AUDIT },
       ),
     ).rejects.toThrow();
 

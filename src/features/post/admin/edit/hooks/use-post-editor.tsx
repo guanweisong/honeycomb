@@ -87,8 +87,13 @@ export function usePostEditor(id: string) {
           return;
         }
 
+        if (!detail) {
+          toast.error("文章尚未加载，无法更新");
+          setLoading(false);
+          return;
+        }
         updatePost
-          .mutateAsync({ ...data, id: detail!.id } as PostUpdate)
+          .mutateAsync({ ...data, id: detail.id } as PostUpdate)
           .then((result) => {
             if (result) {
               toast.success("更新成功");

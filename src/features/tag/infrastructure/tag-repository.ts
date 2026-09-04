@@ -5,23 +5,23 @@ import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import type { TagRecord, TagRepository } from "../application/repository";
+import type { TagRepository } from "../application/repository";
 export type { TagInsert, TagListInput, TagRepository, TagUpdate } from "../application/repository";
 
 export function createTagRepository(db: Database): TagRepository {
   return {
     async create(input) {
       const [value] = await observeDbOperation("tag.create", "insert", () =>
-        db.insert(schema.tag).values(input as typeof schema.tag.$inferInsert).returning(),
+        db.insert(schema.tag).values(input).returning(),
       );
-      return value as TagRecord;
+      return value;
     },
     async update(input) {
       const { id, ...changes } = input;
       const [value] = await observeDbOperation("tag.update", "update", () =>
-        db.update(schema.tag).set(changes as Partial<typeof schema.tag.$inferInsert>).where(eq(schema.tag.id, id)).returning(),
+        db.update(schema.tag).set(changes).where(eq(schema.tag.id, id)).returning(),
       );
-      return value as TagRecord;
+      return value;
     },
     async destroy(ids) {
       await observeDbOperation("tag.destroy", "delete", () =>
@@ -35,7 +35,7 @@ export function createTagRepository(db: Database): TagRepository {
       const orderBy = buildDrizzleOrderBy(
         schema.tag,
         sortField,
-        sortOrder as "asc" | "desc",
+        sortOrder,
         "createdAt",
       );
       const [list, countRows] = await Promise.all([
@@ -47,7 +47,7 @@ export function createTagRepository(db: Database): TagRepository {
           db.select({ count: sql<number>`count(*)`.as("count") }).from(schema.tag).where(where),
         ),
       ]);
-      return { list: list as TagRecord[], total: Number(countRows[0]?.count) || 0 };
+      return { list, total: Number(countRows[0]?.count) || 0 };
     },
   };
 }

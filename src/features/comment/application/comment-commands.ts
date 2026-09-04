@@ -10,7 +10,7 @@ export type { CommentUpdate, PublicCommentInput } from "./repository";
 
 /** 更新后台评论内容或状态。 */
 export async function updateComment(
-  repository: CommentCommandRepository,
+  repository: Pick<CommentCommandRepository, "findStatus" | "update">,
   input: CommentUpdate,
   bus?: InProcessEventBus,
 ) {
@@ -27,10 +27,10 @@ export async function updateComment(
   );
 }
 /** 批量删除后台评论。 */
-export function destroyComments(repository: CommentCommandRepository, ids: string[]) { return repository.destroy(ids); }
+export function destroyComments(repository: Pick<CommentCommandRepository, "destroy">, ids: string[]) { return repository.destroy(ids); }
 /** 创建公开评论并触发异步通知。 */
 export async function createComment(
-  repository: CommentCommandRepository,
+  repository: Pick<CommentCommandRepository, "create">,
   headers: Headers,
   input: PublicCommentInput & { captchaToken?: string },
   validateCaptcha: (token?: string) => Promise<void>,

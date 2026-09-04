@@ -21,7 +21,7 @@ describe("应用层 Admin 用户查询", () => {
       id: "user-1", email: null, level: "ADMIN", name: "Admin", status: "ENABLE",
     });
 
-    const repository = {} as never;
+    const repository = { current: vi.fn() };
     await expect(getAdminUser(new Headers(), repository)).resolves.toMatchObject({ id: "user-1" });
     expect(mocks.getCurrentUser).toHaveBeenCalledWith(repository, "user-1");
   });
@@ -29,7 +29,7 @@ describe("应用层 Admin 用户查询", () => {
   it("没有会话时不访问数据库", async () => {
     mocks.getSession.mockResolvedValueOnce(null);
 
-    await expect(getAdminUser(new Headers(), {} as never)).resolves.toBeNull();
+    await expect(getAdminUser(new Headers(), { current: vi.fn() })).resolves.toBeNull();
     expect(mocks.getCurrentUser).not.toHaveBeenCalled();
   });
 });

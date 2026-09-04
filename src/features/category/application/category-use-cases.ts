@@ -9,13 +9,13 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { ApplicationError } from "@/packages/application/errors";
 
 function assertStatus(status: string | undefined): void {
-  if (status !== undefined && !Object.values(EnableStatus).includes(status as EnableStatus)) {
+  if (status !== undefined && status !== EnableStatus.ENABLE && status !== EnableStatus.DISABLE) {
     throw new ApplicationError("BAD_REQUEST", "分类状态不合法");
   }
 }
 
 async function assertParentChain(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "find">,
   id: string | undefined,
   parent: string | null | undefined,
 ): Promise<void> {
@@ -34,7 +34,7 @@ async function assertParentChain(
 }
 
 async function assertPath(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "pathExists">,
   path: string | undefined,
   excludeId?: string,
 ): Promise<void> {
@@ -45,7 +45,7 @@ async function assertPath(
 
 /** 创建分类用例。 */
 export function createCategory(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "create" | "find" | "pathExists">,
   input: CategoryInsert,
 ) {
   return (async () => {
@@ -58,7 +58,7 @@ export function createCategory(
 
 /** 更新分类用例。 */
 export function updateCategory(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "find" | "pathExists" | "update">,
   input: CategoryUpdate,
 ) {
   return (async () => {
@@ -73,7 +73,7 @@ export function updateCategory(
 
 /** 批量删除分类用例。 */
 export function destroyCategories(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "destroy">,
   ids: string[],
 ) {
   return repository.destroy(ids);
@@ -81,7 +81,7 @@ export function destroyCategories(
 
 /** 查询分类列表并构建分类树。 */
 export function getCategoryList(
-  repository: CategoryRepository,
+  repository: Pick<CategoryRepository, "list">,
   input: CategoryListInput,
   visibility: CategoryVisibility = "PUBLIC_ONLY",
 ) {

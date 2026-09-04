@@ -12,7 +12,7 @@ import enIconLight from "./img/en.light.svg";
 import { Theme } from "@/app/(blog)/types/Theme";
 import {
   MultiLangEnum,
-  MultiLang,
+  normalizeMultiLangLocale,
 } from "@/packages/domain/localization/multi-lang";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 
@@ -22,7 +22,7 @@ import { Link } from "@/packages/ui/navigation/blog-navigation";
  * @returns {JSX.Element | null} 语言切换按钮或 null。
  */
 const LanguageSwitcher = () => {
-  const locale = useLocale() as keyof MultiLang;
+  const locale = normalizeMultiLangLocale(useLocale());
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   /**

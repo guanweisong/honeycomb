@@ -39,15 +39,15 @@ export function MediaGrid({
                 : "border-gray-100",
             )}
             onClick={() => onSelect(item)}
-            title={item.name as string}
+            title={item.name}
           >
             {item.type?.includes("image") ? (
               <Image
                 className="object-contain"
                 fill
                 sizes="7vw"
-                src={item.url as string}
-                alt={item.name as string}
+                src={item.url}
+                alt={item.name}
               />
             ) : (
               <File className="w-full h-full p-8 text-gray-400" />
@@ -56,7 +56,7 @@ export function MediaGrid({
               <Button
                 variant="secondary"
                 onClick={() => {
-                  navigator.clipboard.writeText(item.url!);
+                  navigator.clipboard.writeText(item.url);
                   toast.success("已复制至剪切板");
                 }}
               >

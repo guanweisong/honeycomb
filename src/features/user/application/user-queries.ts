@@ -15,12 +15,12 @@ export class UserQueryError extends ApplicationError {
 }
 
 /** 查询用户详情。 */
-export function getUserDetail(repository: UserQueryPort, id: string) {
+export function getUserDetail(repository: Pick<UserQueryPort, "detail">, id: string) {
   return repository.detail(id);
 }
 
 /** 查询当前用户。 */
-export async function getCurrentUser(repository: UserQueryPort, id: string) {
+export async function getCurrentUser(repository: Pick<UserQueryPort, "current">, id: string) {
   try {
     return await repository.current(id);
   } catch (error) {
@@ -32,6 +32,6 @@ export async function getCurrentUser(repository: UserQueryPort, id: string) {
 }
 
 /** 查询用户列表。 */
-export function getUserList(repository: UserQueryPort, input: UserListInput) {
+export function getUserList(repository: Pick<UserQueryPort, "list">, input: UserListInput) {
   return repository.list(input);
 }

@@ -14,7 +14,7 @@ export interface MultiLangTextProps {
   /**
    * 包含多语言文本的对象，通常包含 `en` 和 `zh` 属性。
    */
-  text: MultiLang;
+  text?: MultiLang | null;
 }
 
 /**
@@ -52,8 +52,8 @@ const MultiLangText = (props: MultiLangTextProps) => {
         className="cursor-pointer ml-1"
         title={
           active === MultiLangEnum.Zh
-            ? props.text[MultiLangEnum.En]
-            : props.text[MultiLangEnum.Zh]
+            ? text[MultiLangEnum.En]
+            : text[MultiLangEnum.Zh]
         }
         width={20}
         onClick={handleSwitch}

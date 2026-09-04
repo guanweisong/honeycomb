@@ -14,6 +14,7 @@ vi.mock("@/packages/ui/components/button", () => ({
 }));
 
 import { CommentForm } from ".";
+import { CommentStatus } from "@/packages/domain/content/comment";
 
 describe("CommentForm", () => {
   let container: HTMLDivElement;
@@ -77,7 +78,16 @@ describe("CommentForm", () => {
   it("shows reply target, supports cancellation, and disables submit while pending", () => {
     const onCancelReply = vi.fn();
     render({
-      replyTo: { id: "comment-1", author: "Bob" } as never,
+      replyTo: {
+        id: "comment-1",
+        author: "Bob",
+        content: "",
+        site: null,
+        parentId: null,
+        status: CommentStatus.PUBLISH,
+        createdAt: null,
+        avatar: "",
+      },
       onCancelReply,
       isPending: true,
     });

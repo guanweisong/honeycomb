@@ -10,7 +10,7 @@ import Header from "@/app/(blog)/components/Header";
 import Footer from "@/app/(blog)/components/Footer";
 import ThemeProvider from "@/app/(blog)/components/ThemeProvider";
 import { setRequestLocale } from "next-intl/server";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -38,7 +38,8 @@ export default async function LocaleLayout({
   children,
   params,
 }: LocaleLayoutProps) {
-  const { locale } = (await params) as { locale: keyof MultiLang };
+  const { locale: rawLocale } = await params;
+  const locale = normalizeMultiLangLocale(rawLocale);
 
   setRequestLocale(locale);
 

@@ -60,4 +60,10 @@ describe("archives page utils", () => {
       description: "简介",
     });
   });
+
+  it("does not format an absent movie release date", () => {
+    expect(
+      getPostTitle({ type: PostType.MOVIE, title: { zh: "电影" } }, "zh"),
+    ).toBe("电影");
+  });
 });

@@ -24,7 +24,7 @@ export interface MediaRecord {
 }
 
 export type MediaListInput = Record<string, string | number | boolean | Array<string | number | boolean> | undefined> & {
-  page?: number; limit?: number; sortField?: string; sortOrder?: string;
+  page?: number; limit?: number; sortField?: string; sortOrder?: "asc" | "desc";
 };
 
 export interface MediaRepository {

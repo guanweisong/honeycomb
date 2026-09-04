@@ -15,6 +15,7 @@ vi.mock("@/packages/infrastructure/db/query/tools", () => ({
 import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
 import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
 import { createUserRepository } from "@/features/user/infrastructure/user-repository";
+import { asMockDatabase } from "@tests/helpers/test-utils";
 
 function fakeDb() {
   const db = {
@@ -34,7 +35,7 @@ describe("Drizzle repository adapter 行为", () => {
     const returning = vi.fn().mockResolvedValue([{ id: "media-1", url: "https://assets.test/a.png" }]);
     db.insert.mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) });
 
-    const result = await createMediaRepository(db as never).create({
+    const result = await createMediaRepository(asMockDatabase(db)).create({
       name: "a.png", size: 10, type: "image/png", key: "a.png",
     });
 
@@ -47,7 +48,7 @@ describe("Drizzle repository adapter 行为", () => {
     const where = vi.fn().mockResolvedValue(undefined);
     db.delete.mockReturnValue({ where });
 
-    await expect(createTagRepository(db as never).destroy(["tag-1", "tag-2"])).resolves.toEqual({ success: true });
+    await expect(createTagRepository(asMockDatabase(db)).destroy(["tag-1", "tag-2"])).resolves.toEqual({ success: true });
     expect(where).toHaveBeenCalled();
   });
 
@@ -57,6 +58,6 @@ describe("Drizzle repository adapter 行为", () => {
     const where = vi.fn().mockReturnValue({ limit });
     db.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where }) });
 
-    await expect(createUserRepository(db as never).detail("user-1")).resolves.toEqual({ id: "user-1", name: "管理员" });
+    await expect(createUserRepository(asMockDatabase(db)).detail("user-1")).resolves.toEqual({ id: "user-1", name: "管理员" });
   });
 });

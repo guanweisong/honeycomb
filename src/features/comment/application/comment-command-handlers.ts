@@ -4,7 +4,7 @@ import { CommentAggregate } from "../domain/comment";
 import type { CommentCommandRepository, CommentUpdate } from "./repository";
 
 export async function moderateComment(
-  repository: CommentCommandRepository,
+  repository: Pick<CommentCommandRepository, "update">,
   input: CommentUpdate & { currentStatus: CommentStatus; status: CommentStatus },
   bus?: InProcessEventBus,
 ) {

@@ -20,21 +20,22 @@ vi.mock("./CommentClient", () => ({
 }));
 
 import Comment from ".";
+import { MenuType } from "@/packages/domain/navigation/menu";
 
 describe("Comment", () => {
   it("creates the server query and forwards its promise to CommentClient", async () => {
     const queryPromise = Promise.resolve({ list: [], total: 0 });
     mocks.listByRef.mockReturnValueOnce(queryPromise);
 
-    const result = await Comment({ id: "post-1", type: "POST" as never });
+    const result = await Comment({ id: "post-1", type: MenuType.CATEGORY });
 
     expect(mocks.listByRef).toHaveBeenCalledWith({
       id: "post-1",
-      type: "POST",
+      type: MenuType.CATEGORY,
     });
     expect((result as React.ReactElement).props).toMatchObject({
       id: "post-1",
-      type: "POST",
+      type: MenuType.CATEGORY,
       queryCommentPromise: queryPromise,
     });
   });
@@ -43,7 +44,7 @@ describe("Comment", () => {
     const queryPromise = Promise.resolve({ list: [], total: 0 });
     mocks.listByRef.mockReturnValueOnce(queryPromise);
 
-    const result = await Comment({ id: "page-1", type: "PAGE" as never });
+    const result = await Comment({ id: "page-1", type: MenuType.PAGE });
 
     expect(mocks.listByRef).toHaveBeenCalledWith({
       id: "page-1",

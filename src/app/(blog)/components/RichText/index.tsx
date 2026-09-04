@@ -16,21 +16,21 @@ export function RichText({ html, images = [] }: Props) {
       if (domNode.type === "tag" && domNode.name === "img") {
         const { src } = domNode.attribs;
         const image = images.find((img) => img.url === src);
-        if (!image) return null;
+        if (!image || image.width == null || image.height == null) return null;
         return (
           <a
             key={image.key}
             href={src}
-            data-pswp-width={image.width!}
-            data-pswp-height={image.height!}
+            data-pswp-width={image.width}
+            data-pswp-height={image.height}
             target="_blank"
             rel="noreferrer"
           >
             <Image
               src={src}
-              alt={image.name!}
-              width={image.width!}
-              height={image.height!}
+              alt={image.name}
+              width={image.width}
+              height={image.height}
               sizes="
               (max-width: 768px) 320px,
               846px

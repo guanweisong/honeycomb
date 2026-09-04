@@ -1,4 +1,5 @@
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import type { I18n } from "@/packages/domain/localization/i18n";
 import type { PostStatus } from "@/packages/domain/content/post-status";
 export type PostCommandInput = Partial<{
   title: unknown; content: unknown; excerpt: unknown; status: string; type: string;
@@ -15,7 +16,7 @@ export interface PostMediaRecord {
   color: string | null; height: number | null; width: number | null;
   createdAt: string | null; updatedAt: string | null;
 }
-export interface PostTagRecord { id: string; name: MultiLang | null; createdAt: string | null; updatedAt: string | null }
+export interface PostTagRecord { id: string; name: I18n | null; createdAt: string | null; updatedAt: string | null }
 export interface PostCategoryRecord { id: string; title: MultiLang | null; description: MultiLang | null; parent: string | null; status: string; path: string; createdAt: string | null; updatedAt: string | null }
 export interface PostAuthorRecord { id: string; email: string | null; level: string; name: string | null; status: string; createdAt: string | null; updatedAt: string | null }
 export interface PostWithRelations {

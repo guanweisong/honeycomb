@@ -68,7 +68,7 @@ export function UserFormDialog({
 
   return (
     <Dialog
-      title={`${ModalTypeName[ModalType[state.type!] as keyof typeof ModalTypeName]}用户`}
+      title={`${isEdit ? ModalTypeName.EDIT : ModalTypeName.ADD}用户`}
       open={state.open}
       onOpenChange={onOpenChange}
     >

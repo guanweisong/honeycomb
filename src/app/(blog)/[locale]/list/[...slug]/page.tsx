@@ -2,7 +2,7 @@ import React from "react";
 import PostList from "@/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { createServerClient } from "@/packages/trpc/api";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
@@ -35,20 +35,18 @@ export default async function List(props: ListProps) {
     serverClient.setting.index(),
     serverClient.menu.index(),
   ]);
-  const params = (await props.params) as {
-    slug: string[];
-    locale: keyof MultiLang;
-  };
+  const params = await props.params;
+  const locale = normalizeMultiLangLocale(params.locale);
   const t = await getTranslations("PostList");
 
   const type =
     typeof params?.slug !== "undefined" ? params?.slug[0] : undefined;
 
-  let queryParams = {
+  let queryParams: PostListQueryInput = {
     status: [PostStatus.PUBLISHED],
     limit: PAGE_SIZE,
     sortField: "createdAt",
-  } as PostListQueryInput;
+  };
   const typeValue = params?.slug?.[params.slug.length - 1] ?? "";
   let typeName = typeValue;
   switch (type) {
@@ -60,7 +58,7 @@ export default async function List(props: ListProps) {
       }
       typeName =
         menu?.list?.find((item) => item.path === typeName)?.title?.[
-          params.locale
+          locale
         ] || "";
       break;
     case "tags":
@@ -72,7 +70,7 @@ export default async function List(props: ListProps) {
           ...queryParams,
           tagId: matchedTag.id,
         };
-        typeName = matchedTag.name?.[params.locale] ?? "";
+        typeName = matchedTag.name?.[locale] ?? "";
       } else {
         queryParams = { ...queryParams, tagId: typeValue };
         typeName = "";
@@ -103,9 +101,9 @@ export default async function List(props: ListProps) {
         break;
       default:
         if (typeName) {
-          title = `${typeName}_${setting.siteName?.[params.locale]}`;
+          title = `${typeName}_${setting?.siteName?.[locale] ?? ""}`;
         } else {
-          title = setting.siteName?.[params.locale] as string;
+          title = setting?.siteName?.[locale] ?? "";
         }
     }
     return title;
@@ -113,7 +111,7 @@ export default async function List(props: ListProps) {
 
   return (
     <>
-      {["tags", "authors"].includes(type!) && (
+      {(type === "tags" || type === "authors") && (
         <div className="mb-2 lg:mb-4">{getTitle()}</div>
       )}
       {post.list.length > 0 ? (
@@ -152,7 +150,7 @@ export async function generateMetadata(
   const [setting, menu, locale] = await Promise.all([
     serverClient.setting.index(),
     serverClient.menu.index(),
-    getLocale().then((res) => res as keyof MultiLang),
+    getLocale().then(normalizeMultiLangLocale),
   ]);
   const t = await getTranslations("PostList");
   const params = await props.params;
@@ -198,7 +196,7 @@ export async function generateMetadata(
         if (typeName) {
           title = `${typeName}_${setting?.siteName?.[locale]}`;
         } else {
-          title = setting?.siteName?.[locale] as string;
+          title = setting?.siteName?.[locale] ?? "";
         }
     }
     return title;

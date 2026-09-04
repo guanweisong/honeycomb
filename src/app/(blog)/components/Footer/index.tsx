@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { getLocale } from "next-intl/server";
 import { getSiteSetting } from "@/app/lib/server/site-setting";
-import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 
 /**
  * 网站底部组件。
@@ -10,13 +10,14 @@ import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
  */
 export default async function Footer() {
   const [setting, locale] = await Promise.all([getSiteSetting(), getLocale()]);
+  const language = normalizeMultiLangLocale(locale);
 
   return (
     <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
-      <div>{setting?.siteSignature?.[locale as MultiLangEnum]}</div>
+      <div>{setting?.siteSignature?.[language]}</div>
       <div>
         ©{format(new Date(), "yyyy")}&nbsp;
-        {setting?.siteCopyright?.[locale as MultiLangEnum]}
+        {setting?.siteCopyright?.[language]}
       </div>
       <div>
         {setting?.siteRecordNo ? (

@@ -9,7 +9,7 @@ describe("Category use cases", () => {
     const update = vi.fn();
 
     await expect(
-      updateCategory({ find, pathExists: vi.fn(), update } as never, { id: "a", parent: "a" }),
+      updateCategory({ find, pathExists: vi.fn(), update }, { id: "a", parent: "a" }),
     ).rejects.toThrow();
     expect(update).not.toHaveBeenCalled();
   });
@@ -21,7 +21,7 @@ describe("Category use cases", () => {
     const update = vi.fn();
 
     await expect(
-      updateCategory({ find, pathExists: vi.fn(), update } as never, { id: "a", parent: "b" }),
+      updateCategory({ find, pathExists: vi.fn(), update }, { id: "a", parent: "b" }),
     ).rejects.toThrow();
     expect(update).not.toHaveBeenCalled();
   });
@@ -32,7 +32,7 @@ describe("Category use cases", () => {
     const update = vi.fn();
 
     await expect(
-      updateCategory({ find, pathExists, update } as never, { id: "a", path: "taken" }),
+      updateCategory({ find, pathExists, update }, { id: "a", path: "taken" }),
     ).rejects.toThrow();
     expect(pathExists).toHaveBeenCalledWith("taken", "a");
     expect(update).not.toHaveBeenCalled();
@@ -42,7 +42,7 @@ describe("Category use cases", () => {
     const find = vi.fn().mockResolvedValue({ id: "a", parent: null, path: "a", status: "ENABLE" });
     const update = vi.fn().mockResolvedValue({ id: "a" });
 
-    await updateCategory({ find, pathExists: vi.fn().mockResolvedValue(false), update } as never, { id: "a", ...base });
+    await updateCategory({ find, pathExists: vi.fn().mockResolvedValue(false), update }, { id: "a", ...base });
 
     expect(update).toHaveBeenCalledWith({ id: "a", ...base });
   });

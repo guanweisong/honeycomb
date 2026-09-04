@@ -2,6 +2,7 @@ import { vi, type Mock } from "vitest";
 import type { User } from "@/packages/trpc/api/context";
 import type { Context } from "@/packages/trpc/api/context";
 import { UserLevel } from "@/packages/domain/identity/user";
+import type { Database } from "@/packages/infrastructure/db/db";
 
 type MockQueryModel = {
   findMany: Mock;
@@ -100,6 +101,10 @@ export const createMockDb = (): MockDb => {
   return mockDb;
 };
 
+/** 将链式 mock 集中适配为 Drizzle 数据库；测试不再在每个调用点伪装成 never。 */
+export const asMockDatabase = (mockDb: object): Database =>
+  mockDb as unknown as Database;
+
 export const resetMockDb = (mockDb: MockDb) => {
   const reset = (mock: Mock) => {
     mock.mockReset();
@@ -148,7 +153,7 @@ export const resetMockDb = (mockDb: MockDb) => {
 
 export const createMockContext = (user?: User | null, db?: MockDb) =>
   ({
-    db: (db ?? createMockDb()) as unknown as Context["db"],
+    db: asMockDatabase(db ?? createMockDb()),
     user: user ?? null,
     header: new Headers(),
   }) as Context;

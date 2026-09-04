@@ -22,3 +22,8 @@ export enum MultiLangEnum {
    */
   En = "en",
 }
+
+/** 将外部 locale 字符串收敛到应用支持的语言键。 */
+export function normalizeMultiLangLocale(locale: string): MultiLangEnum {
+  return locale === MultiLangEnum.Zh ? MultiLangEnum.Zh : MultiLangEnum.En;
+}

@@ -12,7 +12,7 @@ import { createServerClient } from "@/packages/trpc/api";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
-import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
 /**
@@ -27,16 +27,21 @@ export default async function Header() {
     serverClient.menu.index(),
     getLocale(),
   ]);
+  const language = normalizeMultiLangLocale(locale);
 
   /**
    * 包含所有菜单项的数组。
    */
-  const allMenu = [
+  const allMenu: MenuEntity[] = [
     {
       title: { zh: "首页", en: "Home" },
       id: "home",
+      parent: null,
+      power: 0,
+      type: MenuType.CUSTOM,
       path: "/",
-      children: [],
+      createdAt: null,
+      updatedAt: null,
     },
     ...menu?.list,
   ];
@@ -44,6 +49,7 @@ export default async function Header() {
   /**
    * 将扁平化的菜单数据转换为树形结构。
    */
+  // list-to-tree-lite 未暴露保留输入项字段的泛型返回类型；断言集中在这个适配边界。
   const menuTree = listToTree(allMenu, {
     idKey: "id",
     parentKey: "parent",
@@ -62,13 +68,15 @@ export default async function Header() {
        * @param {MenuEntityTree} data - 原始菜单实体数据。
        * @returns 格式化后的菜单项。
        */
-      const item = {
-        label: data.title?.[locale as MultiLangEnum],
-      } as MenuLocalEntity;
+      const item: MenuLocalEntity = {
+        label: data.title?.[language] ?? "",
+        link: "",
+        children: [],
+      };
       if (data.id === "home") {
         item.link = "/list/category";
       } else if (data.id === "links") {
-        item.link = data.path!;
+        item.link = data.path ?? "";
       }
       switch (data.type) {
         case MenuType.PAGE:
@@ -110,7 +118,7 @@ export default async function Header() {
                 scroll={false}
                 className="text-teal-500 text-lg"
               >
-                {setting?.siteName?.[locale as MultiLangEnum]}
+                {setting?.siteName?.[language]}
               </Link>
             </span>
           </div>
@@ -126,7 +134,7 @@ export default async function Header() {
         </div>
       </header>
       <ViewTransition name="siteBreadcrumb">
-        <Breadcrumb menu={allMenu as MenuEntity[]} />
+        <Breadcrumb menu={allMenu} />
       </ViewTransition>
     </>
   );

@@ -16,7 +16,7 @@ describe("buildCategoryFilter", () => {
     ]) };
 
     await expect(
-      buildCategoryFilter(repository as never, TEST_IDS.ID_1),
+      buildCategoryFilter(repository, TEST_IDS.ID_1),
     ).resolves.toEqual([TEST_IDS.ID_1, TEST_IDS.ID_2, TEST_IDS.ID_3]);
   });
 
@@ -24,7 +24,7 @@ describe("buildCategoryFilter", () => {
     const repository = { categoryFilter: vi.fn().mockResolvedValue([TEST_IDS.ID_1]) };
 
     await expect(
-      buildCategoryFilter(repository as never, TEST_IDS.ID_1),
+      buildCategoryFilter(repository, TEST_IDS.ID_1),
     ).resolves.toEqual([TEST_IDS.ID_1]);
   });
 });

@@ -58,7 +58,8 @@ describe("useRowSelection", () => {
     }
 
     await act(async () => root.render(React.createElement(SelectionHarness)));
-    const button = container.querySelector<HTMLButtonElement>("button")!;
+    const button = container.querySelector<HTMLButtonElement>("button");
+    if (!button) throw new Error("selection button was not rendered");
 
     await act(async () => button.click());
     expect(onSelectionChange).toHaveBeenLastCalledWith([rows[1], rows[2]]);

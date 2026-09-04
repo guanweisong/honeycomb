@@ -67,11 +67,12 @@ describe("PasskeySettings", () => {
     );
     expect(nameInput).not.toBeNull();
     expect(addButton).not.toBeNull();
+    if (!nameInput || !addButton) throw new Error("passkey controls were not rendered");
 
     await act(async () => {
-      nameInput!.value = "iPhone";
-      nameInput!.dispatchEvent(new Event("change", { bubbles: true }));
-      addButton!.click();
+      nameInput.value = "iPhone";
+      nameInput.dispatchEvent(new Event("change", { bubbles: true }));
+      addButton.click();
     });
 
     expect(mocks.addPasskey).toHaveBeenCalledWith({ name: "iPhone" });

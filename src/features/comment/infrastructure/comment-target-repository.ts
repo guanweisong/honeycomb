@@ -18,7 +18,8 @@ export function createCommentTargetRepository(db: Database): CommentTargetReposi
   return {
     async assertPublic(target) {
       if (target.pageId) {
-        const [page] = await observeDbOperation("comment.target.page", "select", () => db.select({ id: schema.page.id, status: schema.page.status }).from(schema.page).where(eq(schema.page.id, target.pageId!)).limit(1));
+        const pageId = target.pageId;
+        const [page] = await observeDbOperation("comment.target.page", "select", () => db.select({ id: schema.page.id, status: schema.page.status }).from(schema.page).where(eq(schema.page.id, pageId)).limit(1));
         if (!page || page.status !== PageStatus.PUBLISHED) throw new CommentTargetError("NOT_FOUND");
         return;
       }

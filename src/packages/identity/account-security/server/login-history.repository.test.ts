@@ -4,6 +4,7 @@ import {
   listUserLoginHistory,
   recordLoginHistory,
 } from "./login-history.repository";
+import { asMockDatabase } from "@tests/helpers/test-utils";
 
 describe("login history repository", () => {
   it("returns a safe, limited current-user history list", async () => {
@@ -25,7 +26,7 @@ describe("login history repository", () => {
       }),
     };
 
-    const result = await listUserLoginHistory(db as never, "user-1");
+    const result = await listUserLoginHistory(asMockDatabase(db), "user-1");
 
     expect(limit).toHaveBeenCalledWith(50);
     expect(result).toEqual([
@@ -45,7 +46,7 @@ describe("login history repository", () => {
       select: () => ({ from: () => ({ where: () => ({ limit }) }) }),
     };
 
-    expect(await findUserIdByIdentifier(db as never, " admin ")).toBe(
+    expect(await findUserIdByIdentifier(asMockDatabase(db), " admin ")).toBe(
       "user-1",
     );
     expect(limit).toHaveBeenCalledWith(1);
@@ -59,7 +60,7 @@ describe("login history repository", () => {
       delete: () => ({ where }),
     };
 
-    await recordLoginHistory(db as never, {
+    await recordLoginHistory(asMockDatabase(db), {
       event: "SIGN_OUT",
       userId: "user-1",
       occurredAt: new Date("2026-08-11T00:00:00.000Z"),

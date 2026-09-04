@@ -63,7 +63,7 @@ export function LinkFormDialog({
 
   return (
     <Dialog
-      title={`${ModalTypeName[ModalType[state.type!] as keyof typeof ModalTypeName]}链接`}
+      title={`${isEdit ? ModalTypeName.EDIT : ModalTypeName.ADD}链接`}
       open={state.open}
       onOpenChange={onOpenChange}
     >

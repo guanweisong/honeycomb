@@ -24,18 +24,18 @@ export async function getMediaPresignedUrl(
 }
 
 /** 保存媒体元数据用例。 */
-export function createMedia(repository: MediaRepository, input: MediaInsert) {
+export function createMedia(repository: Pick<MediaRepository, "create">, input: MediaInsert) {
   return repository.create(input);
 }
 
 /** 删除媒体记录及对象存储文件用例。 */
-export function destroyMedia(repository: MediaRepository, ids: string[]) {
+export function destroyMedia(repository: Pick<MediaRepository, "destroy">, ids: string[]) {
   return repository.destroy(ids);
 }
 
 /** 查询媒体列表用例。 */
 export function getMediaList(
-  repository: MediaRepository,
+  repository: Pick<MediaRepository, "list">,
   input: MediaListInput,
 ) {
   return repository.list(input);

@@ -19,22 +19,26 @@ export function createMenuRepository(db: Database): MenuRepository {
         await tx.delete(schema.menu);
         if (!input.length) return { count: 0 };
         const rowIdByBusinessId = new Map(input.map((item) => [item.id, crypto.randomUUID()]));
-        const rows = await tx.insert(schema.menu).values(input.map(({ id, type, parent, power }) => ({
-          id: rowIdByBusinessId.get(id)!,
-          parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
-          power,
-          type,
-          categoryId: type === MenuType.CATEGORY ? id : null,
-          pageId: type === MenuType.PAGE ? id : null,
-          customId: type === MenuType.CUSTOM ? id : null,
-        }))).returning();
+        const rows = await tx.insert(schema.menu).values(input.map(({ id, type, parent, power }) => {
+          const rowId = rowIdByBusinessId.get(id);
+          if (!rowId) throw new Error(`菜单 ${id} 缺少持久化标识`);
+          return {
+            id: rowId,
+            parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
+            power,
+            type,
+            categoryId: type === MenuType.CATEGORY ? id : null,
+            pageId: type === MenuType.PAGE ? id : null,
+            customId: type === MenuType.CUSTOM ? id : null,
+          };
+        })).returning();
         return { count: rows.length };
       }));
     },
     async list(visibility) {
       const menus = await observeDbOperation("menu.service.list", "select", () => db.query.menu.findMany({ orderBy: [asc(schema.menu.power)] }));
-      const categoryIds = menus.filter((menu) => menu.type === MenuType.CATEGORY && menu.categoryId).map((menu) => menu.categoryId as string);
-      const pageIds = menus.filter((menu) => menu.type === MenuType.PAGE && menu.pageId).map((menu) => menu.pageId as string);
+      const categoryIds = menus.map((menu) => menu.type === MenuType.CATEGORY ? menu.categoryId : null).filter((id): id is string => id !== null);
+      const pageIds = menus.map((menu) => menu.type === MenuType.PAGE ? menu.pageId : null).filter((id): id is string => id !== null);
       const [categories, pages] = await Promise.all([
         categoryIds.length ? observeDbOperation("menu.service.categories", "select", () => db.select({ id: schema.category.id, title: schema.category.title, path: schema.category.path }).from(schema.category).where(visibility === "ALL" ? inArray(schema.category.id, categoryIds) : and(inArray(schema.category.id, categoryIds), eq(schema.category.status, EnableStatus.ENABLE)))) : Promise.resolve([]),
         pageIds.length ? observeDbOperation("menu.service.pages", "select", () => db.select({ id: schema.page.id, title: schema.page.title }).from(schema.page).where(visibility === "ALL" ? inArray(schema.page.id, pageIds) : and(inArray(schema.page.id, pageIds), eq(schema.page.status, PageStatus.PUBLISHED)))) : Promise.resolve([]),

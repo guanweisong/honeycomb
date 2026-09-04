@@ -70,7 +70,9 @@ export function Dialog({
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
-  const setOpen = isControlled ? controlledOnOpenChange! : setUncontrolledOpen;
+  const setOpen = isControlled
+    ? (controlledOnOpenChange ?? (() => undefined))
+    : setUncontrolledOpen;
 
   const [loading, setLoading] = React.useState(false);
 

@@ -10,7 +10,7 @@ describe("Comment command handlers", () => {
     const bus = new InProcessEventBus();
     const handler = vi.fn();
     bus.subscribe("comment.moderated", handler);
-    await moderateComment({ update } as never, { id: "comment-1", currentStatus: CommentStatus.TO_AUDIT, status: CommentStatus.PUBLISH }, bus);
+    await moderateComment({ update }, { id: "comment-1", currentStatus: CommentStatus.TO_AUDIT, status: CommentStatus.PUBLISH }, bus);
     expect(update).toHaveBeenCalledWith({ id: "comment-1", status: CommentStatus.PUBLISH });
     expect(handler).toHaveBeenCalledOnce();
   });
@@ -20,7 +20,7 @@ describe("Comment command handlers", () => {
     const update = vi.fn().mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
 
     await updateComment(
-      { findStatus, update } as never,
+      { findStatus, update },
       { id: "comment-1", status: CommentStatus.PUBLISH },
     );
 
@@ -34,7 +34,7 @@ describe("Comment command handlers", () => {
 
     await expect(
       updateComment(
-        { findStatus, update } as never,
+        { findStatus, update },
         { id: "comment-1", status: CommentStatus.TO_AUDIT },
       ),
     ).rejects.toThrow();

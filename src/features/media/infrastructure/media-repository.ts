@@ -10,7 +10,7 @@ import {
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import S3 from "@/packages/infrastructure/storage/S3";
 import { clientEnv } from "@/env/client";
-import type { MediaRecord, MediaRepository } from "../application/repository";
+import type { MediaRepository } from "../application/repository";
 export type { MediaInsert, MediaListInput, MediaRepository } from "../application/repository";
 
 export function createMediaRepository(db: Database): MediaRepository {
@@ -22,7 +22,7 @@ export function createMediaRepository(db: Database): MediaRepository {
           .values({
             ...input,
             url: `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${input.key}`,
-          } as typeof schema.media.$inferInsert)
+          })
           .returning(),
       );
       return media;
@@ -33,7 +33,7 @@ export function createMediaRepository(db: Database): MediaRepository {
       const orderBy = buildDrizzleOrderBy(
         schema.media,
         sortField,
-        sortOrder as "asc" | "desc",
+        sortOrder,
         "createdAt",
       );
       const [list, countRows] = await Promise.all([
@@ -53,7 +53,7 @@ export function createMediaRepository(db: Database): MediaRepository {
             .where(where),
         ),
       ]);
-      return { list: list as MediaRecord[], total: Number(countRows[0]?.count) || 0 };
+      return { list, total: Number(countRows[0]?.count) || 0 };
     },
     async destroy(ids) {
       const media = await observeDbOperation("media.destroy.select", "select", () =>

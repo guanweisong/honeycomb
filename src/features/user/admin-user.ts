@@ -16,10 +16,10 @@ export interface AdminUser extends CurrentUser {
 /** 从当前请求会话读取可进入 Admin 的启用用户。 */
 export async function getAdminUser(
   headers: Headers,
-  repository: UserRepository,
+  repository: Pick<UserRepository, "current">,
 ): Promise<AdminUser | null> {
   const session = await auth.api.getSession({ headers });
-  const sessionUser = session?.user as { id?: string } | null | undefined;
+  const sessionUser = session?.user;
 
   if (!sessionUser?.id) return null;
 

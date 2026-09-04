@@ -5,10 +5,10 @@ import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 export interface SettingRecord {
   id: string;
-  siteName: MultiLang;
-  siteSubName: MultiLang;
-  siteSignature: MultiLang;
-  siteCopyright: MultiLang;
+  siteName: MultiLang | null;
+  siteSubName: MultiLang | null;
+  siteSignature: MultiLang | null;
+  siteCopyright: MultiLang | null;
   siteRecordNo: string | null;
   siteRecordUrl: string | null;
   createdAt: string | null;
@@ -22,7 +22,7 @@ export interface StatisticsType {
   commentStatus: { item: CommentStatus; count: number }[];
 }
 export interface SettingRepository {
-  get(): Promise<SettingRecord>;
+  get(): Promise<SettingRecord | undefined>;
   update(input: SettingUpdate): Promise<SettingRecord | undefined>;
   statistics(): Promise<StatisticsType>;
 }

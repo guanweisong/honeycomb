@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/"],
       },
     ],
-    sitemap: `${new URL(clientEnv.NEXT_PUBLIC_SITE_URL as string).origin}/sitemap.xml`,
+    sitemap: clientEnv.NEXT_PUBLIC_SITE_URL
+      ? `${new URL(clientEnv.NEXT_PUBLIC_SITE_URL).origin}/sitemap.xml`
+      : undefined,
   };
 }

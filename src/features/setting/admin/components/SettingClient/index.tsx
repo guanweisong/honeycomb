@@ -31,8 +31,12 @@ const Setting = () => {
    * 当用户提交设置表单时调用，将表单值发送到后端进行更新，并刷新本地设置缓存。
    */
   const handleSubmit = async (values: SettingFormValues) => {
+    if (!setting) {
+      toast.error("设置尚未加载，无法更新");
+      return;
+    }
     try {
-      await updateSetting.mutateAsync({ ...values, id: setting!.id });
+      await updateSetting.mutateAsync({ ...values, id: setting.id });
       await refreshSetting();
       toast.success("更新成功");
     } catch {

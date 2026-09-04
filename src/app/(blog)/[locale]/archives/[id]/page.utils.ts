@@ -34,9 +34,11 @@ export function getPostTitle(
   post: PostPresentation,
   locale: keyof MultiLang,
 ): string | null | undefined {
-  return post.type === PostType.MOVIE
-    ? `${post.title?.[locale]} (${utcFormat(post.movieTime!, "YYYY")})`
-    : (post.title?.[locale] ?? post.quoteContent?.[locale]);
+  if (post.type === PostType.MOVIE) {
+    const title = post.title?.[locale];
+    return post.movieTime ? `${title ?? ""} (${utcFormat(post.movieTime, "YYYY")})` : title;
+  }
+  return post.title?.[locale] ?? post.quoteContent?.[locale];
 }
 
 /** 根据文章类型生成稳定的 JSON-LD 结构化数据。 */
@@ -49,13 +51,13 @@ export function createPostJsonLd(
     name: getPostTitle(post, locale),
   };
 
-  const typeMap: Partial<Record<PostType, string>> = {
+  const typeMap: Partial<Record<string, string>> = {
     [PostType.ARTICLE]: "Article",
     [PostType.MOVIE]: "Movie",
     [PostType.PHOTOGRAPH]: "Photograph",
     [PostType.QUOTE]: "Quotation",
   };
-  jsonLd["@type"] = typeMap[post.type as PostType];
+  jsonLd["@type"] = typeMap[post.type];
   if (post.type !== PostType.QUOTE) {
     jsonLd.image = post.cover?.url;
     jsonLd.description = post.excerpt?.[locale];

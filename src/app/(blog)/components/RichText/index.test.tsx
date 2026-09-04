@@ -18,12 +18,20 @@ vi.mock("@/app/(blog)/components/PhotoSwipe", () => ({
 
 import { RichText } from ".";
 
+type RichTextProps = React.ComponentProps<typeof RichText>;
+
 const image = {
   key: "cover-key",
   url: "https://cdn.example.test/cover.jpg",
   name: "封面图",
   width: 1200,
   height: 800,
+  id: "media-1",
+  size: 1024,
+  type: "image/jpeg",
+  color: null,
+  createdAt: null,
+  updatedAt: null,
 };
 
 describe("RichText", () => {
@@ -35,11 +43,11 @@ describe("RichText", () => {
     container?.remove();
   });
 
-  const render = (props: { html?: string; images?: object[] }) => {
+  const render = (props: RichTextProps) => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => root.render(React.createElement(RichText, props as never)));
+    act(() => root.render(<RichText {...props} />));
   };
 
   it("parses text and wraps known images for PhotoSwipe", () => {
@@ -69,6 +77,18 @@ describe("RichText", () => {
     expect(container.querySelector("a[data-pswp-width]")).toBeNull();
     expect(container.querySelector("img")?.getAttribute("src")).toBe(
       "https://cdn.example.test/missing.jpg",
+    );
+  });
+
+  it("keeps a known image unchanged when its dimensions are incomplete", () => {
+    render({
+      html: `<img src="${image.url}" />`,
+      images: [{ ...image, width: null }],
+    });
+
+    expect(container.querySelector(`a[href="${image.url}"]`)).toBeNull();
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(
+      image.url,
     );
   });
 

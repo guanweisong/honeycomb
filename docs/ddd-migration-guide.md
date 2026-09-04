@@ -26,6 +26,14 @@ Admin 和公开页面接口。DDD 的目标是隔离业务规则与技术细节�
 2. 在 `application/repository.ts` 中定义 Repository 接口和稳定读写契约；Domain 不访问 Repository。
 3. 简单模块在 `application` 用例中编写注入端口的命令和查询；复杂模块才增加聚合和领域事件。
 4. 在 `infrastructure` 中实现数据库映射，禁止把 Drizzle 类型泄漏到 domain、application 或 presentation。
+
+## 类型安全边界
+
+- Application Repository 必须使用明确 DTO，禁止显式 `any`、开放式 `Record<string, any>` 和 `no-explicit-any` 抑制。
+- 用例函数只接收实际使用的端口子集，例如 `Pick<Repository, "find" | "update">`，使测试 fake 能直接满足真实契约。
+- 优先用源类型修正、控制流窄化、类型谓词和显式空值分支替代断言；测试不得用 `as never` 掩盖不完整 fixture。
+- `as const`、校验后构造的品牌类型以及第三方泛型无法表达时的最小适配断言可以保留；非显然双重断言必须在局部说明边界原因。
+- Drizzle、Better Auth 等未公开内部结构的测试应通过单一辅助函数集中建立 `unknown` 边界，调用点使用正常类型。
 5. 在 feature 根部 router，或按需保留的 admin/public 入口中接入现有入口。
 6. 增加 fake repository、边界测试和至少一个失败路径测试。
 

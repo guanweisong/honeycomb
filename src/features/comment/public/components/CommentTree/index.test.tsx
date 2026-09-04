@@ -25,8 +25,9 @@ vi.mock("@/packages/ui/blog/utc-format", () => ({
 
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { CommentTree } from ".";
+import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 
-const comments = [
+const comments: CommentTreeViewModel[] = [
   {
     id: "comment-1",
     author: "作者甲",
@@ -35,6 +36,7 @@ const comments = [
     status: "PUBLISHED",
     site: "https://example.test/author",
     avatar: "https://example.test/avatar.jpg",
+    parentId: null,
     children: [
       {
         id: "comment-2",
@@ -42,6 +44,9 @@ const comments = [
         content: "回复内容",
         createdAt: "2026-08-18T01:00:00.000Z",
         status: "PUBLISHED",
+        site: null,
+        parentId: "comment-1",
+        avatar: "",
         children: [],
       },
     ],
@@ -52,6 +57,9 @@ const comments = [
     content: "被屏蔽内容",
     createdAt: "2026-08-18T02:00:00.000Z",
     status: CommentStatus.BAN,
+    site: null,
+    parentId: null,
+    avatar: "",
   },
 ];
 
@@ -71,7 +79,7 @@ describe("CommentTree", () => {
     act(() =>
       root.render(
         <ul>
-          <CommentTree comments={comments as never} onReply={vi.fn()} />
+          <CommentTree comments={comments} onReply={vi.fn()} />
         </ul>,
       ),
     );
@@ -94,7 +102,7 @@ describe("CommentTree", () => {
     act(() =>
       root.render(
         <ul>
-          <CommentTree comments={comments as never} onReply={onReply} />
+          <CommentTree comments={comments} onReply={onReply} />
         </ul>,
       ),
     );
