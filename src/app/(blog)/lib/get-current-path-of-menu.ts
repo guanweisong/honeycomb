@@ -26,7 +26,7 @@ export interface GetCurrentPathProps {
  */
 const getCurrentPathOfMenu = (props: GetCurrentPathProps) => {
   const { id, familyProp, menu } = props;
-  const path = [] as string[];
+  const path: string[] = [];
   if (id) {
     const find = (data: MenuEntity[]) => {
       /**
@@ -34,7 +34,7 @@ const getCurrentPathOfMenu = (props: GetCurrentPathProps) => {
        * @param {MenuEntity[]} data - 当前层级的菜单数据，用于查找父级。
        */
       if (data.length === 1) {
-        const value = data[0][familyProp];
+        const value = data[0]?.[familyProp];
         if (typeof value === "string") {
           path.push(value);
         }

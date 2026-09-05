@@ -35,7 +35,7 @@ Query 只负责读取适配、查询组合和结果映射，不承载写入、�
 
 ## Application 边界
 
-`src/features/<feature>/application/` 放单功能用例；`src/packages/application/` 只放跨功能编排。后者不能成为无边界的“万能 service”。
+`src/features/<feature>/application/` 放单功能用例及该功能拥有的业务输入/输出契约。`src/packages/application/` 放跨功能编排，也可放有至少两个真实跨功能消费者、无 UI/transport/ORM 依赖的稳定应用契约或校验基础能力。后者不能成为无边界的“万能 service”或通用工具杂物箱。
 
 ## 复杂度控制
 

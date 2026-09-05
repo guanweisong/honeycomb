@@ -20,9 +20,9 @@ const accountSecurityTabs = [
 type AccountSecurityTab = (typeof accountSecurityTabs)[number]["value"];
 
 function getAccountSecurityTab(value: string | null): AccountSecurityTab {
-  return accountSecurityTabs.some((tab) => tab.value === value)
-    ? (value as AccountSecurityTab)
-    : "passkey";
+  return (
+    accountSecurityTabs.find((tab) => tab.value === value)?.value ?? "passkey"
+  );
 }
 
 type Props = {

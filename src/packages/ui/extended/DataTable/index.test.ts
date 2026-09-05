@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -91,7 +92,7 @@ describe("DataTable", () => {
 
     await act(async () => {
       root.render(
-        React.createElement(DataTable<Person, PersonRequest>, {
+        React.createElement(DataTable<Person>, {
           columns,
           data: { list: people, total: 41 },
           selectableRows: true,
@@ -148,7 +149,7 @@ describe("DataTable", () => {
     function SelectionHarness() {
       const [selectedRows, setSelectedRows] = useState<Person[]>([]);
 
-      return React.createElement(DataTable<Person, PersonRequest>, {
+      return React.createElement(DataTable<Person>, {
         columns,
         data: { list: people, total: people.length },
         selectableRows: true,
@@ -168,17 +169,17 @@ describe("DataTable", () => {
       container.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]'),
     );
     expect(checkboxes).toHaveLength(3);
-    expect(checkboxes[1].disabled).toBe(true);
+    expect(requireDefined(checkboxes[1]).disabled).toBe(true);
 
-    await act(async () => checkboxes[0].click());
+    await act(async () => requireDefined(checkboxes[0]).click());
 
     expect(onSelectionChange).toHaveBeenLastCalledWith([people[1]]);
     checkboxes = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]'),
     );
-    expect(checkboxes[0].getAttribute("data-state")).toBe("checked");
+    expect(requireDefined(checkboxes[0]).getAttribute("data-state")).toBe("checked");
 
-    await act(async () => checkboxes[0].click());
+    await act(async () => requireDefined(checkboxes[0]).click());
 
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
   });
@@ -186,7 +187,7 @@ describe("DataTable", () => {
   it("renders the empty state when no rows are available", async () => {
     await act(async () => {
       root.render(
-        React.createElement(DataTable<Person, PersonRequest>, {
+        React.createElement(DataTable<Person>, {
           columns,
           data: { list: [], total: 0 },
         }),
@@ -202,7 +203,7 @@ describe("DataTable", () => {
 
     await act(async () => {
       root.render(
-        React.createElement(DataTable<Person, PersonRequest>, {
+        React.createElement(DataTable<Person>, {
           columns,
           data: { list: [], total: 0 },
           error: true,

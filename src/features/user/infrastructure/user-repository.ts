@@ -1,4 +1,10 @@
 import "server-only";
+import { repositoryPaginationDefaults } from "@/packages/application/pagination";
+import {
+  parseEnumValue,
+  requireWriteResult,
+} from "@/packages/infrastructure/db/value-validation";
+import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 
 import { eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
@@ -26,6 +32,20 @@ const safeUserColumns = {
   updatedAt: schema.user.updatedAt,
 };
 
+function validateUserState<T extends { status: unknown; level: unknown }>(
+  user: T,
+) {
+  return {
+    ...user,
+    status: parseEnumValue(
+      user.status,
+      Object.values(UserStatus),
+      "user.status",
+    ),
+    level: parseEnumValue(user.level, Object.values(UserLevel), "user.level"),
+  };
+}
+
 export type LoginHistoryRecord = Awaited<
   ReturnType<typeof listUserLoginHistory>
 >[number];
@@ -39,11 +59,11 @@ export function createUserRepository(db: Database): UserRepository {
           .from(schema.user)
           .where(eq(schema.user.id, id)),
       );
-      return user ? { status: user.status, level: user.level } : null;
+      return user ? validateUserState(user) : null;
     },
     async getStates(ids) {
       if (ids.length === 0) return [];
-      return observeDbOperation("user.states", "select", () =>
+      const users = await observeDbOperation("user.states", "select", () =>
         db
           .select({
             id: schema.user.id,
@@ -53,6 +73,7 @@ export function createUserRepository(db: Database): UserRepository {
           .from(schema.user)
           .where(inArray(schema.user.id, ids)),
       );
+      return users.map(validateUserState);
     },
     async detail(id) {
       const [user] = await observeDbOperation("user.detail", "select", () =>
@@ -79,16 +100,22 @@ export function createUserRepository(db: Database): UserRepository {
           .limit(1),
       );
       if (!user) throw new ApplicationError("UNAUTHORIZED");
-      return user;
+      return validateUserState(user);
     },
     async list(input) {
-      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
+      const {
+        page = repositoryPaginationDefaults.page,
+        limit = repositoryPaginationDefaults.limit,
+        sortField,
+        sortOrder,
+        ...rest
+      } = input;
       const where = buildDrizzleWhere(schema.user, rest, ["status", "level"]);
       const orderBy = buildDrizzleOrderBy(
         schema.user,
         sortField,
-        sortOrder as "asc" | "desc",
-        "createdAt",
+        sortOrder,
+        repositoryPaginationDefaults.sortField,
       );
       const [list, counts] = await Promise.all([
         observeDbOperation("user.list", "select", () =>
@@ -107,16 +134,20 @@ export function createUserRepository(db: Database): UserRepository {
             .where(where),
         ),
       ]);
-      return { list, total: Number(counts[0]?.count) || 0 };
+      return {
+        list: list.map(validateUserState),
+        total: Number(counts[0]?.count) || 0,
+      };
     },
     async create(input) {
       const { password, ...values } = input;
       return db.transaction(async (tx) => {
-        const [user] = await observeDbOperation("user.create", "insert", () =>
+        const [row] = await observeDbOperation("user.create", "insert", () =>
           tx.insert(schema.user).values(values).returning(safeUserColumns),
         );
+        const user = requireWriteResult(row, "create", "user");
         await setCredentialPassword(tx, user.id, password);
-        return user;
+        return validateUserState(user);
       });
     },
     async destroy(ids) {
@@ -128,15 +159,16 @@ export function createUserRepository(db: Database): UserRepository {
     async update(input) {
       const { id, password, ...rest } = input;
       const update = async (store: CredentialStore) => {
-        const [user] = await observeDbOperation("user.update", "update", () =>
+        const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
             .set(rest)
             .where(eq(schema.user.id, id))
             .returning(safeUserColumns),
         );
+        const user = requireWriteResult(row, "update", "user");
         if (password) await setCredentialPassword(store, id, password);
-        return user;
+        return validateUserState(user);
       };
       return password ? db.transaction(update) : update(db);
     },

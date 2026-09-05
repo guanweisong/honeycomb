@@ -9,6 +9,7 @@ import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
 import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
+import { parseStaticImage } from "@/packages/ui/lib/static-image";
 import { Theme } from "@/app/(blog)/types/Theme";
 import {
   MultiLangEnum,
@@ -52,8 +53,8 @@ const LanguageSwitcher = () => {
    * 根据当前主题和语言环境选择对应的语言图标。
    */
   const localeIcon = {
-    en: resolvedTheme === Theme.Dark ? enIconLight : enIcon,
-    zh: resolvedTheme === Theme.Dark ? zhIconLight : zhIcon,
+    en: parseStaticImage(resolvedTheme === Theme.Dark ? enIconLight : enIcon),
+    zh: parseStaticImage(resolvedTheme === Theme.Dark ? zhIconLight : zhIcon),
   };
 
   return (

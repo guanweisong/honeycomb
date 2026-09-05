@@ -1,7 +1,7 @@
-import type * as schema from "@/packages/infrastructure/db/schema";
 import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 
-export type LoginHistoryEvent = (typeof schema.loginHistoryEvents)[number];
+import type { LoginHistoryEvent } from "./login-history-events";
+export type { LoginHistoryEvent } from "./login-history-events";
 
 export type LoginHistoryRecordInput = {
   event: LoginHistoryEvent;

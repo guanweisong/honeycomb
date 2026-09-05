@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useEffect, useImperativeHandle, forwardRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useState } from "react";
 import {
   useForm,
   FieldValues,
   UseFormReturn,
   DefaultValues,
-  Path,
-  FieldPathValue,
-  Resolver,
 } from "react-hook-form";
 import { z, ZodObject, ZodRawShape } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,33 +23,35 @@ export type DynamicFormRef<T extends FieldValues = FieldValues> = {
   submit: () => void | Promise<void>;
 };
 
-interface DynamicFormProps<TSchema extends ZodObject<ZodRawShape>> {
-  schema: TSchema;
+interface DynamicFormProps<TShape extends ZodRawShape> {
+  schema: ZodObject<TShape>;
   fields: FieldConfig[];
-  defaultValues?: DefaultValues<z.infer<TSchema>>;
-  onSubmit: (values: z.infer<TSchema>) => void;
+  defaultValues?: DefaultValues<z.input<ZodObject<TShape>>>;
+  onSubmit: (values: z.output<ZodObject<TShape>>) => void | Promise<void>;
+  ref?: React.Ref<DynamicFormRef<z.input<ZodObject<TShape>>>>;
   inline?: boolean;
   submitProps?: React.ComponentProps<typeof Button>;
   renderSubmitButton?: boolean;
 }
 
-function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
-  {
-    schema,
-    fields,
-    defaultValues,
-    onSubmit,
-    inline = false,
-    submitProps,
-    renderSubmitButton = true,
-  }: DynamicFormProps<TSchema>,
-  ref: React.ForwardedRef<DynamicFormRef<z.infer<TSchema>>>,
-) {
+export function DynamicForm<TShape extends ZodRawShape>({
+  schema,
+  fields,
+  defaultValues,
+  onSubmit,
+  inline = false,
+  submitProps,
+  renderSubmitButton = true,
+  ref,
+}: DynamicFormProps<TShape>) {
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<TSchema>>({
-    // Zod 版本间 input/output 泛型差异无法由 resolver 当前类型表达；断言限制在此适配边界。
-    resolver: zodResolver(schema) as unknown as Resolver<z.infer<TSchema>>,
+  const form = useForm<
+    z.input<ZodObject<TShape>>,
+    unknown,
+    z.output<ZodObject<TShape>>
+  >({
+    resolver: zodResolver(schema),
     mode: "onBlur",
     defaultValues,
   });
@@ -66,21 +65,13 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
     getValues: form.getValues,
     reset: form.reset,
     setValues: (values) => {
-      // Object.entries 会丢失路径与值之间的关联；在 react-hook-form 适配边界恢复该关系。
-      const entries = Object.entries(values) as Array<
-        [
-          Path<z.infer<TSchema>>,
-          FieldPathValue<z.infer<TSchema>, Path<z.infer<TSchema>>>,
-        ]
-      >;
-      entries.forEach(([key, value]) => {
-        form.setValue(key, value, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-      });
+      form.reset(
+        { ...form.getValues(), ...values },
+        { keepDefaultValues: true },
+      );
+      void form.trigger();
     },
-    submit: () => form.handleSubmit(onSubmit)(),
+    submit: () => form.handleSubmit((values) => onSubmit(values))(),
   }));
 
   return (
@@ -116,11 +107,3 @@ function DynamicFormInner<TSchema extends ZodObject<ZodRawShape>>(
     </Form>
   );
 }
-
-export const DynamicForm = forwardRef(DynamicFormInner) as <
-  TSchema extends ZodObject<ZodRawShape>,
->(
-  props: DynamicFormProps<TSchema> & {
-    ref?: React.Ref<DynamicFormRef<z.infer<TSchema>>>;
-  },
-) => React.ReactElement;

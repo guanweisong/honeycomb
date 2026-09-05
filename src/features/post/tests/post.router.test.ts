@@ -1,3 +1,6 @@
+import { createPostFixture } from "@tests/helpers/post-fixtures";
+import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
@@ -21,24 +24,30 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 // 模拟文章关联数据加载函数。
 vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   const actual = await vi.importActual<typeof import("@/features/post/infrastructure/post-query-repository")>("@/features/post/infrastructure/post-query-repository");
-  const mockedLoadPostRelations = vi.fn(
-    async (_db: unknown, posts: Array<Record<string, unknown>>) => {
+  const mockedLoadPostRelations = vi.fn<typeof actual.loadPostRelations>(
+    async (_db, posts) => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
           ...post,
+          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
+          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
+          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
           author: {
             id: post.authorId,
             name: "Test Author",
+            email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null,
           },
           category: {
             id: post.categoryId,
             title: { en: "Category 1", zh: "分类1" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
           },
           cover: post.coverId
             ? {
                 id: post.coverId,
                 url: "https://example.com/cover.jpg",
+                key: "cover.jpg", name: "cover.jpg", size: 10, type: "image/jpeg", color: null, width: null, height: null, createdAt: null, updatedAt: null,
               }
             : undefined,
           movieActors: [],
@@ -50,6 +59,9 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
         ...post,
+          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
+          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
+          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
         author: undefined,
         category: undefined,
         cover: undefined,
@@ -63,7 +75,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   return {
     ...actual,
     createPostQueryRepository: (db: Parameters<typeof actual.createPostQueryRepository>[0]) =>
-      actual.createPostQueryRepository(db, { loadRelations: mockedLoadPostRelations as never }),
+      actual.createPostQueryRepository(db, { loadRelations: mockedLoadPostRelations }),
     loadPostRelations: mockedLoadPostRelations,
   };
 });
@@ -94,22 +106,22 @@ describe("Post Router", () => {
 
     it("should return post list with pagination", async () => {
       const mockPosts = [
-        {
+        createPostFixture({
           id: TEST_IDS.ID_1,
           title: { en: "Post 1", zh: "文章1" },
           content: { en: "Content 1", zh: "内容1" },
           status: PostStatus.PUBLISHED,
-          type: "ARTICLE",
-          createdAt: new Date(),
-        },
-        {
+          type: PostType.ARTICLE,
+          createdAt: new Date().toISOString(),
+        }),
+        createPostFixture({
           id: TEST_IDS.ID_2,
           title: { en: "Post 2", zh: "文章2" },
           content: { en: "Content 2", zh: "内容2" },
           status: PostStatus.PUBLISHED,
-          type: "ARTICLE",
-          createdAt: new Date(),
-        },
+          type: PostType.ARTICLE,
+          createdAt: new Date().toISOString(),
+        }),
       ];
       const mockCount = [{ count: "2" }];
 

@@ -1,5 +1,4 @@
 import type React from "react";
-import type { FieldValues } from "react-hook-form";
 
 export type FieldConfig = {
   name: string;
@@ -16,8 +15,10 @@ export type FieldConfig = {
     | "richText";
   options?:
     | { label: React.ReactNode; value: string }[]
-    | ((formValues: FieldValues) => { label: React.ReactNode; value: string }[]);
+    | ((
+        formValues: Record<string, unknown>,
+      ) => { label: React.ReactNode; value: string }[]);
   placeholder?: string;
-  disabled?: (formValues: FieldValues) => boolean;
+  disabled?: (formValues: Record<string, unknown>) => boolean;
   multiLang?: boolean;
 };

@@ -1,6 +1,6 @@
 ---
 name: openspec-apply-change
-description: Implement tasks from an OpenSpec change. Use when the user wants to start implementing, continue implementation, or work through tasks.
+description: 当用户需要开始或继续实施 OpenSpec 变更，或逐项完成其中的任务时使用。
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
@@ -8,6 +8,8 @@ metadata:
   version: "1.0"
   generatedBy: "1.4.1"
 ---
+
+# 实施 OpenSpec 变更
 
 Implement tasks from an OpenSpec change.
 

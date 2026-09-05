@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,7 +10,7 @@ import { useRowSelection } from "./useRowSelection";
 
 type Row = { id: string; disabled?: boolean };
 
-const rows: Row[] = [
+const rows: [Row, Row, Row] = [
   { id: "disabled", disabled: true },
   { id: "first" },
   { id: "second" },
@@ -109,10 +110,10 @@ describe("useRowSelection", () => {
     await act(async () => root.render(React.createElement(RowHarness)));
     const buttons = container.querySelectorAll("button");
 
-    await act(async () => buttons[0].click());
+    await act(async () => requireDefined(buttons[0]).click());
     expect(onSelectionChange).toHaveBeenLastCalledWith([rows[1], rows[2]]);
 
-    await act(async () => buttons[1].click());
+    await act(async () => requireDefined(buttons[1]).click());
     expect(onSelectionChange).toHaveBeenLastCalledWith([rows[2]]);
   });
 });

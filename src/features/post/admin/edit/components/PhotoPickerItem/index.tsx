@@ -60,7 +60,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
               <>
                 <div className="mb-2 text-center bg-gray-300">
                   <Image
-                    src={cover.url as string}
+                    src={cover.url}
                     alt={`${title}预览`}
                     width={previewWidth}
                     height={previewHeight}

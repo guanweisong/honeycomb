@@ -57,8 +57,8 @@ export function createAuthDatabaseHooks(): NonNullable<
               userId: session.userId,
               provider: getAuthenticationProvider(
                 context?.path ?? "",
-                context?.body as Record<string, unknown> | undefined,
-                context?.params as Record<string, unknown> | undefined,
+                context?.body,
+                context?.params,
               ),
               request: context?.request,
             });

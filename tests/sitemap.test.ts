@@ -47,7 +47,11 @@ vi.mock("@/env/server", () => ({
 
 import * as sitemapIndexRoute from "../src/app/sitemap.xml/route";
 import * as sitemapShardRoute from "../src/app/sitemaps/[id]/route";
-import { toSitemapIndexXml, toSitemapXml } from "../src/app/sitemap-data";
+import {
+  getCachedSitemapShard,
+  toSitemapIndexXml,
+  toSitemapXml,
+} from "../src/app/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },
@@ -112,9 +116,7 @@ describe("runtime sitemap", () => {
 
   it("falls back to one safe shard when sitemap index discovery fails", async () => {
     postIndexMock.mockRejectedValue(new Error("database unavailable"));
-    const logSpy = vi
-      .spyOn(console, "log")
-      .mockImplementation(() => undefined);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     const response = await sitemapIndexRoute.GET();
     const xml = await response.text();
@@ -195,6 +197,25 @@ describe("runtime sitemap", () => {
     expect(menuIndexMock).toHaveBeenCalledTimes(2);
   });
 
+  it("uses a valid current timestamp when persisted modification dates are null", async () => {
+    const now = Date.parse("2026-09-05T12:00:00.000Z");
+    vi.spyOn(Date, "now").mockReturnValue(now);
+    postIndexMock.mockResolvedValue(
+      list([{ id: "post-null-date", updatedAt: null }]),
+    );
+    pageIndexMock.mockResolvedValue(
+      list([{ id: "page-null-date", updatedAt: null }]),
+    );
+
+    const urls = await getCachedSitemapShard("https://example.com", 0);
+    const persistedUrls = urls.filter(({ url }) => url.includes("null-date"));
+
+    expect(persistedUrls).toHaveLength(4);
+    for (const entry of persistedUrls) {
+      expect(entry.lastModified?.getTime()).toBe(now);
+    }
+  });
+
   it("rejects a shard beyond the discovered range before requesting its high offset", async () => {
     postIndexMock.mockResolvedValue(list([], 1001));
     pageIndexMock.mockResolvedValue(list([], 0));
@@ -216,9 +237,7 @@ describe("runtime sitemap", () => {
   it("returns only safe static URLs and reports the failure when dynamic data is unavailable", async () => {
     const error = new Error("Turso unavailable");
     postIndexMock.mockRejectedValue(error);
-    const logSpy = vi
-      .spyOn(console, "log")
-      .mockImplementation(() => undefined);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     const sitemap = await sitemapShardRoute.GET(
       new Request("https://example.com/sitemaps/0.xml"),
@@ -288,15 +307,18 @@ describe("runtime sitemap", () => {
     expect(xml).toContain("https://example.com/en/pages/page-1001");
   });
 
-  it.each(["invalid", "-1"])("rejects the malformed shard id %s", async (id) => {
-    const response = await sitemapShardRoute.GET(
-      new Request(`https://example.com/sitemaps/${id}`),
-      { params: Promise.resolve({ id }) },
-    );
+  it.each(["invalid", "-1"])(
+    "rejects the malformed shard id %s",
+    async (id) => {
+      const response = await sitemapShardRoute.GET(
+        new Request(`https://example.com/sitemaps/${id}`),
+        { params: Promise.resolve({ id }) },
+      );
 
-    expect(response.status).toBe(404);
-    expect(createServerClientMock).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(404);
+      expect(createServerClientMock).not.toHaveBeenCalled();
+    },
+  );
 
   it("accepts a numeric shard id without an XML suffix", async () => {
     const response = await sitemapShardRoute.GET(
@@ -315,7 +337,10 @@ describe("runtime sitemap", () => {
         priority: 0.5,
       },
     ]);
-    const index = toSitemapIndexXml("https://example.com/<root>?a=1&b='x'\"", 1);
+    const index = toSitemapIndexXml(
+      "https://example.com/<root>?a=1&b='x'\"",
+      1,
+    );
 
     expect(sitemap).toContain(
       "https://example.com/&lt;tag&gt;?a=1&amp;b=&apos;quoted&apos;&quot;",

@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import {
   afterEach,
@@ -108,7 +109,7 @@ describe("CommentPageShell", () => {
     const checkboxes =
       container.querySelectorAll<HTMLElement>('[role="checkbox"]');
     expect(checkboxes).toHaveLength(2);
-    await act(async () => checkboxes[1].click());
+    await act(async () => requireDefined(checkboxes[1]).click());
     expect((batchButton as HTMLButtonElement).disabled).toBe(false);
   });
 });

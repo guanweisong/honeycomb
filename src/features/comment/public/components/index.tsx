@@ -2,7 +2,6 @@ import React from "react";
 import CommentClient from "./CommentClient";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
-import type { CommentTreeViewResponse as CommentTreeResponse } from "../../presentation/comment-view-model";
 
 /**
  * 评论组件的属性接口。
@@ -32,12 +31,7 @@ const Comment = async (props: CommentProps) => {
    * 用于从服务器获取评论数据。
    */
   const queryCommentPromise = serverClient.comment.listByRef({ id, type });
-  return (
-    <CommentClient
-      {...props}
-      queryCommentPromise={queryCommentPromise as Promise<CommentTreeResponse>}
-    />
-  );
+  return <CommentClient {...props} queryCommentPromise={queryCommentPromise} />;
 };
 
 export default Comment;

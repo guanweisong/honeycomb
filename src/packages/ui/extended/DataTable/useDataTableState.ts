@@ -1,7 +1,10 @@
 import * as React from "react";
+import { paginationDefaults } from "@/packages/application/pagination";
 import type { ColumnFiltersState, SortingState } from "@tanstack/react-table";
 import type {
   DataTableRequestState,
+  DataTablePaginationState,
+  DataTableQueryParams,
   UseDataTableStateOptions,
   UseDataTableStateResult,
 } from "./types";
@@ -9,50 +12,45 @@ import type {
 export function normalizeFilters(
   filters: ColumnFiltersState,
 ): Record<string, unknown> {
-  return filters.reduce(
-    (params, filter) => {
-      params[filter.id] = filter.value;
-      return params;
-    },
-    {} as Record<string, unknown>,
-  );
+  return filters.reduce<Record<string, unknown>>((params, filter) => {
+    params[filter.id] = filter.value;
+    return params;
+  }, {});
 }
 
-export function normalizeDataTableParams<
-  TRequest extends Record<string, unknown>,
->(state: DataTableRequestState): TRequest {
-  const params: Record<string, unknown> = {};
+export function normalizeDataTableParams(
+  state: DataTableRequestState,
+): DataTableQueryParams {
+  const reservedFields = new Set(["page", "limit", "sortField", "sortOrder"]);
+  const params: DataTableQueryParams = normalizeFilters(
+    state.columnFilters.filter((filter) => !reservedFields.has(filter.id)),
+  );
 
   if (state.pagination) {
     Object.assign(params, state.paginationState);
   }
-  if (state.sorting.length > 0) {
-    params.sortField = state.sorting[0].id;
-    params.sortOrder = state.sorting[0].desc ? "desc" : "asc";
+  const [sorting] = state.sorting;
+  if (sorting) {
+    params.sortField = sorting.id;
+    params.sortOrder = sorting.desc ? "desc" : "asc";
   }
-  if (state.columnFilters.length > 0) {
-    Object.assign(params, normalizeFilters(state.columnFilters));
-  }
-
-  return params as TRequest;
+  return params;
 }
 
-export function useDataTableState<
-  TRequest extends Record<string, unknown>,
-  TData = unknown,
->(
-  options: UseDataTableStateOptions<TRequest, TData>,
-): UseDataTableStateResult<TRequest> {
+// 后台表格保持每页 20 条的展示策略，独立于 API 缺省查询量。
+const tablePaginationDefaults = { page: paginationDefaults.page, limit: 20 };
+
+export function useDataTableState<TData = unknown>(
+  options: UseDataTableStateOptions<TData>,
+): UseDataTableStateResult {
   const { pagination, onChange, onSelectionChange } = options;
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
   const [columnVisibility, setColumnVisibility] = React.useState({});
-  const [paginationState, setPaginationState] = React.useState({
-    page: 1,
-    limit: 20,
-  });
+  const [paginationState, setPaginationState] =
+    React.useState<DataTablePaginationState>(tablePaginationDefaults);
   const onChangeRef = React.useRef(onChange);
   const onSelectionChangeRef = React.useRef(onSelectionChange);
 
@@ -66,7 +64,7 @@ export function useDataTableState<
 
   const requestParams = React.useMemo(
     () =>
-      normalizeDataTableParams<TRequest>({
+      normalizeDataTableParams({
         pagination,
         paginationState,
         sorting,
@@ -87,7 +85,10 @@ export function useDataTableState<
     (updaterOrValue: React.SetStateAction<SortingState>) => {
       setSorting(updaterOrValue);
       if (pagination) {
-        setPaginationState((previous) => ({ ...previous, page: 1 }));
+        setPaginationState((previous) => ({
+          ...previous,
+          page: tablePaginationDefaults.page,
+        }));
       }
     },
     [pagination],
@@ -97,7 +98,10 @@ export function useDataTableState<
     (updaterOrValue: React.SetStateAction<ColumnFiltersState>) => {
       setColumnFilters(updaterOrValue);
       if (pagination) {
-        setPaginationState((previous) => ({ ...previous, page: 1 }));
+        setPaginationState((previous) => ({
+          ...previous,
+          page: tablePaginationDefaults.page,
+        }));
       }
     },
     [pagination],

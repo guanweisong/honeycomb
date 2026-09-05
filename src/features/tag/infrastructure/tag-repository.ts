@@ -1,12 +1,22 @@
 import "server-only";
+import { repositoryPaginationDefaults } from "@/packages/application/pagination";
+import { requireWriteResult } from "@/packages/infrastructure/db/value-validation";
 
 import { eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/packages/infrastructure/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { TagRepository } from "../application/repository";
-export type { TagInsert, TagListInput, TagRepository, TagUpdate } from "../application/repository";
+export type {
+  TagInsert,
+  TagListInput,
+  TagRepository,
+  TagUpdate,
+} from "../application/repository";
 
 export function createTagRepository(db: Database): TagRepository {
   return {
@@ -14,14 +24,18 @@ export function createTagRepository(db: Database): TagRepository {
       const [value] = await observeDbOperation("tag.create", "insert", () =>
         db.insert(schema.tag).values(input).returning(),
       );
-      return value;
+      return requireWriteResult(value, "create", "tag");
     },
     async update(input) {
       const { id, ...changes } = input;
       const [value] = await observeDbOperation("tag.update", "update", () =>
-        db.update(schema.tag).set(changes).where(eq(schema.tag.id, id)).returning(),
+        db
+          .update(schema.tag)
+          .set(changes)
+          .where(eq(schema.tag.id, id))
+          .returning(),
       );
-      return value;
+      return requireWriteResult(value, "update", "tag");
     },
     async destroy(ids) {
       await observeDbOperation("tag.destroy", "delete", () =>
@@ -30,21 +44,41 @@ export function createTagRepository(db: Database): TagRepository {
       return { success: true } as const;
     },
     async list(input) {
-      const { page = 1, limit = 10, sortField, sortOrder, name, ...rest } = input;
-      const where = buildDrizzleWhere(schema.tag, { ...rest, name }, ["status"], { name });
+      const {
+        page = repositoryPaginationDefaults.page,
+        limit = repositoryPaginationDefaults.limit,
+        sortField,
+        sortOrder,
+        name,
+        ...rest
+      } = input;
+      const where = buildDrizzleWhere(
+        schema.tag,
+        { ...rest, name },
+        ["status"],
+        { name },
+      );
       const orderBy = buildDrizzleOrderBy(
         schema.tag,
         sortField,
         sortOrder,
-        "createdAt",
+        repositoryPaginationDefaults.sortField,
       );
       const [list, countRows] = await Promise.all([
         observeDbOperation("tag.list", "select", () =>
-          db.select().from(schema.tag).where(where).orderBy(orderBy)
-            .limit(limit).offset((page - 1) * limit),
+          db
+            .select()
+            .from(schema.tag)
+            .where(where)
+            .orderBy(orderBy)
+            .limit(limit)
+            .offset((page - 1) * limit),
         ),
         observeDbOperation("tag.count", "select", () =>
-          db.select({ count: sql<number>`count(*)`.as("count") }).from(schema.tag).where(where),
+          db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(schema.tag)
+            .where(where),
         ),
       ]);
       return { list, total: Number(countRows[0]?.count) || 0 };

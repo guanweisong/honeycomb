@@ -9,7 +9,6 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import type { LegendProps } from "recharts";
 
 /**
  * 饼图组件的属性接口。
@@ -46,9 +45,6 @@ const COLORS = [
   "oklch(46.6% 0.025 107.3)",
   "oklch(57.7% 0.245 27.325)",
 ];
-
-type LegendEntry = NonNullable<LegendProps["payload"]>[number];
-type PieDataItem = NonNullable<PieProps["data"]>[number];
 
 /**
  * 自定义饼图组件。
@@ -130,12 +126,13 @@ const CustomPie = ({
               align="right"
               iconType="circle"
               wrapperStyle={{ paddingLeft: "10px" }}
-              formatter={(value, entry) => {
-                const payload = ((entry as LegendEntry).payload ??
-                  {}) as Partial<PieDataItem>;
+              formatter={(value, _entry, index) => {
+                const payload = sortedData[index];
                 const total =
                   data?.reduce((sum, item) => sum + item.count, 0) || 1;
-                const percent = (((payload.count ?? 0) / total) * 100).toFixed(0);
+                const percent = (((payload?.count ?? 0) / total) * 100).toFixed(
+                  0,
+                );
                 return (
                   <span className="text-xs text-gray-600">
                     <span className="inline-block w-16 truncate align-bottom">

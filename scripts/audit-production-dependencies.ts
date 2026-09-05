@@ -195,9 +195,10 @@ function productionPackagePaths(lock: BunLock): Map<string, string> {
     }
   }
 
-  for (let index = 0; index < queue.length; index += 1) {
-    const key = queue[index];
-    const [, , metadata = {}] = lock.packages[key];
+  for (const key of queue) {
+    const entry = lock.packages[key];
+    if (!entry) continue;
+    const [, , metadata = {}] = entry;
     const optionalPeers = new Set(metadata.optionalPeers ?? []);
     const dependencies = {
       ...metadata.dependencies,
@@ -216,7 +217,9 @@ function productionPackagePaths(lock: BunLock): Map<string, string> {
         dependencyName,
       );
       if (!dependencyKey || paths.has(dependencyKey)) continue;
-      const identity = packageIdentity(lock.packages[dependencyKey][0]);
+      const dependency = lock.packages[dependencyKey];
+      if (!dependency) continue;
+      const identity = packageIdentity(dependency[0]);
       paths.set(
         dependencyKey,
         `${paths.get(key)}>${identity.name}@${identity.version}`,
@@ -244,7 +247,9 @@ export function createProductionFindings(
   const findings: AuditFinding[] = [];
 
   for (const [key, dependencyPath] of paths) {
-    const { name, version } = packageIdentity(lock.packages[key][0]);
+    const entry = lock.packages[key];
+    if (!entry) continue;
+    const { name, version } = packageIdentity(entry[0]);
     for (const advisory of audit[name] ?? []) {
       if (!satisfies(version, advisory.vulnerable_versions)) continue;
       findings.push({

@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import type { CommentUpdate } from "@/features/comment/schemas/comment.update.schema";
-import type { CommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
+import type { AdminCommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
 import type { CommentStatus } from "@/packages/domain/content/comment";
 import { trpc } from "@/packages/trpc/client/trpc";
 
@@ -29,7 +29,7 @@ export async function submitCommentStatusUpdate({
   notifyError,
 }: SubmitCommentStatusUpdateOptions): Promise<CommentActionState> {
   try {
-    await update({ id, status } as CommentUpdate);
+    await update({ id, status });
     refetch();
     notifySuccess("更新成功");
     return "success";

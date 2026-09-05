@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -41,7 +42,7 @@ describe("DataTable state", () => {
       status: ["published"],
     });
     expect(
-      normalizeDataTableParams<RequestParams>({
+      normalizeDataTableParams({
         pagination: false,
         paginationState: { page: 3, limit: 20 },
         sorting: [{ id: "createdAt", desc: true }],
@@ -59,7 +60,7 @@ describe("DataTable state", () => {
     const onSelectionChange = vi.fn<(rows: unknown[]) => void>();
 
     function StateHarness() {
-      const state = useDataTableState<RequestParams>({
+      const state = useDataTableState({
         pagination: true,
         onChange,
         onSelectionChange,
@@ -105,11 +106,11 @@ describe("DataTable state", () => {
     onChange.mockClear();
     onSelectionChange.mockClear();
 
-    await act(async () => container.querySelectorAll("button")[0].click());
+    await act(async () => requireDefined(container.querySelectorAll("button")[0]).click());
     expect(onChange).toHaveBeenLastCalledWith({ page: 3, limit: 20 });
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
 
-    await act(async () => container.querySelectorAll("button")[1].click());
+    await act(async () => requireDefined(container.querySelectorAll("button")[1]).click());
     expect(onChange).toHaveBeenLastCalledWith({
       page: 1,
       limit: 20,
@@ -117,7 +118,7 @@ describe("DataTable state", () => {
       sortOrder: "desc",
     });
 
-    await act(async () => container.querySelectorAll("button")[2].click());
+    await act(async () => requireDefined(container.querySelectorAll("button")[2]).click());
     expect(onChange).toHaveBeenLastCalledWith({
       page: 1,
       limit: 20,

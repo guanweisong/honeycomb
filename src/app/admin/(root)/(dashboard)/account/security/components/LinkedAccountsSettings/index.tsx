@@ -7,13 +7,12 @@ import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
-import type { SocialProviderId } from "@/packages/identity/auth/providers";
+import {
+  SOCIAL_PROVIDER_LABELS,
+  type SocialProviderId,
+} from "@/packages/identity/auth/providers";
 
-const providerLabels: Record<SocialProviderId, string> = {
-  google: "Google",
-  github: "GitHub",
-  apple: "Apple",
-};
+const providerLabels = SOCIAL_PROVIDER_LABELS;
 
 type AccountItem = {
   id: string;
@@ -33,8 +32,9 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
     queryKey: ["account-security", "linked-accounts"],
     queryFn: async () => {
       const result = await authClient.listAccounts();
-      if (result.error) throw new Error(result.error.message || "关联账号加载失败");
-      return (result.data ?? []) as AccountItem[];
+      if (result.error)
+        throw new Error(result.error.message || "关联账号加载失败");
+      return result.data ?? [];
     },
     staleTime: 0,
   });
@@ -149,7 +149,7 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
           if (!open) setUnlinkTarget(null);
         }}
         title="解除账号关联"
-        description={`确定解除 ${unlinkTarget ? providerLabels[unlinkTarget.providerId as SocialProviderId] : "该账号"} 关联吗？`}
+        description={`确定解除 ${unlinkTarget ? (Object.entries(providerLabels).find(([id]) => id === unlinkTarget.providerId)?.[1] ?? unlinkTarget.providerId) : "该账号"} 关联吗？`}
         onOK={unlinkAccount}
         OKProps={{ children: "确认解除" }}
         type="danger"

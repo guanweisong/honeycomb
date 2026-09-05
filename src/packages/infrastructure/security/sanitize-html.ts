@@ -130,7 +130,15 @@ type OptionalI18nInput =
   Partial<Record<keyof I18n, string | null>> | null | undefined;
 
 /** 分别清洗可选的中英文富文本字段。 */
-export const sanitizeOptionalI18nHtml = (value: OptionalI18nInput) => {
+export function sanitizeOptionalI18nHtml(
+  value: NonNullable<OptionalI18nInput>,
+): I18n;
+export function sanitizeOptionalI18nHtml(
+  value: OptionalI18nInput,
+): I18n | null | undefined;
+export function sanitizeOptionalI18nHtml(
+  value: OptionalI18nInput,
+): I18n | null | undefined {
   if (value == null) {
     return value;
   }
@@ -139,4 +147,4 @@ export const sanitizeOptionalI18nHtml = (value: OptionalI18nInput) => {
     en: sanitizeRichText(value.en ?? ""),
     zh: sanitizeRichText(value.zh ?? ""),
   };
-};
+}

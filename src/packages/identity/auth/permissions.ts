@@ -83,18 +83,19 @@ export const ROLE_PERMISSIONS = {
   ],
 } as const satisfies Record<UserLevel, readonly Permission[]>;
 
-const knownRoles = new Set<string>(Object.values(UserLevel));
+const knownRoles = Object.values(UserLevel);
 const knownPermissions = new Set<string>(ALL_PERMISSIONS);
 
 export function can(
   role: string | null | undefined,
   permission: string,
 ): boolean {
-  if (!role || !knownRoles.has(role) || !knownPermissions.has(permission)) {
+  const knownRole = knownRoles.find((candidate) => candidate === role);
+  if (!knownRole || !knownPermissions.has(permission)) {
     return false;
   }
 
   const grantedPermissions: readonly Permission[] =
-    ROLE_PERMISSIONS[role as UserLevel];
-  return grantedPermissions.includes(permission as Permission);
+    ROLE_PERMISSIONS[knownRole];
+  return grantedPermissions.some((granted) => granted === permission);
 }

@@ -6,15 +6,17 @@ import { PostType } from "@/packages/domain/content/post";
 export type PostFormValues = Partial<PostInsert> | PostUpdate;
 
 type NormalizePostFormResult<T extends PostFormValues> =
-  | { ok: true; data: T & { status: PostStatus } }
+  | { ok: true; data: Omit<T, "status"> & { status: PostStatus } }
   | { ok: false; reason: "COVER_REQUIRED" };
 
 export function normalizePostForm<T extends PostFormValues>(
   values: T,
   status: PostStatus,
 ): NormalizePostFormResult<T> {
-  const data = { ...values, status };
-  const type = (data.type ?? PostType.ARTICLE) as PostType;
+  const { status: previousStatus, ...fields } = values;
+  void previousStatus;
+  const data = { ...fields, status };
+  const type = data.type ?? PostType.ARTICLE;
 
   if (
     [PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH].includes(type) &&

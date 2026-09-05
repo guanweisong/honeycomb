@@ -1,21 +1,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@/packages/trpc/client/trpc";
-import type { PostListViewModel as PostListItemEntity } from "../../../../presentation/post-view-model";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 
 /**
  * 文章列表查询结果的输出类型。
  */
-type PostIndexOutput = {
-  /**
-   * 文章实体列表。
-   */
-  list: PostListItemEntity[];
-  /**
-   * 文章总数。
-   */
-  total: number;
-};
+type PostIndexOutput =
+  import("@/features/post/application/repository").PostListResult;
 
 /**
  * 获取文章列表的异步函数。

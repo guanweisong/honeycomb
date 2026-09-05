@@ -15,6 +15,14 @@ import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
+// list-to-tree-lite 未公开保留输入字段的返回类型；仅在菜单适配边界建立固定树类型。
+function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
+  return listToTree(items, {
+    idKey: "id",
+    parentKey: "parent",
+  }) as MenuEntityTree[];
+}
+
 /**
  * 网站头部组件。
  * 显示网站名称、主题切换、语言切换和导航菜单。
@@ -49,11 +57,7 @@ export default async function Header() {
   /**
    * 将扁平化的菜单数据转换为树形结构。
    */
-  // list-to-tree-lite 未暴露保留输入项字段的泛型返回类型；断言集中在这个适配边界。
-  const menuTree = listToTree(allMenu, {
-    idKey: "id",
-    parentKey: "parent",
-  }) as MenuEntityTree[];
+  const menuTree = buildMenuTree(allMenu);
 
   /**
    * 计算菜单的 Link。

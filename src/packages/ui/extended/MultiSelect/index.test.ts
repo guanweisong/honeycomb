@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -37,10 +38,10 @@ describe("MultiSelect", () => {
     })));
 
     const buttons = container.querySelectorAll("button");
-    await act(async () => buttons[0].click());
+    await act(async () => requireDefined(buttons[0]).click());
     expect(onChange).toHaveBeenCalledWith([]);
-    await act(async () => buttons[1].click());
+    await act(async () => requireDefined(buttons[1]).click());
     expect(onChange).toHaveBeenCalledWith(["one", "two"]);
-    expect(buttons[2].disabled).toBe(true);
+    expect(requireDefined(buttons[2]).disabled).toBe(true);
   });
 });

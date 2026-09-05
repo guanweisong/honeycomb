@@ -139,7 +139,7 @@ describe("Page Router", () => {
         id: TEST_IDS.ID_1,
         title: { en: "Page 1", zh: "页面1" },
         content: { en: "Content 1", zh: "内容1" },
-        status: "PUBLISH",
+        status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
         authorId: TEST_IDS.ID_1,
         createdAt: new Date(),

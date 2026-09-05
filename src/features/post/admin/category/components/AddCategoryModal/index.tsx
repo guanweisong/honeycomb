@@ -6,15 +6,10 @@ import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import {
-  CategoryInsert,
-  CategoryInsertSchema,
-} from "@/features/category/schemas/category.insert.schema";
-import {
-  CategoryUpdate,
-  CategoryUpdateSchema,
-} from "@/features/category/schemas/category.update.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import type { CategoryViewModel as CategoryEntity } from "../../../../../category/presentation/category-view-model";
 
@@ -105,7 +100,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   /**
    * 确认按钮事件
    */
-  const handleModalOk = async (values: CategoryInsert | CategoryUpdate) => {
+  const handleModalOk = async (values: Record<string, unknown>) => {
     const modalType = modalProps?.type;
     if (modalType === undefined) {
       return;
@@ -115,17 +110,21 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
     }
     switch (modalType) {
       case ModalType.ADD:
-        return createCategory.mutateAsync(values as CategoryInsert).then(() => {
-          categoryQuery.refetch();
-          toast.success("添加成功");
-          handleModalCancel();
-        });
+        return createCategory
+          .mutateAsync(CategoryInsertSchema.parse(values))
+          .then(() => {
+            categoryQuery.refetch();
+            toast.success("添加成功");
+            handleModalCancel();
+          });
       case ModalType.EDIT:
         if (!modalProps?.record?.id) {
           return;
         }
         return updateCategory
-          .mutateAsync({ ...values, id: modalProps.record.id })
+          .mutateAsync(
+            CategoryUpdateSchema.parse({ ...values, id: modalProps.record.id }),
+          )
           .then(() => {
             categoryQuery.refetch();
             toast.success("更新成功");
@@ -134,61 +133,70 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
     }
   };
 
+  const fields: FieldConfig[] = [
+    {
+      label: "分类名称",
+      name: "title",
+      type: "text",
+      placeholder: "请输入分类名称",
+      multiLang: true,
+    },
+    {
+      label: "分类路径",
+      name: "path",
+      type: "text",
+      placeholder: "输入小写字母，单词间以中划线分隔，用于URL显示",
+    },
+    {
+      label: "父级分类",
+      name: "parent",
+      type: "select",
+      options: list.map((option) => ({
+        label: creatCategoryTitleByDepth(option.title?.zh ?? "", option),
+        value: option.id ?? "0",
+      })),
+      placeholder: "请选择父级分类",
+    },
+    {
+      label: "分类描述",
+      name: "description",
+      type: "textarea",
+      placeholder: "请输入分类描述",
+      multiLang: true,
+    },
+    {
+      label: "状态",
+      name: "status",
+      type: "radio",
+      options: enableStatusOptions,
+    },
+  ];
+
   return (
     <Dialog
-      title={modalProps?.type ? `${ModalTypeName[ModalType[modalProps.type] as keyof typeof ModalTypeName]}分类` : "分类"}
+      title={
+        modalProps?.type
+          ? `${modalProps.type === ModalType.EDIT ? ModalTypeName.EDIT : ModalTypeName.ADD}分类`
+          : "分类"
+      }
       open={modalProps?.open}
       onOpenChange={(open) => setModalProps({ ...modalProps, open })}
     >
-      <DynamicForm
-        defaultValues={defaultValues}
-        schema={
-          modalProps?.type === ModalType.EDIT
-            ? CategoryUpdateSchema
-            : CategoryInsertSchema
-        }
-        fields={[
-          {
-            label: "分类名称",
-            name: "title",
-            type: "text",
-            placeholder: "请输入分类名称",
-            multiLang: true,
-          },
-          {
-            label: "分类路径",
-            name: "path",
-            type: "text",
-            placeholder: "输入小写字母，单词间以中划线分隔，用于URL显示",
-          },
-          {
-            label: "父级分类",
-            name: "parent",
-            type: "select",
-            options: list.map((option) => ({
-              label: creatCategoryTitleByDepth(option.title?.zh ?? "", option),
-              value: option.id ?? "0",
-            })),
-            placeholder: "请选择父级分类",
-          },
-          {
-            label: "分类描述",
-            name: "description",
-            type: "textarea",
-            placeholder: "请输入分类描述",
-            multiLang: true,
-          },
-          {
-            label: "状态",
-            name: "status",
-            type: "radio",
-            options: enableStatusOptions,
-          },
-        ]}
-        onSubmit={(values) =>
-          handleModalOk(values as CategoryInsert | CategoryUpdate)
-        }
-      />
+      {modalProps?.type === ModalType.EDIT ? (
+        <DynamicForm
+          defaultValues={defaultValues}
+          schema={CategoryUpdateSchema}
+          fields={fields}
+          onSubmit={handleModalOk}
+        />
+      ) : (
+        <DynamicForm
+          defaultValues={defaultValues}
+          schema={CategoryInsertSchema}
+          fields={fields}
+          onSubmit={handleModalOk}
+        />
+      )}
     </Dialog>
   );
 };

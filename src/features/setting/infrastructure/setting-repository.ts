@@ -1,4 +1,5 @@
 import "server-only";
+import { requireWriteResult } from "@/packages/infrastructure/db/value-validation";
 
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
@@ -8,7 +9,14 @@ import { PostType } from "@/packages/domain/content/post";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { SettingRepository } from "../application/repository";
+import type { SettingUpdate } from "../application/repository";
 export type { SettingRecord, SettingRepository, SettingUpdate, StatisticsType } from "../application/repository";
+
+// The public input permits partial languages. Encode exactly as i18nField.toDriver
+// does, without claiming the partial value is a complete persisted I18n object.
+function localizedSettingValue(value: SettingUpdate["siteName"]) {
+  return value === undefined ? undefined : sql`${JSON.stringify(value ?? {})}`;
+}
 
 export function createSettingRepository(db: Database): SettingRepository {
   return {
@@ -18,9 +26,15 @@ export function createSettingRepository(db: Database): SettingRepository {
     },
     async update(input) {
       const { id, ...changes } = input;
-      // 表单允许按语言局部更新，而 Drizzle 自定义字段声明为完整 I18n；断言只留在持久化适配边界。
-      const [setting] = await observeDbOperation("setting.update", "update", () => db.update(schema.setting).set(changes as Partial<typeof schema.setting.$inferInsert>).where(eq(schema.setting.id, id)).returning());
-      return setting;
+      const values = {
+        ...changes,
+        siteName: localizedSettingValue(changes.siteName),
+        siteSubName: localizedSettingValue(changes.siteSubName),
+        siteSignature: localizedSettingValue(changes.siteSignature),
+        siteCopyright: localizedSettingValue(changes.siteCopyright),
+      };
+      const [setting] = await observeDbOperation("setting.update", "update", () => db.update(schema.setting).set(values).where(eq(schema.setting.id, id)).returning());
+      return requireWriteResult(setting, "update", "setting");
     },
     async statistics() {
       const countByValues = async <T extends string>(values: readonly T[], table: typeof schema.post | typeof schema.user | typeof schema.comment, column: Parameters<typeof eq>[0], operation: Parameters<typeof observeDbOperation>[0]) =>

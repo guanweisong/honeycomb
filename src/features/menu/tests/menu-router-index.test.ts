@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/menu.router";
 import { MenuType } from "@/packages/domain/navigation/menu";
@@ -84,23 +85,23 @@ describe("Menu Router", () => {
       expect(result).toEqual({
         list: [
           {
-            id: mockCategories[0].id,
+            id: requireDefined(mockCategories[0]).id,
             parent: null,
             power: 1,
             type: MenuType.CATEGORY,
-            createdAt: mockMenus[0].createdAt,
+            createdAt: requireDefined(mockMenus[0]).createdAt,
             updatedAt: undefined,
-            title: mockCategories[0].title,
-            path: mockCategories[0].path,
+            title: requireDefined(mockCategories[0]).title,
+            path: requireDefined(mockCategories[0]).path,
           },
           {
-            id: mockPages[0].id,
+            id: requireDefined(mockPages[0]).id,
             parent: null,
             power: 2,
             type: MenuType.PAGE,
-            createdAt: mockMenus[1].createdAt,
+            createdAt: requireDefined(mockMenus[1]).createdAt,
             updatedAt: undefined,
-            title: mockPages[0].title,
+            title: requireDefined(mockPages[0]).title,
             path: null,
           },
         ],

@@ -63,7 +63,7 @@ export function getCapabilityDefinition(
 }
 
 export const registeredCapabilities: readonly PermissionValue[] =
-  Object.freeze(Object.keys(capabilityRegistry) as PermissionValue[]);
+  Object.freeze(Object.keys(capabilityRegistry).filter(isCapability));
 
 if (registeredCapabilities.length !== ALL_PERMISSIONS.length) {
   throw new Error("能力注册表必须覆盖全部权限");

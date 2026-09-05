@@ -3,25 +3,16 @@
  * 用于在单个字段中存储中英文两种语言的内容。
  */
 
-export interface MultiLang {
-  zh?: string;
-  en?: string;
-}
+import type { z } from "zod";
+import { MultiLangEnum, type PartialLocalizedTextSchema } from "./i18n";
+
+export type MultiLang = z.infer<typeof PartialLocalizedTextSchema>;
 
 /**
  * 多语言枚举。
  * 定义了支持的语言类型。
  */
-export enum MultiLangEnum {
-  /**
-   * 中文。
-   */
-  Zh = "zh",
-  /**
-   * 英文。
-   */
-  En = "en",
-}
+export { MultiLangEnum } from "./i18n";
 
 /** 将外部 locale 字符串收敛到应用支持的语言键。 */
 export function normalizeMultiLangLocale(locale: string): MultiLangEnum {

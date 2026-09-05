@@ -5,8 +5,9 @@ import { getUpstashEnv } from "@/env/server";
 import { MetricName } from "@/packages/infrastructure/observability/core/names";
 import { getMetrics } from "@/packages/infrastructure/observability/server/registry";
 
-export type CacheNamespace = "post.index";
-const cacheNamespaces = new Set<CacheNamespace>(["post.index"]);
+import { cacheNamespaceValues, type CacheNamespace } from "./cache-namespaces";
+export type { CacheNamespace } from "./cache-namespaces";
+const cacheNamespaces = new Set<CacheNamespace>(cacheNamespaceValues);
 
 let redisClient: Redis | null = null;
 let initialized = false;
@@ -55,14 +56,31 @@ async function observeCacheRead<T>(
 }
 
 /** 读取并解析指定命名空间下的 JSON 缓存。 */
-export async function getCacheJSON<T>(
+export function getCacheJSON(
   namespace: CacheNamespace,
   key: string,
-): Promise<T | null> {
+): Promise<unknown>;
+export function getCacheJSON<T>(
+  namespace: CacheNamespace,
+  key: string,
+  decode: (value: unknown) => T,
+): Promise<T | null>;
+export async function getCacheJSON(
+  namespace: CacheNamespace,
+  key: string,
+  decode: (value: unknown) => unknown = (value) => value,
+): Promise<unknown> {
   const redis = getRedisClient();
   if (!redis) return null;
   return observeCacheRead(namespace, async () => {
-    return await redis.get<T>(key);
+    const value = await redis.get<unknown>(key);
+    if (value == null) return null;
+    try {
+      return decode(value);
+    } catch {
+      recordCacheOperation(namespace, "error", "error");
+      return null;
+    }
   });
 }
 

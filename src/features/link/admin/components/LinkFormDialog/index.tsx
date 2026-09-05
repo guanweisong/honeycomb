@@ -67,16 +67,21 @@ export function LinkFormDialog({
       open={state.open}
       onOpenChange={onOpenChange}
     >
-      <DynamicForm
-        defaultValues={
-          isEdit
-            ? toLinkFormDefaults(state.record)
-            : { status: EnableStatus.ENABLE }
-        }
-        schema={isEdit ? LinkUpdateSchema : LinkInsertSchema}
-        fields={fields}
-        onSubmit={(values) => onSubmit(values)}
-      />
+      {isEdit ? (
+        <DynamicForm
+          defaultValues={toLinkFormDefaults(state.record)}
+          schema={LinkUpdateSchema}
+          fields={fields}
+          onSubmit={(values) => onSubmit(values)}
+        />
+      ) : (
+        <DynamicForm
+          defaultValues={{ status: EnableStatus.ENABLE }}
+          schema={LinkInsertSchema}
+          fields={fields}
+          onSubmit={(values) => onSubmit(values)}
+        />
+      )}
     </Dialog>
   );
 }

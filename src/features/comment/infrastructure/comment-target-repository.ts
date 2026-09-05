@@ -10,28 +10,85 @@ import { observeDbOperation } from "@/packages/infrastructure/observability/serv
 import { ApplicationError } from "@/packages/application/errors";
 
 import type { CommentTargetRepository } from "../application/repository";
-export type { CommentTarget, CommentTargetRepository } from "../application/repository";
+export type {
+  CommentTarget,
+  CommentTargetRepository,
+} from "../application/repository";
 export class CommentTargetError extends ApplicationError {
-  constructor(public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN", message?: string) { super(code, message); this.name = "CommentTargetError"; }
+  constructor(
+    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN",
+    message?: string,
+  ) {
+    super(code, message);
+    this.name = "CommentTargetError";
+  }
 }
-export function createCommentTargetRepository(db: Database): CommentTargetRepository {
+export function createCommentTargetRepository(
+  db: Database,
+): CommentTargetRepository {
   return {
     async assertPublic(target) {
       if (target.pageId) {
         const pageId = target.pageId;
-        const [page] = await observeDbOperation("comment.target.page", "select", () => db.select({ id: schema.page.id, status: schema.page.status }).from(schema.page).where(eq(schema.page.id, pageId)).limit(1));
-        if (!page || page.status !== PageStatus.PUBLISHED) throw new CommentTargetError("NOT_FOUND");
+        const [page] = await observeDbOperation(
+          "comment.target.page",
+          "select",
+          () =>
+            db
+              .select({ id: schema.page.id, status: schema.page.status })
+              .from(schema.page)
+              .where(eq(schema.page.id, pageId))
+              .limit(1),
+        );
+        if (!page || page.status !== PageStatus.PUBLISHED)
+          throw new CommentTargetError("NOT_FOUND");
         return;
       }
       const postId = target.postId ?? target.customId;
       if (!postId) throw new CommentTargetError("BAD_REQUEST");
-      const [post] = await observeDbOperation("comment.target.post", "select", () => db.select({ status: schema.post.status, commentStatus: schema.post.commentStatus }).from(schema.post).where(eq(schema.post.id, postId)).limit(1));
-      if (!post || post.status !== PostStatus.PUBLISHED) throw new CommentTargetError("NOT_FOUND");
-      if (post.commentStatus !== EnableStatus.ENABLE) throw new CommentTargetError("FORBIDDEN");
+      const [post] = await observeDbOperation(
+        "comment.target.post",
+        "select",
+        () =>
+          db
+            .select({
+              status: schema.post.status,
+              commentStatus: schema.post.commentStatus,
+            })
+            .from(schema.post)
+            .where(eq(schema.post.id, postId))
+            .limit(1),
+      );
+      if (!post || post.status !== PostStatus.PUBLISHED)
+        throw new CommentTargetError("NOT_FOUND");
+      if (post.commentStatus !== EnableStatus.ENABLE)
+        throw new CommentTargetError("FORBIDDEN");
     },
     async assertParent(parentId, target) {
-      const [parent] = await observeDbOperation("comment.target.parent", "select", () => db.select({ postId: schema.comment.postId, pageId: schema.comment.pageId, customId: schema.comment.customId }).from(schema.comment).where(eq(schema.comment.id, parentId)).limit(1));
-      if (!parent || parent.postId !== (target.postId ?? null) || parent.pageId !== (target.pageId ?? null) || parent.customId !== (target.customId ?? null)) throw new CommentTargetError("BAD_REQUEST", "Parent comment belongs to a different resource");
+      const [parent] = await observeDbOperation(
+        "comment.target.parent",
+        "select",
+        () =>
+          db
+            .select({
+              postId: schema.comment.postId,
+              pageId: schema.comment.pageId,
+              customId: schema.comment.customId,
+            })
+            .from(schema.comment)
+            .where(eq(schema.comment.id, parentId))
+            .limit(1),
+      );
+      if (
+        !parent ||
+        parent.postId !== (target.postId ?? null) ||
+        parent.pageId !== (target.pageId ?? null) ||
+        parent.customId !== (target.customId ?? null)
+      )
+        throw new CommentTargetError(
+          "BAD_REQUEST",
+          "Parent comment belongs to a different resource",
+        );
     },
   };
 }

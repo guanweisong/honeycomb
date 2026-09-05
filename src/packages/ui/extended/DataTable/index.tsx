@@ -17,8 +17,8 @@ import type { DataTableProps } from "./types";
 export { normalizeFilters } from "./useDataTableState";
 export type { DataTableProps } from "./types";
 
-export function DataTable<TData, TRequest extends Record<string, unknown>>(
-  props: DataTableProps<TData, TRequest>,
+export function DataTable<TData>(
+  props: DataTableProps<TData>,
 ) {
   const {
     columns,
@@ -48,7 +48,7 @@ export function DataTable<TData, TRequest extends Record<string, unknown>>(
     handleColumnFiltersChange,
     handleRetry,
     setColumnVisibility,
-  } = useDataTableState<TRequest, TData>({
+  } = useDataTableState<TData>({
     pagination,
     onChange,
     onSelectionChange,

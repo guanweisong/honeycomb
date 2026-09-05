@@ -51,12 +51,12 @@ export default function PostListClient() {
   };
 
   return (
-    <DataTable<PostListItemEntity, PostListQueryInput>
+    <DataTable<PostListItemEntity>
       data={{
-        list: (data?.list as PostListItemEntity[]) ?? [],
+        list: data?.list ?? [],
         total: data?.total ?? 0,
       }}
-      onChange={setSearchParams}
+      onChange={(params) => setSearchParams(PostListQuerySchema.parse(params))}
       columns={postListTableColumns}
       isFetching={isFetching}
       error={isError}

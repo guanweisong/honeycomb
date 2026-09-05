@@ -1,4 +1,5 @@
 import type * as React from "react";
+import { z } from "zod";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -7,20 +8,21 @@ import type {
 } from "@tanstack/react-table";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 
-export interface DataTablePaginationState {
-  page: number;
-  limit: number;
-}
+import type { PaginationInput } from "@/packages/application/pagination";
+export type DataTablePaginationState = Required<
+  Pick<PaginationInput, "page" | "limit">
+>;
 
 export interface DataTableDataSource<TData> {
   list: TData[];
   total: number;
 }
 
-export interface DataTableProps<
-  TData,
-  TRequest extends Record<string, unknown>,
-> {
+export interface DataTableQueryParams extends PaginationInput {
+  [filter: string]: unknown;
+}
+
+export interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
   data: DataTableDataSource<TData>;
   isFetching?: boolean;
@@ -34,13 +36,16 @@ export interface DataTableProps<
   className?: string;
   maxHeightRem?: number;
   stickyHeader?: boolean;
-  onChange?: (params: TRequest) => void;
+  onChange?: (params: DataTableQueryParams) => void;
   pagination?: boolean;
 }
 
-export interface DataTableColumnMeta {
-  filterOptions?: Array<{ label: string; value: string }>;
-}
+export const DataTableColumnMetaSchema = z.object({
+  filterOptions: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .optional(),
+});
+export type DataTableColumnMeta = z.infer<typeof DataTableColumnMetaSchema>;
 
 export interface DataTableRequestState {
   pagination: boolean;
@@ -49,23 +54,18 @@ export interface DataTableRequestState {
   columnFilters: ColumnFiltersState;
 }
 
-export interface UseDataTableStateOptions<
-  TRequest extends Record<string, unknown>,
-  TData,
-> {
+export interface UseDataTableStateOptions<TData> {
   pagination: boolean;
-  onChange?: (params: TRequest) => void;
+  onChange?: (params: DataTableQueryParams) => void;
   onSelectionChange?: (selectedRows: TData[]) => void;
 }
 
-export interface UseDataTableStateResult<
-  TRequest extends Record<string, unknown>,
-> {
+export interface UseDataTableStateResult {
   sorting: SortingState;
   columnFilters: ColumnFiltersState;
   columnVisibility: VisibilityState;
   paginationState: DataTablePaginationState;
-  requestParams: TRequest;
+  requestParams: DataTableQueryParams;
   handleRetry: () => void;
   handlePaginationChange: (value: DataTablePaginationState) => void;
   handleSortingChange: React.Dispatch<React.SetStateAction<SortingState>>;

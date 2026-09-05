@@ -1,11 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { sql } from "drizzle-orm";
+import { createPostFixture } from "@tests/helpers/post-fixtures";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/infrastructure/db/query/tools";
 import * as filters from "@/features/post/post-filters";
 import * as relations from "@/features/post/post-relations";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import { asMockDatabase, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 const mockDb = createMockDb();
 
@@ -18,9 +23,7 @@ let buildCategoryFilterMock: {
     value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>,
   ) => void;
 };
-let loadPostRelationsMock: {
-  mockImplementation: (impl: typeof relations.loadPostRelations) => void;
-};
+let loadPostRelationsMock: MockInstance<typeof relations.loadPostRelations>;
 let repository: ReturnType<typeof createPostQueryRepository>;
 
 describe("getPostList", () => {
@@ -29,32 +32,35 @@ describe("getPostList", () => {
     resetMockDb(mockDb);
 
     vi.spyOn(tools, "buildDrizzleWhere").mockReturnValue(undefined);
-    vi.spyOn(tools, "buildDrizzleOrderBy").mockReturnValue({
-      kind: "order-by",
-    } as never);
-    buildCategoryFilterMock = vi.spyOn(filters, "buildCategoryFilter");
+    vi.spyOn(tools, "buildDrizzleOrderBy").mockReturnValue(sql`created_at desc`);
+    const categoryFilter = vi.fn<typeof repository.categoryFilter>();
+    buildCategoryFilterMock = categoryFilter;
     buildCategoryFilterMock.mockResolvedValue([]);
     loadPostRelationsMock = vi.spyOn(relations, "loadPostRelations");
     loadPostRelationsMock.mockImplementation(
-      async (_db: unknown, posts: Array<Record<string, unknown>>) =>
+      async (_db, posts) =>
         posts.map((post) => ({
           ...post,
-          author: { id: post.authorId, name: "Author" },
+          status: PostStatus.PUBLISHED,
+          type: PostType.ARTICLE,
+          commentStatus: EnableStatus.ENABLE,
+          author: { id: post.authorId, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
           category: {
             id: post.categoryId,
             title: { en: "Category", zh: "分类" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],
           movieDirectors: [],
           movieStyles: [],
           galleryStyles: [],
-        })) as never,
+        })),
     );
-    repository = createPostQueryRepository(mockDb as never, {
-      loadRelations: (db, posts) => (loadPostRelationsMock as unknown as (db: unknown, posts: unknown[]) => Promise<unknown[]>)(db, posts) as never,
+    repository = createPostQueryRepository(asMockDatabase(mockDb), {
+      loadRelations: relations.loadPostRelations,
     });
-    repository.categoryFilter = (categoryId) => filters.buildCategoryFilter(mockDb as never, categoryId);
+    repository.categoryFilter = categoryFilter;
 
     ({ getPostList } =
       await import("@/features/post/application/post-queries"));
@@ -62,14 +68,14 @@ describe("getPostList", () => {
 
   it("returns a paginated list and total count", async () => {
     const posts = [
-      {
+      createPostFixture({
         id: TEST_IDS.ID_1,
         title: { en: "Post 1", zh: "文章1" },
         content: { en: "Content 1", zh: "内容1" },
         categoryId: TEST_IDS.ID_2,
         authorId: TEST_IDS.ID_3,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }),
     ];
 
     mockDb.select.mockReturnValueOnce(mockDb);
@@ -91,16 +97,17 @@ describe("getPostList", () => {
           limit: 5,
           sortField: "createdAt",
           sortOrder: "desc",
-        } as never,
+        },
       ),
     ).resolves.toEqual({
       list: [
         {
           ...posts[0],
-          author: { id: TEST_IDS.ID_3, name: "Author" },
+          author: { id: TEST_IDS.ID_3, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
           category: {
             id: TEST_IDS.ID_2,
             title: { en: "Category", zh: "分类" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],
@@ -129,14 +136,14 @@ describe("getPostList", () => {
 
   it("applies category filter before querying posts", async () => {
     const posts = [
-      {
+      createPostFixture({
         id: TEST_IDS.ID_4,
         title: { en: "Category Post", zh: "分类文章" },
         content: { en: "Category Content", zh: "分类内容" },
         categoryId: TEST_IDS.ID_4,
         authorId: TEST_IDS.ID_5,
-        createdAt: new Date("2026-01-02T00:00:00.000Z"),
-      },
+        createdAt: "2026-01-02T00:00:00.000Z",
+      }),
     ];
 
     buildCategoryFilterMock.mockResolvedValueOnce([
@@ -161,11 +168,11 @@ describe("getPostList", () => {
         page: 1,
         limit: 10,
         categoryId: TEST_IDS.ID_2,
-      } as never,
+      },
     );
 
     expect(result.total).toBe(1);
-    expect(buildCategoryFilterMock).toHaveBeenCalledWith(mockDb, TEST_IDS.ID_2);
+    expect(buildCategoryFilterMock).toHaveBeenCalledWith(TEST_IDS.ID_2);
     expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts);
   });
 
@@ -180,7 +187,7 @@ describe("getPostList", () => {
         page: 1,
         limit: 10,
         tagId: TEST_IDS.ID_4,
-      } as never,
+      },
     );
 
     expect(result).toEqual({ list: [], total: 0 });
@@ -190,14 +197,14 @@ describe("getPostList", () => {
 
   it("applies author filter and returns mapped posts", async () => {
     const posts = [
-      {
+      createPostFixture({
         id: TEST_IDS.ID_3,
         title: { en: "Author Post", zh: "作者文章" },
         content: { en: "Author Content", zh: "作者内容" },
         categoryId: TEST_IDS.ID_1,
         authorId: TEST_IDS.ID_2,
-        createdAt: new Date("2026-01-03T00:00:00.000Z"),
-      },
+        createdAt: "2026-01-03T00:00:00.000Z",
+      }),
     ];
 
     mockDb.select.mockReturnValueOnce(mockDb);
@@ -217,17 +224,18 @@ describe("getPostList", () => {
         page: 1,
         limit: 10,
         authorId: TEST_IDS.ID_2,
-      } as never,
+      },
     );
 
     expect(result).toEqual({
       list: [
         {
           ...posts[0],
-          author: { id: TEST_IDS.ID_2, name: "Author" },
+          author: { id: TEST_IDS.ID_2, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
           category: {
             id: TEST_IDS.ID_1,
             title: { en: "Category", zh: "分类" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],

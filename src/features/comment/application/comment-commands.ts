@@ -2,7 +2,6 @@ import "server-only";
 
 import { toPublicComment } from "../comment-dto";
 import { moderateComment } from "./comment-command-handlers";
-import type { CommentStatus } from "@/packages/domain/content/comment";
 import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { ApplicationError } from "@/packages/application/errors";
 import type { CommentCommandRepository, CommentUpdate, PublicCommentInput } from "./repository";
@@ -22,7 +21,7 @@ export async function updateComment(
 
   return moderateComment(
     repository,
-    { ...input, currentStatus: currentStatus as CommentStatus, status: input.status as CommentStatus },
+    { ...input, currentStatus, status: input.status },
     bus,
   );
 }

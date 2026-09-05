@@ -163,7 +163,7 @@ describe("Comment Router", () => {
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockImplementationOnce(async () => mockCount as never);
+      mockDb.where.mockImplementationOnce(async () => mockCount);
 
       const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 
@@ -206,7 +206,7 @@ describe("Comment Router", () => {
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockImplementationOnce(async () => mockCount as never);
+      mockDb.where.mockImplementationOnce(async () => mockCount);
 
       const caller = commentRouter.createCaller(createMockContext(null, mockDb));
 

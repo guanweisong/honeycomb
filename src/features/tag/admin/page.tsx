@@ -118,7 +118,7 @@ const Tag = () => {
   return (
     <>
       <div className="flex min-h-0 flex-col">
-        <DataTable<TagEntity, TagListQueryInput>
+        <DataTable<TagEntity>
           columns={tagTableColumns}
           data={{
             list: data?.list ?? [],
@@ -130,7 +130,7 @@ const Tag = () => {
           selectedRows={selectedRows}
           onSelectionChange={setSelectedRows}
           onChange={(params) => {
-            setSearchParams(params);
+            setSearchParams(TagListQuerySchema.parse(params));
           }}
           toolBar={
             <div className="flex justify-between">

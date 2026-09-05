@@ -1,3 +1,4 @@
+import { MenuType } from "@/packages/domain/navigation/menu";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -51,7 +52,7 @@ const flatMenu: MenuViewModel[] = [
     path: "/",
     title: { zh: "首页" },
     power: 0,
-    type: "CUSTOM",
+    type: MenuType.CUSTOM,
     createdAt: null,
     updatedAt: null,
   },
@@ -61,7 +62,7 @@ const flatMenu: MenuViewModel[] = [
     path: "parent",
     title: { zh: "父分类" },
     power: 1,
-    type: "CATEGORY",
+    type: MenuType.CATEGORY,
     createdAt: null,
     updatedAt: null,
   },
@@ -71,7 +72,7 @@ const flatMenu: MenuViewModel[] = [
     path: "child",
     title: { zh: "子分类" },
     power: 2,
-    type: "CATEGORY",
+    type: MenuType.CATEGORY,
     createdAt: null,
     updatedAt: null,
   },
@@ -257,7 +258,7 @@ describe("get-current-path-of-menu", () => {
       getCurrentPathOfMenu({
         familyProp: "path",
         id: "only",
-        menu: [{ id: "only", parent: "0", path: "root", power: 0, type: "CUSTOM", createdAt: null, updatedAt: null }],
+        menu: [{ id: "only", parent: "0", path: "root", power: 0, type: MenuType.CUSTOM, createdAt: null, updatedAt: null }],
       }),
     ).toEqual(["root"]);
   });

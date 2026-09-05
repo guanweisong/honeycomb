@@ -30,9 +30,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     accessorKey: "status",
     meta: { filterOptions: enableStatusOptions },
     cell: ({ row }) => (
-      <StatusBadge
-        {...getLinkStatusPresentation(row.getValue("status") as string)}
-      />
+      <StatusBadge {...getLinkStatusPresentation(row.original.status ?? "-")} />
     ),
   },
   {
@@ -43,10 +41,9 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
     header: "添加时间",
     accessorKey: "createdAt",
     cell: ({ row }) =>
-      format(
-        new Date(row.getValue("createdAt") as string),
-        "yyyy-MM-dd HH:mm:ss",
-      ),
+      row.original.createdAt
+        ? format(new Date(row.original.createdAt), "yyyy-MM-dd HH:mm:ss")
+        : "-",
   },
 ];
 /**

@@ -1,9 +1,9 @@
 ---
 name: English Commit Generator
-description: A skill to analyze code changes and generate standard, high-quality conventional English commit messages.
+description: 当需要分析代码变更并生成规范、高质量的 Conventional Commits 英文提交信息时使用。
 ---
 
-# English Commit Generator (英文 Commit 生成器)
+# 英文提交信息生成器
 
 When the user wants to commit their code or asks you to generate a commit message, use this skill to create a high-quality, conventional English commit message.
 

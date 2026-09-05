@@ -6,6 +6,8 @@ import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import type { PageInsert } from "@/features/page/schemas/page.insert.schema";
 import type { PageUpdate } from "@/features/page/schemas/page.update.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import { PageStatus } from "@/packages/domain/content/page";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useRouter } from "next/navigation";
@@ -21,9 +23,7 @@ type SubmitPageEditorOptions = {
 };
 
 export type PageEditorSubmitResult =
-  | { state: "created"; id: string }
-  | { state: "updated" }
-  | { state: "error" };
+  { state: "created"; id: string } | { state: "updated" } | { state: "error" };
 
 export async function submitPageEditor({
   pageId,
@@ -36,11 +36,11 @@ export async function submitPageEditor({
 
   try {
     if (pageId) {
-      await update({ id: pageId, ...data } as PageUpdate);
+      await update(PageUpdateSchema.parse({ id: pageId, ...data }));
       return { state: "updated" };
     }
 
-    const result = await create(data as PageInsert);
+    const result = await create(PageInsertSchema.parse(data));
     return { state: "created", id: result.id };
   } catch {
     return { state: "error" };

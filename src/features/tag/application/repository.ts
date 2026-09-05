@@ -1,11 +1,26 @@
-import type { I18n } from "@/packages/domain/localization/i18n";
+import type { PaginationInput } from "@/packages/application/pagination";
+import { z } from "zod";
+import {
+  NullableI18nSchema,
+  type I18n,
+} from "@/packages/domain/localization/i18n";
 
-export interface TagInsert { name: I18n; id?: string }
+export interface TagInsert {
+  name: I18n;
+  id?: string;
+}
 export type TagUpdate = { id: string } & Partial<TagInsert>;
-export type TagListInput = Record<string, string | number | boolean | Array<string | number | boolean> | undefined> & {
-  page?: number; limit?: number; sortField?: string; sortOrder?: "asc" | "desc"; name?: string;
+export type TagListInput = PaginationInput & {
+  id?: string[];
+  name?: string;
 };
-export interface TagRecord { id: string; name: I18n | null; createdAt: string | null; updatedAt: string | null }
+export const TagRecordSchema = z.object({
+  id: z.string(),
+  name: NullableI18nSchema,
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+export type TagRecord = z.infer<typeof TagRecordSchema>;
 export interface TagRepository {
   create(input: TagInsert): Promise<TagRecord>;
   update(input: TagUpdate): Promise<TagRecord>;

@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 
 import {
   getAuthenticationProvider,
@@ -26,10 +27,8 @@ type AuthRequestAuditDependencies = {
 
 async function readBody(request: Request) {
   try {
-    const body = await request.clone().json();
-    return body && typeof body === "object"
-      ? (body as Record<string, unknown>)
-      : undefined;
+    const body = z.record(z.string(), z.unknown()).safeParse(await request.clone().json());
+    return body.success ? body.data : undefined;
   } catch {
     return undefined;
   }

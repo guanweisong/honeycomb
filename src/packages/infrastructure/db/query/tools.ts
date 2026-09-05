@@ -1,3 +1,4 @@
+import { repositoryPaginationDefaults } from "@/packages/application/pagination";
 /**
  * 通用工具类，包含各种静态辅助方法。
  */
@@ -12,8 +13,8 @@ class Tools {
   static sonsTree<T extends { id: string; parent: string | null }>(
     arr: T[],
     id?: string,
-  ): (T & { deepPath: number })[] {
-    const temp: (T & { deepPath: number })[] = [];
+  ): (Omit<T, "deepPath"> & { deepPath: number })[] {
+    const temp: (Omit<T, "deepPath"> & { deepPath: number })[] = [];
     const lev = 0;
     const forFn = (arr: T[], id: string | undefined, lev: number): void => {
       for (const value of arr) {
@@ -21,8 +22,7 @@ class Tools {
           (value.parent === null && id === undefined) ||
           value.parent?.toString() === id
         ) {
-          const nodeWithValue = value as T & { deepPath: number };
-          nodeWithValue.deepPath = lev;
+          const nodeWithValue = Object.assign(value, { deepPath: lev });
           temp.push(nodeWithValue);
           forFn(arr, value.id, lev + 1);
         }
@@ -34,12 +34,20 @@ class Tools {
 }
 
 // ===== Drizzle 工具函数 =====
-import { and, inArray, like, SQL, sql, type AnyColumn } from "drizzle-orm";
+import {
+  and,
+  inArray,
+  like,
+  SQL,
+  sql,
+  getTableColumns,
+  type Table,
+} from "drizzle-orm";
 
 export type QueryValue =
   string | number | boolean | Array<string | number | boolean>;
 export type QueryRecord = Record<string, QueryValue | undefined>;
-type ColumnContainer = object;
+type ColumnContainer = Table;
 
 /**
  * 动态构建 Drizzle ORM 的 WHERE 查询子句。
@@ -65,7 +73,7 @@ export function buildDrizzleWhere(
   multiLangQueries?: QueryRecord,
 ): SQL | undefined {
   const clauses: SQL[] = [];
-  const columns = table as Record<string, AnyColumn | undefined>;
+  const columns = getTableColumns(table);
 
   // 空值、空数组和未知字段不会生成查询条件。
   for (const key in queries) {
@@ -111,11 +119,11 @@ export function buildDrizzleWhere(
 export function buildDrizzleOrderBy(
   table: ColumnContainer,
   sortField: string | undefined,
-  sortOrder: "asc" | "desc" = "desc",
-  defaultField: string = "createdAt",
+  sortOrder: "asc" | "desc" = repositoryPaginationDefaults.sortOrder,
+  defaultField: string = repositoryPaginationDefaults.sortField,
 ): SQL<unknown> {
   const direction = sortOrder.toLowerCase() === "asc" ? "asc" : "desc";
-  const columns = table as Record<string, AnyColumn | undefined>;
+  const columns = getTableColumns(table);
   const field = (sortField && columns[sortField]) || columns[defaultField];
 
   if (!field) {

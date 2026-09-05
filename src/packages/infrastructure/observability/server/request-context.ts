@@ -39,7 +39,7 @@ export function getRequestIdFromHeaders(
   return undefined;
 }
 
-function normalizeRequestId(value: string | null | undefined): string | undefined {
-  const requestId = value?.trim();
+function normalizeRequestId(value: unknown): string | undefined {
+  const requestId = typeof value === "string" ? value.trim() : undefined;
   return requestId || undefined;
 }

@@ -6,7 +6,7 @@ import { Checkbox } from "../../components/checkbox";
 import { TableHead, TableHeader, TableRow } from "../../components/table";
 import { cn } from "../../lib/utils";
 import { MultiSelect } from "../MultiSelect";
-import type { DataTableColumnMeta } from "./types";
+import { DataTableColumnMetaSchema } from "./types";
 
 interface DataTableHeaderProps<TData> {
   table: TanStackTable<TData>;
@@ -39,11 +39,20 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
           )}
           {headerGroup.headers.map((header) => {
             const column = header.column;
-            const filterOptions = (
-              column.columnDef.meta as DataTableColumnMeta | undefined
-            )?.filterOptions;
+            const metadata = DataTableColumnMetaSchema.safeParse(
+              column.columnDef.meta,
+            );
+            const filterOptions = metadata.success
+              ? metadata.data.filterOptions
+              : undefined;
             const isSorted = column.getIsSorted();
-            const isFiltered = (column.getFilterValue() as string[])?.length;
+            const rawFilterValue: unknown = column.getFilterValue();
+            const filterValue = Array.isArray(rawFilterValue)
+              ? rawFilterValue.filter(
+                  (value): value is string => typeof value === "string",
+                )
+              : [];
+            const isFiltered = filterValue.length;
 
             return (
               <TableHead
@@ -61,10 +70,11 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
                 <div className="flex items-center gap-1">
                   {flexRender(column.columnDef.header, header.getContext())}
                   {column.getCanSort() &&
-                    ({
-                      asc: <ArrowUp size={16} />,
-                      desc: <ArrowDown size={16} />,
-                    }[isSorted as string] ?? (
+                    (isSorted === "asc" ? (
+                      <ArrowUp size={16} />
+                    ) : isSorted === "desc" ? (
+                      <ArrowDown size={16} />
+                    ) : (
                       <ArrowUpDown
                         size={16}
                         className="text-muted-foreground"
@@ -88,7 +98,7 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
                         </Button>
                       }
                       options={filterOptions}
-                      value={(column.getFilterValue() as string[]) ?? []}
+                      value={filterValue}
                       onChange={(value) => {
                         column.setFilterValue(value || []);
                       }}

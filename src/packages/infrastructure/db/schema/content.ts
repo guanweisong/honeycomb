@@ -1,3 +1,9 @@
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PageStatus } from "@/packages/domain/content/page";
+import { PostType } from "@/packages/domain/content/post";
+import { PageTemplate } from "@/packages/domain/content/page-template";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import {
   sqliteTable,
   text,
@@ -17,7 +23,7 @@ export const category = sqliteTable(
     description: i18nField("description").notNull(), // 分类描述 (国际化)
     title: i18nField("title").notNull(), // 分类标题 (国际化)
     parent: text("parent"), // 父分类ID，用于构建层级关系
-    status: text("status").default("ENABLE").notNull(), // 分类状态，默认启用
+    status: text("status").default(EnableStatus.ENABLE).notNull(), // 分类状态，默认启用
     path: text("path").notNull(), // 分类的访问路径/slug
     ...withTimestamps(),
   },
@@ -39,7 +45,9 @@ export const post = sqliteTable(
   "post",
   {
     id: text("id").primaryKey().$defaultFn(objectId),
-    commentStatus: text("comment_status").default("ENABLE").notNull(), // 评论状态，默认启用
+    commentStatus: text("comment_status")
+      .default(EnableStatus.ENABLE)
+      .notNull(), // 评论状态，默认启用
     // --- 图库类型字段 ---
     galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
     galleryTime: text("gallery_time"), // 图库拍摄时间
@@ -57,9 +65,9 @@ export const post = sqliteTable(
       onDelete: "set null",
     }), // 封面图ID，关联到 media 表
     excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
-    status: text("status").default("TO_AUDIT").notNull(), // 文章状态，默认待审核
+    status: text("status").default(PostStatus.TO_AUDIT).notNull(), // 文章状态，默认待审核
     title: i18nField("title"), // 文章标题 (国际化)
-    type: text("type").default("ARTICLE").notNull(), // 文章类型，默认普通文章
+    type: text("type").default(PostType.ARTICLE).notNull(), // 文章类型，默认普通文章
     views: integer("views").default(0), // 浏览次数
     // --- 引言类型字段 ---
     quoteAuthor: i18nField("quote_author"), // 引言作者 (国际化)
@@ -97,8 +105,8 @@ export const page = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "no action" }), // 作者ID
     content: i18nField("content").notNull(), // 页面内容 (国际化)
-    status: text("status").default("TO_AUDIT").notNull(), // 页面状态，默认待审核
-    template: text("template").default("default").notNull(), // 页面模板
+    status: text("status").default(PageStatus.TO_AUDIT).notNull(), // 页面状态，默认待审核
+    template: text("template").default(PageTemplate.DEFAULT).notNull(), // 页面模板
     title: i18nField("title").notNull(), // 页面标题 (国际化)
     views: integer("views").default(0).notNull(), // 浏览次数
     ...withTimestamps(),
@@ -134,7 +142,7 @@ export const comment = sqliteTable(
     postId: text("post_id").references(() => post.id, { onDelete: "cascade" }), // 关联的文章ID
     pageId: text("page_id").references(() => page.id, { onDelete: "cascade" }), // 关联的页面ID
     customId: text("custom_id"), // 关联的自定义实体ID
-    status: text("status").default("PUBLISH"), // 评论状态，默认发布
+    status: text("status").default(CommentStatus.PUBLISH), // 评论状态，默认发布
     ...withTimestamps(),
   },
   (table) => ({
@@ -275,7 +283,7 @@ export const link = sqliteTable(
     name: text("name").notNull(),
     logo: text("logo").notNull(), // 链接 Logo URL
     description: text("description"),
-    status: text("status").default("ENABLE"), // 链接状态，默认启用
+    status: text("status").default(EnableStatus.ENABLE), // 链接状态，默认启用
     ...withTimestamps(),
   },
   (table) => ({

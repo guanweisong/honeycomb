@@ -76,6 +76,9 @@ export function callActualProcedure(
   input: unknown,
 ): Promise<unknown> {
   const [routerName, procedureName] = path.split(".");
+  if (!routerName || !procedureName) {
+    throw new Error(`Unknown appRouter procedure: ${path}`);
+  }
   const caller = appRouter.createCaller(context) as Record<
     string,
     Record<string, (value?: unknown) => Promise<unknown>>

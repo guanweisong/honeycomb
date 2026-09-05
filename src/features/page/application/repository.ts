@@ -1,39 +1,35 @@
+import type { PaginationInput } from "@/packages/application/pagination";
 import type { PageStatus } from "@/packages/domain/content/page";
 import type { PageTemplate } from "@/packages/domain/content/page-template";
+import type { I18n } from "@/packages/domain/localization/i18n";
+import type { MediaRecord } from "@/features/contracts";
 
-export type LocalizedText = { en: string; zh: string };
+export type LocalizedText = I18n;
 
-export interface PageCreateCommand {
-  title: LocalizedText;
-  content: LocalizedText;
-  status?: PageStatus;
-  template: PageTemplate;
-}
+export type PageCreateCommand = import("zod").output<
+  typeof import("./write-schema").PageInsertSchema
+>;
 export type PageUpdateCommand = Partial<PageCreateCommand> & { id: string };
 export type PageVisibility = "PUBLISHED_ONLY" | "ALL";
-export type PageInput = {
-  page?: number;
-  limit?: number;
-  sortField?: string;
-  sortOrder?: string;
+export type PageInput = PaginationInput & {
   title?: string;
   content?: string;
-  [key: string]: unknown;
+  status?: string[];
 };
 export interface PageRecord {
   id: string;
   authorId: string;
-  content: LocalizedText;
+  content: LocalizedText | null;
   status: PageStatus;
   template: PageTemplate;
-  title: LocalizedText;
+  title: LocalizedText | null;
   views: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
 export interface PageWithRelations extends PageRecord {
   author: { id: string; name: string | null } | null;
-  imagesInContent: Array<{ id: string; url: string; key: string; name: string; size: number; type: string; color: string | null; height: number | null; width: number | null; createdAt: string | null; updatedAt: string | null }>;
+  imagesInContent: MediaRecord[];
 }
 export interface PageCommandRepository {
   create(input: PageCreateCommand, authorId: string): Promise<{ id: string }>;
@@ -43,7 +39,13 @@ export interface PageCommandRepository {
   incrementViews(id: string): Promise<{ views: number } | undefined>;
 }
 export interface PageQueryRepository {
-  list(input: PageInput, visibility: PageVisibility): Promise<{ list: PageWithRelations[]; total: number }>;
-  detail(id: string, visibility: PageVisibility): Promise<PageWithRelations | null>;
+  list(
+    input: PageInput,
+    visibility: PageVisibility,
+  ): Promise<{ list: PageWithRelations[]; total: number }>;
+  detail(
+    id: string,
+    visibility: PageVisibility,
+  ): Promise<PageWithRelations | null>;
   author(id: string): Promise<{ id: string; name: string | null } | null>;
 }

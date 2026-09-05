@@ -1,3 +1,4 @@
+import { cacheNamespaceValues } from "../../cache/cache-namespaces";
 import type { MetricLabelName } from "./names";
 
 export const databaseQueryNames = [
@@ -191,7 +192,7 @@ const metricLabelValues = {
     "put",
     "presign",
   ],
-  namespace: ["post.index"],
+  namespace: cacheNamespaceValues,
   service: ["captcha", "email", "object-storage"],
 } as const satisfies Record<MetricLabelName, readonly string[]>;
 

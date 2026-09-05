@@ -51,8 +51,8 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     header: "级别",
     meta: { filterOptions: userLevelOptions },
     cell: ({ row }) => {
-      const level = row.getValue("level") as string;
-      return UserLevelName[level as keyof typeof UserLevelName] ?? level;
+      const level = row.original.level;
+      return UserLevelName[level] ?? level;
     },
   },
   {
@@ -60,9 +60,7 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     header: "状态",
     meta: { filterOptions: userStatusOptions },
     cell: ({ row }) => {
-      const presentation = getUserStatusPresentation(
-        row.getValue("status") as string,
-      );
+      const presentation = getUserStatusPresentation(row.original.status);
       return <StatusBadge {...presentation} />;
     },
   },
@@ -74,13 +72,13 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     accessorKey: "createdAt",
     header: "添加时间",
     enableSorting: true,
-    cell: ({ row }) => formatUserDate(row.getValue("createdAt")),
+    cell: ({ row }) => formatUserDate(row.original.createdAt),
   },
   {
     accessorKey: "updatedAt",
     header: "最后更新日期",
     enableSorting: true,
-    cell: ({ row }) => formatUserDate(row.getValue("updatedAt")),
+    cell: ({ row }) => formatUserDate(row.original.updatedAt),
   },
 ];
 /**

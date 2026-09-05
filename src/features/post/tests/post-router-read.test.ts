@@ -1,3 +1,7 @@
+import { PostType } from "@/packages/domain/content/post";
+import { createPostFixture } from "@tests/helpers/post-fixtures";
+import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/post.router";
 import * as schema from "@/packages/infrastructure/db/schema";
@@ -19,24 +23,30 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 // 模拟文章关联数据加载函数。
 vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   const actual = await vi.importActual<typeof import("@/features/post/infrastructure/post-query-repository")>("@/features/post/infrastructure/post-query-repository");
-  const loadPostRelations = vi.fn(
-    async (_db: unknown, posts: Array<Record<string, unknown>>) => {
+  const loadPostRelations = vi.fn<typeof actual.loadPostRelations>(
+    async (_db, posts) => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
           ...post,
+          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
+          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
+          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
           author: {
             id: post.authorId,
             name: "Test Author",
+            email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null,
           },
           category: {
             id: post.categoryId,
             title: { en: "Category 1", zh: "分类1" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
           },
           cover: post.coverId
             ? {
                 id: post.coverId,
                 url: "https://example.com/cover.jpg",
+                key: "cover.jpg", name: "cover.jpg", size: 10, type: "image/jpeg", color: null, width: null, height: null, createdAt: null, updatedAt: null,
               }
             : undefined,
           movieActors: [],
@@ -48,6 +58,9 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
         ...post,
+          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
+          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
+          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
         author: undefined,
         category: undefined,
         cover: undefined,
@@ -61,7 +74,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   return {
     ...actual,
     createPostQueryRepository: (db: Parameters<typeof actual.createPostQueryRepository>[0]) =>
-      actual.createPostQueryRepository(db, { loadRelations: loadPostRelations as never }),
+      actual.createPostQueryRepository(db, { loadRelations: loadPostRelations }),
     loadPostRelations,
   };
 });
@@ -87,16 +100,16 @@ describe("Post Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([
-        {
+        createPostFixture({
           id: TEST_IDS.ID_1,
           title: { en: "Post 1", zh: "文章1" },
           content: { en: "Content 1", zh: "内容1" },
           status: PostStatus.DRAFT,
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
           authorId: TEST_IDS.ID_2,
-          categoryId: null,
+          categoryId: TEST_IDS.ID_1,
           coverId: null,
-        },
+        }),
       ]);
 
       const caller = postRouter.createCaller(
@@ -114,25 +127,27 @@ describe("Post Router", () => {
 
   describe("detail procedure", () => {
     it("should return post details with related data", async () => {
-      const mockPost = {
+      const mockPost = createPostFixture({
         id: TEST_IDS.ID_1,
         title: { en: "Post 1", zh: "文章1" },
         content: { en: "Content 1", zh: "内容1" },
-        status: "PUBLISH",
-        type: "ARTICLE",
+        status: PostStatus.PUBLISHED,
+        type: PostType.ARTICLE,
         categoryId: TEST_IDS.ID_1,
         authorId: TEST_IDS.ID_1,
         coverId: TEST_IDS.ID_1,
-        createdAt: new Date(),
-      };
+        createdAt: new Date().toISOString(),
+      });
       const mockCategory = {
         id: TEST_IDS.ID_1,
         title: { en: "Category 1", zh: "分类1" },
+            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
       };
-      const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
+      const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null };
       const mockCover = {
         id: TEST_IDS.ID_1,
         url: "https://example.com/cover.jpg",
+                key: "cover.jpg", name: "cover.jpg", size: 10, type: "image/jpeg", color: null, width: null, height: null, createdAt: null, updatedAt: null,
       };
 
       // 设置文章详情查询的模拟调用链。

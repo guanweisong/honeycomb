@@ -14,7 +14,10 @@ export interface SettingRecord {
   createdAt: string | null;
   updatedAt: string | null;
 }
-export type SettingUpdate = Partial<Omit<SettingRecord, "createdAt" | "updatedAt">> & { id: string };
+export type SettingUpdate = Partial<
+  Omit<SettingRecord, "createdAt" | "updatedAt">
+> & { id: string };
+export type SettingViewModel = SettingRecord | undefined;
 export interface StatisticsType {
   postType: { item: PostType; count: number }[];
   userType: { item: UserLevel; count: number }[];
@@ -23,6 +26,6 @@ export interface StatisticsType {
 }
 export interface SettingRepository {
   get(): Promise<SettingRecord | undefined>;
-  update(input: SettingUpdate): Promise<SettingRecord | undefined>;
+  update(input: SettingUpdate): Promise<SettingRecord>;
   statistics(): Promise<StatisticsType>;
 }

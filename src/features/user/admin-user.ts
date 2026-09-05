@@ -1,17 +1,11 @@
 import "server-only";
 
 import { auth } from "@/auth";
-import { UserStatus, type CurrentUser, type UserLevel } from "@/packages/domain/identity/user";
+import { UserStatus } from "@/packages/domain/identity/user";
 import { getCurrentUser, UserQueryError } from "./application/user-queries";
 import type { UserRepository } from "./application/repository";
 
-export interface AdminUser extends CurrentUser {
-  id: string;
-  level: UserLevel;
-  email: string | null;
-  status: UserStatus;
-  name: string | null;
-}
+export type AdminUser = import("./application/repository").CurrentUserRecord;
 
 /** 从当前请求会话读取可进入 Admin 的启用用户。 */
 export async function getAdminUser(

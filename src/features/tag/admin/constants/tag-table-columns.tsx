@@ -16,7 +16,7 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染标签名称的单元格。
        * 显示多语言标签名称。
        */
-      return <MultiLangText text={row.getValue("name")} />;
+      return <MultiLangText text={row.original.name} />;
     },
   },
   {
@@ -28,7 +28,9 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染创建时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return format(new Date(row.getValue("createdAt")), "yyyy-MM-dd HH:mm:ss");
+      return row.original.createdAt
+        ? format(new Date(row.original.createdAt), "yyyy-MM-dd HH:mm:ss")
+        : "-";
     },
   },
   {
@@ -40,7 +42,9 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return format(new Date(row.getValue("updatedAt")), "yyyy-MM-dd HH:mm:ss");
+      return row.original.updatedAt
+        ? format(new Date(row.original.updatedAt), "yyyy-MM-dd HH:mm:ss")
+        : "-";
     },
   },
 ];

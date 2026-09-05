@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -52,15 +53,15 @@ describe("PhotoSwipeClient", () => {
     );
 
     expect(mocks.instances).toHaveLength(1);
-    expect(mocks.instances[0].options).toMatchObject({
+    expect(requireDefined(mocks.instances[0]).options).toMatchObject({
       gallery: container.firstElementChild,
       children: "a[data-pswp-width]",
     });
-    expect(mocks.instances[0].init).toHaveBeenCalledOnce();
+    expect(requireDefined(mocks.instances[0]).init).toHaveBeenCalledOnce();
 
     act(() => root.unmount());
 
-    expect(mocks.instances[0].destroy).toHaveBeenCalledOnce();
+    expect(requireDefined(mocks.instances[0]).destroy).toHaveBeenCalledOnce();
   });
 
   it("preserves children without requiring gallery metadata", () => {
@@ -77,6 +78,6 @@ describe("PhotoSwipeClient", () => {
     );
 
     expect(container.textContent).toBe("正文");
-    expect(mocks.instances[0].options.children).toBe("a[data-pswp-width]");
+    expect(requireDefined(mocks.instances[0]).options.children).toBe("a[data-pswp-width]");
   });
 });

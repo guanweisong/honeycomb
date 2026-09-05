@@ -5,20 +5,10 @@ import { Skeleton } from "@/packages/ui/components/skeleton";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { toast } from "sonner";
 
-type LoginHistoryItem = {
-  id: string;
-  event:
-    | "LOGIN_SUCCESS"
-    | "LOGIN_FAILURE"
-    | "SIGN_OUT"
-    | "REVOKE_OTHER_SESSIONS";
-  provider: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: string;
-};
+import type { LoginHistoryEvent } from "@/packages/identity/account-security/login-history-events";
+import { SOCIAL_PROVIDER_LABELS } from "@/packages/identity/auth/providers";
 
-const eventLabels: Record<LoginHistoryItem["event"], string> = {
+const eventLabels: Record<LoginHistoryEvent, string> = {
   LOGIN_SUCCESS: "登录成功",
   LOGIN_FAILURE: "登录失败",
   SIGN_OUT: "退出登录",
@@ -29,9 +19,7 @@ const providerLabels: Record<string, string> = {
   password: "用户名密码",
   passkey: "Passkey",
   session: "会话管理",
-  google: "Google",
-  github: "GitHub",
-  apple: "Apple",
+  ...SOCIAL_PROVIDER_LABELS,
   oauth: "OAuth",
 };
 
@@ -43,8 +31,11 @@ function formatHistoryDate(value: string) {
 }
 
 const LoginHistorySettings = () => {
-  const { data: history = [], error, isPending } =
-    trpc.accountSecurity.loginHistory.useQuery();
+  const {
+    data: history = [],
+    error,
+    isPending,
+  } = trpc.accountSecurity.loginHistory.useQuery();
 
   useEffect(() => {
     if (error) toast.error("登录历史加载失败，请稍后重试");

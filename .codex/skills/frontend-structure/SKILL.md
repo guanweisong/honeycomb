@@ -1,6 +1,6 @@
 ---
 name: frontend-structure
-description: 当在本 Next.js 前端工程中处理路由、页面、组件、交互、样式、依赖、包边界或前端架构时使用。
+description: 当在 Honeycomb Next.js 工程中修改或审查路由、页面、组件、交互、样式、依赖、包边界或前端架构时使用。
 ---
 
 # 前端工程结构规范
@@ -15,7 +15,7 @@ description: 当在本 Next.js 前端工程中处理路由、页面、组件、�
 4. 任何改变持久化状态、触发外部副作用或需要多个步骤协调的行为，都属于业务操作，必须经过 Use Case；Router 出现多步判断、多个数据源调用或状态顺序时必须提取。
 5. Client UI 不访问数据库、Repository 或服务端实现；Server Component 可直接调用服务端 Query/Repository；Router 只做输入校验、传输适配和入口鉴权；Domain 不依赖 Next.js、tRPC、数据库等基础设施。
 6. 同一业务概念和规则只保留一个权威来源；不同边界允许有转换模型，但转换必须显式，不复制规则。
-7. `features/<feature>/application` 只承载单功能用例；跨功能编排放 `src/packages/application`，不要互相复制 service。只有跨两个及以上独立 Feature 且调用关系稳定时，才能进入 `src/packages/application`。
+7. `features/<feature>/application` 只承载单功能用例及该功能拥有的稳定业务契约；跨功能编排及有真实跨功能消费者、无 UI/ORM 依赖的稳定应用契约可放 `src/packages/application`，不要互相复制 service。只有跨两个及以上独立 Feature 且调用关系稳定时，才能进入该共享层。
 8. Feature 不得依赖其他 Feature 的内部文件；跨功能只能通过公开契约或 Application 边界调用。
 9. 共享代码必须有真实的跨模块复用；包装层必须有独立职责，否则就地实现。
 10. 新功能、行为变化或架构调整先走 OpenSpec；小型 bug、文案、局部样式和机械修改可直接处理。
@@ -41,6 +41,8 @@ Domain 不依赖 Repository；Use Case 负责协调 Domain 和 Repository。Serv
 Query 只负责读取适配、查询组合和结果映射，不承载写入、跨步骤业务流程或外部副作用。
 
 ## 单一事实源
+
+生成或修改 TypeScript 类型、schema、ViewModel、共享常量及转换函数时，**REQUIRED SUB-SKILL:** Use type-safety-governance，执行其「生成前：唯一事实源」。此处不维护第二套规则。
 
 - 同一业务概念和规则只保留一个权威来源；数据库记录、领域实体、API 输出和表单输入可以是不同边界的模型，但转换必须显式。
 - 权限必须在服务端业务入口校验：Router 负责外部请求的身份/能力入口校验，Use Case 负责不可绕过的业务授权；内部可信调用不重复校验。Domain 只判断业务不变量，不感知登录实现。

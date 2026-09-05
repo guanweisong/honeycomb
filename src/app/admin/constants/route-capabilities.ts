@@ -1,4 +1,7 @@
-import { Permission, type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
+import {
+  Permission,
+  type Permission as PermissionValue,
+} from "@/packages/identity/auth/permissions";
 import { authorize } from "@/packages/identity/auth/authorize";
 
 export const ADMIN_PATHNAME_HEADER = "x-honeycomb-admin-pathname";
@@ -32,7 +35,9 @@ export function getAdminRoutePermission(
   if (!Object.prototype.hasOwnProperty.call(adminRouteCapabilities, pathname)) {
     return undefined;
   }
-  return adminRouteCapabilities[pathname as AdminRoutePath];
+  return Object.entries(adminRouteCapabilities).find(
+    ([path]) => path === pathname,
+  )?.[1];
 }
 
 export function canAccessAdminRoute(

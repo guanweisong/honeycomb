@@ -1,3 +1,4 @@
+import { MenuType } from "@/packages/domain/navigation/menu";
 import React, { act, type CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -110,7 +111,7 @@ describe("MenuPageShell", () => {
           id: "parent",
           parent: null,
           power: 0,
-          type: "1",
+          type: MenuType.CATEGORY,
           createdAt: null,
           updatedAt: null,
           title: { zh: "父菜单" },
@@ -119,7 +120,7 @@ describe("MenuPageShell", () => {
           id: "child",
           parent: "parent",
           power: 1,
-          type: "2",
+          type: MenuType.PAGE,
           createdAt: null,
           updatedAt: null,
           title: { zh: "子菜单" },

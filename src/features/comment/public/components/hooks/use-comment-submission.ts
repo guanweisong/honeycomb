@@ -59,13 +59,18 @@ export function useCommentSubmission({
     }
 
     const form = event.currentTarget;
+    const formData = new FormData(form);
+    const readText = (name: string) => {
+      const value = formData.get(name);
+      return typeof value === "string" ? value : "";
+    };
     let submittedIdentity = identity;
     if (!submittedIdentity) {
       submittedIdentity = {
-        author: form.author.value,
-        email: form.email.value,
+        author: readText("author"),
+        email: readText("email"),
       };
-      const site = form.site.value;
+      const site = readText("site");
       if (site) submittedIdentity.site = site;
     }
 
@@ -73,7 +78,7 @@ export function useCommentSubmission({
       id,
       type,
       identity: submittedIdentity,
-      content: form.content.value,
+      content: readText("content"),
       captchaToken: captchaToken ?? undefined,
       parentId: replyTo?.id,
     });

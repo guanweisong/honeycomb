@@ -20,7 +20,7 @@ function fakeDb() {
     update: vi.fn(),
     delete: vi.fn(),
     select: vi.fn(),
-  } as Record<string, ReturnType<typeof vi.fn>>;
+  };
   return db;
 }
 

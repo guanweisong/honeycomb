@@ -68,7 +68,7 @@ describe("server-only module boundaries", () => {
     const sharedContracts = [
       "src/packages/domain/identity/user.ts",
       "src/packages/trpc/api/schemas/i18n.schema.ts",
-      "src/packages/trpc/api/types/content-visibility.ts",
+      "src/packages/application/pagination.ts",
     ];
 
     for (const path of sharedContracts) {

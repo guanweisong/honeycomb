@@ -37,7 +37,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
 }));
 
 import { ModalType } from "@/packages/ui/admin/modal-type";
-import AddCategoryModal from ".";
+import AddCategoryModal, { type ModalProps } from ".";
 
 describe("AddCategoryModal", () => {
   let container: HTMLDivElement;
@@ -54,14 +54,14 @@ describe("AddCategoryModal", () => {
     mocks.formSubmit = undefined;
   });
 
-  function render(modalProps: Record<string, unknown>) {
+  function render(modalProps: ModalProps) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
     act(() =>
       root.render(
         <AddCategoryModal
-          modalProps={modalProps as never}
+          modalProps={modalProps}
           setModalProps={mocks.setModalProps}
         />,
       ),
@@ -70,11 +70,11 @@ describe("AddCategoryModal", () => {
 
   it("creates a category, removes the root parent sentinel, and closes", async () => {
     render({ type: ModalType.ADD, open: true });
-    const values = { title: { zh: "分类" }, parent: "0" };
+    const values = { title: { zh: "分类", en: "English" }, description: { zh: "说明", en: "Description" }, path: "category", parent: "0" };
 
     await act(async () => mocks.formSubmit?.(values));
 
-    expect(mocks.create).toHaveBeenCalledWith({ title: { zh: "分类" } });
+    expect(mocks.create).toHaveBeenCalledWith({ title: { zh: "分类", en: "English" }, description: { zh: "说明", en: "Description" }, path: "category" });
     expect(mocks.categoryQuery.refetch).toHaveBeenCalledTimes(1);
     expect(mocks.success).toHaveBeenCalledWith("添加成功");
     expect(mocks.setModalProps).toHaveBeenCalledWith({ open: false });
@@ -84,15 +84,15 @@ describe("AddCategoryModal", () => {
     render({
       type: ModalType.EDIT,
       open: true,
-      record: { id: "category-1", title: { zh: "旧分类" } },
+      record: { id: "507f1f77bcf86cd799439011", title: { zh: "旧分类", en: "English" }, description: null, path: "category", parent: null, status: "ENABLE", createdAt: null, updatedAt: null, deepPath: 0 },
     });
-    const values = { title: { zh: "新分类" }, parent: "parent-1" };
+    const values = { title: { zh: "新分类", en: "English" }, parent: "parent-1" };
 
     await act(async () => mocks.formSubmit?.(values));
 
     expect(mocks.update).toHaveBeenCalledWith({
       ...values,
-      id: "category-1",
+      id: "507f1f77bcf86cd799439011",
     });
     expect(mocks.success).toHaveBeenCalledWith("更新成功");
     expect(mocks.setModalProps).toHaveBeenCalledWith({ open: false });

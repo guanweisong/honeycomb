@@ -1,24 +1,12 @@
-import {
-  sqliteTable,
-  text,
-  integer,
-  index,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
+import { loginHistoryEvents } from "@/packages/identity/account-security/login-history-events";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+import { stringEnumValues } from "../value-validation";
 
-const userLevels = [
-  UserLevel.ADMIN,
-  UserLevel.EDITOR,
-  UserLevel.GUEST,
-] as const;
-
-const userStatuses = [
-  UserStatus.DELETED,
-  UserStatus.ENABLE,
-  UserStatus.DISABLE,
-] as const;
+const userLevels = stringEnumValues(UserLevel);
+const userStatuses = stringEnumValues(UserStatus);
 
 /**
  * 用户表 (user)
@@ -117,12 +105,7 @@ export const session = sqliteTable(
   }),
 );
 
-export const loginHistoryEvents = [
-  "LOGIN_SUCCESS",
-  "LOGIN_FAILURE",
-  "SIGN_OUT",
-  "REVOKE_OTHER_SESSIONS",
-] as const;
+export { loginHistoryEvents } from "@/packages/identity/account-security/login-history-events";
 
 /** Better Auth 登录安全事件表。 */
 export const loginHistory = sqliteTable(

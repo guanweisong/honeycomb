@@ -1,6 +1,8 @@
 export type {
   CategoryViewModel,
-  CommentViewModel,
+  AdminCommentViewModel,
+  PublicCommentViewModel,
+  CommentTreeViewModel,
   LinkViewModel,
   MediaViewModel,
   MenuViewModel,
@@ -10,4 +12,10 @@ export type {
   SettingViewModel,
   TagViewModel,
   UserViewModel,
+} from "./content";
+export {
+  MediaRecordSchema,
+  TagRecordSchema,
+  type MediaRecord,
+  type TagRecord,
 } from "./content";

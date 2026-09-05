@@ -1,3 +1,4 @@
+import type { PaginationInput } from "@/packages/application/pagination";
 import type { I18n } from "@/packages/domain/localization/i18n";
 
 /** 分类写入契约；具体数据库字段由 infrastructure 适配器负责映射。 */
@@ -9,18 +10,21 @@ export type CategoryInsert = {
   parent?: string | null;
   status?: string;
 };
-export type CategoryUpdate = { id: string } & Partial<Omit<CategoryInsert, "id">>;
-export type CategoryListInput = {
-  page?: number;
-  limit?: number;
-  sortField?: string;
-  sortOrder?: "asc" | "desc";
+export type CategoryUpdate = { id: string } & Partial<
+  Omit<CategoryInsert, "id">
+>;
+export type CategoryListInput = PaginationInput & {
   id?: string;
   title?: string;
   status?: string;
 };
 export type CategoryVisibility = "PUBLIC_ONLY" | "ALL";
-export type CategoryNode = { id: string; parent: string | null; path: string; status: string };
+export type CategoryNode = {
+  id: string;
+  parent: string | null;
+  path: string;
+  status: string;
+};
 export type CategoryRecord = {
   id: string;
   title: I18n | null;
@@ -38,7 +42,10 @@ export interface CategoryRepository {
   pathExists(path: string, excludeId?: string): Promise<boolean>;
   update(input: CategoryUpdate): Promise<CategoryRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
-  list(input: CategoryListInput, visibility: CategoryVisibility): Promise<{
+  list(
+    input: CategoryListInput,
+    visibility: CategoryVisibility,
+  ): Promise<{
     list: (CategoryRecord & { deepPath: number })[];
     total: number;
   }>;

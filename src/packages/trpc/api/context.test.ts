@@ -15,7 +15,7 @@ database.from.mockReturnValue(database);
 database.where.mockReturnValue(database);
 
 const { getSession } = vi.hoisted(() => ({
-  getSession: vi.fn(async () => null),
+  getSession: vi.fn<() => Promise<{ user: { id: string; level: string } } | null>>(async () => null),
 }));
 
 vi.mock("@/auth", () => ({
@@ -67,7 +67,7 @@ describe("createContext", () => {
         id: "disabled-user",
         level: UserLevel.ADMIN,
       },
-    } as never);
+    });
     database.limit.mockResolvedValueOnce([
       {
         id: "disabled-user",
@@ -81,6 +81,13 @@ describe("createContext", () => {
       req: new Request("https://honeycomb.test/api/trpc"),
     });
 
+    expect(context.user).toBeNull();
+  });
+
+  it("rejects an unknown stored role before constructing a trusted user", async () => {
+    getSession.mockResolvedValueOnce({ user: { id: "user", level: UserLevel.ADMIN } });
+    database.limit.mockResolvedValueOnce([{ id: "user", level: "UNKNOWN", name: null, status: UserStatus.ENABLE }]);
+    const context = await createContext({ req: new Request("https://honeycomb.test/api/trpc") });
     expect(context.user).toBeNull();
   });
 });

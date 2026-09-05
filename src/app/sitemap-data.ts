@@ -153,7 +153,7 @@ function escapeXml(value: string) {
       '"': "&quot;",
     };
 
-    return entities[character];
+    return entities[character] ?? character;
   });
 }
 

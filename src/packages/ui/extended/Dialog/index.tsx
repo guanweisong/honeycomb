@@ -91,18 +91,7 @@ export function Dialog({
 
   return (
     <BaseDialog open={open} onOpenChange={setOpen} {...props}>
-      {trigger && (
-        <DialogTrigger asChild>
-          {React.isValidElement(trigger)
-            ? React.cloneElement(
-                trigger as React.ReactElement<{ onClick?: () => void }>,
-                {
-                  onClick: () => setOpen(true),
-                },
-              )
-            : trigger}
-        </DialogTrigger>
-      )}
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className={className}>
         {(title || description) && (
           <DialogHeader>

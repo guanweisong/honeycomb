@@ -19,11 +19,11 @@ export function buildCommentInput({
   captchaToken,
   parentId,
 }: BuildCommentInputOptions): CommentInsertInput {
-  const data = {
+  const data: CommentInsertInput = {
     ...identity,
     content,
     captchaToken,
-  } as CommentInsertInput;
+  };
 
   if (type === MenuType.CATEGORY) data.postId = id;
   if (type === MenuType.PAGE) data.pageId = id;

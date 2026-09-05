@@ -1,9 +1,7 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import type { CategoryViewModel as CategoryEntity } from "../../../../category/presentation/category-view-model";
 import {
   StatusBadge,
@@ -24,7 +22,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 渲染分类名称的单元格。
        * 根据分类的深度添加前缀，并显示多语言标题。
        */
-      const title = row.getValue("title") as MultiLang;
+      const title = row.original.title;
       const record = row.original;
       return creatCategoryTitleByDepth(<MultiLangText text={title} />, record);
     },
@@ -41,7 +39,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 渲染分类描述的单元格。
        * 显示多语言描述。
        */
-      const description = row.getValue("description") as MultiLang;
+      const description = row.original.description;
       return <MultiLangText text={description} />;
     },
   },
@@ -53,7 +51,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 渲染状态的单元格。
        * 将状态值映射为对应的中文名称，并使用颜色徽章展示。
        */
-      const status = row.getValue("status") as EnableStatus;
+      const status = row.original.status;
       const toneMap = {
         ENABLE: StatusBadgeTone.GREEN,
         DISABLE: StatusBadgeTone.RED,
@@ -75,10 +73,10 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 渲染创建时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("createdAt") as string;
+      const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },
@@ -92,10 +90,10 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("updatedAt") as string;
+      const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },

@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -23,7 +24,7 @@ describe("Signature", () => {
     expect(container.textContent).toBe("没有更多文章");
     expect(container.querySelectorAll("span")).toHaveLength(3);
     expect(container.firstElementChild?.className).toContain("flex");
-    expect(container.querySelectorAll("span")[1].className).toContain("px-4");
+    expect(requireDefined(container.querySelectorAll("span")[1]).className).toContain("px-4");
   });
 
   it("supports an empty signature without adding fallback text", () => {

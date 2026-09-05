@@ -11,7 +11,8 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
 
   useEffect(() => {
     if (open) {
-      setUrl(editor.getAttributes("link").href ?? "");
+      const href: unknown = editor.getAttributes("link").href;
+      setUrl(typeof href === "string" ? href : "");
     }
   }, [open, editor]);
 
@@ -47,7 +48,12 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
         />
         <div className="flex justify-between gap-2">
           {editor.isActive("link") && (
-            <Button size="sm" variant="ghost" className="text-red-600" onClick={removeLink}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-600"
+              onClick={removeLink}
+            >
               移除
             </Button>
           )}

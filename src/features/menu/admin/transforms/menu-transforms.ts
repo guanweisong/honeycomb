@@ -8,7 +8,7 @@ export type MenuEntityTree = {
   id: string;
   parent: string | null;
   power: number;
-  type: string;
+  type: MenuType;
   createdAt: string | null;
   updatedAt: string | null;
   title?: { en?: string; zh?: string } | string | null;
@@ -99,7 +99,7 @@ export function formatMenuTree(
     updatedAt: item.updatedAt,
     path: item.path,
     title: typeof item.title === "string" ? item.title : (item.title?.zh ?? ""),
-    subtitle: MenuTypeName[item.type as MenuType],
+    subtitle: MenuTypeName[item.type],
     expanded: true,
   }));
 
@@ -137,7 +137,7 @@ export function buildMenuSaveInput(
 ): MenuSaveItem[] {
   return checkedList.map((item, power) => ({
     id: item.id,
-    type: item.type as MenuType,
+    type: item.type,
     power,
     ...(item.parent ? { parent: item.parent } : {}),
   }));

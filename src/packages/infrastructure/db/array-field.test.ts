@@ -1,28 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { arrayField } from "./array-field";
+import { sqliteTable } from "drizzle-orm/sqlite-core";
+import { z } from "zod";
 
 describe("array-field", () => {
   it("serializes arrays for the database driver", () => {
-    const field = arrayField<string>("tags");
-    const config = (field as unknown as { config: { customTypeParams: {
-      toDriver: (value: string[]) => string;
-    } } }).config.customTypeParams as {
-      toDriver: (value: string[]) => string;
-    };
-
-    expect(config.toDriver(["one", "two"])).toBe('["one","two"]');
-    expect(config.toDriver([])).toBe("[]");
+    const table = sqliteTable("fixture", { tags: arrayField("tags", z.string().parse) });
+    expect(table.tags.mapToDriverValue(["one", "two"])).toBe('["one","two"]');
+    expect(table.tags.mapToDriverValue([])).toBe("[]");
   });
 
   it("restores arrays from database values", () => {
-    const field = arrayField<number>("scores");
-    const config = (field as unknown as { config: { customTypeParams: {
-      fromDriver: (value: string) => number[];
-    } } }).config.customTypeParams as {
-      fromDriver: (value: string) => number[];
-    };
-
-    expect(config.fromDriver("[1,2,3]")).toEqual([1, 2, 3]);
-    expect(config.fromDriver("")).toEqual([]);
+    const table = sqliteTable("fixture", { scores: arrayField("scores", z.number().parse) });
+    expect(table.scores.mapFromDriverValue("[1,2,3]")).toEqual([1, 2, 3]);
+    expect(table.scores.mapFromDriverValue("")).toEqual([]);
+    expect(() => table.scores.mapFromDriverValue('["not-a-number"]')).toThrow();
+    expect(() => table.scores.mapFromDriverValue('{}')).toThrow();
   });
 });

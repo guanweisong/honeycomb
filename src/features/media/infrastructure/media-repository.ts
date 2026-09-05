@@ -1,4 +1,6 @@
 import "server-only";
+import { repositoryPaginationDefaults } from "@/packages/application/pagination";
+import { requireWriteResult } from "@/packages/infrastructure/db/value-validation";
 
 import { sql, inArray } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
@@ -10,7 +12,11 @@ import {
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { clientEnv } from "@/env/client";
 import type { MediaRepository } from "../application/repository";
-export type { MediaInsert, MediaListInput, MediaRepository } from "../application/repository";
+export type {
+  MediaInsert,
+  MediaListInput,
+  MediaRepository,
+} from "../application/repository";
 
 export function createMediaRepository(db: Database): MediaRepository {
   return {
@@ -24,16 +30,22 @@ export function createMediaRepository(db: Database): MediaRepository {
           })
           .returning(),
       );
-      return media;
+      return requireWriteResult(media, "create", "media");
     },
     async list(input) {
-      const { page = 1, limit = 10, sortField, sortOrder, ...rest } = input;
+      const {
+        page = repositoryPaginationDefaults.page,
+        limit = repositoryPaginationDefaults.limit,
+        sortField,
+        sortOrder,
+        ...rest
+      } = input;
       const where = buildDrizzleWhere(schema.media, rest, []);
       const orderBy = buildDrizzleOrderBy(
         schema.media,
         sortField,
         sortOrder,
-        "createdAt",
+        repositoryPaginationDefaults.sortField,
       );
       const [list, countRows] = await Promise.all([
         observeDbOperation("media.list", "select", () =>

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 const { redisCtor, redisInstance } = vi.hoisted(() => {
   const instance = {
@@ -42,6 +43,17 @@ describe("upstash cache", () => {
     redisInstance.incr.mockReset();
     process.env.UPSTASH_REDIS_REST_URL = originalEnv.url;
     process.env.UPSTASH_REDIS_REST_TOKEN = originalEnv.token;
+  });
+
+  it("validates cached JSON and treats malformed values as misses", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    const { cache } = await loadModule();
+    const decoder = z.object({ total: z.number() }).parse;
+    redisInstance.get.mockResolvedValueOnce({ total: "invalid" });
+    await expect(cache.getCacheJSON("post.index", "key", decoder)).resolves.toBeNull();
+    redisInstance.get.mockResolvedValueOnce({ total: 3 });
+    await expect(cache.getCacheJSON("post.index", "key", decoder)).resolves.toEqual({ total: 3 });
   });
 
   it("returns nullish defaults when env is missing", async () => {

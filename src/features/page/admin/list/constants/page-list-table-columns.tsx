@@ -1,12 +1,10 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { Badge } from "@/packages/ui/components/badge";
 import { pageStatusOptions } from "@/packages/domain/content/page";
 import { pageTemplateOptions } from "@/packages/domain/content/page-template";
 import type { PageViewModel as PageEntity } from "../../../presentation/page-view-model";
-import type { UserViewModel as UserEntity } from "../../../../user/presentation/user-view-model";
 import {
   StatusBadge,
   StatusBadgeTone,
@@ -26,7 +24,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染文章标题的单元格。
        * 显示多语言标题。
        */
-      const title = row.getValue("title") as MultiLang;
+      const title = row.original.title;
       return <MultiLangText text={title} />;
     },
   },
@@ -38,7 +36,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author: UserEntity = row.getValue("author");
+      const author = row.original.author;
       return author?.name ?? "-";
     },
   },
@@ -53,7 +51,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染页面状态的单元格。
        * 将页面状态值映射为对应的中文标签，并根据状态显示不同样式的徽章。
        */
-      const status = row.getValue("status") as string;
+      const status = row.original.status;
       const label =
         pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
@@ -68,7 +66,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
     accessorKey: "template",
     header: "模板",
     cell: ({ row }) => {
-      const template = row.getValue("template") as string;
+      const template = row.original.template;
       return (
         <Badge variant="outline">
           {pageTemplateOptions.find((opt) => opt.value === template)?.label ??
@@ -86,10 +84,10 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染发表时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("createdAt") as string;
+      const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },
@@ -103,10 +101,10 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("updatedAt") as string;
+      const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },

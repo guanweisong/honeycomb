@@ -21,8 +21,14 @@ import { sendCommentEmail } from "./comment-email";
 
 const payload = {
   setting: { siteName: { zh: "站点", en: "Site" } },
-  currentComment: { id: "comment-1" },
-} as never;
+  currentComment: {
+    id: "comment-1", author: "Reader", content: "Comment",
+    site: null, email: "reader@example.com", parentId: null,
+    postId: null, pageId: null, customId: null, status: null,
+    createdAt: null, updatedAt: null, userAgent: null, ip: null,
+    post: null, page: null,
+  },
+} satisfies Parameters<typeof sendCommentEmail>[1];
 
 describe("comment email observability", () => {
   beforeEach(() => {

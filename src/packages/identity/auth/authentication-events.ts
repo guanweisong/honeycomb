@@ -10,8 +10,8 @@ const AUTHENTICATION_PATHS = new Set([
 
 export function getAuthenticationProvider(
   path: string,
-  body?: Record<string, unknown>,
-  params?: Record<string, unknown>,
+  body?: unknown,
+  params?: unknown,
 ): string | null {
   if (path === "/sign-in/username" || path === "/sign-in/email")
     return "password";
@@ -21,15 +21,15 @@ export function getAuthenticationProvider(
   )
     return "passkey";
   if (path === "/sign-in/social") {
-    return typeof body?.provider === "string" ? body.provider : "oauth";
+    return body !== null && typeof body === "object" && "provider" in body && typeof body.provider === "string" ? body.provider : "oauth";
   }
 
-  if (path === "/callback/:id" && typeof params?.id === "string") {
+  if (path === "/callback/:id" && params !== null && typeof params === "object" && "id" in params && typeof params.id === "string") {
     return params.id;
   }
 
   const callbackMatch = path.match(/^\/callback\/([^/:]+)$/);
-  if (callbackMatch) return callbackMatch[1];
+  if (callbackMatch) return callbackMatch[1] ?? null;
 
   return null;
 }

@@ -19,16 +19,8 @@ import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";
 /**
  * 文章列表查询结果的输出类型。
  */
-type PostIndexOutput = {
-  /**
-   * 文章实体列表。
-   */
-  list: PostListItemEntity[];
-  /**
-   * 文章总数。
-   */
-  total: number;
-};
+type PostIndexOutput =
+  import("@/features/post/application/repository").PostListResult;
 
 /**
  * 文章列表组件的属性接口。
@@ -133,11 +125,15 @@ export default function PostList(props: PostListProps): JSX.Element {
               {item.type === PostType.MOVIE && (
                 <>
                   {item.title?.[locale]}
-                  {item.movieTime ? ` (${utcFormat(item.movieTime, "YYYY")})` : ""}
+                  {item.movieTime
+                    ? ` (${utcFormat(item.movieTime, "YYYY")})`
+                    : ""}
                 </>
               )}
               {(item.type === PostType.ARTICLE ||
-                item.type === PostType.PHOTOGRAPH) && <>{item.title?.[locale]}</>}
+                item.type === PostType.PHOTOGRAPH) && (
+                <>{item.title?.[locale]}</>
+              )}
               {item.type === PostType.QUOTE && (
                 <>
                   “{item.quoteContent?.[locale]}” ——{" "}

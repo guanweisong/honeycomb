@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -17,7 +18,7 @@ function sourceFiles(directory: string): string[] {
 
 function imports(source: string): string[] {
   return [...source.matchAll(/from\s+["']([^"']+)["']/g)].map(
-    (match) => match[1],
+    (match) => requireDefined(match[1]),
   );
 }
 

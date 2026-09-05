@@ -100,7 +100,7 @@ export function createAssetRemotePattern(
   }
 
   return {
-    protocol: url.protocol.slice(0, -1) as AssetRemotePattern["protocol"],
+    protocol: url.protocol === "https:" ? "https" : "http",
     hostname: url.hostname,
     port: url.port,
   };

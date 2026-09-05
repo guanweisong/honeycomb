@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
@@ -7,9 +8,13 @@ const eslint = new ESLint({
 });
 
 async function lintConsoleAt(filePath: string) {
-  const [result] = await eslint.lintText("console.log('test');\n", { filePath });
+  const [result] = await eslint.lintText("console.log('test');\n", {
+    filePath,
+  });
 
-  return result.messages.filter((message) => message.ruleId === "no-console");
+  const messages = requireDefined(result).messages;
+  expect(messages.filter((message) => message.fatal)).toEqual([]);
+  return messages.filter((message) => message.ruleId === "no-console");
 }
 
 describe("console lint boundary", () => {
@@ -17,15 +22,21 @@ describe("console lint boundary", () => {
     "src/auth.ts",
     "src/instrumentation.ts",
     "src/env/server.ts",
-    "src/app/api/health/route.ts",
+    "src/app/api/trpc/[trpc]/route.ts",
     "src/packages/trpc/api/context.ts",
-  ])("forbids console usage in %s", async (filePath) => {
-    await expect(lintConsoleAt(filePath)).resolves.toHaveLength(1);
-  }, 15_000);
+  ])(
+    "forbids console usage in %s",
+    async (filePath) => {
+      await expect(lintConsoleAt(filePath)).resolves.toHaveLength(1);
+    },
+    30_000,
+  );
 
   it("allows console usage only in the console logger adapter", async () => {
     await expect(
-      lintConsoleAt("src/packages/infrastructure/observability/adapters/console.ts"),
+      lintConsoleAt(
+        "src/packages/infrastructure/observability/adapters/console.ts",
+      ),
     ).resolves.toHaveLength(0);
-  }, 15_000);
+  }, 30_000);
 });

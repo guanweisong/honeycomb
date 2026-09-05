@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { ModalType } from "@/packages/ui/admin/modal-type";
 import type { LinkInsert } from "@/features/link/schemas/link.insert.schema";
 import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
+import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
+import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "../transforms/link-transforms";
@@ -169,7 +171,7 @@ export function useLinkActions({
     const state =
       dialogState.type === ModalType.ADD
         ? await submitLinkCreate({
-            values: values as LinkInsert,
+            values: LinkInsertSchema.parse(values),
             create: createLink.mutateAsync,
             refetch,
             notifySuccess: toast.success,
@@ -177,7 +179,7 @@ export function useLinkActions({
           })
         : await submitLinkUpdate({
             record: dialogState.record,
-            values: values as LinkUpdate,
+            values: LinkUpdateSchema.parse(values),
             update: updateLink.mutateAsync,
             refetch,
             notifySuccess: toast.success,

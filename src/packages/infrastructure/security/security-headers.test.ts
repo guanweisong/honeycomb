@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
 import {
   createAssetRemotePattern,
@@ -43,7 +44,7 @@ describe("createSecurityHeaders", () => {
       "https://www.googletagmanager.com",
     );
     expect(
-      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
     ).toContain("https://www.googletagmanager.com");
     expect(headers["Content-Security-Policy"]).toContain(
       "https://static.cloudflareinsights.com",
@@ -131,7 +132,7 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
     ).toContain(
       "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
     );
@@ -147,7 +148,7 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
     ).toContain("https://static.honeycomb.example");
   });
 
@@ -160,7 +161,7 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(headers["Content-Security-Policy"], "connect-src"),
+      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
     ).toEqual(["'self'", "https://static.cloudflareinsights.com"]);
     expect(headers["Content-Security-Policy"]).not.toContain("attacker.test");
   });

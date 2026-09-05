@@ -47,54 +47,55 @@ export type MockDb = {
 };
 
 export const createMockDb = (): MockDb => {
-  const mockDb = {} as MockDb;
-  const chain = () => mockDb;
-  const queryChain = () => mockDb;
+  const chain = (): MockDb => mockDb;
+  const queryChain = (): MockDb => mockDb;
 
-  mockDb.select = vi.fn(chain);
-  mockDb.from = vi.fn(chain);
-  mockDb.where = vi.fn(chain);
-  mockDb.groupBy = vi.fn(chain);
-  mockDb.leftJoin = vi.fn(chain);
-  mockDb.orderBy = vi.fn(chain);
-  mockDb.limit = vi.fn(chain);
-  mockDb.offset = vi.fn(chain);
-  mockDb.insert = vi.fn(chain);
-  mockDb.values = vi.fn(chain);
-  mockDb.returning = vi.fn(chain);
-  mockDb.delete = vi.fn(chain);
-  mockDb.update = vi.fn(chain);
-  mockDb.set = vi.fn(chain);
-  mockDb.batch = vi.fn(chain);
-  mockDb.resultKind = vi.fn(chain);
-  mockDb._ = vi.fn(chain);
-  mockDb.prepare = vi.fn(chain);
-  mockDb.run = vi.fn(chain);
-  mockDb.all = vi.fn(chain);
-  mockDb.get = vi.fn(chain);
-  mockDb.dbValues = vi.fn(chain);
-  mockDb.execute = vi.fn(chain);
-  mockDb.transaction = vi.fn(async (callback: (tx: MockDb) => unknown) =>
-    callback(mockDb),
-  );
-  mockDb.rollback = vi.fn(chain);
-  mockDb.commit = vi.fn(chain);
-  mockDb.query = {
-    comment: {
-      findMany: vi.fn(queryChain),
-      findFirst: vi.fn(queryChain),
-    },
-    page: {
-      findMany: vi.fn(queryChain),
-      findFirst: vi.fn(queryChain),
-    },
-    post: {
-      findMany: vi.fn(queryChain),
-      findFirst: vi.fn(queryChain),
-    },
-    menu: {
-      findMany: vi.fn(queryChain),
-      findFirst: vi.fn(queryChain),
+  const mockDb: MockDb = {
+    select: vi.fn(chain),
+    from: vi.fn(chain),
+    where: vi.fn(chain),
+    groupBy: vi.fn(chain),
+    leftJoin: vi.fn(chain),
+    orderBy: vi.fn(chain),
+    limit: vi.fn(chain),
+    offset: vi.fn(chain),
+    insert: vi.fn(chain),
+    values: vi.fn(chain),
+    returning: vi.fn(chain),
+    delete: vi.fn(chain),
+    update: vi.fn(chain),
+    set: vi.fn(chain),
+    batch: vi.fn(chain),
+    resultKind: vi.fn(chain),
+    _: vi.fn(chain),
+    prepare: vi.fn(chain),
+    run: vi.fn(chain),
+    all: vi.fn(chain),
+    get: vi.fn(chain),
+    dbValues: vi.fn(chain),
+    execute: vi.fn(chain),
+    transaction: vi.fn(async (callback: (tx: MockDb) => unknown) =>
+      callback(mockDb),
+    ),
+    rollback: vi.fn(chain),
+    commit: vi.fn(chain),
+    query: {
+      comment: {
+        findMany: vi.fn(queryChain),
+        findFirst: vi.fn(queryChain),
+      },
+      page: {
+        findMany: vi.fn(queryChain),
+        findFirst: vi.fn(queryChain),
+      },
+      post: {
+        findMany: vi.fn(queryChain),
+        findFirst: vi.fn(queryChain),
+      },
+      menu: {
+        findMany: vi.fn(queryChain),
+        findFirst: vi.fn(queryChain),
+      },
     },
   };
 
@@ -151,12 +152,16 @@ export const resetMockDb = (mockDb: MockDb) => {
   reset(mockDb.query.menu.findFirst);
 };
 
-export const createMockContext = (user?: User | null, db?: MockDb) =>
-  ({
-    db: asMockDatabase(db ?? createMockDb()),
-    user: user ?? null,
-    header: new Headers(),
-  }) as Context;
+export const createMockContext = (
+  user?: User | null,
+  db?: MockDb,
+): Context => ({
+  db: asMockDatabase(db ?? createMockDb()),
+  user: user ?? null,
+  header: new Headers(),
+  hasRequest: false,
+  requestId: "test-request",
+});
 
 export const createAdminUser = (id: string): User => ({
   id,

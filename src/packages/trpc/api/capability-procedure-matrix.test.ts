@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -179,7 +180,7 @@ function findRouterDeclaration(
       `${fileName} must declare exactly one createTRPCRouter variable`,
     );
   }
-  return declarations[0];
+  return requireDefined(declarations[0]);
 }
 
 function isIdentifierCall(node: ts.CallExpression, name: string): boolean {
@@ -312,7 +313,7 @@ function resolveRegistrationKey(
   }
 
   const registration = registrations.find(
-    ({ localSymbol }) => localSymbol === imports[0].localSymbol,
+    ({ localSymbol }) => localSymbol === requireDefined(imports[0]).localSymbol,
   );
   if (!registration) {
     throw new Error(

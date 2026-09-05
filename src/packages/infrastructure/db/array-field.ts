@@ -16,7 +16,7 @@ import { customType } from "drizzle-orm/sqlite-core";
  *   - `value: string`: 接收一个 JSON 字符串。
  *   - `returns: T[]`: 返回解析后的数组。如果字符串为空，则返回一个空数组。
  */
-export function arrayField<T = string>(name: string) {
+export function arrayField<T>(name: string, decode: (value: unknown) => T) {
   return customType<{ data: T[]; driverData: string }>({
     dataType() {
       return "text";
@@ -26,7 +26,9 @@ export function arrayField<T = string>(name: string) {
     },
     fromDriver(value: string): T[] {
       if (!value) return [];
-      return JSON.parse(value);
+      const parsed: unknown = JSON.parse(value);
+      if (!Array.isArray(parsed)) throw new Error("Stored array field is not an array");
+      return parsed.map((item: unknown) => decode(item));
     },
   })(name);
 }

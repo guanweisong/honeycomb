@@ -27,7 +27,7 @@ export function RichText({ html, images = [] }: Props) {
             rel="noreferrer"
           >
             <Image
-              src={src}
+              src={image.url}
               alt={image.name}
               width={image.width}
               height={image.height}

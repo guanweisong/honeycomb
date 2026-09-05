@@ -1,4 +1,5 @@
 import "server-only";
+import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
 
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
@@ -36,7 +37,8 @@ export function createMenuRepository(db: Database): MenuRepository {
       }));
     },
     async list(visibility) {
-      const menus = await observeDbOperation("menu.service.list", "select", () => db.query.menu.findMany({ orderBy: [asc(schema.menu.power)] }));
+      const rows = await observeDbOperation("menu.service.list", "select", () => db.query.menu.findMany({ orderBy: [asc(schema.menu.power)] }));
+      const menus = rows.map((menu) => ({ ...menu, type: parseEnumValue(menu.type, Object.values(MenuType), "menu.type") }));
       const categoryIds = menus.map((menu) => menu.type === MenuType.CATEGORY ? menu.categoryId : null).filter((id): id is string => id !== null);
       const pageIds = menus.map((menu) => menu.type === MenuType.PAGE ? menu.pageId : null).filter((id): id is string => id !== null);
       const [categories, pages] = await Promise.all([

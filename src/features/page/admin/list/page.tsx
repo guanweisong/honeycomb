@@ -80,7 +80,7 @@ const Page = () => {
 
   return (
     <>
-      <DataTable<PageEntity, PageListQueryInput>
+      <DataTable<PageEntity>
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
@@ -88,7 +88,7 @@ const Page = () => {
         isFetching={isFetching}
         error={isError}
         onChange={(params) => {
-          setSearchParams(params);
+          setSearchParams(PageListQuerySchema.parse(params));
         }}
         columns={pageListTableColumns}
         selectableRows={canDeletePage}

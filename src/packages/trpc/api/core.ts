@@ -38,7 +38,17 @@ const requestObservabilityMiddleware = t.middleware(
 
     getLogger().info(LogEvent.requestStarted, baseContext);
 
-    const result = await next();
+    const response = await next();
+    const applicationError = !response.ok && response.error.cause instanceof ApplicationError
+      ? response.error.cause
+      : undefined;
+    const result = !response.ok && applicationError
+      ? { ...response, error: new TRPCError({
+          code: applicationError.code,
+          message: applicationError.message,
+          cause: applicationError,
+        }) }
+      : response;
     const durationMs = Date.now() - startedAt;
     const outcome = result.ok ? "success" : result.error.code;
     const labels = { procedure: path, method: type, outcome };

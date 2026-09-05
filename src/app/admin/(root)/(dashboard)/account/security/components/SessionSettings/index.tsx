@@ -7,14 +7,7 @@ import { Button } from "@/packages/ui/components/button";
 import { Skeleton } from "@/packages/ui/components/skeleton";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
-
-type SessionItem = {
-  id: string;
-  createdAt: Date | string;
-  expiresAt: Date | string;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
+import { parseSessionList } from "./session-contract";
 
 export function formatSessionDate(value: Date | string | undefined) {
   if (!value) return "未知时间";
@@ -45,8 +38,9 @@ const SessionSettings = () => {
     queryKey: ["account-security", "sessions"],
     queryFn: async () => {
       const result = await authClient.$fetch("/list-sessions");
-      if (result.error) throw new Error(result.error.message || "登录会话加载失败");
-      return (result.data ?? []) as SessionItem[];
+      if (result.error)
+        throw new Error(result.error.message || "登录会话加载失败");
+      return parseSessionList(result.data ?? []);
     },
     staleTime: 0,
   });
@@ -100,10 +94,7 @@ const SessionSettings = () => {
       </div>
 
       {isLoading ? (
-        <div
-          className="space-y-3"
-          aria-label="正在加载登录会话"
-        >
+        <div className="space-y-3" aria-label="正在加载登录会话">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
@@ -115,7 +106,8 @@ const SessionSettings = () => {
             <li key={session.id} className="rounded-md border p-3 text-sm">
               <p className="font-medium">{getDeviceName(session.userAgent)}</p>
               <p className="mt-1 text-muted-foreground">
-                {session.ipAddress || "未知 IP"} · 登录于 {formatSessionDate(session.createdAt)}
+                {session.ipAddress || "未知 IP"} · 登录于{" "}
+                {formatSessionDate(session.createdAt)}
               </p>
               <p className="mt-1 text-muted-foreground">
                 到期于 {formatSessionDate(session.expiresAt)}

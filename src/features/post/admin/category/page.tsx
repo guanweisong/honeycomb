@@ -111,7 +111,7 @@ const Category = () => {
 
   return (
     <>
-      <DataTable<CategoryEntity, { limit: number }>
+      <DataTable<CategoryEntity>
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],

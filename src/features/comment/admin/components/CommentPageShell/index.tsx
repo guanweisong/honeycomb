@@ -5,7 +5,7 @@ import { Trash } from "lucide-react";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
-import type { CommentViewModel as CommentEntity } from "../../../presentation/comment-view-model";
+import type { AdminCommentViewModel as CommentEntity } from "../../../presentation/comment-view-model";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
@@ -13,10 +13,7 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { useCommentActions } from "../../actions/comment-actions";
 import { commentTableColumns } from "../../columns/comment-columns";
-import {
-  useCommentQuery,
-  type CommentListQueryInput,
-} from "../../queries/comment-query";
+import { useCommentQuery } from "../../queries/comment-query";
 
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);
@@ -134,7 +131,7 @@ export function CommentPageShell() {
   };
 
   return (
-    <DataTable<CommentEntity, CommentListQueryInput>
+    <DataTable<CommentEntity>
       columns={commentTableColumns}
       data={{
         list: query.data?.list ?? [],
@@ -142,7 +139,9 @@ export function CommentPageShell() {
       }}
       isFetching={query.isFetching}
       error={query.isError}
-      onChange={query.setSearchParams}
+      onChange={(params) =>
+        query.setSearchParams(CommentListQuerySchema.parse(params))
+      }
       selectableRows={canModerateComments}
       selectedRows={selectedRows}
       onSelectionChange={setSelectedRows}

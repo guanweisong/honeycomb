@@ -16,7 +16,7 @@ import { PostTypeFields } from "./components/PostTypeFields";
 import { usePostEditor } from "./hooks/use-post-editor";
 
 function PostDetailContent() {
-  const id = useSearchParams().get("id") as string;
+  const id = useSearchParams().get("id");
   const editor = usePostEditor(id);
   const {
     detail,

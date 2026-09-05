@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
-import type { UserListQueryInput } from "@/features/user/schemas/user.list.query.schema";
 import { UserListQuerySchema } from "@/features/user/schemas/user.list.query.schema";
 import type { UserViewModel as UserEntity } from "../../../presentation/user-view-model";
 import { Button } from "@/packages/ui/components/button";
@@ -41,7 +40,7 @@ export function UserPageShell() {
 
   return (
     <>
-      <DataTable<UserEntity, UserListQueryInput>
+      <DataTable<UserEntity>
         data={{
           list: query.data?.list ?? [],
           total: query.data?.total ?? 0,
@@ -53,7 +52,9 @@ export function UserPageShell() {
         disabledRowSelectable={isUserResourceProtected}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        onChange={query.setSearchParams}
+        onChange={(params) =>
+          query.setSearchParams(UserListQuerySchema.parse(params))
+        }
         toolBar={
           <div className="flex justify-between">
             {canManageUsers && (

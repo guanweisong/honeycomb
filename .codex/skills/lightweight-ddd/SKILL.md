@@ -1,6 +1,6 @@
 ---
 name: lightweight-ddd
-description: Apply the project's lightweight DDD and modular-monolith architecture when adding or refactoring feature business logic.
+description: 当在 Honeycomb 中新增、重构或审查功能业务逻辑、Repository、Use Case、Domain 或模块化单体边界时使用。
 ---
 
 # 轻量 DDD 工程规范
@@ -28,13 +28,15 @@ feature/
 - 业务不变量、状态流转和领域错误放在 `domain`；Domain 永远不访问 Repository。
 - 任何改变持久化状态、触发外部副作用或需要多步骤协调的行为放在 `application` Use Case；简单查询可直达 Query/Repository。
 - Repository 接口统一放在 `application`，实现放在同一模块的 `infrastructure`。
-- Drizzle、数据库连接、schema、存储 SDK 和第三方客户端只能出现在 `infrastructure` 或明确的技术包中。
+- Drizzle、数据库连接、ORM/数据库 schema、存储 SDK 和第三方客户端只能出现在 `infrastructure` 或明确的技术包中。业务输入的 Zod schema 按契约所有权放在 Application 或 transport/presentation，不受此条中的数据库 schema 限制，但不得反向依赖基础设施。
 - `transport` 和 `presentation` 只负责输入适配、授权入口、依赖注入、结果映射和展示，不承载业务规则。
 - 跨模块只能依赖目标模块的公开契约或稳定 Application 边界，不得依赖目标模块的 `domain`、`infrastructure` 或内部 transport 文件。
 - 不新增 facade、空的接口层、业务模块 contracts 层或重复兼容出口。
 - 简单 CRUD 不强行创建聚合、值对象或领域事件；只有存在稳定、可复用且需要独立测试的不变量时才引入。
 
 ## 工作流程
+
+定义或调整业务 DTO、Repository 契约、读取 schema、共享规则时，**REQUIRED SUB-SKILL:** Use type-safety-governance，执行其「生成前：唯一事实源」，不要在不同层平行维护同一模型。
 
 1. 先定位目标模块的 Query、Use Case（如有）、Repository 接口/实现和 transport 入口。
 2. 将业务规则放入 domain，将业务操作编排放入 application，将数据库映射放入 infrastructure。

@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -231,16 +232,16 @@ function findUnboundActionIds(
     /^\(root\)\/\(dashboard\)\/(comment|media|post|link|menu|page|setting|tag|user)\/(.+)$/,
   );
   const featureRelativePath = featureMatch
-    ? featureMatch[1] === "media"
-      ? featureMatch[2].replace(/^components\//, "")
-      : featureMatch[2]
+    ? requireDefined(featureMatch[1]) === "media"
+      ? requireDefined(featureMatch[2]).replace(/^components\//, "")
+      : requireDefined(featureMatch[2])
     : "";
   const fileName = featureMatch
     ? join(
         process.cwd(),
         "src/features",
-        featureMatch[1],
-        featureMatch[1] === "media" && featureMatch[2].startsWith("components/Media")
+        requireDefined(featureMatch[1]),
+        requireDefined(featureMatch[1]) === "media" && requireDefined(featureMatch[2]).startsWith("components/Media")
           ? "shared"
           : "admin",
         featureRelativePath,
@@ -340,7 +341,7 @@ describe("admin action capability guards", () => {
     const settingPath = "(root)/(dashboard)/setting/components/SettingClient/index.tsx";
     const [settingAction] = getActions(settingPath);
     const disabledAction: ActionGuardContract = {
-      ...settingAction,
+      ...requireDefined(settingAction),
       guard: {
         kind: "attribute",
         attribute: "disabled",

@@ -183,7 +183,8 @@ export function useMediaActions({
 
     if (result.state === "success") {
       toast.success(`成功上传 ${result.media.length} 个文件`);
-      onUploadComplete(result.media[result.media.length - 1]);
+      const lastMedia = result.media.at(-1);
+      if (lastMedia) onUploadComplete(lastMedia);
       refetch();
     } else if (result.state === "error") {
       toast.error(result.message);

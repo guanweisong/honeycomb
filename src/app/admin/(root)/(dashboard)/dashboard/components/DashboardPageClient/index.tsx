@@ -1,13 +1,10 @@
 "use client";
 
-import {
-  CommentStatus,
-  CommentStatusName,
-} from "@/packages/domain/content/comment";
+import { CommentStatusName } from "@/packages/domain/content/comment";
 import CustomPie from "../CustomPie";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { PostType, PostTypeName } from "@/packages/domain/content/post";
-import { UserLevel, UserLevelName } from "@/packages/domain/identity/user";
+import { PostTypeName } from "@/packages/domain/content/post";
+import { UserLevelName } from "@/packages/domain/identity/user";
 
 /**
  * 后台主看板客户端内容，负责查询统计数据并渲染图表。
@@ -21,9 +18,7 @@ export default function DashboardPageClient() {
         loading={isLoading}
         data={statistics?.postType?.map((n) => ({
           ...n,
-          item: PostTypeName[
-            PostType[n.item] as keyof typeof PostTypeName
-          ] as string,
+          item: PostTypeName[n.item],
         }))}
         title="文章"
       />
@@ -31,9 +26,7 @@ export default function DashboardPageClient() {
         loading={isLoading}
         data={statistics?.commentStatus?.map((n) => ({
           ...n,
-          item: CommentStatusName[
-            CommentStatus[n.item] as keyof typeof CommentStatusName
-          ] as string,
+          item: CommentStatusName[n.item],
         }))}
         title="评论"
       />
@@ -41,9 +34,7 @@ export default function DashboardPageClient() {
         loading={isLoading}
         data={statistics?.userType?.map((n) => ({
           ...n,
-          item: UserLevelName[
-            UserLevel[n.item] as keyof typeof UserLevelName
-          ] as string,
+          item: UserLevelName[n.item],
         }))}
         title="用户"
       />

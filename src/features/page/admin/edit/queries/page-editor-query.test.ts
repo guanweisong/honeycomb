@@ -59,7 +59,7 @@ describe("page editor query", () => {
       }
 
       await act(async () => root.render(React.createElement(Harness)));
-      expect(trpcMocks.calls.at(-1)).toEqual([{ id }, { enabled }]);
+      expect(trpcMocks.calls.at(-1)).toEqual([{ id: id ?? "" }, { enabled }]);
       expect(query).toEqual({
         data: { id: "page-42" },
         refetch: trpcMocks.refetch,

@@ -3,7 +3,9 @@ import "server-only";
 import { getDb } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+import type { CurrentUser } from "@/packages/domain/identity/user";
 import {
   createRequestContext,
   type RequestContext,
@@ -13,11 +15,7 @@ import { observeDbOperation } from "@/packages/infrastructure/observability/serv
 /**
  * 上下文中的用户信息接口。
  */
-export interface User {
-  id: string;
-  level: UserLevel;
-  name?: string | null;
-}
+export type User = CurrentUser;
 
 export interface CreateContextOptions {
   req?: Request;
@@ -41,12 +39,9 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
   // 在生产构建时形成循环模块初始化。
   const { auth } = await import("@/auth");
   const session = await auth.api.getSession({ headers: req.headers });
-  const sessionUser = session?.user as
-    | { id?: string; level?: UserLevel; name?: string | null }
-    | null
-    | undefined;
+  const sessionUser = session?.user;
 
-  if (!sessionUser?.id || !sessionUser.level) {
+  if (!sessionUser?.id || !("level" in sessionUser) || !sessionUser.level) {
     return null;
   }
   const sessionUserId = sessionUser.id;
@@ -68,10 +63,12 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
   if (!user || user.status !== UserStatus.ENABLE) {
     return null;
   }
+  const level = z.enum(UserLevel).safeParse(user.level);
+  if (!level.success) return null;
 
   return {
     id: user.id,
-    level: user.level,
+    level: level.data,
     name: user.name,
   };
 }

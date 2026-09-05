@@ -3,7 +3,7 @@ export class ApplicationError extends Error {
   readonly kind = "application" as const;
 
   constructor(
-    public readonly code: "FORBIDDEN" | "UNAUTHORIZED" | "NOT_FOUND" | "BAD_REQUEST",
+    public readonly code: "FORBIDDEN" | "UNAUTHORIZED" | "NOT_FOUND" | "BAD_REQUEST" | "INTERNAL_SERVER_ERROR",
     message?: string,
   ) {
     super(message ?? code);

@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { UserInsert } from "@/features/user/schemas/user.insert.schema";
 import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
+import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildUserUpdateInput } from "../transforms/user-transforms";
@@ -155,7 +157,7 @@ export function useUserActions({
     const state =
       dialogState.type === ModalType.ADD
         ? await submitUserCreate({
-            values: values as UserInsert,
+            values: UserInsertSchema.parse(values),
             create: createUser.mutateAsync,
             refetch,
             notifySuccess: toast.success,
@@ -163,7 +165,7 @@ export function useUserActions({
           })
         : await submitUserUpdate({
             record: dialogState.record,
-            values: values as UserUpdate,
+            values: UserUpdateSchema.parse(values),
             update: updateUser.mutateAsync,
             refetch,
             notifySuccess: toast.success,

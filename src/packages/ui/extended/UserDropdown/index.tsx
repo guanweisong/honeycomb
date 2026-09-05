@@ -33,7 +33,7 @@ export const UserDropdown = (props: UserDropdownProps) => {
             <div className="flex-1 mx-3 min-w-0">
               <div className="truncate">{user.name}</div>
               <div className="text-gray-500 text-xs truncate">
-                {UserLevelName[user.level as keyof typeof UserLevelName]}
+                {UserLevelName[user.level]}
               </div>
             </div>
           )}

@@ -7,7 +7,7 @@ export interface MenuItem {
   id: string;
   parent: string | null;
   power: number;
-  type: string;
+  type: MenuType;
   createdAt: string | null;
   updatedAt: string | null;
   title?: MultiLang | null;

@@ -34,7 +34,7 @@ describe("page editor action state", () => {
 
     await expect(
       submitPageEditor({
-        pageId: "page-42",
+        pageId: "507f1f77bcf86cd799439011",
         values,
         status: PageStatus.PUBLISHED,
         create: vi.fn(),
@@ -42,7 +42,7 @@ describe("page editor action state", () => {
       }),
     ).resolves.toEqual({ state: "error" });
     expect(update).toHaveBeenCalledWith({
-      id: "page-42",
+      id: "507f1f77bcf86cd799439011",
       ...values,
       status: PageStatus.PUBLISHED,
     });
@@ -50,7 +50,7 @@ describe("page editor action state", () => {
     update.mockResolvedValue(undefined);
     await expect(
       submitPageEditor({
-        pageId: "page-42",
+        pageId: "507f1f77bcf86cd799439011",
         values,
         status: PageStatus.PUBLISHED,
         create: vi.fn(),

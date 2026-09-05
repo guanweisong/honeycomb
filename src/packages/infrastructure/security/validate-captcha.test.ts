@@ -102,4 +102,14 @@ describe("validate-captcha", () => {
       MetricName.externalServiceOperationDurationMs,
     ]);
   });
+
+  it.each([null, {}, { success: "true" }, { success: true, "error-codes": 1 }])(
+    "rejects malformed verification data: %j",
+    async (data) => {
+      fetchMock.mockResolvedValue({ ok: true, json: async () => data });
+      await expect(validateCaptcha("token")).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+      });
+    },
+  );
 });

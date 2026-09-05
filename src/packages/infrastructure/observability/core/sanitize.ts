@@ -9,7 +9,6 @@ const MAX_CONTEXT_DEPTH = 8;
 const sensitiveKey =
   /password|token|cookie|authorization|secret|email|ip(?:address)?$/i;
 const restrictedContainerKey = /body|input|params?|parameters?|sql/i;
-const metricLabelNameSet = new Set<string>(metricLabelNames);
 
 export type SanitizedContext = Record<string, unknown>;
 
@@ -23,7 +22,10 @@ export interface SerializedError {
 export function sanitizeContext(
   context: Record<string, unknown>,
 ): SanitizedContext {
-  return sanitizeValue(context, new WeakSet(), 0) as SanitizedContext;
+  const value = sanitizeValue(context, new WeakSet(), 0);
+  return typeof value === "object" && value !== null && isPlainObject(value)
+    ? value
+    : {};
 }
 
 export function serializeError(
@@ -41,8 +43,8 @@ export function sanitizeMetricLabels(
 
   const sanitized: Partial<Record<MetricLabelName, string>> = {};
   for (const [key, value] of Object.entries(labels)) {
-    if (metricLabelNameSet.has(key) && typeof value === "string") {
-      const labelName = key as MetricLabelName;
+    const labelName = metricLabelNames.find((name) => name === key);
+    if (labelName !== undefined && typeof value === "string") {
       if (metricLabelValueCatalog[labelName].has(value)) {
         sanitized[labelName] = value;
       }
@@ -104,7 +106,11 @@ function serializeErrorValue(
   }
 
   seen.add(error);
-  const record = error as Record<string, unknown>;
+  const record = {
+    name: "name" in error ? error.name : undefined,
+    message: "message" in error ? error.message : undefined,
+    stack: "stack" in error ? error.stack : undefined,
+  };
   const name =
     typeof record.name === "string" ? redactText(record.name) : "Error";
   const message =
@@ -119,11 +125,11 @@ function serializeErrorValue(
     ...(stack ? { stack } : {}),
   };
 
-  if ("cause" in record) {
+  if ("cause" in error) {
     serialized.cause =
       depth >= maxCauseDepth
         ? TRUNCATED
-        : serializeErrorCause(record.cause, seen, depth + 1, maxCauseDepth);
+        : serializeErrorCause(error.cause, seen, depth + 1, maxCauseDepth);
   }
   return serialized;
 }
@@ -159,13 +165,11 @@ function redactIpv6Candidate(candidate: string): string {
   if (isIpv6(candidate)) return REDACTED;
 
   const address = candidate.endsWith(".") ? candidate.slice(0, -1) : candidate;
-  return address !== candidate && isIpv6(address)
-    ? `${REDACTED}.`
-    : candidate;
+  return address !== candidate && isIpv6(address) ? `${REDACTED}.` : candidate;
 }
 
 function isIpv6(candidate: string): boolean {
-  const address = candidate.split("%", 1)[0];
+  const [address = ""] = candidate.split("%", 1);
   if (!address.includes(":")) return false;
   if ((address.match(/::/g) ?? []).length > 1) return false;
 
@@ -188,7 +192,7 @@ function isIpv6(candidate: string): boolean {
 }
 
 function isPlainObject(value: object): value is Record<string, unknown> {
-  const prototype = Object.getPrototypeOf(value);
+  const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 }
 

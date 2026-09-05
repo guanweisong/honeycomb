@@ -7,6 +7,17 @@ import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
 import type { TagViewModel as TagEntity } from "../../../presentation/tag-view-model";
 import { z } from "zod";
+import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
+
+const tagFields: FieldConfig[] = [
+  {
+    label: "标签名称",
+    name: "name",
+    type: "text",
+    placeholder: "请输入标签名称",
+    multiLang: true,
+  },
+];
 
 type TagInsertValues = z.infer<typeof TagInsertSchema>;
 type TagUpdateValues = z.infer<typeof TagUpdateSchema>;
@@ -61,7 +72,7 @@ export default function AddTagDialog(props: AddTagDialogProps) {
     switch (type) {
       case ModalType.ADD:
         try {
-          await createTag.mutateAsync(values as TagInsertValues);
+          await createTag.mutateAsync(TagInsertSchema.parse(values));
           onSuccess?.();
           toast.success("添加成功");
           onClose?.();
@@ -75,10 +86,12 @@ export default function AddTagDialog(props: AddTagDialogProps) {
           return;
         }
         try {
-          await updateTag.mutateAsync({
-            ...(values as TagUpdateValues),
-            id: record.id,
-          });
+          await updateTag.mutateAsync(
+            TagUpdateSchema.parse({
+              ...values,
+              id: record.id,
+            }),
+          );
           onSuccess?.();
           toast.success("更新成功");
           onClose?.();
@@ -95,27 +108,30 @@ export default function AddTagDialog(props: AddTagDialogProps) {
       open={open}
       onOpenChange={() => onClose?.()}
     >
-      <DynamicForm
-        defaultValues={
-          record
-            ? {
-                id: record.id,
-                name: record.name ?? undefined,
-              }
-            : undefined
-        }
-        schema={type === ModalType.EDIT ? TagUpdateSchema : TagInsertSchema}
-        fields={[
-          {
-            label: "标签名称",
-            name: "name",
-            type: "text",
-            placeholder: "请输入标签名称",
-            multiLang: true,
-          },
-        ]}
-        onSubmit={handleModalOk}
-      />
+      {type === ModalType.EDIT ? (
+        <DynamicForm
+          defaultValues={
+            record
+              ? {
+                  id: record.id,
+                  name: record.name ?? undefined,
+                }
+              : undefined
+          }
+          schema={TagUpdateSchema}
+          fields={tagFields}
+          onSubmit={handleModalOk}
+        />
+      ) : (
+        <DynamicForm
+          defaultValues={
+            record ? { name: record.name ?? undefined } : undefined
+          }
+          schema={TagInsertSchema}
+          fields={tagFields}
+          onSubmit={handleModalOk}
+        />
+      )}
     </Dialog>
   );
 }

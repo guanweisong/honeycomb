@@ -1,12 +1,9 @@
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
 import { postStatusOptions } from "@/packages/domain/content/post-status";
 import { postTypeOptions } from "@/packages/domain/content/post";
-import type { CategoryViewModel as CategoryEntity } from "../../../../category/presentation/category-view-model";
-import type { UserViewModel as UserEntity } from "../../../../user/presentation/user-view-model";
 import {
   StatusBadge,
   StatusBadgeTone,
@@ -26,7 +23,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染文章标题的单元格。
        * 显示多语言标题。
        */
-      const title = row.getValue("title") as MultiLang;
+      const title = row.original.title;
       return <MultiLangText text={title} />;
     },
   },
@@ -38,7 +35,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染引用内容的单元格。
        * 显示多语言引用内容，并限制宽度。
        */
-      const quote = row.getValue("quoteContent") as MultiLang;
+      const quote = row.original.quoteContent;
       return (
         <div className="max-w-60 whitespace-normal">
           <MultiLangText text={quote} />
@@ -54,7 +51,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染分类名称的单元格。
        * 显示多语言分类名称，如果不存在则显示 "-"。
        */
-      const category: CategoryEntity = row.getValue("category");
+      const category = row.original.category;
       return category?.title ? <MultiLangText text={category.title} /> : "-";
     },
   },
@@ -69,7 +66,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染文章类型的单元格。
        * 将文章类型值映射为对应的中文标签。
        */
-      const type = row.getValue("type") as string;
+      const type = row.original.type;
       return postTypeOptions.find((opt) => opt.value === type)?.label ?? type;
     },
   },
@@ -81,7 +78,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染作者名称的单元格。
        * 如果作者信息不存在，则显示 "-"。
        */
-      const author: UserEntity = row.getValue("author");
+      const author = row.original.author;
       return author?.name ?? "-";
     },
   },
@@ -96,7 +93,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染文章状态的单元格。
        * 将文章状态值映射为对应的中文标签，并根据状态显示不同样式的徽章。
        */
-      const status = row.getValue("status") as string;
+      const status = row.original.status;
       const label =
         postStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
@@ -116,10 +113,10 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染发表时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("createdAt") as string;
+      const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },
@@ -133,10 +130,10 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      const value = row.getValue("updatedAt") as string;
+      const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {format(new Date(value), "yyyy-MM-dd HH:mm:ss")}
+          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
         </span>
       );
     },

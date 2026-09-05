@@ -8,9 +8,7 @@ import { toast } from "sonner";
 import type { ModalProps } from "../../category/components/AddCategoryModal";
 import type { PhotoPickerItemProps } from "../components/PhotoPickerItem";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
-import type { PostInsert } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
-import type { PostUpdate } from "@/features/post/schemas/post.update.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import type { PostDetailViewModel as PostDetailEntity } from "../../../presentation/post-view-model";
 import { PostStatus } from "@/packages/domain/content/post-status";
@@ -23,7 +21,7 @@ import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 type PostTagOption = Pick<TagEntity, "id" | "name">;
 export type PostSubmitAction = "create" | "update";
 
-export function usePostEditor(id: string) {
+export function usePostEditor(id: string | null) {
   const router = useRouter();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [modalProps, setModalProps] = useState<ModalProps>();
@@ -39,9 +37,12 @@ export function usePostEditor(id: string) {
     defaultValues: { type: PostType.ARTICLE },
   });
   const watchedType = useWatch({ control: form.control, name: "type" });
-  const type = (watchedType as PostType | undefined) ?? PostType.ARTICLE;
+  const type = watchedType ?? PostType.ARTICLE;
   const { data: category } = trpc.category.adminIndex.useQuery({ limit: 9999 });
-  const { data: detail, refetch } = trpc.post.adminDetail.useQuery({ id });
+  const { data: detail, refetch } = trpc.post.adminDetail.useQuery(
+    { id: id ?? "" },
+    { enabled: Boolean(id) },
+  );
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
 
@@ -76,7 +77,7 @@ export function usePostEditor(id: string) {
             return;
           }
           createPost
-            .mutateAsync(data as PostInsert)
+            .mutateAsync(PostInsertSchema.parse(data))
             .then((result) => {
               if (result.id) {
                 toast.success("添加成功");
@@ -93,7 +94,7 @@ export function usePostEditor(id: string) {
           return;
         }
         updatePost
-          .mutateAsync({ ...data, id: detail.id } as PostUpdate)
+          .mutateAsync(PostUpdateSchema.parse({ ...data, id: detail.id }))
           .then((result) => {
             if (result) {
               toast.success("更新成功");

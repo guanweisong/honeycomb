@@ -1,6 +1,7 @@
 import "server-only";
 
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { getTurnstileEnv } from "@/env/server";
 import {
   getLogger,
@@ -8,10 +9,10 @@ import {
 } from "@/packages/infrastructure/observability/server";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 
-interface TurnstileVerifyResponse {
-  success: boolean;
-  "error-codes"?: string[];
-}
+const TurnstileVerifyResponseSchema = z.object({
+  success: z.boolean(),
+  "error-codes": z.array(z.string()).optional(),
+});
 
 /** 校验 Cloudflare Turnstile 验证码，并将外部服务错误转换为安全的 API 错误。 */
 export const validateCaptcha = async (
@@ -40,7 +41,7 @@ export const validateCaptcha = async (
       );
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as TurnstileVerifyResponse;
+      const data = TurnstileVerifyResponseSchema.parse(await res.json());
       if (!data.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",

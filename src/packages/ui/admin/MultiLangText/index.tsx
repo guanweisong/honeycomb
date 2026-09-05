@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useState } from "react";
 import enIcon from "./img/en.svg";
 import zhIcon from "./img/zh.svg";
+import { parseStaticImage } from "../../lib/static-image";
 
 /**
  * 多语言文本组件的属性接口。
@@ -47,7 +48,7 @@ const MultiLangText = (props: MultiLangTextProps) => {
     <span className="flex items-center">
       {text[active]}
       <Image
-        src={active === MultiLangEnum.Zh ? zhIcon : enIcon}
+        src={parseStaticImage(active === MultiLangEnum.Zh ? zhIcon : enIcon)}
         alt="切换语言"
         className="cursor-pointer ml-1"
         title={

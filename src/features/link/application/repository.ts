@@ -1,16 +1,9 @@
-export type LinkInsert = {
-  url: string;
-  name: string;
-  logo: string;
-  description?: string;
-  status?: string;
-};
+import type { PaginationInput } from "@/packages/application/pagination";
+export type LinkInsert = import("zod").output<
+  typeof import("./write-schema").LinkInsertSchema
+>;
 export type LinkUpdate = { id: string } & Partial<LinkInsert>;
-export type LinkListInput = {
-  page?: number;
-  limit?: number;
-  sortField?: string;
-  sortOrder?: "asc" | "desc";
+export type LinkListInput = PaginationInput & {
   name?: string;
   url?: string;
   description?: string;
@@ -31,5 +24,8 @@ export interface LinkRepository {
   create(input: LinkInsert): Promise<LinkRecord>;
   update(input: LinkUpdate): Promise<LinkRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
-  list(input: LinkListInput, visibility: LinkVisibility): Promise<{ list: LinkRecord[]; total: number }>;
+  list(
+    input: LinkListInput,
+    visibility: LinkVisibility,
+  ): Promise<{ list: LinkRecord[]; total: number }>;
 }
