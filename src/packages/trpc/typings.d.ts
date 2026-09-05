@@ -9,5 +9,3 @@ declare module "list-to-tree-lite" {
   ): (T & { children?: T[] })[];
   export default listToTree;
 }
-
-declare module "@nosferatu500/react-sortable-tree";

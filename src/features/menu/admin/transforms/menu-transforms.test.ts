@@ -69,10 +69,13 @@ describe("menu transforms", () => {
       { ...pageMenu, parent: null },
     ]);
 
-    expect(flattenMenuTree(draggedTree)).toEqual([
+    const flattened = flattenMenuTree(draggedTree);
+
+    expect(flattened).toEqual([
       expect.objectContaining({ id: "page-1", parent: null }),
       expect.objectContaining({ id: "category-1", parent: "page-1" }),
     ]);
+    expect(flattened.every((node) => node.children === undefined)).toBe(true);
   });
 
   it("builds the saveAll payload in visible order and omits root parents", () => {
@@ -119,9 +122,9 @@ describe("menu transforms", () => {
         type: MenuType.PAGE,
       },
     ]);
-    expect(toggleMenuSelection(added, selectablePage, false, MenuType.PAGE)).toEqual([
-      categoryMenu,
-    ]);
+    expect(
+      toggleMenuSelection(added, selectablePage, false, MenuType.PAGE),
+    ).toEqual([categoryMenu]);
     expect(isMenuSelected(added, selectablePage)).toBe(true);
   });
 

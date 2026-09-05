@@ -1,6 +1,9 @@
 "use client";
 
-import SortableTree from "@nosferatu500/react-sortable-tree";
+import {
+  getVisibleNodeCount,
+  SortableTree,
+} from "@nosferatu500/react-sortable-tree";
 import { Save } from "lucide-react";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
 import { useCan } from "@/features/contracts/admin/use-current-user";
@@ -13,6 +16,8 @@ import LoadingState from "@/packages/ui/extended/LoadingState";
 import { useMenuActions } from "../../actions/menu-actions";
 import { useMenuQuery } from "../../queries/menu-query";
 import { useMenuTreeEditor } from "../../hooks/use-menu-tree-editor";
+
+const MENU_TREE_ROW_HEIGHT = 50;
 
 export function MenuPageShell() {
   const canUpdateMenu = useCan(Permission.menuUpdate);
@@ -27,6 +32,9 @@ export function MenuPageShell() {
   } = useMenuQuery();
   const editor = useMenuTreeEditor(checkedData);
   const { submit } = useMenuActions(editor.checkedList, refetchMenu);
+  const menuTreeHeight =
+    Math.max(getVisibleNodeCount({ treeData: editor.menuTree }), 1) *
+    MENU_TREE_ROW_HEIGHT;
 
   return (
     <div className="flex gap-6">
@@ -41,25 +49,32 @@ export function MenuPageShell() {
               value: "1",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {categoryLoading ? <LoadingState fullScreen={false} /> : categoryList?.list?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="px-3 leading-8 transition-all hover:bg-gray-100"
-                    >
-                      <Checkbox
-                        onCheckedChange={(checked) =>
-                          editor.onCheck(
+                  {categoryLoading ? (
+                    <LoadingState fullScreen={false} />
+                  ) : (
+                    categoryList?.list?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="px-3 leading-8 transition-all hover:bg-gray-100"
+                      >
+                        <Checkbox
+                          onCheckedChange={(checked) =>
+                            editor.onCheck(
+                              item,
+                              checked === true,
+                              MenuType.CATEGORY,
+                            )
+                          }
+                          checked={editor.getCheckedStatus(item)}
+                          disabled={editor.getDisabledStatus(item)}
+                          label={creatCategoryTitleByDepth(
+                            item.title?.zh,
                             item,
-                            checked === true,
-                            MenuType.CATEGORY,
-                          )
-                        }
-                        checked={editor.getCheckedStatus(item)}
-                        disabled={editor.getDisabledStatus(item)}
-                        label={creatCategoryTitleByDepth(item.title?.zh, item)}
-                      />
-                    </div>
-                  ))}
+                          )}
+                        />
+                      </div>
+                    ))
+                  )}
                 </div>
               ),
             },
@@ -68,21 +83,29 @@ export function MenuPageShell() {
               value: "2",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {pageLoading ? <LoadingState fullScreen={false} /> : pageList?.list?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="px-3 leading-8 transition-all hover:bg-gray-100"
-                    >
-                      <Checkbox
-                        onCheckedChange={(checked) =>
-                          editor.onCheck(item, checked === true, MenuType.PAGE)
-                        }
-                        checked={editor.getCheckedStatus(item)}
-                        disabled={editor.getDisabledStatus(item)}
-                        label={item.title?.zh}
-                      />
-                    </div>
-                  ))}
+                  {pageLoading ? (
+                    <LoadingState fullScreen={false} />
+                  ) : (
+                    pageList?.list?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="px-3 leading-8 transition-all hover:bg-gray-100"
+                      >
+                        <Checkbox
+                          onCheckedChange={(checked) =>
+                            editor.onCheck(
+                              item,
+                              checked === true,
+                              MenuType.PAGE,
+                            )
+                          }
+                          checked={editor.getCheckedStatus(item)}
+                          disabled={editor.getDisabledStatus(item)}
+                          label={item.title?.zh}
+                        />
+                      </div>
+                    ))
+                  )}
                 </div>
               ),
             },
@@ -106,10 +129,12 @@ export function MenuPageShell() {
             <LoadingState fullScreen={false} />
           ) : (
             <SortableTree
+              aria-label="菜单结构"
+              className="menu-tree"
               treeData={editor.menuTree}
               onChange={editor.onDragEnd}
-              rowHeight={50}
-              isVirtualized={false}
+              rowHeight={MENU_TREE_ROW_HEIGHT}
+              style={{ height: menuTreeHeight }}
             />
           )}
         </div>

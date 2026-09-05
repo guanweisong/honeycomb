@@ -2,10 +2,7 @@ import {
   getFlatDataFromTree,
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
-import {
-  MenuType,
-  MenuTypeName,
-} from "@/packages/domain/navigation/menu";
+import { MenuType, MenuTypeName } from "@/packages/domain/navigation/menu";
 
 export type MenuEntityTree = {
   id: string;
@@ -72,7 +69,7 @@ export function toggleMenuSelection(
       updatedAt: item.updatedAt,
       power: checkedList.length,
       type,
-    } as MenuEntityTree,
+    },
   ];
 }
 
@@ -93,34 +90,45 @@ export function isMenuSelectionDisabled(
 export function formatMenuTree(
   checkedList: MenuEntityTree[],
 ): SortableMenuNode[] {
-  const flatData = checkedList.map((item) => ({
-    ...item,
-    title:
-      typeof item.title === "string" ? item.title : (item.title?.zh ?? ""),
+  const flatData: SortableMenuNode[] = checkedList.map((item) => ({
+    id: item.id,
+    parent: item.parent,
+    power: item.power,
+    type: item.type,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    path: item.path,
+    title: typeof item.title === "string" ? item.title : (item.title?.zh ?? ""),
     subtitle: MenuTypeName[item.type as MenuType],
     expanded: true,
   }));
 
-  return getTreeFromFlatData({
+  return getTreeFromFlatData<SortableMenuNode>({
     flatData,
-    getKey: (node: { id: string }) => node.id,
-    getParentKey: (node: { parent: string | null }) => node.parent,
+    getKey: (node) => node.id,
+    getParentKey: (node) => node.parent,
     rootKey: null,
-  }) as SortableMenuNode[];
+  });
 }
 
 export function flattenMenuTree(
   treeData: SortableMenuNode[],
 ): MenuEntityTree[] {
-  const listData = getFlatDataFromTree({
+  const listData = getFlatDataFromTree<SortableMenuNode>({
     treeData,
-    getNodeKey: ({ node }: { node: MenuEntityTree }) => node.id,
+    getNodeKey: ({ node }) => node.id,
     ignoreCollapsed: false,
-  }) as { node: MenuEntityTree; parentNode: MenuEntityTree | null }[];
+  });
 
   return listData.map(({ node, parentNode }) => ({
-    ...node,
+    id: node.id,
     parent: parentNode?.id ?? null,
+    power: node.power,
+    type: node.type,
+    createdAt: node.createdAt,
+    updatedAt: node.updatedAt,
+    title: node.title,
+    path: node.path,
   }));
 }
 

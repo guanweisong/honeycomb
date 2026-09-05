@@ -1,13 +1,20 @@
-import React, { act } from "react";
+import React, { act, type CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import type { MenuEntityTree } from "../../transforms/menu-transforms";
 
 let canUpdateMenu = false;
-const queryMocks = vi.hoisted(() => ({
-  data: { list: [] },
-  refetch: vi.fn(),
-  mutateAsync: vi.fn(),
-}));
+const queryMocks = vi.hoisted(
+  (): {
+    data: { list: MenuEntityTree[] };
+    refetch: ReturnType<typeof vi.fn>;
+    mutateAsync: ReturnType<typeof vi.fn>;
+  } => ({
+    data: { list: [] },
+    refetch: vi.fn(),
+    mutateAsync: vi.fn(),
+  }),
+);
 
 vi.mock("@/features/contracts/admin/use-current-user", () => ({
   useCan: () => canUpdateMenu,
@@ -39,7 +46,25 @@ vi.mock("@nosferatu500/react-sortable-tree", async () => {
   const actual = await vi.importActual<
     typeof import("@nosferatu500/react-sortable-tree")
   >("@nosferatu500/react-sortable-tree");
-  return { ...actual, default: () => null };
+  return {
+    ...actual,
+    default: () => null,
+    SortableTree: ({
+      "aria-label": ariaLabel,
+      className,
+      style,
+    }: {
+      "aria-label"?: string;
+      className?: string;
+      style?: CSSProperties;
+    }) =>
+      React.createElement("div", {
+        "aria-label": ariaLabel,
+        className,
+        role: "tree",
+        style,
+      }),
+  };
 });
 
 import { MenuPageShell } from "./index";
@@ -50,6 +75,7 @@ describe("MenuPageShell", () => {
 
   beforeEach(() => {
     canUpdateMenu = false;
+    queryMocks.data = { list: [] };
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -75,5 +101,37 @@ describe("MenuPageShell", () => {
     await act(async () => root.render(React.createElement(MenuPageShell)));
 
     expect(container.textContent).toContain("保存");
+  });
+
+  it("gives the virtualized menu tree a visible height and accessible name", async () => {
+    queryMocks.data = {
+      list: [
+        {
+          id: "parent",
+          parent: null,
+          power: 0,
+          type: "1",
+          createdAt: null,
+          updatedAt: null,
+          title: { zh: "父菜单" },
+        },
+        {
+          id: "child",
+          parent: "parent",
+          power: 1,
+          type: "2",
+          createdAt: null,
+          updatedAt: null,
+          title: { zh: "子菜单" },
+        },
+      ],
+    };
+
+    await act(async () => root.render(React.createElement(MenuPageShell)));
+
+    const tree = container.querySelector<HTMLElement>('[role="tree"]');
+    expect(tree?.getAttribute("aria-label")).toBe("菜单结构");
+    expect(tree?.classList.contains("menu-tree")).toBe(true);
+    expect(tree?.style.height).toBe("100px");
   });
 });
