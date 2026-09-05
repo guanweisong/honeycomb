@@ -1,13 +1,12 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Theme } from "@/app/(blog)/types/Theme";
-import { flushSync } from "react-dom";
-import { Moon, Sun } from "lucide-react";
 
 /**
  * 主题切换组件。
- * 允许用户在亮色和暗色主题之间切换，并支持视图过渡动画。
+ * 允许用户在亮色和暗色主题之间切换，并展示图标弹簧动画。
  * @returns {JSX.Element | null} 主题切换按钮或 null。
  */
 export const ThemeSwitcher = () => {
@@ -17,7 +16,6 @@ export const ThemeSwitcher = () => {
    */
   const [mounted, setMounted] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   /**
    * 副作用钩子，用于动态设置 `<meta name="theme-color">`。
@@ -58,67 +56,26 @@ export const ThemeSwitcher = () => {
 
   /**
    * 切换暗黑模式。
-   * 支持视图过渡动画，提供更平滑的用户体验。
+   * 图标动画由 react-toggle-dark-mode 驱动，避免页面快照遮挡弹簧过程。
    * @param {boolean} checked - 是否启用暗黑模式。
    */
-  const toggleDarkMode = async (checked: boolean) => {
-    // 动画增强部分
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const isViewTransitionSupported = !!document.startViewTransition;
-
-    if (
-      !buttonRef.current ||
-      !isViewTransitionSupported ||
-      prefersReducedMotion
-    ) {
-      setTheme(checked ? Theme.Dark : Theme.Light);
-      return;
-    }
-
-    await document.startViewTransition(() => {
-      flushSync(() => {
-        setTheme(checked ? Theme.Dark : Theme.Light);
-      });
-    }).ready;
-
-    const { top, left, width, height } =
-      buttonRef.current.getBoundingClientRect();
-    const x = left + width / 2;
-    const y = top + height / 2;
-    const right = window.innerWidth - left;
-    const bottom = window.innerHeight - top;
-    const maxRadius = Math.hypot(Math.max(left, right), Math.max(top, bottom));
-
-    document.documentElement.animate(
-      {
-        clipPath: [
-          `circle(0px at ${x}px ${y}px)`,
-          `circle(${maxRadius}px at ${x}px ${y}px)`,
-        ],
-      },
-      {
-        duration: 500,
-        easing: "ease-in-out",
-        pseudoElement: "::view-transition-new(root)",
-      },
-    );
+  const toggleDarkMode = (checked: boolean) => {
+    setTheme(checked ? Theme.Dark : Theme.Light);
   };
 
   const dark = resolvedTheme === Theme.Dark;
+
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      aria-label="Toggle theme"
-      aria-pressed={dark}
-      data-checked={dark}
-      data-testid="theme-switcher"
-      onClick={() => toggleDarkMode(!dark)}
-      className="inline-flex size-5 items-center justify-center"
-    >
-      {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
-    </button>
+    <span data-testid="theme-switcher">
+      <DarkModeSwitch
+        aria-label="Toggle theme"
+        data-checked={dark}
+        size={20}
+        checked={dark}
+        onChange={toggleDarkMode}
+        sunColor="#333"
+        moonColor="#ccc"
+      />
+    </span>
   );
 };

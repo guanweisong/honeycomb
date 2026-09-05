@@ -27,25 +27,6 @@ vi.mock("next-themes", () => ({
   }),
 }));
 
-vi.mock("react-toggle-dark-mode", () => ({
-  DarkModeSwitch: ({
-    checked,
-    onChange,
-  }: {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-  }) =>
-    React.createElement(
-      "button",
-      {
-        "aria-label": "Toggle theme",
-        "data-checked": String(checked),
-        onClick: () => onChange(!checked),
-      },
-      "theme",
-    ),
-}));
-
 vi.mock("next-intl", () => ({
   useLocale: () => locale,
   useTranslations: () => (key: string) => {
@@ -114,10 +95,6 @@ describe("blog appearance controls", () => {
     pathname = "/archives/post-1";
     scrollTop = undefined;
     themeChanges.length = 0;
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn(() => ({ matches: false })),
-    );
     Object.defineProperty(document, "startViewTransition", {
       configurable: true,
       value: undefined,
@@ -141,6 +118,52 @@ describe("blog appearance controls", () => {
         .querySelector('meta[name="theme-color"]')
         ?.getAttribute("content"),
     ).toBe("white");
+  });
+
+  it("renders the animated sun and moon icon control", async () => {
+    await act(async () => root.render(React.createElement(ThemeSwitcher)));
+
+    expect(
+      container.querySelector('[data-testid="theme-switcher"] svg'),
+    ).not.toBeNull();
+    expect(container.querySelector("button button")).toBeNull();
+    expect(
+      container.querySelector('[role="switch"]')?.getAttribute("aria-checked"),
+    ).toBe("false");
+  });
+
+  it("delegates icon animation without custom Web Animations", async () => {
+    const animate = vi.fn();
+    const originalAnimate = Object.getOwnPropertyDescriptor(
+      SVGElement.prototype,
+      "animate",
+    );
+    Object.defineProperty(SVGElement.prototype, "animate", {
+      configurable: true,
+      value: animate,
+    });
+
+    try {
+      await act(async () => root.render(React.createElement(ThemeSwitcher)));
+      await act(async () => {
+        container
+          .querySelector('[aria-label="Toggle theme"]')
+          ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      });
+
+      expect(animate).not.toHaveBeenCalled();
+      expect(themeChanges).toEqual(["dark"]);
+    } finally {
+      if (originalAnimate) {
+        Object.defineProperty(
+          SVGElement.prototype,
+          "animate",
+          originalAnimate,
+        );
+      } else {
+        Reflect.deleteProperty(SVGElement.prototype, "animate");
+      }
+    }
   });
 
   it("updates every existing theme meta for dark mode", async () => {
@@ -176,35 +199,21 @@ describe("blog appearance controls", () => {
     expect(themeChanges).toEqual(["dark"]);
   });
 
-  it("animates a supported theme transition from the control position", async () => {
-    const animations: unknown[] = [];
+  it("does not cover the icon spring with a page view transition", async () => {
+    const startViewTransition = vi.fn((callback: () => void) => {
+      callback();
+      return { ready: Promise.resolve() };
+    });
+    const animate = vi.fn();
     Object.defineProperty(document, "startViewTransition", {
       configurable: true,
-      value: (callback: () => void) => {
-        callback();
-        return { ready: Promise.resolve() };
-      },
+      value: startViewTransition,
     });
     Object.defineProperty(document.documentElement, "animate", {
       configurable: true,
-      value: (keyframes: unknown, options: unknown) => {
-        animations.push([keyframes, options]);
-        return {} as Animation;
-      },
+      value: animate,
     });
     await act(async () => root.render(React.createElement(ThemeSwitcher)));
-    const control = container.querySelector('[data-testid="theme-switcher"]');
-    vi.spyOn(control as HTMLElement, "getBoundingClientRect").mockReturnValue({
-      bottom: 60,
-      height: 20,
-      left: 30,
-      right: 50,
-      toJSON: () => ({}),
-      top: 40,
-      width: 20,
-      x: 30,
-      y: 40,
-    });
 
     await act(async () => {
       container
@@ -214,7 +223,8 @@ describe("blog appearance controls", () => {
     });
 
     expect(themeChanges).toEqual(["dark"]);
-    expect(animations).toHaveLength(1);
+    expect(startViewTransition).not.toHaveBeenCalled();
+    expect(animate).not.toHaveBeenCalled();
   });
 
   it.each([
