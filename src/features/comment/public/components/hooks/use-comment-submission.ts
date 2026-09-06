@@ -4,11 +4,7 @@ import { type FormEvent, type RefObject, useState, useTransition } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import {
-  usePathname,
-  useRouter,
-} from "@/packages/ui/navigation/blog-navigation";
-import { refreshPath } from "@/packages/infrastructure/refresh-path";
+import { useRouter } from "@/packages/ui/navigation/blog-navigation";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
@@ -44,7 +40,6 @@ export function useCommentSubmission({
   const mutation = trpc.comment.create.useMutation();
   const t = useTranslations("Comment");
   const router = useRouter();
-  const pathname = usePathname();
 
   const resetCaptcha = () => {
     setCaptchaToken(null);
@@ -88,7 +83,6 @@ export function useCommentSubmission({
         .mutateAsync(data)
         .then(async (result) => {
           if (result?.id) {
-            await refreshPath(pathname);
             router.refresh();
             clearReply();
             formRef.current?.reset();

@@ -212,7 +212,7 @@ R2、Turnstile、Resend 与 OAuth Provider 是可选集成：完全不配置即�
 - 支持已绑定用户使用 Passkey 登录；Passkey 可在后台“账号安全”页面注册和管理
 - OAuth Provider 只有在对应环境变量存在时才会启用并展示按钮
 - OAuth 回调地址为 `/api/auth/callback/google`、`/api/auth/callback/github` 和 `/api/auth/callback/apple`
-- 用户名密码登录会校验 Turnstile，并使用 `bcrypt` 哈希比对密码
+- 用户名密码登录在配置 Turnstile 时会校验验证码，并使用 `bcrypt` 哈希比对密码
 - 六位密码下限为兼容现有账号而保留，属于已接受风险；未来提升长度必须单独评估已有凭据和用户迁移。
 - 登录后的会话由 Better Auth 维护，权限判定以数据库中的用户状态和角色为准
 - 从 NextAuth 切换后旧 Cookie 不再兼容，首次发布后所有用户需要重新登录

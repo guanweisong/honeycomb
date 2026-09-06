@@ -1,5 +1,5 @@
 import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 
 /**

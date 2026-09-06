@@ -7,6 +7,9 @@ const workflow = readFileSync(
   resolve(process.cwd(), ".github/workflows/quality.yml"),
   "utf8",
 );
+const packageJson = JSON.parse(
+  readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
+) as { scripts: Record<string, string> };
 
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
@@ -14,9 +17,13 @@ describe("quality workflow", () => {
     expect(workflow).toContain("bun install --frozen-lockfile");
   });
 
-  it("keeps Turbopack as the production build path", () => {
+  it("keeps Turbopack analysis finite and writes static diagnostics", () => {
     expect(workflow).toContain("- run: bun run build");
-    expect(workflow).toContain("- run: bun run analyze");
+    expect(workflow).toContain("- run: timeout 10m bun run analyze");
+    expect(workflow).toContain("path: .next/diagnostics/analyze/");
+    expect(packageJson.scripts.analyze).toBe(
+      "bun next experimental-analyze --output",
+    );
     expect(workflow).not.toMatch(/webpack/i);
   });
 

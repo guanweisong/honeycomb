@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定义业务 feature 的唯一归属、tRPC transport 边界和测试组织方式。
+定义业务 feature 的唯一实现归属、tRPC transport 边界、跨模块依赖方向和测试组织方式，避免业务规则回流共享技术包或通过深层导入形成不可维护耦合。
 
 ## Requirements
 

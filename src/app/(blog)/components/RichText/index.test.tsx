@@ -97,4 +97,14 @@ describe("RichText", () => {
 
     expect(container.firstElementChild).toBeNull();
   });
+
+  it("removes executable markup before parsing stored rich text", () => {
+    render({
+      html: '<p onclick="alert(1)">正文<a href="javascript:alert(2)">链接</a></p>',
+    });
+
+    expect(container.textContent).toBe("正文链接");
+    expect(container.querySelector("p")?.hasAttribute("onclick")).toBe(false);
+    expect(container.querySelector("a")?.hasAttribute("href")).toBe(false);
+  });
 });

@@ -10,7 +10,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
@@ -24,6 +24,7 @@ import {
 } from "@/features/page/application/page-use-cases";
 import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
+import { invalidatePublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
@@ -53,24 +54,38 @@ export const pageRouter = createTRPCRouter({
     }),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPage(
+      const result = await createPage(
         createPageCommandRepository(ctx.db),
         input,
         ctx.user.id,
       );
+      await invalidatePublicContent({ id: result.id, type: "page" });
+      return result;
     }),
   destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyPages(createPageCommandRepository(ctx.db), input.ids),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyPages(
+        createPageCommandRepository(ctx.db),
+        input.ids,
+      );
+      await Promise.all(
+        input.ids.map((id) => invalidatePublicContent({ id, type: "page" })),
+      );
+      return result;
+    }),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updatePage(createPageCommandRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updatePage(
+        createPageCommandRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidatePublicContent({ id: input.id, type: "page" });
+      return result;
+    }),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ input, ctx }) => {

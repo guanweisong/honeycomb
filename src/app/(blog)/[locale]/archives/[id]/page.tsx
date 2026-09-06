@@ -14,6 +14,8 @@ import { createServerClient } from "@/packages/trpc/api";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { PostType } from "@/packages/domain/content/post";
 import { RichText } from "@/app/(blog)/components/RichText";
+import { PostViewTracker } from "@/app/(blog)/components/ViewTracker";
+import { serializeJsonLd } from "@/packages/infrastructure/security/serialize-json-ld";
 import {
   assertPostDetail,
   createPostJsonLd,
@@ -58,16 +60,16 @@ export default async function Archives(props: ArchivesProps) {
       categoryId: postDetail.category.id,
     }),
     serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
-    serverClient.post.incrementViews({ id }),
   ]);
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
 
   return (
     <>
+      <PostViewTracker id={id} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <ViewTransition name={`postTitle-${postDetail.id}`}>
         <PageTitle>{title}</PageTitle>

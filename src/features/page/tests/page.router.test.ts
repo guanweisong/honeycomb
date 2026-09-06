@@ -6,6 +6,13 @@ import { PageStatus } from "@/packages/domain/content/page";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
+const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
+
+vi.mock("@/packages/infrastructure/refresh-path", () => ({
+  invalidatePublicContent: (...args: unknown[]) =>
+    mockInvalidatePublicContent(...args),
+}));
+
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
@@ -134,6 +141,10 @@ describe("Page Router", () => {
 
       expect(result).toEqual(updatedPage);
       expect(mockDb.update).toHaveBeenCalledWith(schema.page);
+      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+        id: TEST_IDS.ID_1,
+        type: "page",
+      });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

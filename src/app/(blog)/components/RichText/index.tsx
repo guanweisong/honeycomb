@@ -2,6 +2,7 @@ import parse, { HTMLReactParserOptions } from "html-react-parser";
 import Image from "next/image";
 import type { MediaViewModel as MediaEntity } from "@/features/contracts";
 import { PhotoSwipeClient } from "@/app/(blog)/components/PhotoSwipe";
+import { sanitizeRichText } from "@/packages/infrastructure/security/sanitize-html";
 
 interface Props {
   html?: string;
@@ -42,7 +43,9 @@ export function RichText({ html, images = [] }: Props) {
     },
   };
 
-  return <PhotoSwipeClient>{parse(html, options)}</PhotoSwipeClient>;
+  return (
+    <PhotoSwipeClient>{parse(sanitizeRichText(html), options)}</PhotoSwipeClient>
+  );
 }
 /**
  * 富文本展示组件，负责解析并渲染经过清洗的 HTML 内容。

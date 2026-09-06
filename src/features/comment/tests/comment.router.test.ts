@@ -6,6 +6,15 @@ import { createAdminUser, createGuestUser, createMockContext, createMockDb, rese
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
+const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
+const mockInvalidateAllPublicContent = vi.hoisted(() => vi.fn());
+
+vi.mock("@/packages/infrastructure/refresh-path", () => ({
+  invalidatePublicContent: (...args: unknown[]) =>
+    mockInvalidatePublicContent(...args),
+  invalidateAllPublicContent: () => mockInvalidateAllPublicContent(),
+}));
+
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
@@ -144,6 +153,10 @@ describe("Comment Router", () => {
       expect(result).not.toHaveProperty("email");
       expect(result).not.toHaveProperty("ip");
       expect(result).not.toHaveProperty("userAgent");
+      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+        id: TEST_IDS.ID_1,
+        type: "post",
+      });
     });
   });
 
@@ -173,6 +186,7 @@ describe("Comment Router", () => {
 
       expect(result).toEqual(updatedComment);
       expect(mockDb.update).toHaveBeenCalledWith(expect.any(Object));
+      expect(mockInvalidateAllPublicContent).toHaveBeenCalledOnce();
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
@@ -200,6 +214,7 @@ describe("Comment Router", () => {
 
       expect(result).toEqual({ success: true });
       expect(mockDb.delete).toHaveBeenCalledWith(expect.any(Object));
+      expect(mockInvalidateAllPublicContent).toHaveBeenCalledOnce();
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

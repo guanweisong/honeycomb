@@ -1,4 +1,4 @@
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { I18nSchema } from "@/packages/trpc/api/schemas/i18n.schema";
 import { z } from "zod";
 

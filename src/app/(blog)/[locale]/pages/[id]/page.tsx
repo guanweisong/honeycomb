@@ -7,6 +7,7 @@ import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-l
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
 import { RichText } from "@/app/(blog)/components/RichText";
+import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
@@ -34,7 +35,6 @@ export default async function Pages(props: PagesProps) {
   const [pageDetail, commentsData] = await Promise.all([
     serverClient.page.detail({ id }),
     serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
-    serverClient.page.incrementViews({ id }),
   ]);
   const publishedPage = assertPublishedPost(pageDetail);
   const links =
@@ -47,6 +47,7 @@ export default async function Pages(props: PagesProps) {
 
   return (
     <>
+      <PageViewTracker id={id} />
       <PageTitle>{publishedPage.title?.[locale]}</PageTitle>
       <PostInfo
         id={publishedPage.id}

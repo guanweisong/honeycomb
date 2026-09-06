@@ -9,7 +9,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@/features/comment/schemas/comment.update.schema";
 import { CommentQuerySchema } from "@/features/comment/schemas/comment.query.schema";
@@ -27,6 +27,10 @@ import { createCommentQueryRepository } from "@/features/comment/infrastructure/
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
 import { validateCaptcha } from "@/packages/infrastructure/security/validate-captcha";
+import {
+  invalidateAllPublicContent,
+  invalidatePublicContent,
+} from "@/packages/infrastructure/refresh-path";
 
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
@@ -46,8 +50,8 @@ export const commentRouter = createTRPCRouter({
 
   create: publicProcedure
     .input(CommentInsertSchema)
-    .mutation(({ ctx, input }) =>
-      createComment(
+    .mutation(async ({ ctx, input }) => {
+      const result = await createComment(
         createCommentCommandRepository(ctx.db),
         ctx.header,
         input,
@@ -59,18 +63,34 @@ export const commentRouter = createTRPCRouter({
             parentId,
           ),
         logCommentNotificationFailure,
-      ).catch(mapApplicationError),
-    ),
+      ).catch(mapApplicationError);
+      if (input.postId) {
+        await invalidatePublicContent({ id: input.postId, type: "post" });
+      } else if (input.pageId) {
+        await invalidatePublicContent({ id: input.pageId, type: "page" });
+      }
+      return result;
+    }),
 
   update: permissionProcedure(Permission.commentModerate)
     .input(CommentUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updateComment(createCommentCommandRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateComment(
+        createCommentCommandRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidateAllPublicContent();
+      return result;
+    }),
 
   destroy: permissionProcedure(Permission.commentModerate)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyComments(createCommentCommandRepository(ctx.db), input.ids),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyComments(
+        createCommentCommandRepository(ctx.db),
+        input.ids,
+      );
+      await invalidateAllPublicContent();
+      return result;
+    }),
 });

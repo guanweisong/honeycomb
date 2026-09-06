@@ -12,6 +12,7 @@ const mockSettingIndex = vi.fn();
 const mockPostDetail = vi.fn();
 const mockRandomPosts = vi.fn();
 const mockIncrementViews = vi.fn();
+const mockClientIncrementViews = vi.fn();
 const mockComments = vi.fn();
 
 vi.mock("react", async (importOriginal) => {
@@ -43,6 +44,17 @@ vi.mock("@/packages/trpc/api", () => ({
     },
     setting: { index: mockSettingIndex },
   }),
+}));
+
+vi.mock("@/packages/trpc/client/trpc", () => ({
+  trpc: {
+    page: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },
+    post: {
+      incrementViews: {
+        useMutation: () => ({ mutate: mockClientIncrementViews }),
+      },
+    },
+  },
 }));
 
 vi.mock("@/app/(blog)/components/PostInfo", () => ({
@@ -139,6 +151,7 @@ describe("archives page", () => {
       { id: "post-2", title: { zh: "推荐文章" } },
     ]);
     mockIncrementViews.mockReset().mockResolvedValue(undefined);
+    mockClientIncrementViews.mockReset();
     mockComments.mockReset().mockResolvedValue({ total: 3 });
   });
 
@@ -182,6 +195,23 @@ describe("archives page", () => {
     ).toBe("推荐文章");
     expect(container.querySelector('a[href="/archives/post-1"]')).toBeNull();
     expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
+    expect(mockIncrementViews).not.toHaveBeenCalled();
+    expect(mockClientIncrementViews).toHaveBeenCalledOnce();
+    expect(mockClientIncrementViews).toHaveBeenCalledWith({ id: "post-1" });
+  });
+
+  it("keeps JSON-LD inside its script context for hostile stored titles", async () => {
+    await renderArchive({
+      ...articleDetail,
+      title: { zh: '</script><script data-attack="stored">alert(1)</script>' },
+    });
+
+    const script = container.querySelector('script[type="application/ld+json"]');
+    expect(script?.innerHTML).not.toContain("<");
+    expect(container.querySelector('script[data-attack="stored"]')).toBeNull();
+    expect(structuredData().name).toBe(
+      '</script><script data-attack="stored">alert(1)</script>',
+    );
   });
 
   it("renders movie year, release date and Movie structured data", async () => {

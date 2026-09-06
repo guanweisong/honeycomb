@@ -10,18 +10,20 @@ const {
   mockUseTranslations,
   mockUseRouter,
   mockUsePathname,
-  mockRefreshPath,
   mockClientEnv,
+  mockMutateAsync,
+  mockRouterRefresh,
 } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
   mockUseMutation: vi.fn(),
   mockUseTranslations: vi.fn(),
   mockUseRouter: vi.fn(),
   mockUsePathname: vi.fn(),
-  mockRefreshPath: vi.fn(),
   mockClientEnv: {
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: undefined as string | undefined,
   },
+  mockMutateAsync: vi.fn(),
+  mockRouterRefresh: vi.fn(),
 }));
 
 vi.mock("@/env/client", () => ({
@@ -51,10 +53,6 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
       },
     },
   },
-}));
-
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  refreshPath: (...args: unknown[]) => mockRefreshPath(...args),
 }));
 
 vi.mock("@marsidev/react-turnstile", () => ({
@@ -90,20 +88,21 @@ describe("CommentClient", () => {
     mockUseTranslations.mockReset();
     mockUseRouter.mockReset();
     mockUsePathname.mockReset();
-    mockRefreshPath.mockReset();
     mockClientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY = undefined;
     mockUseTranslations.mockReturnValue((key: string) => {
       if (key === "captchaRequired") return "请先完成验证码验证";
       return key;
     });
     mockUseRouter.mockReturnValue({
-      refresh: vi.fn(),
+      refresh: mockRouterRefresh,
     });
     mockUsePathname.mockReturnValue("/zh/list/category");
     mockUseMutation.mockReturnValue({
-      mutateAsync: vi.fn(),
+      mutateAsync: mockMutateAsync,
       isPending: false,
     });
+    mockMutateAsync.mockReset();
+    mockRouterRefresh.mockReset();
     localStorage.clear();
     alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
   });
@@ -154,6 +153,41 @@ describe("CommentClient", () => {
 
     expect(mockToastError).toHaveBeenCalledWith("请先完成验证码验证");
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("refreshes the client view after the server mutation succeeds", async () => {
+    mockMutateAsync.mockResolvedValue({ id: "comment-id" });
+
+    await act(async () => {
+      root.render(
+        React.createElement(
+          React.Suspense,
+          { fallback: null },
+          React.createElement(CommentClient, {
+            id: "507f1f77bcf86cd799439011",
+            type: MenuType.CATEGORY,
+            queryCommentPromise: commentPromise,
+          }),
+        ),
+      );
+      await Promise.resolve();
+    });
+
+    (container.querySelector('input[name="author"]') as HTMLInputElement).value =
+      "Alice";
+    (container.querySelector('input[name="email"]') as HTMLInputElement).value =
+      "alice@example.com";
+    (container.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value =
+      "Hello world";
+
+    await act(async () => {
+      container.querySelector("form")?.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(mockRouterRefresh).toHaveBeenCalledOnce();
   });
 
   it("restores and clears the saved identity using the existing user key", async () => {

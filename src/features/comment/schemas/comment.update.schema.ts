@@ -1,5 +1,5 @@
 import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { z } from "zod";

@@ -10,7 +10,7 @@ import {
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { IdSchema } from "@/packages/trpc/api/schemas/fields/id.schema";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
@@ -30,6 +30,7 @@ import {
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";
+import { invalidatePublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({
@@ -83,26 +84,40 @@ export const postRouter = createTRPCRouter({
 
   create: permissionProcedure(Permission.postCreate)
     .input(PostInsertSchema)
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPost(
+      const result = await createPost(
         createPostCommandRepository(ctx.db),
         input,
         ctx.user.id,
       );
+      await invalidatePublicContent({ id: result.id, type: "post" });
+      return result;
     }),
 
   destroy: permissionProcedure(Permission.postDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyPosts(createPostCommandRepository(ctx.db), input.ids),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyPosts(
+        createPostCommandRepository(ctx.db),
+        input.ids,
+      );
+      await Promise.all(
+        input.ids.map((id) => invalidatePublicContent({ id, type: "post" })),
+      );
+      return result;
+    }),
 
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updatePost(createPostCommandRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updatePost(
+        createPostCommandRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidatePublicContent({ id: input.id, type: "post" });
+      return result;
+    }),
 
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: IdSchema }))
@@ -141,7 +156,12 @@ export const postRouter = createTRPCRouter({
         type: z.nativeEnum(TagType),
       }),
     )
-    .mutation(({ input, ctx }) =>
-      updatePostTags(createPostCommandRepository(ctx.db), input),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updatePostTags(
+        createPostCommandRepository(ctx.db),
+        input,
+      );
+      await invalidatePublicContent({ id: input.postId, type: "post" });
+      return result;
+    }),
 });

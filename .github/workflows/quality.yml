@@ -18,8 +18,8 @@ jobs:
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SITE_URL: https://example.test
-      TURSO_URL: http://127.0.0.1:1
-      TURSO_TOKEN: ci-unreachable-test-token
+      TURSO_URL: file:/tmp/honeycomb-ci.db
+      TURSO_TOKEN: local
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
     steps:
@@ -42,6 +42,7 @@ jobs:
       - run: bun run check-types
       - run: bun run lint
       - run: bun run db:migrations:check
+      - run: bunx drizzle-kit migrate
       - run: bun run test:unit:run
       - run: bun run test:unit:coverage
       - run: bun run test:unit:process
@@ -54,7 +55,14 @@ jobs:
           retention-days: 14
       - run: bun run audit:production
       - run: bun run build
-      - run: bun run analyze
+      - run: timeout 10m bun run analyze
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-analysis
+          path: .next/diagnostics/analyze/
+          if-no-files-found: ignore
+          retention-days: 14
       - run: bunx playwright install --with-deps chromium
       - run: >-
           bunx playwright test

@@ -16,6 +16,13 @@ import {
   resetMockDb,
 } from "@tests/helpers/test-utils";
 
+const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
+
+vi.mock("@/packages/infrastructure/refresh-path", () => ({
+  invalidatePublicContent: (...args: unknown[]) =>
+    mockInvalidatePublicContent(...args),
+}));
+
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
@@ -376,6 +383,10 @@ describe("Post Router", () => {
 
       expect(result).toEqual(updatedPost);
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+        id: TEST_IDS.ID_1,
+        type: "post",
+      });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
