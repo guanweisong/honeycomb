@@ -1,18 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { changeUserStatus } from "./application/user-command-handlers";
 import { destroyUsers, updateUser } from "./application/user-commands";
 
 describe("User command handlers", () => {
-  it("账号状态变更成功后派发事件", async () => {
+  it("账号状态变更成功后返回持久化结果", async () => {
     const update = vi.fn().mockResolvedValue({ id: "user-1", status: UserStatus.DISABLE });
-    const bus = new InProcessEventBus();
-    const handler = vi.fn();
-    bus.subscribe("user.status-changed", handler);
-    await changeUserStatus({ update }, { id: "user-1", currentStatus: UserStatus.ENABLE, status: UserStatus.DISABLE, level: UserLevel.EDITOR, actorLevel: UserLevel.ADMIN }, bus);
+    await expect(changeUserStatus({ update }, { id: "user-1", currentStatus: UserStatus.ENABLE, status: UserStatus.DISABLE, level: UserLevel.EDITOR, actorLevel: UserLevel.ADMIN })).resolves.toEqual({ id: "user-1", status: UserStatus.DISABLE });
     expect(update).toHaveBeenCalledWith({ id: "user-1", status: UserStatus.DISABLE });
-    expect(handler).toHaveBeenCalledOnce();
   });
 
   it("更新用户状态时必须先经过用户聚合", async () => {

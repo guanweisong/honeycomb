@@ -2,7 +2,6 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { DomainError } from "@/packages/domain/core/domain-error";
 import { PostAggregate } from "../domain/post";
 import type { PostCommandRepository, PostUpdateCommand } from "./repository";
-import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
 function isPostStatus(status: string): status is PostStatus {
   return Object.values(PostStatus).some((value) => value === status);
@@ -12,7 +11,6 @@ function isPostStatus(status: string): status is PostStatus {
 export async function publishPost(
   repository: Pick<PostCommandRepository, "update">,
   input: PostUpdateCommand & { status: PostStatus },
-  bus?: InProcessEventBus,
 ) {
   if (!input.status)
     throw new DomainError("发布文章必须提供当前状态", "MISSING_POST_STATUS");
@@ -20,19 +18,16 @@ export async function publishPost(
     throw new DomainError("文章当前状态不合法", "INVALID_POST_STATUS");
   const aggregate = PostAggregate.rehydrate(input.id, input.status);
   aggregate.publish();
-  const result = await repository.update({
+  return repository.update({
     ...input,
     status: PostStatus.PUBLISHED,
   });
-  for (const event of aggregate.pullEvents()) await bus?.publish(event);
-  return result;
 }
 
 /** 通过 Post 聚合执行撤回命令，再交给 repository 持久化。 */
 export async function withdrawPost(
   repository: Pick<PostCommandRepository, "update">,
   input: PostUpdateCommand & { status: PostStatus },
-  bus?: InProcessEventBus,
 ) {
   if (!input.status)
     throw new DomainError("撤回文章必须提供当前状态", "MISSING_POST_STATUS");
@@ -40,19 +35,16 @@ export async function withdrawPost(
     throw new DomainError("文章当前状态不合法", "INVALID_POST_STATUS");
   const aggregate = PostAggregate.rehydrate(input.id, input.status);
   aggregate.withdraw();
-  const result = await repository.update({
+  return repository.update({
     ...input,
     status: PostStatus.DRAFT,
   });
-  for (const event of aggregate.pullEvents()) await bus?.publish(event);
-  return result;
 }
 
 /** 更新文章；状态变更必须经过 Post 聚合。 */
 export async function updatePost(
   repository: Pick<PostCommandRepository, "findStatus" | "update">,
   input: PostUpdateCommand,
-  bus?: InProcessEventBus,
 ) {
   if (input.status === undefined) return repository.update(input);
 
@@ -61,10 +53,10 @@ export async function updatePost(
   if (currentStatus === input.status) return repository.update(input);
 
   if (input.status === PostStatus.PUBLISHED) {
-    return publishPost(repository, { ...input, status: currentStatus }, bus);
+    return publishPost(repository, { ...input, status: currentStatus });
   }
   if (input.status === PostStatus.DRAFT) {
-    return withdrawPost(repository, { ...input, status: currentStatus }, bus);
+    return withdrawPost(repository, { ...input, status: currentStatus });
   }
   throw new DomainError(
     `文章不支持变更为 ${input.status}`,

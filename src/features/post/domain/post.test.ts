@@ -4,11 +4,10 @@ import { InvalidStateTransitionError } from "@/packages/domain/core/domain-error
 import { PostAggregate } from "./post";
 
 describe("PostAggregate", () => {
-  it("支持草稿发布和发布事件", () => {
+  it("支持草稿发布", () => {
     const post = PostAggregate.rehydrate("post-1", PostStatus.DRAFT);
     post.publish();
     expect(post.currentStatus).toBe(PostStatus.PUBLISHED);
-    expect(post.pullEvents()[0]).toMatchObject({ name: "post.published" });
   });
 
   it("支持撤回并拒绝重复发布", () => {

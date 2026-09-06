@@ -90,6 +90,7 @@ describe("User Router", () => {
           status: UserStatus.ENABLE,
         }),
       ).rejects.toThrow(TRPCError);
+      expect(mockDb.insert).not.toHaveBeenCalled();
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
@@ -176,6 +177,7 @@ describe("User Router", () => {
       await expect(
         caller.destroy({ ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] }),
       ).rejects.toThrow(TRPCError);
+      expect(mockDb.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -320,6 +322,7 @@ describe("User Router", () => {
       await expect(
         caller.update({ id: TEST_IDS.ID_2, name: "Updated User" }),
       ).rejects.toThrow(TRPCError);
+      expect(mockDb.update).not.toHaveBeenCalled();
     });
   });
 });

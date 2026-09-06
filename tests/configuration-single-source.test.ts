@@ -73,7 +73,7 @@ describe("配置与契约所有权", () => {
   });
 
   it.each([
-    "src/features/user/login-history-port.ts",
+    "src/features/user/application/login-history-port.ts",
     "src/app/admin/(root)/(dashboard)/account/security/components/LoginHistorySettings/index.tsx",
   ])("%s 引用登录历史事件类型，不重写联合", (path) => {
     const violations: string[] = [];

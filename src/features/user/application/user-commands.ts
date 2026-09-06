@@ -6,7 +6,6 @@ import type {
 } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
 import { UserLevel } from "@/packages/domain/identity/user";
-import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { changeUserStatus } from "./user-command-handlers";
 import { UserAggregate } from "../domain/user";
 
@@ -38,7 +37,6 @@ export async function updateUser(
   repository: Pick<UserCommandPort, "getStatus" | "update">,
   input: { id: string; password?: string } & Partial<Omit<UserCommandInput, "password">>,
   actorLevel: UserLevel,
-  bus?: InProcessEventBus,
 ) {
   if (input.status !== undefined || input.level !== undefined) {
     const current = await repository.getStatus(input.id);
@@ -60,7 +58,6 @@ export async function updateUser(
           level: current.level,
           actorLevel,
         },
-        bus,
         changes,
       );
     }

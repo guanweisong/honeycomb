@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
-import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { moderateComment } from "./application/comment-command-handlers";
 import { createComment, updateComment } from "./application/comment-commands";
 
@@ -68,14 +67,10 @@ describe("Comment command handlers", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("审核成功后派发事件", async () => {
+  it("审核成功后返回持久化结果", async () => {
     const update = vi.fn().mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
-    const bus = new InProcessEventBus();
-    const handler = vi.fn();
-    bus.subscribe("comment.moderated", handler);
-    await moderateComment({ update }, { id: "comment-1", currentStatus: CommentStatus.TO_AUDIT, status: CommentStatus.PUBLISH }, bus);
+    await expect(moderateComment({ update }, { id: "comment-1", currentStatus: CommentStatus.TO_AUDIT, status: CommentStatus.PUBLISH })).resolves.toEqual({ id: "comment-1", status: CommentStatus.PUBLISH });
     expect(update).toHaveBeenCalledWith({ id: "comment-1", status: CommentStatus.PUBLISH });
-    expect(handler).toHaveBeenCalledOnce();
   });
 
   it("更新评论状态时必须先经过评论聚合", async () => {

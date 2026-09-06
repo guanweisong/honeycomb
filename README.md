@@ -4,7 +4,7 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -124,9 +124,9 @@ honeycomb/
 
 ### Feature 分层约束
 
-每个业务 feature 的根部 service 或用例模块只负责业务用例编排和领域规则，不得直接
-导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化端口定义在 feature 根部，
-由同一 feature 的 router 或 app 入口创建 infrastructure adapter 后注入 service。
+每个业务 feature 的 Application 只负责业务用例编排、领域规则与业务端口契约，不得直接
+导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化、凭据和登录历史等端口定义在
+feature 的 `application` 目录，由 router 或 app 入口创建 infrastructure adapter 后注入用例。
 
 权限入口统一登记在 `src/packages/identity/auth/capability-registry.ts`。tRPC、Admin
 Action、Admin route 和后台菜单只能使用已登记的 capability；相关边界测试位于
@@ -136,7 +136,7 @@ Action、Admin route 和后台菜单只能使用已登记的 capability；相关
 
 ### 环境要求
 
-- Node.js >= 20.9
+- Node.js >= 22.12
 - Bun >= 1.3.3
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
@@ -193,7 +193,7 @@ AUTH_GITHUB_SECRET=your_github_client_secret
 AUTH_APPLE_ID=your_apple_service_id
 AUTH_APPLE_SECRET=your_apple_client_secret
 
-# Upstash Redis（API 限流，可选）
+# Upstash Redis（生产 API 限流必填；开发/测试可不配置）
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 
@@ -203,7 +203,7 @@ CSP_REPORT_ONLY=true
 
 生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 阶段不会连接数据库，也不会执行生产启动校验。
 
-R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。
+R2、Turnstile、Resend 与 OAuth Provider 是可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。Upstash 在生产运行时必须完整配置，缺失时 API 会 fail-closed 返回 `503`；只有开发和测试环境可不配置。
 
 ### 登录说明
 
@@ -213,6 +213,7 @@ R2、Turnstile、Resend、OAuth Provider 与 Upstash 均为可选集成：完全
 - OAuth Provider 只有在对应环境变量存在时才会启用并展示按钮
 - OAuth 回调地址为 `/api/auth/callback/google`、`/api/auth/callback/github` 和 `/api/auth/callback/apple`
 - 用户名密码登录会校验 Turnstile，并使用 `bcrypt` 哈希比对密码
+- 六位密码下限为兼容现有账号而保留，属于已接受风险；未来提升长度必须单独评估已有凭据和用户迁移。
 - 登录后的会话由 Better Auth 维护，权限判定以数据库中的用户状态和角色为准
 - 从 NextAuth 切换后旧 Cookie 不再兼容，首次发布后所有用户需要重新登录
 - Passkey 的生产 RP ID 为 `www.guanweisong.com`，认证来源为 `https://www.guanweisong.com`
@@ -360,9 +361,10 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 
 项目集成了 Serwist（Service Worker）：
 
-- 离线访问支持
+- `/en/offline` 显式进入 precache，断网访问未缓存文档时返回离线提示和重试按钮
 - 自动更新
 - 缓存策略配置
+- 唯一注册入口为 `/serwist/sw.js`，`public` 不保留旧 Workbox worker
 
 ## 安全响应头与 CSP
 
@@ -375,11 +377,11 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 - PWA manifest 和 Service Worker 正常注册
 - 不存在未解释的 CSP 违规；强制模式发布后再次执行 E2E 冒烟测试
 
-当前策略为保持静态渲染与 CDN 缓存兼容，脚本策略仍包含 `unsafe-inline`。`report-only` 模式只负责浏览器观察，本工程暂未配置 CSP 报告接收端点。
+当前策略为保持静态渲染与 CDN 缓存兼容，脚本策略仍包含 `unsafe-inline`，属于已接受风险；这不是严格 nonce/hash CSP。未来移除前必须单独评估静态缓存和脚本注入链路。`report-only` 模式只负责浏览器观察，本工程暂未配置 CSP 报告接收端点。
 
 ## 可观测性
 
-项目的可观测性接口不绑定供应商。服务端默认向标准输出写入单行 JSON 日志，指标默认使用 noop adapter；部署环境可以注入自己的 `Logger` 和 `Metrics` 实现。日志或指标 adapter 抛错时会被安全包装器隔离，不会改变业务请求、数据库操作或外部服务调用的结果。
+项目的可观测性接口不绑定供应商。服务端默认向标准输出写入单行 JSON 日志和指标；部署环境可以注入自己的 `Logger` 和 `Metrics` 实现。日志或指标 adapter 抛错时会被安全包装器隔离，不会改变业务请求、数据库操作或外部服务调用的结果。
 
 ### 结构化日志
 
@@ -435,7 +437,7 @@ const metrics: Metrics = {
 configureObservability({ logger, metrics });
 ```
 
-`configureObservability` 会对两个 adapter 自动应用脱敏、标签白名单和 fail-open 包装。adapter 内部不得反向调用 `getLogger()` 或 `getMetrics()` 报告自身错误，以免递归；其内部故障应由供应商 SDK 自身的诊断通道处理。若只替换其中一个 adapter，未提供的日志仍使用 console、指标仍使用 noop。
+`configureObservability` 会对两个 adapter 自动应用脱敏、标签白名单和 fail-open 包装。adapter 内部不得反向调用 `getLogger()` 或 `getMetrics()` 报告自身错误，以免递归；其内部故障应由供应商 SDK 自身的诊断通道处理。若只替换其中一个 adapter，未提供的日志和指标仍使用结构化 console adapter。
 
 未来接入 OpenTelemetry 时，可将 `increment` 映射到 Counter、将 `recordDuration` 映射到 Histogram，并把 labels 作为低基数 attributes；接入 Sentry 时，可将 `Logger.error` 映射为错误事件，将 `event` 和已清洗 context 映射为稳定 tag/context；Vercel、Cloudflare 等平台原生接入可直接转发结构化日志，并将固定指标名映射到平台计数器和耗时分布。所有实现都必须保留现有名称、毫秒单位、标签白名单和 fail-open 语义，不得在 adapter 中加入原始 SQL、参数、请求体、凭据或个人信息。本项目当前不引入 OpenTelemetry、Sentry 或平台 SDK；具体 SDK 初始化、批量发送、采样和关闭刷新应由后续独立 adapter 完成。
 

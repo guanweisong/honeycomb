@@ -36,19 +36,62 @@ describe("observability server registry", () => {
     ]);
   });
 
-  it("restores the console logger and noop metrics by default", () => {
+  it("restores structured console logger and metrics by default", () => {
     const output = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     configureObservability();
     getLogger().info(LogEvent.requestStarted, { requestId: "req-default" });
+    getMetrics().recordDuration(MetricName.apiRequestDurationMs, 23, {
+      method: "query",
+    });
 
-    expect(output).toHaveBeenCalledOnce();
+    expect(output).toHaveBeenCalledTimes(2);
     expect(JSON.parse(output.mock.calls[0]?.[0] ?? "{}")).toMatchObject({
       event: LogEvent.requestStarted,
       requestId: "req-default",
     });
+    expect(JSON.parse(output.mock.calls[1]?.[0] ?? "{}")).toMatchObject({
+      type: "metric",
+      name: MetricName.apiRequestDurationMs,
+      operation: "record-duration",
+      value: 23,
+      unit: "ms",
+      service: "honeycomb",
+      labels: { method: "query" },
+    });
+  });
+
+  it("drops unknown and high-cardinality labels from default metrics", () => {
+    const output = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    configureObservability();
+    getMetrics().increment(MetricName.apiRequestsTotal, {
+      procedure: "attacker-controlled",
+      token: "secret-token",
+    });
+
+    expect(output).toHaveBeenCalledOnce();
+    expect(JSON.parse(output.mock.calls[0]?.[0] ?? "{}")).toMatchObject({
+      type: "metric",
+      name: MetricName.apiRequestsTotal,
+      operation: "increment",
+      value: 1,
+      unit: "count",
+      labels: {},
+    });
+    expect(output.mock.calls[0]?.[0]).not.toContain("secret-token");
+    expect(output.mock.calls[0]?.[0]).not.toContain("attacker-controlled");
+  });
+
+  it("keeps callers running when the default metric writer throws", () => {
+    vi.spyOn(console, "log").mockImplementation(() => {
+      throw new Error("stdout unavailable");
+    });
+
+    configureObservability();
+
     expect(() =>
-      getMetrics().increment(MetricName.apiRequestsTotal),
+      getMetrics().increment(MetricName.apiErrorsTotal),
     ).not.toThrow();
   });
 

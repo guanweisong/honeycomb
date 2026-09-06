@@ -2,7 +2,6 @@ import "server-only";
 
 import { toPublicComment } from "../comment-dto";
 import { moderateComment } from "./comment-command-handlers";
-import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import { ApplicationError } from "@/packages/application/errors";
 import type { CommentCommandRepository, CommentUpdate, PublicCommentInput } from "./repository";
 export type { CommentUpdate, PublicCommentInput } from "./repository";
@@ -11,7 +10,6 @@ export type { CommentUpdate, PublicCommentInput } from "./repository";
 export async function updateComment(
   repository: Pick<CommentCommandRepository, "findStatus" | "update">,
   input: CommentUpdate,
-  bus?: InProcessEventBus,
 ) {
   if (input.status === undefined) return repository.update(input);
 
@@ -22,7 +20,6 @@ export async function updateComment(
   return moderateComment(
     repository,
     { ...input, currentStatus, status: input.status },
-    bus,
   );
 }
 /** 批量删除后台评论。 */

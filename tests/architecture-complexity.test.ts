@@ -145,6 +145,28 @@ describe("架构复杂度治理", () => {
     expect(violations).toEqual([]);
   });
 
+  it("Feature 根目录不得拥有业务端口契约", () => {
+    const violations = readdirSync(featureRoot).flatMap((feature) => {
+      const directory = join(featureRoot, feature);
+      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory()) return [];
+
+      return readdirSync(directory)
+        .filter((entry) => entry === "ports.ts" || /-port\.ts$/.test(entry))
+        .map((entry) => relative(process.cwd(), join(directory, entry)));
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it("生产源码不得保留未接线的通用领域事件基础设施", () => {
+    const eventsRoot = join(sourceRoot, "packages/domain/events");
+    const eventInfrastructure = statSync(eventsRoot, { throwIfNoEntry: false })
+      ? sourceFiles(eventsRoot).map((path) => relative(process.cwd(), path))
+      : [];
+
+    expect(eventInfrastructure).toEqual([]);
+  });
+
   it("业务 commands、queries、handlers 必须位于 application", () => {
     const violations = readdirSync(featureRoot).flatMap((feature) => {
       const directory = join(featureRoot, feature);

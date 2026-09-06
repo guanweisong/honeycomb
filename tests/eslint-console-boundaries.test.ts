@@ -32,11 +32,10 @@ describe("console lint boundary", () => {
     30_000,
   );
 
-  it("allows console usage only in the console logger adapter", async () => {
-    await expect(
-      lintConsoleAt(
-        "src/packages/infrastructure/observability/adapters/console.ts",
-      ),
-    ).resolves.toHaveLength(0);
+  it.each([
+    "src/packages/infrastructure/observability/adapters/console.ts",
+    "src/packages/infrastructure/observability/adapters/console-metrics.ts",
+  ])("allows console usage in %s", async (filePath) => {
+    await expect(lintConsoleAt(filePath)).resolves.toHaveLength(0);
   }, 30_000);
 });

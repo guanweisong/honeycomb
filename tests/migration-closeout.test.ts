@@ -6,7 +6,7 @@ const coreContracts = [
   "src/features/page/application/repository.ts",
   "src/features/comment/application/repository.ts",
   "src/features/comment/application/comment-use-cases.ts",
-  "src/features/user/ports.ts",
+  "src/features/user/application/ports.ts",
 ];
 
 describe("DDD migration closeout", () => {

@@ -1,4 +1,3 @@
-import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import type { PostCommandRepository, PostUpdateCommand } from "./repository";
 import type { PostStatus } from "@/packages/domain/content/post-status";
 import { publishPost, withdrawPost } from "./post-command-handlers";
@@ -15,15 +14,13 @@ export const postUseCases = {
   publish(
     repository: PostCommandRepository,
     input: PostUpdateCommand & { status: PostStatus },
-    bus?: InProcessEventBus,
   ) {
-    return publishPost(repository, input, bus);
+    return publishPost(repository, input);
   },
   withdraw(
     repository: PostCommandRepository,
     input: PostUpdateCommand & { status: PostStatus },
-    bus?: InProcessEventBus,
   ) {
-    return withdrawPost(repository, input, bus);
+    return withdrawPost(repository, input);
   },
 };

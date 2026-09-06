@@ -18,13 +18,18 @@
 
 ## 收尾指标
 
-| 指标 | 迁移前基线 | 当前结果 |
-| --- | ---: | ---: |
-| `src` 文件数 | 679 | 691 |
-| `src` TypeScript/TSX 行数 | 约 46,080 | 46,588 |
-| 业务 feature 数 | 10 | 11（含 contracts 目录） |
-| 测试文件数 | 208 | 215 |
-| 生产文件超过 600 行 | 0 | 0 |
-| feature 根部旧 service 文件 | 存在 | 0 |
+| 指标 | 2026-09-06 当前结果 |
+| --- | ---: |
+| `src` 文件数 | 740 |
+| `src` TypeScript/TSX 文件数 | 724 |
+| `src` TypeScript/TSX 行数 | 50,570 |
+| feature 目录数 | 11（含 `contracts`） |
+| 测试文件数 | 275 |
+| 生产文件超过 600 行 | 0 |
+| feature 根部旧 service/port 文件 | 0 |
+| 无生产消费者的领域事件基础设施 | 0 |
+| 遗留根级 Service Worker/Workbox 资产 | 0 |
 
-类型检查、Lint、全量单元测试、覆盖率和 webpack 生产构建均通过。覆盖率为：Statements 81.34%、Branches 75.23%、Functions 77.70%、Lines 82.26%。E2E 尚未完成：安全测试环境无法启动独立本地服务，且已有开发服务器占用端口；未终止用户进程或加载真实凭据。
+类型检查、Lint、迁移治理、全量单元测试、覆盖率、进程级门禁和 Webpack 生产构建均通过。全量单测为 252 个测试文件、1140 项测试；覆盖率为 Statements 82.03%、Branches 74.66%、Functions 80.25%、Lines 83.09%。安全响应头、RBAC 与 PWA 关键 Chromium E2E 为 6/6 通过，PWA 生产离线用例另连续运行两次通过。
+
+默认 Turbopack 构建与 `next experimental-analyze` 在当前受限执行环境中均停在 PostCSS 子进程创建阶段，错误为内部端口绑定 `Operation not permitted`；相同隔离假配置下 Webpack 生产构建通过，失败发生在数据库访问前。该限制已记录，不以失败结果冒充分析通过。

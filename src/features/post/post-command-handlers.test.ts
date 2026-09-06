@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { publishPost, withdrawPost } from "./application/post-command-handlers";
 import { updatePost } from "./application/post-commands";
-import { InProcessEventBus } from "@/packages/domain/events/event-bus";
 
 const input = { id: "post-1", status: PostStatus.DRAFT };
 
@@ -13,13 +12,12 @@ describe("Post command handlers", () => {
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ status: PostStatus.PUBLISHED }));
   });
 
-  it("发布成功后派发领域事件", async () => {
+  it("发布成功后返回持久化结果", async () => {
     const update = vi.fn().mockResolvedValue({ id: "post-1", status: PostStatus.PUBLISHED });
-    const bus = new InProcessEventBus();
-    const handler = vi.fn();
-    bus.subscribe("post.published", handler);
-    await publishPost({ update }, input, bus);
-    expect(handler).toHaveBeenCalledOnce();
+    await expect(publishPost({ update }, input)).resolves.toEqual({
+      id: "post-1",
+      status: PostStatus.PUBLISHED,
+    });
   });
 
   it("通过聚合撤回文章", async () => {

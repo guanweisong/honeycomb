@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryObservability } from "./packages/infrastructure/observability/adapters/memory";
-import { configureObservability } from "./packages/infrastructure/observability/server/registry";
+import {
+  configureObservability,
+  getMetrics,
+} from "./packages/infrastructure/observability/server/registry";
+import { MetricName } from "./packages/infrastructure/observability/core/names";
 import { onRequestError, register } from "./instrumentation";
 
 const productionCoreEnv = {
@@ -52,6 +56,20 @@ describe("instrumentation register", () => {
     vi.stubEnv("TURSO_URL", "invalid-turso-url");
 
     expect(() => register()).not.toThrow();
+  });
+
+  it("register 后默认指标写入结构化标准输出", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const output = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    register();
+    getMetrics().increment(MetricName.apiRequestsTotal, { method: "query" });
+
+    expect(JSON.parse(output.mock.calls[0]?.[0] ?? "{}")).toMatchObject({
+      type: "metric",
+      name: MetricName.apiRequestsTotal,
+      labels: { method: "query" },
+    });
   });
 
   it("records only safe request error fields from Next.js", async () => {

@@ -69,32 +69,36 @@ feature transport / presentation
                     └─ application repository → infrastructure
 ```
 
-`domain` 只包含业务状态、不变量、聚合行为和领域事件；Application Use Case 负责
+`domain` 只包含业务状态、不变量和聚合行为；Application Use Case 负责
 用例编排与事务边界；`infrastructure` 负责 Drizzle、存储、通知等外部适配；
 Repository 接口由 Application 定义。简单模块不强制 Domain，复杂模块仅在存在
 稳定、可复用且需要独立测试的不变量时引入 Domain。
 
-各 feature 按真实业务不变量选择是否使用聚合和领域事件；简单 CRUD 保持 Query/Use Case
-和 Repository 的最小结构，避免过度复杂化。领域事件目前使用进程内总线，并通过
-幂等处理器承载缓存、通知和邮件副作用。
+各 feature 按真实业务不变量选择是否使用聚合；简单 CRUD 保持 Query/Use Case
+和 Repository 的最小结构，避免过度复杂化。工程不保留没有生产消费者的进程内事件总线、
+pending event 队列或幂等事件处理器；现有缓存、通知和邮件副作用由对应 Application/Infrastructure 路径直接编排。
 
 ## DDD 迁移记录
 
 - 已为全部十个业务模块建立 `infrastructure`、Application 和按需的公开、管理边界；
   Repository 契约统一迁入各 feature 的 `application/repository.ts`，旧根部契约已删除。
-- 已将核心命令接入 Post、Comment、User 聚合及领域事件。
-- 已增加领域边界、聚合状态机、fake repository、事件失败重试和幂等测试。
+- 已将核心命令接入 Post、Page、Comment、User 聚合，聚合只负责状态转换和不变量。
+- 已增加领域边界、聚合状态机和 fake repository 测试，并删除仅由测试使用的事件抽象。
 - 保留现有 tRPC、Admin Action 和公开页面入口，未改变外部输入输出契约。
 - 当前不保留无独立职责的业务 facade；新的业务操作必须进入 Application Use Case，
   稳定业务不变量才进入 Domain。
 
 ## 验证记录
 
-最近一次验证结果：类型检查、Lint、Webpack 生产构建通过；全量单测 213 个测试文件、
-940 个测试通过；覆盖率为语句 81.34%、分支 75.23%、函数 77.70%、行 82.26%。
-本地 Turbopack 构建曾因受限环境无法创建子进程而失败，不代表应用代码构建失败。
-Playwright 全量 E2E 尚未完成：安全测试环境无法启动独立本地服务，且已有开发服务器
-占用端口；未终止用户进程或加载真实凭据，因此未将 E2E 标记为通过。
+最近一次验证结果（2026-09-06）：类型检查、Lint、迁移治理、Webpack 生产构建、
+252 个单元测试文件中的 1140 项测试和 52 项进程级测试均通过。覆盖率为语句
+82.03%、分支 74.66%、函数 80.25%、行 83.09%，没有降低全局或关键文件门槛。
+安全响应头、RBAC 与 PWA 关键 Chromium E2E 为 6/6 通过；生产 PWA 离线导航还以
+同一用例连续两次通过验证时序稳定性。
+
+默认 Turbopack 构建和实验性分析器在当前受限执行环境中因 PostCSS 子进程无法绑定
+内部端口而失败；相同隔离假配置下 Webpack 构建成功，且失败发生在任何数据库访问前。
+该环境限制不记录为分析成功，后续应在允许子进程本地通信的 CI/开发环境复跑。
 
 ## 技术包
 

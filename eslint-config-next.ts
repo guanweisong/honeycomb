@@ -40,7 +40,10 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/packages/infrastructure/observability/adapters/console.ts"],
+    files: [
+      "src/packages/infrastructure/observability/adapters/console.ts",
+      "src/packages/infrastructure/observability/adapters/console-metrics.ts",
+    ],
     rules: {
       "no-console": "off",
     },

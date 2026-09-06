@@ -1,4 +1,3 @@
-import type { InProcessEventBus } from "@/packages/domain/events/event-bus";
 import type { CommentStatus } from "@/packages/domain/content/comment";
 import type { CommentCommandRepository, CommentUpdate } from "./repository";
 import { moderateComment } from "./comment-command-handlers";
@@ -22,8 +21,7 @@ export const commentUseCases = {
       currentStatus: CommentStatus;
       status: CommentStatus;
     },
-    bus?: InProcessEventBus,
   ) {
-    return moderateComment(repository, input, bus);
+    return moderateComment(repository, input);
   },
 };

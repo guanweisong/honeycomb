@@ -19,13 +19,14 @@ export default function Offline() {
       <WifiOff className="w-16 h-16 text-gray-500 mb-4" aria-hidden="true" />
       <h1 className="text-2xl font-bold mb-2">{t("title")}</h1>
       <p className="text-gray-600 mb-6 text-center">{t("description")}</p>
-      <button
-        onClick={() => window.location.reload()}
-        className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors"
-        type="button"
-      >
-        {t("retry")}
-      </button>
+      <form action="" method="get">
+        <button
+          className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors"
+          type="submit"
+        >
+          {t("retry")}
+        </button>
+      </form>
     </div>
   );
 }
