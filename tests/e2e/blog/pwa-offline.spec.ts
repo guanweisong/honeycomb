@@ -20,6 +20,10 @@ test.describe('blog pwa', () => {
       return registration.active?.scriptURL ?? '';
     });
     expect(activeWorkerUrl).toContain('/serwist/sw.js');
+    const workerSource = await page.request.get(activeWorkerUrl);
+    await expect(workerSource.text()).resolves.not.toMatch(
+      /static\/images\/(desktop|mobile)\.png/,
+    );
     await expect
       .poll(() =>
         page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? ''),

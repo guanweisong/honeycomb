@@ -25,8 +25,8 @@
 
 ## 5. PWA 预缓存预算
 
-- [ ] 5.1 先增加预缓存排除模式和离线必要资源保留的失败测试
-- [ ] 5.2 配置 Serwist 排除 Manifest screenshots、source map 和非必要后台资产
+- [x] 5.1 先增加预缓存排除模式和离线必要资源保留的失败测试
+- [x] 5.2 配置 Serwist 排除 Manifest screenshots、source map 和非必要后台资产
 - [ ] 5.3 运行 PWA 单测与生产构建，记录资源数量和预缓存体积
 
 ## 6. 动态浏览量

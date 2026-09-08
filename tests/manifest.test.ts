@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { offlinePrecacheUrl } from "@/packages/infrastructure/pwa/precache-config";
 
 describe("web app manifest", () => {
   it("does not import runtime services", async () => {
@@ -26,9 +27,11 @@ describe("PWA 离线可靠性", () => {
     );
 
     expect(routeSource).toMatch(
-      /additionalPrecacheEntries:[\s\S]*url:\s*"\/en\/offline"[\s\S]*revision:/,
+      /additionalPrecacheEntries:[\s\S]*url:\s*offlinePrecacheUrl[\s\S]*revision:/,
     );
-    expect(workerSource).toContain('const offlineFallbackUrl = "/en/offline"');
+    expect(workerSource).toContain(
+      `const offlineFallbackUrl = "${offlinePrecacheUrl}"`,
+    );
     expect(workerSource).toContain("serwist.matchPrecache(offlineFallbackUrl)");
   });
 
