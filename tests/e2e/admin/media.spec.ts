@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  refreshMockedAdminUser,
+  signInAsDashboardTestUser,
+} from "./auth";
 
 test.use({ bypassCSP: true });
 
@@ -39,6 +43,8 @@ test.describe("admin media upload", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
+
+    await signInAsDashboardTestUser(page);
 
     await page.route("https://upload.honeycomb.test/**", async (route) => {
       const request = route.request();
@@ -143,6 +149,7 @@ test.describe("admin media upload", () => {
     });
 
     await page.goto("/admin/media", { waitUntil: "networkidle" });
+    await refreshMockedAdminUser(page);
     const uploadButton = page.getByRole("button", { name: "点击上传文件" });
     await expect(uploadButton).toBeVisible();
     const fileChooserPromise = page.waitForEvent("filechooser");

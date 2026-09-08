@@ -1,4 +1,10 @@
 import { expect, test } from "@playwright/test";
+import {
+  refreshMockedAdminUser,
+  signInAsDashboardTestUser,
+} from "./auth";
+
+const PAGE_ID = "0123456789abcdef01234567";
 
 type PageRecord = {
   id: string;
@@ -27,6 +33,8 @@ test.describe("admin page editor", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
+
+    await signInAsDashboardTestUser(page);
 
     await page.route("**/api/trpc/**", async (route) => {
       const request = route.request();
@@ -67,7 +75,7 @@ test.describe("admin page editor", () => {
           createInputs.push(input);
           const record = {
             ...(input as Omit<PageRecord, "id">),
-            id: "page-created",
+            id: PAGE_ID,
           } satisfies PageRecord;
           records.set(record.id, record);
           return { result: { data: record } };
@@ -95,6 +103,7 @@ test.describe("admin page editor", () => {
     });
 
     await page.goto("/admin/page/edit", { waitUntil: "networkidle" });
+    await refreshMockedAdminUser(page);
     await page.getByPlaceholder("在此输入页面标题").fill("关于我们");
     await page.getByRole("tab", { name: "en" }).first().click();
     await page.getByPlaceholder("在此输入页面标题").fill("About us");
@@ -106,7 +115,9 @@ test.describe("admin page editor", () => {
       .fill("English content");
     await page.getByRole("button", { name: "保存草稿" }).click();
 
-    await expect(page).toHaveURL(/\/admin\/page\/edit\?id=page-created$/);
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/page/edit\\?id=${PAGE_ID}$`),
+    );
     await expect(page.getByText("添加成功")).toBeVisible();
     expect(createInputs).toEqual([
       {
@@ -117,25 +128,28 @@ test.describe("admin page editor", () => {
       },
     ]);
 
-    await expect.poll(() => detailInputs).toEqual([{ id: "page-created" }]);
+    await expect.poll(() => detailInputs).toEqual([{ id: PAGE_ID }]);
+    await expect(page.getByPlaceholder("在此输入页面标题")).toHaveValue(
+      "About us",
+    );
     await page.getByRole("tab", { name: "zh" }).first().click();
     await page.getByPlaceholder("在此输入页面标题").fill("更新后的页面");
     await page.getByRole("button", { name: "发布" }).click();
 
-    await expect(page.getByText("更新成功")).toBeVisible();
     await expect
       .poll(() => updateInputs)
       .toEqual([
         {
-          id: "page-created",
+          id: PAGE_ID,
           title: { en: "About us", zh: "更新后的页面" },
           content: { en: "<p>English content</p>", zh: "<p>中文内容</p>" },
           template: "default",
           status: "PUBLISHED",
         },
       ]);
+    await expect(page.getByText("更新成功")).toBeVisible();
     await expect
       .poll(() => detailInputs)
-      .toEqual([{ id: "page-created" }, { id: "page-created" }]);
+      .toEqual([{ id: PAGE_ID }, { id: PAGE_ID }]);
   });
 });

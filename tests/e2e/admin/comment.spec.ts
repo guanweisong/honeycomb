@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  refreshMockedAdminUser,
+  signInAsDashboardTestUser,
+} from "./auth";
 
 type CommentRecord = {
   id: string;
@@ -45,6 +49,8 @@ test.describe("admin comment moderation", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
+
+    await signInAsDashboardTestUser(page);
 
     await page.route("**/api/trpc/**", async (route) => {
       const request = route.request();
@@ -118,6 +124,7 @@ test.describe("admin comment moderation", () => {
     });
 
     await page.goto("/admin/comment", { waitUntil: "networkidle" });
+    await refreshMockedAdminUser(page);
     await expect(page.getByText("需要审核的评论")).toBeVisible();
     const initialCommentIndexCallCount = commentIndexInputs.length;
     expect(initialCommentIndexCallCount).toBeGreaterThan(0);
