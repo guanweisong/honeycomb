@@ -1,7 +1,7 @@
 import React from "react";
 import CommentClient from "./CommentClient";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import { createServerClient } from "@/packages/trpc/api";
+import type { getPublicComments } from "@/app/lib/server/public-queries";
 
 /**
  * 评论组件的属性接口。
@@ -15,6 +15,8 @@ export interface CommentProps {
    * 评论关联的实体类型。
    */
   type: MenuType;
+  /** 由详情页创建并与评论计数共享的请求级查询。 */
+  queryCommentPromise: ReturnType<typeof getPublicComments>;
 }
 
 /**
@@ -23,15 +25,6 @@ export interface CommentProps {
  * @param {CommentProps} props - 组件属性。
  * @returns {JSX.Element} 评论客户端组件。
  */
-const Comment = async (props: CommentProps) => {
-  const serverClient = await createServerClient();
-  const { id, type } = props;
-  /**
-   * 评论查询的 Promise。
-   * 用于从服务器获取评论数据。
-   */
-  const queryCommentPromise = serverClient.comment.listByRef({ id, type });
-  return <CommentClient {...props} queryCommentPromise={queryCommentPromise} />;
-};
+const Comment = (props: CommentProps) => <CommentClient {...props} />;
 
 export default Comment;

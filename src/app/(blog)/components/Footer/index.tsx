@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { getLocale } from "next-intl/server";
-import { getSiteSetting } from "@/app/lib/server/site-setting";
+import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 
 /**
@@ -9,7 +9,10 @@ import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-l
  * @returns {Promise<JSX.Element>} 网站底部。
  */
 export default async function Footer() {
-  const [setting, locale] = await Promise.all([getSiteSetting(), getLocale()]);
+  const [setting, locale] = await Promise.all([
+    getPublicSetting(),
+    getLocale(),
+  ]);
   const language = normalizeMultiLangLocale(locale);
 
   return (

@@ -6,6 +6,11 @@ import { getLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
+import {
+  getPublicComments,
+  getPublicPageDetail,
+  getPublicSetting,
+} from "@/app/lib/server/public-queries";
 import { RichText } from "@/app/(blog)/components/RichText";
 import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
@@ -32,9 +37,10 @@ export default async function Pages(props: PagesProps) {
   const serverClient = await createServerClient();
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
+  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
   const [pageDetail, commentsData] = await Promise.all([
-    serverClient.page.detail({ id }),
-    serverClient.comment.listByRef({ id, type: MenuType.PAGE }),
+    getPublicPageDetail(id),
+    queryCommentPromise,
   ]);
   const publishedPage = assertPublishedPost(pageDetail);
   const links =
@@ -95,7 +101,11 @@ export default async function Pages(props: PagesProps) {
           )}
         </div>
       ) : null}
-      <Comment id={id} type={MenuType.PAGE} />
+      <Comment
+        id={id}
+        type={MenuType.PAGE}
+        queryCommentPromise={queryCommentPromise}
+      />
     </>
   );
 }
@@ -120,11 +130,10 @@ type GenerateMetadataProps = {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(props: GenerateMetadataProps) {
-  const serverClient = await createServerClient();
   const { id } = await props.params;
   const [setting, pageDetail] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.page.detail({ id }),
+    getPublicSetting(),
+    getPublicPageDetail(id),
   ]);
   const local = normalizeMultiLangLocale(await getLocale());
 

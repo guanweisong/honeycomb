@@ -4,6 +4,10 @@ import NoData from "@/app/(blog)/components/NoData";
 import { getLocale, getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { createServerClient } from "@/packages/trpc/api";
+import {
+  getPublicMenu,
+  getPublicSetting,
+} from "@/app/lib/server/public-queries";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
@@ -32,8 +36,8 @@ export interface ListProps {
 export default async function List(props: ListProps) {
   const serverClient = await createServerClient();
   const [setting, menu] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.menu.index(),
+    getPublicSetting(),
+    getPublicMenu(),
   ]);
   const params = await props.params;
   const locale = normalizeMultiLangLocale(params.locale);
@@ -148,8 +152,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
-    serverClient.setting.index(),
-    serverClient.menu.index(),
+    getPublicSetting(),
+    getPublicMenu(),
     getLocale().then(normalizeMultiLangLocale),
   ]);
   const t = await getTranslations("PostList");

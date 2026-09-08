@@ -11,6 +11,11 @@ import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-l
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/packages/trpc/api";
+import {
+  getPublicComments,
+  getPublicPostDetail,
+  getPublicSetting,
+} from "@/app/lib/server/public-queries";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { PostType } from "@/packages/domain/content/post";
 import { RichText } from "@/app/(blog)/components/RichText";
@@ -43,9 +48,9 @@ export default async function Archives(props: ArchivesProps) {
   const serverClient = await createServerClient();
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  let postDetail: Awaited<ReturnType<typeof serverClient.post.detail>>;
+  let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
   try {
-    postDetail = assertPostDetail(await serverClient.post.detail({ id }));
+    postDetail = assertPostDetail(await getPublicPostDetail(id));
   } catch (error) {
     handlePostDetailError(error);
   }
@@ -55,11 +60,12 @@ export default async function Archives(props: ArchivesProps) {
     throw new Error(`Post ${id} is missing category relation`);
   }
 
+  const queryCommentPromise = getPublicComments(id, MenuType.CATEGORY);
   const [randomPostsList, commentsData] = await Promise.all([
     serverClient.post.getRandomByCategory({
       categoryId: postDetail.category.id,
     }),
-    serverClient.comment.listByRef({ id, type: MenuType.CATEGORY }),
+    queryCommentPromise,
   ]);
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
@@ -144,7 +150,11 @@ export default async function Archives(props: ArchivesProps) {
           </ul>
         </Card>
       )}
-      <Comment id={id} type={MenuType.CATEGORY} />
+      <Comment
+        id={id}
+        type={MenuType.CATEGORY}
+        queryCommentPromise={queryCommentPromise}
+      />
     </>
   );
 }
@@ -172,14 +182,13 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
-  const serverClient = await createServerClient();
   const { id } = await props.params;
-  let setting: Awaited<ReturnType<typeof serverClient.setting.index>>;
-  let postDetail: Awaited<ReturnType<typeof serverClient.post.detail>>;
+  let setting: Awaited<ReturnType<typeof getPublicSetting>>;
+  let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
   try {
     [setting, postDetail] = await Promise.all([
-      serverClient.setting.index(),
-      serverClient.post.detail({ id }),
+      getPublicSetting(),
+      getPublicPostDetail(id),
     ]);
     postDetail = assertPostDetail(postDetail);
   } catch (error) {

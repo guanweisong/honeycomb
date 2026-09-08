@@ -20,8 +20,8 @@ vi.mock("next-intl/server", () => ({
   getLocale: vi.fn(async () => "zh"),
 }));
 
-vi.mock("@/app/lib/server/site-setting", () => ({
-  getSiteSetting: vi.fn(async () => mocks.setting),
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicSetting: vi.fn(async () => mocks.setting),
 }));
 
 import Footer from ".";

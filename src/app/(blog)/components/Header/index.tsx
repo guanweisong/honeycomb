@@ -6,9 +6,11 @@ import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
-import { getSiteSetting } from "@/app/lib/server/site-setting";
+import {
+  getPublicMenu,
+  getPublicSetting,
+} from "@/app/lib/server/public-queries";
 import { getLocale } from "next-intl/server";
-import { createServerClient } from "@/packages/trpc/api";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
@@ -29,10 +31,9 @@ function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
  * @returns {Promise<JSX.Element>} 网站头部。
  */
 export default async function Header() {
-  const serverClient = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
-    getSiteSetting(),
-    serverClient.menu.index(),
+    getPublicSetting(),
+    getPublicMenu(),
     getLocale(),
   ]);
   const language = normalizeMultiLangLocale(locale);
