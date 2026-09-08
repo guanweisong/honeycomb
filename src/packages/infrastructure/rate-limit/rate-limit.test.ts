@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createApiRatelimit, getClientIp } from "./rate-limit";
+import {
+  createApiRatelimit,
+  getClientIp,
+  limitWithTimeout,
+} from "./rate-limit";
 
 const originalEnv = {
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -70,5 +74,32 @@ describe("getClientIp", () => {
     const result = await createApiRatelimit().limit("127.0.0.1");
 
     expect(result).toMatchObject({ success: false, unavailable: true });
+  });
+
+  it("bounds production provider waits and fails closed", async () => {
+    vi.useFakeTimers();
+    const pending = { limit: vi.fn(() => new Promise<never>(() => {})) };
+
+    const resultPromise = limitWithTimeout(pending, "client", {
+      environment: "production",
+      timeoutMs: 50,
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    await expect(resultPromise).resolves.toMatchObject({
+      success: false,
+      unavailable: true,
+    });
+    vi.useRealTimers();
+  });
+
+  it("marks development provider failures unavailable while allowing locally", async () => {
+    const failing = {
+      limit: vi.fn().mockRejectedValue(new Error("provider offline")),
+    };
+
+    await expect(
+      limitWithTimeout(failing, "client", { environment: "development" }),
+    ).resolves.toMatchObject({ success: true, unavailable: true });
   });
 });

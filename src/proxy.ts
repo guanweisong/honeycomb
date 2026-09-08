@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/packages/ui/navigation/routing";
-import { apiRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
+import {
+  apiRatelimit,
+  limitWithTimeout,
+} from "@/packages/infrastructure/rate-limit/rate-limit";
 import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 import { ADMIN_PATHNAME_HEADER } from "@/app/admin/constants/route-capabilities";
 
@@ -20,7 +23,7 @@ export async function proxy(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/api/")) {
     const identifier = getClientIp(req);
     const { success, limit, remaining, reset, unavailable } =
-      await apiRatelimit.limit(identifier);
+      await limitWithTimeout(apiRatelimit, identifier);
 
     if (!success) {
       return new NextResponse(

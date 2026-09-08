@@ -31,6 +31,13 @@ import {
   invalidateAllPublicContent,
   invalidatePublicContent,
 } from "@/packages/infrastructure/refresh-path";
+import { commentCreateRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
+import { createRateLimitedPublicProcedure } from "@/packages/trpc/api/rate-limited-procedure";
+
+const createCommentProcedure = createRateLimitedPublicProcedure({
+  limiter: commentCreateRatelimit,
+  namespace: "comment.create",
+});
 
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
@@ -48,7 +55,7 @@ export const commentRouter = createTRPCRouter({
       ).catch(mapApplicationError),
     ),
 
-  create: publicProcedure
+  create: createCommentProcedure
     .input(CommentInsertSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await createComment(
