@@ -18,6 +18,10 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
+vi.mock("@/packages/infrastructure/refresh-path", () => ({
+  invalidateAllPublicContent: vi.fn(),
+}));
+
 // 模拟工具模块。
 vi.mock("@/packages/infrastructure/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),

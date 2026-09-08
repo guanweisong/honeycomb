@@ -17,6 +17,7 @@ import {
   updateTag,
 } from "@/features/tag/application/tag-use-cases";
 import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
+import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 标签 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const tagRouter = createTRPCRouter({
@@ -25,17 +26,23 @@ export const tagRouter = createTRPCRouter({
     .query(({ input, ctx }) => getTagList(createTagRepository(ctx.db), input)),
   create: permissionProcedure(Permission.tagCreate)
     .input(TagInsertSchema)
-    .mutation(({ input, ctx }) =>
-      createTag(createTagRepository(ctx.db), input),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await createTag(createTagRepository(ctx.db), input);
+      await invalidateAllPublicContent();
+      return result;
+    }),
   destroy: permissionProcedure(Permission.tagDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyTags(createTagRepository(ctx.db), input.ids),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyTags(createTagRepository(ctx.db), input.ids);
+      await invalidateAllPublicContent();
+      return result;
+    }),
   update: permissionProcedure(Permission.tagUpdate)
     .input(TagUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updateTag(createTagRepository(ctx.db), input),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateTag(createTagRepository(ctx.db), input);
+      await invalidateAllPublicContent();
+      return result;
+    }),
 });

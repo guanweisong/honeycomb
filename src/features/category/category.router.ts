@@ -18,6 +18,7 @@ import {
   updateCategory,
 } from "@/features/category/application/category-use-cases";
 import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
+import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const categoryRouter = createTRPCRouter({
@@ -33,17 +34,32 @@ export const categoryRouter = createTRPCRouter({
     ),
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)
-    .mutation(({ input, ctx }) =>
-      createCategory(createCategoryRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await createCategory(
+        createCategoryRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidateAllPublicContent();
+      return result;
+    }),
   destroy: permissionProcedure(Permission.categoryDelete)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyCategories(createCategoryRepository(ctx.db), input.ids),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyCategories(
+        createCategoryRepository(ctx.db),
+        input.ids,
+      );
+      await invalidateAllPublicContent();
+      return result;
+    }),
   update: permissionProcedure(Permission.categoryUpdate)
     .input(CategoryUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updateCategory(createCategoryRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateCategory(
+        createCategoryRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidateAllPublicContent();
+      return result;
+    }),
 });

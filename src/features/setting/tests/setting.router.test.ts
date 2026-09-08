@@ -8,6 +8,10 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
+vi.mock("@/packages/infrastructure/refresh-path", () => ({
+  invalidateAllPublicContent: vi.fn(),
+}));
+
 const mockDb = createMockDb();
 
 describe("Setting Router", () => {

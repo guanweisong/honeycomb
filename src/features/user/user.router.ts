@@ -26,6 +26,7 @@ import {
   toUserCommandPort,
   toUserQueryPort,
 } from "@/features/user/infrastructure/user-repository-adapter";
+import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 用户 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const userRouter = createTRPCRouter({
@@ -47,24 +48,37 @@ export const userRouter = createTRPCRouter({
     ),
   create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)
-    .mutation(({ input, ctx }) =>
-      createUser(toUserCommandPort(createUserRepository(ctx.db)), input).catch(
+    .mutation(async ({ input, ctx }) => {
+      const result = await createUser(
+        toUserCommandPort(createUserRepository(ctx.db)),
+        input,
+      ).catch(
         mapApplicationError,
-      ),
-    ),
+      );
+      await invalidateAllPublicContent();
+      return result;
+    }),
   destroy: permissionProcedure(Permission.userManage)
     .input(DeleteBatchSchema)
-    .mutation(({ input, ctx }) =>
-      destroyUsers(
+    .mutation(async ({ input, ctx }) => {
+      const result = await destroyUsers(
         toUserCommandPort(createUserRepository(ctx.db)),
         input.ids,
-      ).catch(mapApplicationError),
-    ),
+      ).catch(mapApplicationError);
+      await invalidateAllPublicContent();
+      return result;
+    }),
   update: permissionProcedure(Permission.userManage)
     .input(UserUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      updateUser(toUserCommandPort(createUserRepository(ctx.db)), input, ctx.user.level).catch(
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateUser(
+        toUserCommandPort(createUserRepository(ctx.db)),
+        input,
+        ctx.user.level,
+      ).catch(
         mapApplicationError,
-      ),
-    ),
+      );
+      await invalidateAllPublicContent();
+      return result;
+    }),
 });

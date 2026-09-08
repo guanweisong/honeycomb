@@ -13,6 +13,7 @@ import {
   saveAllMenus,
 } from "@/features/menu/application/menu-use-cases";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
+import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const menuRouter = createTRPCRouter({
@@ -24,7 +25,12 @@ export const menuRouter = createTRPCRouter({
   ),
   saveAll: permissionProcedure(Permission.menuUpdate)
     .input(MenuUpdateSchema)
-    .mutation(({ input, ctx }) =>
-      saveAllMenus(createMenuRepository(ctx.db), input).catch(mapApplicationError),
-    ),
+    .mutation(async ({ input, ctx }) => {
+      const result = await saveAllMenus(
+        createMenuRepository(ctx.db),
+        input,
+      ).catch(mapApplicationError);
+      await invalidateAllPublicContent();
+      return result;
+    }),
 });
