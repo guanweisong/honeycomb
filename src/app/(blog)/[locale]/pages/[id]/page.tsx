@@ -2,7 +2,6 @@ import React from "react";
 import PostInfo from "@/app/(blog)/components/PostInfo";
 import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
-import { getLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { createServerClient } from "@/packages/trpc/api";
@@ -17,6 +16,10 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
 import { assertPublishedPost } from "./page.utils";
+import {
+  createLocalizedAlternates,
+  defaultSocialImage,
+} from "@/app/(blog)/lib/metadata";
 /**
  * 页面详情组件的属性接口。
  */
@@ -118,7 +121,7 @@ type GenerateMetadataProps = {
   /**
    * 包含页面 ID 的 Promise。
    */
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
   /**
    * 包含搜索参数的 Promise。
    */
@@ -131,12 +134,12 @@ type GenerateMetadataProps = {
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(props: GenerateMetadataProps) {
-  const { id } = await props.params;
+  const { id, locale: rawLocale } = await props.params;
   const [setting, pageDetail] = await Promise.all([
     getPublicSetting(),
     getPublicPageDetail(id),
   ]);
-  const local = normalizeMultiLangLocale(await getLocale());
+  const local = normalizeMultiLangLocale(rawLocale);
 
   const title = pageDetail?.title?.[local];
 
@@ -149,7 +152,17 @@ export async function generateMetadata(props: GenerateMetadataProps) {
   return {
     title,
     description: setting?.siteName?.[local],
-    openGraph,
+    alternates: createLocalizedAlternates(
+      local,
+      `/pages/${encodeURIComponent(id)}`,
+    ),
+    openGraph: { ...openGraph, images: [defaultSocialImage] },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: setting?.siteName?.[local],
+      images: [defaultSocialImage],
+    },
   };
 }
 

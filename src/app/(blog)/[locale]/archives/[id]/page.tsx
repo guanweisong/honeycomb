@@ -6,7 +6,7 @@ import { Link } from "@/packages/ui/navigation/blog-navigation";
 import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
@@ -27,6 +27,10 @@ import {
   getPostTitle,
   handlePostDetailError,
 } from "./page.utils";
+import {
+  createLocalizedAlternates,
+  defaultSocialImage,
+} from "@/app/(blog)/lib/metadata";
 
 /**
  * 归档页面组件的属性接口。
@@ -167,7 +171,7 @@ type GenerateMetadataProps = {
   /**
    * 包含文章 ID 的 Promise。
    */
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
   /**
    * 包含搜索参数的 Promise。
    */
@@ -183,7 +187,7 @@ type GenerateMetadataProps = {
 export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
-  const { id } = await props.params;
+  const { id, locale: rawLocale } = await props.params;
   let setting: Awaited<ReturnType<typeof getPublicSetting>>;
   let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
   try {
@@ -195,7 +199,7 @@ export async function generateMetadata(
   } catch (error) {
     handlePostDetailError(error);
   }
-  const locale = normalizeMultiLangLocale(await getLocale());
+  const locale = normalizeMultiLangLocale(rawLocale);
 
   /**
    * 格式化文章标题
@@ -211,7 +215,17 @@ export async function generateMetadata(
   return {
     title,
     description: setting?.siteName?.[locale],
-    openGraph,
+    alternates: createLocalizedAlternates(
+      locale,
+      `/archives/${encodeURIComponent(id)}`,
+    ),
+    openGraph: { ...openGraph, images: [defaultSocialImage] },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: setting?.siteName?.[locale],
+      images: [defaultSocialImage],
+    },
   };
 }
 

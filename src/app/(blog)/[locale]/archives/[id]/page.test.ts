@@ -340,10 +340,41 @@ describe("archives page", () => {
 
     await expect(
       generateMetadata({
-        params: Promise.resolve({ id: "post-1" }),
+        params: Promise.resolve({ id: "post-1", locale: "zh" }),
         searchParams: Promise.resolve({}),
       }),
-    ).resolves.toEqual(expected);
+    ).resolves.toMatchObject(expected);
+  });
+
+  it("generates English canonical, language alternates and social defaults", async () => {
+    mockSettingIndex.mockResolvedValue({
+      siteName: { en: "Honeycomb", zh: "蜂巢" },
+    });
+    mockPostDetail.mockResolvedValue({
+      ...articleDetail,
+      title: { en: "Article title", zh: "文章标题" },
+    });
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: "post-1", locale: "en" }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(metadata).toMatchObject({
+      title: "Article title",
+      alternates: {
+        canonical: "/en/archives/post-1",
+        languages: {
+          en: "/en/archives/post-1",
+          zh: "/zh/archives/post-1",
+        },
+      },
+      openGraph: { images: ["/static/images/logo.png"] },
+      twitter: {
+        title: "Article title",
+        images: ["/static/images/logo.png"],
+      },
+    });
   });
 
   it("does not pre-render unbounded archive parameters", async () => {

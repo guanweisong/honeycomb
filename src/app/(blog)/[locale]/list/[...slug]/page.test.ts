@@ -230,17 +230,20 @@ describe("blog list page", () => {
   ] as const)("generates localized metadata for %j", async (slug, expected) => {
     await expect(
       generateMetadata({
-        params: Promise.resolve({ slug: [...slug] }),
+        params: Promise.resolve({ slug: [...slug], locale: "zh" }),
         searchParams: Promise.resolve({}),
       }),
-    ).resolves.toEqual(expected);
+    ).resolves.toMatchObject(expected);
   });
 
   it("uses an empty name when metadata cannot resolve a tag", async () => {
     mockTagIndex.mockResolvedValue({ list: [] });
 
     const metadata = await generateMetadata({
-      params: Promise.resolve({ slug: ["tags", "unknown-tag"] }),
+      params: Promise.resolve({
+        slug: ["tags", "unknown-tag"],
+        locale: "zh",
+      }),
       searchParams: Promise.resolve({}),
     });
 

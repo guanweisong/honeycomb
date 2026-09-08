@@ -44,9 +44,9 @@
 
 ## 8. Metadata 与可访问性
 
-- [ ] 8.1 先增加 `metadataBase`、canonical、hreflang、默认社交图片、not-found 和 viewport 的失败测试
-- [ ] 8.2 在公开根布局与动态页面补全 Metadata 默认值、本地化 canonical 和 alternates
-- [ ] 8.3 新增可访问的全局 not-found 页面，并移除后台禁止缩放的 viewport 配置
+- [x] 8.1 先增加 `metadataBase`、canonical、hreflang、默认社交图片、not-found 和 viewport 的失败测试
+- [x] 8.2 在公开根布局与动态页面补全 Metadata 默认值、本地化 canonical 和 alternates
+- [x] 8.3 新增可访问的全局 not-found 页面，并移除后台禁止缩放的 viewport 配置
 
 ## 9. 综合验证与收尾
 

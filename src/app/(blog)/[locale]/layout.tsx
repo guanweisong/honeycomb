@@ -3,7 +3,7 @@ import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import "../app.scss";
 import BackToTop from "@/app/(blog)/components/BackToTop";
 import Header from "@/app/(blog)/components/Header";
@@ -13,6 +13,26 @@ import { setRequestLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
+import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    clientEnv.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
+  title: {
+    default: "Honeycomb",
+    template: "%s | Honeycomb",
+  },
+  description: "Honeycomb content management system",
+  openGraph: {
+    type: "website",
+    images: [defaultSocialImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [defaultSocialImage],
+  },
+};
 
 /**
  * 国际化布局组件的属性接口。

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const appRoot = join(process.cwd(), "src", "app");
@@ -74,5 +74,31 @@ describe("App Router 业务组件目录约束", () => {
 
   it("组件目录必须使用大驼峰且只保留标准入口文件", () => {
     expect(componentDirectoryViolations()).toEqual([]);
+  });
+});
+
+describe("App Router 恢复与 viewport 边界", () => {
+  it("provides a root not-found page", () => {
+    expect(existsSync(join(appRoot, "not-found.tsx"))).toBe(true);
+  });
+
+  it("does not prevent zoom in the admin root layout", () => {
+    const source = readFileSync(join(appRoot, "admin", "layout.tsx"), "utf8");
+
+    expect(source).toContain("export const viewport");
+    expect(source).not.toMatch(/maximumScale|userScalable|user-scalable/);
+  });
+
+  it("provides public metadata defaults at the locale root", () => {
+    const source = readFileSync(
+      join(appRoot, "(blog)", "[locale]", "layout.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("export const metadata");
+    expect(source).toContain("metadataBase");
+    expect(source).toContain("openGraph");
+    expect(source).toContain("twitter");
+    expect(source).toContain("defaultSocialImage");
   });
 });

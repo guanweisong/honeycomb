@@ -5,6 +5,12 @@ import { Toaster } from "@/packages/ui/components/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 /**
  * Admin 应用的根布局组件。
@@ -28,12 +34,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-cn">
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
-        />
-      </head>
       <body>
         {children}
         <Toaster />

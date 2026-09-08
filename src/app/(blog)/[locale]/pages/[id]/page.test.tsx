@@ -11,6 +11,7 @@ const mockPageDetail = vi.fn();
 const mockComments = vi.fn();
 const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
+const mockSettingIndex = vi.fn();
 
 vi.mock("next-intl/server", () => ({ getLocale: () => Promise.resolve("zh") }));
 vi.mock("next-intl", () => ({
@@ -25,7 +26,7 @@ vi.mock("@/packages/trpc/api", () => ({
       detail: mockPageDetail,
       incrementViews: mockServerIncrementViews,
     },
-    setting: { index: vi.fn() },
+    setting: { index: mockSettingIndex },
   }),
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
@@ -49,7 +50,7 @@ vi.mock("@/app/(blog)/components/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
 
-import Pages from "./page";
+import Pages, { generateMetadata } from "./page";
 
 describe("pages detail page", () => {
   let container: HTMLDivElement;
@@ -71,6 +72,9 @@ describe("pages detail page", () => {
     });
     mockServerIncrementViews.mockReset();
     mockClientIncrementViews.mockReset();
+    mockSettingIndex.mockReset().mockResolvedValue({
+      siteName: { en: "Honeycomb", zh: "蜂巢" },
+    });
   });
 
   afterEach(async () => {
@@ -91,5 +95,24 @@ describe("pages detail page", () => {
       { id: "page-1" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+  });
+
+  it("generates localized page indexing relationships", async () => {
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(metadata).toMatchObject({
+      title: "页面标题",
+      alternates: {
+        canonical: "/zh/pages/page-1",
+        languages: {
+          en: "/en/pages/page-1",
+          zh: "/zh/pages/page-1",
+        },
+      },
+      openGraph: { images: ["/static/images/logo.png"] },
+    });
   });
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import PostList from "@/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { createServerClient } from "@/packages/trpc/api";
 import {
@@ -11,6 +11,10 @@ import {
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
+import {
+  createLocalizedAlternates,
+  defaultSocialImage,
+} from "@/app/(blog)/lib/metadata";
 
 /**
  * 页面大小常量，用于分页查询。
@@ -134,7 +138,7 @@ type GenerateMetadataProps = {
   /**
    * 包含 slug 数组的 Promise。
    */
-  params: Promise<{ slug: string[] }>;
+  params: Promise<{ slug: string[]; locale: string }>;
   /**
    * 包含搜索参数的 Promise。
    */
@@ -151,13 +155,13 @@ export async function generateMetadata(
   props: GenerateMetadataProps,
 ): Promise<Metadata> {
   const serverClient = await createServerClient();
-  const [setting, menu, locale] = await Promise.all([
+  const params = await props.params;
+  const locale = normalizeMultiLangLocale(params.locale);
+  const [setting, menu] = await Promise.all([
     getPublicSetting(),
     getPublicMenu(),
-    getLocale().then(normalizeMultiLangLocale),
   ]);
   const t = await getTranslations("PostList");
-  const params = await props.params;
   const slug = params?.slug ?? [];
   // 获取第一个路径部分作为类型
   const type =
@@ -211,14 +215,24 @@ export async function generateMetadata(
   const openGraph = {
     title: title,
     type: "website",
-    images: ["/static/images/logo.png"],
+    images: [defaultSocialImage],
     description: setting?.siteSubName?.[locale],
   };
 
   return {
     title,
     description: setting?.siteSubName?.[locale],
+    alternates: createLocalizedAlternates(
+      locale,
+      `/list/${slug.map(encodeURIComponent).join("/")}`,
+    ),
     openGraph,
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: setting?.siteSubName?.[locale],
+      images: [defaultSocialImage],
+    },
   };
 }
 
