@@ -32,10 +32,7 @@ export function RichText({ html, images = [] }: Props) {
               alt={image.name}
               width={image.width}
               height={image.height}
-              sizes="
-              (max-width: 768px) 320px,
-              846px
-            "
+              sizes="(max-width: 768px) 320px, 846px"
             />
           </a>
         );

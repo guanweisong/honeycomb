@@ -60,7 +60,9 @@ describe("MediaGrid", () => {
       );
     });
 
-    expect(container.querySelector('img[alt="cover.png"]')).not.toBeNull();
+    const image = container.querySelector('img[alt="cover.png"]');
+    expect(image).not.toBeNull();
+    expect(image?.getAttribute("sizes")).toBe("128px");
     const tile = container.querySelector('[title="cover.png"]');
     expect(tile).not.toBeNull();
     await act(async () =>

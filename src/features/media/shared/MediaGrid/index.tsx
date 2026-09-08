@@ -45,7 +45,7 @@ export function MediaGrid({
               <Image
                 className="object-contain"
                 fill
-                sizes="7vw"
+                sizes="128px"
                 src={item.url}
                 alt={item.name}
               />

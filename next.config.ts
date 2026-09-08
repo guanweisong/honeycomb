@@ -13,6 +13,21 @@ const assetRemotePattern = createAssetRemotePattern(
 );
 const securityHeaders = createSecurityHeaders(securityHeaderOptions);
 
+export const imageConfig = {
+  remotePatterns: [
+    {
+      protocol: "https" as const,
+      hostname: "cravatar.cn",
+      port: "",
+    },
+    ...(assetRemotePattern ? [assetRemotePattern] : []),
+  ],
+  formats: ["image/avif", "image/webp"] as const,
+  deviceSizes: [640, 750, 828, 960, 1080, 1280, 1536, 1920],
+  imageSizes: [20, 32, 48, 64, 96, 128, 256, 384],
+  minimumCacheTTL: 31536000,
+} satisfies NonNullable<NextConfig["images"]>;
+
 /**
  * Next.js 基础配置文件。
  * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
@@ -25,20 +40,7 @@ const nextConfig: NextConfig = withSerwist({
       dynamic: 300,
     },
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https" as const,
-        hostname: "cravatar.cn",
-        port: "",
-      },
-      ...(assetRemotePattern ? [assetRemotePattern] : []),
-    ],
-    formats: ["image/webp"],
-    deviceSizes: [960, 1280, 1920], // fill 模式生成这几种宽度
-    imageSizes: [960, 1280, 1920], // 用于有 width 的 Image
-    minimumCacheTTL: 31536000,
-  },
+  images: imageConfig,
   poweredByHeader: false,
   async headers() {
     return [
