@@ -53,7 +53,6 @@ export default async function Pages(props: PagesProps) {
 
   return (
     <>
-      <PageViewTracker id={id} />
       <PageTitle>{publishedPage.title?.[locale]}</PageTitle>
       <PostInfo
         id={publishedPage.id}
@@ -61,7 +60,9 @@ export default async function Pages(props: PagesProps) {
         authorId={publishedPage.author?.id}
         date={publishedPage.createdAt ?? ""}
         comments={commentsData?.total}
-        views={publishedPage.views ?? 0}
+        views={
+          <PageViewTracker id={id} initialViews={publishedPage.views ?? 0} />
+        }
       />
       <div className="my-3 lg:my-5">
         <div className="prose-editor">

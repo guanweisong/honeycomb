@@ -445,4 +445,20 @@ describe("Post Router", () => {
       expect(mockDb.insert).not.toHaveBeenCalled();
     });
   });
+
+  describe("incrementViews procedure", () => {
+    it("returns the latest count without invalidating the static route", async () => {
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([{ views: 8 }]);
+
+      const caller = postRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(caller.incrementViews({ id: TEST_IDS.ID_1 })).resolves.toEqual({
+        views: 8,
+      });
+      expect(mockInvalidatePublicContent).not.toHaveBeenCalled();
+    });
+  });
 });

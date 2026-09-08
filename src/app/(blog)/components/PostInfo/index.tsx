@@ -45,7 +45,7 @@ export interface PostInfoProps {
   /**
    * 浏览量。
    */
-  views?: number;
+  views?: React.ReactNode;
   /**
    * 信息对齐方式。
    */
@@ -91,7 +91,7 @@ const PostInfo = (props: PostInfoProps) => {
   }
 
   if (typeof views !== "undefined") {
-    data.push(t("views", { count: views }));
+    data.push(typeof views === "number" ? t("views", { count: views }) : views);
   }
 
   if (!data.length) {
@@ -110,7 +110,7 @@ const PostInfo = (props: PostInfoProps) => {
         )}
       >
         {data.map((item, index) => (
-          <span key={item.toString()}>
+          <span key={index}>
             {index > 0 && <span className="mx-1 text-gray-300">/</span>}
             <span>{item}</span>
           </span>

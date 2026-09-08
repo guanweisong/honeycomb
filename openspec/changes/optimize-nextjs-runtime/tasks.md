@@ -31,9 +31,9 @@
 
 ## 6. 动态浏览量
 
-- [ ] 6.1 先增加 mutation 返回计数、客户端更新显示、失败隔离和不失效 SSG 的失败测试
-- [ ] 6.2 增加已发布内容浏览量轻量查询，并让 ViewTracker 使用 mutation 结果或查询更新显示
-- [ ] 6.3 从静态 PostInfo 数据流移除最终浏览量权威值，保持无 JavaScript 兜底语义
+- [x] 6.1 先增加 mutation 返回计数、客户端更新显示、失败隔离和不失效 SSG 的失败测试
+- [x] 6.2 复用已发布内容 increment mutation 的返回计数更新显示，不追加重复查询
+- [x] 6.3 从静态 PostInfo 数据流移除最终浏览量权威值，保持无 JavaScript 兜底语义
 
 ## 7. 有界 API 限流
 

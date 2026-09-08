@@ -34,6 +34,11 @@ vi.mock("next-intl/server", () => ({
   getTranslations: () => mockGetTranslations(),
 }));
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (_key: string, values: { count: number }) =>
+    `${values.count} views`,
+}));
+
 vi.mock("@/packages/trpc/api", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
@@ -58,11 +63,12 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
 }));
 
 vi.mock("@/app/(blog)/components/PostInfo", () => ({
-  default: (props: Record<string, unknown>) =>
+  default: ({ views, ...props }: Record<string, unknown>) =>
     React.createElement(
       "output",
       { "data-testid": "post-info" },
       JSON.stringify(props),
+      views as React.ReactNode,
     ),
 }));
 
@@ -197,7 +203,10 @@ describe("archives page", () => {
     expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
     expect(mockIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
-    expect(mockClientIncrementViews).toHaveBeenCalledWith({ id: "post-1" });
+    expect(mockClientIncrementViews).toHaveBeenCalledWith(
+      { id: "post-1" },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 
   it("keeps JSON-LD inside its script context for hostile stored titles", async () => {

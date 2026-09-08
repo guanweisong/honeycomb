@@ -13,6 +13,10 @@ const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 
 vi.mock("next-intl/server", () => ({ getLocale: () => Promise.resolve("zh") }));
+vi.mock("next-intl", () => ({
+  useTranslations: () => (_key: string, values: { count: number }) =>
+    `${values.count} views`,
+}));
 vi.mock("@/packages/trpc/api", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
@@ -34,7 +38,9 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     post: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },
   },
 }));
-vi.mock("@/app/(blog)/components/PostInfo", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/components/PostInfo", () => ({
+  default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
+}));
 vi.mock("@/features/comment/public/components", () => ({ default: () => null }));
 vi.mock("@/app/(blog)/components/PageTitle", () => ({
   default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,
@@ -81,6 +87,9 @@ describe("pages detail page", () => {
     expect(container.textContent).toContain("页面正文");
     expect(mockServerIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
-    expect(mockClientIncrementViews).toHaveBeenCalledWith({ id: "page-1" });
+    expect(mockClientIncrementViews).toHaveBeenCalledWith(
+      { id: "page-1" },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 });

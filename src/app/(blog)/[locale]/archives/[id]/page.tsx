@@ -72,7 +72,6 @@ export default async function Archives(props: ArchivesProps) {
 
   return (
     <>
-      <PostViewTracker id={id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
@@ -86,7 +85,9 @@ export default async function Archives(props: ArchivesProps) {
         authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ""}
         comments={commentsData?.total}
-        views={postDetail.views ?? 0}
+        views={
+          <PostViewTracker id={id} initialViews={postDetail.views ?? 0} />
+        }
       />
       {postDetail.type !== PostType.QUOTE && (
         <div className="my-3 lg:my-5">

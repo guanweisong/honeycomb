@@ -19,6 +19,11 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (_key: string, values: { count: number }) =>
+    `${values.count} 次浏览`,
+}));
+
 import { PageViewTracker, PostViewTracker } from ".";
 
 describe("ViewTracker", () => {
@@ -38,19 +43,23 @@ describe("ViewTracker", () => {
     container.remove();
   });
 
-  it("reports a post only once while the same tracker remains mounted", () => {
-    act(() => root.render(<PostViewTracker id="post-1" />));
-    act(() => root.render(<PostViewTracker id="post-1" />));
+  it("reports a post once and renders the mutation result", () => {
+    act(() => root.render(<PostViewTracker id="post-1" initialViews={7} />));
+    act(() => root.render(<PostViewTracker id="post-1" initialViews={7} />));
 
     expect(mockPostMutate).toHaveBeenCalledOnce();
-    expect(mockPostMutate).toHaveBeenCalledWith({ id: "post-1" });
+    expect(container.textContent).toBe("7 次浏览");
+    act(() => {
+      mockPostMutate.mock.calls[0]?.[1]?.onSuccess({ views: 8 });
+    });
+    expect(container.textContent).toBe("8 次浏览");
   });
 
-  it("uses the page mutation for page views", () => {
-    act(() => root.render(<PageViewTracker id="page-1" />));
+  it("uses the page mutation and keeps the fallback when it fails", () => {
+    act(() => root.render(<PageViewTracker id="page-1" initialViews={3} />));
 
     expect(mockPageMutate).toHaveBeenCalledOnce();
-    expect(mockPageMutate).toHaveBeenCalledWith({ id: "page-1" });
+    expect(container.textContent).toBe("3 次浏览");
     expect(mockPostMutate).not.toHaveBeenCalled();
   });
 });

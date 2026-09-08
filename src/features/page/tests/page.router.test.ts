@@ -161,4 +161,20 @@ describe("Page Router", () => {
       ).rejects.toThrow("FORBIDDEN");
     });
   });
+
+  describe("incrementViews procedure", () => {
+    it("returns the latest count without invalidating the static route", async () => {
+      mockDb.update.mockReturnValueOnce(mockDb);
+      mockDb.set.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.returning.mockResolvedValueOnce([{ views: 4 }]);
+
+      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
+
+      await expect(caller.incrementViews({ id: TEST_IDS.ID_1 })).resolves.toEqual({
+        views: 4,
+      });
+      expect(mockInvalidatePublicContent).not.toHaveBeenCalled();
+    });
+  });
 });
