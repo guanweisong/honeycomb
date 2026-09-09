@@ -2,10 +2,12 @@ import { hashPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
 import type { Database } from "@/packages/infrastructure/db/db";
+import { assertCredentialPassword } from "@/packages/identity/auth/password-policy";
 
 export type CredentialStore = Pick<Database, "select" | "insert" | "update">;
 
 export function hashCredentialPassword(password: string) {
+  assertCredentialPassword(password);
   return hashPassword(password);
 }
 

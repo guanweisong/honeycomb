@@ -9,6 +9,10 @@ import { getDb } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { getPasskeyConfig } from "@/packages/identity/auth/passkey-config";
 import { createAuthDatabaseHooks } from "@/packages/identity/auth/server/auth-hooks";
+import {
+  CREDENTIAL_PASSWORD_MAX_LENGTH,
+  CREDENTIAL_PASSWORD_MIN_LENGTH,
+} from "@/packages/identity/auth/password-policy";
 
 const authEnv = getAuthEnv();
 const authBaseURL = authEnv.AUTH_URL;
@@ -64,7 +68,8 @@ const authOptions: BetterAuthOptions = {
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
-    minPasswordLength: 6,
+    minPasswordLength: CREDENTIAL_PASSWORD_MIN_LENGTH,
+    maxPasswordLength: CREDENTIAL_PASSWORD_MAX_LENGTH,
   },
   session: {
     // 当前后台将登录会话列表视为普通的已登录用户信息，不要求重新认证。

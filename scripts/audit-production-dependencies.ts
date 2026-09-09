@@ -28,7 +28,7 @@ interface BunAdvisory {
   vulnerable_versions: string;
 }
 
-type BunAuditOutput = Record<string, BunAdvisory[]>;
+export type BunAuditOutput = Record<string, BunAdvisory[]>;
 
 interface LockMetadata {
   dependencies?: Record<string, string>;
@@ -51,6 +51,99 @@ interface BunLock {
 const blockingSeverities = new Set<AuditSeverity>(["high", "critical"]);
 const advisoryPattern = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const auditSeverities = new Set<AuditSeverity>([
+  "low",
+  "moderate",
+  "high",
+  "critical",
+]);
+
+function isBunAdvisory(value: unknown): value is BunAdvisory {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const advisory = value as Record<string, unknown>;
+  return (
+    typeof advisory.url === "string" &&
+    typeof advisory.title === "string" &&
+    typeof advisory.vulnerable_versions === "string" &&
+    typeof advisory.severity === "string" &&
+    auditSeverities.has(advisory.severity as AuditSeverity)
+  );
+}
+
+function isBunAuditOutput(value: unknown): value is BunAuditOutput {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every(
+      (advisories) =>
+        Array.isArray(advisories) && advisories.every(isBunAdvisory),
+    )
+  );
+}
+
+function jsonObjectCandidates(output: string): string[] {
+  const candidates: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < output.length; index += 1) {
+    const character = output[index];
+    if (start === -1) {
+      if (character === "{") {
+        start = index;
+        depth = 1;
+      }
+      continue;
+    }
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') {
+      inString = true;
+    } else if (character === "{") {
+      depth += 1;
+    } else if (character === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        candidates.push(output.slice(start, index + 1));
+        start = -1;
+      }
+    }
+  }
+
+  return candidates;
+}
+
+export function parseBunAuditOutput(output: string): BunAuditOutput {
+  const candidates = jsonObjectCandidates(output).flatMap((candidate) => {
+    try {
+      const parsed: unknown = JSON.parse(candidate);
+      return isBunAuditOutput(parsed) ? [parsed] : [];
+    } catch {
+      return [];
+    }
+  });
+
+  if (candidates.length === 0) {
+    throw new Error("bun audit output did not contain valid JSON");
+  }
+  if (candidates.length > 1) {
+    throw new Error("bun audit output contained multiple valid JSON objects");
+  }
+  const candidate = candidates[0];
+  if (!candidate) {
+    throw new Error("bun audit output did not contain valid JSON");
+  }
+  return candidate;
+}
 
 function validateExceptions(exceptions: AuditException[]): void {
   for (const exception of exceptions) {
@@ -277,11 +370,7 @@ function runBunAudit(): BunAuditOutput {
   if (result.status !== 0 && result.status !== 1) {
     throw new Error(`bun audit failed: ${result.stderr.trim()}`);
   }
-  try {
-    return JSON.parse(result.stdout) as BunAuditOutput;
-  } catch {
-    throw new Error("bun audit returned invalid JSON");
-  }
+  return parseBunAuditOutput(result.stdout);
 }
 
 function argumentValue(flag: string): string | undefined {

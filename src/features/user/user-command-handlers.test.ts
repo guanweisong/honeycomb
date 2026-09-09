@@ -1,9 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { changeUserStatus } from "./application/user-command-handlers";
-import { destroyUsers, updateUser } from "./application/user-commands";
+import {
+  createUser,
+  destroyUsers,
+  updateUser,
+} from "./application/user-commands";
+
+const validUserId = "000000000000000000000001";
 
 describe("User command handlers", () => {
+  it("应用层创建入口拒绝非法邮箱且不调用仓储", () => {
+    const create = vi.fn();
+
+    expect(() =>
+      createUser(
+        { create },
+        { name: "user", email: "invalid", password: "123456" },
+      ),
+    ).toThrow();
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("账号状态变更成功后返回持久化结果", async () => {
     const update = vi.fn().mockResolvedValue({ id: "user-1", status: UserStatus.DISABLE });
     await expect(changeUserStatus({ update }, { id: "user-1", currentStatus: UserStatus.ENABLE, status: UserStatus.DISABLE, level: UserLevel.EDITOR, actorLevel: UserLevel.ADMIN })).resolves.toEqual({ id: "user-1", status: UserStatus.DISABLE });
@@ -19,12 +37,12 @@ describe("User command handlers", () => {
 
     await updateUser(
       { getStatus, update },
-      { id: "user-1", status: UserStatus.DISABLE },
+      { id: validUserId, status: UserStatus.DISABLE },
       UserLevel.ADMIN,
     );
 
-    expect(getStatus).toHaveBeenCalledWith("user-1");
-    expect(update).toHaveBeenCalledWith({ id: "user-1", status: UserStatus.DISABLE });
+    expect(getStatus).toHaveBeenCalledWith(validUserId);
+    expect(update).toHaveBeenCalledWith({ id: validUserId, status: UserStatus.DISABLE });
   });
 
   it("拒绝非管理员修改管理员账号状态", async () => {
@@ -37,7 +55,7 @@ describe("User command handlers", () => {
     await expect(
       updateUser(
         { getStatus, update },
-        { id: "user-1", status: UserStatus.DISABLE },
+        { id: validUserId, status: UserStatus.DISABLE },
         UserLevel.EDITOR,
       ),
     ).rejects.toThrow();
@@ -87,7 +105,7 @@ describe("User command handlers", () => {
     await expect(
       updateUser(
         { getStatus, update },
-        { id: "admin-1", level: UserLevel.EDITOR },
+        { id: validUserId, level: UserLevel.EDITOR },
         UserLevel.ADMIN,
       ),
     ).rejects.toThrow();

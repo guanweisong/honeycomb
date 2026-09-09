@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createProductionFindings,
   evaluateAudit,
+  parseBunAuditOutput,
   type AuditException,
   type AuditFinding,
 } from "../scripts/audit-production-dependencies";
@@ -24,6 +25,32 @@ const validException: AuditException = {
 };
 
 describe("production dependency audit policy", () => {
+  it("parses the unique audit object after dotenv, ANSI, and Bun banners", () => {
+    const output = [
+      '[0.32ms] ".env.local", ".env"',
+      "\u001b[1mbun audit v1.3.3\u001b[0m",
+      '{"transport":[{"url":"https://github.com/advisories/GHSA-aaaa-bbbb-cccc","title":"Example {advisory}","severity":"high","vulnerable_versions":"<2.0.0"}]}',
+    ].join("\n");
+
+    expect(parseBunAuditOutput(output)).toEqual({
+      transport: [
+        {
+          url: "https://github.com/advisories/GHSA-aaaa-bbbb-cccc",
+          title: "Example {advisory}",
+          severity: "high",
+          vulnerable_versions: "<2.0.0",
+        },
+      ],
+    });
+  });
+
+  it("fails closed when audit JSON is missing or ambiguous", () => {
+    expect(() => parseBunAuditOutput("bun audit v1.3.3\nNo vulnerabilities"))
+      .toThrow(/JSON/i);
+    expect(() => parseBunAuditOutput("{}\n{}"))
+      .toThrow(/multiple|unique|ambiguous/i);
+  });
+
   it("follows transitive runtime dependencies and skips unresolved or development-only packages", () => {
     const advisory = {
       url: "https://github.com/advisories/GHSA-aaaa-bbbb-cccc",

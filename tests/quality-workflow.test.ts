@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -35,12 +35,28 @@ describe("quality workflow", () => {
       "bun run test:unit:coverage",
       "bun run test:unit:process",
       "bun run audit:production",
-      "tests/e2e/security-headers.spec.ts",
-      "tests/e2e/admin/rbac.spec.ts",
-      "tests/e2e/blog/pwa-offline.spec.ts",
+      "bun run db:e2e:seed",
+      "bunx playwright test --project=chromium",
     ]) {
       expect(workflow).toContain(command);
     }
     expect(workflow).not.toContain("bun audit --audit-level=critical");
+    expect(workflow).not.toMatch(/playwright test\s+tests\/e2e\//);
+  });
+
+  it("does not conditionally skip deterministic E2E inventory", () => {
+    const e2eRoot = resolve(process.cwd(), "tests/e2e");
+    const conditionalSkips = readdirSync(e2eRoot, { recursive: true })
+      .filter((path): path is string =>
+        typeof path === "string" && path.endsWith(".spec.ts"),
+      )
+      .flatMap((path) => {
+        const source = readFileSync(resolve(e2eRoot, path), "utf8");
+        return /\btest\s*\.\s*(?:describe\s*\.\s*)?skip\s*\(/.test(source)
+          ? [path]
+          : [];
+      });
+
+    expect(conditionalSkips).toEqual([]);
   });
 });

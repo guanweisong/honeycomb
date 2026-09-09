@@ -22,6 +22,7 @@ jobs:
       TURSO_TOKEN: local
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
+      E2E_SEED: "1"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -43,6 +44,7 @@ jobs:
       - run: bun run lint
       - run: bun run db:migrations:check
       - run: bunx drizzle-kit migrate
+      - run: bun run db:e2e:seed
       - run: bun run test:unit:run
       - run: bun run test:unit:coverage
       - run: bun run test:unit:process
@@ -64,9 +66,4 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - run: bunx playwright install --with-deps chromium
-      - run: >-
-          bunx playwright test
-          tests/e2e/security-headers.spec.ts
-          tests/e2e/admin/rbac.spec.ts
-          tests/e2e/blog/pwa-offline.spec.ts
-          --project=chromium
+      - run: bunx playwright test --project=chromium

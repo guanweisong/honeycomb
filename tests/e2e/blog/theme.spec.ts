@@ -8,8 +8,6 @@ test.describe('blog theme', () => {
     const themeToggle = page
       .locator('header [data-testid="theme-switcher"], header img[alt="moon"], header img[alt="sun"]')
       .first();
-    const hasThemeToggle = (await themeToggle.count()) > 0;
-    test.skip(!hasThemeToggle, 'Theme toggle is not rendered in current runtime');
     await expect(themeToggle).toBeVisible();
 
     const before = await page.locator('html').getAttribute('class');

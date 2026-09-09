@@ -1,15 +1,11 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import type { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+import type { UserInsert, UserUpdate } from "./write-schema";
 export type { CredentialPort } from "./credential-port";
 export type { LoginHistoryPort } from "./login-history-port";
 
-export type UserCommandInput = {
-  name: string | null;
-  email: string | null;
-  status?: UserStatus;
-  level?: UserLevel;
-  password: string;
-};
+export type UserCommandInput = UserInsert;
+export type UserUpdateCommandInput = UserUpdate;
 export type UserListInput = PaginationInput & {
   name?: string;
   email?: string;
@@ -37,11 +33,7 @@ export interface UserCommandPort {
   getStates(
     ids: string[],
   ): Promise<Array<Pick<UserRecord, "id" | "status" | "level">>>;
-  update(
-    input: { id: string; password?: string } & Partial<
-      Omit<UserCommandInput, "password">
-    >,
-  ): Promise<UserRecord>;
+  update(input: UserUpdateCommandInput): Promise<UserRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
 }
 

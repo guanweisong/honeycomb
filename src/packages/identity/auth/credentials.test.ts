@@ -13,4 +13,9 @@ describe("Better Auth credential passwords", () => {
       false,
     );
   });
+
+  it("rejects passwords outside the credential policy before hashing", () => {
+    expect(() => hashCredentialPassword("12345")).toThrow(/password/i);
+    expect(() => hashCredentialPassword("a".repeat(129))).toThrow(/password/i);
+  });
 });

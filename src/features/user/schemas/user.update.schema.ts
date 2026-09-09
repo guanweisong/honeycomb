@@ -1,12 +1,4 @@
-import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
-import { IdSchema } from "@/packages/domain/shared/id.schema";
-import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
-
-/**
- * 更新用户时的数据验证 schema。
- */
-export const UserUpdateSchema = UserInsertSchema.partial().extend({
-  id: IdSchema,
-});
-
-export type UserUpdate = CleanZod<typeof UserUpdateSchema>;
+export {
+  UserUpdateSchema,
+  type UserUpdate,
+} from "@/features/user/application/write-schema";

@@ -3,17 +3,22 @@ import "server-only";
 import type {
   UserCommandInput,
   UserCommandPort,
+  UserUpdateCommandInput,
 } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { changeUserStatus } from "./user-command-handlers";
 import { UserAggregate } from "../domain/user";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+} from "./write-schema";
 
 export type { UserCommandInput } from "./repository";
 
 /** 创建用户及凭据。 */
 export function createUser(repository: Pick<UserCommandPort, "create">, input: UserCommandInput) {
-  return repository.create(input);
+  return repository.create(UserInsertSchema.parse(input));
 }
 
 /** 删除用户，并由领域模型阻止删除受保护的管理员账号。 */
@@ -35,9 +40,10 @@ export async function destroyUsers(
 /** 更新用户及可选凭据。 */
 export async function updateUser(
   repository: Pick<UserCommandPort, "getStatus" | "update">,
-  input: { id: string; password?: string } & Partial<Omit<UserCommandInput, "password">>,
+  input: UserUpdateCommandInput,
   actorLevel: UserLevel,
 ) {
+  input = UserUpdateSchema.parse(input);
   if (input.status !== undefined || input.level !== undefined) {
     const current = await repository.getStatus(input.id);
     if (!current) throw new ApplicationError("NOT_FOUND", "用户不存在");
