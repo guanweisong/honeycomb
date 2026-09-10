@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { tagRouter } from "@/features/tag/tag.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import {
+  createAdminUser,
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -10,7 +15,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidateAllPublicContent: vi.fn(),
+  publicContentInvalidator: { invalidateAll: vi.fn() },
 }));
 
 const mockDb = createMockDb();
@@ -98,7 +103,9 @@ describe("Tag Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newTag]);
 
-      const caller = tagRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.create({
         name: { en: "New Tag", zh: "新标签" },
@@ -109,7 +116,9 @@ describe("Tag Router", () => {
     });
 
     it("should throw FORBIDDEN error for non-admin users", async () => {
-      const caller = tagRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       await expect(
         caller.create({
@@ -134,7 +143,9 @@ describe("Tag Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = tagRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -145,7 +156,9 @@ describe("Tag Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = tagRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       await expect(
         caller.destroy({
@@ -167,7 +180,9 @@ describe("Tag Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedTag]);
 
-      const caller = tagRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -179,7 +194,9 @@ describe("Tag Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = tagRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = tagRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       await expect(
         caller.update({

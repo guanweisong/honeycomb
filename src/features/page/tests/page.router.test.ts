@@ -4,13 +4,22 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { PageStatus } from "@/packages/domain/content/page";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import {
+  createAdminUser,
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "@tests/helpers/test-utils";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidatePublicContent: (...args: unknown[]) =>
-    mockInvalidatePublicContent(...args),
+  publicContentInvalidator: {
+    invalidateContent: (...args: unknown[]) =>
+      mockInvalidatePublicContent(...args),
+    invalidateAll: vi.fn(),
+  },
 }));
 
 // 模拟数据库及相关模块。
@@ -40,7 +49,9 @@ describe("Page Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newPage]);
 
-      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.create({
         title: { en: "New Page", zh: "新页面" },
@@ -54,28 +65,30 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
-        await expect(
-      caller.create({
-        title: { en: "New Page", zh: "新页面" },
-        content: { en: "New Content", zh: "新内容" },
-        status: PageStatus.PUBLISHED,
-        template: PageTemplate.DEFAULT,
-      }),
+      await expect(
+        caller.create({
+          title: { en: "New Page", zh: "新页面" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
+        }),
       ).rejects.toThrow("FORBIDDEN");
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
-        await expect(
-      caller.create({
-        title: { en: "New Page", zh: "新页面" },
-        content: { en: "New Content", zh: "新内容" },
-        status: PageStatus.PUBLISHED,
-        template: PageTemplate.DEFAULT,
-      }),
+      await expect(
+        caller.create({
+          title: { en: "New Page", zh: "新页面" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
+        }),
       ).rejects.toThrow("UNAUTHORIZED");
     });
   });
@@ -88,7 +101,9 @@ describe("Page Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -99,7 +114,9 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       await expect(
         caller.destroy({
@@ -125,7 +142,9 @@ describe("Page Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedPage]);
 
-      const caller = pageRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -148,16 +167,18 @@ describe("Page Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
-        await expect(
-      caller.update({
-        id: TEST_IDS.ID_1,
-        title: { en: "Updated Page", zh: "更新的页面" },
-        content: { en: "Updated Content", zh: "更新的内容" },
-        status: PageStatus.PUBLISHED,
-        template: PageTemplate.DEFAULT,
-      }),
+      await expect(
+        caller.update({
+          id: TEST_IDS.ID_1,
+          title: { en: "Updated Page", zh: "更新的页面" },
+          content: { en: "Updated Content", zh: "更新的内容" },
+          status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
+        }),
       ).rejects.toThrow("FORBIDDEN");
     });
   });
@@ -171,7 +192,9 @@ describe("Page Router", () => {
 
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(caller.incrementViews({ id: TEST_IDS.ID_1 })).resolves.toEqual({
+      await expect(
+        caller.incrementViews({ id: TEST_IDS.ID_1 }),
+      ).resolves.toEqual({
         views: 4,
       });
       expect(mockInvalidatePublicContent).not.toHaveBeenCalled();

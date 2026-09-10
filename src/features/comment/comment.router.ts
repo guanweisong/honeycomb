@@ -27,10 +27,7 @@ import { createCommentQueryRepository } from "@/features/comment/infrastructure/
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
 import { validateCaptcha } from "@/packages/infrastructure/security/validate-captcha";
-import {
-  invalidateAllPublicContent,
-  invalidatePublicContent,
-} from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 import { commentCreateRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
 import { createRateLimitedPublicProcedure } from "@/packages/trpc/api/rate-limited-procedure";
 
@@ -58,25 +55,22 @@ export const commentRouter = createTRPCRouter({
   create: createCommentProcedure
     .input(CommentInsertSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await createComment(
-        createCommentCommandRepository(ctx.db),
+      return createComment(
+        {
+          repository: createCommentCommandRepository(ctx.db),
+          validateCaptcha,
+          notify: (commentId, parentId) =>
+            notifyCommentCreated(
+              createCommentNotificationRepository(ctx.db),
+              commentId,
+              parentId,
+            ),
+          logNotificationFailure: logCommentNotificationFailure,
+          invalidator: publicContentInvalidator,
+        },
         ctx.header,
         input,
-        validateCaptcha,
-        (commentId, parentId) =>
-          notifyCommentCreated(
-            createCommentNotificationRepository(ctx.db),
-            commentId,
-            parentId,
-          ),
-        logCommentNotificationFailure,
       ).catch(mapApplicationError);
-      if (input.postId) {
-        await invalidatePublicContent({ id: input.postId, type: "post" });
-      } else if (input.pageId) {
-        await invalidatePublicContent({ id: input.pageId, type: "page" });
-      }
-      return result;
     }),
 
   update: permissionProcedure(Permission.commentModerate)
@@ -85,8 +79,8 @@ export const commentRouter = createTRPCRouter({
       const result = await updateComment(
         createCommentCommandRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidateAllPublicContent();
       return result;
     }),
 
@@ -96,8 +90,8 @@ export const commentRouter = createTRPCRouter({
       const result = await destroyComments(
         createCommentCommandRepository(ctx.db),
         input.ids,
+        publicContentInvalidator,
       );
-      await invalidateAllPublicContent();
       return result;
     }),
 });

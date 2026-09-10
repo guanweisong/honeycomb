@@ -17,7 +17,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidateAllPublicContent: vi.fn(),
+  publicContentInvalidator: { invalidateAll: vi.fn() },
 }));
 
 const mockDb = createMockDb();
@@ -62,10 +62,7 @@ describe("Menu Router", () => {
       mockDb.returning.mockResolvedValueOnce(menuItems);
 
       const caller = menuRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.saveAll(menuItems);
@@ -82,10 +79,7 @@ describe("Menu Router", () => {
       mockDb.where.mockResolvedValueOnce(undefined);
 
       const caller = menuRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.saveAll([]);
@@ -118,10 +112,7 @@ describe("Menu Router", () => {
       );
 
       const caller = menuRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       await expect(caller.saveAll(menuItems)).rejects.toThrow("insert failed");
@@ -147,10 +138,7 @@ describe("Menu Router", () => {
       ];
 
       const caller = menuRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(caller.saveAll(menuItems)).rejects.toThrow("FORBIDDEN");

@@ -18,7 +18,7 @@ import {
   updateCategory,
 } from "@/features/category/application/category-use-cases";
 import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
-import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const categoryRouter = createTRPCRouter({
@@ -38,8 +38,8 @@ export const categoryRouter = createTRPCRouter({
       const result = await createCategory(
         createCategoryRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidateAllPublicContent();
       return result;
     }),
   destroy: permissionProcedure(Permission.categoryDelete)
@@ -48,8 +48,8 @@ export const categoryRouter = createTRPCRouter({
       const result = await destroyCategories(
         createCategoryRepository(ctx.db),
         input.ids,
+        publicContentInvalidator,
       );
-      await invalidateAllPublicContent();
       return result;
     }),
   update: permissionProcedure(Permission.categoryUpdate)
@@ -58,8 +58,8 @@ export const categoryRouter = createTRPCRouter({
       const result = await updateCategory(
         createCategoryRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidateAllPublicContent();
       return result;
     }),
 });

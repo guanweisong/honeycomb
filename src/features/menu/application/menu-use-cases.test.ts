@@ -8,6 +8,9 @@ const item = (id: string, parent?: string | null) => ({
   parent,
   power: 1,
 });
+const invalidator = () => ({
+  invalidateAll: vi.fn().mockResolvedValue(undefined),
+});
 
 describe("Menu use cases", () => {
   it.each([
@@ -18,15 +21,21 @@ describe("Menu use cases", () => {
   ])("拒绝%s", async (_name, input) => {
     const saveAll = vi.fn();
 
-    await expect(saveAllMenus({ saveAll }, input)).rejects.toThrow();
+    await expect(
+      saveAllMenus({ saveAll }, input, invalidator()),
+    ).rejects.toThrow();
     expect(saveAll).not.toHaveBeenCalled();
   });
 
   it("通过校验后保存菜单树", async () => {
     const saveAll = vi.fn().mockResolvedValue({ count: 2 });
     const input = [item("a"), item("b", "a")];
+    const cache = invalidator();
 
-    await expect(saveAllMenus({ saveAll }, input)).resolves.toEqual({ count: 2 });
+    await expect(saveAllMenus({ saveAll }, input, cache)).resolves.toEqual({
+      count: 2,
+    });
     expect(saveAll).toHaveBeenCalledWith(input);
+    expect(cache.invalidateAll).toHaveBeenCalledOnce();
   });
 });

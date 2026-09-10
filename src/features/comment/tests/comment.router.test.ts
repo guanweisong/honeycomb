@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "@/features/comment/comment.router";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createAdminUser, createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import {
+  createAdminUser,
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "@tests/helpers/test-utils";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
@@ -10,9 +16,11 @@ const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 const mockInvalidateAllPublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidatePublicContent: (...args: unknown[]) =>
-    mockInvalidatePublicContent(...args),
-  invalidateAllPublicContent: () => mockInvalidateAllPublicContent(),
+  publicContentInvalidator: {
+    invalidateContent: (...args: unknown[]) =>
+      mockInvalidatePublicContent(...args),
+    invalidateAll: () => mockInvalidateAllPublicContent(),
+  },
 }));
 
 // 模拟数据库及相关模块。
@@ -85,7 +93,9 @@ describe("Comment Router", () => {
         { ...comment, postId: TEST_IDS.ID_2 },
       ]);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       await expect(
         caller.create({
@@ -139,7 +149,9 @@ describe("Comment Router", () => {
         { id: "1", key: "comment_notify", value: "true" },
       ]);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       const result = await caller.create({
         content: "New Comment",
@@ -190,7 +202,9 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller(createMockContext(createGuestUser("2"), mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(createGuestUser("2"), mockDb),
+      );
 
       await expect(
         caller.update({
@@ -206,7 +220,9 @@ describe("Comment Router", () => {
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
-      const caller = commentRouter.createCaller(createMockContext(createAdminUser("1"), mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(createAdminUser("1"), mockDb),
+      );
 
       const result = await caller.destroy({
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
@@ -218,7 +234,9 @@ describe("Comment Router", () => {
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
-      const caller = commentRouter.createCaller(createMockContext(createGuestUser("2"), mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(createGuestUser("2"), mockDb),
+      );
 
       await expect(
         caller.destroy({

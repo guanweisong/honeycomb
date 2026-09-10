@@ -13,7 +13,7 @@ import {
   saveAllMenus,
 } from "@/features/menu/application/menu-use-cases";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
-import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const menuRouter = createTRPCRouter({
@@ -29,8 +29,8 @@ export const menuRouter = createTRPCRouter({
       const result = await saveAllMenus(
         createMenuRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidateAllPublicContent();
       return result;
     }),
 });

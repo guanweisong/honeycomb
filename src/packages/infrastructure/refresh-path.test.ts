@@ -6,21 +6,20 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
 }));
 
-import {
-  invalidateAllPublicContent,
-  invalidatePublicContent,
-} from "./refresh-path";
+import { publicContentInvalidator } from "./refresh-path";
 
-describe("invalidatePublicContent", () => {
+describe("publicContentInvalidator", () => {
   beforeEach(() => mockRevalidatePath.mockReset());
 
   it("rejects arbitrary paths without invalidating cache", async () => {
-    await expect(invalidatePublicContent("/admin")).rejects.toThrow();
+    await expect(
+      publicContentInvalidator.invalidateContent("/admin" as never),
+    ).rejects.toThrow();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("builds the public archive path from a validated content reference", async () => {
-    await invalidatePublicContent({
+    await publicContentInvalidator.invalidateContent({
       id: "507f1f77bcf86cd799439011",
       type: "post",
     });
@@ -34,13 +33,16 @@ describe("invalidatePublicContent", () => {
 
   it("rejects invalid locales and identifiers", async () => {
     await expect(
-      invalidatePublicContent({ id: "short", type: "page" }),
+      publicContentInvalidator.invalidateContent({
+        id: "short",
+        type: "page",
+      }),
     ).rejects.toThrow();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
   it("invalidates the bounded public locale layout for writes without a target", async () => {
-    await invalidateAllPublicContent();
+    await publicContentInvalidator.invalidateAll();
 
     expect(mockRevalidatePath).toHaveBeenCalledOnce();
     expect(mockRevalidatePath).toHaveBeenCalledWith("/[locale]", "layout");

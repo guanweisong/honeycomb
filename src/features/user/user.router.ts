@@ -26,7 +26,7 @@ import {
   toUserCommandPort,
   toUserQueryPort,
 } from "@/features/user/infrastructure/user-repository-adapter";
-import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 用户 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const userRouter = createTRPCRouter({
@@ -52,10 +52,8 @@ export const userRouter = createTRPCRouter({
       const result = await createUser(
         toUserCommandPort(createUserRepository(ctx.db)),
         input,
-      ).catch(
-        mapApplicationError,
-      );
-      await invalidateAllPublicContent();
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
       return result;
     }),
   destroy: permissionProcedure(Permission.userManage)
@@ -64,8 +62,8 @@ export const userRouter = createTRPCRouter({
       const result = await destroyUsers(
         toUserCommandPort(createUserRepository(ctx.db)),
         input.ids,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidateAllPublicContent();
       return result;
     }),
   update: permissionProcedure(Permission.userManage)
@@ -75,10 +73,8 @@ export const userRouter = createTRPCRouter({
         toUserCommandPort(createUserRepository(ctx.db)),
         input,
         ctx.user.level,
-      ).catch(
-        mapApplicationError,
-      );
-      await invalidateAllPublicContent();
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
       return result;
     }),
 });

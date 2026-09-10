@@ -3,7 +3,12 @@ import { categoryRouter } from "@/features/category/category.router";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import {
+  createAdminUser,
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -11,7 +16,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidateAllPublicContent: vi.fn(),
+  publicContentInvalidator: { invalidateAll: vi.fn() },
 }));
 
 vi.mock("@/packages/infrastructure/db/query/tools", () => ({
@@ -70,7 +75,9 @@ describe("Category Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
 
-      const caller = categoryRouter.createCaller(createMockContext(null, mockDb));
+      const caller = categoryRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       const result = await caller.index({ page: 1, limit: 10 });
 
@@ -179,7 +186,12 @@ describe("Category Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([
-        { id: TEST_IDS.ID_1, parent: null, path: "old", status: UserStatus.ENABLE },
+        {
+          id: TEST_IDS.ID_1,
+          parent: null,
+          path: "old",
+          status: UserStatus.ENABLE,
+        },
       ]);
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);

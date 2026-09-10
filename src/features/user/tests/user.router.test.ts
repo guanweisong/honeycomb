@@ -19,7 +19,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidateAllPublicContent: vi.fn(),
+  publicContentInvalidator: { invalidateAll: vi.fn() },
 }));
 
 // 模拟工具模块。
@@ -56,10 +56,7 @@ describe("User Router", () => {
       mockDb.values.mockReturnValueOnce(mockDb);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.create({
@@ -79,10 +76,7 @@ describe("User Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
@@ -125,10 +119,7 @@ describe("User Router", () => {
       ]);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       await expect(
@@ -156,10 +147,7 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce(undefined);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.destroy({
@@ -172,10 +160,7 @@ describe("User Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
@@ -194,10 +179,7 @@ describe("User Router", () => {
       ]);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       await expect(
@@ -225,10 +207,7 @@ describe("User Router", () => {
       mockDb.returning.mockResolvedValueOnce([updatedUser]);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.update({
@@ -267,10 +246,7 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce(undefined);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.update({
@@ -317,10 +293,7 @@ describe("User Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = userRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(

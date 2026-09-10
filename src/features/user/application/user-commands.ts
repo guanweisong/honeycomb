@@ -6,25 +6,33 @@ import type {
   UserUpdateCommandInput,
 } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
+import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { changeUserStatus } from "./user-command-handlers";
 import { UserAggregate } from "../domain/user";
-import {
-  UserInsertSchema,
-  UserUpdateSchema,
-} from "./write-schema";
+import { UserInsertSchema, UserUpdateSchema } from "./write-schema";
 
 export type { UserCommandInput } from "./repository";
 
 /** 创建用户及凭据。 */
-export function createUser(repository: Pick<UserCommandPort, "create">, input: UserCommandInput) {
-  return repository.create(UserInsertSchema.parse(input));
+export function createUser(
+  repository: Pick<UserCommandPort, "create">,
+  input: UserCommandInput,
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+) {
+  const parsed = UserInsertSchema.parse(input);
+  return (async () => {
+    const result = await repository.create(parsed);
+    await invalidator.invalidateAll();
+    return result;
+  })();
 }
 
 /** 删除用户，并由领域模型阻止删除受保护的管理员账号。 */
 export async function destroyUsers(
   repository: Pick<UserCommandPort, "destroy" | "getStates">,
   ids: string[],
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
 ) {
   const targets = await repository.getStates(ids);
   for (const target of targets) {
@@ -34,7 +42,9 @@ export async function destroyUsers(
       target.level,
     ).assertDeletable();
   }
-  return repository.destroy(ids);
+  const result = await repository.destroy(ids);
+  await invalidator.invalidateAll();
+  return result;
 }
 
 /** 更新用户及可选凭据。 */
@@ -42,6 +52,7 @@ export async function updateUser(
   repository: Pick<UserCommandPort, "getStatus" | "update">,
   input: UserUpdateCommandInput,
   actorLevel: UserLevel,
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
 ) {
   input = UserUpdateSchema.parse(input);
   if (input.status !== undefined || input.level !== undefined) {
@@ -55,7 +66,7 @@ export async function updateUser(
     if (input.level !== undefined) aggregate.changeLevel(input.level);
     if (input.status !== undefined && current.status !== input.status) {
       const { id, status, ...changes } = input;
-      return changeUserStatus(
+      const result = await changeUserStatus(
         repository,
         {
           id,
@@ -66,7 +77,11 @@ export async function updateUser(
         },
         changes,
       );
+      await invalidator.invalidateAll();
+      return result;
     }
   }
-  return repository.update(input);
+  const result = await repository.update(input);
+  await invalidator.invalidateAll();
+  return result;
 }

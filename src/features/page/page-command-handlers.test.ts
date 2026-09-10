@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { PageStatus } from "@/packages/domain/content/page";
 import { updatePage } from "./application/page-use-cases";
 
+const invalidator = {
+  invalidateContent: vi.fn().mockResolvedValue(undefined),
+};
+
 describe("Page command use cases", () => {
   it("更新页面状态时必须先经过页面生命周期规则", async () => {
     const findStatus = vi.fn().mockResolvedValue(PageStatus.DRAFT);
@@ -9,7 +13,12 @@ describe("Page command use cases", () => {
 
     await updatePage(
       { findStatus, update },
-      { id: "page-1", title: { en: "About", zh: "关于" }, status: PageStatus.PUBLISHED },
+      {
+        id: "page-1",
+        title: { en: "About", zh: "关于" },
+        status: PageStatus.PUBLISHED,
+      },
+      invalidator,
     );
 
     expect(findStatus).toHaveBeenCalledWith("page-1");
@@ -25,10 +34,14 @@ describe("Page command use cases", () => {
     await updatePage(
       { findStatus, update },
       { id: "page-1", status: PageStatus.DRAFT },
+      invalidator,
     );
 
     expect(findStatus).toHaveBeenCalledWith("page-1");
-    expect(update).toHaveBeenCalledWith({ id: "page-1", status: PageStatus.DRAFT });
+    expect(update).toHaveBeenCalledWith({
+      id: "page-1",
+      status: PageStatus.DRAFT,
+    });
   });
 
   it("拒绝页面不支持的状态流转", async () => {
@@ -39,6 +52,7 @@ describe("Page command use cases", () => {
       updatePage(
         { findStatus, update },
         { id: "page-1", status: PageStatus.TO_AUDIT },
+        invalidator,
       ),
     ).rejects.toThrow();
 

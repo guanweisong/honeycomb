@@ -30,7 +30,7 @@ import {
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";
-import { invalidatePublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({
@@ -86,37 +86,32 @@ export const postRouter = createTRPCRouter({
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      const result = await createPost(
+      return createPost(
         createPostCommandRepository(ctx.db),
         input,
         ctx.user.id,
+        publicContentInvalidator,
       );
-      await invalidatePublicContent({ id: result.id, type: "post" });
-      return result;
     }),
 
   destroy: permissionProcedure(Permission.postDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      const result = await destroyPosts(
+      return destroyPosts(
         createPostCommandRepository(ctx.db),
         input.ids,
+        publicContentInvalidator,
       );
-      await Promise.all(
-        input.ids.map((id) => invalidatePublicContent({ id, type: "post" })),
-      );
-      return result;
     }),
 
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const result = await updatePost(
+      return updatePost(
         createPostCommandRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidatePublicContent({ id: input.id, type: "post" });
-      return result;
     }),
 
   getRandomByCategory: publicProcedure
@@ -157,11 +152,10 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const result = await updatePostTags(
+      return updatePostTags(
         createPostCommandRepository(ctx.db),
         input,
+        publicContentInvalidator,
       );
-      await invalidatePublicContent({ id: input.postId, type: "post" });
-      return result;
     }),
 });

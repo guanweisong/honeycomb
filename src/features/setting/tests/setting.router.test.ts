@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { settingRouter } from "@/features/setting/setting.router";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createAdminUser, createGuestUser, createMockContext, createMockDb } from "@tests/helpers/test-utils";
+import {
+  createAdminUser,
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+} from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -9,7 +14,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidateAllPublicContent: vi.fn(),
+  publicContentInvalidator: { invalidateAll: vi.fn() },
 }));
 
 const mockDb = createMockDb();
@@ -32,7 +37,9 @@ describe("Setting Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockResolvedValueOnce([mockSetting]);
 
-      const caller = settingRouter.createCaller(createMockContext(null, mockDb));
+      const caller = settingRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       const result = await caller.index();
 
@@ -56,7 +63,9 @@ describe("Setting Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedSetting]);
 
-      const caller = settingRouter.createCaller(createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb));
+      const caller = settingRouter.createCaller(
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+      );
 
       const result = await caller.update({
         id: TEST_IDS.ID_1,
@@ -70,7 +79,9 @@ describe("Setting Router", () => {
     });
 
     it("should throw error for non-admin users", async () => {
-      const caller = settingRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = settingRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       await expect(
         caller.update({

@@ -11,7 +11,10 @@ import {
   getTagList,
   updateTag,
 } from "@/features/tag/application/tag-use-cases";
-import { getUserDetail, getUserList } from "@/features/user/application/user-queries";
+import {
+  getUserDetail,
+  getUserList,
+} from "@/features/user/application/user-queries";
 import {
   createCategory,
   destroyCategories,
@@ -39,26 +42,38 @@ import {
 import { PageTemplate } from "@/packages/domain/content/page-template";
 
 describe("feature repository 契约", () => {
+  const invalidateAll = () => ({
+    invalidateAll: vi.fn().mockResolvedValue(undefined),
+  });
+  const invalidateContent = () => ({
+    invalidateContent: vi.fn().mockResolvedValue(undefined),
+  });
+
   it("media service 只调用 repository", async () => {
     const repository = {
       create: vi.fn().mockResolvedValue({ id: "media-1" }),
-      findDeleteTargets: vi.fn().mockResolvedValue([{ id: "media-1", key: "a" }]),
+      findDeleteTargets: vi
+        .fn()
+        .mockResolvedValue([{ id: "media-1", key: "a" }]),
       deleteRecords: vi.fn().mockResolvedValue({ success: true }),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
     const storage = { deleteObjects: vi.fn().mockResolvedValue(undefined) };
     await expect(
-      createMedia(
-        repository,
-        { name: "a", size: 1, type: "image/png", key: "a" },
-      ),
+      createMedia(repository, {
+        name: "a",
+        size: 1,
+        type: "image/png",
+        key: "a",
+      }),
     ).resolves.toEqual({ id: "media-1" });
     await expect(
       destroyMedia(repository, storage, ["media-1"]),
     ).resolves.toEqual({ success: true });
-    await expect(
-      getMediaList(repository, { page: 1 }),
-    ).resolves.toEqual({ list: [], total: 0 });
+    await expect(getMediaList(repository, { page: 1 })).resolves.toEqual({
+      list: [],
+      total: 0,
+    });
     expect(repository.create).toHaveBeenCalled();
     expect(storage.deleteObjects).toHaveBeenCalledWith(["a"]);
     expect(repository.deleteRecords).toHaveBeenCalledWith(["media-1"]);
@@ -72,9 +87,13 @@ describe("feature repository 契约", () => {
       destroy: vi.fn().mockResolvedValue({ success: true }),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
-    await createTag(repository, { name: { en: "tag", zh: "标签" } });
-    await updateTag(repository, { id: "tag-1" });
-    await destroyTags(repository, ["tag-1"]);
+    await createTag(
+      repository,
+      { name: { en: "tag", zh: "标签" } },
+      invalidateAll(),
+    );
+    await updateTag(repository, { id: "tag-1" }, invalidateAll());
+    await destroyTags(repository, ["tag-1"], invalidateAll());
     await getTagList(repository, { page: 1 });
     expect(repository.create).toHaveBeenCalled();
     expect(repository.update).toHaveBeenCalledWith({ id: "tag-1" });
@@ -87,12 +106,14 @@ describe("feature repository 契约", () => {
       detail: vi.fn().mockResolvedValue({ id: "user-1", name: "管理员" }),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
-    await expect(getUserDetail(repository, "user-1")).resolves.toEqual(
-      { id: "user-1", name: "管理员" },
-    );
-    await expect(
-      getUserList(repository, { page: 1 }),
-    ).resolves.toEqual({ list: [], total: 0 });
+    await expect(getUserDetail(repository, "user-1")).resolves.toEqual({
+      id: "user-1",
+      name: "管理员",
+    });
+    await expect(getUserList(repository, { page: 1 })).resolves.toEqual({
+      list: [],
+      total: 0,
+    });
     expect(repository.detail).toHaveBeenCalledWith("user-1");
     expect(repository.list).toHaveBeenCalledWith({ page: 1 });
   });
@@ -106,8 +127,16 @@ describe("feature repository 契约", () => {
       destroy: vi.fn(),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
-    await createCategory(category, { title: { en: "Category", zh: "分类" }, description: { en: "Description", zh: "描述" }, path: "category" });
-    await destroyCategories(category, ["category-1"]);
+    await createCategory(
+      category,
+      {
+        title: { en: "Category", zh: "分类" },
+        description: { en: "Description", zh: "描述" },
+        path: "category",
+      },
+      invalidateAll(),
+    );
+    await destroyCategories(category, ["category-1"], invalidateAll());
     await getCategoryList(category, { page: 1 });
     expect(category.create).toHaveBeenCalled();
     expect(category.destroy).toHaveBeenCalledWith(["category-1"]);
@@ -119,7 +148,11 @@ describe("feature repository 契约", () => {
       destroy: vi.fn(),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
-    await createLink(link, { name: "Link", url: "https://example.test", logo: "https://example.test/logo.png" });
+    await createLink(link, {
+      name: "Link",
+      url: "https://example.test",
+      logo: "https://example.test/logo.png",
+    });
     await destroyLinks(link, ["link-1"]);
     await getLinkList(link, { page: 1 });
     expect(link.create).toHaveBeenCalled();
@@ -127,13 +160,13 @@ describe("feature repository 契约", () => {
     expect(link.list).toHaveBeenCalled();
 
     const menu = { saveAll: vi.fn(), list: vi.fn().mockResolvedValue([]) };
-    await saveAllMenus(menu, []);
+    await saveAllMenus(menu, [], invalidateAll());
     await getMenuList(menu);
     expect(menu.saveAll).toHaveBeenCalledWith([]);
     expect(menu.list).toHaveBeenCalled();
 
     const page = {
-      create: vi.fn(),
+      create: vi.fn().mockResolvedValue({ id: "page-1" }),
       destroy: vi.fn(),
       update: vi.fn(),
       incrementViews: vi.fn(),
@@ -146,8 +179,8 @@ describe("feature repository 契约", () => {
       content: { en: "Content", zh: "内容" },
       template: PageTemplate.DEFAULT,
     };
-    await createPage(page, pageInput, "user-1");
-    await destroyPages(page, ["page-1"]);
+    await createPage(page, pageInput, "user-1", invalidateContent());
+    await destroyPages(page, ["page-1"], invalidateContent());
     await getPageList(page, { page: 1 });
     await getPageDetail(page, "page-1");
     expect(page.create).toHaveBeenCalledWith(pageInput, "user-1");
@@ -157,7 +190,7 @@ describe("feature repository 契约", () => {
 
     const setting = { get: vi.fn(), update: vi.fn(), statistics: vi.fn() };
     await getSetting(setting);
-    await updateSetting(setting, { id: "setting-1" });
+    await updateSetting(setting, { id: "setting-1" }, invalidateAll());
     expect(setting.get).toHaveBeenCalled();
     expect(setting.update).toHaveBeenCalled();
   });

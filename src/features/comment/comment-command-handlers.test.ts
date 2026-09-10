@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { moderateComment } from "./application/comment-command-handlers";
-import { createComment, updateComment } from "./application/comment-commands";
+import {
+  createComment,
+  destroyComments,
+  updateComment,
+} from "./application/comment-commands";
 
 describe("Comment command handlers", () => {
   const createdComment = {
@@ -21,37 +25,49 @@ describe("Comment command handlers", () => {
     ip: "203.0.113.10",
   };
 
+  function createDependencies(overrides = {}) {
+    return {
+      repository: { create: vi.fn().mockResolvedValue(createdComment) },
+      validateCaptcha: vi.fn().mockResolvedValue(undefined),
+      notify: vi.fn().mockResolvedValue(undefined),
+      logNotificationFailure: vi.fn(),
+      invalidator: {
+        invalidateContent: vi.fn().mockResolvedValue(undefined),
+      },
+      ...overrides,
+    };
+  }
+
   it("通知失败时仍返回已创建的脱敏评论", async () => {
     const notify = vi.fn().mockRejectedValue(new Error("notification failed"));
     const logNotificationFailure = vi.fn();
 
-    const result = await createComment(
-      { create: vi.fn().mockResolvedValue(createdComment) },
-      new Headers(),
-      {
-        author: createdComment.author,
-        content: createdComment.content,
-        email: createdComment.email,
-        postId: createdComment.postId,
-      },
-      vi.fn().mockResolvedValue(undefined),
-      notify,
-      logNotificationFailure,
-    );
+    const dependencies = createDependencies({ notify, logNotificationFailure });
+    const result = await createComment(dependencies, new Headers(), {
+      author: createdComment.author,
+      content: createdComment.content,
+      email: createdComment.email,
+      postId: createdComment.postId,
+    });
 
     expect(result).toMatchObject({ id: createdComment.id, author: "Visitor" });
     expect(result).not.toHaveProperty("email");
-    expect(logNotificationFailure).toHaveBeenCalledWith(
-      expect.any(Error),
-    );
+    expect(logNotificationFailure).toHaveBeenCalledWith(expect.any(Error));
   });
 
   it("数据库创建失败时不调用通知", async () => {
     const notify = vi.fn();
+    const invalidator = { invalidateContent: vi.fn() };
 
     await expect(
       createComment(
-        { create: vi.fn().mockRejectedValue(new Error("database failed")) },
+        createDependencies({
+          repository: {
+            create: vi.fn().mockRejectedValue(new Error("database failed")),
+          },
+          notify,
+          invalidator,
+        }),
         new Headers(),
         {
           author: createdComment.author,
@@ -59,31 +75,111 @@ describe("Comment command handlers", () => {
           email: createdComment.email,
           postId: createdComment.postId,
         },
-        vi.fn().mockResolvedValue(undefined),
-        notify,
       ),
     ).rejects.toThrow("database failed");
 
     expect(notify).not.toHaveBeenCalled();
+    expect(invalidator.invalidateContent).not.toHaveBeenCalled();
+  });
+
+  it("按验证码、数据库、通知、缓存的顺序创建评论", async () => {
+    const order: string[] = [];
+    const dependencies = createDependencies({
+      repository: {
+        create: vi.fn().mockImplementation(async () => {
+          order.push("database");
+          return createdComment;
+        }),
+      },
+      validateCaptcha: vi.fn().mockImplementation(async () => {
+        order.push("captcha");
+      }),
+      notify: vi.fn().mockImplementation(async () => {
+        order.push("notification");
+      }),
+      invalidator: {
+        invalidateContent: vi.fn().mockImplementation(async () => {
+          order.push("cache");
+        }),
+      },
+    });
+
+    await createComment(dependencies, new Headers(), {
+      author: createdComment.author,
+      content: createdComment.content,
+      email: createdComment.email,
+      postId: createdComment.postId,
+    });
+
+    expect(order).toEqual(["captcha", "database", "notification", "cache"]);
+    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
+      id: "post-1",
+      type: "post",
+    });
+  });
+
+  it("通知失败仍刷新缓存，缓存失败继续向上传播", async () => {
+    const cacheError = new Error("cache failed");
+    const dependencies = createDependencies({
+      notify: vi.fn().mockRejectedValue(new Error("notification failed")),
+      invalidator: {
+        invalidateContent: vi.fn().mockRejectedValue(cacheError),
+      },
+    });
+
+    await expect(
+      createComment(dependencies, new Headers(), {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        pageId: "page-1",
+      }),
+    ).rejects.toBe(cacheError);
+
+    expect(dependencies.logNotificationFailure).toHaveBeenCalledOnce();
+    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
+      id: "page-1",
+      type: "page",
+    });
   });
 
   it("审核成功后返回持久化结果", async () => {
-    const update = vi.fn().mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
-    await expect(moderateComment({ update }, { id: "comment-1", currentStatus: CommentStatus.TO_AUDIT, status: CommentStatus.PUBLISH })).resolves.toEqual({ id: "comment-1", status: CommentStatus.PUBLISH });
-    expect(update).toHaveBeenCalledWith({ id: "comment-1", status: CommentStatus.PUBLISH });
+    const update = vi
+      .fn()
+      .mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
+    await expect(
+      moderateComment(
+        { update },
+        {
+          id: "comment-1",
+          currentStatus: CommentStatus.TO_AUDIT,
+          status: CommentStatus.PUBLISH,
+        },
+      ),
+    ).resolves.toEqual({ id: "comment-1", status: CommentStatus.PUBLISH });
+    expect(update).toHaveBeenCalledWith({
+      id: "comment-1",
+      status: CommentStatus.PUBLISH,
+    });
   });
 
   it("更新评论状态时必须先经过评论聚合", async () => {
     const findStatus = vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT);
-    const update = vi.fn().mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
+    const update = vi
+      .fn()
+      .mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
 
     await updateComment(
       { findStatus, update },
       { id: "comment-1", status: CommentStatus.PUBLISH },
+      { invalidateAll: vi.fn().mockResolvedValue(undefined) },
     );
 
     expect(findStatus).toHaveBeenCalledWith("comment-1");
-    expect(update).toHaveBeenCalledWith({ id: "comment-1", status: CommentStatus.PUBLISH });
+    expect(update).toHaveBeenCalledWith({
+      id: "comment-1",
+      status: CommentStatus.PUBLISH,
+    });
   });
 
   it("拒绝评论聚合不支持的状态流转", async () => {
@@ -94,9 +190,25 @@ describe("Comment command handlers", () => {
       updateComment(
         { findStatus, update },
         { id: "comment-1", status: CommentStatus.TO_AUDIT },
+        { invalidateAll: vi.fn().mockResolvedValue(undefined) },
       ),
     ).rejects.toThrow();
 
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("更新与删除评论仅在持久化成功后刷新全部公开内容", async () => {
+    const invalidator = { invalidateAll: vi.fn().mockResolvedValue(undefined) };
+    const update = vi.fn().mockResolvedValue({ id: "comment-1" });
+    const destroy = vi.fn().mockResolvedValue({ success: true });
+
+    await updateComment(
+      { findStatus: vi.fn(), update },
+      { id: "comment-1" },
+      invalidator,
+    );
+    await destroyComments({ destroy }, ["comment-1"], invalidator);
+
+    expect(invalidator.invalidateAll).toHaveBeenCalledTimes(2);
   });
 });

@@ -7,9 +7,14 @@ import type {
 } from "./repository";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { ApplicationError } from "@/packages/application/errors";
+import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
 function assertStatus(status: string | undefined): void {
-  if (status !== undefined && status !== EnableStatus.ENABLE && status !== EnableStatus.DISABLE) {
+  if (
+    status !== undefined &&
+    status !== EnableStatus.ENABLE &&
+    status !== EnableStatus.DISABLE
+  ) {
     throw new ApplicationError("BAD_REQUEST", "分类状态不合法");
   }
 }
@@ -20,12 +25,14 @@ async function assertParentChain(
   parent: string | null | undefined,
 ): Promise<void> {
   if (parent === undefined || parent === null) return;
-  if (parent === id) throw new ApplicationError("BAD_REQUEST", "分类不能将自己设置为父节点");
+  if (parent === id)
+    throw new ApplicationError("BAD_REQUEST", "分类不能将自己设置为父节点");
 
   const visited = new Set(id ? [id] : []);
   let currentId: string | null = parent;
   while (currentId) {
-    if (visited.has(currentId)) throw new ApplicationError("BAD_REQUEST", "分类父子关系不能形成循环");
+    if (visited.has(currentId))
+      throw new ApplicationError("BAD_REQUEST", "分类父子关系不能形成循环");
     visited.add(currentId);
     const current = await repository.find(currentId);
     if (!current) throw new ApplicationError("BAD_REQUEST", "父级分类不存在");
@@ -38,7 +45,7 @@ async function assertPath(
   path: string | undefined,
   excludeId?: string,
 ): Promise<void> {
-  if (path !== undefined && await repository.pathExists(path, excludeId)) {
+  if (path !== undefined && (await repository.pathExists(path, excludeId))) {
     throw new ApplicationError("BAD_REQUEST", "分类路径已经存在");
   }
 }
@@ -47,12 +54,15 @@ async function assertPath(
 export function createCategory(
   repository: Pick<CategoryRepository, "create" | "find" | "pathExists">,
   input: CategoryInsert,
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
 ) {
   return (async () => {
     assertStatus(input.status);
     await assertParentChain(repository, undefined, input.parent);
     await assertPath(repository, input.path);
-    return repository.create(input);
+    const result = await repository.create(input);
+    await invalidator.invalidateAll();
+    return result;
   })();
 }
 
@@ -60,6 +70,7 @@ export function createCategory(
 export function updateCategory(
   repository: Pick<CategoryRepository, "find" | "pathExists" | "update">,
   input: CategoryUpdate,
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
 ) {
   return (async () => {
     const current = await repository.find(input.id);
@@ -67,7 +78,9 @@ export function updateCategory(
     assertStatus(input.status);
     await assertParentChain(repository, input.id, input.parent);
     await assertPath(repository, input.path, input.id);
-    return repository.update(input);
+    const result = await repository.update(input);
+    await invalidator.invalidateAll();
+    return result;
   })();
 }
 
@@ -75,8 +88,13 @@ export function updateCategory(
 export function destroyCategories(
   repository: Pick<CategoryRepository, "destroy">,
   ids: string[],
+  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
 ) {
-  return repository.destroy(ids);
+  return (async () => {
+    const result = await repository.destroy(ids);
+    await invalidator.invalidateAll();
+    return result;
+  })();
 }
 
 /** 查询分类列表并构建分类树。 */

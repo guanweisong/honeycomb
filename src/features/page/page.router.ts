@@ -24,7 +24,7 @@ import {
 } from "@/features/page/application/page-use-cases";
 import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
-import { invalidatePublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
@@ -56,35 +56,30 @@ export const pageRouter = createTRPCRouter({
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      const result = await createPage(
+      return createPage(
         createPageCommandRepository(ctx.db),
         input,
         ctx.user.id,
+        publicContentInvalidator,
       );
-      await invalidatePublicContent({ id: result.id, type: "page" });
-      return result;
     }),
   destroy: permissionProcedure(Permission.pageDelete)
     .input(DeleteBatchSchema)
     .mutation(async ({ input, ctx }) => {
-      const result = await destroyPages(
+      return destroyPages(
         createPageCommandRepository(ctx.db),
         input.ids,
+        publicContentInvalidator,
       );
-      await Promise.all(
-        input.ids.map((id) => invalidatePublicContent({ id, type: "page" })),
-      );
-      return result;
     }),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      const result = await updatePage(
+      return updatePage(
         createPageCommandRepository(ctx.db),
         input,
+        publicContentInvalidator,
       ).catch(mapApplicationError);
-      await invalidatePublicContent({ id: input.id, type: "page" });
-      return result;
     }),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))

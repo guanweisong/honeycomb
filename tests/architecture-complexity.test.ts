@@ -17,8 +17,8 @@ function sourceFiles(directory: string): string[] {
 }
 
 function imports(source: string): string[] {
-  return [...source.matchAll(/from\s+["']([^"']+)["']/g)].map(
-    (match) => requireDefined(match[1]),
+  return [...source.matchAll(/from\s+["']([^"']+)["']/g)].map((match) =>
+    requireDefined(match[1]),
   );
 }
 
@@ -131,7 +131,9 @@ describe("架构复杂度治理", () => {
   it("Repository 契约必须位于 application，Application 不得依赖 infrastructure", () => {
     const rootRepositoryFiles = readdirSync(featureRoot).flatMap((feature) => {
       const path = join(featureRoot, feature, "repository.ts");
-      return statSync(path, { throwIfNoEntry: false }) ? [relative(process.cwd(), path)] : [];
+      return statSync(path, { throwIfNoEntry: false })
+        ? [relative(process.cwd(), path)]
+        : [];
     });
     expect(rootRepositoryFiles).toEqual([]);
 
@@ -140,15 +142,33 @@ describe("架构复杂度治理", () => {
       .flatMap((path) =>
         imports(readFileSync(path, "utf8"))
           .filter((specifier) => /\/infrastructure\//.test(specifier))
-          .map((specifier) => `${relative(process.cwd(), path)} -> ${specifier}`),
+          .map(
+            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
+          ),
       );
+    expect(violations).toEqual([]);
+  });
+
+  it("Application 只依赖副作用端口，不直接依赖框架或外部服务 SDK", () => {
+    const forbidden = /^(?:next\/cache|resend|@aws-sdk\/)|\/infrastructure\//;
+    const violations = sourceFiles(featureRoot)
+      .filter((path) => /\/application\//.test(path))
+      .flatMap((path) =>
+        imports(readFileSync(path, "utf8"))
+          .filter((specifier) => forbidden.test(specifier))
+          .map(
+            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
+          ),
+      );
+
     expect(violations).toEqual([]);
   });
 
   it("Feature 根目录不得拥有业务端口契约", () => {
     const violations = readdirSync(featureRoot).flatMap((feature) => {
       const directory = join(featureRoot, feature);
-      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory()) return [];
+      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory())
+        return [];
 
       return readdirSync(directory)
         .filter((entry) => entry === "ports.ts" || /-port\.ts$/.test(entry))
@@ -170,7 +190,8 @@ describe("架构复杂度治理", () => {
   it("业务 commands、queries、handlers 必须位于 application", () => {
     const violations = readdirSync(featureRoot).flatMap((feature) => {
       const directory = join(featureRoot, feature);
-      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory()) return [];
+      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory())
+        return [];
       return readdirSync(directory)
         .filter((entry) => /(?:commands|queries|handlers)\.ts$/.test(entry))
         .map((entry) => `${relative(process.cwd(), join(directory, entry))}`);

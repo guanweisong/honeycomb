@@ -12,7 +12,7 @@ import {
   updateSetting,
 } from "@/features/setting/application/setting-use-cases";
 import { createSettingRepository } from "@/features/setting/infrastructure/setting-repository";
-import { invalidateAllPublicContent } from "@/packages/infrastructure/refresh-path";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 网站设置 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const settingRouter = createTRPCRouter({
@@ -25,8 +25,8 @@ export const settingRouter = createTRPCRouter({
       const result = await updateSetting(
         createSettingRepository(ctx.db),
         input,
+        publicContentInvalidator,
       );
-      await invalidateAllPublicContent();
       return result;
     }),
 });

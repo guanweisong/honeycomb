@@ -19,8 +19,11 @@ import {
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  invalidatePublicContent: (...args: unknown[]) =>
-    mockInvalidatePublicContent(...args),
+  publicContentInvalidator: {
+    invalidateContent: (...args: unknown[]) =>
+      mockInvalidatePublicContent(...args),
+    invalidateAll: vi.fn(),
+  },
 }));
 
 // 模拟数据库及相关模块。
@@ -30,31 +33,58 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 
 // 模拟文章关联数据加载函数。
 vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
-  const actual = await vi.importActual<typeof import("@/features/post/infrastructure/post-query-repository")>("@/features/post/infrastructure/post-query-repository");
+  const actual = await vi.importActual<
+    typeof import("@/features/post/infrastructure/post-query-repository")
+  >("@/features/post/infrastructure/post-query-repository");
   const mockedLoadPostRelations = vi.fn<typeof actual.loadPostRelations>(
     async (_db, posts) => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
           ...post,
-          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
+          status: parseEnumValue(
+            post.status,
+            Object.values(PostStatus),
+            "post.status",
+          ),
           type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
+          commentStatus: parseEnumValue(
+            post.commentStatus,
+            Object.values(EnableStatus),
+            "post.commentStatus",
+          ),
           author: {
             id: post.authorId,
             name: "Test Author",
-            email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null,
+            email: null,
+            level: "GUEST",
+            status: "ACTIVE",
+            createdAt: null,
+            updatedAt: null,
           },
           category: {
             id: post.categoryId,
             title: { en: "Category 1", zh: "分类1" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null,
+            parent: null,
+            status: "ENABLE",
+            path: "category",
+            createdAt: null,
+            updatedAt: null,
           },
           cover: post.coverId
             ? {
                 id: post.coverId,
                 url: "https://example.com/cover.jpg",
-                key: "cover.jpg", name: "cover.jpg", size: 10, type: "image/jpeg", color: null, width: null, height: null, createdAt: null, updatedAt: null,
+                key: "cover.jpg",
+                name: "cover.jpg",
+                size: 10,
+                type: "image/jpeg",
+                color: null,
+                width: null,
+                height: null,
+                createdAt: null,
+                updatedAt: null,
               }
             : undefined,
           movieActors: [],
@@ -66,9 +96,17 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
         ...post,
-          status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
-          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-          commentStatus: parseEnumValue(post.commentStatus, Object.values(EnableStatus), "post.commentStatus"),
+        status: parseEnumValue(
+          post.status,
+          Object.values(PostStatus),
+          "post.status",
+        ),
+        type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
+        commentStatus: parseEnumValue(
+          post.commentStatus,
+          Object.values(EnableStatus),
+          "post.commentStatus",
+        ),
         author: undefined,
         category: undefined,
         cover: undefined,
@@ -81,8 +119,12 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   );
   return {
     ...actual,
-    createPostQueryRepository: (db: Parameters<typeof actual.createPostQueryRepository>[0]) =>
-      actual.createPostQueryRepository(db, { loadRelations: mockedLoadPostRelations }),
+    createPostQueryRepository: (
+      db: Parameters<typeof actual.createPostQueryRepository>[0],
+    ) =>
+      actual.createPostQueryRepository(db, {
+        loadRelations: mockedLoadPostRelations,
+      }),
     loadPostRelations: mockedLoadPostRelations,
   };
 });
@@ -106,9 +148,9 @@ describe("Post Router", () => {
     it("rejects unauthenticated callers from adminIndex", async () => {
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(
-        caller.adminIndex({ page: 1, limit: 10 }),
-      ).rejects.toThrow("UNAUTHORIZED");
+      await expect(caller.adminIndex({ page: 1, limit: 10 })).rejects.toThrow(
+        "UNAUTHORIZED",
+      );
     });
 
     it("should return post list with pagination", async () => {
@@ -252,10 +294,7 @@ describe("Post Router", () => {
       mockDb.returning.mockResolvedValueOnce([newPost]);
 
       const caller = postRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.create({
@@ -272,10 +311,7 @@ describe("Post Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
@@ -317,10 +353,7 @@ describe("Post Router", () => {
       mockDb.where.mockResolvedValueOnce(undefined);
 
       const caller = postRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.destroy({
@@ -333,10 +366,7 @@ describe("Post Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
@@ -367,10 +397,7 @@ describe("Post Router", () => {
       mockDb.returning.mockResolvedValueOnce([updatedPost]);
 
       const caller = postRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.update({
@@ -391,10 +418,7 @@ describe("Post Router", () => {
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
@@ -424,10 +448,7 @@ describe("Post Router", () => {
       );
 
       const caller = postRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       await expect(
@@ -455,7 +476,9 @@ describe("Post Router", () => {
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(caller.incrementViews({ id: TEST_IDS.ID_1 })).resolves.toEqual({
+      await expect(
+        caller.incrementViews({ id: TEST_IDS.ID_1 }),
+      ).resolves.toEqual({
         views: 8,
       });
       expect(mockInvalidatePublicContent).not.toHaveBeenCalled();
