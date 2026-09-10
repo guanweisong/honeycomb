@@ -5,7 +5,7 @@
 每个 feature 使用以下入口：
 
 - `application/*-use-cases.ts`：业务用例编排
-- `repository.ts`：最小持久化端口
+- `application/repository.ts`：最小持久化端口
 - `infrastructure/`：Drizzle、存储和外部服务适配器
 - `schemas/`：该 feature 的输入校验和传输类型
 - `*.router.ts`：tRPC 传输入口
@@ -16,3 +16,7 @@
 `src/packages/trpc` 只负责 tRPC 核心、上下文、客户端绑定和共享传输工具，不再承载业务
 feature 的 schema 或 router。Feature 之间禁止直接依赖内部文件；跨功能复用应通过
 稳定的 public 能力或明确的共享契约完成。
+
+写入、缓存失效、通知和对象存储等多步骤业务操作必须由 Application Use Case 编排。
+Router 可以创建并注入 Infrastructure adapter，但只保留输入、限流、会话、授权和错误映射，
+不得在 Use Case 返回后继续执行业务副作用。

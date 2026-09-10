@@ -127,6 +127,10 @@ honeycomb/
 每个业务 feature 的 Application 只负责业务用例编排、领域规则与业务端口契约，不得直接
 导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化、凭据和登录历史等端口定义在
 feature 的 `application` 目录，由 router 或 app 入口创建 infrastructure adapter 后注入用例。
+缓存失效、通知和对象存储等与业务操作相关的副作用也由 Application 决定顺序和失败语义；
+Router 只负责限流、会话、入口授权、错误映射以及 adapter 组装，不直接执行这些副作用。
+跨 Feature 的公开内容缓存契约位于 `src/packages/application/public-content-invalidator.ts`，
+Next.js `revalidatePath` 仅存在于对应 Infrastructure adapter。
 
 权限入口统一登记在 `src/packages/identity/auth/capability-registry.ts`。tRPC、Admin
 Action、Admin route 和后台菜单只能使用已登记的 capability；相关边界测试位于
@@ -419,7 +423,10 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 供应商接入只需实现 [`Logger`](src/packages/infrastructure/observability/core/contracts.ts) 和/或 [`Metrics`](src/packages/infrastructure/observability/core/contracts.ts)，并在服务端启动时配置：
 
 ```ts
-import type { Logger, Metrics } from "@/packages/infrastructure/observability/core/contracts";
+import type {
+  Logger,
+  Metrics,
+} from "@/packages/infrastructure/observability/core/contracts";
 import { configureObservability } from "@/packages/infrastructure/observability/server";
 
 const logger: Logger = {

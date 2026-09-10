@@ -26,6 +26,7 @@ Client/Server UI → Transport Adapter → Application Use Case
 - `domain` MUST 不依赖框架、数据库和传输层。
 - `application` MUST 承载业务用例编排，不在 procedure 或页面中复制业务规则。
 - `infrastructure` MUST 隐藏数据库、存储、缓存和外部服务实现。
+- `transport` MUST 只组装副作用 adapter；缓存、通知和对象存储的执行顺序及失败语义由 Application Use Case 决定。
 - 展示层 MUST 使用 View Model，不直接接收 Drizzle schema 类型。
 - 权限 MUST 通过 capability registry 和统一授权服务判断。
 
@@ -52,7 +53,11 @@ Client/Server UI → Transport Adapter → Application Use Case
 Application 用例只编排业务用例和领域规则，不得导入 Drizzle、数据库连接、schema
 或 ORM 查询构造器。需要持久化时，必须依赖 feature 自己的窄端口；Drizzle adapter
 统一放在同一 feature 的 `infrastructure` 目录，并由 router 或 app 入口注入。
-该约束由 `tests/feature-boundaries.test.ts` 持续检查。
+缓存和外部服务同样通过窄端口注入；跨 Feature 的公开缓存端口由
+`src/packages/application/public-content-invalidator.ts` 统一定义，Next.js adapter 留在
+Infrastructure。该约束由 `tests/feature-boundaries.test.ts`、
+`tests/architecture-complexity.test.ts` 和 `tests/public-cache-invalidation-boundaries.test.ts`
+持续检查。
 
 `features/media/shared` 存放媒体 UI 共享能力，供媒体管理页面和文章编辑器
 复用，避免文章功能直接依赖媒体管理端内部实现。
@@ -76,7 +81,8 @@ Repository 接口由 Application 定义。简单模块不强制 Domain，复杂�
 
 各 feature 按真实业务不变量选择是否使用聚合；简单 CRUD 保持 Query/Use Case
 和 Repository 的最小结构，避免过度复杂化。工程不保留没有生产消费者的进程内事件总线、
-pending event 队列或幂等事件处理器；现有缓存、通知和邮件副作用由对应 Application/Infrastructure 路径直接编排。
+pending event 队列或幂等事件处理器；现有缓存、通知和对象存储副作用由 Application
+Use Case 编排，Infrastructure adapter 执行，transport 只负责注入。
 
 ## DDD 迁移记录
 
@@ -90,14 +96,14 @@ pending event 队列或幂等事件处理器；现有缓存、通知和邮件副
 
 ## 验证记录
 
-最近一次验证结果（2026-09-06）：类型检查、Lint、迁移治理、Webpack 生产构建、
-252 个单元测试文件中的 1140 项测试和 52 项进程级测试均通过。覆盖率为语句
-82.03%、分支 74.66%、函数 80.25%、行 83.09%，没有降低全局或关键文件门槛。
+最近一次验证结果（2026-09-11）：类型检查、Lint、迁移治理、生产依赖审计和 Webpack
+生产构建均通过；270 个单元测试文件中的 1209 项测试和 52 项进程级测试均通过。
+覆盖率为语句 83.12%、分支 75.24%、函数 80.83%、行 84.35%，没有降低全局或关键文件门槛。
 安全响应头、RBAC 与 PWA 关键 Chromium E2E 为 6/6 通过；生产 PWA 离线导航还以
 同一用例连续两次通过验证时序稳定性。
 
-默认 Turbopack 构建和实验性分析器在当前受限执行环境中因 PostCSS 子进程无法绑定
-内部端口而失败；相同隔离假配置下 Webpack 构建成功，且失败发生在任何数据库访问前。
+默认 Turbopack 构建在当前受限执行环境中因 PostCSS 子进程无法绑定内部端口而失败；
+相同隔离假配置下 Webpack 构建成功，且失败发生在任何数据库访问前。
 该环境限制不记录为分析成功，后续应在允许子进程本地通信的 CI/开发环境复跑。
 
 ## 技术包
