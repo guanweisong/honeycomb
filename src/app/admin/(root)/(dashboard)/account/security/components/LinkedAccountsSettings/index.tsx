@@ -69,8 +69,7 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
     }
 
     const result = await authClient.unlinkAccount({
-      providerId: unlinkTarget.providerId,
-      accountId: unlinkTarget.accountId,
+      accountId: unlinkTarget.id,
     });
     if (result.error) {
       toast.error(result.error.message || "解除关联失败");

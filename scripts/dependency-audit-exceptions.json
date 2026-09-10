@@ -1,9 +1,1 @@
-[
-  {
-    "advisory": "GHSA-c2c7-rcm5-vvqj",
-    "dependencyPath": "next-intl@4.14.2>@parcel/watcher@2.5.6>picomatch@4.0.3",
-    "mitigation": "@parcel/watcher 仅处理受信任的源码监听路径；生产请求不会调用该工具链或向 picomatch 提供 glob 表达式。",
-    "owner": "maintainer",
-    "expiresOn": "2026-12-01"
-  }
-]
+[]

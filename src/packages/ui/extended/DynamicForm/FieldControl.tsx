@@ -4,7 +4,7 @@ import type React from "react";
 import { format } from "date-fns";
 import type { ControllerRenderProps } from "react-hook-form";
 import { z } from "zod";
-import type { DateRange } from "react-day-picker";
+import type { DateRange } from "@daypicker/react";
 import { zhCN } from "date-fns/locale";
 import { Input } from "../../components/input";
 import { Textarea } from "../../components/textarea";

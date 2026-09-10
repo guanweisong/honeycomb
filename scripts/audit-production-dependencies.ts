@@ -145,6 +145,13 @@ export function parseBunAuditOutput(output: string): BunAuditOutput {
   return candidate;
 }
 
+export function parseBunAuditProcessOutput(
+  stdout: string,
+  stderr: string,
+): BunAuditOutput {
+  return parseBunAuditOutput(`${stdout}\n${stderr}`);
+}
+
 function validateExceptions(exceptions: AuditException[]): void {
   for (const exception of exceptions) {
     if (!advisoryPattern.test(exception.advisory)) {
@@ -370,7 +377,7 @@ function runBunAudit(): BunAuditOutput {
   if (result.status !== 0 && result.status !== 1) {
     throw new Error(`bun audit failed: ${result.stderr.trim()}`);
   }
-  return parseBunAuditOutput(result.stdout);
+  return parseBunAuditProcessOutput(result.stdout, result.stderr);
 }
 
 function argumentValue(flag: string): string | undefined {

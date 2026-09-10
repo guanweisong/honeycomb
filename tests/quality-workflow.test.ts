@@ -9,11 +9,12 @@ const workflow = readFileSync(
 );
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
-) as { scripts: Record<string, string> };
+) as { packageManager: string; scripts: Record<string, string> };
 
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
-    expect(workflow).toContain("bun-version: 1.3.3");
+    expect(packageJson.packageManager).toBe("bun@1.4.2");
+    expect(workflow).toContain("bun-version: 1.4.2");
     expect(workflow).toContain("bun install --frozen-lockfile");
   });
 

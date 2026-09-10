@@ -68,8 +68,7 @@ describe("LinkedAccountsSettings", () => {
     });
 
     expect(mocks.unlinkAccount).toHaveBeenCalledWith({
-      providerId: "github",
-      accountId: "github-1",
+      accountId: "account-1",
     });
     expect(mocks.listAccounts).toHaveBeenCalledTimes(2);
   });

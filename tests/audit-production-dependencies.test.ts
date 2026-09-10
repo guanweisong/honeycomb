@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createProductionFindings,
   evaluateAudit,
+  parseBunAuditProcessOutput,
   parseBunAuditOutput,
   type AuditException,
   type AuditFinding,
@@ -49,6 +50,12 @@ describe("production dependency audit policy", () => {
       .toThrow(/JSON/i);
     expect(() => parseBunAuditOutput("{}\n{}"))
       .toThrow(/multiple|unique|ambiguous/i);
+  });
+
+  it("accepts Bun 1.4 audit JSON written to stderr", () => {
+    expect(parseBunAuditProcessOutput("", '[0.10ms] ".env"\n{}\n')).toEqual(
+      {},
+    );
   });
 
   it("follows transitive runtime dependencies and skips unresolved or development-only packages", () => {

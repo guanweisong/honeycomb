@@ -137,7 +137,7 @@ Action、Admin route 和后台菜单只能使用已登记的 capability；相关
 ### 环境要求
 
 - Node.js >= 22.12
-- Bun >= 1.3.3
+- Bun >= 1.4.2
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
 - Resend 账号（可选，用于邮件服务）
