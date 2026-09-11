@@ -34,12 +34,6 @@ export const imageConfig = {
  */
 const nextConfig: NextConfig = withSerwist({
   reactStrictMode: true,
-  experimental: {
-    // 动态页面返回已访问路由时复用客户端 RSC segment，避免 admin 菜单往返重复请求。
-    staleTimes: {
-      dynamic: 300,
-    },
-  },
   images: imageConfig,
   poweredByHeader: false,
   async headers() {

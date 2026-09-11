@@ -19,6 +19,7 @@ import { authClient } from "@/auth-client";
 import Script from "next/script";
 import { providerIcons } from "../../provider-icons";
 import { LoginSchema, type LoginValues } from "../../login.schema";
+import { normalizeAdminCallback } from "../../safe-admin-callback";
 
 type AuthProvider = { id: string; name: string };
 
@@ -40,7 +41,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
   );
   const form = useRef<DynamicFormRef<LoginValues>>(null);
 
-  const callbackUrl = targetUrl || "/admin/dashboard";
+  const callbackUrl = normalizeAdminCallback(targetUrl);
 
   useEffect(() => {
     setIsPasskeySupported(

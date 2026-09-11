@@ -4,9 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   invalidate: vi.fn().mockResolvedValue(undefined),
+  clear: vi.fn(),
+  clearRuntimeCaches: vi.fn().mockResolvedValue(undefined),
+  navigateToLogin: vi.fn(),
   setData: vi.fn(),
-  signOut: vi.fn().mockResolvedValue(undefined),
+  signOut: vi.fn().mockResolvedValue({ error: null }),
   push: vi.fn(),
+  error: vi.fn(),
   success: vi.fn(),
   onLogout: undefined as (() => Promise<void>) | undefined,
 }));
@@ -21,7 +25,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: { success: mocks.success },
+  toast: { error: mocks.error, success: mocks.success },
 }));
 
 vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
@@ -44,6 +48,15 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
       },
     }),
   },
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({ clear: mocks.clear }),
+}));
+
+vi.mock("./logout-browser-state", () => ({
+  clearHoneycombRuntimeCaches: mocks.clearRuntimeCaches,
+  navigateToAdminLogin: mocks.navigateToLogin,
 }));
 
 vi.mock("@/packages/ui/extended/AdminLayout", () => ({
@@ -71,10 +84,14 @@ describe("DashboardClientShell", () => {
     act(() => root?.unmount());
     container?.remove();
     mocks.invalidate.mockClear();
+    mocks.clear.mockClear();
+    mocks.clearRuntimeCaches.mockReset().mockResolvedValue(undefined);
+    mocks.navigateToLogin.mockClear();
     mocks.setData.mockClear();
-    mocks.signOut.mockReset().mockResolvedValue(undefined);
+    mocks.signOut.mockReset().mockResolvedValue({ error: null });
     mocks.push.mockClear();
     mocks.success.mockClear();
+    mocks.error.mockClear();
     mocks.onLogout = undefined;
   });
 
@@ -91,26 +108,59 @@ describe("DashboardClientShell", () => {
     );
   }
 
-  it("clears the cached user and redirects after a successful logout", async () => {
+  it("clears browser and query caches before hard navigation after logout", async () => {
     render();
 
     await act(async () => mocks.onLogout?.());
 
     expect(mocks.signOut).toHaveBeenCalledTimes(1);
     expect(mocks.setData).toHaveBeenCalledWith(undefined, undefined);
-    expect(mocks.invalidate).toHaveBeenCalledTimes(1);
+    expect(mocks.invalidate).not.toHaveBeenCalled();
+    expect(mocks.clearRuntimeCaches).toHaveBeenCalledTimes(1);
+    expect(mocks.clear).toHaveBeenCalledTimes(1);
     expect(mocks.success).toHaveBeenCalledWith("登出成功");
-    expect(mocks.push).toHaveBeenCalledWith("/admin/login");
+    expect(mocks.navigateToLogin).toHaveBeenCalledTimes(1);
   });
 
-  it("redirects to login even when logout fails", async () => {
+  it("continues logout after post-success browser cache cleanup fails", async () => {
+    mocks.clearRuntimeCaches.mockRejectedValueOnce(new Error("cache unavailable"));
+    render();
+
+    await act(async () => mocks.onLogout?.());
+
+    expect(mocks.signOut).toHaveBeenCalledTimes(1);
+    expect(mocks.setData).toHaveBeenCalledWith(undefined, undefined);
+    expect(mocks.clear).toHaveBeenCalledTimes(1);
+    expect(mocks.navigateToLogin).toHaveBeenCalledTimes(1);
+    expect(mocks.success).toHaveBeenCalledWith("登出成功");
+    expect(mocks.error).not.toHaveBeenCalled();
+  });
+
+  it("does not clear state, redirect, or claim success when logout fails", async () => {
     mocks.signOut.mockRejectedValueOnce(new Error("network error"));
     render();
 
     await act(async () => mocks.onLogout?.());
 
-    expect(mocks.push).toHaveBeenCalledWith("/admin/login");
+    expect(mocks.push).not.toHaveBeenCalled();
     expect(mocks.setData).not.toHaveBeenCalled();
+    expect(mocks.clearRuntimeCaches).not.toHaveBeenCalled();
+    expect(mocks.clear).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.navigateToLogin).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith("登出失败");
+  });
+
+  it("leaves browser Cache Storage untouched when sign-out resolves with an error", async () => {
+    mocks.signOut.mockResolvedValueOnce({ error: { message: "sign-out failed" } });
+    render();
+
+    await act(async () => mocks.onLogout?.());
+
+    expect(mocks.clearRuntimeCaches).not.toHaveBeenCalled();
+    expect(mocks.clear).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.navigateToLogin).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith("sign-out failed");
   });
 });

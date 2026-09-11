@@ -4,6 +4,7 @@ import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "./components/LoginClient";
+import { normalizeAdminCallback } from "./safe-admin-callback";
 
 type LoginPageProps = {
   searchParams: Promise<{ targetUrl?: string }>;
@@ -21,7 +22,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     getSiteSetting(requestHeaders),
     getAuthProviders(),
   ]);
-  const targetUrl = (await searchParams).targetUrl;
+  const targetUrl = normalizeAdminCallback((await searchParams).targetUrl);
 
   return <LoginClient setting={setting} providers={providers} targetUrl={targetUrl} />;
 }

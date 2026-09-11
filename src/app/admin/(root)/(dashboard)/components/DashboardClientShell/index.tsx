@@ -6,10 +6,14 @@ import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
+import {
+  clearHoneycombRuntimeCaches,
+  navigateToAdminLogin,
+} from "./logout-browser-state";
 
 function findMenuTitle(
   items: ReturnType<typeof getMenuForCapabilities>,
@@ -34,9 +38,9 @@ export function DashboardClientShell({
   children: React.ReactNode;
   user: AdminUser;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const { setting } = useSiteSetting();
   const adminMenu = useMemo(() => getMenuForCapabilities(user.level), [user.level]);
 
@@ -48,15 +52,26 @@ export function DashboardClientShell({
 
   const handleLogout = async () => {
     try {
-      await authClient.signOut();
-      utils.user.current.setData(undefined, undefined);
-      await utils.user.current.invalidate();
-      toast.success("登出成功");
+      const result = await authClient.signOut();
+      if (result.error) {
+        toast.error(result.error.message || "登出失败");
+        return;
+      }
     } catch {
-      // 即使 API 调用失败，也继续执行登出流程，确保前端状态被清理。
-    } finally {
-      router.push("/admin/login");
+      toast.error("登出失败");
+      return;
     }
+
+    try {
+      await clearHoneycombRuntimeCaches(window.caches);
+    } catch {
+      // Cache Storage can be unavailable, but the server sign-out succeeded.
+    }
+
+    utils.user.current.setData(undefined, undefined);
+    queryClient.clear();
+    toast.success("登出成功");
+    navigateToAdminLogin(window.location);
   };
 
   return (

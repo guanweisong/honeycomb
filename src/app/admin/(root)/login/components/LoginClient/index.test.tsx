@@ -5,6 +5,11 @@ import { createRoot, type Root } from "react-dom/client";
 const mockUseSiteSetting = vi.fn();
 const mockRefreshUser = vi.fn();
 const mockFetch = vi.fn();
+const mocks = vi.hoisted(() => ({
+  social: vi.fn().mockResolvedValue({ error: null }),
+  passkey: vi.fn(),
+  username: vi.fn(),
+}));
 
 vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   useSiteSetting: () => mockUseSiteSetting(),
@@ -19,9 +24,9 @@ vi.mock("@/features/contracts/admin/use-current-user", () => ({
 vi.mock("@/auth-client", () => ({
   authClient: {
     signIn: {
-      username: vi.fn(),
-      social: vi.fn(),
-      passkey: vi.fn(),
+      username: mocks.username,
+      social: mocks.social,
+      passkey: mocks.passkey,
     },
     signOut: vi.fn(),
   },
@@ -72,6 +77,7 @@ describe("admin login page", () => {
     mockRefreshUser.mockReset();
     mockUseSiteSetting.mockReset();
     mockFetch.mockReset();
+    mocks.social.mockReset().mockResolvedValue({ error: null });
     vi.stubGlobal("fetch", mockFetch);
   });
 
@@ -80,6 +86,7 @@ describe("admin login page", () => {
       root.unmount();
     });
     container.remove();
+    vi.unstubAllGlobals();
   });
 
   it("renders server-provided setting and providers immediately", async () => {
@@ -131,5 +138,28 @@ describe("admin login page", () => {
     });
 
     expect(container.textContent).toContain("使用 Passkey 登录");
+  });
+
+  it("uses the dashboard fallback for an unsafe OAuth callback", async () => {
+    await act(async () => {
+      root.render(
+        React.createElement(LoginClient, {
+          setting: { siteName: { zh: "Honeycomb" } },
+          providers: [{ id: "github", name: "GitHub" }],
+          targetUrl: "//evil.test",
+        }),
+      );
+    });
+
+    await act(async () => {
+      Array.from(container.querySelectorAll("button"))
+        .find((button) => button.textContent?.includes("使用GitHub登录"))
+        ?.click();
+    });
+
+    expect(mocks.social).toHaveBeenCalledWith({
+      provider: "github",
+      callbackURL: "/admin/dashboard",
+    });
   });
 });
