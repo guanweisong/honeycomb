@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
 
 const {
   cacheStores,
@@ -102,6 +104,8 @@ describe("runtime sitemap", () => {
     expect(secondXml).toBe(firstXml);
     expect(firstXml).toContain("https://example.com/sitemaps/0.xml");
     expect(firstXml).toContain("https://example.com/sitemaps/1.xml");
+    expect(firstXml).toContain("https://example.com/sitemaps/10.xml");
+    expect(firstXml).not.toContain("https://example.com/sitemaps/11.xml");
     expect(createServerClientMock).toHaveBeenCalledTimes(1);
     expect(postIndexMock).toHaveBeenCalledWith(
       expect.objectContaining({ page: 1, limit: 1 }),
@@ -217,7 +221,7 @@ describe("runtime sitemap", () => {
   });
 
   it("rejects a shard beyond the discovered range before requesting its high offset", async () => {
-    postIndexMock.mockResolvedValue(list([], 1001));
+    postIndexMock.mockResolvedValue(list([], 101));
     pageIndexMock.mockResolvedValue(list([], 0));
 
     const response = await sitemapShardRoute.GET(
@@ -227,10 +231,10 @@ describe("runtime sitemap", () => {
 
     expect(response.status).toBe(404);
     expect(postIndexMock).not.toHaveBeenCalledWith(
-      expect.objectContaining({ page: 3, limit: 1000 }),
+      expect.objectContaining({ page: 3, limit: 100 }),
     );
     expect(pageIndexMock).not.toHaveBeenCalledWith(
-      expect.objectContaining({ page: 3, limit: 1000 }),
+      expect.objectContaining({ page: 3, limit: 100 }),
     );
   });
 
@@ -265,25 +269,25 @@ describe("runtime sitemap", () => {
     );
   });
 
-  it("reads the second batch for a later shard so URLs after the first 1000 records remain discoverable", async () => {
+  it("reads the second bounded batch so URLs after the first 100 records remain discoverable", async () => {
     postIndexMock.mockImplementation(({ page }) =>
       Promise.resolve(
         page === 2
           ? list(
-              [{ id: "post-1001", updatedAt: "2026-01-02T00:00:00.000Z" }],
-              1001,
+              [{ id: "post-101", updatedAt: "2026-01-02T00:00:00.000Z" }],
+              101,
             )
-          : list([], 1001),
+          : list([], 101),
       ),
     );
     pageIndexMock.mockImplementation(({ page }) =>
       Promise.resolve(
         page === 2
           ? list(
-              [{ id: "page-1001", updatedAt: "2026-01-03T00:00:00.000Z" }],
-              1001,
+              [{ id: "page-101", updatedAt: "2026-01-03T00:00:00.000Z" }],
+              101,
             )
-          : list([], 1001),
+          : list([], 101),
       ),
     );
 
@@ -295,16 +299,88 @@ describe("runtime sitemap", () => {
     );
 
     expect(postIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2, limit: 1000 }),
+      expect.objectContaining({ page: 2, limit: 100 }),
     );
     expect(pageIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2, limit: 1000 }),
+      expect.objectContaining({ page: 2, limit: 100 }),
     );
     const xml = await sitemap.text();
-    expect(xml).toContain("https://example.com/zh/archives/post-1001");
-    expect(xml).toContain("https://example.com/en/archives/post-1001");
-    expect(xml).toContain("https://example.com/zh/pages/page-1001");
-    expect(xml).toContain("https://example.com/en/pages/page-1001");
+    expect(xml).toContain("https://example.com/zh/archives/post-101");
+    expect(xml).toContain("https://example.com/en/archives/post-101");
+    expect(xml).toContain("https://example.com/zh/pages/page-101");
+    expect(xml).toContain("https://example.com/en/pages/page-101");
+  });
+
+  it("enumerates every dynamic URL through the real bounded list schemas", async () => {
+    const posts = Array.from({ length: 205 }, (_, index) => ({
+      id: `post-${index + 1}`,
+      updatedAt: null,
+    }));
+    const pages = Array.from({ length: 101 }, (_, index) => ({
+      id: `page-${index + 1}`,
+      updatedAt: null,
+    }));
+    postIndexMock.mockImplementation(async (input: unknown) => {
+      const { page = 1, limit = 10 } = PostListQuerySchema.parse(input);
+      return list(posts.slice((page - 1) * limit, page * limit), posts.length);
+    });
+    pageIndexMock.mockImplementation(async (input: unknown) => {
+      const { page = 1, limit = 10 } = PageListQuerySchema.parse(input);
+      return list(pages.slice((page - 1) * limit, page * limit), pages.length);
+    });
+    menuIndexMock.mockResolvedValue(
+      list([{ type: "CATEGORY", path: "root/child/grandchild" }]),
+    );
+
+    const firstResponse = await sitemapShardRoute.GET(
+      new Request("https://example.com/sitemaps/0.xml"),
+      {
+        params: Promise.resolve({ id: "0.xml" }),
+      },
+    );
+    const firstXml = await firstResponse.text();
+    expect(firstXml).toContain("https://example.com/zh/archives/post-1");
+    expect(firstXml).toContain("https://example.com/en/pages/page-1");
+
+    const indexXml = await (await sitemapIndexRoute.GET()).text();
+    const shardUrls = [...indexXml.matchAll(/<loc>(.*?)<\/loc>/g)].flatMap(
+      ([, url]) => (url ? [url] : []),
+    );
+    expect(shardUrls).toEqual([
+      "https://example.com/sitemaps/0.xml",
+      "https://example.com/sitemaps/1.xml",
+      "https://example.com/sitemaps/2.xml",
+    ]);
+    const urls: string[] = [];
+    for (const shardUrl of shardUrls) {
+      const response = await sitemapShardRoute.GET(new Request(shardUrl), {
+        params: Promise.resolve({
+          id: new URL(shardUrl).pathname.split("/").at(-1) ?? "",
+        }),
+      });
+      expect(response.status).toBe(200);
+      urls.push(
+        ...[...(await response.text()).matchAll(/<loc>(.*?)<\/loc>/g)].flatMap(
+          ([, url]) => (url ? [url] : []),
+        ),
+      );
+    }
+    expect(new Set(urls).size).toBe(617);
+    expect(urls.filter((url) => url.includes("/archives/"))).toHaveLength(410);
+    expect(urls.filter((url) => url.includes("/pages/"))).toHaveLength(202);
+    for (const locale of ["zh", "en"]) {
+      for (const post of posts)
+        expect(urls).toContain(
+          `https://example.com/${locale}/archives/${post.id}`,
+        );
+      for (const page of pages)
+        expect(urls).toContain(
+          `https://example.com/${locale}/pages/${page.id}`,
+        );
+      expect(urls).toContain(
+        `https://example.com/${locale}/list/category/root/child/grandchild`,
+      );
+    }
   });
 
   it.each(["invalid", "-1"])(

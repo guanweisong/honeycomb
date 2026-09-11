@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export function hasUpdateFields(value: { id: string }): boolean {
+  return Object.entries(value).some(([key, field]) => key !== "id" && field !== undefined);
+}
+
 export function requiredString(message: string) {
   return z
     .string({

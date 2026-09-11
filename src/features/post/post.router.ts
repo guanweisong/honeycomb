@@ -14,7 +14,7 @@ import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
-import { TagType } from "@/packages/domain/content/tag";
+import { PostTagUpdateSchema } from "@/features/post/application/write-schema";
 import {
   createPost,
   destroyPosts,
@@ -144,13 +144,7 @@ export const postRouter = createTRPCRouter({
     ),
 
   updateTags: permissionProcedure(Permission.postManageTags)
-    .input(
-      z.object({
-        postId: IdSchema,
-        tagIds: z.array(IdSchema),
-        type: z.nativeEnum(TagType),
-      }),
-    )
+    .input(PostTagUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       return updatePostTags(
         createPostCommandRepository(ctx.db),

@@ -1,5 +1,6 @@
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
+import { hasUpdateFields } from "@/packages/application/validation";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import type { z } from "zod";
 import type { PageUpdateCommand } from "../application/repository";
@@ -9,7 +10,7 @@ import type { PageUpdateCommand } from "../application/repository";
  */
 export const PageUpdateSchema = PageInsertSchema.partial().extend({
   id: IdSchema,
-});
+}).refine(hasUpdateFields, "至少修改一个字段");
 
 export type PageUpdate = CleanZod<typeof PageUpdateSchema>;
 

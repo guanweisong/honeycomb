@@ -97,7 +97,7 @@ export function destroyCategories(
   })();
 }
 
-/** 查询分类列表并构建分类树。 */
+/** 查询分类的平面分页列表；完整树由独立 Repository 查询提供。 */
 export function getCategoryList(
   repository: Pick<CategoryRepository, "list">,
   input: CategoryListInput,

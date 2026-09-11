@@ -3,6 +3,7 @@ import { ApplicationError } from "@/packages/application/errors";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
 function validateMenuTree(input: MenuInput): void {
+  if (input.length === 0) throw new ApplicationError("BAD_REQUEST", "菜单不能为空");
   const ids = new Set<string>();
   for (const item of input) {
     if (ids.has(item.id))

@@ -82,7 +82,7 @@ describe("Category Router", () => {
       const result = await caller.index({ page: 1, limit: 10 });
 
       expect(result).toEqual({
-        list: mockCategories,
+        list: mockCategories.map((item) => ({ ...item, deepPath: 0 })),
         total: 2,
       });
     });

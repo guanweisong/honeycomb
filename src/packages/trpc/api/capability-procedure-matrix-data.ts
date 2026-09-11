@@ -19,6 +19,7 @@ type CapabilityMatrixEntry = readonly [
 ];
 
 export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
+  ["category.adminTree", Permission.categoryReadAll, ALL_ROLES, undefined, "database"],
   [
     "accountSecurity.loginHistory",
     Permission.userReadSelf,
@@ -56,7 +57,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "category.update",
     Permission.categoryUpdate,
     ADMIN_EDITOR,
-    { id: TEST_ID },
+    { id: TEST_ID, path: "/updated" },
     "database",
   ],
   [
@@ -104,7 +105,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "link.update",
     Permission.linkUpdate,
     ADMIN_ONLY,
-    { id: TEST_ID },
+    { id: TEST_ID, name: "Updated" },
     "database",
   ],
   ["media.index", Permission.mediaReadAll, ALL_ROLES, LIST_INPUT, "database"],
@@ -130,7 +131,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "database",
   ],
   ["menu.adminIndex", Permission.menuReadAll, ALL_ROLES, undefined, "database"],
-  ["menu.saveAll", Permission.menuUpdate, ADMIN_EDITOR, [], "database"],
+  ["menu.saveAll", Permission.menuUpdate, ADMIN_EDITOR, [{ id: TEST_ID, type: "CATEGORY", power: 0 }], "database"],
   [
     "page.adminIndex",
     Permission.pageReadAll,
@@ -168,7 +169,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "page.update",
     Permission.pageUpdate,
     ADMIN_EDITOR,
-    { id: TEST_ID },
+    { id: TEST_ID, title: I18N_INPUT },
     "database",
   ],
   [
@@ -209,7 +210,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "post.update",
     Permission.postUpdate,
     ADMIN_EDITOR,
-    { id: TEST_ID },
+    { id: TEST_ID, title: I18N_INPUT },
     "database",
   ],
   [
@@ -251,7 +252,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "tag.update",
     Permission.tagUpdate,
     ADMIN_EDITOR,
-    { id: TEST_ID },
+    { id: TEST_ID, name: I18N_INPUT },
     "database",
   ],
   ["user.current", Permission.userReadSelf, ALL_ROLES, undefined, "database"],
@@ -274,7 +275,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "user.update",
     Permission.userManage,
     ADMIN_ONLY,
-    { id: TEST_ID },
+    { id: TEST_ID, name: "Updated" },
     "database",
   ],
 ];

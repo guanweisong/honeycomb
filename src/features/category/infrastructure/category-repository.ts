@@ -13,6 +13,16 @@ import {
 import Tools from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { CategoryRepository } from "../application/repository";
+import { ApplicationError } from "@/packages/application/errors";
+
+function mapCategoryConstraint(error: unknown): never {
+  if (error instanceof Error) {
+    if (error.message.includes("UNIQUE constraint failed: category.path"))
+      throw new ApplicationError("BAD_REQUEST", "分类路径已经存在");
+    if (error.cause) return mapCategoryConstraint(error.cause);
+  }
+  throw error;
+}
 export type {
   CategoryInsert,
   CategoryListInput,
@@ -66,11 +76,23 @@ export function createCategoryRepository(db: Database): CategoryRepository {
         "category.create",
         "insert",
         () => db.insert(schema.category).values(input).returning(),
-      );
+      ).catch(mapCategoryConstraint);
       return requireWriteResult(value, "create", "category");
     },
     async update(input) {
       const { id, ...changes } = input;
+      // The recursive guard and write share one SQLite statement, so two
+      // concurrent reparentings cannot both pass a stale ancestor check.
+      const parentGuard =
+        input.parent == null
+          ? undefined
+          : sql`not exists (
+        with recursive ancestors(id, parent) as (
+          select id, parent from category where id = ${input.parent}
+          union
+          select c.id, c.parent from category c join ancestors a on c.id = a.parent
+        ) select 1 from ancestors where id = ${id}
+      )`;
       const [value] = await observeDbOperation(
         "category.update",
         "update",
@@ -78,9 +100,14 @@ export function createCategoryRepository(db: Database): CategoryRepository {
           db
             .update(schema.category)
             .set(changes)
-            .where(eq(schema.category.id, id))
+            .where(and(eq(schema.category.id, id), parentGuard))
             .returning(),
-      );
+      ).catch(mapCategoryConstraint);
+      if (!value && parentGuard)
+        throw new ApplicationError(
+          "BAD_REQUEST",
+          "分类不存在或父子关系形成循环",
+        );
       return requireWriteResult(value, "update", "category");
     },
     async destroy(ids) {
@@ -102,7 +129,12 @@ export function createCategoryRepository(db: Database): CategoryRepository {
       } = input;
       let where = buildDrizzleWhere(
         schema.category,
-        { ...rest, title, status: visibility === "ALL" ? status : undefined },
+        {
+          ...rest,
+          id,
+          title,
+          status: visibility === "ALL" ? status : undefined,
+        },
         ["status"],
         { title },
       );
@@ -134,9 +166,27 @@ export function createCategoryRepository(db: Database): CategoryRepository {
         ),
       ]);
       return {
-        list: Tools.sonsTree(list, id),
+        list: list.map((item) => ({ ...item, deepPath: 0 })),
         total: Number(countRows[0]?.count) || 0,
       };
+    },
+    async tree(visibility) {
+      const rows = await observeDbOperation(
+        "category.service.list",
+        "select",
+        () => db.select().from(schema.category).orderBy(schema.category.path),
+      );
+      // Assemble before visibility filtering so hidden parents also hide their subtree.
+      const visible = new Map<string, boolean>();
+      const list = Tools.sonsTree(rows).filter((item) => {
+        const enabled =
+          visibility === "ALL" ||
+          (item.status === EnableStatus.ENABLE &&
+            (!item.parent || visible.get(item.parent) === true));
+        visible.set(item.id, enabled);
+        return enabled;
+      });
+      return { list, total: list.length };
     },
   };
 }

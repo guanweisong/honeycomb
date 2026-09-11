@@ -1,5 +1,6 @@
 import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
+import { hasUpdateFields } from "@/packages/application/validation";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 
 /**
@@ -7,6 +8,6 @@ import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
  */
 export const CategoryUpdateSchema = CategoryInsertSchema.partial().extend({
   id: IdSchema,
-});
+}).refine(hasUpdateFields, "至少修改一个字段");
 
 export type CategoryUpdate = CleanZod<typeof CategoryUpdateSchema>;

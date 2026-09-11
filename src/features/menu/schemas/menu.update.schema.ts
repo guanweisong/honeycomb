@@ -22,4 +22,4 @@ export const MenuUpdateSchema = z
     power: PowerSchema,
     parent: IdSchema.optional(),
   })
-  .array();
+  .array().min(1, "菜单不能为空");

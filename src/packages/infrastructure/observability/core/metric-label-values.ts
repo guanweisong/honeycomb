@@ -91,6 +91,8 @@ export const databaseQueryNames = [
 
 const procedureNames = [
   "category.adminIndex",
+  "category.adminTree",
+  "category.tree",
   "category.create",
   "category.destroy",
   "category.index",

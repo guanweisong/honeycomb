@@ -1,14 +1,14 @@
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import { z } from "zod";
+import { QueryStringArraySchema } from "@/packages/trpc/api/schemas/query.string.schema";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 
 /**
  * 获取用户列表时的查询参数验证 schema。
  */
 export const UserListQuerySchema = PaginationQuerySchema.extend({
-  status: z.array(z.string()).optional(),
-  level: z.array(z.string()).optional(),
+  status: QueryStringArraySchema,
+  level: QueryStringArraySchema,
   name: queryString(),
 }).partial();
 

@@ -20,7 +20,7 @@ vi.mock("sonner", () => ({ toast: { success: mocks.success } }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
     category: {
-      adminIndex: { useQuery: () => mocks.categoryQuery },
+      adminTree: { useQuery: () => mocks.categoryQuery },
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
       update: { useMutation: () => ({ mutateAsync: mocks.update }) },
     },

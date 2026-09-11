@@ -6,7 +6,7 @@ import {
 } from "@/packages/infrastructure/db/value-validation";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import {
@@ -151,9 +151,16 @@ export function createUserRepository(db: Database): UserRepository {
       });
     },
     async destroy(ids) {
-      await observeDbOperation("user.destroy", "delete", () =>
-        db.delete(schema.user).where(inArray(schema.user.id, ids)),
-      );
+      // libSQL transactions acquire the write lock before the first read.
+      // Promotion and deletion therefore serialize around this entire batch.
+      await db.transaction(async (tx) => {
+        const [admin] = await tx.select({ id: schema.user.id }).from(schema.user)
+          .where(and(inArray(schema.user.id, ids), eq(schema.user.level, UserLevel.ADMIN))).limit(1);
+        if (admin) throw new ApplicationError("FORBIDDEN", "不能删除管理员");
+        await observeDbOperation("user.destroy", "delete", () =>
+          tx.delete(schema.user).where(inArray(schema.user.id, ids)),
+        );
+      });
       return { success: true } as const;
     },
     async update(input) {

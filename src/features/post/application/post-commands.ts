@@ -1,4 +1,5 @@
 import "server-only";
+import type { PostTagUpdate } from "./write-schema";
 import type {
   PostCommandRepository,
   PostCreateCommand,
@@ -43,11 +44,7 @@ export async function updatePost(
 /** 替换文章标签关联。 */
 export async function updatePostTags(
   repository: Pick<PostCommandRepository, "updateTags">,
-  input: {
-    postId: string;
-    tagIds: string[];
-    type: import("@/packages/domain/content/tag").TagType;
-  },
+  input: PostTagUpdate,
   invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
 ) {
   const result = await repository.updateTags(input);

@@ -390,10 +390,10 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("maps all 39 protected procedures onto all 32 defined permissions", () => {
-    expect(capabilityProcedureMatrix).toHaveLength(39);
+  it("maps all 40 protected procedures onto all 32 defined permissions", () => {
+    expect(capabilityProcedureMatrix).toHaveLength(40);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
-      39,
+      40,
     );
     expect(
       new Set(capabilityProcedureMatrix.map(([, permission]) => permission)),

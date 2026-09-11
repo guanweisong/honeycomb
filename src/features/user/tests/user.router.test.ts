@@ -143,6 +143,8 @@ describe("User Router", () => {
           status: UserStatus.ENABLE,
         },
       ]);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([]);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 

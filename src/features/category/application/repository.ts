@@ -37,6 +37,12 @@ export type CategoryRecord = {
 };
 
 export interface CategoryRepository {
+  tree(
+    visibility: CategoryVisibility,
+  ): Promise<{
+    list: (CategoryRecord & { deepPath: number })[];
+    total: number;
+  }>;
   create(input: CategoryInsert): Promise<CategoryRecord>;
   find(id: string): Promise<CategoryNode | null>;
   pathExists(path: string, excludeId?: string): Promise<boolean>;

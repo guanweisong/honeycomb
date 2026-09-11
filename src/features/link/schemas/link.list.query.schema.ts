@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
-import { z } from "zod";
+import { QueryStringArraySchema } from "@/packages/trpc/api/schemas/query.string.schema";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 
 /**
@@ -10,7 +10,7 @@ export const LinkListQuerySchema = PaginationQuerySchema.extend({
   name: queryString(),
   url: queryString(),
   description: queryString(),
-  status: z.array(z.string()).optional(),
+  status: QueryStringArraySchema,
 }).partial();
 
 /**

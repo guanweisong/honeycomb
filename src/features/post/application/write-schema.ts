@@ -5,6 +5,16 @@ import { z } from "zod";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
+import { TagType } from "@/packages/domain/content/tag";
+import { MAX_BATCH_SIZE } from "@/packages/application/resource-limits";
+
+export const PostTagUpdateSchema = z.object({
+  postId: IdSchema,
+  tagIds: z.array(IdSchema).max(MAX_BATCH_SIZE).transform((ids) => [...new Set(ids)]),
+  type: z.enum(TagType),
+});
+export type PostTagUpdate = z.output<typeof PostTagUpdateSchema>;
 
 /**
  * 新增文章时的数据验证 schema。

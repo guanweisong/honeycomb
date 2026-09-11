@@ -23,11 +23,12 @@ vi.mock("@/features/contracts/admin/use-current-user", () => ({
 
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
+    useQueries: () => [],
     page: {
       adminIndex: { useQuery: () => ({ data: queryMocks.data }) },
     },
     category: {
-      adminIndex: { useQuery: () => ({ data: queryMocks.data }) },
+      adminTree: { useQuery: () => ({ data: queryMocks.data }) },
     },
     menu: {
       adminIndex: {

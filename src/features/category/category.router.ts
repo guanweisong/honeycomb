@@ -22,6 +22,12 @@ import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path
 
 /** 分类 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const categoryRouter = createTRPCRouter({
+  tree: publicProcedure.query(({ ctx }) =>
+    createCategoryRepository(ctx.db).tree("PUBLIC_ONLY"),
+  ),
+  adminTree: permissionProcedure(Permission.categoryReadAll).query(({ ctx }) =>
+    createCategoryRepository(ctx.db).tree("ALL"),
+  ),
   index: publicProcedure
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>

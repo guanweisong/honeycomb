@@ -4,15 +4,14 @@ import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import { createServerClient } from "@/packages/trpc/api";
 import {
   getPublicComments,
   getPublicPageDetail,
   getPublicSetting,
+  getPublicLinks,
 } from "@/app/lib/server/public-queries";
 import { RichText } from "@/app/(blog)/components/RichText";
 import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
 import { assertPublishedPost } from "./page.utils";
@@ -37,7 +36,6 @@ export interface PagesProps {
  * @returns {Promise<JSX.Element>} 页面详情。
  */
 export default async function Pages(props: PagesProps) {
-  const serverClient = await createServerClient();
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
   const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
@@ -48,10 +46,7 @@ export default async function Pages(props: PagesProps) {
   const publishedPage = assertPublishedPost(pageDetail);
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
-      ? await serverClient.link.index({
-          limit: 999,
-          status: [EnableStatus.ENABLE],
-        })
+      ? await getPublicLinks()
       : null;
 
   return (

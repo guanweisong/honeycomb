@@ -80,7 +80,7 @@ export function createPostCommandRepository(
             await tx
               .insert(schema.postTag)
               .values(
-                input.tagIds.map((tagId) => ({
+                [...new Set(input.tagIds)].map((tagId) => ({
                   postId: input.postId,
                   tagId,
                   type: input.type,

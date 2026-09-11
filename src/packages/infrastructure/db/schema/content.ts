@@ -9,6 +9,7 @@ import {
   text,
   integer,
   index,
+  uniqueIndex,
   foreignKey,
 } from "drizzle-orm/sqlite-core";
 import { i18nField } from "../i18n-field";
@@ -32,7 +33,7 @@ export const category = sqliteTable(
       columns: [table.parent],
       foreignColumns: [table.id],
     }).onDelete("set null"),
-    categoryPathIdx: index("category_path_idx").on(table.path),
+    categoryPathIdx: uniqueIndex("category_path_idx").on(table.path),
     categoryStatusIdx: index("category_status_idx").on(table.status),
     categoryParentIdx: index("category_parent_idx").on(table.parent),
   }),
@@ -263,6 +264,11 @@ export const postTag = sqliteTable(
     type: text("type").notNull(), // 标签类型：ACTOR, DIRECTOR, MOVIE_STYLE, GALLERY_STYLE
   },
   (table) => ({
+    postTagUniqueIdx: uniqueIndex("post_tag_post_tag_type_unique").on(
+      table.postId,
+      table.tagId,
+      table.type,
+    ),
     postTagIdx: index("post_tag_post_tag_idx").on(table.postId, table.tagId),
     postTagTagTypeIdx: index("post_tag_tag_type_idx").on(
       table.tagId,

@@ -46,17 +46,13 @@ export interface PostQueryRepository {
   ): Promise<PostDetailResult | null>;
   categoryFilter(categoryId: string): Promise<string[]>;
 }
-import type { TagType } from "@/packages/domain/content/tag";
+import type { PostTagUpdate } from "./write-schema";
 export interface PostCommandRepository {
   create(input: PostCreateCommand, authorId: string): Promise<{ id: string }>;
   destroy(ids: string[]): Promise<{ success: true }>;
   findStatus(id: string): Promise<PostStatus | null>;
   update(input: PostUpdateCommand): Promise<{ id: string }>;
-  updateTags(input: {
-    postId: string;
-    tagIds: string[];
-    type: TagType;
-  }): Promise<{ success: true }>;
+  updateTags(input: PostTagUpdate): Promise<{ success: true }>;
   incrementViews(id: string): Promise<{ views: number | null } | undefined>;
 }
 export interface PostSpecialRepository {

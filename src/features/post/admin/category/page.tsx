@@ -40,20 +40,11 @@ const Category = () => {
     open: false,
   });
   /**
-   * 存储分类列表的查询参数。
-   * 使用较大的 `limit` 让该页面一次性加载全部分类目录。
-   */
-  const [searchParams] = useState<{
-    limit: number;
-  }>({
-    limit: 9999,
-  });
-  /**
    * 获取分类列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
   const { data, isFetching, isError, refetch } =
-    trpc.category.adminIndex.useQuery(searchParams, {
+    trpc.category.adminTree.useQuery(undefined, {
       placeholderData: keepPreviousData,
       staleTime: 60 * 1000, // 1 minutes
     });

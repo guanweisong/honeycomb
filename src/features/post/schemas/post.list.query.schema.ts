@@ -1,6 +1,6 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
-import { z } from "zod";
+import { QueryStringArraySchema } from "@/packages/trpc/api/schemas/query.string.schema";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 
 /**
@@ -9,8 +9,8 @@ import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 export const PostListQuerySchema = PaginationQuerySchema.extend({
   title: queryString(),
   content: queryString(),
-  status: z.array(z.string()).optional(),
-  type: z.array(z.string()).optional(),
+  status: QueryStringArraySchema,
+  type: QueryStringArraySchema,
   categoryId: queryString(),
   tagId: queryString(),
   authorId: queryString(),

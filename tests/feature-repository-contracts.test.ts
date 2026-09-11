@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { MenuType } from "@/packages/domain/navigation/menu";
 
 import {
   createMedia,
@@ -160,9 +161,9 @@ describe("feature repository 契约", () => {
     expect(link.list).toHaveBeenCalled();
 
     const menu = { saveAll: vi.fn(), list: vi.fn().mockResolvedValue([]) };
-    await saveAllMenus(menu, [], invalidateAll());
+    await saveAllMenus(menu, [{ id: "menu", type: MenuType.CATEGORY, power: 0 }], invalidateAll());
     await getMenuList(menu);
-    expect(menu.saveAll).toHaveBeenCalledWith([]);
+    expect(menu.saveAll).toHaveBeenCalledWith([{ id: "menu", type: "CATEGORY", power: 0 }]);
     expect(menu.list).toHaveBeenCalled();
 
     const page = {

@@ -1,11 +1,12 @@
 import { unstable_cache } from "next/cache";
 
 import { getServerEnv } from "@/env/server";
+import { MAX_PAGE_SIZE } from "@/packages/application/resource-limits";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
 
-export const SITEMAP_BATCH_SIZE = 1000;
+export const SITEMAP_BATCH_SIZE = MAX_PAGE_SIZE;
 export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
 
 type SitemapUrl = {

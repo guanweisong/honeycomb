@@ -1,7 +1,7 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
-import { z } from "zod";
+import { QueryStringArraySchema } from "@/packages/trpc/api/schemas/query.string.schema";
 
 /**
  * 获取独立页面列表时的查询参数验证 schema。
@@ -9,7 +9,7 @@ import { z } from "zod";
 export const PageListQuerySchema = PaginationQuerySchema.extend({
   title: queryString(),
   content: queryString(),
-  status: z.array(z.string()).optional(),
+  status: QueryStringArraySchema,
 }).partial();
 
 /**

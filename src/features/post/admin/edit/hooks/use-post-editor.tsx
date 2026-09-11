@@ -38,7 +38,7 @@ export function usePostEditor(id: string | null) {
   });
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = watchedType ?? PostType.ARTICLE;
-  const { data: category } = trpc.category.adminIndex.useQuery({ limit: 9999 });
+  const { data: category } = trpc.category.adminTree.useQuery();
   const { data: detail, refetch } = trpc.post.adminDetail.useQuery(
     { id: id ?? "" },
     { enabled: Boolean(id) },

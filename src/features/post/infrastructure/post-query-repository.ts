@@ -177,12 +177,13 @@ export function createPostQueryRepository(
         "post.service.category-tree",
         "select",
         () =>
-          db
-            .select()
-            .from(schema.category)
-            .where(eq(schema.category.parent, categoryId)),
+          db.all<{ id: string }>(sql`with recursive descendants(id) as (
+            select ${categoryId}
+            union
+            select c.id from category c join descendants d on c.parent = d.id
+          ) select id from descendants`),
       );
-      return [categoryId, ...subCategories.map((category) => category.id)];
+      return subCategories.map((category) => category.id);
     },
     async list(input, visibility) {
       const {

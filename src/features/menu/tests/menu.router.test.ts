@@ -72,7 +72,7 @@ describe("Menu Router", () => {
       expect(mockDb.insert).toHaveBeenCalledWith(schema.menu);
     });
 
-    it("should return 0 count for empty input", async () => {
+    it("rejects empty saves before deleting existing menus", async () => {
       // 设置删除操作的模拟调用。
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -82,10 +82,8 @@ describe("Menu Router", () => {
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
-      const result = await caller.saveAll([]);
-
-      expect(result).toEqual({ count: 0 });
-      expect(mockDb.delete).toHaveBeenCalledWith(schema.menu);
+      await expect(caller.saveAll([])).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockDb.delete).not.toHaveBeenCalled();
     });
 
     it("should save menu items inside a transaction", async () => {

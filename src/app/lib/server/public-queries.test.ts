@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   page: vi.fn(),
   comments: vi.fn(),
+  links: vi.fn(),
 }));
 
 vi.mock("react", async (importOriginal) => {
@@ -35,6 +36,7 @@ import {
   getPublicPageDetail,
   getPublicPostDetail,
   getPublicSetting,
+  getPublicLinks,
 } from "./public-queries";
 
 describe("public server queries", () => {
@@ -42,10 +44,31 @@ describe("public server queries", () => {
     vi.clearAllMocks();
     mocks.createServerClient.mockResolvedValue({
       comment: { listByRef: mocks.comments },
+      link: { index: mocks.links },
       menu: { index: mocks.menu },
       page: { detail: mocks.page },
       post: { detail: mocks.post },
       setting: { index: mocks.setting },
+    });
+  });
+
+  it("keeps friendly links beyond the first bounded page", async () => {
+    mocks.links
+      .mockResolvedValueOnce({ list: [{ id: "first" }], total: 101 })
+      .mockResolvedValueOnce({ list: [{ id: "last" }], total: 101 });
+    expect(await getPublicLinks()).toEqual({
+      list: [{ id: "first" }, { id: "last" }],
+      total: 101,
+    });
+    expect(mocks.links).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      limit: 100,
+      status: ["ENABLE"],
+    });
+    expect(mocks.links).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      limit: 100,
+      status: ["ENABLE"],
     });
   });
 
