@@ -28,3 +28,23 @@
 
 - **WHEN** API 请求需要限流、会话解析、入口 capability 鉴权或协议错误映射
 - **THEN** transport SHALL 在调用 Use Case 前完成这些职责，且不得把 HTTP 或 tRPC 类型传入 Application
+
+#### Scenario: 第三方身份路由不得提供竞争写入口
+
+- **WHEN** 后台用户资料写入需要 capability 鉴权并触发公开缓存失效
+- **THEN** transport MUST 禁用绕过该 Application Use Case 的通用身份资料更新端点
+
+#### Scenario: 评论请求元数据进入用例
+
+- **WHEN** HTTP transport 接收公开评论创建请求
+- **THEN** transport MUST 将请求头转换为只包含 IP 与 User-Agent 的纯数据后传入 Application，Application 和 Repository 契约不得接收 `Headers` 或其他 HTTP 类型
+
+#### Scenario: 评论目标业务规则
+
+- **WHEN** 创建评论或读取公开评论需要检查目标可见性、评论开关或父评论目标
+- **THEN** Infrastructure MUST 只返回持久化状态，Application MUST 判断公开状态、是否允许评论及父子同源规则
+
+#### Scenario: Application 转出口
+
+- **WHEN** transport 从 Feature Application 入口导入用例
+- **THEN** Application 入口 MUST NOT 直接或通过 Feature 根目录转出口导出 Infrastructure DTO、Repository 实现或外部服务 adapter

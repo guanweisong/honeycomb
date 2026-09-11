@@ -3,9 +3,7 @@
 ## Purpose
 
 定义公开 API 与后台 API 的数据暴露、资源可见性和对象关系安全边界，确保敏感字段不会离开服务端、未发布资源不能通过辅助接口访问，并保证评论只能关联有效且一致的公开内容目标。
-
 ## Requirements
-
 ### Requirement: 用户 API 使用安全响应字段
 系统 SHALL 在用户创建、更新和列表接口中仅返回业务所需字段，并且 MUST NOT 返回密码哈希；用户管理 procedure MUST 要求对应 capability，而不得直接按角色数组授权。
 
@@ -87,3 +85,58 @@
 #### Scenario: 无能力用户调用后台接口
 - **WHEN** 用户已登录但缺少目标 procedure 所需 Permission
 - **THEN** 系统返回 `FORBIDDEN` 且不读取或修改目标资源
+
+### Requirement: 全局 API 限流必须有界且故障隔离
+Proxy 中的全局 API 限流 MUST 使用确定的等待上限；超时或供应商故障 MUST 按环境定义的安全策略结束请求并记录可观测结果，不得无限等待或抛出未处理异常。
+
+#### Scenario: 生产环境限流服务超时
+- **WHEN** 限流供应商在等待上限内没有响应
+- **THEN** Proxy 返回 503、记录限流不可用结果且不继续执行目标 API
+
+#### Scenario: 开发环境未配置限流服务
+- **WHEN** 本地开发没有配置远程限流凭据
+- **THEN** 请求使用明确的本地允许策略继续，且不伪装成远程限流成功
+
+### Requirement: 高成本 procedure 可组合独立限流
+tRPC SHALL 提供不复制鉴权和业务规则的可组合限流边界，使验证码、登录相关或高成本 procedure 能声明独立策略。
+
+#### Scenario: 高成本 procedure 达到独立限额
+- **WHEN** 调用者达到该 procedure 声明的限额
+- **THEN** procedure 在业务 handler 执行前返回可识别的限流错误
+
+### Requirement: 公开内容只披露必要的账户字段
+
+公开文章查询 MUST 为作者返回页面展示所需的最小读取模型，不得携带电子邮箱、权限级别、账户状态或账户内部时间戳。既有缓存中包含的额外账户字段 MUST 在响应前由共享读取 Schema 丢弃。
+
+#### Scenario: 读取公开文章作者
+
+- **WHEN** 匿名或已登录调用方读取公开文章列表或详情
+- **THEN** 作者对象 MUST 只包含 `id` 与 `name`
+
+#### Scenario: 读取旧版本文章缓存
+
+- **WHEN** 旧缓存作者对象仍包含账户内部字段
+- **THEN** 缓存解码 MUST 丢弃额外字段，不得把它们返回给调用方
+
+### Requirement: 用户资料写入必须经过受保护的应用入口
+
+需要后台 capability 鉴权及公开缓存失效的用户资料写入 MUST 经过 User Application Use Case。身份框架的通用资料更新路由 MUST 被禁用，避免形成竞争写入口。
+
+#### Scenario: 调用通用身份资料更新路由
+
+- **WHEN** 已登录用户请求 Better Auth 通用 `/update-user` 端点
+- **THEN** 身份 transport MUST 拒绝该路由，且不得绕过 User Application Use Case 修改资料
+
+#### Scenario: 真实身份 handler 拒绝通用资料更新
+
+- **WHEN** 测试直接向当前认证配置生成的 handler 发送 `/api/auth/update-user` POST 请求
+- **THEN** handler MUST 返回 404，且不得要求有效会话或访问用户数据库
+
+### Requirement: 批量写操作拒绝空目标
+
+共享批量删除输入 MUST 至少包含一个有效资源 ID，避免空操作触发数据库调用、通知或公开缓存失效。
+
+#### Scenario: 提交空批量删除
+
+- **WHEN** 调用方提交 `{ ids: [] }`
+- **THEN** transport 输入校验 MUST 拒绝请求，且不得进入对应 Application Use Case

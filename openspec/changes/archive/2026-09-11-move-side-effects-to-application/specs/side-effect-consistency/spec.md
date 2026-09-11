@@ -19,6 +19,11 @@
 - **WHEN** tRPC Router 接收公开评论创建请求
 - **THEN** Router SHALL 注入验证码、Repository、通知与缓存端口，由 Application 决定验证、写入、通知和缓存失效顺序
 
+#### Scenario: 评论创建的业务校验顺序
+
+- **WHEN** Application 创建公开评论
+- **THEN** 它 MUST 在验证码成功后读取并验证公开目标，在存在父评论时验证父子目标同源，全部成功后才持久化、尽力通知并失效缓存
+
 #### Scenario: 入口限流
 
 - **WHEN** 公开 API 需要请求级速率限制
