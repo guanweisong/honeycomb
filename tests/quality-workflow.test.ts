@@ -12,13 +12,31 @@ const workflow = readFileSync(
 );
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
-) as { packageManager: string; scripts: Record<string, string> };
+) as {
+  engines: { node: string };
+  packageManager: string;
+  scripts: Record<string, string>;
+};
+const vercelJson = JSON.parse(
+  readFileSync(resolve(process.cwd(), "vercel.json"), "utf8"),
+) as { bunVersion?: string; installCommand: string };
 
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
     expect(packageJson.packageManager).toBe("bun@1.4.2");
     expect(workflow).toContain("bun-version: 1.4.2");
     expect(workflow).toContain("bun install --frozen-lockfile");
+  });
+
+  it("uses one Bun version source for Vercel installation", () => {
+    expect(vercelJson.installCommand).toBe(
+      `bunx ${packageJson.packageManager} install --frozen-lockfile`,
+    );
+    expect(vercelJson).not.toHaveProperty("bunVersion");
+  });
+
+  it("pins Vercel to the supported Node major", () => {
+    expect(packageJson.engines.node).toBe("22.x");
   });
 
   it("keeps Turbopack analysis finite and writes static diagnostics", () => {

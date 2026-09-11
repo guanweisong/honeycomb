@@ -1,7 +1,6 @@
 {
-  "bunVersion": "1.x",
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "bun run build",
-  "installCommand": "bun install --frozen-lockfile",
+  "installCommand": "bunx bun@1.4.2 install --frozen-lockfile",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
 }
