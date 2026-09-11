@@ -8,7 +8,7 @@ import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
 import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   clearHoneycombRuntimeCaches,
@@ -39,16 +39,24 @@ export function DashboardClientShell({
   user: AdminUser;
 }) {
   const pathname = usePathname();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const utils = trpc.useUtils();
   const queryClient = useQueryClient();
   const { setting } = useSiteSetting();
-  const adminMenu = useMemo(() => getMenuForCapabilities(user.level), [user.level]);
+  const adminMenu = useMemo(
+    () => getMenuForCapabilities(user.level),
+    [user.level],
+  );
 
   useEffect(() => {
     const pageTitle = findMenuTitle(adminMenu, pathname) ?? "管理后台";
     const siteName = setting?.siteName?.zh;
     document.title = siteName ? `${pageTitle} - ${siteName}` : pageTitle;
   }, [adminMenu, pathname, setting?.siteName?.zh]);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -81,6 +89,10 @@ export function DashboardClientShell({
       user={user}
       footer={setting?.siteSignature?.zh}
       onLogout={handleLogout}
+      pendingPath={pendingPath}
+      onNavigateStart={(nextPath) => {
+        if (nextPath !== pathname) setPendingPath(nextPath);
+      }}
     >
       {children}
     </AdminLayout>

@@ -8,8 +8,28 @@ vi.mock("next/navigation", () => ({
   usePathname: () => navigation.pathname,
 }));
 vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
-    React.createElement("a", { href, ...props }, children),
+  default: ({
+    href,
+    children,
+    prefetch,
+    onNavigate,
+    ...props
+  }: {
+    href: string;
+    children: React.ReactNode;
+    prefetch?: boolean;
+    onNavigate?: () => void;
+  }) =>
+    React.createElement(
+      "a",
+      {
+        href,
+        "data-prefetch": String(prefetch),
+        onClick: onNavigate,
+        ...props,
+      },
+      children,
+    ),
 }));
 
 import { MenuTitle } from "./index";
@@ -55,7 +75,11 @@ describe("MenuTitle", () => {
         }),
       );
     });
-    await act(async () => container.firstElementChild?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await act(async () =>
+      container.firstElementChild?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true }),
+      ),
+    );
     expect(toggleMenu).toHaveBeenCalledWith("/admin/content");
   });
 
@@ -69,6 +93,8 @@ describe("MenuTitle", () => {
       );
     });
 
-    expect(container.querySelector("a")?.getAttribute("href")).toBe("/admin/custom");
+    const link = container.querySelector("a");
+    expect(link?.getAttribute("href")).toBe("/admin/custom");
+    expect(link?.getAttribute("data-prefetch")).toBe("false");
   });
 });

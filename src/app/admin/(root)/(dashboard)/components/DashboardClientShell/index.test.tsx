@@ -15,13 +15,15 @@ const mocks = vi.hoisted(() => ({
   onLogout: undefined as (() => Promise<void>) | undefined,
 }));
 
+const navigation = vi.hoisted(() => ({ pathname: "/admin/dashboard" }));
+
 vi.mock("@/auth-client", () => ({
   authClient: { signOut: mocks.signOut },
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mocks.push }),
-  usePathname: () => "/admin/dashboard",
+  usePathname: () => navigation.pathname,
 }));
 
 vi.mock("sonner", () => ({
@@ -60,9 +62,25 @@ vi.mock("./logout-browser-state", () => ({
 }));
 
 vi.mock("@/packages/ui/extended/AdminLayout", () => ({
-  AdminLayout: (props: { onLogout: () => Promise<void>; children: React.ReactNode }) => {
+  AdminLayout: (props: {
+    onLogout: () => Promise<void>;
+    children: React.ReactNode;
+    pendingPath?: string | null;
+    onNavigateStart?: (path: string) => void;
+  }) => {
     mocks.onLogout = props.onLogout;
-    return <main>{props.children}</main>;
+    return (
+      <main>
+        <button
+          type="button"
+          onClick={() => props.onNavigateStart?.("/admin/tag")}
+        >
+          标签
+        </button>
+        <output aria-label="pending route">{props.pendingPath}</output>
+        {props.children}
+      </main>
+    );
   },
 }));
 
@@ -93,6 +111,7 @@ describe("DashboardClientShell", () => {
     mocks.success.mockClear();
     mocks.error.mockClear();
     mocks.onLogout = undefined;
+    navigation.pathname = "/admin/dashboard";
   });
 
   function render() {
@@ -107,6 +126,47 @@ describe("DashboardClientShell", () => {
       ),
     );
   }
+
+  it("marks only the destination menu while navigation is pending", async () => {
+    render();
+
+    await act(async () => {
+      container.querySelector("button")?.click();
+    });
+
+    expect(
+      container.querySelector('output[aria-label="pending route"]')
+        ?.textContent,
+    ).toBe("/admin/tag");
+
+    navigation.pathname = "/admin/tag";
+    await act(async () => {
+      root.render(
+        <DashboardClientShell user={user}>
+          <span>tag</span>
+        </DashboardClientShell>,
+      );
+    });
+
+    expect(
+      container.querySelector('output[aria-label="pending route"]')
+        ?.textContent,
+    ).toBe("");
+  });
+
+  it("does not leave a pending marker when the current menu is clicked", async () => {
+    navigation.pathname = "/admin/tag";
+    render();
+
+    await act(async () => {
+      container.querySelector("button")?.click();
+    });
+
+    expect(
+      container.querySelector('output[aria-label="pending route"]')
+        ?.textContent,
+    ).toBe("");
+  });
 
   it("clears browser and query caches before hard navigation after logout", async () => {
     render();
@@ -123,7 +183,9 @@ describe("DashboardClientShell", () => {
   });
 
   it("continues logout after post-success browser cache cleanup fails", async () => {
-    mocks.clearRuntimeCaches.mockRejectedValueOnce(new Error("cache unavailable"));
+    mocks.clearRuntimeCaches.mockRejectedValueOnce(
+      new Error("cache unavailable"),
+    );
     render();
 
     await act(async () => mocks.onLogout?.());
@@ -152,7 +214,9 @@ describe("DashboardClientShell", () => {
   });
 
   it("leaves browser Cache Storage untouched when sign-out resolves with an error", async () => {
-    mocks.signOut.mockResolvedValueOnce({ error: { message: "sign-out failed" } });
+    mocks.signOut.mockResolvedValueOnce({
+      error: { message: "sign-out failed" },
+    });
     render();
 
     await act(async () => mocks.onLogout?.());

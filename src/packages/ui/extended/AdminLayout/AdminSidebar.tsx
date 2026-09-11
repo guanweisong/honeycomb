@@ -33,7 +33,11 @@ export function AdminSidebar({
         </span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto px-2">
-        <Menu data={menu} pendingPath={pendingPath} onNavigateStart={onNavigateStart} />
+        <Menu
+          data={menu}
+          pendingPath={pendingPath}
+          onNavigateStart={onNavigateStart}
+        />
       </div>
       <div className="p-3 pt-0">
         <UserDropdown user={user} onLogout={onLogout} />
