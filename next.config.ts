@@ -34,6 +34,13 @@ export const imageConfig = {
  */
 const nextConfig: NextConfig = withSerwist({
   reactStrictMode: true,
+  experimental: {
+    // Reuse visited dynamic route segments in the in-memory client router cache.
+    // Auth exits use a hard navigation so private payloads do not cross sessions.
+    staleTimes: {
+      dynamic: 300,
+    },
+  },
   images: imageConfig,
   poweredByHeader: false,
   async headers() {

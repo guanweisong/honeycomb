@@ -38,6 +38,20 @@ admin 菜单 SHALL 禁用默认 Link 预取，避免为所有可见菜单批量�
 - **WHEN** admin dashboard 渲染用户可访问的菜单项
 - **THEN** 菜单不因项目进入视口而批量预取对应的私有动态路由
 
+### Requirement: 已访问动态路由复用客户端 RSC
+
+系统 SHALL 在浏览器内存中保留已访问动态路由的 RSC segment 五分钟，使用户在该时限内返回 Admin 页面时无需再次发送对应的路由 RSC 请求。该缓存不得持久化到服务端或跨越页面硬刷新；登出和认证失效 MUST 通过硬导航离开后台，使当前登录会话的客户端 Router Cache 被销毁。
+
+#### Scenario: 五分钟内返回已访问页面
+
+- **WHEN** 用户在首次完成 Admin 路由 B 后切换到路由 A，并在五分钟内再次进入路由 B
+- **THEN** 客户端直接复用路由 B 的 RSC segment，不发送新的路由 B RSC 请求
+
+#### Scenario: 用户退出后台
+
+- **WHEN** 用户登出或客户端检测到认证失效
+- **THEN** 浏览器硬导航到登录页，不允许当前登录会话的私有 Router Cache 被后续会话复用
+
 ### Requirement: 菜单导航 API 保持兼容
 
 菜单组件 SHALL 支持 admin 提供的导航回调，同时在未提供回调时保持现有 `Link` 导航行为。
