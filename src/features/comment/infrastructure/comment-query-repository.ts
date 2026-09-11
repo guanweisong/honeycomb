@@ -2,10 +2,13 @@ import "server-only";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { repositoryPaginationDefaults } from "@/packages/application/pagination";
-import { toCommentRecord } from "./comment-dto";
+import { toCommentRecord, toPublicCommentSource } from "./comment-dto";
+import {
+  buildPublicCommentTree,
+  toPublicComment,
+} from "../application/comment-public-dto";
 
 import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
-import listToTree from "list-to-tree-lite";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
@@ -13,8 +16,6 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
-import { toPublicComment } from "./comment-dto";
-import { createCommentTargetRepository } from "./comment-target-repository";
 
 import type {
   CommentQueryRepository,
@@ -118,12 +119,6 @@ export function createCommentQueryRepository(
       return { list, total: Number(countRows[0]?.count) || 0 };
     },
     async listPublicByRef(input) {
-      const target = {
-        postId: input.type === MenuType.CATEGORY ? input.id : undefined,
-        pageId: input.type === MenuType.PAGE ? input.id : undefined,
-        customId: input.type === MenuType.CUSTOM ? input.id : undefined,
-      };
-      await createCommentTargetRepository(db).assertPublic(target);
       let where: SQL | undefined = inArray(schema.comment.status, [
         CommentStatus.PUBLISH,
         CommentStatus.BAN,
@@ -152,12 +147,9 @@ export function createCommentQueryRepository(
             orderBy: [asc(schema.comment.createdAt), desc(schema.comment.id)],
           }),
       );
-      const list = result.length
-        ? listToTree(result.map(toPublicComment), {
-            idKey: "id",
-            parentKey: "parentId",
-          })
-        : [];
+      const list = buildPublicCommentTree(
+        result.map(toPublicCommentSource).map(toPublicComment),
+      );
       const [countResult] = await observeDbOperation(
         "comment.service.public-count",
         "select",

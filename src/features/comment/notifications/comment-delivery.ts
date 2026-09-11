@@ -18,14 +18,62 @@ export function logCommentNotificationFailure(error: unknown) {
   });
 }
 
+function logEmailDeliveryFailure(operation: string, error: unknown) {
+  getLogger().error(LogEvent.externalServiceOperation, {
+    service: "email",
+    operation,
+    outcome: "error",
+    errorType: errorType(error),
+  });
+}
+
+function settleEmailDelivery(
+  operation: string,
+  send: () => Promise<void>,
+): Promise<void> {
+  return Promise.resolve()
+    .then(send)
+    .catch((error: unknown) => {
+      logEmailDeliveryFailure(operation, error);
+    });
+}
+
 /** 编排新评论的管理员通知和回复通知。邮件失败只记录日志，不阻断评论写入。 */
-export async function notifyCommentCreated(repository: CommentNotificationRepository, commentId: string, parentId?: string | null) {
+export async function notifyCommentCreated(
+  repository: CommentNotificationRepository,
+  commentId: string,
+  parentId?: string | null,
+) {
   const currentComment = await repository.getComment(commentId);
   const setting = await repository.getSetting();
-  if (!currentComment || !setting) throw new Error("Comment or setting not found");
-  sendCommentEmail("ADMIN_NOTICE", { setting, currentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-admin-notification", outcome: "error", errorType: errorType(error) }));
+  if (!currentComment || !setting)
+    throw new Error("Comment or setting not found");
+
+  const deliveries = [
+    settleEmailDelivery("send-admin-notification", () =>
+      sendCommentEmail("ADMIN_NOTICE", { setting, currentComment }),
+    ),
+  ];
+  let preparationError: unknown;
   if (parentId) {
-    const parentComment = await repository.getComment(parentId);
-    if (parentComment) sendCommentEmail("REPLY_NOTICE", { setting, currentComment, parentComment }).catch((error) => getLogger().error(LogEvent.externalServiceOperation, { service: "email", operation: "send-reply-notification", outcome: "error", errorType: errorType(error) }));
+    try {
+      const parentComment = await repository.getComment(parentId);
+      if (parentComment) {
+        deliveries.push(
+          settleEmailDelivery("send-reply-notification", () =>
+            sendCommentEmail("REPLY_NOTICE", {
+              setting,
+              currentComment,
+              parentComment,
+            }),
+          ),
+        );
+      }
+    } catch (error) {
+      preparationError = error;
+    }
   }
+
+  await Promise.all(deliveries);
+  if (preparationError) throw preparationError;
 }

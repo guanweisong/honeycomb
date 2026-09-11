@@ -149,9 +149,10 @@ describe("Comment Router", () => {
         { id: "1", key: "comment_notify", value: "true" },
       ]);
 
-      const caller = commentRouter.createCaller(
-        createMockContext(null, mockDb),
-      );
+      const context = createMockContext(null, mockDb);
+      context.header.set("x-forwarded-for", "203.0.113.10, 10.0.0.1");
+      context.header.set("user-agent", "Sensitive Browser");
+      const caller = commentRouter.createCaller(context);
 
       const result = await caller.create({
         content: "New Comment",
@@ -165,6 +166,12 @@ describe("Comment Router", () => {
       expect(result).not.toHaveProperty("email");
       expect(result).not.toHaveProperty("ip");
       expect(result).not.toHaveProperty("userAgent");
+      expect(mockDb.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ip: "203.0.113.10",
+          userAgent: "Sensitive Browser",
+        }),
+      );
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         id: TEST_IDS.ID_1,
         type: "post",

@@ -1,11 +1,18 @@
 import "server-only";
 
-import { toPublicComment } from "../comment-dto";
+import { toPublicComment } from "./comment-public-dto";
+import {
+  assertCommentParentMatches,
+  assertPublicTarget,
+  toCommentTargetReference,
+} from "./comment-target-policy";
 import { moderateComment } from "./comment-command-handlers";
 import { ApplicationError } from "@/packages/application/errors";
-import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
+import type { PublicContentReference } from "@/packages/application/public-content-invalidator";
 import type {
   CommentCommandRepository,
+  CommentRequestMetadata,
+  CommentTargetRepository,
   CommentUpdate,
   PublicCommentInput,
 } from "./repository";
@@ -13,17 +20,26 @@ export type { CommentUpdate, PublicCommentInput } from "./repository";
 
 export interface CreateCommentDependencies {
   repository: Pick<CommentCommandRepository, "create">;
+  targetRepository: CommentTargetRepository;
   validateCaptcha: (token?: string) => Promise<void>;
   notify: (commentId: string, parentId?: string | null) => Promise<void>;
   logNotificationFailure: (error: unknown) => void;
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">;
+  invalidator: CommentContentInvalidator;
 }
+
+type CommentContentInvalidator = {
+  invalidateContent(reference: PublicContentReference): Promise<void>;
+};
+
+type CommentAllInvalidator = {
+  invalidateAll(): Promise<void>;
+};
 
 /** 更新后台评论内容或状态。 */
 export async function updateComment(
   repository: Pick<CommentCommandRepository, "findStatus" | "update">,
   input: CommentUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: CommentAllInvalidator,
 ) {
   let result;
   if (input.status === undefined) {
@@ -47,7 +63,7 @@ export async function updateComment(
 export async function destroyComments(
   repository: Pick<CommentCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: CommentAllInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidateAll();
@@ -56,11 +72,12 @@ export async function destroyComments(
 /** 创建公开评论并触发异步通知。 */
 export async function createComment(
   dependencies: CreateCommentDependencies,
-  headers: Headers,
+  metadata: CommentRequestMetadata,
   input: PublicCommentInput & { captchaToken?: string },
 ) {
   const {
     repository,
+    targetRepository,
     validateCaptcha,
     notify,
     logNotificationFailure,
@@ -68,7 +85,15 @@ export async function createComment(
   } = dependencies;
   const { captchaToken, ...comment } = input;
   await validateCaptcha(captchaToken);
-  const created = await repository.create(headers, comment);
+  const target = toCommentTargetReference(comment);
+  await assertPublicTarget(targetRepository, target);
+  if (comment.parentId)
+    await assertCommentParentMatches(
+      targetRepository,
+      comment.parentId,
+      target,
+    );
+  const created = await repository.create(metadata, comment);
   try {
     await notify(created.id, comment.parentId);
   } catch (error) {

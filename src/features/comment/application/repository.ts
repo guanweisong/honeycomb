@@ -2,6 +2,11 @@ import type { MenuType } from "@/packages/domain/navigation/menu";
 import type { PaginationInput } from "@/packages/application/pagination";
 import type { CommentStatus } from "@/packages/domain/content/comment";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import type { PostStatus } from "@/packages/domain/content/post-status";
+import type { PageStatus } from "@/packages/domain/content/page";
+import type { EnableStatus } from "@/packages/domain/shared/enable-status";
+import type { CommentUpdate } from "../schemas/comment.update.schema";
+export type { CommentUpdate } from "../schemas/comment.update.schema";
 export interface CommentRecord {
   id: string;
   author: string;
@@ -38,19 +43,6 @@ export interface PublicCommentNode {
   avatar: string;
   children?: PublicCommentNode[];
 }
-export type CommentUpdate = { id: string; status?: CommentStatus } & Partial<
-  Pick<
-    CommentRecord,
-    | "author"
-    | "content"
-    | "site"
-    | "email"
-    | "parentId"
-    | "postId"
-    | "pageId"
-    | "customId"
-  >
->;
 export interface PublicCommentInput {
   author: string;
   content: string;
@@ -65,7 +57,14 @@ export interface CommentCommandRepository {
   findStatus(id: string): Promise<CommentStatus | null>;
   update(input: CommentUpdate): Promise<CommentRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
-  create(headers: Headers, input: PublicCommentInput): Promise<CommentRecord>;
+  create(
+    metadata: CommentRequestMetadata,
+    input: PublicCommentInput,
+  ): Promise<CommentRecord>;
+}
+export interface CommentRequestMetadata {
+  ip: string | null;
+  userAgent: string | null;
 }
 export type CommentListInput = PaginationInput & {
   content?: string;
@@ -88,9 +87,20 @@ export type CommentTarget = Partial<{
   pageId: string | null;
   customId: string | null;
 }>;
+export type CommentTargetReference = {
+  type: "post" | "page" | "custom";
+  id: string;
+};
+export type CommentTargetState =
+  | { type: "page"; status: PageStatus }
+  | {
+      type: "post";
+      status: PostStatus;
+      commentStatus: EnableStatus;
+    };
 export interface CommentTargetRepository {
-  assertPublic(target: CommentTarget): Promise<void>;
-  assertParent(parentId: string, target: CommentTarget): Promise<void>;
+  findTarget(target: CommentTargetReference): Promise<CommentTargetState | null>;
+  findParentTarget(parentId: string): Promise<CommentTargetReference | null>;
 }
 export type NotificationComment = CommentRecord & {
   post: CommentRelatedRecord | null;

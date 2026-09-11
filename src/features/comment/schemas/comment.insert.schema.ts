@@ -1,9 +1,8 @@
 import { CaptchaSchema } from "@/packages/trpc/api/schemas/captcha.schema";
-import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { z } from "zod";
 
-const httpUrl = z
+const HttpUrlSchema = z
   .string()
   .trim()
   .url("网址格式不正确")
@@ -13,9 +12,9 @@ const httpUrl = z
   }, "网址必须使用 http 或 https")
   .max(200, "网址不能超过 200 个字符");
 
-const optionalHttpUrl = z
+export const CommentSiteSchema = z
   .union([
-    httpUrl,
+    HttpUrlSchema,
     z
       .string()
       .trim()
@@ -25,17 +24,27 @@ const optionalHttpUrl = z
   .nullable()
   .optional();
 
+export const CommentAuthorSchema = requiredString("作者不能为空").max(
+  20,
+  "作者不能超过 20 个字符",
+);
+export const CommentContentSchema = requiredString("内容不能为空").max(
+  200,
+  "内容不能超过 200 个字符",
+);
+export const CommentEmailSchema = requiredString("邮箱不能为空")
+  .email("邮箱格式不正确")
+  .max(254, "邮箱不能超过 254 个字符");
+
 /**
  * 新增评论时的数据验证 schema。
  * 只定义用户可提交的输入字段，并扩展验证码校验，避免依赖数据库表结构。
  */
 export const CommentInsertBaseSchema = z.object({
-    author: requiredString("作者不能为空").max(20, "作者不能超过 20 个字符"),
-    content: requiredString("内容不能为空").max(200, "内容不能超过 200 个字符"),
-    email: requiredString("邮箱不能为空")
-      .email("邮箱格式不正确")
-      .max(254, "邮箱不能超过 254 个字符"),
-    site: optionalHttpUrl,
+    author: CommentAuthorSchema,
+    content: CommentContentSchema,
+    email: CommentEmailSchema,
+    site: CommentSiteSchema,
     parentId: z.string().nullable().optional(),
     postId: z.string().nullable().optional(),
     pageId: z.string().nullable().optional(),
@@ -56,4 +65,4 @@ export const CommentInsertSchema = CommentInsertBaseSchema.refine(
  * 新增评论的 TypeScript 输入类型。
  * 从 `CommentInsertSchema` 推断而来，提供了清晰的数据结构定义。
  */
-export type CommentInsertInput = CleanZod<typeof CommentInsertSchema>;
+export type CommentInsertInput = z.infer<typeof CommentInsertSchema>;

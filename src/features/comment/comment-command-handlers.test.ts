@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PageStatus } from "@/packages/domain/content/page";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { moderateComment } from "./application/comment-command-handlers";
 import {
   createComment,
@@ -8,6 +11,10 @@ import {
 } from "./application/comment-commands";
 
 describe("Comment command handlers", () => {
+  const requestMetadata = {
+    ip: "203.0.113.10",
+    userAgent: "test-agent",
+  };
   const createdComment = {
     id: "comment-1",
     author: "Visitor",
@@ -28,6 +35,14 @@ describe("Comment command handlers", () => {
   function createDependencies(overrides = {}) {
     return {
       repository: { create: vi.fn().mockResolvedValue(createdComment) },
+      targetRepository: {
+        findTarget: vi.fn().mockResolvedValue({
+          type: "post",
+          status: PostStatus.PUBLISHED,
+          commentStatus: EnableStatus.ENABLE,
+        }),
+        findParentTarget: vi.fn().mockResolvedValue(null),
+      },
       validateCaptcha: vi.fn().mockResolvedValue(undefined),
       notify: vi.fn().mockResolvedValue(undefined),
       logNotificationFailure: vi.fn(),
@@ -43,7 +58,7 @@ describe("Comment command handlers", () => {
     const logNotificationFailure = vi.fn();
 
     const dependencies = createDependencies({ notify, logNotificationFailure });
-    const result = await createComment(dependencies, new Headers(), {
+    const result = await createComment(dependencies, requestMetadata, {
       author: createdComment.author,
       content: createdComment.content,
       email: createdComment.email,
@@ -68,7 +83,7 @@ describe("Comment command handlers", () => {
           notify,
           invalidator,
         }),
-        new Headers(),
+        requestMetadata,
         {
           author: createdComment.author,
           content: createdComment.content,
@@ -82,13 +97,116 @@ describe("Comment command handlers", () => {
     expect(invalidator.invalidateContent).not.toHaveBeenCalled();
   });
 
-  it("按验证码、数据库、通知、缓存的顺序创建评论", async () => {
+  it("按验证码、目标、数据库、通知、缓存的顺序创建评论", async () => {
     const order: string[] = [];
     const dependencies = createDependencies({
       repository: {
         create: vi.fn().mockImplementation(async () => {
           order.push("database");
           return createdComment;
+        }),
+      },
+      targetRepository: {
+        findTarget: vi.fn().mockImplementation(async () => {
+          order.push("target");
+          return {
+            type: "post",
+            status: PostStatus.PUBLISHED,
+            commentStatus: EnableStatus.ENABLE,
+          };
+        }),
+        findParentTarget: vi.fn().mockResolvedValue(null),
+      },
+      validateCaptcha: vi.fn().mockImplementation(async () => {
+        order.push("captcha");
+      }),
+      notify: vi.fn().mockImplementation(async () => {
+        order.push("notification");
+      }),
+      invalidator: {
+        invalidateContent: vi.fn().mockImplementation(async () => {
+          order.push("cache");
+        }),
+      },
+    });
+
+    await createComment(dependencies, requestMetadata, {
+      author: createdComment.author,
+      content: createdComment.content,
+      email: createdComment.email,
+      postId: createdComment.postId,
+    });
+
+    expect(order).toEqual([
+      "captcha",
+      "target",
+      "database",
+      "notification",
+      "cache",
+    ]);
+    expect(dependencies.repository.create).toHaveBeenCalledWith(
+      requestMetadata,
+      expect.objectContaining({ postId: "post-1" }),
+    );
+    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
+      id: "post-1",
+      type: "post",
+    });
+  });
+
+  it("通知失败仍刷新缓存，缓存失败继续向上传播", async () => {
+    const cacheError = new Error("cache failed");
+    const dependencies = createDependencies({
+      targetRepository: {
+        findTarget: vi.fn().mockResolvedValue({
+          type: "page",
+          status: PageStatus.PUBLISHED,
+        }),
+        findParentTarget: vi.fn().mockResolvedValue(null),
+      },
+      notify: vi.fn().mockRejectedValue(new Error("notification failed")),
+      invalidator: {
+        invalidateContent: vi.fn().mockRejectedValue(cacheError),
+      },
+    });
+
+    await expect(
+      createComment(dependencies, requestMetadata, {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        pageId: "page-1",
+      }),
+    ).rejects.toBe(cacheError);
+
+    expect(dependencies.logNotificationFailure).toHaveBeenCalledOnce();
+    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
+      id: "page-1",
+      type: "page",
+    });
+  });
+
+  it("父评论必须在插入前确认属于同一目标", async () => {
+    const order: string[] = [];
+    const dependencies = createDependencies({
+      repository: {
+        create: vi.fn().mockImplementation(async () => {
+          order.push("database");
+          return { ...createdComment, parentId: "parent-1" };
+        }),
+      },
+      targetRepository: {
+        findTarget: vi.fn().mockImplementation(async () => {
+          order.push("target");
+          return {
+            type: "post",
+            status: PostStatus.PUBLISHED,
+            commentStatus: EnableStatus.ENABLE,
+          };
+        }),
+        findParentTarget: vi.fn().mockImplementation(async () => {
+          order.push("parent");
+          return { type: "post", id: "post-1" };
         }),
       },
       validateCaptcha: vi.fn().mockImplementation(async () => {
@@ -104,43 +222,114 @@ describe("Comment command handlers", () => {
       },
     });
 
-    await createComment(dependencies, new Headers(), {
+    await createComment(dependencies, requestMetadata, {
       author: createdComment.author,
       content: createdComment.content,
       email: createdComment.email,
-      postId: createdComment.postId,
+      parentId: "parent-1",
+      postId: "post-1",
     });
 
-    expect(order).toEqual(["captcha", "database", "notification", "cache"]);
-    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: "post-1",
-      type: "post",
-    });
+    expect(order).toEqual([
+      "captcha",
+      "target",
+      "parent",
+      "database",
+      "notification",
+      "cache",
+    ]);
   });
 
-  it("通知失败仍刷新缓存，缓存失败继续向上传播", async () => {
-    const cacheError = new Error("cache failed");
+  it.each([
+    {
+      name: "目标不存在",
+      state: null,
+      expectedCode: "NOT_FOUND",
+    },
+    {
+      name: "文章未发布",
+      state: {
+        type: "post",
+        status: PostStatus.DRAFT,
+        commentStatus: EnableStatus.ENABLE,
+      },
+      expectedCode: "NOT_FOUND",
+    },
+    {
+      name: "文章关闭评论",
+      state: {
+        type: "post",
+        status: PostStatus.PUBLISHED,
+        commentStatus: EnableStatus.DISABLE,
+      },
+      expectedCode: "FORBIDDEN",
+    },
+    {
+      name: "页面未发布",
+      state: { type: "page", status: PageStatus.DRAFT },
+      expectedCode: "NOT_FOUND",
+    },
+  ])("$name 时拒绝写入", async ({ state, expectedCode }) => {
     const dependencies = createDependencies({
-      notify: vi.fn().mockRejectedValue(new Error("notification failed")),
-      invalidator: {
-        invalidateContent: vi.fn().mockRejectedValue(cacheError),
+      targetRepository: {
+        findTarget: vi.fn().mockResolvedValue(state),
+        findParentTarget: vi.fn().mockResolvedValue(null),
       },
     });
 
     await expect(
-      createComment(dependencies, new Headers(), {
+      createComment(dependencies, requestMetadata, {
         author: createdComment.author,
         content: createdComment.content,
         email: createdComment.email,
+        ...(state?.type === "page"
+          ? { pageId: "page-1" }
+          : { postId: "post-1" }),
+      }),
+    ).rejects.toMatchObject({ code: expectedCode });
+    expect(dependencies.repository.create).not.toHaveBeenCalled();
+  });
+
+  it("拒绝同时关联多个评论目标", async () => {
+    const dependencies = createDependencies();
+
+    await expect(
+      createComment(dependencies, requestMetadata, {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        postId: "post-1",
         pageId: "page-1",
       }),
-    ).rejects.toBe(cacheError);
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(dependencies.targetRepository.findTarget).not.toHaveBeenCalled();
+    expect(dependencies.repository.create).not.toHaveBeenCalled();
+  });
 
-    expect(dependencies.logNotificationFailure).toHaveBeenCalledOnce();
-    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: "page-1",
-      type: "page",
+  it("父评论属于其他目标时拒绝写入", async () => {
+    const dependencies = createDependencies({
+      targetRepository: {
+        findTarget: vi.fn().mockResolvedValue({
+          type: "post",
+          status: PostStatus.PUBLISHED,
+          commentStatus: EnableStatus.ENABLE,
+        }),
+        findParentTarget: vi
+          .fn()
+          .mockResolvedValue({ type: "post", id: "post-2" }),
+      },
     });
+
+    await expect(
+      createComment(dependencies, requestMetadata, {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        parentId: "parent-1",
+        postId: "post-1",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(dependencies.repository.create).not.toHaveBeenCalled();
   });
 
   it("审核成功后返回持久化结果", async () => {

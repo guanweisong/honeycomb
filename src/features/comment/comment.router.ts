@@ -20,16 +20,20 @@ import {
   createComment,
   listComments,
   listPublicCommentsByRef,
-  notifyCommentCreated,
-  logCommentNotificationFailure,
 } from "@/features/comment/application/comment-use-cases";
+import {
+  logCommentNotificationFailure,
+  notifyCommentCreated,
+} from "@/features/comment/notifications/comment-delivery";
 import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createCommentCommandRepository } from "@/features/comment/infrastructure/comment-command-repository";
+import { createCommentTargetRepository } from "@/features/comment/infrastructure/comment-target-repository";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
 import { validateCaptcha } from "@/packages/infrastructure/security/validate-captcha";
 import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 import { commentCreateRatelimit } from "@/packages/infrastructure/rate-limit/rate-limit";
 import { createRateLimitedPublicProcedure } from "@/packages/trpc/api/rate-limited-procedure";
+import { getClientIp } from "@/packages/infrastructure/http/client-ip";
 
 const createCommentProcedure = createRateLimitedPublicProcedure({
   limiter: commentCreateRatelimit,
@@ -48,6 +52,7 @@ export const commentRouter = createTRPCRouter({
     .query(({ input, ctx }) =>
       listPublicCommentsByRef(
         createCommentQueryRepository(ctx.db),
+        createCommentTargetRepository(ctx.db),
         input,
       ).catch(mapApplicationError),
     ),
@@ -58,6 +63,7 @@ export const commentRouter = createTRPCRouter({
       return createComment(
         {
           repository: createCommentCommandRepository(ctx.db),
+          targetRepository: createCommentTargetRepository(ctx.db),
           validateCaptcha,
           notify: (commentId, parentId) =>
             notifyCommentCreated(
@@ -68,7 +74,10 @@ export const commentRouter = createTRPCRouter({
           logNotificationFailure: logCommentNotificationFailure,
           invalidator: publicContentInvalidator,
         },
-        ctx.header,
+        {
+          ip: getClientIp({ headers: ctx.header }),
+          userAgent: ctx.header.get("user-agent") ?? null,
+        },
         input,
       ).catch(mapApplicationError);
     }),

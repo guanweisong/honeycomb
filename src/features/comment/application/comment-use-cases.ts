@@ -5,13 +5,9 @@ import { moderateComment } from "./comment-command-handlers";
 export * from "./comment-commands";
 export * from "./comment-queries";
 export * from "./comment-public-queries";
-export * from "../comment-target";
-export * from "../comment-dto";
+export * from "./comment-public-dto";
+export * from "./comment-target-policy";
 export { moderateComment } from "./comment-command-handlers";
-export {
-  logCommentNotificationFailure,
-  notifyCommentCreated,
-} from "../notifications/comment-delivery";
 
 /** Comment 用例入口；审核状态由 Comment 聚合负责。 */
 export const commentUseCases = {

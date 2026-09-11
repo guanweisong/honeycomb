@@ -103,6 +103,7 @@ describe("Comment Router", () => {
           type: MenuType.CATEGORY,
         }),
       ).rejects.toThrow("FORBIDDEN");
+      expect(mockDb.query.comment.findMany).not.toHaveBeenCalled();
     });
 
     it("rejects comments for unavailable public resources", async () => {
@@ -119,6 +120,7 @@ describe("Comment Router", () => {
           type: MenuType.CATEGORY,
         }),
       ).rejects.toThrow("NOT_FOUND");
+      expect(mockDb.query.comment.findMany).not.toHaveBeenCalled();
     });
 
     it("should return tree structure comments for category", async () => {

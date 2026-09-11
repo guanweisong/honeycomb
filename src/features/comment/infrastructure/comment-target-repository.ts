@@ -7,29 +7,21 @@ import { PostStatus } from "@/packages/domain/content/post-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import { ApplicationError } from "@/packages/application/errors";
+import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
 
 import type { CommentTargetRepository } from "../application/repository";
 export type {
   CommentTarget,
+  CommentTargetReference,
   CommentTargetRepository,
+  CommentTargetState,
 } from "../application/repository";
-export class CommentTargetError extends ApplicationError {
-  constructor(
-    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "FORBIDDEN",
-    message?: string,
-  ) {
-    super(code, message);
-    this.name = "CommentTargetError";
-  }
-}
 export function createCommentTargetRepository(
   db: Database,
 ): CommentTargetRepository {
   return {
-    async assertPublic(target) {
-      if (target.pageId) {
-        const pageId = target.pageId;
+    async findTarget(target) {
+      if (target.type === "page") {
         const [page] = await observeDbOperation(
           "comment.target.page",
           "select",
@@ -37,15 +29,20 @@ export function createCommentTargetRepository(
             db
               .select({ id: schema.page.id, status: schema.page.status })
               .from(schema.page)
-              .where(eq(schema.page.id, pageId))
+              .where(eq(schema.page.id, target.id))
               .limit(1),
         );
-        if (!page || page.status !== PageStatus.PUBLISHED)
-          throw new CommentTargetError("NOT_FOUND");
-        return;
+        return page
+          ? {
+              type: "page" as const,
+              status: parseEnumValue(
+                page.status,
+                Object.values(PageStatus),
+                "page.status",
+              ),
+            }
+          : null;
       }
-      const postId = target.postId ?? target.customId;
-      if (!postId) throw new CommentTargetError("BAD_REQUEST");
       const [post] = await observeDbOperation(
         "comment.target.post",
         "select",
@@ -56,15 +53,26 @@ export function createCommentTargetRepository(
               commentStatus: schema.post.commentStatus,
             })
             .from(schema.post)
-            .where(eq(schema.post.id, postId))
+            .where(eq(schema.post.id, target.id))
             .limit(1),
       );
-      if (!post || post.status !== PostStatus.PUBLISHED)
-        throw new CommentTargetError("NOT_FOUND");
-      if (post.commentStatus !== EnableStatus.ENABLE)
-        throw new CommentTargetError("FORBIDDEN");
+      return post
+        ? {
+            type: "post" as const,
+            status: parseEnumValue(
+              post.status,
+              Object.values(PostStatus),
+              "post.status",
+            ),
+            commentStatus: parseEnumValue(
+              post.commentStatus,
+              Object.values(EnableStatus),
+              "post.commentStatus",
+            ),
+          }
+        : null;
     },
-    async assertParent(parentId, target) {
+    async findParentTarget(parentId) {
       const [parent] = await observeDbOperation(
         "comment.target.parent",
         "select",
@@ -79,16 +87,15 @@ export function createCommentTargetRepository(
             .where(eq(schema.comment.id, parentId))
             .limit(1),
       );
-      if (
-        !parent ||
-        parent.postId !== (target.postId ?? null) ||
-        parent.pageId !== (target.pageId ?? null) ||
-        parent.customId !== (target.customId ?? null)
-      )
-        throw new CommentTargetError(
-          "BAD_REQUEST",
-          "Parent comment belongs to a different resource",
-        );
+      if (!parent) return null;
+      const targets = [
+        parent.postId ? { type: "post" as const, id: parent.postId } : null,
+        parent.pageId ? { type: "page" as const, id: parent.pageId } : null,
+        parent.customId
+          ? { type: "custom" as const, id: parent.customId }
+          : null,
+      ].filter((target) => target !== null);
+      return targets.length === 1 ? targets[0]! : null;
     },
   };
 }

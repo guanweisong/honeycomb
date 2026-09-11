@@ -70,7 +70,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "comment.update",
     Permission.commentModerate,
     ADMIN_ONLY,
-    { id: TEST_ID },
+    { id: TEST_ID, status: "PUBLISH" },
     "database",
   ],
   [
