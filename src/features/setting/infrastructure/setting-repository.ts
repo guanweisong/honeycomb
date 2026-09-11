@@ -9,32 +9,60 @@ import { PostType } from "@/packages/domain/content/post";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { SettingRepository } from "../application/repository";
-import type { SettingUpdate } from "../application/repository";
 export type { SettingRecord, SettingRepository, SettingUpdate, StatisticsType } from "../application/repository";
-
-// The public input permits partial languages. Encode exactly as i18nField.toDriver
-// does, without claiming the partial value is a complete persisted I18n object.
-function localizedSettingValue(value: SettingUpdate["siteName"]) {
-  return value === undefined ? undefined : sql`${JSON.stringify(value ?? {})}`;
-}
+import {
+  assembleSettingTranslations,
+  patchSettingTranslationRows,
+} from "./setting-translations";
 
 export function createSettingRepository(db: Database): SettingRepository {
   return {
     async get() {
       const list = await observeDbOperation("setting.get", "select", () => db.select().from(schema.setting));
-      return list[0];
+      const setting = list[0];
+      if (!setting) return undefined;
+      const translations = await observeDbOperation("setting.get", "select", () =>
+        db
+          .select()
+          .from(schema.settingTranslation)
+          .where(eq(schema.settingTranslation.settingId, setting.id)),
+      );
+      return { ...setting, ...assembleSettingTranslations(translations) };
     },
     async update(input) {
-      const { id, ...changes } = input;
-      const values = {
-        ...changes,
-        siteName: localizedSettingValue(changes.siteName),
-        siteSubName: localizedSettingValue(changes.siteSubName),
-        siteSignature: localizedSettingValue(changes.siteSignature),
-        siteCopyright: localizedSettingValue(changes.siteCopyright),
-      };
-      const [setting] = await observeDbOperation("setting.update", "update", () => db.update(schema.setting).set(values).where(eq(schema.setting.id, id)).returning());
-      return requireWriteResult(setting, "update", "setting");
+      const {
+        id,
+        siteName,
+        siteSubName,
+        siteSignature,
+        siteCopyright,
+        ...changes
+      } = input;
+      const setting = await observeDbOperation("setting.update", "transaction", () =>
+        db.transaction(async (tx) => {
+          const [updated] = Object.keys(changes).length
+            ? await tx.update(schema.setting).set(changes).where(eq(schema.setting.id, id)).returning()
+            : await tx.select().from(schema.setting).where(eq(schema.setting.id, id)).limit(1);
+          const result = requireWriteResult(updated, "update", "setting");
+          const current = await tx
+            .select()
+            .from(schema.settingTranslation)
+            .where(eq(schema.settingTranslation.settingId, id));
+          const next = patchSettingTranslationRows(id, current, {
+            id,
+            siteName,
+            siteSubName,
+            siteSignature,
+            siteCopyright,
+          });
+          await tx
+            .delete(schema.settingTranslation)
+            .where(eq(schema.settingTranslation.settingId, id));
+          if (next.length) await tx.insert(schema.settingTranslation).values(next);
+          return { ...result, ...assembleSettingTranslations(next) };
+        }),
+      );
+      return setting;
     },
     async statistics() {
       const countByValues = async <T extends string>(values: readonly T[], table: typeof schema.post | typeof schema.user | typeof schema.comment, column: Parameters<typeof eq>[0], operation: Parameters<typeof observeDbOperation>[0]) =>

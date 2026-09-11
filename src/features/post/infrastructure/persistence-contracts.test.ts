@@ -36,6 +36,7 @@ describe("required persistence results", () => {
   it.each(updateFactories)("rejects a missing update target (%#)", async (factory) => {
     const db = createMockDb();
     db.returning.mockResolvedValue([]);
+    db.limit.mockResolvedValue([]);
     await expect(factory(asMockDatabase(db)).update({ id: "missing" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
   it("rejects empty create results across repositories", async () => {
@@ -61,14 +62,14 @@ describe("required persistence results", () => {
     await expect(factory(asMockDatabase(db)).findStatus("id")).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
   it.each(["status", "type", "commentStatus"])("rejects an unknown post %s during DTO mapping", async (field) => {
-    const row: typeof schema.post.$inferSelect = { id: "post", authorId: "author", categoryId: "category", title: null, content: null, excerpt: null, status: "PUBLISHED", type: "ARTICLE", commentStatus: "ENABLE", coverId: null, quoteAuthor: null, quoteContent: null, movieTime: null, galleryLocation: null, galleryTime: null, views: 0, createdAt: null, updatedAt: null };
+    const row: typeof schema.post.$inferSelect = { id: "post", authorId: "author", categoryId: "category", status: "PUBLISHED", type: "ARTICLE", commentStatus: "ENABLE", coverId: null, movieTime: null, galleryTime: null, views: 0, createdAt: null, updatedAt: null };
     const db = createMockDb();
     db.query.post.findMany.mockResolvedValue([]);
     await expect(loadPostRelations(asMockDatabase(db), [{ ...row, [field]: "UNKNOWN" }])).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
   it.each(["status", "template"])("rejects an unknown page %s during detail mapping", async (field) => {
     const db = createMockDb();
-    db.query.page.findFirst.mockResolvedValue({ id: "page", status: "PUBLISHED", template: "default", title: null, content: null, authorId: "author", views: 0, createdAt: null, updatedAt: null, author: null, [field]: "UNKNOWN" });
+    db.query.page.findFirst.mockResolvedValue({ id: "page", status: "PUBLISHED", template: "default", authorId: "author", views: 0, createdAt: null, updatedAt: null, author: null, translations: [], [field]: "UNKNOWN" });
     await expect(createPageQueryRepository(asMockDatabase(db)).detail("page", "ALL")).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
   it("rejects an unknown menu type before constructing navigation", async () => {
@@ -104,6 +105,7 @@ describe("required persistence results", () => {
   it("keeps post command persistence free of cache side effects", async () => {
     const db = createMockDb();
     db.returning.mockResolvedValue([{ id: "post" }]);
+    db.limit.mockResolvedValue([{ id: "post", authorId: "author", categoryId: "category" }]);
     const repository = createPostCommandRepository(asMockDatabase(db));
 
     await repository.create({ categoryId: "category" }, "author");

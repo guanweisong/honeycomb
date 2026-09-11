@@ -24,6 +24,10 @@ import type {
   PostCategoryRecord,
   PostTagRecord,
 } from "../application/repository";
+import { groupPostTranslations } from "./post-translations";
+import {
+  assembleRequiredLocalizedField,
+} from "@/packages/infrastructure/db/translation-values";
 export type {
   PostListInput,
   PostQueryRepository,
@@ -31,7 +35,12 @@ export type {
   PostWithRelations,
 } from "../application/repository";
 type PostRecord = typeof schema.post.$inferSelect;
-type TagRecord = typeof schema.tag.$inferSelect;
+type PostTranslations = ReturnType<typeof groupPostTranslations> extends Map<
+  string,
+  infer Value
+>
+  ? Value
+  : never;
 
 function toMediaRecord(
   media: typeof schema.media.$inferSelect,
@@ -53,8 +62,9 @@ function toMediaRecord(
 
 function toPostViewModel(
   post: PostRecord,
+  translations: PostTranslations | undefined,
   relations: {
-    category?: typeof schema.category.$inferSelect | null;
+    category?: PostCategoryRecord | null;
     author?: PostAuthorRecord | null;
     cover?: typeof schema.media.$inferSelect | null;
     movieActors: PostTagRecord[];
@@ -63,9 +73,14 @@ function toPostViewModel(
     galleryStyles: PostTagRecord[];
   },
 ): PostWithRelations {
-  const category = relations.category;
   return {
     ...post,
+    title: translations?.title ?? null,
+    content: translations?.content ?? null,
+    excerpt: translations?.excerpt ?? null,
+    galleryLocation: translations?.galleryLocation ?? null,
+    quoteAuthor: translations?.quoteAuthor ?? null,
+    quoteContent: translations?.quoteContent ?? null,
     status: parseEnumValue(
       post.status,
       Object.values(PostStatus),
@@ -77,18 +92,7 @@ function toPostViewModel(
       Object.values(EnableStatus),
       "post.commentStatus",
     ),
-    category: category
-      ? ({
-          id: category.id,
-          title: category.title,
-          description: category.description,
-          parent: category.parent,
-          status: category.status,
-          path: category.path,
-          createdAt: category.createdAt,
-          updatedAt: category.updatedAt,
-        } satisfies PostCategoryRecord)
-      : undefined,
+    category: relations.category ?? undefined,
     author: relations.author ?? undefined,
     cover: relations.cover ? toMediaRecord(relations.cover) : undefined,
     movieActors: relations.movieActors,
@@ -112,7 +116,6 @@ export async function loadPostRelations(
       db.query.post.findMany({
         where: inArray(schema.post.id, postIds),
         with: {
-          category: true,
           author: {
             columns: {
               id: true,
@@ -120,27 +123,52 @@ export async function loadPostRelations(
             },
           },
           cover: true,
-          postTags: { with: { tag: true } },
+          translations: true,
+          category: { with: { translations: true } },
+          postTags: { with: { tag: { with: { translations: true } } } },
         },
       }),
   );
+  const translations = groupPostTranslations(rows.flatMap((row) => row.translations));
   const relationMap = new Map(rows.map((row) => [row.id, row]));
   return posts.map((item) => {
     const row = relationMap.get(item.id);
     const tags = row?.postTags ?? [];
+    type RelatedTag = NonNullable<(typeof tags)[number]["tag"]>;
     const mapTags = (type: TagType) =>
       tags
         .filter((postTag) => postTag.type === type)
         .map((postTag) => postTag.tag)
-        .filter((tag): tag is TagRecord => Boolean(tag));
-    const mapTag = (tag: TagRecord): PostTagRecord => ({
+        .filter((tag): tag is RelatedTag => Boolean(tag));
+    const mapTag = (tag: RelatedTag): PostTagRecord => ({
       id: tag.id,
-      name: tag.name,
+      name: assembleRequiredLocalizedField(tag.translations, (translation) => translation.name),
       createdAt: tag.createdAt,
       updatedAt: tag.updatedAt,
     });
-    return toPostViewModel(item, {
-      category: row?.category,
+    const category = row?.category;
+    const categoryTranslations = category
+      ? {
+          title: assembleRequiredLocalizedField(category.translations, (translation) => translation.title),
+          description: assembleRequiredLocalizedField(
+            category.translations,
+            (translation) => translation.description,
+          ),
+        }
+      : undefined;
+    return toPostViewModel(item, translations.get(item.id), {
+      category: category
+        ? {
+            id: category.id,
+            title: categoryTranslations?.title ?? null,
+            description: categoryTranslations?.description ?? null,
+            parent: category.parent,
+            status: category.status,
+            path: category.path,
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
+          }
+        : undefined,
       author: row?.author
         ? {
             id: row.author.id,
@@ -190,10 +218,21 @@ export function createPostQueryRepository(
       } = input;
       let where = buildDrizzleWhere(
         schema.post,
-        { ...rest, title, content },
+        rest,
         ["status", "type"],
-        { title, content },
       );
+      for (const [column, value] of [
+        [schema.postTranslation.title, title],
+        [schema.postTranslation.content, content],
+      ] as const) {
+        if (!value) continue;
+        const match = sql`exists (
+          select 1 from ${schema.postTranslation}
+          where ${schema.postTranslation.postId} = ${schema.post.id}
+            and ${column} like ${`%${value}%`}
+        )`;
+        where = where ? and(where, match) : match;
+      }
       if (visibility === "PUBLISHED_ONLY") {
         const published = eq(schema.post.status, PostStatus.PUBLISHED);
         where = where ? and(where, published) : published;

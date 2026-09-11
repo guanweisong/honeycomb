@@ -3,6 +3,7 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { inArray } from "drizzle-orm";
 import { MultiLang } from "@/packages/domain/localization/multi-lang";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import { assembleRequiredLocalizedField } from "@/packages/infrastructure/db/translation-values";
 
 /**
  * 关联标签接口。
@@ -23,10 +24,19 @@ export interface RelationTag {
 export const getRelationTags = async (ids: string[] = []) => {
   if (ids.length === 0) return [];
   const db = getDb();
-  return observeDbOperation("tag.relations", "select", () =>
-    db
-      .select({ id: schema.tag.id, name: schema.tag.name })
-      .from(schema.tag)
-      .where(inArray(schema.tag.id, ids)),
+  const tags = await observeDbOperation("tag.relations", "select", () =>
+    db.select({ id: schema.tag.id }).from(schema.tag).where(inArray(schema.tag.id, ids)),
   );
+  if (!tags.length) return [];
+  const translations = await db
+    .select()
+    .from(schema.tagTranslation)
+    .where(inArray(schema.tagTranslation.tagId, tags.map(({ id }) => id)));
+  return tags.flatMap((tag) => {
+    const name = assembleRequiredLocalizedField(
+      translations.filter((row) => row.tagId === tag.id),
+      (row) => row.name,
+    );
+    return name ? [{ id: tag.id, name }] : [];
+  });
 };

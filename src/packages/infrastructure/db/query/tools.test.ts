@@ -114,14 +114,6 @@ describe("buildDrizzleWhere", () => {
     expect(result).toBeDefined();
   });
 
-  it("should handle multi-language queries", () => {
-    const table = sqliteTable("fixtures", { name: text("name"), title: text("title") });
-    const result = buildDrizzleWhere(table, { name: "test" }, [], {
-      title: "中文",
-    });
-    expect(result).toBeDefined();
-  });
-
   it("should skip invalid table columns", () => {
     const table = sqliteTable("fixtures", { name: text("name") });
     const result = buildDrizzleWhere(table, { invalidField: "test" }, []);

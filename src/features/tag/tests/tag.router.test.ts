@@ -7,6 +7,7 @@ import {
   createGuestUser,
   createMockContext,
   createMockDb,
+  resetMockDb,
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
@@ -23,6 +24,7 @@ const mockDb = createMockDb();
 describe("Tag Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -53,6 +55,12 @@ describe("Tag Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockResolvedValueOnce([
+        { tagId: TEST_IDS.ID_1, locale: "en", name: "Tag 1" },
+        { tagId: TEST_IDS.ID_1, locale: "zh", name: "标签1" },
+        { tagId: TEST_IDS.ID_2, locale: "en", name: "Tag 2" },
+        { tagId: TEST_IDS.ID_2, locale: "zh", name: "标签2" },
+      ]);
 
       const caller = tagRouter.createCaller(createMockContext(null, mockDb));
 
@@ -175,10 +183,15 @@ describe("Tag Router", () => {
         name: { en: "Updated Tag", zh: "更新的标签" },
       };
 
-      mockDb.update.mockReturnValueOnce(mockDb);
-      mockDb.set.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedTag]);
+      mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
+      mockDb.where
+        .mockReturnValueOnce(mockDb)
+        .mockReturnValueOnce(mockDb)
+        .mockReturnValueOnce(mockDb)
+        .mockResolvedValueOnce([
+          { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
+          { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },
+        ]);
 
       const caller = tagRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
@@ -190,7 +203,7 @@ describe("Tag Router", () => {
       });
 
       expect(result).toEqual(updatedTag);
-      expect(mockDb.update).toHaveBeenCalledWith(schema.tag);
+      expect(mockDb.update).not.toHaveBeenCalledWith(schema.tag);
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

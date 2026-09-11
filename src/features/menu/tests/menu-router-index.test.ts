@@ -55,7 +55,6 @@ describe("Menu Router", () => {
       const mockCategories = [
         {
           id: TEST_IDS.ID_1,
-          title: { en: "Category 1", zh: "分类1" },
           path: "/category1",
           parent: null,
         },
@@ -63,7 +62,6 @@ describe("Menu Router", () => {
       const mockPages = [
         {
           id: TEST_IDS.ID_2,
-          title: { en: "Page 1", zh: "页面1" },
         },
       ];
       mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
@@ -77,6 +75,14 @@ describe("Menu Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockPages);
+      mockDb.where.mockResolvedValueOnce([
+        { categoryId: TEST_IDS.ID_1, locale: "en", title: "Category 1", description: "" },
+        { categoryId: TEST_IDS.ID_1, locale: "zh", title: "分类1", description: "" },
+      ]);
+      mockDb.where.mockResolvedValueOnce([
+        { pageId: TEST_IDS.ID_2, locale: "en", title: "Page 1", content: "" },
+        { pageId: TEST_IDS.ID_2, locale: "zh", title: "页面1", content: "" },
+      ]);
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
@@ -91,7 +97,7 @@ describe("Menu Router", () => {
             type: MenuType.CATEGORY,
             createdAt: requireDefined(mockMenus[0]).createdAt,
             updatedAt: undefined,
-            title: requireDefined(mockCategories[0]).title,
+            title: { en: "Category 1", zh: "分类1" },
             path: requireDefined(mockCategories[0]).path,
           },
           {
@@ -101,7 +107,7 @@ describe("Menu Router", () => {
             type: MenuType.PAGE,
             createdAt: requireDefined(mockMenus[1]).createdAt,
             updatedAt: undefined,
-            title: requireDefined(mockPages[0]).title,
+            title: { en: "Page 1", zh: "页面1" },
             path: null,
           },
         ],

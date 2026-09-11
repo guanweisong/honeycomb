@@ -40,12 +40,22 @@ describe("loadPostRelations", () => {
           findMany: vi.fn().mockResolvedValue([
             {
               ...first,
-              category,
+              translations: [
+                { postId: first.id, locale: "en", title: "first", content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
+                { postId: first.id, locale: "zh", title: "first", content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
+              ],
+              category: { ...category, translations: [] },
               author,
               cover,
               postTags: [
-                { type: TagType.ACTOR, tag: actor },
-                { type: TagType.GALLERY_STYLE, tag: gallery },
+                { type: TagType.ACTOR, tag: { ...actor, translations: [
+                  { tagId: actor.id, locale: "en", name: "Actor" },
+                  { tagId: actor.id, locale: "zh", name: "Actor" },
+                ] } },
+                { type: TagType.GALLERY_STYLE, tag: { ...gallery, translations: [
+                  { tagId: gallery.id, locale: "en", name: "Gallery" },
+                  { tagId: gallery.id, locale: "zh", name: "Gallery" },
+                ] } },
                 { type: TagType.DIRECTOR, tag: null },
               ],
             },
@@ -59,6 +69,10 @@ describe("loadPostRelations", () => {
     ).resolves.toEqual([
       {
         ...second,
+        title: null,
+        author: undefined,
+        category: undefined,
+        cover: undefined,
         movieActors: [],
         movieDirectors: [],
         movieStyles: [],

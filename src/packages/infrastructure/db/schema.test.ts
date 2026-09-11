@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getTableConfig, type SQLiteTable } from "drizzle-orm/sqlite-core";
 import * as schema from "./schema";
 
 type ColumnView = {
@@ -26,11 +27,18 @@ type RelationView = {
   config: (helpers: RelationHelpers) => Record<string, { kind: string; fieldName: string }>;
 };
 
+function requireTable(name: string): SQLiteTable {
+  const table: unknown = Reflect.get(schema, name);
+  expect(table, `${name} must be exported`).toBeDefined();
+  // Drizzle does not expose a runtime predicate for its proxied table type.
+  return table as SQLiteTable;
+}
+
 describe("db schema helpers", () => {
   it("exposes the expected table column names", () => {
     expect((schema.user.id as unknown as ColumnView).config.name).toBe("id");
-    expect((schema.category.title as unknown as ColumnView).config.name).toBe("title");
-    expect((schema.page.content as unknown as ColumnView).config.name).toBe("content");
+    expect((schema.categoryTranslation.title as unknown as ColumnView).config.name).toBe("title");
+    expect((schema.pageTranslation.content as unknown as ColumnView).config.name).toBe("content");
     expect((schema.menu.pageId as unknown as ColumnView).config.name).toBe("page_id");
     expect((schema.user.username as unknown as ColumnView).config.name).toBe("username");
     expect((schema.account.providerId as unknown as ColumnView).config.name).toBe("provider_id");
@@ -43,26 +51,37 @@ describe("db schema helpers", () => {
     expect((schema.loginHistory.createdAt as unknown as ColumnView).config.name).toBe("created_at");
   });
 
+  it.each([
+    ["categoryTranslation", "category_translation", "category_id", ["title", "description"]],
+    ["postTranslation", "post_translation", "post_id", ["title", "content", "excerpt", "gallery_location", "quote_author", "quote_content"]],
+    ["pageTranslation", "page_translation", "page_id", ["title", "content"]],
+    ["tagTranslation", "tag_translation", "tag_id", ["name"]],
+    ["settingTranslation", "setting_translation", "setting_id", ["site_name", "site_sub_name", "site_signature", "site_copyright"]],
+  ])("defines %s with locale integrity and cascade ownership", (exportName, tableName, ownerColumn, translatedColumns) => {
+    const config = getTableConfig(requireTable(exportName));
+
+    expect(config.name).toBe(tableName);
+    expect(config.columns.map(({ name }) => name)).toEqual([
+      ownerColumn,
+      "locale",
+      ...translatedColumns,
+    ]);
+    expect(config.primaryKeys).toHaveLength(1);
+    expect(config.primaryKeys[0]?.columns.map(({ name }) => name)).toEqual([
+      ownerColumn,
+      "locale",
+    ]);
+    expect(config.foreignKeys).toHaveLength(1);
+    expect(config.foreignKeys[0]?.onDelete).toBe("cascade");
+    expect(config.checks).toHaveLength(1);
+  });
+
   it("generates lowercase object ids", () => {
     const sql = (schema.user.id as unknown as ColumnView).config.defaultFn?.();
 
     expect((sql as unknown as { queryChunks?: Array<{ value?: unknown[] }> })?.queryChunks?.[0]?.value?.[0]).toBe(
       "lower(hex(randomblob(12)))",
     );
-  });
-
-  it("serializes and parses i18n fields", () => {
-    const toDriver = (schema.category.title as unknown as ColumnView).config.customTypeParams?.toDriver;
-    const fromDriver = (schema.category.title as unknown as ColumnView).config.customTypeParams?.fromDriver;
-
-    expect(toDriver?.({ en: "hello", zh: "你好" })).toBe(
-      JSON.stringify({ en: "hello", zh: "你好" }),
-    );
-    expect(fromDriver?.("{\"en\":\"hello\",\"zh\":\"你好\"}")).toEqual({
-      en: "hello",
-      zh: "你好",
-    });
-    expect(fromDriver?.("{invalid json}")).toBeNull();
   });
 
   it("creates timestamp defaults and update handlers", () => {
@@ -101,6 +120,7 @@ describe("db schema helpers", () => {
       posts: { kind: "many", fieldName: "posts" },
       parentItem: { kind: "one", fieldName: "parentItem" },
       children: { kind: "many", fieldName: "children" },
+      translations: { kind: "many", fieldName: "translations" },
     });
     expect((schema.mediaRelations as unknown as RelationView).config(helpers)).toEqual({
       coverPosts: { kind: "many", fieldName: "coverPosts" },
@@ -110,9 +130,11 @@ describe("db schema helpers", () => {
       category: { kind: "one", fieldName: "category" },
       cover: { kind: "one", fieldName: "cover" },
       postTags: { kind: "many", fieldName: "postTags" },
+      translations: { kind: "many", fieldName: "translations" },
     });
     expect((schema.tagRelations as unknown as RelationView).config(helpers)).toEqual({
       postTags: { kind: "many", fieldName: "postTags" },
+      translations: { kind: "many", fieldName: "translations" },
     });
     expect((schema.postTagRelations as unknown as RelationView).config(helpers)).toEqual({
       post: { kind: "one", fieldName: "post" },
@@ -121,6 +143,7 @@ describe("db schema helpers", () => {
     expect((schema.pageRelations as unknown as RelationView).config(helpers)).toEqual({
       author: { kind: "one", fieldName: "author" },
       comments: { kind: "many", fieldName: "comments" },
+      translations: { kind: "many", fieldName: "translations" },
     });
     expect((schema.commentRelations as unknown as RelationView).config(helpers)).toEqual({
       post: { kind: "one", fieldName: "post" },
@@ -134,5 +157,21 @@ describe("db schema helpers", () => {
       category: { kind: "one", fieldName: "category" },
       page: { kind: "one", fieldName: "page" },
     });
+    expect((schema.settingRelations as unknown as RelationView).config(helpers)).toEqual({
+      translations: { kind: "many", fieldName: "translations" },
+    });
+    for (const relationName of [
+      "categoryTranslationRelations",
+      "postTranslationRelations",
+      "pageTranslationRelations",
+      "tagTranslationRelations",
+      "settingTranslationRelations",
+    ]) {
+      const relation = Reflect.get(schema, relationName) as RelationView | undefined;
+      expect(relation, `${relationName} must be exported`).toBeDefined();
+      expect(relation?.config(helpers)).toEqual({
+        owner: { kind: "one", fieldName: "owner" },
+      });
+    }
   });
 });

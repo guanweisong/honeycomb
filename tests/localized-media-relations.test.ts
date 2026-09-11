@@ -26,8 +26,6 @@ const images = [zhUrl, enUrl].map((url, index) => ({
 }));
 const page = {
   id: "page-1",
-  title: null,
-  content,
   status: "PUBLISHED",
   template: "default",
   authorId: "user-1",
@@ -35,13 +33,24 @@ const page = {
   updatedAt: null,
   author: null,
 };
+const pageTranslations = [
+  { pageId: page.id, locale: "en", title: "Page", content: content.en },
+  { pageId: page.id, locale: "zh", title: "页面", content: content.zh },
+];
 
 describe("localized media relations", () => {
   it("post detail loads unique images from all supported locales", async () => {
     const db = createMockDb();
     const post = createPostFixture({ content });
     db.limit.mockResolvedValue([post]);
-    db.query.post.findMany.mockResolvedValue([{ ...post, postTags: [] }]);
+    db.query.post.findMany.mockResolvedValue([{
+      ...post,
+      translations: [
+        { postId: post.id, locale: "en", title: null, content: content.en, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
+        { postId: post.id, locale: "zh", title: null, content: content.zh, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
+      ],
+      postTags: [],
+    }]);
     db.where
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce([...images, ...images]);
@@ -60,7 +69,7 @@ describe("localized media relations", () => {
   });
   it("page detail loads unique images from all supported locales", async () => {
     const db = createMockDb();
-    db.query.page.findFirst.mockResolvedValue(page);
+    db.query.page.findFirst.mockResolvedValue({ ...page, translations: pageTranslations });
     db.where.mockResolvedValue([...images, ...images]);
     const result = await createPageQueryRepository(asMockDatabase(db)).detail(
       "page-1",
@@ -77,7 +86,7 @@ describe("localized media relations", () => {
   it("page lists map deduplicated images from all locales", async () => {
     const db = createMockDb();
     db.offset.mockResolvedValue([page]);
-    db.query.page.findMany.mockResolvedValue([page]);
+    db.query.page.findMany.mockResolvedValue([{ ...page, translations: pageTranslations }]);
     db.where
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce([{ count: 1 }])

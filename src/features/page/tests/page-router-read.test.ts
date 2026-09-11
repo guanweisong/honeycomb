@@ -61,7 +61,13 @@ describe("Page Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPages);
 
-      mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
+      mockDb.query.page.findMany.mockResolvedValueOnce(mockPages.map(({ title, content, ...page }) => ({
+        ...page,
+        translations: [
+          { pageId: page.id, locale: "en", title: title.en, content: content.en },
+          { pageId: page.id, locale: "zh", title: title.zh, content: content.zh },
+        ],
+      })));
 
       // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -112,11 +118,13 @@ describe("Page Router", () => {
     it("allows guest callers to read adminDetail", async () => {
       mockDb.query.page.findFirst.mockResolvedValueOnce({
         id: TEST_IDS.ID_1,
-        title: { en: "Page 1", zh: "页面1" },
-        content: { en: "Content 1", zh: "内容1" },
         status: PageStatus.DRAFT,
         template: PageTemplate.DEFAULT,
         author: null,
+        translations: [
+          { pageId: TEST_IDS.ID_1, locale: "en", title: "Page 1", content: "Content 1" },
+          { pageId: TEST_IDS.ID_1, locale: "zh", title: "页面1", content: "内容1" },
+        ],
       });
 
       const caller = pageRouter.createCaller(
@@ -156,6 +164,10 @@ describe("Page Router", () => {
 
       mockDb.query.page.findFirst.mockResolvedValueOnce({
         ...mockPage,
+        translations: [
+          { pageId: mockPage.id, locale: "en", title: mockPage.title.en, content: mockPage.content.en },
+          { pageId: mockPage.id, locale: "zh", title: mockPage.title.zh, content: mockPage.content.zh },
+        ],
         author: mockAuthor,
       });
 

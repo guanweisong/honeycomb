@@ -11,6 +11,7 @@ import { CommentStatus } from "@/packages/domain/content/comment";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { MultiLangEnum } from "@/packages/domain/localization/i18n";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { hashCredentialPassword } from "@/packages/identity/auth/credentials";
 import { assertSafeE2ESeedTarget } from "./e2e-seed-policy";
@@ -38,7 +39,6 @@ async function seed(): Promise<void> {
   const client = createClient({ url, authToken: process.env.TURSO_TOKEN });
   const db = drizzle(client, { schema });
   const now = new Date().toISOString();
-  const localized = (en: string, zh: string) => ({ en, zh });
   const passwordHash = await hashCredentialPassword(password);
 
   try {
@@ -91,33 +91,25 @@ async function seed(): Promise<void> {
         .insert(schema.setting)
         .values({
           id: ids.setting,
-          siteName: localized("Honeycomb E2E", "蜂巢 E2E"),
-          siteSubName: localized("Reliable browser gates", "可靠浏览器门禁"),
-          siteSignature: localized("Deterministic test site", "确定性测试站点"),
-          siteCopyright: localized("Honeycomb E2E", "蜂巢 E2E"),
           createdAt: now,
           updatedAt: now,
         })
         .onConflictDoUpdate({
           target: schema.setting.id,
-          set: {
-            siteName: localized("Honeycomb E2E", "蜂巢 E2E"),
-            siteSubName: localized("Reliable browser gates", "可靠浏览器门禁"),
-            siteSignature: localized(
-              "Deterministic test site",
-              "确定性测试站点",
-            ),
-            siteCopyright: localized("Honeycomb E2E", "蜂巢 E2E"),
-            updatedAt: now,
-          },
+          set: { updatedAt: now },
         });
+      await tx.insert(schema.settingTranslation).values([
+        { settingId: ids.setting, locale: MultiLangEnum.En, siteName: "Honeycomb E2E", siteSubName: "Reliable browser gates", siteSignature: "Deterministic test site", siteCopyright: "Honeycomb E2E" },
+        { settingId: ids.setting, locale: MultiLangEnum.Zh, siteName: "蜂巢 E2E", siteSubName: "可靠浏览器门禁", siteSignature: "确定性测试站点", siteCopyright: "蜂巢 E2E" },
+      ]).onConflictDoUpdate({
+        target: [schema.settingTranslation.settingId, schema.settingTranslation.locale],
+        set: { siteName: schema.settingTranslation.siteName, siteSubName: schema.settingTranslation.siteSubName, siteSignature: schema.settingTranslation.siteSignature, siteCopyright: schema.settingTranslation.siteCopyright },
+      });
 
       await tx
         .insert(schema.category)
         .values({
           id: ids.category,
-          description: localized("E2E category", "E2E 分类"),
-          title: localized("Engineering", "工程"),
           status: EnableStatus.ENABLE,
           path: "engineering",
           createdAt: now,
@@ -126,41 +118,54 @@ async function seed(): Promise<void> {
         .onConflictDoUpdate({
           target: schema.category.id,
           set: {
-            description: localized("E2E category", "E2E 分类"),
-            title: localized("Engineering", "工程"),
             status: EnableStatus.ENABLE,
             path: "engineering",
             updatedAt: now,
           },
         });
+      await tx.insert(schema.categoryTranslation).values([
+        { categoryId: ids.category, locale: MultiLangEnum.En, title: "Engineering", description: "E2E category" },
+        { categoryId: ids.category, locale: MultiLangEnum.Zh, title: "工程", description: "E2E 分类" },
+      ]).onConflictDoUpdate({
+        target: [schema.categoryTranslation.categoryId, schema.categoryTranslation.locale],
+        set: { title: schema.categoryTranslation.title, description: schema.categoryTranslation.description },
+      });
 
       for (const category of [
         {
           id: ids.childCategory,
           parent: ids.category,
           path: "testing",
-          title: localized("Testing", "测试"),
+          title: { en: "Testing", zh: "测试" },
         },
         {
           id: ids.grandchildCategory,
           parent: ids.childCategory,
           path: "browser-tests",
-          title: localized("Browser tests", "浏览器测试"),
+          title: { en: "Browser tests", zh: "浏览器测试" },
         },
       ]) {
         await tx
           .insert(schema.category)
           .values({
-            ...category,
-            description: localized("Nested E2E category", "嵌套 E2E 分类"),
+            id: category.id,
+            parent: category.parent,
+            path: category.path,
             status: EnableStatus.ENABLE,
             createdAt: now,
             updatedAt: now,
           })
           .onConflictDoUpdate({
             target: schema.category.id,
-            set: { ...category, status: EnableStatus.ENABLE, updatedAt: now },
+            set: { parent: category.parent, path: category.path, status: EnableStatus.ENABLE, updatedAt: now },
           });
+        await tx.insert(schema.categoryTranslation).values([
+          { categoryId: category.id, locale: MultiLangEnum.En, title: category.title.en, description: "Nested E2E category" },
+          { categoryId: category.id, locale: MultiLangEnum.Zh, title: category.title.zh, description: "嵌套 E2E 分类" },
+        ]).onConflictDoUpdate({
+          target: [schema.categoryTranslation.categoryId, schema.categoryTranslation.locale],
+          set: { title: schema.categoryTranslation.title, description: schema.categoryTranslation.description },
+        });
       }
 
       await tx
@@ -170,13 +175,7 @@ async function seed(): Promise<void> {
           authorId: ids.user,
           categoryId: ids.grandchildCategory,
           commentStatus: EnableStatus.ENABLE,
-          content: localized(
-            "<p>Deterministic browser test content.</p>",
-            "<p>确定性浏览器测试内容。</p>",
-          ),
-          excerpt: localized("E2E post excerpt", "E2E 文章摘要"),
           status: PostStatus.PUBLISHED,
-          title: localized("Reliable browser gates", "可靠浏览器门禁"),
           type: PostType.MOVIE,
           movieTime: "2026-09-09",
           views: 0,
@@ -189,18 +188,19 @@ async function seed(): Promise<void> {
             authorId: ids.user,
             categoryId: ids.grandchildCategory,
             commentStatus: EnableStatus.ENABLE,
-            content: localized(
-              "<p>Deterministic browser test content.</p>",
-              "<p>确定性浏览器测试内容。</p>",
-            ),
-            excerpt: localized("E2E post excerpt", "E2E 文章摘要"),
             status: PostStatus.PUBLISHED,
-            title: localized("Reliable browser gates", "可靠浏览器门禁"),
             type: PostType.MOVIE,
             movieTime: "2026-09-09",
             updatedAt: now,
           },
         });
+      await tx.insert(schema.postTranslation).values([
+        { postId: ids.post, locale: MultiLangEnum.En, title: "Reliable browser gates", content: "<p>Deterministic browser test content.</p>", excerpt: "E2E post excerpt" },
+        { postId: ids.post, locale: MultiLangEnum.Zh, title: "可靠浏览器门禁", content: "<p>确定性浏览器测试内容。</p>", excerpt: "E2E 文章摘要" },
+      ]).onConflictDoUpdate({
+        target: [schema.postTranslation.postId, schema.postTranslation.locale],
+        set: { title: schema.postTranslation.title, content: schema.postTranslation.content, excerpt: schema.postTranslation.excerpt },
+      });
 
       for (const comment of [
         {
@@ -240,13 +240,8 @@ async function seed(): Promise<void> {
         .values({
           id: ids.page,
           authorId: ids.user,
-          content: localized(
-            "<p>About the E2E site.</p>",
-            "<p>关于 E2E 站点。</p>",
-          ),
           status: PageStatus.PUBLISHED,
           template: PageTemplate.DEFAULT,
-          title: localized("About", "关于"),
           views: 0,
           createdAt: now,
           updatedAt: now,
@@ -255,29 +250,37 @@ async function seed(): Promise<void> {
           target: schema.page.id,
           set: {
             authorId: ids.user,
-            content: localized(
-              "<p>About the E2E site.</p>",
-              "<p>关于 E2E 站点。</p>",
-            ),
             status: PageStatus.PUBLISHED,
             template: PageTemplate.DEFAULT,
-            title: localized("About", "关于"),
             updatedAt: now,
           },
         });
+      await tx.insert(schema.pageTranslation).values([
+        { pageId: ids.page, locale: MultiLangEnum.En, title: "About", content: "<p>About the E2E site.</p>" },
+        { pageId: ids.page, locale: MultiLangEnum.Zh, title: "关于", content: "<p>关于 E2E 站点。</p>" },
+      ]).onConflictDoUpdate({
+        target: [schema.pageTranslation.pageId, schema.pageTranslation.locale],
+        set: { title: schema.pageTranslation.title, content: schema.pageTranslation.content },
+      });
 
       await tx
         .insert(schema.tag)
         .values({
           id: ids.tag,
-          name: localized("Testing", "测试"),
           createdAt: now,
           updatedAt: now,
         })
         .onConflictDoUpdate({
           target: schema.tag.id,
-          set: { name: localized("Testing", "测试"), updatedAt: now },
+          set: { updatedAt: now },
         });
+      await tx.insert(schema.tagTranslation).values([
+        { tagId: ids.tag, locale: MultiLangEnum.En, name: "Testing" },
+        { tagId: ids.tag, locale: MultiLangEnum.Zh, name: "测试" },
+      ]).onConflictDoUpdate({
+        target: [schema.tagTranslation.tagId, schema.tagTranslation.locale],
+        set: { name: schema.tagTranslation.name },
+      });
 
       await tx
         .insert(schema.menu)

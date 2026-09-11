@@ -17,12 +17,28 @@ import type {
   PageQueryRepository,
   PageWithRelations,
 } from "../application/repository";
+import { groupPageTranslations } from "./page-translations";
 
 type PageRow = typeof schema.page.$inferSelect;
+type PageTranslations = ReturnType<typeof groupPageTranslations> extends Map<
+  string,
+  infer Value
+>
+  ? Value
+  : never;
 
-function toPageRecord(page: PageRow) {
+function toPageRecord(
+  page: PageRow & { translations?: unknown; author?: unknown },
+  translations: PageTranslations | undefined,
+) {
   return {
-    ...page,
+    id: page.id,
+    authorId: page.authorId,
+    views: page.views,
+    createdAt: page.createdAt,
+    updatedAt: page.updatedAt,
+    title: translations?.title ?? null,
+    content: translations?.content ?? null,
     status: parseEnumValue(
       page.status,
       Object.values(PageStatus),
@@ -41,30 +57,36 @@ async function mapRelations(
   pages: PageRow[],
 ): Promise<PageWithRelations[]> {
   if (!pages.length) return [];
-  const urls = Array.from(
-    new Set(pages.flatMap((page) => getLocalizedImageLinks(page.content))),
-  );
-  const [rows, medias] = await Promise.all([
-    observeDbOperation("page.service.relations", "select", () =>
+  const urls = new Set<string>();
+  const rows = await observeDbOperation("page.service.relations", "select", () =>
       db.query.page.findMany({
         where: inArray(
           schema.page.id,
           pages.map((page) => page.id),
         ),
-        with: { author: { columns: { id: true, name: true } } },
+        with: {
+          author: { columns: { id: true, name: true } },
+          translations: true,
+        },
       }),
-    ),
-    urls.length
-      ? observeDbOperation("page.service.images", "select", () =>
-          db.select().from(schema.media).where(inArray(schema.media.url, urls)),
+    );
+  const translations = groupPageTranslations(rows.flatMap((row) => row.translations));
+  const localizedPages = pages.map((page) => ({
+    ...toPageRecord(page, translations.get(page.id)),
+    author: rows.find((row) => row.id === page.id)?.author ?? null,
+  }));
+  for (const page of localizedPages) {
+    for (const url of getLocalizedImageLinks(page.content)) urls.add(url);
+  }
+  const urlList = [...urls];
+  const medias = urlList.length
+      ? await observeDbOperation("page.service.images", "select", () =>
+          db.select().from(schema.media).where(inArray(schema.media.url, urlList)),
         )
-      : Promise.resolve([]),
-  ]);
-  const rowMap = new Map(rows.map((row) => [row.id, row]));
+      : [];
   const imageMap = new Map(medias.map((media) => [media.url, media]));
-  return pages.map((page) => ({
-    ...toPageRecord(page),
-    author: rowMap.get(page.id)?.author ?? null,
+  return localizedPages.map((page) => ({
+    ...page,
     imagesInContent: getLocalizedImageLinks(page.content)
       .map((url) => imageMap.get(url))
       .filter((image): image is typeof schema.media.$inferSelect =>
@@ -87,10 +109,21 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
       } = input;
       let where = buildDrizzleWhere(
         schema.page,
-        { ...rest, title, content },
+        rest,
         ["status"],
-        { title, content },
       );
+      for (const [column, value] of [
+        [schema.pageTranslation.title, title],
+        [schema.pageTranslation.content, content],
+      ] as const) {
+        if (!value) continue;
+        const match = sql`exists (
+          select 1 from ${schema.pageTranslation}
+          where ${schema.pageTranslation.pageId} = ${schema.page.id}
+            and ${column} like ${`%${value}%`}
+        )`;
+        where = where ? and(where, match) : match;
+      }
       if (visibility === "PUBLISHED_ONLY") {
         const published = eq(schema.page.status, PageStatus.PUBLISHED);
         where = where ? and(where, published) : published;
@@ -134,11 +167,16 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
               visibility === "ALL"
                 ? idFilter
                 : and(idFilter, eq(schema.page.status, PageStatus.PUBLISHED)),
-            with: { author: { columns: { id: true, name: true } } },
+            with: {
+              author: { columns: { id: true, name: true } },
+              translations: true,
+            },
           }),
       );
       if (!page) return null;
-      const urls = getLocalizedImageLinks(page.content);
+      const translations = groupPageTranslations(page.translations);
+      const localized = toPageRecord(page, translations.get(page.id));
+      const urls = getLocalizedImageLinks(localized.content);
       const imagesInContent = urls.length
         ? await observeDbOperation("page.service.detail-images", "select", () =>
             db
@@ -148,7 +186,7 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
           )
         : [];
       return {
-        ...toPageRecord(page),
+        ...localized,
         author: page.author ?? null,
         imagesInContent: [
           ...new Map(

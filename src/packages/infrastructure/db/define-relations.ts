@@ -9,13 +9,19 @@ type RelationTables = Pick<
   | "passkey"
   | "loginHistory"
   | "category"
+  | "categoryTranslation"
   | "media"
   | "post"
+  | "postTranslation"
   | "tag"
+  | "tagTranslation"
   | "postTag"
   | "page"
+  | "pageTranslation"
   | "comment"
   | "menu"
+  | "setting"
+  | "settingTranslation"
 >;
 
 /** 创建数据库关系定义，避免表声明文件同时承担关系编排职责。 */
@@ -27,13 +33,19 @@ export function defineRelations(tables: RelationTables) {
     passkey,
     loginHistory,
     category,
+    categoryTranslation,
     media,
     post,
+    postTranslation,
     tag,
+    tagTranslation,
     postTag,
     page,
+    pageTranslation,
     comment,
     menu,
+    setting,
+    settingTranslation,
   } = tables;
 
   return {
@@ -65,6 +77,13 @@ export function defineRelations(tables: RelationTables) {
         relationName: "category_parent",
       }),
       children: many(category, { relationName: "category_parent" }),
+      translations: many(categoryTranslation),
+    })),
+    categoryTranslationRelations: relations(categoryTranslation, ({ one }) => ({
+      owner: one(category, {
+        fields: [categoryTranslation.categoryId],
+        references: [category.id],
+      }),
     })),
     mediaRelations: relations(media, ({ many }) => ({
       coverPosts: many(post),
@@ -77,8 +96,24 @@ export function defineRelations(tables: RelationTables) {
       }),
       cover: one(media, { fields: [post.coverId], references: [media.id] }),
       postTags: many(postTag),
+      translations: many(postTranslation),
     })),
-    tagRelations: relations(tag, ({ many }) => ({ postTags: many(postTag) })),
+    postTranslationRelations: relations(postTranslation, ({ one }) => ({
+      owner: one(post, {
+        fields: [postTranslation.postId],
+        references: [post.id],
+      }),
+    })),
+    tagRelations: relations(tag, ({ many }) => ({
+      postTags: many(postTag),
+      translations: many(tagTranslation),
+    })),
+    tagTranslationRelations: relations(tagTranslation, ({ one }) => ({
+      owner: one(tag, {
+        fields: [tagTranslation.tagId],
+        references: [tag.id],
+      }),
+    })),
     postTagRelations: relations(postTag, ({ one }) => ({
       post: one(post, { fields: [postTag.postId], references: [post.id] }),
       tag: one(tag, { fields: [postTag.tagId], references: [tag.id] }),
@@ -86,6 +121,13 @@ export function defineRelations(tables: RelationTables) {
     pageRelations: relations(page, ({ one, many }) => ({
       author: one(user, { fields: [page.authorId], references: [user.id] }),
       comments: many(comment),
+      translations: many(pageTranslation),
+    })),
+    pageTranslationRelations: relations(pageTranslation, ({ one }) => ({
+      owner: one(page, {
+        fields: [pageTranslation.pageId],
+        references: [page.id],
+      }),
     })),
     commentRelations: relations(comment, ({ one, many }) => ({
       post: one(post, { fields: [comment.postId], references: [post.id] }),
@@ -109,6 +151,15 @@ export function defineRelations(tables: RelationTables) {
         references: [category.id],
       }),
       page: one(page, { fields: [menu.pageId], references: [page.id] }),
+    })),
+    settingRelations: relations(setting, ({ many }) => ({
+      translations: many(settingTranslation),
+    })),
+    settingTranslationRelations: relations(settingTranslation, ({ one }) => ({
+      owner: one(setting, {
+        fields: [settingTranslation.settingId],
+        references: [setting.id],
+      }),
     })),
   };
 }

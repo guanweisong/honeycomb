@@ -10,19 +10,35 @@ import { observeDbOperation } from "@/packages/infrastructure/observability/serv
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 import type { PostCommandRepository } from "../application/repository";
+import {
+  patchPostTranslationRows,
+  sanitizePostTranslationInput,
+  toPostTranslationRows,
+  type PostTranslationInput,
+} from "./post-translations";
 export function createPostCommandRepository(
   db: Database,
 ): PostCommandRepository {
   return {
     async create(input, authorId) {
-      const [post] = await observeDbOperation("post.create", "insert", () =>
-        db
-          .insert(schema.post)
-          .values(toPostInsertValues(input, authorId))
-          .returning(),
+      const post = await observeDbOperation("post.create", "transaction", () =>
+        db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(schema.post)
+            .values(toPostInsertValues(input, authorId))
+            .returning();
+          const result = requireWriteResult(created, "create", "post");
+          const translations = toPostTranslationRows(
+            result.id,
+            sanitizePostTranslationInput(input),
+          );
+          if (translations.length) {
+            await tx.insert(schema.postTranslation).values(translations);
+          }
+          return result;
+        }),
       );
-      const result = requireWriteResult(post, "create", "post");
-      return result;
+      return post;
     },
     async destroy(ids) {
       await observeDbOperation("post.destroy", "delete", () =>
@@ -43,16 +59,47 @@ export function createPostCommandRepository(
         : null;
     },
     async update(input) {
-      const { id, ...rest } = input;
-      const [post] = await observeDbOperation("post.update", "update", () =>
-        db
-          .update(schema.post)
-          .set(toPostUpdateValues(rest))
-          .where(eq(schema.post.id, id))
-          .returning(),
+      const {
+        id,
+        title,
+        content,
+        excerpt,
+        galleryLocation,
+        quoteAuthor,
+        quoteContent,
+        ...rest
+      } = input;
+      const translationInput = sanitizePostTranslationInput({
+        title,
+        content,
+        excerpt,
+        galleryLocation,
+        quoteAuthor,
+        quoteContent,
+      } satisfies PostTranslationInput);
+      const post = await observeDbOperation("post.update", "transaction", () =>
+        db.transaction(async (tx) => {
+          const parentValues = toPostUpdateValues(rest);
+          const [updated] = Object.keys(parentValues).length
+            ? await tx
+                .update(schema.post)
+                .set(parentValues)
+                .where(eq(schema.post.id, id))
+                .returning()
+            : await tx.select().from(schema.post).where(eq(schema.post.id, id)).limit(1);
+          if (updated && Object.values(translationInput).some((value) => value !== undefined)) {
+            const current = await tx
+              .select()
+              .from(schema.postTranslation)
+              .where(eq(schema.postTranslation.postId, id));
+            const next = patchPostTranslationRows(id, current, translationInput);
+            await tx.delete(schema.postTranslation).where(eq(schema.postTranslation.postId, id));
+            if (next.length) await tx.insert(schema.postTranslation).values(next);
+          }
+          return updated;
+        }),
       );
-      const result = requireWriteResult(post, "update", "post");
-      return result;
+      return requireWriteResult(post, "update", "post");
     },
     async updateTags(input) {
       await observeDbOperation("post.update-tags", "transaction", () =>

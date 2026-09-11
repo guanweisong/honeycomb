@@ -72,7 +72,7 @@ ORM 翻译行是持久化模型，不作为 Repository 输出。迁移结束后�
 
 ### 远程发布先备份后迁移
 
-远程目标只从项目现有 `TURSO_URL` 解析并在执行前打印脱敏后的数据库身份。正式写入前进入维护窗口，使用 `turso db export` 将 snapshot 与 WAL 导出到 `/Users/guanweisong/Documents/backups/honeycomb/<UTC 时间戳>/`；目录权限为 `0700`，文件权限为 `0600`，不得提交到 Git。
+远程目标只从项目现有 `TURSO_URL` 解析并在执行前打印脱敏后的数据库身份。正式写入前进入维护窗口，优先使用 `turso db export` 将 snapshot 与 WAL 导出到 `/Users/guanweisong/Documents/backups/honeycomb/<UTC 时间戳>/`。若本机 Turso CLI 没有账户会话，但现有数据库级凭据可用，则允许使用项目已安装的 libSQL Embedded Replica 执行一次只读同步，生成 SQLite 兼容的本地 snapshot；关闭连接后连同实际存在的 WAL/SHM 一并保留。目录权限为 `0700`，文件权限为 `0600`，不得提交到 Git。
 
 备份必须通过 SQLite `PRAGMA integrity_check`、关键表行数清单和 SHA-256 校验，并保留导出元数据。任何检查失败都停止发布。随后只运行已提交且已在临时数据库验证的 `bun run db:migrate`，不得使用 push。迁移完成后读取 migration ledger，执行只读 schema 审计和关键数据计数/孤儿检查。若迁移失败或审计不一致，停止应用发布并保留日志与备份；不在生产库即兴执行逆向 DDL，恢复按既有 runbook 使用已验证导出完成。
 

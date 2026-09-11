@@ -14,6 +14,8 @@ import Tools from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { CategoryRepository } from "../application/repository";
 import { ApplicationError } from "@/packages/application/errors";
+import { supportedLanguages } from "@/packages/domain/localization/i18n";
+import { groupCategoryTranslations, toCategoryTranslationRows } from "./category-translations";
 
 function mapCategoryConstraint(error: unknown): never {
   if (error instanceof Error) {
@@ -32,6 +34,20 @@ export type {
 } from "../application/repository";
 
 export function createCategoryRepository(db: Database): CategoryRepository {
+  async function withTranslations<T extends typeof schema.category.$inferSelect>(rows: T[]) {
+    if (!rows.length) return [];
+    const translations = await db
+      .select()
+      .from(schema.categoryTranslation)
+      .where(inArray(schema.categoryTranslation.categoryId, rows.map(({ id }) => id)));
+    const byId = groupCategoryTranslations(translations);
+    return rows.map((row) => ({
+      ...row,
+      title: byId.get(row.id)?.title ?? null,
+      description: byId.get(row.id)?.description ?? null,
+    }));
+  }
+
   return {
     async find(id) {
       const [value] = await observeDbOperation(
@@ -72,15 +88,24 @@ export function createCategoryRepository(db: Database): CategoryRepository {
       return Boolean(value);
     },
     async create(input) {
-      const [value] = await observeDbOperation(
+      const value = await observeDbOperation(
         "category.create",
-        "insert",
-        () => db.insert(schema.category).values(input).returning(),
+        "transaction",
+        () =>
+          db.transaction(async (tx) => {
+            const { title, description, ...parent } = input;
+            const [created] = await tx.insert(schema.category).values(parent).returning();
+            const category = requireWriteResult(created, "create", "category");
+            await tx
+              .insert(schema.categoryTranslation)
+              .values(toCategoryTranslationRows(category.id, title, description));
+            return { ...category, title, description };
+          }),
       ).catch(mapCategoryConstraint);
-      return requireWriteResult(value, "create", "category");
+      return value;
     },
     async update(input) {
-      const { id, ...changes } = input;
+      const { id, title, description, ...changes } = input;
       // The recursive guard and write share one SQLite statement, so two
       // concurrent reparentings cannot both pass a stale ancestor check.
       const parentGuard =
@@ -93,22 +118,49 @@ export function createCategoryRepository(db: Database): CategoryRepository {
           select c.id, c.parent from category c join ancestors a on c.id = a.parent
         ) select 1 from ancestors where id = ${id}
       )`;
-      const [value] = await observeDbOperation(
+      const value = await observeDbOperation(
         "category.update",
-        "update",
+        "transaction",
         () =>
-          db
-            .update(schema.category)
-            .set(changes)
-            .where(and(eq(schema.category.id, id), parentGuard))
-            .returning(),
+          db.transaction(async (tx) => {
+            const [updated] = Object.keys(changes).length
+              ? await tx
+                  .update(schema.category)
+                  .set(changes)
+                  .where(and(eq(schema.category.id, id), parentGuard))
+                  .returning()
+              : await tx
+                  .select()
+                  .from(schema.category)
+                  .where(and(eq(schema.category.id, id), parentGuard))
+                  .limit(1);
+            if (updated && (title !== undefined || description !== undefined)) {
+              for (const locale of supportedLanguages) {
+                await tx
+                    .update(schema.categoryTranslation)
+                    .set({
+                      ...(title !== undefined ? { title: title[locale] } : {}),
+                      ...(description !== undefined ? { description: description[locale] } : {}),
+                    })
+                    .where(
+                      and(
+                        eq(schema.categoryTranslation.categoryId, id),
+                        eq(schema.categoryTranslation.locale, locale),
+                      ),
+                    );
+              }
+            }
+            return updated;
+          }),
       ).catch(mapCategoryConstraint);
       if (!value && parentGuard)
         throw new ApplicationError(
           "BAD_REQUEST",
           "分类不存在或父子关系形成循环",
         );
-      return requireWriteResult(value, "update", "category");
+      const category = requireWriteResult(value, "update", "category");
+      const [result] = await withTranslations([category]);
+      return requireWriteResult(result, "update", "category");
     },
     async destroy(ids) {
       await observeDbOperation("category.destroy", "delete", () =>
@@ -132,12 +184,18 @@ export function createCategoryRepository(db: Database): CategoryRepository {
         {
           ...rest,
           id,
-          title,
           status: visibility === "ALL" ? status : undefined,
         },
         ["status"],
-        { title },
       );
+      if (title) {
+        const titleMatch = sql`exists (
+          select 1 from ${schema.categoryTranslation}
+          where ${schema.categoryTranslation.categoryId} = ${schema.category.id}
+            and ${schema.categoryTranslation.title} like ${`%${title}%`}
+        )`;
+        where = where ? and(where, titleMatch) : titleMatch;
+      }
       if (visibility === "PUBLIC_ONLY") {
         const enabled = eq(schema.category.status, EnableStatus.ENABLE);
         where = where ? and(where, enabled) : enabled;
@@ -166,7 +224,7 @@ export function createCategoryRepository(db: Database): CategoryRepository {
         ),
       ]);
       return {
-        list: list.map((item) => ({ ...item, deepPath: 0 })),
+        list: (await withTranslations(list)).map((item) => ({ ...item, deepPath: 0 })),
         total: Number(countRows[0]?.count) || 0,
       };
     },
@@ -178,7 +236,8 @@ export function createCategoryRepository(db: Database): CategoryRepository {
       );
       // Assemble before visibility filtering so hidden parents also hide their subtree.
       const visible = new Map<string, boolean>();
-      const list = Tools.sonsTree(rows).filter((item) => {
+      const localizedRows = await withTranslations(rows);
+      const list = Tools.sonsTree(localizedRows).filter((item) => {
         const enabled =
           visibility === "ALL" ||
           (item.status === EnableStatus.ENABLE &&

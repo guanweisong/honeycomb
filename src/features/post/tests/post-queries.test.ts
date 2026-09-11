@@ -40,6 +40,7 @@ describe("getPostList", () => {
     loadPostRelationsMock.mockImplementation(
       async (_db, posts) =>
         posts.map((post) => ({
+          title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
           ...post,
           status: PostStatus.PUBLISHED,
           type: PostType.ARTICLE,
@@ -123,7 +124,6 @@ describe("getPostList", () => {
       schema.post,
       { title: undefined, content: undefined },
       ["status", "type"],
-      { title: undefined, content: undefined },
     );
     expect(tools.buildDrizzleOrderBy).toHaveBeenCalledWith(
       schema.post,

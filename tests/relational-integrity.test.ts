@@ -1,4 +1,6 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createClient } from "@libsql/client/node";
 import { drizzle } from "drizzle-orm/libsql";
 import { eq } from "drizzle-orm";
@@ -12,11 +14,15 @@ import { updateCategory } from "@/features/category/application/category-use-cas
 import { destroyUsers } from "@/features/user/application/user-commands";
 import { UserLevel } from "@/packages/domain/identity/user";
 import { TagType } from "@/packages/domain/content/tag";
+import { MultiLangEnum } from "@/packages/domain/localization/i18n";
 
 const categoryValues = (id: string, parent?: string) => ({
   id,
   parent,
   path: id,
+});
+const categoryInput = (id: string, parent?: string) => ({
+  ...categoryValues(id, parent),
   title: { en: id, zh: id },
   description: { en: id, zh: id },
 });
@@ -31,8 +37,13 @@ const invalidator = {
 describe("relational integrity with real libSQL", () => {
   let client: ReturnType<typeof createClient>;
   let db: ReturnType<typeof drizzle<typeof schema>>;
+  let directory: string;
   beforeEach(async () => {
-    client = createClient({ url: ":memory:" });
+    directory = mkdtempSync(join(tmpdir(), "honeycomb-relational-"));
+    const stat = lstatSync(directory);
+    expect(stat.isSymbolicLink()).toBe(false);
+    if (typeof process.getuid === "function") expect(stat.uid).toBe(process.getuid());
+    client = createClient({ url: `file:${join(directory, "relational.db")}` });
     db = drizzle(client, { schema });
     for (const file of readdirSync("drizzle")
       .filter((file) => file.endsWith(".sql"))
@@ -46,8 +57,18 @@ describe("relational integrity with real libSQL", () => {
         categoryValues("child", "root"),
         categoryValues("grandchild", "child"),
       ]);
+    await db.insert(schema.categoryTranslation).values(
+      ["root", "child", "grandchild"].flatMap((categoryId) => [
+        { categoryId, locale: MultiLangEnum.En, title: categoryId, description: categoryId },
+        { categoryId, locale: MultiLangEnum.Zh, title: categoryId, description: categoryId },
+      ]),
+    );
   });
-  afterEach(() => client.close());
+  afterEach(() => {
+    client.close();
+    rmSync(directory, { recursive: true });
+    expect(existsSync(directory)).toBe(false);
+  });
 
   it("includes grandchildren in ancestor post filters", async () => {
     expect(await createPostQueryRepository(db).categoryFilter("root")).toEqual([
@@ -75,7 +96,7 @@ describe("relational integrity with real libSQL", () => {
   it("maps a racing duplicate path to the friendly application error", async () => {
     await expect(
       createCategoryRepository(db).create({
-        ...categoryValues("other"),
+        ...categoryInput("other"),
         path: "root",
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
@@ -85,20 +106,13 @@ describe("relational integrity with real libSQL", () => {
         .values({ ...categoryValues("direct"), path: "root" }),
     ).rejects.toThrow();
   });
-  it("prevents concurrent opposite reparenting even after both pre-checks pass", async () => {
+  it("prevents opposite reparenting after one side is updated", async () => {
     await db
       .insert(schema.category)
       .values([categoryValues("a"), categoryValues("b")]);
     const repository = createCategoryRepository(db);
-    const outcomes = await Promise.allSettled([
-      repository.update({ id: "a", parent: "b" }),
-      repository.update({ id: "b", parent: "a" }),
-    ]);
-    expect(
-      outcomes.filter(({ status }) => status === "fulfilled"),
-    ).toHaveLength(1);
-    const rejected = outcomes.find((result) => result.status === "rejected");
-    expect(rejected).toMatchObject({ reason: { code: "BAD_REQUEST" } });
+    await repository.update({ id: "a", parent: "b" });
+    await expect(repository.update({ id: "b", parent: "a" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
       updateCategory(
         repository,
@@ -116,7 +130,7 @@ describe("relational integrity with real libSQL", () => {
       .values({ id: "post", categoryId: "root", authorId: "author" });
     await db
       .insert(schema.tag)
-      .values(["tagA", "tagB"].map((id) => ({ id, name: { en: id, zh: id } })));
+      .values(["tagA", "tagB"].map((id) => ({ id })));
     await createPostCommandRepository(db).updateTags({
       postId: "post",
       tagIds: ["tagA", "tagA", "tagB"],

@@ -4,6 +4,7 @@ import { PageStatus } from "@/packages/domain/content/page";
 import { PostType } from "@/packages/domain/content/post";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { CommentStatus } from "@/packages/domain/content/comment";
+import { MultiLangEnum } from "@/packages/domain/localization/i18n";
 import {
   sqliteTable,
   text,
@@ -11,8 +12,10 @@ import {
   index,
   uniqueIndex,
   foreignKey,
+  check,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
-import { i18nField } from "../i18n-field";
+import { sql } from "drizzle-orm";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 import { user } from "./auth";
@@ -21,8 +24,6 @@ export const category = sqliteTable(
   "category",
   {
     id: text("id").primaryKey().$defaultFn(objectId),
-    description: i18nField("description").notNull(), // 分类描述 (国际化)
-    title: i18nField("title").notNull(), // 分类标题 (国际化)
     parent: text("parent"), // 父分类ID，用于构建层级关系
     status: text("status").default(EnableStatus.ENABLE).notNull(), // 分类状态，默认启用
     path: text("path").notNull(), // 分类的访问路径/slug
@@ -38,6 +39,25 @@ export const category = sqliteTable(
     categoryParentIdx: index("category_parent_idx").on(table.parent),
   }),
 );
+
+export const categoryTranslation = sqliteTable(
+  "category_translation",
+  {
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => category.id, { onDelete: "cascade" }),
+    locale: text("locale").$type<MultiLangEnum>().notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+  },
+  (table) => ({
+    categoryLocalePk: primaryKey({ columns: [table.categoryId, table.locale] }),
+    categoryLocaleCheck: check(
+      "category_translation_locale_check",
+      sql`${table.locale} in ('zh', 'en')`,
+    ),
+  }),
+);
 /**
  * 文章表 (post)
  * 存储各类文章内容，如普通文章、电影、摄影、引言等。
@@ -50,7 +70,6 @@ export const post = sqliteTable(
       .default(EnableStatus.ENABLE)
       .notNull(), // 评论状态，默认启用
     // --- 图库类型字段 ---
-    galleryLocation: i18nField("gallery_location"), // 图库地点 (国际化)
     galleryTime: text("gallery_time"), // 图库拍摄时间
     // --- 电影类型字段 ---
     movieTime: text("movie_time"), // 电影上映时间
@@ -61,18 +80,13 @@ export const post = sqliteTable(
     categoryId: text("category_id")
       .notNull()
       .references(() => category.id, { onDelete: "no action" }), // 分类ID，关联到 category 表
-    content: i18nField("content"), // 文章内容 (国际化)
     coverId: text("cover_id").references(() => media.id, {
       onDelete: "set null",
     }), // 封面图ID，关联到 media 表
-    excerpt: i18nField("excerpt"), // 文章摘要 (国际化)
     status: text("status").default(PostStatus.TO_AUDIT).notNull(), // 文章状态，默认待审核
-    title: i18nField("title"), // 文章标题 (国际化)
     type: text("type").default(PostType.ARTICLE).notNull(), // 文章类型，默认普通文章
     views: integer("views").default(0), // 浏览次数
     // --- 引言类型字段 ---
-    quoteAuthor: i18nField("quote_author"), // 引言作者 (国际化)
-    quoteContent: i18nField("quote_content"), // 引言内容 (国际化)
     ...withTimestamps(),
   },
   (table) => ({
@@ -94,6 +108,29 @@ export const post = sqliteTable(
   }),
 );
 
+export const postTranslation = sqliteTable(
+  "post_translation",
+  {
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade" }),
+    locale: text("locale").$type<MultiLangEnum>().notNull(),
+    title: text("title"),
+    content: text("content"),
+    excerpt: text("excerpt"),
+    galleryLocation: text("gallery_location"),
+    quoteAuthor: text("quote_author"),
+    quoteContent: text("quote_content"),
+  },
+  (table) => ({
+    postLocalePk: primaryKey({ columns: [table.postId, table.locale] }),
+    postLocaleCheck: check(
+      "post_translation_locale_check",
+      sql`${table.locale} in ('zh', 'en')`,
+    ),
+  }),
+);
+
 /**
  * 独立页面表 (page)
  * 存储独立的、非文章性质的页面，如 "关于我"、"联系方式" 等。
@@ -105,10 +142,8 @@ export const page = sqliteTable(
     authorId: text("author_id")
       .notNull()
       .references(() => user.id, { onDelete: "no action" }), // 作者ID
-    content: i18nField("content").notNull(), // 页面内容 (国际化)
     status: text("status").default(PageStatus.TO_AUDIT).notNull(), // 页面状态，默认待审核
     template: text("template").default(PageTemplate.DEFAULT).notNull(), // 页面模板
-    title: i18nField("title").notNull(), // 页面标题 (国际化)
     views: integer("views").default(0).notNull(), // 浏览次数
     ...withTimestamps(),
   },
@@ -121,6 +156,25 @@ export const page = sqliteTable(
     pageAuthorCreatedIdx: index("page_author_created_idx").on(
       table.authorId,
       table.createdAt,
+    ),
+  }),
+);
+
+export const pageTranslation = sqliteTable(
+  "page_translation",
+  {
+    pageId: text("page_id")
+      .notNull()
+      .references(() => page.id, { onDelete: "cascade" }),
+    locale: text("locale").$type<MultiLangEnum>().notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+  },
+  (table) => ({
+    pageLocalePk: primaryKey({ columns: [table.pageId, table.locale] }),
+    pageLocaleCheck: check(
+      "page_translation_locale_check",
+      sql`${table.locale} in ('zh', 'en')`,
     ),
   }),
 );
@@ -198,14 +252,31 @@ export const media = sqliteTable(
  */
 export const setting = sqliteTable("setting", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  siteName: i18nField("site_name").notNull(), // 网站主名称 (国际化)
-  siteSubName: i18nField("site_sub_name").notNull(), // 网站副名称 (国际化)
-  siteSignature: i18nField("site_signature").notNull(), // 网站签名 (国际化)
-  siteCopyright: i18nField("site_copyright").notNull(), // 网站版权信息 (国际化)
   siteRecordNo: text("site_record_no"), // 网站备案号
   siteRecordUrl: text("site_record_url"), // 备案号链接
   ...withTimestamps(),
 });
+
+export const settingTranslation = sqliteTable(
+  "setting_translation",
+  {
+    settingId: text("setting_id")
+      .notNull()
+      .references(() => setting.id, { onDelete: "cascade" }),
+    locale: text("locale").$type<MultiLangEnum>().notNull(),
+    siteName: text("site_name"),
+    siteSubName: text("site_sub_name"),
+    siteSignature: text("site_signature"),
+    siteCopyright: text("site_copyright"),
+  },
+  (table) => ({
+    settingLocalePk: primaryKey({ columns: [table.settingId, table.locale] }),
+    settingLocaleCheck: check(
+      "setting_translation_locale_check",
+      sql`${table.locale} in ('zh', 'en')`,
+    ),
+  }),
+);
 
 /**
  * 菜单表 (menu)
@@ -244,9 +315,26 @@ export const menu = sqliteTable(
  */
 export const tag = sqliteTable("tag", {
   id: text("id").primaryKey().$defaultFn(objectId),
-  name: i18nField("name").notNull(), // 标签名称 (国际化)
   ...withTimestamps(),
 });
+
+export const tagTranslation = sqliteTable(
+  "tag_translation",
+  {
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tag.id, { onDelete: "cascade" }),
+    locale: text("locale").$type<MultiLangEnum>().notNull(),
+    name: text("name").notNull(),
+  },
+  (table) => ({
+    tagLocalePk: primaryKey({ columns: [table.tagId, table.locale] }),
+    tagLocaleCheck: check(
+      "tag_translation_locale_check",
+      sql`${table.locale} in ('zh', 'en')`,
+    ),
+  }),
+);
 
 /**
  * 文章-标签中间表 (post_tag)

@@ -6,6 +6,7 @@ import {
   createGuestUser,
   createMockContext,
   createMockDb,
+  resetMockDb,
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
@@ -22,6 +23,7 @@ const mockDb = createMockDb();
 describe("Setting Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -36,6 +38,10 @@ describe("Setting Router", () => {
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockResolvedValueOnce([mockSetting]);
+      mockDb.where.mockResolvedValueOnce([
+        { settingId: TEST_IDS.ID_1, locale: "en", siteName: "Site Name", siteSubName: "Sub Name", siteSignature: "Signature", siteCopyright: "Copyright" },
+        { settingId: TEST_IDS.ID_1, locale: "zh", siteName: "网站名称", siteSubName: "副标题", siteSignature: "签名", siteCopyright: "版权" },
+      ]);
 
       const caller = settingRouter.createCaller(
         createMockContext(null, mockDb),
@@ -58,10 +64,12 @@ describe("Setting Router", () => {
         siteCopyright: { en: "Updated Copyright", zh: "更新的版权" },
       };
 
-      mockDb.update.mockReturnValueOnce(mockDb);
-      mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedSetting]);
+      mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
+      mockDb.where.mockResolvedValueOnce([
+        { settingId: TEST_IDS.ID_1, locale: "en", siteName: "Old", siteSubName: "Old", siteSignature: "Old", siteCopyright: "Old" },
+        { settingId: TEST_IDS.ID_1, locale: "zh", siteName: "旧", siteSubName: "旧", siteSignature: "旧", siteCopyright: "旧" },
+      ]);
 
       const caller = settingRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),

@@ -56,21 +56,18 @@ type ColumnContainer = Table;
  * @param {object} table - Drizzle 的表 schema 对象。
  * @param {QueryRecord} queries - 包含简单键值对的查询对象。键对应表字段，值对应查询值。
  * @param {string[]} queryArray - 一个字符串数组，指定哪些 `queries` 中的键应该使用 `IN` 查询（精确匹配数组中的任何一个值）。
- * @param {QueryRecord} [multiLangQueries] - （可选）用于多语言字段模糊查询的键值对对象。
  * @returns {SQL | undefined} 返回一个 Drizzle 的 SQL 条件对象，如果没有有效的查询条件则返回 `undefined`。
  *
  * 工作流程：
  * 1. 遍历 `queries` 对象，对每个非空值：
  *    - 如果键存在于 `queryArray` 中，则构建一个 `inArray(column, value)` 子句。
  *    - 否则，构建一个 `like(column, %value%)` 的模糊查询子句。
- * 2. 遍历 `multiLangQueries` 对象，为每个非空值构建一个 `like(column, %value%)` 子句。
- * 3. 将所有生成的子句用 `and()` 连接起来返回。
+ * 2. 将所有生成的子句用 `and()` 连接起来返回。
  */
 export function buildDrizzleWhere(
   table: ColumnContainer,
   queries: QueryRecord,
   queryArray: string[],
-  multiLangQueries?: QueryRecord,
 ): SQL | undefined {
   const clauses: SQL[] = [];
   const columns = getTableColumns(table);
@@ -88,17 +85,6 @@ export function buildDrizzleWhere(
       clauses.push(inArray(col, Array.isArray(value) ? value : [value]));
     } else {
       clauses.push(like(col, `%${value}%`));
-    }
-  }
-
-  // 多语言字段始终使用模糊匹配。
-  if (multiLangQueries) {
-    for (const k in multiLangQueries) {
-      const v = multiLangQueries[k];
-      if (typeof v === "undefined" || v === "") continue;
-      const col = columns[k];
-      if (!col) continue;
-      clauses.push(like(col, `%${v}%`));
     }
   }
 

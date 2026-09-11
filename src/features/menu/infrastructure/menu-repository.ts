@@ -9,6 +9,7 @@ import { MenuType } from "@/packages/domain/navigation/menu";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import { assembleRequiredLocalizedField } from "@/packages/infrastructure/db/translation-values";
 
 import type { MenuRepository } from "../application/repository";
 export type { MenuInput, MenuRepository, MenuVisibility } from "../application/repository";
@@ -42,11 +43,15 @@ export function createMenuRepository(db: Database): MenuRepository {
       const categoryIds = menus.map((menu) => menu.type === MenuType.CATEGORY ? menu.categoryId : null).filter((id): id is string => id !== null);
       const pageIds = menus.map((menu) => menu.type === MenuType.PAGE ? menu.pageId : null).filter((id): id is string => id !== null);
       const [categories, pages] = await Promise.all([
-        categoryIds.length ? observeDbOperation("menu.service.categories", "select", () => db.select({ id: schema.category.id, title: schema.category.title, path: schema.category.path }).from(schema.category).where(visibility === "ALL" ? inArray(schema.category.id, categoryIds) : and(inArray(schema.category.id, categoryIds), eq(schema.category.status, EnableStatus.ENABLE)))) : Promise.resolve([]),
-        pageIds.length ? observeDbOperation("menu.service.pages", "select", () => db.select({ id: schema.page.id, title: schema.page.title }).from(schema.page).where(visibility === "ALL" ? inArray(schema.page.id, pageIds) : and(inArray(schema.page.id, pageIds), eq(schema.page.status, PageStatus.PUBLISHED)))) : Promise.resolve([]),
+        categoryIds.length ? observeDbOperation("menu.service.categories", "select", () => db.select({ id: schema.category.id, path: schema.category.path }).from(schema.category).where(visibility === "ALL" ? inArray(schema.category.id, categoryIds) : and(inArray(schema.category.id, categoryIds), eq(schema.category.status, EnableStatus.ENABLE)))) : Promise.resolve([]),
+        pageIds.length ? observeDbOperation("menu.service.pages", "select", () => db.select({ id: schema.page.id }).from(schema.page).where(visibility === "ALL" ? inArray(schema.page.id, pageIds) : and(inArray(schema.page.id, pageIds), eq(schema.page.status, PageStatus.PUBLISHED)))) : Promise.resolve([]),
       ]);
-      const categoryMap = new Map(categories.map((item) => [item.id, item]));
-      const pageMap = new Map(pages.map((item) => [item.id, item]));
+      const [categoryTranslations, pageTranslations] = await Promise.all([
+        categories.length ? db.select().from(schema.categoryTranslation).where(inArray(schema.categoryTranslation.categoryId, categories.map(({ id }) => id))) : Promise.resolve([]),
+        pages.length ? db.select().from(schema.pageTranslation).where(inArray(schema.pageTranslation.pageId, pages.map(({ id }) => id))) : Promise.resolve([]),
+      ]);
+      const categoryMap = new Map(categories.map((item) => [item.id, { ...item, translations: categoryTranslations.filter((row) => row.categoryId === item.id) }]));
+      const pageMap = new Map(pages.map((item) => [item.id, { ...item, translations: pageTranslations.filter((row) => row.pageId === item.id) }]));
       const visibleRowIds = new Set(menus.filter((menu) => visibility === "ALL" || menu.type === MenuType.CUSTOM || (menu.type === MenuType.CATEGORY && Boolean(menu.categoryId && categoryMap.has(menu.categoryId))) || (menu.type === MenuType.PAGE && Boolean(menu.pageId && pageMap.has(menu.pageId)))).map((menu) => menu.id));
       if (visibility === "PUBLIC_ONLY") {
         let changed = true;
@@ -61,8 +66,8 @@ export function createMenuRepository(db: Database): MenuRepository {
         let title: MultiLang | undefined | null;
         let path: string | null | undefined = null;
         let id: string | null | undefined = menu.id;
-        if (menu.type === MenuType.CATEGORY) { const category = menu.categoryId ? categoryMap.get(menu.categoryId) : null; id = menu.categoryId ?? menu.id; title = category?.title; path = category?.path; }
-        else if (menu.type === MenuType.PAGE) { const page = menu.pageId ? pageMap.get(menu.pageId) : null; id = menu.pageId ?? menu.id; title = page?.title; }
+        if (menu.type === MenuType.CATEGORY) { const category = menu.categoryId ? categoryMap.get(menu.categoryId) : null; id = menu.categoryId ?? menu.id; title = category ? assembleRequiredLocalizedField(category.translations, (row) => row.title) : null; path = category?.path; }
+        else if (menu.type === MenuType.PAGE) { const page = menu.pageId ? pageMap.get(menu.pageId) : null; id = menu.pageId ?? menu.id; title = page ? assembleRequiredLocalizedField(page.translations, (row) => row.title) : null; }
         else if (menu.type === MenuType.CUSTOM) id = menu.customId ?? menu.id;
         return { id: id ?? menu.id, parent: menu.parent ? (businessIdByRowId.get(menu.parent) ?? null) : null, power: menu.power, type: menu.type, createdAt: menu.createdAt, updatedAt: menu.updatedAt, title, path };
       });

@@ -10,6 +10,7 @@ import * as schema from "@/packages/infrastructure/db/schema";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PageStatus } from "@/packages/domain/content/page";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { MultiLangEnum } from "@/packages/domain/localization/i18n";
 import { createComment } from "../application/comment-commands";
 import type { PublicCommentInput } from "../application/repository";
 import { createCommentCommandRepository } from "./comment-command-repository";
@@ -50,9 +51,11 @@ describe("public comment insertion consistency with real libSQL", () => {
     await db.insert(schema.category).values({
       id: "category",
       path: "category",
-      title: { en: "Category", zh: "分类" },
-      description: { en: "Category", zh: "分类" },
     });
+    await db.insert(schema.categoryTranslation).values([
+      { categoryId: "category", locale: MultiLangEnum.En, title: "Category", description: "Category" },
+      { categoryId: "category", locale: MultiLangEnum.Zh, title: "分类", description: "分类" },
+    ]);
     await db.insert(schema.post).values(
       ["post", "other-post", "custom-post"].map((id) => ({
         id,
@@ -65,10 +68,12 @@ describe("public comment insertion consistency with real libSQL", () => {
     await db.insert(schema.page).values({
       id: "page",
       authorId: "author",
-      title: { en: "Page", zh: "页面" },
-      content: { en: "Page", zh: "页面" },
       status: PageStatus.PUBLISHED,
     });
+    await db.insert(schema.pageTranslation).values([
+      { pageId: "page", locale: MultiLangEnum.En, title: "Page", content: "Page" },
+      { pageId: "page", locale: MultiLangEnum.Zh, title: "页面", content: "页面" },
+    ]);
     await db.insert(schema.comment).values({
       ...comment,
       id: "parent",

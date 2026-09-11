@@ -1,10 +1,11 @@
 import "server-only";
 import { decodeCachedPostList } from "./post-cache-dto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
 import type { Database } from "@/packages/infrastructure/db/db";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
+import { assembleLocalizedField } from "@/packages/infrastructure/db/translation-values";
 import {
   getCacheJSON,
   getCacheVersion,
@@ -33,14 +34,10 @@ export function createPostSpecialRepository(
       await setCacheJSON(namespace, key, result, 60 * 60);
       return result;
     },
-    randomByCategory(categoryId) {
-      return observeDbOperation("post.random-by-category", "select", () =>
+    async randomByCategory(categoryId) {
+      const posts = await observeDbOperation("post.random-by-category", "select", () =>
         db
-          .select({
-            id: schema.post.id,
-            title: schema.post.title,
-            quoteContent: schema.post.quoteContent,
-          })
+          .select({ id: schema.post.id })
           .from(schema.post)
           .where(
             and(
@@ -51,6 +48,19 @@ export function createPostSpecialRepository(
           .orderBy(sql`abs(random())`)
           .limit(10),
       );
+      if (!posts.length) return [];
+      const translations = await db
+        .select()
+        .from(schema.postTranslation)
+        .where(inArray(schema.postTranslation.postId, posts.map((post) => post.id)));
+      return posts.map((post) => {
+        const rows = translations.filter((row) => row.postId === post.id);
+        return {
+          id: post.id,
+          title: assembleLocalizedField(rows, (row) => row.title),
+          quoteContent: assembleLocalizedField(rows, (row) => row.quoteContent),
+        };
+      });
     },
     async publishedCategoryId(id) {
       const [result] = await observeDbOperation(

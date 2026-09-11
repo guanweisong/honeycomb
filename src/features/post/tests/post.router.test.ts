@@ -39,6 +39,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
+          title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
           ...post,
           status: parseEnumValue(
             post.status,
@@ -88,6 +89,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       }
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
+        title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
         ...post,
         status: parseEnumValue(
           post.status,
@@ -388,6 +390,7 @@ describe("Post Router", () => {
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedPost]);
+      mockDb.where.mockResolvedValueOnce([]);
 
       const caller = postRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),

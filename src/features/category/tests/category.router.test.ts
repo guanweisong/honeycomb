@@ -8,6 +8,7 @@ import {
   createGuestUser,
   createMockContext,
   createMockDb,
+  resetMockDb,
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
@@ -32,6 +33,7 @@ const mockDb = createMockDb();
 describe("Category Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetMockDb(mockDb);
   });
 
   describe("index procedure", () => {
@@ -50,12 +52,14 @@ describe("Category Router", () => {
         {
           id: TEST_IDS.ID_1,
           title: { en: "Category 1", zh: "分类1" },
+          description: { en: "Description 1", zh: "描述1" },
           status: UserStatus.ENABLE,
           createdAt: new Date(),
         },
         {
           id: TEST_IDS.ID_2,
           title: { en: "Category 2", zh: "分类2" },
+          description: { en: "Description 2", zh: "描述2" },
           status: UserStatus.ENABLE,
           createdAt: new Date(),
         },
@@ -74,6 +78,12 @@ describe("Category Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
+      mockDb.where.mockResolvedValueOnce([
+        { categoryId: TEST_IDS.ID_1, locale: "en", title: "Category 1", description: "Description 1" },
+        { categoryId: TEST_IDS.ID_1, locale: "zh", title: "分类1", description: "描述1" },
+        { categoryId: TEST_IDS.ID_2, locale: "en", title: "Category 2", description: "Description 2" },
+        { categoryId: TEST_IDS.ID_2, locale: "zh", title: "分类2", description: "描述2" },
+      ]);
 
       const caller = categoryRouter.createCaller(
         createMockContext(null, mockDb),
@@ -115,7 +125,10 @@ describe("Category Router", () => {
         status: UserStatus.ENABLE,
       });
 
-      expect(result).toEqual(newCategory);
+      expect(result).toEqual({
+        ...newCategory,
+        description: { en: "New category description", zh: "新分类描述" },
+      });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.category);
     });
 
@@ -197,6 +210,12 @@ describe("Category Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([]);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([
+        { categoryId: TEST_IDS.ID_1, locale: "en", title: "Updated Category", description: "Updated category description" },
+        { categoryId: TEST_IDS.ID_1, locale: "zh", title: "更新的分类", description: "更新的分类描述" },
+      ]);
       const result = await caller.update({
         id: TEST_IDS.ID_1,
         title: { en: "Updated Category", zh: "更新的分类" },
@@ -207,7 +226,10 @@ describe("Category Router", () => {
         path: "/updated-category",
       });
 
-      expect(result).toEqual(updatedCategory);
+      expect(result).toEqual({
+        ...updatedCategory,
+        description: { en: "Updated category description", zh: "更新的分类描述" },
+      });
       expect(mockDb.update).toHaveBeenCalledWith(schema.category);
     });
 

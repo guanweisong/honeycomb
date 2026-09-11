@@ -28,6 +28,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
+          title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
           ...post,
           status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
           type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
@@ -56,6 +57,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       }
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
+        title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
         ...post,
           status: parseEnumValue(post.status, Object.values(PostStatus), "post.status"),
           type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
@@ -338,6 +340,11 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce(mockPosts);
+      mockDb.where.mockResolvedValueOnce([
+        { postId: TEST_IDS.ID_1, locale: "en", title: "Post 1", quoteContent: null },
+        { postId: TEST_IDS.ID_2, locale: "en", title: "Post 2", quoteContent: null },
+        { postId: TEST_IDS.ID_3, locale: "en", title: "Post 3", quoteContent: null },
+      ]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 

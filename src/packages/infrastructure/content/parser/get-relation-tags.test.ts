@@ -43,7 +43,12 @@ describe("get-relation-tags", () => {
 
     mockDb.select.mockReturnValueOnce(mockDb);
     mockDb.from.mockReturnValueOnce(mockDb);
-    mockDb.where.mockResolvedValueOnce(mockTags);
+    mockDb.where
+      .mockResolvedValueOnce(mockTags.map(({ id }) => ({ id })))
+      .mockResolvedValueOnce(mockTags.flatMap(({ id, name }) => [
+        { tagId: id, locale: "en", name: name.en },
+        { tagId: id, locale: "zh", name: name.zh },
+      ]));
 
     const result = await getRelationTags([TEST_IDS.ID_1, TEST_IDS.ID_2]);
 
@@ -57,7 +62,12 @@ describe("get-relation-tags", () => {
 
     mockDb.select.mockReturnValueOnce(mockDb);
     mockDb.from.mockReturnValueOnce(mockDb);
-    mockDb.where.mockResolvedValueOnce(mockTags);
+    mockDb.where
+      .mockResolvedValueOnce(mockTags.map(({ id }) => ({ id })))
+      .mockResolvedValueOnce([
+        { tagId: TEST_IDS.ID_1, locale: "en", name: "Tag 1" },
+        { tagId: TEST_IDS.ID_1, locale: "zh", name: "标签1" },
+      ]);
 
     const result = await getRelationTags([TEST_IDS.ID_1]);
 

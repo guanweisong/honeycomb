@@ -5,7 +5,7 @@ import { PageTemplate } from "@/packages/domain/content/page-template";
 import { toPageInsertValues, toPageUpdateValues } from "./page-transforms";
 
 describe("page command transforms", () => {
-  it("sanitizes both content locales while preserving titles", () => {
+  it("keeps translated fields out of parent insert values", () => {
     const values = toPageInsertValues(
       {
         title: { en: "<b>About</b>", zh: "<b>关于</b>" },
@@ -19,18 +19,16 @@ describe("page command transforms", () => {
       "author-1",
     );
 
-    expect(values.title).toEqual({ en: "<b>About</b>", zh: "<b>关于</b>" });
-    expect(values.content).toEqual({ en: "<p>Safe</p>", zh: "<img /><p>安全</p>" });
+    expect(values).not.toHaveProperty("title");
+    expect(values).not.toHaveProperty("content");
   });
 
   it("omits absent content during partial updates", () => {
     expect(toPageUpdateValues({ title: { en: "About", zh: "关于" } }))
-      .toEqual({ title: { en: "About", zh: "关于" } });
+      .toEqual({});
   });
 
   it("keeps and sanitizes explicitly provided empty content", () => {
-    expect(toPageUpdateValues({ content: { en: "", zh: "" } })).toEqual({
-      content: { en: "", zh: "" },
-    });
+    expect(toPageUpdateValues({ content: { en: "", zh: "" } })).toEqual({});
   });
 });
