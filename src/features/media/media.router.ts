@@ -17,6 +17,7 @@ import {
 } from "@/features/media/application/media-use-cases";
 import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
 import S3 from "@/packages/infrastructure/storage/S3";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 媒体 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const mediaRouter = createTRPCRouter({
@@ -27,9 +28,7 @@ export const mediaRouter = createTRPCRouter({
     ),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(MediaUploadFileSchema)
-    .mutation(({ input }) =>
-      getMediaPresignedUrl(S3, input.name, input.type, input.size),
-    ),
+    .mutation(({ input }) => getMediaPresignedUrl(S3, input.name, input.type, input.size)),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(({ input, ctx }) =>
@@ -38,6 +37,11 @@ export const mediaRouter = createTRPCRouter({
   destroy: permissionProcedure(Permission.mediaDelete)
     .input(DeleteBatchSchema)
     .mutation(({ input, ctx }) =>
-      destroyMedia(createMediaRepository(ctx.db), S3, input.ids),
+      destroyMedia(
+        createMediaRepository(ctx.db),
+        S3,
+        input.ids,
+        publicContentInvalidator,
+      ),
     ),
 });

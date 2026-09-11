@@ -20,9 +20,7 @@ const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
   publicContentInvalidator: {
-    invalidateContent: (...args: unknown[]) =>
-      mockInvalidatePublicContent(...args),
-    invalidateAll: vi.fn(),
+    invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
 }));
 
@@ -56,11 +54,6 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
           author: {
             id: post.authorId,
             name: "Test Author",
-            email: null,
-            level: "GUEST",
-            status: "ACTIVE",
-            createdAt: null,
-            updatedAt: null,
           },
           category: {
             id: post.categoryId,
@@ -411,8 +404,10 @@ describe("Post Router", () => {
       expect(result).toEqual(updatedPost);
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
-        id: TEST_IDS.ID_1,
-        type: "post",
+        contents: [{ id: TEST_IDS.ID_1, type: "post" }],
+        refreshLayout: true,
+        refreshPostIndex: true,
+        refreshSitemap: true,
       });
     });
 

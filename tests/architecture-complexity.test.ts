@@ -1,7 +1,7 @@
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 const sourceRoot = join(process.cwd(), "src");
 const featureRoot = join(sourceRoot, "features");
@@ -17,9 +17,60 @@ function sourceFiles(directory: string): string[] {
 }
 
 function imports(source: string): string[] {
-  return [...source.matchAll(/from\s+["']([^"']+)["']/g)].map((match) =>
-    requireDefined(match[1]),
-  );
+  return [
+    ...new Set(
+      [
+        ...source.matchAll(/from\s+["']([^"']+)["']/g),
+        ...source.matchAll(/import\s+["']([^"']+)["']/g),
+        ...source.matchAll(/import\s*\(\s*["']([^"']+)["']\s*\)/g),
+        ...source.matchAll(/require\s*\(\s*["']([^"']+)["']\s*\)/g),
+      ].map((match) => requireDefined(match[1])),
+    ),
+  ];
+}
+
+function resolveLocalImport(importer: string, specifier: string): string | null {
+  const base = specifier.startsWith("@/")
+    ? join(sourceRoot, specifier.slice(2))
+    : specifier.startsWith(".")
+      ? resolve(dirname(importer), specifier)
+      : null;
+  if (!base) return null;
+
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    join(base, "index.ts"),
+    join(base, "index.tsx"),
+  ]) {
+    if (statSync(candidate, { throwIfNoEntry: false })?.isFile()) return candidate;
+  }
+  return null;
+}
+
+function forbiddenTransitiveDependencies(entry: string): string[] {
+  const visited = new Set<string>();
+  const violations = new Set<string>();
+
+  function visit(path: string) {
+    if (visited.has(path)) return;
+    visited.add(path);
+    for (const specifier of imports(readFileSync(path, "utf8"))) {
+      const dependency = resolveLocalImport(path, specifier);
+      if (!dependency) continue;
+      if (/\/infrastructure\/|\/notifications\//.test(dependency)) {
+        violations.add(
+          `${relative(process.cwd(), entry)} -> ${relative(process.cwd(), dependency)}`,
+        );
+        continue;
+      }
+      visit(dependency);
+    }
+  }
+
+  visit(entry);
+  return [...violations];
 }
 
 describe("架构复杂度治理", () => {
@@ -150,7 +201,8 @@ describe("架构复杂度治理", () => {
   });
 
   it("Application 只依赖副作用端口，不直接依赖框架或外部服务 SDK", () => {
-    const forbidden = /^(?:next\/cache|resend|@aws-sdk\/)|\/infrastructure\//;
+    const forbidden =
+      /^(?:next\/cache|resend|@aws-sdk\/|@\/packages\/trpc(?:\/|$))|\/infrastructure\//;
     const violations = sourceFiles(featureRoot)
       .filter((path) => /\/application\//.test(path))
       .flatMap((path) =>
@@ -160,6 +212,24 @@ describe("架构复杂度治理", () => {
             (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
           ),
       );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("Application 的本地依赖与转发出口不得间接到达 Infrastructure 或通知适配器", () => {
+    const violations = sourceFiles(featureRoot)
+      .filter((path) => /\/application\//.test(path))
+      .flatMap(forbiddenTransitiveDependencies);
+
+    expect(violations).toEqual([]);
+  });
+
+  it("Application 契约不得泄漏 HTTP 或 tRPC 类型", () => {
+    const forbiddenType = /\b(?:Headers|Request|Response|FormData|TRPCError)\b/;
+    const violations = sourceFiles(featureRoot)
+      .filter((path) => /\/application\//.test(path))
+      .filter((path) => forbiddenType.test(readFileSync(path, "utf8")))
+      .map((path) => relative(process.cwd(), path));
 
     expect(violations).toEqual([]);
   });

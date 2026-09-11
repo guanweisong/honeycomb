@@ -12,6 +12,8 @@
 - sitemap 在相关写入完成后立即失效，同时保留 300 秒兜底 TTL。
 - Application 不再从 tRPC 包导入通用类型。
 - 保持现有输入输出、权限、数据库结构以及“写入成功后同步执行失效，失效失败向上传播”的语义。
+- 缓存版本键首次创建时也必须离开隐式默认版本，确保第一次失效有效。
+- 公开文章作者只披露页面需要的 `id` 与 `name`，并关闭绕过 User Application 的身份资料写入口。
 
 ## 方案比较
 
@@ -55,7 +57,7 @@ interface PublicContentInvalidator {
 | Post 创建、更新、删除、标签关联更新 | 受影响文章 | 是 | 是 | 是 |
 | Page 创建、更新、删除 | 受影响页面 | 是 | 否 | 是 |
 | Menu 保存 | 否 | 是 | 否 | 是 |
-| Category 创建、更新、删除 | 否 | 是 | 是 | 否 |
+| Category 创建、更新、删除 | 否 | 是 | 是 | 是 |
 | Tag 创建、更新、删除 | 否 | 是 | 是 | 否 |
 | User 创建、更新、删除 | 否 | 是 | 是 | 否 |
 | Media 删除 | 否 | 是 | 是 | 否 |
@@ -68,12 +70,16 @@ interface PublicContentInvalidator {
 
 `src/packages/infrastructure/refresh-path.ts` 提供统一适配器：
 
-1. 校验并去重详情引用，对所有支持语言刷新对应详情路径。
-2. `refreshLayout` 为真时只调用一次 `revalidatePath("/[locale]", "layout")`。
-3. `refreshPostIndex` 为真时只提升一次 Upstash `post.index` 版本。
-4. `refreshSitemap` 为真时使用 `revalidateTag(tag, { expire: 0 })` 立即使 sitemap shard 与 shard-count 缓存过期。
+1. 校验计划至少包含一个非空详情引用或一个值为 `true` 的范围，并去重详情引用。
+2. `refreshPostIndex` 为真时先提升一次 Upstash `post.index` 版本。
+3. `refreshSitemap` 为真时使用 `revalidateTag(tag, { expire: 0 })` 立即使 sitemap shard 与 shard-count 缓存过期。
+4. 最后对所有支持语言刷新详情路径，并在 `refreshLayout` 为真时只调用一次 `revalidatePath("/[locale]", "layout")`。
 
 sitemap 的两个 `unstable_cache` 使用同一稳定 tag；300 秒 TTL 保留为异常情况下的兜底。缓存 namespace、版本 key 和 sitemap tag 各只有一个权威定义，不在 Feature 间复制。
+
+版本键缺失时读取端使用隐式版本 `1`，而 Redis `INCR` 对缺失键的首次结果同样是 `1`。因此版本提升遇到首次结果 `1` 时继续原子递增一次到 `2`；并发初始化最多产生无害的额外版本跳跃，不会继续命中旧 `v1` 数据。
+
+公开文章关联查询只选择作者 `id` 与 `name`，共享 Zod 读取模型也只保留这两个字段。旧缓存即使仍带邮箱、权限级别、账户状态和内部时间戳，解码时也会剥离额外字段。Better Auth 通用 `/update-user` 被禁用，后台用户修改继续走具备 `user:manage` capability 的 tRPC Application 入口。
 
 ## 数据流与失败语义
 
@@ -85,13 +91,17 @@ Router -> Application Use Case -> Repository write
                                   -> sitemap tag
 ```
 
-Repository 写入失败时不执行任何失效。失效任一步失败时请求继续失败，不回滚已提交数据库写入，也不吞错；这保持现有对外行为。本次不引入 Outbox、重试队列或最终一致性事件总线。
+Repository 写入失败时不执行任何失效。失效任一步失败时请求继续失败，不回滚已提交数据库写入，也不吞错；这保持现有对外行为。本次不引入 Outbox、重试队列或最终一致性事件总线。媒体删除使用相同非空 ID 重试且记录已经不存在时，仍执行一次幂等失效，以修复上一次数据库成功但缓存失败留下的陈旧公开缓存；空 ID 请求不产生副作用。
 
 ## 类型与依赖边界
 
 `CleanZod` 从 `src/packages/trpc/api/schemas` 移到 `src/packages/application/validation` 所属的共享 Application 校验边界。全部消费者改用新权威出口，旧文件删除，不保留兼容层。
 
 Application 只依赖共享 Application 契约和 Feature Repository 端口。Category、Tag、User、Media 不得导入 Post Infrastructure；Router 只负责注入统一适配器。
+
+Comment Application 只接收 transport 已提取的 `ip/userAgent` 纯元数据。目标 Repository 返回页面/文章状态和父评论目标，公开状态、评论开关及父子同源由 Application 判断；公共评论 DTO 也由 Application 基于 `CommentRecord` 映射。Feature Application 转出口不得直接或间接导出 Infrastructure 与通知 adapter。
+
+共享批量删除 Schema 至少包含一个 ID。Better Auth `/update-user` 除配置检查外，以实际 handler 请求验证返回 404。
 
 ## 测试策略
 
@@ -103,7 +113,7 @@ Application 只依赖共享 Application 契约和 Feature Repository 端口。Ca
 
 ## 非目标
 
-- 不改变公开 API、管理端交互、数据库 schema 或缓存 TTL。
+- 不改变公开页面所依赖的作者契约、管理端交互、数据库 schema 或缓存 TTL；未声明且未被消费的账户内部字段不再随公开响应返回。
 - 不为缓存失败增加补偿事务、异步重试或消息队列。
 - 不调整浏览量递增的缓存策略。
 - 不清理与本次缓存一致性和依赖方向无关的代码。

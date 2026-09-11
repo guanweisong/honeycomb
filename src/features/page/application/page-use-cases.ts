@@ -14,11 +14,15 @@ export function createPage(
   repository: Pick<PageCommandRepository, "create">,
   input: PageCreateCommand,
   authorId: string,
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   return (async () => {
     const result = await repository.create(input, authorId);
-    await invalidator.invalidateContent({ id: result.id, type: "page" });
+    await invalidator.invalidate({
+      contents: [{ id: result.id, type: "page" }],
+      refreshLayout: true,
+      refreshSitemap: true,
+    });
     return result;
   })();
 }
@@ -26,23 +30,29 @@ export function createPage(
 export async function destroyPages(
   repository: Pick<PageCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.destroy(ids);
-  await Promise.all(
-    ids.map((id) => invalidator.invalidateContent({ id, type: "page" })),
-  );
+  await invalidator.invalidate({
+    contents: ids.map((id) => ({ id, type: "page" })),
+    refreshLayout: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 更新独立页面用例。 */
 export function updatePage(
   repository: Pick<PageCommandRepository, "findStatus" | "update">,
   input: PageUpdateCommand,
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   return (async () => {
     const result = await updatePageThroughAggregate(repository, input);
-    await invalidator.invalidateContent({ id: input.id, type: "page" });
+    await invalidator.invalidate({
+      contents: [{ id: input.id, type: "page" }],
+      refreshLayout: true,
+      refreshSitemap: true,
+    });
     return result;
   })();
 }

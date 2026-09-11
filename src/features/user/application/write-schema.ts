@@ -2,8 +2,10 @@ import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { hasUpdateFields } from "@/packages/application/validation";
 import { CredentialPasswordSchema } from "@/packages/identity/auth/password-policy";
-import { requiredString } from "@/packages/application/validation";
-import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
+import {
+  type CleanZod,
+  requiredString,
+} from "@/packages/application/validation";
 import { z } from "zod";
 
 /** 后台账号写入契约，不依赖数据库表结构。 */

@@ -12,8 +12,17 @@ import { MediaRecordSchema, TagRecordSchema } from "@/features/contracts";
 import { PostWithRelationsSchema } from "@/features/post/application/post-read-model";
 import { decodeCachedPostList } from "@/features/post/infrastructure/post-cache-dto";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
+import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 
 describe("共享契约的真实消费者", () => {
+  it("批量删除拒绝空 ID 集合", () => {
+    const id = "123456789012345678901234";
+    expect(DeleteBatchSchema.safeParse({ ids: [] }).success).toBe(false);
+    expect(DeleteBatchSchema.parse({ ids: [id] })).toEqual({
+      ids: [id],
+    });
+  });
+
   it.each([
     { en: " English ", zh: " 中文 " },
     { en: "", zh: "中文" },
@@ -93,11 +102,6 @@ describe("共享契约的真实消费者", () => {
       author: {
         id: "author",
         name: null,
-        email: null,
-        status: "ENABLE",
-        level: "EDITOR",
-        createdAt: null,
-        updatedAt: null,
       },
       movieActors: [tag],
       movieDirectors: [tag],

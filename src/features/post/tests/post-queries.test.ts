@@ -44,7 +44,7 @@ describe("getPostList", () => {
           status: PostStatus.PUBLISHED,
           type: PostType.ARTICLE,
           commentStatus: EnableStatus.ENABLE,
-          author: { id: post.authorId, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
+          author: { id: post.authorId, name: "Author" },
           category: {
             id: post.categoryId,
             title: { en: "Category", zh: "分类" },
@@ -103,7 +103,7 @@ describe("getPostList", () => {
       list: [
         {
           ...posts[0],
-          author: { id: TEST_IDS.ID_3, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
+          author: { id: TEST_IDS.ID_3, name: "Author" },
           category: {
             id: TEST_IDS.ID_2,
             title: { en: "Category", zh: "分类" },
@@ -231,7 +231,7 @@ describe("getPostList", () => {
       list: [
         {
           ...posts[0],
-          author: { id: TEST_IDS.ID_2, name: "Author", email: null, level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null },
+          author: { id: TEST_IDS.ID_2, name: "Author" },
           category: {
             id: TEST_IDS.ID_1,
             title: { en: "Category", zh: "分类" },

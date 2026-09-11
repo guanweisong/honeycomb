@@ -1,7 +1,7 @@
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { hasUpdateFields } from "@/packages/application/validation";
-import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
+import type { CleanZod } from "@/packages/application/validation";
 import type { z } from "zod";
 import type { PostUpdateCommand } from "../application/repository";
 

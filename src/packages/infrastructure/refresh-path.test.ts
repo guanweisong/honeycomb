@@ -1,50 +1,116 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockRevalidatePath = vi.fn();
+const mockRevalidateTag = vi.fn();
+const mockBumpCacheVersion = vi.fn().mockResolvedValue(1);
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+  revalidateTag: (...args: unknown[]) => mockRevalidateTag(...args),
+}));
+vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
+  bumpCacheVersion: (...args: unknown[]) => mockBumpCacheVersion(...args),
 }));
 
 import { publicContentInvalidator } from "./refresh-path";
 
-describe("publicContentInvalidator", () => {
-  beforeEach(() => mockRevalidatePath.mockReset());
+const SITEMAP_CACHE_TAG = "public.sitemap";
 
-  it("rejects arbitrary paths without invalidating cache", async () => {
-    await expect(
-      publicContentInvalidator.invalidateContent("/admin" as never),
-    ).rejects.toThrow();
-    expect(mockRevalidatePath).not.toHaveBeenCalled();
+describe("publicContentInvalidator", () => {
+  beforeEach(() => {
+    mockRevalidatePath.mockReset();
+    mockRevalidateTag.mockReset();
+    mockBumpCacheVersion.mockReset().mockResolvedValue(1);
   });
 
-  it("builds the public archive path from a validated content reference", async () => {
-    await publicContentInvalidator.invalidateContent({
-      id: "507f1f77bcf86cd799439011",
-      type: "post",
+  it("deduplicates details and invalidates each requested cache layer once", async () => {
+    await publicContentInvalidator.invalidate({
+      contents: [
+        { id: "507f1f77bcf86cd799439011", type: "post" },
+        { id: "507f1f77bcf86cd799439011", type: "post" },
+        { id: "507f1f77bcf86cd799439012", type: "page" },
+      ],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
     });
 
     expect(mockRevalidatePath.mock.calls).toEqual([
       ["/zh/archives/507f1f77bcf86cd799439011"],
       ["/en/archives/507f1f77bcf86cd799439011"],
+      ["/zh/pages/507f1f77bcf86cd799439012"],
+      ["/en/pages/507f1f77bcf86cd799439012"],
       ["/[locale]", "layout"],
     ]);
+    expect(mockBumpCacheVersion).toHaveBeenCalledOnce();
+    expect(mockBumpCacheVersion).toHaveBeenCalledWith(
+      "post.index",
+      "cache:post:index:version",
+    );
+    expect(mockRevalidateTag).toHaveBeenCalledOnce();
+    expect(mockRevalidateTag).toHaveBeenCalledWith(SITEMAP_CACHE_TAG, {
+      expire: 0,
+    });
   });
 
-  it("rejects invalid locales and identifiers", async () => {
+  it("does not execute omitted cache scopes", async () => {
+    await publicContentInvalidator.invalidate({ refreshLayout: true });
+
+    expect(mockRevalidatePath.mock.calls).toEqual([["/[locale]", "layout"]]);
+    expect(mockBumpCacheVersion).not.toHaveBeenCalled();
+    expect(mockRevalidateTag).not.toHaveBeenCalled();
+  });
+
+  it("rejects arbitrary paths and invalid identifiers before side effects", async () => {
     await expect(
-      publicContentInvalidator.invalidateContent({
-        id: "short",
-        type: "page",
+      publicContentInvalidator.invalidate({ contents: ["/admin"] } as never),
+    ).rejects.toThrow();
+    await expect(
+      publicContentInvalidator.invalidate({
+        contents: [{ id: "short", type: "page" }],
       }),
     ).rejects.toThrow();
+
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+    expect(mockBumpCacheVersion).not.toHaveBeenCalled();
+    expect(mockRevalidateTag).not.toHaveBeenCalled();
   });
 
-  it("invalidates the bounded public locale layout for writes without a target", async () => {
-    await publicContentInvalidator.invalidateAll();
+  it("propagates cache dependency failures", async () => {
+    const cacheError = new Error("cache failed");
+    mockBumpCacheVersion.mockRejectedValueOnce(cacheError);
 
-    expect(mockRevalidatePath).toHaveBeenCalledOnce();
-    expect(mockRevalidatePath).toHaveBeenCalledWith("/[locale]", "layout");
+    await expect(
+      publicContentInvalidator.invalidate({ refreshPostIndex: true }),
+    ).rejects.toBe(cacheError);
+  });
+
+  it("invalidates inner data caches before route caches can regenerate", async () => {
+    const order: string[] = [];
+    mockBumpCacheVersion.mockImplementationOnce(async () => {
+      order.push("post-index");
+      return 2;
+    });
+    mockRevalidateTag.mockImplementationOnce(() => {
+      order.push("sitemap");
+    });
+    mockRevalidatePath.mockImplementation(() => {
+      order.push("route");
+    });
+
+    await publicContentInvalidator.invalidate({
+      contents: [{ id: "507f1f77bcf86cd799439011", type: "post" }],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
+
+    expect(order).toEqual([
+      "post-index",
+      "sitemap",
+      "route",
+      "route",
+      "route",
+    ]);
   });
 });

@@ -13,42 +13,60 @@ export async function createPost(
   repository: Pick<PostCommandRepository, "create">,
   input: PostCreateCommand,
   authorId: string,
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.create(input, authorId);
-  await invalidator.invalidateContent({ id: result.id, type: "post" });
+  await invalidator.invalidate({
+    contents: [{ id: result.id, type: "post" }],
+    refreshLayout: true,
+    refreshPostIndex: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 批量删除文章。 */
 export async function destroyPosts(
   repository: Pick<PostCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.destroy(ids);
-  await Promise.all(
-    ids.map((id) => invalidator.invalidateContent({ id, type: "post" })),
-  );
+  await invalidator.invalidate({
+    contents: ids.map((id) => ({ id, type: "post" })),
+    refreshLayout: true,
+    refreshPostIndex: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 更新文章。 */
 export async function updatePost(
   repository: Pick<PostCommandRepository, "findStatus" | "update">,
   input: PostUpdateCommand,
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await updatePostThroughAggregate(repository, input);
-  await invalidator.invalidateContent({ id: input.id, type: "post" });
+  await invalidator.invalidate({
+    contents: [{ id: input.id, type: "post" }],
+    refreshLayout: true,
+    refreshPostIndex: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 替换文章标签关联。 */
 export async function updatePostTags(
   repository: Pick<PostCommandRepository, "updateTags">,
   input: PostTagUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidateContent">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.updateTags(input);
-  await invalidator.invalidateContent({ id: input.postId, type: "post" });
+  await invalidator.invalidate({
+    contents: [{ id: input.postId, type: "post" }],
+    refreshLayout: true,
+    refreshPostIndex: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 增加公开文章浏览量。 */

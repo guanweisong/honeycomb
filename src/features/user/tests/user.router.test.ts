@@ -19,7 +19,7 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidateAll: vi.fn() },
+  publicContentInvalidator: { invalidate: vi.fn() },
 }));
 
 // 模拟工具模块。

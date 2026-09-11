@@ -9,7 +9,7 @@ const item = (id: string, parent?: string | null) => ({
   power: 1,
 });
 const invalidator = () => ({
-  invalidateAll: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue(undefined),
 });
 
 describe("Menu use cases", () => {
@@ -36,6 +36,9 @@ describe("Menu use cases", () => {
       count: 2,
     });
     expect(saveAll).toHaveBeenCalledWith(input);
-    expect(cache.invalidateAll).toHaveBeenCalledOnce();
+    expect(cache.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+      refreshSitemap: true,
+    });
   });
 });

@@ -58,6 +58,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
 const authOptions: BetterAuthOptions = {
   baseURL: authBaseURL || "http://localhost:3000",
   secret: authEnv.AUTH_SECRET,
+  disabledPaths: ["/update-user"],
   database:
     process.env.TURSO_URL && process.env.TURSO_TOKEN
       ? drizzleAdapter(getDb(), {

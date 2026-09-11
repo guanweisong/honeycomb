@@ -4,6 +4,11 @@ export function hasUpdateFields(value: { id: string }): boolean {
   return Object.entries(value).some(([key, field]) => key !== "id" && field !== undefined);
 }
 
+/** 将 Zod 推导结果展平为易读的普通对象类型。 */
+export type CleanZod<T extends z.ZodTypeAny> = {
+  [K in keyof z.infer<T>]: z.infer<T>[K];
+};
+
 export function requiredString(message: string) {
   return z
     .string({

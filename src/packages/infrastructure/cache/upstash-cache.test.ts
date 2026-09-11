@@ -128,6 +128,20 @@ describe("upstash cache", () => {
     ).resolves.toBe(8);
   });
 
+  it("advances beyond the implicit default on the first version bump", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+
+    const { cache } = await loadModule();
+
+    redisInstance.incr.mockResolvedValueOnce(1).mockResolvedValueOnce(2);
+
+    await expect(
+      cache.bumpCacheVersion("post.index", "version:key"),
+    ).resolves.toBe(2);
+    expect(redisInstance.incr).toHaveBeenCalledTimes(2);
+  });
+
   it("records read, hit, miss, write, and error without cache keys", async () => {
     process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";

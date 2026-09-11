@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { updateCategory } from "./category-use-cases";
+import {
+  createCategory,
+  destroyCategories,
+  updateCategory,
+} from "./category-use-cases";
 
 const base = {
   title: { en: "A", zh: "甲" },
@@ -7,7 +11,7 @@ const base = {
   path: "a",
 };
 const invalidator = () => ({
-  invalidateAll: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue(undefined),
 });
 
 describe("Category use cases", () => {
@@ -101,6 +105,36 @@ describe("Category use cases", () => {
     );
 
     expect(update).toHaveBeenCalledWith({ id: "a", ...base });
-    expect(cache.invalidateAll).toHaveBeenCalledOnce();
+    expect(cache.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
+  });
+
+  it("创建和删除分类也会失效菜单派生的 sitemap", async () => {
+    const cache = invalidator();
+    await createCategory(
+      {
+        create: vi.fn().mockResolvedValue({ id: "a" }),
+        find: vi.fn(),
+        pathExists: vi.fn().mockResolvedValue(false),
+      },
+      base,
+      cache,
+    );
+    await destroyCategories(
+      { destroy: vi.fn().mockResolvedValue({ success: true as const }) },
+      ["a"],
+      cache,
+    );
+
+    const expectedPlan = {
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    };
+    expect(cache.invalidate).toHaveBeenNthCalledWith(1, expectedPlan);
+    expect(cache.invalidate).toHaveBeenNthCalledWith(2, expectedPlan);
   });
 });

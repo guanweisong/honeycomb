@@ -24,11 +24,7 @@ export const PostCategoryRecordSchema = z.object({
 /** 关联快照不冒充已验证角色的认证用户。 */
 export const PostAuthorRecordSchema = z.object({
   id: z.string(),
-  email: z.string().nullable(),
-  level: z.string(),
   name: z.string().nullable(),
-  status: z.string(),
-  ...timestamps,
 });
 
 /** Repository 返回类型与缓存解码共用的唯一文章读取契约。 */

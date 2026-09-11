@@ -18,12 +18,15 @@ export type { UserCommandInput } from "./repository";
 export function createUser(
   repository: Pick<UserCommandPort, "create">,
   input: UserCommandInput,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const parsed = UserInsertSchema.parse(input);
   return (async () => {
     const result = await repository.create(parsed);
-    await invalidator.invalidateAll();
+    await invalidator.invalidate({
+      refreshLayout: true,
+      refreshPostIndex: true,
+    });
     return result;
   })();
 }
@@ -32,7 +35,7 @@ export function createUser(
 export async function destroyUsers(
   repository: Pick<UserCommandPort, "destroy" | "getStates">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const targets = await repository.getStates(ids);
   for (const target of targets) {
@@ -43,7 +46,10 @@ export async function destroyUsers(
     ).assertDeletable();
   }
   const result = await repository.destroy(ids);
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({
+    refreshLayout: true,
+    refreshPostIndex: true,
+  });
   return result;
 }
 
@@ -52,7 +58,7 @@ export async function updateUser(
   repository: Pick<UserCommandPort, "getStatus" | "update">,
   input: UserUpdateCommandInput,
   actorLevel: UserLevel,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   input = UserUpdateSchema.parse(input);
   if (input.status !== undefined || input.level !== undefined) {
@@ -77,11 +83,17 @@ export async function updateUser(
         },
         changes,
       );
-      await invalidator.invalidateAll();
+      await invalidator.invalidate({
+        refreshLayout: true,
+        refreshPostIndex: true,
+      });
       return result;
     }
   }
   const result = await repository.update(input);
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({
+    refreshLayout: true,
+    refreshPostIndex: true,
+  });
   return result;
 }

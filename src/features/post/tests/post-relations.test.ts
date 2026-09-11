@@ -27,8 +27,7 @@ describe("loadPostRelations", () => {
       status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
     } satisfies NonNullable<PostWithRelations["category"]>;
     const author = {
-      id: "user-1", email: "author@example.com", name: "Author",
-      level: "GUEST", status: "ACTIVE", createdAt: null, updatedAt: null,
+      id: "user-1", name: "Author",
     } satisfies NonNullable<PostWithRelations["author"]>;
     const cover = {
       id: "media-1", key: "cover.png", name: "cover.png", size: 10,
@@ -76,5 +75,12 @@ describe("loadPostRelations", () => {
         galleryStyles: [gallery],
       },
     ]);
+    expect(db.query.post.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        with: expect.objectContaining({
+          author: { columns: { id: true, name: true } },
+        }),
+      }),
+    );
   });
 });

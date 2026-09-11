@@ -10,15 +10,19 @@ import { createMediaRepository } from "@/features/media/infrastructure/media-rep
 import { createUserRepository } from "@/features/user/infrastructure/user-repository";
 import { createSettingRepository } from "@/features/setting/infrastructure/setting-repository";
 import { PageTemplate } from "@/packages/domain/content/page-template";
+import { TagType } from "@/packages/domain/content/tag";
 import { loadPostRelations } from "./post-query-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
 import { createMenuRepository } from "@/features/menu/infrastructure/menu-repository";
-import { toPublicComment } from "@/features/comment/infrastructure/comment-dto";
+import { toPublicComment } from "@/features/comment/application/comment-public-dto";
+import { toPublicCommentSource } from "@/features/comment/infrastructure/comment-dto";
 import { createCommentNotificationRepository } from "@/features/comment/infrastructure/comment-notification-repository";
 import type * as schema from "@/packages/infrastructure/db/schema";
 
+const mockBumpCacheVersion = vi.hoisted(() => vi.fn());
+
 vi.mock("@/packages/infrastructure/observability/server", () => ({ observeDbOperation: (_name: string, _kind: string, operation: () => unknown) => operation() }));
-vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({ bumpCacheVersion: vi.fn() }));
+vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({ bumpCacheVersion: mockBumpCacheVersion }));
 vi.mock("@/env/client", () => ({ clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" } }));
 
 const commentRow: typeof schema.comment.$inferSelect = {
@@ -42,7 +46,7 @@ describe("required persistence results", () => {
     const creates = [
       () => createPostCommandRepository(db).create({ categoryId: "category" }, "author"),
       () => createPageCommandRepository(db).create({ title: { en: "title", zh: "标题" }, content: { en: "body", zh: "正文" }, template: PageTemplate.DEFAULT }, "author"),
-      () => createCommentCommandRepository(db).create(new Headers(), { author: "author", email: "a@test.dev", content: "text", postId: "post" }),
+      () => createCommentCommandRepository(db).create({ ip: null, userAgent: null }, { author: "author", email: "a@test.dev", content: "text", postId: "post" }),
       () => createCategoryRepository(db).create({ path: "category", title: { en: "title", zh: "标题" }, description: { en: "description", zh: "描述" } }),
       () => createTagRepository(db).create({ name: { en: "tag", zh: "标签" } }),
       () => createLinkRepository(db).create({ name: "link", url: "https://test.dev", logo: "logo" }),
@@ -73,7 +77,7 @@ describe("required persistence results", () => {
     await expect(createMenuRepository(asMockDatabase(db)).list("ALL")).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
   it("rejects invalid status in public comment data", () => {
-    expect(() => toPublicComment({ id: "comment", author: "author", content: "text", site: null, email: "a@test.dev", parentId: null, status: "UNKNOWN", createdAt: null })).toThrow(expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }));
+    expect(() => toPublicComment(toPublicCommentSource(commentRow))).toThrow(expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }));
   });
   it("rejects invalid status when mapping a written comment", async () => {
     const db = createMockDb();
@@ -94,6 +98,23 @@ describe("required persistence results", () => {
     const db = createMockDb();
     db.limit.mockResolvedValue([{ status: null }]);
     await expect(createCommentCommandRepository(asMockDatabase(db)).findStatus("comment")).resolves.toBeNull();
-    expect(toPublicComment({ ...commentRow, status: null }).status).toBeNull();
+    expect(toPublicComment(toPublicCommentSource({ ...commentRow, status: null })).status).toBeNull();
+  });
+
+  it("keeps post command persistence free of cache side effects", async () => {
+    const db = createMockDb();
+    db.returning.mockResolvedValue([{ id: "post" }]);
+    const repository = createPostCommandRepository(asMockDatabase(db));
+
+    await repository.create({ categoryId: "category" }, "author");
+    await repository.update({ id: "post" });
+    await repository.destroy(["post"]);
+    await repository.updateTags({
+      postId: "post",
+      tagIds: [],
+      type: TagType.ACTOR,
+    });
+
+    expect(mockBumpCacheVersion).not.toHaveBeenCalled();
   });
 });

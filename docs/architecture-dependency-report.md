@@ -55,9 +55,27 @@ Application 用例只编排业务用例和领域规则，不得导入 Drizzle、
 统一放在同一 feature 的 `infrastructure` 目录，并由 router 或 app 入口注入。
 缓存和外部服务同样通过窄端口注入；跨 Feature 的公开缓存端口由
 `src/packages/application/public-content-invalidator.ts` 统一定义，Next.js adapter 留在
-Infrastructure。该约束由 `tests/feature-boundaries.test.ts`、
+Infrastructure。写入 Use Case 通过一次结构化计划声明详情、公开布局、文章索引和
+sitemap 影响范围；adapter 对详情去重，并让每种共享缓存范围最多失效一次。多层失效按
+文章索引版本、sitemap 数据、公开路由的依赖顺序执行，避免路由从旧内层缓存重新生成。
+文章 Repository 不执行缓存副作用，分类、标签、用户和媒体删除会显式刷新含有关联快照的
+文章索引；分类和菜单变化会同步刷新 sitemap，sitemap 使用共享 tag 主动失效并保留 300 秒兜底 TTL。
+版本键缺失时第一次 Redis 递增会越过读取端的隐式默认版本，避免首次失效仍命中旧索引。
+媒体删除的非空幂等重试即使已找不到记录也会再次修复公开缓存。该约束由 `tests/feature-boundaries.test.ts`、
 `tests/architecture-complexity.test.ts` 和 `tests/public-cache-invalidation-boundaries.test.ts`
 持续检查。
+
+公开文章的作者读取模型只包含 `id` 与 `name`，数据库查询不读取邮箱、权限级别、账户状态或
+账户时间戳；旧缓存中的额外字段会在共享 Schema 解码时被剥离。后台用户写入只允许经过
+capability 保护的 User Application 入口，Better Auth 通用资料更新路由已禁用，避免旁路写入
+绕过领域规则与公开缓存失效。
+
+Comment Application 接收 transport 已提取的普通 `ip/userAgent` 元数据，不接收 HTTP
+对象；公开目标状态、评论开关和父评论同源规则均在 Use Case 写入前判断。数据库 adapter
+只返回类型化状态并执行持久化，通知 adapter 由 Router 直接注入。公共评论 DTO 与树构建由
+Application 定义，查询 adapter 仅选择公共字段及头像散列所需邮箱，响应不会暴露邮箱、IP
+或 User-Agent。架构门禁会递归跟踪本地 import、re-export、动态 import 与 require，阻止
+Application 通过兼容出口间接到达 Infrastructure 或通知 adapter；共享批量删除入口拒绝空 ID 集合。
 
 `features/media/shared` 存放媒体 UI 共享能力，供媒体管理页面和文章编辑器
 复用，避免文章功能直接依赖媒体管理端内部实现。
@@ -97,8 +115,8 @@ Use Case 编排，Infrastructure adapter 执行，transport 只负责注入。
 ## 验证记录
 
 最近一次验证结果（2026-09-11）：类型检查、Lint、迁移治理、生产依赖审计和 Webpack
-生产构建均通过；270 个单元测试文件中的 1209 项测试和 52 项进程级测试均通过。
-覆盖率为语句 83.12%、分支 75.24%、函数 80.83%、行 84.35%，没有降低全局或关键文件门槛。
+生产构建均通过；273 个单元测试文件中的 1237 项测试和 52 项进程级测试均通过。
+最近一次完整覆盖率为语句 83.33%、分支 75.61%、函数 81.02%、行 84.58%，没有降低全局或关键文件门槛。
 安全响应头、RBAC 与 PWA 关键 Chromium E2E 为 6/6 通过；生产 PWA 离线导航还以
 同一用例连续两次通过验证时序稳定性。
 

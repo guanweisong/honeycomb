@@ -21,7 +21,7 @@ describe("Post cache side effects", () => {
       }),
     };
     const invalidator = {
-      invalidateContent: vi.fn(async () => {
+      invalidate: vi.fn(async () => {
         order.push("cache");
       }),
     };
@@ -30,14 +30,16 @@ describe("Post cache side effects", () => {
       createPost(repository, input, "author-1", invalidator),
     ).resolves.toEqual({ id: postId });
     expect(order).toEqual(["repository", "cache"]);
-    expect(invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: postId,
-      type: "post",
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: postId, type: "post" }],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
     });
   });
 
   it("数据库写入失败时不失效缓存", async () => {
-    const invalidator = { invalidateContent: vi.fn() };
+    const invalidator = { invalidate: vi.fn() };
 
     await expect(
       createPost(
@@ -47,12 +49,12 @@ describe("Post cache side effects", () => {
         invalidator,
       ),
     ).rejects.toThrow("database failed");
-    expect(invalidator.invalidateContent).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 
   it("批量删除成功后失效每个文章目标", async () => {
     const invalidator = {
-      invalidateContent: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue(undefined),
     };
 
     await destroyPosts(
@@ -61,15 +63,21 @@ describe("Post cache side effects", () => {
       invalidator,
     );
 
-    expect(invalidator.invalidateContent.mock.calls).toEqual([
-      [{ id: postId, type: "post" }],
-      [{ id: secondPostId, type: "post" }],
-    ]);
+    expect(invalidator.invalidate).toHaveBeenCalledOnce();
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [
+        { id: postId, type: "post" },
+        { id: secondPostId, type: "post" },
+      ],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
   });
 
   it("更新成功后失效文章缓存", async () => {
     const invalidator = {
-      invalidateContent: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue(undefined),
     };
 
     await updatePost(
@@ -81,15 +89,17 @@ describe("Post cache side effects", () => {
       invalidator,
     );
 
-    expect(invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: postId,
-      type: "post",
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: postId, type: "post" }],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
     });
   });
 
   it("标签更新成功后失效所属文章缓存", async () => {
     const invalidator = {
-      invalidateContent: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue(undefined),
     };
 
     await updatePostTags(
@@ -98,9 +108,11 @@ describe("Post cache side effects", () => {
       invalidator,
     );
 
-    expect(invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: postId,
-      type: "post",
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: postId, type: "post" }],
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
     });
   });
 
@@ -112,7 +124,7 @@ describe("Post cache side effects", () => {
         { create: vi.fn().mockResolvedValue({ id: postId }) },
         input,
         "author-1",
-        { invalidateContent: vi.fn().mockRejectedValue(cacheError) },
+        { invalidate: vi.fn().mockRejectedValue(cacheError) },
       ),
     ).rejects.toBe(cacheError);
   });

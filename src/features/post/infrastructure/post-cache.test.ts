@@ -45,4 +45,34 @@ describe("post list cache validation", () => {
     cache.value = { list: [{ ...post, id: "cached" }], total: 1 };
     await expect(createPostSpecialRepository(asMockDatabase(createMockDb()), query).cachedList({})).resolves.toMatchObject({ list: [{ id: "cached" }], total: 1 });
   });
+
+  it("strips private account fields from cached public post authors", async () => {
+    cache.value = {
+      list: [
+        {
+          ...post,
+          author: {
+            id: "author",
+            name: "Public name",
+            email: "private@example.com",
+            level: "ADMIN",
+            status: "ENABLE",
+            createdAt: "2026-09-11T00:00:00.000Z",
+            updatedAt: "2026-09-11T00:00:00.000Z",
+          },
+        },
+      ],
+      total: 1,
+    };
+
+    const result = await createPostSpecialRepository(
+      asMockDatabase(createMockDb()),
+      query,
+    ).cachedList({});
+
+    expect(result.list[0]?.author).toEqual({
+      id: "author",
+      name: "Public name",
+    });
+  });
 });

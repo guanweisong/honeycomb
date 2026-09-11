@@ -17,6 +17,7 @@ import {
   updateLink,
 } from "@/features/link/application/link-use-cases";
 import { createLinkRepository } from "@/features/link/infrastructure/link-repository";
+import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 友情链接 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const linkRouter = createTRPCRouter({
@@ -33,16 +34,20 @@ export const linkRouter = createTRPCRouter({
   create: permissionProcedure(Permission.linkCreate)
     .input(LinkInsertSchema)
     .mutation(({ input, ctx }) =>
-      createLink(createLinkRepository(ctx.db), input),
+      createLink(createLinkRepository(ctx.db), input, publicContentInvalidator),
     ),
   destroy: permissionProcedure(Permission.linkDelete)
     .input(DeleteBatchSchema)
     .mutation(({ input, ctx }) =>
-      destroyLinks(createLinkRepository(ctx.db), input.ids),
+      destroyLinks(
+        createLinkRepository(ctx.db),
+        input.ids,
+        publicContentInvalidator,
+      ),
     ),
   update: permissionProcedure(Permission.linkUpdate)
     .input(LinkUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateLink(createLinkRepository(ctx.db), input),
+      updateLink(createLinkRepository(ctx.db), input, publicContentInvalidator),
     ),
 });

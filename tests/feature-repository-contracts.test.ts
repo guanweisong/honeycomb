@@ -43,11 +43,8 @@ import {
 import { PageTemplate } from "@/packages/domain/content/page-template";
 
 describe("feature repository 契约", () => {
-  const invalidateAll = () => ({
-    invalidateAll: vi.fn().mockResolvedValue(undefined),
-  });
-  const invalidateContent = () => ({
-    invalidateContent: vi.fn().mockResolvedValue(undefined),
+  const invalidator = () => ({
+    invalidate: vi.fn().mockResolvedValue(undefined),
   });
 
   it("media service 只调用 repository", async () => {
@@ -69,7 +66,7 @@ describe("feature repository 契约", () => {
       }),
     ).resolves.toEqual({ state: "created", media: { id: "media-1" } });
     await expect(
-      destroyMedia(repository, storage, ["media-1"]),
+      destroyMedia(repository, storage, ["media-1"], invalidator()),
     ).resolves.toEqual({ success: true });
     await expect(getMediaList(repository, { page: 1 })).resolves.toEqual({
       list: [],
@@ -91,10 +88,10 @@ describe("feature repository 契约", () => {
     await createTag(
       repository,
       { name: { en: "tag", zh: "标签" } },
-      invalidateAll(),
+      invalidator(),
     );
-    await updateTag(repository, { id: "tag-1" }, invalidateAll());
-    await destroyTags(repository, ["tag-1"], invalidateAll());
+    await updateTag(repository, { id: "tag-1" }, invalidator());
+    await destroyTags(repository, ["tag-1"], invalidator());
     await getTagList(repository, { page: 1 });
     expect(repository.create).toHaveBeenCalled();
     expect(repository.update).toHaveBeenCalledWith({ id: "tag-1" });
@@ -135,9 +132,9 @@ describe("feature repository 契约", () => {
         description: { en: "Description", zh: "描述" },
         path: "category",
       },
-      invalidateAll(),
+      invalidator(),
     );
-    await destroyCategories(category, ["category-1"], invalidateAll());
+    await destroyCategories(category, ["category-1"], invalidator());
     await getCategoryList(category, { page: 1 });
     expect(category.create).toHaveBeenCalled();
     expect(category.destroy).toHaveBeenCalledWith(["category-1"]);
@@ -149,27 +146,25 @@ describe("feature repository 契约", () => {
       destroy: vi.fn(),
       list: vi.fn().mockResolvedValue({ list: [], total: 0 }),
     };
-    await createLink(link, {
-      name: "Link",
-      url: "https://example.test",
-      logo: "https://example.test/logo.png",
-    });
-    await destroyLinks(link, ["link-1"]);
+    await createLink(
+      link,
+      {
+        name: "Link",
+        url: "https://example.test",
+        logo: "https://example.test/logo.png",
+      },
+      invalidator(),
+    );
+    await destroyLinks(link, ["link-1"], invalidator());
     await getLinkList(link, { page: 1 });
     expect(link.create).toHaveBeenCalled();
     expect(link.destroy).toHaveBeenCalledWith(["link-1"]);
     expect(link.list).toHaveBeenCalled();
 
     const menu = { saveAll: vi.fn(), list: vi.fn().mockResolvedValue([]) };
-    await saveAllMenus(
-      menu,
-      [{ id: "menu", type: MenuType.CATEGORY, power: 0 }],
-      invalidateAll(),
-    );
+    await saveAllMenus(menu, [{ id: "menu", type: MenuType.CATEGORY, power: 0 }], invalidator());
     await getMenuList(menu);
-    expect(menu.saveAll).toHaveBeenCalledWith([
-      { id: "menu", type: "CATEGORY", power: 0 },
-    ]);
+    expect(menu.saveAll).toHaveBeenCalledWith([{ id: "menu", type: "CATEGORY", power: 0 }]);
     expect(menu.list).toHaveBeenCalled();
 
     const page = {
@@ -186,8 +181,8 @@ describe("feature repository 契约", () => {
       content: { en: "Content", zh: "内容" },
       template: PageTemplate.DEFAULT,
     };
-    await createPage(page, pageInput, "user-1", invalidateContent());
-    await destroyPages(page, ["page-1"], invalidateContent());
+    await createPage(page, pageInput, "user-1", invalidator());
+    await destroyPages(page, ["page-1"], invalidator());
     await getPageList(page, { page: 1 });
     await getPageDetail(page, "page-1");
     expect(page.create).toHaveBeenCalledWith(pageInput, "user-1");
@@ -197,7 +192,7 @@ describe("feature repository 契约", () => {
 
     const setting = { get: vi.fn(), update: vi.fn(), statistics: vi.fn() };
     await getSetting(setting);
-    await updateSetting(setting, { id: "setting-1" }, invalidateAll());
+    await updateSetting(setting, { id: "setting-1" }, invalidator());
     expect(setting.get).toHaveBeenCalled();
     expect(setting.update).toHaveBeenCalled();
   });

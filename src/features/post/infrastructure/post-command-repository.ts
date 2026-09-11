@@ -7,17 +7,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/packages/infrastructure/db/schema";
 import type { Database } from "@/packages/infrastructure/db/db";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
-import { bumpCacheVersion } from "@/packages/infrastructure/cache/upstash-cache";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 import type { PostCommandRepository } from "../application/repository";
-import {
-  POST_CACHE_VERSION_KEY as CACHE_VERSION_KEY,
-  POST_CACHE_NAMESPACE as CACHE_NAMESPACE,
-} from "./post-cache-keys";
-async function invalidate() {
-  await bumpCacheVersion(CACHE_NAMESPACE, CACHE_VERSION_KEY);
-}
 export function createPostCommandRepository(
   db: Database,
 ): PostCommandRepository {
@@ -30,14 +22,12 @@ export function createPostCommandRepository(
           .returning(),
       );
       const result = requireWriteResult(post, "create", "post");
-      await invalidate();
       return result;
     },
     async destroy(ids) {
       await observeDbOperation("post.destroy", "delete", () =>
         db.delete(schema.post).where(inArray(schema.post.id, ids)),
       );
-      await invalidate();
       return { success: true } as const;
     },
     async findStatus(id) {
@@ -62,7 +52,6 @@ export function createPostCommandRepository(
           .returning(),
       );
       const result = requireWriteResult(post, "update", "post");
-      await invalidate();
       return result;
     },
     async updateTags(input) {
@@ -88,7 +77,6 @@ export function createPostCommandRepository(
               );
         }),
       );
-      await invalidate();
       return { success: true } as const;
     },
     async incrementViews(id) {

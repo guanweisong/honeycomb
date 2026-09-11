@@ -9,10 +9,10 @@ import type { PublicContentInvalidator } from "@/packages/application/public-con
 export async function updateSetting(
   repository: Pick<SettingRepository, "update">,
   input: SettingUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.update(input);
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({ refreshLayout: true });
   return result;
 }
 /** 查询网站设置用例。 */

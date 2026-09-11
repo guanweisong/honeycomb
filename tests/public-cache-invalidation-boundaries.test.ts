@@ -6,10 +6,12 @@ const publicVisibleRouters = [
   "src/features/page/page.router.ts",
   "src/features/comment/comment.router.ts",
   "src/features/category/category.router.ts",
+  "src/features/link/link.router.ts",
   "src/features/tag/tag.router.ts",
   "src/features/menu/menu.router.ts",
   "src/features/setting/setting.router.ts",
   "src/features/user/user.router.ts",
+  "src/features/media/media.router.ts",
 ] as const;
 
 describe("public cache invalidation boundaries", () => {
@@ -22,9 +24,7 @@ describe("public cache invalidation boundaries", () => {
       expect(source).not.toMatch(
         /invalidatePublicContent|invalidateAllPublicContent/,
       );
-      expect(source).not.toMatch(
-        /await\s+publicContentInvalidator\.(?:invalidateContent|invalidateAll)/,
-      );
+      expect(source).not.toMatch(/publicContentInvalidator\s*\.\s*invalidate\s*\(/);
     },
   );
 

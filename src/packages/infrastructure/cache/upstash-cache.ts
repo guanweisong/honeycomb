@@ -8,6 +8,7 @@ import { getMetrics } from "@/packages/infrastructure/observability/server/regis
 import { cacheNamespaceValues, type CacheNamespace } from "./cache-namespaces";
 export type { CacheNamespace } from "./cache-namespaces";
 const cacheNamespaces = new Set<CacheNamespace>(cacheNamespaceValues);
+const implicitCacheVersion = 1;
 
 let redisClient: Redis | null = null;
 let initialized = false;
@@ -109,14 +110,16 @@ export async function getCacheVersion(
   key: string,
 ): Promise<number> {
   const redis = getRedisClient();
-  if (!redis) return 1;
+  if (!redis) return implicitCacheVersion;
   const raw = await observeCacheRead<number | string>(namespace, async () => {
     return await redis.get<number | string>(key);
   });
-  if (raw == null) return 1;
+  if (raw == null) return implicitCacheVersion;
 
   const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : implicitCacheVersion;
 }
 
 /** 增加缓存版本，使旧查询键自然失效。 */
@@ -125,11 +128,14 @@ export async function bumpCacheVersion(
   key: string,
 ): Promise<number> {
   const redis = getRedisClient();
-  if (!redis) return 1;
+  if (!redis) return implicitCacheVersion;
   try {
-    const next = await redis.incr(key);
+    let next = Number(await redis.incr(key));
+    if (next === implicitCacheVersion) {
+      next = Number(await redis.incr(key));
+    }
     recordCacheOperation(namespace, "write", "success");
-    return Number(next);
+    return next;
   } catch (error) {
     recordCacheOperation(namespace, "write", "error");
     recordCacheOperation(namespace, "error", "error");

@@ -5,6 +5,7 @@ import { MAX_PAGE_SIZE } from "@/packages/application/resource-limits";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
+import { SITEMAP_CACHE_TAG } from "@/packages/infrastructure/cache/public-cache-keys";
 
 export const SITEMAP_BATCH_SIZE = MAX_PAGE_SIZE;
 export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
@@ -114,7 +115,10 @@ export const getCachedSitemapShard = unstable_cache(
       : dynamicUrls;
   },
   ["runtime-sitemap-shard"],
-  { revalidate: SITEMAP_CACHE_REVALIDATE_SECONDS },
+  {
+    revalidate: SITEMAP_CACHE_REVALIDATE_SECONDS,
+    tags: [SITEMAP_CACHE_TAG],
+  },
 );
 
 export const getCachedSitemapShardCount = unstable_cache(
@@ -133,7 +137,10 @@ export const getCachedSitemapShardCount = unstable_cache(
     );
   },
   ["runtime-sitemap-shard-count"],
-  { revalidate: SITEMAP_CACHE_REVALIDATE_SECONDS },
+  {
+    revalidate: SITEMAP_CACHE_REVALIDATE_SECONDS,
+    tags: [SITEMAP_CACHE_TAG],
+  },
 );
 
 export function reportSitemapError(error: unknown) {

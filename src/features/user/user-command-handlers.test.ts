@@ -9,10 +9,30 @@ import {
 
 const validUserId = "000000000000000000000001";
 const invalidator = () => ({
-  invalidateAll: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue(undefined),
 });
 
 describe("User command handlers", () => {
+  it("创建用户后刷新公开作者快照", async () => {
+    const create = vi.fn().mockResolvedValue({ id: validUserId });
+    const cache = invalidator();
+
+    await createUser(
+      { create },
+      {
+        name: "user",
+        email: "user@example.com",
+        password: "password123",
+      },
+      cache,
+    );
+
+    expect(cache.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+      refreshPostIndex: true,
+    });
+  });
+
   it("应用层创建入口拒绝非法邮箱且不调用仓储", () => {
     const create = vi.fn();
 
@@ -57,17 +77,22 @@ describe("User command handlers", () => {
       .fn()
       .mockResolvedValue({ id: "user-1", status: UserStatus.DISABLE });
 
+    const cache = invalidator();
     await updateUser(
       { getStatus, update },
       { id: validUserId, status: UserStatus.DISABLE },
       UserLevel.ADMIN,
-      invalidator(),
+      cache,
     );
 
     expect(getStatus).toHaveBeenCalledWith(validUserId);
     expect(update).toHaveBeenCalledWith({
       id: validUserId,
       status: UserStatus.DISABLE,
+    });
+    expect(cache.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+      refreshPostIndex: true,
     });
   });
 
@@ -121,7 +146,10 @@ describe("User command handlers", () => {
     await expect(
       destroyUsers({ destroy, getStates }, ["editor-1"], cache),
     ).resolves.toEqual({ success: true });
-    expect(cache.invalidateAll).toHaveBeenCalledOnce();
+    expect(cache.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+      refreshPostIndex: true,
+    });
   });
 
   it("更新前由应用层阻止管理员账号降级", async () => {

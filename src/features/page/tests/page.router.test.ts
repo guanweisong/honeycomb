@@ -16,9 +16,7 @@ const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
   publicContentInvalidator: {
-    invalidateContent: (...args: unknown[]) =>
-      mockInvalidatePublicContent(...args),
-    invalidateAll: vi.fn(),
+    invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
 }));
 
@@ -161,8 +159,9 @@ describe("Page Router", () => {
       expect(result).toEqual(updatedPage);
       expect(mockDb.update).toHaveBeenCalledWith(schema.page);
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
-        id: TEST_IDS.ID_1,
-        type: "page",
+        contents: [{ id: TEST_IDS.ID_1, type: "page" }],
+        refreshLayout: true,
+        refreshSitemap: true,
       });
     });
 

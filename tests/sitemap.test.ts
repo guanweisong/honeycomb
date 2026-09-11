@@ -3,6 +3,7 @@ import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.sch
 import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
 
 const {
+  cacheRegistrations,
   cacheStores,
   createServerClientMock,
   getServerEnvMock,
@@ -11,6 +12,10 @@ const {
   postIndexMock,
   unstableCacheMock,
 } = vi.hoisted(() => ({
+  cacheRegistrations: [] as Array<{
+    keyParts: string[];
+    options: { revalidate?: number; tags?: string[] };
+  }>,
   cacheStores: [] as Array<Map<string, Promise<unknown>>>,
   createServerClientMock: vi.fn(),
   getServerEnvMock: vi.fn(),
@@ -18,9 +23,14 @@ const {
   pageIndexMock: vi.fn(),
   postIndexMock: vi.fn(),
   unstableCacheMock: vi.fn(
-    <T extends (...args: never[]) => Promise<unknown>>(loader: T) => {
+    <T extends (...args: never[]) => Promise<unknown>>(
+      loader: T,
+      keyParts: string[],
+      options: { revalidate?: number; tags?: string[] },
+    ) => {
       const values = new Map<string, Promise<unknown>>();
       cacheStores.push(values);
+      cacheRegistrations.push({ keyParts, options });
 
       return (...args: Parameters<T>) => {
         const key = JSON.stringify(args);
@@ -81,6 +91,19 @@ describe("runtime sitemap", () => {
     );
     postIndexMock.mockResolvedValue(list([]));
     pageIndexMock.mockResolvedValue(list([]));
+  });
+
+  it("tags both cached sitemap datasets for immediate invalidation", () => {
+    expect(cacheRegistrations).toEqual([
+      {
+        keyParts: ["runtime-sitemap-shard"],
+        options: { revalidate: 300, tags: ["public.sitemap"] },
+      },
+      {
+        keyParts: ["runtime-sitemap-shard-count"],
+        options: { revalidate: 300, tags: ["public.sitemap"] },
+      },
+    ]);
   });
 
   it("lets production build route discovery import handlers without loading environment or database data", () => {

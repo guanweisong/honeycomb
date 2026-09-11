@@ -36,11 +36,14 @@ function validateMenuTree(input: MenuInput): void {
 export async function saveAllMenus(
   repository: Pick<MenuRepository, "saveAll">,
   input: MenuInput,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   validateMenuTree(input);
   const result = await repository.saveAll(input);
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({
+    refreshLayout: true,
+    refreshSitemap: true,
+  });
   return result;
 }
 /** 查询并过滤菜单树用例。 */

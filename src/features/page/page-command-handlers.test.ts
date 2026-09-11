@@ -3,7 +3,7 @@ import { PageStatus } from "@/packages/domain/content/page";
 import { updatePage } from "./application/page-use-cases";
 
 const invalidator = {
-  invalidateContent: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue(undefined),
 };
 
 describe("Page command use cases", () => {

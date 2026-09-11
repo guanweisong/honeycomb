@@ -54,14 +54,18 @@ async function assertPath(
 export function createCategory(
   repository: Pick<CategoryRepository, "create" | "find" | "pathExists">,
   input: CategoryInsert,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   return (async () => {
     assertStatus(input.status);
     await assertParentChain(repository, undefined, input.parent);
     await assertPath(repository, input.path);
     const result = await repository.create(input);
-    await invalidator.invalidateAll();
+    await invalidator.invalidate({
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
     return result;
   })();
 }
@@ -70,7 +74,7 @@ export function createCategory(
 export function updateCategory(
   repository: Pick<CategoryRepository, "find" | "pathExists" | "update">,
   input: CategoryUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   return (async () => {
     const current = await repository.find(input.id);
@@ -79,7 +83,11 @@ export function updateCategory(
     await assertParentChain(repository, input.id, input.parent);
     await assertPath(repository, input.path, input.id);
     const result = await repository.update(input);
-    await invalidator.invalidateAll();
+    await invalidator.invalidate({
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
     return result;
   })();
 }
@@ -88,11 +96,15 @@ export function updateCategory(
 export function destroyCategories(
   repository: Pick<CategoryRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidateAll">,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   return (async () => {
     const result = await repository.destroy(ids);
-    await invalidator.invalidateAll();
+    await invalidator.invalidate({
+      refreshLayout: true,
+      refreshPostIndex: true,
+      refreshSitemap: true,
+    });
     return result;
   })();
 }

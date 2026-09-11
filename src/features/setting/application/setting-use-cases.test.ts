@@ -6,12 +6,15 @@ describe("Setting command use cases", () => {
     const cacheError = new Error("cache failed");
     const update = vi.fn().mockResolvedValue({ id: "setting-1" });
     const invalidator = {
-      invalidateAll: vi.fn().mockRejectedValue(cacheError),
+      invalidate: vi.fn().mockRejectedValue(cacheError),
     };
 
     await expect(
       updateSetting({ update }, { id: "setting-1" }, invalidator),
     ).rejects.toBe(cacheError);
-    expect(update).toHaveBeenCalledBefore(invalidator.invalidateAll);
+    expect(update).toHaveBeenCalledBefore(invalidator.invalidate);
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      refreshLayout: true,
+    });
   });
 });

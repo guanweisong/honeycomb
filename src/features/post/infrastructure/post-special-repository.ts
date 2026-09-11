@@ -18,7 +18,7 @@ export type { PostSpecialRepository } from "../application/repository";
 import {
   POST_CACHE_NAMESPACE as namespace,
   POST_CACHE_VERSION_KEY as versionKey,
-} from "./post-cache-keys";
+} from "@/packages/infrastructure/cache/public-cache-keys";
 export function createPostSpecialRepository(
   db: Database,
   query: PostQueryRepository,

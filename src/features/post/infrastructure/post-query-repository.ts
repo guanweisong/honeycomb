@@ -116,12 +116,7 @@ export async function loadPostRelations(
           author: {
             columns: {
               id: true,
-              email: true,
-              level: true,
               name: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
             },
           },
           cover: true,
@@ -149,12 +144,7 @@ export async function loadPostRelations(
       author: row?.author
         ? {
             id: row.author.id,
-            email: row.author.email,
-            level: row.author.level,
             name: row.author.name,
-            status: row.author.status,
-            createdAt: row.author.createdAt,
-            updatedAt: row.author.updatedAt,
           }
         : null,
       cover: row?.cover,

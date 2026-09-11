@@ -20,7 +20,7 @@ describe("Page cache side effects", () => {
       }),
     };
     const invalidator = {
-      invalidateContent: vi.fn(async () => {
+      invalidate: vi.fn(async () => {
         order.push("cache");
       }),
     };
@@ -29,14 +29,15 @@ describe("Page cache side effects", () => {
       createPage(repository, input, "author-1", invalidator),
     ).resolves.toEqual({ id: pageId });
     expect(order).toEqual(["repository", "cache"]);
-    expect(invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: pageId,
-      type: "page",
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: pageId, type: "page" }],
+      refreshLayout: true,
+      refreshSitemap: true,
     });
   });
 
   it("数据库写入失败时不失效页面缓存", async () => {
-    const invalidator = { invalidateContent: vi.fn() };
+    const invalidator = { invalidate: vi.fn() };
 
     await expect(
       createPage(
@@ -46,12 +47,12 @@ describe("Page cache side effects", () => {
         invalidator,
       ),
     ).rejects.toThrow("database failed");
-    expect(invalidator.invalidateContent).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 
   it("批量删除成功后失效每个页面目标", async () => {
     const invalidator = {
-      invalidateContent: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue(undefined),
     };
 
     await destroyPages(
@@ -60,10 +61,15 @@ describe("Page cache side effects", () => {
       invalidator,
     );
 
-    expect(invalidator.invalidateContent.mock.calls).toEqual([
-      [{ id: pageId, type: "page" }],
-      [{ id: secondPageId, type: "page" }],
-    ]);
+    expect(invalidator.invalidate).toHaveBeenCalledOnce();
+    expect(invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [
+        { id: pageId, type: "page" },
+        { id: secondPageId, type: "page" },
+      ],
+      refreshLayout: true,
+      refreshSitemap: true,
+    });
   });
 
   it("更新成功后失效页面缓存并传播缓存失败", async () => {
@@ -76,7 +82,7 @@ describe("Page cache side effects", () => {
           update: vi.fn().mockResolvedValue({ id: pageId }),
         },
         { id: pageId },
-        { invalidateContent: vi.fn().mockRejectedValue(cacheError) },
+        { invalidate: vi.fn().mockRejectedValue(cacheError) },
       ),
     ).rejects.toBe(cacheError);
   });

@@ -1,5 +1,5 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import { CleanZod } from "@/packages/trpc/api/schemas/clean.zod";
+import type { CleanZod } from "@/packages/application/validation";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { MAX_BATCH_SIZE } from "@/packages/application/resource-limits";
