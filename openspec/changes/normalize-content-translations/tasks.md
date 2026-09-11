@@ -33,6 +33,7 @@
 
 - [x] 5.1 只读解析并脱敏确认目标 Turso 数据库，审计远程 schema、migration ledger、JSON 有效性和必填翻译数据
 - [x] 5.2 在仓库外私有目录导出远程 snapshot/WAL，设置安全权限，并通过 `PRAGMA integrity_check`、关键表计数与 SHA-256 验证备份
-- [ ] 5.3 在已批准维护窗口仅使用 `bun run db:migrate` 应用已提交迁移，不运行 `drizzle-kit push`
-- [ ] 5.4 迁移后验证 ledger、目标 schema、主表计数、必填翻译、孤儿关系和旧列移除，并同步部署新 schema 对应代码
-- [ ] 5.5 记录备份位置、校验值、迁移结果和未运行 E2E 的验证边界；若任一步失败则停止发布并按 runbook 恢复
+- [x] 5.3 在已批准维护窗口仅使用 `bun run db:migrate` 应用已提交迁移，不运行 `drizzle-kit push`
+- [x] 5.4 迁移后验证 ledger、目标 schema、主表计数、必填翻译、孤儿关系和旧列移除
+- [ ] 5.5 经单独授权后部署新 schema 对应代码
+- [x] 5.6 记录备份位置、校验值、迁移结果和未运行 E2E 的验证边界；若任一步失败则停止发布并按 runbook 恢复
