@@ -1,12 +1,9 @@
 -- Refuse ambiguous public URLs before changing indexes or association data.
-CREATE TEMP TABLE category_path_migration_guard (value integer);--> statement-breakpoint
-CREATE TEMP TRIGGER category_path_migration_guard_check
-BEFORE INSERT ON category_path_migration_guard
-WHEN EXISTS (SELECT path FROM category GROUP BY path HAVING count(*) > 1)
-BEGIN
-  SELECT RAISE(ABORT, 'Duplicate category paths: resolve paths before migrating. Run SELECT path, group_concat(id) FROM category GROUP BY path HAVING count(*) > 1');
-END;--> statement-breakpoint
-INSERT INTO category_path_migration_guard VALUES (1);--> statement-breakpoint
+CREATE TABLE category_path_migration_guard (
+  value integer CONSTRAINT "Duplicate category paths: resolve paths before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO category_path_migration_guard (value)
+SELECT 1 WHERE EXISTS (SELECT path FROM category GROUP BY path HAVING count(*) > 1);--> statement-breakpoint
 DROP TABLE category_path_migration_guard;--> statement-breakpoint
 -- Keep the earliest association row for each tuple without changing meaning.
 DELETE FROM post_tag WHERE rowid NOT IN (

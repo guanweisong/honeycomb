@@ -1,5 +1,4 @@
-CREATE TEMP TABLE translation_migration_guard (value integer);--> statement-breakpoint
-CREATE TEMP TABLE translation_migration_counts (table_name text primary key, row_count integer not null);--> statement-breakpoint
+CREATE TABLE translation_migration_counts (table_name text primary key, row_count integer not null);--> statement-breakpoint
 INSERT INTO translation_migration_counts VALUES
   ('category', (SELECT count(*) FROM category)),
   ('post', (SELECT count(*) FROM post)),
@@ -7,9 +6,11 @@ INSERT INTO translation_migration_counts VALUES
   ('setting', (SELECT count(*) FROM setting)),
   ('tag', (SELECT count(*) FROM tag));--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_category
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_category (
+  value integer CONSTRAINT "Invalid category translations: repair JSON and en/zh values before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_category (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM category
   WHERE CASE WHEN
     json_valid(title) = 1 AND json_type(title) = 'object' AND
@@ -19,16 +20,14 @@ WHEN EXISTS (
     json_type(description, '$.en') = 'text' AND trim(json_extract(description, '$.en')) <> '' AND
     json_type(description, '$.zh') = 'text' AND trim(json_extract(description, '$.zh')) <> ''
   THEN 0 ELSE 1 END = 1
-)
-BEGIN
-  SELECT RAISE(ABORT, 'Invalid category translations: query category ids with invalid JSON or missing en/zh values before migrating');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TRIGGER translation_guard_category;--> statement-breakpoint
+);--> statement-breakpoint
+DROP TABLE translation_guard_category;--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_page
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_page (
+  value integer CONSTRAINT "Invalid page translations: repair JSON and en/zh values before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_page (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM page
   WHERE CASE WHEN
     json_valid(title) = 1 AND json_type(title) = 'object' AND
@@ -38,32 +37,28 @@ WHEN EXISTS (
     json_type(content, '$.en') = 'text' AND trim(json_extract(content, '$.en')) <> '' AND
     json_type(content, '$.zh') = 'text' AND trim(json_extract(content, '$.zh')) <> ''
   THEN 0 ELSE 1 END = 1
-)
-BEGIN
-  SELECT RAISE(ABORT, 'Invalid page translations: query page ids with invalid JSON or missing en/zh values before migrating');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TRIGGER translation_guard_page;--> statement-breakpoint
+);--> statement-breakpoint
+DROP TABLE translation_guard_page;--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_tag
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_tag (
+  value integer CONSTRAINT "Invalid tag translations: repair JSON and en/zh values before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_tag (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM tag
   WHERE CASE WHEN
     json_valid(name) = 1 AND json_type(name) = 'object' AND
     json_type(name, '$.en') = 'text' AND trim(json_extract(name, '$.en')) <> '' AND
     json_type(name, '$.zh') = 'text' AND trim(json_extract(name, '$.zh')) <> ''
   THEN 0 ELSE 1 END = 1
-)
-BEGIN
-  SELECT RAISE(ABORT, 'Invalid tag translations: query tag ids with invalid JSON or missing en/zh values before migrating');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TRIGGER translation_guard_tag;--> statement-breakpoint
+);--> statement-breakpoint
+DROP TABLE translation_guard_tag;--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_post
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_post (
+  value integer CONSTRAINT "Invalid post translations: repair JSON before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_post (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM post
   WHERE (title IS NOT NULL AND (json_valid(title) <> 1 OR json_type(title) <> 'object'))
      OR (content IS NOT NULL AND (json_valid(content) <> 1 OR json_type(content) <> 'object'))
@@ -71,27 +66,21 @@ WHEN EXISTS (
      OR (gallery_location IS NOT NULL AND (json_valid(gallery_location) <> 1 OR json_type(gallery_location) <> 'object'))
      OR (quote_author IS NOT NULL AND (json_valid(quote_author) <> 1 OR json_type(quote_author) <> 'object'))
      OR (quote_content IS NOT NULL AND (json_valid(quote_content) <> 1 OR json_type(quote_content) <> 'object'))
-)
-BEGIN
-  SELECT RAISE(ABORT, 'Invalid post translations: query post ids containing invalid JSON before migrating');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TRIGGER translation_guard_post;--> statement-breakpoint
+);--> statement-breakpoint
+DROP TABLE translation_guard_post;--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_setting
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_setting (
+  value integer CONSTRAINT "Invalid setting translations: repair JSON before migrating" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_setting (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM setting
   WHERE json_valid(site_name) <> 1 OR json_type(site_name) <> 'object'
      OR json_valid(site_sub_name) <> 1 OR json_type(site_sub_name) <> 'object'
      OR json_valid(site_signature) <> 1 OR json_type(site_signature) <> 'object'
      OR json_valid(site_copyright) <> 1 OR json_type(site_copyright) <> 'object'
-)
-BEGIN
-  SELECT RAISE(ABORT, 'Invalid setting translations: query setting ids containing invalid JSON before migrating');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TRIGGER translation_guard_setting;--> statement-breakpoint
+);--> statement-breakpoint
+DROP TABLE translation_guard_setting;--> statement-breakpoint
 
 CREATE TABLE `category_translation` (
 	`category_id` text NOT NULL,
@@ -192,9 +181,11 @@ ALTER TABLE `setting` DROP COLUMN `site_signature`;--> statement-breakpoint
 ALTER TABLE `setting` DROP COLUMN `site_copyright`;--> statement-breakpoint
 ALTER TABLE `tag` DROP COLUMN `name`;--> statement-breakpoint
 
-CREATE TEMP TRIGGER translation_guard_final
-BEFORE INSERT ON translation_migration_guard
-WHEN EXISTS (
+CREATE TABLE translation_guard_final (
+  value integer CONSTRAINT "Translation migration verification failed: compare counts translations orphans and legacy columns" CHECK (value = 0)
+);--> statement-breakpoint
+INSERT INTO translation_guard_final (value)
+SELECT 1 WHERE EXISTS (
   SELECT 1 FROM translation_migration_counts c
   WHERE c.row_count <> CASE c.table_name
     WHEN 'category' THEN (SELECT count(*) FROM category)
@@ -216,10 +207,6 @@ OR EXISTS (SELECT 1 FROM pragma_table_info('category') WHERE name IN ('descripti
 OR EXISTS (SELECT 1 FROM pragma_table_info('page') WHERE name IN ('content', 'title'))
 OR EXISTS (SELECT 1 FROM pragma_table_info('post') WHERE name IN ('gallery_location', 'content', 'excerpt', 'title', 'quote_author', 'quote_content'))
 OR EXISTS (SELECT 1 FROM pragma_table_info('setting') WHERE name IN ('site_name', 'site_sub_name', 'site_signature', 'site_copyright'))
-OR EXISTS (SELECT 1 FROM pragma_table_info('tag') WHERE name = 'name')
-BEGIN
-  SELECT RAISE(ABORT, 'Translation migration verification failed: compare parent counts, required translations, orphans, and legacy columns');
-END;--> statement-breakpoint
-INSERT INTO translation_migration_guard VALUES (1);--> statement-breakpoint
-DROP TABLE translation_migration_guard;--> statement-breakpoint
+OR EXISTS (SELECT 1 FROM pragma_table_info('tag') WHERE name = 'name');--> statement-breakpoint
+DROP TABLE translation_guard_final;--> statement-breakpoint
 DROP TABLE translation_migration_counts;
