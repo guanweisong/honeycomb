@@ -34,7 +34,7 @@ export function toCommentTargetReferenceFromRef(
 export function assertPublicCommentTarget(
   target: CommentTargetReference,
   state: CommentTargetState | null,
-) {
+): asserts state is CommentTargetState {
   if (!state) throw new ApplicationError("NOT_FOUND");
   if ((target.type === "page") !== (state.type === "page"))
     throw new ApplicationError("INTERNAL_SERVER_ERROR");
@@ -53,7 +53,9 @@ export async function assertPublicTarget(
   repository: CommentTargetRepository,
   target: CommentTargetReference,
 ) {
-  assertPublicCommentTarget(target, await repository.findTarget(target));
+  const state = await repository.findTarget(target);
+  assertPublicCommentTarget(target, state);
+  return state;
 }
 
 export async function assertCommentParentMatches(

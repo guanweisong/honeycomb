@@ -17,13 +17,23 @@ export function getMediaQueryInput(page = 1): MediaIndexInput {
 
 export function useMediaQuery() {
   const [page, setPage] = useState(1);
-  const [pages, setPages] = useState<Record<number, MediaViewModel[]>>({});
+  const [pages, setPages] = useState<Partial<Record<number, MediaViewModel[]>>>(
+    {},
+  );
   const [total, setTotal] = useState(0);
   const requestedPage = useRef<number | undefined>(undefined);
   const requestedFromSignature = useRef<string | undefined>(undefined);
+  const refreshFirstPage = useRef(false);
   const searchParams = getMediaQueryInput(page);
   const query = trpc.media.index.useQuery(searchParams);
   const { refetch } = query;
+
+  useEffect(() => {
+    if (page === 1 && refreshFirstPage.current) {
+      refreshFirstPage.current = false;
+      void refetch();
+    }
+  }, [page, refetch]);
 
   useEffect(() => {
     if (!query.data) return;
@@ -91,12 +101,14 @@ export function useMediaQuery() {
   const reset = useCallback(() => {
     requestedPage.current = undefined;
     requestedFromSignature.current = undefined;
-    setPages({});
-    setTotal(0);
-
     if (page === 1) {
+      // 保留已有页：结构共享可能让成功 refetch 的 data 引用不变。
       void refetch();
     } else {
+      setPages((currentPages) =>
+        currentPages[1] ? { 1: currentPages[1] } : {},
+      );
+      refreshFirstPage.current = true;
       setPage(1);
     }
   }, [page, refetch]);

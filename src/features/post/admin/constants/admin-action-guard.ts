@@ -51,7 +51,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "DataTable",
           attribute: "onSelectionChange",
-          reference: "setSelectedRows",
+          reference: "handleSelectionChange",
         },
         guard: {
           kind: "attribute",

@@ -14,6 +14,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import type { CategoryViewModel as CategoryEntity } from "../../../category/presentation/category-view-model";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
+import { MAX_BATCH_SIZE } from "@/packages/application/resource-limits";
 
 /**
  * 文章分类管理页面。
@@ -28,6 +29,9 @@ const Category = () => {
    * 类型为 `CategoryEntity` 数组。
    */
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
+  const handleSelectionChange = (rows: CategoryEntity[]) => {
+    setSelectedRows(rows.slice(0, MAX_BATCH_SIZE));
+  };
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
    */
@@ -73,10 +77,13 @@ const Category = () => {
   const handleDeleteItem = async (ids: string[]) => {
     try {
       await destroyCategory.mutateAsync({ ids });
-      refetch();
+      setSelectedRows((rows) => rows.filter((row) => !ids.includes(row.id)));
+      void refetch();
       toast.success("删除成功");
+      return true;
     } catch {
       toast.error("删除失败");
+      return false;
     }
   };
 
@@ -85,8 +92,7 @@ const Category = () => {
    */
   const handleDeleteBatch = async () => {
     const ids = selectedRows.map((item) => item.id);
-    await handleDeleteItem(ids);
-    setSelectedRows([]);
+    return handleDeleteItem(ids);
   };
 
   /**
@@ -113,10 +119,13 @@ const Category = () => {
         isFetching={isFetching}
         error={isError}
         selectableRows={canDeleteCategory}
+        disabledRowSelectable={(row) =>
+          selectedRows.length >= MAX_BATCH_SIZE && !selectedRows.includes(row)
+        }
         selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
+        onSelectionChange={handleSelectionChange}
         toolBar={
-          <div className="flex justify-between">
+          <div className="flex flex-col gap-2">
             <div className="flex gap-1">
               {canCreateCategory && (
                 <Button onClick={handleAddNew} variant="outline">
@@ -141,6 +150,14 @@ const Category = () => {
                 />
               )}
             </div>
+            {canDeleteCategory && (
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                已选择 {selectedRows.length} 个；每次最多选择并删除{" "}
+                {MAX_BATCH_SIZE} 个分类。
+                {(data?.total ?? 0) > MAX_BATCH_SIZE &&
+                  `全选将选中前 ${MAX_BATCH_SIZE} 项。`}
+              </p>
+            )}
           </div>
         }
         rowActions={(row) => (

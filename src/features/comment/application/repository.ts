@@ -51,10 +51,12 @@ export interface CommentCommandRepository {
   findStatus(id: string): Promise<CommentStatus | null>;
   update(input: CommentUpdate): Promise<CommentRecord>;
   destroy(ids: string[]): Promise<{ success: true }>;
-  create(
+  /** 仅在已校验的目标状态及父评论归属仍一致时原子插入。 */
+  createIfTargetMatches(
     metadata: CommentRequestMetadata,
     input: PublicCommentInput,
-  ): Promise<CommentRecord>;
+    expectedTarget: CommentTargetState,
+  ): Promise<CommentRecord | null>;
 }
 export interface CommentRequestMetadata {
   ip: string | null;

@@ -11,6 +11,7 @@ import {
 } from "@tests/helpers/test-utils";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import * as commandRepositories from "@/features/comment/infrastructure/comment-command-repository";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 const mockInvalidateAllPublicContent = vi.hoisted(() => vi.fn());
@@ -110,6 +111,21 @@ describe("Comment Router", () => {
     });
 
     it("should create comment with captcha validation", async () => {
+      const createRepository =
+        commandRepositories.createCommentCommandRepository;
+      const guardedCreates = vi.fn();
+      const repositorySpy = vi
+        .spyOn(commandRepositories, "createCommentCommandRepository")
+        .mockImplementation((db) => {
+          const repository = createRepository(db);
+          return {
+            ...repository,
+            createIfTargetMatches: (...args) => {
+              guardedCreates(...args);
+              return repository.createIfTargetMatches(...args);
+            },
+          };
+        });
       const newComment = {
         id: TEST_IDS.ID_1,
         author: "Test User",
@@ -166,12 +182,15 @@ describe("Comment Router", () => {
       expect(result).not.toHaveProperty("email");
       expect(result).not.toHaveProperty("ip");
       expect(result).not.toHaveProperty("userAgent");
-      expect(mockDb.values).toHaveBeenCalledWith(
+      expect(guardedCreates).toHaveBeenCalledWith(
         expect.objectContaining({
           ip: "203.0.113.10",
           userAgent: "Sensitive Browser",
         }),
+        expect.objectContaining({ postId: TEST_IDS.ID_1 }),
+        expect.objectContaining({ status: PostStatus.PUBLISHED }),
       );
+      repositorySpy.mockRestore();
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         id: TEST_IDS.ID_1,
         type: "post",

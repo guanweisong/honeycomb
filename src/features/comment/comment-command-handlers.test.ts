@@ -34,7 +34,9 @@ describe("Comment command handlers", () => {
 
   function createDependencies(overrides = {}) {
     return {
-      repository: { create: vi.fn().mockResolvedValue(createdComment) },
+      repository: {
+        createIfTargetMatches: vi.fn().mockResolvedValue(createdComment),
+      },
       targetRepository: {
         findTarget: vi.fn().mockResolvedValue({
           type: "post",
@@ -78,7 +80,9 @@ describe("Comment command handlers", () => {
       createComment(
         createDependencies({
           repository: {
-            create: vi.fn().mockRejectedValue(new Error("database failed")),
+            createIfTargetMatches: vi
+              .fn()
+              .mockRejectedValue(new Error("database failed")),
           },
           notify,
           invalidator,
@@ -101,7 +105,7 @@ describe("Comment command handlers", () => {
     const order: string[] = [];
     const dependencies = createDependencies({
       repository: {
-        create: vi.fn().mockImplementation(async () => {
+        createIfTargetMatches: vi.fn().mockImplementation(async () => {
           order.push("database");
           return createdComment;
         }),
@@ -144,9 +148,14 @@ describe("Comment command handlers", () => {
       "notification",
       "cache",
     ]);
-    expect(dependencies.repository.create).toHaveBeenCalledWith(
+    expect(dependencies.repository.createIfTargetMatches).toHaveBeenCalledWith(
       requestMetadata,
       expect.objectContaining({ postId: "post-1" }),
+      {
+        type: "post",
+        status: PostStatus.PUBLISHED,
+        commentStatus: EnableStatus.ENABLE,
+      },
     );
     expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
       id: "post-1",
@@ -190,7 +199,7 @@ describe("Comment command handlers", () => {
     const order: string[] = [];
     const dependencies = createDependencies({
       repository: {
-        create: vi.fn().mockImplementation(async () => {
+        createIfTargetMatches: vi.fn().mockImplementation(async () => {
           order.push("database");
           return { ...createdComment, parentId: "parent-1" };
         }),
@@ -287,7 +296,9 @@ describe("Comment command handlers", () => {
           : { postId: "post-1" }),
       }),
     ).rejects.toMatchObject({ code: expectedCode });
-    expect(dependencies.repository.create).not.toHaveBeenCalled();
+    expect(
+      dependencies.repository.createIfTargetMatches,
+    ).not.toHaveBeenCalled();
   });
 
   it("拒绝同时关联多个评论目标", async () => {
@@ -303,7 +314,25 @@ describe("Comment command handlers", () => {
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(dependencies.targetRepository.findTarget).not.toHaveBeenCalled();
-    expect(dependencies.repository.create).not.toHaveBeenCalled();
+    expect(
+      dependencies.repository.createIfTargetMatches,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("原子插入失败后目标恢复时仍拒绝返回成功", async () => {
+    const dependencies = createDependencies({
+      repository: { createIfTargetMatches: vi.fn().mockResolvedValue(null) },
+    });
+    await expect(
+      createComment(dependencies, requestMetadata, {
+        author: createdComment.author,
+        content: createdComment.content,
+        email: createdComment.email,
+        postId: createdComment.postId,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(dependencies.notify).not.toHaveBeenCalled();
+    expect(dependencies.invalidator.invalidateContent).not.toHaveBeenCalled();
   });
 
   it("父评论属于其他目标时拒绝写入", async () => {
@@ -329,7 +358,9 @@ describe("Comment command handlers", () => {
         postId: "post-1",
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(dependencies.repository.create).not.toHaveBeenCalled();
+    expect(
+      dependencies.repository.createIfTargetMatches,
+    ).not.toHaveBeenCalled();
   });
 
   it("审核成功后返回持久化结果", async () => {

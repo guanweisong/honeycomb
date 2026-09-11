@@ -19,7 +19,7 @@ import type {
 export type { CommentUpdate, PublicCommentInput } from "./repository";
 
 export interface CreateCommentDependencies {
-  repository: Pick<CommentCommandRepository, "create">;
+  repository: Pick<CommentCommandRepository, "createIfTargetMatches">;
   targetRepository: CommentTargetRepository;
   validateCaptcha: (token?: string) => Promise<void>;
   notify: (commentId: string, parentId?: string | null) => Promise<void>;
@@ -86,14 +86,29 @@ export async function createComment(
   const { captchaToken, ...comment } = input;
   await validateCaptcha(captchaToken);
   const target = toCommentTargetReference(comment);
-  await assertPublicTarget(targetRepository, target);
+  const expectedTarget = await assertPublicTarget(targetRepository, target);
   if (comment.parentId)
     await assertCommentParentMatches(
       targetRepository,
       comment.parentId,
       target,
     );
-  const created = await repository.create(metadata, comment);
+  const created = await repository.createIfTargetMatches(
+    metadata,
+    comment,
+    expectedTarget,
+  );
+  if (!created) {
+    // 重新读取仅用于友好错误；任何竞态失败都不能继续通知或刷新缓存。
+    await assertPublicTarget(targetRepository, target);
+    if (comment.parentId)
+      await assertCommentParentMatches(
+        targetRepository,
+        comment.parentId,
+        target,
+      );
+    throw new ApplicationError("BAD_REQUEST", "评论目标已变更，请刷新后重试");
+  }
   try {
     await notify(created.id, comment.parentId);
   } catch (error) {
