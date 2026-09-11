@@ -1,6 +1,24 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import {
+  CategoryInsertSchema,
+  CategoryUpdateSchema,
+} from "@/features/category/application/write-schema";
+import { CategoryInsertSchema as CategoryTransportInsert } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema as CategoryTransportUpdate } from "@/features/category/schemas/category.update.schema";
+import {
+  TagInsertSchema,
+  TagUpdateSchema,
+} from "@/features/tag/application/write-schema";
+import { TagInsertSchema as TagTransportInsert } from "@/features/tag/schemas/tag.insert.schema";
+import { TagUpdateSchema as TagTransportUpdate } from "@/features/tag/schemas/tag.update.schema";
+import {
+  PublicCommentBaseSchema,
+  CommentUpdateSchema,
+} from "@/features/comment/application/write-schema";
+import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
+import { CommentUpdateSchema as CommentTransportUpdate } from "@/features/comment/schemas/comment.update.schema";
 
 function source(path: string) {
   return ts.createSourceFile(
@@ -12,6 +30,18 @@ function source(path: string) {
 }
 
 describe("唯一事实源架构门禁", () => {
+  it("transport 消费同一 schema 实例，评论只在共享字段上组合验证码", () => {
+    expect(CategoryTransportInsert).toBe(CategoryInsertSchema);
+    expect(CategoryTransportUpdate).toBe(CategoryUpdateSchema);
+    expect(TagTransportInsert).toBe(TagInsertSchema);
+    expect(TagTransportUpdate).toBe(TagUpdateSchema);
+    expect(CommentTransportUpdate).toBe(CommentUpdateSchema);
+    for (const key of Object.keys(PublicCommentBaseSchema.shape)) {
+      expect(Reflect.get(CommentInsertBaseSchema.shape, key)).toBe(
+        Reflect.get(PublicCommentBaseSchema.shape, key),
+      );
+    }
+  });
   it("公开模型出口只能重新导出，不能另建同名模型", () => {
     for (const path of [
       "src/features/contracts/content.ts",
@@ -37,6 +67,11 @@ describe("唯一事实源架构门禁", () => {
     ["src/features/post/application/repository.ts", "PostWithRelations"],
     ["src/packages/trpc/api/context.ts", "User"],
     ["src/features/page/application/repository.ts", "LocalizedText"],
+    ["src/features/category/application/repository.ts", "CategoryInsert"],
+    ["src/features/category/application/repository.ts", "CategoryUpdate"],
+    ["src/features/tag/application/repository.ts", "TagInsert"],
+    ["src/features/tag/application/repository.ts", "TagUpdate"],
+    ["src/features/comment/application/repository.ts", "PublicCommentInput"],
   ])("%s 的 %s 必须引用或推导，不重写字段", (path, name) => {
     const declaration = source(path).statements.find(
       (node) =>
@@ -50,7 +85,7 @@ describe("唯一事实源架构门禁", () => {
     }
   });
 
-  it.each(["post", "page", "media", "link"])(
+  it.each(["post", "page", "media", "link", "category", "tag"])(
     "%s 写入 schema 出口不维护第二份字段规则",
     (feature) => {
       const file = source(
@@ -63,6 +98,30 @@ describe("唯一事实源架构门禁", () => {
       ).toEqual([]);
     },
   );
+
+  it("Category、Tag、Comment 的更新出口引用 Application 权威 schema", () => {
+    const singleSourceFeatures = ["category", "tag", "comment"].filter(
+      (feature) => {
+        const file = source(
+          `src/features/${feature}/schemas/${feature}.update.schema.ts`,
+        );
+        return (
+          file.statements.length > 0 &&
+          file.statements.every(
+            (node) =>
+              ts.isExportDeclaration(node) &&
+              node.moduleSpecifier &&
+              ts.isStringLiteral(node.moduleSpecifier) &&
+              node.moduleSpecifier.text ===
+                `@/features/${feature}/application/write-schema`,
+          )
+        );
+      },
+    );
+    expect(singleSourceFeatures).toEqual(
+      expect.arrayContaining(["category", "tag", "comment"]),
+    );
+  });
 
   it("评论读写适配共享单个记录映射", () => {
     for (const kind of ["query", "command"]) {

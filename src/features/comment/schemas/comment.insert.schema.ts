@@ -1,59 +1,20 @@
 import { CaptchaSchema } from "@/packages/trpc/api/schemas/captcha.schema";
-import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
+import {
+  PublicCommentBaseSchema,
+  PublicCommentSchema,
+} from "@/features/comment/application/write-schema";
 import { z } from "zod";
-import { HttpUrlSchema } from "@/packages/application/http-url-schema";
+export {
+  CommentAuthorSchema,
+  CommentContentSchema,
+  CommentEmailSchema,
+  CommentSiteSchema,
+} from "@/features/comment/application/write-schema";
 
-export const CommentSiteSchema = z
-  .union([
-    HttpUrlSchema.pipe(z.string().max(200, "网址不能超过 200 个字符")),
-    z
-      .string()
-      .trim()
-      .length(0)
-      .transform(() => undefined),
-  ])
-  .nullable()
-  .optional();
-
-export const CommentAuthorSchema = requiredString("作者不能为空").max(
-  20,
-  "作者不能超过 20 个字符",
+export const CommentInsertBaseSchema = PublicCommentBaseSchema.extend(
+  CaptchaSchema.shape,
 );
-export const CommentContentSchema = requiredString("内容不能为空").max(
-  200,
-  "内容不能超过 200 个字符",
+export const CommentInsertSchema = PublicCommentSchema.safeExtend(
+  CaptchaSchema.shape,
 );
-export const CommentEmailSchema = requiredString("邮箱不能为空")
-  .email("邮箱格式不正确")
-  .max(254, "邮箱不能超过 254 个字符");
-
-/**
- * 新增评论时的数据验证 schema。
- * 只定义用户可提交的输入字段，并扩展验证码校验，避免依赖数据库表结构。
- */
-export const CommentInsertBaseSchema = z.object({
-  author: CommentAuthorSchema,
-  content: CommentContentSchema,
-  email: CommentEmailSchema,
-  site: CommentSiteSchema,
-  parentId: z.string().nullable().optional(),
-  postId: z.string().nullable().optional(),
-  pageId: z.string().nullable().optional(),
-  customId: z.string().nullable().optional(),
-  ...CaptchaSchema.shape,
-});
-
-export const CommentInsertSchema = CommentInsertBaseSchema.refine(
-  (input) =>
-    [input.postId, input.pageId, input.customId].filter(Boolean).length === 1,
-  {
-    message: "评论必须且只能关联一个目标",
-    path: ["postId"],
-  },
-);
-
-/**
- * 新增评论的 TypeScript 输入类型。
- * 从 `CommentInsertSchema` 推断而来，提供了清晰的数据结构定义。
- */
-export type CommentInsertInput = z.infer<typeof CommentInsertSchema>;
+export type CommentInsertInput = z.output<typeof CommentInsertSchema>;

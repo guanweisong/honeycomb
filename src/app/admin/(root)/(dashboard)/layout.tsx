@@ -1,5 +1,4 @@
-import { getAdminUser } from "@/app/admin/lib/admin-auth";
-import { headers } from "next/headers";
+import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
 import { DashboardClientShell } from "./components/DashboardClientShell";
 import { AdminProviders } from "@/app/admin/AdminProviders";
@@ -9,18 +8,15 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const requestHeaders = await headers();
-  const user = await getAdminUser(requestHeaders);
+  const user = await getCurrentAdminUser();
 
   if (!user) {
     redirect("/admin/login");
   }
 
   return (
-      <AdminProviders initialUser={user}>
-      <DashboardClientShell user={user}>
-        {children}
-      </DashboardClientShell>
+    <AdminProviders initialUser={user}>
+      <DashboardClientShell user={user}>{children}</DashboardClientShell>
     </AdminProviders>
   );
 }

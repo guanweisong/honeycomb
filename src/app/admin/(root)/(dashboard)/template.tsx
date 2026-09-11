@@ -1,4 +1,4 @@
-import { getAdminUser } from "@/app/admin/lib/admin-auth";
+import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import {
   ADMIN_PATHNAME_HEADER,
   canAccessAdminRoute,
@@ -12,7 +12,7 @@ export default async function AdminRouteTemplate({
   children: React.ReactNode;
 }) {
   const requestHeaders = await headers();
-  const user = await getAdminUser(requestHeaders);
+  const user = await getCurrentAdminUser();
   if (!user) return redirect("/admin/login");
 
   const pathname = requestHeaders.get(ADMIN_PATHNAME_HEADER);

@@ -5,6 +5,7 @@ export const pwaGlobIgnores = [
   "public/static/images/mobile.png",
   ".next/server/app/admin/**/*",
   ".next/static/app/admin/**/*",
+  ".next/static/chunks/app/admin/**/*",
 ] as const;
 
 export const offlinePrecacheUrl = "/en/offline";

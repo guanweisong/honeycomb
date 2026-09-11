@@ -1,18 +1,13 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import type { I18n } from "@/packages/domain/localization/i18n";
+import type {
+  CategoryInsert as CategoryInsertInput,
+  CategoryUpdate as CategoryUpdateInput,
+} from "./write-schema";
 
 /** 分类写入契约；具体数据库字段由 infrastructure 适配器负责映射。 */
-export type CategoryInsert = {
-  title: I18n;
-  description: I18n;
-  path: string;
-  id?: string;
-  parent?: string | null;
-  status?: string;
-};
-export type CategoryUpdate = { id: string } & Partial<
-  Omit<CategoryInsert, "id">
->;
+export type CategoryInsert = CategoryInsertInput & { id?: string };
+export type CategoryUpdate = CategoryUpdateInput;
 export type CategoryListInput = PaginationInput & {
   id?: string;
   title?: string;
@@ -37,9 +32,7 @@ export type CategoryRecord = {
 };
 
 export interface CategoryRepository {
-  tree(
-    visibility: CategoryVisibility,
-  ): Promise<{
+  tree(visibility: CategoryVisibility): Promise<{
     list: (CategoryRecord & { deepPath: number })[];
     total: number;
   }>;

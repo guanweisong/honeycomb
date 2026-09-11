@@ -5,8 +5,11 @@ import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 import type { PostStatus } from "@/packages/domain/content/post-status";
 import type { PageStatus } from "@/packages/domain/content/page";
 import type { EnableStatus } from "@/packages/domain/shared/enable-status";
-import type { CommentUpdate } from "../schemas/comment.update.schema";
-export type { CommentUpdate } from "../schemas/comment.update.schema";
+import type {
+  CommentUpdate,
+  PublicCommentInput as PublicCommentWriteInput,
+} from "./write-schema";
+export type { CommentUpdate } from "./write-schema";
 export interface CommentRecord {
   id: string;
   author: string;
@@ -43,16 +46,7 @@ export interface PublicCommentNode {
   avatar: string;
   children?: PublicCommentNode[];
 }
-export interface PublicCommentInput {
-  author: string;
-  content: string;
-  email: string;
-  site?: string | null;
-  parentId?: string | null;
-  postId?: string | null;
-  pageId?: string | null;
-  customId?: string | null;
-}
+export type PublicCommentInput = PublicCommentWriteInput;
 export interface CommentCommandRepository {
   findStatus(id: string): Promise<CommentStatus | null>;
   update(input: CommentUpdate): Promise<CommentRecord>;
@@ -99,7 +93,9 @@ export type CommentTargetState =
       commentStatus: EnableStatus;
     };
 export interface CommentTargetRepository {
-  findTarget(target: CommentTargetReference): Promise<CommentTargetState | null>;
+  findTarget(
+    target: CommentTargetReference,
+  ): Promise<CommentTargetState | null>;
   findParentTarget(parentId: string): Promise<CommentTargetReference | null>;
 }
 export type NotificationComment = CommentRecord & {

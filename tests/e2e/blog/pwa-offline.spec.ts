@@ -9,7 +9,8 @@ test.describe('blog pwa', () => {
     await expect(manifests).toHaveCount(2);
   });
 
-  test('@regression service worker serves the offline fallback for a failed navigation', async ({
+  // Serwist injects additionalPrecacheEntries only in production builds.
+  test('@regression @production service worker serves the offline fallback for a failed navigation', async ({
     context,
     page,
   }) => {

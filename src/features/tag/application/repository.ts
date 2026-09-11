@@ -1,15 +1,13 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import { z } from "zod";
-import {
-  NullableI18nSchema,
-  type I18n,
-} from "@/packages/domain/localization/i18n";
+import { NullableI18nSchema } from "@/packages/domain/localization/i18n";
+import type {
+  TagInsert as TagInsertInput,
+  TagUpdate as TagUpdateInput,
+} from "./write-schema";
 
-export interface TagInsert {
-  name: I18n;
-  id?: string;
-}
-export type TagUpdate = { id: string } & Partial<TagInsert>;
+export type TagInsert = TagInsertInput & { id?: string };
+export type TagUpdate = TagUpdateInput;
 export type TagListInput = PaginationInput & {
   id?: string[];
   name?: string;

@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/app/admin/lib/admin-auth", () => ({
-  getAdminUser: mocks.getAdminUser,
+  getCurrentAdminUser: mocks.getAdminUser,
 }));
 vi.mock("next/headers", () => ({ headers: mocks.headers }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));

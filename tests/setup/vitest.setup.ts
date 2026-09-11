@@ -26,7 +26,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 // Mock Next.js environment
-Object.defineProperty(window, 'location', {
+if (typeof window !== 'undefined') Object.defineProperty(window, 'location', {
   value: {
     href: 'http://localhost:3000',
     origin: 'http://localhost:3000',

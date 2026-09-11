@@ -7,6 +7,7 @@ import { PageTemplate } from "@/packages/domain/content/page-template";
 import { PostType } from "@/packages/domain/content/post";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { TagType } from "@/packages/domain/content/tag";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
@@ -24,6 +25,10 @@ const ids = {
   categoryMenu: "000000000000000000000007",
   pageMenu: "000000000000000000000008",
   tag: "000000000000000000000009",
+  childCategory: "000000000000000000000010",
+  grandchildCategory: "000000000000000000000011",
+  bannedComment: "000000000000000000000012",
+  replyComment: "000000000000000000000013",
 } as const;
 
 async function seed(): Promise<void> {
@@ -98,7 +103,10 @@ async function seed(): Promise<void> {
           set: {
             siteName: localized("Honeycomb E2E", "蜂巢 E2E"),
             siteSubName: localized("Reliable browser gates", "可靠浏览器门禁"),
-            siteSignature: localized("Deterministic test site", "确定性测试站点"),
+            siteSignature: localized(
+              "Deterministic test site",
+              "确定性测试站点",
+            ),
             siteCopyright: localized("Honeycomb E2E", "蜂巢 E2E"),
             updatedAt: now,
           },
@@ -126,12 +134,41 @@ async function seed(): Promise<void> {
           },
         });
 
+      for (const category of [
+        {
+          id: ids.childCategory,
+          parent: ids.category,
+          path: "testing",
+          title: localized("Testing", "测试"),
+        },
+        {
+          id: ids.grandchildCategory,
+          parent: ids.childCategory,
+          path: "browser-tests",
+          title: localized("Browser tests", "浏览器测试"),
+        },
+      ]) {
+        await tx
+          .insert(schema.category)
+          .values({
+            ...category,
+            description: localized("Nested E2E category", "嵌套 E2E 分类"),
+            status: EnableStatus.ENABLE,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: schema.category.id,
+            set: { ...category, status: EnableStatus.ENABLE, updatedAt: now },
+          });
+      }
+
       await tx
         .insert(schema.post)
         .values({
           id: ids.post,
           authorId: ids.user,
-          categoryId: ids.category,
+          categoryId: ids.grandchildCategory,
           commentStatus: EnableStatus.ENABLE,
           content: localized(
             "<p>Deterministic browser test content.</p>",
@@ -150,7 +187,7 @@ async function seed(): Promise<void> {
           target: schema.post.id,
           set: {
             authorId: ids.user,
-            categoryId: ids.category,
+            categoryId: ids.grandchildCategory,
             commentStatus: EnableStatus.ENABLE,
             content: localized(
               "<p>Deterministic browser test content.</p>",
@@ -165,12 +202,48 @@ async function seed(): Promise<void> {
           },
         });
 
+      for (const comment of [
+        {
+          id: ids.bannedComment,
+          parentId: null,
+          author: "Moderated author",
+          content: "PRIVATE_BANNED_COMMENT_SENTINEL",
+          status: CommentStatus.BAN,
+        },
+        {
+          id: ids.replyComment,
+          parentId: ids.bannedComment,
+          author: "Public reply author",
+          content: "Visible reply beneath moderated parent",
+          status: CommentStatus.PUBLISH,
+        },
+      ]) {
+        await tx
+          .insert(schema.comment)
+          .values({
+            ...comment,
+            postId: ids.post,
+            email: "private-comment@honeycomb.test",
+            ip: "192.0.2.10",
+            userAgent: "PRIVATE_AGENT_SENTINEL",
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: schema.comment.id,
+            set: { ...comment, updatedAt: now },
+          });
+      }
+
       await tx
         .insert(schema.page)
         .values({
           id: ids.page,
           authorId: ids.user,
-          content: localized("<p>About the E2E site.</p>", "<p>关于 E2E 站点。</p>"),
+          content: localized(
+            "<p>About the E2E site.</p>",
+            "<p>关于 E2E 站点。</p>",
+          ),
           status: PageStatus.PUBLISHED,
           template: PageTemplate.DEFAULT,
           title: localized("About", "关于"),
@@ -182,7 +255,10 @@ async function seed(): Promise<void> {
           target: schema.page.id,
           set: {
             authorId: ids.user,
-            content: localized("<p>About the E2E site.</p>", "<p>关于 E2E 站点。</p>"),
+            content: localized(
+              "<p>About the E2E site.</p>",
+              "<p>关于 E2E 站点。</p>",
+            ),
             status: PageStatus.PUBLISHED,
             template: PageTemplate.DEFAULT,
             title: localized("About", "关于"),

@@ -22,6 +22,8 @@ describe("PWA precache configuration", () => {
       "public/static/images/mobile.png",
       "public/static/images/logo.png",
       ".next/static/app/admin/dashboard.js",
+      ".next/static/chunks/app/admin/(root)/(dashboard)/page-123.js",
+      ".next/static/chunks/app/admin/(root)/login/page-456.js",
       ".next/static/chunks/public.js",
       ".next/static/chunks/public.js.map",
     ];
@@ -34,10 +36,14 @@ describe("PWA precache configuration", () => {
       globDirectory: fixture,
       globPatterns: ["public/**/*", ".next/**/*"],
       globIgnores: [...pwaGlobIgnores],
-      additionalPrecacheEntries: [{ url: offlinePrecacheUrl, revision: "test" }],
+      additionalPrecacheEntries: [
+        { url: offlinePrecacheUrl, revision: "test" },
+      ],
     });
     const urls = result.manifestEntries?.map((entry) => entry.url) ?? [];
 
+    expect(pwaGlobIgnores).toContain(".next/static/chunks/app/admin/**/*");
+    expect(urls.filter((url) => url.includes("/admin/"))).toEqual([]);
     expect(urls).toContain("public/static/images/logo.png");
     expect(urls).toContain(".next/static/chunks/public.js");
     expect(urls).toContain(offlinePrecacheUrl);

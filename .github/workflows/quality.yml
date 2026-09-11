@@ -13,6 +13,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  specs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun add --global @fission-ai/openspec@1.4.1
+      - run: bun run quality:spec
+        env:
+          QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -66,4 +81,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - run: bunx playwright install --with-deps chromium
-      - run: bunx playwright test --project=chromium
+      - run: bun run test:e2e:development
+        env:
+          PLAYWRIGHT_USE_DEV_SERVER: "1"
+          PLAYWRIGHT_PORT: "3100"
+          PLAYWRIGHT_OUTPUT_DIR: /tmp/honeycomb-e2e-development-results
+          PLAYWRIGHT_HTML_REPORT: /tmp/honeycomb-e2e-development-report
+      - run: bun run test:e2e:production
+        env:
+          PLAYWRIGHT_USE_DEV_SERVER: "0"
+          PLAYWRIGHT_PORT: "3101"
+          PLAYWRIGHT_OUTPUT_DIR: /tmp/honeycomb-e2e-production-results
+          PLAYWRIGHT_HTML_REPORT: /tmp/honeycomb-e2e-production-report

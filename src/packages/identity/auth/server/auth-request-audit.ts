@@ -27,7 +27,9 @@ type AuthRequestAuditDependencies = {
 
 async function readBody(request: Request) {
   try {
-    const body = z.record(z.string(), z.unknown()).safeParse(await request.clone().json());
+    const body = z
+      .record(z.string(), z.unknown())
+      .safeParse(await request.json());
     return body.success ? body.data : undefined;
   } catch {
     return undefined;
@@ -49,7 +51,11 @@ export function createAuthRequestAuditHandler({
     }
   };
 
-  return async (request: Request) => {
+  return async (originalRequest: Request) => {
+    // Snapshot both consumers before either reads. The framework retains its
+    // original Request; asynchronous audit work must not expose it to auth.
+    const handlerRequest = originalRequest.clone();
+    const request = originalRequest.clone();
     const path =
       new URL(request.url).pathname.replace(/^\/api\/auth/, "") || "/";
     const body = await readBody(request);
@@ -67,7 +73,7 @@ export function createAuthRequestAuditHandler({
       }
     }
 
-    const response = await handle(request);
+    const response = await handle(handlerRequest);
 
     if (routeEvent && response.ok && sessionBeforeAction?.user) {
       await safelyRecord({

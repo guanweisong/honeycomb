@@ -1,10 +1,1 @@
-import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
-import { IdSchema } from "@/packages/domain/shared/id.schema";
-import { hasUpdateFields } from "@/packages/application/validation";
-
-/**
- * 更新标签时的数据验证 schema
- */
-export const TagUpdateSchema = TagInsertSchema.partial().extend({
-  id: IdSchema,
-}).refine(hasUpdateFields, "至少修改一个字段");
+export { TagUpdateSchema } from "@/features/tag/application/write-schema";
