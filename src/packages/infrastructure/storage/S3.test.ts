@@ -19,7 +19,37 @@ describe("S3 observability", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     configureObservability();
+  });
+
+  it("changing a signed content type produces a different signature for the same PUT", async () => {
+    vi.restoreAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-11T00:00:00Z"));
+    const original = new URL(
+      await S3.getPresignedUrl({
+        Key: "uploads/bound.png",
+        ContentType: "image/png",
+        ContentLength: 10,
+      }),
+    );
+    const altered = new URL(
+      await S3.getPresignedUrl({
+        Key: "uploads/bound.png",
+        ContentType: "text/html",
+        ContentLength: 10,
+      }),
+    );
+    expect(original.searchParams.get("X-Amz-SignedHeaders")).toBe(
+      "content-length;content-type;host",
+    );
+    const originalSignature = original.searchParams.get("X-Amz-Signature");
+    const alteredSignature = altered.searchParams.get("X-Amz-Signature");
+    original.searchParams.delete("X-Amz-Signature");
+    altered.searchParams.delete("X-Amz-Signature");
+    expect(original.toString()).toBe(altered.toString());
+    expect(originalSignature).not.toBe(alteredSignature);
   });
 
   it("records object storage upload success without object keys", async () => {
@@ -55,6 +85,7 @@ describe("S3 observability", () => {
       await S3.getPresignedUrl({
         Key: "uploads/csp-probe.png",
         ContentType: "image/png",
+        ContentLength: 10,
       }),
     );
     const securityOptions = createSecurityHeaderOptions(process.env);
@@ -64,9 +95,26 @@ describe("S3 observability", () => {
       "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
     );
     expect(presignedUrl.pathname).toBe("/bucket/uploads/csp-probe.png");
+    expect(presignedUrl.searchParams.get("X-Amz-SignedHeaders")).toContain(
+      "content-length",
+    );
+    expect(presignedUrl.searchParams.get("X-Amz-SignedHeaders")).toContain(
+      "content-type",
+    );
     expect(presignedUrl.searchParams.get("X-Amz-Algorithm")).toBe(
       "AWS4-HMAC-SHA256",
     );
+  });
+
+  it("signs cleanup for the same object without deleting it during presign", async () => {
+    vi.restoreAllMocks();
+    const cleanup = new URL(
+      await S3.getPresignedDeleteUrl("uploads/orphan.png"),
+    );
+    expect(cleanup.pathname).toBe("/bucket/uploads/orphan.png");
+    expect(cleanup.searchParams.get("X-Amz-Expires")).toBe("3600");
+    expect(cleanup.searchParams.get("X-Amz-Signature")).toBeTruthy();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("records object storage delete failures and preserves the error", async () => {
@@ -92,7 +140,9 @@ describe("S3 observability", () => {
   it("maps keys through the idempotent storage deletion port", async () => {
     send.mockResolvedValue({ Deleted: [] });
 
-    await expect(S3.deleteObjects(["already-missing.png"])).resolves.toBeUndefined();
+    await expect(
+      S3.deleteObjects(["already-missing.png"]),
+    ).resolves.toBeUndefined();
 
     expect(send).toHaveBeenCalledOnce();
     expect(send.mock.calls[0]?.[0].input.Delete.Objects).toEqual([

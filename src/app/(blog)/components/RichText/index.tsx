@@ -25,7 +25,7 @@ export function RichText({ html, images = [] }: Props) {
             data-pswp-width={image.width}
             data-pswp-height={image.height}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             <Image
               src={image.url}
@@ -41,7 +41,9 @@ export function RichText({ html, images = [] }: Props) {
   };
 
   return (
-    <PhotoSwipeClient>{parse(sanitizeRichText(html), options)}</PhotoSwipeClient>
+    <PhotoSwipeClient>
+      {parse(sanitizeRichText(html), options)}
+    </PhotoSwipeClient>
   );
 }
 /**

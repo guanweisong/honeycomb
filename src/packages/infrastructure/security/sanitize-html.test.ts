@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { sanitizeOptionalI18nHtml, sanitizeRichText } from "./sanitize-html";
 
 describe("sanitizeRichText", () => {
+  it("protects new-tab rich-text links while preserving nofollow", () => {
+    const document = new DOMParser().parseFromString(
+      sanitizeRichText(
+        '<a href="https://example.test" target="_blank" rel="nofollow opener">External</a>',
+      ),
+      "text/html",
+    );
+    const link = document.querySelector("a");
+    expect(link?.rel.split(" ")).toEqual(
+      expect.arrayContaining(["nofollow", "noopener", "noreferrer"]),
+    );
+    expect(link?.rel.split(" ")).not.toContain("opener");
+  });
   it("returns an empty string for nullish input", () => {
     expect(sanitizeRichText(null)).toBe("");
     expect(sanitizeRichText(undefined)).toBe("");

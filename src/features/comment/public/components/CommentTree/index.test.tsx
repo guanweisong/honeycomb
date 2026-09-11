@@ -108,7 +108,7 @@ describe("CommentTree", () => {
     );
 
     act(() =>
-      Array.from(container.querySelectorAll("a"))
+      Array.from(container.querySelectorAll("button"))
         .find((link) => link.textContent === "回复")
         ?.click(),
     );

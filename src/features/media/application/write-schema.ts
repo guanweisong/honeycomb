@@ -1,13 +1,11 @@
 import { requiredString } from "@/packages/application/validation";
 import { z } from "zod";
+import { MediaUploadFileSchema } from "./upload-policy";
 
 /**
  * 新增上传文件时的数据验证 schema，不依赖数据库表结构。
  */
-export const MediaInsertSchema = z.object({
-  name: requiredString("文件名不能为空"),
-  size: z.number().int().nonnegative(),
-  type: requiredString("文件类型不能为空"),
+export const MediaInsertSchema = MediaUploadFileSchema.safeExtend({
   key: requiredString("Key 不能为空"),
   color: z.string().nullable().optional(),
   height: z.number().int().nullable().optional(),

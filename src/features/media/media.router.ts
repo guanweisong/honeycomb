@@ -1,6 +1,5 @@
 import "server-only";
 
-import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";
 import {
   permissionProcedure,
@@ -9,7 +8,7 @@ import {
 import { MediaListQuerySchema } from "@/features/media/schemas/media.list.query.schema";
 import { MediaInsertSchema } from "@/features/media/schemas/media.insert.schema";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
+import { MediaUploadFileSchema } from "./application/upload-policy";
 import {
   createMedia,
   destroyMedia,
@@ -27,13 +26,10 @@ export const mediaRouter = createTRPCRouter({
       getMediaList(createMediaRepository(ctx.db), input),
     ),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
-    .input(
-      z.object({
-        name: requiredString("文件名不能为空"),
-        type: requiredString("文件类型不能为空"),
-      }),
-    )
-    .mutation(({ input }) => getMediaPresignedUrl(S3, input.name, input.type)),
+    .input(MediaUploadFileSchema)
+    .mutation(({ input }) =>
+      getMediaPresignedUrl(S3, input.name, input.type, input.size),
+    ),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(({ input, ctx }) =>

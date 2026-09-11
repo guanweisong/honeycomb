@@ -2,6 +2,28 @@ import sanitizeHtml from "sanitize-html";
 import type { I18n } from "@/packages/domain/localization/i18n";
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  transformTags: {
+    a: (tagName, attribs) => ({
+      tagName,
+      attribs:
+        attribs.target?.toLowerCase() === "_blank"
+          ? {
+              ...attribs,
+              rel: [
+                ...new Set([
+                  ...(attribs.rel
+                    ?.split(/\s+/)
+                    .filter(
+                      (value) => value && value.toLowerCase() !== "opener",
+                    ) ?? []),
+                  "noopener",
+                  "noreferrer",
+                ]),
+              ].join(" "),
+            }
+          : attribs,
+    }),
+  },
   allowedTags: [
     "div",
     "section",

@@ -10,7 +10,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
-import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
+import { getLocalizedImageLinks } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { PageStatus } from "@/packages/domain/content/page";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type {
@@ -42,7 +42,7 @@ async function mapRelations(
 ): Promise<PageWithRelations[]> {
   if (!pages.length) return [];
   const urls = Array.from(
-    new Set(pages.flatMap((page) => getAllImageLinkFormHtml(page.content?.zh))),
+    new Set(pages.flatMap((page) => getLocalizedImageLinks(page.content))),
   );
   const [rows, medias] = await Promise.all([
     observeDbOperation("page.service.relations", "select", () =>
@@ -65,7 +65,7 @@ async function mapRelations(
   return pages.map((page) => ({
     ...toPageRecord(page),
     author: rowMap.get(page.id)?.author ?? null,
-    imagesInContent: getAllImageLinkFormHtml(page.content?.zh)
+    imagesInContent: getLocalizedImageLinks(page.content)
       .map((url) => imageMap.get(url))
       .filter((image): image is typeof schema.media.$inferSelect =>
         Boolean(image),
@@ -138,7 +138,7 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
           }),
       );
       if (!page) return null;
-      const urls = getAllImageLinkFormHtml(page.content?.zh);
+      const urls = getLocalizedImageLinks(page.content);
       const imagesInContent = urls.length
         ? await observeDbOperation("page.service.detail-images", "select", () =>
             db
@@ -150,7 +150,11 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
       return {
         ...toPageRecord(page),
         author: page.author ?? null,
-        imagesInContent,
+        imagesInContent: [
+          ...new Map(
+            imagesInContent.map((image) => [image.url, image]),
+          ).values(),
+        ],
       };
     },
     async author(id) {

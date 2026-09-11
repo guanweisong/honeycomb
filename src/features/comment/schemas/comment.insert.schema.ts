@@ -1,20 +1,11 @@
 import { CaptchaSchema } from "@/packages/trpc/api/schemas/captcha.schema";
 import { requiredString } from "@/packages/trpc/api/schemas/required.string.schema";
 import { z } from "zod";
-
-const HttpUrlSchema = z
-  .string()
-  .trim()
-  .url("网址格式不正确")
-  .refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  }, "网址必须使用 http 或 https")
-  .max(200, "网址不能超过 200 个字符");
+import { HttpUrlSchema } from "@/packages/application/http-url-schema";
 
 export const CommentSiteSchema = z
   .union([
-    HttpUrlSchema,
+    HttpUrlSchema.pipe(z.string().max(200, "网址不能超过 200 个字符")),
     z
       .string()
       .trim()
@@ -41,24 +32,24 @@ export const CommentEmailSchema = requiredString("邮箱不能为空")
  * 只定义用户可提交的输入字段，并扩展验证码校验，避免依赖数据库表结构。
  */
 export const CommentInsertBaseSchema = z.object({
-    author: CommentAuthorSchema,
-    content: CommentContentSchema,
-    email: CommentEmailSchema,
-    site: CommentSiteSchema,
-    parentId: z.string().nullable().optional(),
-    postId: z.string().nullable().optional(),
-    pageId: z.string().nullable().optional(),
-    customId: z.string().nullable().optional(),
-    ...CaptchaSchema.shape,
-  });
+  author: CommentAuthorSchema,
+  content: CommentContentSchema,
+  email: CommentEmailSchema,
+  site: CommentSiteSchema,
+  parentId: z.string().nullable().optional(),
+  postId: z.string().nullable().optional(),
+  pageId: z.string().nullable().optional(),
+  customId: z.string().nullable().optional(),
+  ...CaptchaSchema.shape,
+});
 
 export const CommentInsertSchema = CommentInsertBaseSchema.refine(
-    (input) =>
-      [input.postId, input.pageId, input.customId].filter(Boolean).length === 1,
-    {
-      message: "评论必须且只能关联一个目标",
-      path: ["postId"],
-    },
+  (input) =>
+    [input.postId, input.pageId, input.customId].filter(Boolean).length === 1,
+  {
+    message: "评论必须且只能关联一个目标",
+    path: ["postId"],
+  },
 );
 
 /**

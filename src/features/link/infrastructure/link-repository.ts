@@ -54,16 +54,13 @@ export function createLinkRepository(db: Database): LinkRepository {
         status,
         ...rest
       } = input;
-      const searchText = rest.name || rest.description;
       let where = buildDrizzleWhere(
         schema.link,
         {
           ...rest,
-          name: searchText,
           status: visibility === "ALL" ? status : undefined,
         },
         ["status"],
-        { name: searchText },
       );
       if (visibility === "PUBLIC_ONLY") {
         const enabled = eq(schema.link.status, EnableStatus.ENABLE);

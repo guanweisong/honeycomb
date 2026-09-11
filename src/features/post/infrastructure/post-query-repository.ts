@@ -14,7 +14,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
-import { getAllImageLinkFormHtml } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
+import { getLocalizedImageLinks } from "@/packages/infrastructure/content/parser/get-all-image-link-form-html";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type {
   PostQueryRepository,
@@ -283,7 +283,7 @@ export function createPostQueryRepository(
           "INTERNAL_SERVER_ERROR",
           "post detail relation mapping returned no record",
         );
-      const urls = getAllImageLinkFormHtml(result?.content?.zh);
+      const urls = getLocalizedImageLinks(result.content);
       const imagesInContent = urls.length
         ? await observeDbOperation("post.service.detail-images", "select", () =>
             db
@@ -292,7 +292,8 @@ export function createPostQueryRepository(
               .where(inArray(schema.media.url, urls)),
           )
         : [];
-      return { ...result, imagesInContent: imagesInContent.map(toMediaRecord) };
+      const uniqueImages = new Map(imagesInContent.map((image) => [image.url, image]));
+      return { ...result, imagesInContent: [...uniqueImages.values()].map(toMediaRecord) };
     },
   };
 }

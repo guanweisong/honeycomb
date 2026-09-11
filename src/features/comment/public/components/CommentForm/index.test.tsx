@@ -58,6 +58,13 @@ describe("CommentForm", () => {
     expect(container.querySelector('input[name="email"]')).not.toBeNull();
     expect(container.querySelector('input[name="site"]')).not.toBeNull();
     expect(container.querySelector('textarea[name="content"]')).not.toBeNull();
+    for (const name of ["author", "email", "site", "content"]) {
+      const input = container.querySelector<
+        HTMLInputElement | HTMLTextAreaElement
+      >(`[name="${name}"]`);
+      expect(input?.labels?.length).toBe(1);
+      expect(input?.labels?.[0]?.textContent).toBeTruthy();
+    }
   });
 
   it("renders welcome text and clears identity controls for a known commenter", () => {
@@ -70,7 +77,7 @@ describe("CommentForm", () => {
     expect(container.textContent).toContain("welcomeBack");
     expect(container.querySelector('input[name="author"]')).toBeNull();
     container
-      .querySelector("a")
+      .querySelector('button[type="button"]')
       ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onClearIdentity).toHaveBeenCalledTimes(1);
   });
@@ -94,7 +101,7 @@ describe("CommentForm", () => {
 
     expect(container.textContent).toContain("Bob");
     container
-      .querySelector("a")
+      .querySelector('button[type="button"]')
       ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onCancelReply).toHaveBeenCalledTimes(1);
     expect(

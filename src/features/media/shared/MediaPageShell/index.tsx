@@ -9,6 +9,7 @@ import { Button } from "@/packages/ui/components/button";
 import { MediaGrid } from "../MediaGrid";
 import { useMediaActions } from "../actions/media-actions";
 import { useMediaQuery } from "../queries/media-query";
+import { MEDIA_MIME_TYPES } from "../../application/upload-policy";
 
 export interface MediaProps {
   onSelect?: (media: MediaViewModel) => void;
@@ -62,6 +63,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
           <input
             type="file"
             multiple
+            accept={MEDIA_MIME_TYPES.join(",")}
             hidden
             ref={fileInputRef}
             onChange={(event) => handleUpload(event.target.files)}
@@ -77,6 +79,8 @@ export function MediaPageShell({ onSelect }: MediaProps) {
       )}
       <MediaGrid
         media={query.data?.list}
+        isLoading={query.isLoading}
+        error={query.error}
         currentItem={currentItem}
         onDelete={handleDelete}
         onSelect={setCurrentItem}

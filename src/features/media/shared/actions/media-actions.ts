@@ -6,6 +6,13 @@ import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import type { MediaViewModel } from "../media-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
+import {
+  MEDIA_MAX_BATCH_FILES,
+  MediaUploadFileSchema,
+  type MediaUploadFile,
+} from "../../application/upload-policy";
+import type { MediaEntity } from "../../application/write-schema";
+import type { MediaCreateResult } from "../../application/upload-result";
 
 type ImageMetadata = {
   width: number;
@@ -13,31 +20,34 @@ type ImageMetadata = {
   color?: string;
 };
 
-type MediaUploadInput = {
-  name: string;
-  type: string;
-  size: number;
-  key: string;
-  width: number | null;
-  height: number | null;
-  color: string | null;
-};
-
 type SubmitMediaUploadOptions = {
   files: readonly File[];
   getImageMetadata: (file: File) => Promise<ImageMetadata>;
-  getPresignedUrl: (input: { name: string; type: string }) => Promise<{
+  getPresignedUrl: (input: MediaUploadFile) => Promise<{
     url: string;
     key: string;
   }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  createMedia: (input: MediaUploadInput) => Promise<MediaViewModel>;
+  createMedia: (input: MediaEntity) => Promise<MediaCreateResult>;
+  cleanupObject: (key: string) => Promise<void>;
 };
 
+type FailedUpload = {
+  name: string;
+  message: string;
+  cleanupFailed: boolean;
+  outcome: "failed" | "indeterminate";
+};
 export type MediaUploadActionResult =
   | { state: "empty" }
   | { state: "success"; media: MediaViewModel[] }
-  | { state: "error"; message: string };
+  | {
+      state: "partial";
+      media: MediaViewModel[];
+      failed: FailedUpload[];
+      message: string;
+    }
+  | { state: "error"; message: string; failed?: FailedUpload[] };
 
 export async function submitMediaUpload({
   files,
@@ -45,41 +55,88 @@ export async function submitMediaUpload({
   getPresignedUrl,
   uploadToStorage,
   createMedia,
+  cleanupObject,
 }: SubmitMediaUploadOptions): Promise<MediaUploadActionResult> {
   if (files.length === 0) return { state: "empty" };
-
-  try {
-    const media = await Promise.all(
-      files.map(async (file) => {
-        const metadata = file.type.startsWith("image/")
-          ? await getImageMetadata(file)
-          : { width: 0, height: 0 };
-        const { url, key } = await getPresignedUrl({
-          name: file.name,
-          type: file.type,
-        });
-
-        await uploadToStorage(url, file);
-
-        return createMedia({
+  if (files.length > MEDIA_MAX_BATCH_FILES)
+    return { state: "error", message: "每批最多上传 20 个文件" };
+  const results = await Promise.all(
+    files.map(async (file) => {
+      let metadataStarted = false;
+      try {
+        const parsed = MediaUploadFileSchema.safeParse({
           name: file.name,
           type: file.type,
           size: file.size,
+        });
+        if (!parsed.success)
+          throw new Error(parsed.error.issues[0]?.message ?? "无效的媒体文件");
+        const metadata = await getImageMetadata(file);
+        const { url, key } = await getPresignedUrl(parsed.data);
+        await uploadToStorage(url, file);
+        metadataStarted = true;
+        const result = await createMedia({
+          ...parsed.data,
           key,
           width: metadata.width || null,
           height: metadata.height || null,
           color: metadata.color || null,
         });
-      }),
-    );
+        if (result.state === "created") return { media: result.media };
+        let cleanupFailed = false;
+        if (result.state === "rejected") {
+          try {
+            await cleanupObject(key);
+          } catch {
+            cleanupFailed = true;
+          }
+        }
+        return {
+          failed: {
+            name: file.name,
+            message: result.message,
+            cleanupFailed,
+            outcome:
+              result.state === "rejected"
+                ? ("failed" as const)
+                : ("indeterminate" as const),
+          },
+        };
+      } catch (error) {
+        return {
+          failed: {
+            name: file.name,
+            message: metadataStarted
+              ? "保存结果待确认，请刷新媒体列表后核对"
+              : error instanceof Error
+                ? error.message
+                : "上传失败，请稍后再试",
+            cleanupFailed: false,
+            outcome: metadataStarted
+              ? ("indeterminate" as const)
+              : ("failed" as const),
+          },
+        };
+      }
+    }),
+  );
 
-    return { state: "success", media };
-  } catch (error) {
-    return {
-      state: "error",
-      message: error instanceof Error ? error.message : "上传失败，请稍后再试",
-    };
-  }
+  const media = results.flatMap((result) =>
+    result.media ? [result.media] : [],
+  );
+  const failed = results.flatMap((result) =>
+    result.failed ? [result.failed] : [],
+  );
+  if (!failed.length) return { state: "success", media };
+  const message = failed
+    .map(
+      (failure) =>
+        `${failure.name}: ${failure.message}${failure.cleanupFailed ? "（存储清理失败）" : ""}`,
+    )
+    .join("；");
+  return media.length
+    ? { state: "partial", media, failed, message }
+    : { state: "error", failed, message };
 }
 
 type SubmitMediaDeleteOptions = {
@@ -173,23 +230,42 @@ export function useMediaActions({
 
   const handleUpload = async (files: FileList | null) => {
     setLoading(true);
+    const cleanupUrls = new Map<string, string>();
     const result = await submitMediaUpload({
       files: files ? Array.from(files) : [],
       getImageMetadata,
-      getPresignedUrl: getPresignedUrl.mutateAsync,
+      getPresignedUrl: async (input) => {
+        const signed = await getPresignedUrl.mutateAsync(input);
+        cleanupUrls.set(signed.key, signed.cleanupUrl);
+        return signed;
+      },
       uploadToStorage,
       createMedia: uploadMedia.mutateAsync,
+      cleanupObject: async (key) => {
+        const url = cleanupUrls.get(key);
+        if (!url) throw new Error("缺少清理地址");
+        const response = await fetch(url, { method: "DELETE" });
+        if (!response.ok) throw new Error("存储清理失败");
+      },
     });
 
-    if (result.state === "success") {
-      toast.success(`成功上传 ${result.media.length} 个文件`);
+    if (result.state === "success" || result.state === "partial") {
+      if (result.state === "success")
+        toast.success(`成功上传 ${result.media.length} 个文件`);
+      else
+        toast.error(
+          `成功上传 ${result.media.length} 个文件，${result.failed.filter((failure) => failure.outcome === "failed").length} 个失败，${result.failed.filter((failure) => failure.outcome === "indeterminate").length} 个待确认：${result.message}`,
+        );
       const lastMedia = result.media.at(-1);
       if (lastMedia) onUploadComplete(lastMedia);
       refetch();
     } else if (result.state === "error") {
       toast.error(result.message);
+      if (result.failed?.some((failure) => failure.outcome === "indeterminate"))
+        refetch();
     }
     setLoading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDelete = async (id: string) => {

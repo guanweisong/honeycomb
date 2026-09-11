@@ -61,9 +61,13 @@ function CommentItem({
         <div className="absolute right-2 top-4 text-auto-front-gray/50">
           <span>{utcFormat(comment.createdAt || "")}</span>
           <span className="mx-1">/</span>
-          <a className="text-teal-500" onClick={() => onReply(comment)}>
+          <button
+            type="button"
+            className="text-teal-500 focus-visible:outline-2 focus-visible:outline-teal-500"
+            onClick={() => onReply(comment)}
+          >
             {t("form.reply")}
-          </a>
+          </button>
         </div>
       </div>
       {children.length > 0 && (

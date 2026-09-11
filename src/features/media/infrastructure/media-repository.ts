@@ -12,6 +12,7 @@ import {
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import { clientEnv } from "@/env/client";
 import type { MediaRepository } from "../application/repository";
+import { MediaCreateRejectedError } from "../application/upload-result";
 export type {
   MediaInsert,
   MediaListInput,
@@ -29,7 +30,24 @@ export function createMediaRepository(db: Database): MediaRepository {
             url: `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${input.key}`,
           })
           .returning(),
-      );
+      ).catch((error: unknown) => {
+        // SQLite constraint errors prove the statement was rejected. Network/timeout
+        // errors cannot prove rollback and must remain indeterminate to the client.
+        let cause = error;
+        for (let depth = 0; depth < 3 && cause instanceof Error; depth++) {
+          if (
+            "code" in cause &&
+            typeof cause.code === "string" &&
+            /^SQLITE_CONSTRAINT(?:_|$)/.test(cause.code)
+          ) {
+            throw new MediaCreateRejectedError("Media metadata was rejected", {
+              cause: error,
+            });
+          }
+          cause = cause.cause;
+        }
+        throw error;
+      });
       return requireWriteResult(media, "create", "media");
     },
     async list(input) {

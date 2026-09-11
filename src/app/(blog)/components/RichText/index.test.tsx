@@ -65,6 +65,9 @@ describe("RichText", () => {
     );
     expect(link?.getAttribute("data-pswp-width")).toBe("1200");
     expect(link?.getAttribute("data-pswp-height")).toBe("800");
+    expect(link?.getAttribute("rel")?.split(" ")).toEqual(
+      expect.arrayContaining(["noopener", "noreferrer"]),
+    );
     expect(link?.querySelector("img")?.alt).toBe("封面图");
   });
 
@@ -87,9 +90,7 @@ describe("RichText", () => {
     });
 
     expect(container.querySelector(`a[href="${image.url}"]`)).toBeNull();
-    expect(container.querySelector("img")?.getAttribute("src")).toBe(
-      image.url,
-    );
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(image.url);
   });
 
   it("renders nothing when html is empty", () => {

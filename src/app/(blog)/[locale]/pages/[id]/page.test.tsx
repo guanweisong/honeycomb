@@ -4,14 +4,16 @@ import { createRoot, type Root } from "react-dom/client";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockPageDetail = vi.fn();
 const mockComments = vi.fn();
 const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
+const mockLinks = vi.fn();
 
 vi.mock("next-intl/server", () => ({ getLocale: () => Promise.resolve("zh") }));
 vi.mock("next-intl", () => ({
@@ -21,7 +23,7 @@ vi.mock("next-intl", () => ({
 vi.mock("@/packages/trpc/api", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
-    link: { index: vi.fn() },
+    link: { index: mockLinks },
     page: {
       detail: mockPageDetail,
       incrementViews: mockServerIncrementViews,
@@ -42,7 +44,9 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
 vi.mock("@/app/(blog)/components/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
 }));
-vi.mock("@/features/comment/public/components", () => ({ default: () => null }));
+vi.mock("@/features/comment/public/components", () => ({
+  default: () => null,
+}));
 vi.mock("@/app/(blog)/components/PageTitle", () => ({
   default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,
 }));
@@ -114,5 +118,36 @@ describe("pages detail page", () => {
       },
       openGraph: { images: ["/static/images/logo.png"] },
     });
+  });
+  it("protects the opener for friendly links opened in another tab", async () => {
+    mockPageDetail.mockResolvedValue({
+      id: "page-1",
+      title: { zh: "友情链接" },
+      content: null,
+      status: PostStatus.PUBLISHED,
+      template: PageTemplate.FRIENDLY_LINKS,
+      imagesInContent: [],
+      views: 0,
+    });
+    mockLinks.mockResolvedValue({
+      total: 1,
+      list: [
+        {
+          name: "Example",
+          url: "https://example.test",
+          logo: "https://example.test/logo.png",
+        },
+      ],
+    });
+    const element = await Pages({
+      params: Promise.resolve({ id: "page-1", locale: "zh" }),
+    });
+    await act(async () => root.render(element));
+    expect(
+      container
+        .querySelector('a[target="_blank"]')
+        ?.getAttribute("rel")
+        ?.split(" "),
+    ).toEqual(expect.arrayContaining(["noopener", "noreferrer"]));
   });
 });

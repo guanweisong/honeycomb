@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectsCommand,
+  DeleteObjectCommand,
   type PutObjectCommandInput,
   type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
@@ -68,17 +69,35 @@ class S3 {
   static getPresignedUrl = async (params: {
     Key: string;
     ContentType: string;
+    ContentLength?: number;
   }): Promise<string> => {
-    const { Key, ContentType } = params;
+    const { Key, ContentType, ContentLength } = params;
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
     const command = new PutObjectCommand({
       Bucket: r2.bucketName,
       Key,
       ContentType,
+      ContentLength,
     });
     return observeExternalServiceOperation("object-storage", "presign", () =>
-      getSignedUrl(S3.S3(), command, { expiresIn: 3600 }),
+      getSignedUrl(S3.S3(), command, {
+        expiresIn: 3600,
+        signableHeaders: new Set(["content-type"]),
+      }),
+    );
+  };
+
+  /** 为当前上传的独立对象签发短期清理能力，失败时可删除孤立对象。 */
+  static getPresignedDeleteUrl = async (key: string): Promise<string> => {
+    const r2 = getR2Env();
+    if (!r2) throw new Error("R2 integration is not configured");
+    return observeExternalServiceOperation("object-storage", "presign", () =>
+      getSignedUrl(
+        S3.S3(),
+        new DeleteObjectCommand({ Bucket: r2.bucketName, Key: key }),
+        { expiresIn: 3600 },
+      ),
     );
   };
 

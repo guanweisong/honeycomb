@@ -53,14 +53,14 @@ describe("唯一写入契约及边界行为", () => {
   it("媒体尺寸可空但大小仍要求非负整数", () => {
     expect(
       MediaInsertSchema.parse({
-        name: " image ",
+        name: " image.png ",
         size: 0,
         type: " image/png ",
         key: " key ",
         width: null,
       }),
     ).toEqual({
-      name: "image",
+      name: "image.png",
       size: 0,
       type: "image/png",
       key: "key",

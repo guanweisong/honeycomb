@@ -1,17 +1,12 @@
 import React, { act } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { MediaGrid } from ".";
 import type { MediaViewModel } from "../media-view-model";
 
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-
 vi.mock("@/features/contracts/admin/use-current-user", () => ({
-  useCan: () => false,
+  useCan: () => true,
 }));
-
 vi.mock("next/image", () => ({
   default: (
     props: React.ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean },
@@ -21,53 +16,69 @@ vi.mock("next/image", () => ({
     return React.createElement("img", imageProps);
   },
 }));
-
-import { MediaGrid } from "./index";
-
-const imageMedia = {
+const media = {
   id: "media-1",
   name: "cover.png",
   type: "image/png",
-  url: "https://cdn.example.test/cover.png",
-} as MediaViewModel;
+  size: 1,
+  key: "cover.png",
+  url: "https://example.test/cover.png",
+  width: null,
+  height: null,
+  color: null,
+  createdAt: null,
+  updatedAt: null,
+} satisfies MediaViewModel;
+let container: HTMLDivElement;
+let root: Root;
+beforeEach(() => {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+});
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+});
 
-describe("MediaGrid", () => {
-  let container: HTMLDivElement;
-  let root: Root;
-
-  beforeEach(() => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    root = createRoot(container);
-  });
-
-  afterEach(async () => {
-    await act(async () => root.unmount());
-    container.remove();
-  });
-
-  it("renders image media with its existing label and selects it on click", async () => {
-    const onSelect = vi.fn();
-
-    await act(async () => {
-      root.render(
-        React.createElement(MediaGrid, {
-          media: [imageMedia],
-          currentItem: undefined,
-          onDelete: vi.fn(),
-          onSelect,
-        }),
-      );
-    });
-
-    const image = container.querySelector('img[alt="cover.png"]');
-    expect(image).not.toBeNull();
-    expect(image?.getAttribute("sizes")).toBe("128px");
-    const tile = container.querySelector('[title="cover.png"]');
-    expect(tile).not.toBeNull();
-    await act(async () =>
-      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
-    );
-    expect(onSelect).toHaveBeenCalledWith(imageMedia);
-  });
+it("offers named focusable selection and independent copy/delete buttons", () => {
+  const onSelect = vi.fn();
+  act(() =>
+    root.render(
+      <MediaGrid media={[media]} onSelect={onSelect} onDelete={vi.fn()} />,
+    ),
+  );
+  const select = container.querySelector<HTMLButtonElement>(
+    'button[aria-label="选择 cover.png"]',
+  );
+  expect(select).not.toBeNull();
+  select?.focus();
+  expect(document.activeElement).toBe(select);
+  act(() => select?.click());
+  expect(onSelect).toHaveBeenCalledWith(media);
+  expect(
+    container.querySelector('button[aria-label="复制 cover.png 的链接"]'),
+  ).not.toBeNull();
+  expect(
+    container.querySelector('button[aria-label="删除 cover.png"]'),
+  ).not.toBeNull();
+  expect(container.querySelector("button button")).toBeNull();
+  const image = container.querySelector('img[alt="cover.png"]');
+  expect(image).not.toBeNull();
+  expect(image?.getAttribute("sizes")).toBe("128px");
+});
+it("distinguishes initial loading, empty and failed media", () => {
+  const props = { onSelect: vi.fn(), onDelete: vi.fn() };
+  act(() => root.render(<MediaGrid {...props} isLoading />));
+  expect(container.querySelector('[role="status"]')?.textContent).toContain(
+    "正在加载媒体",
+  );
+  act(() => root.render(<MediaGrid {...props} media={[]} />));
+  expect(container.textContent).toContain("暂无媒体");
+  expect(container.textContent).not.toContain("正在加载媒体");
+  act(() => root.render(<MediaGrid {...props} media={[]} error="加载失败" />));
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+    "加载失败",
+  );
+  expect(container.textContent).not.toContain("暂无媒体");
 });

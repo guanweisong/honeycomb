@@ -1,4 +1,7 @@
-import { Permission, type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
+import {
+  Permission,
+  type Permission as PermissionValue,
+} from "@/packages/identity/auth/permissions";
 import { UserLevel } from "@/packages/domain/identity/user";
 import {
   ADMIN_EDITOR,
@@ -19,7 +22,13 @@ type CapabilityMatrixEntry = readonly [
 ];
 
 export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
-  ["category.adminTree", Permission.categoryReadAll, ALL_ROLES, undefined, "database"],
+  [
+    "category.adminTree",
+    Permission.categoryReadAll,
+    ALL_ROLES,
+    undefined,
+    "database",
+  ],
   [
     "accountSecurity.loginHistory",
     Permission.userReadSelf,
@@ -113,7 +122,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "media.getPresignedUrl",
     Permission.mediaUpload,
     ADMIN_EDITOR,
-    { name: "test.jpg", type: "image/jpeg" },
+    { name: "test.jpg", type: "image/jpeg", size: 1 },
     "storage",
   ],
   [
@@ -131,7 +140,13 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "database",
   ],
   ["menu.adminIndex", Permission.menuReadAll, ALL_ROLES, undefined, "database"],
-  ["menu.saveAll", Permission.menuUpdate, ADMIN_EDITOR, [{ id: TEST_ID, type: "CATEGORY", power: 0 }], "database"],
+  [
+    "menu.saveAll",
+    Permission.menuUpdate,
+    ADMIN_EDITOR,
+    [{ id: TEST_ID, type: "CATEGORY", power: 0 }],
+    "database",
+  ],
   [
     "page.adminIndex",
     Permission.pageReadAll,

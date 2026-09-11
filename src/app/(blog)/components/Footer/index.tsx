@@ -29,7 +29,7 @@ export default async function Footer() {
               className="link-light"
               href={`${setting?.siteRecordUrl}`}
               target="_blank"
-              rel="nofollow"
+              rel="nofollow noopener noreferrer"
               aria-label={`View site record: ${setting?.siteRecordNo}`}
             >
               {setting?.siteRecordNo}

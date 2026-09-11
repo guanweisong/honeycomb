@@ -173,17 +173,21 @@ describe("CommentClient", () => {
       await Promise.resolve();
     });
 
-    (container.querySelector('input[name="author"]') as HTMLInputElement).value =
-      "Alice";
+    (
+      container.querySelector('input[name="author"]') as HTMLInputElement
+    ).value = "Alice";
     (container.querySelector('input[name="email"]') as HTMLInputElement).value =
       "alice@example.com";
-    (container.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value =
-      "Hello world";
+    (
+      container.querySelector('textarea[name="content"]') as HTMLTextAreaElement
+    ).value = "Hello world";
 
     await act(async () => {
-      container.querySelector("form")?.dispatchEvent(
-        new Event("submit", { bubbles: true, cancelable: true }),
-      );
+      container
+        .querySelector("form")
+        ?.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true }),
+        );
       await Promise.resolve();
     });
 
@@ -218,8 +222,8 @@ describe("CommentClient", () => {
     expect(container.textContent).toContain("welcomeBack: Alice");
     expect(container.querySelector('input[name="author"]')).toBeNull();
 
-    const quit = Array.from(container.querySelectorAll("a")).find((element) =>
-      element.textContent?.includes("quit"),
+    const quit = Array.from(container.querySelectorAll("button")).find(
+      (element) => element.textContent?.includes("quit"),
     );
     await act(async () => quit?.click());
 
@@ -280,7 +284,7 @@ describe("CommentClient", () => {
     expect(container.textContent).not.toContain("hidden content");
     expect(container.querySelector("ul ul")).not.toBeNull();
 
-    const reply = Array.from(container.querySelectorAll("a")).find(
+    const reply = Array.from(container.querySelectorAll("button")).find(
       (element) => element.textContent === "form.reply",
     );
     await act(async () => reply?.click());

@@ -78,6 +78,7 @@ export default async function Pages(props: PagesProps) {
                 key={item.url}
                 href={item.url}
                 target="_blank"
+                rel="noopener noreferrer"
                 className={cn("flex items-center py-2", {
                   "border-t-0.5 border-dashed border-auto-front-gray/30":
                     index > 0,

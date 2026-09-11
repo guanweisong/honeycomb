@@ -30,7 +30,9 @@ describe("media action state", () => {
       key: "media/cover.png",
     });
     const uploadToStorage = vi.fn().mockResolvedValue(undefined);
-    const createMedia = vi.fn().mockResolvedValue(uploadedMedia);
+    const createMedia = vi
+      .fn()
+      .mockResolvedValue({ state: "created", media: uploadedMedia });
 
     await expect(
       submitMediaUpload({
@@ -39,11 +41,13 @@ describe("media action state", () => {
         getPresignedUrl,
         uploadToStorage,
         createMedia,
+        cleanupObject: vi.fn(),
       }),
     ).resolves.toEqual({ state: "success", media: [uploadedMedia] });
     expect(getPresignedUrl).toHaveBeenCalledWith({
       name: "cover.png",
       type: "image/png",
+      size: 3,
     });
     expect(uploadToStorage).toHaveBeenCalledWith(
       "https://upload.example.test/cover.png",
@@ -68,6 +72,7 @@ describe("media action state", () => {
         getPresignedUrl: vi.fn(),
         uploadToStorage: vi.fn(),
         createMedia: vi.fn(),
+        cleanupObject: vi.fn(),
       }),
     ).resolves.toEqual({ state: "empty" });
 
@@ -80,13 +85,17 @@ describe("media action state", () => {
 
     await expect(
       submitMediaUpload({
-        files: [new File(["video"], "movie.mp4", { type: "video/mp4" })],
-        getImageMetadata: vi.fn(),
+        files: [new File(["image"], "image.png", { type: "image/png" })],
+        getImageMetadata: vi.fn().mockResolvedValue({ width: 1, height: 1 }),
         getPresignedUrl: vi.fn().mockRejectedValue(new Error("sign failed")),
         uploadToStorage: vi.fn(),
         createMedia: vi.fn(),
+        cleanupObject: vi.fn(),
       }),
-    ).resolves.toEqual({ state: "error", message: "sign failed" });
+    ).resolves.toMatchObject({
+      state: "error",
+      message: "image.png: sign failed",
+    });
 
     await expect(
       submitMediaDelete({

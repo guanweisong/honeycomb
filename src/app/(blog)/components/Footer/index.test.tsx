@@ -66,6 +66,9 @@ describe("Footer", () => {
     );
     expect(recordLink?.getAttribute("href")).toBe("https://beian.miit.gov.cn/");
     expect(recordLink?.getAttribute("target")).toBe("_blank");
+    expect(recordLink?.getAttribute("rel")?.split(" ")).toEqual(
+      expect.arrayContaining(["nofollow", "noopener", "noreferrer"]),
+    );
   });
 
   it("renders the record number as text when no record URL exists", async () => {

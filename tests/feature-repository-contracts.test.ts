@@ -62,12 +62,12 @@ describe("feature repository 契约", () => {
     const storage = { deleteObjects: vi.fn().mockResolvedValue(undefined) };
     await expect(
       createMedia(repository, {
-        name: "a",
+        name: "a.png",
         size: 1,
         type: "image/png",
         key: "a",
       }),
-    ).resolves.toEqual({ id: "media-1" });
+    ).resolves.toEqual({ state: "created", media: { id: "media-1" } });
     await expect(
       destroyMedia(repository, storage, ["media-1"]),
     ).resolves.toEqual({ success: true });
@@ -161,9 +161,15 @@ describe("feature repository 契约", () => {
     expect(link.list).toHaveBeenCalled();
 
     const menu = { saveAll: vi.fn(), list: vi.fn().mockResolvedValue([]) };
-    await saveAllMenus(menu, [{ id: "menu", type: MenuType.CATEGORY, power: 0 }], invalidateAll());
+    await saveAllMenus(
+      menu,
+      [{ id: "menu", type: MenuType.CATEGORY, power: 0 }],
+      invalidateAll(),
+    );
     await getMenuList(menu);
-    expect(menu.saveAll).toHaveBeenCalledWith([{ id: "menu", type: "CATEGORY", power: 0 }]);
+    expect(menu.saveAll).toHaveBeenCalledWith([
+      { id: "menu", type: "CATEGORY", power: 0 },
+    ]);
     expect(menu.list).toHaveBeenCalled();
 
     const page = {

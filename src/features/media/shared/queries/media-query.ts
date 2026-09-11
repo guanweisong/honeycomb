@@ -107,6 +107,8 @@ export function useMediaQuery() {
     (query.data?.list.length ?? 0) > 0;
 
   return {
+    isLoading: query.isLoading,
+    error: query.error?.message,
     data: {
       list,
       total: query.data?.total ?? total,
