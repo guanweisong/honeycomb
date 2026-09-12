@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockRevalidatePath = vi.fn();
 const mockRevalidateTag = vi.fn();
 const mockBumpCacheVersion = vi.fn().mockResolvedValue(1);
+const mockLoggerError = vi.fn();
+const mockMetricIncrement = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
@@ -10,6 +12,10 @@ vi.mock("next/cache", () => ({
 }));
 vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
   bumpCacheVersion: (...args: unknown[]) => mockBumpCacheVersion(...args),
+}));
+vi.mock("@/packages/infrastructure/observability/server", () => ({
+  getLogger: () => ({ error: mockLoggerError }),
+  getMetrics: () => ({ increment: mockMetricIncrement }),
 }));
 
 import { publicContentInvalidator } from "./refresh-path";
@@ -21,6 +27,8 @@ describe("publicContentInvalidator", () => {
     mockRevalidatePath.mockReset();
     mockRevalidateTag.mockReset();
     mockBumpCacheVersion.mockReset().mockResolvedValue(1);
+    mockLoggerError.mockReset();
+    mockMetricIncrement.mockReset();
   });
 
   it("deduplicates details and invalidates each requested cache layer once", async () => {
@@ -76,13 +84,41 @@ describe("publicContentInvalidator", () => {
     expect(mockRevalidateTag).not.toHaveBeenCalled();
   });
 
-  it("propagates cache dependency failures", async () => {
-    const cacheError = new Error("cache failed");
-    mockBumpCacheVersion.mockRejectedValueOnce(cacheError);
+  it("retries the complete plan once and reports completed after recovery", async () => {
+    mockBumpCacheVersion
+      .mockRejectedValueOnce(new Error("temporary cache failure"))
+      .mockResolvedValueOnce(2);
 
     await expect(
       publicContentInvalidator.invalidate({ refreshPostIndex: true }),
-    ).rejects.toBe(cacheError);
+    ).resolves.toEqual({ state: "completed" });
+    expect(mockBumpCacheVersion).toHaveBeenCalledTimes(2);
+    expect(mockMetricIncrement).toHaveBeenCalledWith(
+      "public-cache.invalidations.total",
+      { operation: "invalidate", outcome: "completed" },
+    );
+    expect(mockLoggerError).not.toHaveBeenCalled();
+  });
+
+  it("returns degraded and emits only low-cardinality telemetry after two failures", async () => {
+    mockBumpCacheVersion.mockRejectedValue(new Error("secret-key-value"));
+
+    await expect(
+      publicContentInvalidator.invalidate({ refreshPostIndex: true }),
+    ).resolves.toEqual({ state: "degraded" });
+
+    expect(mockBumpCacheVersion).toHaveBeenCalledTimes(2);
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      "cache.invalidation.degraded",
+      { operation: "invalidate", outcome: "degraded" },
+    );
+    expect(mockMetricIncrement).toHaveBeenCalledWith(
+      "public-cache.invalidations.total",
+      { operation: "invalidate", outcome: "degraded" },
+    );
+    expect(JSON.stringify(mockLoggerError.mock.calls)).not.toContain(
+      "secret-key-value",
+    );
   });
 
   it("invalidates inner data caches before route caches can regenerate", async () => {

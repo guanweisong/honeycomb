@@ -40,7 +40,7 @@ describe("PublicContentInvalidator", () => {
     ).toThrow();
 
     const invalidator: PublicContentInvalidator = {
-      invalidate: vi.fn(async () => undefined),
+      invalidate: vi.fn(async () => ({ state: "completed" as const })),
     };
 
     await invalidator.invalidate({ refreshLayout: true });

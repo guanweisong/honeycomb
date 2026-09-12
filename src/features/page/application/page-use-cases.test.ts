@@ -22,6 +22,7 @@ describe("Page cache side effects", () => {
     const invalidator = {
       invalidate: vi.fn(async () => {
         order.push("cache");
+        return { state: "completed" as const };
       }),
     };
 
@@ -52,7 +53,7 @@ describe("Page cache side effects", () => {
 
   it("批量删除成功后失效每个页面目标", async () => {
     const invalidator = {
-      invalidate: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
     };
 
     await destroyPages(
@@ -72,18 +73,20 @@ describe("Page cache side effects", () => {
     });
   });
 
-  it("更新成功后失效页面缓存并传播缓存失败", async () => {
-    const cacheError = new Error("cache failed");
+  it("更新已提交后缓存降级仍返回持久化结果", async () => {
+    const saved = { id: pageId };
 
     await expect(
       updatePage(
         {
           findStatus: vi.fn(),
-          update: vi.fn().mockResolvedValue({ id: pageId }),
+          update: vi.fn().mockResolvedValue(saved),
         },
         { id: pageId },
-        { invalidate: vi.fn().mockRejectedValue(cacheError) },
+        {
+          invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
+        },
       ),
-    ).rejects.toBe(cacheError);
+    ).resolves.toEqual(saved);
   });
 });

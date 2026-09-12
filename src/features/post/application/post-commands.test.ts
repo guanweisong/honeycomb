@@ -23,6 +23,7 @@ describe("Post cache side effects", () => {
     const invalidator = {
       invalidate: vi.fn(async () => {
         order.push("cache");
+        return { state: "completed" as const };
       }),
     };
 
@@ -54,7 +55,7 @@ describe("Post cache side effects", () => {
 
   it("批量删除成功后失效每个文章目标", async () => {
     const invalidator = {
-      invalidate: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
     };
 
     await destroyPosts(
@@ -77,7 +78,7 @@ describe("Post cache side effects", () => {
 
   it("更新成功后失效文章缓存", async () => {
     const invalidator = {
-      invalidate: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
     };
 
     await updatePost(
@@ -99,7 +100,7 @@ describe("Post cache side effects", () => {
 
   it("标签更新成功后失效所属文章缓存", async () => {
     const invalidator = {
-      invalidate: vi.fn().mockResolvedValue(undefined),
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
     };
 
     await updatePostTags(
@@ -116,16 +117,18 @@ describe("Post cache side effects", () => {
     });
   });
 
-  it("缓存失败在数据库成功后继续传播", async () => {
-    const cacheError = new Error("cache failed");
+  it("数据库成功后缓存降级仍返回持久化结果", async () => {
+    const saved = { id: postId };
 
     await expect(
       createPost(
-        { create: vi.fn().mockResolvedValue({ id: postId }) },
+        { create: vi.fn().mockResolvedValue(saved) },
         input,
         "author-1",
-        { invalidate: vi.fn().mockRejectedValue(cacheError) },
+        {
+          invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
+        },
       ),
-    ).rejects.toBe(cacheError);
+    ).resolves.toEqual(saved);
   });
 });

@@ -23,6 +23,7 @@ describe("destroyMedia", () => {
     const invalidator = {
       invalidate: vi.fn(async () => {
         order.push("cache");
+        return { state: "completed" as const };
       }),
     };
 
@@ -99,7 +100,9 @@ describe("destroyMedia", () => {
         .mockResolvedValueOnce({ success: true as const }),
     };
     const storage = { deleteObjects: vi.fn().mockResolvedValue(undefined) };
-    const invalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
 
     await expect(
       destroyMedia(repository, storage, ["media-1"], invalidator),

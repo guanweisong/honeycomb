@@ -6,6 +6,7 @@ export const LogEvent = {
   serverError: "server.error",
   databaseOperation: "database.operation",
   cacheOperation: "cache.operation",
+  cacheInvalidationDegraded: "cache.invalidation.degraded",
   externalServiceOperation: "external-service.operation",
   clientError: "client.error",
 } as const;
@@ -20,6 +21,7 @@ export const MetricName = {
   databaseOperationDurationMs: "database.operation.duration_ms",
   databaseErrorsTotal: "database.errors.total",
   cacheOperationsTotal: "cache.operations.total",
+  publicCacheInvalidationsTotal: "public-cache.invalidations.total",
   externalServiceOperationsTotal: "external-service.operations.total",
   externalServiceOperationDurationMs:
     "external-service.operation.duration_ms",

@@ -30,8 +30,7 @@ vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
   bumpCacheVersion: async () => {},
 }));
 const invalidator = {
-  invalidate: async () => {},
-  invalidateAll: async () => {},
+  invalidate: async () => ({ state: "completed" as const }),
 };
 
 describe("relational integrity with real libSQL", () => {

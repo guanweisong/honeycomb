@@ -126,6 +126,7 @@ describe("public comment insertion consistency with real libSQL", () => {
       invalidator: {
         invalidate: async () => {
           invalidations += 1;
+          return { state: "completed" as const };
         },
       },
     };

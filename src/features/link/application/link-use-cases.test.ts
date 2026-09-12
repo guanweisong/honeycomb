@@ -15,7 +15,9 @@ const link = {
 
 describe("Link cache side effects", () => {
   it("每个成功写操作都会失效全部公开内容", async () => {
-    const invalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
 
     await createLink(
       { create: vi.fn().mockResolvedValue(link) },
@@ -50,6 +52,7 @@ describe("Link cache side effects", () => {
     const invalidator = {
       invalidate: vi.fn(async () => {
         order.push("cache");
+        return { state: "completed" as const };
       }),
     };
 
@@ -76,15 +79,14 @@ describe("Link cache side effects", () => {
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 
-  it("持久化成功后的缓存失败继续传播", async () => {
-    const cacheError = new Error("cache failed");
+  it("持久化成功后的缓存降级仍返回删除结果", async () => {
     const destroy = vi.fn().mockResolvedValue({ success: true });
 
     await expect(
       destroyLinks({ destroy }, [link.id], {
-        invalidate: vi.fn().mockRejectedValue(cacheError),
+        invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
       }),
-    ).rejects.toBe(cacheError);
+    ).resolves.toEqual({ success: true });
     expect(destroy).toHaveBeenCalledWith([link.id]);
   });
 });

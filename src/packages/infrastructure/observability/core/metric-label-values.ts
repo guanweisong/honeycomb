@@ -156,6 +156,8 @@ const metricLabelValues = {
   outcome: [
     "success",
     "error",
+    "completed",
+    "degraded",
     "PARSE_ERROR",
     "BAD_REQUEST",
     "INTERNAL_SERVER_ERROR",
@@ -193,6 +195,7 @@ const metricLabelValues = {
     "send",
     "put",
     "presign",
+    "invalidate",
   ],
   namespace: cacheNamespaceValues,
   service: ["captcha", "email", "object-storage"],

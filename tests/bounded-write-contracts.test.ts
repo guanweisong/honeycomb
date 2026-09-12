@@ -51,8 +51,7 @@ describe("bounded write contracts", () => {
   it("rejects implicit menu clearing at both entry points", async () => {
     expect(MenuUpdateSchema.safeParse([]).success).toBe(false);
     const invalidator = {
-      invalidate: async () => {},
-      invalidateAll: async () => {},
+      invalidate: async () => ({ state: "completed" as const }),
     };
     await expect(
       saveAllMenus(

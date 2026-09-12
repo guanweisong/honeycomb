@@ -39,7 +39,13 @@ export type PublicCacheInvalidationPlan = z.infer<
   typeof PublicCacheInvalidationPlanSchema
 >;
 
+export type PublicCacheInvalidationResult =
+  | { state: "completed" }
+  | { state: "degraded" };
+
 /** 业务写入用例依赖的最小公开缓存失效端口。 */
 export interface PublicContentInvalidator {
-  invalidate(plan: PublicCacheInvalidationPlan): Promise<void>;
+  invalidate(
+    plan: PublicCacheInvalidationPlan,
+  ): Promise<PublicCacheInvalidationResult>;
 }
