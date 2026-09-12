@@ -16,6 +16,23 @@ const featureNames = [
   "category",
 ] as const;
 
+type FeatureSource = { path: string; source: string };
+
+function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
+  return files.flatMap(({ path, source }) => {
+    const current = path.match(/src\/features\/([^/]+)\//)?.[1];
+    if (!current || current === "contracts") return [];
+    return [...source.matchAll(/@\/features\/([^/'"]+)(?:\/([^'"]+))?/g)]
+      .flatMap((match) => {
+        const target = match[1];
+        const segment = match[2]?.split("/")[0];
+        return !target || target === current || target === "contracts" || segment === "public"
+          ? []
+          : [`${path} -> ${target}/${segment ?? "<root>"}`];
+      });
+  });
+}
+
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
     const path = join(directory, entry);
@@ -92,22 +109,43 @@ describe("业务功能边界", () => {
   });
 
   it("禁止 feature 直接导入其他 feature 的内部实现", () => {
-    const violations = sourceFiles(featuresRoot).flatMap((path) => {
-      const source = readFileSync(path, "utf8");
-      return featureNames.flatMap((target) => {
-        const current = featureNames.find((feature) =>
-          path.includes(`/features/${feature}/`),
-        );
-        if (!current || current === target) return [];
-        return new RegExp(
-          `@/features/${target}/(application|transport|admin)/`,
-        ).test(source)
-          ? [`${relative(process.cwd(), path)} -> ${target}`]
-          : [];
-      });
-    });
+    const violations = findCrossFeatureImportViolations(
+      sourceFiles(featuresRoot).map((path) => ({
+        path: relative(process.cwd(), path),
+        source: readFileSync(path, "utf8"),
+      })),
+    );
 
     expect(violations).toEqual([]);
+  });
+
+  it.each(["domain", "infrastructure", "schemas", "presentation", "admin"])(
+    "识别跨 Feature 的 %s 深导入",
+    (segment) => {
+      expect(
+        findCrossFeatureImportViolations([
+          {
+            path: "src/features/post/application/example.ts",
+            source: `import x from \"@/features/comment/${segment}/x\";`,
+          },
+        ]),
+      ).toEqual([`src/features/post/application/example.ts -> comment/${segment}`]);
+    },
+  );
+
+  it("允许本 Feature、共享 contracts 与显式 public 出口", () => {
+    expect(
+      findCrossFeatureImportViolations([
+        {
+          path: "src/features/post/application/example.ts",
+          source: [
+            'import a from "@/features/post/domain/x";',
+            'import b from "@/features/contracts";',
+            'import c from "@/features/comment/public";',
+          ].join("\n"),
+        },
+      ]),
+    ).toEqual([]);
   });
 
   it("禁止用例层直接依赖数据库实现", () => {

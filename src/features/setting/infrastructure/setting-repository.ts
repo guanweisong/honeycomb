@@ -15,11 +15,30 @@ import {
   patchSettingTranslationRows,
 } from "./setting-translations";
 
+function toSettingRecord(
+  setting: typeof schema.setting.$inferSelect,
+  translations: readonly (typeof schema.settingTranslation.$inferSelect)[],
+) {
+  return {
+    id: setting.id,
+    siteRecordNo: setting.siteRecordNo,
+    siteRecordUrl: setting.siteRecordUrl,
+    createdAt: setting.createdAt,
+    updatedAt: setting.updatedAt,
+    ...assembleSettingTranslations(translations),
+  };
+}
+
 export function createSettingRepository(db: Database): SettingRepository {
   return {
     async get() {
-      const list = await observeDbOperation("setting.get", "select", () => db.select().from(schema.setting));
-      const setting = list[0];
+      const [setting] = await observeDbOperation("setting.get", "select", () =>
+        db
+          .select()
+          .from(schema.setting)
+          .where(eq(schema.setting.singletonKey, 1))
+          .limit(1),
+      );
       if (!setting) return undefined;
       const translations = await observeDbOperation("setting.get", "select", () =>
         db
@@ -27,7 +46,7 @@ export function createSettingRepository(db: Database): SettingRepository {
           .from(schema.settingTranslation)
           .where(eq(schema.settingTranslation.settingId, setting.id)),
       );
-      return { ...setting, ...assembleSettingTranslations(translations) };
+      return toSettingRecord(setting, translations);
     },
     async update(input) {
       const {
@@ -59,7 +78,7 @@ export function createSettingRepository(db: Database): SettingRepository {
             .delete(schema.settingTranslation)
             .where(eq(schema.settingTranslation.settingId, id));
           if (next.length) await tx.insert(schema.settingTranslation).values(next);
-          return { ...result, ...assembleSettingTranslations(next) };
+          return toSettingRecord(result, next);
         }),
       );
       return setting;

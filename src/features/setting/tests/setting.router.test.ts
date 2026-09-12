@@ -37,7 +37,9 @@ describe("Setting Router", () => {
       };
 
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce([mockSetting]);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([mockSetting]);
       mockDb.where.mockResolvedValueOnce([
         { settingId: TEST_IDS.ID_1, locale: "en", siteName: "Site Name", siteSubName: "Sub Name", siteSignature: "Signature", siteCopyright: "Copyright" },
         { settingId: TEST_IDS.ID_1, locale: "zh", siteName: "网站名称", siteSubName: "副标题", siteSignature: "签名", siteCopyright: "版权" },

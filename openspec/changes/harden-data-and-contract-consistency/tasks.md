@@ -25,11 +25,11 @@
 
 ## 4. 治理门禁
 
-- [ ] 4.1 先为 SQL/Journal/Snapshot 单向缺失和迁移重放结构漂移增加失败测试
-- [ ] 4.2 加强 check-migrations，验证三类工件双向对应、连续索引及重放结构与当前 schema 一致
-- [ ] 4.3 先增加跨 Feature domain、infrastructure、schemas、presentation 深导入的失败夹具
-- [ ] 4.4 扩大 Feature 边界扫描并保留 features/contracts 与显式 public 出口
-- [ ] 4.5 更新 OpenSpec 主规格、工程技能文档和 CI 门禁说明，使约束与实现保持一致
+- [x] 4.1 先为 SQL/Journal/Snapshot 单向缺失和迁移重放结构漂移增加失败测试
+- [x] 4.2 加强 check-migrations，验证三类工件双向对应、连续索引及重放结构与当前 schema 一致
+- [x] 4.3 先增加跨 Feature domain、infrastructure、schemas、presentation 深导入的失败夹具
+- [x] 4.4 扩大 Feature 边界扫描并保留 features/contracts 与显式 public 出口
+- [x] 4.5 更新 OpenSpec 主规格、工程技能文档和 CI 门禁说明，使约束与实现保持一致
 
 ## 5. 完整验证
 

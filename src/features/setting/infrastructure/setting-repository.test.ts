@@ -51,6 +51,7 @@ describe("setting localized persistence", () => {
 
     await repository.update({ id: "setting", siteName: null });
     await expect(repository.get()).resolves.toMatchObject({ siteName: null });
+    await expect(repository.get()).resolves.not.toHaveProperty("singletonKey");
     await expect(repository.update({ id: "missing", siteRecordNo: "record" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

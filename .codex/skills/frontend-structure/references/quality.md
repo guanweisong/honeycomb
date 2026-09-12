@@ -18,7 +18,7 @@ bun run test:unit:run -- <相关测试>
 
 长期治理应尽量自动化：配置 import boundary、Server/Client 边界和 Domain 禁止依赖基础设施的静态检查；文档规则只保留需要判断的架构决策。
 
-至少应有 CI 门禁验证：Client 不依赖服务端模块、Domain 不依赖基础设施、Feature 不越界引用、共享包满足准入规则。架构边界违规必须阻断 CI；文件规模超限默认先告警，超过硬阈值才阻断。架构规则变更必须同步更新边界测试。
+至少应有 CI 门禁验证：Client 不依赖服务端模块、Domain 不依赖基础设施、Feature 不越界引用、共享包满足准入规则。跨 Feature 依赖只允许 `features/contracts`、目标 Feature 的显式 `public` 出口或本 Feature 内部路径；`application`、`domain`、`infrastructure`、`schemas`、`transport`、`admin`、`presentation` 深导入必须阻断。架构边界违规必须阻断 CI；文件规模超限默认先告警，超过硬阈值才阻断。架构规则变更必须同步更新边界测试。
 
 ## 评审清单
 

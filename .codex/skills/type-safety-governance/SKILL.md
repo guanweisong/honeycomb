@@ -24,6 +24,8 @@ description: 当在 Honeycomb 中生成、修改或审查 TypeScript 类型、Zo
 | 新增跨模块消费者 | 通过既有公开契约或稳定 Application 边界复用；不要深导入其他 Feature 的内部实现或 ORM 类型 |
 | 已有枚举成员、事件、提供商、缓存 namespace、语言或 UI 字段目录 | 从权威目录派生类型、白名单和标签；模块专属常量留在所属模块 |
 
+领域枚举或数值范围同时属于持久化不变量时，Drizzle CHECK、Application Zod schema 与 Repository 读取窄化必须从同一权威目录派生。新增或收紧 CHECK 前先提供只读数据审计，只报告表、字段和数量；发现不兼容数据必须中止迁移，不得自动选择、删除或回显原始值。SQL、Journal、Snapshot 必须一一对应，并通过独占临时数据库重放验证结构。
+
 权威位置由语义和依赖方向决定，不由最早出现的文件决定：Feature 的业务输入及命令校验可由该 Feature Application 的纯 Zod schema 所有，transport/form 重新导出或组合；仅服务于界面交互的 schema 留在 presentation/transport。Drizzle 表定义、数据库列 schema 和 ORM 推导类型仍属于 infrastructure。Application 的业务 schema 不得导入 UI、transport、ORM 或数据库实现。
 
 新增写入或缓存契约时，不能以「编译通过」「有返回类型注解」「satisfies/extends 检查通过」为由，保留业务 interface 并另写一份覆盖同一模型的 Zod object。兼容性检查只能发现部分漂移，不能让两个字段清单成为唯一事实源。保留原调用签名可以通过类型别名迁移实现，不要求复制定义。若用户明确禁止修改权威来源所需文件，先说明冲突和最小必要调整，不静默新增重复契约。

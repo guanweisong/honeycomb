@@ -8,10 +8,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
-import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
+import {
+  CategoryInsertSchema,
+  CategoryUpdateSchema,
+  type CategoryViewModel as CategoryEntity,
+} from "@/features/category/public";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { CategoryViewModel as CategoryEntity } from "../../../../../category/presentation/category-view-model";
 
 /**
  * 模态框属性接口。

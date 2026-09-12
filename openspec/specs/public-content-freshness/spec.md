@@ -24,7 +24,7 @@
 
 ### Requirement: 内容写入必须失效对应公开缓存
 
-文章、页面和评论的成功写操作 MUST 由对应 Application Use Case 通过一次结构化计划使受影响的公开内容缓存失效，且不得由客户端提供任意缓存路径或缓存 key。其他会改变公开读取结果的分类、友情链接、菜单、设置、标签、用户和媒体写入 Use Case MUST 失效全部受影响公开缓存。Transport MUST 只注入缓存失效端口并调用 Use Case，不得直接决定失效时机或范围。
+文章、页面和评论的成功写操作 MUST 由对应 Application Use Case 通过一次结构化计划使受影响的公开内容缓存失效，且不得由客户端提供任意缓存路径或缓存 key。其他会改变公开读取结果的分类、友情链接、菜单、设置、标签、用户和媒体写入 Use Case MUST 失效全部受影响公开缓存。Transport MUST 只注入缓存失效端口并调用 Use Case，不得直接决定失效时机或范围。数据库提交 MUST 作为业务写入成功边界；缓存适配器 MUST 对失败执行一次有限重试，并在仍失败时返回可观测降级结果而不得把已提交写入转换为 API 失败。
 
 #### Scenario: 后台修改友情链接
 
@@ -56,10 +56,15 @@
 - **WHEN** Server Action、后台任务或测试调用与 tRPC 相同的写入 Use Case
 - **THEN** 它 MUST 获得与 tRPC 入口相同的缓存失效行为，而无需复制失效调用
 
-#### Scenario: 缓存失效失败
+#### Scenario: 缓存失效首次失败后恢复
 
-- **WHEN** 数据库写入成功但同步缓存失效失败
-- **THEN** Use Case MUST 保持当前失败传播语义，不得伪造回滚或静默报告全部步骤成功
+- **WHEN** 数据库写入成功且第一次同步缓存失效失败，但立即重试成功
+- **THEN** 缓存适配器 MUST 返回完成结果，Use Case SHALL 返回原业务成功结果
+
+#### Scenario: 缓存失效持续失败
+
+- **WHEN** 数据库写入成功且两次缓存失效均失败
+- **THEN** 缓存适配器 MUST 记录脱敏错误和低基数降级指标，Use Case MUST 保持原业务成功结果且不得伪造回滚
 
 #### Scenario: 关联快照发生变化
 
@@ -69,7 +74,7 @@
 #### Scenario: sitemap 数据发生变化
 
 - **WHEN** 文章、页面、菜单或被菜单引用的分类写入成功改变 sitemap URL、分片数量、可见性或更新时间
-- **THEN** 对应 Use Case MUST 请求立即过期 sitemap 缓存，且下一次读取不得返回旧数据
+- **THEN** 对应 Use Case MUST 请求立即过期 sitemap 缓存，且下一次成功失效后的读取不得返回旧数据
 
 #### Scenario: 多层缓存按依赖顺序失效
 
