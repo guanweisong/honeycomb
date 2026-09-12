@@ -7,6 +7,8 @@ import { MediaInsertSchema } from "@/features/media/schemas/media.insert.schema"
 import { MediaInsertSchema as OwnedMediaSchema } from "@/features/media/application/write-schema";
 import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
 import { LinkInsertSchema as OwnedLinkSchema } from "@/features/link/application/write-schema";
+import { CategoryInsertSchema } from "@/features/category/application/write-schema";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { routing } from "@/packages/ui/navigation/routing";
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { cacheNamespaceValues } from "@/packages/infrastructure/cache/cache-namespaces";
@@ -74,6 +76,40 @@ describe("唯一写入契约及边界行为", () => {
         key: "key",
       }).success,
     ).toBe(false);
+  });
+
+  it.each([
+    [
+      LinkInsertSchema,
+      {
+        url: "https://example.test",
+        name: "Example",
+        logo: "https://example.test/logo.png",
+        status: "BROKEN",
+      },
+    ],
+    [
+      CategoryInsertSchema,
+      {
+        title: { en: "Category", zh: "分类" },
+        description: { en: "Description", zh: "描述" },
+        path: "category",
+        status: "BROKEN",
+      },
+    ],
+  ])("状态写入契约拒绝未知值", (schema, input) => {
+    expect(schema.safeParse(input).success).toBe(false);
+  });
+
+  it("状态写入契约保留 EnableStatus 字面量", () => {
+    expect(
+      LinkInsertSchema.parse({
+        url: "https://example.test",
+        name: "Example",
+        logo: "https://example.test/logo.png",
+        status: EnableStatus.ENABLE,
+      }).status,
+    ).toBe(EnableStatus.ENABLE);
   });
 
   it("保留 API 排序默认与路由语言顺序", () => {

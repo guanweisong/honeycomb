@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { categoryRouter } from "@/features/category/category.router";
 import * as schema from "@/packages/infrastructure/db/schema";
-import { UserStatus } from "@/packages/domain/identity/user";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -53,14 +53,14 @@ describe("Category Router", () => {
           id: TEST_IDS.ID_1,
           title: { en: "Category 1", zh: "分类1" },
           description: { en: "Description 1", zh: "描述1" },
-          status: UserStatus.ENABLE,
+          status: EnableStatus.ENABLE,
           createdAt: new Date(),
         },
         {
           id: TEST_IDS.ID_2,
           title: { en: "Category 2", zh: "分类2" },
           description: { en: "Description 2", zh: "描述2" },
-          status: UserStatus.ENABLE,
+          status: EnableStatus.ENABLE,
           createdAt: new Date(),
         },
       ];
@@ -103,7 +103,7 @@ describe("Category Router", () => {
       const newCategory = {
         id: TEST_IDS.ID_3,
         title: { en: "New Category", zh: "新分类" },
-        status: UserStatus.ENABLE,
+        status: EnableStatus.ENABLE,
       };
 
       mockDb.insert.mockReturnValueOnce(mockDb);
@@ -122,7 +122,7 @@ describe("Category Router", () => {
         title: { en: "New Category", zh: "新分类" },
         description: { en: "New category description", zh: "新分类描述" },
         path: "/new-category",
-        status: UserStatus.ENABLE,
+        status: EnableStatus.ENABLE,
       });
 
       expect(result).toEqual({
@@ -142,7 +142,7 @@ describe("Category Router", () => {
           title: { en: "New Category", zh: "新分类" },
           description: { en: "New category description", zh: "新分类描述" },
           path: "/new-category",
-          status: UserStatus.ENABLE,
+          status: EnableStatus.ENABLE,
         }),
       ).rejects.toThrow();
     });
@@ -183,7 +183,7 @@ describe("Category Router", () => {
       const updatedCategory = {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Category", zh: "更新的分类" },
-        status: UserStatus.ENABLE,
+        status: EnableStatus.ENABLE,
       };
 
       mockDb.update.mockReturnValueOnce(mockDb);
@@ -203,7 +203,7 @@ describe("Category Router", () => {
           id: TEST_IDS.ID_1,
           parent: null,
           path: "old",
-          status: UserStatus.ENABLE,
+          status: EnableStatus.ENABLE,
         },
       ]);
       mockDb.select.mockReturnValueOnce(mockDb);

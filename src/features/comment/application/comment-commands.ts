@@ -8,7 +8,7 @@ import {
 } from "./comment-target-policy";
 import { moderateComment } from "./comment-command-handlers";
 import { ApplicationError } from "@/packages/application/errors";
-import type { PublicContentReference } from "@/packages/application/public-content-invalidator";
+import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 import type {
   CommentCommandRepository,
   CommentRequestMetadata,
@@ -24,22 +24,14 @@ export interface CreateCommentDependencies {
   validateCaptcha: (token?: string) => Promise<void>;
   notify: (commentId: string, parentId?: string | null) => Promise<void>;
   logNotificationFailure: (error: unknown) => void;
-  invalidator: CommentContentInvalidator;
+  invalidator: Pick<PublicContentInvalidator, "invalidate">;
 }
-
-type CommentContentInvalidator = {
-  invalidateContent(reference: PublicContentReference): Promise<void>;
-};
-
-type CommentAllInvalidator = {
-  invalidateAll(): Promise<void>;
-};
 
 /** 更新后台评论内容或状态。 */
 export async function updateComment(
   repository: Pick<CommentCommandRepository, "findStatus" | "update">,
   input: CommentUpdate,
-  invalidator: CommentAllInvalidator,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   let result;
   if (input.status === undefined) {
@@ -56,17 +48,17 @@ export async function updateComment(
             status: input.status,
           });
   }
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({ refreshLayout: true });
   return result;
 }
 /** 批量删除后台评论。 */
 export async function destroyComments(
   repository: Pick<CommentCommandRepository, "destroy">,
   ids: string[],
-  invalidator: CommentAllInvalidator,
+  invalidator: Pick<PublicContentInvalidator, "invalidate">,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidateAll();
+  await invalidator.invalidate({ refreshLayout: true });
   return result;
 }
 /** 创建公开评论并触发异步通知。 */
@@ -114,10 +106,13 @@ export async function createComment(
   } catch (error) {
     logNotificationFailure(error);
   }
-  if (comment.postId) {
-    await invalidator.invalidateContent({ id: comment.postId, type: "post" });
-  } else if (comment.pageId) {
-    await invalidator.invalidateContent({ id: comment.pageId, type: "page" });
-  }
+  await invalidator.invalidate(
+    target.type === "custom"
+      ? { refreshLayout: true }
+      : {
+          contents: [{ id: target.id, type: target.type }],
+          refreshLayout: true,
+        },
+  );
   return toPublicComment(created);
 }

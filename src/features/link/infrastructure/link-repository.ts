@@ -1,6 +1,9 @@
 import "server-only";
 import { repositoryPaginationDefaults } from "@/packages/application/pagination";
-import { requireWriteResult } from "@/packages/infrastructure/db/value-validation";
+import {
+  parseEnumValue,
+  requireWriteResult,
+} from "@/packages/infrastructure/db/value-validation";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
@@ -12,6 +15,7 @@ import {
 } from "@/packages/infrastructure/db/query/tools";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type { LinkRepository } from "../application/repository";
+import type { LinkRecord } from "../application/repository";
 export type {
   LinkInsert,
   LinkListInput,
@@ -20,13 +24,29 @@ export type {
   LinkVisibility,
 } from "../application/repository";
 
+function toLinkRecord(
+  row: typeof schema.link.$inferSelect,
+): LinkRecord {
+  return {
+    ...row,
+    status:
+      row.status === null
+        ? null
+        : parseEnumValue(
+            row.status,
+            Object.values(EnableStatus),
+            "link.status",
+          ),
+  };
+}
+
 export function createLinkRepository(db: Database): LinkRepository {
   return {
     async create(input) {
       const [value] = await observeDbOperation("link.create", "insert", () =>
         db.insert(schema.link).values(input).returning(),
       );
-      return requireWriteResult(value, "create", "link");
+      return toLinkRecord(requireWriteResult(value, "create", "link"));
     },
     async update(input) {
       const { id, ...changes } = input;
@@ -37,7 +57,7 @@ export function createLinkRepository(db: Database): LinkRepository {
           .where(eq(schema.link.id, id))
           .returning(),
       );
-      return requireWriteResult(value, "update", "link");
+      return toLinkRecord(requireWriteResult(value, "update", "link"));
     },
     async destroy(ids) {
       await observeDbOperation("link.destroy", "delete", () =>
@@ -89,7 +109,10 @@ export function createLinkRepository(db: Database): LinkRepository {
             .where(where),
         ),
       ]);
-      return { list, total: Number(countRows[0]?.count) || 0 };
+      return {
+        list: list.map(toLinkRecord),
+        total: Number(countRows[0]?.count) || 0,
+      };
     },
   };
 }

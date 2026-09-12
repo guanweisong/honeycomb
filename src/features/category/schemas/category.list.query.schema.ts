@@ -1,6 +1,8 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import type { CleanZod } from "@/packages/application/validation";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { z } from "zod";
 
 /**
  * 获取分类列表时的查询参数验证 schema。
@@ -11,7 +13,7 @@ import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 export const CategoryListQuerySchema = PaginationQuerySchema.extend({
   title: queryString(),
   path: queryString(),
-  status: queryString(),
+  status: queryString().pipe(z.enum(EnableStatus).optional()),
   id: queryString(),
 }).partial();
 

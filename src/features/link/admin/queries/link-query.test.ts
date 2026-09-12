@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],
@@ -77,7 +78,7 @@ describe("link query state", () => {
         page: 3,
         limit: 25,
         name: "OpenAI",
-        status: ["ENABLE"],
+        status: [EnableStatus.ENABLE],
       }),
     );
 

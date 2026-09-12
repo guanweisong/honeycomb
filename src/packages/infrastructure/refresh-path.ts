@@ -39,22 +39,7 @@ async function invalidate(input: unknown) {
   if (plan.refreshLayout) revalidatePath("/[locale]", "layout");
 }
 
-/** Compatibility adapter for comment workflows committed before plan-based invalidation. */
-async function invalidateContent(input: unknown) {
-  await invalidate({
-    contents: [input],
-    refreshLayout: true,
-  });
-}
-
-/** Compatibility adapter for comment workflows committed before plan-based invalidation. */
-async function invalidateAll() {
-  await invalidate({ refreshLayout: true });
-}
-
 /** Next.js 公开缓存失效适配器；只接受 Application 定义的结构化目标。 */
 export const publicContentInvalidator = {
   invalidate,
-  invalidateContent,
-  invalidateAll,
 };

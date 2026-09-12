@@ -1,5 +1,4 @@
 import { ViewTransition } from "react";
-import listToTree from "list-to-tree-lite";
 import Menu from "@/app/(blog)/components/Menu";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
@@ -17,12 +16,19 @@ import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import type { MenuViewModel as MenuEntity } from "@/features/contracts";
 
-// list-to-tree-lite 未公开保留输入字段的返回类型；仅在菜单适配边界建立固定树类型。
 function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
-  return listToTree(items, {
-    idKey: "id",
-    parentKey: "parent",
-  }) as MenuEntityTree[];
+  const nodes = new Map<string, MenuEntityTree>(
+    items.map((item) => [item.id, { ...item, children: [] }]),
+  );
+  const roots: MenuEntityTree[] = [];
+  for (const item of items) {
+    const node = nodes.get(item.id);
+    if (!node) continue;
+    const parent = item.parent ? nodes.get(item.parent) : undefined;
+    if (parent) parent.children?.push(node);
+    else roots.push(node);
+  }
+  return roots;
 }
 
 /**

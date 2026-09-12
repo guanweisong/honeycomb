@@ -3,6 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import type { CategoryViewModel } from "@/features/category/presentation/category-view-model";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const mocks = vi.hoisted(() => ({
   categories: [] as CategoryViewModel[],
@@ -48,7 +49,7 @@ describe("category bulk deletion from the complete tree", () => {
       description: null,
       parent: null,
       path: `category-${index + 1}`,
-      status: "ENABLE",
+      status: EnableStatus.ENABLE,
       createdAt: null,
       updatedAt: null,
       deepPath: 0,

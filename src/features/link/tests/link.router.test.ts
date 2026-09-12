@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { linkRouter } from "@/features/link/link.router";
-import { UserStatus } from "@/packages/domain/identity/user";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -46,7 +46,7 @@ describe("Link Router", () => {
           name: "Link 1",
           url: "https://example1.com",
           logo: "https://example1.com/logo.png",
-          status: true,
+          status: EnableStatus.ENABLE,
           createdAt: new Date(),
         },
         {
@@ -54,7 +54,7 @@ describe("Link Router", () => {
           name: "Link 2",
           url: "https://example2.com",
           logo: "https://example2.com/logo.png",
-          status: true,
+          status: EnableStatus.ENABLE,
           createdAt: new Date(),
         },
       ];
@@ -88,7 +88,7 @@ describe("Link Router", () => {
         id: TEST_IDS.ID_3,
         name: "New Link",
         url: "https://example3.com",
-        status: true,
+        status: EnableStatus.ENABLE,
       };
 
       mockDb.insert.mockReturnValueOnce(mockDb);
@@ -103,7 +103,7 @@ describe("Link Router", () => {
         name: "New Link",
         url: "https://example3.com",
         logo: "https://example3.com/logo.png",
-        status: UserStatus.ENABLE,
+        status: EnableStatus.ENABLE,
       });
 
       expect(result).toEqual(newLink);
@@ -133,7 +133,7 @@ describe("Link Router", () => {
         id: TEST_IDS.ID_1,
         name: "Updated Link",
         url: "https://example-updated.com",
-        status: true,
+        status: EnableStatus.ENABLE,
       };
 
       mockDb.update.mockReturnValueOnce(mockDb);
@@ -150,7 +150,7 @@ describe("Link Router", () => {
         name: "Updated Link",
         url: "https://example-updated.com",
         logo: "https://example-updated.com/logo.png",
-        status: UserStatus.ENABLE,
+        status: EnableStatus.ENABLE,
       });
 
       expect(result).toEqual(updatedLink);
@@ -167,7 +167,7 @@ describe("Link Router", () => {
           name: "Updated Link",
           url: "https://example-updated.com",
           logo: "https://example-updated.com/logo.png",
-          status: UserStatus.ENABLE,
+          status: EnableStatus.ENABLE,
         }),
       ).rejects.toThrow();
     });

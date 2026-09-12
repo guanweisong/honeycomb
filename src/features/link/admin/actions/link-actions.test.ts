@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 import { ModalType } from "@/packages/ui/admin/modal-type";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
@@ -20,7 +21,7 @@ const link = {
   url: "https://openai.com",
   logo: "https://openai.com/logo.png",
   description: null,
-  status: "ENABLE",
+  status: EnableStatus.ENABLE,
   createdAt: "2026-01-02T03:04:05.000Z",
   updatedAt: null,
 } as LinkEntity;
@@ -55,7 +56,7 @@ describe("link action state", () => {
           name: "OpenAI",
           url: "https://openai.com",
           logo: "https://openai.com/logo.png",
-          status: "ENABLE",
+          status: EnableStatus.ENABLE,
         },
         create,
         refetch,
@@ -67,7 +68,7 @@ describe("link action state", () => {
       name: "OpenAI",
       url: "https://openai.com",
       logo: "https://openai.com/logo.png",
-      status: "ENABLE",
+      status: EnableStatus.ENABLE,
     });
     expect(refetch).toHaveBeenCalledOnce();
     expect(notifySuccess).toHaveBeenCalledWith("添加成功");
@@ -84,7 +85,7 @@ describe("link action state", () => {
           name: "OpenAI",
           url: "https://openai.com",
           logo: "https://openai.com/logo.png",
-          status: "ENABLE",
+          status: EnableStatus.ENABLE,
         },
         create: vi.fn().mockRejectedValue(new Error("create failed")),
         refetch,

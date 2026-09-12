@@ -1,4 +1,5 @@
 import type { PaginationInput } from "@/packages/application/pagination";
+import type { EnableStatus } from "@/packages/domain/shared/enable-status";
 export type LinkInsert = import("zod").output<
   typeof import("./write-schema").LinkInsertSchema
 >;
@@ -7,7 +8,7 @@ export type LinkListInput = PaginationInput & {
   name?: string;
   url?: string;
   description?: string;
-  status?: string[];
+  status?: EnableStatus[];
 };
 export type LinkVisibility = "PUBLIC_ONLY" | "ALL";
 export type LinkRecord = {
@@ -16,7 +17,7 @@ export type LinkRecord = {
   name: string;
   logo: string;
   description: string | null;
-  status: string | null;
+  status: EnableStatus | null;
   createdAt: string | null;
   updatedAt: string | null;
 };

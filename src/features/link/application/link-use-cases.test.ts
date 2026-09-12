@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createLink, destroyLinks, updateLink } from "./link-use-cases";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const link = {
   id: "507f1f77bcf86cd799439031",
@@ -7,7 +8,7 @@ const link = {
   url: "https://example.test",
   logo: "https://example.test/logo.png",
   description: null,
-  status: "ENABLE",
+  status: EnableStatus.ENABLE,
   createdAt: null,
   updatedAt: null,
 };

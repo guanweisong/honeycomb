@@ -2,6 +2,7 @@ import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn().mockResolvedValue(undefined),
@@ -84,7 +85,7 @@ describe("AddCategoryModal", () => {
     render({
       type: ModalType.EDIT,
       open: true,
-      record: { id: "507f1f77bcf86cd799439011", title: { zh: "旧分类", en: "English" }, description: null, path: "category", parent: null, status: "ENABLE", createdAt: null, updatedAt: null, deepPath: 0 },
+      record: { id: "507f1f77bcf86cd799439011", title: { zh: "旧分类", en: "English" }, description: null, path: "category", parent: null, status: EnableStatus.ENABLE, createdAt: null, updatedAt: null, deepPath: 0 },
     });
     const values = { title: { zh: "新分类", en: "English" }, parent: "parent-1" };
 

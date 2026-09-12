@@ -1,6 +1,7 @@
 import { requiredString } from "@/packages/application/validation";
 import { z } from "zod";
 import { HttpUrlSchema } from "@/packages/application/http-url-schema";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 /**
  * 新增友情链接时的数据验证 schema。
@@ -8,7 +9,7 @@ import { HttpUrlSchema } from "@/packages/application/http-url-schema";
  */
 export const LinkInsertSchema = z.object({
   url: HttpUrlSchema,
-  status: z.string().optional(),
+  status: z.enum(EnableStatus).optional(),
   name: requiredString("链接名称不能为空"),
   logo: HttpUrlSchema,
   description: z.string().trim().optional(),

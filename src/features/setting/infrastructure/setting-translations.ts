@@ -1,5 +1,8 @@
-import type { MultiLang } from "@/packages/domain/localization/multi-lang";
-import { supportedLanguages, type MultiLangEnum } from "@/packages/domain/localization/i18n";
+import {
+  supportedLanguages,
+  type MultiLangEnum,
+  type NullableLocalizedInput,
+} from "@/packages/domain/localization/i18n";
 import { assembleLocalizedField, hasTranslationValues } from "@/packages/infrastructure/db/translation-values";
 import type * as schema from "@/packages/infrastructure/db/schema";
 import type { SettingUpdate } from "../application/repository";
@@ -8,7 +11,7 @@ export type SettingTranslationRow = typeof schema.settingTranslation.$inferSelec
 export type SettingTranslationFields = Omit<SettingTranslationRow, "settingId" | "locale">;
 
 function patchLocalizedValue(
-  patch: MultiLang | null | undefined,
+  patch: NullableLocalizedInput | undefined,
   locale: MultiLangEnum,
   current: string | null,
 ): string | null {

@@ -1,5 +1,6 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import type { I18n } from "@/packages/domain/localization/i18n";
+import type { EnableStatus } from "@/packages/domain/shared/enable-status";
 import type {
   CategoryInsert as CategoryInsertInput,
   CategoryUpdate as CategoryUpdateInput,
@@ -11,14 +12,14 @@ export type CategoryUpdate = CategoryUpdateInput;
 export type CategoryListInput = PaginationInput & {
   id?: string;
   title?: string;
-  status?: string;
+  status?: EnableStatus;
 };
 export type CategoryVisibility = "PUBLIC_ONLY" | "ALL";
 export type CategoryNode = {
   id: string;
   parent: string | null;
   path: string;
-  status: string;
+  status: EnableStatus;
 };
 export type CategoryRecord = {
   id: string;
@@ -26,7 +27,7 @@ export type CategoryRecord = {
   description: I18n | null;
   parent: string | null;
   path: string;
-  status: string;
+  status: EnableStatus;
   createdAt: string | null;
   updatedAt: string | null;
 };

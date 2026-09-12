@@ -49,7 +49,7 @@ describe("Comment command handlers", () => {
       notify: vi.fn().mockResolvedValue(undefined),
       logNotificationFailure: vi.fn(),
       invalidator: {
-        invalidateContent: vi.fn().mockResolvedValue(undefined),
+        invalidate: vi.fn().mockResolvedValue(undefined),
       },
       ...overrides,
     };
@@ -74,7 +74,7 @@ describe("Comment command handlers", () => {
 
   it("数据库创建失败时不调用通知", async () => {
     const notify = vi.fn();
-    const invalidator = { invalidateContent: vi.fn() };
+    const invalidator = { invalidate: vi.fn() };
 
     await expect(
       createComment(
@@ -98,7 +98,7 @@ describe("Comment command handlers", () => {
     ).rejects.toThrow("database failed");
 
     expect(notify).not.toHaveBeenCalled();
-    expect(invalidator.invalidateContent).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 
   it("按验证码、目标、数据库、通知、缓存的顺序创建评论", async () => {
@@ -128,7 +128,7 @@ describe("Comment command handlers", () => {
         order.push("notification");
       }),
       invalidator: {
-        invalidateContent: vi.fn().mockImplementation(async () => {
+        invalidate: vi.fn().mockImplementation(async () => {
           order.push("cache");
         }),
       },
@@ -157,9 +157,9 @@ describe("Comment command handlers", () => {
         commentStatus: EnableStatus.ENABLE,
       },
     );
-    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: "post-1",
-      type: "post",
+    expect(dependencies.invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: "post-1", type: "post" }],
+      refreshLayout: true,
     });
   });
 
@@ -175,7 +175,7 @@ describe("Comment command handlers", () => {
       },
       notify: vi.fn().mockRejectedValue(new Error("notification failed")),
       invalidator: {
-        invalidateContent: vi.fn().mockRejectedValue(cacheError),
+        invalidate: vi.fn().mockRejectedValue(cacheError),
       },
     });
 
@@ -189,9 +189,9 @@ describe("Comment command handlers", () => {
     ).rejects.toBe(cacheError);
 
     expect(dependencies.logNotificationFailure).toHaveBeenCalledOnce();
-    expect(dependencies.invalidator.invalidateContent).toHaveBeenCalledWith({
-      id: "page-1",
-      type: "page",
+    expect(dependencies.invalidator.invalidate).toHaveBeenCalledWith({
+      contents: [{ id: "page-1", type: "page" }],
+      refreshLayout: true,
     });
   });
 
@@ -225,7 +225,7 @@ describe("Comment command handlers", () => {
         order.push("notification");
       }),
       invalidator: {
-        invalidateContent: vi.fn().mockImplementation(async () => {
+        invalidate: vi.fn().mockImplementation(async () => {
           order.push("cache");
         }),
       },
@@ -332,7 +332,7 @@ describe("Comment command handlers", () => {
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(dependencies.notify).not.toHaveBeenCalled();
-    expect(dependencies.invalidator.invalidateContent).not.toHaveBeenCalled();
+    expect(dependencies.invalidator.invalidate).not.toHaveBeenCalled();
   });
 
   it("父评论属于其他目标时拒绝写入", async () => {
@@ -392,7 +392,7 @@ describe("Comment command handlers", () => {
     await updateComment(
       { findStatus, update },
       { id: "comment-1", status: CommentStatus.PUBLISH },
-      { invalidateAll: vi.fn().mockResolvedValue(undefined) },
+      { invalidate: vi.fn().mockResolvedValue(undefined) },
     );
 
     expect(findStatus).toHaveBeenCalledWith("comment-1");
@@ -410,7 +410,7 @@ describe("Comment command handlers", () => {
       updateComment(
         { findStatus, update },
         { id: "comment-1", status: CommentStatus.TO_AUDIT },
-        { invalidateAll: vi.fn().mockResolvedValue(undefined) },
+        { invalidate: vi.fn().mockResolvedValue(undefined) },
       ),
     ).rejects.toThrow();
 
@@ -418,7 +418,7 @@ describe("Comment command handlers", () => {
   });
 
   it("更新与删除评论仅在持久化成功后刷新全部公开内容", async () => {
-    const invalidator = { invalidateAll: vi.fn().mockResolvedValue(undefined) };
+    const invalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
     const update = vi.fn().mockResolvedValue({ id: "comment-1" });
     const destroy = vi.fn().mockResolvedValue({ success: true });
 
@@ -429,6 +429,11 @@ describe("Comment command handlers", () => {
     );
     await destroyComments({ destroy }, ["comment-1"], invalidator);
 
-    expect(invalidator.invalidateAll).toHaveBeenCalledTimes(2);
+    expect(invalidator.invalidate).toHaveBeenNthCalledWith(1, {
+      refreshLayout: true,
+    });
+    expect(invalidator.invalidate).toHaveBeenNthCalledWith(2, {
+      refreshLayout: true,
+    });
   });
 });

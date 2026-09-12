@@ -124,7 +124,7 @@ describe("public comment insertion consistency with real libSQL", () => {
       },
       logNotificationFailure: () => {},
       invalidator: {
-        invalidateContent: async () => {
+        invalidate: async () => {
           invalidations += 1;
         },
       },
@@ -229,7 +229,7 @@ describe("public comment insertion consistency with real libSQL", () => {
   it.each([
     { target: { postId: "post", parentId: "parent" }, invalidations: 1 },
     { target: { pageId: "page" }, invalidations: 1 },
-    { target: { customId: "custom-post" }, invalidations: 0 },
+    { target: { customId: "custom-post" }, invalidations: 1 },
   ])(
     "preserves valid target semantics for $target",
     async ({ target, invalidations: expectedInvalidations }) => {

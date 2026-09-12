@@ -1,9 +1,9 @@
 import type { MenuType } from "@/packages/domain/navigation/menu";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
-export type MenuInput = Array<{ id: string; type: MenuType; parent?: string | null; power: number }>;
+export type { MenuInput } from "./write-schema";
+import type { MenuInput } from "./write-schema";
 export type MenuVisibility = "PUBLIC_ONLY" | "ALL";
 export interface MenuItem {
-  [key: string]: unknown;
   id: string;
   parent: string | null;
   power: number;

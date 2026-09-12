@@ -1,10 +1,10 @@
 ## 1. 契约收敛
 
-- [ ] 1.1 先增加唯一事实源失败测试，覆盖 Setting schema 归属、Menu 保存 schema 推导与开放索引签名、Comment 唯一缓存端口
-- [ ] 1.2 在 Setting Application 建立后台更新与内部 nullable patch schema，迁移 Repository、transport、表单和测试消费者
-- [ ] 1.3 将 Menu 保存 schema 移入 Application，由 schema 推导输入类型并移除 MenuItem 开放索引签名
-- [ ] 1.4 让 Link、Category 等状态写入和读取模型从 EnableStatus 派生，并在持久化读取边界验证枚举
-- [ ] 1.5 将 Comment 创建、更新和删除统一迁移到 PublicContentInvalidator.invalidate(plan)，删除兼容端口与函数
+- [x] 1.1 先增加唯一事实源失败测试，覆盖 Setting schema 归属、Menu 保存 schema 推导与开放索引签名、Comment 唯一缓存端口
+- [x] 1.2 在 Setting Application 建立后台更新与内部 nullable patch schema，迁移 Repository、transport、表单和测试消费者
+- [x] 1.3 将 Menu 保存 schema 移入 Application，由 schema 推导输入类型并移除 MenuItem 开放索引签名
+- [x] 1.4 让 Link、Category 等状态写入和读取模型从 EnableStatus 派生，并在持久化读取边界验证枚举
+- [x] 1.5 将 Comment 创建、更新和删除统一迁移到 PublicContentInvalidator.invalidate(plan)，删除兼容端口与函数
 
 ## 2. 副作用成功边界
 

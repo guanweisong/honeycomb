@@ -19,6 +19,10 @@ import {
 } from "@/features/comment/application/write-schema";
 import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 import { CommentUpdateSchema as CommentTransportUpdate } from "@/features/comment/schemas/comment.update.schema";
+import { SettingAdminUpdateSchema } from "@/features/setting/application/write-schema";
+import { SettingUpdateSchema as SettingTransportUpdate } from "@/features/setting/schemas/setting.update.schema";
+import { MenuWriteSchema } from "@/features/menu/application/write-schema";
+import { MenuUpdateSchema as MenuTransportUpdate } from "@/features/menu/schemas/menu.update.schema";
 
 function source(path: string) {
   return ts.createSourceFile(
@@ -36,6 +40,8 @@ describe("唯一事实源架构门禁", () => {
     expect(TagTransportInsert).toBe(TagInsertSchema);
     expect(TagTransportUpdate).toBe(TagUpdateSchema);
     expect(CommentTransportUpdate).toBe(CommentUpdateSchema);
+    expect(SettingTransportUpdate).toBe(SettingAdminUpdateSchema);
+    expect(MenuTransportUpdate).toBe(MenuWriteSchema);
     for (const key of Object.keys(PublicCommentBaseSchema.shape)) {
       expect(Reflect.get(CommentInsertBaseSchema.shape, key)).toBe(
         Reflect.get(PublicCommentBaseSchema.shape, key),
@@ -121,6 +127,73 @@ describe("唯一事实源架构门禁", () => {
     expect(singleSourceFeatures).toEqual(
       expect.arrayContaining(["category", "tag", "comment"]),
     );
+  });
+
+  it.each(["setting", "menu"])(
+    "%s 的更新出口只重新导出 Application 权威 schema",
+    (feature) => {
+      const file = source(
+        `src/features/${feature}/schemas/${feature}.update.schema.ts`,
+      );
+      expect(
+        file.statements
+          .filter((node) => !ts.isExportDeclaration(node))
+          .map((node) => node.getText()),
+      ).toEqual([]);
+      expect(
+        file.statements.every(
+          (node) =>
+            ts.isExportDeclaration(node) &&
+            node.moduleSpecifier &&
+            ts.isStringLiteral(node.moduleSpecifier) &&
+            node.moduleSpecifier.text ===
+              `@/features/${feature}/application/write-schema`,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("Setting 与 Menu Repository 写入类型由 Application schema 推导", () => {
+    for (const path of [
+      "src/features/setting/application/repository.ts",
+      "src/features/menu/application/repository.ts",
+    ]) {
+      const handwrittenWriteTypes = source(path).statements.filter(
+        (node) =>
+          ts.isTypeAliasDeclaration(node) &&
+          ["SettingUpdate", "MenuInput"].includes(node.name.text) &&
+          (ts.isTypeLiteralNode(node.type) ||
+            (ts.isArrayTypeNode(node.type) &&
+              ts.isTypeLiteralNode(node.type.elementType))),
+      );
+      expect(
+        handwrittenWriteTypes.map((node) => node.getText()),
+        path,
+      ).toEqual([]);
+    }
+  });
+
+  it("MenuItem 不允许任意字符串索引扩张读模型", () => {
+    const declaration = source(
+      "src/features/menu/application/repository.ts",
+    ).statements.find(
+      (node) => ts.isInterfaceDeclaration(node) && node.name.text === "MenuItem",
+    );
+    expect(declaration && ts.isInterfaceDeclaration(declaration)).toBe(true);
+    if (declaration && ts.isInterfaceDeclaration(declaration)) {
+      expect(declaration.members.filter(ts.isIndexSignatureDeclaration)).toEqual(
+        [],
+      );
+    }
+  });
+
+  it("评论写用例只依赖统一的 invalidate(plan) 端口", () => {
+    const file = readFileSync(
+      "src/features/comment/application/comment-commands.ts",
+      "utf8",
+    );
+    expect(file).not.toMatch(/invalidateContent|invalidateAll/);
+    expect(file).toMatch(/invalidator\.invalidate\(/);
   });
 
   it("评论读写适配共享单个记录映射", () => {

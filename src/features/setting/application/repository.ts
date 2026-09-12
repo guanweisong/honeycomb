@@ -2,6 +2,7 @@ import type { CommentStatus } from "@/packages/domain/content/comment";
 import type { PostType } from "@/packages/domain/content/post";
 import type { UserLevel } from "@/packages/domain/identity/user";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import type { SettingPatch } from "./write-schema";
 
 export interface SettingRecord {
   id: string;
@@ -14,9 +15,7 @@ export interface SettingRecord {
   createdAt: string | null;
   updatedAt: string | null;
 }
-export type SettingUpdate = Partial<
-  Omit<SettingRecord, "createdAt" | "updatedAt">
-> & { id: string };
+export type SettingUpdate = SettingPatch;
 export type SettingViewModel = SettingRecord | undefined;
 export interface StatisticsType {
   postType: { item: PostType; count: number }[];

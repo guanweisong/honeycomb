@@ -1,6 +1,9 @@
 import "server-only";
 import { repositoryPaginationDefaults } from "@/packages/application/pagination";
-import { requireWriteResult } from "@/packages/infrastructure/db/value-validation";
+import {
+  parseEnumValue,
+  requireWriteResult,
+} from "@/packages/infrastructure/db/value-validation";
 
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
@@ -43,6 +46,11 @@ export function createCategoryRepository(db: Database): CategoryRepository {
     const byId = groupCategoryTranslations(translations);
     return rows.map((row) => ({
       ...row,
+      status: parseEnumValue(
+        row.status,
+        Object.values(EnableStatus),
+        "category.status",
+      ),
       title: byId.get(row.id)?.title ?? null,
       description: byId.get(row.id)?.description ?? null,
     }));
@@ -65,7 +73,16 @@ export function createCategoryRepository(db: Database): CategoryRepository {
             .where(eq(schema.category.id, id))
             .limit(1),
       );
-      return value ?? null;
+      return value
+        ? {
+            ...value,
+            status: parseEnumValue(
+              value.status,
+              Object.values(EnableStatus),
+              "category.status",
+            ),
+          }
+        : null;
     },
     async pathExists(path, excludeId) {
       const [value] = await observeDbOperation(
@@ -99,7 +116,16 @@ export function createCategoryRepository(db: Database): CategoryRepository {
             await tx
               .insert(schema.categoryTranslation)
               .values(toCategoryTranslationRows(category.id, title, description));
-            return { ...category, title, description };
+            return {
+              ...category,
+              status: parseEnumValue(
+                category.status,
+                Object.values(EnableStatus),
+                "category.status",
+              ),
+              title,
+              description,
+            };
           }),
       ).catch(mapCategoryConstraint);
       return value;

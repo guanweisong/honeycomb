@@ -14,13 +14,11 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import * as commandRepositories from "@/features/comment/infrastructure/comment-command-repository";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
-const mockInvalidateAllPublicContent = vi.hoisted(() => vi.fn());
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
   publicContentInvalidator: {
-    invalidateContent: (...args: unknown[]) =>
+    invalidate: (...args: unknown[]) =>
       mockInvalidatePublicContent(...args),
-    invalidateAll: () => mockInvalidateAllPublicContent(),
   },
 }));
 
@@ -192,8 +190,8 @@ describe("Comment Router", () => {
       );
       repositorySpy.mockRestore();
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
-        id: TEST_IDS.ID_1,
-        type: "post",
+        contents: [{ id: TEST_IDS.ID_1, type: "post" }],
+        refreshLayout: true,
       });
     });
   });
@@ -224,7 +222,9 @@ describe("Comment Router", () => {
 
       expect(result).toEqual(updatedComment);
       expect(mockDb.update).toHaveBeenCalledWith(expect.any(Object));
-      expect(mockInvalidateAllPublicContent).toHaveBeenCalledOnce();
+      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+        refreshLayout: true,
+      });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
@@ -256,7 +256,9 @@ describe("Comment Router", () => {
 
       expect(result).toEqual({ success: true });
       expect(mockDb.delete).toHaveBeenCalledWith(expect.any(Object));
-      expect(mockInvalidateAllPublicContent).toHaveBeenCalledOnce();
+      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+        refreshLayout: true,
+      });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

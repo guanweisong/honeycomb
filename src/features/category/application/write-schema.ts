@@ -14,13 +14,7 @@ export const CategoryInsertSchema = z.object({
   title: I18nSchema,
   description: I18nSchema,
   parent: z.string().nullable().optional(),
-  status: z
-    .string()
-    .refine(
-      (value) => Object.values(EnableStatus).some((status) => status === value),
-      "分类状态不合法",
-    )
-    .optional(),
+  status: z.enum(EnableStatus, { message: "分类状态不合法" }).optional(),
   path: requiredString("path不能为空"),
 });
 
