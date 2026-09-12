@@ -186,8 +186,6 @@ describe("Tag Router", () => {
       mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       mockDb.where
         .mockReturnValueOnce(mockDb)
-        .mockReturnValueOnce(mockDb)
-        .mockReturnValueOnce(mockDb)
         .mockResolvedValueOnce([
           { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
           { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },

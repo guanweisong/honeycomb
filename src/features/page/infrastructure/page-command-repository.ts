@@ -72,20 +72,41 @@ export function createPageCommandRepository(
             const sanitizedContent =
               content === undefined ? undefined : sanitizeOptionalI18nHtml(content);
             for (const locale of supportedLanguages) {
-              await tx
-                .update(schema.pageTranslation)
-                .set({
-                  ...(title !== undefined ? { title: title[locale] } : {}),
-                  ...(sanitizedContent !== undefined
-                    ? { content: sanitizedContent[locale] }
-                    : {}),
-                })
-                .where(
-                  and(
-                    eq(schema.pageTranslation.pageId, id),
-                    eq(schema.pageTranslation.locale, locale),
-                  ),
-                );
+              if (title !== undefined && sanitizedContent !== undefined) {
+                await tx
+                  .insert(schema.pageTranslation)
+                  .values({
+                    pageId: id,
+                    locale,
+                    title: title[locale],
+                    content: sanitizedContent[locale],
+                  })
+                  .onConflictDoUpdate({
+                    target: [
+                      schema.pageTranslation.pageId,
+                      schema.pageTranslation.locale,
+                    ],
+                    set: {
+                      title: title[locale],
+                      content: sanitizedContent[locale],
+                    },
+                  });
+              } else {
+                await tx
+                  .update(schema.pageTranslation)
+                  .set({
+                    ...(title !== undefined ? { title: title[locale] } : {}),
+                    ...(sanitizedContent !== undefined
+                      ? { content: sanitizedContent[locale] }
+                      : {}),
+                  })
+                  .where(
+                    and(
+                      eq(schema.pageTranslation.pageId, id),
+                      eq(schema.pageTranslation.locale, locale),
+                    ),
+                  );
+              }
             }
           }
           return updated;

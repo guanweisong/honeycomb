@@ -1,5 +1,6 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import type { LinkProps } from "next/link";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({ pathname: "/admin/current" }));
@@ -17,7 +18,7 @@ vi.mock("next/link", () => ({
   }: {
     href: string;
     children: React.ReactNode;
-    prefetch?: boolean;
+    prefetch?: LinkProps["prefetch"];
     onNavigate?: () => void;
   }) =>
     React.createElement(

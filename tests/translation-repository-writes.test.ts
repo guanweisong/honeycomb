@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
+import { createCommentQueryRepository } from "@/features/comment/infrastructure/comment-query-repository";
 import { createPageCommandRepository } from "@/features/page/infrastructure/page-command-repository";
 import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
@@ -21,6 +22,7 @@ import { createTagRepository } from "@/features/tag/infrastructure/tag-repositor
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { PageStatus } from "@/packages/domain/content/page";
 import { TagType } from "@/packages/domain/content/tag";
+import { CommentStatus } from "@/packages/domain/content/comment";
 import * as schema from "@/packages/infrastructure/db/schema";
 
 vi.mock("@/packages/infrastructure/observability/server", () => ({
@@ -176,6 +178,109 @@ describe("translation repository writes", () => {
       sql: "select status from page where id = ?",
       args: [page.id],
     })).toMatchObject({ rows: [{ status: PageStatus.TO_AUDIT }] });
+  });
+
+  it("restores missing required translation rows during complete updates", async () => {
+    const categoryRepository = createCategoryRepository(db);
+    const tagRepository = createTagRepository(db);
+    const pageRepository = createPageCommandRepository(db);
+    const category = await categoryRepository.create({
+      id: "category",
+      path: "category",
+      title: { en: "Category", zh: "分类" },
+      description: { en: "Description", zh: "描述" },
+    });
+    const tag = await tagRepository.create({
+      id: "tag",
+      name: { en: "Tag", zh: "标签" },
+    });
+    const page = await pageRepository.create(
+      {
+        template: PageTemplate.DEFAULT,
+        title: { en: "Page", zh: "页面" },
+        content: { en: "Content", zh: "正文" },
+      },
+      "author",
+    );
+    await client.execute("delete from category_translation where category_id = 'category' and locale = 'en'");
+    await client.execute("delete from tag_translation where tag_id = 'tag' and locale = 'en'");
+    await client.execute({
+      sql: "delete from page_translation where page_id = ? and locale = 'en'",
+      args: [page.id],
+    });
+
+    await categoryRepository.update({
+      id: category.id,
+      title: { en: "Updated category", zh: "更新分类" },
+      description: { en: "Updated description", zh: "更新描述" },
+    });
+    await tagRepository.update({
+      id: tag.id,
+      name: { en: "Updated tag", zh: "更新标签" },
+    });
+    await pageRepository.update({
+      id: page.id,
+      title: { en: "Updated page", zh: "更新页面" },
+      content: { en: "Updated content", zh: "更新正文" },
+    });
+
+    expect(await client.execute("select locale, title from category_translation order by locale")).toMatchObject({
+      rows: [
+        { locale: "en", title: "Updated category" },
+        { locale: "zh", title: "更新分类" },
+      ],
+    });
+    expect(await client.execute("select locale, name from tag_translation order by locale")).toMatchObject({
+      rows: [
+        { locale: "en", name: "Updated tag" },
+        { locale: "zh", name: "更新标签" },
+      ],
+    });
+    expect(await client.execute({
+      sql: "select locale, title from page_translation where page_id = ? order by locale",
+      args: [page.id],
+    })).toMatchObject({
+      rows: [
+        { locale: "en", title: "Updated page" },
+        { locale: "zh", title: "更新页面" },
+      ],
+    });
+  });
+
+  it("assembles translated titles for every admin comment relation", async () => {
+    await createCategoryRepository(db).create({
+      id: "category",
+      path: "category",
+      title: { en: "Category", zh: "分类" },
+      description: { en: "Description", zh: "描述" },
+    });
+    const page = await createPageCommandRepository(db).create(
+      {
+        template: PageTemplate.DEFAULT,
+        title: { en: "Page", zh: "页面" },
+        content: { en: "Content", zh: "正文" },
+      },
+      "author",
+    );
+    const post = await createPostCommandRepository(db).create(
+      {
+        categoryId: "category",
+        title: { en: "Post", zh: "文章" },
+      },
+      "author",
+    );
+    await db.insert(schema.comment).values([
+      { id: "comment-post", author: "Author", content: "Post comment", email: "post@example.com", postId: post.id, status: CommentStatus.PUBLISH },
+      { id: "comment-page", author: "Author", content: "Page comment", email: "page@example.com", pageId: page.id, status: CommentStatus.PUBLISH },
+      { id: "comment-custom", author: "Author", content: "Custom comment", email: "custom@example.com", customId: post.id, status: CommentStatus.PUBLISH },
+    ]);
+
+    const result = await createCommentQueryRepository(db).list({ page: 1, limit: 10 });
+    const comments = Object.fromEntries(result.list.map((comment) => [comment.id, comment]));
+
+    expect(comments["comment-post"]?.post?.title).toEqual({ en: "Post", zh: "文章" });
+    expect(comments["comment-page"]?.page?.title).toEqual({ en: "Page", zh: "页面" });
+    expect(comments["comment-custom"]?.custom?.title).toEqual({ en: "Post", zh: "文章" });
   });
 
   it("assembles stable read models and counts multilingual matches once", async () => {

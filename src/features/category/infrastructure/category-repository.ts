@@ -136,11 +136,33 @@ export function createCategoryRepository(db: Database): CategoryRepository {
                   .limit(1);
             if (updated && (title !== undefined || description !== undefined)) {
               for (const locale of supportedLanguages) {
-                await tx
+                if (title !== undefined && description !== undefined) {
+                  await tx
+                    .insert(schema.categoryTranslation)
+                    .values({
+                      categoryId: id,
+                      locale,
+                      title: title[locale],
+                      description: description[locale],
+                    })
+                    .onConflictDoUpdate({
+                      target: [
+                        schema.categoryTranslation.categoryId,
+                        schema.categoryTranslation.locale,
+                      ],
+                      set: {
+                        title: title[locale],
+                        description: description[locale],
+                      },
+                    });
+                } else {
+                  await tx
                     .update(schema.categoryTranslation)
                     .set({
                       ...(title !== undefined ? { title: title[locale] } : {}),
-                      ...(description !== undefined ? { description: description[locale] } : {}),
+                      ...(description !== undefined
+                        ? { description: description[locale] }
+                        : {}),
                     })
                     .where(
                       and(
@@ -148,6 +170,7 @@ export function createCategoryRepository(db: Database): CategoryRepository {
                         eq(schema.categoryTranslation.locale, locale),
                       ),
                     );
+                }
               }
             }
             return updated;

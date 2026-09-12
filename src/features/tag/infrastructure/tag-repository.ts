@@ -53,14 +53,15 @@ export function createTagRepository(db: Database): TagRepository {
           if (updated && name !== undefined) {
             for (const locale of supportedLanguages) {
               await tx
-                .update(schema.tagTranslation)
-                .set({ name: name[locale] })
-                .where(
-                  and(
-                    eq(schema.tagTranslation.tagId, id),
-                    eq(schema.tagTranslation.locale, locale),
-                  ),
-                );
+                .insert(schema.tagTranslation)
+                .values({ tagId: id, locale, name: name[locale] })
+                .onConflictDoUpdate({
+                  target: [
+                    schema.tagTranslation.tagId,
+                    schema.tagTranslation.locale,
+                  ],
+                  set: { name: name[locale] },
+                });
             }
           }
           return updated;

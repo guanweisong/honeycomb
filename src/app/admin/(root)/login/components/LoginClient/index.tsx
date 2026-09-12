@@ -20,11 +20,12 @@ import Script from "next/script";
 import { providerIcons } from "../../provider-icons";
 import { LoginSchema, type LoginValues } from "../../login.schema";
 import { normalizeAdminCallback } from "../../safe-admin-callback";
+import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 type AuthProvider = { id: string; name: string };
 
 type LoginClientProps = {
-  setting: { siteName?: { zh?: string | null } | null } | undefined;
+  setting: { siteName?: MultiLang | null } | undefined;
   providers: AuthProvider[];
   targetUrl?: string;
 };

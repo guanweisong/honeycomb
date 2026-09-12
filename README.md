@@ -326,10 +326,14 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 - **tag** - 标签表
 - **post_tag** - 文章-标签关联表
 - **link** - 友情链接表
+- **category_translation** - 分类翻译表
+- **post_translation** - 文章翻译表
+- **page_translation** - 页面翻译表
+- **tag_translation** - 标签翻译表
+- **setting_translation** - 网站设置翻译表
 
-### 自定义字段类型
+### 数据库公共定义
 
-- **i18nField** - 国际化字段（支持多语言）
 - **objectId** - 自定义 ID 生成器
 - **timestamps** - 时间戳字段（createdAt, updatedAt）
 
@@ -358,7 +362,7 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 项目使用 next-intl 实现国际化：
 
 - 支持多语言切换
-- 字段级别的多语言支持（i18nField）
+- 内容多语言字段使用实体专属翻译表持久化，并在应用边界组装为 `{ zh, en }`
 - 自动根据浏览器语言切换
 
 ## PWA 支持

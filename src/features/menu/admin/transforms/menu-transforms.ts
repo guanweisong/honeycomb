@@ -3,6 +3,7 @@ import {
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
 import { MenuType, MenuTypeName } from "@/packages/domain/navigation/menu";
+import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 export type MenuEntityTree = {
   id: string;
@@ -11,7 +12,7 @@ export type MenuEntityTree = {
   type: MenuType;
   createdAt: string | null;
   updatedAt: string | null;
-  title?: { en?: string; zh?: string } | string | null;
+  title?: MultiLang | string | null;
   path?: string | null;
   children?: MenuEntityTree[];
 };
@@ -25,7 +26,7 @@ export type SortableMenuNode = Omit<MenuEntityTree, "title" | "children"> & {
 
 export type MenuSelectableItem = {
   id: string;
-  title?: { en?: string; zh?: string } | null;
+  title?: MultiLang | null;
   path?: string | null;
   createdAt: string | null;
   updatedAt: string | null;

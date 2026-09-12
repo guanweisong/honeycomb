@@ -210,8 +210,6 @@ describe("Category Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([]);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
         { categoryId: TEST_IDS.ID_1, locale: "en", title: "Updated Category", description: "Updated category description" },
         { categoryId: TEST_IDS.ID_1, locale: "zh", title: "更新的分类", description: "更新的分类描述" },

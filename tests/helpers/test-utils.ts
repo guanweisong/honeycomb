@@ -27,6 +27,7 @@ export type MockDb = {
   offset: Mock;
   insert: Mock;
   values: Mock;
+  onConflictDoUpdate: Mock;
   returning: Mock;
   delete: Mock;
   update: Mock;
@@ -61,6 +62,7 @@ export const createMockDb = (): MockDb => {
     offset: vi.fn(chain),
     insert: vi.fn(chain),
     values: vi.fn(chain),
+    onConflictDoUpdate: vi.fn(chain),
     returning: vi.fn(chain),
     delete: vi.fn(chain),
     update: vi.fn(chain),
@@ -122,6 +124,7 @@ export const resetMockDb = (mockDb: MockDb) => {
   reset(mockDb.offset);
   reset(mockDb.insert);
   reset(mockDb.values);
+  reset(mockDb.onConflictDoUpdate);
   reset(mockDb.returning);
   reset(mockDb.delete);
   reset(mockDb.update);

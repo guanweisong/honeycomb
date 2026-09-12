@@ -105,7 +105,7 @@ export type NotificationComment = CommentRecord & {
   page: CommentRelatedRecord | null;
 };
 export type NotificationSetting = {
-  siteName: { zh?: string | null; en?: string | null } | null;
+  siteName: MultiLang | null;
 };
 export interface CommentNotificationRepository {
   getComment(id: string): Promise<NotificationComment | undefined>;

@@ -16,6 +16,8 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/packages/infrastructure/db/query/tools";
+import { assembleLocalizedField } from "@/packages/infrastructure/db/translation-values";
+import type { MultiLangEnum } from "@/packages/domain/localization/i18n";
 
 import type {
   CommentQueryRepository,
@@ -33,9 +35,17 @@ export type {
 } from "../application/repository";
 
 function toRelatedRecord(
-  record: { id: string; title?: { en: string; zh: string } | null } | null,
+  record: {
+    id: string;
+    translations: Array<{ locale: MultiLangEnum; title: string | null }>;
+  } | null,
 ): CommentRelatedRecord | null {
-  return record ? { id: record.id, title: record.title } : null;
+  return record
+    ? {
+        id: record.id,
+        title: assembleLocalizedField(record.translations, (row) => row.title),
+      }
+    : null;
 }
 
 export function createCommentQueryRepository(
@@ -79,7 +89,10 @@ export function createCommentQueryRepository(
         ? await observeDbOperation("comment.service.list", "select", () =>
             db.query.comment.findMany({
               where: inArray(schema.comment.id, ids),
-              with: { post: true, page: true },
+              with: {
+                post: { with: { translations: true } },
+                page: { with: { translations: true } },
+              },
             }),
           )
         : [];
@@ -99,10 +112,10 @@ export function createCommentQueryRepository(
             "comment.service.custom-posts",
             "select",
             () =>
-              db
-                .select()
-                .from(schema.post)
-                .where(inArray(schema.post.id, customIds)),
+              db.query.post.findMany({
+                where: inArray(schema.post.id, customIds),
+                with: { translations: true },
+              }),
           )
         : [];
       const customPostMap = Object.fromEntries(

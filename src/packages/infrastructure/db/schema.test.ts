@@ -6,10 +6,6 @@ type ColumnView = {
   config: {
     name: string;
     defaultFn?: () => unknown;
-    customTypeParams?: {
-      toDriver?: (value: { en: string; zh: string }) => string;
-      fromDriver?: (value: string) => { en: string; zh: string } | null;
-    };
     onUpdateFn?: () => unknown;
   };
 };
