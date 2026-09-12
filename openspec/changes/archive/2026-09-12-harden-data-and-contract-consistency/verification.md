@@ -1,6 +1,6 @@
 # 数据与契约一致性验证记录
 
-验证日期：2026-09-12  
+验证日期：2026-09-12
 验证分支：`master`（用户明确要求直接在当前分支实施）
 
 ## 实施结果
@@ -17,8 +17,8 @@
 | 验证项 | 命令 / 结果 |
 | --- | --- |
 | 静态门禁 | `bun run check-types && bun run lint && bun run db:migrations:check && git diff --check`：退出码 0；4 份 migration 工件治理通过。 |
-| 完整单元测试 | 独占随机 `file:` SQLite、`local-final-verification-sentinel` 与退出清理 trap 下运行 `bun run test:unit:run`：299/299 文件、1451/1451 测试通过。 |
-| 覆盖率 | 同一隔离环境运行 `bun run test:unit:coverage`：299/299 文件、1451/1451 测试通过；Statements 85.8%、Branches 77.97%、Functions 84.19%、Lines 87.01%。 |
+| 完整单元测试 | 独占随机 `file:` SQLite、`local-final-verification-sentinel` 与退出清理 trap 下运行 `bun run test:unit:run`：299/299 文件、1459/1459 测试通过。 |
+| 覆盖率 | 同一隔离环境运行 `bun run test:unit:coverage`：299/299 文件、1457/1457 测试通过；Statements 85.8%、Branches 77.97%、Functions 84.19%、Lines 87.01%。最后 2 项子进程竞态与内部表过滤测试在覆盖率后加入，并由最终完整单测覆盖。 |
 | 进程级测试 | 同一隔离环境运行 `bun run test:unit:process`：2/2 文件、52/52 测试通过，未遗留子进程。 |
 | 最终枚举补漏 | 新测试先观察到未知关联分类状态被缓存接受；修复后 6 个相关文件 48/48 测试通过，随后 `check-types` 与 `lint` 通过。 |
 | 本地迁移 | 随机临时 SQLite 下 `bun run db:migrate`：审计后 4 份 migration 应用成功。 |
@@ -59,3 +59,13 @@ Vite 输出了未来 `configLoader: native` 兼容性提示；webpack 构建输�
 
 本次仅完成数据库备份、迁移与数据库侧验收，没有执行应用部署或线上 smoke
 test。若后续发现需要回滚 schema，只能使用单独审查的前向 migration 或从已验证备份恢复，不执行即兴逆向 DDL。
+
+## 推送后收口
+
+- 修复 Linux runner 将 `src/features/README.md` 当作目录访问导致的 `ENOTDIR`，目录治理只枚举真实 Feature 目录。
+- Feature 边界扫描改用 TypeScript 预处理器解析静态导入，同时解析 `@/` 别名与相对路径；5 个既有越界类型导入已统一改走 `features/contracts`。
+- 迁移门禁除 Snapshot 对应检查外，会生成当前 Drizzle schema 的独占本地库，与完整迁移重放库进行双向结构比较；Push CI 使用事件起点 SHA，覆盖一次推送的全部提交。
+- 远程备份行数元数据由实际 schema 表清单派生，不再只覆盖 5 张关键表；迁移检查对 `EXIT/HUP/INT/TERM` 清理路径增加哨兵、所有权和子进程约束。
+- 独立复核后，迁移门禁进一步精确比较索引列、索引定义和 CHECK 表达式，并对无效 Push 起点 fail-closed；Drizzle 子进程先按原信号退出、超时升级为 `SIGKILL`，只有确认 `close` 后才清理临时库，无法确认退出时保留现场并报告 PID 与路径。
+- 推送后只读复核确认迁移前备份与生产库 21 张业务表记录数全部一致，外键违规数为 0。
+- 收口验证累计新增 8 项测试；最终完整单测为 299 个文件、1459 项通过，覆盖率运行时 1457 项通过，进程测试 52 项通过，Webpack 生产构建通过。Turbopack 本机构建仍受宿主禁止内部端口约束；npm 依赖审计因当前权限不允许发送依赖版本清单，留给 GitHub Actions 验证。

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TagType } from "@/packages/domain/content/tag";
-import type { TagViewModel as TagEntity } from "../../../../../tag/presentation/tag-view-model";
+import type { TagViewModel as TagEntity } from "@/features/contracts";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { trpc } from "@/packages/trpc/client/trpc";

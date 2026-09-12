@@ -15,6 +15,14 @@ export interface SchemaIndex {
   unique: number;
   origin: string;
   partial: number;
+  columns: Array<{
+    seqno: number;
+    name: string | null;
+    desc: number;
+    collation: string;
+    key: number;
+  }>;
+  sql: string | null;
 }
 
 export interface SchemaForeignKey {
@@ -75,7 +83,12 @@ export function normalizeSchemaInventory(
       .map((table) => ({
         ...table,
         columns: [...table.columns].sort((left, right) => left.cid - right.cid),
-        indexes: [...table.indexes].sort(compareByName),
+        indexes: [...table.indexes]
+          .map((index) => ({
+            ...index,
+            columns: [...index.columns].sort((left, right) => left.seqno - right.seqno),
+          }))
+          .sort(compareByName),
         foreignKeys: [...table.foreignKeys].sort(
           (left, right) => left.id - right.id || left.seq - right.seq,
         ),
@@ -119,8 +132,8 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
     client,
     `SELECT name, sql FROM sqlite_master
      WHERE type = 'table'
-       AND name NOT LIKE 'sqlite_%'
-       AND name NOT LIKE '__drizzle_%'
+       AND name NOT GLOB 'sqlite_*'
+       AND name NOT GLOB '__drizzle_*'
      ORDER BY name`,
   );
 
@@ -133,6 +146,38 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
         readOnlyQuery(client, `PRAGMA index_list(${quotedName})`),
         readOnlyQuery(client, `PRAGMA foreign_key_list(${quotedName})`),
       ]);
+
+      const indexes = await Promise.all(
+        indexRows.map(async (row): Promise<SchemaIndex> => {
+          const indexName = string(row, "name");
+          const quotedIndex = quoteIdentifier(indexName);
+          const [indexColumnRows, indexDefinitionRows] = await Promise.all([
+            readOnlyQuery(client, `PRAGMA index_xinfo(${quotedIndex})`),
+            readOnlyQuery(
+              client,
+              `SELECT sql FROM sqlite_master WHERE type = 'index' AND name = '${indexName.replaceAll("'", "''")}'`,
+            ),
+          ]);
+          const sql = indexDefinitionRows[0]?.sql;
+          return {
+            name: indexName,
+            unique: integer(row, "unique"),
+            origin: string(row, "origin"),
+            partial: integer(row, "partial"),
+            columns: indexColumnRows.map((column) => ({
+              seqno: integer(column, "seqno"),
+              name:
+                column.name === null || column.name === undefined
+                  ? null
+                  : String(column.name),
+              desc: integer(column, "desc"),
+              collation: string(column, "coll"),
+              key: integer(column, "key"),
+            })),
+            sql: sql === null || sql === undefined ? null : String(sql),
+          };
+        }),
+      );
 
       return {
         name,
@@ -148,12 +193,7 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
               : String(row.dflt_value),
           pk: integer(row, "pk"),
         })),
-        indexes: indexRows.map((row) => ({
-          name: string(row, "name"),
-          unique: integer(row, "unique"),
-          origin: string(row, "origin"),
-          partial: integer(row, "partial"),
-        })),
+        indexes,
         foreignKeys: foreignKeyRows.map((row) => ({
           id: integer(row, "id"),
           seq: integer(row, "seq"),

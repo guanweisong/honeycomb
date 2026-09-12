@@ -180,8 +180,9 @@ describe("架构复杂度治理", () => {
   });
 
   it("Repository 契约必须位于 application，Application 不得依赖 infrastructure", () => {
-    const rootRepositoryFiles = readdirSync(featureRoot).flatMap((feature) => {
-      const path = join(featureRoot, feature, "repository.ts");
+    const rootRepositoryFiles = readdirSync(featureRoot, { withFileTypes: true }).flatMap((feature) => {
+      if (!feature.isDirectory()) return [];
+      const path = join(featureRoot, feature.name, "repository.ts");
       return statSync(path, { throwIfNoEntry: false })
         ? [relative(process.cwd(), path)]
         : [];

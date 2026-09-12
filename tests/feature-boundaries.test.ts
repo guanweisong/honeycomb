@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import { preProcessFile } from "typescript";
 
 const featuresRoot = join(process.cwd(), "src/features");
 const featureNames = [
@@ -22,10 +23,18 @@ function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
   return files.flatMap(({ path, source }) => {
     const current = path.match(/src\/features\/([^/]+)\//)?.[1];
     if (!current || current === "contracts") return [];
-    return [...source.matchAll(/@\/features\/([^/'"]+)(?:\/([^'"]+))?/g)]
-      .flatMap((match) => {
-        const target = match[1];
-        const segment = match[2]?.split("/")[0];
+    return preProcessFile(source, true, true).importedFiles
+      .flatMap(({ fileName }) => {
+        const importedPath = fileName.startsWith("@/")
+          ? join("src", fileName.slice(2))
+          : fileName.startsWith(".")
+            ? relative(process.cwd(), resolve(dirname(path), fileName))
+            : undefined;
+        const match = importedPath
+          ?.replaceAll("\\", "/")
+          .match(/^src\/features\/([^/]+)(?:\/([^/]+))?/);
+        const target = match?.[1];
+        const segment = match?.[2];
         return !target || target === current || target === "contracts" || segment === "public"
           ? []
           : [`${path} -> ${target}/${segment ?? "<root>"}`];
@@ -132,6 +141,19 @@ describe("业务功能边界", () => {
       ).toEqual([`src/features/post/application/example.ts -> comment/${segment}`]);
     },
   );
+
+  it("识别相对路径形式的跨 Feature 深导入", () => {
+    expect(
+      findCrossFeatureImportViolations([
+        {
+          path: "src/features/post/application/example.ts",
+          source: 'import x from "../../comment/domain/x";',
+        },
+      ]),
+    ).toEqual([
+      "src/features/post/application/example.ts -> comment/domain",
+    ]);
+  });
 
   it("允许本 Feature、共享 contracts 与显式 public 出口", () => {
     expect(

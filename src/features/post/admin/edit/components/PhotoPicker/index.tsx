@@ -3,7 +3,7 @@
 import { Sheet } from "@/packages/ui/extended/Sheet";
 import React, { useState } from "react";
 import { toast } from "sonner";
-import type { MediaViewModel as MediaEntity } from "../../../../../media/shared/media-view-model";
+import type { MediaViewModel as MediaEntity } from "@/features/contracts";
 
 /**
  * 图片选择器模态框的属性接口。

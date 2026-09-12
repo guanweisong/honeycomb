@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
-import type { CategoryViewModel as CategoryEntity } from "../../../../category/presentation/category-view-model";
+import type { CategoryViewModel as CategoryEntity } from "@/features/contracts";
 import {
   StatusBadge,
   StatusBadgeTone,

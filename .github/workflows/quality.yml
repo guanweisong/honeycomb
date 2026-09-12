@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_PUBLIC_SITE_URL: https://example.test
       TURSO_URL: file:/tmp/honeycomb-ci.db
       TURSO_TOKEN: local

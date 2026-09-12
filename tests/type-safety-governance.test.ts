@@ -17,8 +17,9 @@ function sourceFiles(directory: string): string[] {
 }
 
 function applicationRepositoryFiles(): string[] {
-  return readdirSync(featuresRoot).flatMap((feature) => {
-    const applicationDirectory = join(featuresRoot, feature, "application");
+  return readdirSync(featuresRoot, { withFileTypes: true }).flatMap((feature) => {
+    if (!feature.isDirectory()) return [];
+    const applicationDirectory = join(featuresRoot, feature.name, "application");
     if (!statSync(applicationDirectory, { throwIfNoEntry: false })?.isDirectory()) {
       return [];
     }

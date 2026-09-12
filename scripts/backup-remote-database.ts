@@ -23,6 +23,10 @@ async function sha256(path: string): Promise<string> {
   return hash.digest("hex");
 }
 
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replaceAll('"', '""')}"`;
+}
+
 const output = process.argv[2];
 if (!output || !isAbsolute(output)) throw new Error("An absolute backup directory is required");
 const directory = resolve(output);
@@ -55,10 +59,20 @@ try {
   if (integrityResult.length !== 1 || integrityResult[0] !== "ok") {
     throw new Error(`Backup integrity check failed: ${integrityResult.join(", ")}`);
   }
+  const tableInventory = await client.execute(
+    `select name from sqlite_master
+     where type = 'table'
+       and name not glob 'sqlite_*'
+       and name not glob '__drizzle_*'
+     order by name`,
+  );
+  const tables = tableInventory.rows.map((row) => String(row.name));
   const counts = Object.fromEntries(
     await Promise.all(
-      ["category", "post", "page", "setting", "tag"].map(async (table) => {
-        const result = await client.execute(`select count(*) as value from ${table}`);
+      tables.map(async (table) => {
+        const result = await client.execute(
+          `select count(*) as value from ${quoteIdentifier(table)}`,
+        );
         return [table, Number(result.rows[0]?.value ?? 0)];
       }),
     ),
