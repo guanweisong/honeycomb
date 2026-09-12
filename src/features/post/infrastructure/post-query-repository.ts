@@ -163,7 +163,11 @@ export async function loadPostRelations(
             title: categoryTranslations?.title ?? null,
             description: categoryTranslations?.description ?? null,
             parent: category.parent,
-            status: category.status,
+            status: parseEnumValue(
+              category.status,
+              Object.values(EnableStatus),
+              "category.status",
+            ),
             path: category.path,
             createdAt: category.createdAt,
             updatedAt: category.updatedAt,

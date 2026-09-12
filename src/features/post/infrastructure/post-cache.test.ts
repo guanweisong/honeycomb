@@ -33,6 +33,24 @@ const query: PostQueryRepository = {
 describe("post list cache validation", () => {
   it.each([
     { list: [{ ...post, status: "UNKNOWN" }], total: 1 },
+    {
+      list: [
+        {
+          ...post,
+          category: {
+            id: "category",
+            title: null,
+            description: null,
+            parent: null,
+            status: "UNKNOWN",
+            path: "category",
+            createdAt: null,
+            updatedAt: null,
+          },
+        },
+      ],
+      total: 1,
+    },
     { list: [{ ...post, movieActors: [{}] }], total: 1 },
     { list: [{ ...post, views: "many" }], total: 1 },
     { list: [], total: "1" },

@@ -40,7 +40,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
           category: {
             id: post.categoryId,
             title: { en: "Category 1", zh: "分类1" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
           },
           cover: post.coverId
             ? {
@@ -142,7 +142,7 @@ describe("Post Router", () => {
       const mockCategory = {
         id: TEST_IDS.ID_1,
         title: { en: "Category 1", zh: "分类1" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
       };
       const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
       const mockCover = {

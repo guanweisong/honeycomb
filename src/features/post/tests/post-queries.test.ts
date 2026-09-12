@@ -49,7 +49,7 @@ describe("getPostList", () => {
           category: {
             id: post.categoryId,
             title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],
@@ -108,7 +108,7 @@ describe("getPostList", () => {
           category: {
             id: TEST_IDS.ID_2,
             title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],
@@ -235,7 +235,7 @@ describe("getPostList", () => {
           category: {
             id: TEST_IDS.ID_1,
             title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
           },
           cover: undefined,
           movieActors: [],

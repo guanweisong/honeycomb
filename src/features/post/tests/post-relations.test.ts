@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { TagType } from "@/packages/domain/content/tag";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { loadPostRelations } from "../post-relations";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
@@ -24,7 +25,7 @@ describe("loadPostRelations", () => {
     const gallery = { id: "tag-gallery", name: { zh: "Gallery", en: "Gallery" }, createdAt: null, updatedAt: null };
     const category = {
       id: "category-1", title: null, description: null, parent: null,
-      status: "ENABLE", path: "category", createdAt: null, updatedAt: null,
+      status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
     } satisfies NonNullable<PostWithRelations["category"]>;
     const author = {
       id: "user-1", name: "Author",

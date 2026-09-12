@@ -13,6 +13,7 @@ import { PostWithRelationsSchema } from "@/features/post/application/post-read-m
 import { decodeCachedPostList } from "@/features/post/infrastructure/post-cache-dto";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 describe("共享契约的真实消费者", () => {
   it("批量删除拒绝空 ID 集合", () => {
@@ -94,7 +95,7 @@ describe("共享契约的真实消费者", () => {
         title: { zh: "分类" },
         description: null,
         parent: null,
-        status: "ENABLE",
+        status: EnableStatus.ENABLE,
         path: "category",
         createdAt: null,
         updatedAt: null,

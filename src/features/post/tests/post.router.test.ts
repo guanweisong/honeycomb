@@ -61,7 +61,7 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
             title: { en: "Category 1", zh: "分类1" },
             description: null,
             parent: null,
-            status: "ENABLE",
+            status: EnableStatus.ENABLE,
             path: "category",
             createdAt: null,
             updatedAt: null,

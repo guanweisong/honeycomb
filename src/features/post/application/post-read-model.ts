@@ -17,7 +17,7 @@ export const PostCategoryRecordSchema = z.object({
   title: localized,
   description: localized,
   parent: z.string().nullable(),
-  status: z.string(),
+  status: z.enum(EnableStatus),
   path: z.string(),
   ...timestamps,
 });
