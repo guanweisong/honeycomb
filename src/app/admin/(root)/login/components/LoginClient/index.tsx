@@ -21,6 +21,7 @@ import { providerIcons } from "../../provider-icons";
 import { LoginSchema, type LoginValues } from "../../login.schema";
 import { normalizeAdminCallback } from "../../safe-admin-callback";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { useTurnstileToken } from "@/packages/ui/hooks/use-turnstile-token";
 
 type AuthProvider = { id: string; name: string };
 
@@ -36,7 +37,11 @@ type LoginClientProps = {
  */
 const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
   const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const {
+    token: captchaToken,
+    onSuccess: onTurnstileSuccess,
+    reset: resetCaptcha,
+  } = useTurnstileToken(turnstileRef);
   const [isPasskeySupported, setIsPasskeySupported] = useState<boolean | null>(
     null,
   );
@@ -50,14 +55,6 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
         typeof window.PublicKeyCredential !== "undefined",
     );
   }, []);
-
-  /**
-   * 重置验证码
-   */
-  const resetCaptcha = () => {
-    setCaptchaToken(null);
-    turnstileRef.current?.reset();
-  };
 
   /**
    * 表单提交处理器。
@@ -111,15 +108,6 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
     }
     toast.success("登录成功");
     window.location.href = callbackUrl;
-  };
-
-  /**
-   * 验证码通过后的回调。
-   *
-   * @param {string} data - Turnstile 返回的验证码 token。
-   */
-  const onTurnstileSuccess = (data: string) => {
-    setCaptchaToken(data);
   };
 
   return (

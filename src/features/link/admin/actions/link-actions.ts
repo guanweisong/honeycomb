@@ -10,61 +10,22 @@ import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "../transforms/link-transforms";
+import {
+  closeAdminDialog,
+  createInitialAdminDialogState,
+  openAddAdminDialog,
+  openEditAdminDialog,
+  runAdminMutation,
+  submitAdminBatchDelete,
+  type AdminDialogState,
+  type AdminListActionOptions,
+  type AdminMutationFeedback,
+  type AdminTargetMutationState,
+} from "@/packages/ui/admin/action-state";
 
-export type LinkDialogState = {
-  type?: ModalType;
-  open: boolean;
-  record?: LinkEntity;
-};
+export type LinkDialogState = AdminDialogState<LinkEntity>;
 
-export type LinkActionState = "success" | "error" | "missing-target" | "noop";
-
-export function createInitialLinkDialogState(): LinkDialogState {
-  return { type: ModalType.ADD, open: false };
-}
-
-export function openAddLinkDialog(): LinkDialogState {
-  return { type: ModalType.ADD, open: true, record: undefined };
-}
-
-export function openEditLinkDialog(record: LinkEntity): LinkDialogState {
-  return { type: ModalType.EDIT, open: true, record };
-}
-
-export function closeLinkDialog(): LinkDialogState {
-  return { open: false };
-}
-
-type LinkMutationFeedback = {
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
-};
-
-type SubmitLinkCreateOptions = LinkMutationFeedback & {
-  values: LinkInsert;
-  create: (input: LinkInsert) => Promise<unknown>;
-};
-
-export async function submitLinkCreate({
-  values,
-  create,
-  refetch,
-  notifySuccess,
-  notifyError,
-}: SubmitLinkCreateOptions): Promise<LinkActionState> {
-  try {
-    await create(values);
-    refetch();
-    notifySuccess("添加成功");
-    return "success";
-  } catch {
-    notifyError("添加失败");
-    return "error";
-  }
-}
-
-type SubmitLinkUpdateOptions = LinkMutationFeedback & {
+type SubmitLinkUpdateOptions = AdminMutationFeedback & {
   record?: LinkEntity;
   values: LinkUpdate;
   update: (input: LinkUpdate) => Promise<unknown>;
@@ -77,91 +38,49 @@ export async function submitLinkUpdate({
   refetch,
   notifySuccess,
   notifyError,
-}: SubmitLinkUpdateOptions): Promise<LinkActionState> {
+}: SubmitLinkUpdateOptions): Promise<AdminTargetMutationState> {
   if (!record?.id) {
     notifyError("缺少记录ID");
     return "missing-target";
   }
 
-  try {
-    await update(buildLinkUpdateInput(record, values));
-    refetch();
-    notifySuccess("更新成功");
-    return "success";
-  } catch {
-    notifyError("更新失败");
-    return "error";
-  }
+  return runAdminMutation({
+    input: buildLinkUpdateInput(record, values),
+    mutate: update,
+    refetch,
+    notifySuccess,
+    notifyError,
+    successMessage: "更新成功",
+    errorMessage: "更新失败",
+  });
 }
-
-type SubmitLinkDeleteOptions = LinkMutationFeedback & {
-  ids: string[];
-  destroy: (input: { ids: string[] }) => Promise<{ success: boolean }>;
-};
-
-export async function submitLinkDelete({
-  ids,
-  destroy,
-  refetch,
-  notifySuccess,
-  notifyError,
-}: SubmitLinkDeleteOptions): Promise<LinkActionState> {
-  try {
-    const result = await destroy({ ids });
-    if (!result.success) return "noop";
-    refetch();
-    notifySuccess("删除成功");
-    return "success";
-  } catch {
-    notifyError("删除失败");
-    return "error";
-  }
-}
-
-type SubmitLinkBatchDeleteOptions = {
-  selectedRows: LinkEntity[];
-  deleteItems: (ids: string[]) => Promise<LinkActionState>;
-  onSelectionChange: (rows: LinkEntity[]) => void;
-};
-
-export async function submitLinkBatchDelete({
-  selectedRows,
-  deleteItems,
-  onSelectionChange,
-}: SubmitLinkBatchDeleteOptions): Promise<void> {
-  await deleteItems(selectedRows.map((row) => row.id));
-  onSelectionChange([]);
-}
-
-type UseLinkActionsOptions = {
-  selectedRows: LinkEntity[];
-  onSelectionChange: (rows: LinkEntity[]) => void;
-  refetch: () => unknown;
-};
 
 export function useLinkActions({
   selectedRows,
   onSelectionChange,
   refetch,
-}: UseLinkActionsOptions) {
+}: AdminListActionOptions<LinkEntity>) {
   const [dialogState, setDialogState] = useState<LinkDialogState>(
-    createInitialLinkDialogState,
+    createInitialAdminDialogState,
   );
   const createLink = trpc.link.create.useMutation();
   const updateLink = trpc.link.update.useMutation();
   const destroyLink = trpc.link.destroy.useMutation();
 
   const handleDeleteItem = (ids: string[]) =>
-    submitLinkDelete({
-      ids,
-      destroy: destroyLink.mutateAsync,
+    runAdminMutation({
+      input: { ids },
+      mutate: destroyLink.mutateAsync,
+      isSuccess: (result) => result.success,
       refetch,
       notifySuccess: toast.success,
       notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
     });
 
   const handleDeleteBatch = () =>
-    submitLinkBatchDelete({
+    submitAdminBatchDelete({
       selectedRows,
       deleteItems: handleDeleteItem,
       onSelectionChange,
@@ -170,12 +89,14 @@ export function useLinkActions({
   const handleModalOk = async (values: LinkInsert | LinkUpdate) => {
     const state =
       dialogState.type === ModalType.ADD
-        ? await submitLinkCreate({
-            values: LinkInsertSchema.parse(values),
-            create: createLink.mutateAsync,
+        ? await runAdminMutation({
+            input: LinkInsertSchema.parse(values),
+            mutate: createLink.mutateAsync,
             refetch,
             notifySuccess: toast.success,
             notifyError: toast.error,
+            successMessage: "添加成功",
+            errorMessage: "添加失败",
           })
         : await submitLinkUpdate({
             record: dialogState.record,
@@ -186,14 +107,14 @@ export function useLinkActions({
             notifyError: toast.error,
           });
 
-    if (state === "success") setDialogState(closeLinkDialog());
+    if (state === "success") setDialogState(closeAdminDialog());
   };
 
   return {
     dialogState,
-    handleAddNew: () => setDialogState(openAddLinkDialog()),
+    handleAddNew: () => setDialogState(openAddAdminDialog()),
     handleEditItem: (record: LinkEntity) =>
-      setDialogState(openEditLinkDialog(record)),
+      setDialogState(openEditAdminDialog(record)),
     handleDeleteItem,
     handleDeleteBatch,
     handleModalOk,

@@ -8,6 +8,11 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import type { TagViewModel as TagEntity } from "../../../presentation/tag-view-model";
 import { z } from "zod";
 import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
+import {
+  runAdminMutation,
+  withAdminRecordId,
+  type AdminDialogState,
+} from "@/packages/ui/admin/action-state";
 
 const tagFields: FieldConfig[] = [
   {
@@ -25,19 +30,7 @@ type TagUpdateValues = z.infer<typeof TagUpdateSchema>;
 /**
  * 添加/编辑标签对话框的属性接口。
  */
-export interface AddTagDialogProps {
-  /**
-   * 模态框的类型，表示是新增还是编辑。
-   */
-  type?: ModalType;
-  /**
-   * 控制模态框的显示与隐藏。
-   */
-  open: boolean;
-  /**
-   * 当前编辑的标签记录，仅在编辑模式下有效。
-   */
-  record?: TagEntity;
+export type AddTagDialogProps = AdminDialogState<TagEntity> & {
   /**
    * 模态框关闭时的回调函数。
    */
@@ -46,7 +39,7 @@ export interface AddTagDialogProps {
    * 操作成功（添加或编辑成功）时的回调函数。
    */
   onSuccess?: () => void;
-}
+};
 
 /**
  * 添加/编辑标签的对话框组件。
@@ -71,33 +64,36 @@ export default function AddTagDialog(props: AddTagDialogProps) {
   const handleModalOk = async (values: TagInsertValues | TagUpdateValues) => {
     switch (type) {
       case ModalType.ADD:
-        try {
-          await createTag.mutateAsync(TagInsertSchema.parse(values));
-          onSuccess?.();
-          toast.success("添加成功");
+        if (
+          (await runAdminMutation({
+            input: TagInsertSchema.parse(values),
+            mutate: createTag.mutateAsync,
+            refetch: () => onSuccess?.(),
+            notifySuccess: toast.success,
+            notifyError: toast.error,
+            successMessage: "添加成功",
+            errorMessage: "添加失败",
+          })) === "success"
+        )
           onClose?.();
-        } catch {
-          toast.error("添加失败");
-        }
         break;
       case ModalType.EDIT:
         if (!record) {
           toast.error("标签不存在，无法更新");
           return;
         }
-        try {
-          await updateTag.mutateAsync(
-            TagUpdateSchema.parse({
-              ...values,
-              id: record.id,
-            }),
-          );
-          onSuccess?.();
-          toast.success("更新成功");
+        if (
+          (await runAdminMutation({
+            input: TagUpdateSchema.parse(withAdminRecordId(record, values)),
+            mutate: updateTag.mutateAsync,
+            refetch: () => onSuccess?.(),
+            notifySuccess: toast.success,
+            notifyError: toast.error,
+            successMessage: "更新成功",
+            errorMessage: "更新失败",
+          })) === "success"
+        )
           onClose?.();
-        } catch {
-          toast.error("更新失败");
-        }
         break;
     }
   };

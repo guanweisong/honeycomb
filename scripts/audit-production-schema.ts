@@ -1,5 +1,7 @@
 import { createClient, type Client, type Row } from "@libsql/client";
 import { writeFile } from "node:fs/promises";
+import { argumentValue } from "./cli";
+import { quoteSqliteIdentifier } from "./sqlite";
 
 export interface SchemaColumn {
   cid: number;
@@ -86,7 +88,9 @@ export function normalizeSchemaInventory(
         indexes: [...table.indexes]
           .map((index) => ({
             ...index,
-            columns: [...index.columns].sort((left, right) => left.seqno - right.seqno),
+            columns: [...index.columns].sort(
+              (left, right) => left.seqno - right.seqno,
+            ),
           }))
           .sort(compareByName),
         foreignKeys: [...table.foreignKeys].sort(
@@ -115,10 +119,6 @@ async function readOnlyQuery(client: Client, sql: string): Promise<Row[]> {
   return [...result.rows];
 }
 
-function quoteIdentifier(identifier: string): string {
-  return `"${identifier.replaceAll('"', '""')}"`;
-}
-
 function integer(row: Row, key: string): number {
   return Number(row[key]);
 }
@@ -140,7 +140,7 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
   const tables = await Promise.all(
     tableRows.map(async (tableRow): Promise<SchemaTable> => {
       const name = string(tableRow, "name");
-      const quotedName = quoteIdentifier(name);
+      const quotedName = quoteSqliteIdentifier(name);
       const [columnRows, indexRows, foreignKeyRows] = await Promise.all([
         readOnlyQuery(client, `PRAGMA table_info(${quotedName})`),
         readOnlyQuery(client, `PRAGMA index_list(${quotedName})`),
@@ -150,7 +150,7 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
       const indexes = await Promise.all(
         indexRows.map(async (row): Promise<SchemaIndex> => {
           const indexName = string(row, "name");
-          const quotedIndex = quoteIdentifier(indexName);
+          const quotedIndex = quoteSqliteIdentifier(indexName);
           const [indexColumnRows, indexDefinitionRows] = await Promise.all([
             readOnlyQuery(client, `PRAGMA index_xinfo(${quotedIndex})`),
             readOnlyQuery(
@@ -270,11 +270,6 @@ ${abandonedMigrationProvenance}
 - Production DDL/DML: not executed.
 - Production Drizzle ledger adoption: not executed; explicit approval required.
 `);
-}
-
-function argumentValue(flag: string): string | undefined {
-  const index = process.argv.indexOf(flag);
-  return index === -1 ? undefined : process.argv[index + 1];
 }
 
 async function main(): Promise<void> {

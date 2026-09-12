@@ -3,13 +3,12 @@ import type { PageStatus } from "@/packages/domain/content/page";
 import type { PageTemplate } from "@/packages/domain/content/page-template";
 import type { I18n } from "@/packages/domain/localization/i18n";
 import type { MediaRecord } from "@/features/contracts";
+import type { PageInsert, PageUpdate } from "./write-schema";
 
 export type LocalizedText = I18n;
 
-export type PageCreateCommand = import("zod").output<
-  typeof import("./write-schema").PageInsertSchema
->;
-export type PageUpdateCommand = Partial<PageCreateCommand> & { id: string };
+export type PageCreateCommand = PageInsert;
+export type PageUpdateCommand = PageUpdate;
 export type PageVisibility = "PUBLISHED_ONLY" | "ALL";
 export type PageInput = PaginationInput & {
   title?: string;

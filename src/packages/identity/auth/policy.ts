@@ -1,5 +1,7 @@
-import { UserStatus } from "@/packages/domain/identity/user";
-export { getConfiguredProviderIds, type AuthProviderConfig } from "./providers";
+import {
+  isUserEnabled,
+  type UserStatus,
+} from "@/packages/domain/identity/user";
 export function canCreateSessionForUser(status: UserStatus) {
-  return status === UserStatus.ENABLE;
+  return isUserEnabled(status);
 }

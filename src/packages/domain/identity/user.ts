@@ -28,6 +28,10 @@ export enum UserStatus {
   DISABLE = "DISABLE",
 }
 
+export function isUserEnabled(status: UserStatus): boolean {
+  return status === UserStatus.ENABLE;
+}
+
 export enum UserStatusName {
   DELETED = "已删除",
   ENABLE = "启用",

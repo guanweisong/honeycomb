@@ -1,6 +1,5 @@
 "use client";
 
-import { ModalType } from "@/packages/ui/admin/modal-type";
 import type { TagViewModel as TagEntity } from "../presentation/tag-view-model";
 import { useState } from "react";
 import { tagTableColumns } from "./constants/tag-table-columns";
@@ -16,9 +15,18 @@ import {
 } from "@/features/tag/schemas/tag.list.query.schema";
 import AddTagDialog from "./components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { keepPreviousData } from "@tanstack/react-query";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
+import {
+  closeAdminDialog,
+  createInitialAdminDialogState,
+  openAddAdminDialog,
+  openEditAdminDialog,
+  runAdminMutation,
+  submitAdminBatchDelete,
+  type AdminDialogState,
+} from "@/packages/ui/admin/action-state";
 
 /**
  * 标签管理页面。
@@ -36,14 +44,9 @@ const Tag = () => {
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的标签记录。
    */
-  const [modalProps, setModalProps] = useState<{
-    type?: ModalType;
-    open: boolean;
-    record?: TagEntity;
-  }>({
-    type: ModalType.ADD,
-    open: false,
-  });
+  const [modalProps, setModalProps] = useState<AdminDialogState<TagEntity>>(
+    createInitialAdminDialogState,
+  );
 
   /**
    * 存储标签列表的查询参数。
@@ -57,10 +60,7 @@ const Tag = () => {
    */
   const { data, isFetching, isError, refetch } = trpc.tag.index.useQuery(
     searchParams,
-    {
-      placeholderData: keepPreviousData,
-      staleTime: 60 * 1000, // 缓存 1 分钟。
-    },
+    adminListQueryOptions,
   );
   /**
    * 删除标签的 tRPC mutation。
@@ -71,49 +71,40 @@ const Tag = () => {
   /**
    * 新增按钮事件
    */
-  const handleAddNew = () => {
-    setModalProps({
-      type: ModalType.ADD,
-      open: true,
-      record: undefined,
-    });
-  };
+  const handleAddNew = () => setModalProps(openAddAdminDialog());
 
   /**
    * 删除按钮事件
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    try {
-      const res = await destroyTag.mutateAsync({ ids });
-      if (res.success) {
-        toast.success("删除成功");
-        refetch();
-      }
-    } catch {
-      toast.error("删除失败");
-    }
+    await runAdminMutation({
+      input: { ids },
+      mutate: destroyTag.mutateAsync,
+      isSuccess: (result) => result.success,
+      refetch,
+      notifySuccess: toast.success,
+      notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
+    });
   };
 
   /**
    * 批量删除
    */
-  const handleDeleteBatch = async () => {
-    const ids = selectedRows.map((item) => item.id);
-    await handleDeleteItem(ids);
-    setSelectedRows([]);
-  };
+  const handleDeleteBatch = () =>
+    submitAdminBatchDelete({
+      selectedRows,
+      deleteItems: handleDeleteItem,
+      onSelectionChange: setSelectedRows,
+    });
 
   /**
    * 编辑按钮事件
    */
-  const handleEditItem = (record: TagEntity) => {
-    setModalProps({
-      type: ModalType.EDIT,
-      open: true,
-      record,
-    });
-  };
+  const handleEditItem = (record: TagEntity) =>
+    setModalProps(openEditAdminDialog(record));
 
   return (
     <>
@@ -214,7 +205,7 @@ const Tag = () => {
 
       <AddTagDialog
         {...modalProps}
-        onClose={() => setModalProps((prev) => ({ ...prev, open: false }))}
+        onClose={() => setModalProps(closeAdminDialog())}
         onSuccess={() => {
           refetch();
         }}

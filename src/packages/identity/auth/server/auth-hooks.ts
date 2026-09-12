@@ -8,6 +8,7 @@ import { getAuthenticationProvider } from "../authentication-events";
 import { recordLoginHistory } from "@/packages/identity/account-security/server/login-history.repository";
 import { getLogger } from "@/packages/infrastructure/observability/server";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { canCreateSessionForUser } from "../policy";
 
 export function createAuthDatabaseHooks(): NonNullable<
   BetterAuthOptions["databaseHooks"]
@@ -48,7 +49,7 @@ export function createAuthDatabaseHooks(): NonNullable<
             .where(eq(schema.user.id, session.userId))
             .limit(1);
 
-          if (!user || user.status !== "ENABLE") return false;
+          if (!user || !canCreateSessionForUser(user.status)) return false;
         },
         after: async (session, context) => {
           try {

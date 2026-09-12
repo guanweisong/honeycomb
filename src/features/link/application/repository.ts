@@ -1,9 +1,12 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import type { EnableStatus } from "@/packages/domain/shared/enable-status";
-export type LinkInsert = import("zod").output<
-  typeof import("./write-schema").LinkInsertSchema
->;
-export type LinkUpdate = { id: string } & Partial<LinkInsert>;
+import type {
+  LinkInsert as LinkInsertInput,
+  LinkUpdate as LinkUpdateInput,
+} from "./write-schema";
+
+export type LinkInsert = LinkInsertInput;
+export type LinkUpdate = LinkUpdateInput;
 export type LinkListInput = PaginationInput & {
   name?: string;
   url?: string;

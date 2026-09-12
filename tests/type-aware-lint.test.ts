@@ -16,7 +16,7 @@ it("类型感知Lint拒绝隐式any跨越赋值、调用、属性和返回边界
     accept(external);
     export function returned(): string { return external; }
   `,
-    { filePath: resolve("src/packages/application/use-case.ts") },
+    { filePath: resolve("src/packages/application/errors.ts") },
   );
   const ruleIds = results.flatMap((result) =>
     result.messages.map((message) => message.ruleId),

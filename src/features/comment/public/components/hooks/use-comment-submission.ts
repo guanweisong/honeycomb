@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type RefObject, useState, useTransition } from "react";
+import { type FormEvent, type RefObject, useTransition } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -13,6 +13,7 @@ import type { CommentIdentity } from "./use-comment-identity";
 import { buildCommentInput } from "../utils/comment-input";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { useTurnstileToken } from "@/packages/ui/hooks/use-turnstile-token";
 
 interface UseCommentSubmissionOptions {
   id: string;
@@ -35,16 +36,15 @@ export function useCommentSubmission({
   persistIdentity,
   clearReply,
 }: UseCommentSubmissionOptions) {
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const {
+    token: captchaToken,
+    onSuccess: onCaptchaSuccess,
+    reset: resetCaptcha,
+  } = useTurnstileToken(turnstileRef);
   const [isPending, startTransition] = useTransition();
   const mutation = trpc.comment.create.useMutation();
   const t = useTranslations("Comment");
   const router = useRouter();
-
-  const resetCaptcha = () => {
-    setCaptchaToken(null);
-    turnstileRef.current?.reset();
-  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -101,7 +101,7 @@ export function useCommentSubmission({
 
   return {
     handleSubmit,
-    onCaptchaSuccess: setCaptchaToken,
+    onCaptchaSuccess,
     resetCaptcha,
     isPending: isPending || mutation.isPending,
   };

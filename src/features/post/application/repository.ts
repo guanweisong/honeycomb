@@ -10,12 +10,11 @@ import type {
   PostListResultSchema,
 } from "./post-read-model";
 import type { PostStatus } from "@/packages/domain/content/post-status";
+import type { PostInsert, PostUpdate } from "./write-schema";
 
 export type PostI18nInput = NullableLocalizedInput;
-export type PostCreateCommand = import("zod").output<
-  typeof import("./write-schema").PostInsertSchema
->;
-export type PostUpdateCommand = Partial<PostCreateCommand> & { id: string };
+export type PostCreateCommand = PostInsert;
+export type PostUpdateCommand = PostUpdate;
 export type PostVisibility = "PUBLISHED_ONLY" | "ALL";
 export type PostListInput = PaginationInput & {
   status?: string[];

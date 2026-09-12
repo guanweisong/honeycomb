@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { preProcessFile } from "typescript";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 const featuresRoot = join(process.cwd(), "src/features");
 const featureNames = [
@@ -23,8 +24,8 @@ function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
   return files.flatMap(({ path, source }) => {
     const current = path.match(/src\/features\/([^/]+)\//)?.[1];
     if (!current || current === "contracts") return [];
-    return preProcessFile(source, true, true).importedFiles
-      .flatMap(({ fileName }) => {
+    return preProcessFile(source, true, true).importedFiles.flatMap(
+      ({ fileName }) => {
         const importedPath = fileName.startsWith("@/")
           ? join("src", fileName.slice(2))
           : fileName.startsWith(".")
@@ -35,20 +36,14 @@ function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
           .match(/^src\/features\/([^/]+)(?:\/([^/]+))?/);
         const target = match?.[1];
         const segment = match?.[2];
-        return !target || target === current || target === "contracts" || segment === "public"
+        return !target ||
+          target === current ||
+          target === "contracts" ||
+          segment === "public"
           ? []
           : [`${path} -> ${target}/${segment ?? "<root>"}`];
-      });
-  });
-}
-
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.(ts|tsx)$/.test(entry) && !/\.test\.(ts|tsx)$/.test(entry)
-      ? [path]
-      : [];
+      },
+    );
   });
 }
 
@@ -78,7 +73,9 @@ describe("业务功能边界", () => {
     for (const feature of ["post", "comment", "user"]) {
       expect(existsSync(join(featuresRoot, feature, "domain"))).toBe(true);
       expect(existsSync(join(featuresRoot, feature, "application"))).toBe(true);
-      expect(existsSync(join(featuresRoot, feature, "application", "repository.ts"))).toBe(true);
+      expect(
+        existsSync(join(featuresRoot, feature, "application", "repository.ts")),
+      ).toBe(true);
     }
   });
 
@@ -138,7 +135,9 @@ describe("业务功能边界", () => {
             source: `import x from \"@/features/comment/${segment}/x\";`,
           },
         ]),
-      ).toEqual([`src/features/post/application/example.ts -> comment/${segment}`]);
+      ).toEqual([
+        `src/features/post/application/example.ts -> comment/${segment}`,
+      ]);
     },
   );
 
@@ -150,9 +149,7 @@ describe("业务功能边界", () => {
           source: 'import x from "../../comment/domain/x";',
         },
       ]),
-    ).toEqual([
-      "src/features/post/application/example.ts -> comment/domain",
-    ]);
+    ).toEqual(["src/features/post/application/example.ts -> comment/domain"]);
   });
 
   it("允许本 Feature、共享 contracts 与显式 public 出口", () => {

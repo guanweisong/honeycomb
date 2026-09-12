@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -35,29 +35,15 @@ export const metadata: Metadata = {
 };
 
 /**
- * 国际化布局组件的属性接口。
- */
-export interface LocaleLayoutProps {
-  /**
-   * 子组件，即页面内容。
-   */
-  children: ReactNode;
-  /**
-   * 包含当前语言环境的 Promise。
-   */
-  params: Promise<{ locale: string }>;
-}
-
-/**
  * 国际化布局组件。
  * 该组件为所有国际化页面提供统一的布局结构，包括头部、底部、主题提供者和返回顶部按钮。
- * @param {LocaleLayoutProps} { children, params } - 组件属性。
+ * @param {LayoutProps<"/[locale]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 国际化布局。
  */
 export default async function LocaleLayout({
   children,
   params,
-}: LocaleLayoutProps) {
+}: LayoutProps<"/[locale]">) {
   const { locale: rawLocale } = await params;
   const locale = normalizeMultiLangLocale(rawLocale);
 

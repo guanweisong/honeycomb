@@ -1,5 +1,4 @@
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import type { CleanZod } from "@/packages/application/validation";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { z } from "zod";
@@ -16,9 +15,3 @@ export const CategoryListQuerySchema = PaginationQuerySchema.extend({
   status: queryString().pipe(z.enum(EnableStatus).optional()),
   id: queryString(),
 }).partial();
-
-/**
- * 分类列表查询参数的 TypeScript 类型。
- * 从 `CategoryListQuerySchema` 推断而来，为前端或后端提供了清晰的类型定义。
- */
-export type CategoryListQueryInput = CleanZod<typeof CategoryListQuerySchema>;

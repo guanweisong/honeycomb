@@ -22,22 +22,14 @@ import {
 const PAGE_SIZE = 10;
 
 /**
- * 列表页面组件的属性接口。
- */
-export interface ListProps {
-  /**
-   * 包含 slug 数组和当前语言环境的 Promise。
-   */
-  params: Promise<{ slug: string[]; locale: string }>;
-}
-
-/**
  * 列表页面组件。
  * 根据 URL 中的 slug 参数（如分类、标签、作者）显示相应的文章列表。
- * @param {ListProps} props - 组件属性。
+ * @param {PageProps<"/[locale]/list/[...slug]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
-export default async function List(props: ListProps) {
+export default async function List(
+  props: PageProps<"/[locale]/list/[...slug]">,
+) {
   const serverClient = await createServerClient();
   const [setting, menu] = await Promise.all([
     getPublicSetting(),
@@ -132,27 +124,13 @@ export default async function List(props: ListProps) {
 }
 
 /**
- * `generateMetadata` 函数的属性接口。
- */
-type GenerateMetadataProps = {
-  /**
-   * 包含 slug 数组的 Promise。
-   */
-  params: Promise<{ slug: string[]; locale: string }>;
-  /**
-   * 包含搜索参数的 Promise。
-   */
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-
-/**
  * 为列表页面生成元数据。
  * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
- * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @param props - 包含页面参数的属性。
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(
-  props: GenerateMetadataProps,
+  props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
   const serverClient = await createServerClient();
   const params = await props.params;

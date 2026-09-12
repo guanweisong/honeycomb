@@ -24,14 +24,14 @@ export interface CreateCommentDependencies {
   validateCaptcha: (token?: string) => Promise<void>;
   notify: (commentId: string, parentId?: string | null) => Promise<void>;
   logNotificationFailure: (error: unknown) => void;
-  invalidator: Pick<PublicContentInvalidator, "invalidate">;
+  invalidator: PublicContentInvalidator;
 }
 
 /** 更新后台评论内容或状态。 */
 export async function updateComment(
   repository: Pick<CommentCommandRepository, "findStatus" | "update">,
   input: CommentUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   let result;
   if (input.status === undefined) {
@@ -55,7 +55,7 @@ export async function updateComment(
 export async function destroyComments(
   repository: Pick<CommentCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidate({ refreshLayout: true });

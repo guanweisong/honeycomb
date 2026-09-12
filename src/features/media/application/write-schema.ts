@@ -13,7 +13,7 @@ export const MediaInsertSchema = MediaUploadFileSchema.safeExtend({
 });
 
 /**
- * 媒体实体的 TypeScript 类型。
- * 这是从 MediaInsertSchema 推断出的纯净 TypeScript 类型，用于在代码中方便地引用媒体对象的结构。
+ * 媒体写入数据类型。
+ * 由 MediaInsertSchema 推导，避免与读取侧 MediaViewModel 混淆。
  */
-export type MediaEntity = z.output<typeof MediaInsertSchema>;
+export type MediaInsert = z.output<typeof MediaInsertSchema>;

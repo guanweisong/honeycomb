@@ -14,7 +14,7 @@ export function createPage(
   repository: Pick<PageCommandRepository, "create">,
   input: PageCreateCommand,
   authorId: string,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   return (async () => {
     const result = await repository.create(input, authorId);
@@ -30,7 +30,7 @@ export function createPage(
 export async function destroyPages(
   repository: Pick<PageCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidate({
@@ -44,7 +44,7 @@ export async function destroyPages(
 export function updatePage(
   repository: Pick<PageCommandRepository, "findStatus" | "update">,
   input: PageUpdateCommand,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   return (async () => {
     const result = await updatePageThroughAggregate(repository, input);
@@ -78,11 +78,4 @@ export function getPageDetail(
   visibility: PageVisibility = "PUBLISHED_ONLY",
 ) {
   return repository.detail(id, visibility);
-}
-/** 查询页面作者用例。 */
-export function getPageAuthorById(
-  repository: Pick<PageQueryRepository, "author">,
-  authorId: string,
-) {
-  return repository.author(authorId);
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { ModalType } from "@/packages/ui/admin/modal-type";
 import { Button } from "@/packages/ui/components/button";
 import { useState } from "react";
 import AddCategoryModal from "./components/AddCategoryModal";
@@ -10,11 +9,17 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { keepPreviousData } from "@tanstack/react-query";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import type { CategoryViewModel as CategoryEntity } from "@/features/contracts";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
 import { MAX_BATCH_SIZE } from "@/packages/application/resource-limits";
+import {
+  createInitialAdminDialogState,
+  openAddAdminDialog,
+  openEditAdminDialog,
+  type AdminDialogState,
+} from "@/packages/ui/admin/action-state";
 
 /**
  * 文章分类管理页面。
@@ -35,23 +40,15 @@ const Category = () => {
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
    */
-  const [modalProps, setModalProps] = useState<{
-    type?: ModalType;
-    open: boolean;
-    record?: CategoryEntity;
-  }>({
-    type: ModalType.ADD,
-    open: false,
-  });
+  const [modalProps, setModalProps] = useState<
+    AdminDialogState<CategoryEntity>
+  >(createInitialAdminDialogState);
   /**
    * 获取分类列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
   const { data, isFetching, isError, refetch } =
-    trpc.category.adminTree.useQuery(undefined, {
-      placeholderData: keepPreviousData,
-      staleTime: 60 * 1000, // 1 minutes
-    });
+    trpc.category.adminTree.useQuery(undefined, adminListQueryOptions);
   /**
    * 删除分类的 tRPC mutation。
    * 用于执行删除操作。
@@ -62,13 +59,8 @@ const Category = () => {
    * 编辑事件
    * @param record
    */
-  const handleEditItem = (record: CategoryEntity) => {
-    setModalProps({
-      record,
-      open: true,
-      type: ModalType.EDIT,
-    });
-  };
+  const handleEditItem = (record: CategoryEntity) =>
+    setModalProps(openEditAdminDialog(record));
 
   /**
    * 删除事件
@@ -98,13 +90,7 @@ const Category = () => {
   /**
    * 新增事件
    */
-  const handleAddNew = () => {
-    setModalProps({
-      open: true,
-      type: ModalType.ADD,
-      record: undefined,
-    });
-  };
+  const handleAddNew = () => setModalProps(openAddAdminDialog());
 
   return (
     <>

@@ -46,8 +46,6 @@ const criticalCoverageFiles = [
   "src/packages/infrastructure/observability/client.ts",
   "src/packages/infrastructure/observability/adapters/console.ts",
   "src/packages/infrastructure/observability/adapters/console-metrics.ts",
-  "src/packages/infrastructure/observability/adapters/memory.ts",
-  "src/packages/infrastructure/observability/adapters/noop.ts",
   "src/packages/infrastructure/observability/core/contracts.ts",
   "src/packages/infrastructure/observability/core/metric-label-values.ts",
   "src/packages/infrastructure/observability/core/names.ts",

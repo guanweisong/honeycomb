@@ -14,22 +14,7 @@ import {
   clearHoneycombRuntimeCaches,
   navigateToAdminLogin,
 } from "./logout-browser-state";
-
-function findMenuTitle(
-  items: ReturnType<typeof getMenuForCapabilities>,
-  pathname: string,
-): string | undefined {
-  for (const item of items) {
-    if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
-      if (item.children) {
-        const childTitle = findMenuTitle(item.children, pathname);
-        if (childTitle) return childTitle;
-      }
-      return item.name;
-    }
-  }
-  return undefined;
-}
+import { findMenuTitle } from "@/packages/ui/extended/AdminLayout/menu-title";
 
 export function DashboardClientShell({
   children,

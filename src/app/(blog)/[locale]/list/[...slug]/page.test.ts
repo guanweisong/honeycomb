@@ -97,6 +97,7 @@ describe("blog list page", () => {
   async function renderList(slug: string[]) {
     const element = await List({
       params: Promise.resolve({ locale: "zh", slug }),
+      searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
   }

@@ -1,7 +1,7 @@
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import type { TagViewModel as TagEntity } from "../../presentation/tag-view-model";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
 
 /**
  * 标签列表的表格列定义。
@@ -28,9 +28,7 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染创建时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return row.original.createdAt
-        ? format(new Date(row.original.createdAt), "yyyy-MM-dd HH:mm:ss")
-        : "-";
+      return formatAdminDateTime(row.original.createdAt);
     },
   },
   {
@@ -42,9 +40,7 @@ export const tagTableColumns: ColumnDef<TagEntity>[] = [
        * 渲染最后更新日期的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
-      return row.original.updatedAt
-        ? format(new Date(row.original.updatedAt), "yyyy-MM-dd HH:mm:ss")
-        : "-";
+      return formatAdminDateTime(row.original.updatedAt);
     },
   },
 ];

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { TagType } from "@/packages/domain/content/tag";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { loadPostRelations } from "../post-relations";
+import { loadPostRelations } from "../infrastructure/post-query-repository";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import type { PostWithRelations } from "../application/repository";

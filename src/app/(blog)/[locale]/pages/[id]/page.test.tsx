@@ -89,6 +89,7 @@ describe("pages detail page", () => {
   it("keeps server rendering read-only and reports the view after mounting", async () => {
     const element = await Pages({
       params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
 
@@ -141,6 +142,7 @@ describe("pages detail page", () => {
     });
     const element = await Pages({
       params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
     expect(

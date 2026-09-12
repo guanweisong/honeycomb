@@ -1,19 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
+import type { MediaViewModel } from "@/features/contracts";
+import type { MediaInsert } from "@/features/media/application/write-schema";
+import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
+import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
 
 test.use({ bypassCSP: true });
-
-type MediaRecord = {
-  id: string;
-  key: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  width: number | null;
-  height: number | null;
-  color: string | null;
-};
 
 test.describe("admin media upload", () => {
   for (const scenario of ["success", "partial", "cleanup-rejected"] as const) {
@@ -26,7 +18,7 @@ test.describe("admin media upload", () => {
         buffer: Buffer.from("media upload regression"),
       };
       const rejectedFile = { ...file, name: "rejected.png" };
-      const media: MediaRecord[] = [];
+      const media: MediaViewModel[] = [];
       const cleanupRequests: string[] = [];
       const presignedInputs: unknown[] = [];
       const uploadInputs: unknown[] = [];
@@ -35,18 +27,6 @@ test.describe("admin media upload", () => {
         body: Buffer | null;
         contentType: string | null;
       }[] = [];
-      const setting = {
-        id: "setting-1",
-        siteName: { en: "Honeycomb", zh: "蜂巢" },
-        siteSubName: { en: "Site", zh: "站点" },
-        siteSignature: { en: "Signature", zh: "签名" },
-        siteCopyright: { en: "Copyright", zh: "版权" },
-        siteRecordNo: null,
-        siteRecordUrl: null,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      };
-
       await signInAsDashboardTestUser(page);
 
       await page.route("https://upload.honeycomb.test/**", async (route) => {
@@ -84,33 +64,18 @@ test.describe("admin media upload", () => {
 
       await page.route("**/api/trpc/**", async (route) => {
         const request = route.request();
-        const pathname = new URL(request.url()).pathname;
-        const procedures = pathname.split("/").at(-1)!.split(",");
-        const rawInput =
-          request.method() === "GET"
-            ? new URL(request.url()).searchParams.get("input")
-            : request.postData();
-        const inputs = rawInput
-          ? (JSON.parse(rawInput) as Record<string, unknown>)
-          : {};
-        const result = procedures.map((procedure, index) => {
-          const requestInput = inputs[String(index)];
-          const input =
-            requestInput &&
-            typeof requestInput === "object" &&
-            "json" in requestInput
-              ? (requestInput as { json?: unknown }).json
-              : requestInput;
+        const calls = decodeTrpcBatchRequest({
+          url: request.url(),
+          method: request.method(),
+          body: request.postData(),
+        });
+        const result = calls.map(({ procedure, input }) => {
 
           if (procedure === "user.current") {
             return {
               result: {
                 data: {
-                  id: "admin-1",
-                  name: "admin",
-                  email: "admin@honeycomb.test",
-                  level: "ADMIN",
-                  status: "ENABLE",
+                  ...mockedAdminUser,
                 },
               },
             };
@@ -119,7 +84,7 @@ test.describe("admin media upload", () => {
             return { result: { data: { list: media, total: media.length } } };
           }
           if (procedure === "setting.index") {
-            return { result: { data: setting } };
+            return { result: { data: mockedSiteSetting } };
           }
           if (procedure === "media.getPresignedUrl") {
             presignedInputs.push(input);
@@ -153,11 +118,17 @@ test.describe("admin media upload", () => {
                   data: { state: "rejected", message: "媒体信息未保存" },
                 },
               };
+            const values = input as MediaInsert;
             const record = {
-              ...(input as Omit<MediaRecord, "id" | "url">),
+              ...values,
               id: "media-upload-contract",
               url: "https://assets.honeycomb.test/media/media-upload-contract.png",
-            } satisfies MediaRecord;
+              color: values.color ?? null,
+              height: values.height ?? null,
+              width: values.width ?? null,
+              createdAt: "2026-01-02T03:04:05.000Z",
+              updatedAt: "2026-01-02T03:04:05.000Z",
+            } satisfies MediaViewModel;
             media.push(record);
             return { result: { data: { state: "created", media: record } } };
           }

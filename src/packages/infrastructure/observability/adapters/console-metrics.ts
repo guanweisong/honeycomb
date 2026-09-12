@@ -2,18 +2,16 @@ import type { MetricLabels, Metrics } from "../core/contracts";
 import type { MetricName } from "../core/names";
 import { createSafeMetrics } from "../core/safe-adapters";
 import { sanitizeMetricLabels } from "../core/sanitize";
-
-export interface ConsoleMetricsOptions {
-  service?: string;
-  environment?: string;
-  write?: (line: string) => void;
-}
+import {
+  getRuntimeEnvironment,
+  type ConsoleAdapterOptions,
+} from "./console-options";
 
 export function createConsoleMetrics(
-  options: ConsoleMetricsOptions = {},
+  options: ConsoleAdapterOptions = {},
 ): Metrics {
   const service = options.service ?? "honeycomb";
-  const environment = options.environment ?? getEnvironment();
+  const environment = options.environment ?? getRuntimeEnvironment();
   const write = options.write ?? ((line: string) => console.log(line));
 
   return createSafeMetrics({
@@ -65,10 +63,4 @@ function writeMetric(
       labels: sanitizeMetricLabels(labels),
     }),
   );
-}
-
-function getEnvironment(): string {
-  return typeof process === "undefined"
-    ? "development"
-    : process.env.NODE_ENV ?? "development";
 }

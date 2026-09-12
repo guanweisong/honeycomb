@@ -10,7 +10,7 @@ import {
   type ActionControlIdentity,
   type ActionGuardContract,
   type GuardPolarity,
-} from "./admin-action-guard-matrix";
+} from "@tests/helpers/admin-action-guard-matrix";
 import { Permission } from "@/packages/identity/auth/permissions";
 
 function getAttribute(

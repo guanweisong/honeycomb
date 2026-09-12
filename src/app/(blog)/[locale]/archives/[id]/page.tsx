@@ -33,22 +33,14 @@ import {
 } from "@/app/(blog)/lib/metadata";
 
 /**
- * 归档页面组件的属性接口。
- */
-export interface ArchivesProps {
-  /**
-   * 包含文章 ID 和当前语言环境的 Promise。
-   */
-  params: Promise<{ id: string; locale: string }>;
-}
-
-/**
  * 归档页面组件。
  * 用于显示单篇文章的详细内容，包括文章信息、标签、评论、相关文章等。
- * @param {ArchivesProps} props - 组件属性。
+ * @param {PageProps<"/[locale]/archives/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 归档页面。
  */
-export default async function Archives(props: ArchivesProps) {
+export default async function Archives(
+  props: PageProps<"/[locale]/archives/[id]">,
+) {
   const serverClient = await createServerClient();
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
@@ -165,27 +157,13 @@ export default async function Archives(props: ArchivesProps) {
 }
 
 /**
- * `generateMetadata` 函数的属性接口。
- */
-type GenerateMetadataProps = {
-  /**
-   * 包含文章 ID 的 Promise。
-   */
-  params: Promise<{ id: string; locale: string }>;
-  /**
-   * 包含搜索参数的 Promise。
-   */
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-
-/**
  * 为归档页面生成元数据。
  * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
- * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @param props - 包含页面参数的属性。
  * @returns {Promise<Metadata>} 页面元数据。
  */
 export async function generateMetadata(
-  props: GenerateMetadataProps,
+  props: PageProps<"/[locale]/archives/[id]">,
 ): Promise<Metadata> {
   const { id, locale: rawLocale } = await props.params;
   let setting: Awaited<ReturnType<typeof getPublicSetting>>;

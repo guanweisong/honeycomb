@@ -1,19 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import * as ts from "typescript";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 const sourceRoot = join(process.cwd(), "src", "packages");
-
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.(ts|tsx)$/.test(entry) && !/\.test\.(ts|tsx)$/.test(entry)
-      ? [path]
-      : [];
-  });
-}
 
 function importsMatching(directory: string, pattern: RegExp) {
   return sourceFiles(directory).flatMap((path) => {
@@ -59,7 +50,9 @@ describe("package dependency boundaries", () => {
       "security",
     ];
 
-    expect(legacyLayers.filter((layer) => existsSync(join(sourceRoot, layer)))).toEqual([]);
+    expect(
+      legacyLayers.filter((layer) => existsSync(join(sourceRoot, layer))),
+    ).toEqual([]);
   });
 
   it("keeps domain independent from all other package layers", () => {
@@ -89,9 +82,7 @@ describe("package dependency boundaries", () => {
       "utf8",
     );
 
-    expect(
-      source,
-    ).not.toMatch(/@\/env|upstash|rate-limit|server-only/);
+    expect(source).not.toMatch(/@\/env|upstash|rate-limit|server-only/);
   });
 
   it("keeps tRPC procedure-derived output contracts at the transport boundary", () => {

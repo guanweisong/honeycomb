@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
@@ -8,6 +7,7 @@ import {
   StatusBadgeTone,
 } from "@/packages/ui/extended/StatusBadge";
 import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
 
 /**
  * 分类列表的表格列定义。
@@ -76,7 +76,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
       const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },
@@ -93,7 +93,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
       const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },

@@ -7,6 +7,8 @@ import {
 import { runWithRequestContext } from "@/packages/infrastructure/observability/server/node-request-context";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
+export const runtime = "nodejs";
+
 /**
  * tRPC 请求处理函数。
  * 使用 `@trpc/server/adapters/fetch` 提供的 `fetchRequestHandler` 来适配 Next.js 的 Fetch API。

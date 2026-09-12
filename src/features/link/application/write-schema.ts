@@ -1,7 +1,11 @@
-import { requiredString } from "@/packages/application/validation";
+import {
+  hasUpdateFields,
+  requiredString,
+} from "@/packages/application/validation";
 import { z } from "zod";
 import { HttpUrlSchema } from "@/packages/application/http-url-schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 
 /**
  * 新增友情链接时的数据验证 schema。
@@ -16,3 +20,9 @@ export const LinkInsertSchema = z.object({
 });
 
 export type LinkInsert = z.output<typeof LinkInsertSchema>;
+
+export const LinkUpdateSchema = LinkInsertSchema.partial()
+  .extend({ id: IdSchema })
+  .refine(hasUpdateFields, "至少修改一个字段");
+
+export type LinkUpdate = z.output<typeof LinkUpdateSchema>;

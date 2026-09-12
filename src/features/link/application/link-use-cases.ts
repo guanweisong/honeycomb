@@ -7,13 +7,11 @@ import type {
 } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
-type PublicInvalidator = Pick<PublicContentInvalidator, "invalidate">;
-
 /** 创建友情链接用例。 */
 export async function createLink(
   repository: Pick<LinkRepository, "create">,
   input: LinkInsert,
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input);
   await invalidator.invalidate({ refreshLayout: true });
@@ -23,7 +21,7 @@ export async function createLink(
 export async function updateLink(
   repository: Pick<LinkRepository, "update">,
   input: LinkUpdate,
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
   await invalidator.invalidate({ refreshLayout: true });
@@ -33,7 +31,7 @@ export async function updateLink(
 export async function destroyLinks(
   repository: Pick<LinkRepository, "destroy">,
   ids: string[],
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidate({ refreshLayout: true });

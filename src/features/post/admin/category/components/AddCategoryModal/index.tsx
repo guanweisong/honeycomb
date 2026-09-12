@@ -14,25 +14,16 @@ import {
   type CategoryViewModel as CategoryEntity,
 } from "@/features/category/public";
 import { trpc } from "@/packages/trpc/client/trpc";
+import {
+  withAdminRecordId,
+  type AdminDialogState,
+} from "@/packages/ui/admin/action-state";
 
 /**
  * 模态框属性接口。
  * 定义了模态框的类型、显示状态以及可能关联的记录。
  */
-export interface ModalProps {
-  /**
-   * 模态框的类型，例如新增或编辑。
-   */
-  type?: ModalType;
-  /**
-   * 控制模态框是否可见。
-   */
-  open: boolean;
-  /**
-   * 模态框关联的记录数据，通常在编辑模式下使用。
-   */
-  record?: CategoryEntity;
-}
+export type ModalProps = AdminDialogState<CategoryEntity>;
 
 /**
  * 添加分类模态框组件的属性接口。
@@ -125,7 +116,9 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
         }
         return updateCategory
           .mutateAsync(
-            CategoryUpdateSchema.parse({ ...values, id: modalProps.record.id }),
+            CategoryUpdateSchema.parse(
+              withAdminRecordId({ id: modalProps.record.id }, values),
+            ),
           )
           .then(() => {
             categoryQuery.refetch();

@@ -4,7 +4,6 @@ import { UserStatus } from "@/packages/domain/identity/user";
 import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
 
 import {
-  formatUserDate,
   getUserStatusPresentation,
   userTableColumns,
 } from "./user-columns";
@@ -42,8 +41,4 @@ describe("user columns", () => {
     });
   });
 
-  it("renders a placeholder when a user timestamp is empty or invalid", () => {
-    expect(formatUserDate(null)).toBe("-");
-    expect(formatUserDate("not-a-date")).toBe("-");
-  });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { validateCaptcha } from "./validate-captcha";
-import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "@/packages/infrastructure/observability/core/names";
 import { configureObservability } from "@/packages/infrastructure/observability/server";
 

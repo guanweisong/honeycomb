@@ -2,17 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   capabilityRegistry,
-  getCapabilityDefinition,
   isCapability,
-  registeredCapabilities,
 } from "./capability-registry";
 import { ALL_PERMISSIONS, Permission } from "./permissions";
-import { actionGuardMatrix } from "@/app/admin/constants/admin-action-guard-matrix";
+import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
-import { capabilityProcedureMatrix } from "@/packages/trpc/api/capability-procedure-matrix-data";
+import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
 
 describe("能力注册表", () => {
   it("完整覆盖权限定义且没有重复键", () => {
+    const registeredCapabilities = Object.keys(capabilityRegistry);
     expect(registeredCapabilities).toHaveLength(ALL_PERMISSIONS.length);
     expect(new Set(registeredCapabilities)).toEqual(new Set(ALL_PERMISSIONS));
     expect(Object.keys(capabilityRegistry)).toHaveLength(
@@ -22,9 +21,7 @@ describe("能力注册表", () => {
 
   it("为每项能力声明至少一个生产入口类型", () => {
     for (const permission of ALL_PERMISSIONS) {
-      expect(getCapabilityDefinition(permission).consumers.length).toBeGreaterThan(
-        0,
-      );
+      expect(capabilityRegistry[permission].consumers.length).toBeGreaterThan(0);
     }
   });
 

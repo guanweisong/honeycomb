@@ -1,5 +1,6 @@
 import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
+import { withAdminRecordId } from "@/packages/ui/admin/action-state";
 
 export function toLinkFormDefaults(
   record?: LinkEntity,
@@ -20,7 +21,7 @@ export function buildLinkUpdateInput(
   record: LinkEntity,
   values: LinkUpdate,
 ): LinkUpdate {
-  return { ...values, id: record.id };
+  return withAdminRecordId(record, values);
 }
 /**
  * 链接表单默认值和接口更新输入的数据转换函数。

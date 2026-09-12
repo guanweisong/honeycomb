@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { submitMediaUpload } from "./media-actions";
 import type { MediaViewModel } from "../media-view-model";
 import { createMedia as createMediaUseCase } from "../../application/media-use-cases";
-import type { MediaEntity } from "../../application/write-schema";
+import type { MediaInsert } from "../../application/write-schema";
 
 const successfulMedia = {
   id: "media-1",
@@ -26,7 +26,7 @@ function dependencies() {
       cleanupUrl: `https://storage.test/delete/${name}`,
     })),
     uploadToStorage: vi.fn().mockResolvedValue(undefined),
-    createMedia: vi.fn(async ({ name }: MediaEntity) => {
+    createMedia: vi.fn(async ({ name }: MediaInsert) => {
       if (name === "bad.png")
         return { state: "rejected" as const, message: "metadata failed" };
       return { state: "created" as const, media: successfulMedia };

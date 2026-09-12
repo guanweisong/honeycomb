@@ -30,7 +30,7 @@ async function loadModule() {
   const [cache, registry, memory] = await Promise.all([
     import("./upstash-cache"),
     import("@/packages/infrastructure/observability/server/registry"),
-    import("@/packages/infrastructure/observability/adapters/memory"),
+    import("@tests/helpers/memory-observability"),
   ]);
   return { cache, registry, memory };
 }

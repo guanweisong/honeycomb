@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import type { LoginHistoryEvent } from "@/packages/identity/account-security/login-history-events";
 import { SOCIAL_PROVIDER_LABELS } from "@/packages/identity/auth/providers";
+import { formatAccountSecurityDate } from "../account-security-date";
 
 const eventLabels: Record<LoginHistoryEvent, string> = {
   LOGIN_SUCCESS: "登录成功",
@@ -22,13 +23,6 @@ const providerLabels: Record<string, string> = {
   ...SOCIAL_PROVIDER_LABELS,
   oauth: "OAuth",
 };
-
-function formatHistoryDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "未知时间"
-    : date.toLocaleString("zh-CN", { hour12: false });
-}
 
 const LoginHistorySettings = () => {
   const {
@@ -62,7 +56,7 @@ const LoginHistorySettings = () => {
             <div className="flex items-center justify-between gap-3">
               <p className="font-medium">{eventLabels[item.event]}</p>
               <time className="text-muted-foreground">
-                {formatHistoryDate(item.createdAt)}
+                {formatAccountSecurityDate(item.createdAt)}
               </time>
             </div>
             <p className="mt-1 text-muted-foreground">

@@ -11,9 +11,9 @@ import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import nextConfig from "../next.config";
 
-import { actionGuardMatrix } from "@/app/admin/constants/admin-action-guard-matrix";
+import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
-import { capabilityProcedureMatrix } from "@/packages/trpc/api/capability-procedure-matrix-data";
+import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
 import { isCapability } from "@/packages/identity/auth/capability-registry";
 
 const adminRoot = join(process.cwd(), "src/app/admin");

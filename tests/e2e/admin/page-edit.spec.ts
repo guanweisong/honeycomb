@@ -3,82 +3,60 @@ import {
   refreshMockedAdminUser,
   signInAsDashboardTestUser,
 } from "./auth";
+import type { PageViewModel } from "@/features/contracts";
+import type {
+  PageInsert,
+  PageUpdate,
+} from "@/features/page/application/write-schema";
+import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
+import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
+import { PageStatus } from "@/packages/domain/content/page";
 
 const PAGE_ID = "0123456789abcdef01234567";
-
-type PageRecord = {
-  id: string;
-  title: { en: string; zh: string };
-  content: { en: string; zh: string };
-  status: "DRAFT" | "PUBLISHED";
-  template: "default" | "friendly-links";
-};
 
 test.describe("admin page editor", () => {
   test("@regression creates then edits pages through the browser contract", async ({
     page,
   }) => {
-    const records = new Map<string, PageRecord>();
+    const records = new Map<string, PageViewModel>();
     const createInputs: unknown[] = [];
     const detailInputs: unknown[] = [];
     const updateInputs: unknown[] = [];
-    const setting = {
-      id: "setting-1",
-      siteName: { en: "Honeycomb", zh: "蜂巢" },
-      siteSubName: { en: "Site", zh: "站点" },
-      siteSignature: { en: "Signature", zh: "签名" },
-      siteCopyright: { en: "Copyright", zh: "版权" },
-      siteRecordNo: null,
-      siteRecordUrl: null,
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-    };
-
     await signInAsDashboardTestUser(page);
 
     await page.route("**/api/trpc/**", async (route) => {
       const request = route.request();
-      const procedures = new URL(request.url()).pathname
-        .split("/")
-        .at(-1)!
-        .split(",");
-      const rawInput =
-        request.method() === "GET"
-          ? new URL(request.url()).searchParams.get("input")
-          : request.postData();
-      const inputs = rawInput
-        ? (JSON.parse(rawInput) as Record<string, unknown>)
-        : {};
-      const result = procedures.map((procedure, index) => {
-        const requestInput = inputs[String(index)];
-        const input =
-          requestInput &&
-          typeof requestInput === "object" &&
-          "json" in requestInput
-            ? (requestInput as { json?: unknown }).json
-            : requestInput;
+      const calls = decodeTrpcBatchRequest({
+        url: request.url(),
+        method: request.method(),
+        body: request.postData(),
+      });
+      const result = calls.map(({ procedure, input }) => {
         if (procedure === "user.current") {
           return {
             result: {
-              data: {
-                id: "admin-1",
-                name: "admin",
-                email: "admin@honeycomb.test",
-                level: "ADMIN",
-                status: "ENABLE",
-              },
+              data: mockedAdminUser,
             },
           };
         }
-        if (procedure === "setting.index") return { result: { data: setting } };
+        if (procedure === "setting.index")
+          return { result: { data: mockedSiteSetting } };
         if (procedure === "page.create") {
           createInputs.push(input);
+          const values = input as PageInsert;
           const record = {
-            ...(input as Omit<PageRecord, "id">),
+            ...values,
             id: PAGE_ID,
-          } satisfies PageRecord;
+            status: values.status ?? PageStatus.DRAFT,
+            authorId: mockedAdminUser.id,
+            views: 0,
+            createdAt: "2026-01-02T03:04:05.000Z",
+            updatedAt: "2026-01-02T03:04:05.000Z",
+            author: { id: mockedAdminUser.id, name: mockedAdminUser.name },
+            imagesInContent: [],
+          } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: record } };
+          return { result: { data: { id: record.id } } };
         }
         if (procedure === "page.adminDetail") {
           if (!input) return { result: { data: null } };
@@ -89,10 +67,16 @@ test.describe("admin page editor", () => {
         }
         if (procedure === "page.update") {
           updateInputs.push(input);
-          const values = input as PageRecord;
-          const record = { ...records.get(values.id), ...values } as PageRecord;
+          const values = input as PageUpdate;
+          const current = records.get(values.id);
+          if (!current) throw new Error(`Unknown page: ${values.id}`);
+          const record = {
+            ...current,
+            ...values,
+            updatedAt: "2026-01-03T03:04:05.000Z",
+          } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: record } };
+          return { result: { data: { id: record.id } } };
         }
         throw new Error(`Unhandled tRPC procedure: ${procedure}`);
       });

@@ -1,23 +1,13 @@
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
 import * as schema from "@/packages/infrastructure/db/schema";
-import {
-  toPublicComment as toApplicationPublicComment,
-  type PublicCommentSource,
-} from "../application/comment-public-dto";
+import type { PublicCommentSource } from "../application/comment-public-dto";
 export function parseCommentStatus(status: unknown): CommentStatus | null {
   return status === null
     ? null
     : parseEnumValue(status, Object.values(CommentStatus), "comment.status");
 }
 import type { CommentRecord } from "../application/repository";
-
-/** Legacy infrastructure adapter retained for existing persistence consumers. */
-export function toPublicComment(
-  comment: Parameters<typeof toPublicCommentSource>[0],
-) {
-  return toApplicationPublicComment(toPublicCommentSource(comment));
-}
 
 export function toCommentRecord(
   comment: typeof schema.comment.$inferSelect,

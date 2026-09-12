@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
@@ -6,6 +5,7 @@ import {
   StatusBadge,
   StatusBadgeTone,
 } from "@/packages/ui/extended/StatusBadge";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
 
 export function getLinkStatusPresentation(status: string) {
   return {
@@ -40,10 +40,7 @@ export const linkTableColumns: ColumnDef<LinkEntity>[] = [
   {
     header: "添加时间",
     accessorKey: "createdAt",
-    cell: ({ row }) =>
-      row.original.createdAt
-        ? format(new Date(row.original.createdAt), "yyyy-MM-dd HH:mm:ss")
-        : "-",
+    cell: ({ row }) => formatAdminDateTime(row.original.createdAt),
   },
 ];
 /**

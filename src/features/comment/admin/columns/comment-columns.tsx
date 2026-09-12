@@ -1,6 +1,6 @@
-import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
 import type { AdminCommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
 import { commentStatusOptions } from "@/packages/domain/content/comment";
 import {
@@ -77,14 +77,12 @@ export const commentTableColumns: ColumnDef<CommentEntity>[] = [
   {
     accessorKey: "createdAt",
     header: "添加时间",
-    cell: ({ getValue }) =>
-      format(new Date(getValue<string>()), "yyyy-MM-dd HH:mm:ss"),
+    cell: ({ getValue }) => formatAdminDateTime(getValue<string>()),
   },
   {
     accessorKey: "updatedAt",
     header: "最后更新日期",
-    cell: ({ getValue }) =>
-      format(new Date(getValue<string>()), "yyyy-MM-dd HH:mm:ss"),
+    cell: ({ getValue }) => formatAdminDateTime(getValue<string>()),
   },
 ];
 /**

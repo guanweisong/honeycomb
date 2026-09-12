@@ -6,23 +6,16 @@ import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/infrastructure/db/query/tools";
-import * as filters from "@/features/post/post-filters";
-import * as relations from "@/features/post/post-relations";
+import * as relations from "@/features/post/infrastructure/post-query-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
+import type { PostQueryRepository } from "@/features/post/application/repository";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import { asMockDatabase, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
 
 const mockDb = createMockDb();
 
 let getPostList: typeof import("@/features/post/application/post-queries").getPostList;
-let buildCategoryFilterMock: {
-  mockResolvedValue: (
-    value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>,
-  ) => void;
-  mockResolvedValueOnce: (
-    value: Awaited<ReturnType<typeof filters.buildCategoryFilter>>,
-  ) => void;
-};
+let buildCategoryFilterMock: MockInstance<PostQueryRepository["categoryFilter"]>;
 let loadPostRelationsMock: MockInstance<typeof relations.loadPostRelations>;
 let repository: ReturnType<typeof createPostQueryRepository>;
 
@@ -33,7 +26,7 @@ describe("getPostList", () => {
 
     vi.spyOn(tools, "buildDrizzleWhere").mockReturnValue(undefined);
     vi.spyOn(tools, "buildDrizzleOrderBy").mockReturnValue(sql`created_at desc`);
-    const categoryFilter = vi.fn<typeof repository.categoryFilter>();
+    const categoryFilter = vi.fn<PostQueryRepository["categoryFilter"]>();
     buildCategoryFilterMock = categoryFilter;
     buildCategoryFilterMock.mockResolvedValue([]);
     loadPostRelationsMock = vi.spyOn(relations, "loadPostRelations");

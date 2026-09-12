@@ -11,7 +11,7 @@ import {
   MediaUploadFileSchema,
   type MediaUploadFile,
 } from "../../application/upload-policy";
-import type { MediaEntity } from "../../application/write-schema";
+import type { MediaInsert } from "../../application/write-schema";
 import type { MediaCreateResult } from "../../application/upload-result";
 import type { MediaDeleteResult } from "../../application/delete-result";
 
@@ -29,7 +29,7 @@ type SubmitMediaUploadOptions = {
     key: string;
   }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  createMedia: (input: MediaEntity) => Promise<MediaCreateResult>;
+  createMedia: (input: MediaInsert) => Promise<MediaCreateResult>;
   cleanupObject: (key: string) => Promise<void>;
 };
 

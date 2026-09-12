@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
@@ -23,15 +22,7 @@ import { SettingAdminUpdateSchema } from "@/features/setting/application/write-s
 import { SettingUpdateSchema as SettingTransportUpdate } from "@/features/setting/schemas/setting.update.schema";
 import { MenuWriteSchema } from "@/features/menu/application/write-schema";
 import { MenuUpdateSchema as MenuTransportUpdate } from "@/features/menu/schemas/menu.update.schema";
-
-function source(path: string) {
-  return ts.createSourceFile(
-    path,
-    readFileSync(path, "utf8"),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-}
+import { sourceFile } from "@tests/helpers/source-files";
 
 describe("唯一事实源架构门禁", () => {
   it("transport 消费同一 schema 实例，评论只在共享字段上组合验证码", () => {
@@ -53,7 +44,7 @@ describe("唯一事实源架构门禁", () => {
       "src/features/contracts/content.ts",
       "src/features/contracts/index.ts",
     ]) {
-      const definitions = source(path).statements.filter(
+      const definitions = sourceFile(path).statements.filter(
         (node) => !ts.isExportDeclaration(node),
       );
       expect(
@@ -66,7 +57,7 @@ describe("唯一事实源架构门禁", () => {
   it.each([
     ["src/features/post/application/repository.ts", "PostCreateCommand"],
     ["src/features/page/application/repository.ts", "PageCreateCommand"],
-    ["src/features/media/application/repository.ts", "MediaInsert"],
+    ["src/features/media/application/write-schema.ts", "MediaInsert"],
     ["src/features/link/application/repository.ts", "LinkInsert"],
     ["src/features/media/application/repository.ts", "MediaRecord"],
     ["src/features/tag/application/repository.ts", "TagRecord"],
@@ -79,7 +70,7 @@ describe("唯一事实源架构门禁", () => {
     ["src/features/tag/application/repository.ts", "TagUpdate"],
     ["src/features/comment/application/repository.ts", "PublicCommentInput"],
   ])("%s 的 %s 必须引用或推导，不重写字段", (path, name) => {
-    const declaration = source(path).statements.find(
+    const declaration = sourceFile(path).statements.find(
       (node) =>
         (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) &&
         node.name.text === name,
@@ -94,7 +85,7 @@ describe("唯一事实源架构门禁", () => {
   it.each(["post", "page", "media", "link", "category", "tag"])(
     "%s 写入 schema 出口不维护第二份字段规则",
     (feature) => {
-      const file = source(
+      const file = sourceFile(
         `src/features/${feature}/schemas/${feature}.insert.schema.ts`,
       );
       expect(
@@ -108,7 +99,7 @@ describe("唯一事实源架构门禁", () => {
   it("Category、Tag、Comment 的更新出口引用 Application 权威 schema", () => {
     const singleSourceFeatures = ["category", "tag", "comment"].filter(
       (feature) => {
-        const file = source(
+        const file = sourceFile(
           `src/features/${feature}/schemas/${feature}.update.schema.ts`,
         );
         return (
@@ -132,7 +123,7 @@ describe("唯一事实源架构门禁", () => {
   it.each(["setting", "menu"])(
     "%s 的更新出口只重新导出 Application 权威 schema",
     (feature) => {
-      const file = source(
+      const file = sourceFile(
         `src/features/${feature}/schemas/${feature}.update.schema.ts`,
       );
       expect(
@@ -158,7 +149,7 @@ describe("唯一事实源架构门禁", () => {
       "src/features/setting/application/repository.ts",
       "src/features/menu/application/repository.ts",
     ]) {
-      const handwrittenWriteTypes = source(path).statements.filter(
+      const handwrittenWriteTypes = sourceFile(path).statements.filter(
         (node) =>
           ts.isTypeAliasDeclaration(node) &&
           ["SettingUpdate", "MenuInput"].includes(node.name.text) &&
@@ -174,7 +165,7 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("MenuItem 不允许任意字符串索引扩张读模型", () => {
-    const declaration = source(
+    const declaration = sourceFile(
       "src/features/menu/application/repository.ts",
     ).statements.find(
       (node) => ts.isInterfaceDeclaration(node) && node.name.text === "MenuItem",
@@ -188,17 +179,16 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("评论写用例只依赖统一的 invalidate(plan) 端口", () => {
-    const file = readFileSync(
+    const file = sourceFile(
       "src/features/comment/application/comment-commands.ts",
-      "utf8",
-    );
+    ).getFullText();
     expect(file).not.toMatch(/invalidateContent|invalidateAll/);
     expect(file).toMatch(/invalidator\.invalidate\(/);
   });
 
   it("评论读写适配共享单个记录映射", () => {
     for (const kind of ["query", "command"]) {
-      const file = source(
+      const file = sourceFile(
         `src/features/comment/infrastructure/comment-${kind}-repository.ts`,
       );
       expect(
@@ -214,7 +204,7 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("评论通知适配不重写完整评论字段映射", () => {
-    const file = source(
+    const file = sourceFile(
       "src/features/comment/infrastructure/comment-notification-repository.ts",
     );
     const violations: string[] = [];
@@ -242,11 +232,10 @@ describe("唯一事实源架构门禁", () => {
       "src/features/post/public/components/PostList/index.tsx",
     ]) {
       expect(
-        source(path)
+        sourceFile(path)
           .statements.filter(
             (node) =>
               ts.isTypeAliasDeclaration(node) &&
-              ts.isTypeLiteralNode(node.type) &&
               node.name.text === "PostIndexOutput",
           )
           .map((node) => node.getText()),
@@ -254,8 +243,144 @@ describe("唯一事实源架构门禁", () => {
     }
   });
 
+  it.each([
+    [
+      "src/app/(blog)/[locale]/pages/[id]/page.tsx",
+      'PageProps<"/[locale]/pages/[id]">',
+    ],
+    [
+      "src/app/(blog)/[locale]/list/[...slug]/page.tsx",
+      'PageProps<"/[locale]/list/[...slug]">',
+    ],
+    [
+      "src/app/(blog)/[locale]/archives/[id]/page.tsx",
+      'PageProps<"/[locale]/archives/[id]">',
+    ],
+    ["src/app/admin/(root)/login/page.tsx", 'PageProps<"/admin/login">'],
+  ])("%s 页面入口使用 Next.js 路由类型", (path, expectedType) => {
+    const file = sourceFile(path);
+    const page = file.statements.find(
+      (node) =>
+        ts.isFunctionDeclaration(node) &&
+        node.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword,
+        ),
+    );
+    expect(page && ts.isFunctionDeclaration(page)).toBe(true);
+    if (page && ts.isFunctionDeclaration(page)) {
+      expect(page.parameters[0]?.type?.getText(file), path).toBe(expectedType);
+    }
+  });
+
+  it("博客元数据生成器使用 Next.js 路由类型", () => {
+    for (const path of [
+      "src/app/(blog)/[locale]/pages/[id]/page.tsx",
+      "src/app/(blog)/[locale]/list/[...slug]/page.tsx",
+      "src/app/(blog)/[locale]/archives/[id]/page.tsx",
+    ]) {
+      const aliases = sourceFile(path).statements.filter(
+        (node) =>
+          ts.isTypeAliasDeclaration(node) &&
+          node.name.text === "GenerateMetadataProps",
+      );
+      expect(
+        aliases.map((node) => node.getText()),
+        path,
+      ).toEqual([]);
+      expect(sourceFile(path).getFullText(), path).toMatch(/PageProps<"\//);
+    }
+  });
+
+  it("动态博客布局使用 Next.js LayoutProps", () => {
+    const path = "src/app/(blog)/[locale]/layout.tsx";
+    const file = sourceFile(path);
+    const layout = file.statements.find(
+      (node) =>
+        ts.isFunctionDeclaration(node) &&
+        node.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword,
+        ),
+    );
+    expect(layout && ts.isFunctionDeclaration(layout)).toBe(true);
+    if (layout && ts.isFunctionDeclaration(layout)) {
+      expect(layout.parameters[0]?.type?.getText(file)).toBe(
+        'LayoutProps<"/[locale]">',
+      );
+    }
+  });
+
+  it("后台公共交互参数只维护一份反馈字段", () => {
+    const actionState = sourceFile("src/packages/ui/admin/action-state.ts");
+    const runOptions = actionState.statements.find(
+      (node) =>
+        ts.isInterfaceDeclaration(node) &&
+        node.name.text === "RunAdminMutationOptions",
+    );
+    expect(runOptions && ts.isInterfaceDeclaration(runOptions)).toBe(true);
+    if (runOptions && ts.isInterfaceDeclaration(runOptions)) {
+      expect(runOptions.heritageClauses?.[0]?.getText(actionState)).toContain(
+        "AdminMutationFeedback",
+      );
+      expect(
+        runOptions.members
+          .map((member) => member.name?.getText(actionState))
+          .filter((name) =>
+            ["refetch", "notifySuccess", "notifyError"].includes(name ?? ""),
+          ),
+      ).toEqual([]);
+    }
+
+    const menuActions = sourceFile(
+      "src/features/menu/admin/actions/menu-actions.ts",
+    );
+    const submitOptions = menuActions.statements.find(
+      (node) =>
+        ts.isInterfaceDeclaration(node) &&
+        node.name.text === "SubmitMenuChangesOptions",
+    );
+    expect(submitOptions && ts.isInterfaceDeclaration(submitOptions)).toBe(
+      true,
+    );
+    if (submitOptions && ts.isInterfaceDeclaration(submitOptions)) {
+      expect(submitOptions.heritageClauses?.[0]?.getText(menuActions)).toContain(
+        "AdminMutationFeedback",
+      );
+    }
+  });
+
+  it("编辑器状态不依赖具体弹窗组件的 Props", () => {
+    const editor = sourceFile(
+      "src/features/post/admin/edit/hooks/use-post-editor.tsx",
+    );
+    const modalPropImports = editor.statements
+      .filter(ts.isImportDeclaration)
+      .map((node) => node.moduleSpecifier)
+      .filter(ts.isStringLiteral)
+      .map((node) => node.text)
+      .filter((specifier) => specifier.endsWith("/AddCategoryModal"));
+    expect(modalPropImports).toEqual([]);
+  });
+
+  it("评论基础设施不保留旧的公开 DTO 包装器", () => {
+    const declarations = sourceFile(
+      "src/features/comment/infrastructure/comment-dto.ts",
+    ).statements.filter(
+      (node) =>
+        ts.isFunctionDeclaration(node) && node.name?.text === "toPublicComment",
+    );
+    expect(declarations.map((node) => node.getText())).toEqual([]);
+  });
+
+  it("媒体写入 schema 导出语义明确的 MediaInsert 类型", () => {
+    const aliases = sourceFile(
+      "src/features/media/application/write-schema.ts",
+    ).statements.filter(ts.isTypeAliasDeclaration);
+    expect(aliases.map((node) => node.name.text)).toContain("MediaInsert");
+    expect(aliases.map((node) => node.name.text)).not.toContain("MediaEntity");
+  });
+
   it("后台与公开评论使用显式不同名称", () => {
-    const names = source(
+    const names = sourceFile(
       "src/features/comment/presentation/comment-view-model.ts",
     )
       .statements.filter(ts.isTypeAliasDeclaration)

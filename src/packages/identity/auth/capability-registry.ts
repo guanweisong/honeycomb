@@ -56,13 +56,7 @@ export function isCapability(value: string): value is Capability {
   return Object.prototype.hasOwnProperty.call(capabilityRegistry, value);
 }
 
-export function getCapabilityDefinition(
-  capability: PermissionValue,
-): CapabilityDefinition {
-  return capabilityRegistry[capability];
-}
-
-export const registeredCapabilities: readonly PermissionValue[] =
+const registeredCapabilities: readonly PermissionValue[] =
   Object.freeze(Object.keys(capabilityRegistry).filter(isCapability));
 
 if (registeredCapabilities.length !== ALL_PERMISSIONS.length) {

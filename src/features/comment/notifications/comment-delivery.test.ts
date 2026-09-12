@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/packages/infrastructure/observability/server";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import type { CommentNotificationRepository } from "../application/repository";

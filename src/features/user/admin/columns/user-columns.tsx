@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import {
@@ -10,6 +9,7 @@ import {
   StatusBadge,
   StatusBadgeTone,
 } from "@/packages/ui/extended/StatusBadge";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
 
 export function getUserStatusPresentation(status: string) {
   const label =
@@ -25,20 +25,6 @@ export function getUserStatusPresentation(status: string) {
     default:
       return { label, tone: StatusBadgeTone.GRAY };
   }
-}
-
-export function formatUserDate(
-  value: string | number | Date | null | undefined,
-) {
-  if (value === null || value === undefined || value === "") {
-    return "-";
-  }
-
-  const date = value instanceof Date ? value : new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : format(date, "yyyy-MM-dd HH:mm:ss");
 }
 
 export const userTableColumns: ColumnDef<UserEntity>[] = [
@@ -72,13 +58,13 @@ export const userTableColumns: ColumnDef<UserEntity>[] = [
     accessorKey: "createdAt",
     header: "添加时间",
     enableSorting: true,
-    cell: ({ row }) => formatUserDate(row.original.createdAt),
+    cell: ({ row }) => formatAdminDateTime(row.original.createdAt),
   },
   {
     accessorKey: "updatedAt",
     header: "最后更新日期",
     enableSorting: true,
-    cell: ({ row }) => formatUserDate(row.original.updatedAt),
+    cell: ({ row }) => formatAdminDateTime(row.original.updatedAt),
   },
 ];
 /**

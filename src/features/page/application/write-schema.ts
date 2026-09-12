@@ -1,4 +1,5 @@
-import { I18nSchema } from "@/packages/application/validation";
+import { hasUpdateFields, I18nSchema } from "@/packages/application/validation";
+import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { z } from "zod";
 import { PageStatus } from "@/packages/domain/content/page";
@@ -14,3 +15,9 @@ export const PageInsertSchema = z.object({
 });
 
 export type PageInsert = z.output<typeof PageInsertSchema>;
+
+export const PageUpdateSchema = PageInsertSchema.partial()
+  .extend({ id: IdSchema })
+  .refine(hasUpdateFields, "至少修改一个字段");
+
+export type PageUpdate = z.output<typeof PageUpdateSchema>;

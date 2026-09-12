@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMemoryObservability } from "../adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import type { Logger, Metrics } from "../core/contracts";
 import { LogEvent, MetricName } from "../core/names";
 import { configureObservability, getLogger, getMetrics } from "./registry";

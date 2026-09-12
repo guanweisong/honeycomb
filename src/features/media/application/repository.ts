@@ -1,9 +1,8 @@
 import type { PaginationInput } from "@/packages/application/pagination";
 import { z } from "zod";
+import type { MediaInsert } from "./write-schema";
 
-export type MediaInsert = import("zod").output<
-  typeof import("./write-schema").MediaInsertSchema
->;
+export type { MediaInsert } from "./write-schema";
 
 /** 媒体读模型，明确脱离数据库表结构。 */
 export const MediaRecordSchema = z.object({

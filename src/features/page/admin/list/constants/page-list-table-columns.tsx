@@ -1,15 +1,13 @@
-import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { Badge } from "@/packages/ui/components/badge";
 import { pageStatusOptions } from "@/packages/domain/content/page";
 import { pageTemplateOptions } from "@/packages/domain/content/page-template";
 import type { PageViewModel as PageEntity } from "../../../presentation/page-view-model";
-import {
-  StatusBadge,
-  StatusBadgeTone,
-} from "@/packages/ui/extended/StatusBadge";
+import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
 import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
+import { publicationStatusToneMap } from "@/packages/ui/admin/publication-status-tone";
 
 /**
  * 页面列表的表格列定义。
@@ -56,7 +54,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
         pageStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
         <StatusBadge
-          tone={getStatusBadgeTone(status, pageStatusToneMap)}
+          tone={getStatusBadgeTone(status, publicationStatusToneMap)}
           label={label}
         />
       );
@@ -87,7 +85,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
       const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },
@@ -104,7 +102,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
       const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },
@@ -115,9 +113,3 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
     enableSorting: true,
   },
 ];
-
-const pageStatusToneMap = {
-  PUBLISHED: StatusBadgeTone.GREEN,
-  DRAFT: StatusBadgeTone.GRAY,
-  TO_AUDIT: StatusBadgeTone.AMBER,
-} as const;

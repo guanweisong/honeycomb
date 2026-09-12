@@ -9,7 +9,7 @@ import type { PublicContentInvalidator } from "@/packages/application/public-con
 export async function updateSetting(
   repository: Pick<SettingRepository, "update">,
   input: SettingUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
   await invalidator.invalidate({ refreshLayout: true });

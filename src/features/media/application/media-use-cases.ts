@@ -55,7 +55,7 @@ export async function destroyMedia(
   repository: Pick<MediaRepository, "findDeleteTargets" | "deleteRecords">,
   storage: Pick<MediaStorage, "deleteObjects">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ): Promise<MediaDeleteResult> {
   const targets = await repository.findDeleteTargets(ids);
   if (targets.length === 0) {

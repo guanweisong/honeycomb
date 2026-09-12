@@ -27,8 +27,6 @@ export const adminRouteCapabilities = {
   "/admin/user": Permission.userReadAll,
 } as const satisfies Record<string, PermissionValue>;
 
-export type AdminRoutePath = keyof typeof adminRouteCapabilities;
-
 export function getAdminRoutePermission(
   pathname: string,
 ): PermissionValue | undefined {

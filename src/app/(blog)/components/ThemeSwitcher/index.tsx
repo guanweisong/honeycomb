@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Theme } from "@/app/(blog)/types/Theme";
+import { useMounted } from "@/packages/ui/hooks/use-mounted";
 
 /**
  * 主题切换组件。
@@ -14,7 +15,7 @@ export const ThemeSwitcher = () => {
    * 组件是否已挂载。
    * 用于解决 `next-themes` 在服务器端渲染时的 `resolvedTheme` 不匹配问题。
    */
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const { setTheme, resolvedTheme } = useTheme();
 
   /**
@@ -44,13 +45,6 @@ export const ThemeSwitcher = () => {
       document.head.appendChild(meta);
     }
   }, [resolvedTheme, mounted]);
-
-  /**
-   * 副作用钩子，用于在组件挂载后设置 `mounted` 状态。
-   */
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) return null;
 

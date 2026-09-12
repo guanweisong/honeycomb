@@ -4,7 +4,7 @@ import { getDb } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+import { isUserEnabled, UserLevel } from "@/packages/domain/identity/user";
 import type { CurrentUser } from "@/packages/domain/identity/user";
 import {
   createRequestContext,
@@ -60,7 +60,7 @@ async function getUserFromRequest(req?: Request): Promise<User | null> {
       .limit(1),
   );
 
-  if (!user || user.status !== UserStatus.ENABLE) {
+  if (!user || !isUserEnabled(user.status)) {
     return null;
   }
   const level = z.enum(UserLevel).safeParse(user.level);

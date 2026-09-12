@@ -54,7 +54,7 @@ async function assertPath(
 export function createCategory(
   repository: Pick<CategoryRepository, "create" | "find" | "pathExists">,
   input: CategoryInsert,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   return (async () => {
     assertStatus(input.status);
@@ -74,7 +74,7 @@ export function createCategory(
 export function updateCategory(
   repository: Pick<CategoryRepository, "find" | "pathExists" | "update">,
   input: CategoryUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   return (async () => {
     const current = await repository.find(input.id);
@@ -96,7 +96,7 @@ export function updateCategory(
 export function destroyCategories(
   repository: Pick<CategoryRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   return (async () => {
     const result = await repository.destroy(ids);

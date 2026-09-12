@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { keepPreviousData } from "@tanstack/react-query";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { postListTableColumns } from "../../constants/post-list-table-columns";
@@ -31,7 +31,7 @@ export default function PostListClient() {
   const router = useRouter();
   const { data, isFetching, isError, refetch } = trpc.post.adminIndex.useQuery(
     searchParams,
-    { placeholderData: keepPreviousData, staleTime: 60 * 1000 },
+    adminListQueryOptions,
   );
   const destroyPost = trpc.post.destroy.useMutation();
 

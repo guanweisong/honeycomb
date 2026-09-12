@@ -1,14 +1,12 @@
-import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
 import { postStatusOptions } from "@/packages/domain/content/post-status";
 import { postTypeOptions } from "@/packages/domain/content/post";
-import {
-  StatusBadge,
-  StatusBadgeTone,
-} from "@/packages/ui/extended/StatusBadge";
+import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
 import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
+import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
+import { publicationStatusToneMap } from "@/packages/ui/admin/publication-status-tone";
 
 /**
  * 文章列表的表格列定义。
@@ -98,7 +96,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
         postStatusOptions.find((opt) => opt.value === status)?.label ?? status;
       return (
         <StatusBadge
-          tone={getStatusBadgeTone(status, postStatusToneMap)}
+          tone={getStatusBadgeTone(status, publicationStatusToneMap)}
           label={label}
         />
       );
@@ -116,7 +114,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
       const value = row.original.createdAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },
@@ -133,7 +131,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
       const value = row.original.updatedAt;
       return (
         <span className="whitespace-nowrap">
-          {value ? format(new Date(value), "yyyy-MM-dd HH:mm:ss") : "-"}
+          {formatAdminDateTime(value)}
         </span>
       );
     },
@@ -144,9 +142,3 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
     enableSorting: true,
   },
 ];
-
-const postStatusToneMap = {
-  PUBLISHED: StatusBadgeTone.GREEN,
-  DRAFT: StatusBadgeTone.GRAY,
-  TO_AUDIT: StatusBadgeTone.AMBER,
-} as const;

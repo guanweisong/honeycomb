@@ -3,92 +3,59 @@ import {
   refreshMockedAdminUser,
   signInAsDashboardTestUser,
 } from "./auth";
-
-type CommentRecord = {
-  id: string;
-  content: string;
-  postId: string;
-  author: string;
-  email: string;
-  site: string | null;
-  ip: string;
-  status: "TO_AUDIT" | "PUBLISH" | "RUBBISH" | "BAN";
-  createdAt: string;
-  updatedAt: string;
-};
+import type { AdminCommentViewModel } from "@/features/contracts";
+import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
+import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
+import { CommentStatus } from "@/packages/domain/content/comment";
 
 test.describe("admin comment moderation", () => {
   test("@regression moderates and batch deletes comments through the browser contract", async ({
     page,
   }) => {
-    const comments: CommentRecord[] = [
+    const comments: AdminCommentViewModel[] = [
       {
         id: "comment-1",
         content: "需要审核的评论",
         postId: "post-1",
+        pageId: null,
+        customId: null,
+        parentId: null,
         author: "评论者",
         email: "commenter@example.com",
         site: null,
         ip: "127.0.0.1",
-        status: "TO_AUDIT",
+        status: CommentStatus.TO_AUDIT,
         createdAt: "2026-01-02T03:04:05.000Z",
         updatedAt: "2026-01-02T03:04:05.000Z",
+        userAgent: null,
+        post: { id: "post-1", title: { en: "Post", zh: "文章" } },
+        page: null,
+        custom: null,
       },
     ];
     const commentIndexInputs: unknown[] = [];
     const updateInputs: unknown[] = [];
     const destroyInputs: unknown[] = [];
-    const setting = {
-      id: "setting-1",
-      siteName: { en: "Honeycomb", zh: "蜂巢" },
-      siteSubName: { en: "Site", zh: "站点" },
-      siteSignature: { en: "Signature", zh: "签名" },
-      siteCopyright: { en: "Copyright", zh: "版权" },
-      siteRecordNo: null,
-      siteRecordUrl: null,
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-    };
-
     await signInAsDashboardTestUser(page);
 
     await page.route("**/api/trpc/**", async (route) => {
       const request = route.request();
-      const procedureNames = new URL(request.url())
-        .pathname.split("/")
-        .at(-1)!
-        .split(",");
-      const rawInput =
-        request.method() === "GET"
-          ? new URL(request.url()).searchParams.get("input")
-          : request.postData();
-      const inputs = rawInput
-        ? (JSON.parse(rawInput) as Record<string, unknown>)
-        : {};
-      const result = procedureNames.map((procedure, index) => {
-        const requestInput = inputs[String(index)];
-        const input =
-          requestInput &&
-          typeof requestInput === "object" &&
-          "json" in requestInput
-            ? (requestInput as { json?: unknown }).json
-            : requestInput;
+      const calls = decodeTrpcBatchRequest({
+        url: request.url(),
+        method: request.method(),
+        body: request.postData(),
+      });
+      const result = calls.map(({ procedure, input }) => {
 
         if (procedure === "user.current") {
           return {
             result: {
-              data: {
-                id: "admin-1",
-                name: "admin",
-                email: "admin@honeycomb.test",
-                level: "ADMIN",
-                status: "ENABLE",
-              },
+              data: mockedAdminUser,
             },
           };
         }
         if (procedure === "setting.index") {
-          return { result: { data: setting } };
+          return { result: { data: mockedSiteSetting } };
         }
         if (procedure === "comment.index") {
           commentIndexInputs.push(input);
@@ -98,7 +65,7 @@ test.describe("admin comment moderation", () => {
           updateInputs.push(input);
           const { id, status } = input as {
             id: string;
-            status: CommentRecord["status"];
+            status: NonNullable<AdminCommentViewModel["status"]>;
           };
           const comment = comments.find((item) => item.id === id);
           if (comment) comment.status = status;

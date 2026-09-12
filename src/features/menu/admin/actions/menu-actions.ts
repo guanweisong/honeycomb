@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
+import type { AdminMutationFeedback } from "@/packages/ui/admin/action-state";
 import {
   buildMenuSaveInput,
   type MenuEntityTree,
@@ -10,13 +11,10 @@ import {
 
 type MenuActionState = "success" | "error";
 
-type SubmitMenuChangesOptions = {
+interface SubmitMenuChangesOptions extends AdminMutationFeedback {
   checkedList: MenuEntityTree[];
   saveAll: (input: MenuSaveItem[]) => Promise<unknown>;
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
-};
+}
 
 export async function submitMenuChanges({
   checkedList,

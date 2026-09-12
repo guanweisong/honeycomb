@@ -4,6 +4,7 @@ import {
   assembleLocalizedField,
   assembleRequiredLocalizedField,
   hasTranslationValues,
+  patchLocalizedValue,
 } from "./translation-values";
 
 describe("translation value mapping", () => {
@@ -34,12 +35,27 @@ describe("translation value mapping", () => {
       { locale: MultiLangEnum.En, title: "Title" },
       { locale: MultiLangEnum.Zh, title: "标题" },
     ];
-    expect(assembleRequiredLocalizedField(complete, ({ title }) => title)).toEqual({
+    expect(
+      assembleRequiredLocalizedField(complete, ({ title }) => title),
+    ).toEqual({
       en: "Title",
       zh: "标题",
     });
     expect(
       assembleRequiredLocalizedField(complete.slice(1), ({ title }) => title),
     ).toBeNull();
+  });
+
+  it("distinguishes an omitted localized patch from clearing and partial updates", () => {
+    expect(patchLocalizedValue(undefined, MultiLangEnum.En, "Current")).toBe(
+      "Current",
+    );
+    expect(patchLocalizedValue(null, MultiLangEnum.En, "Current")).toBeNull();
+    expect(
+      patchLocalizedValue({ zh: "新版" }, MultiLangEnum.En, "Current"),
+    ).toBe("Current");
+    expect(
+      patchLocalizedValue({ en: "Updated" }, MultiLangEnum.En, "Current"),
+    ).toBe("Updated");
   });
 });

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const coreContracts = [
@@ -17,5 +17,27 @@ describe("DDD migration closeout", () => {
     });
 
     expect(violations).toEqual([]);
+  });
+
+  it("does not retain retired or test-only modules in production source", () => {
+    const retiredProductionPaths = [
+      "src/app/(blog)/i18n/middleware.ts",
+      "src/app/api/trpc/[trpc]/config.ts",
+      "src/features/post/post-filters.ts",
+      "src/packages/identity/auth/migration.ts",
+      "src/packages/infrastructure/content/parser/get-relation-tags.ts",
+      "src/packages/infrastructure/db/array-field.ts",
+      "src/packages/infrastructure/observability/adapters/memory.ts",
+      "src/packages/infrastructure/observability/adapters/noop.ts",
+      "src/packages/trpc/api/capability-authorization-sources.ts",
+      "src/packages/trpc/api/capability-authorization-static.ts",
+      "src/packages/trpc/api/capability-procedure-matrix-data.ts",
+      "src/packages/trpc/api/capability-procedure-matrix-fixtures.ts",
+      "src/packages/trpc/api/capability-procedure-matrix-test-helpers.ts",
+      "src/packages/ui/components/card.tsx",
+      "src/app/admin/constants/admin-action-guard-matrix.ts",
+    ];
+
+    expect(retiredProductionPaths.filter(existsSync)).toEqual([]);
   });
 });

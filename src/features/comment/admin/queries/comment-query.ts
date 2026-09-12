@@ -1,19 +1,19 @@
 "use client";
 
-import { keepPreviousData } from "@tanstack/react-query";
 import { useState } from "react";
 import type { z } from "zod";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 
 export type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
 
 export function useCommentQuery() {
   const [searchParams, setSearchParams] = useState<CommentListQueryInput>({});
-  const query = trpc.comment.index.useQuery(searchParams, {
-    placeholderData: keepPreviousData,
-    staleTime: 60 * 1000,
-  });
+  const query = trpc.comment.index.useQuery(
+    searchParams,
+    adminListQueryOptions,
+  );
 
   return {
     data: query.data,

@@ -7,10 +7,6 @@ export const PublicContentReferenceSchema = z.object({
   type: z.enum(["post", "page"]),
 });
 
-export type PublicContentReference = z.infer<
-  typeof PublicContentReferenceSchema
->;
-
 export const PublicCacheInvalidationPlanSchema = z
   .object({
     contents: z

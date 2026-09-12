@@ -5,18 +5,10 @@ import {
   createSecurityHeaderOptions,
   createSecurityHeaders,
 } from "./security-headers";
+import { getDirectiveSources } from "@tests/helpers/content-security-policy";
 
 function asRecord(headers: ReturnType<typeof createSecurityHeaders>) {
   return Object.fromEntries(headers.map(({ key, value }) => [key, value]));
-}
-
-function getDirectiveSources(csp: string, name: string) {
-  const directive = csp
-    .split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(`${name} `));
-
-  return directive?.split(/\s+/).slice(1) ?? [];
 }
 
 describe("createSecurityHeaders", () => {
@@ -44,7 +36,10 @@ describe("createSecurityHeaders", () => {
       "https://www.googletagmanager.com",
     );
     expect(
-      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
+      getDirectiveSources(
+        requireDefined(headers["Content-Security-Policy"]),
+        "connect-src",
+      ),
     ).toContain("https://www.googletagmanager.com");
     expect(headers["Content-Security-Policy"]).toContain(
       "https://static.cloudflareinsights.com",
@@ -132,7 +127,10 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
+      getDirectiveSources(
+        requireDefined(headers["Content-Security-Policy"]),
+        "connect-src",
+      ),
     ).toContain(
       "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
     );
@@ -148,7 +146,10 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
+      getDirectiveSources(
+        requireDefined(headers["Content-Security-Policy"]),
+        "connect-src",
+      ),
     ).toContain("https://static.honeycomb.example");
   });
 
@@ -161,7 +162,10 @@ describe("createSecurityHeaders", () => {
     );
 
     expect(
-      getDirectiveSources(requireDefined(headers["Content-Security-Policy"]), "connect-src"),
+      getDirectiveSources(
+        requireDefined(headers["Content-Security-Policy"]),
+        "connect-src",
+      ),
     ).toEqual(["'self'", "https://static.cloudflareinsights.com"]);
     expect(headers["Content-Security-Policy"]).not.toContain("attacker.test");
   });

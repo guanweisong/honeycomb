@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 const appRoot = join(process.cwd(), "src", "app");
 
@@ -14,16 +15,10 @@ const routeFiles = new Set([
   "default.tsx",
 ]);
 
-function filesIn(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) return filesIn(path);
-    return [path];
-  });
-}
+const appFiles = sourceFiles(appRoot, { includeTests: true });
 
 function componentFiles(): string[] {
-  return filesIn(appRoot).filter((path) => {
+  return appFiles.filter((path) => {
     if (!path.endsWith(".tsx") || path.includes(`${join("src", "app", "api")}`)) {
       return false;
     }
@@ -40,7 +35,7 @@ function componentFiles(): string[] {
 }
 
 function componentDirectories(): string[] {
-  return filesIn(appRoot)
+  return appFiles
     .filter((path) => /\/components\/[^/]+\/index\.tsx$/.test(path))
     .map((path) => path.slice(0, -"/index.tsx".length));
 }

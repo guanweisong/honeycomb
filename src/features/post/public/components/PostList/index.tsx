@@ -15,12 +15,7 @@ import { PostType, PostTypeName } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
 import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";
-
-/**
- * 文章列表查询结果的输出类型。
- */
-type PostIndexOutput =
-  import("@/features/post/application/repository").PostListResult;
+import type { PostListResult } from "@/features/post/application/repository";
 
 /**
  * 文章列表组件的属性接口。
@@ -33,7 +28,7 @@ export interface PostListProps {
   /**
    * 初始文章列表数据。
    */
-  initData?: PostIndexOutput;
+  initData?: PostListResult;
 }
 
 /**

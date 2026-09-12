@@ -1,17 +1,8 @@
-import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import * as providers from "@/packages/identity/auth/providers";
 import * as validation from "@/packages/infrastructure/db/value-validation";
-
-function file(path: string) {
-  return ts.createSourceFile(
-    path,
-    readFileSync(path, "utf8"),
-    ts.ScriptTarget.Latest,
-    true,
-  );
-}
+import { sourceFile } from "@tests/helpers/source-files";
 
 describe("配置与契约所有权", () => {
   it("数据库枚举元组完整派生并拒绝空目录", () => {
@@ -38,7 +29,7 @@ describe("配置与契约所有权", () => {
         violations.push(node.getText());
       ts.forEachChild(node, visit);
     }
-    visit(file("src/packages/infrastructure/db/schema/content.ts"));
+    visit(sourceFile("src/packages/infrastructure/db/schema/content.ts"));
     expect(violations).toEqual([]);
   });
 
@@ -53,7 +44,7 @@ describe("配置与契约所有权", () => {
         violations.push(node.getText());
       ts.forEachChild(node, visit);
     }
-    visit(file("src/packages/ui/navigation/routing.ts"));
+    visit(sourceFile("src/packages/ui/navigation/routing.ts"));
     expect(violations).toEqual([]);
   });
   it("提供商目录同时负责筛选已配置的登录方式", () => {
@@ -90,7 +81,7 @@ describe("配置与契约所有权", () => {
         violations.push(node.getText());
       ts.forEachChild(node, visit);
     }
-    visit(file(path));
+    visit(sourceFile(path));
     expect(violations).toEqual([]);
   });
 
@@ -110,7 +101,7 @@ describe("配置与契约所有权", () => {
         }
         ts.forEachChild(node, visit);
       }
-      visit(file(`src/features/${feature}/application/repository.ts`));
+      visit(sourceFile(`src/features/${feature}/application/repository.ts`));
       expect(violations).toEqual([]);
     },
   );

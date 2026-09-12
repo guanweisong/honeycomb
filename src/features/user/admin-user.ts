@@ -1,7 +1,7 @@
 import "server-only";
 
 import { auth } from "@/auth";
-import { UserStatus } from "@/packages/domain/identity/user";
+import { isUserEnabled } from "@/packages/domain/identity/user";
 import { getCurrentUser, UserQueryError } from "./application/user-queries";
 import type { UserRepository } from "./application/repository";
 
@@ -24,7 +24,7 @@ export async function getAdminUser(
     if (error instanceof UserQueryError) return null;
     throw error;
   }
-  if (!user || user.status !== UserStatus.ENABLE) return null;
+  if (!user || !isUserEnabled(user.status)) return null;
 
   return user;
 }

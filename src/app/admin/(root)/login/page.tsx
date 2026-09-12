@@ -6,11 +6,9 @@ import { redirect } from "next/navigation";
 import LoginClient from "./components/LoginClient";
 import { normalizeAdminCallback } from "./safe-admin-callback";
 
-type LoginPageProps = {
-  searchParams: Promise<{ targetUrl?: string }>;
-};
-
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({
+  searchParams,
+}: PageProps<"/admin/login">) {
   const requestHeaders = await headers();
   const user = await getAdminUser(requestHeaders);
 

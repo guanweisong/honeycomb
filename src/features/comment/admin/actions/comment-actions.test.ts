@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import { CommentStatus } from "@/packages/domain/content/comment";
 import {
-  submitCommentBatchDelete,
   submitCommentDelete,
   submitCommentStatusUpdate,
 } from "./comment-actions";
@@ -49,20 +48,6 @@ describe("comment moderation actions", () => {
 
     expect(refetch).not.toHaveBeenCalled();
     expect(notifyError).toHaveBeenCalledWith("更新失败");
-  });
-
-  it("deletes the selected ids and clears batch selection after the action settles", async () => {
-    const deleteItems = vi.fn().mockResolvedValue("error");
-    const onSelectionChange = vi.fn();
-
-    await submitCommentBatchDelete({
-      selectedRows: [{ id: "comment-1" }, { id: "comment-2" }],
-      deleteItems,
-      onSelectionChange,
-    });
-
-    expect(deleteItems).toHaveBeenCalledWith(["comment-1", "comment-2"]);
-    expect(onSelectionChange).toHaveBeenCalledWith([]);
   });
 
   it("keeps delete success feedback and refresh behavior", async () => {

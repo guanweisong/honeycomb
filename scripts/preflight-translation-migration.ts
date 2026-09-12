@@ -1,10 +1,5 @@
 import { createClient } from "@libsql/client";
-
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is required`);
-  return value;
-}
+import { requiredEnvironmentVariable } from "./cli";
 
 function sanitizedTarget(value: string): string {
   const url = new URL(value);
@@ -19,8 +14,11 @@ async function scalar(
   return Number(result.rows[0]?.value ?? 0);
 }
 
-const url = required("TURSO_URL");
-const client = createClient({ url, authToken: required("TURSO_TOKEN") });
+const url = requiredEnvironmentVariable("TURSO_URL");
+const client = createClient({
+  url,
+  authToken: requiredEnvironmentVariable("TURSO_TOKEN"),
+});
 
 try {
   const tableRows = await client.execute(

@@ -9,7 +9,8 @@ vi.mock("@/auth-client", () => ({
   authClient: { $fetch: mocks.fetch },
 }));
 
-import SessionSettings, { formatSessionDate } from "./index";
+import SessionSettings from "./index";
+import { formatAccountSecurityDate } from "../account-security-date";
 
 describe("SessionSettings", () => {
   let container: HTMLDivElement;
@@ -98,7 +99,9 @@ describe("SessionSettings", () => {
   });
 
   it("formats millisecond timestamps returned as strings", () => {
-    expect(formatSessionDate("1786288777627.0")).not.toBe("未知时间");
+    expect(formatAccountSecurityDate("1786288777627.0")).not.toBe(
+      "未知时间",
+    );
   });
 
   it("shows skeleton placeholders while sessions are loading", async () => {

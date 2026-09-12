@@ -1,4 +1,4 @@
 export {
   MediaInsertSchema,
-  type MediaEntity,
+  type MediaInsert,
 } from "../application/write-schema";

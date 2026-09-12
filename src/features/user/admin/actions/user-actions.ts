@@ -10,38 +10,25 @@ import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildUserUpdateInput } from "../transforms/user-transforms";
+import {
+  closeAdminDialog,
+  createInitialAdminDialogState,
+  openAddAdminDialog,
+  openEditAdminDialog,
+  runAdminMutation,
+  submitAdminBatchDelete,
+  type AdminDialogState,
+  type AdminListActionOptions,
+  type AdminMutationFeedback,
+  type AdminTargetMutationState,
+} from "@/packages/ui/admin/action-state";
 
-export type UserDialogState = {
-  type?: ModalType;
-  open: boolean;
-  record?: UserEntity;
-};
+export type UserDialogState = AdminDialogState<UserEntity>;
 
-export type UserActionState = "success" | "error" | "missing-target" | "noop";
-
-export function createInitialUserDialogState(): UserDialogState {
-  return { type: ModalType.ADD, open: false };
-}
-
-export function openAddUserDialog(): UserDialogState {
-  return { type: ModalType.ADD, open: true, record: undefined };
-}
-
-export function openEditUserDialog(record: UserEntity): UserDialogState {
-  return { type: ModalType.EDIT, open: true, record };
-}
-
-export function closeUserDialog(): UserDialogState {
-  return { open: false };
-}
-
-type SubmitUserUpdateOptions = {
+type SubmitUserUpdateOptions = AdminMutationFeedback & {
   record?: UserEntity;
   values: UserUpdate;
   update: (input: UserUpdate) => Promise<unknown>;
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
 };
 
 export async function submitUserUpdate({
@@ -51,117 +38,65 @@ export async function submitUserUpdate({
   refetch,
   notifySuccess,
   notifyError,
-}: SubmitUserUpdateOptions): Promise<UserActionState> {
+}: SubmitUserUpdateOptions): Promise<AdminTargetMutationState> {
   if (!record?.id) {
     notifyError("缺少用户ID");
     return "missing-target";
   }
 
-  try {
-    await update(buildUserUpdateInput(record, values));
-    refetch();
-    notifySuccess("更新成功");
-    return "success";
-  } catch {
-    notifyError("更新失败");
-    return "error";
-  }
+  return runAdminMutation({
+    input: buildUserUpdateInput(record, values),
+    mutate: update,
+    refetch,
+    notifySuccess,
+    notifyError,
+    successMessage: "更新成功",
+    errorMessage: "更新失败",
+  });
 }
-
-type SubmitUserCreateOptions = {
-  values: UserInsert;
-  create: (input: UserInsert) => Promise<unknown>;
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
-};
-
-export async function submitUserCreate({
-  values,
-  create,
-  refetch,
-  notifySuccess,
-  notifyError,
-}: SubmitUserCreateOptions): Promise<UserActionState> {
-  try {
-    await create(values);
-    refetch();
-    notifySuccess("添加成功");
-    return "success";
-  } catch {
-    notifyError("添加失败");
-    return "error";
-  }
-}
-
-type SubmitUserDeleteOptions = {
-  ids: string[];
-  destroy: (input: { ids: string[] }) => Promise<{ success: boolean }>;
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
-};
-
-export async function submitUserDelete({
-  ids,
-  destroy,
-  refetch,
-  notifySuccess,
-  notifyError,
-}: SubmitUserDeleteOptions): Promise<UserActionState> {
-  try {
-    const result = await destroy({ ids });
-    if (!result.success) return "noop";
-    refetch();
-    notifySuccess("删除成功");
-    return "success";
-  } catch {
-    notifyError("删除失败");
-    return "error";
-  }
-}
-
-type UseUserActionsOptions = {
-  selectedRows: UserEntity[];
-  onSelectionChange: (rows: UserEntity[]) => void;
-  refetch: () => unknown;
-};
 
 export function useUserActions({
   selectedRows,
   onSelectionChange,
   refetch,
-}: UseUserActionsOptions) {
+}: AdminListActionOptions<UserEntity>) {
   const [dialogState, setDialogState] = useState<UserDialogState>(
-    createInitialUserDialogState,
+    createInitialAdminDialogState,
   );
   const createUser = trpc.user.create.useMutation();
   const updateUser = trpc.user.update.useMutation();
   const destroyUser = trpc.user.destroy.useMutation();
 
   const handleDeleteItem = (ids: string[]) =>
-    submitUserDelete({
-      ids,
-      destroy: destroyUser.mutateAsync,
+    runAdminMutation({
+      input: { ids },
+      mutate: destroyUser.mutateAsync,
+      isSuccess: (result) => result.success,
       refetch,
       notifySuccess: toast.success,
       notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
     });
 
-  const handleDeleteBatch = async () => {
-    await handleDeleteItem(selectedRows.map((row) => row.id));
-    onSelectionChange([]);
-  };
+  const handleDeleteBatch = () =>
+    submitAdminBatchDelete({
+      selectedRows,
+      deleteItems: handleDeleteItem,
+      onSelectionChange,
+    });
 
   const handleModalOk = async (values: UserInsert | UserUpdate) => {
     const state =
       dialogState.type === ModalType.ADD
-        ? await submitUserCreate({
-            values: UserInsertSchema.parse(values),
-            create: createUser.mutateAsync,
+        ? await runAdminMutation({
+            input: UserInsertSchema.parse(values),
+            mutate: createUser.mutateAsync,
             refetch,
             notifySuccess: toast.success,
             notifyError: toast.error,
+            successMessage: "添加成功",
+            errorMessage: "添加失败",
           })
         : await submitUserUpdate({
             record: dialogState.record,
@@ -172,14 +107,14 @@ export function useUserActions({
             notifyError: toast.error,
           });
 
-    if (state === "success") setDialogState(closeUserDialog());
+    if (state === "success") setDialogState(closeAdminDialog());
   };
 
   return {
     dialogState,
-    handleAddNew: () => setDialogState(openAddUserDialog()),
+    handleAddNew: () => setDialogState(openAddAdminDialog()),
     handleEditItem: (record: UserEntity) =>
-      setDialogState(openEditUserDialog(record)),
+      setDialogState(openEditAdminDialog(record)),
     handleDeleteItem,
     handleDeleteBatch,
     handleModalOk,

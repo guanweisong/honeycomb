@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "@/packages/infrastructure/observability/core/names";
 import { configureObservability } from "@/packages/infrastructure/observability/server";
 

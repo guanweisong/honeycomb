@@ -46,10 +46,6 @@ function validateUserState<T extends { status: unknown; level: unknown }>(
   };
 }
 
-export type LoginHistoryRecord = Awaited<
-  ReturnType<typeof listUserLoginHistory>
->[number];
-
 export function createUserRepository(db: Database): UserRepository {
   return {
     async getStatus(id) {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { BetterAuthOptions } from "better-auth";
-import { getConfiguredProviderIds } from "@/packages/identity/auth/policy";
+import { getConfiguredProviderIds } from "@/packages/identity/auth/providers";
 
 const captured = vi.hoisted(() => ({
   options: undefined as BetterAuthOptions | undefined,

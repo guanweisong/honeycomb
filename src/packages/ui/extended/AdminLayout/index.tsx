@@ -12,6 +12,7 @@ import {
   AdminLayoutPageTitleContext,
 } from "./AdminLayoutContext";
 import { AdminSidebar } from "./AdminSidebar";
+import { findMenuTitle } from "./menu-title";
 
 export {
   useAdminLayoutActions,
@@ -33,30 +34,6 @@ export interface AdminLayoutProps {
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
 const SIDEBAR_COLLAPSE_BREAKPOINT = 768;
-
-const findMenuTitle = (
-  items: MenuItem[],
-  pathname: string,
-): string | undefined => {
-  for (const item of items) {
-    if (pathname === item.path) {
-      return item.name;
-    }
-
-    if (item.children) {
-      const childTitle = findMenuTitle(item.children, pathname);
-      if (childTitle) {
-        return childTitle;
-      }
-    }
-
-    if (pathname.startsWith(`${item.path}/`)) {
-      return item.name;
-    }
-  }
-
-  return undefined;
-};
 
 export const AdminLayout = (props: AdminLayoutProps) => {
   const {

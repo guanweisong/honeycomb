@@ -1,16 +1,16 @@
 "use client";
 
-import { keepPreviousData } from "@tanstack/react-query";
 import { useState } from "react";
 import type { LinkListQueryInput } from "@/features/link/schemas/link.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 
 export function useLinkQuery() {
   const [searchParams, setSearchParams] = useState<LinkListQueryInput>({});
-  const query = trpc.link.adminIndex.useQuery(searchParams, {
-    placeholderData: keepPreviousData,
-    staleTime: 60 * 1000,
-  });
+  const query = trpc.link.adminIndex.useQuery(
+    searchParams,
+    adminListQueryOptions,
+  );
 
   return {
     data: query.data,

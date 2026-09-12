@@ -6,8 +6,6 @@ import type {
 } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
-type PublicInvalidator = Pick<PublicContentInvalidator, "invalidate">;
-
 const postIndexInvalidation = {
   refreshLayout: true,
   refreshPostIndex: true,
@@ -17,7 +15,7 @@ const postIndexInvalidation = {
 export async function createTag(
   repository: Pick<TagRepository, "create">,
   input: TagInsert,
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input);
   await invalidator.invalidate(postIndexInvalidation);
@@ -27,7 +25,7 @@ export async function createTag(
 export async function updateTag(
   repository: Pick<TagRepository, "update">,
   input: TagUpdate,
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
   await invalidator.invalidate(postIndexInvalidation);
@@ -37,7 +35,7 @@ export async function updateTag(
 export async function destroyTags(
   repository: Pick<TagRepository, "destroy">,
   ids: string[],
-  invalidator: PublicInvalidator,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidate(postIndexInvalidation);

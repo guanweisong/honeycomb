@@ -5,6 +5,7 @@ import {
   resolveAssetOrigin,
   resolveR2UploadOrigin,
 } from "./security-headers-config";
+import { getDirectiveSources } from "@tests/helpers/content-security-policy";
 
 const VERCEL_SCRIPT_ORIGIN = "https://va.vercel-scripts.com";
 const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
@@ -25,15 +26,6 @@ function getCsp(headers: Record<string, string>) {
   expect(Boolean(enforced) && Boolean(reportOnly)).toBe(false);
 
   return enforced ?? reportOnly ?? "";
-}
-
-function getDirectiveSources(csp: string, name: string) {
-  const directive = csp
-    .split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(`${name} `));
-
-  return directive?.split(/\s+/).slice(1) ?? [];
 }
 
 test.describe("security response headers", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import { useEffect, useState, ViewTransition } from "react";
+import { ViewTransition } from "react";
 import Image from "next/image";
 import { usePathname } from "@/packages/ui/navigation/blog-navigation";
 import { useTheme } from "next-themes";
@@ -16,6 +16,7 @@ import {
   normalizeMultiLangLocale,
 } from "@/packages/domain/localization/multi-lang";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
+import { useMounted } from "@/packages/ui/hooks/use-mounted";
 
 /**
  * 语言切换组件。
@@ -30,20 +31,13 @@ const LanguageSwitcher = () => {
    * 组件是否已挂载。
    * 用于解决 `next-themes` 在服务器端渲染时的 `resolvedTheme` 不匹配问题。
    */
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
 
   /**
    * 另一个语言环境。
    */
   const otherLocale =
     locale === MultiLangEnum.En ? MultiLangEnum.Zh : MultiLangEnum.En;
-
-  /**
-   * 副作用钩子，用于在组件挂载后设置 `mounted` 状态。
-   */
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return null;

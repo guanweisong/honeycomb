@@ -170,6 +170,7 @@ describe("archives page", () => {
     mockPostDetail.mockResolvedValue(detail);
     const element = await Archives({
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
+      searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
   }
@@ -291,6 +292,7 @@ describe("archives page", () => {
     await expect(
       Archives({
         params: Promise.resolve({ id: "post-1", locale: "zh" }),
+        searchParams: Promise.resolve({}),
       }),
     ).rejects.toThrow("Post post-1 is missing category relation");
   });
@@ -301,6 +303,7 @@ describe("archives page", () => {
     await expect(
       Archives({
         params: Promise.resolve({ id: "missing", locale: "zh" }),
+        searchParams: Promise.resolve({}),
       }),
     ).rejects.toThrow("NEXT_NOT_FOUND");
   });

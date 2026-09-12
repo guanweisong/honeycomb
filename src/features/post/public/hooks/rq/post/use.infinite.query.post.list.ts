@@ -1,18 +1,13 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@/packages/trpc/client/trpc";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
-
-/**
- * 文章列表查询结果的输出类型。
- */
-type PostIndexOutput =
-  import("@/features/post/application/repository").PostListResult;
+import type { PostListResult } from "@/features/post/application/repository";
 
 /**
  * 获取文章列表的异步函数。
  * @param {PostListQueryInput} queryParams - 查询参数。
  * @param {number} [page=1] - 页码。
- * @returns {Promise<PostIndexOutput>} 文章列表数据。
+ * @returns {Promise<PostListResult>} 文章列表数据。
  */
 const getPostList = async (
   queryParams: PostListQueryInput,
@@ -26,13 +21,13 @@ const getPostList = async (
  * 用于无限滚动加载文章列表的 React Query Hook。
  * @param {PostListQueryInput} queryParams - 查询参数。
  * @param initialData
- * @returns {UseInfiniteQueryResult<PostIndexOutput, Error>} 无限查询结果。
+ * @returns {UseInfiniteQueryResult<PostListResult, Error>} 无限查询结果。
  */
 export default function useInfiniteQueryPostList(
   queryParams: PostListQueryInput,
-  initialData?: PostIndexOutput,
+  initialData?: PostListResult,
 ) {
-  return useInfiniteQuery<PostIndexOutput, Error>({
+  return useInfiniteQuery<PostListResult, Error>({
     queryKey: ["posts", queryParams],
     queryFn: ({ pageParam }) =>
       getPostList(queryParams, typeof pageParam === "number" ? pageParam : 1),

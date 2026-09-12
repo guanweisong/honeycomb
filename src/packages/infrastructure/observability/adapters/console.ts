@@ -1,18 +1,16 @@
 import type { Logger } from "../core/contracts";
 import { createSafeLogger } from "../core/safe-adapters";
 import { sanitizeContext } from "../core/sanitize";
-
-export interface ConsoleLoggerOptions {
-  service?: string;
-  environment?: string;
-  write?: (line: string) => void;
-}
+import {
+  getRuntimeEnvironment,
+  type ConsoleAdapterOptions,
+} from "./console-options";
 
 export function createConsoleLogger(
-  options: ConsoleLoggerOptions = {},
+  options: ConsoleAdapterOptions = {},
 ): Logger {
   const service = options.service ?? "honeycomb";
-  const environment = options.environment ?? getEnvironment();
+  const environment = options.environment ?? getRuntimeEnvironment();
   const write = options.write ?? ((line: string) => console.log(line));
 
   return createSafeLogger({
@@ -40,8 +38,4 @@ function writeLog(
       environment,
     }),
   );
-}
-
-function getEnvironment(): string {
-  return typeof process === "undefined" ? "development" : process.env.NODE_ENV ?? "development";
 }

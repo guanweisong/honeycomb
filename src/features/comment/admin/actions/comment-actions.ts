@@ -5,16 +5,15 @@ import type { CommentUpdate } from "@/features/comment/schemas/comment.update.sc
 import type { AdminCommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
 import type { CommentStatus } from "@/packages/domain/content/comment";
 import { trpc } from "@/packages/trpc/client/trpc";
+import {
+  runAdminMutation,
+  submitAdminBatchDelete,
+  type AdminListActionOptions,
+  type AdminMutationFeedback,
+  type AdminMutationState,
+} from "@/packages/ui/admin/action-state";
 
-export type CommentActionState = "success" | "error";
-
-type CommentMutationFeedback = {
-  refetch: () => unknown;
-  notifySuccess: (message: string) => void;
-  notifyError: (message: string) => void;
-};
-
-type SubmitCommentStatusUpdateOptions = CommentMutationFeedback & {
+type SubmitCommentStatusUpdateOptions = AdminMutationFeedback & {
   id: string;
   status: CommentStatus;
   update: (input: CommentUpdate) => Promise<unknown>;
@@ -27,19 +26,19 @@ export async function submitCommentStatusUpdate({
   refetch,
   notifySuccess,
   notifyError,
-}: SubmitCommentStatusUpdateOptions): Promise<CommentActionState> {
-  try {
-    await update({ id, status });
-    refetch();
-    notifySuccess("更新成功");
-    return "success";
-  } catch {
-    notifyError("更新失败");
-    return "error";
-  }
+}: SubmitCommentStatusUpdateOptions): Promise<AdminMutationState> {
+  return runAdminMutation({
+    input: { id, status },
+    mutate: update,
+    refetch,
+    notifySuccess,
+    notifyError,
+    successMessage: "更新成功",
+    errorMessage: "更新失败",
+  });
 }
 
-type SubmitCommentDeleteOptions = CommentMutationFeedback & {
+type SubmitCommentDeleteOptions = AdminMutationFeedback & {
   ids: string[];
   destroy: (input: { ids: string[] }) => Promise<unknown>;
 };
@@ -50,44 +49,23 @@ export async function submitCommentDelete({
   refetch,
   notifySuccess,
   notifyError,
-}: SubmitCommentDeleteOptions): Promise<CommentActionState> {
-  try {
-    await destroy({ ids });
-    refetch();
-    notifySuccess("删除成功");
-    return "success";
-  } catch {
-    notifyError("删除失败");
-    return "error";
-  }
+}: SubmitCommentDeleteOptions): Promise<AdminMutationState> {
+  return runAdminMutation({
+    input: { ids },
+    mutate: destroy,
+    refetch,
+    notifySuccess,
+    notifyError,
+    successMessage: "删除成功",
+    errorMessage: "删除失败",
+  });
 }
-
-type SubmitCommentBatchDeleteOptions = {
-  selectedRows: Pick<CommentEntity, "id">[];
-  deleteItems: (ids: string[]) => Promise<CommentActionState>;
-  onSelectionChange: (rows: CommentEntity[]) => void;
-};
-
-export async function submitCommentBatchDelete({
-  selectedRows,
-  deleteItems,
-  onSelectionChange,
-}: SubmitCommentBatchDeleteOptions): Promise<void> {
-  await deleteItems(selectedRows.map((row) => row.id));
-  onSelectionChange([]);
-}
-
-type UseCommentActionsOptions = {
-  selectedRows: CommentEntity[];
-  onSelectionChange: (rows: CommentEntity[]) => void;
-  refetch: () => unknown;
-};
 
 export function useCommentActions({
   selectedRows,
   onSelectionChange,
   refetch,
-}: UseCommentActionsOptions) {
+}: AdminListActionOptions<CommentEntity>) {
   const updateComment = trpc.comment.update.useMutation();
   const destroyComment = trpc.comment.destroy.useMutation();
 
@@ -111,7 +89,7 @@ export function useCommentActions({
     });
 
   const handleDeleteBatch = () =>
-    submitCommentBatchDelete({
+    submitAdminBatchDelete({
       selectedRows,
       deleteItems: handleDelete,
       onSelectionChange,
@@ -121,7 +99,4 @@ export function useCommentActions({
 }
 /**
  * Comment 管理页的状态变更、批量操作及权限相关客户端编排。
- */
-/**
- * 评论管理的状态变更、批量操作及权限相关客户端编排。
  */

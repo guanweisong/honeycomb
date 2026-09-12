@@ -13,7 +13,7 @@ export async function createPost(
   repository: Pick<PostCommandRepository, "create">,
   input: PostCreateCommand,
   authorId: string,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input, authorId);
   await invalidator.invalidate({
@@ -28,7 +28,7 @@ export async function createPost(
 export async function destroyPosts(
   repository: Pick<PostCommandRepository, "destroy">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
   await invalidator.invalidate({
@@ -43,7 +43,7 @@ export async function destroyPosts(
 export async function updatePost(
   repository: Pick<PostCommandRepository, "findStatus" | "update">,
   input: PostUpdateCommand,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await updatePostThroughAggregate(repository, input);
   await invalidator.invalidate({
@@ -58,7 +58,7 @@ export async function updatePost(
 export async function updatePostTags(
   repository: Pick<PostCommandRepository, "updateTags">,
   input: PostTagUpdate,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.updateTags(input);
   await invalidator.invalidate({

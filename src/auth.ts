@@ -105,5 +105,3 @@ const authOptions: BetterAuthOptions = {
 };
 
 export const auth = betterAuth(authOptions);
-
-export type AuthSession = typeof auth.$Infer.Session;

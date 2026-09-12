@@ -2,19 +2,10 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 const sourceRoot = join(process.cwd(), "src");
 const featureRoot = join(sourceRoot, "features");
-
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const path = join(directory, entry);
-    if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.(ts|tsx)$/.test(entry) && !/\.test\.(ts|tsx)$/.test(entry)
-      ? [path]
-      : [];
-  });
-}
 
 function imports(source: string): string[] {
   return [
@@ -29,7 +20,10 @@ function imports(source: string): string[] {
   ];
 }
 
-function resolveLocalImport(importer: string, specifier: string): string | null {
+function resolveLocalImport(
+  importer: string,
+  specifier: string,
+): string | null {
   const base = specifier.startsWith("@/")
     ? join(sourceRoot, specifier.slice(2))
     : specifier.startsWith(".")
@@ -44,7 +38,8 @@ function resolveLocalImport(importer: string, specifier: string): string | null 
     join(base, "index.ts"),
     join(base, "index.tsx"),
   ]) {
-    if (statSync(candidate, { throwIfNoEntry: false })?.isFile()) return candidate;
+    if (statSync(candidate, { throwIfNoEntry: false })?.isFile())
+      return candidate;
   }
   return null;
 }
@@ -180,7 +175,9 @@ describe("架构复杂度治理", () => {
   });
 
   it("Repository 契约必须位于 application，Application 不得依赖 infrastructure", () => {
-    const rootRepositoryFiles = readdirSync(featureRoot, { withFileTypes: true }).flatMap((feature) => {
+    const rootRepositoryFiles = readdirSync(featureRoot, {
+      withFileTypes: true,
+    }).flatMap((feature) => {
       if (!feature.isDirectory()) return [];
       const path = join(featureRoot, feature.name, "repository.ts");
       return statSync(path, { throwIfNoEntry: false })

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 import { satisfies } from "semver";
+import { argumentValue } from "./cli";
 
 export type AuditSeverity = "low" | "moderate" | "high" | "critical";
 
@@ -167,7 +168,9 @@ function validateExceptions(exceptions: AuditException[]): void {
       );
     }
     if (!exception.owner.trim() || !exception.mitigation.trim()) {
-      throw new Error(`Exception ${exception.advisory} lacks owner or mitigation`);
+      throw new Error(
+        `Exception ${exception.advisory} lacks owner or mitigation`,
+      );
     }
     if (
       !datePattern.test(exception.expiresOn) ||
@@ -378,11 +381,6 @@ function runBunAudit(): BunAuditOutput {
     throw new Error(`bun audit failed: ${result.stderr.trim()}`);
   }
   return parseBunAuditProcessOutput(result.stdout, result.stderr);
-}
-
-function argumentValue(flag: string): string | undefined {
-  const index = process.argv.indexOf(flag);
-  return index === -1 ? undefined : process.argv[index + 1];
 }
 
 function main(): void {

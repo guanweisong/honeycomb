@@ -20,22 +20,14 @@ import {
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
 /**
- * 页面详情组件的属性接口。
- */
-export interface PagesProps {
-  /**
-   * 包含页面 ID 和当前语言环境的 Promise。
-   */
-  params: Promise<{ id: string; locale: string }>;
-}
-
-/**
  * 页面详情组件。
  * 用于显示单个页面的详细内容，包括页面信息、评论等。
- * @param {PagesProps} props - 组件属性。
+ * @param {PageProps<"/[locale]/pages/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 页面详情。
  */
-export default async function Pages(props: PagesProps) {
+export default async function Pages(
+  props: PageProps<"/[locale]/pages/[id]">,
+) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
   const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
@@ -111,25 +103,14 @@ export default async function Pages(props: PagesProps) {
 }
 
 /**
- * `generateMetadata` 函数的属性接口。
- */
-type GenerateMetadataProps = {
-  /**
-   * 包含页面 ID 的 Promise。
-   */
-  params: Promise<{ id: string; locale: string }>;
-  /**
-   * 包含搜索参数的 Promise。
-   */
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
-/**
  * 为页面详情生成元数据。
  * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
- * @param {GenerateMetadataProps} props - 包含页面参数的属性。
+ * @param props - 包含页面参数的属性。
  * @returns {Promise<Metadata>} 页面元数据。
  */
-export async function generateMetadata(props: GenerateMetadataProps) {
+export async function generateMetadata(
+  props: PageProps<"/[locale]/pages/[id]">,
+) {
   const { id, locale: rawLocale } = await props.params;
   const [setting, pageDetail] = await Promise.all([
     getPublicSetting(),

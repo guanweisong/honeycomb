@@ -10,12 +10,12 @@ import {
   Permission,
   type Permission as PermissionValue,
 } from "@/packages/identity/auth/permissions";
-import { createMemoryObservability } from "@/packages/infrastructure/observability/adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/packages/infrastructure/observability/server/registry";
 import { UserLevel } from "@/packages/domain/identity/user";
 
 import { appRouter } from "./app-router";
-import { capabilityProcedureMatrix } from "./capability-procedure-matrix-data";
+import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
 import {
   boundaryCounts,
   callActualProcedure,
@@ -24,7 +24,8 @@ import {
   deniedRoleFor,
   loadRouterSources,
   normalizeDeclarationMatrix,
-} from "./capability-procedure-matrix-test-helpers";
+  type RouterSource,
+} from "@tests/helpers/capability-procedure-matrix-test-helpers";
 
 const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
 
@@ -44,12 +45,6 @@ vi.mock("@/packages/infrastructure/storage/S3", () => ({
     },
   },
 }));
-
-interface RouterSource {
-  moduleSpecifier: string;
-  fileName: string;
-  source: string;
-}
 
 interface RouterDeclaration {
   exportSymbol: string;

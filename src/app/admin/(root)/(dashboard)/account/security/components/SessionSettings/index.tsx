@@ -8,18 +8,7 @@ import { Skeleton } from "@/packages/ui/components/skeleton";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { parseSessionList } from "./session-contract";
-
-export function formatSessionDate(value: Date | string | undefined) {
-  if (!value) return "未知时间";
-  const numericValue =
-    typeof value === "string" && /^\d+(\.\d+)?$/.test(value)
-      ? Number(value)
-      : value;
-  const date = new Date(numericValue);
-  return Number.isNaN(date.getTime())
-    ? "未知时间"
-    : date.toLocaleString("zh-CN", { hour12: false });
-}
+import { formatAccountSecurityDate } from "../account-security-date";
 
 function getDeviceName(userAgent: string | null | undefined) {
   if (!userAgent) return "未知设备";
@@ -107,10 +96,10 @@ const SessionSettings = () => {
               <p className="font-medium">{getDeviceName(session.userAgent)}</p>
               <p className="mt-1 text-muted-foreground">
                 {session.ipAddress || "未知 IP"} · 登录于{" "}
-                {formatSessionDate(session.createdAt)}
+                {formatAccountSecurityDate(session.createdAt)}
               </p>
               <p className="mt-1 text-muted-foreground">
-                到期于 {formatSessionDate(session.expiresAt)}
+                到期于 {formatAccountSecurityDate(session.expiresAt)}
               </p>
             </li>
           ))}

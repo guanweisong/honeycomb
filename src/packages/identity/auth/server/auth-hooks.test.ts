@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   responses: [] as Array<Array<{ id?: string; status?: string }>>,
   getDb: vi.fn(),
+  canCreateSessionForUser: vi.fn((status: string) => status === "ENABLE"),
 }));
 
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -17,10 +18,16 @@ vi.mock("@/packages/infrastructure/observability/server", () => ({
 vi.mock("../authentication-events", () => ({
   getAuthenticationProvider: () => "credentials",
 }));
+vi.mock("../policy", () => ({
+  canCreateSessionForUser: mocks.canCreateSessionForUser,
+}));
 
 import { createAuthDatabaseHooks } from "./auth-hooks";
 
 function setupDatabase() {
+  mocks.canCreateSessionForUser.mockImplementation(
+    (status: string) => status === "ENABLE",
+  );
   const limit = vi.fn(async () => mocks.responses.shift() ?? []);
   const where = vi.fn(() => ({ limit }));
   const from = vi.fn(() => ({ where }));
@@ -48,6 +55,19 @@ describe("auth database hooks", () => {
   it("rejects session creation for a disabled user", async () => {
     setupDatabase();
     mocks.responses = [[{ status: "DISABLE" }]];
+    const hooks = createAuthDatabaseHooks();
+
+    const result = await hooks.session!.create!.before!({
+      userId: "user-1",
+    } as never, {} as never);
+
+    expect(result).toBe(false);
+  });
+
+  it("uses the shared session policy as the authorization decision", async () => {
+    setupDatabase();
+    mocks.responses = [[{ status: "ENABLE" }]];
+    mocks.canCreateSessionForUser.mockReturnValue(false);
     const hooks = createAuthDatabaseHooks();
 
     const result = await hooks.session!.create!.before!({

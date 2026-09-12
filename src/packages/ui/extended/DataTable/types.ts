@@ -45,7 +45,6 @@ export const DataTableColumnMetaSchema = z.object({
     .array(z.object({ label: z.string(), value: z.string() }))
     .optional(),
 });
-export type DataTableColumnMeta = z.infer<typeof DataTableColumnMetaSchema>;
 
 export interface DataTableRequestState {
   pagination: boolean;

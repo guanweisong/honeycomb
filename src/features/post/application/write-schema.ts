@@ -1,6 +1,9 @@
 import { NullableLocalizedInputSchema } from "@/packages/domain/localization/i18n";
 const OptionalI18nSchema = NullableLocalizedInputSchema.optional();
-import { requiredString } from "@/packages/application/validation";
+import {
+  hasUpdateFields,
+  requiredString,
+} from "@/packages/application/validation";
 import { z } from "zod";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
@@ -11,7 +14,10 @@ import { MAX_BATCH_SIZE } from "@/packages/application/resource-limits";
 
 export const PostTagUpdateSchema = z.object({
   postId: IdSchema,
-  tagIds: z.array(IdSchema).max(MAX_BATCH_SIZE).transform((ids) => [...new Set(ids)]),
+  tagIds: z
+    .array(IdSchema)
+    .max(MAX_BATCH_SIZE)
+    .transform((ids) => [...new Set(ids)]),
   type: z.enum(TagType),
 });
 export type PostTagUpdate = z.output<typeof PostTagUpdateSchema>;
@@ -43,3 +49,9 @@ export const PostInsertSchema = z.object({
 });
 
 export type PostInsert = z.output<typeof PostInsertSchema>;
+
+export const PostUpdateSchema = PostInsertSchema.partial()
+  .extend({ id: IdSchema })
+  .refine(hasUpdateFields, "至少修改一个字段");
+
+export type PostUpdate = z.output<typeof PostUpdateSchema>;

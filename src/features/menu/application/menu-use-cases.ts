@@ -36,7 +36,7 @@ function validateMenuTree(input: MenuInput): void {
 export async function saveAllMenus(
   repository: Pick<MenuRepository, "saveAll">,
   input: MenuInput,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   validateMenuTree(input);
   const result = await repository.saveAll(input);

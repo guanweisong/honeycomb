@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canCreateSessionForUser, getConfiguredProviderIds } from "./policy";
+import { canCreateSessionForUser } from "./policy";
+import { getConfiguredProviderIds } from "./providers";
 import { UserStatus } from "@/packages/domain/identity/user";
 
 describe("Better Auth policy", () => {

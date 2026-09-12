@@ -14,10 +14,14 @@ import {
   PageListQuerySchema,
 } from "@/features/page/schemas/page.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import { keepPreviousData } from "@tanstack/react-query";
+import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import type { PageViewModel as PageEntity } from "../../presentation/page-view-model";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
+import {
+  runAdminMutation,
+  submitAdminBatchDelete,
+} from "@/packages/ui/admin/action-state";
 
 /**
  * 页面列表管理页面。
@@ -44,10 +48,7 @@ const Page = () => {
    */
   const { data, isFetching, isError, refetch } = trpc.page.adminIndex.useQuery(
     searchParams,
-    {
-      placeholderData: keepPreviousData,
-      staleTime: 60 * 1000, // 1 minutes
-    },
+    adminListQueryOptions,
   );
   /**
    * 删除页面的 tRPC mutation。
@@ -60,23 +61,26 @@ const Page = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    try {
-      await destroyPage.mutateAsync({ ids });
-      refetch();
-      toast.success("删除成功");
-    } catch {
-      toast.error("删除失败");
-    }
+    await runAdminMutation({
+      input: { ids },
+      mutate: destroyPage.mutateAsync,
+      refetch,
+      notifySuccess: toast.success,
+      notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
+    });
   };
 
   /**
    * 批量删除
    */
-  const handleDeleteBatch = async () => {
-    const ids = selectedRows.map((item) => item.id);
-    await handleDeleteItem(ids);
-    setSelectedRows([]);
-  };
+  const handleDeleteBatch = () =>
+    submitAdminBatchDelete({
+      selectedRows,
+      deleteItems: handleDeleteItem,
+      onSelectionChange: setSelectedRows,
+    });
 
   return (
     <>

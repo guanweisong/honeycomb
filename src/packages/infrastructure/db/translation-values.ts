@@ -7,6 +7,19 @@ import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 type TranslationRow = { locale: MultiLangEnum };
 
+export function patchLocalizedValue(
+  patch:
+    | Partial<Record<MultiLangEnum, string | null | undefined>>
+    | null
+    | undefined,
+  locale: MultiLangEnum,
+  current: string | null,
+): string | null {
+  if (patch === undefined) return current;
+  if (patch === null) return null;
+  return Object.hasOwn(patch, locale) ? (patch[locale] ?? null) : current;
+}
+
 export function assembleLocalizedField<Row extends TranslationRow>(
   rows: readonly Row[],
   read: (row: Row) => string | null,

@@ -18,7 +18,7 @@ export type { UserCommandInput } from "./repository";
 export function createUser(
   repository: Pick<UserCommandPort, "create">,
   input: UserCommandInput,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const parsed = UserInsertSchema.parse(input);
   return (async () => {
@@ -35,7 +35,7 @@ export function createUser(
 export async function destroyUsers(
   repository: Pick<UserCommandPort, "destroy" | "getStates">,
   ids: string[],
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   const targets = await repository.getStates(ids);
   for (const target of targets) {
@@ -58,7 +58,7 @@ export async function updateUser(
   repository: Pick<UserCommandPort, "getStatus" | "update">,
   input: UserUpdateCommandInput,
   actorLevel: UserLevel,
-  invalidator: Pick<PublicContentInvalidator, "invalidate">,
+  invalidator: PublicContentInvalidator,
 ) {
   input = UserUpdateSchema.parse(input);
   if (input.status !== undefined || input.level !== undefined) {

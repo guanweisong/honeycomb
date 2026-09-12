@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createMemoryObservability } from "../adapters/memory";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "../core/names";
 import { configureObservability } from "./registry";
 import { observeExternalServiceOperation } from "./external-service-operation";

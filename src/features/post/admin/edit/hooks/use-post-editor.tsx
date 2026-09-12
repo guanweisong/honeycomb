@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { ModalProps } from "../../category/components/AddCategoryModal";
 import type { PhotoPickerItemProps } from "../components/PhotoPickerItem";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
@@ -13,18 +12,20 @@ import { trpc } from "@/packages/trpc/client/trpc";
 import type { PostDetailViewModel as PostDetailEntity } from "../../../presentation/post-view-model";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
-import type { TagViewModel as TagEntity } from "@/features/contracts";
 import { normalizePostForm } from "../utils/normalize-post-form";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
+import type { CategoryViewModel as CategoryEntity } from "@/features/category/public";
+import type { AdminDialogState } from "@/packages/ui/admin/action-state";
 
-type PostTagOption = Pick<TagEntity, "id" | "name">;
 export type PostSubmitAction = "create" | "update";
 
 export function usePostEditor(id: string | null) {
   const router = useRouter();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
-  const [modalProps, setModalProps] = useState<ModalProps>();
+  const [modalProps, setModalProps] =
+    useState<AdminDialogState<CategoryEntity>>();
   const [loading, setLoading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
   const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
