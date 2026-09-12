@@ -154,11 +154,6 @@ describe("public comment insertion consistency with real libSQL", () => {
       code: "BAD_REQUEST",
     },
     {
-      name: "parent gains another target",
-      mutation: "parent-ambiguous",
-      code: "BAD_REQUEST",
-    },
-    {
       name: "parent is deleted",
       mutation: "parent-delete",
       code: "BAD_REQUEST",
@@ -201,11 +196,6 @@ describe("public comment insertion consistency with real libSQL", () => {
                 .update(schema.comment)
                 .set({ postId: "other-post" })
                 .where(eq(schema.comment.id, "parent"));
-            case "parent-ambiguous":
-              return competingDb
-                .update(schema.comment)
-                .set({ pageId: "page" })
-                .where(eq(schema.comment.id, "parent"));
             case "parent-delete":
               return competingDb
                 .delete(schema.comment)
@@ -226,6 +216,22 @@ describe("public comment insertion consistency with real libSQL", () => {
       expect(invalidations).toBe(0);
     },
   );
+
+  it("rejects making a persisted parent comment target ambiguous", async () => {
+    await expect(
+      competingDb
+        .update(schema.comment)
+        .set({ pageId: "page" })
+        .where(eq(schema.comment.id, "parent")),
+    ).rejects.toMatchObject({
+      cause: { message: expect.stringMatching(/comment_target_check/i) },
+    });
+    const [parent] = await db
+      .select({ postId: schema.comment.postId, pageId: schema.comment.pageId })
+      .from(schema.comment)
+      .where(eq(schema.comment.id, "parent"));
+    expect(parent).toEqual({ postId: "post", pageId: null });
+  });
 
   it.each([
     { target: { postId: "post", parentId: "parent" }, invalidations: 1 },

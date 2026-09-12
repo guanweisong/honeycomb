@@ -58,6 +58,7 @@ jobs:
       - run: bun run check-types
       - run: bun run lint
       - run: bun run db:migrations:check
+      - run: bun run db:invariants:audit
       - run: bunx drizzle-kit migrate
       - run: bun run db:e2e:seed
       - run: bun run test:unit:run

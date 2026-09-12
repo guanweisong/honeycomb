@@ -4,6 +4,7 @@ import { withTimestamps } from "../timestamps";
 import { loginHistoryEvents } from "@/packages/identity/account-security/login-history-events";
 import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { stringEnumValues } from "../value-validation";
+import { enumCheck } from "../constraint-helpers";
 
 const userLevels = stringEnumValues(UserLevel);
 const userStatuses = stringEnumValues(UserStatus);
@@ -12,23 +13,40 @@ const userStatuses = stringEnumValues(UserStatus);
  * 用户表 (user)
  * 存储系统用户信息。
  */
-export const user = sqliteTable("user", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  email: text("email").unique(),
-  emailVerified: integer("email_verified", { mode: "boolean" })
-    .default(false)
-    .notNull(),
-  image: text("image"),
-  level: text("level", { enum: userLevels }).default(UserLevel.GUEST).notNull(), // 用户等级，默认为访客
-  name: text("name").unique(),
-  password: text("password"),
-  username: text("username").unique(),
-  displayUsername: text("display_username"),
-  status: text("status", { enum: userStatuses })
-    .default(UserStatus.ENABLE)
-    .notNull(), // 用户状态，默认启用
-  ...withTimestamps(),
-});
+export const user = sqliteTable(
+  "user",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    email: text("email").unique(),
+    emailVerified: integer("email_verified", { mode: "boolean" })
+      .default(false)
+      .notNull(),
+    image: text("image"),
+    level: text("level", { enum: userLevels })
+      .default(UserLevel.GUEST)
+      .notNull(),
+    name: text("name").unique(),
+    password: text("password"),
+    username: text("username").unique(),
+    displayUsername: text("display_username"),
+    status: text("status", { enum: userStatuses })
+      .default(UserStatus.ENABLE)
+      .notNull(),
+    ...withTimestamps(),
+  },
+  (table) => ({
+    userLevelCheck: enumCheck(
+      "user_level_check",
+      table.level,
+      Object.values(UserLevel),
+    ),
+    userStatusCheck: enumCheck(
+      "user_status_check",
+      table.status,
+      Object.values(UserStatus),
+    ),
+  }),
+);
 
 /** Better Auth 账号表，保存 OAuth 账号和 credential 账号。 */
 export const account = sqliteTable(
@@ -130,6 +148,11 @@ export const loginHistory = sqliteTable(
     ),
     loginHistoryCreatedIdx: index("login_history_created_idx").on(
       table.createdAt,
+    ),
+    loginHistoryEventCheck: enumCheck(
+      "login_history_event_check",
+      table.event,
+      loginHistoryEvents,
     ),
   }),
 );

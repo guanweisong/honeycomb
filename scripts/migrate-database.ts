@@ -1,15 +1,33 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { findPersistenceInvariantViolations } from "./audit-persistence-invariants";
 
-const url = process.env.TURSO_URL;
-if (!url) throw new Error("TURSO_URL is required");
+type MigrationClient = ReturnType<typeof createClient>;
 
-const client = createClient({ url, authToken: process.env.TURSO_TOKEN });
+export async function migrateDatabase(
+  client: MigrationClient,
+  applyMigrations: () => Promise<void> = () =>
+    migrate(drizzle(client), { migrationsFolder: "drizzle" }),
+) {
+  const violations = await findPersistenceInvariantViolations(client);
+  if (violations.length > 0) {
+    const summary = violations
+      .map(({ table, field, count }) => `${table}.${field}: ${count}`)
+      .join(", ");
+    throw new Error(`Persistence invariant audit failed: ${summary}`);
+  }
+  await applyMigrations();
+}
 
-try {
-  await migrate(drizzle(client), { migrationsFolder: "drizzle" });
-  process.stdout.write("Database migrations applied successfully.\n");
-} finally {
-  client.close();
+if (import.meta.main) {
+  const url = process.env.TURSO_URL;
+  if (!url) throw new Error("TURSO_URL is required");
+  const client = createClient({ url, authToken: process.env.TURSO_TOKEN });
+  try {
+    await migrateDatabase(client);
+    process.stdout.write("Database migrations applied successfully.\n");
+  } finally {
+    client.close();
+  }
 }

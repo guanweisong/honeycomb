@@ -90,6 +90,42 @@ describe("db schema helpers", () => {
     expect(updateHandler).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
+  it("exposes stable persistence invariant checks and the Setting singleton", () => {
+    const expectedChecks: Record<string, string[]> = {
+      user: ["user_level_check", "user_status_check"],
+      category: ["category_status_check"],
+      post: [
+        "post_comment_status_check",
+        "post_status_check",
+        "post_type_check",
+        "post_views_check",
+      ],
+      page: ["page_status_check", "page_template_check", "page_views_check"],
+      comment: ["comment_status_check", "comment_target_check"],
+      media: ["media_size_check", "media_height_check", "media_width_check"],
+      menu: ["menu_type_check"],
+      postTag: ["post_tag_type_check"],
+      link: ["link_status_check"],
+      loginHistory: ["login_history_event_check"],
+      setting: ["setting_singleton_check"],
+    };
+
+    for (const [tableName, checks] of Object.entries(expectedChecks)) {
+      const config = getTableConfig(requireTable(tableName));
+      expect(config.checks.map(({ name }) => name)).toEqual(
+        expect.arrayContaining(checks),
+      );
+    }
+
+    const settingConfig = getTableConfig(schema.setting);
+    expect(settingConfig.columns.map(({ name }) => name)).toContain(
+      "singleton_key",
+    );
+    expect(settingConfig.indexes.map(({ config }) => config.name)).toContain(
+      "setting_singleton_idx",
+    );
+  });
+
   it("exposes the expected relation graph", () => {
     const helpers: RelationHelpers = {
       many: () => ({

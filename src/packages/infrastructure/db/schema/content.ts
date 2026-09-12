@@ -19,6 +19,9 @@ import { sql } from "drizzle-orm";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 import { user } from "./auth";
+import { enumCheck } from "../constraint-helpers";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import { TagType } from "@/packages/domain/content/tag";
 
 export const category = sqliteTable(
   "category",
@@ -37,6 +40,11 @@ export const category = sqliteTable(
     categoryPathIdx: uniqueIndex("category_path_idx").on(table.path),
     categoryStatusIdx: index("category_status_idx").on(table.status),
     categoryParentIdx: index("category_parent_idx").on(table.parent),
+    categoryStatusCheck: enumCheck(
+      "category_status_check",
+      table.status,
+      Object.values(EnableStatus),
+    ),
   }),
 );
 
@@ -105,6 +113,22 @@ export const post = sqliteTable(
       table.createdAt,
     ),
     postCoverIdx: index("post_cover_idx").on(table.coverId),
+    postCommentStatusCheck: enumCheck(
+      "post_comment_status_check",
+      table.commentStatus,
+      Object.values(EnableStatus),
+    ),
+    postStatusCheck: enumCheck(
+      "post_status_check",
+      table.status,
+      Object.values(PostStatus),
+    ),
+    postTypeCheck: enumCheck(
+      "post_type_check",
+      table.type,
+      Object.values(PostType),
+    ),
+    postViewsCheck: check("post_views_check", sql`${table.views} >= 0`),
   }),
 );
 
@@ -157,6 +181,17 @@ export const page = sqliteTable(
       table.authorId,
       table.createdAt,
     ),
+    pageStatusCheck: enumCheck(
+      "page_status_check",
+      table.status,
+      Object.values(PageStatus),
+    ),
+    pageTemplateCheck: enumCheck(
+      "page_template_check",
+      table.template,
+      Object.values(PageTemplate),
+    ),
+    pageViewsCheck: check("page_views_check", sql`${table.views} >= 0`),
   }),
 );
 
@@ -219,6 +254,15 @@ export const comment = sqliteTable(
       "comment_custom_status_created_idx",
     ).on(table.customId, table.status, table.createdAt),
     commentParentIdx: index("comment_parent_idx").on(table.parentId),
+    commentStatusCheck: enumCheck(
+      "comment_status_check",
+      table.status,
+      Object.values(CommentStatus),
+    ),
+    commentTargetCheck: check(
+      "comment_target_check",
+      sql`(${table.postId} is not null) + (${table.pageId} is not null) + (${table.customId} is not null) = 1`,
+    ),
   }),
 );
 
@@ -243,6 +287,15 @@ export const media = sqliteTable(
   (table) => ({
     mediaKeyIdx: index("media_key_idx").on(table.key),
     mediaCreatedIdx: index("media_created_idx").on(table.createdAt),
+    mediaSizeCheck: check("media_size_check", sql`${table.size} >= 0`),
+    mediaHeightCheck: check(
+      "media_height_check",
+      sql`${table.height} is null or ${table.height} >= 0`,
+    ),
+    mediaWidthCheck: check(
+      "media_width_check",
+      sql`${table.width} is null or ${table.width} >= 0`,
+    ),
   }),
 );
 
@@ -250,12 +303,25 @@ export const media = sqliteTable(
  * 网站设置表 (setting)
  * 存储全局的网站配置信息。
  */
-export const setting = sqliteTable("setting", {
-  id: text("id").primaryKey().$defaultFn(objectId),
-  siteRecordNo: text("site_record_no"), // 网站备案号
-  siteRecordUrl: text("site_record_url"), // 备案号链接
-  ...withTimestamps(),
-});
+export const setting = sqliteTable(
+  "setting",
+  {
+    id: text("id").primaryKey().$defaultFn(objectId),
+    singletonKey: integer("singleton_key").default(1).notNull(),
+    siteRecordNo: text("site_record_no"), // 网站备案号
+    siteRecordUrl: text("site_record_url"), // 备案号链接
+    ...withTimestamps(),
+  },
+  (table) => ({
+    settingSingletonCheck: check(
+      "setting_singleton_check",
+      sql`${table.singletonKey} = 1`,
+    ),
+    settingSingletonIdx: uniqueIndex("setting_singleton_idx").on(
+      table.singletonKey,
+    ),
+  }),
+);
 
 export const settingTranslation = sqliteTable(
   "setting_translation",
@@ -306,6 +372,11 @@ export const menu = sqliteTable(
     menuParentIdx: index("menu_parent_idx").on(table.parent),
     menuPowerIdx: index("menu_power_idx").on(table.power),
     menuTypeIdx: index("menu_type_idx").on(table.type),
+    menuTypeCheck: enumCheck(
+      "menu_type_check",
+      table.type,
+      Object.values(MenuType),
+    ),
   }),
 );
 
@@ -362,6 +433,11 @@ export const postTag = sqliteTable(
       table.tagId,
       table.type,
     ),
+    postTagTypeCheck: enumCheck(
+      "post_tag_type_check",
+      table.type,
+      Object.values(TagType),
+    ),
   }),
 );
 
@@ -382,5 +458,10 @@ export const link = sqliteTable(
   },
   (table) => ({
     linkStatusIdx: index("link_status_idx").on(table.status),
+    linkStatusCheck: enumCheck(
+      "link_status_check",
+      table.status,
+      Object.values(EnableStatus),
+    ),
   }),
 );
