@@ -24,7 +24,7 @@
 | 本地迁移 | 随机临时 SQLite 下 `bun run db:migrate`：审计后 4 份 migration 应用成功。 |
 | 生产构建 | `bun run build` 两次均在 Turbopack 处理 CSS 时因宿主禁止创建子进程/绑定本地端口而中止（`Operation not permitted`，第二次已请求非沙箱执行）；同一源码、环境变量和已迁移临时数据库执行 `bun next build --webpack`：退出码 0，26/26 页面生成成功。 |
 | OpenSpec | `openspec validate harden-data-and-contract-consistency --strict`：valid。 |
-| 临时资源 | 验证、失败构建和 webpack 构建均使用随机 `/private/tmp/honeycomb-consistency-*` 目录与即时 trap；结束后目录扫描无结果。未连接或修改远程/生产数据库。 |
+| 临时资源 | 验证、失败构建、webpack 构建与生产迁移演练均使用随机 `/private/tmp/honeycomb-*` 目录与即时 trap；结束后目录扫描无结果。生产迁移只使用已提交的 `db:migrate`，未运行 `drizzle-kit push`。 |
 
 Vite 输出了未来 `configLoader: native` 兼容性提示；webpack 构建输出了 Serwist 内部 browserslist 动态 `require` 的既有静态分析 warning。二者均未造成测试或 webpack 生产构建失败。本机 `bun run build` 的 Turbopack 结果按事实保留，不将环境权限失败记作通过。
 
@@ -35,12 +35,27 @@ Vite 输出了未来 `configLoader: native` 兼容性提示；webpack 构建输�
 - 列表查询中的字符串数组是 transport 过滤表达，不冒充已验证的持久化枚举；Repository 返回的领域状态必须在持久化边界解析。
 - 缓存完整计划重试允许版本额外单调提升；不承诺无后台执行器时的最终必达。
 
-## 生产部署前置条件
+## 生产迁移执行记录
 
-本次没有执行生产数据库只读审计，也没有执行生产迁移、备份或任何远程写入。部署前必须依次完成：
+用户于 2026-09-12 明确授权备份和迁移目标
+`libsql://honeycomb-guanweisong.aws-ap-northeast-1.turso.io`。执行顺序和结果：
 
-1. 获得生产变更批准，并确认维护窗口和回滚负责人。
-2. 对目标数据库运行 `bun run db:invariants:audit`；若返回任何 `{ table, field, count }`，立即中止，人工决定数据修复，不自动选择保留记录或替换枚举。
-3. 创建并验证可恢复备份。
-4. 重新运行只读审计确认零违规，再执行版本化 migration。
-5. 迁移后运行约束抽查和应用健康检查。若需要回滚 schema，只能提交单独审查的前向 migration，不执行即兴逆向 DDL。
+1. 迁移前 `bun run db:invariants:audit`：通过，无不兼容数据。
+2. 生产快照保存到
+   `/Users/guanweisong/Documents/backups/honeycomb/20260912T054209Z`；目录权限
+   `0700`、文件权限 `0600`，`PRAGMA integrity_check=ok`。主数据库文件
+   SHA-256 为
+   `dbeb49f71e654d61fb53afe9c6fc9f2df12e50dd43b901be36291333d79c9f27`，
+   其余 sidecar 校验值保存在同目录 `metadata.json`。
+3. 在备份的随机临时副本运行 `bun run db:migrate` 和迁移后不变量审计：均通过；副本随后清理，原始备份未修改。
+4. 对生产数据库运行 `bun run db:migrate`：成功；随后
+   `bun run db:invariants:audit`：通过。
+5. 只读验收确认 `PRAGMA integrity_check=ok`；ledger 最新 hash
+   `aeedb211135ddcbbb5e68c1a64ea4cff5ab55be957740d5dc5e773e5ce2da96b`
+   与 `drizzle/0003_enforce_persistence_invariants.sql` 的 SHA-256 一致；25 个
+   CHECK 与 `setting_singleton_idx` 已存在。
+6. 迁移前后关键表计数一致：category 16、post 56、page 1、setting 1、tag
+   242。一次最终只读查询在连接阶段遇到瞬时 TLS 证书错误，未执行 SQL；同一查询重试成功。
+
+本次仅完成数据库备份、迁移与数据库侧验收，没有执行应用部署或线上 smoke
+test。若后续发现需要回滚 schema，只能使用单独审查的前向 migration 或从已验证备份恢复，不执行即兴逆向 DDL。
