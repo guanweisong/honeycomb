@@ -29,14 +29,14 @@ admin dashboard SHALL 在目标 RSC 尚未返回时保留当前正文，不得�
 - **WHEN** 菜单导航完成并渲染目标页面
 - **THEN** 正文区域显示目标页面内容且目标菜单项不再显示 pending 状态
 
-### Requirement: Admin 菜单不预取私有动态路由
+### Requirement: Admin 菜单使用自适应路由预取
 
-admin 菜单 SHALL 禁用默认 Link 预取，避免为所有可见菜单批量请求只包含路由 loading 壳的私有 RSC payload。
+admin 菜单 SHALL 使用 Link 的 `auto` 预取策略，由 Next.js 根据路由静态或动态属性决定完整或部分预取；菜单不得强制完整预取所有私有动态路由。
 
 #### Scenario: 展示后台菜单
 
 - **WHEN** admin dashboard 渲染用户可访问的菜单项
-- **THEN** 菜单不因项目进入视口而批量预取对应的私有动态路由
+- **THEN** Next.js 对静态路由执行完整预取，对动态路由最多预取到最近的 loading 边界
 
 ### Requirement: 已访问动态路由复用客户端 RSC
 

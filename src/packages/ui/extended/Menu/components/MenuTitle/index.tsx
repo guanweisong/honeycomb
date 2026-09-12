@@ -75,7 +75,7 @@ export const MenuTitle = (props: MenuTitleProps) => {
     <Link
       className={containerClass}
       href={item.path}
-      prefetch={false}
+      prefetch="auto"
       onNavigate={() => onNavigateStart?.(item.path)}
     >
       {content}

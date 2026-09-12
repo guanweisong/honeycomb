@@ -83,7 +83,7 @@ describe("MenuTitle", () => {
     expect(toggleMenu).toHaveBeenCalledWith("/admin/content");
   });
 
-  it("keeps leaf navigation on the link", async () => {
+  it("uses adaptive prefetch for leaf navigation", async () => {
     await act(async () => {
       root.render(
         React.createElement(MenuTitle, {
@@ -95,6 +95,6 @@ describe("MenuTitle", () => {
 
     const link = container.querySelector("a");
     expect(link?.getAttribute("href")).toBe("/admin/custom");
-    expect(link?.getAttribute("data-prefetch")).toBe("false");
+    expect(link?.getAttribute("data-prefetch")).toBe("auto");
   });
 });
