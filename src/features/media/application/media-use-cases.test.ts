@@ -89,7 +89,7 @@ describe("destroyMedia", () => {
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 
-  it("can retry after storage succeeded but database deletion failed", async () => {
+  it("reports indeterminate after storage succeeds but database deletion fails, then allows retry", async () => {
     const repository = {
       findDeleteTargets: vi
         .fn()
@@ -106,7 +106,11 @@ describe("destroyMedia", () => {
 
     await expect(
       destroyMedia(repository, storage, ["media-1"], invalidator),
-    ).rejects.toThrow("database failed");
+    ).resolves.toEqual({
+      success: false,
+      state: "indeterminate",
+      message: "删除结果待确认，请刷新媒体列表后重试",
+    });
     await expect(
       destroyMedia(repository, storage, ["media-1"], invalidator),
     ).resolves.toEqual({ success: true });

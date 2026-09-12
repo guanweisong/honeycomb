@@ -79,9 +79,16 @@ describe("media action state", () => {
     await expect(
       submitMediaDelete({
         id: "media-1",
-        destroy: vi.fn().mockResolvedValue({ success: false }),
+        destroy: vi.fn().mockResolvedValue({
+          success: false,
+          state: "indeterminate",
+          message: "删除结果待确认，请刷新媒体列表后重试",
+        }),
       }),
-    ).resolves.toEqual({ state: "noop" });
+    ).resolves.toEqual({
+      state: "indeterminate",
+      message: "删除结果待确认，请刷新媒体列表后重试",
+    });
 
     await expect(
       submitMediaUpload({

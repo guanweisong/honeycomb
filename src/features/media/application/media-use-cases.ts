@@ -8,6 +8,7 @@ import type {
   MediaRepository,
 } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
+import type { MediaDeleteResult } from "./delete-result";
 
 export interface MediaStorage {
   getPresignedUrl(input: { Key: string; ContentType: string; ContentLength: number }): Promise<string>;
@@ -55,7 +56,7 @@ export async function destroyMedia(
   storage: Pick<MediaStorage, "deleteObjects">,
   ids: string[],
   invalidator: Pick<PublicContentInvalidator, "invalidate">,
-) {
+): Promise<MediaDeleteResult> {
   const targets = await repository.findDeleteTargets(ids);
   if (targets.length === 0) {
     if (ids.length > 0) {
@@ -64,7 +65,16 @@ export async function destroyMedia(
     return { success: true } as const;
   }
   await storage.deleteObjects(targets.map(({ key }) => key));
-  const result = await repository.deleteRecords(targets.map(({ id }) => id));
+  let result: { success: true };
+  try {
+    result = await repository.deleteRecords(targets.map(({ id }) => id));
+  } catch {
+    return {
+      success: false,
+      state: "indeterminate",
+      message: "删除结果待确认，请刷新媒体列表后重试",
+    };
+  }
   await invalidator.invalidate(mediaDeletionInvalidation);
   return result;
 }

@@ -338,6 +338,42 @@ describe("MediaPageShell", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith(existingMedia);
   });
+
+  it("refreshes while keeping selection when deletion is indeterminate", async () => {
+    allowedPermissions = new Set([Permission.mediaDelete]);
+    const onSelect = vi.fn();
+    trpcMocks.destroy.mockResolvedValue({
+      success: false,
+      state: "indeterminate",
+      message: "删除结果待确认，请刷新媒体列表后重试",
+    });
+    await act(async () =>
+      root.render(React.createElement(MediaPageShell, { onSelect })),
+    );
+
+    const tile = container.querySelector('[title="cover.png"]');
+    await act(async () =>
+      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+    );
+    const deleteButton = Array.from(container.querySelectorAll("button")).at(
+      -1,
+    );
+    await act(async () => deleteButton?.click());
+    const confirmButton = Array.from(
+      document.body.querySelectorAll("button"),
+    ).find((button) => button.textContent === "确定");
+    await act(async () => confirmButton?.click());
+    await vi.waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        "删除结果待确认，请刷新媒体列表后重试",
+      ),
+    );
+
+    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenCalledWith(existingMedia);
+    expect(toastMocks.success).not.toHaveBeenCalled();
+  });
   it.each([204, 403])(
     "retains partial success and attempts scoped DELETE after definite rejection (cleanup %s)",
     async (cleanupStatus) => {

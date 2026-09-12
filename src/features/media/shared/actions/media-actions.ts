@@ -13,6 +13,7 @@ import {
 } from "../../application/upload-policy";
 import type { MediaEntity } from "../../application/write-schema";
 import type { MediaCreateResult } from "../../application/upload-result";
+import type { MediaDeleteResult } from "../../application/delete-result";
 
 type ImageMetadata = {
   width: number;
@@ -141,11 +142,13 @@ export async function submitMediaUpload({
 
 type SubmitMediaDeleteOptions = {
   id: string;
-  destroy: (input: { ids: string[] }) => Promise<{ success: boolean }>;
+  destroy: (input: { ids: string[] }) => Promise<MediaDeleteResult>;
 };
 
 export type MediaDeleteActionResult =
-  { state: "success" } | { state: "noop" } | { state: "error" };
+  | { state: "success" }
+  | { state: "indeterminate"; message: string }
+  | { state: "error" };
 
 export async function submitMediaDelete({
   id,
@@ -153,7 +156,9 @@ export async function submitMediaDelete({
 }: SubmitMediaDeleteOptions): Promise<MediaDeleteActionResult> {
   try {
     const result = await destroy({ ids: [id] });
-    return result.success ? { state: "success" } : { state: "noop" };
+    return result.success
+      ? { state: "success" }
+      : { state: "indeterminate", message: result.message };
   } catch {
     return { state: "error" };
   }
@@ -280,6 +285,9 @@ export function useMediaActions({
       refetch();
     } else if (result.state === "error") {
       toast.error("删除失败");
+    } else if (result.state === "indeterminate") {
+      toast.error(result.message);
+      refetch();
     }
   };
 
