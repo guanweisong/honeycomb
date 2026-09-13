@@ -11,7 +11,7 @@ import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
-import { CommentUpdateSchema } from "@/features/comment/schemas/comment.update.schema";
+import { CommentUpdateSchema } from "@/features/comment/application/write-schema";
 import { CommentQuerySchema } from "@/features/comment/schemas/comment.query.schema";
 import { CommentInsertSchema } from "@/features/comment/schemas/comment.insert.schema";
 import {

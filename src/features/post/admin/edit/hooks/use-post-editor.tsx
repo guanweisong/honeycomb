@@ -6,8 +6,10 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { PhotoPickerItemProps } from "../components/PhotoPickerItem";
-import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
-import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
+import {
+  PostInsertSchema,
+  PostUpdateSchema,
+} from "@/features/post/application/write-schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import type { PostDetailViewModel as PostDetailEntity } from "../../../presentation/post-view-model";
 import { PostStatus } from "@/packages/domain/content/post-status";

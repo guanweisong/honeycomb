@@ -69,7 +69,7 @@ function forbiddenTransitiveDependencies(entry: string): string[] {
 }
 
 describe("架构复杂度治理", () => {
-  it("不保留已确认无消费者的 barrel 与历史类型声明", () => {
+  it("不保留无消费者 barrel、测试专用源码与 schema 转发文件", () => {
     const obsoleteFiles = [
       "src/features/comment/domain/index.ts",
       "src/features/page/domain/index.ts",
@@ -77,6 +77,43 @@ describe("架构复杂度治理", () => {
       "src/features/user/domain/index.ts",
       "src/packages/infrastructure/db/index.ts",
       "src/packages/trpc/typings.d.ts",
+      ...[
+        "comment",
+        "link",
+        "media",
+        "menu",
+        "page",
+        "post",
+        "setting",
+        "tag",
+        "user",
+      ].map(
+        (feature) =>
+          `src/features/${feature}/admin/constants/admin-action-guard.ts`,
+      ),
+      "src/packages/identity/auth/admin-action-guard-types.ts",
+      "src/packages/trpc/api/schemas/i18n.schema.ts",
+      ...[
+        ["page", "insert"],
+        ["page", "update"],
+        ["post", "insert"],
+        ["post", "update"],
+        ["category", "insert"],
+        ["category", "update"],
+        ["comment", "update"],
+        ["user", "insert"],
+        ["user", "update"],
+        ["link", "insert"],
+        ["link", "update"],
+        ["menu", "update"],
+        ["setting", "update"],
+        ["tag", "insert"],
+        ["tag", "update"],
+        ["media", "insert"],
+      ].map(
+        ([feature, operation]) =>
+          `src/features/${feature}/schemas/${feature}.${operation}.schema.ts`,
+      ),
     ].filter((path) => existsSync(join(process.cwd(), path)));
 
     expect(obsoleteFiles).toEqual([]);
@@ -116,6 +153,7 @@ describe("架构复杂度治理", () => {
       "drizzle-zod",
       "list-to-tree-lite",
       "autoprefixer",
+      "bcryptjs",
     ].filter(
       (dependency) =>
         manifest.dependencies?.[dependency] !== undefined ||

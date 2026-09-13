@@ -1,5 +1,5 @@
 import { Permission } from "@/packages/identity/auth/permissions";
-import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
+import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const menuActionGuardMatrix: readonly ActionGuardFile[] = [
   {

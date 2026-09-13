@@ -7,7 +7,7 @@ import {
   mapApplicationError,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { MenuUpdateSchema } from "@/features/menu/schemas/menu.update.schema";
+import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/application/write-schema";
 import {
   getMenuList,
   saveAllMenus,

@@ -6,7 +6,7 @@ import {
   publicProcedure,
 } from "@/packages/trpc/api/core";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { SettingUpdateSchema } from "@/features/setting/schemas/setting.update.schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
 import {
   getSetting,
   updateSetting,

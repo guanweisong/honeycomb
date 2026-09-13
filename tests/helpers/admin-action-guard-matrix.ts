@@ -1,21 +1,21 @@
-import type { ActionGuardFile } from "@/packages/identity/auth/admin-action-guard-types";
+import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 export type {
   ActionControlIdentity,
   ActionGuardContract,
   ActionGuardFile,
   GuardMode,
   GuardPolarity,
-} from "@/packages/identity/auth/admin-action-guard-types";
+} from "@tests/helpers/admin-action-guard-types";
 
-import { commentActionGuardMatrix } from "@/features/comment/admin/constants/admin-action-guard";
-import { linkActionGuardMatrix } from "@/features/link/admin/constants/admin-action-guard";
-import { mediaActionGuardMatrix } from "@/features/media/admin/constants/admin-action-guard";
-import { menuActionGuardMatrix } from "@/features/menu/admin/constants/admin-action-guard";
-import { pageActionGuardMatrix } from "@/features/page/admin/constants/admin-action-guard";
-import { postActionGuardMatrix } from "@/features/post/admin/constants/admin-action-guard";
-import { settingActionGuardMatrix } from "@/features/setting/admin/constants/admin-action-guard";
-import { tagActionGuardMatrix } from "@/features/tag/admin/constants/admin-action-guard";
-import { userActionGuardMatrix } from "@/features/user/admin/constants/admin-action-guard";
+import { commentActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/comment";
+import { linkActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/link";
+import { mediaActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/media";
+import { menuActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/menu";
+import { pageActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/page";
+import { postActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/post";
+import { settingActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/setting";
+import { tagActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/tag";
+import { userActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/user";
 
 export const actionGuardMatrix: readonly ActionGuardFile[] = [
   ...commentActionGuardMatrix,

@@ -4,16 +4,15 @@ import {
   PartialLocalizedTextSchema,
   NullableLocalizedInputSchema,
 } from "@/packages/domain/localization/i18n";
-import {
-  I18nSchema as InputI18n,
-  OptionalI18nSchema,
-} from "@/packages/trpc/api/schemas/i18n.schema";
+import { I18nSchema as InputI18n } from "@/packages/application/validation";
 import { MediaRecordSchema, TagRecordSchema } from "@/features/contracts";
 import { PostWithRelationsSchema } from "@/features/post/application/post-read-model";
 import { decodeCachedPostList } from "@/features/post/infrastructure/post-cache-dto";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
+
+const OptionalI18nSchema = NullableLocalizedInputSchema.optional();
 
 describe("共享契约的真实消费者", () => {
   it("批量删除拒绝空 ID 集合", () => {

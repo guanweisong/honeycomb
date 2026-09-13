@@ -1,4 +1,4 @@
-import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
+import type { UserUpdate } from "@/features/user/application/write-schema";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { isProtectedUser } from "../../domain/user";

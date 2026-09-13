@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { ModalType } from "@/packages/ui/admin/modal-type";
-import type { LinkInsert } from "@/features/link/schemas/link.insert.schema";
-import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
-import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
-import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
+import {
+  LinkInsertSchema,
+  LinkUpdateSchema,
+  type LinkInsert,
+  type LinkUpdate,
+} from "@/features/link/application/write-schema";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "../transforms/link-transforms";

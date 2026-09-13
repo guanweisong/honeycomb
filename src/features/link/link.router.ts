@@ -8,8 +8,10 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { LinkListQuerySchema } from "@/features/link/schemas/link.list.query.schema";
-import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
-import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
+import {
+  LinkInsertSchema,
+  LinkUpdateSchema,
+} from "@/features/link/application/write-schema";
 import {
   getLinkList,
   createLink,

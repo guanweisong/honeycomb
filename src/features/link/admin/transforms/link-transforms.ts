@@ -1,4 +1,4 @@
-import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
+import type { LinkUpdate } from "@/features/link/application/write-schema";
 import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
 import { withAdminRecordId } from "@/packages/ui/admin/action-state";
 

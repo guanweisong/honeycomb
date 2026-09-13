@@ -18,7 +18,7 @@ type CapabilityMatrixEntry = readonly [
   permission: PermissionValue,
   allowedRoles: readonly UserLevel[],
   input: unknown,
-  firstBoundary: "database" | "hash" | "storage",
+  firstBoundary: "database" | "storage",
 ];
 
 export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [

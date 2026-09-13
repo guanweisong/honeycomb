@@ -67,7 +67,7 @@ describe("server-only module boundaries", () => {
   it("keeps shared contracts free of the server-only boundary", () => {
     const sharedContracts = [
       "src/packages/domain/identity/user.ts",
-      "src/packages/trpc/api/schemas/i18n.schema.ts",
+      "src/packages/application/validation.ts",
       "src/packages/application/pagination.ts",
     ];
 

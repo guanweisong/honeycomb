@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { CommentUpdateSchema } from "./comment.update.schema";
+import { CommentUpdateSchema } from "../application/write-schema";
 
 describe("CommentUpdateSchema", () => {
   it("拒绝没有任何可编辑字段的更新", () => {

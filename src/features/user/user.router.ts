@@ -11,8 +11,10 @@ import {
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { UserListQuerySchema } from "@/features/user/schemas/user.list.query.schema";
-import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
-import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+} from "@/features/user/application/write-schema";
 import {
   createUser,
   destroyUsers,

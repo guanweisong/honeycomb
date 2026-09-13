@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { CommentSiteSchema } from "@/features/comment/schemas/comment.insert.schema";
+import { CommentSiteSchema } from "@/features/comment/application/write-schema";
 import { LinkInsertSchema } from "@/features/link/application/write-schema";
-import { SettingUpdateSchema } from "@/features/setting/schemas/setting.update.schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
 import { MediaInsertSchema } from "@/features/media/application/write-schema";
 
 describe("safe persisted links", () => {

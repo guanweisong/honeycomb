@@ -45,13 +45,11 @@
 
 - **Better Auth** - 后台认证，支持用户名密码 / Google / GitHub / Apple 登录
 - **Database Session** - 基于 HttpOnly Cookie 的数据库会话机制
-- **bcryptjs** - 用户名密码登录的密码哈希校验
 
 ### 数据库与 ORM
 
 - **Drizzle ORM** - 现代化 TypeScript ORM
 - **Turso** - Serverless SQLite 数据库
-- **Drizzle-Zod** - 自动生成 Zod schema
 
 ### UI 组件
 

@@ -4,10 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
-import type { PageInsert } from "@/features/page/schemas/page.insert.schema";
-import type { PageUpdate } from "@/features/page/schemas/page.update.schema";
-import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
-import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import {
+  PageInsertSchema,
+  PageUpdateSchema,
+  type PageInsert,
+  type PageUpdate,
+} from "@/features/page/application/write-schema";
 import { PageStatus } from "@/packages/domain/content/page";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useRouter } from "next/navigation";

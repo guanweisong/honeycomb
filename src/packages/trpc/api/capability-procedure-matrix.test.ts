@@ -27,15 +27,7 @@ import {
   type RouterSource,
 } from "@tests/helpers/capability-procedure-matrix-test-helpers";
 
-const externalBoundaries = vi.hoisted(() => ({ hash: 0, storage: 0 }));
-
-vi.mock("bcryptjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("bcryptjs")>()),
-  hash: async () => {
-    externalBoundaries.hash += 1;
-    throw new Error("hash boundary reached");
-  },
-}));
+const externalBoundaries = vi.hoisted(() => ({ storage: 0 }));
 
 vi.mock("@/packages/infrastructure/storage/S3", () => ({
   default: {
@@ -380,7 +372,6 @@ const sampleAppRouterSource = `
 
 describe("capability procedure matrix", () => {
   beforeEach(() => {
-    externalBoundaries.hash = 0;
     externalBoundaries.storage = 0;
   });
   afterEach(() => configureObservability());
@@ -427,7 +418,6 @@ describe("capability procedure matrix", () => {
 
       expect(boundaryCounts(externalBoundaries, counts.database)).toEqual({
         database: 0,
-        hash: 0,
         storage: 0,
       });
     },

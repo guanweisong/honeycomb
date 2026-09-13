@@ -2,16 +2,18 @@ import { describe, expect, it } from "vitest";
 import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
 import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
-import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
-import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
-import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
-import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
-import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
-import { SettingUpdateSchema } from "@/features/setting/schemas/setting.update.schema";
-import { MenuUpdateSchema } from "@/features/menu/schemas/menu.update.schema";
+import { CategoryUpdateSchema } from "@/features/category/application/write-schema";
+import { TagUpdateSchema } from "@/features/tag/application/write-schema";
+import {
+  PostUpdateSchema,
+  PostTagUpdateSchema,
+} from "@/features/post/application/write-schema";
+import { PageUpdateSchema } from "@/features/page/application/write-schema";
+import { LinkUpdateSchema } from "@/features/link/application/write-schema";
+import { UserUpdateSchema } from "@/features/user/application/write-schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
+import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/application/write-schema";
 import { saveAllMenus } from "@/features/menu/application/menu-use-cases";
-import { PostTagUpdateSchema } from "@/features/post/application/write-schema";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.query.schema";
 

@@ -3,10 +3,12 @@
 import { ModalType } from "@/packages/ui/admin/modal-type";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { UserInsert } from "@/features/user/schemas/user.insert.schema";
-import type { UserUpdate } from "@/features/user/schemas/user.update.schema";
-import { UserInsertSchema } from "@/features/user/schemas/user.insert.schema";
-import { UserUpdateSchema } from "@/features/user/schemas/user.update.schema";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+  type UserInsert,
+  type UserUpdate,
+} from "@/features/user/application/write-schema";
 import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildUserUpdateInput } from "../transforms/user-transforms";

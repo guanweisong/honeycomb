@@ -8,8 +8,10 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.query.schema";
-import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
-import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
+import {
+  TagInsertSchema,
+  TagUpdateSchema,
+} from "@/features/tag/application/write-schema";
 import {
   getTagList,
   createTag,

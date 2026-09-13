@@ -6,7 +6,7 @@ import {
   createTRPCRouter,
 } from "@/packages/trpc/api/core";
 import { MediaListQuerySchema } from "@/features/media/schemas/media.list.query.schema";
-import { MediaInsertSchema } from "@/features/media/schemas/media.insert.schema";
+import { MediaInsertSchema } from "@/features/media/application/write-schema";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { MediaUploadFileSchema } from "./application/upload-policy";
 import {

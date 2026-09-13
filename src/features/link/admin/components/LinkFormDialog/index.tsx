@@ -1,10 +1,12 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
-import type { LinkInsert } from "@/features/link/schemas/link.insert.schema";
-import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
-import type { LinkUpdate } from "@/features/link/schemas/link.update.schema";
-import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
+import {
+  LinkInsertSchema,
+  LinkUpdateSchema,
+  type LinkInsert,
+  type LinkUpdate,
+} from "@/features/link/application/write-schema";
 import {
   EnableStatus,
   enableStatusOptions,

@@ -12,8 +12,10 @@ import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
-import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
-import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import {
+  PageInsertSchema,
+  PageUpdateSchema,
+} from "@/features/page/application/write-schema";
 import {
   createPage,
   destroyPages,

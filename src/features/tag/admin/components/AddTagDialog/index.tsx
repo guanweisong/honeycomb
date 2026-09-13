@@ -1,7 +1,9 @@
 import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
-import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
+import {
+  TagInsertSchema,
+  TagUpdateSchema,
+} from "@/features/tag/application/write-schema";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";

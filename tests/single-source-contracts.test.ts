@@ -1,38 +1,11 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import {
-  CategoryInsertSchema,
-  CategoryUpdateSchema,
-} from "@/features/category/application/write-schema";
-import { CategoryInsertSchema as CategoryTransportInsert } from "@/features/category/schemas/category.insert.schema";
-import { CategoryUpdateSchema as CategoryTransportUpdate } from "@/features/category/schemas/category.update.schema";
-import {
-  TagInsertSchema,
-  TagUpdateSchema,
-} from "@/features/tag/application/write-schema";
-import { TagInsertSchema as TagTransportInsert } from "@/features/tag/schemas/tag.insert.schema";
-import { TagUpdateSchema as TagTransportUpdate } from "@/features/tag/schemas/tag.update.schema";
-import {
-  PublicCommentBaseSchema,
-  CommentUpdateSchema,
-} from "@/features/comment/application/write-schema";
+import { PublicCommentBaseSchema } from "@/features/comment/application/write-schema";
 import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
-import { CommentUpdateSchema as CommentTransportUpdate } from "@/features/comment/schemas/comment.update.schema";
-import { SettingAdminUpdateSchema } from "@/features/setting/application/write-schema";
-import { SettingUpdateSchema as SettingTransportUpdate } from "@/features/setting/schemas/setting.update.schema";
-import { MenuWriteSchema } from "@/features/menu/application/write-schema";
-import { MenuUpdateSchema as MenuTransportUpdate } from "@/features/menu/schemas/menu.update.schema";
 import { sourceFile } from "@tests/helpers/source-files";
 
 describe("唯一事实源架构门禁", () => {
-  it("transport 消费同一 schema 实例，评论只在共享字段上组合验证码", () => {
-    expect(CategoryTransportInsert).toBe(CategoryInsertSchema);
-    expect(CategoryTransportUpdate).toBe(CategoryUpdateSchema);
-    expect(TagTransportInsert).toBe(TagInsertSchema);
-    expect(TagTransportUpdate).toBe(TagUpdateSchema);
-    expect(CommentTransportUpdate).toBe(CommentUpdateSchema);
-    expect(SettingTransportUpdate).toBe(SettingAdminUpdateSchema);
-    expect(MenuTransportUpdate).toBe(MenuWriteSchema);
+  it("评论插入 schema 只在共享字段上组合验证码", () => {
     for (const key of Object.keys(PublicCommentBaseSchema.shape)) {
       expect(Reflect.get(CommentInsertBaseSchema.shape, key)).toBe(
         Reflect.get(PublicCommentBaseSchema.shape, key),
@@ -81,68 +54,6 @@ describe("唯一事实源架构门禁", () => {
       expect(ts.isTypeLiteralNode(declaration.type)).toBe(false);
     }
   });
-
-  it.each(["post", "page", "media", "link", "category", "tag"])(
-    "%s 写入 schema 出口不维护第二份字段规则",
-    (feature) => {
-      const file = sourceFile(
-        `src/features/${feature}/schemas/${feature}.insert.schema.ts`,
-      );
-      expect(
-        file.statements
-          .filter((node) => !ts.isExportDeclaration(node))
-          .map((node) => node.getText()),
-      ).toEqual([]);
-    },
-  );
-
-  it("Category、Tag、Comment 的更新出口引用 Application 权威 schema", () => {
-    const singleSourceFeatures = ["category", "tag", "comment"].filter(
-      (feature) => {
-        const file = sourceFile(
-          `src/features/${feature}/schemas/${feature}.update.schema.ts`,
-        );
-        return (
-          file.statements.length > 0 &&
-          file.statements.every(
-            (node) =>
-              ts.isExportDeclaration(node) &&
-              node.moduleSpecifier &&
-              ts.isStringLiteral(node.moduleSpecifier) &&
-              node.moduleSpecifier.text ===
-                `@/features/${feature}/application/write-schema`,
-          )
-        );
-      },
-    );
-    expect(singleSourceFeatures).toEqual(
-      expect.arrayContaining(["category", "tag", "comment"]),
-    );
-  });
-
-  it.each(["setting", "menu"])(
-    "%s 的更新出口只重新导出 Application 权威 schema",
-    (feature) => {
-      const file = sourceFile(
-        `src/features/${feature}/schemas/${feature}.update.schema.ts`,
-      );
-      expect(
-        file.statements
-          .filter((node) => !ts.isExportDeclaration(node))
-          .map((node) => node.getText()),
-      ).toEqual([]);
-      expect(
-        file.statements.every(
-          (node) =>
-            ts.isExportDeclaration(node) &&
-            node.moduleSpecifier &&
-            ts.isStringLiteral(node.moduleSpecifier) &&
-            node.moduleSpecifier.text ===
-              `@/features/${feature}/application/write-schema`,
-        ),
-      ).toBe(true);
-    },
-  );
 
   it("Setting 与 Menu Repository 写入类型由 Application schema 推导", () => {
     for (const path of [

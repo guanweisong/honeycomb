@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageInsertSchema } from "@/features/page/application/write-schema";
 import { PageTemplate } from "@/packages/domain/content/page-template";
-import { PostInsertSchema } from "./post.insert.schema";
+import { PostInsertSchema } from "../application/write-schema";
 
 describe("content command enum schemas", () => {
   it("rejects unknown post enum values", () => {

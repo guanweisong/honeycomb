@@ -9,8 +9,10 @@ import {
 import { Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { CategoryListQuerySchema } from "@/features/category/schemas/category.list.query.schema";
-import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
-import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
+import {
+  CategoryInsertSchema,
+  CategoryUpdateSchema,
+} from "@/features/category/application/write-schema";
 import {
   getCategoryList,
   createCategory,

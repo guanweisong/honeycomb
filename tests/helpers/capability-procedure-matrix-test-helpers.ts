@@ -28,7 +28,6 @@ export function normalizeDeclarationMatrix<
 /** 权限矩阵测试的外部边界计数。 */
 export interface BoundaryCounts {
   database: number;
-  hash: number;
   storage: number;
 }
 
@@ -62,10 +61,10 @@ export function deniedRoleFor(allowedRoles: readonly UserLevel[]): UserLevel {
 
 /** 合并数据库边界计数与外部边界计数。 */
 export function boundaryCounts(
-  external: Pick<BoundaryCounts, "hash" | "storage">,
+  external: Pick<BoundaryCounts, "storage">,
   database = 0,
 ): BoundaryCounts {
-  return { database, hash: external.hash, storage: external.storage };
+  return { database, storage: external.storage };
 }
 
 /** 调用 appRouter 中的矩阵目标 procedure。 */
