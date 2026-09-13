@@ -2,9 +2,6 @@ import type {
   PageCreateCommand,
   PageCommandRepository,
   PageUpdateCommand,
-  PageInput,
-  PageQueryRepository,
-  PageVisibility,
 } from "./repository";
 import { updatePage as updatePageThroughAggregate } from "./page-command-handlers";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
@@ -62,20 +59,4 @@ export function incrementPageViews(
   id: string,
 ) {
   return repository.incrementViews(id);
-}
-/** 查询页面列表用例。 */
-export function getPageList(
-  repository: Pick<PageQueryRepository, "list">,
-  input: PageInput,
-  visibility: PageVisibility = "PUBLISHED_ONLY",
-) {
-  return repository.list(input, visibility);
-}
-/** 查询页面详情用例。 */
-export function getPageDetail(
-  repository: Pick<PageQueryRepository, "detail">,
-  id: string,
-  visibility: PageVisibility = "PUBLISHED_ONLY",
-) {
-  return repository.detail(id, visibility);
 }

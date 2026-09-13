@@ -13,7 +13,6 @@ import {
   TagUpdateSchema,
 } from "@/features/tag/application/write-schema";
 import {
-  getTagList,
   createTag,
   destroyTags,
   updateTag,
@@ -25,7 +24,7 @@ import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path
 export const tagRouter = createTRPCRouter({
   index: publicProcedure
     .input(TagListQuerySchema)
-    .query(({ input, ctx }) => getTagList(createTagRepository(ctx.db), input)),
+    .query(({ input, ctx }) => createTagRepository(ctx.db).list(input)),
   create: permissionProcedure(Permission.tagCreate)
     .input(TagInsertSchema)
     .mutation(async ({ input, ctx }) => {

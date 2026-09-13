@@ -20,11 +20,6 @@ import {
 import {
   createPost,
   destroyPosts,
-  getCachedPostList,
-  getPostDetail,
-  getPostList,
-  getPublishedPostCategoryId,
-  getRandomPostsByCategory,
   updatePost,
   updatePostTags,
   incrementPostViews,
@@ -40,31 +35,23 @@ export const postRouter = createTRPCRouter({
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
       ctx.hasRequest
-        ? getCachedPostList(
-            createPostSpecialRepository(
-              ctx.db,
-              createPostQueryRepository(ctx.db),
-            ),
-            input,
-          )
-        : getPostList(
+        ? createPostSpecialRepository(
+            ctx.db,
             createPostQueryRepository(ctx.db),
-            input,
-            "PUBLISHED_ONLY",
-          ),
+          ).cachedList(input)
+        : createPostQueryRepository(ctx.db).list(input, "PUBLISHED_ONLY"),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
-      getPostList(createPostQueryRepository(ctx.db), input, "ALL"),
+      createPostQueryRepository(ctx.db).list(input, "ALL"),
     ),
 
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(
-        createPostQueryRepository(ctx.db),
+      const result = await createPostQueryRepository(ctx.db).detail(
         input.id,
         "PUBLISHED_ONLY",
       );
@@ -75,8 +62,7 @@ export const postRouter = createTRPCRouter({
   adminDetail: permissionProcedure(Permission.postReadAll)
     .input(z.object({ id: IdSchema }))
     .query(async ({ input, ctx }) => {
-      const result = await getPostDetail(
-        createPostQueryRepository(ctx.db),
+      const result = await createPostQueryRepository(ctx.db).detail(
         input.id,
         "ALL",
       );
@@ -119,10 +105,10 @@ export const postRouter = createTRPCRouter({
   getRandomByCategory: publicProcedure
     .input(z.object({ categoryId: IdSchema }))
     .query(({ input, ctx }) =>
-      getRandomPostsByCategory(
-        createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)),
-        input.categoryId,
-      ),
+      createPostSpecialRepository(
+        ctx.db,
+        createPostQueryRepository(ctx.db),
+      ).randomByCategory(input.categoryId),
     ),
 
   incrementViews: publicProcedure
@@ -139,10 +125,10 @@ export const postRouter = createTRPCRouter({
   getCategoryId: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) =>
-      getPublishedPostCategoryId(
-        createPostSpecialRepository(ctx.db, createPostQueryRepository(ctx.db)),
-        input.id,
-      ),
+      createPostSpecialRepository(
+        ctx.db,
+        createPostQueryRepository(ctx.db),
+      ).publishedCategoryId(input.id),
     ),
 
   updateTags: permissionProcedure(Permission.postManageTags)

@@ -13,7 +13,6 @@ import {
   LinkUpdateSchema,
 } from "@/features/link/application/write-schema";
 import {
-  getLinkList,
   createLink,
   destroyLinks,
   updateLink,
@@ -26,13 +25,11 @@ export const linkRouter = createTRPCRouter({
   index: publicProcedure
     .input(LinkListQuerySchema)
     .query(({ input, ctx }) =>
-      getLinkList(createLinkRepository(ctx.db), input, "PUBLIC_ONLY"),
+      createLinkRepository(ctx.db).list(input, "PUBLIC_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.linkReadAll)
     .input(LinkListQuerySchema)
-    .query(({ input, ctx }) =>
-      getLinkList(createLinkRepository(ctx.db), input, "ALL"),
-    ),
+    .query(({ input, ctx }) => createLinkRepository(ctx.db).list(input, "ALL")),
   create: permissionProcedure(Permission.linkCreate)
     .input(LinkInsertSchema)
     .mutation(({ input, ctx }) =>

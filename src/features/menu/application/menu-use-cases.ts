@@ -1,9 +1,10 @@
-import type { MenuInput, MenuRepository, MenuVisibility } from "./repository";
+import type { MenuInput, MenuRepository } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
 function validateMenuTree(input: MenuInput): void {
-  if (input.length === 0) throw new ApplicationError("BAD_REQUEST", "菜单不能为空");
+  if (input.length === 0)
+    throw new ApplicationError("BAD_REQUEST", "菜单不能为空");
   const ids = new Set<string>();
   for (const item of input) {
     if (ids.has(item.id))
@@ -45,11 +46,4 @@ export async function saveAllMenus(
     refreshSitemap: true,
   });
   return result;
-}
-/** 查询并过滤菜单树用例。 */
-export function getMenuList(
-  repository: Pick<MenuRepository, "list">,
-  visibility: MenuVisibility = "PUBLIC_ONLY",
-) {
-  return repository.list(visibility);
 }

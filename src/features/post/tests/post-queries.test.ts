@@ -3,61 +3,81 @@ import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from "vitest";
 import * as schema from "@/packages/infrastructure/db/schema";
 import * as tools from "@/packages/infrastructure/db/query/tools";
 import * as relations from "@/features/post/infrastructure/post-query-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import type { PostQueryRepository } from "@/features/post/application/repository";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { asMockDatabase, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import {
+  asMockDatabase,
+  createMockDb,
+  resetMockDb,
+} from "@tests/helpers/test-utils";
 
 const mockDb = createMockDb();
 
-let getPostList: typeof import("@/features/post/application/post-queries").getPostList;
-let buildCategoryFilterMock: MockInstance<PostQueryRepository["categoryFilter"]>;
+let buildCategoryFilterMock: MockInstance<
+  PostQueryRepository["categoryFilter"]
+>;
 let loadPostRelationsMock: MockInstance<typeof relations.loadPostRelations>;
 let repository: ReturnType<typeof createPostQueryRepository>;
 
-describe("getPostList", () => {
+describe("文章查询 Repository", () => {
   beforeEach(async () => {
     vi.restoreAllMocks();
     resetMockDb(mockDb);
 
     vi.spyOn(tools, "buildDrizzleWhere").mockReturnValue(undefined);
-    vi.spyOn(tools, "buildDrizzleOrderBy").mockReturnValue(sql`created_at desc`);
+    vi.spyOn(tools, "buildDrizzleOrderBy").mockReturnValue(
+      sql`created_at desc`,
+    );
     const categoryFilter = vi.fn<PostQueryRepository["categoryFilter"]>();
     buildCategoryFilterMock = categoryFilter;
     buildCategoryFilterMock.mockResolvedValue([]);
     loadPostRelationsMock = vi.spyOn(relations, "loadPostRelations");
-    loadPostRelationsMock.mockImplementation(
-      async (_db, posts) =>
-        posts.map((post) => ({
-          title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
-          ...post,
-          status: PostStatus.PUBLISHED,
-          type: PostType.ARTICLE,
-          commentStatus: EnableStatus.ENABLE,
-          author: { id: post.authorId, name: "Author" },
-          category: {
-            id: post.categoryId,
-            title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
-          },
-          cover: undefined,
-          movieActors: [],
-          movieDirectors: [],
-          movieStyles: [],
-          galleryStyles: [],
-        })),
+    loadPostRelationsMock.mockImplementation(async (_db, posts) =>
+      posts.map((post) => ({
+        title: null,
+        content: null,
+        excerpt: null,
+        galleryLocation: null,
+        quoteAuthor: null,
+        quoteContent: null,
+        ...post,
+        status: PostStatus.PUBLISHED,
+        type: PostType.ARTICLE,
+        commentStatus: EnableStatus.ENABLE,
+        author: { id: post.authorId, name: "Author" },
+        category: {
+          id: post.categoryId,
+          title: { en: "Category", zh: "分类" },
+          description: null,
+          parent: null,
+          status: EnableStatus.ENABLE,
+          path: "category",
+          createdAt: null,
+          updatedAt: null,
+        },
+        cover: undefined,
+        movieActors: [],
+        movieDirectors: [],
+        movieStyles: [],
+        galleryStyles: [],
+      })),
     );
     repository = createPostQueryRepository(asMockDatabase(mockDb), {
       loadRelations: relations.loadPostRelations,
     });
     repository.categoryFilter = categoryFilter;
-
-    ({ getPostList } =
-      await import("@/features/post/application/post-queries"));
   });
 
   it("returns a paginated list and total count", async () => {
@@ -84,14 +104,14 @@ describe("getPostList", () => {
     mockDb.where.mockResolvedValueOnce([{ count: "1" }]);
 
     await expect(
-      getPostList(
-        repository,
+      repository.list(
         {
           page: 2,
           limit: 5,
           sortField: "createdAt",
           sortOrder: "desc",
         },
+        "PUBLISHED_ONLY",
       ),
     ).resolves.toEqual({
       list: [
@@ -101,7 +121,12 @@ describe("getPostList", () => {
           category: {
             id: TEST_IDS.ID_2,
             title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
+            description: null,
+            parent: null,
+            status: EnableStatus.ENABLE,
+            path: "category",
+            createdAt: null,
+            updatedAt: null,
           },
           cover: undefined,
           movieActors: [],
@@ -155,13 +180,13 @@ describe("getPostList", () => {
     mockDb.from.mockReturnValueOnce(mockDb);
     mockDb.where.mockResolvedValueOnce([{ count: "1" }]);
 
-    const result = await getPostList(
-      repository,
+    const result = await repository.list(
       {
         page: 1,
         limit: 10,
         categoryId: TEST_IDS.ID_2,
       },
+      "PUBLISHED_ONLY",
     );
 
     expect(result.total).toBe(1);
@@ -174,13 +199,13 @@ describe("getPostList", () => {
     mockDb.from.mockReturnValueOnce(mockDb);
     mockDb.where.mockResolvedValueOnce([]);
 
-    const result = await getPostList(
-      repository,
+    const result = await repository.list(
       {
         page: 1,
         limit: 10,
         tagId: TEST_IDS.ID_4,
       },
+      "PUBLISHED_ONLY",
     );
 
     expect(result).toEqual({ list: [], total: 0 });
@@ -211,13 +236,13 @@ describe("getPostList", () => {
     mockDb.from.mockReturnValueOnce(mockDb);
     mockDb.where.mockResolvedValueOnce([{ count: "1" }]);
 
-    const result = await getPostList(
-      repository,
+    const result = await repository.list(
       {
         page: 1,
         limit: 10,
         authorId: TEST_IDS.ID_2,
       },
+      "PUBLISHED_ONLY",
     );
 
     expect(result).toEqual({
@@ -228,7 +253,12 @@ describe("getPostList", () => {
           category: {
             id: TEST_IDS.ID_1,
             title: { en: "Category", zh: "分类" },
-            description: null, parent: null, status: EnableStatus.ENABLE, path: "category", createdAt: null, updatedAt: null,
+            description: null,
+            parent: null,
+            status: EnableStatus.ENABLE,
+            path: "category",
+            createdAt: null,
+            updatedAt: null,
           },
           cover: undefined,
           movieActors: [],

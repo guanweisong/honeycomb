@@ -1,9 +1,7 @@
 import type {
   CategoryInsert,
-  CategoryListInput,
   CategoryRepository,
   CategoryUpdate,
-  CategoryVisibility,
 } from "./repository";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { ApplicationError } from "@/packages/application/errors";
@@ -107,13 +105,4 @@ export function destroyCategories(
     });
     return result;
   })();
-}
-
-/** 查询分类的平面分页列表；完整树由独立 Repository 查询提供。 */
-export function getCategoryList(
-  repository: Pick<CategoryRepository, "list">,
-  input: CategoryListInput,
-  visibility: CategoryVisibility = "PUBLIC_ONLY",
-) {
-  return repository.list(input, visibility);
 }

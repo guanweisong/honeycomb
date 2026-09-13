@@ -6,7 +6,7 @@ import { glob } from "tinyglobby";
 import { describe, expect, it } from "vitest";
 import type { TestUserConfig } from "vitest/config";
 
-import vitestConfig from "../vitest.config";
+import vitestConfig from "../vitest.config.mts";
 
 const config = vitestConfig.test as TestUserConfig;
 const coverage = config.coverage;
@@ -121,8 +121,7 @@ describe("coverage governance", () => {
 
   it("gives every critical module its own effective 90/80 file threshold", async () => {
     const thresholds = coverage?.thresholds as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
 
     for (const file of criticalCoverageFiles) {
       expect(await glob(file)).toEqual([file]);

@@ -1,10 +1,4 @@
-import type {
-  LinkInsert,
-  LinkListInput,
-  LinkRepository,
-  LinkUpdate,
-  LinkVisibility,
-} from "./repository";
+import type { LinkInsert, LinkRepository, LinkUpdate } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
 /** 创建友情链接用例。 */
@@ -36,12 +30,4 @@ export async function destroyLinks(
   const result = await repository.destroy(ids);
   await invalidator.invalidate({ refreshLayout: true });
   return result;
-}
-/** 查询友情链接列表用例。 */
-export function getLinkList(
-  repository: Pick<LinkRepository, "list">,
-  input: LinkListInput,
-  visibility: LinkVisibility = "PUBLIC_ONLY",
-) {
-  return repository.list(input, visibility);
 }

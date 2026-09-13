@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "path";
-import { processHeavyTests } from "./vitest-test-groups";
+import { processHeavyTests } from "./vitest-test-groups.mts";
 
 const criticalCoverageFiles = [
   "src/packages/identity/auth/permissions.ts",
@@ -90,9 +90,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
-      "@tests": resolve(__dirname, "./tests"),
-      "server-only": resolve(__dirname, "./tests/setup/server-only.ts"),
+      "@": resolve(import.meta.dirname, "./src"),
+      "@tests": resolve(import.meta.dirname, "./tests"),
+      "server-only": resolve(
+        import.meta.dirname,
+        "./tests/setup/server-only.ts",
+      ),
     },
   },
 });

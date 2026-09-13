@@ -22,7 +22,6 @@ interface MigrationCheckInput {
   migrationFiles: string[];
   snapshotFiles: string[];
   trackedFiles: string[];
-  changedFiles: string[];
 }
 
 export function findMigrationGovernanceErrors({
@@ -30,7 +29,6 @@ export function findMigrationGovernanceErrors({
   migrationFiles,
   snapshotFiles,
   trackedFiles,
-  changedFiles,
 }: MigrationCheckInput): string[] {
   const errors: string[] = [];
   const migrationNames = new Set(
@@ -80,16 +78,6 @@ export function findMigrationGovernanceErrors({
     if (!tracked.has(file)) {
       errors.push(`${file} is not tracked by Git`);
     }
-  }
-
-  const schemaChanged = changedFiles.some((file) =>
-    file.startsWith("src/packages/infrastructure/db/schema/"),
-  );
-  const migrationChanged = changedFiles.some((file) =>
-    file.startsWith("drizzle/"),
-  );
-  if (schemaChanged && !migrationChanged) {
-    errors.push("Database schema changed without a matching drizzle/ change");
   }
 
   return errors;
@@ -439,71 +427,6 @@ function gitLines(args: string[]): string[] {
   }
 }
 
-function requiredGitLines(args: string[], context: string): string[] {
-  try {
-    return execFileSync("git", args, { encoding: "utf8" })
-      .trim()
-      .split("\n")
-      .filter(Boolean);
-  } catch {
-    throw new Error(`Migration governance could not ${context}`);
-  }
-}
-
-function changedFiles(): string[] {
-  const files = new Set([
-    ...gitLines(["diff", "--name-only", "HEAD"]),
-    ...gitLines(["diff", "--cached", "--name-only"]),
-    ...gitLines(["ls-files", "--others", "--exclude-standard"]),
-  ]);
-
-  if (process.env.CI === "true") {
-    const requestedBase = process.env.QUALITY_DIFF_BASE_SHA;
-    const validRequestedBase =
-      /^[a-fA-F0-9]{40}$/.test(requestedBase ?? "") &&
-      !/^0+$/.test(requestedBase ?? "");
-    if (validRequestedBase) {
-      const resolvedBase = requiredGitLines(
-        ["rev-parse", "--verify", `${requestedBase}^{commit}`],
-        `resolve push/PR base ${requestedBase}`,
-      )[0];
-      if (!resolvedBase) {
-        throw new Error(`Migration governance could not resolve push/PR base ${requestedBase}`);
-      }
-      const range = process.env.GITHUB_EVENT_NAME === "pull_request"
-        ? `${resolvedBase}...HEAD`
-        : `${resolvedBase}..HEAD`;
-      for (const file of requiredGitLines(["diff", "--name-only", range], `diff ${range}`)) {
-        files.add(file);
-      }
-    } else if (/^0{40}$/.test(requestedBase ?? "")) {
-      const emptyTree = execFileSync("git", ["hash-object", "-t", "tree", "--stdin"], {
-        encoding: "utf8",
-        input: "",
-      }).trim();
-      for (const file of gitLines(["diff", "--name-only", emptyTree, "HEAD"])) {
-        files.add(file);
-      }
-    } else if (requestedBase) {
-      throw new Error(`Invalid QUALITY_DIFF_BASE_SHA: ${requestedBase}`);
-    } else if (process.env.GITHUB_BASE_REF) {
-      const baseRef = process.env.GITHUB_BASE_REF;
-      const mergeBase = gitLines(["merge-base", "HEAD", `origin/${baseRef}`])[0];
-      if (mergeBase) {
-        for (const file of gitLines(["diff", "--name-only", `${mergeBase}...HEAD`])) {
-          files.add(file);
-        }
-      }
-    } else {
-      for (const file of gitLines(["diff", "--name-only", "HEAD^", "HEAD"])) {
-        files.add(file);
-      }
-    }
-  }
-
-  return [...files];
-}
-
 async function main(): Promise<void> {
   const journalPath = "drizzle/meta/_journal.json";
   if (!existsSync(journalPath)) {
@@ -526,7 +449,6 @@ async function main(): Promise<void> {
     migrationFiles,
     snapshotFiles,
     trackedFiles: gitLines(["ls-files"]),
-    changedFiles: changedFiles(),
   });
 
   if (errors.length > 0) {

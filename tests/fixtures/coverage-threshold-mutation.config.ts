@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import type { TestUserConfig } from "vitest/config";
 
-import projectConfig from "../../vitest.config";
+import projectConfig from "../../vitest.config.mts";
 
 const criticalFile = "src/packages/identity/auth/permissions.ts";
 const projectTestConfig = projectConfig.test as TestUserConfig;

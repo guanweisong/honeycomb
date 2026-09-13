@@ -12,7 +12,6 @@ import { MediaUploadFileSchema } from "./application/upload-policy";
 import {
   createMedia,
   destroyMedia,
-  getMediaList,
   getMediaPresignedUrl,
 } from "@/features/media/application/media-use-cases";
 import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
@@ -23,12 +22,12 @@ import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path
 export const mediaRouter = createTRPCRouter({
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
-    .query(({ input, ctx }) =>
-      getMediaList(createMediaRepository(ctx.db), input),
-    ),
+    .query(({ input, ctx }) => createMediaRepository(ctx.db).list(input)),
   getPresignedUrl: permissionProcedure(Permission.mediaUpload)
     .input(MediaUploadFileSchema)
-    .mutation(({ input }) => getMediaPresignedUrl(S3, input.name, input.type, input.size)),
+    .mutation(({ input }) =>
+      getMediaPresignedUrl(S3, input.name, input.type, input.size),
+    ),
   upload: permissionProcedure(Permission.mediaUpload)
     .input(MediaInsertSchema)
     .mutation(({ input, ctx }) =>

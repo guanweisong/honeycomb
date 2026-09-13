@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
-import baseConfig from "./vitest.config";
-import { processHeavyTests } from "./vitest-test-groups";
+import baseConfig from "./vitest.config.mts";
+import { processHeavyTests } from "./vitest-test-groups.mts";
 
 export default defineConfig({
   ...baseConfig,

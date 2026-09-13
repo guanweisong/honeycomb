@@ -20,8 +20,6 @@ import {
   destroyUsers,
   updateUser,
   getCurrentUser,
-  getUserDetail,
-  getUserList,
 } from "@/features/user/application/user-use-cases";
 import { createUserRepository } from "@/features/user/infrastructure/user-repository";
 import {
@@ -35,7 +33,7 @@ export const userRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
     .query(({ ctx, input }) =>
-      getUserDetail(toUserQueryPort(createUserRepository(ctx.db)), input.id),
+      toUserQueryPort(createUserRepository(ctx.db)).detail(input.id),
     ),
   current: permissionProcedure(Permission.userReadSelf).query(({ ctx }) =>
     getCurrentUser(
@@ -46,7 +44,7 @@ export const userRouter = createTRPCRouter({
   index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
     .query(({ input, ctx }) =>
-      getUserList(toUserQueryPort(createUserRepository(ctx.db)), input),
+      toUserQueryPort(createUserRepository(ctx.db)).list(input),
     ),
   create: permissionProcedure(Permission.userManage)
     .input(UserInsertSchema)

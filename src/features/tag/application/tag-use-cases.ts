@@ -1,9 +1,4 @@
-import type {
-  TagInsert,
-  TagListInput,
-  TagRepository,
-  TagUpdate,
-} from "./repository";
+import type { TagInsert, TagRepository, TagUpdate } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 
 const postIndexInvalidation = {
@@ -40,11 +35,4 @@ export async function destroyTags(
   const result = await repository.destroy(ids);
   await invalidator.invalidate(postIndexInvalidation);
   return result;
-}
-/** 查询标签列表用例。 */
-export function getTagList(
-  repository: Pick<TagRepository, "list">,
-  input: TagListInput,
-) {
-  return repository.list(input);
 }

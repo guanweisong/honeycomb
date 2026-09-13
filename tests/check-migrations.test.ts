@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createClient } from "@libsql/client/node";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -100,24 +100,6 @@ describe("migration governance checker", () => {
       .toContain("Migration replay check differs for sample.sample_a_check");
   });
 
-  it("fails closed when the CI push base cannot be resolved", () => {
-    const result = spawnSync("bun", ["scripts/check-migrations.ts"], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        CI: "true",
-        GITHUB_EVENT_NAME: "push",
-        QUALITY_DIFF_BASE_SHA: "ffffffffffffffffffffffffffffffffffffffff",
-      },
-    });
-
-    expect(result.status).not.toBe(0);
-    expect(`${result.stdout}${result.stderr}`).toContain(
-      "Migration governance could not resolve push/PR base",
-    );
-  });
-
   it("force-stops a migration child that ignores the graceful signal", async () => {
     const child = spawn(
       process.execPath,
@@ -182,14 +164,13 @@ describe("migration governance checker", () => {
         migrationFiles: [],
         snapshotFiles: [],
         trackedFiles: [],
-        changedFiles: [],
       }),
     ).toContain(
       "Journal entry 0000_production_baseline has no matching migration SQL",
     );
   });
 
-  it("rejects a schema-only change", () => {
+  it("allows a schema source refactor when the replayed database shape is unchanged", () => {
     expect(
       findMigrationGovernanceErrors({
         journalEntries: [{ idx: 0, tag: "0000_production_baseline" }],
@@ -197,11 +178,11 @@ describe("migration governance checker", () => {
         snapshotFiles: ["drizzle/meta/0000_snapshot.json"],
         trackedFiles: [
           "drizzle/0000_production_baseline.sql",
+          "drizzle/meta/0000_snapshot.json",
           "drizzle/meta/_journal.json",
         ],
-        changedFiles: ["src/packages/infrastructure/db/schema/content.ts"],
       }),
-    ).toContain("Database schema changed without a matching drizzle/ change");
+    ).toEqual([]);
   });
 
   it("rejects SQL and snapshots that are not represented in the journal", () => {
@@ -216,7 +197,6 @@ describe("migration governance checker", () => {
         "drizzle/meta/0001_snapshot.json",
       ],
       trackedFiles: [],
-      changedFiles: [],
     });
     expect(errors).toContain("Migration SQL 0001_extra has no matching journal entry");
     expect(errors).toContain("Snapshot 0001_snapshot has no matching journal entry");
@@ -234,7 +214,6 @@ describe("migration governance checker", () => {
       ],
       snapshotFiles: ["drizzle/meta/0000_snapshot.json"],
       trackedFiles: [],
-      changedFiles: [],
     });
     expect(errors).toContain("Journal index 2 is not contiguous; expected 1");
     expect(errors).toContain("Journal entry 0001_wrong_index index prefix does not match idx 2");

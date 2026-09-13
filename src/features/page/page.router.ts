@@ -19,8 +19,6 @@ import {
 import {
   createPage,
   destroyPages,
-  getPageDetail,
-  getPageList,
   incrementPageViews,
   updatePage,
 } from "@/features/page/application/page-use-cases";
@@ -33,27 +31,23 @@ export const pageRouter = createTRPCRouter({
   index: publicProcedure
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(createPageQueryRepository(ctx.db), input, "PUBLISHED_ONLY"),
+      createPageQueryRepository(ctx.db).list(input, "PUBLISHED_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      getPageList(createPageQueryRepository(ctx.db), input, "ALL"),
+      createPageQueryRepository(ctx.db).list(input, "ALL"),
     ),
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
-    .query(async ({ input, ctx }) => {
-      return getPageDetail(
-        createPageQueryRepository(ctx.db),
-        input.id,
-        "PUBLISHED_ONLY",
-      );
-    }),
+    .query(({ input, ctx }) =>
+      createPageQueryRepository(ctx.db).detail(input.id, "PUBLISHED_ONLY"),
+    ),
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
-    .query(async ({ input, ctx }) => {
-      return getPageDetail(createPageQueryRepository(ctx.db), input.id, "ALL");
-    }),
+    .query(({ input, ctx }) =>
+      createPageQueryRepository(ctx.db).detail(input.id, "ALL"),
+    ),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {

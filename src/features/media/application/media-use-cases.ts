@@ -1,17 +1,20 @@
 import { format } from "date-fns";
 import { MediaUploadFileSchema } from "./upload-policy";
 import { MediaInsertSchema } from "./write-schema";
-import { MediaCreateRejectedError, type MediaCreateResult } from "./upload-result";
-import type {
-  MediaInsert,
-  MediaListInput,
-  MediaRepository,
-} from "./repository";
+import {
+  MediaCreateRejectedError,
+  type MediaCreateResult,
+} from "./upload-result";
+import type { MediaInsert, MediaRepository } from "./repository";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
 import type { MediaDeleteResult } from "./delete-result";
 
 export interface MediaStorage {
-  getPresignedUrl(input: { Key: string; ContentType: string; ContentLength: number }): Promise<string>;
+  getPresignedUrl(input: {
+    Key: string;
+    ContentType: string;
+    ContentLength: number;
+  }): Promise<string>;
   getPresignedDeleteUrl(key: string): Promise<string>;
   deleteObjects(keys: readonly string[]): Promise<void>;
 }
@@ -32,21 +35,31 @@ export async function getMediaPresignedUrl(
   const ext = name.split(".").pop();
   const key = `${format(new Date(), "yyyy/MM/dd")}/${crypto.randomUUID()}.${ext}`;
   return {
-    url: await storage.getPresignedUrl({ Key: key, ContentType: file.type, ContentLength: file.size }),
+    url: await storage.getPresignedUrl({
+      Key: key,
+      ContentType: file.type,
+      ContentLength: file.size,
+    }),
     cleanupUrl: await storage.getPresignedDeleteUrl(key),
     key,
   };
 }
 
 /** 保存媒体元数据用例。 */
-export async function createMedia(repository: Pick<MediaRepository, "create">, input: MediaInsert): Promise<MediaCreateResult> {
+export async function createMedia(
+  repository: Pick<MediaRepository, "create">,
+  input: MediaInsert,
+): Promise<MediaCreateResult> {
   const validated = MediaInsertSchema.parse(input);
   try {
     return { state: "created", media: await repository.create(validated) };
   } catch (error) {
     return error instanceof MediaCreateRejectedError
       ? { state: "rejected", message: "媒体信息未保存" }
-      : { state: "indeterminate", message: "保存结果待确认，请刷新媒体列表后核对" };
+      : {
+          state: "indeterminate",
+          message: "保存结果待确认，请刷新媒体列表后核对",
+        };
   }
 }
 
@@ -77,12 +90,4 @@ export async function destroyMedia(
   }
   await invalidator.invalidate(mediaDeletionInvalidation);
   return result;
-}
-
-/** 查询媒体列表用例。 */
-export function getMediaList(
-  repository: Pick<MediaRepository, "list">,
-  input: MediaListInput,
-) {
-  return repository.list(input);
 }

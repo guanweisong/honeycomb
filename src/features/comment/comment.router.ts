@@ -18,7 +18,6 @@ import {
   destroyComments,
   updateComment,
   createComment,
-  listComments,
   listPublicCommentsByRef,
 } from "@/features/comment/application/comment-use-cases";
 import {
@@ -44,7 +43,7 @@ export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
     .input(CommentListQuerySchema)
     .query(({ input, ctx }) =>
-      listComments(createCommentQueryRepository(ctx.db), input),
+      createCommentQueryRepository(ctx.db).list(input),
     ),
 
   listByRef: publicProcedure

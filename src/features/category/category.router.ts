@@ -14,7 +14,6 @@ import {
   CategoryUpdateSchema,
 } from "@/features/category/application/write-schema";
 import {
-  getCategoryList,
   createCategory,
   destroyCategories,
   updateCategory,
@@ -33,12 +32,12 @@ export const categoryRouter = createTRPCRouter({
   index: publicProcedure
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(createCategoryRepository(ctx.db), input, "PUBLIC_ONLY"),
+      createCategoryRepository(ctx.db).list(input, "PUBLIC_ONLY"),
     ),
   adminIndex: permissionProcedure(Permission.categoryReadAll)
     .input(CategoryListQuerySchema)
     .query(({ input, ctx }) =>
-      getCategoryList(createCategoryRepository(ctx.db), input, "ALL"),
+      createCategoryRepository(ctx.db).list(input, "ALL"),
     ),
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)

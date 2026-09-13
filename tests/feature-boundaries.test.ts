@@ -1,22 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import ts from "typescript";
 import { preProcessFile } from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
 
 const featuresRoot = join(process.cwd(), "src/features");
-const featureNames = [
-  "comment",
-  "post",
-  "media",
-  "link",
-  "menu",
-  "page",
-  "setting",
-  "tag",
-  "user",
-  "category",
-] as const;
+const featureNames = readdirSync(featuresRoot, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && entry.name !== "contracts")
+  .map((entry) => entry.name);
 
 type FeatureSource = { path: string; source: string };
 
@@ -47,7 +39,172 @@ function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
   });
 }
 
+function isRepositoryForwardingRead(
+  name: string,
+  body: ts.ConciseBody | undefined,
+): boolean {
+  if (!/^(get|list|find|query)[A-Z]/.test(name) || !body) return false;
+
+  const statement =
+    ts.isBlock(body) && body.statements.length === 1
+      ? body.statements[0]
+      : undefined;
+  const returned = ts.isBlock(body)
+    ? statement && ts.isReturnStatement(statement)
+      ? statement.expression
+      : undefined
+    : body;
+  const expression =
+    returned && ts.isAwaitExpression(returned) ? returned.expression : returned;
+
+  return Boolean(
+    expression &&
+    ts.isCallExpression(expression) &&
+    ts.isPropertyAccessExpression(expression.expression) &&
+    ts.isIdentifier(expression.expression.expression) &&
+    expression.expression.expression.text === "repository",
+  );
+}
+
+function findReadForwardingViolations(files: readonly string[]) {
+  return files.flatMap((path) => {
+    if (!path.includes("/application/")) return [];
+
+    const source = ts.createSourceFile(
+      path,
+      readFileSync(path, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const violations: string[] = [];
+    const visit = (node: ts.Node) => {
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        if (isRepositoryForwardingRead(node.name.text, node.body)) {
+          violations.push(`${relative(process.cwd(), path)}:${node.name.text}`);
+        }
+      }
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        (ts.isArrowFunction(node.initializer) ||
+          ts.isFunctionExpression(node.initializer)) &&
+        isRepositoryForwardingRead(node.name.text, node.initializer.body)
+      ) {
+        violations.push(`${relative(process.cwd(), path)}:${node.name.text}`);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+    return violations;
+  });
+}
+
+function findMutationUseCaseViolations(files: readonly FeatureSource[]) {
+  return files.flatMap(({ path, source }) => {
+    const feature = path.match(/src\/features\/([^/]+)\//)?.[1];
+    if (!feature || feature === "contracts" || !path.endsWith(".router.ts")) {
+      return [];
+    }
+
+    const sourceFile = ts.createSourceFile(
+      path,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const applicationFunctions = new Set<string>();
+
+    for (const statement of sourceFile.statements) {
+      if (!ts.isImportDeclaration(statement) || !statement.importClause) {
+        continue;
+      }
+      const moduleName = ts.isStringLiteral(statement.moduleSpecifier)
+        ? statement.moduleSpecifier.text
+        : "";
+      const isFeatureApplication =
+        moduleName.startsWith(`@/features/${feature}/application/`) ||
+        moduleName.startsWith(`./application/`);
+      if (!isFeatureApplication || statement.importClause.isTypeOnly) continue;
+
+      const bindings = statement.importClause.namedBindings;
+      if (!bindings || !ts.isNamedImports(bindings)) continue;
+      for (const specifier of bindings.elements) {
+        if (!specifier.isTypeOnly) {
+          applicationFunctions.add(specifier.name.text);
+        }
+      }
+    }
+
+    const violations: string[] = [];
+    const visit = (node: ts.Node) => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === "mutation"
+      ) {
+        const handler = node.arguments[0];
+        const calledApplicationFunction = new Set<string>();
+        if (
+          handler &&
+          (ts.isArrowFunction(handler) || ts.isFunctionExpression(handler))
+        ) {
+          const findApplicationCall = (handlerNode: ts.Node) => {
+            if (
+              ts.isCallExpression(handlerNode) &&
+              ts.isIdentifier(handlerNode.expression) &&
+              applicationFunctions.has(handlerNode.expression.text)
+            ) {
+              calledApplicationFunction.add(handlerNode.expression.text);
+            }
+            ts.forEachChild(handlerNode, findApplicationCall);
+          };
+          findApplicationCall(handler);
+        }
+
+        if (calledApplicationFunction.size === 0) {
+          const line =
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+          violations.push(`${path}:${line}`);
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+    return violations;
+  });
+}
+
 describe("业务功能边界", () => {
+  it("简单只读查询不保留纯 Repository 转发用例", () => {
+    expect(findReadForwardingViolations(sourceFiles(featuresRoot))).toEqual([]);
+  });
+
+  it("识别没有调用本 Feature Application 的 mutation", () => {
+    const violations = findMutationUseCaseViolations([
+      {
+        path: "src/features/post/post.router.ts",
+        source: [
+          'import { createPost } from "@/features/post/application/post-use-cases";',
+          "createTRPCRouter({ save: procedure.mutation(({ ctx }) => ctx.db.insert(ctx.input)) });",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(violations).toEqual(["src/features/post/post.router.ts:2"]);
+  });
+
+  it("所有 Feature Router 的 mutation 都调用本 Feature Application", () => {
+    const routers = sourceFiles(featuresRoot)
+      .filter((path) => path.endsWith(".router.ts"))
+      .map((path) => ({
+        path: relative(process.cwd(), path),
+        source: readFileSync(path, "utf8"),
+      }));
+
+    expect(findMutationUseCaseViolations(routers)).toEqual([]);
+  });
+
   it("feature 生产代码只从 feature 目录导入业务 schema", () => {
     const violations = sourceFiles(featuresRoot).flatMap((path) => {
       const source = readFileSync(path, "utf8");
@@ -179,21 +336,6 @@ describe("业务功能边界", () => {
           (specifier) => `${relative(process.cwd(), path)}: ${specifier}`,
         );
       });
-
-    expect(violations).toEqual([]);
-  });
-
-  it("核心 feature 的 transport 使用 application 用例入口", () => {
-    const violations = ["post", "comment", "user"].flatMap((feature) =>
-      sourceFiles(join(featuresRoot, feature))
-        .filter((path) => path.endsWith(".router.ts"))
-        .filter((path) =>
-          readFileSync(path, "utf8").includes(
-            `features/${feature}/${feature}.service`,
-          ),
-        )
-        .map((path) => relative(process.cwd(), path)),
-    );
 
     expect(violations).toEqual([]);
   });
