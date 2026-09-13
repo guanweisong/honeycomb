@@ -14,7 +14,6 @@ import { useDataTableState } from "./useDataTableState";
 import { useRowSelection } from "./useRowSelection";
 import type { DataTableProps } from "./types";
 
-export { normalizeFilters } from "./useDataTableState";
 export type { DataTableProps } from "./types";
 
 export function DataTable<TData>(

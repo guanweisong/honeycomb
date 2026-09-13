@@ -7,7 +7,7 @@ function isPageStatus(status: string): status is PageStatus {
   return Object.values(PageStatus).some((value) => value === status);
 }
 
-export async function publishPage(
+async function publishPage(
   repository: Pick<PageCommandRepository, "update">,
   input: PageUpdateCommand & { status: PageStatus },
 ) {
@@ -23,7 +23,7 @@ export async function publishPage(
   });
 }
 
-export async function withdrawPage(
+async function withdrawPage(
   repository: Pick<PageCommandRepository, "update">,
   input: PageUpdateCommand & { status: PageStatus },
 ) {

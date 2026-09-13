@@ -1,8 +1,4 @@
-## Purpose
-
-定义 feature 模块的单一职责、依赖方向及跨模块交互边界，使领域、应用、基础设施、传输和展示代码保持清晰分工，并由自动化规则阻止反向依赖。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Feature 模块必须具有单一职责边界
 
@@ -13,21 +9,12 @@
 - **WHEN** 一个 feature 需要使用另一个 feature 的能力
 - **THEN** 它 MUST 通过对方的公开契约或稳定查询接口访问，且不得导入对方的 admin、infrastructure 或内部 router 文件
 
-#### Scenario: 简单 CRUD 模块
-
-- **WHEN** 一个 feature 不包含复杂聚合规则或某个目录出口没有消费者
-- **THEN** 它 MUST 使用轻量用例和 repository 结构，不得为了模板完整性创建空领域层或无职责再导出文件
-
 #### Scenario: App 组合层使用公共评论或文章 UI
 
 - **WHEN** 博客路由组合 Comment 或 Post 的公共组件
 - **THEN** 它 MUST 从对应 feature 的 `public` 出口具名导入，不得绕过出口深层导入组件或查询 hook
 
-### Requirement: 模块依赖方向必须可自动验证
+#### Scenario: 简单 CRUD 模块
 
-模块依赖 MUST 从路由和展示层指向传输/应用层，再指向领域和基础设施端口；领域层 MUST NOT 依赖框架、数据库或传输层。
-
-#### Scenario: 引入反向依赖
-
-- **WHEN** domain 或 application 代码导入 Drizzle、Next.js 或 tRPC server
-- **THEN** 架构测试 MUST 失败并指出违规文件和允许的替代边界
+- **WHEN** 一个 feature 不包含复杂聚合规则或某个目录出口没有消费者
+- **THEN** 它 MUST 使用轻量用例和 repository 结构，不得为了模板完整性创建空领域层或无职责再导出文件

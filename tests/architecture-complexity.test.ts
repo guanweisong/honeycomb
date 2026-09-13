@@ -1,6 +1,6 @@
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { sourceFiles } from "@tests/helpers/source-files";
 
@@ -69,6 +69,67 @@ function forbiddenTransitiveDependencies(entry: string): string[] {
 }
 
 describe("架构复杂度治理", () => {
+  it("不保留已确认无消费者的 barrel 与历史类型声明", () => {
+    const obsoleteFiles = [
+      "src/features/comment/domain/index.ts",
+      "src/features/page/domain/index.ts",
+      "src/features/post/domain/index.ts",
+      "src/features/user/domain/index.ts",
+      "src/packages/infrastructure/db/index.ts",
+      "src/packages/trpc/typings.d.ts",
+    ].filter((path) => existsSync(join(process.cwd(), path)));
+
+    expect(obsoleteFiles).toEqual([]);
+  });
+
+  it("App 组合层通过 Comment 与 Post 的 public 出口使用公共 UI", () => {
+    const violations = sourceFiles(join(sourceRoot, "app")).flatMap((path) =>
+      imports(readFileSync(path, "utf8"))
+        .filter((specifier) =>
+          /^@\/features\/(?:comment|post)\/public\//.test(specifier),
+        )
+        .map(
+          (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
+        ),
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("依赖清单只声明真实直接消费者并显式列出测试工具", () => {
+    const manifest = JSON.parse(
+      readFileSync(join(process.cwd(), "package.json"), "utf8"),
+    ) as {
+      main?: string;
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const redundantDependencies = [
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-radio-group",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "drizzle-zod",
+      "list-to-tree-lite",
+      "autoprefixer",
+    ].filter(
+      (dependency) =>
+        manifest.dependencies?.[dependency] !== undefined ||
+        manifest.devDependencies?.[dependency] !== undefined,
+    );
+
+    expect(redundantDependencies).toEqual([]);
+    expect(manifest.devDependencies).toMatchObject({
+      "@serwist/build": expect.any(String),
+      tinyglobby: expect.any(String),
+    });
+    expect(manifest.main).toBeUndefined();
+  });
+
   it("所有 feature 都有明确的基础边界", () => {
     const features = readdirSync(featureRoot).filter((entry) =>
       statSync(join(featureRoot, entry)).isDirectory(),

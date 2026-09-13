@@ -3,7 +3,7 @@ type RuntimeRequest = {
   url: Pick<URL, "pathname">;
 };
 
-export function isPrivateRuntimePath(pathname: string): boolean {
+function isPrivateRuntimePath(pathname: string): boolean {
   return (
     pathname === "/api" ||
     pathname.startsWith("/api/") ||

@@ -3,7 +3,7 @@ import PostInfo from "@/app/(blog)/components/PostInfo";
 import Tags from "@/app/(blog)/components/Tags";
 import Card from "@/packages/ui/blog/Card";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
-import Comment from "@/features/comment/public/components";
+import { Comment } from "@/features/comment/public";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { getTranslations } from "next-intl/server";

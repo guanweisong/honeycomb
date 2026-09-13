@@ -1,5 +1,5 @@
 import React from "react";
-import PostList from "@/features/post/public/components/PostList";
+import { PostList } from "@/features/post/public";
 import NoData from "@/app/(blog)/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
@@ -8,18 +8,12 @@ import {
   getPublicMenu,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { Metadata } from "next";
 import {
   createLocalizedAlternates,
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
-
-/**
- * 页面大小常量，用于分页查询。
- */
-const PAGE_SIZE = 10;
+import { resolveListContext, resolveListTitle } from "./page.utils";
 
 /**
  * 列表页面组件。
@@ -39,80 +33,26 @@ export default async function List(
   const locale = normalizeMultiLangLocale(params.locale);
   const t = await getTranslations("PostList");
 
-  const type =
-    typeof params?.slug !== "undefined" ? params?.slug[0] : undefined;
-
-  let queryParams: PostListQueryInput = {
-    status: [PostStatus.PUBLISHED],
-    limit: PAGE_SIZE,
-    sortField: "createdAt",
-  };
-  const typeValue = params?.slug?.[params.slug.length - 1] ?? "";
-  let typeName = typeValue;
-  switch (type) {
-    case "category":
-      // 获取分类ID
-      const categoryId = menu?.list?.find((item) => item.path === typeName)?.id;
-      if (typeof categoryId !== "undefined") {
-        queryParams = { ...queryParams, categoryId: categoryId };
-      }
-      typeName =
-        menu?.list?.find((item) => item.path === typeName)?.title?.[
-          locale
-        ] || "";
-      break;
-    case "tags":
-      const matchedTag = (
-        await serverClient.tag.index({ limit: 1, page: 1, id: [typeValue] })
-      )?.list?.[0];
-      if (matchedTag) {
-        queryParams = {
-          ...queryParams,
-          tagId: matchedTag.id,
-        };
-        typeName = matchedTag.name?.[locale] ?? "";
-      } else {
-        queryParams = { ...queryParams, tagId: typeValue };
-        typeName = "";
-      }
-      break;
-    case "authors":
-      const matchedAuthor = await serverClient.user.detail({ id: typeValue });
-      if (matchedAuthor) {
-        queryParams = { ...queryParams, authorId: matchedAuthor.id };
-        typeName = matchedAuthor.name ?? "";
-      } else {
-        queryParams = { ...queryParams, authorId: typeValue };
-        typeName = "";
-      }
-      break;
-  }
+  const { queryParams, type, typeName } = await resolveListContext({
+    client: serverClient,
+    locale,
+    menu,
+    slug: params.slug,
+  });
 
   const post = await serverClient.post.index(queryParams);
-
-  const getTitle = () => {
-    let title = "";
-    switch (type) {
-      case "tags":
-        title = t("postUnderTag", { tag: typeName });
-        break;
-      case "authors":
-        title = t("postUnderAuthor", { author: typeName });
-        break;
-      default:
-        if (typeName) {
-          title = `${typeName}_${setting?.siteName?.[locale] ?? ""}`;
-        } else {
-          title = setting?.siteName?.[locale] ?? "";
-        }
-    }
-    return title;
-  };
+  const title = resolveListTitle({
+    type,
+    typeName,
+    siteName: setting?.siteName?.[locale],
+    tagTitle: (tag) => t("postUnderTag", { tag }),
+    authorTitle: (author) => t("postUnderAuthor", { author }),
+  });
 
   return (
     <>
       {(type === "tags" || type === "authors") && (
-        <div className="mb-2 lg:mb-4">{getTitle()}</div>
+        <div className="mb-2 lg:mb-4">{title}</div>
       )}
       {post.list.length > 0 ? (
         <PostList initData={post} queryParams={queryParams} />
@@ -140,55 +80,20 @@ export async function generateMetadata(
     getPublicMenu(),
   ]);
   const t = await getTranslations("PostList");
-  const slug = params?.slug ?? [];
-  // 获取第一个路径部分作为类型
-  const type =
-    typeof slug !== "undefined" && slug.length > 0 ? slug[0] : undefined;
-  const typeValue = slug?.[slug.length - 1] ?? "";
-  let typeName = typeValue;
-  // 根据 `type` 和 `menu` 来查找类型名称
-  switch (type) {
-    case "category":
-      typeName =
-        menu?.list?.find((item) => item.path === typeValue)?.title?.[locale] ||
-        "";
-      break;
-    case "tags":
-      typeName =
-        (
-          await serverClient.tag.index({
-            limit: 1,
-            page: 1,
-            id: [typeValue],
-          })
-        )?.list?.[0]?.name?.[locale] ?? "";
-      break;
-    case "authors":
-      typeName =
-        (await serverClient.user.detail({ id: typeValue }))?.name ?? "";
-      break;
-  }
-
-  const getTitle = () => {
-    let title = "";
-    switch (type) {
-      case "tags":
-        title = t("postUnderTag", { tag: typeName });
-        break;
-      case "authors":
-        title = t("postUnderAuthor", { author: typeName });
-        break;
-      default:
-        if (typeName) {
-          title = `${typeName}_${setting?.siteName?.[locale]}`;
-        } else {
-          title = setting?.siteName?.[locale] ?? "";
-        }
-    }
-    return title;
-  };
-
-  const title = getTitle();
+  const slug = params.slug ?? [];
+  const { type, typeName } = await resolveListContext({
+    client: serverClient,
+    locale,
+    menu,
+    slug,
+  });
+  const title = resolveListTitle({
+    type,
+    typeName,
+    siteName: setting?.siteName?.[locale],
+    tagTitle: (tag) => t("postUnderTag", { tag }),
+    authorTitle: (author) => t("postUnderAuthor", { author }),
+  });
 
   const openGraph = {
     title: title,

@@ -5,7 +5,7 @@ import type { MediaViewModel } from "../media-view-model";
 import type { MediaIndexInput } from "@/features/media/schemas/media.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 
-export const MEDIA_PAGE_SIZE = 50;
+const MEDIA_PAGE_SIZE = 50;
 
 function getPageSignature(page: MediaViewModel[]) {
   return page.map((item) => item?.id ?? String(item)).join("|");

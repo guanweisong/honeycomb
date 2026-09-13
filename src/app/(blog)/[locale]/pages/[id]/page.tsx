@@ -1,6 +1,6 @@
 import React from "react";
 import PostInfo from "@/app/(blog)/components/PostInfo";
-import Comment from "@/features/comment/public/components";
+import { Comment } from "@/features/comment/public";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { MenuType } from "@/packages/domain/navigation/menu";

@@ -2,8 +2,8 @@ import { z } from "zod";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 
-export const MenuTypeSchema = z.enum(MenuType).default(MenuType.CATEGORY);
-export const MenuPowerSchema = z.number().int();
+const MenuTypeSchema = z.enum(MenuType).default(MenuType.CATEGORY);
+const MenuPowerSchema = z.number().int();
 
 /** 覆盖式保存完整菜单结构的唯一写入契约。 */
 export const MenuWriteSchema = z

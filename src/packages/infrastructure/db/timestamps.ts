@@ -7,7 +7,7 @@ import { text } from "drizzle-orm/sqlite-core";
  * @returns 一个 Drizzle ORM 的 text 字段构建器，配置了默认值函数，
  *          该函数在插入新记录时会自动将当前时间（ISO 格式）设为字段值。
  */
-export const createdAt = (name = "created_at") =>
+const createdAt = (name = "created_at") =>
   text(name).$defaultFn(() => new Date().toISOString());
 
 /**
@@ -18,7 +18,7 @@ export const createdAt = (name = "created_at") =>
  *          - 插入新记录时，自动将当前时间设为字段值。
  *          - 更新记录时 (`$onUpdate`)，自动将字段值更新为当前时间。
  */
-export const updatedAt = (name = "updated_at") =>
+const updatedAt = (name = "updated_at") =>
   text(name)
     .$defaultFn(() => new Date().toISOString())
     .$onUpdate(() => new Date().toISOString());

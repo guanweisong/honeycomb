@@ -8,7 +8,7 @@ export const MEDIA_MIME_TYPES = [
   "image/webp",
   "image/avif",
 ] as const;
-export const MEDIA_MAX_BYTES = 20 * 1024 * 1024;
+const MEDIA_MAX_BYTES = 20 * 1024 * 1024;
 export const MEDIA_MAX_BATCH_FILES = 20;
 const extensionsByMime: Record<
   (typeof MEDIA_MIME_TYPES)[number],

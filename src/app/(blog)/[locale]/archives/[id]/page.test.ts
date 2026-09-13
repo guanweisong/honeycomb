@@ -91,8 +91,8 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
     React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/features/comment/public/components", () => ({
-  default: ({ id }: { id: string }) =>
+vi.mock("@/features/comment/public", () => ({
+  Comment: ({ id }: { id: string }) =>
     React.createElement("div", { "data-testid": "comment" }, id),
 }));
 

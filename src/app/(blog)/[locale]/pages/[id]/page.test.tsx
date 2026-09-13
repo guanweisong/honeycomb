@@ -44,8 +44,8 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
 vi.mock("@/app/(blog)/components/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
 }));
-vi.mock("@/features/comment/public/components", () => ({
-  default: () => null,
+vi.mock("@/features/comment/public", () => ({
+  Comment: () => null,
 }));
 vi.mock("@/app/(blog)/components/PageTitle", () => ({
   default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,

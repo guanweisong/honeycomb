@@ -3,7 +3,7 @@ import React from "react";
 /**
  * 无数据组件的属性接口。
  */
-export interface NoData {
+interface NoDataProps {
   /**
    * 显示的提示文本。
    */
@@ -16,7 +16,7 @@ export interface NoData {
  * @param {NoData} props - 组件属性。
  * @returns {JSX.Element} 无数据提示组件。
  */
-const NoData = (props: NoData) => {
+const NoData = (props: NoDataProps) => {
   const { title } = props;
 
   return <div className="py-20 text-center">{title}</div>;

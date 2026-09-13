@@ -4,12 +4,7 @@ import {
   PublicCommentSchema,
 } from "@/features/comment/application/write-schema";
 import { z } from "zod";
-export {
-  CommentAuthorSchema,
-  CommentContentSchema,
-  CommentEmailSchema,
-  CommentSiteSchema,
-} from "@/features/comment/application/write-schema";
+export { CommentSiteSchema } from "@/features/comment/application/write-schema";
 
 export const CommentInsertBaseSchema = PublicCommentBaseSchema.extend(
   CaptchaSchema.shape,

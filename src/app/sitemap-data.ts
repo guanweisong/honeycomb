@@ -7,8 +7,8 @@ import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import { getLogger } from "@/packages/infrastructure/observability/server";
 import { SITEMAP_CACHE_TAG } from "@/packages/infrastructure/cache/public-cache-keys";
 
-export const SITEMAP_BATCH_SIZE = MAX_PAGE_SIZE;
-export const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
+const SITEMAP_BATCH_SIZE = MAX_PAGE_SIZE;
+const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
 
 type SitemapUrl = {
   url: string;

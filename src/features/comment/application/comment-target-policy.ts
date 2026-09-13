@@ -31,7 +31,7 @@ export function toCommentTargetReferenceFromRef(
   return { type: "custom", id: input.id };
 }
 
-export function assertPublicCommentTarget(
+function assertPublicCommentTarget(
   target: CommentTargetReference,
   state: CommentTargetState | null,
 ): asserts state is CommentTargetState {

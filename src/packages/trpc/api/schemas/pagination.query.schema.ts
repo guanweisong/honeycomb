@@ -7,7 +7,6 @@ import {
   SortOrder,
   apiPaginationDefaults,
 } from "@/packages/application/pagination";
-export { SortOrder };
 export const PaginationQuerySchema = z.object({
   page: z
     .number()
