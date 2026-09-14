@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as BaseSelect from "../../components/select";
-import { SelectProps as BaseSelectProps } from "@radix-ui/react-select";
+import type { SelectProps as BaseSelectProps } from "radix-ui/select";
 
 type Option = {
   label: React.ReactNode;

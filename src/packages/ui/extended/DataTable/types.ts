@@ -6,7 +6,7 @@ import type {
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { CheckedState } from "@radix-ui/react-checkbox";
+import type { CheckedState } from "radix-ui/checkbox";
 
 import type { PaginationInput } from "@/packages/application/pagination";
 export type DataTablePaginationState = Required<

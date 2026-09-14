@@ -142,6 +142,10 @@ describe("架构复杂度治理", () => {
       devDependencies?: Record<string, string>;
     };
     const redundantDependencies = [
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-label",
+      "@radix-ui/react-select",
+      "@radix-ui/react-slot",
       "@radix-ui/react-avatar",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
@@ -166,6 +170,18 @@ describe("架构复杂度治理", () => {
       tinyglobby: expect.any(String),
     });
     expect(manifest.main).toBeUndefined();
+  });
+
+  it("Radix primitives 统一通过 radix-ui 聚合包导入", () => {
+    const violations = sourceFiles(sourceRoot).flatMap((path) =>
+      imports(readFileSync(path, "utf8"))
+        .filter((specifier) => /^@radix-ui\/react-/.test(specifier))
+        .map(
+          (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
+        ),
+    );
+
+    expect(violations).toEqual([]);
   });
 
   it("所有 feature 都有明确的基础边界", () => {

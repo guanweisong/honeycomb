@@ -1,6 +1,6 @@
 import type * as React from "react";
 import { flexRender, type Table as TanStackTable } from "@tanstack/react-table";
-import type { CheckedState } from "@radix-ui/react-checkbox";
+import type { CheckedState } from "radix-ui/checkbox";
 import { Button } from "../../components/button";
 import { Checkbox } from "../../components/checkbox";
 import { TableBody, TableCell, TableRow } from "../../components/table";

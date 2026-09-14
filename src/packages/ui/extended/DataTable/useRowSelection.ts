@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { CheckedState } from "@radix-ui/react-checkbox";
+import type { CheckedState } from "radix-ui/checkbox";
 import type { UseRowSelectionOptions, UseRowSelectionResult } from "./types";
 
 export function useRowSelection<TData>(
