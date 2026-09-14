@@ -62,7 +62,6 @@ export function CommentForm({
           </div>
         ) : (
           <>
-            <label htmlFor={`${fieldId}-author`}>{t("form.name")}</label>
             <input
               id={`${fieldId}-author`}
               className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
@@ -72,7 +71,6 @@ export function CommentForm({
               maxLength={20}
               required
             />
-            <label htmlFor={`${fieldId}-site`}>{t("form.site")}</label>
             <input
               id={`${fieldId}-site`}
               className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
@@ -81,7 +79,6 @@ export function CommentForm({
               name="site"
               maxLength={200}
             />
-            <label htmlFor={`${fieldId}-email`}>{t("form.email")}</label>
             <input
               id={`${fieldId}-email`}
               className="block border-b-[0.5px] border-auto-front-gray/40 w-full leading-10 outline-0 focus:border-teal-400 bg-transparent"
@@ -93,7 +90,6 @@ export function CommentForm({
             />
           </>
         )}
-        <label htmlFor={`${fieldId}-content`}>{t("form.content")}</label>
         <textarea
           id={`${fieldId}-content`}
           className="block border-b-[0.5px]  border-auto-front-gray/40 w-full leading-6 pt-2 outline-0 focus:border-teal-400 mb-2 bg-transparent"
