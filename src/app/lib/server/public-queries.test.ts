@@ -3,6 +3,9 @@ import { MenuType } from "@/packages/domain/navigation/menu";
 
 const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
+  connection: vi.fn(),
   setting: vi.fn(),
   menu: vi.fn(),
   post: vi.fn(),
@@ -29,6 +32,11 @@ vi.mock("react", async (importOriginal) => {
 vi.mock("@/packages/trpc/api", () => ({
   createServerClient: mocks.createServerClient,
 }));
+vi.mock("next/cache", () => ({
+  cacheLife: mocks.cacheLife,
+  cacheTag: mocks.cacheTag,
+}));
+vi.mock("next/server", () => ({ connection: mocks.connection }));
 
 import {
   getPublicComments,
@@ -91,6 +99,13 @@ describe("public server queries", () => {
     expect(mocks.post).toHaveBeenCalledOnce();
     expect(mocks.page).toHaveBeenCalledOnce();
     expect(mocks.comments).toHaveBeenCalledOnce();
+    expect(mocks.connection).toHaveBeenCalledOnce();
     expect(mocks.createServerClient).toHaveBeenCalledTimes(5);
+    expect(mocks.cacheLife).toHaveBeenCalledTimes(4);
+    expect(mocks.cacheTag).toHaveBeenCalledWith("public.layout");
+    expect(mocks.createServerClient).toHaveBeenCalledWith(undefined, {
+      requestContext: { requestId: "next-public-cache-fill" },
+      skipRequestObservability: true,
+    });
   });
 });

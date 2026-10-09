@@ -55,10 +55,13 @@ describe("publicContentInvalidator", () => {
       "post.index",
       "cache:post:index:version",
     );
-    expect(mockRevalidateTag).toHaveBeenCalledOnce();
-    expect(mockRevalidateTag).toHaveBeenCalledWith(SITEMAP_CACHE_TAG, {
-      expire: 0,
-    });
+    expect(mockRevalidateTag.mock.calls).toEqual([
+      ["public.post-index", { expire: 0 }],
+      [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
+      ["public.page.507f1f77bcf86cd799439012", { expire: 0 }],
+      ["public.layout", { expire: 0 }],
+    ]);
   });
 
   it("does not execute omitted cache scopes", async () => {
@@ -66,7 +69,9 @@ describe("publicContentInvalidator", () => {
 
     expect(mockRevalidatePath.mock.calls).toEqual([["/[locale]", "layout"]]);
     expect(mockBumpCacheVersion).not.toHaveBeenCalled();
-    expect(mockRevalidateTag).not.toHaveBeenCalled();
+    expect(mockRevalidateTag).toHaveBeenCalledWith("public.layout", {
+      expire: 0,
+    });
   });
 
   it("rejects arbitrary paths and invalid identifiers before side effects", async () => {

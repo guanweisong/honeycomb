@@ -16,6 +16,10 @@ const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
 
 vi.mock("next-intl/server", () => ({ getLocale: () => Promise.resolve("zh") }));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
+}));
 vi.mock("next-intl", () => ({
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} views`,
@@ -31,6 +35,12 @@ vi.mock("@/packages/trpc/api", () => ({
     setting: { index: mockSettingIndex },
   }),
 }));
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicComments: (...args: unknown[]) => mockComments(...args),
+  getPublicPageDetail: (...args: unknown[]) => mockPageDetail(...args),
+  getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
+  getPublicLinks: (...args: unknown[]) => mockLinks(...args),
+}));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
     page: {
@@ -43,6 +53,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
 }));
 vi.mock("@/app/(blog)/components/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
+  PostCommentCount: () => null,
 }));
 vi.mock("@/features/comment/public", () => ({
   Comment: () => null,

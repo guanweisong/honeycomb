@@ -13,10 +13,17 @@ const mockMenuIndex = vi.fn();
 const mockTagIndex = vi.fn();
 const mockUserDetail = vi.fn();
 const mockPostIndex = vi.fn();
+const mockPublicPostList = vi.fn();
+const mockPublicTag = vi.fn();
+const mockPublicAuthor = vi.fn();
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
   getTranslations: () => mockGetTranslations(),
+}));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
 }));
 
 vi.mock("@/packages/trpc/api", () => ({
@@ -27,6 +34,13 @@ vi.mock("@/packages/trpc/api", () => ({
     tag: { index: mockTagIndex },
     user: { detail: mockUserDetail },
   }),
+}));
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicMenu: () => mockMenuIndex(),
+  getPublicPostList: (...args: unknown[]) => mockPublicPostList(...args),
+  getPublicSetting: () => mockSettingIndex(),
+  getPublicTag: (...args: unknown[]) => mockPublicTag(...args),
+  getPublicAuthor: (...args: unknown[]) => mockPublicAuthor(...args),
 }));
 
 vi.mock("@/features/post/public", () => ({
@@ -43,7 +57,7 @@ vi.mock("@/app/(blog)/components/NoData", () => ({
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));
 
-import List, { generateMetadata, generateStaticParams } from "./page";
+import List, { generateMetadata } from "./page";
 
 describe("blog list page", () => {
   let container: HTMLDivElement;
@@ -79,14 +93,23 @@ describe("blog list page", () => {
     mockTagIndex.mockReset().mockResolvedValue({
       list: [{ id: "resolved-tag", name: { zh: "标签名称" } }],
     });
+    mockPublicTag.mockReset().mockImplementation(async () =>
+      (await mockTagIndex({})).list[0],
+    );
     mockUserDetail.mockReset().mockResolvedValue({
       id: "resolved-author",
       name: "作者名称",
     });
+    mockPublicAuthor.mockReset().mockImplementation((input) =>
+      mockUserDetail(input),
+    );
     mockPostIndex.mockReset().mockResolvedValue({
       list: [{ id: "post-1" }],
       total: 1,
     });
+    mockPublicPostList.mockReset().mockImplementation((input) =>
+      mockPostIndex(input),
+    );
   });
 
   afterEach(async () => {
@@ -251,7 +274,4 @@ describe("blog list page", () => {
     expect(metadata.title).toBe("标签：");
   });
 
-  it("does not pre-render unbounded list parameters", async () => {
-    await expect(generateStaticParams()).resolves.toEqual([]);
-  });
 });

@@ -7,8 +7,6 @@ import {
   toSitemapIndexXml,
 } from "@/app/sitemap-data";
 
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const siteOrigin = getSiteOrigin();
   try {

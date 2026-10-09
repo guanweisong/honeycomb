@@ -28,6 +28,10 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   },
 }));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
+}));
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
@@ -50,6 +54,12 @@ vi.mock("@/packages/trpc/api", () => ({
     setting: { index: mockSettingIndex },
   }),
 }));
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicComments: (...args: unknown[]) => mockComments(...args),
+  getPublicPostDetail: (...args: unknown[]) => mockPostDetail(...args),
+  getPublicRandomPosts: (...args: unknown[]) => mockRandomPosts(...args),
+  getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
+}));
 
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
@@ -70,6 +80,7 @@ vi.mock("@/app/(blog)/components/PostInfo", () => ({
       JSON.stringify(props),
       views as React.ReactNode,
     ),
+  PostCommentCount: () => React.createElement("span", null, "3 comments"),
 }));
 
 vi.mock("@/app/(blog)/components/Tags", () => ({
@@ -106,7 +117,8 @@ vi.mock("@/app/(blog)/components/RichText", () => ({
     React.createElement("article", { "data-testid": "rich-text" }, html),
 }));
 
-import Archives, { generateMetadata, generateStaticParams } from "./page";
+import Archives, { generateMetadata } from "./page";
+import { assertPostCategory, assertPostDetail } from "./page.utils";
 
 type DetailFixture = Record<string, unknown> & {
   category?: { id: string };
@@ -284,28 +296,13 @@ describe("archives page", () => {
   });
 
   it("rejects post details without a category relation", async () => {
-    mockPostDetail.mockResolvedValue({
-      ...articleDetail,
-      category: undefined,
-    });
-
-    await expect(
-      Archives({
-        params: Promise.resolve({ id: "post-1", locale: "zh" }),
-        searchParams: Promise.resolve({}),
-      }),
-    ).rejects.toThrow("Post post-1 is missing category relation");
+    expect(() =>
+      assertPostCategory({ ...articleDetail, category: undefined }),
+    ).toThrow("Post post-1 is missing category relation");
   });
 
   it("maps missing post details to the Next.js not-found boundary", async () => {
-    mockPostDetail.mockResolvedValue(null);
-
-    await expect(
-      Archives({
-        params: Promise.resolve({ id: "missing", locale: "zh" }),
-        searchParams: Promise.resolve({}),
-      }),
-    ).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(() => assertPostDetail(null)).toThrow("NEXT_NOT_FOUND");
   });
 
   it.each([
@@ -380,7 +377,4 @@ describe("archives page", () => {
     });
   });
 
-  it("does not pre-render unbounded archive parameters", async () => {
-    await expect(generateStaticParams()).resolves.toEqual([]);
-  });
 });

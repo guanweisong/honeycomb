@@ -62,6 +62,8 @@ export default defineConfig([
     "test-results/**",
     "public/sw.js",
     "public/sw.js.map",
+    "public/serwist/**",
+    ".serwist-build/**",
     "public/workbox-*.js",
     "public/workbox-*.js.map",
     "next-env.d.ts",

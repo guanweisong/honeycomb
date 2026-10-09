@@ -6,6 +6,8 @@ export const pwaGlobIgnores = [
   ".next/server/app/admin/**/*",
   ".next/static/app/admin/**/*",
   ".next/static/chunks/app/admin/**/*",
+  ".serwist-build/**/*",
+  "public/serwist/**/*",
 ] as const;
 
 export const offlinePrecacheUrl = "/en/offline";

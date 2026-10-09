@@ -1,5 +1,5 @@
-import React, { ViewTransition } from "react";
-import PostInfo from "@/app/(blog)/components/PostInfo";
+import React, { Suspense, ViewTransition } from "react";
+import PostInfo, { PostCommentCount } from "@/app/(blog)/components/PostInfo";
 import Tags from "@/app/(blog)/components/Tags";
 import Card from "@/packages/ui/blog/Card";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
@@ -10,10 +10,10 @@ import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
-import { createServerClient } from "@/packages/trpc/api";
 import {
   getPublicComments,
   getPublicPostDetail,
+  getPublicRandomPosts,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
 import { MenuType } from "@/packages/domain/navigation/menu";
@@ -23,6 +23,7 @@ import { PostViewTracker } from "@/app/(blog)/components/ViewTracker";
 import { serializeJsonLd } from "@/packages/infrastructure/security/serialize-json-ld";
 import {
   assertPostDetail,
+  assertPostCategory,
   createPostJsonLd,
   getPostTitle,
   handlePostDetailError,
@@ -31,6 +32,8 @@ import {
   createLocalizedAlternates,
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
+import { connection } from "next/server";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 /**
  * 归档页面组件。
@@ -38,10 +41,24 @@ import {
  * @param {PageProps<"/[locale]/archives/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 归档页面。
  */
-export default async function Archives(
+export default function Archives(
   props: PageProps<"/[locale]/archives/[id]">,
 ) {
-  const serverClient = await createServerClient();
+  return (
+    <>
+      <Suspense fallback={null}>
+        <DynamicMetadataMarker />
+      </Suspense>
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <ArchiveContent {...props} />
+      </Suspense>
+    </>
+  );
+}
+
+async function ArchiveContent(
+  props: PageProps<"/[locale]/archives/[id]">,
+) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
   let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
@@ -52,17 +69,10 @@ export default async function Archives(
   }
   const t = await getTranslations("Archive");
 
-  if (!postDetail.category) {
-    throw new Error(`Post ${id} is missing category relation`);
-  }
+  const category = assertPostCategory(postDetail);
 
   const queryCommentPromise = getPublicComments(id, MenuType.CATEGORY);
-  const [randomPostsList, commentsData] = await Promise.all([
-    serverClient.post.getRandomByCategory({
-      categoryId: postDetail.category.id,
-    }),
-    queryCommentPromise,
-  ]);
+  const randomPostsList = await getPublicRandomPosts(category.id);
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
 
@@ -80,7 +90,11 @@ export default async function Archives(
         author={postDetail.author?.name ?? ""}
         authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ""}
-        comments={commentsData?.total}
+        comments={
+          <Suspense fallback={<span aria-hidden="true">…</span>}>
+            <PostCommentCount commentsPromise={queryCommentPromise} />
+          </Suspense>
+        }
         views={
           <PostViewTracker id={id} initialViews={postDetail.views ?? 0} />
         }
@@ -147,13 +161,20 @@ export default async function Archives(
           </ul>
         </Card>
       )}
-      <Comment
-        id={id}
-        type={MenuType.CATEGORY}
-        queryCommentPromise={queryCommentPromise}
-      />
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <Comment
+          id={id}
+          type={MenuType.CATEGORY}
+          queryCommentPromise={queryCommentPromise}
+        />
+      </Suspense>
     </>
   );
+}
+
+async function DynamicMetadataMarker() {
+  await connection();
+  return null;
 }
 
 /**
@@ -205,13 +226,4 @@ export async function generateMetadata(
       images: [defaultSocialImage],
     },
   };
-}
-
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
 }

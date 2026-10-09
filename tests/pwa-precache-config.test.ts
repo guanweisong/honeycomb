@@ -26,6 +26,8 @@ describe("PWA precache configuration", () => {
       ".next/static/chunks/app/admin/(root)/login/page-456.js",
       ".next/static/chunks/public.js",
       ".next/static/chunks/public.js.map",
+      ".serwist-build/sw.js",
+      "public/serwist/sw.js",
     ];
     for (const file of files) {
       mkdirSync(join(fixture, file, ".."), { recursive: true });
@@ -51,5 +53,7 @@ describe("PWA precache configuration", () => {
     expect(urls).not.toContain("public/static/images/mobile.png");
     expect(urls).not.toContain(".next/static/app/admin/dashboard.js");
     expect(urls).not.toContain(".next/static/chunks/public.js.map");
+    expect(urls).not.toContain(".serwist-build/sw.js");
+    expect(urls).not.toContain("public/serwist/sw.js");
   });
 });

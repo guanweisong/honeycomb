@@ -1,64 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-
-const mocks = vi.hoisted(() => ({
-  getAdminUser: vi.fn(),
-  headers: vi.fn(),
-  redirect: vi.fn(),
-}));
-
-vi.mock("@/app/admin/lib/admin-auth", () => ({
-  getCurrentAdminUser: mocks.getAdminUser,
-}));
-vi.mock("next/headers", () => ({ headers: mocks.headers }));
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+import { Suspense } from "react";
+import { describe, expect, it } from "vitest";
 
 import AdminRouteTemplate from "./template";
-
-function requestHeaders(pathname: string): Headers {
-  return new Headers({ "x-honeycomb-admin-pathname": pathname });
-}
+import { getAdminRouteAccessDecision } from "./admin-route-access";
 
 describe("AdminRouteTemplate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.headers.mockResolvedValue(requestHeaders("/admin/tag"));
+  it("holds request-bound route checks behind a generic fallback", () => {
+    const element = AdminRouteTemplate({ children: "protected-content" });
+
+    expect(element.type).toBe(Suspense);
+    expect(JSON.stringify(element.props.fallback)).not.toContain(
+      "protected-content",
+    );
   });
 
-  it("未登录时重定向到登录页", async () => {
-    mocks.getAdminUser.mockResolvedValue(null);
-
-    await AdminRouteTemplate({ children: "content" });
-
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login");
+  it("sends anonymous users to login", () => {
+    expect(getAdminRouteAccessDecision(false, false)).toBe("login");
   });
 
-  it("已登录但缺少 route capability 时重定向到无权限页", async () => {
-    mocks.getAdminUser.mockResolvedValue({
-      id: "guest-1",
-      email: null,
-      level: UserLevel.GUEST,
-      name: "Guest",
-      status: UserStatus.ENABLE,
-    });
-
-    await AdminRouteTemplate({ children: "content" });
-
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/forbidden");
+  it("forbids signed-in users without the destination capability", () => {
+    expect(getAdminRouteAccessDecision(true, false)).toBe("forbidden");
   });
 
-  it("拥有 route capability 时渲染页面", async () => {
-    mocks.getAdminUser.mockResolvedValue({
-      id: "editor-1",
-      email: null,
-      level: UserLevel.EDITOR,
-      name: "Editor",
-      status: UserStatus.ENABLE,
-    });
-
-    await expect(
-      AdminRouteTemplate({ children: "content" }),
-    ).resolves.toBe("content");
-    expect(mocks.redirect).not.toHaveBeenCalled();
+  it("allows a user with the destination capability", () => {
+    expect(getAdminRouteAccessDecision(true, true)).toBe("allow");
   });
 });

@@ -8,6 +8,10 @@ import {
 } from "@/packages/application/public-content-invalidator";
 import { bumpCacheVersion } from "@/packages/infrastructure/cache/upstash-cache";
 import {
+  getPageDetailCacheTag,
+  getPostDetailCacheTag,
+  POST_INDEX_CACHE_TAG,
+  PUBLIC_LAYOUT_CACHE_TAG,
   POST_CACHE_NAMESPACE,
   POST_CACHE_VERSION_KEY,
   SITEMAP_CACHE_TAG,
@@ -35,17 +39,25 @@ async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
 
   if (plan.refreshPostIndex) {
     await bumpCacheVersion(POST_CACHE_NAMESPACE, POST_CACHE_VERSION_KEY);
+    revalidateTag(POST_INDEX_CACHE_TAG, { expire: 0 });
   }
   if (plan.refreshSitemap) {
     revalidateTag(SITEMAP_CACHE_TAG, { expire: 0 });
   }
   for (const { id, type } of references.values()) {
+    revalidateTag(
+      type === "post" ? getPostDetailCacheTag(id) : getPageDetailCacheTag(id),
+      { expire: 0 },
+    );
     const segment = type === "post" ? "archives" : "pages";
     for (const locale of supportedLanguages) {
       revalidatePath(`/${locale}/${segment}/${id}`);
     }
   }
-  if (plan.refreshLayout) revalidatePath("/[locale]", "layout");
+  if (plan.refreshLayout) {
+    revalidateTag(PUBLIC_LAYOUT_CACHE_TAG, { expire: 0 });
+    revalidatePath("/[locale]", "layout");
+  }
 }
 
 function recordInvalidation(outcome: "completed" | "degraded") {

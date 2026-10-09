@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import {
   ADMIN_PATHNAME_HEADER,
@@ -5,18 +6,39 @@ import {
 } from "@/app/admin/constants/route-capabilities";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import AdminRouteFallback from "@/app/admin/components/AdminRouteFallback";
+import { getAdminRouteAccessDecision } from "./admin-route-access";
 
-export default async function AdminRouteTemplate({
+export default function AdminRouteTemplate({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<AdminRouteFallback />}>
+      <AdminRouteAccess>{children}</AdminRouteAccess>
+    </Suspense>
+  );
+}
+
+async function AdminRouteAccess({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const requestHeaders = await headers();
   const user = await getCurrentAdminUser();
-  if (!user) return redirect("/admin/login");
-
   const pathname = requestHeaders.get(ADMIN_PATHNAME_HEADER);
-  if (!pathname || !canAccessAdminRoute(user.level, pathname)) {
+  const hasRouteCapability =
+    user !== null &&
+    pathname !== null &&
+    canAccessAdminRoute(user.level, pathname);
+  const decision = getAdminRouteAccessDecision(
+    user !== null,
+    hasRouteCapability,
+  );
+  if (decision === "login") return redirect("/admin/login");
+  if (decision === "forbidden") {
     return redirect("/admin/forbidden");
   }
 

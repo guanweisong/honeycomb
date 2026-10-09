@@ -29,6 +29,8 @@ const t = initTRPC.context<Context>().create();
 
 const requestObservabilityMiddleware = t.middleware(
   async ({ ctx, next, path, type }) => {
+    if (ctx.requestObservabilityEnabled === false) return next();
+
     const startedAt = Date.now();
     const baseContext = {
       requestId: ctx.requestId,

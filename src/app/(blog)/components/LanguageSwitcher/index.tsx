@@ -3,7 +3,11 @@
 import { useLocale } from "next-intl";
 import { ViewTransition } from "react";
 import Image from "next/image";
-import { usePathname } from "@/packages/ui/navigation/blog-navigation";
+import NextLink from "next/link";
+import {
+  getPathname,
+  usePathname,
+} from "@/packages/ui/navigation/blog-navigation";
 import { useTheme } from "next-themes";
 import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
@@ -15,7 +19,6 @@ import {
   MultiLangEnum,
   normalizeMultiLangLocale,
 } from "@/packages/domain/localization/multi-lang";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
 import { useMounted } from "@/packages/ui/hooks/use-mounted";
 
 /**
@@ -38,6 +41,10 @@ const LanguageSwitcher = () => {
    */
   const otherLocale =
     locale === MultiLangEnum.En ? MultiLangEnum.Zh : MultiLangEnum.En;
+  const localizedPathname = getPathname({
+    href: pathname,
+    locale: otherLocale,
+  });
 
   if (!mounted) {
     return null;
@@ -53,9 +60,10 @@ const LanguageSwitcher = () => {
 
   return (
     <ViewTransition name="siteLanguageSwitcher">
-      <Link
-        href={pathname}
-        locale={otherLocale}
+      <NextLink
+        href={localizedPathname}
+        hrefLang={otherLocale}
+        prefetch="auto"
         replace
         aria-label={`Switch to ${otherLocale === "en" ? "English" : "中文"}`}
       >
@@ -64,7 +72,7 @@ const LanguageSwitcher = () => {
           alt={`Current language: ${locale === "en" ? "English" : "中文"}`}
           className="w-5 cursor-pointer"
         />
-      </Link>
+      </NextLink>
     </ViewTransition>
   );
 };

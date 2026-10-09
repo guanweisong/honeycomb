@@ -10,11 +10,14 @@ const mocks = vi.hoisted(() => ({
   linkProps: undefined as
     | {
         href?: string;
+        hrefLang?: string;
         locale?: string;
+        prefetch?: boolean | "auto" | null;
         replace?: boolean;
         "aria-label"?: string;
       }
     | undefined,
+  linkKind: undefined as "next" | "intl" | undefined,
 }));
 
 vi.mock("next-intl", () => ({
@@ -32,8 +35,26 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+vi.mock("next/link", () => ({
+  default: (props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    hrefLang?: string;
+    prefetch?: boolean | "auto" | null;
+    replace?: boolean;
+  }) => {
+    mocks.linkKind = "next";
+    mocks.linkProps = props;
+    return (
+      <a href={props.href} aria-label={props["aria-label"]}>
+        {props.children}
+      </a>
+    );
+  },
+}));
+
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   usePathname: () => mocks.pathname,
+  getPathname: ({ href, locale }: { href: string; locale: string }) =>
+    `/${locale}${href}`,
   Link: ({
     children,
     ...props
@@ -42,6 +63,7 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
     replace?: boolean;
   }) => {
     mocks.linkProps = props;
+    mocks.linkKind = "intl";
     return <a {...props}>{children}</a>;
   },
 }));
@@ -67,6 +89,7 @@ describe("LanguageSwitcher", () => {
     mocks.pathname = "/archives/1";
     mocks.resolvedTheme = "light";
     mocks.linkProps = undefined;
+    mocks.linkKind = undefined;
   });
 
   it("waits for client mounting before rendering the switcher", () => {
@@ -77,9 +100,11 @@ describe("LanguageSwitcher", () => {
     act(() => root.render(<LanguageSwitcher />));
 
     expect(container.querySelector("a")).not.toBeNull();
+    expect(mocks.linkKind).toBe("next");
     expect(mocks.linkProps).toMatchObject({
-      href: "/archives/1",
-      locale: "zh",
+      href: "/zh/archives/1",
+      hrefLang: "zh",
+      prefetch: "auto",
       replace: true,
       "aria-label": "Switch to 中文",
     });
@@ -95,7 +120,9 @@ describe("LanguageSwitcher", () => {
 
     expect(container.querySelector("img")?.alt).toBe("Current language: 中文");
     expect(mocks.linkProps).toMatchObject({
-      locale: "en",
+      href: "/en/archives/1",
+      hrefLang: "en",
+      prefetch: "auto",
       "aria-label": "Switch to English",
     });
   });

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { PostList } from "@/features/post/public";
 import NoData from "@/app/(blog)/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import { createServerClient } from "@/packages/trpc/api";
 import {
   getPublicMenu,
+  getPublicPostList,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
 import { Metadata } from "next";
@@ -14,6 +14,8 @@ import {
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
 import { resolveListContext, resolveListTitle } from "./page.utils";
+import { connection } from "next/server";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 /**
  * 列表页面组件。
@@ -21,10 +23,24 @@ import { resolveListContext, resolveListTitle } from "./page.utils";
  * @param {PageProps<"/[locale]/list/[...slug]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
-export default async function List(
+export default function List(
   props: PageProps<"/[locale]/list/[...slug]">,
 ) {
-  const serverClient = await createServerClient();
+  return (
+    <>
+      <Suspense fallback={null}>
+        <DynamicMetadataMarker />
+      </Suspense>
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <ListContent {...props} />
+      </Suspense>
+    </>
+  );
+}
+
+async function ListContent(
+  props: PageProps<"/[locale]/list/[...slug]">,
+) {
   const [setting, menu] = await Promise.all([
     getPublicSetting(),
     getPublicMenu(),
@@ -34,13 +50,12 @@ export default async function List(
   const t = await getTranslations("PostList");
 
   const { queryParams, type, typeName } = await resolveListContext({
-    client: serverClient,
     locale,
     menu,
     slug: params.slug,
   });
 
-  const post = await serverClient.post.index(queryParams);
+  const post = await getPublicPostList(queryParams);
   const title = resolveListTitle({
     type,
     typeName,
@@ -72,7 +87,6 @@ export default async function List(
 export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
-  const serverClient = await createServerClient();
   const params = await props.params;
   const locale = normalizeMultiLangLocale(params.locale);
   const [setting, menu] = await Promise.all([
@@ -82,7 +96,6 @@ export async function generateMetadata(
   const t = await getTranslations("PostList");
   const slug = params.slug ?? [];
   const { type, typeName } = await resolveListContext({
-    client: serverClient,
     locale,
     menu,
     slug,
@@ -119,11 +132,7 @@ export async function generateMetadata(
   };
 }
 
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ slug: string[] }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
+async function DynamicMetadataMarker() {
+  await connection();
+  return null;
 }

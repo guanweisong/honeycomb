@@ -44,6 +44,29 @@ vi.mock("next/image", () => ({
     React.createElement("img", props),
 }));
 
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    hrefLang,
+    prefetch,
+    "aria-label": ariaLabel,
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    hrefLang?: string;
+    prefetch?: boolean | "auto" | null;
+  }) =>
+    React.createElement(
+      "a",
+      {
+        href,
+        hrefLang,
+        "aria-label": ariaLabel,
+        "data-prefetch": prefetch,
+      },
+      children,
+    ),
+}));
+
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({
     children,
@@ -67,6 +90,8 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
       },
       children,
     ),
+  getPathname: ({ href, locale: targetLocale }: { href: string; locale: string }) =>
+    `/${targetLocale}${href}`,
   usePathname: () => pathname,
 }));
 
@@ -238,8 +263,9 @@ describe("blog appearance controls", () => {
       await act(async () => root.render(React.createElement(LanguageSwitcher)));
 
       const link = container.querySelector("a");
-      expect(link?.getAttribute("href")).toBe("/archives/post-1");
-      expect(link?.getAttribute("data-locale")).toBe(targetLocale);
+      expect(link?.getAttribute("href")).toBe(`/${targetLocale}/archives/post-1`);
+      expect(link?.getAttribute("hrefLang")).toBe(targetLocale);
+      expect(link?.getAttribute("data-prefetch")).toBe("auto");
       expect(link?.getAttribute("aria-label")).toBe(label);
       expect(container.querySelector("img")?.getAttribute("alt")).toBe(alt);
     },

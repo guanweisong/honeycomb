@@ -1,5 +1,5 @@
-import React from "react";
-import PostInfo from "@/app/(blog)/components/PostInfo";
+import React, { Suspense } from "react";
+import PostInfo, { PostCommentCount } from "@/app/(blog)/components/PostInfo";
 import { Comment } from "@/features/comment/public";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
@@ -14,6 +14,8 @@ import { RichText } from "@/app/(blog)/components/RichText";
 import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
+import { connection } from "next/server";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { assertPublishedPost } from "./page.utils";
 import {
   createLocalizedAlternates,
@@ -25,16 +27,26 @@ import {
  * @param {PageProps<"/[locale]/pages/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 页面详情。
  */
-export default async function Pages(
+export default function Pages(
   props: PageProps<"/[locale]/pages/[id]">,
 ) {
+  return (
+    <>
+      <Suspense fallback={null}>
+        <DynamicMetadataMarker />
+      </Suspense>
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <PageContent {...props} />
+      </Suspense>
+    </>
+  );
+}
+
+async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
   const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
-  const [pageDetail, commentsData] = await Promise.all([
-    getPublicPageDetail(id),
-    queryCommentPromise,
-  ]);
+  const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPost(pageDetail);
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
@@ -49,7 +61,11 @@ export default async function Pages(
         author={publishedPage.author?.name ?? ""}
         authorId={publishedPage.author?.id}
         date={publishedPage.createdAt ?? ""}
-        comments={commentsData?.total}
+        comments={
+          <Suspense fallback={<span aria-hidden="true">…</span>}>
+            <PostCommentCount commentsPromise={queryCommentPromise} />
+          </Suspense>
+        }
         views={
           <PageViewTracker id={id} initialViews={publishedPage.views ?? 0} />
         }
@@ -93,13 +109,20 @@ export default async function Pages(
           )}
         </div>
       ) : null}
-      <Comment
-        id={id}
-        type={MenuType.PAGE}
-        queryCommentPromise={queryCommentPromise}
-      />
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <Comment
+          id={id}
+          type={MenuType.PAGE}
+          queryCommentPromise={queryCommentPromise}
+        />
+      </Suspense>
     </>
   );
+}
+
+async function DynamicMetadataMarker() {
+  await connection();
+  return null;
 }
 
 /**
@@ -141,13 +164,4 @@ export async function generateMetadata(
       images: [defaultSocialImage],
     },
   };
-}
-
-/**
- * 生成静态页面参数。
- * 在构建时预渲染页面，提高性能。
- * @returns {Promise<Array<{ id: string }>>} 静态参数数组。
- */
-export async function generateStaticParams() {
-  return [];
 }

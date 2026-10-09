@@ -19,6 +19,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next-intl/server", () => ({
   getLocale: vi.fn(async () => "zh"),
 }));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
+}));
 
 vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: vi.fn(async () => mocks.setting),

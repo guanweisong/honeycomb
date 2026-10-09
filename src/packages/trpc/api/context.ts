@@ -20,6 +20,7 @@ export type User = CurrentUser;
 export interface CreateContextOptions {
   req?: Request;
   requestContext?: RequestContext;
+  skipRequestObservability?: boolean;
 }
 
 /**
@@ -96,6 +97,7 @@ export const createContext = async (opts: CreateContextOptions) => {
     hasRequest,
     header: opts.req?.headers ?? new Headers(),
     requestId: requestContext.requestId,
+    requestObservabilityEnabled: !opts.skipRequestObservability,
   } as const;
 };
 
@@ -103,4 +105,7 @@ export const createContext = async (opts: CreateContextOptions) => {
  * tRPC 上下文的 TypeScript 类型。
  * 从 `createContext` 函数的返回值类型推断而来。
  */
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = Omit<
+  Awaited<ReturnType<typeof createContext>>,
+  "requestObservabilityEnabled"
+> & { requestObservabilityEnabled?: boolean };

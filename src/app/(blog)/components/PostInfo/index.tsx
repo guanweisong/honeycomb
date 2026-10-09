@@ -3,6 +3,8 @@ import React, { ViewTransition } from "react";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { useTranslations } from "next-intl";
 import { cn } from "@/packages/ui/lib/utils";
+import { getTranslations } from "next-intl/server";
+import type { getPublicComments } from "@/app/lib/server/public-queries";
 
 /**
  * 对齐方式枚举。
@@ -41,7 +43,7 @@ export interface PostInfoProps {
   /**
    * 评论数量。
    */
-  comments?: number;
+  comments?: number | React.ReactNode;
   /**
    * 浏览量。
    */
@@ -86,8 +88,10 @@ const PostInfo = (props: PostInfoProps) => {
     data.push(utcFormat(date));
   }
 
-  if (typeof comments !== "undefined") {
+  if (typeof comments === "number") {
     data.push(t("messages", { count: comments }));
+  } else if (typeof comments !== "undefined") {
+    data.push(comments);
   }
 
   if (typeof views !== "undefined") {
@@ -121,3 +125,15 @@ const PostInfo = (props: PostInfoProps) => {
 };
 
 export default PostInfo;
+
+export async function PostCommentCount({
+  commentsPromise,
+}: {
+  commentsPromise: ReturnType<typeof getPublicComments>;
+}) {
+  const [comments, t] = await Promise.all([
+    commentsPromise,
+    getTranslations("PostInfo"),
+  ]);
+  return t("messages", { count: comments.total });
+}

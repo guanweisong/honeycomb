@@ -1,14 +1,36 @@
 import "server-only";
 
 import { cache } from "react";
+import { cacheLife, cacheTag } from "next/cache";
+import { connection } from "next/server";
 import { createServerClient } from "@/packages/trpc/api";
 import type { MenuType } from "@/packages/domain/navigation/menu";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 import { MAX_PAGE_SIZE } from "@/packages/application/resource-limits";
+import type { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
+import {
+  getPageDetailCacheTag,
+  getPostDetailCacheTag,
+  POST_INDEX_CACHE_TAG,
+  PUBLIC_LAYOUT_CACHE_TAG,
+} from "@/packages/infrastructure/cache/public-cache-keys";
+
+const cachedClientOptions = {
+  requestContext: { requestId: "next-public-cache-fill" },
+  skipRequestObservability: true,
+} as const;
+
+async function createCachedPublicClient() {
+  return createServerClient(undefined, cachedClientOptions);
+}
 
 /** 逐页读取友情链接，保留完整公开列表并遵守单次查询上限。 */
-export const getPublicLinks = cache(async () => {
-  const client = await createServerClient();
+async function getCachedPublicLinks() {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(PUBLIC_LAYOUT_CACHE_TAG);
+
+  const client = await createCachedPublicClient();
   const input = { limit: MAX_PAGE_SIZE, status: [EnableStatus.ENABLE] };
   const first = await client.link.index({ ...input, page: 1 });
   const list = [...first.list];
@@ -18,29 +40,85 @@ export const getPublicLinks = cache(async () => {
     if (result.list.length === 0) break;
   }
   return { list, total: first.total };
-});
+}
 
-export const getPublicSetting = cache(async () => {
-  const client = await createServerClient();
+async function getCachedPublicSetting() {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(PUBLIC_LAYOUT_CACHE_TAG);
+  const client = await createCachedPublicClient();
   return client.setting.index();
-});
+}
 
-export const getPublicMenu = cache(async () => {
-  const client = await createServerClient();
+async function getCachedPublicMenu() {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(PUBLIC_LAYOUT_CACHE_TAG);
+  const client = await createCachedPublicClient();
   return client.menu.index();
-});
+}
 
-export const getPublicPostDetail = cache(async (id: string) => {
-  const client = await createServerClient();
+async function getCachedPublicPostDetail(id: string) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(POST_INDEX_CACHE_TAG, getPostDetailCacheTag(id));
+  const client = await createCachedPublicClient();
   return client.post.detail({ id });
-});
+}
 
-export const getPublicPageDetail = cache(async (id: string) => {
-  const client = await createServerClient();
+async function getCachedPublicPageDetail(id: string) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(getPageDetailCacheTag(id));
+  const client = await createCachedPublicClient();
   return client.page.detail({ id });
-});
+}
 
+async function getCachedPublicPostList(input: PostListQueryInput) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(POST_INDEX_CACHE_TAG);
+  const client = await createCachedPublicClient();
+  return client.post.index(input);
+}
+
+async function getCachedRandomPosts(categoryId: string) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(POST_INDEX_CACHE_TAG);
+  const client = await createCachedPublicClient();
+  return client.post.getRandomByCategory({ categoryId });
+}
+
+async function getCachedPublicTag(id: string) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(POST_INDEX_CACHE_TAG);
+  const client = await createCachedPublicClient();
+  return (await client.tag.index({ limit: 1, page: 1, id: [id] })).list[0];
+}
+
+async function getCachedPublicAuthor(id: string) {
+  "use cache: remote";
+  cacheLife("max");
+  cacheTag(POST_INDEX_CACHE_TAG);
+  const client = await createCachedPublicClient();
+  return client.user.detail({ id });
+}
+
+export const getPublicLinks = cache(getCachedPublicLinks);
+export const getPublicSetting = cache(getCachedPublicSetting);
+export const getPublicMenu = cache(getCachedPublicMenu);
+export const getPublicPostDetail = cache(getCachedPublicPostDetail);
+export const getPublicPageDetail = cache(getCachedPublicPageDetail);
+export const getPublicPostList = cache(getCachedPublicPostList);
+export const getPublicRandomPosts = cache(getCachedRandomPosts);
+export const getPublicTag = cache(getCachedPublicTag);
+export const getPublicAuthor = cache(getCachedPublicAuthor);
+
+/** 评论保留请求内去重，避免共享缓存延迟展示新提交的内容。 */
 export const getPublicComments = cache(async (id: string, type: MenuType) => {
+  await connection();
   const client = await createServerClient();
   return client.comment.listByRef({ id, type });
 });

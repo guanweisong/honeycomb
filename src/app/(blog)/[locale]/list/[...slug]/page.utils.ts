@@ -1,18 +1,15 @@
-import type { createServerClient } from "@/packages/trpc/api";
-import type { getPublicMenu } from "@/app/lib/server/public-queries";
+import {
+  getPublicAuthor,
+  getPublicMenu,
+  getPublicTag,
+} from "@/app/lib/server/public-queries";
 import type { MultiLangEnum } from "@/packages/domain/localization/i18n";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import type { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 
 const PAGE_SIZE = 10;
 
-type ListLookupClient = Pick<
-  Awaited<ReturnType<typeof createServerClient>>,
-  "tag" | "user"
->;
-
 type ListContextInput = {
-  client: ListLookupClient;
   locale: MultiLangEnum;
   menu: Awaited<ReturnType<typeof getPublicMenu>>;
   slug?: string[];
@@ -20,7 +17,6 @@ type ListContextInput = {
 
 /** 将动态列表路径解析为唯一的查询条件和本地化标题上下文。 */
 export async function resolveListContext({
-  client,
   locale,
   menu,
   slug = [],
@@ -42,9 +38,7 @@ export async function resolveListContext({
       break;
     }
     case "tags": {
-      const matchedTag = (
-        await client.tag.index({ limit: 1, page: 1, id: [typeValue] })
-      ).list[0];
+      const matchedTag = await getPublicTag(typeValue);
       queryParams = {
         ...queryParams,
         tagId: matchedTag?.id ?? typeValue,
@@ -53,7 +47,7 @@ export async function resolveListContext({
       break;
     }
     case "authors": {
-      const matchedAuthor = await client.user.detail({ id: typeValue });
+      const matchedAuthor = await getPublicAuthor(typeValue);
       queryParams = {
         ...queryParams,
         authorId: matchedAuthor?.id ?? typeValue,

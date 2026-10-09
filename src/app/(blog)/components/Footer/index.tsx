@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { format } from "date-fns";
+import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
@@ -19,7 +21,11 @@ export default async function Footer() {
     <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[language]}</div>
       <div>
-        ©{format(new Date(), "yyyy")}&nbsp;
+        ©
+        <Suspense fallback={<span aria-hidden="true">…</span>}>
+          <CurrentYear />
+        </Suspense>
+        &nbsp;
         {setting?.siteCopyright?.[language]}
       </div>
       <div>
@@ -41,4 +47,9 @@ export default async function Footer() {
       </div>
     </footer>
   );
+}
+
+async function CurrentYear() {
+  await connection();
+  return format(new Date(), "yyyy");
 }

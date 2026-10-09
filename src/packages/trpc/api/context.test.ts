@@ -61,6 +61,16 @@ describe("createContext", () => {
     expect(context.requestId).toBe("req-trpc-default-context");
   });
 
+  it("uses a stable request ID and skips instrumentation for cache fills", async () => {
+    const context = await createContext({
+      requestContext: { requestId: "public-cache-fill" },
+      skipRequestObservability: true,
+    });
+
+    expect(context.requestId).toBe("public-cache-fill");
+    expect(context.requestObservabilityEnabled).toBe(false);
+  });
+
   it("rejects a disabled session user at the database-backed identity boundary", async () => {
     getSession.mockResolvedValueOnce({
       user: {

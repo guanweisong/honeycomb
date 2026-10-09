@@ -109,8 +109,8 @@ describe("runtime sitemap", () => {
   it("lets production build route discovery import handlers without loading environment or database data", () => {
     process.env.NEXT_PHASE = "phase-production-build";
 
-    expect(sitemapIndexRoute.dynamic).toBe("force-dynamic");
-    expect(sitemapShardRoute.dynamic).toBe("force-dynamic");
+    expect(sitemapIndexRoute).not.toHaveProperty("dynamic");
+    expect(sitemapShardRoute).not.toHaveProperty("dynamic");
     expect(getServerEnvMock).not.toHaveBeenCalled();
     expect(createServerClientMock).not.toHaveBeenCalled();
   });

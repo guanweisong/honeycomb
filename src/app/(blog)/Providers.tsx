@@ -1,9 +1,8 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
-import { SerwistProvider } from "@serwist/turbopack/react";
 
 /**
  * 全局提供者组件。
@@ -14,10 +13,15 @@ import { SerwistProvider } from "@serwist/turbopack/react";
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.register("/serwist/sw.js", { scope: "/" });
+  }, []);
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>
+        {children}
       </QueryClientProvider>
     </trpc.Provider>
   );

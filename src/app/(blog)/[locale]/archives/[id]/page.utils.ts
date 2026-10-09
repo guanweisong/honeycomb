@@ -12,6 +12,15 @@ export function assertPostDetail<T>(postDetail: T | null | undefined): T {
   return postDetail;
 }
 
+export function assertPostCategory(
+  postDetail: { id: string; category?: { id: string } | null },
+) {
+  if (!postDetail.category) {
+    throw new Error(`Post ${postDetail.id} is missing category relation`);
+  }
+  return postDetail.category;
+}
+
 export function handlePostDetailError(error: unknown): never {
   if (error instanceof TRPCError && error.code === "NOT_FOUND") {
     notFound();

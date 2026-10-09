@@ -60,6 +60,42 @@ vi.mock("@/packages/trpc/api", () => ({
   }),
 }));
 
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicMenu: async () => ({
+    list: [
+      {
+        id: "links",
+        parent: "0",
+        path: "/friend-links",
+        title: { zh: "友链" },
+        type: "CUSTOM",
+      },
+      {
+        id: "page-1",
+        parent: "0",
+        path: "about",
+        title: { zh: "关于" },
+        type: "PAGE",
+      },
+      {
+        id: "parent-id",
+        parent: "0",
+        path: "parent",
+        title: { zh: "父分类" },
+        type: "CATEGORY",
+      },
+      {
+        id: "child-id",
+        parent: "parent-id",
+        path: "child",
+        title: { zh: "子分类" },
+        type: "CATEGORY",
+      },
+    ],
+  }),
+  getPublicSetting: async () => ({ siteName: { zh: "蜂巢博客" } }),
+}));
+
 vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
   Link: ({
     children,

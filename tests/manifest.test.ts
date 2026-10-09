@@ -17,22 +17,26 @@ describe("web app manifest", () => {
 
 describe("PWA 离线可靠性", () => {
   it("显式预缓存与导航 fallback 使用同一个离线页面", async () => {
-    const routeSource = await readFile(
-      join(process.cwd(), "src/app/serwist/[path]/route.ts"),
+    const buildSource = await readFile(
+      join(process.cwd(), "scripts/build-serwist.ts"),
       "utf8",
     );
     const workerSource = await readFile(
       join(process.cwd(), "src/app/sw.ts"),
       "utf8",
     );
-
-    expect(routeSource).toMatch(
-      /additionalPrecacheEntries:[\s\S]*url:\s*offlinePrecacheUrl[\s\S]*revision:/,
+    const providerSource = await readFile(
+      join(process.cwd(), "src/app/(blog)/Providers.tsx"),
+      "utf8",
     );
+
+    expect(buildSource).toContain("injectManifest");
+    expect(buildSource).toContain("offlinePrecacheUrl");
     expect(workerSource).toContain(
       `const offlineFallbackUrl = "${offlinePrecacheUrl}"`,
     );
     expect(workerSource).toContain("serwist.matchPrecache(offlineFallbackUrl)");
+    expect(providerSource).toContain('register("/serwist/sw.js", { scope: "/" })');
   });
 
   it("public 不得保留旧 Service Worker 与 Workbox 资产", async () => {
