@@ -28,10 +28,8 @@ describe("quality workflow", () => {
     expect(workflow).toContain("bun install --frozen-lockfile");
   });
 
-  it("uses one Bun version source for Vercel installation", () => {
-    expect(vercelJson.installCommand).toBe(
-      `bunx ${packageJson.packageManager} install --frozen-lockfile`,
-    );
+  it("uses Vercel's detected Bun installer with a frozen lockfile", () => {
+    expect(vercelJson.installCommand).toBe("bun install --frozen-lockfile");
     expect(vercelJson).not.toHaveProperty("bunVersion");
   });
 

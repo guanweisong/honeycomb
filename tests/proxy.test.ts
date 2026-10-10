@@ -78,7 +78,7 @@ describe("proxy", () => {
     expect(res.headers.get("X-RateLimit-Reset")).toBe("123456");
   });
 
-  it("returns 503 when production rate limiting is unavailable", async () => {
+  it("allows API requests when rate limiting is unavailable", async () => {
     limitMock.mockResolvedValue({
       success: false,
       unavailable: true,
@@ -89,11 +89,10 @@ describe("proxy", () => {
 
     const res = await proxy(createProxyRequest("/api/trpc/post.list"));
 
-    expect(res.status).toBe(503);
-    await expect(res.json()).resolves.toEqual({
-      code: 503,
-      message: "API rate limiting is temporarily unavailable.",
-    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-RateLimit-Limit")).toBeNull();
+    expect(res.headers.get("X-RateLimit-Remaining")).toBeNull();
+    expect(res.headers.get("X-RateLimit-Reset")).toBeNull();
   });
 
   it("delegates non-API request to i18n proxy", async () => {
