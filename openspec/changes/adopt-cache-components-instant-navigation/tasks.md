@@ -10,7 +10,7 @@
 - [x] 2.1 启用 Cache Components 和 Partial Prefetching，同时保留其他无关的 Next.js 配置。
 - [x] 2.2 移除根 `[locale]`、归档、页面和列表路由中的 `generateStaticParams()`，由 Cache Components 为请求时参数提供可复用页面外壳。
 - [x] 2.3 将归档、页面详情和列表路由中依赖 URL 的页面读取及运行时 Metadata 标记放入页面局部边界。
-- [x] 2.4 将评论和当前年份放到局部 fallback 后流式返回；保留公开页面外壳，以及可见 `Link` 的 App Shell 预取行为。
+- [x] 2.4 将评论和当前年份放到局部 fallback 后流式返回；博客站内 `Link` 使用 `prefetch={true}` 预取目标内容，后台链接保留 `auto`。
 - [x] 2.5 更新受影响的路由和组件测试，覆盖先显示页面外壳的行为和生成器约定。
 
 ## 3. 后台即时导航

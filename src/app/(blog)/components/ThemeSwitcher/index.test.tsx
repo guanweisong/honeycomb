@@ -265,7 +265,7 @@ describe("blog appearance controls", () => {
       const link = container.querySelector("a");
       expect(link?.getAttribute("href")).toBe(`/${targetLocale}/archives/post-1`);
       expect(link?.getAttribute("hrefLang")).toBe(targetLocale);
-      expect(link?.getAttribute("data-prefetch")).toBe("auto");
+      expect(link?.getAttribute("data-prefetch")).toBe("true");
       expect(link?.getAttribute("aria-label")).toBe(label);
       expect(container.querySelector("img")?.getAttribute("alt")).toBe(alt);
     },

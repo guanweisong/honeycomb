@@ -104,7 +104,7 @@ describe("LanguageSwitcher", () => {
     expect(mocks.linkProps).toMatchObject({
       href: "/zh/archives/1",
       hrefLang: "zh",
-      prefetch: "auto",
+      prefetch: true,
       replace: true,
       "aria-label": "Switch to 中文",
     });
@@ -122,7 +122,7 @@ describe("LanguageSwitcher", () => {
     expect(mocks.linkProps).toMatchObject({
       href: "/en/archives/1",
       hrefLang: "en",
-      prefetch: "auto",
+      prefetch: true,
       "aria-label": "Switch to English",
     });
   });

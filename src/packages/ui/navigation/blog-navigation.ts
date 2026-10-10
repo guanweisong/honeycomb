@@ -8,11 +8,8 @@ import { routing } from "./routing";
  */
 const navigation = createNavigation(routing);
 
-export function Link({
-  prefetch = "auto",
-  ...props
-}: ComponentProps<typeof navigation.Link>) {
-  return createElement(navigation.Link, { ...props, prefetch });
+export function Link(props: ComponentProps<typeof navigation.Link>) {
+  return createElement(navigation.Link, { ...props, prefetch: true });
 }
 
 export const { getPathname, usePathname, useRouter } = navigation;

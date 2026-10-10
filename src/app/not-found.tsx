@@ -7,7 +7,7 @@ export default function NotFound() {
       title="页面未找到"
       description="404：请求的页面不存在或已被移除。"
       actions={
-        <Link className="link-light" href="/en/list/category">
+        <Link className="link-light" href="/en/list/category" prefetch={true}>
           返回首页
         </Link>
       }

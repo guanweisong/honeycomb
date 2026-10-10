@@ -63,7 +63,7 @@ const LanguageSwitcher = () => {
       <NextLink
         href={localizedPathname}
         hrefLang={otherLocale}
-        prefetch="auto"
+        prefetch={true}
         replace
         aria-label={`Switch to ${otherLocale === "en" ? "English" : "中文"}`}
       >

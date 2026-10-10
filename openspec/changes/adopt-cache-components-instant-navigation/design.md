@@ -8,7 +8,7 @@ Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src
 
 - 为每个 App Router 路由启用 Cache Components 和 Partial Prefetching。
 - 在公开博客和后台页面间导航时，立即显示安全的页面外壳；依赖请求数据、路由参数或未缓存查询的工作随后流式返回。
-- 让可见的站内链接使用 Next.js App Shell 预取。后台链接继续使用 `auto` 行为，避免逐个链接完整预取认证后才可见的数据。
+- 让博客前台所有站内链接显式使用 `prefetch={true}`，在可见时预取目标 URL 的缓存内容，以支持即时导航。后台链接继续使用 `auto`，避免完整预取认证后的私有数据。
 - 只缓存可复用的公开读取，并使用现有结构化失效计划可以清除的缓存标签。
 - 移除 locale、ID 和 slug 的 `generateStaticParams()`，让这些参数在请求时解析并复用静态页面外壳。
 - 保留后台访问检查、公开 URL、sitemap 行为、浏览量追踪、评论时效性和离线支持。
@@ -22,7 +22,7 @@ Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src
 
 ## 决策
 
-1. **全局启用两项框架能力。** 设置顶层 `cacheComponents: true` 和 `partialPrefetching: true`，保留 `experimental.agentUpgrade`、`experimental.staleTimes` 及其他无关配置。启用 Partial Prefetching 后，可见 `<Link>` 默认预取目标 App Shell。后台链接继续使用现有的 `auto` 策略；只有验证证明公开目标需要在点击前载入 URL 专属内容时，才为相应链接显式设置预取。
+1. **全局启用两项框架能力。** 设置顶层 `cacheComponents: true` 和 `partialPrefetching: true`，保留 `experimental.agentUpgrade`、`experimental.staleTimes` 及其他无关配置。博客统一 Link 封装强制使用 `prefetch={true}`，语言切换器和博客 404 等直接链接也显式使用 `true`，让可见的博客链接预取目标 URL 的缓存内容。后台链接继续使用现有的 `auto` 策略，避免完整预取认证后的私有数据。
 
 2. **缓存公开查询结果，不缓存请求上下文或私有内容。** 将稳定的公开读取改为 `use cache: remote`，并使用 `cacheLife('max')` 和显式标签。`getPublicComments()` 继续只在单次渲染内复用，不跨请求缓存。公开缓存填充使用稳定的内部请求上下文，避免在缓存作用域内通过 `crypto.randomUUID()` 生成请求 ID。现有 Upstash 文章列表缓存继续供 tRPC 消费者使用，并由现有失效计划递增版本。
 
@@ -38,7 +38,7 @@ Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src
 
 ## 风险与权衡
 
-- **未知 ID 路由在 URL 专属查询完成前无法显示完整正文** → 让不同 ID/slug 共用 App Shell；按规范化输入缓存公开查询，并只在验证证明确有价值时使用逐链接预取。
+- **完整预取会增加博客导航的预取请求** → 只对博客站内链接启用；目标内容通过公开缓存复用，后台继续使用 `auto`，并避免缓存或预取私有数据。
 - **远程缓存查询会增加网络延迟和托管成本** → 仅用于能跨临时实例复用、且可减少数据库负载的公开读取；会话、评论和高基数私有查询不缓存。
 - **缓存标签过期不正确会导致成功写入后内容或 Metadata 仍旧** → 为每种结构化计划范围补充测试，并保留路径重新验证、Upstash 版本管理和现有重试约定。
 - **认证周围的 Suspense 可能在 fallback 中暴露受保护内容** → 使用不含敏感信息的通用 fallback，并且只在现有认证和能力检查通过后渲染后台页面。
@@ -55,4 +55,4 @@ Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src
 
 ## 待决问题
 
-无。如果运行时验证显示某个公开目标需要预取 URL 专属内容，则为该目标的公开链接添加 `prefetch={true}` 并测量请求成本；后台链接继续使用 `auto`。
+无。博客站内链接统一使用 `prefetch={true}`；后台链接继续使用 `auto`。

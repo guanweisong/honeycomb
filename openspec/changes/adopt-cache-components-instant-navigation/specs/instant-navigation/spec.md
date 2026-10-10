@@ -19,19 +19,19 @@
 - **WHEN** 请求级路由检查发现已认证用户无权访问目标页面
 - **THEN** 使用现有的禁止访问重定向或页面，目标页面的受保护内容不得出现在页面外壳或 fallback 中
 
-### Requirement: 站内链接预取共享 App Shell
+### Requirement: 博客站内链接完整预取目标内容
 
-站内公开和后台 `<Link>` 组件 MUST 保留预取能力。启用 Partial Prefetching 后，可见链接的默认 `auto` 行为 MUST 预取目标 App Shell。后台链接 MUST NOT 强制完整预取 URL 专属的认证内容。若导航体验确有需要，公开链接 MAY 逐链接完整预取带缓存的 URL 专属内容。
+博客前台所有指向站内路由的 `<Link>` MUST 显式或通过统一封装使用 `prefetch={true}`，以便目标链接可见时预取目标 URL 的缓存内容。博客直接使用 `next/link` 的组件也 MUST 使用 `true`。后台链接 MUST 保留 `auto` 行为，且 MUST NOT 强制完整预取 URL 专属的认证内容。
 
-#### Scenario: 公开链接进入视口
+#### Scenario: 博客站内链接进入视口
 
-- **WHEN** 生产环境中的站内博客链接变为可见
-- **THEN** Next.js 可以在访客点击前预取目标 App Shell
+- **WHEN** 生产环境中的博客站内链接变为可见
+- **THEN** Next.js 预取目标 URL 的缓存内容，以便点击时即时导航
 
 #### Scenario: 后台菜单链接进入视口
 
 - **WHEN** 已认证用户看到后台菜单链接
-- **THEN** 链接可以预取其 App Shell，但不会强制完整预取私有路由数据
+- **THEN** 链接按 `auto` 策略预取页面外壳，不会强制完整预取私有路由数据
 
 ### Requirement: 动态语言和内容参数无需构建时枚举
 
