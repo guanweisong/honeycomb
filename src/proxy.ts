@@ -25,16 +25,14 @@ export async function proxy(req: NextRequest) {
     const { success, limit, remaining, reset, unavailable } =
       await limitWithTimeout(apiRatelimit, identifier);
 
-    if (!success) {
+    if (!success && !unavailable) {
       return new NextResponse(
         JSON.stringify({
-          code: unavailable ? 503 : 429,
-          message: unavailable
-            ? "API rate limiting is temporarily unavailable."
-            : "Too many requests, please try again later.",
+          code: 429,
+          message: "Too many requests, please try again later.",
         }),
         {
-          status: unavailable ? 503 : 429,
+          status: 429,
           headers: {
             "Content-Type": "application/json",
             "X-RateLimit-Limit": String(limit),
@@ -45,10 +43,14 @@ export async function proxy(req: NextRequest) {
       );
     }
 
+    // Keep general API traffic available when Upstash is down. Sensitive
+    // procedures such as comment creation enforce their own separate limits.
     const response = NextResponse.next();
-    response.headers.set("X-RateLimit-Limit", String(limit));
-    response.headers.set("X-RateLimit-Remaining", String(remaining));
-    response.headers.set("X-RateLimit-Reset", String(reset));
+    if (!unavailable) {
+      response.headers.set("X-RateLimit-Limit", String(limit));
+      response.headers.set("X-RateLimit-Remaining", String(remaining));
+      response.headers.set("X-RateLimit-Reset", String(reset));
+    }
     return response;
   }
 
