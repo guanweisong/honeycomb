@@ -90,7 +90,8 @@ describe("App Router 恢复与 viewport 边界", () => {
       "utf8",
     );
 
-    expect(source).toContain("export const metadata");
+    expect(source).toContain("export async function generateMetadata");
+    expect(source).toContain("getPublicSetting");
     expect(source).toContain("metadataBase");
     expect(source).toContain("openGraph");
     expect(source).toContain("twitter");

@@ -14,25 +14,34 @@ import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-l
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
+import { getPublicSetting } from "@/app/lib/server/public-queries";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    clientEnv.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: "Honeycomb",
-    template: "%s | Honeycomb",
-  },
-  description: "Honeycomb content management system",
-  openGraph: {
-    type: "website",
-    images: [defaultSocialImage],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: [defaultSocialImage],
-  },
-};
+export async function generateMetadata({
+  params,
+}: LayoutProps<"/[locale]">): Promise<Metadata> {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeMultiLangLocale(rawLocale);
+  const setting = await getPublicSetting();
+  const siteName = setting?.siteName?.[locale] ?? "Honeycomb";
+  const siteSubName =
+    setting?.siteSubName?.[locale] ?? "Honeycomb content management system";
+
+  return {
+    metadataBase: new URL(
+      clientEnv.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    ),
+    title: siteName,
+    description: siteSubName,
+    openGraph: {
+      type: "website",
+      images: [defaultSocialImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [defaultSocialImage],
+    },
+  };
+}
 
 /**
  * 国际化布局组件。
