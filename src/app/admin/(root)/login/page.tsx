@@ -5,13 +5,11 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "./components/LoginClient";
 import { normalizeAdminCallback } from "./safe-admin-callback";
-import AdminRouteFallback from "@/app/admin/components/AdminRouteFallback";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
-export default function LoginPage({
-  searchParams,
-}: PageProps<"/admin/login">) {
+export default function LoginPage({ searchParams }: PageProps<"/admin/login">) {
   return (
-    <Suspense fallback={<AdminRouteFallback />}>
+    <Suspense fallback={<LoadingState variant="page" />}>
       <LoginContent searchParams={searchParams} />
     </Suspense>
   );
@@ -33,6 +31,12 @@ async function LoginContent({
   ]);
   const targetUrl = normalizeAdminCallback((await searchParams).targetUrl);
 
-  return <LoginClient setting={setting} providers={providers} targetUrl={targetUrl} />;
+  return (
+    <LoginClient
+      setting={setting}
+      providers={providers}
+      targetUrl={targetUrl}
+    />
+  );
 }
 import { Suspense } from "react";

@@ -23,24 +23,20 @@ import LoadingState from "@/packages/ui/extended/LoadingState";
  * @param {PageProps<"/[locale]/list/[...slug]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
-export default function List(
-  props: PageProps<"/[locale]/list/[...slug]">,
-) {
+export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
   return (
     <>
       <Suspense fallback={null}>
         <DynamicMetadataMarker />
       </Suspense>
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
+      <Suspense fallback={<LoadingState variant="region" />}>
         <ListContent {...props} />
       </Suspense>
     </>
   );
 }
 
-async function ListContent(
-  props: PageProps<"/[locale]/list/[...slug]">,
-) {
+async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
   const [setting, menu] = await Promise.all([
     getPublicSetting(),
     getPublicMenu(),

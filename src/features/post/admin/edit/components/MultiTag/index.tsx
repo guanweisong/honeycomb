@@ -15,10 +15,11 @@ import {
   CommandList,
   CommandEmpty,
 } from "@/packages/ui/components/command";
-import { X, Loader2, Plus } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { TagType } from "@/packages/domain/content/tag";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { useCan } from "@/features/contracts/admin/use-current-user";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { PostTagOption, useMultiTag } from "./use-multi-tag";
 
 /**
@@ -117,7 +118,11 @@ const MultiTag = ({
               <CommandList>
                 {isSearching ? (
                   <div className="flex items-center justify-center py-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <LoadingState
+                      variant="inline"
+                      label="正在搜索标签..."
+                      visuallyHiddenLabel
+                    />
                   </div>
                 ) : (
                   <>
@@ -137,7 +142,14 @@ const MultiTag = ({
                               onClick={() => createNewTag(input)}
                               disabled={isCreating}
                             >
-                              {isCreating ? "创建中..." : "新建"}
+                              {isCreating ? (
+                                <LoadingState
+                                  variant="inline"
+                                  label="创建中..."
+                                />
+                              ) : (
+                                "新建"
+                              )}
                             </Button>
                           )}
                         </div>

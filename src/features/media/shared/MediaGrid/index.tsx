@@ -8,6 +8,7 @@ import { Permission } from "@/packages/identity/auth/permissions";
 import type { MediaViewModel } from "../media-view-model";
 import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { cn } from "@/packages/ui/lib/utils";
 
 type MediaGridProps = {
@@ -32,7 +33,9 @@ export function MediaGrid({
   return (
     <div className="flex flex-wrap">
       {error && <p role="alert">{error}</p>}
-      {isLoading && !media?.length && <p role="status">正在加载媒体...</p>}
+      {isLoading && !media?.length && (
+        <LoadingState variant="region" label="正在加载媒体..." />
+      )}
       {media?.length ? (
         media.map((item) => (
           <div

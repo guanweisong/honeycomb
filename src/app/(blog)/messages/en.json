@@ -7,12 +7,14 @@
   },
   "PostInfo": {
     "views": "{count, plural, =0 {# view} other {# views}}",
-    "messages": "{count, plural, =0 {# message} other {# messages}}"
+    "messages": "{count, plural, =0 {# message} other {# messages}}",
+    "loading": "Loading comments..."
   },
   "PostList": {
     "emptyTip": "The category currently has no articles！",
     "postUnderTag": "Articles under the tag {tag}",
     "postUnderAuthor": "Articles under the author {author}",
+    "loadingMore": "Loading more articles...",
     "listEnd": "Reach the end"
   },
   "Tag": {

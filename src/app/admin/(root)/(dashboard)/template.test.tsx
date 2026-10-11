@@ -1,5 +1,9 @@
 import { Suspense } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/app/admin/lib/admin-auth", () => ({
+  getCurrentAdminUser: vi.fn(),
+}));
 
 import AdminRouteTemplate from "./template";
 import { getAdminRouteAccessDecision } from "./admin-route-access";

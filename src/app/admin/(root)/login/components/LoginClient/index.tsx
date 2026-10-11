@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import {
   DEFAULT_SCRIPT_ID,
   SCRIPT_URL,
@@ -199,7 +200,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
 
 export default function LoginClient(props: LoginClientProps) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingState variant="region" />}>
       <LoginContent {...props} />
     </Suspense>
   );

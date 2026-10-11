@@ -15,6 +15,7 @@ import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { cn } from "@/packages/ui/lib/utils";
 import { connection } from "next/server";
+import { getTranslations } from "next-intl/server";
 import LoadingState from "@/packages/ui/extended/LoadingState";
 import { assertPublishedPost } from "./page.utils";
 import {
@@ -27,15 +28,13 @@ import {
  * @param {PageProps<"/[locale]/pages/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 页面详情。
  */
-export default function Pages(
-  props: PageProps<"/[locale]/pages/[id]">,
-) {
+export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
   return (
     <>
       <Suspense fallback={null}>
         <DynamicMetadataMarker />
       </Suspense>
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
+      <Suspense fallback={<LoadingState variant="region" />}>
         <PageContent {...props} />
       </Suspense>
     </>
@@ -48,6 +47,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPost(pageDetail);
+  const postInfoT = await getTranslations("PostInfo");
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
       ? await getPublicLinks()
@@ -62,7 +62,15 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
         authorId={publishedPage.author?.id}
         date={publishedPage.createdAt ?? ""}
         comments={
-          <Suspense fallback={<span aria-hidden="true">…</span>}>
+          <Suspense
+            fallback={
+              <LoadingState
+                variant="inline"
+                label={postInfoT("loading")}
+                visuallyHiddenLabel
+              />
+            }
+          >
             <PostCommentCount commentsPromise={queryCommentPromise} />
           </Suspense>
         }

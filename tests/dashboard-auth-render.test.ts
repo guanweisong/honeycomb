@@ -54,7 +54,7 @@ it("shares one admin lookup between layout and template only within a server ren
             builder.onResolve(
               {
                 filter:
-                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/admin-user|@\/features\/user\/infrastructure\/user-repository|@\/packages\/infrastructure\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/DashboardClientShell)$/,
+                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/admin-user|@\/features\/user\/infrastructure\/user-repository|@\/packages\/infrastructure\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/DashboardClientShell|@\/packages\/ui\/extended\/LoadingState)$/,
               },
               (args) => ({ path: args.path, namespace: "fixture" }),
             );
@@ -77,6 +77,8 @@ it("shares one admin lookup between layout and template only within a server ren
                   "export function AdminProviders({ children }) { return children; }",
                 "./components/DashboardClientShell":
                   "export function DashboardClientShell({ user, children }) { return [user.id, children]; }",
+                "@/packages/ui/extended/LoadingState":
+                  "export default function LoadingState() { return null; }",
               };
               return { contents: modules[args.path], loader: "js" };
             });

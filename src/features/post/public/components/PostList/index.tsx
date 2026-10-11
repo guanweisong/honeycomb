@@ -8,8 +8,8 @@ import Signature from "@/packages/ui/blog/Signature";
 import { utcFormat } from "@/packages/ui/blog/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import { Loader } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
 import { PostType, PostTypeName } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
@@ -156,7 +156,11 @@ export default function PostList(props: PostListProps): JSX.Element {
       {isEnd && <Signature text={t("listEnd")} />}
       {isLoadingMore && (
         <div className="mt-4 flex justify-center">
-          <Loader className="animate-spin" />
+          <LoadingState
+            variant="inline"
+            label={t("loadingMore")}
+            visuallyHiddenLabel
+          />
         </div>
       )}
     </>

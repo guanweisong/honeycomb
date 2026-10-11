@@ -12,6 +12,13 @@ vi.mock("react-hook-form", () => ({
 
 vi.mock("@/packages/ui/components/form", () => ({
   FormField: ({ render }: { render: () => React.ReactNode }) => render(),
+  FormItem: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => React.createElement("div", { className }, children),
   FormMessage: () => React.createElement("div", { "data-testid": "message" }),
 }));
 

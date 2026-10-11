@@ -3,7 +3,11 @@
 import { Button } from "@/packages/ui/components/button";
 import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
-import { FormField, FormMessage } from "@/packages/ui/components/form";
+import {
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/packages/ui/components/form";
 import React from "react";
 import type { PostDetailViewModel as PostDetailEntity } from "../../../../presentation/post-view-model";
 import Image from "next/image";
@@ -55,17 +59,17 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
         control={control}
         name="coverId"
         render={() => (
-          <>
+          <FormItem className="gap-0">
             {cover?.id ? (
               <>
-                <div className="mb-2 text-center bg-gray-300">
+                <div className="mb-2 aspect-video w-full overflow-hidden bg-gray-300">
                   <Image
                     src={cover.url}
                     alt={`${title}预览`}
                     width={previewWidth}
                     height={previewHeight}
-                    sizes="(max-width: 768px) 100vw, 640px"
-                    className="mx-auto block h-auto max-h-full max-w-full object-contain"
+                    sizes="(min-width: 1024px) 320px, 100vw"
+                    className="block h-full w-full object-contain"
                   />
                 </div>
                 <div className="flex justify-between">
@@ -98,7 +102,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
               </Button>
             )}
             <FormMessage />
-          </>
+          </FormItem>
         )}
       />
     </div>

@@ -15,7 +15,10 @@ const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
 
-vi.mock("next-intl/server", () => ({ getLocale: () => Promise.resolve("zh") }));
+vi.mock("next-intl/server", () => ({
+  getLocale: () => Promise.resolve("zh"),
+  getTranslations: () => Promise.resolve((key: string) => key),
+}));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,

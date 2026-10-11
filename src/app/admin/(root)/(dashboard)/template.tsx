@@ -6,7 +6,7 @@ import {
 } from "@/app/admin/constants/route-capabilities";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import AdminRouteFallback from "@/app/admin/components/AdminRouteFallback";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { getAdminRouteAccessDecision } from "./admin-route-access";
 
 export default function AdminRouteTemplate({
@@ -15,17 +15,13 @@ export default function AdminRouteTemplate({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<AdminRouteFallback />}>
+    <Suspense fallback={<LoadingState variant="region" />}>
       <AdminRouteAccess>{children}</AdminRouteAccess>
     </Suspense>
   );
 }
 
-async function AdminRouteAccess({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function AdminRouteAccess({ children }: { children: React.ReactNode }) {
   const requestHeaders = await headers();
   const user = await getCurrentAdminUser();
   const pathname = requestHeaders.get(ADMIN_PATHNAME_HEADER);

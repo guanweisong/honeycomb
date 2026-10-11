@@ -70,7 +70,7 @@ const CommentClient = ({
 
   return (
     <div>
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
+      <Suspense fallback={<LoadingState variant="region" />}>
         <CommentListContent
           queryCommentPromise={queryCommentPromise}
           onReply={handleReply}

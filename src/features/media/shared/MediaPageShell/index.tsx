@@ -6,6 +6,7 @@ import { useCan } from "@/features/contracts/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { MediaViewModel } from "../media-view-model";
 import { Button } from "@/packages/ui/components/button";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { MediaGrid } from "../MediaGrid";
 import { useMediaActions } from "../actions/media-actions";
 import { useMediaQuery } from "../queries/media-query";
@@ -73,7 +74,11 @@ export function MediaPageShell({ onSelect }: MediaProps) {
             disabled={loading}
           >
             <UploadCloud />
-            {loading ? "正在上传中..." : "点击上传文件"}
+            {loading ? (
+              <LoadingState variant="inline" label="正在上传中..." />
+            ) : (
+              "点击上传文件"
+            )}
           </Button>
         </div>
       )}
@@ -91,11 +96,15 @@ export function MediaPageShell({ onSelect }: MediaProps) {
         aria-live="polite"
         className="flex min-h-8 items-center justify-center text-sm text-gray-500"
       >
-        {query.isFetchingMore
-          ? "正在加载更多..."
-          : !query.hasMore && query.data?.list.length
-            ? "已加载全部媒体"
-            : null}
+        {query.isFetchingMore ? (
+          <LoadingState
+            variant="inline"
+            label="正在加载更多..."
+            visuallyHiddenLabel
+          />
+        ) : !query.hasMore && query.data?.list.length ? (
+          "已加载全部媒体"
+        ) : null}
       </div>
     </div>
   );

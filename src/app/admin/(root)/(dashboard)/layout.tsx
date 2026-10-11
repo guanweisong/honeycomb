@@ -3,7 +3,7 @@ import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
 import { DashboardClientShell } from "./components/DashboardClientShell";
 import { AdminProviders } from "@/app/admin/AdminProviders";
-import AdminRouteFallback from "@/app/admin/components/AdminRouteFallback";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 export default function AdminDashboardLayout({
   children,
@@ -11,7 +11,7 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<AdminRouteFallback />}>
+    <Suspense fallback={<LoadingState variant="page" />}>
       <AuthenticatedDashboard>{children}</AuthenticatedDashboard>
     </Suspense>
   );

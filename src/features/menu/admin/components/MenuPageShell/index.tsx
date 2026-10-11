@@ -50,7 +50,7 @@ export function MenuPageShell() {
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
                   {categoryLoading ? (
-                    <LoadingState fullScreen={false} />
+                    <LoadingState variant="region" />
                   ) : (
                     categoryList?.list?.map((item) => (
                       <div
@@ -84,7 +84,7 @@ export function MenuPageShell() {
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
                   {pageLoading ? (
-                    <LoadingState fullScreen={false} />
+                    <LoadingState variant="region" />
                   ) : (
                     pageList?.list?.map((item) => (
                       <div
@@ -126,7 +126,7 @@ export function MenuPageShell() {
         )}
         <div className="bg-gray-50 my-2 py-2">
           {menuLoading ? (
-            <LoadingState fullScreen={false} />
+            <LoadingState variant="region" />
           ) : (
             <SortableTree
               aria-label="菜单结构"

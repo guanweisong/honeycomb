@@ -12,6 +12,7 @@ import {
 } from "../../components/dialog";
 import { Button } from "../../components/button";
 import { cn } from "../../lib/utils";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 import {
   AlertTriangle,
@@ -132,7 +133,11 @@ export function Dialog({
                 variant={type ? typeButtonVariantMap[type] : "default"}
                 {...OKProps}
               >
-                {loading ? "处理中…" : OKProps?.children || "确定"}
+                {loading ? (
+                  <LoadingState variant="inline" label="处理中…" />
+                ) : (
+                  OKProps?.children || "确定"
+                )}
               </Button>
             )}
           </DialogFooter>

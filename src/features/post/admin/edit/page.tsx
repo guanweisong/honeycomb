@@ -14,6 +14,7 @@ import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
 import { usePostEditor } from "./hooks/use-post-editor";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 function PostDetailContent() {
   const id = useSearchParams().get("id");
@@ -83,7 +84,7 @@ function PostDetailContent() {
 
 export default function PostDetail() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingState variant="region" />}>
       <PostDetailContent />
     </Suspense>
   );

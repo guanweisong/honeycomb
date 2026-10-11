@@ -10,6 +10,7 @@ import {
 } from "../../components/sheet";
 
 import { Button } from "../../components/button";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 interface SheetProps {
   open: boolean;
@@ -58,7 +59,11 @@ export function Sheet({
               <Button variant="outline">{cancelText}</Button>
             </SheetClose>
             <Button onClick={onConfirm} disabled={loading}>
-              {loading ? "Loading..." : confirmText}
+              {loading ? (
+                <LoadingState variant="inline" label="Loading..." />
+              ) : (
+                confirmText
+              )}
             </Button>
           </SheetFooter>
         )}

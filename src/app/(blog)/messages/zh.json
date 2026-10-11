@@ -7,12 +7,14 @@
   },
   "PostInfo": {
     "views": "{count}次浏览",
-    "messages": "{count}条留言"
+    "messages": "{count}条留言",
+    "loading": "正在加载评论..."
   },
   "PostList": {
     "emptyTip": "该分类暂时没有文章哦！",
     "postUnderTag": "标签{tag}下的所有文章",
     "postUnderAuthor": "作者{author}下的所有文章",
+    "loadingMore": "正在加载更多文章...",
     "listEnd": "到底了"
   },
   "Tag": {

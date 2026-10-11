@@ -41,24 +41,20 @@ import LoadingState from "@/packages/ui/extended/LoadingState";
  * @param {PageProps<"/[locale]/archives/[id]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 归档页面。
  */
-export default function Archives(
-  props: PageProps<"/[locale]/archives/[id]">,
-) {
+export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
   return (
     <>
       <Suspense fallback={null}>
         <DynamicMetadataMarker />
       </Suspense>
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
+      <Suspense fallback={<LoadingState variant="region" />}>
         <ArchiveContent {...props} />
       </Suspense>
     </>
   );
 }
 
-async function ArchiveContent(
-  props: PageProps<"/[locale]/archives/[id]">,
-) {
+async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
   let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
@@ -68,6 +64,7 @@ async function ArchiveContent(
     handlePostDetailError(error);
   }
   const t = await getTranslations("Archive");
+  const postInfoT = await getTranslations("PostInfo");
 
   const category = assertPostCategory(postDetail);
 
@@ -91,13 +88,19 @@ async function ArchiveContent(
         authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ""}
         comments={
-          <Suspense fallback={<span aria-hidden="true">…</span>}>
+          <Suspense
+            fallback={
+              <LoadingState
+                variant="inline"
+                label={postInfoT("loading")}
+                visuallyHiddenLabel
+              />
+            }
+          >
             <PostCommentCount commentsPromise={queryCommentPromise} />
           </Suspense>
         }
-        views={
-          <PostViewTracker id={id} initialViews={postDetail.views ?? 0} />
-        }
+        views={<PostViewTracker id={id} initialViews={postDetail.views ?? 0} />}
       />
       {postDetail.type !== PostType.QUOTE && (
         <div className="my-3 lg:my-5">
@@ -122,14 +125,15 @@ async function ArchiveContent(
         postDetail.type === PostType.MOVIE ||
         postDetail.type === PostType.QUOTE) && (
         <ul className="border-t-0.5 border-dashed border-auto-front-gray/30 py-2">
-          {postDetail.type === PostType.PHOTOGRAPH && postDetail.galleryTime && (
-            <li className="flex items-center">
-              <Camera size={20} />
-              &nbsp;{utcFormat(postDetail.galleryTime)}&nbsp; {t("shotIn")}
-              &nbsp;
-              {postDetail.galleryLocation?.[locale]}
-            </li>
-          )}
+          {postDetail.type === PostType.PHOTOGRAPH &&
+            postDetail.galleryTime && (
+              <li className="flex items-center">
+                <Camera size={20} />
+                &nbsp;{utcFormat(postDetail.galleryTime)}&nbsp; {t("shotIn")}
+                &nbsp;
+                {postDetail.galleryLocation?.[locale]}
+              </li>
+            )}
           {postDetail.type === PostType.MOVIE && postDetail.movieTime && (
             <li className="flex items-center">
               <Calendar size={20} />

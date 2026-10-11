@@ -12,13 +12,12 @@ import { DataTablePagination } from "./Pagination";
 import { DataTableToolbar } from "./Toolbar";
 import { useDataTableState } from "./useDataTableState";
 import { useRowSelection } from "./useRowSelection";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import type { DataTableProps } from "./types";
 
 export type { DataTableProps } from "./types";
 
-export function DataTable<TData>(
-  props: DataTableProps<TData>,
-) {
+export function DataTable<TData>(props: DataTableProps<TData>) {
   const {
     columns,
     data,
@@ -138,7 +137,11 @@ export function DataTable<TData>(
         </Table>
         {isFetching && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
-            <span className="text-muted-foreground text-sm">正在加载中...</span>
+            <LoadingState
+              variant="inline"
+              label="正在加载中..."
+              visuallyHiddenLabel
+            />
           </div>
         )}
       </div>

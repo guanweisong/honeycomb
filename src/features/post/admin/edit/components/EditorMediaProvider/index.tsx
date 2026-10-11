@@ -6,12 +6,20 @@ import {
   TiptapMediaPickerProvider,
   type MediaPickerRenderer,
 } from "@/packages/ui/extended/Tiptap/media-picker";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
-const loading = () => <span role="status">正在加载媒体选择器…</span>;
+const loading = () => (
+  <LoadingState
+    variant="inline"
+    label="正在加载媒体选择器…"
+    visuallyHiddenLabel
+  />
+);
 
 const PhotoPickerModal = dynamic(() => import("../PhotoPicker"), { loading });
 const MediaPageShell = dynamic(
-  () => import("@/features/media/public").then((module) => module.MediaPageShell),
+  () =>
+    import("@/features/media/public").then((module) => module.MediaPageShell),
   { loading },
 );
 

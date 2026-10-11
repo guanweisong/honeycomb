@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 /**
  * 网站底部组件。
@@ -22,7 +23,15 @@ export default async function Footer() {
       <div>{setting?.siteSignature?.[language]}</div>
       <div>
         ©
-        <Suspense fallback={<span aria-hidden="true">…</span>}>
+        <Suspense
+          fallback={
+            <LoadingState
+              variant="inline"
+              label={language === "zh" ? "正在加载年份" : "Loading year"}
+              visuallyHiddenLabel
+            />
+          }
+        >
           <CurrentYear />
         </Suspense>
         &nbsp;

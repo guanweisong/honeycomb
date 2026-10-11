@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/packages/ui/lib/utils";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import { usePathname } from "next/navigation";
 import { MenuItem } from "../../index";
 
@@ -34,10 +35,14 @@ export const MenuTitle = (props: MenuTitleProps) => {
   const content = (
     <div className="flex items-center gap-2 w-full min-w-0">
       <span>{item.icon}</span>
-      {!collapsed && (
-        <span className={cn("text-sm truncate", isPending && "shimmer")}>
-          {item.name}
-        </span>
+      {!collapsed && <span className="truncate text-sm">{item.name}</span>}
+      {isPending && (
+        <LoadingState
+          variant="inline"
+          label={`正在打开${item.name}`}
+          visuallyHiddenLabel
+          className="ml-auto shrink-0 text-current"
+        />
       )}
     </div>
   );

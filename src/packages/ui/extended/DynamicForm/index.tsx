@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Form } from "../../components/form";
 import { Button } from "../../components/button";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 
 import { DynamicField, FieldConfig } from "./DynamicField";
 
@@ -99,7 +100,11 @@ export function DynamicForm<TShape extends ZodRawShape>({
               disabled={loading}
               {...submitProps}
             >
-              {loading ? "处理中..." : (submitProps?.children ?? "提交")}
+              {loading ? (
+                <LoadingState variant="inline" label="处理中..." />
+              ) : (
+                (submitProps?.children ?? "提交")
+              )}
             </Button>
           </div>
         )}
