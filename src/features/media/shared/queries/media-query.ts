@@ -126,7 +126,12 @@ export function useMediaQuery() {
       total: query.data?.total ?? total,
     },
     hasMore,
-    isFetchingMore: page > 1 && query.isFetching,
+    // Keep the load-more state active until the response is reconciled into
+    // `pages`; otherwise `hasMore` briefly becomes false between query settle
+    // and the page reconciliation effect updating the current page.
+    isFetchingMore:
+      page > 1 &&
+      (query.isFetching || (!currentPageLoaded && !query.error)),
     loadMore,
     refetch: reset,
     reset,

@@ -102,7 +102,7 @@ export function MediaPageShell({ onSelect }: MediaProps) {
             label="正在加载更多..."
             visuallyHiddenLabel
           />
-        ) : !query.hasMore && query.data?.list.length ? (
+        ) : !query.error && !query.hasMore && query.data?.list.length ? (
           "已加载全部媒体"
         ) : null}
       </div>
