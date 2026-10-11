@@ -1,18 +1,30 @@
+import { connection } from "next/server";
 import type { MetadataRoute } from "next";
+import { getPublicSetting } from "@/app/lib/server/public-queries";
+import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 
-/**
- * 生成 Web App Manifest 文件。
- * 用于定义渐进式 Web 应用 (PWA) 的元数据，如应用名称、图标、启动 URL 等。
- * 保持为静态元数据，避免 Next.js 构建阶段依赖数据库等运行时服务。
- */
-export default function manifest(): MetadataRoute.Manifest {
+type ManifestProps = {
+  params: Promise<{ locale: string }>;
+};
+
+/** 按当前语言生成 Web App Manifest。 */
+export default async function manifest({
+  params,
+}: ManifestProps): Promise<MetadataRoute.Manifest> {
+  await connection();
+
+  const { locale: rawLocale } = await params;
+  const locale = normalizeMultiLangLocale(rawLocale);
+  const setting = await getPublicSetting();
+
   return {
-    name: "Honeycomb",
-    short_name: "Honeycomb",
-    description: "Honeycomb content management system",
+    name: setting?.siteName?.[locale] ?? "Honeycomb",
+    short_name: setting?.siteName?.[locale] ?? "Honeycomb",
+    description:
+      setting?.siteSubName?.[locale] ?? "Honeycomb content management system",
     background_color: "#FFFFFF",
     theme_color: "#FFFFFF",
-    start_url: "/",
+    start_url: `/${locale}/`,
     display: "standalone",
     orientation: "portrait",
     icons: [

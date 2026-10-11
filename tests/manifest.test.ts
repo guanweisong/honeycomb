@@ -4,12 +4,14 @@ import { describe, expect, it } from "vitest";
 import { offlinePrecacheUrl } from "@/packages/infrastructure/pwa/precache-config";
 
 describe("web app manifest", () => {
-  it("does not import runtime services", async () => {
+  it("loads public settings at request time", async () => {
     const source = await readFile(
-      join(process.cwd(), "src/app/manifest.ts"),
+      join(process.cwd(), "src/app/(blog)/[locale]/manifest.ts"),
       "utf8",
     );
 
+    expect(source).toContain("await connection()");
+    expect(source).toContain("await getPublicSetting()");
     expect(source).not.toContain("@/packages/trpc/api");
     expect(source).not.toContain("createServerClient");
   });

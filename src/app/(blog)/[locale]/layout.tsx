@@ -53,7 +53,7 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href={`/${locale}/manifest.webmanifest`} />
         <meta name="theme-color" content="#FFFFFF" />
         {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
           <Script

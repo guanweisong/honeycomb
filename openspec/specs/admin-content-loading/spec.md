@@ -31,12 +31,12 @@ admin dashboard SHALL 在目标 RSC 尚未返回时保留当前正文，不得�
 
 ### Requirement: Admin 菜单使用自适应路由预取
 
-admin 菜单 SHALL 使用 Link 的 `auto` 预取策略，由 Next.js 根据路由静态或动态属性决定完整或部分预取；菜单不得强制完整预取所有私有动态路由。
+admin 菜单 SHALL 使用 Link 的 `auto` 预取策略。启用 Partial Prefetching 后，Next.js MUST 为可见链接预取目标 App Shell，并根据路由的静态或动态属性决定完整或部分预取；菜单 MUST NOT 强制完整预取认证后才可见的私有动态数据。身份与权限相关内容 MUST 继续由请求时的服务端边界保护。
 
-#### Scenario: 展示后台菜单
+#### Scenario: 渲染后台菜单
 
 - **WHEN** admin dashboard 渲染用户可访问的菜单项
-- **THEN** Next.js 对静态路由执行完整预取，对动态路由最多预取到最近的 loading 边界
+- **THEN** Next.js 为可见目标预取共享 App Shell，对静态路由执行完整预取，对动态路由最多预取到最近的 loading 边界；身份与权限相关内容继续由请求时的服务端边界保护
 
 ### Requirement: 已访问动态路由复用客户端 RSC
 
