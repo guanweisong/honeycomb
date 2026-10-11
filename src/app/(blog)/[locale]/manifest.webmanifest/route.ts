@@ -3,21 +3,17 @@ import type { MetadataRoute } from "next";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 
-type ManifestProps = {
-  params: Promise<{ locale: string }>;
-};
-
-/** 按当前语言生成 Web App Manifest。 */
-export default async function manifest({
-  params,
-}: ManifestProps): Promise<MetadataRoute.Manifest> {
+/** 按当前语言在请求时生成 Web App Manifest。 */
+export async function GET(
+  _request: Request,
+  { params }: RouteContext<"/[locale]/manifest.webmanifest">,
+): Promise<Response> {
   await connection();
 
   const { locale: rawLocale } = await params;
   const locale = normalizeMultiLangLocale(rawLocale);
   const setting = await getPublicSetting();
-
-  return {
+  const manifest: MetadataRoute.Manifest = {
     name: setting?.siteName?.[locale] ?? "Honeycomb",
     short_name: setting?.siteName?.[locale] ?? "Honeycomb",
     description:
@@ -59,4 +55,8 @@ export default async function manifest({
       },
     ],
   };
+
+  return Response.json(manifest, {
+    headers: { "Content-Type": "application/manifest+json; charset=utf-8" },
+  });
 }

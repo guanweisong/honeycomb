@@ -6,7 +6,10 @@ import { offlinePrecacheUrl } from "@/packages/infrastructure/pwa/precache-confi
 describe("web app manifest", () => {
   it("loads public settings at request time", async () => {
     const source = await readFile(
-      join(process.cwd(), "src/app/(blog)/[locale]/manifest.ts"),
+      join(
+        process.cwd(),
+        "src/app/(blog)/[locale]/manifest.webmanifest/route.ts",
+      ),
       "utf8",
     );
 
