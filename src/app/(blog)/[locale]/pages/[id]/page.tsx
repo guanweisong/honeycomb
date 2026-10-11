@@ -109,13 +109,11 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
           )}
         </div>
       ) : null}
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
-        <Comment
-          id={id}
-          type={MenuType.PAGE}
-          queryCommentPromise={queryCommentPromise}
-        />
-      </Suspense>
+      <Comment
+        id={id}
+        type={MenuType.PAGE}
+        queryCommentPromise={queryCommentPromise}
+      />
     </>
   );
 }

@@ -161,13 +161,11 @@ async function ArchiveContent(
           </ul>
         </Card>
       )}
-      <Suspense fallback={<LoadingState fullScreen={false} />}>
-        <Comment
-          id={id}
-          type={MenuType.CATEGORY}
-          queryCommentPromise={queryCommentPromise}
-        />
-      </Suspense>
+      <Comment
+        id={id}
+        type={MenuType.CATEGORY}
+        queryCommentPromise={queryCommentPromise}
+      />
     </>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useRef, useState } from "react";
+import { Suspense, use, useRef, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
 import Card from "@/packages/ui/blog/Card";
+import LoadingState from "@/packages/ui/extended/LoadingState";
 import type { CommentProps } from "../index";
 import type {
   CommentTreeViewModel as CommentTreeEntity,
@@ -20,12 +21,32 @@ export interface CommentClientProps extends CommentProps {
   queryCommentPromise: Promise<CommentTreeResponse>;
 }
 
+function CommentListContent({
+  queryCommentPromise,
+  onReply,
+}: {
+  queryCommentPromise: Promise<CommentTreeResponse>;
+  onReply: (comment: CommentTreeEntity) => void;
+}) {
+  const comment = use(queryCommentPromise);
+  const t = useTranslations("Comment");
+
+  if (!comment || comment.total === 0) return null;
+
+  return (
+    <Card title={t("summary", { count: comment.total })}>
+      <ul>
+        <CommentTree comments={comment.list} onReply={onReply} />
+      </ul>
+    </Card>
+  );
+}
+
 const CommentClient = ({
   id,
   type,
   queryCommentPromise,
 }: CommentClientProps) => {
-  const comment = use(queryCommentPromise);
   const [replyTo, setReplyTo] = useState<CommentTreeEntity | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
@@ -49,13 +70,12 @@ const CommentClient = ({
 
   return (
     <div>
-      {comment && comment.total !== 0 && (
-        <Card title={t("summary", { count: comment.total })}>
-          <ul>
-            <CommentTree comments={comment.list} onReply={handleReply} />
-          </ul>
-        </Card>
-      )}
+      <Suspense fallback={<LoadingState fullScreen={false} />}>
+        <CommentListContent
+          queryCommentPromise={queryCommentPromise}
+          onReply={handleReply}
+        />
+      </Suspense>
       <Card title={t("title")}>
         <CommentForm
           identity={identity}
