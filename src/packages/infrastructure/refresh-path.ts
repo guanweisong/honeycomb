@@ -30,6 +30,14 @@ import {
  * 只接受结构化标识，不暴露任意路径缓存失效能力。
  */
 async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
+  let failed = false;
+  async function attempt(operation: () => unknown) {
+    try {
+      await operation();
+    } catch {
+      failed = true;
+    }
+  }
   const references = new Map(
     plan.contents?.map((reference) => [
       `${reference.type}:${reference.id}`,
@@ -38,26 +46,31 @@ async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
   );
 
   if (plan.refreshPostIndex) {
-    await bumpCacheVersion(POST_CACHE_NAMESPACE, POST_CACHE_VERSION_KEY);
-    revalidateTag(POST_INDEX_CACHE_TAG, { expire: 0 });
+    await attempt(() =>
+      bumpCacheVersion(POST_CACHE_NAMESPACE, POST_CACHE_VERSION_KEY),
+    );
+    await attempt(() => revalidateTag(POST_INDEX_CACHE_TAG, { expire: 0 }));
   }
   if (plan.refreshSitemap) {
-    revalidateTag(SITEMAP_CACHE_TAG, { expire: 0 });
+    await attempt(() => revalidateTag(SITEMAP_CACHE_TAG, { expire: 0 }));
   }
   for (const { id, type } of references.values()) {
-    revalidateTag(
-      type === "post" ? getPostDetailCacheTag(id) : getPageDetailCacheTag(id),
-      { expire: 0 },
+    await attempt(() =>
+      revalidateTag(
+        type === "post" ? getPostDetailCacheTag(id) : getPageDetailCacheTag(id),
+        { expire: 0 },
+      ),
     );
     const segment = type === "post" ? "archives" : "pages";
     for (const locale of supportedLanguages) {
-      revalidatePath(`/${locale}/${segment}/${id}`);
+      await attempt(() => revalidatePath(`/${locale}/${segment}/${id}`));
     }
   }
   if (plan.refreshLayout) {
-    revalidateTag(PUBLIC_LAYOUT_CACHE_TAG, { expire: 0 });
-    revalidatePath("/[locale]", "layout");
+    await attempt(() => revalidateTag(PUBLIC_LAYOUT_CACHE_TAG, { expire: 0 }));
+    await attempt(() => revalidatePath("/[locale]", "layout"));
   }
+  if (failed) throw new Error("Public cache invalidation failed");
 }
 
 function recordInvalidation(outcome: "completed" | "degraded") {

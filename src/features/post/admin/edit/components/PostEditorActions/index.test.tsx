@@ -65,6 +65,7 @@ describe("PostEditorActions", () => {
           loading: props.loading ?? false,
           submit: async (...args) => {
             submitted.push(args);
+            return true;
           },
         }),
       );
@@ -134,5 +135,15 @@ describe("PostEditorActions", () => {
 
     expect(button("更新")?.disabled).toBe(true);
     expect(button("撤回为草稿")?.disabled).toBe(true);
+  });
+
+  it("disables every create action while a mutation is pending", async () => {
+    grantedPermissions.add("post:create");
+    await renderActions({ loading: true });
+
+    expect(button("发布")?.disabled).toBe(true);
+    expect(button("保存草稿")?.disabled).toBe(true);
+    await click("保存草稿");
+    expect(submitted).toEqual([]);
   });
 });

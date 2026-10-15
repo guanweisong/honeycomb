@@ -205,7 +205,7 @@ export async function generateMetadata(
   /**
    * 格式化文章标题
    */
-  const title = decodeURI(getPostTitle(postDetail, locale) ?? "");
+  const title = getPostTitle(postDetail, locale) ?? "";
 
   const openGraph = {
     title: title,

@@ -1,9 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BetterAuthOptions } from "better-auth";
+import { captcha } from "better-auth/plugins";
 import { getConfiguredProviderIds } from "@/packages/identity/auth/providers";
 
 const captured = vi.hoisted(() => ({
   options: undefined as BetterAuthOptions | undefined,
+  env: {
+    AUTH_URL: "http://localhost:3000",
+    AUTH_SECRET: "test-secret",
+    turnstile: undefined as { secretKey: string } | undefined,
+  },
 }));
 
 vi.mock("better-auth", () => ({
@@ -21,10 +27,7 @@ vi.mock("better-auth/plugins", () => ({
   username: vi.fn(() => ({})),
 }));
 vi.mock("@/env/server", () => ({
-  getAuthEnv: () => ({
-    AUTH_URL: "http://localhost:3000",
-    AUTH_SECRET: "test-secret",
-  }),
+  getAuthEnv: () => captured.env,
 }));
 vi.mock("@/packages/infrastructure/db/db", () => ({ getDb: vi.fn() }));
 vi.mock("@/packages/infrastructure/db/schema", () => ({}));
@@ -36,6 +39,13 @@ vi.mock("@/packages/identity/auth/server/auth-hooks", () => ({
 }));
 
 describe("auth transport boundary", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    captured.options = undefined;
+    captured.env.turnstile = undefined;
+  });
+
   it("keeps the supported social provider order stable", () => {
     expect(
       getConfiguredProviderIds({
@@ -50,5 +60,23 @@ describe("auth transport boundary", () => {
     await import("./auth");
 
     expect(captured.options?.disabledPaths).toContain("/update-user");
+  });
+
+  it("protects both password sign-in endpoints when Turnstile is configured", async () => {
+    captured.env.turnstile = { secretKey: "turnstile-secret" };
+
+    await import("./auth");
+
+    expect(captcha).toHaveBeenCalledWith({
+      provider: "cloudflare-turnstile",
+      secretKey: "turnstile-secret",
+      endpoints: ["/sign-in/username", "/sign-in/email"],
+    });
+  });
+
+  it("does not enable CAPTCHA when Turnstile is not configured", async () => {
+    await import("./auth");
+
+    expect(captcha).not.toHaveBeenCalled();
   });
 });

@@ -11,7 +11,7 @@ interface PostEditorActionsProps {
   id?: string;
   loading: boolean;
   status?: string;
-  submit: (status: PostStatus, action: PostSubmitAction) => Promise<void>;
+  submit: (status: PostStatus, action: PostSubmitAction) => Promise<boolean>;
 }
 
 export function PostEditorActions({
@@ -46,6 +46,7 @@ export function PostEditorActions({
           }
           type="danger"
           title="确定要撤回吗？"
+          OKProps={{ disabled: loading }}
           onOK={() => submit(PostStatus.DRAFT, "update")}
         />
       )}
@@ -72,6 +73,7 @@ export function PostEditorActions({
       {canCreatePost && !isEdit && (
         <Button
           type="button"
+          disabled={loading}
           onClick={() => submit(PostStatus.DRAFT, "create")}
         >
           保存草稿

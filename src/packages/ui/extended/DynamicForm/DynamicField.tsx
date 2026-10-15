@@ -29,6 +29,7 @@ export type { FieldConfig } from "./types";
 
 /** 动态表单字段容器，负责表单绑定、多语言字段和错误展示。 */
 export function DynamicField(field: FieldConfig) {
+  const labelId = React.useId();
   const form = useFormContext<Record<string, unknown>>();
   const formValues = useWatch({ control: form.control });
 
@@ -43,6 +44,7 @@ export function DynamicField(field: FieldConfig) {
           name={name}
           controllerField={controllerField}
           formValues={formValues}
+          aria-labelledby={field.label ? labelId : undefined}
         />
       </FormControl>
       <FormMessage />
@@ -54,7 +56,7 @@ export function DynamicField(field: FieldConfig) {
       <FormItem key={field.name}>
         <Tabs defaultValue="zh">
           <div className="flex justify-between">
-            <Label>{field.label}</Label>
+            <Label id={labelId}>{field.label}</Label>
             <TabsList>
               {supportedLangs.map((lang) => {
                 const { error } = form.getFieldState(
@@ -95,7 +97,7 @@ export function DynamicField(field: FieldConfig) {
       name={field.name}
       render={({ field: controllerField }) => (
         <FormItem key={field.name}>
-          {field.label && <FormLabel>{field.label}</FormLabel>}
+          {field.label && <FormLabel id={labelId}>{field.label}</FormLabel>}
           {renderField(field.name, controllerField)}
         </FormItem>
       )}

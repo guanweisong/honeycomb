@@ -129,9 +129,9 @@ export function Dialog({
             {onOK && (
               <Button
                 onClick={handleOK}
-                disabled={loading || OKProps?.disabled}
                 variant={type ? typeButtonVariantMap[type] : "default"}
                 {...OKProps}
+                disabled={loading || OKProps?.disabled}
               >
                 {loading ? (
                   <LoadingState variant="inline" label="处理中…" />

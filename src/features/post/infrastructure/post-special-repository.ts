@@ -26,12 +26,24 @@ export function createPostSpecialRepository(
 ): PostSpecialRepository {
   return {
     async cachedList(input) {
-      const version = await getCacheVersion(namespace, versionKey);
-      const key = `post:index:v${version}:${JSON.stringify(input)}`;
-      const cached = await getCacheJSON(namespace, key, decodeCachedPostList);
-      if (cached) return cached;
+      let key: string | undefined;
+      try {
+        const version = await getCacheVersion(namespace, versionKey);
+        key = `post:index:v${version}:${JSON.stringify(input)}`;
+        const cached = await getCacheJSON(namespace, key, decodeCachedPostList);
+        if (cached) return cached;
+      } catch {
+        // Cache failures are observed by the adapter; public reads still use DB.
+        key = undefined;
+      }
       const result = await query.list(input, "PUBLISHED_ONLY");
-      await setCacheJSON(namespace, key, result, 60 * 60);
+      if (key !== undefined) {
+        try {
+          await setCacheJSON(namespace, key, result, 60 * 60);
+        } catch {
+          // A failed cache fill must not discard a successful database read.
+        }
+      }
       return result;
     },
     async randomByCategory(categoryId) {

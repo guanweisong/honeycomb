@@ -4,6 +4,7 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
+  Table,
   VisibilityState,
 } from "@tanstack/react-table";
 import type { CheckedState } from "radix-ui/checkbox";
@@ -32,7 +33,7 @@ export interface DataTableProps<TData> {
   selectedRows?: TData[];
   onSelectionChange?: (selectedRows: TData[]) => void;
   rowActions?: (row: TData) => React.ReactNode;
-  toolBar?: React.ReactNode;
+  toolBar?: React.ReactNode | ((table: Table<TData>) => React.ReactNode);
   className?: string;
   maxHeightRem?: number;
   stickyHeader?: boolean;

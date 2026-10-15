@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ export function usePostEditor(id: string | null) {
   const [modalProps, setModalProps] =
     useState<AdminDialogState<CategoryEntity>>();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
   const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
   const [movieActors, setMovieActors] = useState<PostTagOption[]>([]);
@@ -59,60 +60,70 @@ export function usePostEditor(id: string | null) {
     setMovieStyles(detail.movieStyles || []);
   }, [detail, form]);
 
-  const submit = (
+  const submit = async (
     status: PostStatus,
     action: PostSubmitAction,
-  ): Promise<void> =>
-    form.handleSubmit(
-      async (values) => {
-        const normalized = normalizePostForm(values, status);
-        if (!normalized.ok) {
-          toast.error("请上传封面");
-          return;
-        }
+  ): Promise<boolean> => {
+    if (submitting.current) return false;
+    submitting.current = true;
+    setLoading(true);
+    let saved = false;
 
-        const data = normalized.data;
-        setLoading(true);
-        if (action === "create") {
-          if (!data.categoryId) {
-            toast.error("请选择分类目录");
-            setLoading(false);
+    try {
+      await form.handleSubmit(
+        async (values) => {
+          const normalized = normalizePostForm(values, status);
+          if (!normalized.ok) {
+            toast.error("请上传封面");
             return;
           }
-          createPost
-            .mutateAsync(PostInsertSchema.parse(data))
-            .then((result) => {
-              if (result.id) {
-                toast.success("添加成功");
-                router.push(`/admin/post/edit?id=${result.id}`);
-              }
-            })
-            .finally(() => setLoading(false));
-          return;
-        }
 
-        if (!detail) {
-          toast.error("文章尚未加载，无法更新");
-          setLoading(false);
-          return;
-        }
-        updatePost
-          .mutateAsync(PostUpdateSchema.parse({ ...data, id: detail.id }))
-          .then((result) => {
-            if (result) {
-              toast.success("更新成功");
-              refetch();
+          const data = normalized.data;
+          if (action === "create") {
+            if (!data.categoryId) {
+              toast.error("请选择分类目录");
+              return;
             }
-          })
-          .finally(() => setLoading(false));
-      },
-      () => {
-        clientLogger.warn(LogEvent.clientError, {
-          operation: "post.validate",
-          outcome: "error",
-        });
-      },
-    )();
+            const result = await createPost.mutateAsync(
+              PostInsertSchema.parse(data),
+            );
+            if (result.id) {
+              saved = true;
+              toast.success("添加成功");
+              router.push(`/admin/post/edit?id=${result.id}`);
+            }
+            return;
+          }
+
+          if (!detail) {
+            toast.error("文章尚未加载，无法更新");
+            return;
+          }
+          const result = await updatePost.mutateAsync(
+            PostUpdateSchema.parse({ ...data, id: detail.id }),
+          );
+          if (result) {
+            await refetch();
+            saved = true;
+            toast.success("更新成功");
+          }
+        },
+        () => {
+          clientLogger.warn(LogEvent.clientError, {
+            operation: "post.validate",
+            outcome: "error",
+          });
+        },
+      )();
+      return saved;
+    } catch {
+      toast.error(action === "create" ? "添加失败" : "更新失败");
+      return false;
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
 
   const photoPickerProps: PhotoPickerItemProps = {
     cover: coverPreview,

@@ -346,6 +346,27 @@ describe("archives page", () => {
     ).resolves.toMatchObject(expected);
   });
 
+  it.each(["增长 100%", "Literal %20 title", "Bad %E0%A4%A escape"])(
+    "preserves literal title text in metadata: %s",
+    async (title) => {
+      mockPostDetail.mockResolvedValue({
+        ...articleDetail,
+        title: { zh: title },
+      });
+
+      await expect(
+        generateMetadata({
+          params: Promise.resolve({ id: "post-1", locale: "zh" }),
+          searchParams: Promise.resolve({}),
+        }),
+      ).resolves.toMatchObject({
+        title,
+        openGraph: { title },
+        twitter: { title },
+      });
+    },
+  );
+
   it("generates English canonical, language alternates and social defaults", async () => {
     mockSettingIndex.mockResolvedValue({
       siteName: { en: "Honeycomb", zh: "蜂巢" },

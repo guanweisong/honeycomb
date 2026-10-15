@@ -4,7 +4,7 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Video from "./components/VideoNode";
 import { ToolbarButton } from "./components/ToolbarButton";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 import { toolbarItems } from "@/packages/ui/extended/Tiptap/config/toolbar-items";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -14,12 +14,22 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { ToolbarGroupItem } from "./components/ToolbarGroupItem";
 
-interface TiptapProps {
+interface TiptapProps extends Pick<
+  HTMLAttributes<HTMLDivElement>,
+  "id" | "aria-describedby" | "aria-invalid" | "aria-labelledby"
+> {
   value?: string;
   onChange?: (value: string) => void;
 }
 
-export default function Tiptap({ value, onChange }: TiptapProps = {}) {
+export default function Tiptap({
+  value,
+  onChange,
+  id,
+  "aria-describedby": describedBy,
+  "aria-invalid": invalid,
+  "aria-labelledby": labelledBy,
+}: TiptapProps = {}) {
   const [, setUpdateCount] = useState(0);
   const onChangeRef = useRef(onChange);
 
@@ -52,6 +62,16 @@ export default function Tiptap({ value, onChange }: TiptapProps = {}) {
     ],
     content: value || "<p></p>",
     immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        role: "textbox",
+        "aria-multiline": "true",
+        ...(id ? { id } : {}),
+        ...(describedBy ? { "aria-describedby": describedBy } : {}),
+        ...(invalid !== undefined ? { "aria-invalid": String(invalid) } : {}),
+        ...(labelledBy ? { "aria-labelledby": labelledBy } : {}),
+      },
+    },
     onUpdate: ({ editor }) => {
       onChangeRef.current?.(editor.getHTML());
     },

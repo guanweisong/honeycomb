@@ -10,7 +10,7 @@
     "lint:fix": "bunx eslint -c eslint-config-next.ts . --fix",
     "analyze": "bun next experimental-analyze --output",
     "format": "prettier --write \"**/*.{ts,tsx,md,css,scss}\"",
-    "check-types": "bun tsc --noEmit",
+    "check-types": "bun next typegen && bun tsc --noEmit",
     "quality:spec": "openspec validate --all --strict && bun scripts/check-diff.ts",
     "prepare": "husky",
     "test": "vitest",

@@ -96,7 +96,9 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-2", className)}>
-      <DataTableToolbar>{toolBar}</DataTableToolbar>
+      <DataTableToolbar>
+        {typeof toolBar === "function" ? toolBar(table) : toolBar}
+      </DataTableToolbar>
       <div
         className={tableWrapperClassName}
         style={
