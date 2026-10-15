@@ -5,8 +5,8 @@ test.describe('blog pwa', () => {
   test('@regression manifest link exists', async ({ page }) => {
     await openBlogHome(page);
     const manifests = page.locator('link[rel="manifest"]');
-    await expect(manifests.first()).toHaveAttribute('href', '/manifest.webmanifest');
-    await expect(manifests).toHaveCount(2);
+    await expect(manifests.first()).toHaveAttribute('href', '/en/manifest.webmanifest');
+    await expect(manifests).toHaveCount(1);
   });
 
   // Serwist injects additionalPrecacheEntries only in production builds.
@@ -55,7 +55,7 @@ test.describe('blog pwa', () => {
       await context.setOffline(false);
     }
 
-    const manifestResponse = await page.goto('/manifest.webmanifest');
+    const manifestResponse = await page.goto('/en/manifest.webmanifest');
     expect(manifestResponse?.ok()).toBe(true);
   });
 });
