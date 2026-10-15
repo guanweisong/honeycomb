@@ -6,10 +6,11 @@ import { requireDefined } from "@tests/helpers/require-defined";
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   destroy: vi.fn(),
+  can: vi.fn(),
 }));
 
 vi.mock("@/features/contracts/admin/use-current-user", () => ({
-  useCan: () => false,
+  useCan: mocks.can,
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
@@ -69,6 +70,7 @@ let root: Root;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.can.mockReturnValue(false);
   mocks.query.mockReturnValue({
     data: { list: [], total: 80 },
     isFetching: false,
@@ -87,6 +89,22 @@ afterEach(async () => {
 function lastQuery() {
   return requireDefined(mocks.query.mock.lastCall)[0];
 }
+
+it("names the icon-only row actions", async () => {
+  mocks.can.mockReturnValue(true);
+  mocks.query.mockReturnValue({
+    data: {
+      list: [{ id: "post-1", title: null, type: "ARTICLE", status: "DRAFT" }],
+      total: 1,
+    },
+    isFetching: false,
+    isError: false,
+  });
+  await act(async () => root.render(<PostListClient />));
+
+  expect(container.querySelector('tbody button[aria-label="编辑文章"]')).not.toBeNull();
+  expect(container.querySelector('tbody button[aria-label="删除文章"]')).not.toBeNull();
+});
 
 async function nextPage() {
   await act(async () => {

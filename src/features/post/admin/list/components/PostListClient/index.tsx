@@ -110,6 +110,7 @@ export default function PostListClient() {
             <Button
               variant="secondary"
               size="sm"
+              aria-label="编辑文章"
               onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
             >
               <Pencil />
@@ -118,7 +119,7 @@ export default function PostListClient() {
           {canDeletePost && (
             <Dialog
               trigger={
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" aria-label="删除文章">
                   <Trash />
                 </Button>
               }

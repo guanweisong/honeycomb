@@ -3,6 +3,14 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostType } from "@/packages/domain/content/post";
+import type { PostDetailViewModel } from "../../../presentation/post-view-model";
+
+type EditorDetail = Pick<
+  PostDetailViewModel,
+  "id" | "categoryId" | "coverId" | "type"
+> &
+  Partial<PostDetailViewModel>;
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -12,9 +20,7 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
-  detail: undefined as
-    | { id: string; categoryId: string; coverId: string; type: "ARTICLE" }
-    | undefined,
+  detail: undefined as EditorDetail | undefined,
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
@@ -39,11 +45,42 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
 
 import { usePostEditor } from "./use-post-editor";
 
-describe("usePostEditor submissions", () => {
+describe("usePostEditor", () => {
   let container: HTMLDivElement;
   let root: Root;
   let editor: ReturnType<typeof usePostEditor> | undefined;
   const postId = "123456789012345678901234";
+  const cover = {
+    id: "cover-1",
+    key: "cover.jpg",
+    name: "cover.jpg",
+    size: 100,
+    type: "image/jpeg",
+    url: "/cover.jpg",
+    color: null,
+    height: 1080,
+    width: 1920,
+    createdAt: null,
+    updatedAt: null,
+  };
+  const tag = {
+    id: "tag-1",
+    name: { zh: "原标签", en: "Original tag" },
+    createdAt: null,
+    updatedAt: null,
+  };
+  const originalDetail: EditorDetail = {
+    id: postId,
+    categoryId: "category-1",
+    coverId: cover.id,
+    cover,
+    type: PostType.ARTICLE,
+    title: { zh: "原始标题" },
+    galleryStyles: [tag],
+    movieActors: [tag],
+    movieDirectors: [tag],
+    movieStyles: [tag],
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -62,18 +99,222 @@ describe("usePostEditor submissions", () => {
     container.remove();
   });
 
-  async function renderEditor(id: string | null = null) {
-    function Harness() {
-      editor = usePostEditor(id);
-      return <span>{editor.loading ? "saving" : "idle"}</span>;
-    }
+  function Harness({ id }: { id: string | null }) {
+    editor = usePostEditor(id);
+    return <span>{editor.loading ? "saving" : "idle"}</span>;
+  }
 
-    await act(async () => root.render(<Harness />));
+  async function rerenderEditor(id: string | null = null) {
+    await act(async () => root.render(<Harness id={id} />));
+  }
+
+  async function renderEditor(id: string | null = null) {
+    await rerenderEditor(id);
     await act(async () => {
       requireDefined(editor).form.setValue("categoryId", "category-1");
       requireDefined(editor).form.setValue("coverId", "cover-1");
     });
   }
+
+  it("preserves dirty fields and cover/tag selections during a same-post refetch", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    const selectedCover = { ...cover, id: "cover-2", url: "/selected.jpg" };
+    const selectedTag = { ...tag, id: "tag-2" };
+
+    await act(async () => {
+      const current = requireDefined(editor);
+      current.form.setValue(
+        "title",
+        { zh: "未保存标题" },
+        { shouldDirty: true },
+      );
+      current.form.setValue("coverId", selectedCover.id, { shouldDirty: true });
+      current.setCoverPreview(selectedCover);
+      current.setGalleryStyles([selectedTag]);
+      current.setMovieActors([selectedTag]);
+      current.setMovieDirectors([selectedTag]);
+      current.setMovieStyles([selectedTag]);
+    });
+    mocks.detail = { ...originalDetail, title: { zh: "后台更新标题" } };
+    await rerenderEditor(postId);
+
+    const current = requireDefined(editor);
+    expect(current.form.getValues("title")).toEqual({ zh: "未保存标题" });
+    expect(current.form.getValues("coverId")).toBe(selectedCover.id);
+    expect(current.form.formState.isDirty).toBe(true);
+    expect(current.photoPickerProps.cover).toEqual(selectedCover);
+    expect(current.galleryStyles).toEqual([selectedTag]);
+    expect(current.movieActors).toEqual([selectedTag]);
+    expect(current.movieDirectors).toEqual([selectedTag]);
+    expect(current.movieStyles).toEqual([selectedTag]);
+  });
+
+  it("refreshes a pristine form and its auxiliary selections", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    const refreshed = {
+      ...originalDetail,
+      title: { zh: "最新标题" },
+      coverId: "cover-2",
+      cover: { ...cover, id: "cover-2" },
+      galleryStyles: [],
+      movieActors: [],
+      movieDirectors: [],
+      movieStyles: [],
+    };
+    mocks.detail = refreshed;
+    await rerenderEditor(postId);
+
+    const current = requireDefined(editor);
+    expect(current.form.getValues("title")).toEqual(refreshed.title);
+    expect(current.photoPickerProps.cover).toEqual(refreshed.cover);
+    expect(current.galleryStyles).toEqual([]);
+    expect(current.movieActors).toEqual([]);
+    expect(current.movieDirectors).toEqual([]);
+    expect(current.movieStyles).toEqual([]);
+    expect(current.form.formState.isDirty).toBe(false);
+  });
+
+  it.each([null, "234567890123456789012345"])(
+    "clears the previous draft when navigating to %s and initializes arriving detail",
+    async (nextId) => {
+      mocks.detail = originalDetail;
+      await renderEditor(postId);
+      await act(async () => {
+        requireDefined(editor).form.setValue(
+          "title",
+          { zh: "未保存标题" },
+          { shouldDirty: true },
+        );
+      });
+      // The prior query may still be visible while the next record is loading.
+      await rerenderEditor(nextId);
+
+      const current = requireDefined(editor);
+      expect(current.form.getValues()).toEqual({ type: "ARTICLE" });
+      expect(current.form.formState.isDirty).toBe(false);
+      expect(current.photoPickerProps.cover).toBeUndefined();
+      expect(current.galleryStyles).toEqual([]);
+      expect(current.movieActors).toEqual([]);
+      expect(current.movieDirectors).toEqual([]);
+      expect(current.movieStyles).toEqual([]);
+
+      if (nextId) {
+        mocks.detail = {
+          ...originalDetail,
+          id: nextId,
+          title: { zh: "新文章" },
+        };
+        await rerenderEditor(nextId);
+        expect(requireDefined(editor).form.getValues("id")).toBe(nextId);
+        expect(requireDefined(editor).form.getValues("title")).toEqual({
+          zh: "新文章",
+        });
+        expect(requireDefined(editor).photoPickerProps.cover).toEqual(cover);
+        expect(requireDefined(editor).galleryStyles).toEqual([tag]);
+      }
+    },
+  );
+
+  it("replaces a dirty draft immediately when navigating to a loaded record", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    await act(async () => {
+      requireDefined(editor).form.setValue(
+        "title",
+        { zh: "未保存标题" },
+        { shouldDirty: true },
+      );
+    });
+    const nextId = "234567890123456789012345";
+    mocks.detail = { ...originalDetail, id: nextId, title: { zh: "新文章" } };
+    await rerenderEditor(nextId);
+
+    expect(requireDefined(editor).form.getValues("id")).toBe(nextId);
+    expect(requireDefined(editor).form.getValues("title")).toEqual({
+      zh: "新文章",
+    });
+    expect(requireDefined(editor).form.formState.isDirty).toBe(false);
+  });
+
+  it("resets the saved draft and auxiliary selections from the explicit save refetch", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    await act(async () => {
+      const current = requireDefined(editor);
+      current.form.setValue(
+        "title",
+        { zh: "未保存标题" },
+        { shouldDirty: true },
+      );
+      current.setCoverPreview(undefined);
+      current.setGalleryStyles([]);
+      current.setMovieActors([]);
+      current.setMovieDirectors([]);
+      current.setMovieStyles([]);
+    });
+    const savedDetail = {
+      ...originalDetail,
+      title: { zh: "已保存标题" },
+      status: PostStatus.PUBLISHED,
+    };
+    mocks.refetch.mockResolvedValue({ data: savedDetail, isSuccess: true });
+    await act(async () => {
+      await expect(
+        requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+      ).resolves.toBe(true);
+    });
+
+    const current = requireDefined(editor);
+    expect(current.form.getValues("title")).toEqual(savedDetail.title);
+    expect(current.form.getValues("status")).toBe(PostStatus.PUBLISHED);
+    expect(current.form.formState.isDirty).toBe(false);
+    expect(current.photoPickerProps.cover).toEqual(cover);
+    expect(current.galleryStyles).toEqual([tag]);
+    expect(current.movieActors).toEqual([tag]);
+    expect(current.movieDirectors).toEqual([tag]);
+    expect(current.movieStyles).toEqual([tag]);
+  });
+
+  it("keeps the saved values when refetch fails with an older cached detail", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    const selectedCover = { ...cover, id: "cover-2", url: "/selected.jpg" };
+    const selectedTag = { ...tag, id: "tag-2" };
+    await act(async () => {
+      const current = requireDefined(editor);
+      current.form.setValue("title", { zh: "保存标题" }, { shouldDirty: true });
+      current.form.setValue("coverId", selectedCover.id, { shouldDirty: true });
+      current.setCoverPreview(selectedCover);
+      current.setGalleryStyles([selectedTag]);
+      current.setMovieActors([selectedTag]);
+      current.setMovieDirectors([selectedTag]);
+      current.setMovieStyles([selectedTag]);
+    });
+    mocks.refetch.mockResolvedValue({
+      data: originalDetail,
+      isError: true,
+      isSuccess: false,
+    });
+
+    await act(async () => {
+      await expect(
+        requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+      ).resolves.toBe(true);
+    });
+
+    const current = requireDefined(editor);
+    expect(current.form.getValues("title")).toEqual({ zh: "保存标题" });
+    expect(current.form.getValues("coverId")).toBe(selectedCover.id);
+    expect(current.form.getValues("status")).toBe(PostStatus.PUBLISHED);
+    expect(current.form.formState.isDirty).toBe(false);
+    expect(current.photoPickerProps.cover).toEqual(selectedCover);
+    expect(current.galleryStyles).toEqual([selectedTag]);
+    expect(current.movieActors).toEqual([selectedTag]);
+    expect(current.movieDirectors).toEqual([selectedTag]);
+    expect(current.movieStyles).toEqual([selectedTag]);
+  });
 
   it.each(["create", "update"] as const)(
     "waits for %s and rejects same-tick duplicate submissions",
@@ -83,7 +324,7 @@ describe("usePostEditor submissions", () => {
           id: postId,
           categoryId: "category-1",
           coverId: "cover-1",
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
         };
       }
       let resolveMutation: ((value: { id: string }) => void) | undefined;
@@ -139,7 +380,7 @@ describe("usePostEditor submissions", () => {
           id: postId,
           categoryId: "category-1",
           coverId: "cover-1",
-          type: "ARTICLE",
+          type: PostType.ARTICLE,
         };
       }
       const mutation = action === "create" ? mocks.create : mocks.update;

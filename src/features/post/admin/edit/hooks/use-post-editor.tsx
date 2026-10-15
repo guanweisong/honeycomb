@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -49,16 +49,41 @@ export function usePostEditor(id: string | null) {
   );
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
+  const { isDirty } = form.formState;
+  const previousRecord = useRef<
+    | {
+        id: string | null;
+        detail: typeof detail;
+      }
+    | undefined
+  >(undefined);
+
+  const resetEditor = useCallback(
+    (post?: PostDetailEntity | null) => {
+      form.reset(post ?? { type: PostType.ARTICLE });
+      setCoverPreview(post?.cover);
+      setGalleryStyles(post?.galleryStyles || []);
+      setMovieActors(post?.movieActors || []);
+      setMovieDirectors(post?.movieDirectors || []);
+      setMovieStyles(post?.movieStyles || []);
+    },
+    [form],
+  );
 
   useEffect(() => {
-    if (!detail) return;
-    form.reset(detail);
-    setCoverPreview(detail.cover);
-    setGalleryStyles(detail.galleryStyles || []);
-    setMovieActors(detail.movieActors || []);
-    setMovieDirectors(detail.movieDirectors || []);
-    setMovieStyles(detail.movieStyles || []);
-  }, [detail, form]);
+    const previous = previousRecord.current;
+    previousRecord.current = { id, detail };
+    if (previous?.id === id) {
+      // Changes to dirty state alone must not reapply an older query snapshot.
+      if (previous.detail === detail) return;
+      if (isDirty && previous.detail?.id === id) return;
+    }
+    if (id && detail?.id !== id) {
+      if (previous?.id !== id) resetEditor();
+      return;
+    }
+    resetEditor(id ? detail : undefined);
+  }, [detail, id, isDirty, resetEditor]);
 
   const submit = async (
     status: PostStatus,
@@ -88,6 +113,7 @@ export function usePostEditor(id: string | null) {
               PostInsertSchema.parse(data),
             );
             if (result.id) {
+              form.reset(data);
               saved = true;
               toast.success("添加成功");
               router.push(`/admin/post/edit?id=${result.id}`);
@@ -103,7 +129,12 @@ export function usePostEditor(id: string | null) {
             PostUpdateSchema.parse({ ...data, id: detail.id }),
           );
           if (result) {
-            await refetch();
+            const refreshed = await refetch();
+            if (previousRecord.current?.id === detail.id) {
+              if (refreshed.isSuccess && refreshed.data) {
+                resetEditor(refreshed.data);
+              } else form.reset(data);
+            }
             saved = true;
             toast.success("更新成功");
           }

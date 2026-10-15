@@ -195,7 +195,7 @@ AUTH_GITHUB_SECRET=your_github_client_secret
 AUTH_APPLE_ID=your_apple_service_id
 AUTH_APPLE_SECRET=your_apple_client_secret
 
-# Upstash Redis（生产 API 限流必填；开发/测试可不配置）
+# Upstash Redis（生产限流建议配置；评论创建等独立限流入口依赖它）
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 
@@ -205,7 +205,7 @@ CSP_REPORT_ONLY=true
 
 生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 阶段不会连接数据库，也不会执行生产启动校验。
 
-R2、Turnstile、Resend 与 OAuth Provider 是可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。Upstash 在生产运行时必须完整配置，缺失时 API 会 fail-closed 返回 `503`；只有开发和测试环境可不配置。
+R2、Turnstile、Resend、OAuth Provider 与 Upstash 是可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。生产环境中，Upstash 缺失、超时或故障时，通用 API 代理会 fail-open 放行请求以保持可用；评论创建等具有独立限流的入口仍会 fail-closed 拒绝请求，返回 `503`。生产部署应完整配置 Upstash，以启用通用 API 限流和这些受保护的写入入口。
 
 ### 登录说明
 
@@ -305,9 +305,11 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 - 响应体：`{"code":429,"message":"Too many requests, please try again later."}`
 - 响应头包含：`X-RateLimit-Limit`、`X-RateLimit-Remaining`、`X-RateLimit-Reset`
 
-生产环境必须完整配置 `UPSTASH_REDIS_REST_URL` 与
-`UPSTASH_REDIS_REST_TOKEN`；缺失或限流服务故障时，API 返回 HTTP `503`，
-不会静默跳过限流。开发和测试环境允许使用内存允许策略。
+`UPSTASH_REDIS_REST_URL` 与 `UPSTASH_REDIS_REST_TOKEN` 必须成对配置。
+生产环境缺失配置、限流服务异常或等待超过 750ms 时，通用 API 代理采用
+fail-open：放行请求，并省略不可用的限流响应头。评论创建等使用独立限流的
+入口采用 fail-closed：限流不可用时返回 HTTP `503`，超过阈值时返回 `429`。
+开发和测试环境未配置 Upstash 时使用允许策略，不模拟实际配额限制。
 
 ## 数据库设计
 

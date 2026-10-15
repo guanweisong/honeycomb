@@ -10,6 +10,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { cn } from "@/packages/ui/lib/utils";
 import LoadingState from "@/packages/ui/extended/LoadingState";
+import { Button } from "@/packages/ui/components/button";
 import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
 import { PostType, PostTypeName } from "@/packages/domain/content/post";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
@@ -40,16 +41,25 @@ export interface PostListProps {
 export default function PostList(props: PostListProps): JSX.Element {
   const { queryParams, initData } = props;
   const { top: scrollTop } = useScrollPosition();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQueryPostList(queryParams, initData);
+  const {
+    data,
+    fetchNextPage,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isError,
+    isFetchNextPageError,
+  } = useInfiniteQueryPostList(queryParams, initData);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
+  const errorTranslations = useTranslations("Error");
 
   const postList = data?.pages.flatMap((page) => page?.list ?? []) ?? [];
   /**
    * 是否已加载所有文章。
    */
-  const isEnd = !hasNextPage;
+  const isEnd = !hasNextPage && !isError && !isFetching;
   /**
    * 是否正在加载更多文章。
    */
@@ -60,7 +70,12 @@ export default function PostList(props: PostListProps): JSX.Element {
    * 当用户滚动到页面底部附近时，自动加载下一页文章。
    */
   useEffect(() => {
-    if (typeof document !== "undefined" && !isLoadingMore && hasNextPage) {
+    if (
+      typeof document !== "undefined" &&
+      !isFetching &&
+      !isError &&
+      hasNextPage
+    ) {
       const documentHeight = document.body.scrollHeight;
       const viewportBottom = scrollTop + window.innerHeight;
       const difference = documentHeight - viewportBottom;
@@ -68,7 +83,7 @@ export default function PostList(props: PostListProps): JSX.Element {
         fetchNextPage();
       }
     }
-  }, [scrollTop, isLoadingMore, hasNextPage, fetchNextPage]);
+  }, [scrollTop, isFetching, isError, hasNextPage, fetchNextPage]);
 
   /**
    * 渲染文章列表中的单个卡片。
@@ -153,6 +168,25 @@ export default function PostList(props: PostListProps): JSX.Element {
       <div className="flex flex-col gap-4">
         {postList.map((item, index) => renderCard(item, index))}
       </div>
+      {isError && (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <p role="alert">{errorTranslations("title")}</p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isFetching}
+            onClick={() => {
+              if (isFetchNextPageError) {
+                void fetchNextPage();
+              } else {
+                void refetch();
+              }
+            }}
+          >
+            {errorTranslations("tryAgain")}
+          </Button>
+        </div>
+      )}
       {isEnd && <Signature text={t("listEnd")} />}
       {isLoadingMore && (
         <div className="mt-4 flex justify-center">
