@@ -19,6 +19,7 @@ const bun = (globalThis as typeof globalThis & {
       target: "browser";
       format: "esm";
       minify: boolean;
+      define: Record<string, string>;
       sourcemap: "none";
     }): Promise<{ success: boolean; logs: unknown[] }>;
   };
@@ -30,6 +31,11 @@ const bundle = await bun.build({
   target: "browser",
   format: "esm",
   minify: isProduction,
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(
+      isProduction ? "production" : "development",
+    ),
+  },
   sourcemap: "none",
 });
 
