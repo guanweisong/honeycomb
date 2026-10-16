@@ -23,6 +23,7 @@ import type {
   PostAuthorRecord,
   PostCategoryRecord,
   PostTagRecord,
+  PostVisibility,
 } from "../application/repository";
 import { groupPostTranslations } from "./post-translations";
 import {
@@ -104,6 +105,7 @@ function toPostViewModel(
 export async function loadPostRelations(
   db: Database,
   posts: PostRecord[],
+  visibility: PostVisibility = "ALL",
 ): Promise<PostWithRelations[]> {
   const postIds = Array.from(
     new Set(posts.map((post) => post.id).filter(Boolean)),
@@ -114,7 +116,12 @@ export async function loadPostRelations(
     "select",
     () =>
       db.query.post.findMany({
-        where: inArray(schema.post.id, postIds),
+        where: and(
+          inArray(schema.post.id, postIds),
+          visibility === "PUBLISHED_ONLY"
+            ? eq(schema.post.status, PostStatus.PUBLISHED)
+            : undefined,
+        ),
         with: {
           author: {
             columns: {
@@ -129,11 +136,28 @@ export async function loadPostRelations(
         },
       }),
   );
-  const translations = groupPostTranslations(rows.flatMap((row) => row.translations));
   const relationMap = new Map(rows.map((row) => [row.id, row]));
-  return posts.map((item) => {
+  const visiblePosts =
+    visibility === "PUBLISHED_ONLY"
+      ? posts.filter((post) => relationMap.has(post.id))
+      : posts;
+  return visiblePosts.map((item) => {
     const row = relationMap.get(item.id);
-    const tags = row?.postTags ?? [];
+    const {
+      author,
+      cover,
+      translations,
+      category,
+      postTags: tags,
+      ...currentPost
+    } = row ?? {
+      ...item,
+      author: null,
+      cover: null,
+      translations: [],
+      category: null,
+      postTags: [],
+    };
     type RelatedTag = NonNullable<(typeof tags)[number]["tag"]>;
     const mapTags = (type: TagType) =>
       tags
@@ -146,7 +170,6 @@ export async function loadPostRelations(
       createdAt: tag.createdAt,
       updatedAt: tag.updatedAt,
     });
-    const category = row?.category;
     const categoryTranslations = category
       ? {
           title: assembleRequiredLocalizedField(category.translations, (translation) => translation.title),
@@ -156,7 +179,10 @@ export async function loadPostRelations(
           ),
         }
       : undefined;
-    return toPostViewModel(item, translations.get(item.id), {
+    // Published metadata and translations must come from the same payload read.
+    const post = visibility === "PUBLISHED_ONLY" ? currentPost : item;
+    const localized = groupPostTranslations(translations).get(item.id);
+    return toPostViewModel(post, localized, {
       category: category
         ? {
             id: category.id,
@@ -173,13 +199,13 @@ export async function loadPostRelations(
             updatedAt: category.updatedAt,
           }
         : undefined,
-      author: row?.author
+      author: author
         ? {
-            id: row.author.id,
-            name: row.author.name,
+            id: author.id,
+            name: author.name,
           }
         : null,
-      cover: row?.cover,
+      cover,
       movieActors: mapTags(TagType.ACTOR).map(mapTag),
       movieDirectors: mapTags(TagType.DIRECTOR).map(mapTag),
       movieStyles: mapTags(TagType.MOVIE_STYLE).map(mapTag),
@@ -289,7 +315,7 @@ export function createPostQueryRepository(
         ),
       ]);
       return {
-        list: await loadRelations(db, list),
+        list: await loadRelations(db, list, visibility),
         total: Number(countRows[0]?.count) || 0,
       };
     },
@@ -310,7 +336,8 @@ export function createPostQueryRepository(
             .limit(1),
       );
       if (!item) return null;
-      const [result] = await loadRelations(db, [item]);
+      const [result] = await loadRelations(db, [item], visibility);
+      if (!result && visibility === "PUBLISHED_ONLY") return null;
       if (!result)
         throw new ApplicationError(
           "INTERNAL_SERVER_ERROR",
