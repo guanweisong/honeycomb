@@ -16,6 +16,7 @@ import { observeDbOperation } from "@/packages/infrastructure/observability/serv
 import type {
   PageQueryRepository,
   PageWithRelations,
+  PageVisibility,
 } from "../application/repository";
 import { groupPageTranslations } from "./page-translations";
 
@@ -55,14 +56,20 @@ function toPageRecord(
 async function mapRelations(
   db: Database,
   pages: PageRow[],
+  visibility: PageVisibility,
 ): Promise<PageWithRelations[]> {
   if (!pages.length) return [];
   const urls = new Set<string>();
   const rows = await observeDbOperation("page.service.relations", "select", () =>
       db.query.page.findMany({
-        where: inArray(
-          schema.page.id,
-          pages.map((page) => page.id),
+        where: and(
+          inArray(
+            schema.page.id,
+            pages.map((page) => page.id),
+          ),
+          visibility === "PUBLISHED_ONLY"
+            ? eq(schema.page.status, PageStatus.PUBLISHED)
+            : undefined,
         ),
         with: {
           author: { columns: { id: true, name: true } },
@@ -71,9 +78,17 @@ async function mapRelations(
       }),
     );
   const translations = groupPageTranslations(rows.flatMap((row) => row.translations));
-  const localizedPages = pages.map((page) => ({
+  const relationMap = new Map(rows.map((row) => [row.id, row]));
+  const visiblePages =
+    visibility === "PUBLISHED_ONLY"
+      ? pages.flatMap((page) => {
+          const row = relationMap.get(page.id);
+          return row ? [row] : [];
+        })
+      : pages;
+  const localizedPages = visiblePages.map((page) => ({
     ...toPageRecord(page, translations.get(page.id)),
-    author: rows.find((row) => row.id === page.id)?.author ?? null,
+    author: relationMap.get(page.id)?.author ?? null,
   }));
   for (const page of localizedPages) {
     for (const url of getLocalizedImageLinks(page.content)) urls.add(url);
@@ -152,7 +167,7 @@ export function createPageQueryRepository(db: Database): PageQueryRepository {
         ),
       ]);
       return {
-        list: await mapRelations(db, list),
+        list: await mapRelations(db, list, visibility),
         total: Number(countRows[0]?.count) || 0,
       };
     },

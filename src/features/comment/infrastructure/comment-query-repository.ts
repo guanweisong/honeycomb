@@ -1,5 +1,7 @@
 import "server-only";
 import { CommentStatus } from "@/packages/domain/content/comment";
+import { PostStatus } from "@/packages/domain/content/post-status";
+import { PageStatus } from "@/packages/domain/content/page";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { repositoryPaginationDefaults } from "@/packages/application/pagination";
 import { toCommentRecord, toPublicCommentSource } from "./comment-dto";
@@ -8,7 +10,7 @@ import {
   toPublicComment,
 } from "../application/comment-public-dto";
 
-import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { Database } from "@/packages/infrastructure/db/db";
 import * as schema from "@/packages/infrastructure/db/schema";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
@@ -52,7 +54,7 @@ export function createCommentQueryRepository(
   db: Database,
 ): CommentQueryRepository {
   return {
-    async list(input) {
+    async list(input, visibility = "ALL") {
       const {
         page = repositoryPaginationDefaults.page,
         limit = repositoryPaginationDefaults.limit,
@@ -60,7 +62,26 @@ export function createCommentQueryRepository(
         sortOrder,
         ...rest
       } = input;
-      const where = buildDrizzleWhere(schema.comment, rest, ["status"]);
+      let where = buildDrizzleWhere(schema.comment, rest, ["status"]);
+      if (visibility === "PUBLISHED_ONLY") {
+        const publishedPosts = db
+          .select({ id: schema.post.id })
+          .from(schema.post)
+          .where(eq(schema.post.status, PostStatus.PUBLISHED));
+        const publishedPages = db
+          .select({ id: schema.page.id })
+          .from(schema.page)
+          .where(eq(schema.page.status, PageStatus.PUBLISHED));
+        // 先限制目标再分页和计数，避免通过评论、标题或总数读取未发布内容。
+        where = and(
+          where,
+          or(
+            inArray(schema.comment.postId, publishedPosts),
+            inArray(schema.comment.pageId, publishedPages),
+            inArray(schema.comment.customId, publishedPosts),
+          ),
+        );
+      }
       const orderBy = buildDrizzleOrderBy(
         schema.comment,
         sortField,
@@ -88,7 +109,10 @@ export function createCommentQueryRepository(
       const comments = ids.length
         ? await observeDbOperation("comment.service.list", "select", () =>
             db.query.comment.findMany({
-              where: inArray(schema.comment.id, ids),
+              where:
+                visibility === "PUBLISHED_ONLY"
+                  ? and(inArray(schema.comment.id, ids), where)
+                  : inArray(schema.comment.id, ids),
               with: {
                 post: { with: { translations: true } },
                 page: { with: { translations: true } },
@@ -113,7 +137,13 @@ export function createCommentQueryRepository(
             "select",
             () =>
               db.query.post.findMany({
-                where: inArray(schema.post.id, customIds),
+                where:
+                  visibility === "PUBLISHED_ONLY"
+                    ? and(
+                        inArray(schema.post.id, customIds),
+                        eq(schema.post.status, PostStatus.PUBLISHED),
+                      )
+                    : inArray(schema.post.id, customIds),
                 with: { translations: true },
               }),
           )

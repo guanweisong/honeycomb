@@ -17,6 +17,22 @@ import { useCommentQuery } from "../../queries/comment-query";
 
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);
+  const canReadPrivate = useCan(Permission.commentReadPrivate);
+  const columns = canReadPrivate
+    ? commentTableColumns
+    : commentTableColumns
+        .filter(
+          (column) =>
+            !(
+              "accessorKey" in column &&
+              ["email", "ip"].includes(String(column.accessorKey))
+            ),
+        )
+        .map((column) =>
+          "accessorKey" in column && column.accessorKey === "postId"
+            ? { ...column, enableSorting: false }
+            : column,
+        );
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
   const query = useCommentQuery();
   const { handleSetStatus, handleDelete, handleDeleteBatch } =
@@ -132,7 +148,7 @@ export function CommentPageShell() {
 
   return (
     <DataTable<CommentEntity>
-      columns={commentTableColumns}
+      columns={columns}
       data={{
         list: query.data?.list ?? [],
         total: query.data?.total ?? 0,

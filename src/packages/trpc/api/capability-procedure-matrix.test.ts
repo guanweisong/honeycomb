@@ -10,6 +10,10 @@ import {
   Permission,
   type Permission as PermissionValue,
 } from "@/packages/identity/auth/permissions";
+import {
+  capabilityRegistry,
+  type CapabilityConsumer,
+} from "@/packages/identity/auth/capability-registry";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/packages/infrastructure/observability/server/registry";
 import { UserLevel } from "@/packages/domain/identity/user";
@@ -376,14 +380,43 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("maps all 40 protected procedures onto all 32 defined permissions", () => {
+  it("covers all 35 permissions with 40 procedure gates and three explicit data scopes", () => {
     expect(capabilityProcedureMatrix).toHaveLength(40);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
       40,
     );
+    const procedurePermissions = new Set(
+      capabilityProcedureMatrix.map(([, permission]) => permission),
+    );
+    const dataScopePermissions = ALL_PERMISSIONS.filter((permission) => {
+      const consumers: readonly CapabilityConsumer[] =
+        capabilityRegistry[permission].consumers;
+      return consumers.includes("trpc-data");
+    });
+    const registeredProcedurePermissions = ALL_PERMISSIONS.filter(
+      (permission) => {
+        const consumers: readonly CapabilityConsumer[] =
+          capabilityRegistry[permission].consumers;
+        return consumers.includes("trpc");
+      },
+    );
+    expect(procedurePermissions.size).toBe(32);
+    expect(procedurePermissions).toEqual(
+      new Set(registeredProcedurePermissions),
+    );
+    expect(dataScopePermissions).toEqual([
+      Permission.commentReadPrivate,
+      Permission.pageReadUnpublished,
+      Permission.postReadUnpublished,
+    ]);
     expect(
-      new Set(capabilityProcedureMatrix.map(([, permission]) => permission)),
-    ).toEqual(new Set(ALL_PERMISSIONS));
+      dataScopePermissions.some((permission) =>
+        procedurePermissions.has(permission),
+      ),
+    ).toBe(false);
+    expect(new Set([...procedurePermissions, ...dataScopePermissions])).toEqual(
+      new Set(ALL_PERMISSIONS),
+    );
   });
 
   it("matches direct capability declarations in every real registered router", () => {

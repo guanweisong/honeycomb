@@ -35,6 +35,20 @@ export interface CommentListItem extends CommentRecord {
   page: CommentRelatedRecord | null;
   custom: CommentRelatedRecord | null;
 }
+/** 后台演示列表的显式安全投影，不含评论者隐私及内部关联标识。 */
+export type CommentPreviewListItem = Pick<
+  CommentListItem,
+  | "id"
+  | "author"
+  | "content"
+  | "site"
+  | "status"
+  | "createdAt"
+  | "updatedAt"
+  | "post"
+  | "page"
+  | "custom"
+>;
 export interface PublicCommentNode {
   id: string;
   author: string;
@@ -73,6 +87,7 @@ export type CommentRefInput = { id: string; type: `${MenuType}` };
 export interface CommentQueryRepository {
   list(
     input: CommentListInput,
+    visibility?: "ALL" | "PUBLISHED_ONLY",
   ): Promise<{ list: CommentListItem[]; total: number }>;
   listPublicByRef(
     input: CommentRefInput,

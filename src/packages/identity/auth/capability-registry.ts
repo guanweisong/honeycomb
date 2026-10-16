@@ -6,6 +6,7 @@ import {
 
 export type CapabilityConsumer =
   | "trpc"
+  | "trpc-data"
   | "admin-action"
   | "admin-route"
   | "menu";
@@ -21,6 +22,7 @@ export const capabilityRegistry = {
   [Permission.categoryDelete]: { consumers: ["trpc", "admin-action"] },
   [Permission.categoryUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.commentReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
+  [Permission.commentReadPrivate]: { consumers: ["trpc-data", "admin-action"] },
   [Permission.commentModerate]: { consumers: ["trpc", "admin-action"] },
   [Permission.linkReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.linkCreate]: { consumers: ["trpc", "admin-action"] },
@@ -32,10 +34,12 @@ export const capabilityRegistry = {
   [Permission.menuReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.menuUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.pageReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
+  [Permission.pageReadUnpublished]: { consumers: ["trpc-data"] },
   [Permission.pageCreate]: { consumers: ["trpc", "admin-action"] },
   [Permission.pageDelete]: { consumers: ["trpc", "admin-action"] },
   [Permission.pageUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.postReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
+  [Permission.postReadUnpublished]: { consumers: ["trpc-data"] },
   [Permission.postCreate]: { consumers: ["trpc", "admin-action"] },
   [Permission.postDelete]: { consumers: ["trpc", "admin-action"] },
   [Permission.postUpdate]: { consumers: ["trpc", "admin-action"] },

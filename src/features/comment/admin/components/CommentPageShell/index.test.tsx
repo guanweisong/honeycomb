@@ -94,6 +94,32 @@ describe("CommentPageShell", () => {
     expect(container.querySelectorAll('[role="checkbox"]')).toHaveLength(0);
   });
 
+  it("hides private comment columns and their sorting without private-read capability", async () => {
+    await act(async () => root.render(React.createElement(CommentPageShell)));
+
+    expect(container.textContent).not.toContain("评论人邮箱");
+    expect(container.textContent).not.toContain("评论IP");
+    expect(container.textContent).not.toContain("commenter@example.com");
+    expect(container.textContent).not.toContain("127.0.0.1");
+    expect(container.textContent).toContain("评论文章");
+    const targetHeader = Array.from(container.querySelectorAll("th")).find(
+      (header) => header.textContent?.includes("评论文章"),
+    );
+    expect(targetHeader).toBeDefined();
+    expect(targetHeader?.className).not.toContain("cursor-pointer");
+  });
+
+  it("keeps private comment columns for authorized readers without moderation", async () => {
+    allowedPermissions = new Set([Permission.commentReadPrivate]);
+    await act(async () => root.render(React.createElement(CommentPageShell)));
+
+    expect(container.textContent).toContain("评论人邮箱");
+    expect(container.textContent).toContain("评论IP");
+    expect(container.textContent).toContain("commenter@example.com");
+    expect(container.textContent).toContain("127.0.0.1");
+    expect(container.textContent).not.toContain("批量删除");
+  });
+
   it("uses the moderation capability for selection and batch deletion", async () => {
     allowedPermissions = new Set([Permission.commentModerate]);
     await act(async () => root.render(React.createElement(CommentPageShell)));

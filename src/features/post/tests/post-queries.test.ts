@@ -149,7 +149,7 @@ describe("文章查询 Repository", () => {
       "desc",
       "createdAt",
     );
-    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts);
+    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts, "PUBLISHED_ONLY");
   });
 
   it("applies category filter before querying posts", async () => {
@@ -191,7 +191,7 @@ describe("文章查询 Repository", () => {
 
     expect(result.total).toBe(1);
     expect(buildCategoryFilterMock).toHaveBeenCalledWith(TEST_IDS.ID_2);
-    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts);
+    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts, "PUBLISHED_ONLY");
   });
 
   it("returns empty result when tag filter matches no posts", async () => {
@@ -269,6 +269,6 @@ describe("文章查询 Repository", () => {
       ],
       total: 1,
     });
-    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts);
+    expect(loadPostRelationsMock).toHaveBeenCalledWith(mockDb, posts, "PUBLISHED_ONLY");
   });
 });
