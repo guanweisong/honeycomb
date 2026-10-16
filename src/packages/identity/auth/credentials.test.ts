@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { verifyPassword } from "better-auth/crypto";
 import { hashCredentialPassword } from "./credentials";

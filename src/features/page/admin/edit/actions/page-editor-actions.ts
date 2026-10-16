@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
@@ -59,6 +59,7 @@ export function usePageEditorActions({
   refetch,
 }: UsePageEditorActionsOptions) {
   const [loading, setLoading] = useState(false);
+  const [isNavigating, startNavigation] = useTransition();
   const router = useRouter();
   const createPage = trpc.page.create.useMutation();
   const updatePage = trpc.page.update.useMutation();
@@ -72,14 +73,16 @@ export function usePageEditorActions({
       create: createPage.mutateAsync,
       update: updatePage.mutateAsync,
     });
-    setLoading(false);
-
     if (result.state === "updated") {
       toast.success("更新成功");
-      refetch();
+      try {
+        await refetch();
+      } catch {
+        // The mutation already succeeded; a failed refresh must not undo it.
+      }
     } else if (result.state === "created") {
       toast.success("添加成功");
-      router.push(`/admin/page/edit?id=${result.id}`);
+      startNavigation(() => router.push(`/admin/page/edit?id=${result.id}`));
     } else {
       clientLogger.error(LogEvent.clientError, {
         operation: "page.submit",
@@ -87,9 +90,11 @@ export function usePageEditorActions({
       });
       toast.error("提交失败，请检查表单内容");
     }
+    setLoading(false);
+    return result;
   };
 
-  return { loading, submit };
+  return { loading: loading || isNavigating, submit };
 }
 /**
  * 页面编辑提交操作及表单 Mutation 编排。

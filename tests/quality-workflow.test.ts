@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -51,7 +53,6 @@ describe("quality workflow", () => {
     for (const command of [
       "bun run check-types",
       "bun run lint",
-      "bun run test:unit:run",
       "bun run test:unit:coverage",
       "bun run test:unit:process",
       "bun run audit:production",
@@ -63,6 +64,35 @@ describe("quality workflow", () => {
     }
     expect(workflow).not.toContain("bun audit --audit-level=critical");
     expect(workflow).not.toMatch(/playwright test\s+tests\/e2e\//);
+  });
+
+  it("runs the full unit inventory once with coverage and retains process tests", () => {
+    const ci = z
+      .object({
+        jobs: z.object({
+          verify: z.object({
+            steps: z.array(z.object({ run: z.string().optional() })),
+          }),
+        }),
+      })
+      .parse(parse(workflow));
+    const commands = ci.jobs.verify.steps.flatMap((step) =>
+      step.run ? [step.run] : [],
+    );
+
+    expect(packageJson.scripts["test:unit:coverage"]).toBe(
+      "vitest run --coverage",
+    );
+    expect(packageJson.scripts["test:unit:process"]).toBe(
+      "vitest run --config vitest.process.config.mts",
+    );
+    expect(
+      commands.filter((command) => command === "bun run test:unit:coverage"),
+    ).toHaveLength(1);
+    expect(
+      commands.filter((command) => command === "bun run test:unit:process"),
+    ).toHaveLength(1);
+    expect(commands.join("\n")).not.toMatch(/bun run test:unit:run\b/);
   });
 
   it("CI selections are disjoint and together execute the complete Playwright inventory", () => {

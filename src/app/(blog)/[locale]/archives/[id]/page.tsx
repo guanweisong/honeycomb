@@ -69,7 +69,6 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   const category = assertPostCategory(postDetail);
 
   const queryCommentPromise = getPublicComments(id, MenuType.CATEGORY);
-  const randomPostsList = await getPublicRandomPosts(category.id);
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
 
@@ -149,28 +148,59 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         </ul>
       )}
       <Tags {...postDetail} />
-      {randomPostsList.filter((item) => item.id !== postDetail?.id).length >
-        0 && (
-        <Card title={t("guessWhatYouLike")}>
-          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-            {randomPostsList
-              .filter((item) => item.id !== postDetail?.id)
-              .map((item) => (
-                <li key={item.id} className="my-2">
-                  <Link href={`/archives/${item.id}`} className="link-light">
-                    {item.title?.[locale] || item.quoteContent?.[locale]}
-                  </Link>
-                </li>
-              ))}
-          </ul>
-        </Card>
-      )}
+      <Suspense
+        fallback={<LoadingState variant="region" label={postInfoT("loading")} />}
+      >
+        <RecommendedPosts
+          categoryId={category.id}
+          postId={postDetail.id}
+          locale={locale}
+          title={t("guessWhatYouLike")}
+        />
+      </Suspense>
       <Comment
         id={id}
         type={MenuType.CATEGORY}
         queryCommentPromise={queryCommentPromise}
       />
     </>
+  );
+}
+
+async function RecommendedPosts({
+  categoryId,
+  postId,
+  locale,
+  title,
+}: {
+  categoryId: string;
+  postId: string;
+  locale: ReturnType<typeof normalizeMultiLangLocale>;
+  title: string;
+}) {
+  let randomPostsList: Awaited<ReturnType<typeof getPublicRandomPosts>>;
+  try {
+    randomPostsList = await getPublicRandomPosts(categoryId);
+  } catch {
+    // Recommendations are optional and must not replace the article on failure.
+    return null;
+  }
+
+  const recommendations = randomPostsList.filter((item) => item.id !== postId);
+  if (recommendations.length === 0) return null;
+
+  return (
+    <Card title={title}>
+      <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
+        {recommendations.map((item) => (
+          <li key={item.id} className="my-2">
+            <Link href={`/archives/${item.id}`} className="link-light">
+              {item.title?.[locale] || item.quoteContent?.[locale]}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

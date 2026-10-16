@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   refetch: vi.fn(),
   push: vi.fn(),
   success: vi.fn(),
+  warning: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
   detail: undefined as EditorDetail | undefined,
@@ -25,7 +26,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("sonner", () => ({
-  toast: { success: mocks.success, error: mocks.error },
+  toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
 vi.mock("@/packages/infrastructure/observability/client", () => ({
   clientLogger: { warn: mocks.warn },
@@ -406,6 +407,70 @@ describe("usePostEditor", () => {
         ).resolves.toBe(true);
       });
       expect(mutation).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([
+    ["create", PostStatus.DRAFT],
+    ["create", PostStatus.PUBLISHED],
+    ["update", PostStatus.DRAFT],
+    ["update", PostStatus.PUBLISHED],
+  ] as const)(
+    "treats %s to %s as saved when public synchronization is degraded",
+    async (action, status) => {
+      if (action === "update") mocks.detail = originalDetail;
+      const mutation = action === "create" ? mocks.create : mocks.update;
+      mutation.mockResolvedValue({ id: postId, publicSync: "degraded" });
+      await renderEditor(action === "update" ? postId : null);
+
+      await act(async () => {
+        await expect(
+          requireDefined(editor).submit(status, action),
+        ).resolves.toBe(true);
+      });
+
+      expect(mutation).toHaveBeenCalledOnce();
+      expect(mocks.warning).toHaveBeenCalledWith(
+        "已保存，公开内容同步未完成，请稍后检查公开页面",
+      );
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(mocks.success).not.toHaveBeenCalled();
+      expect(requireDefined(editor).form.formState.isDirty).toBe(false);
+      if (action === "create")
+        expect(mocks.push).toHaveBeenCalledWith(
+          `/admin/post/edit?id=${postId}`,
+        );
+    },
+  );
+
+  it.each(["completed", "degraded"] as const)(
+    "does not report a failed save when admin refetch rejects after %s synchronization",
+    async (publicSync) => {
+      mocks.detail = originalDetail;
+      mocks.update.mockResolvedValue({ id: postId, publicSync });
+      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
+      await renderEditor(postId);
+      await act(async () => {
+        requireDefined(editor).form.setValue(
+          "title",
+          { zh: "保存标题" },
+          { shouldDirty: true },
+        );
+      });
+      await act(async () => {
+        await expect(
+          requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+        ).resolves.toBe(true);
+      });
+      expect(mocks.update).toHaveBeenCalledOnce();
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(requireDefined(editor).form.getValues("title")).toEqual({
+        zh: "保存标题",
+      });
+      expect(requireDefined(editor).form.formState.isDirty).toBe(false);
+      if (publicSync === "degraded")
+        expect(mocks.warning).toHaveBeenCalledOnce();
+      else expect(mocks.success).toHaveBeenCalledWith("更新成功");
     },
   );
 

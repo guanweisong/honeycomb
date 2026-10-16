@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true;
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const grantedPermissions = new Set<string>();
 
@@ -16,18 +17,14 @@ vi.mock("@/packages/ui/components/button", () => ({
     children,
     variant: _variant,
     ...props
-  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) =>
-    (void _variant, React.createElement("button", props, children)),
+  }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) => (
+    void _variant,
+    React.createElement("button", props, children)
+  ),
 }));
 
 vi.mock("@/packages/ui/extended/Dialog", () => ({
-  Dialog: ({
-    onOK,
-    trigger,
-  }: {
-    onOK: () => void;
-    trigger: React.ReactNode;
-  }) =>
+  Dialog: ({ onOK, trigger }: { onOK: () => void; trigger: React.ReactNode }) =>
     React.createElement(
       React.Fragment,
       null,
@@ -97,6 +94,21 @@ describe("PageEditorActionButtons", () => {
     await click("发布");
     await click("保存草稿");
     expect(submitted).toEqual(["PUBLISHED", "DRAFT"]);
+  });
+
+  it("disables all create actions while saving or navigating", async () => {
+    grantedPermissions.add("page:create");
+    await renderActions({ isEdit: false, loading: true });
+
+    const buttons = Array.from(container.querySelectorAll("button"));
+    expect(buttons.map((item) => item.textContent)).toEqual([
+      "发布",
+      "保存草稿",
+    ]);
+    expect(buttons.every((item) => item.disabled)).toBe(true);
+    await click("发布");
+    await click("保存草稿");
+    expect(submitted).toEqual([]);
   });
 
   it("allows published pages to be updated or withdrawn", async () => {

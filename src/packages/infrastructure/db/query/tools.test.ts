@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect } from "vitest";

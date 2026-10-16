@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { validateCaptcha } from "./validate-captcha";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";

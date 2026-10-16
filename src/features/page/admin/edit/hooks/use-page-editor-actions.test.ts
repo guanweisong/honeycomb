@@ -1,8 +1,9 @@
-import React, { act } from "react";
+import React, { act, Suspense, use, useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { PageStatus } from "@/packages/domain/content/page";
 import { PageTemplate } from "@/packages/domain/content/page-template";
+import { requireDefined } from "@tests/helpers/require-defined";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -41,9 +42,13 @@ const values = {
   content: { en: "English", zh: "中文" },
   template: PageTemplate.DEFAULT,
 };
+let editorActions: ReturnType<typeof usePageEditorActions> | undefined;
 
 function Harness({ pageId }: { pageId?: string }) {
   const actions = usePageEditorActions({ pageId, refetch: mocks.refetch });
+  useEffect(() => {
+    editorActions = actions;
+  }, [actions]);
   return React.createElement(
     React.Fragment,
     null,
@@ -70,6 +75,7 @@ describe("use-page-editor-actions", () => {
 
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
+    editorActions = undefined;
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -103,7 +109,9 @@ describe("use-page-editor-actions", () => {
   it("restores loading and keeps edit failures from refetching", async () => {
     mocks.update.mockRejectedValue(new Error("network unavailable"));
     await act(async () =>
-      root.render(React.createElement(Harness, { pageId: "page-42" })),
+      root.render(
+        React.createElement(Harness, { pageId: "123456789012345678901234" }),
+      ),
     );
 
     await act(async () => container.querySelector("button")?.click());
@@ -117,5 +125,101 @@ describe("use-page-editor-actions", () => {
       operation: "page.submit",
       outcome: "error",
     });
+  });
+
+  it("keeps creation busy until the destination finishes navigating", async () => {
+    const navigation = deferred<unknown>();
+    mocks.create.mockResolvedValue({ id: "123456789012345678901234" });
+
+    function Destination() {
+      use(navigation.promise);
+      return React.createElement("span", null, "destination");
+    }
+
+    function NavigationHarness() {
+      const [navigated, setNavigated] = useState(false);
+      const actions = usePageEditorActions({ refetch: mocks.refetch });
+      useEffect(() => {
+        mocks.push.mockImplementation(() => setNavigated(true));
+      }, []);
+      return React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(
+          "output",
+          null,
+          actions.loading ? "loading" : "idle",
+        ),
+        React.createElement(
+          "button",
+          { onClick: () => void actions.submit(values, PageStatus.PUBLISHED) },
+          "submit",
+        ),
+        navigated && React.createElement(Destination),
+      );
+    }
+
+    await act(async () =>
+      root.render(
+        React.createElement(
+          Suspense,
+          { fallback: "navigating" },
+          React.createElement(NavigationHarness),
+        ),
+      ),
+    );
+    await act(async () => container.querySelector("button")?.click());
+
+    expect(container.querySelector("output")?.textContent).toBe("loading");
+    expect(container.textContent).not.toContain("navigating");
+    await act(async () => navigation.resolve(undefined));
+
+    expect(container.querySelector("output")?.textContent).toBe("idle");
+    expect(container.textContent).toContain("destination");
+  });
+
+  it("waits for refresh and returns the confirmed save result", async () => {
+    const refresh = deferred<unknown>();
+    mocks.update.mockResolvedValue(undefined);
+    mocks.refetch.mockReturnValue(refresh.promise);
+    await act(async () =>
+      root.render(
+        React.createElement(Harness, { pageId: "123456789012345678901234" }),
+      ),
+    );
+    let pending:
+      ReturnType<ReturnType<typeof usePageEditorActions>["submit"]> | undefined;
+    await act(async () => {
+      pending = requireDefined(editorActions).submit(
+        values,
+        PageStatus.PUBLISHED,
+      );
+    });
+    expect(container.textContent).toContain("loading");
+
+    await act(async () => {
+      refresh.resolve({ isSuccess: true });
+      await expect(pending).resolves.toEqual({ state: "updated" });
+    });
+    expect(container.textContent).toContain("idle");
+  });
+
+  it("returns a saved result rather than rejecting when refresh fails", async () => {
+    mocks.update.mockResolvedValue(undefined);
+    mocks.refetch.mockRejectedValue(new Error("refetch unavailable"));
+    await act(async () =>
+      root.render(
+        React.createElement(Harness, { pageId: "123456789012345678901234" }),
+      ),
+    );
+
+    await act(async () => {
+      await expect(
+        requireDefined(editorActions).submit(values, PageStatus.PUBLISHED),
+      ).resolves.toEqual({ state: "updated" });
+    });
+    expect(container.textContent).toContain("idle");
+    expect(mocks.success).toHaveBeenCalledWith("更新成功");
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 });

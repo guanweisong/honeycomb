@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { afterEach, describe, expect, it } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "../core/names";

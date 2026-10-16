@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { canCreateSessionForUser } from "./policy";
 import { getConfiguredProviderIds } from "./providers";

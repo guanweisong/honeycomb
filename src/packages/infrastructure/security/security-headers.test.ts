@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
 import {

@@ -115,7 +115,9 @@ export function usePostEditor(id: string | null) {
             if (result.id) {
               form.reset(data);
               saved = true;
-              toast.success("添加成功");
+              if (result.publicSync === "degraded") {
+                toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
+              } else toast.success("添加成功");
               router.push(`/admin/post/edit?id=${result.id}`);
             }
             return;
@@ -129,14 +131,17 @@ export function usePostEditor(id: string | null) {
             PostUpdateSchema.parse({ ...data, id: detail.id }),
           );
           if (result) {
-            const refreshed = await refetch();
+            // Persistence has succeeded; a failed read must not invite retrying the write.
+            const refreshed = await refetch().catch(() => undefined);
             if (previousRecord.current?.id === detail.id) {
-              if (refreshed.isSuccess && refreshed.data) {
+              if (refreshed?.isSuccess && refreshed.data) {
                 resetEditor(refreshed.data);
               } else form.reset(data);
             }
             saved = true;
-            toast.success("更新成功");
+            if (result.publicSync === "degraded") {
+              toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
+            } else toast.success("更新成功");
           }
         },
         () => {

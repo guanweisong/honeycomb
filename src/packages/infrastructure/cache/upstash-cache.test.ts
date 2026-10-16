@@ -91,6 +91,8 @@ describe("upstash cache", () => {
     expect(redisCtor).toHaveBeenCalledWith({
       url: "https://example.upstash.io",
       token: "token",
+      signal: expect.any(Function),
+      retry: { retries: 0 },
     });
 
     await cache.setCacheJSON("post.index", "cache:key", { foo: "bar" }, 120);

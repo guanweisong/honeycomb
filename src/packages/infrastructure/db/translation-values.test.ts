@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { MultiLangEnum } from "@/packages/domain/localization/i18n";
 import {

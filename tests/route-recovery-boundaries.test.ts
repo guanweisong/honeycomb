@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { access, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { describe, expect, it } from "vitest";
