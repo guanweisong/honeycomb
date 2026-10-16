@@ -7,16 +7,18 @@ import {
   type UserInsert,
   type UserUpdate,
 } from "@/features/user/application/write-schema";
+import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import {
-  UserLevel,
   userLevelOptions,
-  UserStatus,
   userStatusOptions,
-} from "@/packages/domain/identity/user";
+} from "@/packages/ui/admin/user-options";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import type { UserDialogState } from "../../actions/user-actions";
-import { isUserResourceProtected, toUserFormDefaults } from "../../transforms/user-transforms";
+import {
+  isUserResourceProtected,
+  toUserFormDefaults,
+} from "../../transforms/user-transforms";
 
 type UserFormDialogProps = {
   state: UserDialogState;

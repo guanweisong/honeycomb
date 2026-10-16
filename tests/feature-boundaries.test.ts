@@ -187,7 +187,7 @@ describe("业务功能边界", () => {
       {
         path: "src/features/post/post.router.ts",
         source: [
-          'import { createPost } from "@/features/post/application/post-use-cases";',
+          'import { createPost } from "@/features/post/application/post-commands";',
           "createTRPCRouter({ save: procedure.mutation(({ ctx }) => ctx.db.insert(ctx.input)) });",
         ].join("\n"),
       },

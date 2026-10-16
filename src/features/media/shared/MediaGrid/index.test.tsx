@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MediaGrid } from ".";
 import type { MediaViewModel } from "../media-view-model";
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("next/image", () => ({

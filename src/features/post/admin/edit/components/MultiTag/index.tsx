@@ -18,7 +18,7 @@ import {
 import { X, Plus } from "lucide-react";
 import { TagType } from "@/packages/domain/content/tag";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import LoadingState from "@/packages/ui/extended/LoadingState";
 import { PostTagOption, useMultiTag } from "./use-multi-tag";
 

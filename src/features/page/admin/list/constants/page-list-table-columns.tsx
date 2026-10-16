@@ -1,9 +1,11 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
 import { Badge } from "@/packages/ui/components/badge";
-import { pageStatusOptions } from "@/packages/domain/content/page";
-import { pageTemplateOptions } from "@/packages/domain/content/page-template";
-import type { PageViewModel as PageEntity } from "../../../presentation/page-view-model";
+import {
+  pageStatusOptions,
+  pageTemplateOptions,
+} from "@/packages/ui/admin/page-options";
+import type { PageWithRelations as PageEntity } from "@/features/page/application/repository";
 import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
 import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
 import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
@@ -84,9 +86,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        */
       const value = row.original.createdAt;
       return (
-        <span className="whitespace-nowrap">
-          {formatAdminDateTime(value)}
-        </span>
+        <span className="whitespace-nowrap">{formatAdminDateTime(value)}</span>
       );
     },
   },
@@ -101,9 +101,7 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
        */
       const value = row.original.updatedAt;
       return (
-        <span className="whitespace-nowrap">
-          {formatAdminDateTime(value)}
-        </span>
+        <span className="whitespace-nowrap">{formatAdminDateTime(value)}</span>
       );
     },
   },

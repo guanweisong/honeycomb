@@ -2,15 +2,17 @@ import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  setting: { id: "setting-1", siteName: { en: "Honeycomb", zh: "Honeycomb" } } as
-    | { id: string; siteName: { en: string; zh: string } }
-    | undefined,
-  submit: undefined as ((values: Record<string, unknown>) => Promise<void>) | undefined,
+  setting: {
+    id: "setting-1",
+    siteName: { en: "Honeycomb", zh: "Honeycomb" },
+  } as { id: string; siteName: { en: string; zh: string } } | undefined,
+  submit: undefined as
+    ((values: Record<string, unknown>) => Promise<void>) | undefined,
   update: vi.fn().mockResolvedValue(undefined),
   error: vi.fn(),
 }));
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({ useCan: () => true }));
+vi.mock("@/packages/ui/admin/use-current-user", () => ({ useCan: () => true }));
 vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   useSiteSetting: () => ({
     setting: mocks.setting,
@@ -18,7 +20,15 @@ vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   }),
 }));
 vi.mock("@/packages/ui/extended/DynamicForm", () => ({
-  DynamicForm: ({ defaultValues, onSubmit, ...props }: { defaultValues?: { id?: string }; onSubmit: (values: Record<string, unknown>) => Promise<void>; key?: string }) => {
+  DynamicForm: ({
+    defaultValues,
+    onSubmit,
+    ...props
+  }: {
+    defaultValues?: { id?: string };
+    onSubmit: (values: Record<string, unknown>) => Promise<void>;
+    key?: string;
+  }) => {
     mocks.submit = onSubmit;
     return React.createElement("div", {
       "data-setting-id": defaultValues?.id,
@@ -38,7 +48,10 @@ import SettingClient from "./index";
 
 describe("SettingClient", () => {
   beforeEach(() => {
-    mocks.setting = { id: "setting-1", siteName: { en: "Honeycomb", zh: "Honeycomb" } };
+    mocks.setting = {
+      id: "setting-1",
+      siteName: { en: "Honeycomb", zh: "Honeycomb" },
+    };
     mocks.submit = undefined;
     mocks.update.mockClear();
     mocks.error.mockClear();

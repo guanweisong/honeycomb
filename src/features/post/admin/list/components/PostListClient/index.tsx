@@ -15,9 +15,9 @@ import {
   PostListQuerySchema,
 } from "@/features/post/schemas/post.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { PostListViewModel as PostListItemEntity } from "../../../../presentation/post-view-model";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 
 /**
  * 文章列表客户端壳，负责查询、筛选、权限控制和删除交互。

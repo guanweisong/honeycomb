@@ -8,7 +8,7 @@ const trpcMocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
 }));
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: () => canManageUsers,
 }));
 

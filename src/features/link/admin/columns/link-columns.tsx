@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
-import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
+import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
+import { enableStatusOptions } from "@/packages/ui/admin/enable-status-options";
 import {
   StatusBadge,
   StatusBadgeTone,

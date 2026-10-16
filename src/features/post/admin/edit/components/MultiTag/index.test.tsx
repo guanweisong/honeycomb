@@ -29,7 +29,7 @@ let updateState: {
   mutateAsync: (input: unknown) => Promise<unknown>;
 };
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 

@@ -18,7 +18,7 @@ vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   useSiteSetting: () => mockUseSiteSetting(),
 }));
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCurrentUser: () => ({
     refreshUser: mockRefreshUser,
   }),

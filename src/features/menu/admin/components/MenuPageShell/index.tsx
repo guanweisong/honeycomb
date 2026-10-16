@@ -6,7 +6,7 @@ import {
 } from "@nosferatu500/react-sortable-tree";
 import { Save } from "lucide-react";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { MenuType } from "@/packages/domain/navigation/menu";
 import { Button } from "@/packages/ui/components/button";

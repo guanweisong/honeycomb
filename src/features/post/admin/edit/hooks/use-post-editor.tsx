@@ -11,7 +11,7 @@ import {
   PostUpdateSchema,
 } from "@/features/post/application/write-schema";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { PostDetailViewModel as PostDetailEntity } from "../../../presentation/post-view-model";
+import type { PostDetailResult as PostDetailEntity } from "@/features/post/application/repository";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 import { normalizePostForm } from "../utils/normalize-post-form";

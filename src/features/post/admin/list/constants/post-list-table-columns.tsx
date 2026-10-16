@@ -1,8 +1,10 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
-import { postStatusOptions } from "@/packages/domain/content/post-status";
-import { postTypeOptions } from "@/packages/domain/content/post";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
+import {
+  postStatusOptions,
+  postTypeOptions,
+} from "@/packages/ui/admin/post-options";
 import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
 import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
 import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
@@ -113,9 +115,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        */
       const value = row.original.createdAt;
       return (
-        <span className="whitespace-nowrap">
-          {formatAdminDateTime(value)}
-        </span>
+        <span className="whitespace-nowrap">{formatAdminDateTime(value)}</span>
       );
     },
   },
@@ -130,9 +130,7 @@ export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
        */
       const value = row.original.updatedAt;
       return (
-        <span className="whitespace-nowrap">
-          {formatAdminDateTime(value)}
-        </span>
+        <span className="whitespace-nowrap">{formatAdminDateTime(value)}</span>
       );
     },
   },

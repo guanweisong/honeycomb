@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { UserLevel } from "@/packages/domain/identity/user";
 import { UserStatus } from "@/packages/domain/identity/user";
-import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
+import type { UserRecord as UserEntity } from "@/features/user/application/repository";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),

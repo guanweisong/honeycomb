@@ -2,7 +2,8 @@ import {
   getFlatDataFromTree,
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
-import { MenuType, MenuTypeName } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuTypeName } from "@/packages/ui/admin/menu-options";
 import type { MultiLang } from "@/packages/domain/localization/multi-lang";
 
 export type MenuEntityTree = {

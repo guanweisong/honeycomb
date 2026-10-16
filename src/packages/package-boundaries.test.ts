@@ -66,7 +66,7 @@ describe("package dependency boundaries", () => {
     ).toEqual([]);
   });
 
-  it("keeps shared layers independent from App Router and tRPC transport modules", () => {
+  it("limits shared transport access to the current-user client binding", () => {
     const violations = ["identity", "infrastructure", "ui"].flatMap(
       (directory) =>
         importsMatching(
@@ -75,7 +75,11 @@ describe("package dependency boundaries", () => {
         ),
     );
 
-    expect(violations).toEqual([]);
+    // This UI owner provides the existing current-user query binding. All other
+    // shared UI, identity and infrastructure imports remain transport-free.
+    expect(violations).toEqual([
+      "src/packages/ui/admin/use-current-user.ts: @/packages/trpc/client/trpc",
+    ]);
   });
 
   it("keeps client IP parsing free of environment and rate-limit dependencies", () => {

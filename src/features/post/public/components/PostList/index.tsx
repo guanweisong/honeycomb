@@ -11,8 +11,9 @@ import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-l
 import { cn } from "@/packages/ui/lib/utils";
 import LoadingState from "@/packages/ui/extended/LoadingState";
 import { Button } from "@/packages/ui/components/button";
-import type { PostListViewModel as PostListItemEntity } from "../../../presentation/post-view-model";
-import { PostType, PostTypeName } from "@/packages/domain/content/post";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
+import { PostType } from "@/packages/domain/content/post";
+import { PostTypeName } from "@/packages/ui/admin/post-options";
 import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
 import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";

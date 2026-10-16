@@ -7,8 +7,7 @@ import type {
 } from "./repository";
 import { ApplicationError } from "@/packages/application/errors";
 import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { changeUserStatus } from "./user-command-handlers";
+import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
 import { UserAggregate } from "../domain/user";
 import { UserInsertSchema, UserUpdateSchema } from "./write-schema";
 
@@ -96,4 +95,30 @@ export async function updateUser(
     refreshPostIndex: true,
   });
   return result;
+}
+
+type UserStatusChangeInput = {
+  id: string;
+  currentStatus: UserStatus;
+  status: UserStatus;
+  level: UserLevel;
+  actorLevel: UserLevel;
+};
+
+type UserUpdateFields = {
+  password?: string;
+} & Partial<Omit<UserCommandInput, "password" | "status">>;
+
+export async function changeUserStatus(
+  repository: Pick<UserCommandPort, "update">,
+  input: UserStatusChangeInput,
+  changes?: UserUpdateFields,
+) {
+  const aggregate = UserAggregate.rehydrate(
+    input.id,
+    input.currentStatus,
+    input.level,
+  );
+  aggregate.changeStatus(input.status, input.actorLevel);
+  return repository.update({ id: input.id, ...changes, status: input.status });
 }
