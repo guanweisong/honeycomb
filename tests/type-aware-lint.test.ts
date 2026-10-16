@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
 import { expect, it } from "vitest";

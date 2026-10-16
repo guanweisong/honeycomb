@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { getTableConfig, type SQLiteTable } from "drizzle-orm/sqlite-core";
 import * as schema from "./schema";

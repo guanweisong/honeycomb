@@ -16,13 +16,13 @@ export async function createPost(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input, authorId);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     contents: [{ id: result.id, type: "post" }],
     refreshLayout: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 /** 批量删除文章。 */
 export async function destroyPosts(
@@ -46,13 +46,13 @@ export async function updatePost(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await updatePostThroughAggregate(repository, input);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     contents: [{ id: input.id, type: "post" }],
     refreshLayout: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 /** 替换文章标签关联。 */
 export async function updatePostTags(

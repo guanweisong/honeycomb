@@ -5,7 +5,7 @@ import { updatePost } from "./application/post-commands";
 
 const input = { id: "post-1", status: PostStatus.DRAFT };
 const invalidator = {
-  invalidate: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue({ state: "completed" }),
 };
 
 describe("Post command handlers", () => {

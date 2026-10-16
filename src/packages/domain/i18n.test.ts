@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { I18nSchema, NullableI18nSchema } from "./localization/i18n";
 

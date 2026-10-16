@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { createPostSpecialRepository } from "./post-special-repository";
 import type { PostQueryRepository, PostWithRelations } from "../application/repository";
@@ -6,13 +6,16 @@ import { PostType } from "@/packages/domain/content/post";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
-const cache = vi.hoisted(() => ({ value: undefined as unknown }));
+const cache = vi.hoisted(() => ({
+  value: undefined as unknown,
+  getVersion: vi.fn(),
+  getJSON: vi.fn(),
+  setJSON: vi.fn(),
+}));
 vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
-  getCacheVersion: async () => 1,
-  setCacheJSON: vi.fn(),
-  getCacheJSON: async (_namespace: string, _key: string, decode?: (value: unknown) => unknown) => {
-    try { return decode ? decode(cache.value) : cache.value; } catch { return null; }
-  },
+  getCacheVersion: cache.getVersion,
+  setCacheJSON: cache.setJSON,
+  getCacheJSON: cache.getJSON,
 }));
 
 const post: PostWithRelations = {
@@ -31,6 +34,52 @@ const query: PostQueryRepository = {
 };
 
 describe("post list cache validation", () => {
+  beforeEach(() => {
+    cache.value = undefined;
+    cache.getVersion.mockReset().mockResolvedValue(1);
+    cache.setJSON.mockReset().mockResolvedValue(undefined);
+    cache.getJSON.mockReset().mockImplementation(async (
+      _namespace: string,
+      _key: string,
+      decode?: (value: unknown) => unknown,
+    ) => {
+      try { return decode ? decode(cache.value) : cache.value; } catch { return null; }
+    });
+  });
+
+  it.each(["getVersion", "getJSON", "setJSON"] as const)(
+    "returns fresh public data when cache %s fails",
+    async (operation) => {
+      cache[operation].mockRejectedValue(new Error("Redis unavailable"));
+      const list = vi.fn().mockResolvedValue(fresh);
+      const repository = createPostSpecialRepository(
+        asMockDatabase(createMockDb()),
+        { ...query, list },
+      );
+
+      await expect(repository.cachedList({})).resolves.toEqual(fresh);
+      expect(list).toHaveBeenCalledExactlyOnceWith({}, "PUBLISHED_ONLY");
+      if (operation === "getVersion") {
+        expect(cache.getJSON).not.toHaveBeenCalled();
+        expect(cache.setJSON).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it.each([false, true])("propagates database failures when cache is unavailable: %s", async (cacheFails) => {
+    if (cacheFails) cache.getVersion.mockRejectedValue(new Error("Redis unavailable"));
+    const failure = new Error("database unavailable");
+    const list = vi.fn().mockRejectedValue(failure);
+    const repository = createPostSpecialRepository(
+      asMockDatabase(createMockDb()),
+      { ...query, list },
+    );
+
+    await expect(repository.cachedList({})).rejects.toBe(failure);
+    expect(list).toHaveBeenCalledOnce();
+    expect(cache.setJSON).not.toHaveBeenCalled();
+  });
+
   it.each([
     { list: [{ ...post, status: "UNKNOWN" }], total: 1 },
     {

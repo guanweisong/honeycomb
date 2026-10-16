@@ -62,7 +62,6 @@ jobs:
       - run: bun run db:invariants:audit
       - run: bunx drizzle-kit migrate
       - run: bun run db:e2e:seed
-      - run: bun run test:unit:run
       - run: bun run test:unit:coverage
       - run: bun run test:unit:process
       - uses: actions/upload-artifact@v4

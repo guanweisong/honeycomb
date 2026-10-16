@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   PageInsertSchema,
@@ -35,21 +35,53 @@ export function PageEditorPage() {
     pageId: detail?.id,
     refetch: query.refetch,
   });
+  const isLoadingDetail = Boolean(id && detail?.id !== id);
+  const loading = actions.loading || isLoadingDetail;
+  const { isDirty } = form.formState;
+  const previousRecord = useRef<
+    { id: string | null; detail: typeof detail } | undefined
+  >(undefined);
 
   useEffect(() => {
+    const previous = previousRecord.current;
+    previousRecord.current = { id, detail };
+    if (previous?.id === id) {
+      // Dirty-state changes must not reapply an older query snapshot.
+      if (previous.detail === detail) return;
+      if ((isDirty || actions.loading) && previous.detail?.id === id) return;
+    }
+    if (id && detail?.id !== id) {
+      if (previous?.id !== id) {
+        form.reset({ template: PageTemplate.DEFAULT });
+      }
+      return;
+    }
     form.reset(
-      toPageEditorFormValues(detail) ?? { template: PageTemplate.DEFAULT },
+      toPageEditorFormValues(id ? detail : undefined) ?? {
+        template: PageTemplate.DEFAULT,
+      },
     );
-  }, [detail, form]);
+  }, [actions.loading, detail, form, id, isDirty]);
 
   const submit = (status: PageStatus) => {
-    void form.handleSubmit((values) => actions.submit(values, status))();
+    void form.handleSubmit(async (values) => {
+      const submittedValues = JSON.stringify(form.getValues());
+      const result = await actions.submit(values, status);
+      if (result.state === "error" || previousRecord.current?.id !== id) return;
+
+      const currentValues = form.getValues();
+      form.reset({ ...values, status });
+      if (JSON.stringify(currentValues) !== submittedValues) {
+        // New edits stay dirty against the values that actually finished saving.
+        form.reset({ ...currentValues, status }, { keepDefaultValues: true });
+      }
+    })();
   };
   const headerActions = (
     <div className="flex flex-wrap gap-3">
       <PageEditorActionButtons
         isEdit={!!detail?.id}
-        loading={actions.loading}
+        loading={loading}
         status={detail?.status}
         onSubmit={submit}
       />
@@ -62,10 +94,15 @@ export function PageEditorPage() {
   );
   useAdminLayoutActions(
     headerActions,
-    `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${actions.loading}`,
+    `${id ?? "new"}:${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`,
   );
 
-  return <PageEditorForm form={form} />;
+  const readOnly = isLoadingDetail || (!id && actions.loading);
+  return (
+    <div inert={readOnly} aria-busy={readOnly}>
+      <PageEditorForm form={form} />
+    </div>
+  );
 }
 /**
  * 页面编辑页组件，负责加载页面数据、初始化表单并组合编辑器。

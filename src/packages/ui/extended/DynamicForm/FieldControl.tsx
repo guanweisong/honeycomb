@@ -21,7 +21,10 @@ import { cn } from "../../lib/utils";
 import Tiptap from "../Tiptap";
 import type { FieldConfig } from "./types";
 
-type FieldControlProps = {
+type FieldControlProps = Pick<
+  React.ComponentProps<"input">,
+  "id" | "aria-describedby" | "aria-invalid" | "aria-labelledby"
+> & {
   field: FieldConfig;
   name: string;
   controllerField: ControllerRenderProps<Record<string, unknown>, string>;
@@ -43,10 +46,15 @@ export function FieldControl({
   name,
   controllerField,
   formValues,
+  ...controlAttributes
 }: FieldControlProps) {
   const isDisabled = field.disabled?.(formValues) ?? false;
   const { value, ...controllerProps } = controllerField;
-  const commonProps = { disabled: isDisabled, ...controllerProps };
+  const commonProps = {
+    disabled: isDisabled,
+    ...controllerProps,
+    ...controlAttributes,
+  };
   const textValue =
     typeof value === "string" || typeof value === "number"
       ? value
@@ -123,6 +131,7 @@ export function FieldControl({
         <Popover>
           <PopoverTrigger asChild>
             <Input
+              {...commonProps}
               readOnly
               value={date ? format(date, "yyyy-MM-dd") : ""}
               placeholder={field.placeholder}
@@ -157,6 +166,7 @@ export function FieldControl({
         <Popover>
           <PopoverTrigger asChild>
             <Input
+              {...commonProps}
               readOnly
               value={displayValue}
               placeholder={field.placeholder}
@@ -179,7 +189,13 @@ export function FieldControl({
       );
     }
     case "richText":
-      return <Tiptap onChange={controllerField.onChange} value={stringValue} />;
+      return (
+        <Tiptap
+          onChange={controllerField.onChange}
+          value={stringValue}
+          {...controlAttributes}
+        />
+      );
     default:
       return <span className="text-red-500">未知字段类型：{field.type}</span>;
   }

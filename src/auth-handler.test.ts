@@ -4,6 +4,7 @@ vi.mock("@/env/server", () => ({
   getAuthEnv: () => ({
     AUTH_URL: "http://localhost:3000",
     AUTH_SECRET: "test-secret-with-sufficient-length",
+    turnstile: { secretKey: "test-turnstile-secret" },
   }),
 }));
 vi.mock("@/packages/infrastructure/db/db", () => ({
@@ -38,5 +39,22 @@ describe("auth handler security boundary", () => {
     );
 
     expect(response.status).toBe(404);
+  });
+
+  it.each([
+    ["email", { email: "user@example.test", password: "password" }],
+    ["username", { username: "user", password: "password" }],
+  ])("rejects %s password sign-in without CAPTCHA at the real handler", async (path, body) => {
+    const { auth } = await import("./auth");
+    const response = await auth.handler(
+      new Request(`http://localhost:3000/api/auth/sign-in/${path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: "MISSING_RESPONSE" });
   });
 });

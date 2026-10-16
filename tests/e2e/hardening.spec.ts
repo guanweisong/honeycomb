@@ -187,9 +187,14 @@ for (const [target, expected] of [
       }),
     );
     await page.goto(`/admin/login?targetUrl=${encodeURIComponent(target)}`);
+    const login = page.getByRole("button", { name: "登录", exact: true });
+    // SSR fields can be visible before hydration and the captcha callback.
+    // Wait for the committed token before filling so hydration cannot erase
+    // the credentials, and submission cannot race captcha readiness.
+    await expect(login).toBeEnabled();
     await page.getByPlaceholder("用户名", { exact: true }).fill("guest");
     await page.getByPlaceholder("密码", { exact: true }).fill("123456");
-    await page.getByRole("button", { name: "登录", exact: true }).click();
+    await login.click();
     await expect(page).toHaveURL(
       (url) => url.pathname + url.search === expected,
     );

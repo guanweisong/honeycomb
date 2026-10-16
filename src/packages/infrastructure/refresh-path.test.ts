@@ -126,6 +126,63 @@ describe("publicContentInvalidator", () => {
     );
   });
 
+  it("continues all other targets when Redis version invalidation fails", async () => {
+    mockBumpCacheVersion.mockRejectedValue(new Error("Redis unavailable"));
+
+    await expect(publicContentInvalidator.invalidate({
+      refreshPostIndex: true,
+      refreshSitemap: true,
+      contents: [{ id: "507f1f77bcf86cd799439011", type: "post" }],
+      refreshLayout: true,
+    })).resolves.toEqual({ state: "degraded" });
+
+    expect(mockRevalidateTag.mock.calls).toEqual([
+      ["public.post-index", { expire: 0 }],
+      [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
+      ["public.layout", { expire: 0 }],
+      ["public.post-index", { expire: 0 }],
+      [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
+      ["public.layout", { expire: 0 }],
+    ]);
+    expect(mockRevalidatePath.mock.calls).toEqual([
+      ["/zh/archives/507f1f77bcf86cd799439011"],
+      ["/en/archives/507f1f77bcf86cd799439011"],
+      ["/[locale]", "layout"],
+      ["/zh/archives/507f1f77bcf86cd799439011"],
+      ["/en/archives/507f1f77bcf86cd799439011"],
+      ["/[locale]", "layout"],
+    ]);
+  });
+
+  it("continues independent tags and routes after Next cache targets fail", async () => {
+    mockRevalidateTag.mockImplementation((tag: string) => {
+      if (tag === "public.post.507f1f77bcf86cd799439011") {
+        throw new Error("detail tag unavailable");
+      }
+    });
+    mockRevalidatePath.mockImplementation((path: string) => {
+      if (path.startsWith("/zh/archives/")) throw new Error("route unavailable");
+    });
+
+    await expect(publicContentInvalidator.invalidate({
+      contents: [
+        { id: "507f1f77bcf86cd799439011", type: "post" },
+        { id: "507f1f77bcf86cd799439012", type: "page" },
+      ],
+      refreshLayout: true,
+    })).resolves.toEqual({ state: "degraded" });
+
+    expect(mockRevalidateTag).toHaveBeenCalledTimes(6);
+    expect(mockRevalidateTag).toHaveBeenCalledWith("public.page.507f1f77bcf86cd799439012", { expire: 0 });
+    expect(mockRevalidateTag).toHaveBeenCalledWith("public.layout", { expire: 0 });
+    expect(mockRevalidatePath).toHaveBeenCalledTimes(10);
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/en/archives/507f1f77bcf86cd799439011");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/zh/pages/507f1f77bcf86cd799439012");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/[locale]", "layout");
+  });
+
   it("invalidates inner data caches before route caches can regenerate", async () => {
     const order: string[] = [];
     mockBumpCacheVersion.mockImplementationOnce(async () => {

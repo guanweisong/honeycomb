@@ -10,7 +10,13 @@ type Option = {
   disabled?: boolean;
 };
 
-interface SelectProps extends Omit<BaseSelectProps, "onValueChange" | "value"> {
+interface SelectProps
+  extends
+    Omit<BaseSelectProps, "onValueChange" | "value">,
+    Pick<
+      React.ComponentProps<typeof BaseSelect.SelectTrigger>,
+      "id" | "aria-describedby" | "aria-invalid" | "aria-labelledby"
+    > {
   value?: string;
   onChange?: (value: string) => void;
   options?: Option[];
@@ -28,11 +34,19 @@ export function Select({
   disabled,
   size = "default",
   className,
+  id,
+  "aria-describedby": describedBy,
+  "aria-invalid": invalid,
+  "aria-labelledby": labelledBy,
   ...props
 }: SelectProps) {
   return (
     <BaseSelect.Select value={value} onValueChange={onChange} {...props}>
       <BaseSelect.SelectTrigger
+        id={id}
+        aria-describedby={describedBy}
+        aria-invalid={invalid}
+        aria-labelledby={labelledBy}
         size={size}
         className={className}
         disabled={disabled}

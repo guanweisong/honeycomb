@@ -29,7 +29,7 @@ describe("Post cache side effects", () => {
 
     await expect(
       createPost(repository, input, "author-1", invalidator),
-    ).resolves.toEqual({ id: postId });
+    ).resolves.toEqual({ id: postId, publicSync: "completed" });
     expect(order).toEqual(["repository", "cache"]);
     expect(invalidator.invalidate).toHaveBeenCalledWith({
       contents: [{ id: postId, type: "post" }],
@@ -117,6 +117,26 @@ describe("Post cache side effects", () => {
     });
   });
 
+  it.each(["completed", "degraded"] as const)(
+    "更新后返回公开同步状态 %s，同时只写入一次数据库",
+    async (state) => {
+      const repository = {
+        findStatus: vi.fn(),
+        update: vi.fn().mockResolvedValue({ id: postId }),
+      };
+      const invalidator = { invalidate: vi.fn().mockResolvedValue({ state }) };
+
+      await expect(
+        updatePost(repository, { id: postId }, invalidator),
+      ).resolves.toEqual({
+        id: postId,
+        publicSync: state,
+      });
+      expect(repository.update).toHaveBeenCalledOnce();
+      expect(invalidator.invalidate).toHaveBeenCalledOnce();
+    },
+  );
+
   it("数据库成功后缓存降级仍返回持久化结果", async () => {
     const saved = { id: postId };
 
@@ -129,6 +149,6 @@ describe("Post cache side effects", () => {
           invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
         },
       ),
-    ).resolves.toEqual(saved);
+    ).resolves.toEqual({ ...saved, publicSync: "degraded" });
   });
 });

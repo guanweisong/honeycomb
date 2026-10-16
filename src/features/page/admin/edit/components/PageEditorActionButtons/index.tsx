@@ -64,7 +64,11 @@ export function PageEditorActionButtons({
         </Button>
       )}
       {canCreatePage && !isEdit && (
-        <Button type="button" onClick={() => onSubmit(PageStatus.DRAFT)}>
+        <Button
+          type="button"
+          disabled={loading}
+          onClick={() => onSubmit(PageStatus.DRAFT)}
+        >
           保存草稿
         </Button>
       )}

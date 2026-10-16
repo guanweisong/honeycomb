@@ -26,9 +26,9 @@ export default defineConfig({
   },
   webServer: {
     command: USE_DEV_SERVER
-      ? `bun next dev -p ${PORT} -H ${HOST}`
+      ? `bun scripts/build-serwist.ts --development && bun next dev -p ${PORT} -H ${HOST}`
       : `bun run build && bun next start -p ${PORT} -H ${HOST}`,
-    url: `${BASE_URL}/manifest.webmanifest`,
+    url: `${BASE_URL}/en/manifest.webmanifest`,
     reuseExistingServer: REUSE_EXISTING_SERVER,
     timeout: 240_000,
     env: {

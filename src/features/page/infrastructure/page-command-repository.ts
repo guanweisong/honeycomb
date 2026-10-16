@@ -58,9 +58,13 @@ export function createPageCommandRepository(
     },
     async update(input) {
       const { id, title, content, ...rest } = input;
+      const hasTranslationChanges = title !== undefined || content !== undefined;
       const page = await observeDbOperation("page.update", "transaction", () =>
         db.transaction(async (tx) => {
           const parentValues = toPageUpdateValues(rest);
+          if (hasTranslationChanges) {
+            parentValues.updatedAt = new Date().toISOString();
+          }
           const [updated] = Object.keys(parentValues).length
             ? await tx
                 .update(schema.page)
@@ -68,7 +72,7 @@ export function createPageCommandRepository(
                 .where(eq(schema.page.id, id))
                 .returning()
             : await tx.select().from(schema.page).where(eq(schema.page.id, id)).limit(1);
-          if (updated && (title !== undefined || content !== undefined)) {
+          if (updated && hasTranslationChanges) {
             const sanitizedContent =
               content === undefined ? undefined : sanitizeOptionalI18nHtml(content);
             for (const locale of supportedLanguages) {
@@ -121,7 +125,10 @@ export function createPageCommandRepository(
         () =>
           db
             .update(schema.page)
-            .set({ views: sql`${schema.page.views} + 1` })
+            .set({
+              views: sql`${schema.page.views} + 1`,
+              updatedAt: sql`${schema.page.updatedAt}`,
+            })
             .where(
               and(
                 eq(schema.page.id, id),

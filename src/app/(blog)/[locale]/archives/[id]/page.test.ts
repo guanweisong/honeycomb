@@ -154,6 +154,7 @@ describe("archives page", () => {
     mockGetTranslations.mockReset().mockResolvedValue((key: string) => {
       const values: Record<string, string> = {
         guessWhatYouLike: "猜你喜欢",
+        loading: "正在加载",
         quoteFrom: "摘自",
         released: "上映",
         shotIn: "摄于",
@@ -220,6 +221,83 @@ describe("archives page", () => {
       { id: "post-1" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+  });
+
+  it("renders the article while recommendations are still pending", async () => {
+    mockGetTranslations.mockResolvedValue((key: string) => {
+      if (key === "loading") return "Loading recommendations";
+      if (key === "guessWhatYouLike") return "猜你喜欢";
+      return key;
+    });
+    let resolveRecommendations!: (
+      posts: { id: string; title: { zh: string } }[],
+    ) => void;
+    mockRandomPosts.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRecommendations = resolve;
+      }),
+    );
+
+    await renderArchive({ ...articleDetail });
+
+    expect(container.querySelector("h1")?.textContent).toBe("文章标题");
+    expect(
+      container.querySelector('[data-testid="rich-text"]')?.textContent,
+    ).toBe("文章正文");
+    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(
+      "Loading recommendations",
+    );
+    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
+
+    await act(async () => {
+      resolveRecommendations([
+        { id: "post-1", title: { zh: "当前文章" } },
+        { id: "post-2", title: { zh: "稍后推荐" } },
+      ]);
+    });
+
+    expect(
+      container.querySelector('a[href="/archives/post-2"]')?.textContent,
+    ).toBe("稍后推荐");
+    expect(container.querySelector('a[href="/archives/post-1"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it("keeps the article readable after a delayed recommendation failure", async () => {
+    let rejectRecommendations!: (error: Error) => void;
+    mockRandomPosts.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectRecommendations = reject;
+      }),
+    );
+
+    await renderArchive({ ...articleDetail });
+    await act(async () => {
+      rejectRecommendations(new Error("Recommendations unavailable"));
+    });
+
+    expect(container.querySelector("h1")?.textContent).toBe("文章标题");
+    expect(
+      container.querySelector('[data-testid="rich-text"]')?.textContent,
+    ).toBe("文章正文");
+    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
+    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it("omits recommendations when their query throws synchronously", async () => {
+    mockRandomPosts.mockImplementation(() => {
+      throw new Error("Recommendations unavailable");
+    });
+
+    await renderArchive({ ...articleDetail });
+
+    expect(
+      container.querySelector('[data-testid="rich-text"]')?.textContent,
+    ).toBe("文章正文");
+    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
+    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
   });
 
   it("keeps JSON-LD inside its script context for hostile stored titles", async () => {
@@ -345,6 +423,27 @@ describe("archives page", () => {
       }),
     ).resolves.toMatchObject(expected);
   });
+
+  it.each(["增长 100%", "Literal %20 title", "Bad %E0%A4%A escape"])(
+    "preserves literal title text in metadata: %s",
+    async (title) => {
+      mockPostDetail.mockResolvedValue({
+        ...articleDetail,
+        title: { zh: title },
+      });
+
+      await expect(
+        generateMetadata({
+          params: Promise.resolve({ id: "post-1", locale: "zh" }),
+          searchParams: Promise.resolve({}),
+        }),
+      ).resolves.toMatchObject({
+        title,
+        openGraph: { title },
+        twitter: { title },
+      });
+    },
+  );
 
   it("generates English canonical, language alternates and social defaults", async () => {
     mockSettingIndex.mockResolvedValue({

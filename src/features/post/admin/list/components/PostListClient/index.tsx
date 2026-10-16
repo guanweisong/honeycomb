@@ -63,7 +63,7 @@ export default function PostListClient() {
       selectableRows={canDeletePost}
       selectedRows={selectedRows}
       onSelectionChange={setSelectedRows}
-      toolBar={
+      toolBar={(table) => (
         <div className="flex justify-between">
           <div className="flex gap-1">
             {canCreatePost && (
@@ -96,18 +96,21 @@ export default function PostListClient() {
                 placeholder: "请输入文章名称进行搜索",
               },
             ]}
-            onSubmit={setSearchParams}
+            onSubmit={({ title }) =>
+              table.getColumn("title")?.setFilterValue(title)
+            }
             inline
             submitProps={{ children: "查询", variant: "outline" }}
           />
         </div>
-      }
+      )}
       rowActions={(row) => (
         <div className="flex gap-1">
           {canUpdatePost && (
             <Button
               variant="secondary"
               size="sm"
+              aria-label="编辑文章"
               onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
             >
               <Pencil />
@@ -116,7 +119,7 @@ export default function PostListClient() {
           {canDeletePost && (
             <Dialog
               trigger={
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" aria-label="删除文章">
                   <Trash />
                 </Button>
               }

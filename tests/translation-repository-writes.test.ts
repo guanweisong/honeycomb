@@ -21,6 +21,7 @@ import { createSettingRepository } from "@/features/setting/infrastructure/setti
 import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
 import { PageTemplate } from "@/packages/domain/content/page-template";
 import { PageStatus } from "@/packages/domain/content/page";
+import { PostStatus } from "@/packages/domain/content/post-status";
 import { TagType } from "@/packages/domain/content/tag";
 import { CommentStatus } from "@/packages/domain/content/comment";
 import * as schema from "@/packages/infrastructure/db/schema";
@@ -244,6 +245,90 @@ describe("translation repository writes", () => {
         { locale: "en", title: "Updated page" },
         { locale: "zh", title: "更新页面" },
       ],
+    });
+  });
+
+  describe.each(["post", "page"] as const)("%s content timestamps", (type) => {
+    const previousTime = "2020-01-02T03:04:05.000Z";
+    const nextTime = "2026-10-15T12:00:00.000Z";
+
+    beforeEach(async () => {
+      await client.execute("insert into category (id, path) values ('timestamp-category', 'timestamp-category')");
+      if (type === "post") {
+        await client.execute({
+          sql: "insert into post (id, author_id, category_id, status, updated_at) values ('timestamp-content', 'author', 'timestamp-category', ?, ?)",
+          args: [PostStatus.PUBLISHED, previousTime],
+        });
+        await client.execute("insert into post_translation (post_id, locale, title) values ('timestamp-content', 'en', 'Original')");
+      } else {
+        await client.execute({
+          sql: "insert into page (id, author_id, template, status, updated_at) values ('timestamp-content', 'author', ?, ?, ?)",
+          args: [PageTemplate.DEFAULT, PageStatus.PUBLISHED, previousTime],
+        });
+        await client.execute("insert into page_translation (page_id, locale, title, content) values ('timestamp-content', 'en', 'Original', 'Body'), ('timestamp-content', 'zh', '原始', '正文')");
+      }
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(nextTime));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function repository() {
+      return type === "post"
+        ? createPostCommandRepository(db)
+        : createPageCommandRepository(db);
+    }
+
+    it("advances the parent timestamp for a translation-only update", async () => {
+      const updated = await repository().update({
+        id: "timestamp-content",
+        title: { en: "Updated", zh: "更新" },
+      });
+
+      expect(updated).toMatchObject({ updatedAt: nextTime });
+      expect(await client.execute(`select updated_at from ${type} where id = 'timestamp-content'`)).toMatchObject({
+        rows: [{ updated_at: nextTime }],
+      });
+      expect(await client.execute(`select title from ${type}_translation where ${type}_id = 'timestamp-content' and locale = 'en'`)).toMatchObject({
+        rows: [{ title: "Updated" }],
+      });
+    });
+
+    it("rolls back timestamps and translations together when translation persistence fails", async () => {
+      await client.execute(`create trigger reject_timestamp_translation
+        before ${type === "post" ? "insert" : "update"} on ${type}_translation begin
+        select raise(abort, 'translation rejected'); end`);
+
+      await expect(repository().update({
+        id: "timestamp-content",
+        title: { en: "Rejected", zh: "拒绝" },
+      })).rejects.toThrow();
+
+      expect(await client.execute(`select updated_at from ${type} where id = 'timestamp-content'`)).toMatchObject({
+        rows: [{ updated_at: previousTime }],
+      });
+      expect(await client.execute(`select title from ${type}_translation where ${type}_id = 'timestamp-content' and locale = 'en'`)).toMatchObject({
+        rows: [{ title: "Original" }],
+      });
+    });
+
+    it.each([previousTime, null])("preserves content updatedAt %s when counting views", async (updatedAt) => {
+      await client.execute({
+        sql: `update ${type} set updated_at = ? where id = 'timestamp-content'`,
+        args: [updatedAt],
+      });
+
+      await expect(repository().incrementViews("timestamp-content")).resolves.toEqual({ views: 1 });
+      expect(await client.execute(`select views, updated_at from ${type} where id = 'timestamp-content'`)).toMatchObject({
+        rows: [{ views: 1, updated_at: updatedAt }],
+      });
+    });
+
+    it("leaves the timestamp unchanged for an empty patch", async () => {
+      const unchanged = await repository().update({ id: "timestamp-content" });
+      expect(unchanged).toMatchObject({ updatedAt: previousTime });
     });
   });
 

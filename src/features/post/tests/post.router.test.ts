@@ -137,6 +137,7 @@ describe("Post Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetMockDb(mockDb);
+    mockInvalidatePublicContent.mockResolvedValue({ state: "completed" });
   });
 
   describe("index procedure", () => {
@@ -275,7 +276,8 @@ describe("Post Router", () => {
   });
 
   describe("create procedure", () => {
-    it("should create post with admin permissions", async () => {
+    it.each(["completed", "degraded"] as const)("should create post with admin permissions and %s public sync", async (state) => {
+      mockInvalidatePublicContent.mockResolvedValue({ state });
       const newPost = {
         id: TEST_IDS.ID_3,
         title: { en: "New Post", zh: "新文章" },
@@ -300,7 +302,7 @@ describe("Post Router", () => {
         categoryId: TEST_IDS.ID_1,
       });
 
-      expect(result).toEqual(newPost);
+      expect(result).toEqual({ ...newPost, publicSync: state });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.post);
     });
 
@@ -373,7 +375,8 @@ describe("Post Router", () => {
   });
 
   describe("update procedure", () => {
-    it("should update post with admin permissions", async () => {
+    it.each(["completed", "degraded"] as const)("should update post with admin permissions and %s public sync", async (state) => {
+      mockInvalidatePublicContent.mockResolvedValue({ state });
       const updatedPost = {
         id: TEST_IDS.ID_1,
         title: { en: "Updated Post", zh: "更新的文章" },
@@ -404,7 +407,7 @@ describe("Post Router", () => {
         type: PostType.ARTICLE,
       });
 
-      expect(result).toEqual(updatedPost);
+      expect(result).toEqual({ ...updatedPost, publicSync: state });
       expect(mockDb.update).toHaveBeenCalledWith(schema.post);
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         contents: [{ id: TEST_IDS.ID_1, type: "post" }],

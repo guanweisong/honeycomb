@@ -35,7 +35,7 @@ test.describe("security response headers", () => {
     const [blog, login, manifest] = await Promise.all([
       request.get("/en/list/category"),
       request.get("/admin/login"),
-      request.get("/manifest.webmanifest"),
+      request.get("/en/manifest.webmanifest"),
     ]);
 
     for (const response of [blog, login, manifest]) {
@@ -236,7 +236,7 @@ test.describe("security response headers", () => {
       .locator('link[rel="manifest"]')
       .first()
       .getAttribute("href");
-    expect(manifestHref).toBe("/manifest.webmanifest");
+    expect(manifestHref).toBe("/en/manifest.webmanifest");
     const manifest = await page.request.get(manifestHref!);
     expect(manifest.ok()).toBe(true);
     expect(manifest.headers()["content-type"]).toContain(

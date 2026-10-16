@@ -9,6 +9,7 @@ import { cacheNamespaceValues, type CacheNamespace } from "./cache-namespaces";
 export type { CacheNamespace } from "./cache-namespaces";
 const cacheNamespaces = new Set<CacheNamespace>(cacheNamespaceValues);
 const implicitCacheVersion = 1;
+const redisRequestTimeoutMs = 1000;
 
 let redisClient: Redis | null = null;
 let initialized = false;
@@ -23,7 +24,13 @@ function getRedisClient(): Redis | null {
     return redisClient;
   }
 
-  redisClient = new Redis(upstash);
+  redisClient = new Redis({
+    ...upstash,
+    // Give each request its own deadline and abort the underlying HTTP work.
+    signal: () => AbortSignal.timeout(redisRequestTimeoutMs),
+    // Public reads already fall back to DB; invalidation owns its one retry.
+    retry: { retries: 0 },
+  });
   return redisClient;
 }
 

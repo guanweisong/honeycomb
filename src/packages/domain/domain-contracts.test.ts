@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { CommentStatus, commentStatusOptions } from "./content/comment";
 import { PageTemplate, pageTemplateOptions } from "./content/page-template";

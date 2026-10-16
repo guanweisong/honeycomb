@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ export function usePostEditor(id: string | null) {
   const [modalProps, setModalProps] =
     useState<AdminDialogState<CategoryEntity>>();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
   const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
   const [movieActors, setMovieActors] = useState<PostTagOption[]>([]);
@@ -48,71 +49,117 @@ export function usePostEditor(id: string | null) {
   );
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
+  const { isDirty } = form.formState;
+  const previousRecord = useRef<
+    | {
+        id: string | null;
+        detail: typeof detail;
+      }
+    | undefined
+  >(undefined);
+
+  const resetEditor = useCallback(
+    (post?: PostDetailEntity | null) => {
+      form.reset(post ?? { type: PostType.ARTICLE });
+      setCoverPreview(post?.cover);
+      setGalleryStyles(post?.galleryStyles || []);
+      setMovieActors(post?.movieActors || []);
+      setMovieDirectors(post?.movieDirectors || []);
+      setMovieStyles(post?.movieStyles || []);
+    },
+    [form],
+  );
 
   useEffect(() => {
-    if (!detail) return;
-    form.reset(detail);
-    setCoverPreview(detail.cover);
-    setGalleryStyles(detail.galleryStyles || []);
-    setMovieActors(detail.movieActors || []);
-    setMovieDirectors(detail.movieDirectors || []);
-    setMovieStyles(detail.movieStyles || []);
-  }, [detail, form]);
+    const previous = previousRecord.current;
+    previousRecord.current = { id, detail };
+    if (previous?.id === id) {
+      // Changes to dirty state alone must not reapply an older query snapshot.
+      if (previous.detail === detail) return;
+      if (isDirty && previous.detail?.id === id) return;
+    }
+    if (id && detail?.id !== id) {
+      if (previous?.id !== id) resetEditor();
+      return;
+    }
+    resetEditor(id ? detail : undefined);
+  }, [detail, id, isDirty, resetEditor]);
 
-  const submit = (
+  const submit = async (
     status: PostStatus,
     action: PostSubmitAction,
-  ): Promise<void> =>
-    form.handleSubmit(
-      async (values) => {
-        const normalized = normalizePostForm(values, status);
-        if (!normalized.ok) {
-          toast.error("请上传封面");
-          return;
-        }
+  ): Promise<boolean> => {
+    if (submitting.current) return false;
+    submitting.current = true;
+    setLoading(true);
+    let saved = false;
 
-        const data = normalized.data;
-        setLoading(true);
-        if (action === "create") {
-          if (!data.categoryId) {
-            toast.error("请选择分类目录");
-            setLoading(false);
+    try {
+      await form.handleSubmit(
+        async (values) => {
+          const normalized = normalizePostForm(values, status);
+          if (!normalized.ok) {
+            toast.error("请上传封面");
             return;
           }
-          createPost
-            .mutateAsync(PostInsertSchema.parse(data))
-            .then((result) => {
-              if (result.id) {
-                toast.success("添加成功");
-                router.push(`/admin/post/edit?id=${result.id}`);
-              }
-            })
-            .finally(() => setLoading(false));
-          return;
-        }
 
-        if (!detail) {
-          toast.error("文章尚未加载，无法更新");
-          setLoading(false);
-          return;
-        }
-        updatePost
-          .mutateAsync(PostUpdateSchema.parse({ ...data, id: detail.id }))
-          .then((result) => {
-            if (result) {
-              toast.success("更新成功");
-              refetch();
+          const data = normalized.data;
+          if (action === "create") {
+            if (!data.categoryId) {
+              toast.error("请选择分类目录");
+              return;
             }
-          })
-          .finally(() => setLoading(false));
-      },
-      () => {
-        clientLogger.warn(LogEvent.clientError, {
-          operation: "post.validate",
-          outcome: "error",
-        });
-      },
-    )();
+            const result = await createPost.mutateAsync(
+              PostInsertSchema.parse(data),
+            );
+            if (result.id) {
+              form.reset(data);
+              saved = true;
+              if (result.publicSync === "degraded") {
+                toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
+              } else toast.success("添加成功");
+              router.push(`/admin/post/edit?id=${result.id}`);
+            }
+            return;
+          }
+
+          if (!detail) {
+            toast.error("文章尚未加载，无法更新");
+            return;
+          }
+          const result = await updatePost.mutateAsync(
+            PostUpdateSchema.parse({ ...data, id: detail.id }),
+          );
+          if (result) {
+            // Persistence has succeeded; a failed read must not invite retrying the write.
+            const refreshed = await refetch().catch(() => undefined);
+            if (previousRecord.current?.id === detail.id) {
+              if (refreshed?.isSuccess && refreshed.data) {
+                resetEditor(refreshed.data);
+              } else form.reset(data);
+            }
+            saved = true;
+            if (result.publicSync === "degraded") {
+              toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
+            } else toast.success("更新成功");
+          }
+        },
+        () => {
+          clientLogger.warn(LogEvent.clientError, {
+            operation: "post.validate",
+            outcome: "error",
+          });
+        },
+      )();
+      return saved;
+    } catch {
+      toast.error(action === "create" ? "添加失败" : "更新失败");
+      return false;
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
 
   const photoPickerProps: PhotoPickerItemProps = {
     cover: coverPreview,

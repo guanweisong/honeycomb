@@ -12,6 +12,9 @@ let listState: {
   data?: { pages: Array<{ list?: unknown[] }> };
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
+  isFetching: boolean;
+  isError: boolean;
+  isFetchNextPageError: boolean;
 };
 
 vi.mock("react", async (importOriginal) => {
@@ -43,6 +46,7 @@ vi.mock(
     default: () => ({
       ...listState,
       fetchNextPage: () => fetches.push("next"),
+      refetch: () => fetches.push("refetch"),
     }),
   }),
 );
@@ -65,7 +69,8 @@ import { PostType } from "@/packages/domain/content/post";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
 const makePost = (
-  overrides: Partial<PostListViewModel> & Pick<PostListViewModel, "id" | "type">,
+  overrides: Partial<PostListViewModel> &
+    Pick<PostListViewModel, "id" | "type">,
 ): PostListViewModel => ({
   authorId: "author-1",
   categoryId: "category-1",
@@ -147,6 +152,9 @@ describe("PostList", () => {
       data: { pages: [{ list: posts }] },
       hasNextPage: false,
       isFetchingNextPage: false,
+      isFetching: false,
+      isError: false,
+      isFetchNextPageError: false,
     };
     Object.defineProperty(document.body, "scrollHeight", {
       configurable: true,
@@ -194,15 +202,19 @@ describe("PostList", () => {
 
   it("omits unsafe media promotion and date formatting for incomplete data", async () => {
     listState.data = {
-      pages: [{
-        list: [{
-          cover: { height: 600, url: "/incomplete.jpg", width: null },
-          id: "incomplete",
-          movieTime: null,
-          title: { zh: "未完整电影" },
-          type: "MOVIE",
-        }],
-      }],
+      pages: [
+        {
+          list: [
+            {
+              cover: { height: 600, url: "/incomplete.jpg", width: null },
+              id: "incomplete",
+              movieTime: null,
+              title: { zh: "未完整电影" },
+              type: "MOVIE",
+            },
+          ],
+        },
+      ],
     };
 
     await renderList();
@@ -230,6 +242,7 @@ describe("PostList", () => {
       scrollState = scroll;
       listState.hasNextPage = hasNextPage;
       listState.isFetchingNextPage = isFetchingNextPage;
+      listState.isFetching = isFetchingNextPage;
 
       await renderList();
 
@@ -237,9 +250,89 @@ describe("PostList", () => {
     },
   );
 
+  it("keeps loaded posts and stops automatic requests after a next-page error", async () => {
+    listState.hasNextPage = true;
+    listState.isFetchingNextPage = true;
+    listState.isFetching = true;
+    await renderList();
+
+    listState.isFetchingNextPage = false;
+    listState.isFetching = false;
+    listState.isError = true;
+    listState.isFetchNextPageError = true;
+    await renderList();
+    scrollState = { top: 100 };
+    await renderList();
+
+    expect(fetches).toEqual([]);
+    expect(container.textContent).toContain("文章标题");
+    expect(container.textContent).toContain("照片标题");
+    expect(container.querySelector('[role="alert"]')?.textContent).toBeTruthy();
+    expect(container.textContent).not.toContain("已经到底了");
+  });
+
+  it("retries a failed next page only when its accessible button is clicked", async () => {
+    listState.hasNextPage = true;
+    listState.isError = true;
+    listState.isFetchNextPageError = true;
+    await renderList();
+
+    const retry = container.querySelector("button");
+    expect(retry?.textContent).toBe("tryAgain");
+    expect(retry?.type).toBe("button");
+    expect(retry?.disabled).toBe(false);
+    await act(async () => retry?.click());
+
+    expect(fetches).toEqual(["next"]);
+    listState.isFetchingNextPage = true;
+    listState.isFetching = true;
+    await renderList();
+    expect(container.querySelector("button")?.disabled).toBe(true);
+    await act(async () => container.querySelector("button")?.click());
+    expect(fetches).toEqual(["next"]);
+  });
+
+  it("retries an initial error instead of claiming the feed has ended", async () => {
+    listState.data = undefined;
+    listState.isError = true;
+    await renderList();
+
+    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.querySelector('[role="alert"]')).not.toBeNull();
+    await act(async () => container.querySelector("button")?.click());
+
+    expect(fetches).toEqual(["refetch"]);
+  });
+
+  it("does not report the end while an initial request is being retried", async () => {
+    listState.data = undefined;
+    listState.isFetching = true;
+    await renderList();
+
+    expect(container.textContent).not.toContain("已经到底了");
+    expect(fetches).toEqual([]);
+  });
+
+  it("resumes automatic loading when the query recovers", async () => {
+    listState.hasNextPage = true;
+    listState.isError = true;
+    listState.isFetchNextPageError = true;
+    await renderList();
+    expect(fetches).toEqual([]);
+
+    listState.isError = false;
+    listState.isFetchNextPageError = false;
+    await renderList();
+
+    expect(fetches).toEqual(["next"]);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector("button")).toBeNull();
+  });
+
   it("shows a loading indicator while fetching the next page", async () => {
     listState.hasNextPage = true;
     listState.isFetchingNextPage = true;
+    listState.isFetching = true;
     await renderList();
 
     expect(container.querySelector(".animate-spin")).not.toBeNull();

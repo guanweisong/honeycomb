@@ -56,6 +56,12 @@ bun run test:unit:run
 bun run test:e2e:ui
 ```
 
+## CI 执行与测试环境
+
+CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage` 同时验证断言和覆盖率，不再额外执行重复的 `test:unit:run`。两个进程级门禁文件继续通过 `bun run test:unit:process` 单独运行；测试清单、覆盖率排除项和门槛不因此缩减。本地仍可使用 `test:unit:run` 进行不采集覆盖率的快速验证。
+
+默认环境仍为 `jsdom`，需要 DOM、浏览器 API 或 React 客户端渲染的测试保持不变。已核实只使用 Node API、纯领域逻辑或静态契约检查的文件，在文件顶部显式声明 `// @vitest-environment node`，避免不必要的 DOM 初始化。新增声明前应检查测试及其导入依赖，并在 Node 环境下执行验证，不按 `.ts` / `.tsx` 后缀自动分组。保留 Vitest 默认的文件隔离和现有 worker 上限。
+
 ## 覆盖率治理
 
 `bun run test:unit:coverage` 显式统计 `src/**/*.{ts,tsx}`，因此没有被测试导入的生产文件也会以零覆盖进入分母。以下是完整且可审计的排除清单：

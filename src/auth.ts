@@ -47,7 +47,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
       captcha({
         provider: "cloudflare-turnstile",
         secretKey: authEnv.turnstile.secretKey,
-        endpoints: ["/sign-in/username"],
+        endpoints: ["/sign-in/username", "/sign-in/email"],
       }),
     );
   }

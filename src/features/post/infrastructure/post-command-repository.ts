@@ -77,9 +77,15 @@ export function createPostCommandRepository(
         quoteAuthor,
         quoteContent,
       } satisfies PostTranslationInput);
+      const hasTranslationChanges = Object.values(translationInput).some(
+        (value) => value !== undefined,
+      );
       const post = await observeDbOperation("post.update", "transaction", () =>
         db.transaction(async (tx) => {
           const parentValues = toPostUpdateValues(rest);
+          if (hasTranslationChanges) {
+            parentValues.updatedAt = new Date().toISOString();
+          }
           const [updated] = Object.keys(parentValues).length
             ? await tx
                 .update(schema.post)
@@ -87,7 +93,7 @@ export function createPostCommandRepository(
                 .where(eq(schema.post.id, id))
                 .returning()
             : await tx.select().from(schema.post).where(eq(schema.post.id, id)).limit(1);
-          if (updated && Object.values(translationInput).some((value) => value !== undefined)) {
+          if (updated && hasTranslationChanges) {
             const current = await tx
               .select()
               .from(schema.postTranslation)
@@ -133,7 +139,10 @@ export function createPostCommandRepository(
         () =>
           db
             .update(schema.post)
-            .set({ views: sql`${schema.post.views} + 1` })
+            .set({
+              views: sql`${schema.post.views} + 1`,
+              updatedAt: sql`${schema.post.updatedAt}`,
+            })
             .where(
               and(
                 eq(schema.post.id, id),

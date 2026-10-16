@@ -142,6 +142,11 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
               variant: "secondary",
               size: "lg",
               className: "w-full bg-white/80 text-black hover:bg-white",
+              // Omit the override once ready so DynamicForm retains its
+              // own disabled state while a submission is in flight.
+              ...(clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken
+                ? { disabled: true }
+                : {}),
             }}
             onSubmit={onSubmit}
           />

@@ -161,16 +161,21 @@ export function createUserRepository(db: Database): UserRepository {
     },
     async update(input) {
       const { id, password, ...rest } = input;
-      const update = async (store: CredentialStore) => {
+      const update = async (store: CredentialStore & Pick<Database, "delete">) => {
         const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
-            .set(rest)
+            .set({ ...rest, updatedAt: new Date().toISOString() })
             .where(eq(schema.user.id, id))
             .returning(safeUserColumns),
         );
         const user = requireWriteResult(row, "update", "user");
-        if (password) await setCredentialPassword(store, id, password);
+        if (password) {
+          await setCredentialPassword(store, id, password);
+          await observeDbOperation("user.update", "delete", () =>
+            store.delete(schema.session).where(eq(schema.session.userId, id)),
+          );
+        }
         return validateUserState(user);
       };
       return password ? db.transaction(update) : update(db);
