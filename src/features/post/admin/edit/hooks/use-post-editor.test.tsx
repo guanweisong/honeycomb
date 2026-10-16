@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
-import type { PostDetailViewModel } from "../../../presentation/post-view-model";
+import type { PostDetailResult as PostDetailViewModel } from "@/features/post/application/repository";
 
 type EditorDetail = Pick<
   PostDetailViewModel,

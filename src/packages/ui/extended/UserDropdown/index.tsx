@@ -9,7 +9,8 @@ import {
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
 import Avatar from "../Avatar";
-import { UserLevelName, type CurrentUser } from "@/packages/domain/identity/user";
+import { UserLevelName } from "@/packages/ui/admin/user-options";
+import { type CurrentUser } from "@/packages/domain/identity/user";
 
 export interface UserDropdownProps {
   user?: CurrentUser | null;
@@ -37,7 +38,11 @@ export const UserDropdown = (props: UserDropdownProps) => {
               </div>
             </div>
           )}
-          <ChevronsUpDown size={18} strokeWidth={1.5} className={collapsed ? "ml-2" : ""} />
+          <ChevronsUpDown
+            size={18}
+            strokeWidth={1.5}
+            className={collapsed ? "ml-2" : ""}
+          />
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">

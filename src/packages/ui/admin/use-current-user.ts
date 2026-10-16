@@ -1,5 +1,5 @@
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { AdminUser } from "@/features/user/admin-user";
+import type { CurrentUserRecord as AdminUser } from "@/features/contracts";
 import { type Permission as PermissionValue } from "@/packages/identity/auth/permissions";
 import { authorize } from "@/packages/identity/auth/authorize";
 import {

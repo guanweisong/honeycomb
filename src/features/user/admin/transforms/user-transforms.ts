@@ -1,5 +1,5 @@
 import type { UserUpdate } from "@/features/user/application/write-schema";
-import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
+import type { UserRecord as UserEntity } from "@/features/user/application/repository";
 import { UserStatus } from "@/packages/domain/identity/user";
 import { isProtectedUser } from "../../domain/user";
 import { withAdminRecordId } from "@/packages/ui/admin/action-state";

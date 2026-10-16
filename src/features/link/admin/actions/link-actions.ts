@@ -9,7 +9,7 @@ import {
   type LinkInsert,
   type LinkUpdate,
 } from "@/features/link/application/write-schema";
-import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
+import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildLinkUpdateInput } from "../transforms/link-transforms";
 import {

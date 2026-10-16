@@ -23,7 +23,7 @@ import {
   updatePost,
   updatePostTags,
   incrementPostViews,
-} from "@/features/post/application/post-use-cases";
+} from "@/features/post/application/post-commands";
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";

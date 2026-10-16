@@ -63,7 +63,7 @@ vi.mock("next-intl", () => ({
 }));
 
 import PostList from "./index";
-import type { PostListViewModel } from "../../../presentation/post-view-model";
+import type { PostWithRelations as PostListViewModel } from "@/features/post/application/repository";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";

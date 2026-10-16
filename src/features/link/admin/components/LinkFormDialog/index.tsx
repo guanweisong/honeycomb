@@ -7,10 +7,8 @@ import {
   type LinkInsert,
   type LinkUpdate,
 } from "@/features/link/application/write-schema";
-import {
-  EnableStatus,
-  enableStatusOptions,
-} from "@/packages/domain/shared/enable-status";
+import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { enableStatusOptions } from "@/packages/ui/admin/enable-status-options";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import type { LinkDialogState } from "../../actions/link-actions";

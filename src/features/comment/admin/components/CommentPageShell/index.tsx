@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Trash } from "lucide-react";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import type { AdminCommentViewModel as CommentEntity } from "../../../presentation/comment-view-model";

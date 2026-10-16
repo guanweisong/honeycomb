@@ -9,7 +9,7 @@ import {
   type UserInsert,
   type UserUpdate,
 } from "@/features/user/application/write-schema";
-import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
+import type { UserRecord as UserEntity } from "@/features/user/application/repository";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { buildUserUpdateInput } from "../transforms/user-transforms";
 import {

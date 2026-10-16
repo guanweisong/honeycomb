@@ -1,12 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import {
-  type CurrentUser,
-  UserLevel,
-  userLevelOptions,
-  userStatusOptions,
-} from "./identity/user";
+import { type CurrentUser, UserLevel, UserStatus } from "./identity/user";
 
 describe("user domain contract", () => {
   it("provides the minimal current-user contract required by shared UI", () => {
@@ -19,16 +14,8 @@ describe("user domain contract", () => {
     expect(user.level).toBe(UserLevel.ADMIN);
   });
 
-  it("keeps user values and display options stable", () => {
-    expect(userLevelOptions.map((item) => item.value)).toEqual([
-      "ADMIN",
-      "EDITOR",
-      "GUEST",
-    ]);
-    expect(userStatusOptions.map((item) => item.value)).toEqual([
-      "DELETED",
-      "DISABLE",
-      "ENABLE",
-    ]);
+  it("keeps user level and status values stable", () => {
+    expect(Object.values(UserLevel)).toEqual(["ADMIN", "EDITOR", "GUEST"]);
+    expect(Object.values(UserStatus)).toEqual(["DELETED", "ENABLE", "DISABLE"]);
   });
 });

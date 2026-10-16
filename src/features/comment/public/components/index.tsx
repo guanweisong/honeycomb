@@ -1,7 +1,7 @@
 import React from "react";
 import CommentClient from "./CommentClient";
 import { MenuType } from "@/packages/domain/navigation/menu";
-import type { getPublicComments } from "@/app/lib/server/public-queries";
+import type { CommentTreeViewResponse } from "../../presentation/comment-view-model";
 
 /**
  * 评论组件的属性接口。
@@ -16,7 +16,7 @@ export interface CommentProps {
    */
   type: MenuType;
   /** 由详情页创建并与评论计数共享的请求级查询。 */
-  queryCommentPromise: ReturnType<typeof getPublicComments>;
+  queryCommentPromise: Promise<CommentTreeViewResponse>;
 }
 
 /**

@@ -1,10 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { UserViewModel as UserEntity } from "../../presentation/user-view-model";
+import type { UserRecord as UserEntity } from "@/features/user/application/repository";
 import {
   UserLevelName,
   userLevelOptions,
-} from "@/packages/domain/identity/user";
-import { userStatusOptions } from "@/packages/domain/identity/user";
+  userStatusOptions,
+} from "@/packages/ui/admin/user-options";
 import {
   StatusBadge,
   StatusBadgeTone,

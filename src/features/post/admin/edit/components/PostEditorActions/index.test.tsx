@@ -8,7 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 
 const grantedPermissions = new Set<string>();
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 

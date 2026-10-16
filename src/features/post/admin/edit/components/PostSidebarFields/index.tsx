@@ -5,13 +5,14 @@ import { Button } from "@/packages/ui/components/button";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
 import { ModalType } from "@/packages/ui/admin/modal-type";
-import { PostType, postTypeOptions } from "@/packages/domain/content/post";
+import { PostType } from "@/packages/domain/content/post";
+import { postTypeOptions } from "@/packages/ui/admin/post-options";
 import { TagType } from "@/packages/domain/content/tag";
 import MultiTag from "../MultiTag";
 import PhotoPickerItem from "../PhotoPickerItem";
 import type { usePostEditor } from "../../hooks/use-post-editor";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 
 type Editor = ReturnType<typeof usePostEditor>;
 
