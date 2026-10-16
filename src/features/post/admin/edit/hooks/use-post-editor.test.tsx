@@ -317,6 +317,258 @@ describe("usePostEditor", () => {
     expect(current.movieStyles).toEqual([selectedTag]);
   });
 
+  it.each([true, false])(
+    "preserves edits made while an update and refetch are pending (refresh succeeds: %s)",
+    async (refreshSucceeds) => {
+      mocks.detail = originalDetail;
+      await renderEditor(postId);
+      let resolveUpdate: ((value: { id: string }) => void) | undefined;
+      let resolveRefresh: ((value: unknown) => void) | undefined;
+      mocks.update.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveUpdate = resolve;
+          }),
+      );
+      mocks.refetch.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      );
+      let saving: Promise<boolean> | undefined;
+      await act(async () => {
+        saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+      });
+      await act(async () => {
+        requireDefined(editor).form.setValue(
+          "title",
+          { zh: "Typed during save" },
+          { shouldDirty: true },
+        );
+        requireDefined(resolveUpdate)({ id: postId });
+      });
+      const selectedCover = { ...cover, id: "cover-2" };
+      const selectedTag = { ...tag, id: "tag-2" };
+      await act(async () => {
+        const current = requireDefined(editor);
+        current.form.setValue("coverId", selectedCover.id, {
+          shouldDirty: true,
+        });
+        current.setCoverPreview(selectedCover);
+        current.setGalleryStyles([selectedTag]);
+        current.setMovieActors([selectedTag]);
+        current.setMovieDirectors([selectedTag]);
+        current.setMovieStyles([selectedTag]);
+      });
+      await act(async () => {
+        requireDefined(resolveRefresh)({
+          isSuccess: refreshSucceeds,
+          data: { ...originalDetail, status: PostStatus.PUBLISHED },
+        });
+        await saving;
+      });
+      const current = requireDefined(editor);
+      expect(current.form.getValues("title")).toEqual({
+        zh: "Typed during save",
+      });
+      expect(current.form.getValues("coverId")).toBe(selectedCover.id);
+      expect(current.form.getValues("status")).toBe(PostStatus.PUBLISHED);
+      expect(current.form.formState.isDirty).toBe(true);
+      expect(current.photoPickerProps.cover).toEqual(selectedCover);
+      expect(current.galleryStyles).toEqual([selectedTag]);
+      expect(current.movieActors).toEqual([selectedTag]);
+      expect(current.movieDirectors).toEqual([selectedTag]);
+      expect(current.movieStyles).toEqual([selectedTag]);
+    },
+  );
+
+  it("preserves independently updated tags when form values did not change during save", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    let resolveUpdate: ((value: { id: string }) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    mocks.refetch.mockResolvedValue({ isSuccess: true, data: originalDetail });
+    let saving: Promise<boolean> | undefined;
+    await act(async () => {
+      saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+    });
+    const selectedTag = { ...tag, id: "tag-2" };
+    await act(async () => {
+      requireDefined(editor).setMovieStyles([selectedTag]);
+    });
+    await act(async () => {
+      requireDefined(resolveUpdate)({ id: postId });
+      await saving;
+    });
+    expect(requireDefined(editor).movieStyles).toEqual([selectedTag]);
+  });
+
+  it.each([true, false])(
+    "does not reapply the explicit save refetch when its query data renders (immediately: %s)",
+    async (immediately) => {
+      mocks.detail = originalDetail;
+      await renderEditor(postId);
+      let resolveRefresh: ((value: unknown) => void) | undefined;
+      mocks.refetch.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveRefresh = resolve;
+          }),
+      );
+      let saving: Promise<boolean> | undefined;
+      await act(async () => {
+        saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+      });
+      const selectedTag = { ...tag, id: "tag-2" };
+      await act(async () => {
+        requireDefined(editor).setMovieStyles([selectedTag]);
+      });
+      const savedDetail = { ...originalDetail, status: PostStatus.PUBLISHED };
+      await act(async () => {
+        if (immediately) mocks.detail = savedDetail;
+        requireDefined(resolveRefresh)({ isSuccess: true, data: savedDetail });
+        await saving;
+      });
+      if (!immediately) {
+        mocks.detail = savedDetail;
+        await rerenderEditor(postId);
+      }
+      expect(requireDefined(editor).movieStyles).toEqual([selectedTag]);
+      expect(requireDefined(editor).form.formState.isDirty).toBe(false);
+    },
+  );
+
+  it("does not navigate back to a created post after the user leaves the record", async () => {
+    await renderEditor();
+    let resolveCreate: ((value: { id: string }) => void) | undefined;
+    mocks.create.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    let saving: Promise<boolean> | undefined;
+    await act(async () => {
+      saving = requireDefined(editor).submit(PostStatus.DRAFT, "create");
+    });
+    mocks.detail = originalDetail;
+    await rerenderEditor(postId);
+    await act(async () => {
+      requireDefined(resolveCreate)({ id: "new-record" });
+      await saving;
+    });
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(requireDefined(editor).form.getValues("title")).toEqual(
+      originalDetail.title,
+    );
+  });
+
+  it.each(["unmount", "leave-and-return"])(
+    "ignores stale create navigation after %s",
+    async (navigation) => {
+      await renderEditor();
+      let resolveCreate: ((value: { id: string }) => void) | undefined;
+      mocks.create.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveCreate = resolve;
+          }),
+      );
+      let saving: Promise<boolean> | undefined;
+      await act(async () => {
+        saving = requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      });
+      if (navigation === "unmount") {
+        await act(async () => root.render(<div>Other page</div>));
+      } else {
+        mocks.detail = originalDetail;
+        await rerenderEditor(postId);
+        mocks.detail = undefined;
+        await rerenderEditor(null);
+        await act(async () => {
+          requireDefined(editor).form.setValue(
+            "title",
+            { zh: "New draft" },
+            { shouldDirty: true },
+          );
+        });
+      }
+      await act(async () => {
+        requireDefined(resolveCreate)({ id: "created-record" });
+        await saving;
+      });
+      expect(mocks.push).not.toHaveBeenCalled();
+      if (navigation === "leave-and-return") {
+        expect(requireDefined(editor).form.getValues("title")).toEqual({
+          zh: "New draft",
+        });
+      }
+    },
+  );
+
+  it("does not apply a pristine background refetch during an update", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    let resolveUpdate: ((value: { id: string }) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    let saving: Promise<boolean> | undefined;
+    await act(async () => {
+      saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+    });
+    mocks.detail = { ...originalDetail, title: { zh: "Background snapshot" } };
+    await rerenderEditor(postId);
+    expect(requireDefined(editor).form.getValues("title")).toEqual(
+      originalDetail.title,
+    );
+    await act(async () => {
+      requireDefined(resolveUpdate)({ id: postId });
+      await saving;
+    });
+  });
+
+  it("does not reset another record when the previous update finishes", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    let resolveUpdate: ((value: { id: string }) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    mocks.refetch.mockResolvedValue({ isSuccess: true, data: originalDetail });
+    let saving: Promise<boolean> | undefined;
+    await act(async () => {
+      saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+    });
+    const nextId = "234567890123456789012345";
+    mocks.detail = {
+      ...originalDetail,
+      id: nextId,
+      title: { zh: "Other post" },
+    };
+    await rerenderEditor(nextId);
+    await act(async () => {
+      requireDefined(resolveUpdate)({ id: postId });
+      await saving;
+    });
+    expect(requireDefined(editor).form.getValues("title")).toEqual({
+      zh: "Other post",
+    });
+    expect(requireDefined(editor).form.getValues("id")).toBe(nextId);
+  });
+
   it.each(["create", "update"] as const)(
     "waits for %s and rejects same-tick duplicate submissions",
     async (action) => {
@@ -353,6 +605,7 @@ describe("usePostEditor", () => {
       expect(mutation).toHaveBeenCalledTimes(1);
       expect(settled).toBe(false);
       expect(container.textContent).toBe("saving");
+      expect(requireDefined(editor).readOnly).toBe(action === "create");
       expect(mocks.success).not.toHaveBeenCalled();
       await expect(duplicate).resolves.toBe(false);
 

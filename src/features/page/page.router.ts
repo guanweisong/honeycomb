@@ -8,7 +8,7 @@ import {
   publicProcedure,
   mapApplicationError,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/identity/auth/permissions";
+import { can, Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
@@ -36,7 +36,12 @@ export const pageRouter = createTRPCRouter({
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      createPageQueryRepository(ctx.db).list(input, "ALL"),
+      createPageQueryRepository(ctx.db).list(
+        input,
+        can(ctx.user.level, Permission.pageReadUnpublished)
+          ? "ALL"
+          : "PUBLISHED_ONLY",
+      ),
     ),
   detail: publicProcedure
     .input(z.object({ id: IdSchema }))
@@ -46,7 +51,12 @@ export const pageRouter = createTRPCRouter({
   adminDetail: permissionProcedure(Permission.pageReadAll)
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) =>
-      createPageQueryRepository(ctx.db).detail(input.id, "ALL"),
+      createPageQueryRepository(ctx.db).detail(
+        input.id,
+        can(ctx.user.level, Permission.pageReadUnpublished)
+          ? "ALL"
+          : "PUBLISHED_ONLY",
+      ),
     ),
   create: permissionProcedure(Permission.pageCreate)
     .input(PageInsertSchema)

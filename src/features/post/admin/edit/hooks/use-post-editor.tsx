@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -30,6 +30,15 @@ export function usePostEditor(id: string | null) {
     useState<AdminDialogState<CategoryEntity>>();
   const [loading, setLoading] = useState(false);
   const submitting = useRef(false);
+  const recordGeneration = useRef(0);
+  useEffect(
+    () => () => {
+      // A completed request must not affect another visit, even to the same ID.
+      recordGeneration.current += 1;
+    },
+    [id],
+  );
+  const [isNavigating, startNavigation] = useTransition();
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
   const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
   const [movieActors, setMovieActors] = useState<PostTagOption[]>([]);
@@ -50,6 +59,7 @@ export function usePostEditor(id: string | null) {
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
   const { isDirty } = form.formState;
+  const consumedSaveSnapshot = useRef<typeof detail>(undefined);
   const previousRecord = useRef<
     | {
         id: string | null;
@@ -73,10 +83,12 @@ export function usePostEditor(id: string | null) {
   useEffect(() => {
     const previous = previousRecord.current;
     previousRecord.current = { id, detail };
+    if (previous?.id !== id) consumedSaveSnapshot.current = undefined;
     if (previous?.id === id) {
       // Changes to dirty state alone must not reapply an older query snapshot.
       if (previous.detail === detail) return;
-      if (isDirty && previous.detail?.id === id) return;
+      if (detail === consumedSaveSnapshot.current) return;
+      if ((isDirty || submitting.current) && previous.detail?.id === id) return;
     }
     if (id && detail?.id !== id) {
       if (previous?.id !== id) resetEditor();
@@ -89,10 +101,12 @@ export function usePostEditor(id: string | null) {
     status: PostStatus,
     action: PostSubmitAction,
   ): Promise<boolean> => {
-    if (submitting.current) return false;
+    if (submitting.current || isNavigating) return false;
     submitting.current = true;
     setLoading(true);
     let saved = false;
+    const submittedValues = JSON.stringify(form.getValues());
+    const submittedGeneration = recordGeneration.current;
 
     try {
       await form.handleSubmit(
@@ -113,12 +127,19 @@ export function usePostEditor(id: string | null) {
               PostInsertSchema.parse(data),
             );
             if (result.id) {
-              form.reset(data);
               saved = true;
+              if (
+                recordGeneration.current !== submittedGeneration ||
+                previousRecord.current?.id !== id
+              )
+                return;
+              form.reset(data);
               if (result.publicSync === "degraded") {
                 toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
               } else toast.success("添加成功");
-              router.push(`/admin/post/edit?id=${result.id}`);
+              startNavigation(() =>
+                router.push(`/admin/post/edit?id=${result.id}`),
+              );
             }
             return;
           }
@@ -133,10 +154,52 @@ export function usePostEditor(id: string | null) {
           if (result) {
             // Persistence has succeeded; a failed read must not invite retrying the write.
             const refreshed = await refetch().catch(() => undefined);
-            if (previousRecord.current?.id === detail.id) {
-              if (refreshed?.isSuccess && refreshed.data) {
-                resetEditor(refreshed.data);
-              } else form.reset(data);
+            if (
+              recordGeneration.current === submittedGeneration &&
+              previousRecord.current?.id === detail.id
+            ) {
+              const currentValues = form.getValues();
+              const savedDetail = refreshed?.isSuccess
+                ? refreshed.data
+                : undefined;
+              if (savedDetail) {
+                // This snapshot is applied here, not again by query hydration.
+                consumedSaveSnapshot.current = savedDetail;
+              }
+              form.reset(savedDetail ?? data);
+              if (JSON.stringify(currentValues) !== submittedValues) {
+                // Keep later edits dirty against the snapshot that actually saved.
+                form.reset(
+                  { ...currentValues, status },
+                  { keepDefaultValues: true },
+                );
+              }
+              if (savedDetail) {
+                // Tag relations save independently; do not replace newer selections.
+                setCoverPreview((current) =>
+                  current === coverPreview ? savedDetail.cover : current,
+                );
+                setGalleryStyles((current) =>
+                  current === galleryStyles
+                    ? savedDetail.galleryStyles || []
+                    : current,
+                );
+                setMovieActors((current) =>
+                  current === movieActors
+                    ? savedDetail.movieActors || []
+                    : current,
+                );
+                setMovieDirectors((current) =>
+                  current === movieDirectors
+                    ? savedDetail.movieDirectors || []
+                    : current,
+                );
+                setMovieStyles((current) =>
+                  current === movieStyles
+                    ? savedDetail.movieStyles || []
+                    : current,
+                );
+              }
             }
             saved = true;
             if (result.publicSync === "degraded") {
@@ -177,7 +240,9 @@ export function usePostEditor(id: string | null) {
     detail,
     form,
     galleryStyles,
-    loading,
+    loading: loading || isNavigating || Boolean(id && detail?.id !== id),
+    readOnly:
+      Boolean(id && detail?.id !== id) || (!id && (loading || isNavigating)),
     modalProps,
     movieActors,
     movieDirectors,

@@ -23,6 +23,7 @@ function PostDetailContent() {
     detail,
     form,
     loading,
+    readOnly,
     modalProps,
     setCoverPreview,
     setModalProps,
@@ -53,7 +54,7 @@ function PostDetailContent() {
   );
 
   return (
-    <>
+    <div inert={readOnly} aria-busy={readOnly}>
       <Form {...form}>
         <form>
           <div className="lg:flex lg:gap-8">
@@ -78,7 +79,7 @@ function PostDetailContent() {
         handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
       />
       <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
-    </>
+    </div>
   );
 }
 

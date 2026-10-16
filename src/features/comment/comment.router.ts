@@ -1,15 +1,17 @@
 import "server-only";
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   permissionProcedure,
   publicProcedure,
   createTRPCRouter,
   mapApplicationError,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/identity/auth/permissions";
+import { can, Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
+import type { CommentPreviewListItem } from "@/features/comment/application/repository";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import { CommentUpdateSchema } from "@/features/comment/application/write-schema";
 import { CommentQuerySchema } from "@/features/comment/schemas/comment.query.schema";
@@ -42,9 +44,49 @@ const createCommentProcedure = createRateLimitedPublicProcedure({
 export const commentRouter = createTRPCRouter({
   index: permissionProcedure(Permission.commentReadAll)
     .input(CommentListQuerySchema)
-    .query(({ input, ctx }) =>
-      createCommentQueryRepository(ctx.db).list(input),
-    ),
+    .query(async ({ input, ctx }) => {
+      const canReadPrivate = can(ctx.user.level, Permission.commentReadPrivate);
+      // 搜索和排序同样会暴露私有字段，不能只在响应中删掉值。
+      if (
+        !canReadPrivate &&
+        (input.email ||
+          input.ip ||
+          [
+            "email",
+            "ip",
+            "userAgent",
+            "parentId",
+            "postId",
+            "pageId",
+            "customId",
+          ].includes(input.sortField))
+      ) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const canReadUnpublished =
+        can(ctx.user.level, Permission.postReadUnpublished) &&
+        can(ctx.user.level, Permission.pageReadUnpublished);
+      const result = await createCommentQueryRepository(ctx.db).list(
+        input,
+        canReadUnpublished ? "ALL" : "PUBLISHED_ONLY",
+      );
+      if (canReadPrivate) return result;
+      return {
+        total: result.total,
+        list: result.list.map((comment): CommentPreviewListItem => ({
+          id: comment.id,
+          author: comment.author,
+          content: comment.content,
+          site: comment.site,
+          status: comment.status,
+          createdAt: comment.createdAt,
+          updatedAt: comment.updatedAt,
+          post: comment.post,
+          page: comment.page,
+          custom: comment.custom,
+        })),
+      };
+    }),
 
   listByRef: publicProcedure
     .input(z.object({ id: IdSchema }).merge(CommentQuerySchema))

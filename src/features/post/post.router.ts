@@ -8,7 +8,7 @@ import {
   publicProcedure,
   mapApplicationError,
 } from "@/packages/trpc/api/core";
-import { Permission } from "@/packages/identity/auth/permissions";
+import { can, Permission } from "@/packages/identity/auth/permissions";
 import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
 import { IdSchema } from "@/packages/domain/shared/id.schema";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
@@ -45,7 +45,12 @@ export const postRouter = createTRPCRouter({
   adminIndex: permissionProcedure(Permission.postReadAll)
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
-      createPostQueryRepository(ctx.db).list(input, "ALL"),
+      createPostQueryRepository(ctx.db).list(
+        input,
+        can(ctx.user.level, Permission.postReadUnpublished)
+          ? "ALL"
+          : "PUBLISHED_ONLY",
+      ),
     ),
 
   detail: publicProcedure
@@ -64,7 +69,9 @@ export const postRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const result = await createPostQueryRepository(ctx.db).detail(
         input.id,
-        "ALL",
+        can(ctx.user.level, Permission.postReadUnpublished)
+          ? "ALL"
+          : "PUBLISHED_ONLY",
       );
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return result;
