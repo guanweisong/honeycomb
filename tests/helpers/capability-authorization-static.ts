@@ -183,7 +183,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   "src/app/admin/constants/route-capabilities.ts",
   // Admin route template 只把已复核的用户角色映射到登记的 route capability。
   "src/app/admin/(root)/(dashboard)/template.tsx",
-  "src/features/contracts/admin/use-current-user.ts",
+  "src/packages/ui/admin/use-current-user.ts",
   // User use case 只编排账号等级领域不变量，不决定入口授权。
   "src/features/user/application/user-commands.ts",
   "src/packages/infrastructure/db/schema/index.ts",

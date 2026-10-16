@@ -2,4 +2,4 @@ export {
   CategoryInsertSchema,
   CategoryUpdateSchema,
 } from "@/features/category/application/write-schema";
-export type { CategoryViewModel } from "@/features/category/presentation/category-view-model";
+export type { CategoryListItem as CategoryViewModel } from "@/features/category/application/repository";

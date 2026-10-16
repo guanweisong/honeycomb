@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from "@/packages/ui/components/form";
 import React from "react";
-import type { PostDetailViewModel as PostDetailEntity } from "../../../../presentation/post-view-model";
+import type { PostDetailResult as PostDetailEntity } from "@/features/post/application/repository";
 import Image from "next/image";
 
 /**

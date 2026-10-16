@@ -2,7 +2,7 @@
 
 import { trpc, trpcClient } from "@/packages/trpc/client/trpc";
 import { createAdminQueryClient } from "@/packages/trpc/client/admin-query-client";
-import { CurrentUserProvider } from "@/features/contracts/admin/use-current-user";
+import { CurrentUserProvider } from "@/packages/ui/admin/use-current-user";
 import { SiteSettingProvider } from "@/features/setting/admin/hooks-use-site-setting";
 import type { AdminUser } from "./lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -18,7 +18,9 @@ export function AdminProviders({
 }) {
   const router = useRouter();
   const [queryClient] = React.useState(() =>
-    createAdminQueryClient({ onForbidden: () => router.replace("/admin/forbidden") }),
+    createAdminQueryClient({
+      onForbidden: () => router.replace("/admin/forbidden"),
+    }),
   );
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>

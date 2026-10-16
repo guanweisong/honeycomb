@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { PageStatus } from "@/packages/domain/content/page";
 import { PageTemplate } from "@/packages/domain/content/page-template";
-import type { PageViewModel } from "@/features/page/presentation/page-view-model";
+import type { PageWithRelations as PageViewModel } from "@/features/page/application/repository";
 import type { PageEditorForm } from "../PageEditorForm";
 import type { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { AdminLayoutActionsContext } from "@/packages/ui/extended/AdminLayout/AdminLayoutContext";

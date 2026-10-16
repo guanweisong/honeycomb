@@ -7,7 +7,7 @@ import {
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { TagViewModel as TagEntity } from "../../../presentation/tag-view-model";
+import type { TagRecord as TagEntity } from "@/features/tag/application/repository";
 import { z } from "zod";
 import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
 import {

@@ -2,7 +2,7 @@
 
 import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import type { MediaViewModel } from "../media-view-model";
 import { Button } from "@/packages/ui/components/button";

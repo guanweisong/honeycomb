@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   can: vi.fn(),
 }));
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: mocks.can,
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
@@ -102,8 +102,12 @@ it("names the icon-only row actions", async () => {
   });
   await act(async () => root.render(<PostListClient />));
 
-  expect(container.querySelector('tbody button[aria-label="编辑文章"]')).not.toBeNull();
-  expect(container.querySelector('tbody button[aria-label="删除文章"]')).not.toBeNull();
+  expect(
+    container.querySelector('tbody button[aria-label="编辑文章"]'),
+  ).not.toBeNull();
+  expect(
+    container.querySelector('tbody button[aria-label="删除文章"]'),
+  ).not.toBeNull();
 });
 
 async function nextPage() {

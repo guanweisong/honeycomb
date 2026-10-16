@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
+import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
 
 import { buildLinkUpdateInput, toLinkFormDefaults } from "./link-transforms";
 

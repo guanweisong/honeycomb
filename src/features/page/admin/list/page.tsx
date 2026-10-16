@@ -15,9 +15,9 @@ import {
 } from "@/features/page/schemas/page.list.query.schema";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
-import type { PageViewModel as PageEntity } from "../../presentation/page-view-model";
+import type { PageWithRelations as PageEntity } from "@/features/page/application/repository";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import {
   runAdminMutation,
   submitAdminBatchDelete,

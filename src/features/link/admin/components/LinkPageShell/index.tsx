@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import { Permission } from "@/packages/identity/auth/permissions";
 import { LinkListQuerySchema } from "@/features/link/schemas/link.list.query.schema";
-import type { LinkViewModel as LinkEntity } from "../../../presentation/link-view-model";
+import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
 import { Button } from "@/packages/ui/components/button";
 import { DataTable } from "@/packages/ui/extended/DataTable";
 import { Dialog } from "@/packages/ui/extended/Dialog";

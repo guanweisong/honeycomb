@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { EnableStatus } from "@/packages/domain/shared/enable-status";
 
-import type { LinkViewModel as LinkEntity } from "../../presentation/link-view-model";
+import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
 
 import { submitLinkUpdate } from "./link-actions";
 
@@ -71,5 +71,4 @@ describe("link action state", () => {
     expect(update).not.toHaveBeenCalled();
     expect(notifyError).toHaveBeenCalledWith("缺少记录ID");
   });
-
 });

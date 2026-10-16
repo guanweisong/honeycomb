@@ -6,7 +6,7 @@ import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/sett
 import { trpc } from "@/packages/trpc/client/trpc";
 import { z } from "zod";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
 
 type SettingFormValues = z.infer<typeof SettingUpdateSchema>;

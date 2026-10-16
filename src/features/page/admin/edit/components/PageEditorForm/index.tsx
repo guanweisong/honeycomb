@@ -2,7 +2,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/packages/ui/components/form";
 import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
 import type { PageInsert } from "@/features/page/application/write-schema";
-import { pageTemplateOptions } from "@/packages/domain/content/page-template";
+import { pageTemplateOptions } from "@/packages/ui/admin/page-options";
 
 type PageEditorFormProps = { form: UseFormReturn<PageInsert> };
 

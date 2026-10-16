@@ -1,6 +1,6 @@
 "use client";
 
-import type { TagViewModel as TagEntity } from "../presentation/tag-view-model";
+import type { TagRecord as TagEntity } from "@/features/tag/application/repository";
 import { useState } from "react";
 import { tagTableColumns } from "./constants/tag-table-columns";
 import { DataTable } from "@/packages/ui/extended/DataTable";
@@ -17,7 +17,7 @@ import AddTagDialog from "./components/AddTagDialog";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,

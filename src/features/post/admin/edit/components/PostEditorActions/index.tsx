@@ -5,7 +5,7 @@ import { Dialog } from "@/packages/ui/extended/Dialog";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import type { PostSubmitAction } from "../../hooks/use-post-editor";
 import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/features/contracts/admin/use-current-user";
+import { useCan } from "@/packages/ui/admin/use-current-user";
 
 interface PostEditorActionsProps {
   id?: string;

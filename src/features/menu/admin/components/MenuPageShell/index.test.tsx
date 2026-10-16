@@ -17,7 +17,7 @@ const queryMocks = vi.hoisted(
   }),
 );
 
-vi.mock("@/features/contracts/admin/use-current-user", () => ({
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: () => canUpdateMenu,
 }));
 

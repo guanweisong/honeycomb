@@ -1,6 +1,6 @@
 "use client";
 
-import { enableStatusOptions } from "@/packages/domain/shared/enable-status";
+import { enableStatusOptions } from "@/packages/ui/admin/enable-status-options";
 import { Dialog } from "@/packages/ui/extended/Dialog";
 import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
 import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";

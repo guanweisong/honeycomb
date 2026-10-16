@@ -2,13 +2,11 @@
 
 ## 目标分层
 
-```text
-src/app       路由入口、布局、中间件和页面组装
-    ↓
-src/features  按业务垂直拆分的功能模块、schema、用例、router 和公开/管理入口
-    ↓
-src/packages  技术能力和共享基础设施
-```
+- `src/app`：框架入口、路由、布局与应用组合（例如公开内容缓存）。
+- `src/features`：按业务组织输入、用例、模型、适配器和 UI；查询与写入各走实际所需的最短路径。
+- `src/packages`：共享能力，不是统一的底层。domain/application 不依赖 UI 或数据库；ui/trpc 的组装层可以依赖公开业务契约。
+
+具体调用路径见[代码阅读地图](code-reading-map.md)。这不是 `app → features → packages` 的绝对单向目录树；按职责和实际 import 检查边界。
 
 ## 复杂度治理目标
 

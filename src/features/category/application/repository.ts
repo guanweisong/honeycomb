@@ -32,9 +32,12 @@ export type CategoryRecord = {
   updatedAt: string | null;
 };
 
+/** 分类列表和树节点的稳定读取模型。 */
+export type CategoryListItem = CategoryRecord & { deepPath: number };
+
 export interface CategoryRepository {
   tree(visibility: CategoryVisibility): Promise<{
-    list: (CategoryRecord & { deepPath: number })[];
+    list: CategoryListItem[];
     total: number;
   }>;
   create(input: CategoryInsert): Promise<CategoryRecord>;
@@ -46,7 +49,7 @@ export interface CategoryRepository {
     input: CategoryListInput,
     visibility: CategoryVisibility,
   ): Promise<{
-    list: (CategoryRecord & { deepPath: number })[];
+    list: CategoryListItem[];
     total: number;
   }>;
 }
