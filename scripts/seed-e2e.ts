@@ -87,6 +87,31 @@ async function seed(): Promise<void> {
           set: { password: passwordHash, updatedAt: now },
         });
 
+      // A separate full-admin identity for read-only page smoke tests. The
+      // local-file/E2E_SEED guard above applies before either account is written.
+      // Keep the existing guest identity and permission-boundary tests unchanged.
+      await tx.insert(schema.user).values({
+        id: "000000000000000000000014",
+        email: "page-smoke@honeycomb.test",
+        emailVerified: true,
+        level: UserLevel.ADMIN,
+        name: "page-smoke-admin",
+        username: "page-smoke-admin",
+        displayUsername: "page-smoke-admin",
+        status: UserStatus.ENABLE,
+        createdAt: now,
+        updatedAt: now,
+      }).onConflictDoNothing();
+      await tx.insert(schema.account).values({
+        id: "000000000000000000000015",
+        accountId: "000000000000000000000014",
+        providerId: "credential",
+        userId: "000000000000000000000014",
+        password: await hashCredentialPassword("page-smoke-test-only"),
+        createdAt: now,
+        updatedAt: now,
+      }).onConflictDoNothing();
+
       await tx
         .insert(schema.setting)
         .values({
