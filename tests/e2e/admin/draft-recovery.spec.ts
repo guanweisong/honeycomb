@@ -10,7 +10,12 @@ test.describe("@regression local editor draft recovery", () => {
       page,
     }) => {
       await page.goto(`/admin/${kind}/edit?id=999999999999999999999999`);
-      await expect(page.getByRole("alert")).toContainText("不存在或已被删除");
+      // The post query retries transient errors with 1s/2s/4s backoff.
+      // Scope to our alert, not Next.js's separate route announcer.
+      await expect(page.locator('section[role="alert"]')).toContainText(
+        "不存在或已被删除",
+        { timeout: 15_000 },
+      );
       await expect(
         page.getByRole("link", {
           name: kind === "post" ? "返回文章列表" : "返回页面列表",
@@ -28,8 +33,13 @@ test.describe("@regression local editor draft recovery", () => {
       });
       page.on("dialog", (dialog) => dialog.accept());
       await page.goto(`/admin/${kind}/edit`);
+      // Header actions are installed in a client effect, after editor hydration.
+      await expect(
+        page.getByRole("button", { name: "保存草稿", exact: true }),
+      ).toBeEnabled();
       const title = page.getByPlaceholder(placeholder);
       await title.fill("浏览器未保存草稿");
+      await expect(title).toHaveValue("浏览器未保存草稿");
       await expect
         .poll(() =>
           page.evaluate(
