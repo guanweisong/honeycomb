@@ -1,5 +1,6 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
@@ -90,6 +91,23 @@ afterEach(async () => {
 });
 
 describe("public blog search", () => {
+  it("keeps the server-rendered trigger disabled until the client is ready", () => {
+    const html = renderToString(
+      <QueryClientProvider client={client}>
+        <NextIntlClientProvider locale="zh" messages={messages}>
+          <PostSearch />
+        </NextIntlClientProvider>
+      </QueryClientProvider>,
+    );
+    const document = new DOMParser().parseFromString(html, "text/html");
+    expect(
+      document
+        .querySelector('button[aria-label="搜索"]')
+        ?.hasAttribute("disabled"),
+    ).toBe(true);
+    expect(button("搜索").disabled).toBe(false);
+  });
+
   it("opens an accessible dialog, focuses the input, and restores trigger focus on Escape", async () => {
     await open();
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();

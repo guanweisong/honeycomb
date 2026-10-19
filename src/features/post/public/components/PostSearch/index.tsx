@@ -17,6 +17,7 @@ import {
 } from "@/packages/ui/components/dialog";
 import { Input } from "@/packages/ui/components/input";
 import { Button } from "@/packages/ui/components/button";
+import { useMounted } from "@/packages/ui/hooks/use-mounted";
 
 /** Mount only while open, so closing discards the query and cancels pending work. */
 function SearchContent({ onNavigate }: { onNavigate: () => void }) {
@@ -132,6 +133,7 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
 }
 
 export default function PostSearch() {
+  const mounted = useMounted();
   const t = useTranslations("Search");
   const [open, setOpen] = useState(false);
   return (
@@ -139,6 +141,7 @@ export default function PostSearch() {
       <DialogTrigger asChild>
         <button
           type="button"
+          disabled={!mounted}
           aria-label={t("title")}
           className="inline-flex size-5 shrink-0 items-center justify-center cursor-pointer focus-visible:outline-2 focus-visible:outline-teal-500"
         >
