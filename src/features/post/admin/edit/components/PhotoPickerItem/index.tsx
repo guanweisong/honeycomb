@@ -20,6 +20,7 @@ export interface PhotoPickerItemProps {
    * 封面图片对象，用于显示预览。
    */
   cover?: PostDetailEntity["cover"];
+  coverId?: string | null;
   /**
    * 图片选择器项的标题。
    */
@@ -45,7 +46,8 @@ export interface PhotoPickerItemProps {
  * @returns {JSX.Element} 图片选择器项。
  */
 const PhotoPickerItem = (props: PhotoPickerItemProps) => {
-  const { cover, title, size, handlePhotoClear, openPhotoPicker } = props;
+  const { cover, coverId, title, size, handlePhotoClear, openPhotoPicker } =
+    props;
   const { control } = useFormContext();
   const previewWidth = cover?.width ?? 960;
   const previewHeight = cover?.height ?? 540;
@@ -60,18 +62,24 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
         name="coverId"
         render={() => (
           <FormItem className="gap-0">
-            {cover?.id ? (
+            {cover?.id || coverId ? (
               <>
-                <div className="mb-2 aspect-video w-full overflow-hidden bg-gray-300">
-                  <Image
-                    src={cover.url}
-                    alt={`${title}预览`}
-                    width={previewWidth}
-                    height={previewHeight}
-                    sizes="(min-width: 1024px) 320px, 100vw"
-                    className="block h-full w-full object-contain"
-                  />
-                </div>
+                {cover ? (
+                  <div className="mb-2 aspect-video w-full overflow-hidden bg-gray-300">
+                    <Image
+                      src={cover.url}
+                      alt={`${title}预览`}
+                      width={previewWidth}
+                      height={previewHeight}
+                      sizes="(min-width: 1024px) 320px, 100vw"
+                      className="block h-full w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    已恢复封面选择，重新选择可查看预览。
+                  </p>
+                )}
                 <div className="flex justify-between">
                   <Button
                     type={"button"}

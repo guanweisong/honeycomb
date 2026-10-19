@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   PageInsertSchema,
   type PageInsert,
@@ -24,6 +24,14 @@ import {
   toPageEditorFormValues,
 } from "../../transforms/page-editor-transforms";
 
+import {
+  useLocalDraft,
+  LocalDraftPrompt,
+} from "@/packages/ui/admin/local-draft";
+import { useCurrentUser } from "@/packages/ui/admin/use-current-user";
+import { can, Permission } from "@/packages/identity/auth/permissions";
+import { parsePageDraft } from "../../transforms/page-draft";
+
 export function PageEditorPage() {
   const id = getPageEditorId(useSearchParams());
   const form = useForm<PageInsert>({
@@ -43,6 +51,8 @@ export function PageEditorPage() {
     : null;
   const loading = actions.loading || (isLoadingDetail && !loadError);
   const { isDirty } = form.formState;
+  const { user } = useCurrentUser();
+  const draftValues = parsePageDraft(useWatch({ control: form.control })) ?? {};
   const previousRecord = useRef<
     { id: string | null; detail: typeof detail } | undefined
   >(undefined);
@@ -68,13 +78,57 @@ export function PageEditorPage() {
     );
   }, [actions.loading, detail, form, id, isDirty]);
 
+  const recordGeneration = useRef(0);
+  useEffect(
+    () => () => {
+      recordGeneration.current += 1;
+    },
+    [id, user?.id],
+  );
+  const previousAccount = useRef(user?.id);
+  useEffect(() => {
+    if (previousAccount.current !== user?.id) {
+      previousAccount.current = user?.id;
+      form.reset(
+        toPageEditorFormValues(
+          id && detail?.id === id ? detail : undefined,
+        ) ?? { template: PageTemplate.DEFAULT },
+      );
+    }
+  }, [user?.id, id, detail, form]);
+
+  const draft = useLocalDraft({
+    storageKey:
+      user &&
+      can(user.level, id ? Permission.pageUpdate : Permission.pageCreate)
+        ? `honeycomb:draft:page:${encodeURIComponent(user.id)}:${id ?? "new"}`
+        : null,
+    values: draftValues,
+    dirty: isDirty,
+    ready: !isLoadingDetail,
+    parse: parsePageDraft,
+    onRestore: (values) =>
+      form.reset(
+        { ...values, status: form.getValues("status") },
+        { keepDefaultValues: true },
+      ),
+  });
+
   const submit = (status: PageStatus) => {
     if (isLoadingDetail) return;
     void form.handleSubmit(async (values) => {
       const submittedValues = JSON.stringify(form.getValues());
+      const submittedDraft = parsePageDraft(form.getValues()) ?? {};
+      const generation = recordGeneration.current;
       const result = await actions.submit(values, status);
-      if (result.state === "error" || previousRecord.current?.id !== id) return;
+      if (
+        result.state === "error" ||
+        previousRecord.current?.id !== id ||
+        generation !== recordGeneration.current
+      )
+        return;
 
+      draft.clearSaved(submittedDraft);
       const currentValues = form.getValues();
       form.reset({ ...values, status });
       if (JSON.stringify(currentValues) !== submittedValues) {
@@ -117,6 +171,7 @@ export function PageEditorPage() {
   const readOnly = isLoadingDetail || (!id && actions.loading);
   return (
     <div inert={readOnly} aria-busy={readOnly}>
+      <LocalDraftPrompt {...draft} />
       <PageEditorForm form={form} />
     </div>
   );
