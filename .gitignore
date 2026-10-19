@@ -55,3 +55,9 @@ public/serwist/sw.js
 public/workbox-*.js
 public/workbox-*.js.map
 .serwist-build/
+
+# CI shard reports
+unit-shard/
+unit-artifacts/
+unit-blobs/
+unit-inventory.json

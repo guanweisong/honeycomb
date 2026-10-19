@@ -30,7 +30,9 @@
     "db:e2e:seed": "bun scripts/seed-e2e.ts",
     "db:schema:audit": "bun scripts/audit-production-schema.ts --output docs/production-schema-baseline-report.md",
     "db:migrations:check": "bun scripts/check-migrations.ts",
-    "audit:production": "bun scripts/audit-production-dependencies.ts"
+    "audit:production": "bun scripts/audit-production-dependencies.ts",
+    "test:unit:shard": "vitest run --config vitest.shard.config.mts --coverage --reporter=default --reporter=blob --reporter=json --outputFile.blob=unit-shard/blob.json --outputFile.json=unit-shard/results.json",
+    "test:unit:merge": "vitest --merge-reports=unit-blobs --coverage --reporter=default --reporter=json --outputFile.json=coverage/merged-results.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1129.0",
