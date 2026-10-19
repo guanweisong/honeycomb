@@ -21,6 +21,11 @@ import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
 import type { CategoryViewModel as CategoryEntity } from "@/features/category/public";
 import type { AdminDialogState } from "@/packages/ui/admin/action-state";
 
+import { useLocalDraft } from "@/packages/ui/admin/local-draft";
+import { useCurrentUser } from "@/packages/ui/admin/use-current-user";
+import { can, Permission } from "@/packages/identity/auth/permissions";
+import { parsePostDraft } from "../utils/post-draft";
+
 export type PostSubmitAction = "create" | "update";
 
 export function usePostEditor(id: string | null) {
@@ -63,6 +68,8 @@ export function usePostEditor(id: string | null) {
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
   const { isDirty } = form.formState;
+  const { user } = useCurrentUser();
+  const draftValues = parsePostDraft(useWatch({ control: form.control })) ?? {};
   const consumedSaveSnapshot = useRef<typeof detail>(undefined);
   const previousRecord = useRef<
     | {
@@ -101,6 +108,39 @@ export function usePostEditor(id: string | null) {
     resetEditor(id ? detail : undefined);
   }, [detail, id, isDirty, resetEditor]);
 
+  const previousAccount = useRef(user?.id);
+  useEffect(() => {
+    if (previousAccount.current !== user?.id) {
+      previousAccount.current = user?.id;
+      recordGeneration.current += 1;
+      resetEditor(id && detail?.id === id ? detail : undefined);
+    }
+  }, [user?.id, id, detail, resetEditor]);
+
+  const draft = useLocalDraft({
+    storageKey:
+      user &&
+      can(user.level, id ? Permission.postUpdate : Permission.postCreate)
+        ? `honeycomb:draft:post:${encodeURIComponent(user.id)}:${id ?? "new"}`
+        : null,
+    values: draftValues,
+    dirty: isDirty,
+    ready: !id || detail?.id === id,
+    parse: parsePostDraft,
+    onRestore: (values) => {
+      form.reset(
+        {
+          ...values,
+          id: form.getValues("id"),
+          status: form.getValues("status"),
+        },
+        { keepDefaultValues: true },
+      );
+      // Do not display an unrelated server cover for a recovered selection.
+      if (values.coverId !== coverPreview?.id) setCoverPreview(undefined);
+    },
+  });
+
   const submit = async (
     status: PostStatus,
     action: PostSubmitAction,
@@ -111,6 +151,7 @@ export function usePostEditor(id: string | null) {
     setLoading(true);
     let saved = false;
     const submittedValues = JSON.stringify(form.getValues());
+    const submittedDraft = parsePostDraft(form.getValues()) ?? {};
     const submittedGeneration = recordGeneration.current;
 
     try {
@@ -138,6 +179,7 @@ export function usePostEditor(id: string | null) {
                 previousRecord.current?.id !== id
               )
                 return;
+              draft.clearSaved(submittedDraft);
               form.reset(data);
               if (result.publicSync === "degraded") {
                 toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
@@ -163,6 +205,7 @@ export function usePostEditor(id: string | null) {
               recordGeneration.current === submittedGeneration &&
               previousRecord.current?.id === detail.id
             ) {
+              draft.clearSaved(submittedDraft);
               const currentValues = form.getValues();
               const savedDetail = refreshed?.isSuccess
                 ? refreshed.data
@@ -231,6 +274,7 @@ export function usePostEditor(id: string | null) {
 
   const photoPickerProps: PhotoPickerItemProps = {
     cover: coverPreview,
+    coverId: draftValues.coverId,
     handlePhotoClear: () => {
       form.setValue("coverId", undefined, { shouldDirty: true });
       setCoverPreview(undefined);
@@ -252,6 +296,7 @@ export function usePostEditor(id: string | null) {
     loadError,
     retryLoad: refetch,
     detail,
+    draft,
     form,
     galleryStyles,
     loading:

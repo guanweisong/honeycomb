@@ -1,5 +1,6 @@
 "use client";
 
+import { LocalDraftPrompt } from "@/packages/ui/admin/local-draft";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PhotoPickerModal from "@/features/post/admin/edit/components/PhotoPicker";
@@ -67,6 +68,7 @@ function PostDetailContent() {
 
   return (
     <div inert={readOnly} aria-busy={readOnly}>
+      {editor.draft && <LocalDraftPrompt {...editor.draft} />}
       <Form {...form}>
         <form>
           <div className="lg:flex lg:gap-8">

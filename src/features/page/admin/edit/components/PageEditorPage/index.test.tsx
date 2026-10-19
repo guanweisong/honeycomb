@@ -34,6 +34,10 @@ const mocks = vi.hoisted(() => ({
   pageTitle: vi.fn(),
 }));
 
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: "draft-user", level: "ADMIN" } }),
+}));
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () =>
     new URLSearchParams(mocks.searchId ? `id=${mocks.searchId}` : ""),
@@ -130,6 +134,7 @@ describe("PageEditorPage", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    localStorage.clear();
     mocks.searchId = null;
     mocks.queryError = null;
     mocks.detail = undefined;
@@ -198,6 +203,25 @@ describe("PageEditorPage", () => {
     expect(container.textContent).toContain("页面不存在或已被删除");
     expect(container.querySelector("[inert]")).toBeNull();
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("restores a local draft only after explicit choice", async () => {
+    mocks.detail = originalDetail;
+    await render();
+    await editTitle("本地草稿");
+    await act(async () => window.dispatchEvent(new Event("pagehide")));
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await render();
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe("原标题");
+    const restore = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "恢复草稿",
+    );
+    expect(restore).toBeDefined();
+    await act(async () => restore?.click());
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe("本地草稿");
+    expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 
   it("configures the new-page title and initializes default values", async () => {

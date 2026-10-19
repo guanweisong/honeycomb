@@ -99,6 +99,24 @@ describe("PhotoPickerItem", () => {
     expect(actions).toEqual(["open"]);
   });
 
+  it("shows a recovered cover reference without displaying a stale image", async () => {
+    await act(async () =>
+      root.render(
+        <PhotoPickerItem
+          coverId="recovered-cover"
+          title="封面"
+          size="1920*1080"
+          openPhotoPicker={() => actions.push("open")}
+          handlePhotoClear={() => actions.push("clear")}
+        />,
+      ),
+    );
+    expect(container.textContent).toContain("已恢复封面选择");
+    expect(container.querySelector("img")).toBeNull();
+    await click("清除图片");
+    expect(actions).toEqual(["clear"]);
+  });
+
   it("uses safe preview dimensions and exposes replace and clear actions", async () => {
     await renderPicker({ id: "cover-1", url: "/cover.jpg" });
 

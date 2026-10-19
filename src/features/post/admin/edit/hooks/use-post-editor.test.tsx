@@ -13,6 +13,7 @@ type EditorDetail = Pick<
   Partial<PostDetailViewModel>;
 
 const mocks = vi.hoisted(() => ({
+  userId: "draft-user",
   create: vi.fn(),
   update: vi.fn(),
   refetch: vi.fn(),
@@ -23,6 +24,10 @@ const mocks = vi.hoisted(() => ({
   warn: vi.fn(),
   detail: undefined as EditorDetail | undefined,
   queryError: null as { data?: { code: string } } | null,
+}));
+
+vi.mock("@/packages/ui/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: mocks.userId, level: "ADMIN" } }),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
@@ -90,6 +95,8 @@ describe("usePostEditor", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    mocks.userId = "draft-user";
     mocks.detail = undefined;
     mocks.queryError = null;
     mocks.create.mockResolvedValue({ id: postId });
@@ -122,6 +129,69 @@ describe("usePostEditor", () => {
       requireDefined(editor).form.setValue("coverId", "cover-1");
     });
   }
+
+  it("offers bilingual local edits after reopening without automatically replacing the server", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    await act(async () =>
+      requireDefined(editor).form.setValue(
+        "title",
+        { zh: "本地草稿", en: "Local draft" },
+        { shouldDirty: true },
+      ),
+    );
+    await act(async () => window.dispatchEvent(new Event("pagehide")));
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await renderEditor(postId);
+    expect(requireDefined(editor).form.getValues("title")).toEqual(
+      originalDetail.title,
+    );
+    expect(requireDefined(editor).draft.pending).not.toBeNull();
+    await act(async () => requireDefined(editor).draft.restore());
+    expect(requireDefined(editor).form.getValues("title")).toEqual({
+      zh: "本地草稿",
+      en: "Local draft",
+    });
+    expect(requireDefined(editor).form.formState.isDirty).toBe(true);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("does not copy one account's dirty content into another account's backup", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    await act(async () =>
+      requireDefined(editor).form.setValue(
+        "title",
+        { zh: "Account A secret" },
+        { shouldDirty: true },
+      ),
+    );
+    mocks.userId = "another-user";
+    await rerenderEditor(postId);
+    await act(async () => window.dispatchEvent(new Event("pagehide")));
+    expect(requireDefined(editor).form.getValues("title")).toEqual(
+      originalDetail.title,
+    );
+    expect(
+      localStorage.getItem(`honeycomb:draft:post:another-user:${postId}`),
+    ).toBeNull();
+  });
+
+  it("does not resurrect a cleared cover when restoring a draft", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    await act(async () =>
+      requireDefined(editor).photoPickerProps.handlePhotoClear(),
+    );
+    await act(async () => window.dispatchEvent(new Event("pagehide")));
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await renderEditor(postId);
+    await act(async () => requireDefined(editor).draft.restore());
+    expect(requireDefined(editor).form.getValues("coverId")).toBeUndefined();
+    expect(requireDefined(editor).photoPickerProps.cover).toBeUndefined();
+  });
 
   it.each([
     ["INTERNAL_SERVER_ERROR", "error"],

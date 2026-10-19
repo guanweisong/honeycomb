@@ -40,3 +40,14 @@ coverage. Login UI rendering and real password API sign-in are covered, not
 an interactive CAPTCHA/login submission flow. The media/link fixtures may
 legitimately be empty. Modal dialogs and every post type/locale are not separate
 routes and are not exhaustively exercised here.
+
+## Local draft recovery regression
+
+`draft-recovery.spec.ts` uses the same local-only real admin fixture. Both post
+and page editors cover nonexistent-record recovery and title edit → reload →
+explicit restore → reload → discard. It asserts that no content mutations are
+sent. Local drafts are browser-only snapshots, isolated by account and entity,
+with separate zh/en fields, a 1 MiB per-record limit, and a 30-day expiry. They
+are not server drafts or cross-device sync. Multiple tabs use last-write-wins
+backup storage; clearing compares the exact owned record so an older tab does
+not remove a newer backup. Cover IDs are retained without storing media URLs.
