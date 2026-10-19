@@ -8,6 +8,9 @@ import {
 import { MetricName } from "./packages/infrastructure/observability/core/names";
 import { onRequestError, register } from "./instrumentation";
 
+const sentry = vi.hoisted(() => ({ configureSentryLogs: vi.fn() }));
+vi.mock("./packages/infrastructure/observability/server/sentry", () => sentry);
+
 const productionCoreEnv = {
   NEXT_PUBLIC_SITE_URL: "https://honeycomb.example.com",
   TURSO_URL: "libsql://honeycomb.turso.io",
@@ -20,6 +23,37 @@ describe("instrumentation register", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     configureObservability();
+  });
+
+  it("initializes only configured Node runtime logging", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("SENTRY_DSN", "https://public@example.invalid/1");
+    await register();
+    expect(sentry.configureSentryLogs).toHaveBeenCalledWith(
+      "https://public@example.invalid/1",
+    );
+    sentry.configureSentryLogs.mockClear();
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    await register();
+    expect(sentry.configureSentryLogs).not.toHaveBeenCalled();
+    vi.stubEnv("NEXT_PHASE", "");
+    vi.stubEnv("NEXT_RUNTIME", "edge");
+    await register();
+    expect(sentry.configureSentryLogs).not.toHaveBeenCalled();
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("SENTRY_DSN", "");
+    await register();
+    expect(sentry.configureSentryLogs).not.toHaveBeenCalled();
+  });
+  it("does not fail startup when the SDK fails", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("SENTRY_DSN", "https://public@example.invalid/1");
+    sentry.configureSentryLogs.mockImplementationOnce(() => {
+      throw new Error("SDK failure");
+    });
+    await expect(register()).resolves.toBeUndefined();
   });
 
   it("rejects an invalid production environment before the server handles requests", () => {
