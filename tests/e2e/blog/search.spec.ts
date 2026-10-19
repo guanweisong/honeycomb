@@ -7,6 +7,17 @@ test.describe("blog search", () => {
   }) => {
     await openBlogHome(page);
     const trigger = page.getByRole("button", { name: "Search", exact: true });
+    const iconBoxes = await Promise.all([
+      page.getByTestId("theme-switcher").first().locator("svg").boundingBox(),
+      page
+        .getByRole("link", { name: "Switch to 中文" })
+        .locator("img")
+        .boundingBox(),
+      trigger.locator("svg").boundingBox(),
+    ]);
+    expect(iconBoxes.every(Boolean)).toBe(true);
+    const centers = iconBoxes.map((box) => box!.y + box!.height / 2);
+    expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1);
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "Search", exact: true });
     const input = dialog.getByRole("searchbox");
@@ -14,7 +25,17 @@ test.describe("blog search", () => {
     await input.fill("Deterministic browser test content");
     const result = dialog.getByRole("link", { name: /Reliable browser gates/ });
     await expect(result).toBeVisible();
-    await expect(result).toContainText("Article");
+    await expect(result).toContainText("Movie");
+    await expect(result.locator("img")).toHaveCount(0);
+    const cover = dialog
+      .getByRole("link", { name: /Search cover fixture/ })
+      .locator("img");
+    await expect(cover).toBeVisible();
+    await expect
+      .poll(() =>
+        cover.evaluate((image: HTMLImageElement) => image.naturalWidth),
+      )
+      .toBeGreaterThan(0);
     await expect(result).toContainText("Deterministic browser test content.");
     await input.press("Tab");
     await expect(result).toBeFocused();
@@ -40,12 +61,14 @@ test.describe("blog search", () => {
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "搜索", exact: true });
     await expect(dialog).toBeVisible();
-    const box = await dialog.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.x).toBeCloseTo(0, 0);
-    expect(box!.y).toBeCloseTo(0, 0);
-    expect(box!.width).toBeCloseTo(390, 0);
-    expect(box!.height).toBeCloseTo(844, 0);
+    await expect(async () => {
+      const box = await dialog.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeCloseTo(0, 0);
+      expect(box!.y).toBeCloseTo(0, 0);
+      expect(box!.width).toBeCloseTo(390, 0);
+      expect(box!.height).toBeCloseTo(844, 0);
+    }).toPass({ timeout: 5_000 });
     await dialog.getByRole("searchbox").fill("确定性浏览器测试内容");
     await expect(
       dialog.getByRole("link", { name: /可靠浏览器门禁/ }),

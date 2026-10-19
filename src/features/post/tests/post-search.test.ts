@@ -134,11 +134,55 @@ describe("public post search with real libSQL", () => {
       title: "needle",
       excerpt: "Hello & world Next line",
       type: PostType.ARTICLE,
+      cover: null,
     });
     expect(result.find((row) => row.id === "empty")?.excerpt).toBe("");
     expect(result.find((row) => row.id === "long")?.excerpt).toBe(
       `${"a".repeat(159)}…`,
     );
+  });
+
+  it("returns only the public cover URL, preserving posts without covers", async () => {
+    await seed("covered", "needle");
+    await seed("plain", "needle");
+    await db.insert(schema.media).values({
+      id: "cover",
+      key: "internal/storage-key.jpg",
+      name: "private-name.jpg",
+      size: 12345,
+      type: "image/jpeg",
+      url: "https://images.example.test/cover.jpg",
+      width: 1200,
+      height: 800,
+      color: "#123456",
+    });
+    await db
+      .update(schema.post)
+      .set({ coverId: "cover" })
+      .where(eq(schema.post.id, "covered"));
+    const result = await caller().search({ query: "needle", locale: "en" });
+    expect(result).toEqual([
+      {
+        id: "covered",
+        title: "needle",
+        excerpt: "",
+        type: PostType.ARTICLE,
+        cover: { url: "https://images.example.test/cover.jpg" },
+      },
+      {
+        id: "plain",
+        title: "needle",
+        excerpt: "",
+        type: PostType.ARTICLE,
+        cover: null,
+      },
+    ]);
+    await db.update(schema.media).set({ width: null, height: null });
+    expect(
+      (await caller().search({ query: "needle", locale: "en" }))[0]?.cover,
+    ).toEqual({
+      url: "https://images.example.test/cover.jpg",
+    });
   });
 
   it("caps results at 20 with a deterministic newest-first order", async () => {
@@ -183,6 +227,7 @@ describe("public post search with real libSQL", () => {
         title: "A quotation",
         excerpt: "needle & wisdom",
         type: PostType.QUOTE,
+        cover: null,
       },
     ]);
     await expect(

@@ -14,4 +14,5 @@ export interface PostSearchResult {
   title: string;
   excerpt: string;
   type: PostType;
+  cover: { url: string } | null;
 }

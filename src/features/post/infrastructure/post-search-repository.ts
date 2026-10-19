@@ -5,7 +5,11 @@ import { Parser } from "htmlparser2";
 import { PostStatus } from "@/packages/domain/content/post-status";
 import { PostType } from "@/packages/domain/content/post";
 import type { Database } from "@/packages/infrastructure/db/db";
-import { post, postTranslation } from "@/packages/infrastructure/db/schema";
+import {
+  media,
+  post,
+  postTranslation,
+} from "@/packages/infrastructure/db/schema";
 import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
 import { observeDbOperation } from "@/packages/infrastructure/observability/server";
 import type {
@@ -76,9 +80,11 @@ export async function searchPublishedPosts(
         title: postTranslation.title,
         content: body,
         type: post.type,
+        coverUrl: media.url,
       })
       .from(post)
       .innerJoin(postTranslation, eq(postTranslation.postId, post.id))
+      .leftJoin(media, eq(media.id, post.coverId))
       .where(
         and(
           eq(post.status, PostStatus.PUBLISHED),
@@ -97,5 +103,6 @@ export async function searchPublishedPosts(
     title: row.title ?? "",
     excerpt: plainTextExcerpt(row.content),
     type: parseEnumValue(row.type, Object.values(PostType), "post.type"),
+    cover: row.coverUrl ? { url: row.coverUrl } : null,
   }));
 }

@@ -8,6 +8,22 @@ import messages from "@/app/(blog)/messages/zh.json";
 import PostSearch from ".";
 
 const search = vi.hoisted(() => vi.fn());
+vi.mock("next/image", () => ({
+  default: ({
+    src,
+    alt,
+    className,
+    sizes,
+  }: {
+    src: string;
+    alt: string;
+    className?: string;
+    sizes?: string;
+  }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className={className} sizes={sizes} />
+  ),
+}));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpcClient: { post: { search: { query: search } } },
 }));
@@ -249,5 +265,35 @@ describe("public blog search", () => {
     await act(async () => button("关闭搜索").click());
     expect(options.signal.aborted).toBe(true);
     expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+  it("shows an optional cover thumbnail without reserving a placeholder for uncovered results", async () => {
+    search.mockResolvedValue([
+      {
+        id: "covered",
+        title: "有封面",
+        excerpt: "正文",
+        type: "ARTICLE",
+        cover: { url: "https://assets.example.test/cover.jpg" },
+      },
+      {
+        id: "plain",
+        title: "无封面",
+        excerpt: "正文",
+        type: "QUOTE",
+        cover: null,
+      },
+    ]);
+    await open();
+    await type("正文");
+    await pause();
+    await pause(10);
+    const covered = document.querySelector('a[href="/zh/archives/covered"]');
+    const plain = document.querySelector('a[href="/zh/archives/plain"]');
+    expect(covered?.querySelector("img")?.getAttribute("src")).toBe(
+      "https://assets.example.test/cover.jpg",
+    );
+    expect(covered?.querySelector("img")?.getAttribute("alt")).toBe("");
+    expect(plain?.querySelector("img")).toBeNull();
+    expect(plain?.querySelector('[data-testid="search-cover"]')).toBeNull();
   });
 });

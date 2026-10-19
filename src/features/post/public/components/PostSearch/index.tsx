@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
+import Image from "next/image";
 import { trpcClient } from "@/packages/trpc/client/trpc";
 import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
 import { Link } from "@/packages/ui/navigation/blog-navigation";
@@ -108,17 +109,33 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
                 <Link
                   href={`/archives/${post.id}`}
                   onClick={onNavigate}
-                  className="block rounded-lg p-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
+                  className="flex items-start gap-3 rounded-lg p-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
                 >
-                  <span className="text-xs text-muted-foreground">
-                    {t(`types.${post.type}`)}
-                  </span>
-                  <div className="font-medium break-words">
-                    {post.title || t("untitled")}
+                  {post.cover && (
+                    <span
+                      className="relative size-16 shrink-0 overflow-hidden rounded-md"
+                      data-testid="search-cover"
+                    >
+                      <Image
+                        src={post.cover.url}
+                        alt=""
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs text-muted-foreground">
+                      {t(`types.${post.type}`)}
+                    </span>
+                    <div className="font-medium break-words">
+                      {post.title || t("untitled")}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-2">
+                      {post.excerpt}
+                    </p>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-2">
-                    {post.excerpt}
-                  </p>
                 </Link>
               </li>
             ))}
