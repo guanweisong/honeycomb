@@ -59,7 +59,10 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     await expect(page.getByTestId("custom-pie-loading-skeleton")).toHaveCount(
       0,
     );
-    await expect(page.locator(".recharts-surface")).toHaveCount(4);
+    // Legend icons also use recharts-surface; only direct children are charts.
+    const charts = page.locator(".recharts-wrapper > svg.recharts-surface");
+    await expect(charts).toHaveCount(4);
+    for (const chart of await charts.all()) await expect(chart).toBeVisible();
   });
 
   const lists = [
