@@ -48,6 +48,9 @@ export function LinkPageShell() {
         }
         isFetching={query.isFetching}
         error={query.isError}
+        onRetry={() => {
+          void query.refetch();
+        }}
         columns={linkTableColumns}
         selectableRows={canDeleteLink}
         selectedRows={selectedRows}

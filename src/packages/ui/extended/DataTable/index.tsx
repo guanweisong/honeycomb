@@ -23,6 +23,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     data,
     isFetching,
     error,
+    onRetry,
     selectableRows = false,
     disabledRowSelectable,
     onSelectionChange,
@@ -44,7 +45,6 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     handlePaginationChange,
     handleSortingChange,
     handleColumnFiltersChange,
-    handleRetry,
     setColumnVisibility,
   } = useDataTableState<TData>({
     pagination,
@@ -134,7 +134,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             disabledRowSelectable={disabledRowSelectable}
             onSelectRow={handleSelectRow}
             rowActions={rowActions}
-            onRetry={handleRetry}
+            onRetry={onRetry}
           />
         </Table>
         {isFetching && (

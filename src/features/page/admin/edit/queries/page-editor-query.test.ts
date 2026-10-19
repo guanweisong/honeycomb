@@ -13,14 +13,21 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
       adminDetail: {
         useQuery: (input: unknown, options: unknown) => {
           trpcMocks.calls.push([input, options]);
-          return { data: { id: "page-42" }, refetch: trpcMocks.refetch };
+          return {
+            data: { id: "page-42" },
+            refetch: trpcMocks.refetch,
+            error: { data: { code: "NOT_FOUND" } },
+          };
         },
       },
     },
   },
 }));
 
-import { getPageEditorQueryInput, usePageEditorQuery } from "./page-editor-query";
+import {
+  getPageEditorQueryInput,
+  usePageEditorQuery,
+} from "./page-editor-query";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -61,6 +68,7 @@ describe("page editor query", () => {
       await act(async () => root.render(React.createElement(Harness)));
       expect(trpcMocks.calls.at(-1)).toEqual([{ id: id ?? "" }, { enabled }]);
       expect(query).toEqual({
+        error: { data: { code: "NOT_FOUND" } },
         data: { id: "page-42" },
         refetch: trpcMocks.refetch,
       });

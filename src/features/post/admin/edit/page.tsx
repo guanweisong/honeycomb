@@ -14,6 +14,7 @@ import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
 import { usePostEditor } from "./hooks/use-post-editor";
+import { EditorLoadError } from "@/packages/ui/admin/editor-load-error";
 import LoadingState from "@/packages/ui/extended/LoadingState";
 
 function PostDetailContent() {
@@ -33,7 +34,7 @@ function PostDetailContent() {
     type,
   } = editor;
 
-  const headerActions = (
+  const headerActions = editor.loadError ? null : (
     <div className="flex flex-wrap gap-3">
       <PostEditorActions
         id={detail?.id}
@@ -50,8 +51,19 @@ function PostDetailContent() {
   );
   useAdminLayoutActions(
     headerActions,
-    `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`,
+    `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}:${editor.loadError}`,
   );
+
+  if (editor.loadError) {
+    return (
+      <EditorLoadError
+        kind="文章"
+        notFound={editor.loadError === "not-found"}
+        listHref="/admin/post"
+        onRetry={editor.retryLoad}
+      />
+    );
+  }
 
   return (
     <div inert={readOnly} aria-busy={readOnly}>

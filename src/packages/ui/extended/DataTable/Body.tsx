@@ -15,7 +15,7 @@ interface DataTableBodyProps<TData> {
   disabledRowSelectable?: (row: TData) => boolean;
   onSelectRow: (row: TData, checked: CheckedState) => void;
   rowActions?: (row: TData) => React.ReactNode;
-  onRetry: () => void;
+  onRetry?: () => void;
 }
 
 export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
@@ -43,9 +43,11 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
           >
             <div className="flex flex-col items-center gap-2">
               <div>数据加载失败，请重试</div>
-              <Button size="sm" onClick={onRetry}>
-                重试
-              </Button>
+              {onRetry && (
+                <Button size="sm" onClick={onRetry} disabled={isFetching}>
+                  重试
+                </Button>
+              )}
             </div>
           </TableCell>
         </TableRow>

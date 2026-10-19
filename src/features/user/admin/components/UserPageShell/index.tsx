@@ -48,6 +48,9 @@ export function UserPageShell() {
         columns={userTableColumns}
         isFetching={query.isFetching}
         error={query.isError}
+        onRetry={() => {
+          void query.refetch();
+        }}
         selectableRows={canManageUsers}
         disabledRowSelectable={isUserResourceProtected}
         selectedRows={selectedRows}

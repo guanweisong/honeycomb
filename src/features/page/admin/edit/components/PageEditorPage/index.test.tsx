@@ -21,7 +21,8 @@ type EditorDetail = Pick<
 
 const mocks = vi.hoisted(() => ({
   searchId: null as string | null,
-  detail: undefined as EditorDetail | undefined,
+  queryError: null as { data?: { code: string } } | null,
+  detail: undefined as EditorDetail | null | undefined,
   form: undefined as ComponentProps<typeof PageEditorForm>["form"] | undefined,
   refetch: vi.fn(),
   create: vi.fn(),
@@ -63,7 +64,11 @@ vi.mock("@/packages/ui/extended/AdminLayout", async () => {
 });
 
 vi.mock("../../queries/page-editor-query", () => ({
-  usePageEditorQuery: () => ({ data: mocks.detail, refetch: mocks.refetch }),
+  usePageEditorQuery: () => ({
+    data: mocks.detail,
+    refetch: mocks.refetch,
+    error: mocks.queryError,
+  }),
 }));
 
 vi.mock("../PageEditorForm", () => ({
@@ -126,6 +131,7 @@ describe("PageEditorPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.searchId = null;
+    mocks.queryError = null;
     mocks.detail = undefined;
     mocks.form = undefined;
     mocks.create.mockResolvedValue({ id: pageId });
@@ -159,6 +165,40 @@ describe("PageEditorPage", () => {
   async function save() {
     await act(async () => container.querySelector("button")?.click());
   }
+
+  it.each([
+    ["INTERNAL_SERVER_ERROR", "页面加载失败"],
+    ["NOT_FOUND", "页面不存在或已被删除"],
+  ])(
+    "renders %s with working retry and list navigation",
+    async (code, message) => {
+      mocks.queryError = { data: { code } };
+      await render();
+      expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+        message,
+      );
+      expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+      expect(container.querySelector("header button")).toBeNull();
+      expect(container.querySelector('a[href="/admin/page"]')).not.toBeNull();
+      await act(async () => container.querySelector("button")?.click());
+      expect(mocks.refetch).toHaveBeenCalledTimes(1);
+      mocks.queryError = null;
+      mocks.detail = originalDetail;
+      await render();
+      expect(container.querySelector('[role="alert"]')).toBeNull();
+      expect(requireDefined(mocks.form).getValues("title")).toEqual(
+        originalDetail.title,
+      );
+    },
+  );
+
+  it("shows not found when the page query succeeds with null", async () => {
+    mocks.detail = null;
+    await render(pageId);
+    expect(container.textContent).toContain("页面不存在或已被删除");
+    expect(container.querySelector("[inert]")).toBeNull();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
 
   it("configures the new-page title and initializes default values", async () => {
     await render(null);

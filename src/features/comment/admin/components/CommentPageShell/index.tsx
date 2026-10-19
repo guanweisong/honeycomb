@@ -155,6 +155,9 @@ export function CommentPageShell() {
       }}
       isFetching={query.isFetching}
       error={query.isError}
+      onRetry={() => {
+        void query.refetch();
+      }}
       onChange={(params) =>
         query.setSearchParams(CommentListQuerySchema.parse(params))
       }

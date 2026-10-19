@@ -28,6 +28,7 @@ export interface DataTableProps<TData> {
   data: DataTableDataSource<TData>;
   isFetching?: boolean;
   error?: boolean;
+  onRetry?: () => void;
   selectableRows?: boolean;
   disabledRowSelectable?: (row: TData) => boolean;
   selectedRows?: TData[];
@@ -66,7 +67,6 @@ export interface UseDataTableStateResult {
   columnVisibility: VisibilityState;
   paginationState: DataTablePaginationState;
   requestParams: DataTableQueryParams;
-  handleRetry: () => void;
   handlePaginationChange: (value: DataTablePaginationState) => void;
   handleSortingChange: React.Dispatch<React.SetStateAction<SortingState>>;
   handleColumnFiltersChange: React.Dispatch<
