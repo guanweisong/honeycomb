@@ -60,7 +60,10 @@ export const ThemeSwitcher = () => {
   const dark = resolvedTheme === Theme.Dark;
 
   return (
-    <span data-testid="theme-switcher">
+    <span
+      data-testid="theme-switcher"
+      className="flex items-center justify-center"
+    >
       <DarkModeSwitch
         aria-label="Toggle theme"
         data-checked={dark}

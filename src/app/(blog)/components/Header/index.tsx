@@ -4,6 +4,7 @@ import { Link } from "@/packages/ui/navigation/blog-navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
+import { PostSearch } from "@/features/post/public";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import {
   getPublicMenu,
@@ -136,11 +137,12 @@ export default async function Header() {
           <div className="flex items-center">
             <Menu data={menuDataFormat} flatMenuData={menu?.list} />
           </div>
-          <div className="flex gap-3 mr-2 w-16">
+          <div className="flex items-center gap-3 mr-2 shrink-0">
             <div data-testid="theme-switcher">
               <ThemeSwitcher />
             </div>
             <LanguageSwitcher />
+            <PostSearch />
           </div>
         </div>
       </header>

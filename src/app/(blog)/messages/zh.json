@@ -65,5 +65,25 @@
     "description": "加载页面时发生错误，请稍后重试。",
     "tryAgain": "重试",
     "goHome": "返回首页"
+  },
+  "Search": {
+    "title": "搜索",
+    "close": "关闭搜索",
+    "description": "搜索当前语言下已发布的文章、电影、画廊和引用。",
+    "placeholder": "输入标题或正文关键词",
+    "hint": "输入关键词开始搜索",
+    "loading": "搜索中…",
+    "error": "搜索失败，请重试",
+    "empty": "没有找到相关内容",
+    "retry": "重试",
+    "results": "搜索结果",
+    "limit": "最多显示 20 条结果，请细化关键词。",
+    "types": {
+      "ARTICLE": "文章",
+      "MOVIE": "电影",
+      "PHOTOGRAPH": "画廊",
+      "QUOTE": "引用"
+    },
+    "untitled": "无标题"
   }
 }

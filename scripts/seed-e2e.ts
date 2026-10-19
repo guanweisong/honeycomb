@@ -227,6 +227,31 @@ async function seed(): Promise<void> {
         set: { title: schema.postTranslation.title, content: schema.postTranslation.content, excerpt: schema.postTranslation.excerpt },
       });
 
+      // A separate older post keeps existing first-post fixtures unchanged.
+      // Its cover is a local public asset, so image E2E checks need no network.
+      await tx.insert(schema.media).values({
+        id: "000000000000000000000016",
+        key: "e2e-search-cover",
+        name: "Search cover fixture",
+        size: 0,
+        type: "image/jpeg",
+        url: "/logo.jpg",
+      }).onConflictDoNothing();
+      await tx.insert(schema.post).values({
+        id: "000000000000000000000017",
+        authorId: ids.user,
+        categoryId: ids.grandchildCategory,
+        status: PostStatus.PUBLISHED,
+        type: PostType.ARTICLE,
+        coverId: "000000000000000000000016",
+        createdAt: "2000-01-01T00:00:00.000Z",
+        updatedAt: "2000-01-01T00:00:00.000Z",
+      }).onConflictDoNothing();
+      await tx.insert(schema.postTranslation).values([
+        { postId: "000000000000000000000017", locale: MultiLangEnum.En, title: "Search cover fixture", content: "<p>Deterministic browser test content with a cover.</p>" },
+        { postId: "000000000000000000000017", locale: MultiLangEnum.Zh, title: "搜索封面测试", content: "<p>搜索封面测试内容。</p>" },
+      ]).onConflictDoNothing();
+
       for (const comment of [
         {
           id: ids.bannedComment,

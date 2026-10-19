@@ -27,10 +27,16 @@ import {
 import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
 import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
 import { createPostSpecialRepository } from "@/features/post/infrastructure/post-special-repository";
+import { PostSearchInputSchema } from "@/features/post/application/post-search";
+import { searchPublishedPosts } from "@/features/post/infrastructure/post-search-repository";
 import { publicContentInvalidator } from "@/packages/infrastructure/refresh-path";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({
+  search: publicProcedure
+    .input(PostSearchInputSchema)
+    .query(({ input, ctx }) => searchPublishedPosts(ctx.db, input)),
+
   index: publicProcedure
     .input(PostListQuerySchema)
     .query(({ input, ctx }) =>
