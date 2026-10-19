@@ -109,7 +109,7 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
                 <Link
                   href={`/archives/${post.id}`}
                   onClick={onNavigate}
-                  className="flex items-start gap-3 rounded-lg p-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
+                  className="flex items-start gap-3 rounded-lg py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
                 >
                   {post.cover && (
                     <span
@@ -129,10 +129,18 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
                     <span className="text-xs text-muted-foreground">
                       {t(`types.${post.type}`)}
                     </span>
-                    <div className="font-medium break-words">
-                      {post.title || t("untitled")}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-2">
+                    {post.type !== "QUOTE" && (
+                      <div className="font-medium break-words">
+                        {post.title || t("untitled")}
+                      </div>
+                    )}
+                    <p
+                      className={
+                        post.type === "QUOTE"
+                          ? "mt-1 font-medium break-words line-clamp-2"
+                          : "mt-1 text-sm text-muted-foreground break-words line-clamp-2"
+                      }
+                    >
                       {post.excerpt}
                     </p>
                   </div>

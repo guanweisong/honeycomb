@@ -155,6 +155,7 @@ test.describe("admin media upload", () => {
       await refreshMockedAdminUser(page);
       const uploadButton = page.getByRole("button", { name: "点击上传文件" });
       await expect(uploadButton).toBeVisible();
+      await expect(page.getByText("暂无媒体", { exact: true })).toBeVisible();
       const fileChooserPromise = page.waitForEvent("filechooser");
       await uploadButton.click();
       const fileChooser = await fileChooserPromise;

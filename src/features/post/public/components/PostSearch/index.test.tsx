@@ -107,6 +107,23 @@ afterEach(async () => {
 });
 
 describe("public blog search", () => {
+  it("uses quote body text without a title or untitled fallback and removes horizontal result padding", async () => {
+    search.mockResolvedValue([
+      { id: "quote-titled", title: "不应展示的标题", excerpt: "引用正文", type: "QUOTE", cover: null },
+      { id: "quote-untitled", title: "", excerpt: "另一段引用", type: "QUOTE", cover: null },
+    ]);
+    await open();
+    await type("引用");
+    await pause();
+    await pause(10);
+    expect(document.body.textContent).not.toContain("不应展示的标题");
+    expect(document.body.textContent).not.toContain("无标题");
+    const link = document.querySelector('a[href="/zh/archives/quote-titled"]');
+    expect(link?.textContent).toContain("引用正文");
+    expect(link?.querySelector("p")?.className).toContain("font-medium");
+    expect(link?.className).not.toMatch(/(?:^| )(?:p-|px-)/);
+  });
+
   it("keeps the server-rendered trigger disabled until the client is ready", () => {
     const html = renderToString(
       <QueryClientProvider client={client}>
@@ -218,7 +235,7 @@ describe("public blog search", () => {
 
   it("hides older results immediately while a new query is debouncing", async () => {
     search.mockResolvedValue([
-      { id: "old", title: "旧结果", excerpt: "old", type: "QUOTE" },
+      { id: "old", title: "旧结果", excerpt: "old", type: "ARTICLE" },
     ]);
     await open();
     await type("old");
@@ -237,7 +254,7 @@ describe("public blog search", () => {
         }),
     );
     search.mockResolvedValueOnce([
-      { id: "new", title: "", excerpt: "新的内容", type: "QUOTE" },
+      { id: "new", title: "", excerpt: "新的内容", type: "ARTICLE" },
     ]);
     await open();
     await type("old");

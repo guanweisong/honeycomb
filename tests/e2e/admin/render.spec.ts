@@ -159,12 +159,12 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     }
   }
 
-  test("media (empty library is valid)", async ({ page }) => {
+  test("media (seeded cover renders)", async ({ page }) => {
     await visit(page, "/admin/media", ["media.index"]);
     await expect(
       page.getByRole("button", { name: "点击上传文件" }),
     ).toBeVisible();
-    await expect(page.getByText("暂无媒体", { exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Search cover fixture", exact: true })).toBeVisible();
   });
 
   test("menu", async ({ page }) => {

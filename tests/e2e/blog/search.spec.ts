@@ -1,5 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { openBlogHome } from "./helpers";
+
+async function expectSameHorizontalBounds(input: Locator, result: Locator) {
+  await expect(async () => {
+    const inputBox = await input.boundingBox();
+    const resultBox = await result.boundingBox();
+    expect(inputBox).not.toBeNull();
+    expect(resultBox).not.toBeNull();
+    expect(resultBox!.x).toBeCloseTo(inputBox!.x, 0);
+    expect(resultBox!.width).toBeCloseTo(inputBox!.width, 0);
+    await expect(result).toHaveCSS("padding-left", "0px");
+    await expect(result).toHaveCSS("padding-right", "0px");
+  }).toPass({ timeout: 5_000 });
+}
 
 test.describe("blog search", () => {
   test("@regression searches body text, opens a result, and restores focus after dismissal", async ({
@@ -25,6 +38,7 @@ test.describe("blog search", () => {
     await input.fill("Deterministic browser test content");
     const result = dialog.getByRole("link", { name: /Reliable browser gates/ });
     await expect(result).toBeVisible();
+    await expectSameHorizontalBounds(input, result);
     await expect(result).toContainText("Movie");
     await expect(result.locator("img")).toHaveCount(0);
     const cover = dialog
@@ -70,9 +84,9 @@ test.describe("blog search", () => {
       expect(box!.height).toBeCloseTo(844, 0);
     }).toPass({ timeout: 5_000 });
     await dialog.getByRole("searchbox").fill("确定性浏览器测试内容");
-    await expect(
-      dialog.getByRole("link", { name: /可靠浏览器门禁/ }),
-    ).toBeVisible();
+    const result = dialog.getByRole("link", { name: /可靠浏览器门禁/ });
+    await expect(result).toBeVisible();
+    await expectSameHorizontalBounds(dialog.getByRole("searchbox"), result);
     await dialog.getByRole("button", { name: "关闭搜索" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
