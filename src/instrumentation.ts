@@ -17,6 +17,19 @@ export function register() {
   ) {
     getServerEnv();
   }
+
+  if (
+    process.env.NEXT_RUNTIME === "nodejs" &&
+    process.env.NEXT_PHASE !== "phase-production-build" &&
+    process.env.SENTRY_DSN
+  ) {
+    const dsn = process.env.SENTRY_DSN;
+    return import("./packages/infrastructure/observability/server/sentry")
+      .then(({ configureSentryLogs }) => configureSentryLogs(dsn))
+      .catch(() => {
+        // Telemetry initialization must not prevent the app from serving requests.
+      });
+  }
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (
