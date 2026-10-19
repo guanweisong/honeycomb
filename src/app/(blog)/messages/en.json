@@ -65,5 +65,25 @@
     "description": "An error occurred while loading this page. Please try again later.",
     "tryAgain": "Try again",
     "goHome": "Go home"
+  },
+  "Search": {
+    "title": "Search",
+    "close": "Close search",
+    "description": "Search published articles, movies, galleries, and quotes in this language.",
+    "placeholder": "Search titles or content",
+    "hint": "Enter a keyword to search",
+    "loading": "Searching…",
+    "error": "Search failed. Please try again.",
+    "empty": "No matching content found",
+    "retry": "Retry",
+    "results": "Search results",
+    "limit": "Showing up to 20 results. Refine your search for more specific matches.",
+    "types": {
+      "ARTICLE": "Article",
+      "MOVIE": "Movie",
+      "PHOTOGRAPH": "Gallery",
+      "QUOTE": "Quote"
+    },
+    "untitled": "Untitled"
   }
 }

@@ -165,6 +165,10 @@ vi.mock("@/app/(blog)/components/LanguageSwitcher", () => ({
   default: () => React.createElement("button", null, "语言"),
 }));
 
+vi.mock("@/features/post/public", () => ({
+  PostSearch: () => React.createElement("button", null, "搜索"),
+}));
+
 import Header from "./index";
 
 describe("blog Header", () => {
@@ -215,5 +219,6 @@ describe("blog Header", () => {
     ).toBe("5");
     expect(container.textContent).toContain("主题");
     expect(container.textContent).toContain("语言");
+    expect(container.textContent).toContain("搜索");
   });
 });

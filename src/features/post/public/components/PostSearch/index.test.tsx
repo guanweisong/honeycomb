@@ -1,0 +1,235 @@
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextIntlClientProvider } from "next-intl";
+import messages from "@/app/(blog)/messages/zh.json";
+import PostSearch from ".";
+
+const search = vi.hoisted(() => vi.fn());
+vi.mock("@/packages/trpc/client/trpc", () => ({
+  trpcClient: { post: { search: { query: search } } },
+}));
+vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+  Link: ({
+    children,
+    href,
+    onClick,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      {...props}
+      href={`/zh${href}`}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick?.(event);
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
+let root: Root;
+let container: HTMLDivElement;
+let client: QueryClient;
+const pause = async (ms = 350) => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+};
+function button(label: string) {
+  const found = Array.from(document.querySelectorAll("button")).find(
+    (item) =>
+      item.getAttribute("aria-label") === label || item.textContent === label,
+  );
+  if (!found) throw new Error(`Missing button: ${label}`);
+  return found;
+}
+function input() {
+  const element = document.querySelector<HTMLInputElement>(
+    'input[type="search"]',
+  );
+  if (!element) throw new Error("Missing search input");
+  return element;
+}
+async function type(value: string) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )!.set!.call(input(), value);
+    input().dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+async function open() {
+  await act(async () => button("搜索").click());
+  await pause(10);
+}
+
+beforeEach(async () => {
+  search.mockReset().mockResolvedValue([]);
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  container = document.createElement("div");
+  document.body.append(container);
+  root = createRoot(container);
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <NextIntlClientProvider locale="zh" messages={messages}>
+          <PostSearch />
+        </NextIntlClientProvider>
+      </QueryClientProvider>,
+    ),
+  );
+});
+afterEach(async () => {
+  await act(async () => root.unmount());
+  client.clear();
+  container.remove();
+});
+
+describe("public blog search", () => {
+  it("opens an accessible dialog, focuses the input, and restores trigger focus on Escape", async () => {
+    await open();
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(document.activeElement).toBe(input());
+    expect(search).not.toHaveBeenCalled();
+    await act(async () =>
+      input().dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      ),
+    );
+    await pause(10);
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(button("搜索"));
+  });
+
+  it("debounces current-language queries and displays only safe result text and localized links", async () => {
+    search.mockResolvedValue([
+      {
+        id: "post-one",
+        title: "中文标题",
+        excerpt: "<img src=x onerror=alert(1)>",
+        type: "ARTICLE",
+      },
+    ]);
+    await open();
+    await type("h");
+    await type("  hello  ");
+    expect(search).not.toHaveBeenCalled();
+    await pause();
+    await pause(10);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0]?.[0]).toEqual({ query: "hello", locale: "zh" });
+    const link = document.querySelector<HTMLAnchorElement>(
+      'a[href="/zh/archives/post-one"]',
+    );
+    expect(link?.textContent).toContain("中文标题");
+    expect(link?.textContent).toContain("文章");
+    expect(link?.textContent).toContain("<img src=x onerror=alert(1)>");
+    expect(link?.querySelector("img")).toBeNull();
+    await act(async () => link!.click());
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    await open();
+    expect(input().value).toBe("");
+  });
+
+  it("does not search during IME composition or for whitespace", async () => {
+    await open();
+    await act(async () =>
+      input().dispatchEvent(
+        new CompositionEvent("compositionstart", { bubbles: true }),
+      ),
+    );
+    await type("中文");
+    await pause();
+    await pause(10);
+    expect(search).not.toHaveBeenCalled();
+    await act(async () =>
+      input().dispatchEvent(
+        new CompositionEvent("compositionend", { bubbles: true }),
+      ),
+    );
+    await pause();
+    await pause(10);
+    expect(search.mock.calls[0]?.[0]).toEqual({ query: "中文", locale: "zh" });
+    await type("   ");
+    await pause();
+    await pause(10);
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a loading state, a retryable failure, then empty results", async () => {
+    let reject!: (reason: Error) => void;
+    search.mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    );
+    await open();
+    await type("missing");
+    await pause();
+    await pause(10);
+    expect(document.body.textContent).toContain("搜索中");
+    await act(async () => reject(new Error("offline")));
+    await pause(10);
+    expect(document.body.textContent).toContain("搜索失败");
+    await act(async () => button("重试").click());
+    await pause(10);
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(document.body.textContent).toContain("没有找到相关内容");
+  });
+
+  it("hides older results immediately while a new query is debouncing", async () => {
+    search.mockResolvedValue([
+      { id: "old", title: "旧结果", excerpt: "old", type: "QUOTE" },
+    ]);
+    await open();
+    await type("old");
+    await pause();
+    await pause(10);
+    expect(document.body.textContent).toContain("旧结果");
+    await type("new");
+    expect(document.body.textContent).not.toContain("旧结果");
+  });
+  it("gives untitled results an accessible fallback and ignores late responses for older queries", async () => {
+    let resolveOld!: (value: unknown) => void;
+    search.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    );
+    search.mockResolvedValueOnce([
+      { id: "new", title: "", excerpt: "新的内容", type: "QUOTE" },
+    ]);
+    await open();
+    await type("old");
+    await pause();
+    await type("new");
+    await pause();
+    await pause(10);
+    expect(document.body.textContent).toContain("无标题");
+    expect(document.body.textContent).toContain("新的内容");
+    await act(async () =>
+      resolveOld([
+        { id: "old", title: "旧结果", excerpt: "old", type: "ARTICLE" },
+      ]),
+    );
+    await pause(10);
+    expect(document.body.textContent).not.toContain("旧结果");
+  });
+  it("cancels an in-flight request when closed", async () => {
+    search.mockImplementationOnce(() => new Promise(() => {}));
+    await open();
+    await type("pending");
+    await pause();
+    const options = search.mock.calls[0]?.[1] as { signal: AbortSignal };
+    expect(options.signal.aborted).toBe(false);
+    await act(async () => button("关闭搜索").click());
+    expect(options.signal.aborted).toBe(true);
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+});
