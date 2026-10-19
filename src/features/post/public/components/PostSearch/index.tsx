@@ -109,7 +109,7 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
                 <Link
                   href={`/archives/${post.id}`}
                   onClick={onNavigate}
-                  className="flex items-start gap-3 rounded-lg py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
+                  className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
                 >
                   {post.cover && (
                     <span

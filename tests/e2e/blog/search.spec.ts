@@ -9,8 +9,16 @@ async function expectSameHorizontalBounds(input: Locator, result: Locator) {
     expect(resultBox).not.toBeNull();
     expect(resultBox!.x).toBeCloseTo(inputBox!.x, 0);
     expect(resultBox!.width).toBeCloseTo(inputBox!.width, 0);
-    await expect(result).toHaveCSS("padding-left", "0px");
-    await expect(result).toHaveCSS("padding-right", "0px");
+    const spacing = await result.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        left: parseFloat(style.paddingLeft),
+        right: parseFloat(style.paddingRight),
+        expected: parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.75,
+      };
+    });
+    expect(spacing.left).toBeCloseTo(spacing.expected, 2);
+    expect(spacing.right).toBeCloseTo(spacing.expected, 2);
   }).toPass({ timeout: 5_000 });
 }
 
