@@ -23,6 +23,27 @@ const vercelJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "vercel.json"), "utf8"),
 ) as { bunVersion?: string; installCommand: string };
 
+const jobSchema = z.object({
+  "runs-on": z.string(),
+  needs: z.array(z.string()).optional(),
+  if: z.string().optional(),
+  "continue-on-error": z.boolean().optional(),
+  env: z.record(z.string(), z.string()).optional(),
+  steps: z.array(
+    z.object({
+      run: z.string().optional(),
+      if: z.string().optional(),
+      "continue-on-error": z.boolean().optional(),
+      env: z.record(z.string(), z.string()).optional(),
+    }),
+  ),
+});
+const ci = z
+  .object({ jobs: z.record(z.string(), jobSchema) })
+  .parse(parse(workflow));
+const commandsFor = (job: z.infer<typeof jobSchema>) =>
+  job.steps.flatMap((step) => (step.run ? [step.run] : []));
+
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
     expect(packageJson.packageManager).toBe("bun@1.4.2");
@@ -67,18 +88,7 @@ describe("quality workflow", () => {
   });
 
   it("runs the full unit inventory once with coverage and retains process tests", () => {
-    const ci = z
-      .object({
-        jobs: z.object({
-          verify: z.object({
-            steps: z.array(z.object({ run: z.string().optional() })),
-          }),
-        }),
-      })
-      .parse(parse(workflow));
-    const commands = ci.jobs.verify.steps.flatMap((step) =>
-      step.run ? [step.run] : [],
-    );
+    const commands = Object.values(ci.jobs).flatMap(commandsFor);
 
     expect(packageJson.scripts["test:unit:coverage"]).toBe(
       "vitest run --coverage",
@@ -95,21 +105,92 @@ describe("quality workflow", () => {
     expect(commands.join("\n")).not.toMatch(/bun run test:unit:run\b/);
   });
 
+  it("runs unit checks and build/E2E independently with fresh databases", () => {
+    for (const name of ["unit_checks", "build_e2e"]) {
+      const job = jobSchema.parse(ci.jobs[name]);
+      expect(job, name).toBeDefined();
+      expect(job["runs-on"]).toBe("ubuntu-latest");
+      expect(job.needs).toBeUndefined();
+      expect(job.if).toBeUndefined();
+      expect(job["continue-on-error"]).toBeUndefined();
+      expect(job.env?.TURSO_URL).toMatch(/^file:\/tmp\//);
+      const commands = commandsFor(job);
+      expect(commands).toContain("bun install --frozen-lockfile");
+      expect(commands.indexOf("bunx drizzle-kit migrate")).toBeGreaterThan(-1);
+      expect(commands.indexOf("bun run db:e2e:seed")).toBeGreaterThan(
+        commands.indexOf("bunx drizzle-kit migrate"),
+      );
+      for (const step of job.steps.filter((step) => step.run)) {
+        expect(step.if).toBeUndefined();
+        expect(step["continue-on-error"]).toBeUndefined();
+      }
+    }
+    expect(commandsFor(jobSchema.parse(ci.jobs.unit_checks))).toEqual(
+      expect.arrayContaining([
+        "bun run check-types",
+        "bun run lint",
+        "bun run db:migrations:check",
+        "bun run db:invariants:audit",
+        "bun run test:unit:coverage",
+        "bun run test:unit:process",
+        "bun run audit:production",
+      ]),
+    );
+    expect(commandsFor(jobSchema.parse(ci.jobs.build_e2e))).toEqual(
+      expect.arrayContaining([
+        "bun run build",
+        "timeout 10m bun run analyze",
+        "bun run test:e2e:development",
+        "bun run test:e2e:production",
+      ]),
+    );
+  });
+
+  it("keeps verify fail-closed for failed, skipped, and cancelled dependencies", () => {
+    const gate = jobSchema.parse(ci.jobs.verify);
+    expect(gate.needs?.slice().sort()).toEqual([
+      "build_e2e",
+      "specs",
+      "unit_checks",
+    ]);
+    expect(gate.if).toBe("${{ always() }}");
+    expect(gate["continue-on-error"]).toBeUndefined();
+    expect(gate.steps).toHaveLength(1);
+    const step = jobSchema.shape.steps.element.parse(gate.steps[0]);
+    expect(step.if).toBeUndefined();
+    expect(step["continue-on-error"]).toBeUndefined();
+    expect(step.run).toBeDefined();
+    expect(step.env).toEqual({
+      SPECS_RESULT: "${{ needs.specs.result }}",
+      UNIT_CHECKS_RESULT: "${{ needs.unit_checks.result }}",
+      BUILD_E2E_RESULT: "${{ needs.build_e2e.result }}",
+    });
+    const results = ["success", "failure", "skipped", "cancelled"];
+    for (const specs of results) {
+      for (const unit of results) {
+        for (const build of results) {
+          const result = spawnSync(
+            "bash",
+            ["-e", "-c", z.string().parse(step.run)],
+            {
+              env: {
+                ...process.env,
+                SPECS_RESULT: specs,
+                UNIT_CHECKS_RESULT: unit,
+                BUILD_E2E_RESULT: build,
+              },
+              encoding: "utf8",
+            },
+          );
+          expect(result.status === 0, `${specs}/${unit}/${build}`).toBe(
+            specs === "success" && unit === "success" && build === "success",
+          );
+        }
+      }
+    }
+  });
+
   it("CI selections are disjoint and together execute the complete Playwright inventory", () => {
-    const ci = z
-      .object({
-        jobs: z.object({
-          verify: z.object({
-            steps: z.array(
-              z.object({
-                run: z.string().optional(),
-                env: z.record(z.string(), z.string()).optional(),
-              }),
-            ),
-          }),
-        }),
-      })
-      .parse(parse(workflow));
     const suite = z.object({
       suites: z.array(z.unknown()).default([]),
       specs: z
@@ -145,12 +226,12 @@ describe("quality workflow", () => {
       expect(result.status, result.stdout + result.stderr).toBe(0);
       return collect(JSON.parse(result.stdout));
     };
-    const devStep = ci.jobs.verify.steps.find(
-      (step) => step.run === "bun run test:e2e:development",
-    );
-    const productionStep = ci.jobs.verify.steps.find(
-      (step) => step.run === "bun run test:e2e:production",
-    );
+    const devStep = jobSchema
+      .parse(ci.jobs.build_e2e)
+      .steps.find((step) => step.run === "bun run test:e2e:development");
+    const productionStep = jobSchema
+      .parse(ci.jobs.build_e2e)
+      .steps.find((step) => step.run === "bun run test:e2e:production");
     expect(devStep?.env?.PLAYWRIGHT_USE_DEV_SERVER).toBe("1");
     expect(productionStep?.env?.PLAYWRIGHT_USE_DEV_SERVER).toBe("0");
     for (const key of [

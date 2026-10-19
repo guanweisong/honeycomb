@@ -28,7 +28,7 @@ jobs:
       - run: bun run quality:spec
         env:
           QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-  verify:
+  unit_checks:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -72,6 +72,36 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - run: bun run audit:production
+  build_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      TURSO_URL: file:/tmp/honeycomb-ci.db
+      TURSO_TOKEN: local
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bunx drizzle-kit migrate
+      - run: bun run db:e2e:seed
       - run: bun run build
       - run: timeout 10m bun run analyze
       - uses: actions/upload-artifact@v4
@@ -94,3 +124,18 @@ jobs:
           PLAYWRIGHT_PORT: "3101"
           PLAYWRIGHT_OUTPUT_DIR: /tmp/honeycomb-e2e-production-results
           PLAYWRIGHT_HTML_REPORT: /tmp/honeycomb-e2e-production-report
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [specs, unit_checks, build_e2e]
+    if: ${{ always() }}
+    steps:
+      - name: Require every quality lane to succeed
+        env:
+          SPECS_RESULT: ${{ needs.specs.result }}
+          UNIT_CHECKS_RESULT: ${{ needs.unit_checks.result }}
+          BUILD_E2E_RESULT: ${{ needs.build_e2e.result }}
+        run: |
+          test "$SPECS_RESULT" = success
+          test "$UNIT_CHECKS_RESULT" = success
+          test "$BUILD_E2E_RESULT" = success
