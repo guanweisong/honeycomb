@@ -17,7 +17,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 vi.mock("@/packages/infrastructure/db/query/tools", () => ({
@@ -127,6 +129,7 @@ describe("Category Router", () => {
 
       expect(result).toEqual({
         ...newCategory,
+        publicSync: "completed",
         description: { en: "New category description", zh: "新分类描述" },
       });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.category);
@@ -161,7 +164,7 @@ describe("Category Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.category);
     });
 
@@ -226,6 +229,7 @@ describe("Category Router", () => {
 
       expect(result).toEqual({
         ...updatedCategory,
+        publicSync: "completed",
         description: { en: "Updated category description", zh: "更新的分类描述" },
       });
       expect(mockDb.update).toHaveBeenCalledWith(schema.category);

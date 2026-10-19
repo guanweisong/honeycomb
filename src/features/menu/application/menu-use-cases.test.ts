@@ -9,7 +9,7 @@ const item = (id: string, parent?: string | null) => ({
   power: 1,
 });
 const invalidator = () => ({
-  invalidate: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
 });
 
 describe("Menu use cases", () => {
@@ -34,6 +34,7 @@ describe("Menu use cases", () => {
 
     await expect(saveAllMenus({ saveAll }, input, cache)).resolves.toEqual({
       count: 2,
+      publicSync: "completed",
     });
     expect(saveAll).toHaveBeenCalledWith(input);
     expect(cache.invalidate).toHaveBeenCalledWith({

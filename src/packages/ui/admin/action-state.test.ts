@@ -5,6 +5,7 @@ import {
   createInitialAdminDialogState,
   openAddAdminDialog,
   openEditAdminDialog,
+  notifyPublicSyncWarning,
   runAdminMutation,
   submitAdminBatchDelete,
   withAdminRecordId,
@@ -106,4 +107,92 @@ describe("admin action state", () => {
     expect(refetch).not.toHaveBeenCalled();
     expect(notifyError).toHaveBeenCalledWith("保存失败");
   });
+});
+
+describe("public sync feedback", () => {
+  it("warns only for an explicit degraded result", () => {
+    const warning = vi.fn();
+    for (const result of [undefined, null, true, { publicSync: "completed" }]) {
+      expect(notifyPublicSyncWarning(result, warning)).toBe(false);
+    }
+    expect(warning).not.toHaveBeenCalled();
+    expect(notifyPublicSyncWarning({ publicSync: "degraded" }, warning)).toBe(
+      true,
+    );
+    expect(warning).toHaveBeenCalledExactlyOnceWith(
+      "已保存，公开内容同步未完成，请稍后检查公开页面",
+    );
+  });
+
+  it.each(["completed", "degraded"])(
+    "keeps %s committed writes successful when refresh throws or rejects",
+    async (publicSync) => {
+      for (const refetch of [
+        () => {
+          throw new Error("refresh");
+        },
+        () => Promise.reject(new Error("refresh")),
+      ]) {
+        const notifySuccess = vi.fn();
+        const notifyWarning = vi.fn();
+        const notifyError = vi.fn();
+        await expect(
+          runAdminMutation({
+            input: undefined,
+            mutate: async () => ({ publicSync }),
+            refetch,
+            notifySuccess,
+            notifyWarning,
+            notifyError,
+            successMessage: "保存成功",
+            errorMessage: "保存失败",
+          }),
+        ).resolves.toBe("success");
+        expect(notifyError).not.toHaveBeenCalled();
+        if (publicSync === "degraded") {
+          expect(notifyWarning).toHaveBeenCalledExactlyOnceWith(
+            "已保存，公开内容同步未完成，请稍后检查公开页面",
+          );
+          expect(notifySuccess).not.toHaveBeenCalled();
+        } else {
+          expect(notifySuccess).toHaveBeenCalledExactlyOnceWith("保存成功");
+          expect(notifyWarning).not.toHaveBeenCalled();
+        }
+      }
+    },
+  );
+
+  it("does not warn for unsuccessful mutation results", async () => {
+    const notifyWarning = vi.fn();
+    await expect(
+      runAdminMutation({
+        input: undefined,
+        mutate: async () => ({ success: false, publicSync: "degraded" }),
+        isSuccess: (result) => result.success,
+        refetch: vi.fn(),
+        notifySuccess: vi.fn(),
+        notifyWarning,
+        notifyError: vi.fn(),
+        successMessage: "保存成功",
+        errorMessage: "保存失败",
+      }),
+    ).resolves.toBe("noop");
+    expect(notifyWarning).not.toHaveBeenCalled();
+  });
+});
+
+it("preserves success feedback for callers without a warning notifier", async () => {
+  const notifySuccess = vi.fn();
+  await expect(
+    runAdminMutation({
+      input: undefined,
+      mutate: async () => ({ publicSync: "degraded" }),
+      refetch: vi.fn(),
+      notifySuccess,
+      notifyError: vi.fn(),
+      successMessage: "保存成功",
+      errorMessage: "保存失败",
+    }),
+  ).resolves.toBe("success");
+  expect(notifySuccess).toHaveBeenCalledExactlyOnceWith("保存成功");
 });

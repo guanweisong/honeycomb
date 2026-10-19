@@ -15,6 +15,7 @@ import {
 } from "@/features/category/public";
 import { trpc } from "@/packages/trpc/client/trpc";
 import {
+  runAdminMutation,
   withAdminRecordId,
   type AdminDialogState,
 } from "@/packages/ui/admin/action-state";
@@ -101,31 +102,37 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
     if (values.parent === "0") {
       delete values.parent;
     }
+    const feedback = {
+      refetch: categoryQuery.refetch,
+      notifySuccess: toast.success,
+      notifyWarning: toast.warning,
+      notifyError: toast.error,
+    };
+    let state;
     switch (modalType) {
       case ModalType.ADD:
-        return createCategory
-          .mutateAsync(CategoryInsertSchema.parse(values))
-          .then(() => {
-            categoryQuery.refetch();
-            toast.success("添加成功");
-            handleModalCancel();
-          });
+        state = await runAdminMutation({
+          ...feedback,
+          input: CategoryInsertSchema.parse(values),
+          mutate: createCategory.mutateAsync,
+          successMessage: "添加成功",
+          errorMessage: "添加失败",
+        });
+        break;
       case ModalType.EDIT:
-        if (!modalProps?.record?.id) {
-          return;
-        }
-        return updateCategory
-          .mutateAsync(
-            CategoryUpdateSchema.parse(
-              withAdminRecordId({ id: modalProps.record.id }, values),
-            ),
-          )
-          .then(() => {
-            categoryQuery.refetch();
-            toast.success("更新成功");
-            handleModalCancel();
-          });
+        if (!modalProps?.record?.id) return;
+        state = await runAdminMutation({
+          ...feedback,
+          input: CategoryUpdateSchema.parse(
+            withAdminRecordId({ id: modalProps.record.id }, values),
+          ),
+          mutate: updateCategory.mutateAsync,
+          successMessage: "更新成功",
+          errorMessage: "更新失败",
+        });
+        break;
     }
+    if (state === "success") handleModalCancel();
   };
 
   const fields: FieldConfig[] = [

@@ -7,6 +7,14 @@ const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   destroy: vi.fn(),
   can: vi.fn(),
+  success: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
+  refetch: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+  toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
 
 vi.mock("@/packages/ui/admin/use-current-user", () => ({
@@ -186,3 +194,45 @@ it("keeps title search, filters and sorting together while resetting the display
   });
   expect(container.textContent).toContain("第 1 / 4 页");
 });
+
+it.each(["completed", "degraded"])(
+  "keeps a deleted post successful after %s synchronization when refresh fails",
+  async (publicSync) => {
+    mocks.can.mockReturnValue(true);
+    mocks.query.mockReturnValue({
+      data: {
+        list: [{ id: "post-1", title: null, type: "ARTICLE", status: "DRAFT" }],
+        total: 1,
+      },
+      isFetching: false,
+      isError: false,
+      refetch: mocks.refetch,
+    });
+    mocks.destroy.mockResolvedValue({ success: true, publicSync });
+    mocks.refetch.mockRejectedValue(new Error("refresh failed"));
+    await act(async () => root.render(<PostListClient />));
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('[aria-label="删除文章"]')
+        ?.click(),
+    );
+    await act(async () => {
+      requireDefined(
+        Array.from(document.querySelectorAll("button")).find(
+          (button) => button.textContent === "确定",
+        ),
+      ).click();
+    });
+    expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({ ids: ["post-1"] });
+    expect(mocks.error).not.toHaveBeenCalled();
+    if (publicSync === "degraded") {
+      expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+        "已保存，公开内容同步未完成，请稍后检查公开页面",
+      );
+      expect(mocks.success).not.toHaveBeenCalled();
+    } else {
+      expect(mocks.success).toHaveBeenCalledExactlyOnceWith("删除成功");
+      expect(mocks.warning).not.toHaveBeenCalled();
+    }
+  },
+);

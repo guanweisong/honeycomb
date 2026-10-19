@@ -19,7 +19,10 @@ import { clientLogger } from "@/packages/infrastructure/observability/client";
 import { LogEvent } from "@/packages/infrastructure/observability/core/names";
 import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
 import type { CategoryViewModel as CategoryEntity } from "@/features/category/public";
-import type { AdminDialogState } from "@/packages/ui/admin/action-state";
+import {
+  notifyPublicSyncWarning,
+  type AdminDialogState,
+} from "@/packages/ui/admin/action-state";
 
 import { useLocalDraft } from "@/packages/ui/admin/local-draft";
 import { useCurrentUser } from "@/packages/ui/admin/use-current-user";
@@ -181,9 +184,8 @@ export function usePostEditor(id: string | null) {
                 return;
               draft.clearSaved(submittedDraft);
               form.reset(data);
-              if (result.publicSync === "degraded") {
-                toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
-              } else toast.success("添加成功");
+              if (!notifyPublicSyncWarning(result, toast.warning))
+                toast.success("添加成功");
               startNavigation(() =>
                 router.push(`/admin/post/edit?id=${result.id}`),
               );
@@ -200,7 +202,12 @@ export function usePostEditor(id: string | null) {
           );
           if (result) {
             // Persistence has succeeded; a failed read must not invite retrying the write.
-            const refreshed = await refetch().catch(() => undefined);
+            let refreshed: Awaited<ReturnType<typeof refetch>> | undefined;
+            try {
+              refreshed = await refetch();
+            } catch {
+              // Keep the confirmed save and draft cleanup even if refreshing throws.
+            }
             if (
               recordGeneration.current === submittedGeneration &&
               previousRecord.current?.id === detail.id
@@ -250,9 +257,8 @@ export function usePostEditor(id: string | null) {
               }
             }
             saved = true;
-            if (result.publicSync === "degraded") {
-              toast.warning("已保存，公开内容同步未完成，请稍后检查公开页面");
-            } else toast.success("更新成功");
+            if (!notifyPublicSyncWarning(result, toast.warning))
+              toast.success("更新成功");
           }
         },
         () => {

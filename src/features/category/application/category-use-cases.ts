@@ -59,12 +59,12 @@ export function createCategory(
     await assertParentChain(repository, undefined, input.parent);
     await assertPath(repository, input.path);
     const result = await repository.create(input);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       refreshLayout: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }
 
@@ -81,12 +81,12 @@ export function updateCategory(
     await assertParentChain(repository, input.id, input.parent);
     await assertPath(repository, input.path, input.id);
     const result = await repository.update(input);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       refreshLayout: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }
 
@@ -98,11 +98,11 @@ export function destroyCategories(
 ) {
   return (async () => {
     const result = await repository.destroy(ids);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       refreshLayout: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }

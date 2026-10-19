@@ -28,7 +28,7 @@ import { PageTemplate } from "@/packages/domain/content/page-template";
 
 describe("feature repository 契约", () => {
   const invalidator = () => ({
-    invalidate: vi.fn().mockResolvedValue(undefined),
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   });
 
   it("media commands coordinate repository and storage", async () => {

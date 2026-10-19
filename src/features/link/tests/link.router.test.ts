@@ -15,7 +15,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 vi.mock("@/packages/infrastructure/db/query/tools", () => ({
@@ -106,7 +108,7 @@ describe("Link Router", () => {
         status: EnableStatus.ENABLE,
       });
 
-      expect(result).toEqual(newLink);
+      expect(result).toEqual({ ...newLink, publicSync: "completed" });
     });
   });
 
@@ -123,7 +125,7 @@ describe("Link Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
     });
   });
 
@@ -153,7 +155,7 @@ describe("Link Router", () => {
         status: EnableStatus.ENABLE,
       });
 
-      expect(result).toEqual(updatedLink);
+      expect(result).toEqual({ ...updatedLink, publicSync: "completed" });
     });
 
     it("should throw error for non-admin users", async () => {

@@ -17,7 +17,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 const mockDb = createMockDb();
@@ -67,7 +69,7 @@ describe("Menu Router", () => {
 
       const result = await caller.saveAll(menuItems);
 
-      expect(result).toEqual({ count: 2 });
+      expect(result).toEqual({ count: 2, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.menu);
       expect(mockDb.insert).toHaveBeenCalledWith(schema.menu);
     });

@@ -48,8 +48,8 @@ export async function updateComment(
             status: input.status,
           });
   }
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }
 /** 批量删除后台评论。 */
 export async function destroyComments(
@@ -58,8 +58,8 @@ export async function destroyComments(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }
 /** 创建公开评论并触发异步通知。 */
 export async function createComment(

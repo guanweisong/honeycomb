@@ -33,13 +33,13 @@ export async function destroyPosts(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     contents: ids.map((id) => ({ id, type: "post" })),
     refreshLayout: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 /** 更新文章。 */
 export async function updatePost(
@@ -63,13 +63,13 @@ export async function updatePostTags(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.updateTags(input);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     contents: [{ id: input.postId, type: "post" }],
     refreshLayout: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 /** 增加公开文章浏览量。 */
 export function incrementPostViews(

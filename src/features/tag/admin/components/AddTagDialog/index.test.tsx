@@ -7,12 +7,14 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn().mockResolvedValue(undefined),
   update: vi.fn().mockResolvedValue(undefined),
   success: vi.fn(),
+  warning: vi.fn(),
   error: vi.fn(),
-  formSubmit: undefined as ((values: Record<string, unknown>) => Promise<void>) | undefined,
+  formSubmit: undefined as
+    ((values: Record<string, unknown>) => Promise<void>) | undefined,
 }));
 
 vi.mock("sonner", () => ({
-  toast: { success: mocks.success, error: mocks.error },
+  toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
 
 vi.mock("@/packages/trpc/client/trpc", () => ({
@@ -29,7 +31,9 @@ vi.mock("@/packages/ui/extended/Dialog", () => ({
 }));
 
 vi.mock("@/packages/ui/extended/DynamicForm", () => ({
-  DynamicForm: (props: { onSubmit: (values: Record<string, unknown>) => Promise<void> }) => {
+  DynamicForm: (props: {
+    onSubmit: (values: Record<string, unknown>) => Promise<void>;
+  }) => {
     mocks.formSubmit = props.onSubmit;
     return <div>dynamic-form</div>;
   },
@@ -48,6 +52,7 @@ describe("AddTagDialog", () => {
     mocks.create.mockReset().mockResolvedValue(undefined);
     mocks.update.mockReset().mockResolvedValue(undefined);
     mocks.success.mockClear();
+    mocks.warning.mockClear();
     mocks.error.mockClear();
     mocks.formSubmit = undefined;
   });
@@ -56,10 +61,65 @@ describe("AddTagDialog", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() =>
-      root.render(<AddTagDialog {...props} />),
-    );
+    act(() => root.render(<AddTagDialog {...props} />));
   }
+
+  describe.each([ModalType.ADD, ModalType.EDIT])(
+    "public-sync feedback for %s",
+    (type) => {
+      it.each([
+        { publicSync: "completed", refreshFails: false },
+        { publicSync: "degraded", refreshFails: false },
+        { publicSync: "completed", refreshFails: true },
+        { publicSync: "degraded", refreshFails: true },
+      ])(
+        "closes a committed $publicSync write (refresh rejects: $refreshFails)",
+        async ({ publicSync, refreshFails }) => {
+          const mutation = type === ModalType.ADD ? mocks.create : mocks.update;
+          mutation.mockResolvedValue({
+            id: "507f1f77bcf86cd799439011",
+            publicSync,
+          });
+          const onClose = vi.fn();
+          const onSuccess = vi.fn();
+          if (refreshFails)
+            onSuccess.mockRejectedValue(new Error("refresh failed"));
+          render({
+            type,
+            open: true,
+            record: {
+              id: "507f1f77bcf86cd799439011",
+              name: { zh: "标签", en: "Tag" },
+              createdAt: null,
+              updatedAt: null,
+            },
+            onClose,
+            onSuccess,
+          });
+
+          await act(async () =>
+            mocks.formSubmit?.({ name: { zh: "新标签", en: "Tag" } }),
+          );
+
+          expect(mutation).toHaveBeenCalledOnce();
+          expect(onSuccess).toHaveBeenCalledOnce();
+          expect(onClose).toHaveBeenCalledOnce();
+          expect(mocks.error).not.toHaveBeenCalled();
+          if (publicSync === "degraded") {
+            expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+              "已保存，公开内容同步未完成，请稍后检查公开页面",
+            );
+            expect(mocks.success).not.toHaveBeenCalled();
+          } else {
+            expect(mocks.success).toHaveBeenCalledExactlyOnceWith(
+              type === ModalType.ADD ? "添加成功" : "更新成功",
+            );
+            expect(mocks.warning).not.toHaveBeenCalled();
+          }
+        },
+      );
+    },
+  );
 
   it("creates a tag and closes after success", async () => {
     const onClose = vi.fn();
@@ -80,19 +140,29 @@ describe("AddTagDialog", () => {
     render({
       type: ModalType.EDIT,
       open: true,
-      record: { id: "507f1f77bcf86cd799439011", name: { zh: "旧标签", en: "English" }, createdAt: null, updatedAt: null },
+      record: {
+        id: "507f1f77bcf86cd799439011",
+        name: { zh: "旧标签", en: "English" },
+        createdAt: null,
+        updatedAt: null,
+      },
     });
 
     await act(async () => mocks.formSubmit?.(values));
 
-    expect(mocks.update).toHaveBeenCalledWith({ ...values, id: "507f1f77bcf86cd799439011" });
+    expect(mocks.update).toHaveBeenCalledWith({
+      ...values,
+      id: "507f1f77bcf86cd799439011",
+    });
     expect(mocks.success).toHaveBeenCalledWith("更新成功");
   });
 
   it("rejects an edit submission when the tag record is missing", async () => {
     render({ type: ModalType.EDIT, open: true });
 
-    await act(async () => mocks.formSubmit?.({ name: { zh: "更新标签", en: "English" } }));
+    await act(async () =>
+      mocks.formSubmit?.({ name: { zh: "更新标签", en: "English" } }),
+    );
 
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledWith("标签不存在，无法更新");
@@ -103,7 +173,9 @@ describe("AddTagDialog", () => {
     const onClose = vi.fn();
     render({ type: ModalType.ADD, open: true, onClose });
 
-    await act(async () => mocks.formSubmit?.({ name: { zh: "标签", en: "English" } }));
+    await act(async () =>
+      mocks.formSubmit?.({ name: { zh: "标签", en: "English" } }),
+    );
 
     expect(mocks.error).toHaveBeenCalledWith("添加失败");
     expect(onClose).not.toHaveBeenCalled();

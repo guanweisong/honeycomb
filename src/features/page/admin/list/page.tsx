@@ -66,6 +66,7 @@ const Page = () => {
       mutate: destroyPage.mutateAsync,
       refetch,
       notifySuccess: toast.success,
+      notifyWarning: toast.warning,
       notifyError: toast.error,
       successMessage: "删除成功",
       errorMessage: "删除失败",

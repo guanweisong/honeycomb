@@ -49,7 +49,7 @@ describe("Comment command handlers", () => {
       notify: vi.fn().mockResolvedValue(undefined),
       logNotificationFailure: vi.fn(),
       invalidator: {
-        invalidate: vi.fn().mockResolvedValue(undefined),
+        invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
       },
       ...overrides,
     };
@@ -130,6 +130,7 @@ describe("Comment command handlers", () => {
       invalidator: {
         invalidate: vi.fn().mockImplementation(async () => {
           order.push("cache");
+          return { state: "completed" as const };
         }),
       },
     });
@@ -227,6 +228,7 @@ describe("Comment command handlers", () => {
       invalidator: {
         invalidate: vi.fn().mockImplementation(async () => {
           order.push("cache");
+          return { state: "completed" as const };
         }),
       },
     });
@@ -392,7 +394,7 @@ describe("Comment command handlers", () => {
     await updateComment(
       { findStatus, update },
       { id: "comment-1", status: CommentStatus.PUBLISH },
-      { invalidate: vi.fn().mockResolvedValue(undefined) },
+      { invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }) },
     );
 
     expect(findStatus).toHaveBeenCalledWith("comment-1");
@@ -410,7 +412,7 @@ describe("Comment command handlers", () => {
       updateComment(
         { findStatus, update },
         { id: "comment-1", status: CommentStatus.TO_AUDIT },
-        { invalidate: vi.fn().mockResolvedValue(undefined) },
+        { invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }) },
       ),
     ).rejects.toThrow();
 
@@ -418,7 +420,9 @@ describe("Comment command handlers", () => {
   });
 
   it("更新与删除评论仅在持久化成功后刷新全部公开内容", async () => {
-    const invalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
     const update = vi.fn().mockResolvedValue({ id: "comment-1" });
     const destroy = vi.fn().mockResolvedValue({ success: true });
 

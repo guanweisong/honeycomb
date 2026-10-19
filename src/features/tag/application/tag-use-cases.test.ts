@@ -3,7 +3,9 @@ import { createTag, destroyTags, updateTag } from "./tag-use-cases";
 
 describe("Tag command use cases", () => {
   it("在写入成功后刷新公开内容", async () => {
-    const invalidator = { invalidate: vi.fn().mockResolvedValue(undefined) };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
     const create = vi.fn().mockResolvedValue({ id: "tag-1" });
     const update = vi.fn().mockResolvedValue({ id: "tag-1" });
     const destroy = vi.fn().mockResolvedValue({ success: true });

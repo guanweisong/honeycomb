@@ -357,7 +357,7 @@ describe("Post Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.post);
     });
 

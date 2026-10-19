@@ -11,7 +11,7 @@ const base = {
   path: "a",
 };
 const invalidator = () => ({
-  invalidate: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
 });
 
 describe("Category use cases", () => {

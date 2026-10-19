@@ -16,7 +16,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 const mockDb = createMockDb();
@@ -119,7 +121,7 @@ describe("Tag Router", () => {
         name: { en: "New Tag", zh: "新标签" },
       });
 
-      expect(result).toEqual(newTag);
+      expect(result).toEqual({ ...newTag, publicSync: "completed" });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.tag);
     });
 
@@ -159,7 +161,7 @@ describe("Tag Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.tag);
     });
 
@@ -200,7 +202,7 @@ describe("Tag Router", () => {
         name: { en: "Updated Tag", zh: "更新的标签" },
       });
 
-      expect(result).toEqual(updatedTag);
+      expect(result).toEqual({ ...updatedTag, publicSync: "completed" });
       expect(mockDb.update).not.toHaveBeenCalledWith(schema.tag);
     });
 

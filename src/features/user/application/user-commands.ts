@@ -22,11 +22,11 @@ export function createUser(
   const parsed = UserInsertSchema.parse(input);
   return (async () => {
     const result = await repository.create(parsed);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       refreshLayout: true,
       refreshPostIndex: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }
 
@@ -45,11 +45,11 @@ export async function destroyUsers(
     ).assertDeletable();
   }
   const result = await repository.destroy(ids);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 
 /** 更新用户及可选凭据。 */
@@ -82,19 +82,19 @@ export async function updateUser(
         },
         changes,
       );
-      await invalidator.invalidate({
+      const publicSync = await invalidator.invalidate({
         refreshLayout: true,
         refreshPostIndex: true,
       });
-      return result;
+      return { ...result, publicSync: publicSync.state };
     }
   }
   const result = await repository.update(input);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 
 type UserStatusChangeInput = {

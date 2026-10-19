@@ -2,14 +2,16 @@
 
 import { toast } from "sonner";
 import { trpc } from "@/packages/trpc/client/trpc";
-import type { AdminMutationFeedback } from "@/packages/ui/admin/action-state";
+import {
+  runAdminMutation,
+  type AdminMutationFeedback,
+  type AdminMutationState,
+} from "@/packages/ui/admin/action-state";
 import {
   buildMenuSaveInput,
   type MenuEntityTree,
   type MenuSaveItem,
 } from "../transforms/menu-transforms";
-
-type MenuActionState = "success" | "error";
 
 interface SubmitMenuChangesOptions extends AdminMutationFeedback {
   checkedList: MenuEntityTree[];
@@ -21,17 +23,19 @@ export async function submitMenuChanges({
   saveAll,
   refetch,
   notifySuccess,
+  notifyWarning,
   notifyError,
-}: SubmitMenuChangesOptions): Promise<MenuActionState> {
-  try {
-    await saveAll(buildMenuSaveInput(checkedList));
-    notifySuccess("更新成功");
-    refetch();
-    return "success";
-  } catch {
-    notifyError("更新失败");
-    return "error";
-  }
+}: SubmitMenuChangesOptions): Promise<AdminMutationState> {
+  return runAdminMutation({
+    input: buildMenuSaveInput(checkedList),
+    mutate: saveAll,
+    refetch,
+    notifySuccess,
+    notifyWarning,
+    notifyError,
+    successMessage: "更新成功",
+    errorMessage: "更新失败",
+  });
 }
 
 export function useMenuActions(
@@ -47,6 +51,7 @@ export function useMenuActions(
         saveAll: saveAllMenu.mutateAsync,
         refetch: refetchMenu,
         notifySuccess: toast.success,
+        notifyWarning: toast.warning,
         notifyError: toast.error,
       }),
   };
