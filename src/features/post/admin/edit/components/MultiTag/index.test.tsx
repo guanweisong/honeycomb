@@ -7,6 +7,9 @@ import { TagType } from "@/packages/domain/content/tag";
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
+const toastMocks = vi.hoisted(() => ({ warning: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
+
 const grantedPermissions = new Set<string>();
 const queryInputs: Array<{ name?: string }> = [];
 const updateInputs: unknown[] = [];
@@ -22,6 +25,7 @@ let createState: {
   mutateAsync: (input: unknown) => Promise<{
     id: string;
     name: { en: string; zh: string };
+    publicSync?: "completed" | "degraded";
   }>;
 };
 let updateState: {
@@ -125,6 +129,7 @@ describe("MultiTag", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    toastMocks.warning.mockReset();
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -367,5 +372,67 @@ describe("MultiTag", () => {
     expect(loggedErrors).toEqual([
       ["client.error", { operation: "tag.remove", outcome: "error" }],
     ]);
+  });
+  it.each([
+    ["completed", "completed", 0],
+    ["degraded", "completed", 1],
+    ["completed", "degraded", 1],
+    ["degraded", "degraded", 1],
+    ["degraded", "failed", 0],
+    ["degraded", "local", 1],
+  ] as const)(
+    "handles create %s then association %s without duplicate or misleading warnings",
+    async (creationSync, relationSync, warnings) => {
+      grantedPermissions.add("post:manage-tags");
+      grantedPermissions.add("tag:create");
+      createState.mutateAsync = async () => ({
+        id: "created-tag",
+        name: { en: "React", zh: "React" },
+        publicSync: creationSync,
+      });
+      updateState.mutateAsync = async () => {
+        if (relationSync === "failed") throw new Error("association failed");
+        return { success: true, publicSync: relationSync };
+      };
+      const changes: unknown[] = [];
+      await renderMultiTag({
+        value: [],
+        postId: relationSync === "local" ? "" : "post-1",
+        onChange: (tags) => changes.push(tags),
+      });
+      await setSearch("React");
+      await act(async () => {
+        findButton("新建")?.click();
+      });
+      expect(toastMocks.warning).toHaveBeenCalledTimes(warnings);
+      if (warnings)
+        expect(toastMocks.warning).toHaveBeenCalledWith(
+          "已保存，公开内容同步未完成，请稍后检查公开页面",
+        );
+      expect(changes).toEqual([
+        [{ id: "created-tag", name: { en: "React", zh: "React" } }],
+      ]);
+      if (relationSync === "failed")
+        expect(loggedErrors).toEqual([
+          ["client.error", { operation: "tag.add", outcome: "error" }],
+        ]);
+    },
+  );
+
+  it("warns when removing a tag saves with degraded synchronization", async () => {
+    grantedPermissions.add("post:manage-tags");
+    updateState.mutateAsync = async () => ({
+      success: true,
+      publicSync: "degraded",
+    });
+    await renderMultiTag();
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="tag-badge"] button')
+        ?.click();
+    });
+    expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(
+      "已保存，公开内容同步未完成，请稍后检查公开页面",
+    );
   });
 });

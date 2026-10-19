@@ -86,7 +86,7 @@ describe("Link cache side effects", () => {
       destroyLinks({ destroy }, [link.id], {
         invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
       }),
-    ).resolves.toEqual({ success: true });
+    ).resolves.toEqual({ success: true, publicSync: "degraded" });
     expect(destroy).toHaveBeenCalledWith([link.id]);
   });
 });

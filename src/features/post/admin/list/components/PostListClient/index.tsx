@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { runAdminMutation } from "@/packages/ui/admin/action-state";
 import { postListTableColumns } from "../../constants/post-list-table-columns";
 import { Button } from "@/packages/ui/components/button";
 import { Dialog } from "@/packages/ui/extended/Dialog";
@@ -36,13 +37,16 @@ export default function PostListClient() {
   const destroyPost = trpc.post.destroy.useMutation();
 
   const handleDeleteItem = async (ids: string[]) => {
-    try {
-      await destroyPost.mutateAsync({ ids });
-      await refetch();
-      toast.success("删除成功");
-    } catch {
-      toast.error("删除失败");
-    }
+    await runAdminMutation({
+      input: { ids },
+      mutate: destroyPost.mutateAsync,
+      refetch,
+      notifySuccess: toast.success,
+      notifyWarning: toast.warning,
+      notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
+    });
   };
 
   const handleDeleteBatch = async () => {

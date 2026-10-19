@@ -16,12 +16,13 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refetch: vi.fn(),
   success: vi.fn(),
+  warning: vi.fn(),
   update: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("sonner", () => ({
-  toast: { error: mocks.error, success: mocks.success },
+  toast: { error: mocks.error, success: mocks.success, warning: mocks.warning },
 }));
 vi.mock("@/packages/infrastructure/observability/client", () => ({
   clientLogger: { error: mocks.logger },
@@ -222,4 +223,41 @@ describe("use-page-editor-actions", () => {
     expect(mocks.success).toHaveBeenCalledWith("更新成功");
     expect(mocks.error).not.toHaveBeenCalled();
   });
+  it.each(["create", "update"] as const)(
+    "warns once after degraded %s without reporting failure or losing saved state",
+    async (action) => {
+      const mutation = action === "create" ? mocks.create : mocks.update;
+      mutation.mockResolvedValue({
+        id: "123456789012345678901234",
+        publicSync: "degraded",
+      });
+      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
+      await act(async () =>
+        root.render(
+          React.createElement(Harness, {
+            pageId:
+              action === "update" ? "123456789012345678901234" : undefined,
+          }),
+        ),
+      );
+      await act(async () => {
+        await expect(
+          requireDefined(editorActions).submit(values, PageStatus.PUBLISHED),
+        ).resolves.toMatchObject({
+          state: action === "create" ? "created" : "updated",
+          publicSync: "degraded",
+        });
+      });
+      expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+        "已保存，公开内容同步未完成，请稍后检查公开页面",
+      );
+      expect(mocks.success).not.toHaveBeenCalled();
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(container.textContent).toContain("idle");
+      if (action === "create")
+        expect(mocks.push).toHaveBeenCalledWith(
+          "/admin/page/edit?id=123456789012345678901234",
+        );
+    },
+  );
 });

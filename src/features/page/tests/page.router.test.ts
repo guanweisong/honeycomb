@@ -30,6 +30,7 @@ const mockDb = createMockDb();
 describe("Page Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInvalidatePublicContent.mockResolvedValue({ state: "completed" });
     resetMockDb(mockDb);
   });
 
@@ -58,7 +59,7 @@ describe("Page Router", () => {
         template: PageTemplate.DEFAULT,
       });
 
-      expect(result).toEqual(newPage);
+      expect(result).toEqual({ ...newPage, publicSync: "completed" });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.page);
     });
 
@@ -107,7 +108,7 @@ describe("Page Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.page);
     });
 
@@ -156,7 +157,7 @@ describe("Page Router", () => {
         template: PageTemplate.DEFAULT,
       });
 
-      expect(result).toEqual(updatedPage);
+      expect(result).toEqual({ ...updatedPage, publicSync: "completed" });
       expect(mockDb.update).toHaveBeenCalledWith(schema.page);
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         contents: [{ id: TEST_IDS.ID_1, type: "page" }],

@@ -25,6 +25,7 @@ export async function submitCommentStatusUpdate({
   update,
   refetch,
   notifySuccess,
+  notifyWarning,
   notifyError,
 }: SubmitCommentStatusUpdateOptions): Promise<AdminMutationState> {
   return runAdminMutation({
@@ -32,6 +33,7 @@ export async function submitCommentStatusUpdate({
     mutate: update,
     refetch,
     notifySuccess,
+    notifyWarning,
     notifyError,
     successMessage: "更新成功",
     errorMessage: "更新失败",
@@ -48,6 +50,7 @@ export async function submitCommentDelete({
   destroy,
   refetch,
   notifySuccess,
+  notifyWarning,
   notifyError,
 }: SubmitCommentDeleteOptions): Promise<AdminMutationState> {
   return runAdminMutation({
@@ -55,6 +58,7 @@ export async function submitCommentDelete({
     mutate: destroy,
     refetch,
     notifySuccess,
+    notifyWarning,
     notifyError,
     successMessage: "删除成功",
     errorMessage: "删除失败",
@@ -76,6 +80,7 @@ export function useCommentActions({
       update: updateComment.mutateAsync,
       refetch,
       notifySuccess: toast.success,
+      notifyWarning: toast.warning,
       notifyError: toast.error,
     });
 
@@ -85,6 +90,7 @@ export function useCommentActions({
       destroy: destroyComment.mutateAsync,
       refetch,
       notifySuccess: toast.success,
+      notifyWarning: toast.warning,
       notifyError: toast.error,
     });
 

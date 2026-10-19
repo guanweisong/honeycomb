@@ -15,12 +15,12 @@ export function createPage(
 ) {
   return (async () => {
     const result = await repository.create(input, authorId);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       contents: [{ id: result.id, type: "page" }],
       refreshLayout: true,
       refreshSitemap: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }
 /** 批量删除独立页面用例。 */
@@ -30,12 +30,12 @@ export async function destroyPages(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     contents: ids.map((id) => ({ id, type: "page" })),
     refreshLayout: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }
 /** 更新独立页面用例。 */
 export function updatePage(
@@ -45,12 +45,12 @@ export function updatePage(
 ) {
   return (async () => {
     const result = await updatePageThroughAggregate(repository, input);
-    await invalidator.invalidate({
+    const publicSync = await invalidator.invalidate({
       contents: [{ id: input.id, type: "page" }],
       refreshLayout: true,
       refreshSitemap: true,
     });
-    return result;
+    return { ...result, publicSync: publicSync.state };
   })();
 }
 /** 增加公开页面浏览量用例。 */

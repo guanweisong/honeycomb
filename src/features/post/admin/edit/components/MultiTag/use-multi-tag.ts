@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { notifyPublicSyncWarning } from "@/packages/ui/admin/action-state";
 import { TagType } from "@/packages/domain/content/tag";
 import type { TagViewModel as TagEntity } from "@/features/contracts";
 import { clientLogger } from "@/packages/infrastructure/observability/client";
@@ -45,9 +47,16 @@ export function useMultiTag({
     onChange(tags);
     if (!postId) return;
     try {
-      await updateTags({ postId, tagIds: tags.map((tag) => tag.id), type });
+      const result = await updateTags({
+        postId,
+        tagIds: tags.map((tag) => tag.id),
+        type,
+      });
+      notifyPublicSyncWarning(result, toast.warning);
+      return result;
     } catch {
       clientLogger.error(LogEvent.clientError, { operation, outcome: "error" });
+      return null;
     }
   };
 
@@ -59,14 +68,23 @@ export function useMultiTag({
 
   const addTag = async (tag: PostTagOption) => {
     if (selectedTags.some((item) => item.id === tag.id)) return;
-    await updateTagRelation([...selectedTags, tag], "tag.add");
+    const result = await updateTagRelation(
+      [...selectedTags, { id: tag.id, name: tag.name }],
+      "tag.add",
+    );
     setInput("");
     setOpen(false);
+    return result;
   };
 
   const createNewTag = async (name: string) => {
     try {
-      await addTag(await createTag({ name: { zh: name, en: name } }));
+      const tag = await createTag({ name: { zh: name, en: name } });
+      const relation = await addTag(tag);
+      // A failed association is not a saved post; avoid a misleading or duplicate warning.
+      if (relation !== null && relation?.publicSync !== "degraded") {
+        notifyPublicSyncWarning(tag, toast.warning);
+      }
     } catch {
       clientLogger.error(LogEvent.clientError, {
         operation: "tag.create",

@@ -40,6 +40,7 @@ const mockDb = createMockDb();
 describe("Comment Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInvalidatePublicContent.mockResolvedValue({ state: "completed" });
     resetMockDb(mockDb);
   });
 
@@ -220,7 +221,7 @@ describe("Comment Router", () => {
         content: "Updated Comment",
       });
 
-      expect(result).toEqual(updatedComment);
+      expect(result).toEqual({ ...updatedComment, publicSync: "completed" });
       expect(mockDb.update).toHaveBeenCalledWith(expect.any(Object));
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         refreshLayout: true,
@@ -254,7 +255,7 @@ describe("Comment Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(expect.any(Object));
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         refreshLayout: true,

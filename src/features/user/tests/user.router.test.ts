@@ -19,7 +19,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 // 模拟工具模块。
@@ -67,7 +69,7 @@ describe("User Router", () => {
         status: UserStatus.ENABLE,
       });
 
-      expect(result).toEqual(newUser);
+      expect(result).toEqual({ ...newUser, publicSync: "completed" });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.user);
       expect(mockDb.returning).toHaveBeenCalledWith(
         expect.not.objectContaining({ password: expect.anything() }),
@@ -156,7 +158,7 @@ describe("User Router", () => {
         ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
       });
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.user);
     });
 
@@ -220,7 +222,7 @@ describe("User Router", () => {
         status: UserStatus.ENABLE,
       });
 
-      expect(result).toEqual(updatedUser);
+      expect(result).toEqual({ ...updatedUser, publicSync: "completed" });
       expect(mockDb.update).toHaveBeenCalledWith(schema.user);
       expect(mockDb.returning).toHaveBeenCalledWith(
         expect.not.objectContaining({ password: expect.anything() }),
@@ -256,7 +258,7 @@ describe("User Router", () => {
         password: "password123",
       });
 
-      expect(result).toEqual(updatedUser);
+      expect(result).toEqual({ ...updatedUser, publicSync: "completed" });
       expect(mockDb.update).toHaveBeenCalledWith(schema.account);
       expect(mockDb.set).toHaveBeenCalledWith(
         expect.objectContaining({ password: expect.stringContaining(":") }),
@@ -290,7 +292,7 @@ describe("User Router", () => {
           id: TEST_IDS.ID_2,
           status: UserStatus.DISABLE,
         }),
-      ).resolves.toEqual(updatedUser);
+      ).resolves.toEqual({ ...updatedUser, publicSync: "completed" });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

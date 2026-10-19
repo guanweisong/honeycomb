@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn().mockResolvedValue(undefined),
   refetch: vi.fn().mockResolvedValue(undefined),
   success: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
   setModalProps: vi.fn(),
   formSubmit: undefined as ((values: Record<string, unknown>) => Promise<void>) | undefined,
   categoryQuery: {
@@ -17,7 +19,9 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("sonner", () => ({ toast: { success: mocks.success } }));
+vi.mock("sonner", () => ({
+  toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
+}));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
     category: {
@@ -49,7 +53,9 @@ describe("AddCategoryModal", () => {
     container?.remove();
     mocks.create.mockReset().mockResolvedValue(undefined);
     mocks.update.mockReset().mockResolvedValue(undefined);
-    mocks.categoryQuery.refetch.mockClear();
+    mocks.categoryQuery.refetch.mockReset().mockResolvedValue(undefined);
+    mocks.warning.mockClear();
+    mocks.error.mockClear();
     mocks.success.mockClear();
     mocks.setModalProps.mockClear();
     mocks.formSubmit = undefined;
@@ -97,5 +103,60 @@ describe("AddCategoryModal", () => {
     });
     expect(mocks.success).toHaveBeenCalledWith("更新成功");
     expect(mocks.setModalProps).toHaveBeenCalledWith({ open: false });
+  });
+
+  it.each([ModalType.ADD, ModalType.EDIT])(
+    "warns once and closes after degraded %s even when refresh rejects",
+    async (type) => {
+      const mutation = type === ModalType.ADD ? mocks.create : mocks.update;
+      mutation.mockResolvedValue({ publicSync: "degraded" });
+      mocks.categoryQuery.refetch.mockRejectedValue(
+        new Error("refresh failed"),
+      );
+      render({
+        type,
+        open: true,
+        record: {
+          id: "507f1f77bcf86cd799439011",
+          title: { zh: "旧分类", en: "English" },
+          description: null,
+          path: "category",
+          parent: null,
+          status: EnableStatus.ENABLE,
+          createdAt: null,
+          updatedAt: null,
+          deepPath: 0,
+        },
+      });
+      await act(async () =>
+        mocks.formSubmit?.({
+          title: { zh: "分类", en: "Category" },
+          description: { zh: "说明", en: "Description" },
+          path: "category",
+        }),
+      );
+      expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+        "已保存，公开内容同步未完成，请稍后检查公开页面",
+      );
+      expect(mocks.success).not.toHaveBeenCalled();
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(mocks.setModalProps).toHaveBeenCalledWith({ open: false });
+    },
+  );
+
+  it("keeps the category dialog open after a failed write", async () => {
+    mocks.create.mockRejectedValue(new Error("write failed"));
+    render({ type: ModalType.ADD, open: true });
+    await act(async () =>
+      mocks.formSubmit?.({
+        title: { zh: "分类", en: "Category" },
+        description: { zh: "说明", en: "Description" },
+        path: "category",
+      }),
+    );
+    expect(mocks.setModalProps).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith("添加失败");
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.warning).not.toHaveBeenCalled();
   });
 });

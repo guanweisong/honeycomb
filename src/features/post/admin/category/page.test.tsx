@@ -10,13 +10,14 @@ const mocks = vi.hoisted(() => ({
   destroy: vi.fn(),
   refetch: vi.fn(),
   success: vi.fn(),
+  warning: vi.fn(),
   error: vi.fn(),
 }));
 vi.mock("@/packages/ui/admin/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("sonner", () => ({
-  toast: { success: mocks.success, error: mocks.error },
+  toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
 vi.mock("@/packages/trpc/client/trpc", () => ({
   trpc: {
@@ -60,6 +61,7 @@ describe("category bulk deletion from the complete tree", () => {
     });
     mocks.refetch.mockReset().mockResolvedValue(undefined);
     mocks.success.mockReset();
+    mocks.warning.mockReset();
     mocks.error.mockReset();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -148,4 +150,26 @@ describe("category bulk deletion from the complete tree", () => {
     expect(checkedRows()).toHaveLength(0);
     expect(button("批量删除", container).disabled).toBe(true);
   });
+  it.each(["completed", "degraded"])(
+    "clears deleted selection after %s synchronization despite a failed refresh",
+    async (publicSync) => {
+      mocks.destroy.mockResolvedValue({ success: true, publicSync });
+      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
+      await selectAll();
+      await act(async () => button("批量删除", container).click());
+      await act(async () => button("确定").click());
+      expect(checkedRows()).toHaveLength(0);
+      expect(document.querySelector('[role="dialog"]')).toBeNull();
+      expect(mocks.error).not.toHaveBeenCalled();
+      if (publicSync === "degraded") {
+        expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+          "已保存，公开内容同步未完成，请稍后检查公开页面",
+        );
+        expect(mocks.success).not.toHaveBeenCalled();
+      } else {
+        expect(mocks.success).toHaveBeenCalledExactlyOnceWith("删除成功");
+        expect(mocks.warning).not.toHaveBeenCalled();
+      }
+    },
+  );
 });

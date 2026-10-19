@@ -15,7 +15,9 @@ vi.mock("@/packages/infrastructure/db/db", () => ({
 }));
 
 vi.mock("@/packages/infrastructure/refresh-path", () => ({
-  publicContentInvalidator: { invalidate: vi.fn() },
+  publicContentInvalidator: {
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  },
 }));
 
 const mockDb = createMockDb();
@@ -85,7 +87,7 @@ describe("Setting Router", () => {
         siteCopyright: { en: "Updated Copyright", zh: "更新的版权" },
       });
 
-      expect(result).toEqual(updatedSetting);
+      expect(result).toEqual({ ...updatedSetting, publicSync: "completed" });
     });
 
     it("should throw error for non-admin users", async () => {

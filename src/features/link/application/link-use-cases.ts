@@ -8,8 +8,8 @@ export async function createLink(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input);
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }
 /** 更新友情链接用例。 */
 export async function updateLink(
@@ -18,8 +18,8 @@ export async function updateLink(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }
 /** 批量删除友情链接用例。 */
 export async function destroyLinks(
@@ -28,6 +28,6 @@ export async function destroyLinks(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }

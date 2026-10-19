@@ -84,6 +84,7 @@ const Tag = () => {
       isSuccess: (result) => result.success,
       refetch,
       notifySuccess: toast.success,
+      notifyWarning: toast.warning,
       notifyError: toast.error,
       successMessage: "删除成功",
       errorMessage: "删除失败",
@@ -209,9 +210,7 @@ const Tag = () => {
       <AddTagDialog
         {...modalProps}
         onClose={() => setModalProps(closeAdminDialog())}
-        onSuccess={() => {
-          refetch();
-        }}
+        onSuccess={() => refetch()}
       />
     </>
   );

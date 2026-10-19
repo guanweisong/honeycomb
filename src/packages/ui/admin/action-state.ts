@@ -30,6 +30,7 @@ export type AdminTargetMutationState = AdminMutationState | "missing-target";
 export type AdminMutationFeedback = {
   refetch: () => unknown;
   notifySuccess: (message: string) => void;
+  notifyWarning?: (message: string) => void;
   notifyError: (message: string) => void;
 };
 
@@ -56,26 +57,50 @@ export function withAdminRecordId<
   return { ...values, id: record.id };
 }
 
+export function notifyPublicSyncWarning(
+  result: unknown,
+  notifyWarning: (message: string) => void,
+): boolean {
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !("publicSync" in result) ||
+    result.publicSync !== "degraded"
+  )
+    return false;
+
+  notifyWarning("已保存，公开内容同步未完成，请稍后检查公开页面");
+  return true;
+}
+
 export async function runAdminMutation<Input, Result>({
   input,
   mutate,
   isSuccess,
   refetch,
   notifySuccess,
+  notifyWarning,
   notifyError,
   successMessage,
   errorMessage,
 }: RunAdminMutationOptions<Input, Result>): Promise<AdminMutationState> {
+  let result: Result;
   try {
-    const result = await mutate(input);
-    if (isSuccess && !isSuccess(result)) return "noop";
-    refetch();
-    notifySuccess(successMessage);
-    return "success";
+    result = await mutate(input);
   } catch {
     notifyError(errorMessage);
     return "error";
   }
+  if (isSuccess && !isSuccess(result)) return "noop";
+  if (!notifyWarning || !notifyPublicSyncWarning(result, notifyWarning)) {
+    notifySuccess(successMessage);
+  }
+  try {
+    await refetch();
+  } catch {
+    // The write has committed; a failed refresh must not invite a retry.
+  }
+  return "success";
 }
 
 interface SubmitAdminBatchDeleteOptions<Selection> {

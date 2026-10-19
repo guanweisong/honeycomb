@@ -11,7 +11,7 @@ describe("Setting command use cases", () => {
 
     await expect(
       updateSetting({ update }, { id: "setting-1" }, invalidator),
-    ).resolves.toEqual(saved);
+    ).resolves.toEqual({ ...saved, publicSync: "degraded" });
     expect(update).toHaveBeenCalledBefore(invalidator.invalidate);
     expect(invalidator.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,

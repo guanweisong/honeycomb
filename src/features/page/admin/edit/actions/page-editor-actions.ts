@@ -13,19 +13,24 @@ import {
 import { PageStatus } from "@/packages/domain/content/page";
 import { trpc } from "@/packages/trpc/client/trpc";
 import { useRouter } from "next/navigation";
+import { notifyPublicSyncWarning } from "@/packages/ui/admin/action-state";
+import type { PublicCacheInvalidationResult } from "@/packages/application/public-content-invalidator";
 
 type PageEditorValues = Partial<PageInsert>;
+type PageSyncFeedback = { publicSync?: PublicCacheInvalidationResult["state"] };
 
 type SubmitPageEditorOptions = {
   pageId?: string;
   values: PageEditorValues;
   status: PageStatus;
-  create: (input: PageInsert) => Promise<{ id: string }>;
-  update: (input: PageUpdate) => Promise<unknown>;
+  create: (input: PageInsert) => Promise<{ id: string } & PageSyncFeedback>;
+  update: (input: PageUpdate) => Promise<PageSyncFeedback | undefined>;
 };
 
 export type PageEditorSubmitResult =
-  { state: "created"; id: string } | { state: "updated" } | { state: "error" };
+  | ({ state: "created"; id: string } & PageSyncFeedback)
+  | ({ state: "updated" } & PageSyncFeedback)
+  | { state: "error" };
 
 export async function submitPageEditor({
   pageId,
@@ -38,12 +43,14 @@ export async function submitPageEditor({
 
   try {
     if (pageId) {
-      await update(PageUpdateSchema.parse({ id: pageId, ...data }));
-      return { state: "updated" };
+      const result = await update(
+        PageUpdateSchema.parse({ id: pageId, ...data }),
+      );
+      return { state: "updated", publicSync: result?.publicSync };
     }
 
     const result = await create(PageInsertSchema.parse(data));
-    return { state: "created", id: result.id };
+    return { state: "created", id: result.id, publicSync: result.publicSync };
   } catch {
     return { state: "error" };
   }
@@ -74,14 +81,16 @@ export function usePageEditorActions({
       update: updatePage.mutateAsync,
     });
     if (result.state === "updated") {
-      toast.success("更新成功");
+      if (!notifyPublicSyncWarning(result, toast.warning))
+        toast.success("更新成功");
       try {
         await refetch();
       } catch {
         // The mutation already succeeded; a failed refresh must not undo it.
       }
     } else if (result.state === "created") {
-      toast.success("添加成功");
+      if (!notifyPublicSyncWarning(result, toast.warning))
+        toast.success("添加成功");
       startNavigation(() => router.push(`/admin/page/edit?id=${result.id}`));
     } else {
       clientLogger.error(LogEvent.clientError, {

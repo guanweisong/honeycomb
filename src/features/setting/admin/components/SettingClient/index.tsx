@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { runAdminMutation } from "@/packages/ui/admin/action-state";
 import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
 import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
 import { trpc } from "@/packages/trpc/client/trpc";
@@ -35,13 +36,16 @@ const Setting = () => {
       toast.error("设置尚未加载，无法更新");
       return;
     }
-    try {
-      await updateSetting.mutateAsync({ ...values, id: setting.id });
-      await refreshSetting();
-      toast.success("更新成功");
-    } catch {
-      toast.error("更新失败");
-    }
+    await runAdminMutation({
+      input: { ...values, id: setting.id },
+      mutate: updateSetting.mutateAsync,
+      refetch: refreshSetting,
+      notifySuccess: toast.success,
+      notifyWarning: toast.warning,
+      notifyError: toast.error,
+      successMessage: "更新成功",
+      errorMessage: "更新失败",
+    });
   };
 
   return (

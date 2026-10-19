@@ -13,8 +13,8 @@ export async function createTag(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.create(input);
-  await invalidator.invalidate(postIndexInvalidation);
-  return result;
+  const publicSync = await invalidator.invalidate(postIndexInvalidation);
+  return { ...result, publicSync: publicSync.state };
 }
 /** 更新标签用例。 */
 export async function updateTag(
@@ -23,8 +23,8 @@ export async function updateTag(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
-  await invalidator.invalidate(postIndexInvalidation);
-  return result;
+  const publicSync = await invalidator.invalidate(postIndexInvalidation);
+  return { ...result, publicSync: publicSync.state };
 }
 /** 批量删除标签用例。 */
 export async function destroyTags(
@@ -33,6 +33,6 @@ export async function destroyTags(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.destroy(ids);
-  await invalidator.invalidate(postIndexInvalidation);
-  return result;
+  const publicSync = await invalidator.invalidate(postIndexInvalidation);
+  return { ...result, publicSync: publicSync.state };
 }

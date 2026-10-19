@@ -39,6 +39,7 @@ export async function submitUserUpdate({
   update,
   refetch,
   notifySuccess,
+  notifyWarning,
   notifyError,
 }: SubmitUserUpdateOptions): Promise<AdminTargetMutationState> {
   if (!record?.id) {
@@ -51,6 +52,7 @@ export async function submitUserUpdate({
     mutate: update,
     refetch,
     notifySuccess,
+    notifyWarning,
     notifyError,
     successMessage: "更新成功",
     errorMessage: "更新失败",
@@ -76,6 +78,7 @@ export function useUserActions({
       isSuccess: (result) => result.success,
       refetch,
       notifySuccess: toast.success,
+      notifyWarning: toast.warning,
       notifyError: toast.error,
       successMessage: "删除成功",
       errorMessage: "删除失败",
@@ -96,6 +99,7 @@ export function useUserActions({
             mutate: createUser.mutateAsync,
             refetch,
             notifySuccess: toast.success,
+            notifyWarning: toast.warning,
             notifyError: toast.error,
             successMessage: "添加成功",
             errorMessage: "添加失败",
@@ -106,6 +110,7 @@ export function useUserActions({
             update: updateUser.mutateAsync,
             refetch,
             notifySuccess: toast.success,
+            notifyWarning: toast.warning,
             notifyError: toast.error,
           });
 

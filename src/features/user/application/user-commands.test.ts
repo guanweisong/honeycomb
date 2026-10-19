@@ -10,7 +10,7 @@ import {
 
 const validUserId = "000000000000000000000001";
 const invalidator = () => ({
-  invalidate: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
 });
 
 describe("User commands", () => {
@@ -146,7 +146,7 @@ describe("User commands", () => {
 
     await expect(
       destroyUsers({ destroy, getStates }, ["editor-1"], cache),
-    ).resolves.toEqual({ success: true });
+    ).resolves.toEqual({ success: true, publicSync: "completed" });
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
       refreshPostIndex: true,
@@ -210,7 +210,7 @@ describe("User update sequencing", () => {
 
     await expect(
       updateUser(repository, changes, UserLevel.EDITOR, cache),
-    ).resolves.toEqual(saved);
+    ).resolves.toEqual({ ...saved, publicSync: "completed" });
     expect(order).toEqual(["read", "write", "invalidate"]);
     expect(repository.update).toHaveBeenCalledExactlyOnceWith(changes);
   });

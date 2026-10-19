@@ -18,6 +18,7 @@ import {
   createInitialAdminDialogState,
   openAddAdminDialog,
   openEditAdminDialog,
+  runAdminMutation,
   type AdminDialogState,
 } from "@/packages/ui/admin/action-state";
 
@@ -67,16 +68,20 @@ const Category = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    try {
-      await destroyCategory.mutateAsync({ ids });
+    const state = await runAdminMutation({
+      input: { ids },
+      mutate: destroyCategory.mutateAsync,
+      refetch,
+      notifySuccess: toast.success,
+      notifyWarning: toast.warning,
+      notifyError: toast.error,
+      successMessage: "删除成功",
+      errorMessage: "删除失败",
+    });
+    if (state === "success") {
       setSelectedRows((rows) => rows.filter((row) => !ids.includes(row.id)));
-      void refetch();
-      toast.success("删除成功");
-      return true;
-    } catch {
-      toast.error("删除失败");
-      return false;
     }
+    return state === "success";
   };
 
   /**

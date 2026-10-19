@@ -41,9 +41,9 @@ export async function saveAllMenus(
 ) {
   validateMenuTree(input);
   const result = await repository.saveAll(input);
-  await invalidator.invalidate({
+  const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshSitemap: true,
   });
-  return result;
+  return { ...result, publicSync: publicSync.state };
 }

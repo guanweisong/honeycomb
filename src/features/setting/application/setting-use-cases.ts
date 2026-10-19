@@ -8,6 +8,6 @@ export async function updateSetting(
   invalidator: PublicContentInvalidator,
 ) {
   const result = await repository.update(input);
-  await invalidator.invalidate({ refreshLayout: true });
-  return result;
+  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  return { ...result, publicSync: publicSync.state };
 }

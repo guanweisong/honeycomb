@@ -28,7 +28,7 @@ describe("Page cache side effects", () => {
 
     await expect(
       createPage(repository, input, "author-1", invalidator),
-    ).resolves.toEqual({ id: pageId });
+    ).resolves.toEqual({ id: pageId, publicSync: "completed" });
     expect(order).toEqual(["repository", "cache"]);
     expect(invalidator.invalidate).toHaveBeenCalledWith({
       contents: [{ id: pageId, type: "page" }],
@@ -87,6 +87,6 @@ describe("Page cache side effects", () => {
           invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
         },
       ),
-    ).resolves.toEqual(saved);
+    ).resolves.toEqual({ ...saved, publicSync: "degraded" });
   });
 });

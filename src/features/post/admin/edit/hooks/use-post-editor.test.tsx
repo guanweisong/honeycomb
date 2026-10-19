@@ -795,12 +795,21 @@ describe("usePostEditor", () => {
     },
   );
 
-  it.each(["completed", "degraded"] as const)(
-    "does not report a failed save when admin refetch rejects after %s synchronization",
-    async (publicSync) => {
+  it.each([
+    ["completed", "rejects"],
+    ["degraded", "rejects"],
+    ["completed", "throws"],
+    ["degraded", "throws"],
+  ] as const)(
+    "does not report a failed save after %s synchronization when admin refetch %s",
+    async (publicSync, refreshFailure) => {
       mocks.detail = originalDetail;
       mocks.update.mockResolvedValue({ id: postId, publicSync });
-      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
+      if (refreshFailure === "throws") {
+        mocks.refetch.mockImplementation(() => {
+          throw new Error("refresh failed");
+        });
+      } else mocks.refetch.mockRejectedValue(new Error("refresh failed"));
       await renderEditor(postId);
       await act(async () => {
         requireDefined(editor).form.setValue(
