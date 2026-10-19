@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
   warn: vi.fn(),
   detail: undefined as EditorDetail | undefined,
+  queryError: null as { data?: { code: string } } | null,
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
@@ -36,7 +37,11 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     category: { adminTree: { useQuery: () => ({ data: [] }) } },
     post: {
       adminDetail: {
-        useQuery: () => ({ data: mocks.detail, refetch: mocks.refetch }),
+        useQuery: () => ({
+          data: mocks.detail,
+          refetch: mocks.refetch,
+          error: mocks.queryError,
+        }),
       },
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
       update: { useMutation: () => ({ mutateAsync: mocks.update }) },
@@ -86,6 +91,7 @@ describe("usePostEditor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.detail = undefined;
+    mocks.queryError = null;
     mocks.create.mockResolvedValue({ id: postId });
     mocks.update.mockResolvedValue({ id: postId });
     mocks.refetch.mockResolvedValue({});
@@ -116,6 +122,29 @@ describe("usePostEditor", () => {
       requireDefined(editor).form.setValue("coverId", "cover-1");
     });
   }
+
+  it.each([
+    ["INTERNAL_SERVER_ERROR", "error"],
+    ["NOT_FOUND", "not-found"],
+  ])(
+    "exposes %s load failures without a permanent busy state",
+    async (code, expected) => {
+      mocks.queryError = { data: { code } };
+      await renderEditor(postId);
+      expect(requireDefined(editor).loadError).toBe(expected);
+      expect(requireDefined(editor).loading).toBe(false);
+      expect(requireDefined(editor).readOnly).toBe(true);
+      await act(async () => {
+        await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      });
+      expect(mocks.create).not.toHaveBeenCalled();
+      mocks.queryError = null;
+      mocks.detail = originalDetail;
+      await rerenderEditor(postId);
+      expect(requireDefined(editor).loadError).toBeNull();
+      expect(requireDefined(editor).readOnly).toBe(false);
+    },
+  );
 
   it("preserves dirty fields and cover/tag selections during a same-post refetch", async () => {
     mocks.detail = originalDetail;

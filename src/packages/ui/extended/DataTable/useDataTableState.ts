@@ -107,17 +107,12 @@ export function useDataTableState<TData = unknown>(
     [pagination],
   );
 
-  const handleRetry = React.useCallback(() => {
-    onChangeRef.current?.(requestParams);
-  }, [requestParams]);
-
   return {
     sorting,
     columnFilters,
     columnVisibility,
     paginationState,
     requestParams,
-    handleRetry,
     handlePaginationChange: setPaginationState,
     handleSortingChange,
     handleColumnFiltersChange,

@@ -14,6 +14,7 @@ import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
 } from "@/packages/ui/extended/AdminLayout";
+import { EditorLoadError } from "@/packages/ui/admin/editor-load-error";
 import { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { PageEditorForm } from "../PageEditorForm";
 import { usePageEditorActions } from "../../actions/page-editor-actions";
@@ -36,7 +37,11 @@ export function PageEditorPage() {
     refetch: query.refetch,
   });
   const isLoadingDetail = Boolean(id && detail?.id !== id);
-  const loading = actions.loading || isLoadingDetail;
+  const loadError = isLoadingDetail
+    ? (query.error ??
+      (detail === null ? { data: { code: "NOT_FOUND" } } : null))
+    : null;
+  const loading = actions.loading || (isLoadingDetail && !loadError);
   const { isDirty } = form.formState;
   const previousRecord = useRef<
     { id: string | null; detail: typeof detail } | undefined
@@ -64,6 +69,7 @@ export function PageEditorPage() {
   }, [actions.loading, detail, form, id, isDirty]);
 
   const submit = (status: PageStatus) => {
+    if (isLoadingDetail) return;
     void form.handleSubmit(async (values) => {
       const submittedValues = JSON.stringify(form.getValues());
       const result = await actions.submit(values, status);
@@ -77,7 +83,7 @@ export function PageEditorPage() {
       }
     })();
   };
-  const headerActions = (
+  const headerActions = loadError ? null : (
     <div className="flex flex-wrap gap-3">
       <PageEditorActionButtons
         isEdit={!!detail?.id}
@@ -94,8 +100,19 @@ export function PageEditorPage() {
   );
   useAdminLayoutActions(
     headerActions,
-    `${id ?? "new"}:${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}`,
+    `${id ?? "new"}:${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}:${Boolean(loadError)}`,
   );
+
+  if (loadError) {
+    return (
+      <EditorLoadError
+        kind="页面"
+        notFound={loadError.data?.code === "NOT_FOUND"}
+        listHref="/admin/page"
+        onRetry={query.refetch}
+      />
+    );
+  }
 
   const readOnly = isLoadingDetail || (!id && actions.loading);
   return (

@@ -104,6 +104,9 @@ const Category = () => {
         pagination={false}
         isFetching={isFetching}
         error={isError}
+        onRetry={() => {
+          void refetch();
+        }}
         selectableRows={canDeleteCategory}
         disabledRowSelectable={(row) =>
           selectedRows.length >= MAX_BATCH_SIZE && !selectedRows.includes(row)

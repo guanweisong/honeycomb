@@ -60,6 +60,9 @@ export default function PostListClient() {
       columns={postListTableColumns}
       isFetching={isFetching}
       error={isError}
+      onRetry={() => {
+        void refetch();
+      }}
       selectableRows={canDeletePost}
       selectedRows={selectedRows}
       onSelectionChange={setSelectedRows}

@@ -117,6 +117,9 @@ const Tag = () => {
           }}
           isFetching={isFetching}
           error={isError}
+          onRetry={() => {
+            void refetch();
+          }}
           selectableRows={canDeleteTag}
           selectedRows={selectedRows}
           onSelectionChange={setSelectedRows}

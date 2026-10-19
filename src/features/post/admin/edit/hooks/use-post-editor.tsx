@@ -52,7 +52,11 @@ export function usePostEditor(id: string | null) {
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = watchedType ?? PostType.ARTICLE;
   const { data: category } = trpc.category.adminTree.useQuery();
-  const { data: detail, refetch } = trpc.post.adminDetail.useQuery(
+  const {
+    data: detail,
+    refetch,
+    error: detailError,
+  } = trpc.post.adminDetail.useQuery(
     { id: id ?? "" },
     { enabled: Boolean(id) },
   );
@@ -101,7 +105,8 @@ export function usePostEditor(id: string | null) {
     status: PostStatus,
     action: PostSubmitAction,
   ): Promise<boolean> => {
-    if (submitting.current || isNavigating) return false;
+    if (submitting.current || isNavigating || (id && detail?.id !== id))
+      return false;
     submitting.current = true;
     setLoading(true);
     let saved = false;
@@ -235,12 +240,22 @@ export function usePostEditor(id: string | null) {
     size: "1920*1080",
   };
 
+  const loadError =
+    id && detail?.id !== id && detailError
+      ? detailError.data?.code === "NOT_FOUND"
+        ? "not-found"
+        : "error"
+      : null;
+
   return {
     category,
+    loadError,
+    retryLoad: refetch,
     detail,
     form,
     galleryStyles,
-    loading: loading || isNavigating || Boolean(id && detail?.id !== id),
+    loading:
+      loading || isNavigating || Boolean(id && detail?.id !== id && !loadError),
     readOnly:
       Boolean(id && detail?.id !== id) || (!id && (loading || isNavigating)),
     modalProps,

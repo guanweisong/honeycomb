@@ -91,6 +91,9 @@ const Page = () => {
         }}
         isFetching={isFetching}
         error={isError}
+        onRetry={() => {
+          void refetch();
+        }}
         onChange={(params) => {
           setSearchParams(PageListQuerySchema.parse(params));
         }}

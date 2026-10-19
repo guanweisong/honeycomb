@@ -1,6 +1,11 @@
 import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -177,7 +182,9 @@ describe("DataTable", () => {
     checkboxes = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]'),
     );
-    expect(requireDefined(checkboxes[0]).getAttribute("data-state")).toBe("checked");
+    expect(requireDefined(checkboxes[0]).getAttribute("data-state")).toBe(
+      "checked",
+    );
 
     await act(async () => requireDefined(checkboxes[0]).click());
 
@@ -198,27 +205,91 @@ describe("DataTable", () => {
     expect(container.textContent).toContain("第 0 / 1 页， 共 0 条");
   });
 
-  it("renders the error state and retries with the current request", async () => {
-    const onChange = vi.fn<(params: PersonRequest) => void>();
-
-    await act(async () => {
+  it("only offers retry when a retry action is available and not already fetching", async () => {
+    const props = { columns, data: { list: [], total: 0 }, error: true };
+    await act(async () =>
+      root.render(React.createElement(DataTable<Person>, props)),
+    );
+    expect(findButton(container, "重试")).toBeUndefined();
+    await act(async () =>
       root.render(
         React.createElement(DataTable<Person>, {
-          columns,
-          data: { list: [], total: 0 },
-          error: true,
-          onChange,
+          ...props,
+          onRetry: () => {},
+          isFetching: true,
         }),
-      );
-    });
-
-    expect(container.textContent).toContain("数据加载失败，请重试");
-    expect(container.textContent).not.toContain("暂无数据");
-    onChange.mockClear();
-
-    await act(async () => findButton(container, "重试")?.click());
-
-    expect(onChange).toHaveBeenCalledOnce();
-    expect(onChange).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      ),
+    );
+    expect(requireDefined(findButton(container, "重试")).disabled).toBe(true);
   });
+
+  it.each([true, false])(
+    "refetches the failed query without changing its key (pagination: %s)",
+    async (pagination) => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+      });
+      const requests: PersonRequest[] = [];
+      const onSelectionChange = vi.fn();
+
+      function QueryHarness() {
+        const [params, setParams] = useState<PersonRequest>(
+          pagination ? { page: 1, limit: 20 } : {},
+        );
+        const query = useQuery({
+          queryKey: ["people", params],
+          queryFn: async () => {
+            requests.push(params);
+            if (requests.length === 1) throw new Error("Temporary failure");
+            return { list: people, total: people.length };
+          },
+        });
+        return React.createElement(DataTable<Person>, {
+          columns,
+          data: query.data ?? { list: [], total: 0 },
+          error: query.isError,
+          isFetching: query.isFetching,
+          pagination,
+          onChange: pagination ? setParams : undefined,
+          onRetry: () => {
+            void query.refetch();
+          },
+          onSelectionChange,
+        });
+      }
+
+      await act(async () => {
+        root.render(
+          React.createElement(
+            QueryClientProvider,
+            { client },
+            React.createElement(QueryHarness),
+          ),
+        );
+      });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      expect(container.textContent).toContain("数据加载失败，请重试");
+      expect(requests).toHaveLength(1);
+      const key = client.getQueryCache().getAll()[0]?.queryKey;
+      onSelectionChange.mockClear();
+
+      await act(async () =>
+        requireDefined(findButton(container, "重试")).click(),
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+
+      expect(requests).toHaveLength(2);
+      expect(requests[1]).toEqual(requests[0]);
+      expect(client.getQueryCache().getAll()).toHaveLength(1);
+      expect(client.getQueryCache().getAll()[0]?.queryKey).toEqual(key);
+      expect(container.textContent).toContain("Alice");
+      expect(container.textContent).not.toContain("数据加载失败，请重试");
+      expect(onSelectionChange).not.toHaveBeenCalled();
+      client.clear();
+    },
+  );
 });
