@@ -67,6 +67,49 @@ it("offers named focusable selection and independent copy/delete buttons", () =>
   expect(image).not.toBeNull();
   expect(image?.getAttribute("sizes")).toBe("128px");
 });
+it("keeps each preview in a 128px square card", () => {
+  act(() =>
+    root.render(
+      <MediaGrid media={[media]} onSelect={vi.fn()} onDelete={vi.fn()} />,
+    ),
+  );
+  const select = container.querySelector(
+    'button[aria-label="选择 cover.png"]',
+  );
+  expect(select?.parentElement?.className.split(" ")).toEqual(
+    expect.arrayContaining(["group", "relative", "w-32", "h-32"]),
+  );
+  expect(select?.className.split(" ")).toEqual(
+    expect.arrayContaining(["absolute", "inset-0"]),
+  );
+  expect(
+    container.querySelector('img[alt="cover.png"]')?.classList.contains(
+      "object-contain",
+    ),
+  ).toBe(true);
+});
+it("overlays actions with mobile visibility and desktop hover or focus reveal", () => {
+  act(() =>
+    root.render(
+      <MediaGrid media={[media]} onSelect={vi.fn()} onDelete={vi.fn()} />,
+    ),
+  );
+  const toolbar = container.querySelector(
+    'button[aria-label="复制 cover.png 的链接"]',
+  )?.parentElement;
+  expect(toolbar?.className.split(" ")).toEqual(
+    expect.arrayContaining([
+      "absolute",
+      "bottom-0",
+      "inset-x-0",
+      "bg-black/40",
+      "opacity-100",
+      "sm:opacity-0",
+      "group-hover:opacity-100",
+      "group-focus-within:opacity-100",
+    ]),
+  );
+});
 it("distinguishes initial loading, empty and failed media", () => {
   const props = { onSelect: vi.fn(), onDelete: vi.fn() };
   act(() => root.render(<MediaGrid {...props} isLoading />));
