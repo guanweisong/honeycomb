@@ -9,13 +9,11 @@ export const settingActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "setting.update",
         permission: Permission.settingUpdate,
         control: {
-          tag: "DynamicForm",
-          attribute: "onSubmit",
-          reference: "handleSubmit",
+          tag: "Button",
+          attribute: "disabled",
         },
         guard: {
-          kind: "attribute",
-          attribute: "renderSubmitButton",
+          kind: "ancestor",
           polarity: "positive",
         },
       },

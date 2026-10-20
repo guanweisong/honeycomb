@@ -1,33 +1,38 @@
+// @vitest-environment node
 import { expect, it } from "vitest";
-import { createMediaRepository } from "./media-repository";
-import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { MediaCreateRejectedError } from "../upload-result";
-
-const input = {
-  name: "image.png",
-  type: "image/png" as const,
-  size: 1,
-  key: "image.png",
-};
-it("identifies a definite SQLite constraint rejection through the Drizzle cause", async () => {
-  const db = createMockDb();
-  const constraint = Object.assign(new Error("constraint"), {
-    code: "SQLITE_CONSTRAINT_UNIQUE",
-  });
-  db.returning.mockRejectedValue(
-    new Error("query failed", { cause: constraint }),
-  );
+import { beginMediaUpload } from "../server";
+import {
+  mediaRepositoryFixture,
+  mediaStorageFixture,
+} from "@tests/helpers/media-lifecycle";
+it("never signs a capability before a durable upload record returns", async () => {
+  const repo = mediaRepositoryFixture();
+  const storage = mediaStorageFixture();
+  repo.begin.mockRejectedValue(new Error("response lost"));
   await expect(
-    createMediaRepository(asMockDatabase(db)).create(input),
-  ).rejects.toBeInstanceOf(MediaCreateRejectedError);
+    beginMediaUpload(
+      repo,
+      storage,
+      { name: "a.png", type: "image/png", size: 1 },
+      "actor",
+    ),
+  ).rejects.toThrow();
+  expect(storage.getPresignedUrl).not.toHaveBeenCalled();
 });
-it("preserves an ambiguous database transport error without labeling it rejected", async () => {
-  const db = createMockDb();
-  const failure = Object.assign(new Error("response lost"), {
-    code: "SERVER_ERROR",
+it("signs only the persisted temporary key and returns no cleanup capability", async () => {
+  const repo = mediaRepositoryFixture();
+  const storage = mediaStorageFixture();
+  const result = await beginMediaUpload(
+    repo,
+    storage,
+    { name: "a.png", type: "image/png", size: 3 },
+    "actor",
+  );
+  expect(storage.getPresignedUrl).toHaveBeenCalledWith({
+    Key: "temporary/upload.png",
+    ContentType: "image/png",
+    ContentLength: 3,
   });
-  db.returning.mockRejectedValue(failure);
-  await expect(
-    createMediaRepository(asMockDatabase(db)).create(input),
-  ).rejects.toBe(failure);
+  expect(result).not.toHaveProperty("cleanupUrl");
+  expect(result).not.toHaveProperty("key");
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PostInsertSchema } from "@/features/post/schema";
 import { PageInsertSchema } from "@/features/page/schema";
-import { MediaInsertSchema } from "@/features/media/schema";
+import { MediaUploadFileSchema } from "@/features/media/upload-policy";
 import { LinkInsertSchema } from "@/features/link/schema";
 import { CategoryInsertSchema } from "@/features/category/schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
@@ -36,6 +36,7 @@ describe("唯一写入契约及边界行为", () => {
   it("页面完整语言仍必填且拒绝空文本", () => {
     expect(
       PageInsertSchema.safeParse({
+        creationToken: "11111111-1111-4111-8111-111111111111",
         template: "default",
         title: { en: "About" },
         content: { en: "Content", zh: "内容" },
@@ -43,6 +44,7 @@ describe("唯一写入契约及边界行为", () => {
     ).toBe(false);
     expect(
       PageInsertSchema.safeParse({
+        creationToken: "11111111-1111-4111-8111-111111111111",
         template: "default",
         title: { en: " ", zh: "关于" },
         content: { en: "Content", zh: "内容" },
@@ -50,28 +52,23 @@ describe("唯一写入契约及边界行为", () => {
     ).toBe(false);
   });
 
-  it("媒体尺寸可空但大小仍要求非负整数", () => {
+  it("媒体上传规范化文件字段且大小仍要求非负整数", () => {
     expect(
-      MediaInsertSchema.parse({
+      MediaUploadFileSchema.parse({
         name: " image.png ",
         size: 0,
         type: " image/png ",
-        key: " key ",
-        width: null,
       }),
     ).toEqual({
       name: "image.png",
       size: 0,
       type: "image/png",
-      key: "key",
-      width: null,
     });
     expect(
-      MediaInsertSchema.safeParse({
+      MediaUploadFileSchema.safeParse({
         name: "image",
         size: -1,
         type: "image/png",
-        key: "key",
       }).success,
     ).toBe(false);
   });

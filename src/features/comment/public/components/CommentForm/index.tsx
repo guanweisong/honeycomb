@@ -3,6 +3,7 @@
 import { useId, type FormEventHandler, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 
@@ -27,6 +28,7 @@ export function CommentForm({
 }: CommentFormProps) {
   const t = useTranslations("Comment");
   const fieldId = useId();
+  const mounted = useMounted();
 
   return (
     <>
@@ -111,7 +113,11 @@ export function CommentForm({
           maxLength={200}
           rows={4}
         />
-        <Button type="submit" disabled={isPending} className="cursor-pointer">
+        <Button
+          type="submit"
+          disabled={!mounted || isPending}
+          className="cursor-pointer"
+        >
           {t("form.submit")}
         </Button>
       </form>

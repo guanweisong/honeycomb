@@ -258,6 +258,22 @@ export function usePostEditor(id: string | null) {
           }
 
           const data = normalized.data;
+          // Editor identity and option objects are not command fields.
+          const fields = {
+            categoryId: data.categoryId,
+            coverId: data.coverId,
+            status: data.status,
+            type: data.type,
+            commentStatus: data.commentStatus,
+            movieTime: data.movieTime,
+            galleryTime: data.galleryTime,
+            title: data.title,
+            content: data.content,
+            excerpt: data.excerpt,
+            quoteAuthor: data.quoteAuthor,
+            quoteContent: data.quoteContent,
+            galleryLocation: data.galleryLocation,
+          };
           const relations =
             user && can(user.level, Permission.postManageTags)
               ? {
@@ -280,7 +296,7 @@ export function usePostEditor(id: string | null) {
               return;
             }
             const attempt = PostInsertSchema.parse({
-              ...data,
+              ...fields,
               ...relations,
               creationToken: crypto.randomUUID(),
             });
@@ -318,7 +334,7 @@ export function usePostEditor(id: string | null) {
           }
           const result = await updatePost.mutateAsync(
             PostUpdateSchema.parse({
-              ...data,
+              ...fields,
               ...relations,
               id: detail.id,
               expectedVersion: baselineVersion,

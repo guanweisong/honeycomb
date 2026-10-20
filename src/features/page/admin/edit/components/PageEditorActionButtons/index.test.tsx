@@ -63,7 +63,10 @@ describe("PageEditorActionButtons", () => {
         React.createElement(PageEditorActionButtons, {
           ...props,
           loading: props.loading ?? false,
-          onSubmit: (status) => submitted.push(status),
+          onSubmit: async (status) => {
+            submitted.push(status);
+            return true;
+          },
         }),
       );
     });

@@ -12,13 +12,14 @@ vi.mock("@/lib/observability/server", () => ({
   ) => operation(),
 }));
 
-import { createMedia, destroyMedia } from "@/features/media/server";
+import { beginMediaUpload, destroyMedia } from "@/features/media/server";
 import { createTag, destroyTags, updateTag } from "@/features/tag/server";
 import { createCategory, destroyCategories } from "@/features/category/server";
 import { createLink, destroyLinks } from "@/features/link/server";
 import { saveAllMenus } from "@/features/menu/server";
 import { createPage, destroyPages } from "@/features/page/server";
 import { updateSetting } from "@/features/setting/server";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import { PageTemplate } from "@/features/page/page-template";
 
 describe("feature persistence contracts", () => {
@@ -27,28 +28,57 @@ describe("feature persistence contracts", () => {
   });
 
   it("media commands coordinate repository and storage", async () => {
+    const id = "507f1f77bcf86cd799439011";
     const repository = {
-      create: vi.fn().mockResolvedValue({ id: "media-1" }),
-      findDeleteTargets: vi
-        .fn()
-        .mockResolvedValue([{ id: "media-1", key: "a" }]),
-      deleteRecords: vi.fn().mockResolvedValue({ success: true }),
-    };
-    const storage = { deleteObjects: vi.fn().mockResolvedValue(undefined) };
-    await expect(
-      createMedia(repository, {
-        name: "a.png",
+      begin: vi.fn().mockResolvedValue({
+        id,
+        key: "media/a.png",
+        uploadKey: "temporary/a.png",
+        uploadExpiresAt: "2026-10-20T12:00:00.000Z",
         size: 1,
         type: "image/png",
-        key: "a",
       }),
-    ).resolves.toEqual({ state: "created", media: { id: "media-1" } });
+      beginDelete: vi.fn().mockResolvedValue([{ id, key: "media/a.png" }]),
+      finishDelete: vi.fn().mockResolvedValue(undefined),
+      note: vi.fn().mockResolvedValue(undefined),
+    };
+    const storage = {
+      getPresignedUrl: vi
+        .fn()
+        .mockResolvedValue("https://upload.example.test/a"),
+      headObject: vi
+        .fn()
+        .mockResolvedValueOnce({ size: 1, type: "image/png" })
+        .mockResolvedValueOnce(null),
+      deleteObjects: vi.fn().mockResolvedValue(undefined),
+    };
+    const file = { name: "a.png", size: 1, type: "image/png" as const };
     await expect(
-      destroyMedia(repository, storage, ["media-1"], invalidator()),
-    ).resolves.toEqual({ success: true });
-    expect(repository.create).toHaveBeenCalled();
-    expect(storage.deleteObjects).toHaveBeenCalledWith(["a"]);
-    expect(repository.deleteRecords).toHaveBeenCalledWith(["media-1"]);
+      beginMediaUpload(repository, storage, file, "author"),
+    ).resolves.toEqual({
+      id,
+      uploadUrl: "https://upload.example.test/a",
+      expiresAt: "2026-10-20T12:00:00.000Z",
+    });
+    await expect(
+      destroyMedia(repository, storage, [id], invalidator(), "author", true),
+    ).resolves.toEqual({ success: true, publicSync: "completed" });
+    expect(repository.begin).toHaveBeenCalledWith(file, "author");
+    expect(storage.getPresignedUrl).toHaveBeenCalledWith({
+      Key: "temporary/a.png",
+      ContentType: "image/png",
+      ContentLength: 1,
+    });
+    expect(repository.beginDelete).toHaveBeenCalledWith([id], "author");
+    expect(storage.deleteObjects).toHaveBeenCalledWith(["media/a.png"]);
+    expect(repository.finishDelete).toHaveBeenCalledWith(id);
+    expect(repository.beginDelete).toHaveBeenCalledBefore(
+      storage.deleteObjects,
+    );
+    expect(storage.deleteObjects).toHaveBeenCalledBefore(
+      repository.finishDelete,
+    );
+    expect(repository.note).not.toHaveBeenCalled();
   });
 
   it("tag commands write and delete through the database", async () => {
@@ -125,18 +155,32 @@ describe("feature persistence contracts", () => {
 
   it("menu writes preserve business identifiers inside one transaction", async () => {
     const db = createMockDb();
-    db.returning.mockResolvedValue([{ id: "persisted-menu" }]);
+    const id = "507f1f77bcf86cd799439011";
+    db.returning.mockResolvedValue([{ id: "persisted-menu", version: 1 }]);
+    db.from.mockImplementation((table: object) => {
+      const read = createMockDb();
+      if (table === schema.user)
+        read.limit.mockResolvedValue([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+      else read.where.mockResolvedValue([{ id }]);
+      return read;
+    });
     await expect(
       saveAllMenus(
         asMockDatabase(db),
-        [{ id: "menu", type: MenuType.CATEGORY, power: 0 }],
+        {
+          expectedVersion: 0,
+          items: [{ id, type: MenuType.CATEGORY, power: 0 }],
+        },
+        "author",
         invalidator(),
       ),
-    ).resolves.toEqual({ count: 1, publicSync: "completed" });
+    ).resolves.toEqual({ count: 1, version: 1, publicSync: "completed" });
     expect(db.transaction).toHaveBeenCalledOnce();
     expect(db.values).toHaveBeenCalledWith([
       expect.objectContaining({
-        categoryId: "menu",
+        categoryId: id,
         type: "CATEGORY",
         power: 0,
       }),
@@ -145,17 +189,35 @@ describe("feature persistence contracts", () => {
 
   it("page writes preserve author identity and localized content", async () => {
     const db = createMockDb();
-    db.returning.mockResolvedValue([{ id: "page-1" }]);
+    const id = "507f1f77bcf86cd799439011";
+    db.returning.mockResolvedValue([{ id, version: 0 }]);
+    db.from.mockImplementation((table: object) => {
+      const read = createMockDb();
+      read.limit.mockResolvedValue(
+        table === schema.user
+          ? [{ level: UserLevel.ADMIN, status: UserStatus.ENABLE }]
+          : table === schema.page
+            ? [{ id, version: 0 }]
+            : [],
+      );
+      return read;
+    });
     const input = {
+      creationToken: "11111111-1111-4111-8111-111111111111",
       title: { en: "About", zh: "关于" },
       content: { en: "Content", zh: "内容" },
       template: PageTemplate.DEFAULT,
     };
     await expect(
       createPage(asMockDatabase(db), input, "user-1", invalidator()),
-    ).resolves.toMatchObject({ id: "page-1" });
+    ).resolves.toEqual({ id, version: 0, publicSync: "completed" });
     await expect(
-      destroyPages(asMockDatabase(db), ["page-1"], invalidator()),
+      destroyPages(
+        asMockDatabase(db),
+        { items: [{ id, expectedVersion: 0 }] },
+        "user-1",
+        invalidator(),
+      ),
     ).resolves.toMatchObject({ success: true });
     expect(db.values).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -169,14 +231,25 @@ describe("feature persistence contracts", () => {
 
   it("setting writes preserve the saved identity", async () => {
     const db = createMockDb();
-    db.limit.mockResolvedValue([{ id: "setting-1" }]);
-    db.where
-      .mockReturnValueOnce(db)
-      .mockResolvedValueOnce([])
-      .mockReturnValue(db);
+    const id = "507f1f77bcf86cd799439011";
+    db.returning.mockResolvedValue([{ id, version: 1 }]);
+    db.from.mockImplementation((table: object) => {
+      const read = createMockDb();
+      if (table === schema.user)
+        read.limit.mockResolvedValue([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+      else read.where.mockResolvedValue([]);
+      return read;
+    });
     await expect(
-      updateSetting(asMockDatabase(db), { id: "setting-1" }, invalidator()),
-    ).resolves.toMatchObject({ id: "setting-1", publicSync: "completed" });
+      updateSetting(
+        asMockDatabase(db),
+        { id, expectedVersion: 0, siteName: { en: "Saved" } },
+        "author",
+        invalidator(),
+      ),
+    ).resolves.toMatchObject({ id, version: 1, publicSync: "completed" });
     expect(db.transaction).toHaveBeenCalledOnce();
   });
 });

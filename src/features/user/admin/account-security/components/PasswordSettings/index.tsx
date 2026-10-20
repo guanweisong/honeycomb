@@ -1,13 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { useAccountMutation } from "../use-account-mutation";
 import { authClient } from "@/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const PasswordSettings = () => {
+  const { user } = useCurrentUser();
+  return <PasswordSettingsPanel key={user?.id} />;
+};
+
+const PasswordSettingsPanel = () => {
+  const mutation = useAccountMutation();
   const formRef = useRef<HTMLFormElement>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = mutation.pending;
 
   const changePassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,29 +29,16 @@ const PasswordSettings = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const result = await authClient.$fetch("/change-password", {
-        method: "POST",
-        body: {
-          currentPassword,
-          newPassword,
-          revokeOtherSessions: true,
-        },
-      });
-
-      if (result.error) {
-        toast.error(result.error.message || "密码修改失败");
-        return;
-      }
-
-      formRef.current?.reset();
-      toast.success("密码修改成功，其他设备已退出登录");
-    } catch {
-      toast.error("密码修改请求失败，请稍后重试");
-    } finally {
-      setIsSubmitting(false);
-    }
+    await mutation.run({
+      mutate: () =>
+        authClient.$fetch("/change-password", {
+          method: "POST",
+          body: { currentPassword, newPassword, revokeOtherSessions: true },
+        }),
+      failure: "密码修改失败",
+      success: "密码修改成功，其他设备已退出登录",
+      committed: () => formRef.current?.reset(),
+    });
   };
 
   return (

@@ -1,6 +1,7 @@
 import React from "react";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot, hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next-intl", () => ({
@@ -50,6 +51,53 @@ describe("CommentForm", () => {
     );
     return { formRef, onSubmit };
   }
+
+  it("blocks native submission before hydration and enables the client handler afterward", async () => {
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    });
+    const form = (
+      <CommentForm
+        replyTo={null}
+        formRef={{ current: null }}
+        isPending={false}
+        onSubmit={onSubmit}
+        onCancelReply={vi.fn()}
+        onClearIdentity={vi.fn()}
+      />
+    );
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    container.innerHTML = renderToString(form);
+    container.querySelector<HTMLInputElement>('[name="author"]')!.value =
+      "Alice";
+    container.querySelector<HTMLInputElement>('[name="email"]')!.value =
+      "alice@example.test";
+    container.querySelector<HTMLTextAreaElement>('[name="content"]')!.value =
+      "Hello";
+    const button = container.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
+    // No React listeners exist in SSR HTML. A native submit here would navigate
+    // rather than run captcha validation, even though the fields are visible.
+    const nativeSubmit = vi.fn((event: Event) => event.preventDefault());
+    container.querySelector("form")!.addEventListener("submit", nativeSubmit);
+    button.click();
+    expect(nativeSubmit).not.toHaveBeenCalled();
+    expect(button.disabled).toBe(true);
+    container
+      .querySelector("form")!
+      .removeEventListener("submit", nativeSubmit);
+
+    await act(async () => {
+      root = hydrateRoot(container, form);
+    });
+
+    expect(button.disabled).toBe(false);
+    act(() => button.click());
+    expect(onSubmit).toHaveBeenCalledOnce();
+    expect(onSubmit.mock.calls[0]?.[0].defaultPrevented).toBe(true);
+  });
 
   it("renders identity fields for a new commenter", () => {
     render();

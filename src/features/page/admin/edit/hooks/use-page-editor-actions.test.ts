@@ -1,4 +1,4 @@
-import React, { act, Suspense, use, useEffect, useState } from "react";
+import React, { act, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { PageStatus } from "@/features/page/page-status";
@@ -46,7 +46,11 @@ const values = {
 let editorActions: ReturnType<typeof usePageEditorActions> | undefined;
 
 function Harness({ pageId }: { pageId?: string }) {
-  const actions = usePageEditorActions({ pageId, refetch: mocks.refetch });
+  const actions = usePageEditorActions({
+    pageId,
+    expectedVersion: 1,
+    refetch: mocks.refetch,
+  });
   useEffect(() => {
     editorActions = actions;
   }, [actions]);
@@ -87,177 +91,68 @@ describe("use-page-editor-actions", () => {
     container.remove();
   });
 
-  it("shows loading then redirects with the existing create success contract", async () => {
-    const create = deferred<{ id: string }>();
-    mocks.create.mockReturnValue(create.promise);
-    await act(async () => root.render(React.createElement(Harness)));
-
-    await act(async () => container.querySelector("button")?.click());
-    expect(container.textContent).toContain("loading");
-
-    await act(async () => {
-      create.resolve({ id: "page-created" });
+  it("returns the saved revision without navigating and reports refresh failure separately", async () => {
+    mocks.update.mockResolvedValue({
+      id: "123456789012345678901234",
+      version: 2,
     });
-    await vi.waitFor(() =>
-      expect(mocks.push).toHaveBeenCalledWith(
-        "/admin/page/edit?id=page-created",
-      ),
-    );
-    expect(mocks.success).toHaveBeenCalledWith("添加成功");
-    expect(container.textContent).toContain("idle");
-  });
-
-  it("restores loading and keeps edit failures from refetching", async () => {
-    mocks.update.mockRejectedValue(new Error("network unavailable"));
+    mocks.refetch.mockResolvedValue({ isSuccess: false });
     await act(async () =>
       root.render(
         React.createElement(Harness, { pageId: "123456789012345678901234" }),
       ),
     );
-
-    await act(async () => container.querySelector("button")?.click());
-    await vi.waitFor(() =>
-      expect(mocks.error).toHaveBeenCalledWith("提交失败，请检查表单内容"),
-    );
-
-    expect(container.textContent).toContain("idle");
-    expect(mocks.refetch).not.toHaveBeenCalled();
-    expect(mocks.logger).toHaveBeenCalledWith(expect.anything(), {
-      operation: "page.submit",
-      outcome: "error",
+    await act(async () => {
+      await expect(
+        requireDefined(editorActions).submit(values, PageStatus.PUBLISHED),
+      ).resolves.toMatchObject({
+        state: "updated",
+        version: 2,
+        refreshFailed: true,
+      });
     });
+    expect(mocks.warning).toHaveBeenCalledWith(
+      "已保存，列表待刷新，请勿重复提交",
+    );
+    expect(mocks.push).not.toHaveBeenCalled();
   });
-
-  it("keeps creation busy until the destination finishes navigating", async () => {
-    const navigation = deferred<unknown>();
-    mocks.create.mockResolvedValue({ id: "123456789012345678901234" });
-
-    function Destination() {
-      use(navigation.promise);
-      return React.createElement("span", null, "destination");
-    }
-
-    function NavigationHarness() {
-      const [navigated, setNavigated] = useState(false);
-      const actions = usePageEditorActions({ refetch: mocks.refetch });
-      useEffect(() => {
-        mocks.push.mockImplementation(() => setNavigated(true));
-      }, []);
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement(
-          "output",
-          null,
-          actions.loading ? "loading" : "idle",
-        ),
-        React.createElement(
-          "button",
-          { onClick: () => void actions.submit(values, PageStatus.PUBLISHED) },
-          "submit",
-        ),
-        navigated && React.createElement(Destination),
-      );
-    }
-
+  it("does not refresh or toast after a different record is selected", async () => {
+    const pending = deferred<{ id: string; version: number }>();
+    mocks.update.mockReturnValue(pending.promise);
     await act(async () =>
       root.render(
-        React.createElement(
-          Suspense,
-          { fallback: "navigating" },
-          React.createElement(NavigationHarness),
-        ),
+        React.createElement(Harness, { pageId: "123456789012345678901234" }),
       ),
     );
     await act(async () => container.querySelector("button")?.click());
-
-    expect(container.querySelector("output")?.textContent).toBe("loading");
-    expect(container.textContent).not.toContain("navigating");
-    await act(async () => navigation.resolve(undefined));
-
-    expect(container.querySelector("output")?.textContent).toBe("idle");
-    expect(container.textContent).toContain("destination");
+    await act(async () =>
+      root.render(
+        React.createElement(Harness, { pageId: "223456789012345678901234" }),
+      ),
+    );
+    await act(async () =>
+      pending.resolve({ id: "123456789012345678901234", version: 2 }),
+    );
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.warning).not.toHaveBeenCalled();
   });
-
-  it("waits for refresh and returns the confirmed save result", async () => {
+  it("does not toast after unmount during refresh", async () => {
     const refresh = deferred<unknown>();
-    mocks.update.mockResolvedValue(undefined);
+    mocks.update.mockResolvedValue({
+      id: "123456789012345678901234",
+      version: 2,
+    });
     mocks.refetch.mockReturnValue(refresh.promise);
     await act(async () =>
       root.render(
         React.createElement(Harness, { pageId: "123456789012345678901234" }),
       ),
     );
-    let pending:
-      ReturnType<ReturnType<typeof usePageEditorActions>["submit"]> | undefined;
-    await act(async () => {
-      pending = requireDefined(editorActions).submit(
-        values,
-        PageStatus.PUBLISHED,
-      );
-    });
-    expect(container.textContent).toContain("loading");
-
-    await act(async () => {
-      refresh.resolve({ isSuccess: true });
-      await expect(pending).resolves.toEqual({ state: "updated" });
-    });
-    expect(container.textContent).toContain("idle");
+    await act(async () => container.querySelector("button")?.click());
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await act(async () => refresh.resolve({ isSuccess: true }));
+    expect(mocks.success).not.toHaveBeenCalled();
   });
-
-  it("returns a saved result rather than rejecting when refresh fails", async () => {
-    mocks.update.mockResolvedValue(undefined);
-    mocks.refetch.mockRejectedValue(new Error("refetch unavailable"));
-    await act(async () =>
-      root.render(
-        React.createElement(Harness, { pageId: "123456789012345678901234" }),
-      ),
-    );
-
-    await act(async () => {
-      await expect(
-        requireDefined(editorActions).submit(values, PageStatus.PUBLISHED),
-      ).resolves.toEqual({ state: "updated" });
-    });
-    expect(container.textContent).toContain("idle");
-    expect(mocks.success).toHaveBeenCalledWith("更新成功");
-    expect(mocks.error).not.toHaveBeenCalled();
-  });
-  it.each(["create", "update"] as const)(
-    "warns once after degraded %s without reporting failure or losing saved state",
-    async (action) => {
-      const mutation = action === "create" ? mocks.create : mocks.update;
-      mutation.mockResolvedValue({
-        id: "123456789012345678901234",
-        publicSync: "degraded",
-      });
-      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
-      await act(async () =>
-        root.render(
-          React.createElement(Harness, {
-            pageId:
-              action === "update" ? "123456789012345678901234" : undefined,
-          }),
-        ),
-      );
-      await act(async () => {
-        await expect(
-          requireDefined(editorActions).submit(values, PageStatus.PUBLISHED),
-        ).resolves.toMatchObject({
-          state: action === "create" ? "created" : "updated",
-          publicSync: "degraded",
-        });
-      });
-      expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
-        "已保存，公开内容同步未完成，请稍后检查公开页面",
-      );
-      expect(mocks.success).not.toHaveBeenCalled();
-      expect(mocks.error).not.toHaveBeenCalled();
-      expect(container.textContent).toContain("idle");
-      if (action === "create")
-        expect(mocks.push).toHaveBeenCalledWith(
-          "/admin/page/edit?id=123456789012345678901234",
-        );
-    },
-  );
 });

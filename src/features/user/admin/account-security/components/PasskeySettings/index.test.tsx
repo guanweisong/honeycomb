@@ -1,3 +1,6 @@
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: "user-1" } }),
+}));
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +17,7 @@ vi.mock("@/auth-client", () => ({
     useListPasskeys: () => mocks.listPasskeys(),
     passkey: { addPasskey: mocks.addPasskey },
     $fetch: mocks.fetch,
+    $store: { atoms: { listPasskeys: { get: () => ({ error: null }) } } },
   },
 }));
 

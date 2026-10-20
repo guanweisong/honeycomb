@@ -21,8 +21,9 @@ const SettingRecordUrlSchema = z
   .optional();
 
 /** 后台设置表单的完整传输边界。 */
-export const SettingAdminUpdateSchema = z.object({
+export const SettingAdminUpdateSchema = z.strictObject({
   id: IdSchema,
+  expectedVersion: z.number().int().nonnegative(),
   ...localizedSettingFields,
   siteRecordNo: z.string().trim().nullable().optional(),
   siteRecordUrl: SettingRecordUrlSchema,
@@ -32,11 +33,15 @@ export const SettingAdminUpdateSchema = z.object({
 export const SettingPatchSchema = SettingAdminUpdateSchema.partial()
   .extend({
     id: IdSchema,
+    expectedVersion: z.number().int().nonnegative(),
     siteName: NullableLocalizedInputSchema.optional(),
     siteSubName: NullableLocalizedInputSchema.optional(),
     siteCopyright: NullableLocalizedInputSchema.optional(),
     siteSignature: NullableLocalizedInputSchema.optional(),
   })
-  .refine(hasUpdateFields, "至少修改一个字段");
+  .refine((input) => {
+    const fields = { ...input, expectedVersion: undefined };
+    return hasUpdateFields(fields);
+  }, "至少修改一个字段");
 
 export type SettingPatch = z.output<typeof SettingPatchSchema>;

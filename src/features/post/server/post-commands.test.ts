@@ -23,6 +23,9 @@ import {
 import { getPost } from "./post-queries";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
+vi.mock("@/env/client", () => ({
+  clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test/files" },
+}));
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (_name: string, _kind: string, run: () => unknown) =>
     run(),
@@ -72,7 +75,12 @@ describe("atomic post writes", () => {
     await db
       .insert(schema.category)
       .values({ id: "category", path: "category" });
-    await db.insert(schema.tag).values([{ id: "tag-1" }, { id: "tag-2" }]);
+    await db
+      .insert(schema.tag)
+      .values([
+        { id: "507f1f77bcf86cd799439021" },
+        { id: "507f1f77bcf86cd799439022" },
+      ]);
   });
   async function row(id: string) {
     const [result] = await db
@@ -89,7 +97,7 @@ describe("atomic post writes", () => {
         ...input,
         status: PostStatus.DRAFT,
         title: { en: "original", zh: "原文" },
-        movieActorIds: ["tag-1"],
+        movieActorIds: ["507f1f77bcf86cd799439021"],
       },
       actorId,
       cache(),
@@ -105,8 +113,11 @@ describe("atomic post writes", () => {
         {
           ...input,
           title: { en: "created" },
-          movieActorIds: ["tag-1", "tag-1"],
-          movieDirectorIds: ["tag-2"],
+          movieActorIds: [
+            "507f1f77bcf86cd799439021",
+            "507f1f77bcf86cd799439021",
+          ],
+          movieDirectorIds: ["507f1f77bcf86cd799439022"],
         },
         actorId,
         invalidator,
@@ -128,7 +139,11 @@ describe("atomic post writes", () => {
     await expect(
       createPost(
         db,
-        { ...input, title: { en: "new" }, movieActorIds: ["missing"] },
+        {
+          ...input,
+          title: { en: "new" },
+          movieActorIds: ["507f1f77bcf86cd799439099"],
+        },
         actorId,
         invalidator,
       ),
@@ -148,7 +163,7 @@ describe("atomic post writes", () => {
           expectedVersion: 0,
           title: { en: "changed" },
           movieActorIds: [],
-          movieDirectorIds: ["missing"],
+          movieDirectorIds: ["507f1f77bcf86cd799439099"],
         },
         actorId,
         invalidator,
@@ -157,7 +172,7 @@ describe("atomic post writes", () => {
     expect((await row(created.id)).version).toBe(0);
     expect(await getPost(db, created.id, "ALL")).toMatchObject({
       title: { en: "original" },
-      movieActors: [{ id: "tag-1" }],
+      movieActors: [{ id: "507f1f77bcf86cd799439021" }],
     });
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
@@ -169,7 +184,7 @@ describe("atomic post writes", () => {
         id: created.id,
         expectedVersion: 0,
         title: { en: "changed" },
-        movieDirectorIds: ["tag-2"],
+        movieDirectorIds: ["507f1f77bcf86cd799439022"],
       },
       actorId,
       cache(),
@@ -177,8 +192,8 @@ describe("atomic post writes", () => {
     expect(await getPost(db, created.id, "ALL")).toMatchObject({
       version: 1,
       title: { en: "changed", zh: "原文" },
-      movieActors: [{ id: "tag-1" }],
-      movieDirectors: [{ id: "tag-2" }],
+      movieActors: [{ id: "507f1f77bcf86cd799439021" }],
+      movieDirectors: [{ id: "507f1f77bcf86cd799439022" }],
     });
     await updatePost(
       db,
@@ -190,8 +205,258 @@ describe("atomic post writes", () => {
       version: 2,
       title: null,
       movieActors: [],
-      movieDirectors: [{ id: "tag-2" }],
+      movieDirectors: [{ id: "507f1f77bcf86cd799439022" }],
     });
+  });
+  it("removes only the explicitly requested locale in one versioned save", async () => {
+    const created = await create();
+    const result = await updatePost(
+      db,
+      {
+        id: created.id,
+        expectedVersion: 0,
+        removeLocales: ["en"],
+        title: { zh: "保留" },
+        movieActorIds: [],
+      },
+      actorId,
+      cache(),
+    );
+    expect(result.version).toBe(1);
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "zh", title: "保留" },
+    ]);
+    expect(await db.select().from(schema.postTag)).toEqual([]);
+  });
+  it("clears values without implicitly removing the existing locale rows", async () => {
+    const created = await create();
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: null },
+      actorId,
+      cache(),
+    );
+    const rows = await db.select().from(schema.postTranslation);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.title === null)).toBe(true);
+  });
+  it("does not materialize absent locales on null clearing and preserves empty strings", async () => {
+    const created = await createPost(
+      db,
+      { ...input, title: { en: "original" } },
+      actorId,
+      cache(),
+    );
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: null },
+      actorId,
+      cache(),
+    );
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "en", title: null },
+    ]);
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 1, title: { en: "" } },
+      actorId,
+      cache(),
+    );
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "en", title: "" },
+    ]);
+  });
+  it("rolls back explicit removal when a later relation write fails", async () => {
+    const created = await create();
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          removeLocales: ["en"],
+          movieDirectorIds: ["507f1f77bcf86cd799439099"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toThrow();
+    expect((await row(created.id)).version).toBe(0);
+    expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("validates direct command inputs before writing or invalidating", async () => {
+    const created = await create();
+    const invalidator = cache();
+    const invalidUpdate = {
+      id: created.id,
+      expectedVersion: 0,
+      movieTime: "bad",
+      authorId: "forged",
+    };
+    await expect(
+      updatePost(db, invalidUpdate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          title: { en: "bad" },
+          removeLocales: ["en"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const invalidCreate = { ...input, views: 10 };
+    await expect(
+      createPost(db, invalidCreate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect((await row(created.id)).version).toBe(0);
+    expect(await db.select().from(schema.post)).toHaveLength(1);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("rejects newly introduced unregistered managed media without a partial save", async () => {
+    const invalidator = cache();
+    await expect(
+      createPost(
+        db,
+        {
+          ...input,
+          content: {
+            en: '<img src="https://assets.example.test/files/missing.png">',
+          },
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await db.select().from(schema.post)).toEqual([]);
+    const created = await create();
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          content: {
+            en: '<img src="https://assets.example.test/files/missing.png">',
+          },
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await row(created.id)).version).toBe(0);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("permits unchanged historical managed content and explicit locale removal", async () => {
+    const created = await create();
+    await db
+      .update(schema.postTranslation)
+      .set({
+        content: '<img src="https://assets.example.test/files/historical.png">',
+      })
+      .where(eq(schema.postTranslation.postId, created.id));
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: { en: "changed" } },
+      actorId,
+      cache(),
+    );
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 1, removeLocales: ["en"] },
+      actorId,
+      cache(),
+    );
+    expect((await row(created.id)).version).toBe(2);
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "zh" },
+    ]);
+  });
+  it("checks effective cover and content readiness even when omitted from the patch", async () => {
+    const mediaId = "507f1f77bcf86cd799439033";
+    const image = '<img src="https://assets.example.test/files/ready.png">';
+    await db.insert(schema.media).values({
+      id: mediaId,
+      state: "READY",
+      key: "ready.png",
+      name: "ready",
+      size: 1,
+      type: "image/png",
+      url: "https://assets.example.test/files/ready.png",
+    });
+    const created = await createPost(
+      db,
+      { ...input, coverId: mediaId, content: { en: image } },
+      actorId,
+      cache(),
+    );
+    await db
+      .update(schema.media)
+      .set({ state: "DELETING" })
+      .where(eq(schema.media.id, mediaId));
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, title: { zh: "edit" } },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, coverId: null },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await row(created.id)).version).toBe(0);
+    await updatePost(
+      db,
+      {
+        id: created.id,
+        expectedVersion: 0,
+        coverId: null,
+        removeLocales: ["en"],
+      },
+      actorId,
+      cache(),
+    );
+    expect((await row(created.id)).version).toBe(1);
+  });
+  it("rejects UPLOADING media as a new cover and as new managed content", async () => {
+    const mediaId = "507f1f77bcf86cd799439034";
+    await db.insert(schema.media).values({
+      id: mediaId,
+      key: "pending.png",
+      name: "pending",
+      size: 1,
+      type: "image/png",
+      url: "https://assets.example.test/files/pending.png",
+    });
+    await expect(
+      createPost(db, { ...input, coverId: mediaId }, actorId, cache()),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      createPost(
+        db,
+        {
+          ...input,
+          content: {
+            en: '<img src="https://assets.example.test/files/pending.png">',
+          },
+        },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await db.select().from(schema.post)).toEqual([]);
   });
   it("allows only one concurrent writer at the same expected version", async () => {
     const created = await create();
@@ -371,7 +636,7 @@ describe("atomic post writes", () => {
             ...input,
             status: PostStatus.DRAFT,
             title: { en: "original", zh: "原文" },
-            movieActorIds: ["tag-1"],
+            movieActorIds: ["507f1f77bcf86cd799439021"],
           },
           actorId,
           cache(),
@@ -398,6 +663,29 @@ describe("atomic post writes", () => {
       expect(detail).not.toHaveProperty("creationInputHash");
     }
   });
+  it.each(["unknown-root", "unknown-item", "duplicate", "empty"] as const)(
+    "rejects %s direct delete input before any write or invalidation",
+    async (kind) => {
+      const created = await create();
+      const item = { id: created.id, expectedVersion: 0 };
+      const input =
+        kind === "unknown-root"
+          ? { items: [item], force: true }
+          : kind === "unknown-item"
+            ? { items: [{ ...item, authorId: "forged" }] }
+            : kind === "duplicate"
+              ? { items: [item, item] }
+              : { items: [] };
+      const invalidator = cache();
+      await expect(
+        destroyPosts(db, input, actorId, invalidator),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect((await row(created.id)).version).toBe(0);
+      expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
+      expect(await db.select().from(schema.postTag)).toHaveLength(1);
+      expect(invalidator.invalidate).not.toHaveBeenCalled();
+    },
+  );
   it("rolls back an entire batch delete on any stale version", async () => {
     const first = await create();
     const second = await createPost(
@@ -490,7 +778,7 @@ describe("atomic post writes", () => {
           id: created.id,
           expectedVersion: 0,
           status: PostStatus.DRAFT,
-          movieActorIds: ["tag-1"],
+          movieActorIds: ["507f1f77bcf86cd799439021"],
         },
         actorId,
         cache(),
@@ -504,10 +792,10 @@ describe("atomic post writes", () => {
       db,
       {
         ...input,
-        movieActorIds: ["tag-1"],
-        movieDirectorIds: ["tag-1"],
-        movieStyleIds: ["tag-1"],
-        galleryStyleIds: ["tag-1"],
+        movieActorIds: ["507f1f77bcf86cd799439021"],
+        movieDirectorIds: ["507f1f77bcf86cd799439021"],
+        movieStyleIds: ["507f1f77bcf86cd799439021"],
+        galleryStyleIds: ["507f1f77bcf86cd799439021"],
       },
       actorId,
       cache(),

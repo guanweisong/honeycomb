@@ -3,6 +3,7 @@ import type { SettingPatch } from "./schema";
 
 export interface SettingRecord {
   id: string;
+  version: number;
   siteName: MultiLang | null;
   siteSubName: MultiLang | null;
   siteSignature: MultiLang | null;

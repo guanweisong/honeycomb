@@ -22,7 +22,8 @@ const tag: TagRecord = {
   updatedAt: null,
 };
 const page: PageWithRelations = {
-  id: "page-1",
+  id: "507f1f77bcf86cd799439011",
+  version: 3,
   authorId: "author-1",
   title: { zh: "页面", en: "Page" },
   content: null,
@@ -98,7 +99,7 @@ import Tag from "@/features/tag/admin/page";
 import PostListClient from "@/features/post/admin/list/components/PostListClient";
 
 describe.each([
-  { name: "page", Component: Page, id: "page-1" },
+  { name: "page", Component: Page, id: "507f1f77bcf86cd799439011" },
   { name: "tag", Component: Tag, id: "tag-1" },
   { name: "post", Component: PostListClient, id: "post-1" },
 ])("$name actual delete consumer", ({ name, Component, id }) => {
@@ -161,7 +162,7 @@ describe.each([
       expect(batch.disabled).toBe(false);
       await act(async () => confirm().click());
       const input =
-        name === "post"
+        name === "post" || name === "page"
           ? { items: [{ id, expectedVersion: 3 }] }
           : { ids: [id] };
       expect(mocks.destroy.mock.calls).toEqual([[input], [input]]);

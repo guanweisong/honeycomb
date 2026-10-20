@@ -12,10 +12,16 @@ import { can, Permission } from "@/lib/auth/permissions";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 import {
+  groupPostTranslations,
   patchPostTranslationRows,
   sanitizePostTranslationInput,
   toPostTranslationRows,
 } from "./post-translations";
+import {
+  PostDeleteSchema,
+  PostInsertSchema,
+  PostUpdateSchema,
+} from "../schema";
 import type {
   PostInsert,
   PostUpdate,
@@ -25,6 +31,7 @@ import type {
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
+import { assertMediaReferencesReady } from "@/features/media/server/media-references";
 
 type PostTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 // libSQL starts a transaction before Drizzle enters this callback. Retry only
@@ -141,6 +148,10 @@ export async function createPost(
   actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
+  const parsed = PostInsertSchema.safeParse(input);
+  if (!parsed.success)
+    throw new ApplicationError("BAD_REQUEST", "文章保存输入不合法");
+  input = parsed.data;
   const { creationToken, ...intent } = input;
   const creationInputHash = createHash("sha256")
     .update(canonicalInput(intent))
@@ -184,6 +195,10 @@ export async function createPost(
         created.id,
         sanitizePostTranslationInput(input),
       );
+      await assertMediaReferencesReady(tx, {
+        coverId: input.coverId,
+        content: groupPostTranslations(translations).get(created.id)?.content,
+      });
       if (translations.length)
         await tx.insert(schema.postTranslation).values(translations);
       await patchRelations(tx, created.id, input);
@@ -221,6 +236,10 @@ export async function destroyPosts(
   actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
+  const parsed = PostDeleteSchema.safeParse(input);
+  if (!parsed.success)
+    throw new ApplicationError("BAD_REQUEST", "文章删除输入不合法");
+  input = parsed.data;
   await observeDbOperation("post.destroy", "transaction", () =>
     postTransaction(db, async (tx) => {
       await requireActor(tx, actorId, [Permission.postDelete]);
@@ -260,6 +279,10 @@ export async function updatePost(
   actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
+  const parsed = PostUpdateSchema.safeParse(input);
+  if (!parsed.success)
+    throw new ApplicationError("BAD_REQUEST", "文章保存输入不合法");
+  input = parsed.data;
   const result = await observeDbOperation("post.update", "transaction", () =>
     postTransaction(db, async (tx) => {
       await requireActor(tx, actorId, [
@@ -329,14 +352,25 @@ export async function updatePost(
         quoteAuthor,
         quoteContent,
       });
+      const rows = await tx
+        .select()
+        .from(schema.postTranslation)
+        .where(eq(schema.postTranslation.postId, input.id));
+      const next = patchPostTranslationRows(
+        input.id,
+        rows,
+        translationInput,
+        input.removeLocales,
+      );
+      await assertMediaReferencesReady(tx, {
+        coverId: input.coverId === undefined ? current.coverId : input.coverId,
+        content: groupPostTranslations(next).get(input.id)?.content,
+        previousContent: groupPostTranslations(rows).get(input.id)?.content,
+      });
       if (
-        Object.values(translationInput).some((value) => value !== undefined)
+        Object.values(translationInput).some((value) => value !== undefined) ||
+        input.removeLocales?.length
       ) {
-        const rows = await tx
-          .select()
-          .from(schema.postTranslation)
-          .where(eq(schema.postTranslation.postId, input.id));
-        const next = patchPostTranslationRows(input.id, rows, translationInput);
         await tx
           .delete(schema.postTranslation)
           .where(eq(schema.postTranslation.postId, input.id));

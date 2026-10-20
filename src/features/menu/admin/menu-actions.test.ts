@@ -5,7 +5,7 @@ import { submitMenuChanges } from "./menu-actions";
 
 const checkedList = [
   {
-    id: "category-1",
+    id: "111111111111111111111111",
     title: { en: "Category", zh: "分类" },
     path: "/category",
     parent: null,
@@ -18,23 +18,27 @@ const checkedList = [
 
 describe("menu actions", () => {
   it("reports success after saving the normalized payload and refetching", async () => {
-    const saveAll = vi.fn().mockResolvedValue({ count: 1 });
+    const saveAll = vi.fn().mockResolvedValue({ count: 1, version: 1 });
     const refetch = vi.fn().mockResolvedValue(undefined);
     const notifySuccess = vi.fn();
     const notifyError = vi.fn();
 
     const state = await submitMenuChanges({
       checkedList,
+      expectedVersion: 0,
       saveAll,
       refetch,
       notifySuccess,
       notifyError,
     });
 
-    expect(state).toBe("success");
-    expect(saveAll).toHaveBeenCalledWith([
-      { id: "category-1", type: MenuType.CATEGORY, power: 0 },
-    ]);
+    expect(state).toMatchObject({ state: "success", refreshFailed: false });
+    expect(saveAll).toHaveBeenCalledWith({
+      expectedVersion: 0,
+      items: [
+        { id: "111111111111111111111111", type: MenuType.CATEGORY, power: 0 },
+      ],
+    });
     expect(notifySuccess).toHaveBeenCalledWith("更新成功");
     expect(refetch).toHaveBeenCalledOnce();
     expect(notifyError).not.toHaveBeenCalled();
@@ -48,14 +52,17 @@ describe("menu actions", () => {
 
     const state = await submitMenuChanges({
       checkedList,
+      expectedVersion: 0,
       saveAll,
       refetch,
       notifySuccess,
       notifyError,
     });
 
-    expect(state).toBe("error");
-    expect(notifyError).toHaveBeenCalledWith("更新失败");
+    expect(state).toEqual({ state: "unknown" });
+    expect(notifyError).toHaveBeenCalledWith(
+      "保存结果无法确认，本地输入已保留，请先核对服务器",
+    );
     expect(refetch).not.toHaveBeenCalled();
     expect(notifySuccess).not.toHaveBeenCalled();
   });

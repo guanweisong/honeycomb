@@ -11,6 +11,7 @@ const trpcMocks = vi.hoisted(() => ({
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
+      creationResult: { useQuery: () => ({ data: null }) },
       adminDetail: {
         useQuery: (input: unknown, options: unknown) => {
           trpcMocks.calls.push([input, options]);
@@ -27,6 +28,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 
 const editorMocks = vi.hoisted(() => ({ id: null as string | null }));
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () =>
     new URLSearchParams(editorMocks.id ? `id=${editorMocks.id}` : ""),
 }));

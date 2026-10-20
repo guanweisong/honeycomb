@@ -20,11 +20,27 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
+import { MenuType } from "../menu-types";
 import { useMenuActions } from "./menu-actions";
 
 let actions: ReturnType<typeof useMenuActions> | undefined;
 function Harness() {
-  const currentActions = useMenuActions([], mocks.refetch);
+  const currentActions = useMenuActions(
+    [
+      {
+        id: "111111111111111111111111",
+        type: MenuType.CUSTOM,
+        power: 0,
+        parent: null,
+        createdAt: null,
+        updatedAt: null,
+      },
+    ],
+    0,
+    mocks.refetch,
+    () => {},
+    () => {},
+  );
   React.useEffect(() => {
     actions = currentActions;
   }, [currentActions]);
@@ -50,7 +66,11 @@ describe("Menu public-sync feedback", () => {
   });
 
   it("waits for refresh without treating its rejection as a failed write", async () => {
-    mocks.saveAll.mockResolvedValue({ count: 0, publicSync: "completed" });
+    mocks.saveAll.mockResolvedValue({
+      count: 1,
+      version: 1,
+      publicSync: "completed",
+    });
     let rejectRefresh: ((reason: Error) => void) | undefined;
     mocks.refetch.mockImplementation(
       () =>
@@ -73,7 +93,7 @@ describe("Menu public-sync feedback", () => {
       expect(settled).not.toHaveBeenCalled();
     } finally {
       requireDefined(rejectRefresh)(new Error("refresh failed"));
-      await expect(submission).resolves.toBe("success");
+      await expect(submission).resolves.toBeUndefined();
     }
     expect(mocks.error).not.toHaveBeenCalled();
   });
@@ -86,16 +106,25 @@ describe("Menu public-sync feedback", () => {
   ])(
     "keeps committed $publicSync writes successful (refresh rejects: $refreshFails)",
     async ({ publicSync, refreshFails }) => {
-      mocks.saveAll.mockResolvedValue({ count: 0, publicSync });
+      mocks.saveAll.mockResolvedValue({ count: 1, version: 1, publicSync });
       if (refreshFails)
         mocks.refetch.mockRejectedValue(new Error("refresh failed"));
 
-      await expect(requireDefined(actions).submit()).resolves.toBe("success");
+      await expect(requireDefined(actions).submit()).resolves.toBeUndefined();
 
-      expect(mocks.saveAll).toHaveBeenCalledExactlyOnceWith([]);
+      expect(mocks.saveAll).toHaveBeenCalledExactlyOnceWith({
+        expectedVersion: 0,
+        items: [
+          { id: "111111111111111111111111", type: MenuType.CUSTOM, power: 0 },
+        ],
+      });
       expect(mocks.refetch).toHaveBeenCalledOnce();
       expect(mocks.error).not.toHaveBeenCalled();
-      if (publicSync === "degraded") {
+      if (refreshFails) {
+        expect(mocks.warning).toHaveBeenCalledWith(
+          "已保存，菜单待刷新，请勿重复提交",
+        );
+      } else if (publicSync === "degraded") {
         expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
           "已保存，公开内容同步未完成，请稍后检查公开页面",
         );

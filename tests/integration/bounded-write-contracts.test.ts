@@ -55,7 +55,12 @@ describe("bounded write contracts", () => {
       invalidate: async () => ({ state: "completed" as const }),
     };
     await expect(
-      saveAllMenus(asMockDatabase(createMockDb()), [], invalidator),
+      saveAllMenus(
+        asMockDatabase(createMockDb()),
+        { expectedVersion: 0, items: [] },
+        "author",
+        invalidator,
+      ),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
   it("bounds tag replacement before normalization while permitting explicit clearing", () => {

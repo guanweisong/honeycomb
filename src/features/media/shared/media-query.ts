@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaManagementRecord as MediaViewModel } from "@/features/media/types";
 import type { MediaIndexInput } from "@/features/media/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
+
+import type { MediaState } from "../lifecycle";
 
 const MEDIA_PAGE_SIZE = 50;
 
@@ -11,11 +13,14 @@ function getPageSignature(page: MediaViewModel[]) {
   return page.map((item) => item?.id ?? String(item)).join("|");
 }
 
-export function getMediaQueryInput(page = 1): MediaIndexInput {
-  return { page, limit: MEDIA_PAGE_SIZE };
+export function getMediaQueryInput(
+  page = 1,
+  state?: MediaState,
+): MediaIndexInput {
+  return { page, limit: MEDIA_PAGE_SIZE, ...(state ? { state } : {}) };
 }
 
-export function useMediaQuery() {
+export function useMediaQuery(state?: MediaState) {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState<Partial<Record<number, MediaViewModel[]>>>(
     {},
@@ -24,7 +29,7 @@ export function useMediaQuery() {
   const requestedPage = useRef<number | undefined>(undefined);
   const requestedFromSignature = useRef<string | undefined>(undefined);
   const refreshFirstPage = useRef(false);
-  const searchParams = getMediaQueryInput(page);
+  const searchParams = getMediaQueryInput(page, state);
   const query = trpc.media.index.useQuery(searchParams);
   const { refetch } = query;
 
@@ -50,7 +55,7 @@ export function useMediaQuery() {
       const nextPage = query.data.list;
       if (
         currentPage?.length === nextPage.length &&
-        currentPage.every((item, index) => item.id === nextPage[index]?.id)
+        JSON.stringify(currentPage) === JSON.stringify(nextPage)
       ) {
         return currentPages;
       }

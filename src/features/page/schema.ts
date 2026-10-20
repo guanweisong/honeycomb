@@ -1,13 +1,10 @@
+import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
 import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 import {
   queryString,
   QueryStringArraySchema,
 } from "@/lib/validation/query.string.schema";
-import {
-  hasUpdateFields,
-  I18nSchema,
-  type CleanZod,
-} from "@/lib/validation/validation";
+import { I18nSchema, type CleanZod } from "@/lib/validation/validation";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { PageTemplate } from "@/features/page/page-template";
 import { z } from "zod";
@@ -16,20 +13,44 @@ import { PageStatus } from "@/features/page/page-status";
 /**
  * 新增独立页面时的数据验证 schema，不依赖数据库表结构。
  */
-export const PageInsertSchema = z.object({
+export const PageFieldsSchema = z.strictObject({
   title: I18nSchema,
   content: I18nSchema,
   status: z.enum(PageStatus).optional(),
   template: z.enum(PageTemplate),
 });
 
+export type PageFields = z.output<typeof PageFieldsSchema>;
+export const PageInsertSchema = PageFieldsSchema.extend({
+  creationToken: z.uuid(),
+});
 export type PageInsert = z.output<typeof PageInsertSchema>;
-
-export const PageUpdateSchema = PageInsertSchema.partial()
-  .extend({ id: IdSchema })
-  .refine(hasUpdateFields, "至少修改一个字段");
-
+const version = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+export const PageUpdateSchema = PageFieldsSchema.partial()
+  .extend({ id: IdSchema, expectedVersion: version })
+  .refine(
+    (value) =>
+      Object.entries(value).some(
+        ([key, field]) =>
+          key !== "id" && key !== "expectedVersion" && field !== undefined,
+      ),
+    "至少修改一个字段",
+  );
 export type PageUpdate = z.output<typeof PageUpdateSchema>;
+export const PageDeleteSchema = z.strictObject({
+  items: z
+    .array(z.strictObject({ id: IdSchema, expectedVersion: version }))
+    .min(1)
+    .max(MAX_BATCH_SIZE)
+    .refine(
+      (items) => new Set(items.map(({ id }) => id)).size === items.length,
+      "页面不能重复",
+    ),
+});
+export type PageDelete = z.output<typeof PageDeleteSchema>;
+export const PageCreationResultInputSchema = z.strictObject({
+  creationToken: z.uuid(),
+});
 
 /**
  * 获取独立页面列表时的查询参数验证 schema。

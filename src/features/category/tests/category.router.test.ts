@@ -174,6 +174,9 @@ describe("Category Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete categories with admin permissions", async () => {
+      const menuReferences = createMockDb();
+      menuReferences.limit.mockResolvedValue([]);
+      mockDb.select.mockReturnValue(menuReferences);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
@@ -187,6 +190,10 @@ describe("Category Router", () => {
 
       expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.category);
+      expect(mockDb.transaction).toHaveBeenCalledOnce();
+      expect(menuReferences.from).toHaveBeenCalledWith(schema.menu);
+      expect(menuReferences.limit).toHaveBeenCalledWith(1);
+      expect(mockDb.update).not.toHaveBeenCalled();
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

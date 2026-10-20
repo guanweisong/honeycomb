@@ -27,6 +27,7 @@ export const capabilityRegistry = {
   [Permission.mediaReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.mediaUpload]: { consumers: ["trpc", "admin-action"] },
   [Permission.mediaDelete]: { consumers: ["trpc", "admin-action"] },
+  [Permission.mediaManageUploads]: { consumers: ["command"] },
   [Permission.menuReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.menuUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.pageReadAll]: { consumers: ["trpc", "admin-route", "menu"] },

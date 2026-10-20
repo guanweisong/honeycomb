@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { useAccountMutation } from "../use-account-mutation";
 import { authClient } from "@/auth-client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,11 +22,17 @@ function getDeviceName(userAgent: string | null | undefined) {
 }
 
 const SessionSettings = () => {
-  const [isRevoking, setIsRevoking] = useState(false);
+  const { user } = useCurrentUser();
+  return <SessionPanel key={user?.id} userId={user?.id} />;
+};
+
+const SessionPanel = ({ userId }: { userId?: string }) => {
+  const mutation = useAccountMutation();
+  const isRevoking = mutation.pending;
   const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const sessionsQuery = useQuery({
-    queryKey: ["account-security", "sessions"],
+    queryKey: ["account-security", "sessions", userId],
     queryFn: async () => {
       const result = await authClient.$fetch("/list-sessions");
       if (result.error)
@@ -40,27 +48,22 @@ const SessionSettings = () => {
     if (sessionsQuery.error) toast.error("登录会话加载失败，请稍后重试");
   }, [sessionsQuery.error]);
 
-  const revokeOtherSessions = async () => {
-    setIsRevoking(true);
-    try {
-      const result = await authClient.$fetch("/revoke-other-sessions", {
-        method: "POST",
-        body: {},
-      });
-      if (result.error) {
-        toast.error(result.error.message || "退出其他设备失败");
-        return;
-      }
-      toast.success("其他设备已退出登录");
-      await queryClient.invalidateQueries({
-        queryKey: ["account-security", "sessions"],
-      });
-    } catch {
-      toast.error("退出其他设备请求失败，请稍后重试");
-    } finally {
-      setIsRevoking(false);
-    }
-  };
+  const revokeOtherSessions = () =>
+    mutation.run({
+      mutate: () =>
+        authClient.$fetch("/revoke-other-sessions", {
+          method: "POST",
+          body: {},
+        }),
+      failure: "退出其他设备失败",
+      success: "其他设备已退出登录",
+      committed: () => setIsRevokeDialogOpen(false),
+      refresh: () =>
+        queryClient.invalidateQueries(
+          { queryKey: ["account-security", "sessions", userId] },
+          { throwOnError: true },
+        ),
+    });
 
   return (
     <section className="space-y-4">
@@ -108,11 +111,14 @@ const SessionSettings = () => {
 
       <Dialog
         open={isRevokeDialogOpen}
-        onOpenChange={setIsRevokeDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) mutation.cancelFeedback();
+          setIsRevokeDialogOpen(open);
+        }}
         title="退出其他设备"
         description="确认后，其他设备上的登录会话将立即失效。当前设备不会退出。"
         onOK={revokeOtherSessions}
-        OKProps={{ children: "确认退出" }}
+        OKProps={{ children: "确认退出", disabled: mutation.pending }}
         type="danger"
       />
     </section>

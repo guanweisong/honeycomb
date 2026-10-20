@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { useAccountMutation } from "../use-account-mutation";
 import { authClient } from "@/auth-client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,12 +26,21 @@ type Props = {
   providers: SocialProviderId[];
 };
 
-const LinkedAccountsSettings = ({ providers }: Props) => {
+const LinkedAccountsSettings = (props: Props) => {
+  const { user } = useCurrentUser();
+  return <LinkedAccountsPanel key={user?.id} {...props} userId={user?.id} />;
+};
+
+const LinkedAccountsPanel = ({
+  providers,
+  userId,
+}: Props & { userId?: string }) => {
+  const mutation = useAccountMutation();
   const [unlinkTarget, setUnlinkTarget] = useState<AccountItem | null>(null);
 
   const queryClient = useQueryClient();
   const accountsQuery = useQuery({
-    queryKey: ["account-security", "linked-accounts"],
+    queryKey: ["account-security", "linked-accounts", userId],
     queryFn: async () => {
       const result = await authClient.listAccounts();
       if (result.error)
@@ -53,33 +64,32 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
     [accounts],
   );
 
-  const linkAccount = async (provider: SocialProviderId) => {
-    const result = await authClient.linkSocial({
-      provider,
-      callbackURL: "/admin/account/security",
+  const linkAccount = (provider: SocialProviderId) =>
+    mutation.run({
+      mutate: () =>
+        authClient.linkSocial({
+          provider,
+          callbackURL: "/admin/account/security",
+        }),
+      failure: "关联账号失败",
     });
-    if (result.error) toast.error(result.error.message || "关联账号失败");
-  };
 
   const unlinkAccount = async () => {
-    if (!unlinkTarget) return;
+    if (!unlinkTarget) return false;
     if (accounts.length <= 1) {
       toast.error("至少保留一种登录方式");
-      return;
+      return false;
     }
-
-    const result = await authClient.unlinkAccount({
-      accountId: unlinkTarget.id,
-    });
-    if (result.error) {
-      toast.error(result.error.message || "解除关联失败");
-      return;
-    }
-
-    setUnlinkTarget(null);
-    toast.success("已解除账号关联");
-    await queryClient.invalidateQueries({
-      queryKey: ["account-security", "linked-accounts"],
+    return mutation.run({
+      mutate: () => authClient.unlinkAccount({ accountId: unlinkTarget.id }),
+      failure: "解除关联失败",
+      success: "已解除账号关联",
+      committed: () => setUnlinkTarget(null),
+      refresh: () =>
+        queryClient.invalidateQueries(
+          { queryKey: ["account-security", "linked-accounts", userId] },
+          { throwOnError: true },
+        ),
     });
   };
 
@@ -118,6 +128,7 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setUnlinkTarget(account)}
+                  disabled={mutation.pending}
                 >
                   解除关联
                 </Button>
@@ -126,7 +137,7 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
                   type="button"
                   size="sm"
                   onClick={() => void linkAccount(provider)}
-                  disabled={linkedProviderIds.has(provider)}
+                  disabled={mutation.pending || linkedProviderIds.has(provider)}
                 >
                   关联
                 </Button>
@@ -145,12 +156,15 @@ const LinkedAccountsSettings = ({ providers }: Props) => {
       <Dialog
         open={unlinkTarget !== null}
         onOpenChange={(open) => {
-          if (!open) setUnlinkTarget(null);
+          if (!open) {
+            mutation.cancelFeedback();
+            setUnlinkTarget(null);
+          }
         }}
         title="解除账号关联"
         description={`确定解除 ${unlinkTarget ? (Object.entries(providerLabels).find(([id]) => id === unlinkTarget.providerId)?.[1] ?? unlinkTarget.providerId) : "该账号"} 关联吗？`}
         onOK={unlinkAccount}
-        OKProps={{ children: "确认解除" }}
+        OKProps={{ children: "确认解除", disabled: mutation.pending }}
         type="danger"
       />
     </section>

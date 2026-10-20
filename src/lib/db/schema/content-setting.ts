@@ -19,12 +19,17 @@ export const setting = sqliteTable(
   "setting",
   {
     id: text("id").primaryKey().$defaultFn(objectId),
+    version: integer("version").default(0).notNull(),
     singletonKey: integer("singleton_key").default(1).notNull(),
     siteRecordNo: text("site_record_no"), // 网站备案号
     siteRecordUrl: text("site_record_url"), // 备案号链接
     ...withTimestamps(),
   },
   (table) => ({
+    settingVersionCheck: check(
+      "setting_version_check",
+      sql`${table.version} >= 0`,
+    ),
     settingSingletonCheck: check(
       "setting_singleton_check",
       sql`${table.singletonKey} = 1`,

@@ -82,3 +82,95 @@ it("distinguishes initial loading, empty and failed media", () => {
   );
   expect(container.textContent).not.toContain("暂无媒体");
 });
+it("shows pending recovery metadata but forbids selecting or copying an unfinished upload", async () => {
+  const onSelect = vi.fn();
+  const onReconcile = vi.fn();
+  act(() =>
+    root.render(
+      <MediaGrid
+        media={[
+          {
+            ...media,
+            state: "UPLOADING",
+            verifiedAt: null,
+            lastAttemptAt: "2026-10-20T09:00:00Z",
+            lastErrorCode: "STORAGE_PENDING",
+          },
+        ]}
+        onSelect={onSelect}
+        onDelete={vi.fn()}
+        onReconcile={onReconcile}
+      />,
+    ),
+  );
+  const select = container.querySelector<HTMLButtonElement>(
+    '[aria-label="选择 cover.png"]',
+  );
+  expect(select?.disabled).toBe(true);
+  act(() => select?.click());
+  expect(onSelect).not.toHaveBeenCalled();
+  expect(
+    container.querySelector('[aria-label="复制 cover.png 的链接"]'),
+  ).toBeNull();
+  expect(container.textContent).toContain("上传待确认");
+  expect(container.textContent).toContain("STORAGE_PENDING");
+  expect(container.textContent).toContain("2026-10-20T09:00:00Z");
+  await act(async () =>
+    Array.from(container.querySelectorAll("button"))
+      .find((b) => b.textContent === "检查状态")
+      ?.click(),
+  );
+  expect(onReconcile).toHaveBeenCalledWith("media-1", undefined);
+});
+it("labels historical ready media as unverified and discloses unknown reference risk", async () => {
+  act(() =>
+    root.render(
+      <MediaGrid
+        media={[
+          {
+            ...media,
+            state: "READY",
+            verifiedAt: null,
+            lastAttemptAt: null,
+            lastErrorCode: null,
+          },
+        ]}
+        onSelect={vi.fn()}
+        onDelete={vi.fn().mockResolvedValue(false)}
+      />,
+    ),
+  );
+  expect(container.textContent).toContain("历史媒体 · 未验证");
+  await act(async () =>
+    container
+      .querySelector<HTMLButtonElement>('[aria-label="删除 cover.png"]')
+      ?.click(),
+  );
+  expect(document.body.textContent).toContain(
+    "正文和外部网站的链接无法完整检查",
+  );
+  await act(async () =>
+    Array.from(document.body.querySelectorAll("button"))
+      .find((b) => b.textContent === "确定")
+      ?.click(),
+  );
+  expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+});
+
+it("disables stale READY links while their deletion outcome is unresolved", () => {
+  act(() =>
+    root.render(
+      <MediaGrid
+        media={[media]}
+        unavailableIds={[media.id]}
+        onSelect={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    ),
+  );
+  expect(
+    container.querySelector<HTMLButtonElement>(
+      '[aria-label="复制 cover.png 的链接"]',
+    )?.disabled,
+  ).toBe(true);
+});

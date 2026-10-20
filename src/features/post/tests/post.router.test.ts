@@ -475,6 +475,14 @@ describe("Post Router", () => {
     it("should update post tags inside a transaction", async () => {
       const tx = createMockDb();
       const insertError = new Error("insert failed");
+      tx.from.mockImplementation((table: object) => {
+        if (table === schema.postTranslation) {
+          const translations = createMockDb();
+          translations.where.mockResolvedValue([]);
+          return translations;
+        }
+        return tx;
+      });
 
       tx.limit.mockResolvedValueOnce([
         { level: UserLevel.ADMIN, status: UserStatus.ENABLE },

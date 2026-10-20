@@ -1,22 +1,35 @@
-import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SettingRecord } from "../../../types";
+const initial: SettingRecord = {
+  id: "111111111111111111111111",
+  version: 0,
+  siteName: { en: "Honeycomb", zh: "蜂巢" },
+  siteSubName: null,
+  siteSignature: null,
+  siteCopyright: null,
+  siteRecordNo: null,
+  siteRecordUrl: null,
+  createdAt: null,
+  updatedAt: null,
+};
 const mocks = vi.hoisted(() => ({
-  setting: {
-    id: "setting-1",
-    siteName: { en: "Honeycomb", zh: "Honeycomb" },
-  } as { id: string; siteName: { en: string; zh: string } } | undefined,
-  submit: undefined as
-    ((values: Record<string, unknown>) => Promise<void>) | undefined,
-  update: vi.fn().mockResolvedValue(undefined),
+  setting: undefined as SettingRecord | undefined,
+  actorId: "actor",
+  setTitle: (value: string) => {
+    void value;
+  },
+  getTitle: () => "",
+  update: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
   warning: vi.fn(),
   refetch: vi.fn(),
 }));
-
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,
+  useCurrentUser: () => ({ user: { id: mocks.actorId } }),
 }));
 vi.mock("@/features/setting/admin/use-site-setting", () => ({
   useSiteSetting: () => ({
@@ -24,83 +37,161 @@ vi.mock("@/features/setting/admin/use-site-setting", () => ({
     refreshSetting: mocks.refetch,
   }),
 }));
-vi.mock("@/components/DynamicForm", () => ({
-  DynamicForm: ({
-    defaultValues,
-    onSubmit,
-    ...props
-  }: {
-    defaultValues?: { id?: string };
-    onSubmit: (values: Record<string, unknown>) => Promise<void>;
-    key?: string;
-  }) => {
-    mocks.submit = onSubmit;
-    return React.createElement("div", {
-      "data-setting-id": defaultValues?.id,
-      "data-form-key": props.key,
-    });
-  },
-}));
+vi.mock("@/components/DynamicForm/DynamicField", async () => {
+  const { useFormContext } = await import("react-hook-form");
+  return {
+    DynamicField: () => {
+      const form = useFormContext();
+      mocks.setTitle = (value: string) =>
+        form.setValue("siteName.zh", value, { shouldDirty: true });
+      mocks.getTitle = () => form.getValues("siteName.zh");
+      return null;
+    },
+  };
+});
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
-    useUtils: () => ({ setting: { index: { invalidate: vi.fn() } } }),
     setting: { update: { useMutation: () => ({ mutateAsync: mocks.update }) } },
   },
 }));
 vi.mock("sonner", () => ({
   toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
-
 import SettingClient from "./index";
 
 describe("SettingClient", () => {
-  beforeEach(() => {
-    mocks.setting = {
-      id: "setting-1",
-      siteName: { en: "Honeycomb", zh: "Honeycomb" },
-    };
-    mocks.submit = undefined;
-    mocks.update.mockClear();
-    mocks.error.mockClear();
+  let root: Root;
+  let container: HTMLDivElement;
+  beforeEach(async () => {
+    mocks.setting = initial;
+    mocks.actorId = "actor";
+    mocks.update.mockReset();
+    mocks.error.mockReset();
     mocks.success.mockReset();
     mocks.warning.mockReset();
     mocks.refetch.mockReset();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    await act(async () => root.render(<SettingClient />));
   });
-
-  it("uses the server-provided setting as form defaults", () => {
-    const element = SettingClient();
-
-    expect(element.props.children.props.defaultValues.id).toBe("setting-1");
+  afterEach(async () => {
+    await act(async () => root.unmount());
+    container.remove();
   });
-
-  it("rejects submission while the setting record is unavailable", async () => {
+  const submit = (container: HTMLElement) =>
+    container
+      .querySelector("form")
+      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  it("uses loaded defaults and preserves edits after background data changes", async () => {
+    expect(mocks.getTitle()).toBe("蜂巢");
+    await act(async () => mocks.setTitle("本地"));
+    mocks.setting = {
+      ...initial,
+      version: 1,
+      siteName: { en: "Remote", zh: "远程" },
+    };
+    await act(async () => root.render(<SettingClient />));
+    expect(mocks.getTitle()).toBe("本地");
+  });
+  it("does not save when the setting has not loaded", async () => {
     mocks.setting = undefined;
-    const element = SettingClient();
-    element.props.children.type(element.props.children.props);
-
-    await mocks.submit?.({ siteName: { zh: "站点" } });
-
+    mocks.actorId = "new";
+    await act(async () => root.render(<SettingClient />));
+    await act(async () => submit(container));
     expect(mocks.update).not.toHaveBeenCalled();
-    expect(mocks.error).toHaveBeenCalledWith("设置尚未加载，无法更新");
   });
   it.each(["completed", "degraded"])(
-    "keeps a %s settings write successful if refresh rejects",
+    "keeps committed %s writes separate from refresh failure",
     async (publicSync) => {
-      mocks.update.mockResolvedValue({ publicSync });
-      mocks.refetch.mockRejectedValue(new Error("refresh failed"));
-      const element = SettingClient();
-      element.props.children.type(element.props.children.props);
-      await mocks.submit?.({ siteName: { zh: "站点" } });
+      mocks.update.mockResolvedValue({ ...initial, version: 1, publicSync });
+      mocks.refetch.mockRejectedValue(new Error("refresh"));
+      await act(async () => mocks.setTitle("本地"));
+      await act(async () => submit(container));
+      expect(mocks.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          expectedVersion: 0,
+          siteName: { zh: "本地", en: "Honeycomb" },
+        }),
+      );
       expect(mocks.error).not.toHaveBeenCalled();
-      if (publicSync === "degraded") {
-        expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
-          "已保存，公开内容同步未完成，请稍后检查公开页面",
-        );
-        expect(mocks.success).not.toHaveBeenCalled();
-      } else {
-        expect(mocks.success).toHaveBeenCalledExactlyOnceWith("更新成功");
-        expect(mocks.warning).not.toHaveBeenCalled();
-      }
+      expect(mocks.warning).toHaveBeenCalledWith(
+        "已保存，设置待刷新，请勿重复提交",
+      );
     },
   );
+  it.each([{ data: { code: "CONFLICT" } }, new Error("network")])(
+    "blocks replay and retains input after conflict/unknown",
+    async (error) => {
+      mocks.update.mockRejectedValue(error);
+      await act(async () => mocks.setTitle("本地"));
+      await act(async () => submit(container));
+      expect(mocks.getTitle()).toBe("本地");
+      expect(container.textContent).toContain("读取最新设置供核对");
+      await act(async () => submit(container));
+      expect(mocks.update).toHaveBeenCalledOnce();
+    },
+  );
+  it("keeps a revert-to-baseline edit when committed query data arrives before the response", async () => {
+    let resolve: ((value: unknown) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    await act(async () => mocks.setTitle("提交"));
+    await act(async () => submit(container));
+    await act(async () => mocks.setTitle("蜂巢"));
+    mocks.setting = {
+      ...initial,
+      version: 1,
+      siteName: { zh: "提交", en: "Honeycomb" },
+    };
+    await act(async () => root.render(<SettingClient />));
+    expect(mocks.getTitle()).toBe("蜂巢");
+    mocks.refetch.mockResolvedValue(mocks.setting);
+    await act(async () =>
+      resolve?.({ ...mocks.setting, publicSync: "completed" }),
+    );
+    expect(mocks.getTitle()).toBe("蜂巢");
+    expect(container.textContent).toContain("有未保存的更改");
+  });
+  it("preserves newer typing while a write is pending", async () => {
+    let resolve: ((value: unknown) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    mocks.refetch.mockResolvedValue({ ...initial, version: 1 });
+    await act(async () => mocks.setTitle("已提交"));
+    await act(async () => submit(container));
+    await act(async () => mocks.setTitle("更新输入"));
+    await act(async () =>
+      resolve?.({ ...initial, version: 1, publicSync: "completed" }),
+    );
+    expect(mocks.getTitle()).toBe("更新输入");
+    expect(container.textContent).toContain("有未保存的更改");
+  });
+  it("ignores old responses after switching account", async () => {
+    let resolve: ((value: unknown) => void) | undefined;
+    mocks.update.mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    await act(async () => mocks.setTitle("旧账户"));
+    await act(async () => submit(container));
+    mocks.actorId = "other";
+    await act(async () => root.render(<SettingClient />));
+    await act(async () =>
+      resolve?.({ ...initial, version: 1, publicSync: "completed" }),
+    );
+    expect(mocks.getTitle()).toBe("蜂巢");
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+  });
 });

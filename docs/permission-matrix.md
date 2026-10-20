@@ -26,6 +26,7 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 | `media:read-all`        |   ✓   |   ✓    |   ✓   |
 | `media:upload`          |   ✓   |   ✓    |   —   |
 | `media:delete`          |   ✓   |   ✓    |   —   |
+| `media:manage-uploads`  |   ✓   |   —    |   —   |
 | `menu:read-all`         |   ✓   |   ✓    |   ✓   |
 | `menu:update`           |   ✓   |   ✓    |   —   |
 | `page:read-all`         |   ✓   |   ✓    |   ✓   |

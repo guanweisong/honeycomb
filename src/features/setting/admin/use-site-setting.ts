@@ -30,7 +30,9 @@ export function SiteSettingProvider({
   const utils = trpc.useUtils();
   const resolvedSetting = fetchedSetting ?? currentSetting;
   const refreshSetting = async () => {
-    const nextSetting = await utils.setting.index.fetch();
+    const nextSetting = await utils.setting.index.fetch(undefined, {
+      staleTime: 0,
+    });
     setCurrentSetting(nextSetting);
     return nextSetting;
   };

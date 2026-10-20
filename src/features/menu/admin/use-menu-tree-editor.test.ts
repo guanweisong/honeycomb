@@ -42,6 +42,88 @@ describe("use-menu-tree-editor", () => {
     container.remove();
   });
 
+  it("does not adopt a background snapshot when pending input returns to the old baseline", async () => {
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, {
+          checkedData: { list: [categoryMenu], version: 0 },
+        }),
+      ),
+    );
+    await act(async () => editor.setProtected(true));
+    const item = {
+      id: "page-pending",
+      title: { en: "P", zh: "页" },
+      createdAt,
+      updatedAt: null,
+    };
+    await act(async () => editor.onCheck(item, true, MenuType.PAGE));
+    const submitted = editor.checkedList;
+    await act(async () => editor.onCheck(item, false, MenuType.PAGE));
+    expect(editor.dirty).toBe(false);
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, {
+          checkedData: { list: submitted, version: 1 },
+        }),
+      ),
+    );
+    expect(editor.checkedList).toEqual([categoryMenu]);
+    await act(async () => editor.acknowledge(submitted, 1));
+    expect(editor.dirty).toBe(true);
+  });
+  it("lets users explicitly remove orphan nodes and their descendants", async () => {
+    const orphan = {
+      ...categoryMenu,
+      id: "orphan-row-uuid",
+      title: null,
+      path: undefined,
+    };
+    const child = { ...categoryMenu, id: "child", parent: orphan.id };
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, {
+          checkedData: { list: [orphan, child], version: 0 },
+        }),
+      ),
+    );
+    await act(async () => editor.removeBranch(orphan.id));
+    expect(editor.checkedList).toEqual([]);
+    expect(editor.dirty).toBe(true);
+  });
+
+  it("keeps local edits on background refresh and acknowledges only submitted rows", async () => {
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, {
+          checkedData: { list: [categoryMenu], version: 0 },
+        }),
+      ),
+    );
+    const added = {
+      id: "page-local",
+      title: { en: "Local", zh: "本地" },
+      createdAt,
+      updatedAt: null,
+    };
+    await act(async () => editor.onCheck(added, true, MenuType.PAGE));
+    const submitted = editor.checkedList;
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, { checkedData: { list: [], version: 1 } }),
+      ),
+    );
+    expect(editor.checkedList).toHaveLength(2);
+    expect(editor.baseVersion).toBe(0);
+    await act(async () =>
+      editor.onCheck({ ...added, id: "newer" }, true, MenuType.PAGE),
+    );
+    await act(async () => editor.acknowledge(submitted, 1));
+    expect(editor.checkedList).toHaveLength(3);
+    expect(editor.baseVersion).toBe(1);
+    expect(editor.dirty).toBe(true);
+  });
+
   it("syncs remote rows and updates selection through stable editor actions", async () => {
     await act(async () => root.render(React.createElement(Probe)));
     expect(editor.checkedList).toEqual([]);

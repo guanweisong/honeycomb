@@ -28,6 +28,7 @@ function toPageRecord(
 ) {
   return {
     id: page.id,
+    version: page.version,
     authorId: page.authorId,
     views: page.views,
     createdAt: page.createdAt,
@@ -79,13 +80,10 @@ async function mapRelations(
     rows.flatMap((row) => row.translations),
   );
   const relationMap = new Map(rows.map((row) => [row.id, row]));
-  const visiblePages =
-    visibility === "PUBLISHED_ONLY"
-      ? pages.flatMap((page) => {
-          const row = relationMap.get(page.id);
-          return row ? [row] : [];
-        })
-      : pages;
+  const visiblePages = pages.flatMap((page) => {
+    const row = relationMap.get(page.id);
+    return row ? [row] : [];
+  });
   const localizedPages = visiblePages.map((page) => ({
     ...toPageRecord(page, translations.get(page.id)),
     author: relationMap.get(page.id)?.author ?? null,

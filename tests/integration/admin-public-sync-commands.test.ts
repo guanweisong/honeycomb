@@ -80,6 +80,7 @@ const tag = {
 } satisfies TagRecord;
 const setting = {
   id,
+  version: 1,
   siteName: localized,
   siteSubName: null,
   siteSignature: null,
@@ -115,6 +116,7 @@ const comment = {
   ip: null,
 } satisfies CommentRecord;
 const pageInput = {
+  creationToken: "11111111-1111-4111-8111-111111111111",
   title: localized,
   content: localized,
   template: PageTemplate.DEFAULT,
@@ -179,10 +181,16 @@ function databaseCase<Result extends object>(
             read.limit.mockResolvedValue([
               { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
             ]);
-          if (table === schema.post)
+          if (table === schema.post || table === schema.page)
             read.limit.mockResolvedValue([
               { id, version: 0, status: PostStatus.DRAFT },
             ]);
+          if (
+            name === "saveAllMenus" &&
+            table === schema.category &&
+            isPathCheck
+          )
+            read.where.mockResolvedValue([{ id }]);
           let translations: object[] | undefined;
           if (table === schema.categoryTranslation)
             translations = [
@@ -206,7 +214,8 @@ function databaseCase<Result extends object>(
             ];
           if (
             table === schema.settingTranslation ||
-            table === schema.postTranslation
+            table === schema.postTranslation ||
+            table === schema.pageTranslation
           )
             translations = [];
           if (translations) read.where.mockResolvedValue(translations);
@@ -265,23 +274,43 @@ const commands = [
     (db, invalidator) => destroyLinks(db, [id], invalidator),
     "where",
   ),
-  databaseCase("saveAllMenus", { count: 1 }, (db, invalidator) =>
-    saveAllMenus(db, [{ id, type: MenuType.CATEGORY, power: 0 }], invalidator),
+  databaseCase("saveAllMenus", { count: 1, version: 1 }, (db, invalidator) =>
+    saveAllMenus(
+      db,
+      {
+        expectedVersion: 0,
+        items: [{ id, type: MenuType.CATEGORY, power: 0 }],
+      },
+      "author",
+      invalidator,
+    ),
   ),
-  databaseCase("createPage", { id }, (db, invalidator) =>
+  databaseCase("createPage", { id, version: 0 }, (db, invalidator) =>
     createPage(db, pageInput, "author", invalidator),
   ),
-  databaseCase("updatePage", { id }, (db, invalidator) =>
-    updatePage(db, { id, title: localized }, invalidator),
+  databaseCase("updatePage", { id, version: 1 }, (db, invalidator) =>
+    updatePage(
+      db,
+      { id, expectedVersion: 0, title: localized },
+      "author",
+      invalidator,
+    ),
   ),
-  databaseCase("publishPage", { id }, (db, invalidator) =>
-    updatePage(db, { id, status: PageStatus.PUBLISHED }, invalidator),
+  databaseCase("publishPage", { id, version: 1 }, (db, invalidator) =>
+    updatePage(
+      db,
+      { id, expectedVersion: 0, status: PageStatus.PUBLISHED },
+      "author",
+      invalidator,
+    ),
   ),
-  databaseCase(
-    "destroyPages",
-    success,
-    (db, invalidator) => destroyPages(db, [id], invalidator),
-    "where",
+  databaseCase("destroyPages", success, (db, invalidator) =>
+    destroyPages(
+      db,
+      { items: [{ id, expectedVersion: 0 }] },
+      "author",
+      invalidator,
+    ),
   ),
   databaseCase("createPost", { id, version: 0 }, (db, invalidator) =>
     createPost(
@@ -324,7 +353,12 @@ const commands = [
     ),
   ),
   databaseCase("updateSetting", setting, (db, invalidator) =>
-    updateSetting(db, { id, siteName: localized }, invalidator),
+    updateSetting(
+      db,
+      { id, expectedVersion: 0, siteName: localized },
+      "author",
+      invalidator,
+    ),
   ),
   databaseCase("createTag", tag, (db, invalidator) =>
     createTag(db, { name: localized }, invalidator),

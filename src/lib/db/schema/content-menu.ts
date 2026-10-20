@@ -5,7 +5,9 @@ import {
   integer,
   index,
   foreignKey,
+  check,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 import { category } from "./content-category";
@@ -46,4 +48,17 @@ export const menu = sqliteTable(
       Object.values(MenuType),
     ),
   }),
+);
+
+/** One revision for the complete navigation snapshot, including an empty initial tree. */
+export const menuRevision = sqliteTable(
+  "menu_revision",
+  {
+    singletonKey: integer("singleton_key").primaryKey().default(1).notNull(),
+    version: integer("version").default(0).notNull(),
+  },
+  (table) => [
+    check("menu_revision_singleton_check", sql`${table.singletonKey} = 1`),
+    check("menu_revision_version_check", sql`${table.version} >= 0`),
+  ],
 );

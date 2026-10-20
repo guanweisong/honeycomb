@@ -20,7 +20,7 @@ describe("唯一事实源架构门禁", () => {
   it.each([
     ["src/features/post/schema.ts", "PostInsert"],
     ["src/features/page/schema.ts", "PageInsert"],
-    ["src/features/media/schema.ts", "MediaInsert"],
+    ["src/features/media/upload-policy.ts", "MediaUploadFile"],
     ["src/features/link/types.ts", "LinkInsert"],
     ["src/features/media/types.ts", "MediaRecord"],
     ["src/features/tag/types.ts", "TagRecord"],
@@ -271,11 +271,11 @@ describe("唯一事实源架构门禁", () => {
     expect(declarations.map((node) => node.getText())).toEqual([]);
   });
 
-  it("媒体写入 schema 导出语义明确的 MediaInsert 类型", () => {
+  it("媒体上传 schema 导出语义明确的 MediaUploadFile 类型", () => {
     const aliases = sourceFile(
-      "src/features/media/schema.ts",
+      "src/features/media/upload-policy.ts",
     ).statements.filter(ts.isTypeAliasDeclaration);
-    expect(aliases.map((node) => node.name.text)).toContain("MediaInsert");
+    expect(aliases.map((node) => node.name.text)).toContain("MediaUploadFile");
     expect(aliases.map((node) => node.name.text)).not.toContain("MediaEntity");
   });
 

@@ -69,6 +69,15 @@ function authorize(db: ReturnType<typeof createMockDb>) {
       ]);
       return actor;
     }
+    if (
+      table === schema.postTranslation ||
+      table === schema.settingTranslation ||
+      table === schema.pageTranslation
+    ) {
+      const read = createMockDb();
+      read.where.mockResolvedValue([]);
+      return read;
+    }
     return db;
   });
 }
@@ -79,15 +88,30 @@ describe("required persistence results", () => {
     (db: Database, input: { id: string }) =>
       updatePost(
         db,
-        { ...input, expectedVersion: 0, title: { en: "Changed" } },
+        {
+          ...input,
+          id: "507f1f77bcf86cd799439011",
+          expectedVersion: 0,
+          title: { en: "Changed" },
+        },
         "author",
         invalidator,
       ),
-    updatePage,
+    (db: Database) =>
+      updatePage(
+        db,
+        {
+          id: "507f1f77bcf86cd799439011",
+          expectedVersion: 0,
+          title: { en: "Changed", zh: "变更" },
+        },
+        "author",
+        invalidator,
+      ),
     updateCategory,
     updateTag,
     updateLink,
-    updateSetting,
+
     (db: Database, input: { id: string }) =>
       createCommentCommandRepository(db).update(input),
     (db: Database, input: { id: string }) =>
@@ -102,6 +126,29 @@ describe("required persistence results", () => {
       update(asMockDatabase(db), { id: "missing" }, invalidator),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
+  it.each([false, true])(
+    "rejects a missing or stale setting write target (exists: %s)",
+    async (exists) => {
+      const db = createMockDb();
+      authorize(db);
+      db.returning.mockResolvedValue([]);
+      db.limit.mockResolvedValue(
+        exists ? [{ id: "507f1f77bcf86cd799439011" }] : [],
+      );
+      await expect(
+        updateSetting(
+          asMockDatabase(db),
+          {
+            id: "507f1f77bcf86cd799439011",
+            expectedVersion: 0,
+            siteName: { en: "Changed" },
+          },
+          "author",
+          invalidator,
+        ),
+      ).rejects.toMatchObject({ code: exists ? "CONFLICT" : "NOT_FOUND" });
+    },
+  );
   it("rejects empty create results across repositories", async () => {
     const fake = createMockDb();
     authorize(fake);
@@ -116,18 +163,26 @@ describe("required persistence results", () => {
         invalidator,
       ),
     ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      createPage(
+        db,
+        {
+          creationToken,
+          title: { en: "title", zh: "标题" },
+          content: { en: "body", zh: "正文" },
+          template: PageTemplate.DEFAULT,
+        },
+        "author",
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      createMediaRepository(db).begin(
+        { name: "image.png", size: 1, type: "image/png" },
+        "author",
+      ),
+    ).rejects.toThrow("Media upload not created");
     const creates = [
-      () =>
-        createPage(
-          db,
-          {
-            title: { en: "title", zh: "标题" },
-            content: { en: "body", zh: "正文" },
-            template: PageTemplate.DEFAULT,
-          },
-          "author",
-          invalidator,
-        ),
       () =>
         createCategory(
           db,
@@ -146,13 +201,6 @@ describe("required persistence results", () => {
           invalidator,
         ),
       () =>
-        createMediaRepository(db).create({
-          name: "image",
-          key: "image",
-          size: 1,
-          type: "image/png",
-        }),
-      () =>
         createUserRepository(db).create({
           name: "user",
           email: "a@test.dev",
@@ -168,12 +216,25 @@ describe("required persistence results", () => {
     (db: Database) =>
       updatePost(
         db,
-        { id: "id", expectedVersion: 0, status: PostStatus.PUBLISHED },
+        {
+          id: "507f1f77bcf86cd799439011",
+          expectedVersion: 0,
+          status: PostStatus.PUBLISHED,
+        },
         "author",
         invalidator,
       ),
     (db: Database) =>
-      updatePage(db, { id: "id", status: PageStatus.PUBLISHED }, invalidator),
+      updatePage(
+        db,
+        {
+          id: "507f1f77bcf86cd799439011",
+          expectedVersion: 0,
+          status: PageStatus.PUBLISHED,
+        },
+        "author",
+        invalidator,
+      ),
     (db: Database) => createCommentCommandRepository(db).findStatus("id"),
   ])("rejects unknown stored status (%#)", async (read) => {
     const db = createMockDb();
@@ -228,6 +289,7 @@ describe("required persistence results", () => {
       authorize(db);
       db.query.page.findFirst.mockResolvedValue({
         id: "page",
+        version: 0,
         status: "PUBLISHED",
         template: "default",
         authorId: "author",
@@ -352,19 +414,19 @@ describe("required persistence results", () => {
     );
     await updatePost(
       database,
-      { id: "post", expectedVersion: 0, movieTime: null },
+      { id: "507f1f77bcf86cd799439011", expectedVersion: 0, movieTime: null },
       "author",
       invalidator,
     );
     await destroyPosts(
       database,
-      { items: [{ id: "post", expectedVersion: 0 }] },
+      { items: [{ id: "507f1f77bcf86cd799439011", expectedVersion: 0 }] },
       "author",
       invalidator,
     );
     await updatePost(
       database,
-      { id: "post", expectedVersion: 0, movieActorIds: [] },
+      { id: "507f1f77bcf86cd799439011", expectedVersion: 0, movieActorIds: [] },
       "author",
       invalidator,
     );

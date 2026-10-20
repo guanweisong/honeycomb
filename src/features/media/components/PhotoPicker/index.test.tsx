@@ -146,6 +146,43 @@ describe("PhotoPickerModal", () => {
     expect(toastInfo).toHaveBeenCalledWith("请选择图片");
   });
 
+  it("confirms a selection at most once per open picker", () => {
+    const { handlePhotoPickerOk } = render();
+    act(() =>
+      selectMediaRef.current?.({
+        id: "m",
+        url: "https://test/a.png",
+      } as MediaEntity),
+    );
+    act(() => {
+      container.querySelector<HTMLButtonElement>("button")?.click();
+      container.querySelector<HTMLButtonElement>("button")?.click();
+    });
+    expect(handlePhotoPickerOk).toHaveBeenCalledTimes(1);
+  });
+  it("ignores a late selection callback from a closed picker", () => {
+    const confirm = vi.fn();
+    render(confirm);
+    const staleSelect = selectMediaRef.current;
+    const picker = (open: boolean) => (
+      <PhotoPickerModal
+        showPhotoPicker={open}
+        handlePhotoPickerOk={confirm}
+        handlePhotoPickerCancel={vi.fn()}
+        pickerContent={(onSelect) => {
+          selectMediaRef.current = onSelect;
+          return null;
+        }}
+      />
+    );
+    act(() => root.render(picker(false)));
+    act(() => root.render(picker(true)));
+    act(() =>
+      staleSelect?.({ id: "m", url: "https://test/a.png" } as MediaEntity),
+    );
+    act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+    expect(confirm).not.toHaveBeenCalled();
+  });
   it("forwards cancellation from the sheet", () => {
     const { handlePhotoPickerCancel } = render();
 

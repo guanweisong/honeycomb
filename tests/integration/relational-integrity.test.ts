@@ -196,36 +196,52 @@ describe("relational integrity with real libSQL", () => {
     }
   });
   it("de-duplicates tags and rejects direct duplicate associations", async () => {
-    await db
-      .insert(schema.user)
-      .values({
-        id: "author",
-        name: "Author",
-        email: "author@example.com",
-        level: UserLevel.ADMIN,
-        status: UserStatus.ENABLE,
-      });
+    await db.insert(schema.user).values({
+      id: "author",
+      name: "Author",
+      email: "author@example.com",
+      level: UserLevel.ADMIN,
+      status: UserStatus.ENABLE,
+    });
     await db
       .insert(schema.post)
-      .values({ id: "post", categoryId: "root", authorId: "author" });
-    await db.insert(schema.tag).values(["tagA", "tagB"].map((id) => ({ id })));
+      .values({
+        id: "507f1f77bcf86cd799439011",
+        categoryId: "root",
+        authorId: "author",
+      });
+    await db
+      .insert(schema.tag)
+      .values(
+        ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"].map((id) => ({
+          id,
+        })),
+      );
     await updatePost(
       db,
       {
-        id: "post",
+        id: "507f1f77bcf86cd799439011",
         expectedVersion: 0,
-        movieActorIds: ["tagA", "tagA", "tagB"],
+        movieActorIds: [
+          "507f1f77bcf86cd799439012",
+          "507f1f77bcf86cd799439012",
+          "507f1f77bcf86cd799439013",
+        ],
       },
       "author",
       invalidator,
     );
     expect(
       (await db.select().from(schema.postTag)).map(({ tagId }) => tagId),
-    ).toEqual(["tagA", "tagB"]);
+    ).toEqual(["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]);
     await expect(
       db
         .insert(schema.postTag)
-        .values({ postId: "post", tagId: "tagA", type: TagType.ACTOR }),
+        .values({
+          postId: "507f1f77bcf86cd799439011",
+          tagId: "507f1f77bcf86cd799439012",
+          type: TagType.ACTOR,
+        }),
     ).rejects.toThrow();
   });
   it("migration fails with actionable duplicate path diagnostics without renaming paths", async () => {

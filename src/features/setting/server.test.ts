@@ -13,15 +13,18 @@ import { updateSetting } from "./server";
 describe("Setting server operations", () => {
   it("更新已提交后缓存降级仍返回持久化结果", async () => {
     const saved = {
-      id: "setting-1",
+      id: "111111111111111111111111",
+      version: 1,
       siteRecordNo: null,
       siteRecordUrl: null,
       createdAt: null,
       updatedAt: null,
     };
     const db = createMockDb();
-    db.limit.mockResolvedValue([saved]);
+    db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+    db.returning.mockResolvedValue([saved]);
     db.where
+      .mockReturnValueOnce(db)
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce([])
       .mockReturnValue(db);
@@ -29,7 +32,12 @@ describe("Setting server operations", () => {
       invalidate: vi.fn().mockResolvedValue({ state: "degraded" as const }),
     };
     await expect(
-      updateSetting(asMockDatabase(db), { id: saved.id }, invalidator),
+      updateSetting(
+        asMockDatabase(db),
+        { id: saved.id, expectedVersion: 0, siteRecordNo: null },
+        "actor",
+        invalidator,
+      ),
     ).resolves.toEqual({
       ...saved,
       siteName: null,
@@ -49,7 +57,16 @@ describe("Setting server operations", () => {
     db.transaction.mockRejectedValue(new Error("database failed"));
     const invalidator = { invalidate: vi.fn() };
     await expect(
-      updateSetting(asMockDatabase(db), { id: "setting-1" }, invalidator),
+      updateSetting(
+        asMockDatabase(db),
+        {
+          id: "111111111111111111111111",
+          expectedVersion: 0,
+          siteRecordNo: null,
+        },
+        "actor",
+        invalidator,
+      ),
     ).rejects.toThrow("database failed");
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });

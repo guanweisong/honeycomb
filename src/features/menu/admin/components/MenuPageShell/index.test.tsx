@@ -2,7 +2,7 @@ import { MenuType } from "@/features/menu/menu-types";
 import React, { act, type CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import type { MenuEntityTree } from "../../menu-transforms";
+import type { MenuEntityTree, SortableMenuNode } from "../../menu-transforms";
 
 let canUpdateMenu = false;
 const queryMocks = vi.hoisted(
@@ -19,6 +19,7 @@ const queryMocks = vi.hoisted(
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => canUpdateMenu,
+  useCurrentUser: () => ({ user: { id: "actor" } }),
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
@@ -55,17 +56,33 @@ vi.mock("@nosferatu500/react-sortable-tree", async () => {
       "aria-label": ariaLabel,
       className,
       style,
+      treeData,
+      generateNodeProps,
     }: {
       "aria-label"?: string;
       className?: string;
       style?: CSSProperties;
+      treeData: SortableMenuNode[];
+      generateNodeProps?: (input: { node: SortableMenuNode }) => {
+        buttons: React.ReactNode[];
+      };
     }) =>
-      React.createElement("div", {
-        "aria-label": ariaLabel,
-        className,
-        role: "tree",
-        style,
-      }),
+      React.createElement(
+        "div",
+        {
+          "aria-label": ariaLabel,
+          className,
+          role: "tree",
+          style,
+        },
+        treeData.map((node) =>
+          React.createElement(
+            "div",
+            { key: node.id },
+            generateNodeProps?.({ node }).buttons,
+          ),
+        ),
+      ),
   };
 });
 
@@ -88,6 +105,33 @@ describe("MenuPageShell", () => {
     container.remove();
   });
 
+  it("offers explicit removal for a category whose target was deleted", async () => {
+    canUpdateMenu = true;
+    queryMocks.data = {
+      list: [
+        {
+          id: "orphan-row-uuid",
+          type: MenuType.CATEGORY,
+          parent: null,
+          power: 0,
+          title: null,
+          createdAt: null,
+          updatedAt: null,
+        },
+      ],
+    };
+    await act(async () => root.render(React.createElement(MenuPageShell)));
+    const remove = container.querySelector<HTMLButtonElement>(
+      'button[aria-label^="移除此菜单及子项"]',
+    );
+    expect(remove).not.toBeNull();
+    await act(async () => remove?.click());
+    expect(
+      container.querySelector('button[aria-label^="移除此菜单及子项"]'),
+    ).toBeNull();
+    expect(container.textContent).toContain("请先从左侧选择菜单");
+  });
+
   it("keeps the menu copy and hides save without update permission", async () => {
     await act(async () => root.render(React.createElement(MenuPageShell)));
 
@@ -95,7 +139,7 @@ describe("MenuPageShell", () => {
     expect(container.textContent).toContain("勾选菜单项添加到右侧");
     expect(container.textContent).toContain("菜单结构");
     expect(container.textContent).toContain("请先从左侧选择菜单");
-    expect(container.textContent).not.toContain("保存");
+    expect(container.querySelector("button")?.textContent).not.toBe("保存");
   });
 
   it("shows save when update permission is granted", async () => {

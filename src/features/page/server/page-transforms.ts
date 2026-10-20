@@ -1,12 +1,12 @@
 import type { InferInsertModel } from "drizzle-orm";
 
-import type { PageInsert, PageUpdate } from "../schema";
+import type { PageFields } from "../schema";
 import * as schema from "@/lib/db/schema";
 
 type PageInsertValues = InferInsertModel<typeof schema.page>;
 
 export function toPageInsertValues(
-  input: PageInsert,
+  input: PageFields,
   authorId: string,
 ): PageInsertValues {
   return {
@@ -17,7 +17,7 @@ export function toPageInsertValues(
 }
 
 export function toPageUpdateValues(
-  input: Omit<PageUpdate, "id">,
+  input: Partial<PageFields>,
 ): Partial<PageInsertValues> {
   return {
     ...(input.status !== undefined ? { status: input.status } : {}),

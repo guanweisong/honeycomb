@@ -22,6 +22,7 @@ import { createMediaRepository } from "@/features/media/server/media-repository"
 
 import { createUserRepository } from "@/features/user/server/user-repository";
 import { user } from "@/lib/db/schema";
+import * as schema from "@/lib/db/schema";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 function fakeDb() {
@@ -37,52 +38,79 @@ function fakeDb() {
 describe("feature server 持久化行为", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("media create 生成资产 URL", async () => {
-    const db = fakeDb();
-    const returning = vi
-      .fn()
-      .mockResolvedValue([{ id: "media-1", url: "https://assets.test/a.png" }]);
-    const values = vi.fn().mockReturnValue({ returning });
-    db.insert.mockReturnValue({ values });
-
-    const result = await createMediaRepository(asMockDatabase(db)).create({
-      name: "a.png",
-      size: 10,
-      type: "image/png",
-      key: "a.png",
-    });
-
-    expect(result).toEqual({ id: "media-1", url: "https://assets.test/a.png" });
-    expect(values).toHaveBeenCalledExactlyOnceWith({
-      name: "a.png",
-      size: 10,
-      type: "image/png",
-      key: "a.png",
-      url: "https://assets.test/a.png",
-    });
-    expect(returning).toHaveBeenCalled();
+  it("media begin generates server-owned isolated upload and asset keys", async () => {
+    const db = createMockDb();
+    const row = {
+      id: "507f1f77bcf86cd799439011",
+      url: "https://assets.test/media/a.png",
+    };
+    db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+    db.returning.mockResolvedValue([row]);
+    const result = await createMediaRepository(asMockDatabase(db)).begin(
+      { name: "a.png", size: 10, type: "image/png" },
+      "author",
+    );
+    expect(result).toEqual(row);
+    expect(db.values).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        id: expect.stringMatching(/^[0-9a-f]{24}$/),
+        name: "a.png",
+        size: 10,
+        type: "image/png",
+        state: "UPLOADING",
+        uploadedBy: "author",
+        key: expect.stringMatching(/^media\/[0-9a-f-]+\.png$/),
+        uploadKey: expect.stringMatching(/^temporary\/[0-9a-f-]+\.png$/),
+        url: expect.stringMatching(
+          /^https:\/\/assets\.test\/media\/[0-9a-f-]+\.png$/,
+        ),
+        uploadExpiresAt: expect.any(String),
+      }),
+    );
+    expect(db.transaction).toHaveBeenCalledOnce();
+    expect(db.returning).toHaveBeenCalled();
   });
 
-  it("media delete target selection only reads targets and deletes database records", async () => {
+  it("media deletion marks eligible targets and retains tombstones instead of deleting records", async () => {
     const db = createMockDb();
-    const targets = [{ id: "media-1", key: "a.png" }];
-    const selectWhere = vi.fn().mockResolvedValue(targets);
-    db.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({ where: selectWhere }),
-    });
-    const deleteWhere = vi.fn().mockResolvedValue(undefined);
-    db.delete.mockReturnValue({ where: deleteWhere });
+    const targets = [
+      {
+        id: "507f1f77bcf86cd799439011",
+        key: "a.png",
+        url: "https://assets.test/a.png",
+        state: "READY",
+      },
+    ];
+    db.select.mockImplementation((projection?: object) => ({
+      from: (table: object) => {
+        if (table === schema.user && !projection) {
+          const read = createMockDb();
+          read.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+          return read;
+        }
+        if (table === schema.media)
+          return { where: vi.fn().mockResolvedValue(targets) };
+        if (table === schema.post) {
+          const read = createMockDb();
+          read.limit.mockResolvedValue([]);
+          return read;
+        }
+        return [];
+      },
+    }));
     const repository = createMediaRepository(asMockDatabase(db));
-
-    await expect(repository.findDeleteTargets(["media-1"])).resolves.toEqual(
-      targets,
+    await expect(
+      repository.beginDelete([targets[0]!.id], "author"),
+    ).resolves.toEqual(targets);
+    expect(db.set).toHaveBeenCalledWith(
+      expect.objectContaining({ state: "DELETING", lastErrorCode: null }),
     );
-    await expect(repository.deleteRecords(["media-1"])).resolves.toEqual({
-      success: true,
-    });
-
-    expect(selectWhere).toHaveBeenCalledOnce();
-    expect(deleteWhere).toHaveBeenCalledOnce();
+    await repository.finishDelete(targets[0]!.id);
+    expect(db.set).toHaveBeenLastCalledWith(
+      expect.objectContaining({ state: "DELETED", lastErrorCode: null }),
+    );
+    expect(db.delete).not.toHaveBeenCalled();
+    expect(db.transaction).toHaveBeenCalledOnce();
   });
 
   it("tag destroy 使用批量删除并返回成功", async () => {

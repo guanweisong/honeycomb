@@ -9,18 +9,20 @@ import {
   mapApplicationError,
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
-import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { IdSchema } from "@/lib/validation/id.schema";
 import {
   PageListQuerySchema,
   PageInsertSchema,
   PageUpdateSchema,
+  PageDeleteSchema,
+  PageCreationResultInputSchema,
 } from "@/features/page/schema";
 import {
   createPage,
   destroyPages,
   incrementPageViews,
   updatePage,
+  getPageCreationResult,
 } from "@/features/page/server";
 import { listPages, getPage } from "@/features/page/server/page-queries";
 import { publicContentInvalidator } from "@/lib/cache/refresh-path";
@@ -59,20 +61,40 @@ export const pageRouter = createTRPCRouter({
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPage(ctx.db, input, ctx.user.id, publicContentInvalidator);
+      return createPage(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
   destroy: permissionProcedure(Permission.pageDelete)
-    .input(DeleteBatchSchema)
+    .input(PageDeleteSchema)
     .mutation(async ({ input, ctx }) => {
-      return destroyPages(ctx.db, input.ids, publicContentInvalidator);
+      return destroyPages(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      return updatePage(ctx.db, input, publicContentInvalidator).catch(
-        mapApplicationError,
-      );
+      return updatePage(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
+  creationResult: permissionProcedure(Permission.pageCreate)
+    .input(PageCreationResultInputSchema)
+    .query(({ input, ctx }) =>
+      getPageCreationResult(ctx.db, input.creationToken, ctx.user.id).catch(
+        mapApplicationError,
+      ),
+    ),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))
     .mutation(async ({ input, ctx }) => {

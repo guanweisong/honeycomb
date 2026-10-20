@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth/capability-registry";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server/registry";
+import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";
 import { UserLevel } from "@/features/user/user";
 
 import { appRouter } from "../../app/_trpc/router";
@@ -32,6 +33,10 @@ import {
 } from "@tests/helpers/capability-procedure-matrix-test-helpers";
 
 const externalBoundaries = vi.hoisted(() => ({ storage: 0 }));
+
+vi.mock("@/env/client", () => ({
+  clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test" },
+}));
 
 vi.mock("@/lib/storage/S3", () => ({
   default: {
@@ -383,10 +388,28 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("covers all 35 permissions with 40 procedure gates, three data scopes and one conditional command gate", () => {
-    expect(capabilityProcedureMatrix).toHaveLength(40);
+  it("catalogs every changed content lifecycle procedure without dynamic labels", () => {
+    const registered = new Set(capabilityProcedureMatrix.map(([path]) => path));
+    for (const procedure of [
+      "page.creationResult",
+      "media.beginUpload",
+      "media.confirmUpload",
+      "media.status",
+      "media.reconcile",
+    ]) {
+      expect(registered.has(procedure)).toBe(true);
+      expect(metricLabelValueCatalog.procedure.has(procedure)).toBe(true);
+    }
+    for (const retired of ["media.getPresignedUrl", "media.upload"]) {
+      expect(registered.has(retired)).toBe(false);
+      expect(metricLabelValueCatalog.procedure.has(retired)).toBe(false);
+    }
+  });
+
+  it("covers all 36 permissions with 43 procedure gates, three data scopes and two conditional command gates", () => {
+    expect(capabilityProcedureMatrix).toHaveLength(43);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
-      40,
+      43,
     );
     const procedurePermissions = new Set(
       capabilityProcedureMatrix.map(([, permission]) => permission),
@@ -409,7 +432,10 @@ describe("capability procedure matrix", () => {
         capabilityRegistry[permission].consumers;
       return consumers.includes("command");
     });
-    expect(commandPermissions).toEqual([Permission.postManageTags]);
+    expect(commandPermissions).toEqual([
+      Permission.mediaManageUploads,
+      Permission.postManageTags,
+    ]);
     expect(procedurePermissions).toEqual(
       new Set(registeredProcedurePermissions),
     );

@@ -41,6 +41,7 @@ test.describe("admin page editor", () => {
           const record = {
             ...values,
             id: PAGE_ID,
+            version: 0,
             status: values.status ?? PageStatus.DRAFT,
             authorId: mockedAdminUser.id,
             views: 0,
@@ -50,7 +51,15 @@ test.describe("admin page editor", () => {
             imagesInContent: [],
           } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: { id: record.id } } };
+          return {
+            result: {
+              data: {
+                id: record.id,
+                version: record.version,
+                publicSync: "completed",
+              },
+            },
+          };
         }
         if (procedure === "page.adminDetail") {
           if (!input) return { result: { data: null } };
@@ -64,13 +73,23 @@ test.describe("admin page editor", () => {
           const values = input as PageUpdate;
           const current = records.get(values.id);
           if (!current) throw new Error(`Unknown page: ${values.id}`);
+          expect(values.expectedVersion).toBe(current.version);
           const record = {
             ...current,
             ...values,
+            version: current.version + 1,
             updatedAt: "2026-01-03T03:04:05.000Z",
           } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: { id: record.id } } };
+          return {
+            result: {
+              data: {
+                id: record.id,
+                version: record.version,
+                publicSync: "completed",
+              },
+            },
+          };
         }
         throw new Error(`Unhandled tRPC procedure: ${procedure}`);
       });
@@ -99,6 +118,9 @@ test.describe("admin page editor", () => {
     await expect(page.getByText("添加成功")).toBeVisible();
     expect(createInputs).toEqual([
       {
+        creationToken: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
         title: { en: "About us", zh: "关于我们" },
         content: { en: "<p>English content</p>", zh: "<p>中文内容</p>" },
         template: "default",
@@ -119,6 +141,7 @@ test.describe("admin page editor", () => {
       .toEqual([
         {
           id: PAGE_ID,
+          expectedVersion: 0,
           title: { en: "About us", zh: "更新后的页面" },
           content: { en: "<p>English content</p>", zh: "<p>中文内容</p>" },
           template: "default",

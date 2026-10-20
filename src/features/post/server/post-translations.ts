@@ -72,9 +72,11 @@ export function patchPostTranslationRows(
   postId: string,
   currentRows: readonly PostTranslationRow[],
   input: PostTranslationInput,
+  removeLocales: readonly ("en" | "zh")[] = [],
 ): PostTranslationRow[] {
   const currentByLocale = new Map(currentRows.map((row) => [row.locale, row]));
   return supportedLanguages.flatMap((locale) => {
+    if (removeLocales.includes(locale)) return [];
     const current = currentByLocale.get(locale);
     const fields: PostTranslationFields = {
       title: patchLocalizedValue(input.title, locale, current?.title ?? null),
@@ -104,7 +106,7 @@ export function patchPostTranslationRows(
         current?.quoteContent ?? null,
       ),
     };
-    return hasTranslationValues(Object.values(fields))
+    return current || hasTranslationValues(Object.values(fields))
       ? [{ postId, locale, ...fields }]
       : [];
   });

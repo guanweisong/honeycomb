@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CommentSiteSchema } from "@/features/comment/schema";
 import { LinkInsertSchema } from "@/features/link/schema";
 import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
-import { MediaInsertSchema } from "@/features/media/schema";
+import { MediaUploadFileSchema } from "@/features/media/upload-policy";
 
 describe("safe persisted links", () => {
   it.each(["javascript:alert(1)", "data:text/html,hi", "ftp://example.test/a"])(
@@ -49,7 +49,6 @@ describe("safe persisted links", () => {
 describe("media metadata policy", () => {
   const media = {
     name: "image.png",
-    key: "image.png",
     size: 1,
     type: "image/png",
   };
@@ -59,7 +58,9 @@ describe("media metadata policy", () => {
     "text/html",
     "application/octet-stream",
   ])("rejects unsupported MIME %s", (type) => {
-    expect(MediaInsertSchema.safeParse({ ...media, type }).success).toBe(false);
+    expect(MediaUploadFileSchema.safeParse({ ...media, type }).success).toBe(
+      false,
+    );
   });
   it.each([
     ["image/jpeg", "IMAGE.JPG"],
@@ -70,7 +71,7 @@ describe("media metadata policy", () => {
     ["image/avif", "image.avif"],
   ])("accepts %s with %s at the size boundary", (type, name) => {
     expect(
-      MediaInsertSchema.safeParse({
+      MediaUploadFileSchema.safeParse({
         ...media,
         type,
         name,
@@ -80,7 +81,7 @@ describe("media metadata policy", () => {
   });
   it("rejects oversized metadata", () => {
     expect(
-      MediaInsertSchema.safeParse({ ...media, size: 20 * 1024 * 1024 + 1 })
+      MediaUploadFileSchema.safeParse({ ...media, size: 20 * 1024 * 1024 + 1 })
         .success,
     ).toBe(false);
   });

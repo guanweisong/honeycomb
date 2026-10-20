@@ -108,17 +108,6 @@ describe("S3 observability", () => {
     );
   });
 
-  it("signs cleanup for the same object without deleting it during presign", async () => {
-    vi.restoreAllMocks();
-    const cleanup = new URL(
-      await S3.getPresignedDeleteUrl("uploads/orphan.png"),
-    );
-    expect(cleanup.pathname).toBe("/bucket/uploads/orphan.png");
-    expect(cleanup.searchParams.get("X-Amz-Expires")).toBe("3600");
-    expect(cleanup.searchParams.get("X-Amz-Signature")).toBeTruthy();
-    expect(send).not.toHaveBeenCalled();
-  });
-
   it("records object storage delete failures and preserves the error", async () => {
     const memory = createMemoryObservability();
     configureObservability(memory);
@@ -196,4 +185,55 @@ describe("S3 observability", () => {
       );
     },
   );
+});
+
+describe("immutable candidate storage", () => {
+  afterEach(() => vi.restoreAllMocks());
+  it("copies only once with automatic retry disabled", async () => {
+    const send = vi.fn().mockResolvedValue({});
+    const client = S3.S3();
+    vi.spyOn(client, "send").mockImplementation(send);
+    const factory = vi.spyOn(S3, "S3").mockReturnValue(client);
+    process.env.R2_ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
+    process.env.R2_ACCESS_KEY_ID = "test";
+    process.env.R2_SECRET_ACCESS_KEY = "test";
+    process.env.R2_BUCKET_NAME = "bucket";
+    await S3.copyCandidate("temporary/a.png", "media/a.png", "image/png");
+    expect(factory).toHaveBeenCalledWith(1);
+    expect(send.mock.calls[0]?.[0].input).toMatchObject({
+      Key: "media/a.png",
+      CopySource: "bucket/temporary/a.png",
+      MetadataDirective: "REPLACE",
+      ContentType: "image/png",
+    });
+  });
+  it("distinguishes absence from forbidden or unknown HEAD results", async () => {
+    const send = vi
+      .fn()
+      .mockRejectedValue({ $metadata: { httpStatusCode: 404 } });
+    const client = S3.S3();
+    vi.spyOn(client, "send").mockImplementation(send);
+    vi.spyOn(S3, "S3").mockReturnValue(client);
+    expect(await S3.headObject("media/a.png")).toBeNull();
+    send.mockRejectedValue({ $metadata: { httpStatusCode: 403 } });
+    await expect(S3.headObject("media/a.png")).rejects.toBeDefined();
+  });
+});
+it("bounds streamed candidate reads and destroys oversized streams", async () => {
+  const { Readable } = await import("node:stream");
+  process.env.R2_ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
+  process.env.R2_ACCESS_KEY_ID = "access";
+  process.env.R2_SECRET_ACCESS_KEY = "secret";
+  process.env.R2_BUCKET_NAME = "bucket";
+  const body = Readable.from([Buffer.from("oversized")]);
+  const client = S3.S3();
+  vi.spyOn(client, "send").mockImplementation(async () => ({ Body: body }));
+  const factory = vi.spyOn(S3, "S3").mockReturnValue(client);
+  try {
+    await expect(S3.readObject("media/a.png", 3)).rejects.toThrow("byte limit");
+    expect(body.destroyed).toBe(true);
+  } finally {
+    factory.mockRestore();
+    vi.restoreAllMocks();
+  }
 });

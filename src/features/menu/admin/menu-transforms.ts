@@ -46,6 +46,7 @@ export type MenuSaveItem = {
 };
 
 export type CheckedMenuData = {
+  version?: number;
   list?: MenuEntityTree[];
 };
 

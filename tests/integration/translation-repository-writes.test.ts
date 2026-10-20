@@ -31,6 +31,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 
 import { PageTemplate } from "@/features/page/page-template";
+import { PageUpdateSchema } from "@/features/page/schema";
 import { PageStatus } from "@/features/page/page-status";
 import { PostStatus } from "@/features/post/post-status";
 import { randomUUID } from "node:crypto";
@@ -96,7 +97,7 @@ describe("translation repository writes", () => {
     const tag = await createTag(
       db,
       {
-        id: "tag",
+        id: "507f1f77bcf86cd799439013",
         name: { en: "Tag", zh: "标签" },
       },
       invalidator,
@@ -104,6 +105,7 @@ describe("translation repository writes", () => {
     const page = await createPage(
       db,
       {
+        creationToken: randomUUID(),
         template: PageTemplate.DEFAULT,
         title: { en: "Page", zh: "页面" },
         content: { en: "Content", zh: "正文" },
@@ -190,14 +192,21 @@ describe("translation repository writes", () => {
       "author",
       invalidator,
     );
-    await client.execute("insert into setting (id) values ('setting')");
     await client.execute(
-      "insert into setting_translation (setting_id, locale, site_name, site_sub_name) values ('setting', 'en', 'Original', 'Subtitle'), ('setting', 'zh', '原始', '副标题')",
+      "insert into setting (id) values ('507f1f77bcf86cd799439012')",
+    );
+    await client.execute(
+      "insert into setting_translation (setting_id, locale, site_name, site_sub_name) values ('507f1f77bcf86cd799439012', 'en', 'Original', 'Subtitle'), ('507f1f77bcf86cd799439012', 'zh', '原始', '副标题')",
     );
 
     await updateSetting(
       db,
-      { id: "setting", siteName: { zh: "新版" } },
+      {
+        id: "507f1f77bcf86cd799439012",
+        expectedVersion: 0,
+        siteName: { zh: "新版" },
+      },
+      "author",
       invalidator,
     );
     await updatePost(
@@ -212,13 +221,21 @@ describe("translation repository writes", () => {
         "select locale, title, excerpt from post_translation order by locale",
       ),
     ).toMatchObject({
-      rows: [{ locale: "en", title: null, excerpt: "Excerpt" }],
+      rows: [
+        { locale: "en", title: null, excerpt: "Excerpt" },
+        { locale: "zh", title: null, excerpt: null },
+      ],
     });
     expect(await getSetting(db)).toMatchObject({
       siteName: { en: "Original", zh: "新版" },
       siteSubName: { en: "Subtitle", zh: "副标题" },
     });
-    await updateSetting(db, { id: "setting", siteName: null }, invalidator);
+    await updateSetting(
+      db,
+      { id: "507f1f77bcf86cd799439012", expectedVersion: 1, siteName: null },
+      "author",
+      invalidator,
+    );
     expect(await getSetting(db)).toMatchObject({
       siteName: null,
       siteSubName: { en: "Subtitle", zh: "副标题" },
@@ -229,6 +246,7 @@ describe("translation repository writes", () => {
     const page = await createPage(
       db,
       {
+        creationToken: randomUUID(),
         template: PageTemplate.DEFAULT,
         title: { en: "Page", zh: "页面" },
         content: { en: "Content", zh: "正文" },
@@ -245,9 +263,11 @@ describe("translation repository writes", () => {
         db,
         {
           id: page.id,
+          expectedVersion: page.version,
           status: PageStatus.PUBLISHED,
           title: { en: "Published", zh: "已发布" },
         },
+        "author",
         invalidator,
       ),
     ).rejects.toThrow();
@@ -273,7 +293,7 @@ describe("translation repository writes", () => {
     const tag = await createTag(
       db,
       {
-        id: "tag",
+        id: "507f1f77bcf86cd799439013",
         name: { en: "Tag", zh: "标签" },
       },
       invalidator,
@@ -281,6 +301,7 @@ describe("translation repository writes", () => {
     const page = await createPage(
       db,
       {
+        creationToken: randomUUID(),
         template: PageTemplate.DEFAULT,
         title: { en: "Page", zh: "页面" },
         content: { en: "Content", zh: "正文" },
@@ -292,7 +313,7 @@ describe("translation repository writes", () => {
       "delete from category_translation where category_id = 'category' and locale = 'en'",
     );
     await client.execute(
-      "delete from tag_translation where tag_id = 'tag' and locale = 'en'",
+      "delete from tag_translation where tag_id = '507f1f77bcf86cd799439013' and locale = 'en'",
     );
     await client.execute({
       sql: "delete from page_translation where page_id = ? and locale = 'en'",
@@ -320,9 +341,11 @@ describe("translation repository writes", () => {
       db,
       {
         id: page.id,
+        expectedVersion: page.version,
         title: { en: "Updated page", zh: "更新页面" },
         content: { en: "Updated content", zh: "更新正文" },
       },
+      "author",
       invalidator,
     );
 
@@ -369,19 +392,19 @@ describe("translation repository writes", () => {
       );
       if (type === "post") {
         await client.execute({
-          sql: "insert into post (id, author_id, category_id, status, updated_at) values ('timestamp-content', 'author', 'timestamp-category', ?, ?)",
+          sql: "insert into post (id, author_id, category_id, status, updated_at) values ('507f1f77bcf86cd799439011', 'author', 'timestamp-category', ?, ?)",
           args: [PostStatus.PUBLISHED, previousTime],
         });
         await client.execute(
-          "insert into post_translation (post_id, locale, title) values ('timestamp-content', 'en', 'Original')",
+          "insert into post_translation (post_id, locale, title) values ('507f1f77bcf86cd799439011', 'en', 'Original')",
         );
       } else {
         await client.execute({
-          sql: "insert into page (id, author_id, template, status, updated_at) values ('timestamp-content', 'author', ?, ?, ?)",
+          sql: "insert into page (id, author_id, template, status, updated_at) values ('507f1f77bcf86cd799439011', 'author', ?, ?, ?)",
           args: [PageTemplate.DEFAULT, PageStatus.PUBLISHED, previousTime],
         });
         await client.execute(
-          "insert into page_translation (page_id, locale, title, content) values ('timestamp-content', 'en', 'Original', 'Body'), ('timestamp-content', 'zh', '原始', '正文')",
+          "insert into page_translation (page_id, locale, title, content) values ('507f1f77bcf86cd799439011', 'en', 'Original', 'Body'), ('507f1f77bcf86cd799439011', 'zh', '原始', '正文')",
         );
       }
       vi.useFakeTimers({ toFake: ["Date"] });
@@ -404,7 +427,12 @@ describe("translation repository writes", () => {
                 "author",
                 invalidator,
               )
-            : updatePage(db, input, invalidator),
+            : updatePage(
+                db,
+                { ...input, expectedVersion: 0 },
+                "author",
+                invalidator,
+              ),
         incrementViews: (id: string) =>
           type === "post"
             ? incrementPostViews(db, id)
@@ -414,23 +442,21 @@ describe("translation repository writes", () => {
 
     it("advances the parent timestamp for a translation-only update", async () => {
       const updated = await operations().update({
-        id: "timestamp-content",
+        id: "507f1f77bcf86cd799439011",
         title: { en: "Updated", zh: "更新" },
       });
 
-      if (type === "page")
-        expect(updated).toMatchObject({ updatedAt: nextTime });
-      else expect(updated).toMatchObject({ version: 1 });
+      expect(updated).toMatchObject({ version: 1 });
       expect(
         await client.execute(
-          `select updated_at from ${type} where id = 'timestamp-content'`,
+          `select updated_at from ${type} where id = '507f1f77bcf86cd799439011'`,
         ),
       ).toMatchObject({
         rows: [{ updated_at: nextTime }],
       });
       expect(
         await client.execute(
-          `select title from ${type}_translation where ${type}_id = 'timestamp-content' and locale = 'en'`,
+          `select title from ${type}_translation where ${type}_id = '507f1f77bcf86cd799439011' and locale = 'en'`,
         ),
       ).toMatchObject({
         rows: [{ title: "Updated" }],
@@ -444,21 +470,21 @@ describe("translation repository writes", () => {
 
       await expect(
         operations().update({
-          id: "timestamp-content",
+          id: "507f1f77bcf86cd799439011",
           title: { en: "Rejected", zh: "拒绝" },
         }),
       ).rejects.toThrow();
 
       expect(
         await client.execute(
-          `select updated_at from ${type} where id = 'timestamp-content'`,
+          `select updated_at from ${type} where id = '507f1f77bcf86cd799439011'`,
         ),
       ).toMatchObject({
         rows: [{ updated_at: previousTime }],
       });
       expect(
         await client.execute(
-          `select title from ${type}_translation where ${type}_id = 'timestamp-content' and locale = 'en'`,
+          `select title from ${type}_translation where ${type}_id = '507f1f77bcf86cd799439011' and locale = 'en'`,
         ),
       ).toMatchObject({
         rows: [{ title: "Original" }],
@@ -469,16 +495,16 @@ describe("translation repository writes", () => {
       "preserves content updatedAt %s when counting views",
       async (updatedAt) => {
         await client.execute({
-          sql: `update ${type} set updated_at = ? where id = 'timestamp-content'`,
+          sql: `update ${type} set updated_at = ? where id = '507f1f77bcf86cd799439011'`,
           args: [updatedAt],
         });
 
         await expect(
-          operations().incrementViews("timestamp-content"),
+          operations().incrementViews("507f1f77bcf86cd799439011"),
         ).resolves.toEqual({ views: 1 });
         expect(
           await client.execute(
-            `select views, updated_at from ${type} where id = 'timestamp-content'`,
+            `select views, updated_at from ${type} where id = '507f1f77bcf86cd799439011'`,
           ),
         ).toMatchObject({
           rows: [{ views: 1, updated_at: updatedAt }],
@@ -487,20 +513,18 @@ describe("translation repository writes", () => {
     );
 
     it("leaves the timestamp unchanged for an empty patch", async () => {
-      if (type === "post") {
-        expect(
-          PostUpdateSchema.safeParse({ id: "a".repeat(24), expectedVersion: 0 })
-            .success,
-        ).toBe(false);
-      } else {
-        const unchanged = await operations().update({
-          id: "timestamp-content",
-        });
-        expect(unchanged).toMatchObject({ updatedAt: previousTime });
-      }
+      const updateSchema =
+        type === "post" ? PostUpdateSchema : PageUpdateSchema;
+      expect(
+        updateSchema.safeParse({ id: "a".repeat(24), expectedVersion: 0 })
+          .success,
+      ).toBe(false);
+      await expect(
+        operations().update({ id: "507f1f77bcf86cd799439011" }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(
         await client.execute(
-          `select updated_at from ${type} where id = 'timestamp-content'`,
+          `select updated_at from ${type} where id = '507f1f77bcf86cd799439011'`,
         ),
       ).toMatchObject({ rows: [{ updated_at: previousTime }] });
     });
@@ -520,6 +544,7 @@ describe("translation repository writes", () => {
     const page = await createPage(
       db,
       {
+        creationToken: randomUUID(),
         template: PageTemplate.DEFAULT,
         title: { en: "Page", zh: "页面" },
         content: { en: "Content", zh: "正文" },
@@ -600,7 +625,7 @@ describe("translation repository writes", () => {
     await createTag(
       db,
       {
-        id: "tag",
+        id: "507f1f77bcf86cd799439013",
         name: { en: "Tag", zh: "标签" },
       },
       invalidator,
@@ -608,6 +633,7 @@ describe("translation repository writes", () => {
     await createPage(
       db,
       {
+        creationToken: randomUUID(),
         template: PageTemplate.DEFAULT,
         title: { en: "Page", zh: "页面" },
         content: { en: "Content", zh: "正文" },
@@ -631,7 +657,7 @@ describe("translation repository writes", () => {
       {
         id: post.id,
         expectedVersion: post.version,
-        movieActorIds: ["tag"],
+        movieActorIds: ["507f1f77bcf86cd799439013"],
       },
       "author",
       invalidator,

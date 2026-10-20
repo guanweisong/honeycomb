@@ -1,4 +1,5 @@
 import "server-only";
+import { bumpMenuRevisionForCategoryDeletion } from "@/features/menu/server";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
 
@@ -290,7 +291,10 @@ export async function destroyCategories(
   invalidator: PublicContentInvalidator,
 ) {
   await observeDbOperation("category.destroy", "delete", () =>
-    db.delete(schema.category).where(inArray(schema.category.id, ids)),
+    db.transaction(async (tx) => {
+      await bumpMenuRevisionForCategoryDeletion(tx, ids);
+      await tx.delete(schema.category).where(inArray(schema.category.id, ids));
+    }),
   );
   const persisted = { success: true } as const;
   const publicSync = await invalidator.invalidate({
