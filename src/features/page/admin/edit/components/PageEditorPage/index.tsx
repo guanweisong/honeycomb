@@ -67,12 +67,6 @@ export function PageEditorPage() {
       generation.current += 1;
     };
   }, [identity]);
-  useEffect(
-    () => () => {
-      generation.current += 1;
-    },
-    [identity],
-  );
   const form = useForm<PageEditorValues>({
     resolver: zodResolver(PageEditorSchema),
     defaultValues: { template: PageTemplate.DEFAULT },
@@ -140,6 +134,15 @@ export function PageEditorPage() {
       toPageEditorFormValues(record) ?? { template: PageTemplate.DEFAULT },
     );
   }, [identity, id, actorId, detail, isDirty, form]);
+  const applyDraft = (values: PageDraft) => {
+    setBaseVersion(values.baseVersion);
+    const { baseVersion: savedVersion, ...fields } = values;
+    void savedVersion;
+    form.reset(
+      { ...fields, status: form.getValues("status") },
+      { keepDefaultValues: true },
+    );
+  };
   const draft = useLocalDraft({
     storageKey:
       user &&
@@ -151,14 +154,8 @@ export function PageEditorPage() {
     ready: !isLoadingDetail,
     parse: parsePageDraft,
     onRestore: (values) => {
-      setBaseVersion(values.baseVersion);
+      applyDraft(values);
       if (id && values.baseVersion === undefined) setProblem("conflict");
-      const { baseVersion: savedVersion, ...fields } = values;
-      void savedVersion;
-      form.reset(
-        { ...fields, status: form.getValues("status") },
-        { keepDefaultValues: true },
-      );
     },
   });
   const finishCreation = (
@@ -391,13 +388,7 @@ export function PageEditorPage() {
             type="button"
             disabled={loading}
             onClick={() => {
-              setBaseVersion(preserved.baseVersion);
-              const { baseVersion: savedVersion, ...fields } = preserved;
-              void savedVersion;
-              form.reset(
-                { ...fields, status: form.getValues("status") },
-                { keepDefaultValues: true },
-              );
+              applyDraft(preserved);
               setProblem("conflict");
             }}
           >

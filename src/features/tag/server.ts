@@ -19,7 +19,7 @@ import type { TagInsert, TagUpdate, TagListInput } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
 async function withTranslations<T extends typeof schema.tag.$inferSelect>(
-  db: Database,
+  db: Pick<Database, "select">,
   rows: T[],
 ) {
   if (!rows.length) return [];
@@ -91,12 +91,13 @@ export async function updateTag(
             });
         }
       }
-      return updated;
+      if (!updated) return undefined;
+      // Assemble the response before commit so a failed read rolls back the write.
+      const [result] = await withTranslations(tx, [updated]);
+      return requireWriteResult(result, "update", "tag");
     }),
   );
-  const tag = requireWriteResult(value, "update", "tag");
-  const [result] = await withTranslations(db, [tag]);
-  const persisted = requireWriteResult(result, "update", "tag");
+  const persisted = requireWriteResult(value, "update", "tag");
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,

@@ -38,6 +38,7 @@ describe("useRowSelection", () => {
       const [selectedRows, setSelectedRows] = useState<Row[]>([]);
       const selection = useRowSelection({
         rows,
+        getRowId: (row: Row) => row.id,
         selectedRows,
         disabledRowSelectable: (row: Row) => Boolean(row.disabled),
         onSelectionChange: (nextRows: Row[]) => {
@@ -78,6 +79,7 @@ describe("useRowSelection", () => {
       const [selectedRows, setSelectedRows] = useState<Row[]>([rows[1]]);
       const selection = useRowSelection({
         rows,
+        getRowId: (row: Row) => row.id,
         selectedRows,
         onSelectionChange: (nextRows: Row[]) => {
           setSelectedRows(nextRows);
@@ -115,5 +117,90 @@ describe("useRowSelection", () => {
 
     await act(async () => requireDefined(buttons[1]).click());
     expect(onSelectionChange).toHaveBeenLastCalledWith([rows[2]]);
+  });
+
+  it("reconciles refreshed, missing and newly disabled rows by ID without duplicates", async () => {
+    const original: Row = { id: "first" };
+    const refreshed: Row = { id: "first" };
+    const onSelectionChange = vi.fn<(selectedRows: Row[]) => void>();
+    function Harness({ currentRows }: { currentRows: Row[] }) {
+      const [selectedRows, setSelectedRows] = useState<Row[]>([original]);
+      const selection = useRowSelection({
+        rows: currentRows,
+        selectedRows,
+        getRowId: (row: Row) => row.id,
+        disabledRowSelectable: (row: Row) => Boolean(row.disabled),
+        onSelectionChange: (next: Row[]) => {
+          setSelectedRows(next);
+          onSelectionChange(next);
+        },
+      });
+      return React.createElement(
+        "button",
+        {
+          "data-selected": selection.isAllSelectedOnCurrentPage,
+          onClick: () => selection.handleSelectRow(refreshed, true),
+        },
+        "select",
+      );
+    }
+    await act(async () =>
+      root.render(React.createElement(Harness, { currentRows: [refreshed] })),
+    );
+    expect(onSelectionChange).toHaveBeenLastCalledWith([refreshed]);
+    expect(onSelectionChange.mock.calls.at(-1)?.[0][0]).toBe(refreshed);
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    await act(async () =>
+      root.render(React.createElement(Harness, { currentRows: [refreshed] })),
+    );
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    const button = requireDefined(container.querySelector("button"));
+    expect(button.dataset.selected).toBe("true");
+    await act(async () => button.click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith([refreshed]);
+    await act(async () =>
+      root.render(
+        React.createElement(Harness, {
+          currentRows: [{ id: "first", disabled: true }],
+        }),
+      ),
+    );
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+    await act(async () => button.click());
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+    await act(async () =>
+      root.render(React.createElement(Harness, { currentRows: [] })),
+    );
+    expect(button.dataset.selected).toBe("false");
+  });
+  it("ignores direct select and deselect calls while fetching without discarding selection", async () => {
+    const onSelectionChange = vi.fn<(selectedRows: Row[]) => void>();
+    function Harness() {
+      const selection = useRowSelection({
+        rows,
+        getRowId: (row: Row) => row.id,
+        selectedRows: [rows[1]],
+        isFetching: true,
+        onSelectionChange,
+      });
+      return React.createElement(
+        "button",
+        {
+          "data-selected": selection.isRowSelected(rows[1]),
+          onClick: () => {
+            selection.handleSelectRow(rows[2], true);
+            selection.handleSelectRow(rows[1], false);
+            selection.handleSelectAll(true);
+            selection.handleSelectAll(false);
+          },
+        },
+        "attempt changes",
+      );
+    }
+    await act(async () => root.render(React.createElement(Harness)));
+    const button = requireDefined(container.querySelector("button"));
+    await act(async () => button.click());
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(button.dataset.selected).toBe("true");
   });
 });

@@ -39,12 +39,16 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => false,
 }));
-vi.mock("@/components/DataTable", () => ({
-  DataTable: (props: DataTableProps<unknown>) => {
-    trpcMocks.table = props;
-    return props.toolBar;
-  },
-}));
+vi.mock("@/components/DataTable", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/components/DataTable")>();
+  return {
+    DataTable: (props: DataTableProps<unknown>) => {
+      trpcMocks.table = props;
+      return React.createElement(actual.DataTable, props);
+    },
+  };
+});
 vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: { onSubmit: (input: UserListQueryInput) => void }) => {
     trpcMocks.submit = props.onSubmit;
@@ -73,7 +77,7 @@ describe("user query state", () => {
     container.remove();
   });
 
-  it("sends the exact replacement params and forwards query status", async () => {
+  it("updates the table search filter and forwards query status", async () => {
     await act(async () => {
       root.render(React.createElement(UserPageShell));
     });
@@ -93,8 +97,22 @@ describe("user query state", () => {
       });
     });
 
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      name: "alice",
+    });
     await act(async () => {
       trpcMocks.submit?.({ name: "bob" });
+    });
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      name: "bob",
     });
 
     await act(async () => {
@@ -104,16 +122,11 @@ describe("user query state", () => {
     expect(
       trpcMocks.options.every((options) => options === adminListQueryOptions),
     ).toBe(true);
-    expect(trpcMocks.queryInputs).toEqual([
-      {},
-      {
-        page: 2,
-        limit: 25,
-        name: "alice",
-        level: [UserLevel.EDITOR],
-      },
-      { name: "bob" },
-      {},
-    ]);
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+    });
   });
 });

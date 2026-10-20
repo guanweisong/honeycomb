@@ -47,6 +47,7 @@ export function LinkPageShell() {
   return (
     <>
       <DataTable<LinkEntity>
+        getRowId={(row) => row.id}
         data={{
           list: query.data?.list ?? [],
           total: query.data?.total ?? 0,
@@ -63,7 +64,7 @@ export function LinkPageShell() {
         selectableRows={canDeleteLink}
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
-        toolBar={
+        toolBar={(table) => (
           <div className="flex justify-between">
             <div className="flex gap-1">
               {canCreateLink && (
@@ -99,13 +100,15 @@ export function LinkPageShell() {
                     placeholder: "请输入链接名称进行搜索",
                   },
                 ]}
-                onSubmit={setSearchParams}
+                onSubmit={({ name }) =>
+                  table.getColumn("name")?.setFilterValue(name)
+                }
                 inline={true}
                 submitProps={{ children: "查询", variant: "outline" }}
               />
             </div>
           </div>
-        }
+        )}
         rowActions={
           canUpdateLink || canDeleteLink
             ? (row) => (

@@ -14,8 +14,8 @@ const service = vi.hoisted(() => ({
   destroy: vi.fn(),
 }));
 vi.mock("../server", () => ({
-  beginMediaUpload: service.begin,
-  confirmMediaUpload: service.confirm,
+  prepareMediaUpload: service.begin,
+  registerMediaUpload: service.confirm,
   destroyMedia: service.destroy,
 }));
 vi.mock("@/lib/storage/S3", () => ({ default: {} }));
@@ -33,17 +33,18 @@ function caller(admin = true) {
 }
 it("routes authenticated upload intent and actor, not client object metadata", async () => {
   service.begin.mockResolvedValue({
-    id: TEST_IDS.ID_1,
+    intent: "signed-intent",
     uploadUrl: "https://storage.test/temporary/a.png",
     expiresAt: "later",
   });
-  const result = await caller().beginUpload({
+  const result = await caller().prepareUpload({
     name: "test.png",
     type: "image/png",
     size: 1,
+    sha256: "a".repeat(64),
   });
   expect(result).toEqual({
-    id: TEST_IDS.ID_1,
+    intent: "signed-intent",
     uploadUrl: "https://storage.test/temporary/a.png",
     expiresAt: "later",
   });
@@ -51,10 +52,15 @@ it("routes authenticated upload intent and actor, not client object metadata", a
 });
 it("denies guest upload and confirmation before business calls", async () => {
   await expect(
-    caller(false).beginUpload({ name: "test.png", type: "image/png", size: 1 }),
+    caller(false).prepareUpload({
+      name: "test.png",
+      type: "image/png",
+      size: 1,
+      sha256: "a".repeat(64),
+    }),
   ).rejects.toThrow();
   await expect(
-    caller(false).confirmUpload({ id: TEST_IDS.ID_1 }),
+    caller(false).registerUpload({ intent: "signed-intent" }),
   ).rejects.toThrow();
   expect(service.begin).not.toHaveBeenCalled();
   expect(service.confirm).not.toHaveBeenCalled();
@@ -82,4 +88,13 @@ it("does not expose the old arbitrary-key registration endpoints", () => {
   expect(Object.keys(mediaRouter._def.procedures)).not.toContain(
     "getPresignedUrl",
   );
+});
+
+it("exposes no lifecycle or recovery endpoints", () => {
+  expect(Object.keys(mediaRouter._def.procedures).sort()).toEqual([
+    "destroy",
+    "index",
+    "prepareUpload",
+    "registerUpload",
+  ]);
 });

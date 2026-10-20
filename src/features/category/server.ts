@@ -1,4 +1,5 @@
 import "server-only";
+import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
 import { bumpMenuRevisionForCategoryDeletion } from "@/features/menu/server";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
@@ -37,7 +38,7 @@ function mapCategoryConstraint(error: unknown): never {
 }
 
 async function withTranslations<T extends typeof schema.category.$inferSelect>(
-  db: Database,
+  db: Pick<Database, "select">,
   rows: T[],
 ) {
   if (!rows.length) return [];
@@ -269,14 +270,15 @@ export async function updateCategory(
           }
         }
       }
-      return updated;
+      if (!updated) return undefined;
+      // Assemble the response before commit so a failed read rolls back the write.
+      const [result] = await withTranslations(tx, [updated]);
+      return requireWriteResult(result, "update", "category");
     }),
   ).catch(mapCategoryConstraint);
   if (!value && parentGuard)
     throw new ApplicationError("BAD_REQUEST", "分类不存在或父子关系形成循环");
-  const category = requireWriteResult(value, "update", "category");
-  const [result] = await withTranslations(db, [category]);
-  const persisted = requireWriteResult(result, "update", "category");
+  const persisted = requireWriteResult(value, "update", "category");
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,
@@ -293,7 +295,16 @@ export async function destroyCategories(
   await observeDbOperation("category.destroy", "delete", () =>
     db.transaction(async (tx) => {
       await bumpMenuRevisionForCategoryDeletion(tx, ids);
-      await tx.delete(schema.category).where(inArray(schema.category.id, ids));
+      for (let offset = 0; offset < ids.length; offset += SQL_ID_CHUNK_SIZE) {
+        await tx
+          .delete(schema.category)
+          .where(
+            inArray(
+              schema.category.id,
+              ids.slice(offset, offset + SQL_ID_CHUNK_SIZE),
+            ),
+          );
+      }
     }),
   );
   const persisted = { success: true } as const;

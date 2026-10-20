@@ -378,17 +378,16 @@ describe("atomic post writes", () => {
       { locale: "zh" },
     ]);
   });
-  it("checks effective cover and content readiness even when omitted from the patch", async () => {
+  it("accepts ordinary media for covers and managed content in the save transaction", async () => {
     const mediaId = "507f1f77bcf86cd799439033";
-    const image = '<img src="https://assets.example.test/files/ready.png">';
+    const image = '<img src="https://assets.example.test/files/ordinary.png">';
     await db.insert(schema.media).values({
       id: mediaId,
-      state: "READY",
-      key: "ready.png",
-      name: "ready",
+      key: "ordinary.png",
+      name: "ordinary",
       size: 1,
       type: "image/png",
-      url: "https://assets.example.test/files/ready.png",
+      url: "https://assets.example.test/files/ordinary.png",
     });
     const created = await createPost(
       db,
@@ -396,60 +395,25 @@ describe("atomic post writes", () => {
       actorId,
       cache(),
     );
-    await db
-      .update(schema.media)
-      .set({ state: "DELETING" })
-      .where(eq(schema.media.id, mediaId));
-    await expect(
-      updatePost(
-        db,
-        { id: created.id, expectedVersion: 0, title: { zh: "edit" } },
-        actorId,
-        cache(),
-      ),
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    await expect(
-      updatePost(
-        db,
-        { id: created.id, expectedVersion: 0, coverId: null },
-        actorId,
-        cache(),
-      ),
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect((await row(created.id)).version).toBe(0);
     await updatePost(
       db,
-      {
-        id: created.id,
-        expectedVersion: 0,
-        coverId: null,
-        removeLocales: ["en"],
-      },
+      { id: created.id, expectedVersion: 0, title: { zh: "edit" } },
       actorId,
       cache(),
     );
-    expect((await row(created.id)).version).toBe(1);
-  });
-  it("rejects UPLOADING media as a new cover and as new managed content", async () => {
-    const mediaId = "507f1f77bcf86cd799439034";
-    await db.insert(schema.media).values({
-      id: mediaId,
-      key: "pending.png",
-      name: "pending",
-      size: 1,
-      type: "image/png",
-      url: "https://assets.example.test/files/pending.png",
+    expect(await row(created.id)).toMatchObject({
+      version: 1,
+      coverId: mediaId,
     });
-    await expect(
-      createPost(db, { ...input, coverId: mediaId }, actorId, cache()),
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+  it("rejects newly introduced unknown managed content and rolls back the write", async () => {
     await expect(
       createPost(
         db,
         {
           ...input,
           content: {
-            en: '<img src="https://assets.example.test/files/pending.png">',
+            en: '<img src="https://assets.example.test/files/missing.png">',
           },
         },
         actorId,
@@ -505,6 +469,12 @@ describe("atomic post writes", () => {
       ),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("preserves the persisted creation hash golden bytes", async () => {
+    const created = await createPost(db, input, actorId, cache());
+    expect((await row(created.id)).creationInputHash).toBe(
+      "501ec3697c6f9741b1671bdc68056cd8f2a63660f369b9a902de82bb1ccd02de",
+    );
   });
   it("replays the same creation intent after later edits without overwriting them", async () => {
     const created = await createPost(db, input, actorId, cache());
@@ -842,5 +812,39 @@ describe("post transaction retry boundary", () => {
     });
     expect(fake.transaction).toHaveBeenCalledTimes(4);
     expect(fake.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("post conditional write result", () => {
+  it("rejects a zero-row CAS result before translations and invalidation", async () => {
+    const fake = createMockDb();
+    fake.limit
+      .mockResolvedValueOnce([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "111111111111111111111111",
+          version: 0,
+          status: PostStatus.DRAFT,
+        },
+      ]);
+    fake.returning.mockResolvedValue([]);
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        asMockDatabase(fake),
+        {
+          id: "111111111111111111111111",
+          expectedVersion: 0,
+          movieTime: "changed",
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(fake.insert).not.toHaveBeenCalled();
+    expect(fake.delete).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 });

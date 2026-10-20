@@ -12,6 +12,7 @@ import {
   type PostInsert,
 } from "@/features/post/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
+import { isDeterminateRejectionCode } from "@/lib/trpc/client/mutation-error";
 import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
@@ -62,6 +63,11 @@ export function usePostEditor(id: string | null) {
   );
   const [isNavigating, startNavigation] = useTransition();
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
+  // Confirmed publication state never comes from editable/recovered form values.
+  // Draft CAS provenance may intentionally be older than this server snapshot.
+  const [confirmedBaseline, setConfirmedBaseline] = useState<
+    Pick<PostDetailEntity, "id" | "version" | "status"> | undefined
+  >(undefined);
   const [baselineVersion, setBaselineVersion] = useState<number | undefined>(
     undefined,
   );
@@ -139,6 +145,11 @@ export function usePostEditor(id: string | null) {
 
   const resetEditor = useCallback(
     (post?: PostDetailEntity | null) => {
+      setConfirmedBaseline(
+        post
+          ? { id: post.id, version: post.version, status: post.status }
+          : undefined,
+      );
       setBaselineVersion(post?.version);
       form.reset({
         ...post,
@@ -161,6 +172,13 @@ export function usePostEditor(id: string | null) {
       // Changes to dirty state alone must not reapply an older query snapshot.
       if (previous.detail === detail) return;
       if (detail === consumedSaveSnapshot.current) return;
+      if (
+        detail?.id === confirmedBaseline?.id &&
+        detail &&
+        confirmedBaseline &&
+        detail.version < confirmedBaseline.version
+      )
+        return;
       if ((isDirty || submitting.current) && previous.detail?.id === id) return;
     }
     if (id && detail?.id !== id) {
@@ -168,7 +186,7 @@ export function usePostEditor(id: string | null) {
       return;
     }
     resetEditor(id ? detail : undefined);
-  }, [detail, id, isDirty, resetEditor]);
+  }, [confirmedBaseline, detail, id, isDirty, resetEditor]);
 
   const previousAccount = useRef(user?.id);
   useEffect(() => {
@@ -178,6 +196,16 @@ export function usePostEditor(id: string | null) {
       resetEditor(id && detail?.id === id ? detail : undefined);
     }
   }, [user?.id, id, detail, resetEditor]);
+
+  const applyDraft = (values: PostDraft) => {
+    setBaselineVersion(values.baseVersion);
+    form.reset(
+      { ...values, id: form.getValues("id"), status: form.getValues("status") },
+      { keepDefaultValues: true },
+    );
+    // Do not display an unrelated server cover for a recovered selection.
+    if (values.coverId !== coverPreview?.id) setCoverPreview(undefined);
+  };
 
   const draft = useLocalDraft({
     storageKey:
@@ -190,18 +218,8 @@ export function usePostEditor(id: string | null) {
     ready: !id || detail?.id === id,
     parse: parsePostDraft,
     onRestore: (values) => {
-      setBaselineVersion(values.baseVersion);
+      applyDraft(values);
       if (id && values.baseVersion === undefined) setSaveProblem("conflict");
-      form.reset(
-        {
-          ...values,
-          id: form.getValues("id"),
-          status: form.getValues("status"),
-        },
-        { keepDefaultValues: true },
-      );
-      // Do not display an unrelated server cover for a recovered selection.
-      if (values.coverId !== coverPreview?.id) setCoverPreview(undefined);
     },
   });
 
@@ -358,6 +376,11 @@ export function usePostEditor(id: string | null) {
             ) {
               draft.clearSaved(submittedDraft);
               const currentValues = form.getValues();
+              setConfirmedBaseline({
+                id: detail.id,
+                version: result.version,
+                status: data.status,
+              });
               setBaselineVersion(result.version);
               setSaveProblem(null);
               const savedDetail =
@@ -410,11 +433,7 @@ export function usePostEditor(id: string | null) {
       if (code === "CONFLICT") {
         setSaveProblem("conflict");
         toast.error("服务器已有更新，本地内容已保留，请核对最新版本");
-      } else if (
-        ["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].includes(
-          String(code),
-        )
-      ) {
+      } else if (isDeterminateRejectionCode(String(code))) {
         if (action === "create" && user) {
           const attempt = readPostCreationAttempt(user.id);
           if (attempt) clearPostCreationAttempt(user.id, attempt.creationToken);
@@ -457,6 +476,15 @@ export function usePostEditor(id: string | null) {
       !latest.data
     )
       return;
+    if (
+      latest.data.id === confirmedBaseline?.id &&
+      latest.data.version < confirmedBaseline.version
+    ) {
+      toast.warning(
+        "读取到的版本早于已确认保存，本地内容已保留，请稍后再次加载",
+      );
+      return;
+    }
     consumedSaveSnapshot.current = latest.data;
     if (JSON.stringify(form.getValues()) !== requestedValues) {
       toast.warning("加载期间有新的本地编辑，未替换表单，请核对后再次加载");
@@ -520,22 +548,14 @@ export function usePostEditor(id: string | null) {
 
   return {
     category,
+    confirmedStatus:
+      confirmedBaseline?.id === id ? confirmedBaseline.status : undefined,
     actionsKey: `${userId ?? ""}:${user?.level ?? ""}:${id ?? "new"}:${baselineVersion ?? "unknown"}:${creationAttempt?.creationToken ?? "none"}`,
     saveProblem,
     preservedDraft,
     restorePreservedDraft: () => {
       if (!preservedDraft) return;
-      setBaselineVersion(preservedDraft.baseVersion);
-      form.reset(
-        {
-          ...preservedDraft,
-          id: form.getValues("id"),
-          status: form.getValues("status"),
-        },
-        { keepDefaultValues: true },
-      );
-      if (preservedDraft.coverId !== coverPreview?.id)
-        setCoverPreview(undefined);
+      applyDraft(preservedDraft);
       setSaveProblem("conflict");
     },
     loadLatest,

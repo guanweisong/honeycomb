@@ -1,4 +1,5 @@
 import React, { act } from "react";
+import { z } from "zod";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
@@ -286,6 +287,15 @@ describe("usePostEditor", () => {
     expect(requireDefined(editor).preservedDraft?.title).toEqual({
       zh: "local",
     });
+    await act(async () => requireDefined(editor).restorePreservedDraft());
+    expect(requireDefined(editor).form.getValues("title")).toEqual({
+      zh: "local",
+    });
+    expect(requireDefined(editor).form.getValues("status")).toBe(
+      originalDetail.status,
+    );
+    expect(requireDefined(editor).saveProblem).toBe("conflict");
+    expect(requireDefined(editor).form.formState.isDirty).toBe(true);
   });
 
   it("retains input and does not send creation when synchronous storage fails", async () => {
@@ -1212,6 +1222,27 @@ describe("usePostEditor", () => {
       ).resolves.toBe(true);
     });
   });
+
+  it.each([
+    [new z.ZodError([]), "unknown"],
+    [{ data: { code: { toString: () => "FORBIDDEN" } } }, null],
+  ])(
+    "retains post-specific thrown-error classification %#",
+    async (error, problem) => {
+      mocks.detail = { ...originalDetail, version: 3 };
+      mocks.update.mockRejectedValueOnce(error);
+      await renderEditor(postId);
+      await act(async () => {
+        await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      });
+      expect(requireDefined(editor).saveProblem).toBe(problem);
+      expect(mocks.error).toHaveBeenCalledWith(
+        problem === "unknown"
+          ? "保存结果暂时无法确认，本地内容已保留，请先核对"
+          : "更新失败",
+      );
+    },
+  );
 
   it("returns false when the cover is missing", async () => {
     await renderEditor();

@@ -8,7 +8,7 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 
 ## 角色矩阵
 
-当前共 36 项 Permission。`✓` 表示角色拥有该能力，`—` 表示服务端必须拒绝。ADMIN 自动拥有 `Permission` 定义中的全部能力；EDITOR 和 GUEST 必须在集中映射中显式列出。
+当前共 35 项 Permission。`✓` 表示角色拥有该能力，`—` 表示服务端必须拒绝。ADMIN 自动拥有 `Permission` 定义中的全部能力；EDITOR 和 GUEST 必须在集中映射中显式列出。
 
 | Permission              | ADMIN | EDITOR | GUEST |
 | ----------------------- | :---: | :----: | :---: |
@@ -26,7 +26,6 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 | `media:read-all`        |   ✓   |   ✓    |   ✓   |
 | `media:upload`          |   ✓   |   ✓    |   —   |
 | `media:delete`          |   ✓   |   ✓    |   —   |
-| `media:manage-uploads`  |   ✓   |   —    |   —   |
 | `menu:read-all`         |   ✓   |   ✓    |   ✓   |
 | `menu:update`           |   ✓   |   ✓    |   —   |
 | `page:read-all`         |   ✓   |   ✓    |   ✓   |
@@ -58,9 +57,9 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 - 未同时拥有文章和页面未发布读取能力时，评论列表只包含已发布目标的评论（包括 custom 文章引用），在分页及计数前过滤，避免间接暴露未发布标题、关联标识及评论内容。无目标的 custom 评论同样不可见。
 - ADMIN 和 EDITOR 继续拥有完整读取范围；匿名请求仍不能调用后台接口。评论管理写权限不变。
 
-## 媒体恢复权限
+## 媒体普通记录权限
 
-`media:manage-uploads` 仅 ADMIN 拥有，用于查看和核对其他上传者的非 READY 记录；它不替代 `media:upload` 或 `media:delete`。普通上传者只能查看自己的待处理记录。`media.reconcile` 的入口为 `media:read-all`，后续服务按状态重新检查上传或删除权限及账户启用状态，不能因为有读取权限就执行写入。
+`media.prepareUpload` 和 `media.registerUpload` 使用 `media:upload`；签名意图绑定上传者，服务在返回已存在记录前复查当前账户启用状态和上传权限，在注册写事务再次检查。没有代替其他上传者核对的恢复权限或端点。`media.index` 使用 `media:read-all`，`media.destroy` 使用 `media:delete` 并在删除事务内复查。读取权限不能执行写入。
 
 ## 复合能力
 

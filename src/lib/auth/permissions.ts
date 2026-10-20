@@ -15,7 +15,6 @@ export const Permission = {
   mediaReadAll: "media:read-all",
   mediaUpload: "media:upload",
   mediaDelete: "media:delete",
-  mediaManageUploads: "media:manage-uploads",
   menuReadAll: "menu:read-all",
   menuUpdate: "menu:update",
   pageReadAll: "page:read-all",

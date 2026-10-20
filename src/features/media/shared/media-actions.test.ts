@@ -1,7 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { File as NodeFile } from "node:buffer";
+import { webcrypto } from "node:crypto";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { submitMediaDelete, submitMediaUpload } from "./media-actions";
 import type { MediaRecord } from "../types";
-export const uploadedMedia = {
+beforeEach(() => {
+  vi.stubGlobal("crypto", webcrypto);
+  vi.stubGlobal("File", NodeFile);
+});
+const uploadedMedia = {
   id: "ready",
   name: "good.png",
   type: "image/png",
@@ -14,36 +20,37 @@ export const uploadedMedia = {
   createdAt: null,
   updatedAt: null,
 } satisfies MediaRecord;
-export function dependencies() {
+function dependencies() {
   return {
-    beginUpload: vi.fn(async ({ name }: { name: string }) => ({
-      id: name,
+    prepareUpload: vi.fn(async ({ name }: { name: string }) => ({
+      intent: name,
       uploadUrl: `https://temp.test/${name}`,
       expiresAt: "later",
     })),
     uploadToStorage: vi.fn().mockResolvedValue(undefined),
-    confirmUpload: vi.fn(async ({ id }: { id: string }) =>
-      id === "bad.png"
-        ? { state: "rejected" as const, id, message: "invalid image" }
-        : { state: "ready" as const, media: uploadedMedia },
-    ),
+    registerUpload: vi.fn(async ({ intent }: { intent: string }) => {
+      if (intent === "bad.png") throw new Error("invalid image");
+      return uploadedMedia;
+    }),
   };
 }
-export const file = (name = "good.png") =>
+const file = (name = "good.png") =>
   new File(["a"], name, { type: "image/png" });
-describe("media lifecycle actions", () => {
-  it("begins temporary upload and confirms only the operation ID", async () => {
+describe("media registration actions", () => {
+  it("hashes actual bytes and registers only the signed intent", async () => {
     const deps = dependencies();
     expect(await submitMediaUpload({ ...deps, files: [file()] })).toEqual({
       state: "success",
       media: [uploadedMedia],
     });
-    expect(deps.beginUpload).toHaveBeenCalledWith({
+    expect(deps.prepareUpload).toHaveBeenCalledWith({
       name: "good.png",
       type: "image/png",
       size: 1,
+      sha256:
+        "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
     });
-    expect(deps.confirmUpload).toHaveBeenCalledWith({ id: "good.png" });
+    expect(deps.registerUpload).toHaveBeenCalledWith({ intent: "good.png" });
   });
   it("requires explicit unknown-reference acknowledgment for deletion", async () => {
     const destroy = vi.fn().mockResolvedValue({ success: true });
@@ -55,38 +62,19 @@ describe("media lifecycle actions", () => {
       acknowledgeUnknownReferences: true,
     });
   });
-  it("preserves conflict details and pending deletion", async () => {
+  it("preserves deletion errors with manual verification guidance", async () => {
     expect(
       await submitMediaDelete({
         id: "ready",
-        destroy: vi.fn().mockRejectedValue(
-          Object.assign(new Error("仍被内容引用"), {
-            data: { code: "CONFLICT" },
-          }),
-        ),
+        destroy: vi.fn().mockRejectedValue(new Error("network lost")),
       }),
-    ).toEqual({ state: "error", message: "仍被内容引用" });
-    expect(
-      await submitMediaDelete({
-        id: "ready",
-        destroy: vi.fn().mockResolvedValue({
-          success: false,
-          state: "indeterminate",
-          message: "pending",
-        }),
-      }),
-    ).toEqual({ state: "indeterminate", message: "pending" });
+    ).toEqual({
+      state: "error",
+      message: "network lost；删除结果可能未完成，请人工核对后再重试",
+    });
   });
 });
-it("treats lost delete responses as indeterminate instead of safe-to-select failures", async () => {
-  expect(
-    await submitMediaDelete({
-      id: "ready",
-      destroy: vi.fn().mockRejectedValue(new Error("network lost")),
-    }),
-  ).toMatchObject({ state: "indeterminate" });
-});
-it("does not confirm an upload after its account or component is obsolete", async () => {
+it("does not register an upload after its account or component is obsolete", async () => {
   const deps = dependencies();
   let active = true;
   deps.uploadToStorage.mockImplementation(async () => {
@@ -97,7 +85,7 @@ it("does not confirm an upload after its account or component is obsolete", asyn
     files: [file()],
     isCurrent: () => active,
   });
-  expect(deps.confirmUpload).not.toHaveBeenCalled();
+  expect(deps.registerUpload).not.toHaveBeenCalled();
 });
 it("limits a batch to two concurrent uploads", async () => {
   const deps = dependencies();

@@ -544,6 +544,40 @@ describe("PageEditorPage", () => {
     );
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
   });
+  it("keeps StrictMode A → B → A edits when the first visit finishes saving", async () => {
+    const pending = deferred<{ id: string; version: number }>();
+    mocks.update.mockReturnValueOnce(pending.promise);
+    const renderStrict = async (id: string) => {
+      mocks.searchId = id;
+      mocks.detail = { ...originalDetail, id };
+      await act(async () =>
+        root.render(
+          <React.StrictMode>
+            <LayoutHarness />
+          </React.StrictMode>,
+        ),
+      );
+    };
+    await renderStrict(pageId);
+    await editTitle("first visit");
+    await save();
+    await renderStrict("234567890123456789012345");
+    await renderStrict(pageId);
+    await editTitle("return visit");
+    await act(async () => pending.resolve({ id: pageId, version: 1 }));
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe(
+      "return visit",
+    );
+    expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+    await save();
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+    expect(mocks.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedVersion: 0 }),
+    );
+  });
+
   it("keeps the independent version after a dirty refetch and refreshes header closures after save", async () => {
     mocks.detail = originalDetail;
     await render();

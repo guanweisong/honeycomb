@@ -7,7 +7,7 @@ import type { MenuEntityTree, SortableMenuNode } from "../../menu-transforms";
 let canUpdateMenu = false;
 const queryMocks = vi.hoisted(
   (): {
-    data: { list: MenuEntityTree[] };
+    data: { list: MenuEntityTree[]; version?: number };
     refetch: ReturnType<typeof vi.fn>;
     mutateAsync: ReturnType<typeof vi.fn>;
   } => ({
@@ -103,6 +103,39 @@ describe("MenuPageShell", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("hides passive sync copy while keeping removal and dirty save gating", async () => {
+    canUpdateMenu = true;
+    queryMocks.data = {
+      version: 0,
+      list: [
+        {
+          id: "row",
+          type: MenuType.CUSTOM,
+          parent: null,
+          power: 0,
+          title: null,
+          createdAt: null,
+          updatedAt: null,
+        },
+      ],
+    };
+    await act(async () => root.render(<MenuPageShell />));
+    const save = Array.from(
+      container.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("保存"));
+    expect(save?.disabled).toBe(true);
+    expect(container.textContent).not.toMatch(/已与服务器同步|有未保存的更改/);
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>(
+          'button[aria-label^="移除此菜单及子项"]',
+        )
+        ?.click(),
+    );
+    expect(save?.disabled).toBe(false);
+    expect(container.textContent).not.toMatch(/已与服务器同步|有未保存的更改/);
   });
 
   it("offers explicit removal for a category whose target was deleted", async () => {

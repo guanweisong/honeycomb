@@ -6,7 +6,6 @@ import { UserStatus } from "@/features/user/user";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 
 import {
-  buildUserUpdateInput,
   canDeleteUserResource,
   isUserResourceProtected,
   toUserFormDefaults,
@@ -39,20 +38,6 @@ describe("user transforms", () => {
       email: undefined,
       level: UserLevel.ADMIN,
       status: UserStatus.ENABLE,
-    });
-  });
-
-  it("forces update payloads to use the selected target id", () => {
-    expect(
-      buildUserUpdateInput(editor, {
-        id: "forged-id",
-        name: "Updated Editor",
-        status: UserStatus.DISABLE,
-      }),
-    ).toEqual({
-      id: "editor-1",
-      name: "Updated Editor",
-      status: UserStatus.DISABLE,
     });
   });
 

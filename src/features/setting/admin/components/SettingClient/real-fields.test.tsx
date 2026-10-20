@@ -64,7 +64,13 @@ describe("SettingClient real field initialization", () => {
             'input[placeholder="请填写站点名称"]',
           )?.value,
         ).toBe("蜂巢 E2E");
-        expect(container.textContent).toContain("已与服务器同步");
+        expect(container.textContent).not.toMatch(
+          /已与服务器同步|有未保存的更改/,
+        );
+        expect(
+          container.querySelector<HTMLButtonElement>('button[type="submit"]')
+            ?.disabled,
+        ).toBe(true);
       } finally {
         await act(async () => root.unmount());
         container.remove();

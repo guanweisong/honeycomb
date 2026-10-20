@@ -1,6 +1,10 @@
 import "server-only";
-import { createHash } from "node:crypto";
-import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
+import {
+  transactionWithBeginRetry,
+  type DatabaseTransaction,
+} from "@/lib/db/transaction-begin-retry";
+import { hashCanonicalInput } from "@/lib/canonical-input-hash";
+import { parseEnumValue } from "@/lib/db/value-validation";
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
@@ -31,38 +35,10 @@ import type {
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
-import { assertMediaReferencesReady } from "@/features/media/server/media-references";
+import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 
-type PostTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-/** 只重试回调尚未进入时的 BEGIN 锁竞争；业务写入或提交结果未知后绝不自动重放。 */
-async function postTransaction<T>(
-  db: Database,
-  operation: (tx: PostTransaction) => Promise<T>,
-): Promise<T> {
-  for (let attempt = 0; ; attempt += 1) {
-    let entered = false;
-    try {
-      return await db.transaction((tx) => {
-        entered = true;
-        return operation(tx);
-      });
-    } catch (error) {
-      const busyAtBegin =
-        !entered &&
-        error !== null &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "SQLITE_BUSY";
-      if (!busyAtBegin) throw error;
-      if (attempt >= 3)
-        throw new ApplicationError(
-          "CONFLICT",
-          "保存暂时繁忙，请核对结果后重试",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
-    }
-  }
-}
+const busyMessage = "保存暂时繁忙，请核对结果后重试";
+
 const relationRoles = {
   movieActorIds: TagType.ACTOR,
   movieDirectorIds: TagType.DIRECTOR,
@@ -76,7 +52,7 @@ function hasRelationPatch(input: PostRelationPatch) {
   return relationKeys.some((key) => input[key] !== undefined);
 }
 async function requireActor(
-  tx: PostTransaction,
+  tx: DatabaseTransaction,
   actorId: string,
   permissions: Permission[],
 ) {
@@ -94,7 +70,7 @@ async function requireActor(
   }
 }
 async function patchRelations(
-  tx: PostTransaction,
+  tx: DatabaseTransaction,
   id: string,
   input: PostRelationPatch,
 ) {
@@ -113,18 +89,7 @@ async function patchRelations(
         );
   }
 }
-// 对已校验的原始意图求哈希，不使用清洗后或随后被编辑的存储内容。
-function canonicalInput(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalInput).join(",")}]`;
-  if (value !== null && typeof value === "object") {
-    return `{${Object.entries(value)
-      .filter(([, field]) => field !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, field]) => `${JSON.stringify(key)}:${canonicalInput(field)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "null";
-}
+
 function safeResult(
   row: Pick<typeof schema.post.$inferSelect, "id" | "version">,
 ) {
@@ -156,11 +121,9 @@ export async function createPost(
     throw new ApplicationError("BAD_REQUEST", "文章保存输入不合法");
   input = parsed.data;
   const { creationToken, ...intent } = input;
-  const creationInputHash = createHash("sha256")
-    .update(canonicalInput(intent))
-    .digest("hex");
+  const creationInputHash = hashCanonicalInput(intent);
   const result = await observeDbOperation("post.create", "transaction", () =>
-    postTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [
         Permission.postCreate,
         ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
@@ -198,7 +161,7 @@ export async function createPost(
         created.id,
         sanitizePostTranslationInput(input),
       );
-      await assertMediaReferencesReady(tx, {
+      await assertMediaReferencesExist(tx, {
         coverId: input.coverId,
         content: groupPostTranslations(translations).get(created.id)?.content,
       });
@@ -218,7 +181,7 @@ export async function getPostCreationResult(
   creationToken: string,
   actorId: string,
 ) {
-  return postTransaction(db, async (tx) => {
+  return transactionWithBeginRetry(db, busyMessage, async (tx) => {
     await requireActor(tx, actorId, [Permission.postCreate]);
     const [result] = await tx
       .select({ id: schema.post.id, version: schema.post.version })
@@ -246,7 +209,7 @@ export async function destroyPosts(
     throw new ApplicationError("BAD_REQUEST", "文章删除输入不合法");
   input = parsed.data;
   await observeDbOperation("post.destroy", "transaction", () =>
-    postTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [Permission.postDelete]);
       for (const item of input.items) {
         const [current] = await tx
@@ -290,7 +253,7 @@ export async function updatePost(
     throw new ApplicationError("BAD_REQUEST", "文章保存输入不合法");
   input = parsed.data;
   const result = await observeDbOperation("post.update", "transaction", () =>
-    postTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [
         Permission.postUpdate,
         ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
@@ -368,7 +331,7 @@ export async function updatePost(
         translationInput,
         input.removeLocales,
       );
-      await assertMediaReferencesReady(tx, {
+      await assertMediaReferencesExist(tx, {
         coverId: input.coverId === undefined ? current.coverId : input.coverId,
         content: groupPostTranslations(next).get(input.id)?.content,
         previousContent: groupPostTranslations(rows).get(input.id)?.content,
@@ -383,7 +346,7 @@ export async function updatePost(
         if (next.length) await tx.insert(schema.postTranslation).values(next);
       }
       await patchRelations(tx, input.id, input);
-      return safeResult(requireWriteResult(updated, "update", "post"));
+      return safeResult(updated);
     }),
   );
   const publicSync = await invalidatePosts(invalidator, [result.id]);

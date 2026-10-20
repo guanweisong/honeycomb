@@ -38,12 +38,16 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => false,
 }));
-vi.mock("@/components/DataTable", () => ({
-  DataTable: (props: DataTableProps<unknown>) => {
-    trpcMocks.table = props;
-    return props.toolBar;
-  },
-}));
+vi.mock("@/components/DataTable", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/components/DataTable")>();
+  return {
+    DataTable: (props: DataTableProps<unknown>) => {
+      trpcMocks.table = props;
+      return React.createElement(actual.DataTable, props);
+    },
+  };
+});
 vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: { onSubmit: (input: LinkListQueryInput) => void }) => {
     trpcMocks.submit = props.onSubmit;
@@ -71,7 +75,7 @@ describe("link query state", () => {
     container.remove();
   });
 
-  it("sends replacement params and forwards query status", async () => {
+  it("updates the table search filter and forwards query status", async () => {
     await act(async () => {
       root.render(React.createElement(LinkPageShell));
     });
@@ -91,23 +95,32 @@ describe("link query state", () => {
       }),
     );
 
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      name: "OpenAI",
+    });
     await act(async () => trpcMocks.submit?.({ name: "Example" }));
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      name: "Example",
+    });
 
     await act(async () => trpcMocks.submit?.({}));
 
     expect(
       trpcMocks.options.every((options) => options === adminListQueryOptions),
     ).toBe(true);
-    expect(trpcMocks.queryInputs).toEqual([
-      {},
-      {
-        page: 3,
-        limit: 25,
-        name: "OpenAI",
-        status: ["ENABLE"],
-      },
-      { name: "Example" },
-      {},
-    ]);
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+    });
   });
 });

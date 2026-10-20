@@ -96,6 +96,7 @@ describe("DataTable", () => {
       root.render(
         React.createElement(DataTable<Person>, {
           columns,
+          getRowId: (row) => row.id,
           data: { list: people, total: people.length },
           pagination: false,
           toolBar: React.createElement("button", { type: "button" }, "添加"),
@@ -107,6 +108,7 @@ describe("DataTable", () => {
       root.render(
         React.createElement(DataTable<Person>, {
           columns,
+          getRowId: (row) => row.id,
           data: { list: people, total: people.length },
           pagination: false,
           toolBar: (table) =>
@@ -131,6 +133,7 @@ describe("DataTable", () => {
       root.render(
         React.createElement(DataTable<Person>, {
           columns,
+          getRowId: (row) => row.id,
           data: { list: people, total: 41 },
           selectableRows: true,
           onChange,
@@ -188,6 +191,7 @@ describe("DataTable", () => {
 
       return React.createElement(DataTable<Person>, {
         columns,
+        getRowId: (row) => row.id,
         data: { list: people, total: people.length },
         selectableRows: true,
         disabledRowSelectable: (row) => Boolean(row.locked),
@@ -228,6 +232,7 @@ describe("DataTable", () => {
       root.render(
         React.createElement(DataTable<Person>, {
           columns,
+          getRowId: (row) => row.id,
           data: { list: [], total: 0 },
         }),
       );
@@ -238,7 +243,12 @@ describe("DataTable", () => {
   });
 
   it("only offers retry when a retry action is available and not already fetching", async () => {
-    const props = { columns, data: { list: [], total: 0 }, error: true };
+    const props = {
+      getRowId: (row: Person) => row.id,
+      columns,
+      data: { list: [], total: 0 },
+      error: true,
+    };
     await act(async () =>
       root.render(React.createElement(DataTable<Person>, props)),
     );
@@ -278,6 +288,7 @@ describe("DataTable", () => {
         });
         return React.createElement(DataTable<Person>, {
           columns,
+          getRowId: (row) => row.id,
           data: query.data ?? { list: [], total: 0 },
           error: query.isError,
           isFetching: query.isFetching,

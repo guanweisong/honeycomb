@@ -13,7 +13,6 @@ import { adminListQueryOptions } from "@/components/admin/query-options";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
-import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
 import {
   createInitialAdminDialogState,
   openAddAdminDialog,
@@ -35,9 +34,6 @@ const Category = () => {
    * 类型为 `CategoryEntity` 数组。
    */
   const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
-  const handleSelectionChange = (rows: CategoryEntity[]) => {
-    setSelectedRows(rows.slice(0, MAX_BATCH_SIZE));
-  };
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
    */
@@ -100,6 +96,7 @@ const Category = () => {
   return (
     <>
       <DataTable<CategoryEntity>
+        getRowId={(row) => row.id}
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],
@@ -113,44 +110,31 @@ const Category = () => {
           void refetch();
         }}
         selectableRows={canDeleteCategory}
-        disabledRowSelectable={(row) =>
-          selectedRows.length >= MAX_BATCH_SIZE && !selectedRows.includes(row)
-        }
         selectedRows={selectedRows}
-        onSelectionChange={handleSelectionChange}
+        onSelectionChange={setSelectedRows}
         toolBar={
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-1">
-              {canCreateCategory && (
-                <Button onClick={handleAddNew} variant="outline">
-                  <Plus />
-                  添加新分类
-                </Button>
-              )}
-              {canDeleteCategory && (
-                <Dialog
-                  trigger={
-                    <Button
-                      variant="outline"
-                      disabled={selectedRows.length === 0}
-                    >
-                      <Trash />
-                      批量删除
-                    </Button>
-                  }
-                  type="danger"
-                  title="确定要删除吗？"
-                  onOK={handleDeleteBatch}
-                />
-              )}
-            </div>
+          <div className="flex gap-1">
+            {canCreateCategory && (
+              <Button onClick={handleAddNew} variant="outline">
+                <Plus />
+                添加新分类
+              </Button>
+            )}
             {canDeleteCategory && (
-              <p className="text-sm text-muted-foreground" aria-live="polite">
-                已选择 {selectedRows.length} 个；每次最多选择并删除{" "}
-                {MAX_BATCH_SIZE} 个分类。
-                {(data?.total ?? 0) > MAX_BATCH_SIZE &&
-                  `全选将选中前 ${MAX_BATCH_SIZE} 项。`}
-              </p>
+              <Dialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    disabled={selectedRows.length === 0}
+                  >
+                    <Trash />
+                    批量删除
+                  </Button>
+                }
+                type="danger"
+                title="确定要删除吗？"
+                onOK={handleDeleteBatch}
+              />
             )}
           </div>
         }

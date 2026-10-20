@@ -2,6 +2,7 @@ import "server-only";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue } from "@/lib/db/value-validation";
 import { PageTemplate } from "@/features/page/page-template";
+import { MediaRecordSchema } from "@/features/media/types";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
@@ -51,7 +52,7 @@ function toPageRecord(
 
 async function mapRelations(
   db: Database,
-  pages: PageRow[],
+  pages: Pick<PageRow, "id">[],
   visibility: PageVisibility,
 ): Promise<PageWithRelations[]> {
   if (!pages.length) return [];
@@ -108,7 +109,8 @@ async function mapRelations(
       .map((url) => imageMap.get(url))
       .filter((image): image is typeof schema.media.$inferSelect =>
         Boolean(image),
-      ),
+      )
+      .map((image) => MediaRecordSchema.parse(image)),
   }));
 }
 
@@ -152,7 +154,7 @@ export async function listPages(
   const [list, countRows] = await Promise.all([
     observeDbOperation("page.service.list", "select", () =>
       db
-        .select()
+        .select({ id: schema.page.id })
         .from(schema.page)
         .where(where)
         .orderBy(order)
@@ -204,6 +206,6 @@ export async function getPage(
     author: page.author ?? null,
     imagesInContent: [
       ...new Map(imagesInContent.map((image) => [image.url, image])).values(),
-    ],
+    ].map((image) => MediaRecordSchema.parse(image)),
   };
 }

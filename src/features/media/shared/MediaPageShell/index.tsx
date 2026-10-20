@@ -10,7 +10,6 @@ import LoadingState from "@/components/LoadingState";
 import { MediaGrid } from "../MediaGrid";
 import { useMediaActions } from "../media-actions";
 import { useMediaQuery } from "../media-query";
-import { MEDIA_STATES, type MediaState } from "../../lifecycle";
 import { MEDIA_MIME_TYPES } from "../../upload-policy";
 
 export interface MediaProps {
@@ -19,8 +18,6 @@ export interface MediaProps {
 
 export function MediaPageShell({ onSelect }: MediaProps) {
   const { user } = useCurrentUser();
-  const [state, setState] = useState<MediaState>("READY");
-  const selectedState = onSelect ? "READY" : state;
   const callback = useRef(onSelect);
   useEffect(() => {
     callback.current = onSelect;
@@ -31,49 +28,19 @@ export function MediaPageShell({ onSelect }: MediaProps) {
     previousAccount.current = user?.id;
   }, [user?.id]);
   return (
-    <>
-      {!onSelect && (
-        <label>
-          媒体状态{" "}
-          <select
-            aria-label="媒体状态"
-            value={state}
-            onChange={(event) => setState(event.target.value as MediaState)}
-          >
-            {MEDIA_STATES.map((value) => (
-              <option key={value} value={value}>
-                {
-                  {
-                    UPLOADING: "上传待确认",
-                    READY: "可使用",
-                    DELETING: "删除待确认",
-                    DELETED: "已删除",
-                  }[value]
-                }
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <MediaPanel
-        key={`${user?.id ?? "signed-out"}:${selectedState}`}
-        onSelect={onSelect}
-        state={selectedState}
-        scopeKey={user?.id ?? "signed-out"}
-      />
-    </>
+    <MediaPanel
+      key={user?.id ?? "signed-out"}
+      onSelect={onSelect}
+      scopeKey={user?.id ?? "signed-out"}
+    />
   );
 }
-function MediaPanel({
-  onSelect,
-  state,
-  scopeKey,
-}: MediaProps & { state: MediaState; scopeKey: string }) {
+function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
   const canUploadMedia = useCan(Permission.mediaUpload);
   const [currentItem, setCurrentItem] = useState<MediaViewModel>();
   const onSelectRef = useRef(onSelect);
   const hadSelection = useRef(false);
-  const query = useMediaQuery(state === "READY" ? undefined : state);
+  const query = useMediaQuery();
   const { hasMore, loadMore } = query;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const actions = useMediaActions({
@@ -88,7 +55,6 @@ function MediaPanel({
     fileInputRef,
     handleDelete,
     handleUpload,
-    handleReconcile,
     loading,
     failures,
     unavailableIds,
@@ -150,15 +116,8 @@ function MediaPanel({
       {failures.length > 0 && (
         <ul aria-label="本批上传结果">
           {failures.map((failure, index) => (
-            <li key={`${failure.id ?? failure.name}:${index}`}>
+            <li key={`${failure.name}:${index}`}>
               {failure.name}: {failure.message}
-              {failure.id &&
-                failure.outcome === "indeterminate" &&
-                canUploadMedia && (
-                  <Button onClick={() => handleReconcile(failure.id!)}>
-                    检查状态
-                  </Button>
-                )}
             </li>
           ))}
         </ul>
@@ -170,7 +129,6 @@ function MediaPanel({
         currentItem={currentItem}
         unavailableIds={unavailableIds}
         onDelete={handleDelete}
-        onReconcile={handleReconcile}
         onSelect={setCurrentItem}
       />
       <div

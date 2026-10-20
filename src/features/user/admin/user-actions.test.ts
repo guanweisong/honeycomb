@@ -26,14 +26,22 @@ describe("user action state", () => {
     await expect(
       submitUserUpdate({
         record: editor,
-        values: { id: "forged-id", name: "Updated" },
+        values: {
+          id: "forged-id",
+          name: "Updated",
+          status: UserStatus.DISABLE,
+        },
         update,
         refetch,
         notifySuccess,
         notifyError,
       }),
     ).resolves.toBe("success");
-    expect(update).toHaveBeenCalledWith({ id: "editor-1", name: "Updated" });
+    expect(update).toHaveBeenCalledWith({
+      id: "editor-1",
+      name: "Updated",
+      status: UserStatus.DISABLE,
+    });
     expect(refetch).toHaveBeenCalledOnce();
     expect(notifySuccess).toHaveBeenCalledWith("更新成功");
     expect(notifyError).not.toHaveBeenCalled();

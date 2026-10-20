@@ -6,6 +6,7 @@ import { createCommentCommandRepository } from "@/features/comment/server/commen
 import { createCategory, updateCategory } from "@/features/category/server";
 import { createTag, updateTag } from "@/features/tag/server";
 import { createLink, updateLink } from "@/features/link/server";
+import { createUploadIntent } from "@/features/media/server/upload-intent";
 import { createMediaRepository } from "@/features/media/server/media-repository";
 import { createUserRepository } from "@/features/user/server/user-repository";
 import { updateSetting } from "@/features/setting/server";
@@ -177,11 +178,21 @@ describe("required persistence results", () => {
       ),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     await expect(
-      createMediaRepository(db).begin(
-        { name: "image.png", size: 1, type: "image/png" },
+      createMediaRepository(db).insertRegistered(
+        createUploadIntent(
+          {
+            name: "image.png",
+            size: 1,
+            type: "image/png",
+            sha256: "a".repeat(64),
+          },
+          "author",
+        ).payload,
+        "media/final.png",
+        { size: 1, type: "image/png", width: 1, height: 1, color: null },
         "author",
       ),
-    ).rejects.toThrow("Media upload not created");
+    ).rejects.toThrow("Media registration not confirmed");
     const creates = [
       () =>
         createCategory(

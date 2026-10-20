@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { clientEnv } from "@/env/client";
@@ -8,13 +8,13 @@ import { UserStatus } from "@/features/user/user";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
 import {
-  MediaManagementRecordSchema,
   MediaRecordSchema,
+  type MediaRecord,
   type MediaListInput,
 } from "../types";
-import type { MediaUploadFile } from "../upload-policy";
-import type { MediaState, MediaErrorCodeSchema } from "../lifecycle";
-import type { z } from "zod";
+import type { UploadIntent } from "./upload-intent";
+import type { validateMediaImage } from "./image-validation";
+import { assertOrdinaryMediaSchema } from "./media-schema-readiness";
 import { findKnownMediaReferences } from "./media-references";
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 async function requireActor(
@@ -33,162 +33,67 @@ async function requireActor(
     !can(actor.level, permission)
   )
     throw new ApplicationError("FORBIDDEN", "当前账户无权操作媒体");
-  return actor;
 }
-/** 每次确认都重新验证上传权限与归属；管理他人上传另需 mediaManageUploads。 */
-async function requireUpload(tx: Transaction, id: string, actorId: string) {
-  const actor = await requireActor(tx, actorId, Permission.mediaUpload);
+async function findRow(tx: Transaction, id: string) {
   const [row] = await tx
     .select()
     .from(schema.media)
     .where(eq(schema.media.id, id))
     .limit(1);
-  if (!row) throw new ApplicationError("NOT_FOUND", "媒体不存在");
-  if (
-    row.uploadedBy !== actorId &&
-    !can(actor.level, Permission.mediaManageUploads)
-  )
-    throw new ApplicationError("FORBIDDEN", "无权确认此上传");
-  return row;
+  return row ? MediaRecordSchema.parse(row) : null;
 }
 export function createMediaRepository(db: Database) {
   return {
-    async begin(file: MediaUploadFile, actorId: string) {
-      const assetUrl = clientEnv.NEXT_PUBLIC_ASSET_URL;
-      if (!assetUrl) throw new Error("Public asset URL is not configured");
-      const id = crypto.randomUUID().replaceAll("-", "").slice(0, 24);
-      const suffix = file.name.split(".").at(-1)?.toLowerCase();
-      const key = `media/${crypto.randomUUID()}.${suffix}`;
-      const uploadKey = `temporary/${crypto.randomUUID()}.${suffix}`;
-      const uploadExpiresAt = new Date(Date.now() + 3600_000).toISOString();
+    async authorizeUpload(actorId: string) {
+      await db.transaction(async (tx) => {
+        await requireActor(tx, actorId, Permission.mediaUpload);
+        await assertOrdinaryMediaSchema(tx);
+      });
+    },
+    async findRegistered(id: string, actorId: string) {
       return db.transaction(async (tx) => {
         await requireActor(tx, actorId, Permission.mediaUpload);
-        const [row] = await tx
+        await assertOrdinaryMediaSchema(tx);
+        return findRow(tx, id);
+      });
+    },
+    async insertRegistered(
+      intent: UploadIntent,
+      key: string,
+      metadata: Awaited<ReturnType<typeof validateMediaImage>>,
+      actorId: string,
+    ) {
+      const assetUrl = clientEnv.NEXT_PUBLIC_ASSET_URL;
+      if (!assetUrl) throw new Error("Public asset URL is not configured");
+      return db.transaction(async (tx) => {
+        await requireActor(tx, actorId, Permission.mediaUpload);
+        await assertOrdinaryMediaSchema(tx);
+        if (intent.actorId !== actorId)
+          throw new ApplicationError("FORBIDDEN", "无权登记此上传");
+        const existing = await findRow(tx, intent.id);
+        if (existing) return existing;
+        await tx
           .insert(schema.media)
           .values({
-            ...file,
-            id,
+            id: intent.id,
+            name: intent.name,
             key,
-            uploadKey,
-            uploadExpiresAt,
-            uploadedBy: actorId,
-            state: "UPLOADING",
             url: `${assetUrl.replace(/\/$/, "")}/${key}`,
-          })
-          .returning();
-        if (!row) throw new Error("Media upload not created");
-        return row;
-      });
-    },
-    async findForUpload(id: string, actorId: string) {
-      return db.transaction((tx) => requireUpload(tx, id, actorId));
-    },
-    async status(id: string, actorId: string) {
-      return db.transaction(async (tx) => {
-        const actor = await requireActor(tx, actorId, Permission.mediaReadAll);
-        const [row] = await tx
-          .select()
-          .from(schema.media)
-          .where(eq(schema.media.id, id))
-          .limit(1);
-        if (!row) throw new ApplicationError("NOT_FOUND", "媒体不存在");
-        if (
-          row.state !== "READY" &&
-          row.uploadedBy !== actorId &&
-          !can(actor.level, Permission.mediaManageUploads)
-        )
-          throw new ApplicationError("FORBIDDEN", "无权查看此上传");
-        return MediaManagementRecordSchema.parse(row);
-      });
-    },
-    /** 持久化一次性 COPY 认领，不是可过期租约；已认领后重试只能核对现有候选。 */
-    async claimCopy(id: string, actorId: string) {
-      return db.transaction(async (tx) => {
-        await requireUpload(tx, id, actorId);
-        const [row] = await tx
-          .update(schema.media)
-          .set({
-            copyStartedAt: new Date().toISOString(),
-            lastAttemptAt: new Date().toISOString(),
-            lastErrorCode: null,
-          })
-          .where(
-            and(
-              eq(schema.media.id, id),
-              eq(schema.media.state, "UPLOADING"),
-              isNull(schema.media.copyStartedAt),
-            ),
-          )
-          .returning();
-        return row ?? null;
-      });
-    },
-    async bindReady(
-      id: string,
-      actorId: string,
-      metadata: {
-        size: number;
-        type: string;
-        width: number;
-        height: number;
-        color: null;
-      },
-    ) {
-      return db.transaction(async (tx) => {
-        await requireUpload(tx, id, actorId);
-        const [row] = await tx
-          .update(schema.media)
-          .set({
             ...metadata,
-            state: "READY",
-            verifiedAt: new Date().toISOString(),
-            lastAttemptAt: new Date().toISOString(),
-            lastErrorCode: null,
           })
-          .where(
-            and(eq(schema.media.id, id), eq(schema.media.state, "UPLOADING")),
-          )
-          .returning();
-        if (row) return MediaRecordSchema.parse(row);
-        const current = await requireUpload(tx, id, actorId);
-        return current.state === "READY"
-          ? MediaRecordSchema.parse(current)
-          : null;
+          .onConflictDoNothing({ target: schema.media.id });
+        const registered = await findRow(tx, intent.id);
+        if (!registered) throw new Error("Media registration not confirmed");
+        return registered;
       });
     },
-    async note(
-      id: string,
-      state: MediaState,
-      code: z.infer<typeof MediaErrorCodeSchema>,
-    ) {
-      await db
-        .update(schema.media)
-        .set({ lastAttemptAt: new Date().toISOString(), lastErrorCode: code })
-        .where(and(eq(schema.media.id, id), eq(schema.media.state, state)));
-    },
-    async list(input: MediaListInput, actorId?: string) {
-      const {
-        page = 1,
-        limit = 10,
-        sortField,
-        sortOrder,
-        state = "READY",
-      } = input;
-      let where = eq(schema.media.state, state);
-      if (state !== "READY") {
-        if (!actorId)
-          throw new ApplicationError("FORBIDDEN", "无权查看待处理媒体");
-        const actor = await db.transaction((tx) =>
-          requireActor(tx, actorId, Permission.mediaReadAll),
-        );
-        if (!can(actor.level, Permission.mediaManageUploads))
-          where = and(where, eq(schema.media.uploadedBy, actorId)) ?? where;
-      }
+    async list(input: MediaListInput) {
+      await assertOrdinaryMediaSchema(db);
+      const { page = 1, limit = 10, sortField, sortOrder } = input;
       const [rows, count] = await Promise.all([
         db
           .select()
           .from(schema.media)
-          .where(where)
           .orderBy(
             buildDrizzleOrderBy(
               schema.media,
@@ -199,63 +104,35 @@ export function createMediaRepository(db: Database) {
           )
           .limit(limit)
           .offset((page - 1) * limit),
-        db
-          .select({ count: sql<number>`count(*)` })
-          .from(schema.media)
-          .where(where),
+        db.select({ count: sql<number>`count(*)` }).from(schema.media),
       ]);
       return {
-        list: rows.map((row) => MediaManagementRecordSchema.parse(row)),
+        list: rows.map((row) => MediaRecordSchema.parse(row)),
         total: Number(count[0]?.count ?? 0),
       };
     },
-    async beginDelete(ids: string[], actorId: string) {
-      return db.transaction(async (tx) => {
+    async deleteWithStorage(
+      ids: string[],
+      actorId: string,
+      removeObjects: (rows: MediaRecord[]) => Promise<void>,
+    ) {
+      // libSQL's default transaction mode is write: it serializes this boundary with content writes.
+      await db.transaction(async (tx) => {
         await requireActor(tx, actorId, Permission.mediaDelete);
-        if (!ids.length) return [];
+        await assertOrdinaryMediaSchema(tx);
+        if (!ids.length) return;
         const rows = await tx
           .select()
           .from(schema.media)
           .where(inArray(schema.media.id, ids));
-        if (rows.some((row) => row.state === "UPLOADING"))
-          throw new ApplicationError(
-            "CONFLICT",
-            "上传中的对象需要人工核对，不能直接删除",
-          );
-        const active = rows.filter((row) => row.state !== "DELETED");
-        if (await findKnownMediaReferences(tx, active))
+        if (await findKnownMediaReferences(tx, rows))
           throw new ApplicationError(
             "CONFLICT",
             "媒体仍被内容引用，请先移除引用",
           );
-        if (active.length)
-          await tx
-            .update(schema.media)
-            .set({
-              state: "DELETING",
-              lastAttemptAt: new Date().toISOString(),
-              lastErrorCode: null,
-            })
-            .where(
-              inArray(
-                schema.media.id,
-                active.map((row) => row.id),
-              ),
-            );
-        return active;
+        await removeObjects(rows.map((row) => MediaRecordSchema.parse(row)));
+        await tx.delete(schema.media).where(inArray(schema.media.id, ids));
       });
-    },
-    async finishDelete(id: string) {
-      await db
-        .update(schema.media)
-        .set({
-          state: "DELETED",
-          lastAttemptAt: new Date().toISOString(),
-          lastErrorCode: null,
-        })
-        .where(
-          and(eq(schema.media.id, id), eq(schema.media.state, "DELETING")),
-        );
     },
   };
 }

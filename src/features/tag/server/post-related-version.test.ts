@@ -70,7 +70,6 @@ async function withDatabase(
         name: id,
         size: 1,
         type: "image/jpeg",
-        state: "READY" as const,
         url: `https://assets.example.test/${id}.jpg`,
       })),
     );
@@ -166,16 +165,12 @@ describe("post versions on related deletion", () => {
           .filter((post) => post.id !== "unaffected")
           .every((post) => post.coverId === "cover"),
       ).toBe(true);
-      expect(
-        (await db.select().from(schema.media)).every(
-          (row) => row.state === "READY",
-        ),
-      ).toBe(true);
+      expect(await db.select().from(schema.media)).toHaveLength(2);
       expect(storage.deleteObjects).not.toHaveBeenCalled();
       expect(storage.headObject).not.toHaveBeenCalled();
       expect(cache.invalidate).not.toHaveBeenCalled();
     }));
-  it("preserves recovery state and unrelated covers when tombstone persistence fails", () =>
+  it("preserves ordinary row and unrelated covers after storage success and database rollback", () =>
     withDatabase(async (db, client) => {
       await db.insert(schema.media).values({
         id: "unused",
@@ -183,19 +178,15 @@ describe("post versions on related deletion", () => {
         name: "unused",
         size: 1,
         type: "image/jpeg",
-        state: "READY",
         url: "https://assets.example.test/unused.jpg",
       });
       await client.execute(
-        "CREATE TRIGGER reject_media_tombstone BEFORE UPDATE ON media WHEN NEW.state = 'DELETED' BEGIN SELECT RAISE(ABORT, 'test tombstone rejected'); END",
+        "CREATE TRIGGER reject_media_delete BEFORE DELETE ON media BEGIN SELECT RAISE(ABORT, 'test deletion rejected'); END",
       );
       const cache = invalidator();
       const storage = {
         deleteObjects: vi.fn().mockResolvedValue(undefined),
-        headObject: vi
-          .fn()
-          .mockResolvedValueOnce({ size: 1 })
-          .mockResolvedValue(null),
+        headObject: vi.fn().mockResolvedValue(null),
       };
       await expect(
         destroyMedia(
@@ -206,7 +197,7 @@ describe("post versions on related deletion", () => {
           "author",
           true,
         ),
-      ).resolves.toMatchObject({ success: false, state: "indeterminate" });
+      ).rejects.toThrow("删除结果无法确认");
       expect(await versions(db)).toEqual(original);
       expect(
         (await db.select().from(schema.post)).find(
@@ -218,16 +209,14 @@ describe("post versions on related deletion", () => {
           (row) => row.id === "unused",
         ),
       ).toMatchObject({
-        state: "DELETING",
         key: "unused.jpg",
-        lastErrorCode: "DELETE_PENDING",
       });
       expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith([
         "unused.jpg",
       ]);
       expect(cache.invalidate).not.toHaveBeenCalled();
     }));
-  it("does not repeat storage deletion when tombstone commit succeeds but acknowledgement is lost", () =>
+  it("does not repeat storage deletion when row deletion commits but acknowledgement is lost", () =>
     withDatabase(async (db) => {
       await db.insert(schema.media).values({
         id: "unused",
@@ -235,24 +224,22 @@ describe("post versions on related deletion", () => {
         name: "unused",
         size: 1,
         type: "image/jpeg",
-        state: "READY",
         url: "https://assets.example.test/unused.jpg",
       });
       const repository = createMediaRepository(db);
       const cache = invalidator();
       const storage = {
         deleteObjects: vi.fn().mockResolvedValue(undefined),
-        headObject: vi
-          .fn()
-          .mockResolvedValueOnce({ size: 1 })
-          .mockResolvedValue(null),
+        headObject: vi.fn().mockResolvedValue(null),
       };
       await expect(
         destroyMedia(
           {
             ...repository,
-            finishDelete: async (id) => {
-              await repository.finishDelete(id);
+            deleteWithStorage: async (
+              ...args: Parameters<typeof repository.deleteWithStorage>
+            ) => {
+              await repository.deleteWithStorage(...args);
               throw new Error("response lost");
             },
           },
@@ -262,14 +249,14 @@ describe("post versions on related deletion", () => {
           "author",
           true,
         ),
-      ).resolves.toMatchObject({ success: false, state: "indeterminate" });
+      ).rejects.toThrow("删除结果无法确认");
       expect(await versions(db)).toEqual(original);
       expect(cache.invalidate).not.toHaveBeenCalled();
       expect(
         (await db.select().from(schema.media)).find(
           (row) => row.id === "unused",
         ),
-      ).toMatchObject({ state: "DELETED", key: "unused.jpg" });
+      ).toBeUndefined();
       await expect(
         destroyMedia(repository, storage, ["unused"], cache, "author", true),
       ).resolves.toEqual({ success: true, publicSync: "completed" });

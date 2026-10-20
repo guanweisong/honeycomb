@@ -12,7 +12,7 @@ vi.mock("@/lib/observability/server", () => ({
   ) => operation(),
 }));
 
-import { beginMediaUpload, destroyMedia } from "@/features/media/server";
+import { prepareMediaUpload, destroyMedia } from "@/features/media/server";
 import { createTag, destroyTags, updateTag } from "@/features/tag/server";
 import { createCategory, destroyCategories } from "@/features/category/server";
 import { createLink, destroyLinks } from "@/features/link/server";
@@ -29,56 +29,43 @@ describe("feature persistence contracts", () => {
 
   it("media commands coordinate repository and storage", async () => {
     const id = "507f1f77bcf86cd799439011";
-    const repository = {
-      begin: vi.fn().mockResolvedValue({
-        id,
-        key: "media/a.png",
-        uploadKey: "temporary/a.png",
-        uploadExpiresAt: "2026-10-20T12:00:00.000Z",
-        size: 1,
-        type: "image/png",
-      }),
-      beginDelete: vi.fn().mockResolvedValue([{ id, key: "media/a.png" }]),
-      finishDelete: vi.fn().mockResolvedValue(undefined),
-      note: vi.fn().mockResolvedValue(undefined),
+    const { mediaRepositoryFixture, mediaStorageFixture } =
+      await import("@tests/helpers/media-registration");
+    const repository = mediaRepositoryFixture();
+    const storage = mediaStorageFixture();
+    storage.headObject.mockResolvedValue(null);
+    const file = {
+      name: "a.png",
+      size: 1,
+      type: "image/png" as const,
+      sha256: "a".repeat(64),
     };
-    const storage = {
-      getPresignedUrl: vi
-        .fn()
-        .mockResolvedValue("https://upload.example.test/a"),
-      headObject: vi
-        .fn()
-        .mockResolvedValueOnce({ size: 1, type: "image/png" })
-        .mockResolvedValueOnce(null),
-      deleteObjects: vi.fn().mockResolvedValue(undefined),
-    };
-    const file = { name: "a.png", size: 1, type: "image/png" as const };
-    await expect(
-      beginMediaUpload(repository, storage, file, "author"),
-    ).resolves.toEqual({
-      id,
-      uploadUrl: "https://upload.example.test/a",
-      expiresAt: "2026-10-20T12:00:00.000Z",
+    const prepared = await prepareMediaUpload(
+      repository,
+      storage,
+      file,
+      "author",
+    );
+    expect(prepared).toMatchObject({
+      intent: expect.any(String),
+      uploadUrl: "https://upload.test/temp",
+      expiresAt: expect.any(String),
+    });
+    expect(repository.authorizeUpload).toHaveBeenCalledWith("author");
+    expect(storage.getPresignedUrl).toHaveBeenCalledWith({
+      Key: expect.stringMatching(/^temporary\//),
+      ContentType: "image/png",
+      ContentLength: 1,
     });
     await expect(
       destroyMedia(repository, storage, [id], invalidator(), "author", true),
     ).resolves.toEqual({ success: true, publicSync: "completed" });
-    expect(repository.begin).toHaveBeenCalledWith(file, "author");
-    expect(storage.getPresignedUrl).toHaveBeenCalledWith({
-      Key: "temporary/a.png",
-      ContentType: "image/png",
-      ContentLength: 1,
-    });
-    expect(repository.beginDelete).toHaveBeenCalledWith([id], "author");
-    expect(storage.deleteObjects).toHaveBeenCalledWith(["media/a.png"]);
-    expect(repository.finishDelete).toHaveBeenCalledWith(id);
-    expect(repository.beginDelete).toHaveBeenCalledBefore(
-      storage.deleteObjects,
+    expect(repository.deleteWithStorage).toHaveBeenCalledWith(
+      [id],
+      "author",
+      expect.any(Function),
     );
-    expect(storage.deleteObjects).toHaveBeenCalledBefore(
-      repository.finishDelete,
-    );
-    expect(repository.note).not.toHaveBeenCalled();
+    expect(storage.deleteObjects).toHaveBeenCalledWith(["media/final.png"]);
   });
 
   it("tag commands write and delete through the database", async () => {

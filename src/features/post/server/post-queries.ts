@@ -100,7 +100,7 @@ export async function listPosts(
   const [list, countRows] = await Promise.all([
     observeDbOperation("post.service.list", "select", () =>
       db
-        .select()
+        .select({ id: schema.post.id })
         .from(schema.post)
         .where(where)
         .orderBy(order)
@@ -128,7 +128,7 @@ export async function getPost(
   const idFilter = eq(schema.post.id, id);
   const [item] = await observeDbOperation("post.service.detail", "select", () =>
     db
-      .select()
+      .select({ id: schema.post.id })
       .from(schema.post)
       .where(
         visibility === "ALL"

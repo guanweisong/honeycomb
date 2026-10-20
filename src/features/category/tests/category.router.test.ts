@@ -173,6 +173,33 @@ describe("Category Router", () => {
   });
 
   describe("destroy procedure", () => {
+    it("accepts more than 100 valid category IDs in one mutation", async () => {
+      mockDb.limit.mockResolvedValue([]);
+      const caller = categoryRouter.createCaller(
+        createMockContext(createAdminUser("1"), mockDb),
+      );
+      const ids = Array.from({ length: 101 }, (_, index) =>
+        index.toString(16).padStart(24, "0"),
+      );
+      await expect(caller.destroy({ ids })).resolves.toEqual({
+        success: true,
+        publicSync: "completed",
+      });
+      expect(mockDb.transaction).toHaveBeenCalledOnce();
+      expect(mockDb.delete).toHaveBeenCalledWith(schema.category);
+    });
+
+    it.each([{ ids: [] }, { ids: ["malformed"] }])(
+      "rejects empty or malformed IDs before persistence: %j",
+      async ({ ids }) => {
+        const caller = categoryRouter.createCaller(
+          createMockContext(createAdminUser("1"), mockDb),
+        );
+        await expect(caller.destroy({ ids })).rejects.toThrow();
+        expect(mockDb.transaction).not.toHaveBeenCalled();
+      },
+    );
+
     it("should delete categories with admin permissions", async () => {
       const menuReferences = createMockDb();
       menuReferences.limit.mockResolvedValue([]);

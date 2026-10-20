@@ -1,6 +1,5 @@
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { parseEnumValue } from "@/lib/db/value-validation";
-import { EnableStatus } from "@/lib/validation/enable-status";
+import { PostWithRelationsSchema } from "../post-read-model";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
 import * as schema from "@/lib/db/schema";
@@ -28,105 +27,6 @@ vi.mock("@/lib/cache/refresh-path", () => ({
 vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
-
-// 模拟文章关联数据加载函数。
-vi.mock("@/features/post/server/post-relations", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/features/post/server/post-relations")
-  >("@/features/post/server/post-relations");
-  const mockedLoadPostRelations = vi.fn<typeof actual.loadPostRelations>(
-    async (_db, posts) => {
-      // 对于 detail 测试，返回关联数据
-      if (posts.length === 1) {
-        return posts.map((post) => ({
-          title: null,
-          content: null,
-          excerpt: null,
-          galleryLocation: null,
-          quoteAuthor: null,
-          quoteContent: null,
-          ...post,
-          status: parseEnumValue(
-            post.status,
-            Object.values(PostStatus),
-            "post.status",
-          ),
-          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-          commentStatus: parseEnumValue(
-            post.commentStatus,
-            Object.values(EnableStatus),
-            "post.commentStatus",
-          ),
-          author: {
-            id: post.authorId,
-            name: "Test Author",
-          },
-          category: {
-            id: post.categoryId,
-            title: { en: "Category 1", zh: "分类1" },
-            description: null,
-            parent: null,
-            status: EnableStatus.ENABLE,
-            path: "category",
-            createdAt: null,
-            updatedAt: null,
-          },
-          cover: post.coverId
-            ? {
-                id: post.coverId,
-                url: "https://example.com/cover.jpg",
-                key: "cover.jpg",
-                name: "cover.jpg",
-                size: 10,
-                type: "image/jpeg",
-                color: null,
-                width: null,
-                height: null,
-                createdAt: null,
-                updatedAt: null,
-              }
-            : undefined,
-          movieActors: [],
-          movieDirectors: [],
-          movieStyles: [],
-          galleryStyles: [],
-        }));
-      }
-      // 对于 list 测试，返回空关联数据
-      return posts.map((post) => ({
-        title: null,
-        content: null,
-        excerpt: null,
-        galleryLocation: null,
-        quoteAuthor: null,
-        quoteContent: null,
-        ...post,
-        status: parseEnumValue(
-          post.status,
-          Object.values(PostStatus),
-          "post.status",
-        ),
-        type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-        commentStatus: parseEnumValue(
-          post.commentStatus,
-          Object.values(EnableStatus),
-          "post.commentStatus",
-        ),
-        author: undefined,
-        category: undefined,
-        cover: undefined,
-        movieActors: [],
-        movieDirectors: [],
-        movieStyles: [],
-        galleryStyles: [],
-      }));
-    },
-  );
-  return {
-    ...actual,
-    loadPostRelations: mockedLoadPostRelations,
-  };
-});
 
 vi.mock("@/lib/cache/upstash-cache", () => ({
   bumpCacheVersion: vi.fn().mockResolvedValue(1),
@@ -180,7 +80,24 @@ describe("Post Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
       mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPosts);
+      mockDb.offset.mockResolvedValueOnce(
+        mockPosts.map((post) => ({ id: post.id })),
+      );
+      mockDb.query.post.findMany.mockResolvedValueOnce(
+        mockPosts.map((post) => ({
+          ...post,
+          translations: ["en", "zh"].map((locale) => ({
+            postId: post.id,
+            locale,
+            title: post.title?.[locale as "en" | "zh"] ?? null,
+            content: post.content?.[locale as "en" | "zh"] ?? null,
+          })),
+          author: null,
+          category: null,
+          cover: null,
+          postTags: [],
+        })),
+      );
 
       // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -193,7 +110,7 @@ describe("Post Router", () => {
 
       expect(result).toEqual({
         list: mockPosts.map((post) => ({
-          ...post,
+          ...PostWithRelationsSchema.parse(post),
           author: undefined,
           category: undefined,
           cover: undefined,

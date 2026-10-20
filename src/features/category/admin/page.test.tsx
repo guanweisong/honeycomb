@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
+
 import type { CategoryListItem as CategoryViewModel } from "@/features/category/types";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
@@ -55,8 +55,7 @@ describe("category bulk deletion from the complete tree", () => {
       updatedAt: null,
       deepPath: 0,
     }));
-    mocks.destroy.mockReset().mockImplementation(async (input) => {
-      DeleteBatchSchema.parse(input);
+    mocks.destroy.mockReset().mockImplementation(async () => {
       return { success: true };
     });
     mocks.refetch.mockReset().mockResolvedValue(undefined);
@@ -95,32 +94,31 @@ describe("category bulk deletion from the complete tree", () => {
     await act(async () => checkbox('thead [role="checkbox"]').click());
   }
 
-  it("caps select-all and individual selection to a valid shared deletion batch", async () => {
-    expect(
-      DeleteBatchSchema.safeParse({ ids: mocks.categories.map(({ id }) => id) })
-        .success,
-    ).toBe(false);
+  it("selects and deletes the complete tree in one request without cap copy", async () => {
+    expect(container.textContent).not.toContain("已选择");
+    expect(container.textContent).not.toContain("最多");
+    expect(container.textContent).not.toContain("全选将");
     await selectAll();
-    expect(checkedRows()).toHaveLength(100);
-    expect(container.textContent).toContain("每次最多选择并删除 100 个分类");
-    expect(checkbox('tbody tr:last-child [role="checkbox"]').disabled).toBe(
-      true,
-    );
-
+    expect(checkedRows()).toHaveLength(105);
     await act(async () =>
       checkbox('tbody tr:first-child [role="checkbox"]').click(),
     );
-    expect(checkedRows()).toHaveLength(99);
-    await act(async () =>
-      checkbox('tbody tr:last-child [role="checkbox"]').click(),
+    expect(checkedRows()).toHaveLength(104);
+    expect(checkbox('tbody tr:first-child [role="checkbox"]').disabled).toBe(
+      false,
     );
-    expect(checkedRows()).toHaveLength(100);
+    await act(async () =>
+      checkbox('tbody tr:first-child [role="checkbox"]').click(),
+    );
+    expect(checkedRows()).toHaveLength(105);
     await act(async () => button("批量删除", container).click());
     await act(async () => button("确定").click());
-
-    const [input] = mocks.destroy.mock.calls[0] ?? [];
-    expect(input?.ids).toHaveLength(100);
-    expect(DeleteBatchSchema.safeParse(input).success).toBe(true);
+    expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({
+      ids: [
+        ...mocks.categories.slice(1).map(({ id }) => id),
+        mocks.categories[0]?.id,
+      ],
+    });
     expect(checkedRows()).toHaveLength(0);
     expect(mocks.error).not.toHaveBeenCalled();
   });
@@ -131,7 +129,7 @@ describe("category bulk deletion from the complete tree", () => {
     await act(async () => button("批量删除", container).click());
     await act(async () => button("确定").click());
 
-    expect(checkedRows()).toHaveLength(100);
+    expect(checkedRows()).toHaveLength(105);
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
     expect(mocks.error).toHaveBeenCalledWith("删除失败");
     expect(mocks.refetch).not.toHaveBeenCalled();
@@ -144,7 +142,7 @@ describe("category bulk deletion from the complete tree", () => {
     expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it("allows deselecting the capped select-all selection", async () => {
+  it("allows deselecting the complete select-all selection", async () => {
     await selectAll();
     await selectAll();
     expect(checkedRows()).toHaveLength(0);

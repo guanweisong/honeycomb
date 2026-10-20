@@ -2,7 +2,6 @@ import "server-only";
 
 import {
   S3Client,
-  CopyObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
@@ -92,22 +91,24 @@ class S3 {
     );
   };
 
-  /** A candidate is written once. Retrying COPY could replace already validated bytes. */
-  static copyCandidate = async (
-    source: string,
-    candidate: string,
+  /** Publish the exact validated bytes once, with SDK retries disabled. */
+  static putValidatedObject = async (
+    key: string,
+    bytes: Uint8Array,
     type: string,
-  ) => {
+  ): Promise<void> => {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    await S3.S3(1).send(
-      new CopyObjectCommand({
-        Bucket: r2.bucketName,
-        Key: candidate,
-        CopySource: `${r2.bucketName}/${source.split("/").map(encodeURIComponent).join("/")}`,
-        MetadataDirective: "REPLACE",
-        ContentType: type,
-      }),
+    await observeExternalServiceOperation("object-storage", "put", () =>
+      S3.S3(1).send(
+        new PutObjectCommand({
+          Bucket: r2.bucketName,
+          Key: key,
+          Body: bytes,
+          ContentLength: bytes.byteLength,
+          ContentType: type,
+        }),
+      ),
     );
   };
 
@@ -174,7 +175,7 @@ class S3 {
       "object-storage",
       "delete",
       async () => {
-        const result = await S3.S3().send(
+        const result = await S3.S3(1).send(
           new DeleteObjectsCommand({
             Bucket: r2.bucketName,
             Delete: { Objects },

@@ -13,6 +13,7 @@ import { UserLevel, UserStatus } from "@/features/user/user";
 import { PageStatus } from "./page-status";
 import { PageTemplate } from "./page-template";
 import * as commands from "./server";
+import * as htmlSanitizer from "@/lib/security/sanitize-html";
 import { getPage, listPages } from "./server/page-queries";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 vi.mock("@/env/client", () => ({
@@ -89,6 +90,42 @@ describe("atomic versioned page writes", () => {
       ).toEqual({ id: result.id, version: 1, publicSync: state });
     },
   );
+  it("preserves the persisted creation hash golden bytes", async () => {
+    await create();
+    const [page] = await db.select().from(schema.page);
+    expect(page?.creationInputHash).toBe(
+      "d049b2410b6c627f7e63aeb66e7102adf97d6ecac0dc263ce4bbcbc73fb92f80",
+    );
+  });
+  it("sanitizes page content once per create or update and skips replay", async () => {
+    const sanitize = vi.spyOn(htmlSanitizer, "sanitizeOptionalI18nHtml");
+    try {
+      const created = await create();
+      expect(sanitize).toHaveBeenCalledTimes(1);
+      sanitize.mockClear();
+      await create();
+      expect(sanitize).not.toHaveBeenCalled();
+      await commands.updatePage(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          content: {
+            en: "<p>Safe</p><script>bad()</script>",
+            zh: "<p>安全</p>",
+          },
+        },
+        "author",
+        cache(),
+      );
+      expect(sanitize).toHaveBeenCalledTimes(1);
+      expect(await getPage(db, created.id, "ALL")).toMatchObject({
+        content: { en: "<p>Safe</p>", zh: "<p>安全</p>" },
+      });
+    } finally {
+      sanitize.mockRestore();
+    }
+  });
   it("rolls back body and version when bilingual translation fails", async () => {
     const created = await create();
     const invalidator = cache();
@@ -350,17 +387,8 @@ describe("atomic versioned page writes", () => {
       ),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
-  it("rejects non-ready managed media in the same page save transaction", async () => {
+  it("rejects unknown managed media in the same page save transaction", async () => {
     const a = await create();
-    await db.insert(schema.media).values({
-      id: "media",
-      key: "unready.png",
-      name: "unready",
-      size: 1,
-      type: "image/png",
-      url: "https://assets.test/unready.png",
-      state: "DELETING",
-    });
     const invalidator = cache();
     await expect(
       commands.updatePage(
@@ -382,6 +410,33 @@ describe("atomic versioned page writes", () => {
       content: input.content,
     });
     expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("accepts ordinary managed media in the page save transaction", async () => {
+    const a = await create();
+    await db
+      .insert(schema.media)
+      .values({
+        id: "media",
+        key: "ordinary.png",
+        name: "ordinary",
+        size: 1,
+        type: "image/png",
+        url: "https://assets.test/ordinary.png",
+      });
+    await commands.updatePage(
+      db,
+      {
+        id: a.id,
+        expectedVersion: 0,
+        content: {
+          en: '<img src="https://assets.test/ordinary.png">',
+          zh: "正文",
+        },
+      },
+      "author",
+      cache(),
+    );
+    expect(await getPage(db, a.id, "ALL")).toMatchObject({ version: 1 });
   });
   it("updates both bilingual fields atomically and accepts unchanged status", async () => {
     const a = await create();

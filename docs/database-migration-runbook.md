@@ -32,7 +32,7 @@
 
 ## Existing production baseline adoption
 
-Status: **not executed — explicit approval required**.
+Historical procedure only. Determine adoption from the target’s current ledger and schema; this document is not evidence of current production execution. Any new production action requires explicit approval.
 
 Before adoption:
 
@@ -85,8 +85,7 @@ baseline DDL against existing production tables.
 
 ## Versioned editing and media release: 0004–0007
 
-These migrations have local disposable-database evidence, not approval to run
-against production:
+These are historical migration descriptions, not a statement of the current production ledger or authorization to execute them:
 
 - `0004_post_editor_revision.sql`: post revision and resource-associated creation
   token/hash.
@@ -113,3 +112,30 @@ an old writable application against the new invariants, and do not claim a
 database backup can recover already deleted storage objects. Actual R2/runtime
 and cross-layer cache validation remain release gates documented in the media
 and [public cache](public-cache-verification.md) runbooks.
+
+## Ordinary media registration: 0008
+
+The new migration removes media lifecycle columns and keeps ordinary metadata,
+identifiers, keys/URLs, timestamps, dimension/size constraints, and post cover
+relationships. Do not edit previously applied 0007. Do not apply 0008 merely
+because the code PR is approved.
+
+Before any shared/production execution, inspect the current ledger and count
+UPLOADING, DELETING, and DELETED rows. Any unresolved non-READY row must abort the
+migration; never silently promote or filter/discard it. Resolution and evidence
+export/archive require separate review and authorization. Preserve a restorable
+backup and rehearse the migration, its fail-closed behavior, and rollback with
+foreign keys enabled on an isolated copy.
+
+The table rebuild must save and restore post.cover_id within its migration
+transaction, preserving post versions and timestamps. A write pause and
+coordinated client/server cutover are mandatory: old stateful writers and the new
+ordinary-record writer cannot safely coexist. Obtain explicit production
+approval immediately before running the reviewed chain. Follow the historical
+credential-expiry window and failure limitations in the media runbook.
+
+Stateless registration/deletion deliberately does not guarantee cross-store
+atomicity. Storage success plus database rollback may leave missing objects,
+and uncertain registration may leave orphan objects. Database restoration alone
+cannot reverse external object deletion. No automatic production migration or
+object cleanup is part of this change.

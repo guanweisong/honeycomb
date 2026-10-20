@@ -9,6 +9,7 @@ import {
 } from "@/lib/content/image-links";
 import { clientEnv } from "@/env/client";
 import { ApplicationError } from "@/lib/errors/application-error";
+import { assertOrdinaryMediaSchema } from "./media-schema-readiness";
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export function managedMediaKey(value: string): string | null {
@@ -32,7 +33,7 @@ export function managedMediaKey(value: string): string | null {
  * 必须与所属正文写入共用事务，避免校验与保存之间穿插删除。
  * 仅检查封面及受管图片 URL；未知历史 URL 可原样保留，但不能新增。
  */
-export async function assertMediaReferencesReady(
+export async function assertMediaReferencesExist(
   tx: Transaction,
   input: {
     coverId?: string | null;
@@ -40,13 +41,14 @@ export async function assertMediaReferencesReady(
     previousContent?: Partial<I18n> | null;
   },
 ) {
+  await assertOrdinaryMediaSchema(tx);
   if (input.coverId) {
     const [cover] = await tx
       .select()
       .from(schema.media)
       .where(eq(schema.media.id, input.coverId))
       .limit(1);
-    if (!cover || cover.state !== "READY")
+    if (!cover)
       throw new ApplicationError("CONFLICT", "封面媒体不可用，请重新选择");
   }
   const keys = [
@@ -68,10 +70,7 @@ export async function assertMediaReferencesReady(
   for (const key of keys) {
     const matching = rows.filter((row) => row.key === key);
     // Unknown historical URLs may remain unchanged, but cannot be newly introduced.
-    if (
-      (!matching.length && !previous.has(key)) ||
-      matching.some((row) => row.state !== "READY")
-    )
+    if (!matching.length && !previous.has(key))
       throw new ApplicationError(
         "CONFLICT",
         "正文中的受管媒体不可用，请核对后重试",
@@ -95,7 +94,7 @@ export async function findKnownMediaReferences(
     .limit(1);
   if (cover) return true;
   const duplicate = await tx
-    .select({ id: schema.media.id, state: schema.media.state })
+    .select({ id: schema.media.id })
     .from(schema.media)
     .where(
       or(
@@ -103,8 +102,7 @@ export async function findKnownMediaReferences(
         inArray(schema.media.url, [...urls]),
       ),
     );
-  if (duplicate.some((row) => row.state !== "DELETED" && !ids.includes(row.id)))
-    return true;
+  if (duplicate.some((row) => !ids.includes(row.id))) return true;
   const contents = [
     ...(await tx
       .select({ content: schema.postTranslation.content })

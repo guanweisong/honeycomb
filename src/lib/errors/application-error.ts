@@ -9,7 +9,8 @@ export class ApplicationError extends Error {
       | "UNAUTHORIZED"
       | "NOT_FOUND"
       | "BAD_REQUEST"
-      | "INTERNAL_SERVER_ERROR",
+      | "INTERNAL_SERVER_ERROR"
+      | "SERVICE_UNAVAILABLE",
     message?: string,
   ) {
     super(message ?? code);

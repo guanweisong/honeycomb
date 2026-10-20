@@ -19,6 +19,7 @@ export type { DataTableProps } from "./types";
 export function DataTable<TData>(props: DataTableProps<TData>) {
   const {
     columns,
+    getRowId,
     data,
     isFetching,
     error,
@@ -55,6 +56,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
   const table = useReactTable({
     data: data.list,
     columns,
+    getRowId,
     defaultColumn: {
       enableSorting: false,
     },
@@ -80,13 +82,19 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const { isAllSelectedOnCurrentPage, handleSelectAll, handleSelectRow } =
-    useRowSelection({
-      rows: data.list,
-      selectedRows,
-      disabledRowSelectable,
-      onSelectionChange,
-    });
+  const {
+    isAllSelectedOnCurrentPage,
+    isRowSelected,
+    handleSelectAll,
+    handleSelectRow,
+  } = useRowSelection({
+    rows: data.list,
+    isFetching,
+    getRowId,
+    selectedRows,
+    disabledRowSelectable,
+    onSelectionChange,
+  });
 
   const tableWrapperClassName = cn(
     "relative flex min-h-0 flex-col overflow-hidden rounded-md border",
@@ -116,6 +124,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
         >
           <DataTableHeader
             table={table}
+            isFetching={isFetching}
             selectableRows={selectableRows}
             isAllSelectedOnCurrentPage={isAllSelectedOnCurrentPage}
             onSelectAll={handleSelectAll}
@@ -127,7 +136,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             error={error}
             isFetching={isFetching}
             selectableRows={selectableRows}
-            selectedRows={selectedRows}
+            isRowSelected={isRowSelected}
             disabledRowSelectable={disabledRowSelectable}
             onSelectRow={handleSelectRow}
             rowActions={rowActions}

@@ -1,4 +1,5 @@
 import "server-only";
+import { transactionWithBeginRetry } from "@/lib/db/transaction-begin-retry";
 
 import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
@@ -15,37 +16,7 @@ import { ApplicationError } from "@/lib/errors/application-error";
 import type { SettingUpdate } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
-type SettingTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
-async function settingTransaction<T>(
-  db: Database,
-  operation: (tx: SettingTransaction) => Promise<T>,
-): Promise<T> {
-  for (let attempt = 0; ; attempt += 1) {
-    let entered = false;
-    try {
-      return await db.transaction((tx) => {
-        entered = true;
-        return operation(tx);
-      });
-    } catch (error) {
-      if (
-        entered ||
-        !error ||
-        typeof error !== "object" ||
-        !("code" in error) ||
-        error.code !== "SQLITE_BUSY"
-      )
-        throw error;
-      if (attempt >= 3)
-        throw new ApplicationError(
-          "CONFLICT",
-          "保存暂时繁忙，请核对最新版本后重试",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
-    }
-  }
-}
+const busyMessage = "保存暂时繁忙，请核对最新版本后重试";
 
 function toSettingRecord(
   setting: typeof schema.setting.$inferSelect,
@@ -109,7 +80,7 @@ export async function updateSetting(
     "setting.update",
     "transaction",
     () =>
-      settingTransaction(db, async (tx) => {
+      transactionWithBeginRetry(db, busyMessage, async (tx) => {
         const [actor] = await tx
           .select({ level: schema.user.level, status: schema.user.status })
           .from(schema.user)

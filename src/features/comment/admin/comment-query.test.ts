@@ -39,12 +39,16 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => false,
 }));
-vi.mock("@/components/DataTable", () => ({
-  DataTable: (props: DataTableProps<unknown>) => {
-    trpcMocks.table = props;
-    return props.toolBar;
-  },
-}));
+vi.mock("@/components/DataTable", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/components/DataTable")>();
+  return {
+    DataTable: (props: DataTableProps<unknown>) => {
+      trpcMocks.table = props;
+      return React.createElement(actual.DataTable, props);
+    },
+  };
+});
 vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: {
     onSubmit: (input: CommentListQueryInput) => void;
@@ -74,11 +78,16 @@ describe("comment query parameters", () => {
     container.remove();
   });
 
-  it("replaces and clears submitted filters and pagination", async () => {
+  it("updates and clears the search filter without a competing pagination owner", async () => {
     await act(async () => {
       root.render(React.createElement(CommentPageShell));
     });
-    expect(trpcMocks.queryInputs).toEqual([{}]);
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+    });
 
     await act(async () => {
       trpcMocks.submit?.({
@@ -89,8 +98,22 @@ describe("comment query parameters", () => {
       });
     });
 
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      content: "needs review",
+    });
     await act(async () => {
       trpcMocks.submit?.({ content: "approved" });
+    });
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+      content: "approved",
     });
 
     await act(async () => {
@@ -100,16 +123,11 @@ describe("comment query parameters", () => {
     expect(
       trpcMocks.options.every((options) => options === adminListQueryOptions),
     ).toBe(true);
-    expect(trpcMocks.queryInputs).toEqual([
-      {},
-      {
-        content: "needs review",
-        status: ["TO_AUDIT"],
-        page: 2,
-        limit: 20,
-      },
-      { content: "approved" },
-      {},
-    ]);
+    expect(trpcMocks.queryInputs.at(-1)).toEqual({
+      page: 1,
+      limit: 20,
+      sortField: "updatedAt",
+      sortOrder: "desc",
+    });
   });
 });

@@ -108,6 +108,7 @@ const Tag = () => {
     <>
       <div className="flex min-h-0 flex-col">
         <DataTable<TagEntity>
+          getRowId={(row) => row.id}
           columns={tagTableColumns}
           data={{
             list: data?.list ?? [],
@@ -124,7 +125,7 @@ const Tag = () => {
           onChange={(params) => {
             setSearchParams(TagListQuerySchema.parse(params));
           }}
-          toolBar={
+          toolBar={(table) => (
             <div className="flex justify-between">
               <div className="flex gap-1">
                 {canCreateTag && (
@@ -160,12 +161,8 @@ const Tag = () => {
                       placeholder: "请输入标签名进行搜索",
                     },
                   ]}
-                  onSubmit={(values) =>
-                    setSearchParams((prev) => ({
-                      ...prev,
-                      ...values,
-                      page: 1,
-                    }))
+                  onSubmit={({ name }) =>
+                    table.getColumn("name")?.setFilterValue(name)
                   }
                   inline
                   submitProps={{
@@ -175,7 +172,7 @@ const Tag = () => {
                 />
               </div>
             </div>
-          }
+          )}
           rowActions={(row) => (
             <div className="flex gap-1">
               {canUpdateTag && (

@@ -5,6 +5,10 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
+  isDeterminateRejectionCode,
+  readTrpcErrorCode,
+} from "@/lib/trpc/client/mutation-error";
+import {
   notifyPublicSyncWarning,
   type AdminMutationFeedback,
 } from "@/components/admin/action-state";
@@ -40,21 +44,11 @@ export async function submitMenuChanges(
     result = await options.saveAll(input);
   } catch (error) {
     if (!active()) return { state: "stale" };
-    const parsed = z
-      .object({ data: z.object({ code: z.string() }) })
-      .safeParse(error);
-    const code = parsed.success ? parsed.data.data.code : undefined;
+    const code = readTrpcErrorCode(error);
     const state =
       code === "CONFLICT"
         ? "conflict"
-        : error instanceof z.ZodError ||
-            (code &&
-              [
-                "BAD_REQUEST",
-                "FORBIDDEN",
-                "UNAUTHORIZED",
-                "NOT_FOUND",
-              ].includes(code))
+        : error instanceof z.ZodError || isDeterminateRejectionCode(code)
           ? "error"
           : "unknown";
     options.notifyError(

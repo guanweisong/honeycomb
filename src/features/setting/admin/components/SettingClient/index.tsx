@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
 import { toast } from "sonner";
 import { notifyPublicSyncWarning } from "@/components/admin/action-state";
 import {
@@ -11,6 +10,10 @@ import {
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/client/trpc";
+import {
+  isDeterminateRejectionCode,
+  readTrpcErrorCode,
+} from "@/lib/trpc/client/mutation-error";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { useSiteSetting } from "@/features/setting/admin/use-site-setting";
@@ -25,7 +28,8 @@ export default function Setting() {
   const { setting } = useSiteSetting();
   // Wait for a baseline before mounting controllers: StrictMode registration of
   // empty fields can mark the form dirty and block the first snapshot adoption.
-  if (!setting) return <p role="status">设置尚未加载；若持续未显示，请刷新页面重试。</p>;
+  if (!setting)
+    return <p role="status">设置尚未加载；若持续未显示，请刷新页面重试。</p>;
   return <SettingEditor key={user?.id ?? "signed-out"} />;
 }
 
@@ -58,19 +62,11 @@ function SettingEditor() {
         saved = await mutation.mutateAsync(submitted);
       } catch (error) {
         if (!active()) return;
-        const parsed = z
-          .object({ data: z.object({ code: z.string() }) })
-          .safeParse(error);
-        const code = parsed.success ? parsed.data.data.code : undefined;
+        const code = readTrpcErrorCode(error);
         if (code === "CONFLICT") {
           setBlocked(true);
           toast.error("设置已有更新，本地输入已保留，请核对最新版本");
-        } else if (
-          code &&
-          ["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].includes(
-            code,
-          )
-        )
+        } else if (isDeterminateRejectionCode(code))
           toast.error("更新失败，请检查输入和权限");
         else {
           setBlocked(true);
@@ -120,11 +116,6 @@ function SettingEditor() {
           {fields.map((field) => (
             <DynamicField key={field.name} {...field} />
           ))}
-          <p role="status">
-            {editor.form.formState.isDirty
-              ? "有未保存的更改"
-              : "已与服务器同步"}
-          </p>
           {canUpdate && (
             <Button
               type="submit"

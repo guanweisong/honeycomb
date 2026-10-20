@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { MenuType } from "@/features/menu/menu-types";
 import type { MenuEntityTree } from "./menu-transforms";
 import { submitMenuChanges } from "./menu-actions";
@@ -65,5 +66,31 @@ describe("menu actions", () => {
     );
     expect(refetch).not.toHaveBeenCalled();
     expect(notifySuccess).not.toHaveBeenCalled();
+  });
+});
+
+describe("menu error classification", () => {
+  it.each([
+    [{ data: { code: "BAD_REQUEST" } }, "error"],
+    [{ data: { code: "FORBIDDEN" } }, "error"],
+    [{ data: { code: "UNAUTHORIZED" } }, "error"],
+    [{ data: { code: "NOT_FOUND" } }, "error"],
+    [{ data: { code: "CONFLICT" } }, "conflict"],
+    [{ data: { code: "INTERNAL_SERVER_ERROR" } }, "unknown"],
+    [{ data: { code: { toString: (): string => "FORBIDDEN" } } }, "unknown"],
+    [new z.ZodError([]), "error"],
+  ])("preserves classification %#", async (error, state) => {
+    const refetch = vi.fn();
+    expect(
+      await submitMenuChanges({
+        checkedList,
+        expectedVersion: 0,
+        saveAll: vi.fn().mockRejectedValue(error),
+        refetch,
+        notifySuccess: vi.fn(),
+        notifyError: vi.fn(),
+      }),
+    ).toEqual({ state });
+    expect(refetch).not.toHaveBeenCalled();
   });
 });
