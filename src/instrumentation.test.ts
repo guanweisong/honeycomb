@@ -25,6 +25,18 @@ describe("instrumentation register", () => {
     configureObservability();
   });
 
+  it("prefers the public DSN for server logging during migration", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://new@example.invalid/2");
+    vi.stubEnv("SENTRY_DSN", "https://legacy@example.invalid/1");
+    await register();
+    expect(sentry.configureSentryLogs).toHaveBeenLastCalledWith(
+      "https://new@example.invalid/2",
+    );
+    sentry.configureSentryLogs.mockClear();
+  });
+
   it("initializes only configured Node runtime logging", async () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_RUNTIME", "nodejs");

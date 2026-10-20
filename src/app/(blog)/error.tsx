@@ -1,9 +1,22 @@
 "use client";
 
+import { captureException } from "@sentry/nextjs";
+import { useEffect } from "react";
+
 import { Button } from "@/packages/ui/components/button";
 import { PageState } from "@/packages/ui/extended/PageState";
 
-export default function Error({ reset }: { error: Error; reset: () => void }) {
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
+  useEffect(() => {
+    captureException(error);
+  }, [error]);
+
   const isOffline =
     typeof navigator !== "undefined" && navigator.onLine === false;
   const isChinese =

@@ -1,8 +1,21 @@
 "use client";
 
+import { captureException } from "@sentry/nextjs";
+import { useEffect } from "react";
+
 import { PageState } from "@/packages/ui/extended/PageState";
 
-export default function Error({ reset }: { error: Error; reset: () => void }) {
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
+  useEffect(() => {
+    captureException(error);
+  }, [error]);
+
   return (
     <PageState
       compact
