@@ -16,9 +16,8 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
-
 import {
+  CategoryDeleteSchema,
   CategoryListQuerySchema,
   CategoryInsertSchema,
   CategoryUpdateSchema,
@@ -48,7 +47,7 @@ export const categoryRouter = createTRPCRouter({
       ),
     ),
   destroy: permissionProcedure(Permission.categoryDelete)
-    .input(DeleteBatchSchema)
+    .input(CategoryDeleteSchema)
     .mutation(({ input, ctx }) =>
       destroyCategories(ctx.db, input.ids, publicContentInvalidator),
     ),

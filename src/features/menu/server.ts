@@ -1,4 +1,5 @@
 import "server-only";
+import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
 import {
   transactionWithBeginRetry,
   type DatabaseTransaction,
@@ -336,13 +337,19 @@ async function bumpMenuRevisionForTargets(
   field: typeof schema.menu.pageId | typeof schema.menu.categoryId,
   ids: string[],
 ) {
-  if (!ids.length) return;
-  const [affected] = await tx
-    .select({ id: schema.menu.id })
-    .from(schema.menu)
-    .where(inArray(field, ids))
-    .limit(1);
-  if (!affected) return;
+  let hasReference = false;
+  for (let offset = 0; offset < ids.length; offset += SQL_ID_CHUNK_SIZE) {
+    const [affected] = await tx
+      .select({ id: schema.menu.id })
+      .from(schema.menu)
+      .where(inArray(field, ids.slice(offset, offset + SQL_ID_CHUNK_SIZE)))
+      .limit(1);
+    if (affected) {
+      hasReference = true;
+      break;
+    }
+  }
+  if (!hasReference) return;
   const [revision] = await tx
     .update(schema.menuRevision)
     .set({ version: sql`${schema.menuRevision.version} + 1` })
