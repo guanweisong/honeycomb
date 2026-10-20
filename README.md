@@ -4,8 +4,8 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.0-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -74,49 +74,17 @@
 
 ## 项目结构
 
-首次阅读建议从[代码阅读地图](docs/code-reading-map.md)开始，按文章写入、公开读取和当前用户三条路径定位。
+首次阅读建议从[文档导航](docs/README.md)和[代码阅读地图](docs/code-reading-map.md)开始，按文章写入、公开读取、当前用户和后台统计定位。
 
-```text
-src/
-├── app/                       # 路由、布局、HTTP 与框架组合
-│   ├── (blog)/[locale]/       # 公开页面，URL 不变
-│   ├── admin/                 # 后台路由与布局
-│   ├── api/                   # HTTP 入口
-│   └── _trpc/                 # 根 router 与服务端 caller
-├── features/                  # category/comment/link/media/menu/page/post/setting/tag/user
-│   └── <feature>/
-│       ├── router.ts          # 输入、入口权限与协议适配
-│       ├── schema.ts          # 权威业务输入 schema
-│       ├── types.ts           # 稳定业务类型
-│       ├── rules.ts           # 按需保留的纯业务规则
-│       ├── server.ts          # 直接数据库操作，复杂功能可拆成 server/
-│       ├── admin/             # 所属业务的后台 UI
-│       └── public/            # 按需提供的公开 UI/能力
-├── components/                # 通用 UI 与编辑器
-└── lib/                       # db/auth/trpc/cache/storage/observability/i18n 等技术能力
-```
+目录职责、调用链和依赖边界见[架构说明](docs/architecture-dependency-report.md)，新增文件可参考[按需目录模板](.codex/skills/frontend-structure/references/directory-templates.md)。可验收规则由[OpenSpec 规则索引](.codex/skills/frontend-structure/references/architecture.md)指向现有主规格，本轮归属调整见[当前变更](openspec/changes/refine-directory-ownership/proposal.md)。
 
-目录按实际需要创建，不要求每个 feature 都有全部文件。配置、迁移、静态资源和测试仍位于仓库根部相应目录。
-
-### Feature 职责边界
-
-默认路径是 `UI → feature router → feature server 函数 → db`；Server Component 可直接调用服务端读取函数。server 函数直接使用 Drizzle，负责业务规则、事务、条件写入和副作用顺序，不要求额外 Repository 接口、factory 或 Use Case 跳转。`src/packages` 与人工 `application/domain/infrastructure` 分层不再使用。
-
-业务 schema、类型、状态和选项属于相应 feature；跨功能可直接复用所属 feature 的纯契约、有意复用的 UI 或服务端操作，以具名具体入口表达依赖，不要求 public barrel 或中央 contracts 转发。通用组件通过注入获得业务能力，lib 只提供技术实现。`lib/db`、`lib/auth` 可引用 feature 拥有的纯目录、schema 或类型，但不能加载业务 server 操作。
-
-根 tRPC 组合在 `src/app/_trpc/router.ts`，服务端 caller 在 `src/app/_trpc/server.ts`。`lib/trpc` 只保留公共核心、上下文、客户端和传输工具；客户端可 type-only 引用根 `AppRouter`，不能运行时加载 app 或业务 router。
-
-Router 保留入口授权、限流和错误协议；发布条件、并发防护、数据库校验、公开 DTO 裁剪和副作用失败语义不变。数据库提交后缓存同步失败仍返回降级 `publicSync`，不能把已提交写入变成失败。浏览器/服务端/Edge 边界、草稿恢复和 Sentry 隐私约束均须保持。
-
-认证框架绑定保留在 `src/auth.ts`；认证 hook 与登录审计组合位于 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载该绑定，这是已有的窄技术集成，不允许 lib/auth 加载业务操作。
-
-权限入口统一登记在 `src/lib/auth/capability-registry.ts`。tRPC、Admin Action、Admin route 和后台菜单只能使用已登记 capability；前端检查不能替代服务端授权。详细规则见[架构与依赖边界](docs/architecture-dependency-report.md)及[权限矩阵](docs/permission-matrix.md)。
+开发迁移见[迁移说明](docs/ddd-migration-guide.md)，权限见[权限矩阵](docs/permission-matrix.md)，测试归属与运行入口见[测试指南](tests/README.md)。
 
 ## 快速开始
 
 ### 环境要求
 
-- Node.js >= 22.12
+- Node.js 22.x（与 `package.json` engines 一致）
 - Bun >= 1.4.2
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
@@ -263,10 +231,14 @@ bunx drizzle-kit studio      # 打开 Drizzle Studio
 
 ```
 
-E2E 测试默认把运行产物写入系统临时目录，避免项目目录内历史报告文件的权限问题：
+E2E 必须使用本次独占的本地临时数据库，不读取开发或生产凭据：
 
-- `PLAYWRIGHT_OUTPUT_DIR` 默认 `/private/tmp/honeycomb-e2e-results`
-- `PLAYWRIGHT_HTML_REPORT` 默认 `/private/tmp/honeycomb-playwright-report`
+- 用 `mktemp -d` 创建私有目录后立即安装退出/中断清理 trap；设置 `HONEYCOMB_TEST_DIR` 为该目录的规范绝对路径、`TURSO_URL=file:<目录>/test.db`、`TURSO_TOKEN=e2e-local-only`、`E2E_SEED=1`。
+- 在目录仍为空时运行 `bun --no-env-file scripts/e2e-seed-policy.ts --initialize`，之后验证目标、迁移、seed 和服务必须使用同一环境；可将 `TMPDIR` 设置为该目录，让子进程临时文件也随运行清理。
+- Playwright 结果和 HTML 报告分别放在该目录的 `playwright-results`、`playwright-report`；不再接受任意结果路径覆盖，不复用已存在的服务器。
+- 浏览器只能访问匹配的本地回环 host/port；服务使用固定测试 R2、邮件和认证值，移除 OAuth、Upstash、Sentry 与 GA 集成变量。它不验证真实外部集成。
+- 实际服务启动拒绝存在 `.env`、`.env.local` 或开发/生产/测试 dotenv 文件的工作副本，以免 Bun/Next 重新加载真实凭据。请使用不含这些文件的干净 checkout，不要移动或删除既有凭据文件。`playwright test --list` 仍可只读列出用例，无需数据库初始化。
+- CI 的完整初始化与清理流程见 `.github/workflows/quality.yml`；完成后验证本次服务已退出、临时目录已删除。
 
 ## API 限流
 
@@ -298,7 +270,7 @@ fail-open：放行请求，并省略不可用的限流响应头。评论创建�
 - **post** - 文章表（支持多种类型：文章、电影、图库、引言）
 - **page** - 页面表（独立页面）
 - **comment** - 评论表（支持嵌套评论）
-- **media** - 媒体文件表（图片、视频等）
+- **media** - 图片媒体及上传/删除生命周期（当前上传不支持视频）
 - **setting** - 网站设置表
 - **menu** - 菜单表（导航菜单）
 - **tag** - 标签表
@@ -333,7 +305,7 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 });
 ```
 
-当前 32 项 Permission、完整角色矩阵和新增权限流程见 [权限矩阵](docs/permission-matrix.md)。
+当前 Permission、完整角色矩阵和新增权限流程见 [权限矩阵](docs/permission-matrix.md)。
 
 ## 国际化
 

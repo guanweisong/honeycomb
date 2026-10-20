@@ -1,161 +1,85 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mediaRouter } from "@/features/media/router";
-import { TEST_IDS } from "@tests/helpers/test-constants";
+import { beforeEach, expect, it, vi } from "vitest";
+import { MediaDeleteSchema } from "../schema";
+import { mediaRouter } from "../router";
 import {
   createAdminUser,
   createGuestUser,
   createMockContext,
   createMockDb,
 } from "@tests/helpers/test-utils";
-
-const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
-
+import { TEST_IDS } from "@tests/helpers/test-constants";
+const service = vi.hoisted(() => ({
+  begin: vi.fn(),
+  confirm: vi.fn(),
+  destroy: vi.fn(),
+}));
+vi.mock("../server", () => ({
+  beginMediaUpload: service.begin,
+  confirmMediaUpload: service.confirm,
+  destroyMedia: service.destroy,
+}));
+vi.mock("@/lib/storage/S3", () => ({ default: {} }));
 vi.mock("@/lib/cache/refresh-path", () => ({
-  publicContentInvalidator: {
-    invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
-  },
+  publicContentInvalidator: { invalidate: vi.fn() },
 }));
-
-// 模拟数据库及相关模块。
-vi.mock("@/lib/db/db", () => ({
-  getDb: vi.fn(() => mockDb),
-}));
-
-// 模拟 S3 模块。
-vi.mock("@/lib/storage/S3", () => ({
-  default: {
-    getPresignedUrl: vi
-      .fn()
-      .mockResolvedValue("https://example.com/presigned-url"),
-    deleteObjects: vi.fn().mockResolvedValue(undefined),
-    getPresignedDeleteUrl: vi
-      .fn()
-      .mockResolvedValue("https://example.com/cleanup-url"),
-  },
-}));
-
-const mockDb = createMockDb();
-
-describe("Media Router", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+beforeEach(() => vi.clearAllMocks());
+function caller(admin = true) {
+  return mediaRouter.createCaller(
+    createMockContext(
+      admin ? createAdminUser(TEST_IDS.ID_1) : createGuestUser(TEST_IDS.ID_2),
+      createMockDb(),
+    ),
+  );
+}
+it("routes authenticated upload intent and actor, not client object metadata", async () => {
+  service.begin.mockResolvedValue({
+    id: TEST_IDS.ID_1,
+    uploadUrl: "https://storage.test/temporary/a.png",
+    expiresAt: "later",
   });
-
-  describe("index procedure", () => {
-    it("should create caller successfully", async () => {
-      const caller = mediaRouter.createCaller(createMockContext(null, mockDb));
-
-      expect(caller).toBeDefined();
-      expect(typeof caller.index).toBe("function");
-    });
+  const result = await caller().beginUpload({
+    name: "test.png",
+    type: "image/png",
+    size: 1,
   });
-
-  describe("getPresignedUrl procedure", () => {
-    it("should return presigned URL with admin permissions", async () => {
-      const caller = mediaRouter.createCaller(
-        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
-      );
-
-      const result = await caller.getPresignedUrl({
-        name: "test.jpg",
-        type: "image/jpeg",
-        size: 1024,
-      });
-
-      expect(result).toEqual({
-        url: "https://example.com/presigned-url",
-        cleanupUrl: "https://example.com/cleanup-url",
-        key: expect.any(String),
-      });
-    });
-
-    it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(
-        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
-      );
-
-      await expect(
-        caller.getPresignedUrl({
-          name: "test.jpg",
-          type: "image/jpeg",
-          size: 1024,
-        }),
-      ).rejects.toThrow();
-    });
+  expect(result).toEqual({
+    id: TEST_IDS.ID_1,
+    uploadUrl: "https://storage.test/temporary/a.png",
+    expiresAt: "later",
   });
-
-  describe("upload procedure", () => {
-    it("should upload media with admin permissions", async () => {
-      const mockMedia = {
-        id: TEST_IDS.ID_1,
-        name: "test.jpg",
-        url: "https://example.com/test.jpg",
-      };
-
-      mockDb.insert.mockReturnValueOnce(mockDb);
-      mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([mockMedia]);
-
-      const caller = mediaRouter.createCaller(
-        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
-      );
-
-      const result = await caller.upload({
-        name: "test.jpg",
-        size: 1024,
-        type: "image/jpeg",
-        key: "2024/01/01/test.jpg",
-      });
-
-      expect(result).toEqual({ state: "created", media: mockMedia });
-    });
-
-    it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(
-        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
-      );
-
-      await expect(
-        caller.upload({
-          name: "test.jpg",
-          size: 1024,
-          type: "image/jpeg",
-          key: "2024/01/01/test.jpg",
-        }),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe("destroy procedure", () => {
-    it("should delete media with admin permissions", async () => {
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { id: TEST_IDS.ID_1, key: "test.jpg" },
-      ]);
-
-      mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined);
-
-      const caller = mediaRouter.createCaller(
-        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
-      );
-
-      const result = await caller.destroy({ ids: [TEST_IDS.ID_1] });
-
-      expect(result).toEqual({ success: true });
-      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
-        refreshLayout: true,
-        refreshPostIndex: true,
-      });
-    });
-
-    it("should throw error for non-admin users", async () => {
-      const caller = mediaRouter.createCaller(
-        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
-      );
-
-      await expect(caller.destroy({ ids: [TEST_IDS.ID_1] })).rejects.toThrow();
-    });
-  });
+  expect(service.begin.mock.calls[0]?.[3]).toBe(TEST_IDS.ID_1);
+});
+it("denies guest upload and confirmation before business calls", async () => {
+  await expect(
+    caller(false).beginUpload({ name: "test.png", type: "image/png", size: 1 }),
+  ).rejects.toThrow();
+  await expect(
+    caller(false).confirmUpload({ id: TEST_IDS.ID_1 }),
+  ).rejects.toThrow();
+  expect(service.begin).not.toHaveBeenCalled();
+  expect(service.confirm).not.toHaveBeenCalled();
+});
+it("requires explicit unknown-reference risk acknowledgment", async () => {
+  // Runtime parsing must reject a bypassed client even when TypeScript is not in use.
+  const result = MediaDeleteSchema.safeParse({ ids: [TEST_IDS.ID_1] });
+  expect(result?.success).toBe(false);
+});
+it("routes deletion acknowledgment and preserves committed refresh outcome", async () => {
+  service.destroy.mockResolvedValue({ success: true, publicSync: "degraded" });
+  expect(
+    await caller().destroy({
+      ids: [TEST_IDS.ID_1],
+      acknowledgeUnknownReferences: true,
+    }),
+  ).toEqual({ success: true, publicSync: "degraded" });
+  expect(service.destroy.mock.calls[0]?.slice(-2)).toEqual([
+    TEST_IDS.ID_1,
+    true,
+  ]);
+});
+it("does not expose the old arbitrary-key registration endpoints", () => {
+  expect(Object.keys(mediaRouter._def.procedures)).not.toContain("upload");
+  expect(Object.keys(mediaRouter._def.procedures)).not.toContain(
+    "getPresignedUrl",
+  );
 });

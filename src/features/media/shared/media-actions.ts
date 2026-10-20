@@ -1,50 +1,37 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { clientLogger } from "@/lib/observability/client";
-import { LogEvent } from "@/lib/observability/core/names";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaRecord, MediaConfirmResult } from "../types";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   MEDIA_MAX_BATCH_FILES,
   MediaUploadFileSchema,
   type MediaUploadFile,
 } from "../upload-policy";
-import type { MediaInsert } from "../schema";
-import type { MediaCreateResult } from "../upload-result";
 import type { MediaDeleteResult } from "../delete-result";
-
-type ImageMetadata = {
-  width: number;
-  height: number;
-  color?: string;
-};
 
 type SubmitMediaUploadOptions = {
   files: readonly File[];
-  getImageMetadata: (file: File) => Promise<ImageMetadata>;
-  getPresignedUrl: (input: MediaUploadFile) => Promise<{
-    url: string;
-    key: string;
-  }>;
+  isCurrent?: () => boolean;
+  beginUpload: (
+    input: MediaUploadFile,
+  ) => Promise<{ id: string; uploadUrl: string; expiresAt: string }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  createMedia: (input: MediaInsert) => Promise<MediaCreateResult>;
-  cleanupObject: (key: string) => Promise<void>;
+  confirmUpload: (input: { id: string }) => Promise<MediaConfirmResult>;
 };
-
-type FailedUpload = {
+export type FailedUpload = {
+  id?: string;
   name: string;
   message: string;
-  cleanupFailed: boolean;
   outcome: "failed" | "indeterminate";
 };
 export type MediaUploadActionResult =
   | { state: "empty" }
-  | { state: "success"; media: MediaViewModel[] }
+  | { state: "success"; media: MediaRecord[] }
   | {
       state: "partial";
-      media: MediaViewModel[];
+      media: MediaRecord[];
       failed: FailedUpload[];
       message: string;
     }
@@ -52,76 +39,71 @@ export type MediaUploadActionResult =
 
 export async function submitMediaUpload({
   files,
-  getImageMetadata,
-  getPresignedUrl,
+  beginUpload,
   uploadToStorage,
-  createMedia,
-  cleanupObject,
+  confirmUpload,
+  isCurrent = () => true,
 }: SubmitMediaUploadOptions): Promise<MediaUploadActionResult> {
-  if (files.length === 0) return { state: "empty" };
+  if (!files.length) return { state: "empty" };
   if (files.length > MEDIA_MAX_BATCH_FILES)
     return { state: "error", message: "每批最多上传 20 个文件" };
-  const results = await Promise.all(
-    files.map(async (file) => {
-      let metadataStarted = false;
-      try {
-        const parsed = MediaUploadFileSchema.safeParse({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-        });
-        if (!parsed.success)
-          throw new Error(parsed.error.issues[0]?.message ?? "无效的媒体文件");
-        const metadata = await getImageMetadata(file);
-        const { url, key } = await getPresignedUrl(parsed.data);
-        await uploadToStorage(url, file);
-        metadataStarted = true;
-        const result = await createMedia({
-          ...parsed.data,
-          key,
-          width: metadata.width || null,
-          height: metadata.height || null,
-          color: metadata.color || null,
-        });
-        if (result.state === "created") return { media: result.media };
-        let cleanupFailed = false;
-        if (result.state === "rejected") {
-          try {
-            await cleanupObject(key);
-          } catch {
-            cleanupFailed = true;
-          }
-        }
-        return {
-          failed: {
-            name: file.name,
-            message: result.message,
-            cleanupFailed,
-            outcome:
-              result.state === "rejected"
-                ? ("failed" as const)
-                : ("indeterminate" as const),
-          },
-        };
-      } catch (error) {
-        return {
-          failed: {
-            name: file.name,
-            message: metadataStarted
-              ? "保存结果待确认，请刷新媒体列表后核对"
-              : error instanceof Error
-                ? error.message
-                : "上传失败，请稍后再试",
-            cleanupFailed: false,
-            outcome: metadataStarted
-              ? ("indeterminate" as const)
-              : ("failed" as const),
-          },
-        };
-      }
-    }),
-  );
-
+  const results: { media?: MediaRecord; failed?: FailedUpload }[] = [];
+  for (let offset = 0; offset < files.length; offset += 2) {
+    results.push(
+      ...(await Promise.all(
+        files
+          .slice(offset, offset + 2)
+          .map(
+            async (
+              file,
+            ): Promise<{ media?: MediaRecord; failed?: FailedUpload }> => {
+              let id: string | undefined;
+              try {
+                const parsed = MediaUploadFileSchema.safeParse({
+                  name: file.name,
+                  type: file.type,
+                  size: file.size,
+                });
+                if (!parsed.success)
+                  throw new Error(
+                    parsed.error.issues[0]?.message ?? "无效的媒体文件",
+                  );
+                if (!isCurrent()) throw new Error("操作已过期");
+                const operation = await beginUpload(parsed.data);
+                id = operation.id;
+                if (!isCurrent()) throw new Error("操作已过期");
+                await uploadToStorage(operation.uploadUrl, file);
+                if (!isCurrent()) throw new Error("操作已过期");
+                const result = await confirmUpload({ id });
+                if (result.state === "ready") return { media: result.media };
+                return {
+                  failed: {
+                    id,
+                    name: file.name,
+                    message: result.message,
+                    outcome:
+                      result.state === "pending" ? "indeterminate" : "failed",
+                  },
+                };
+              } catch (error) {
+                return {
+                  failed: {
+                    id,
+                    name: file.name,
+                    message: id
+                      ? "上传结果待确认，请在媒体管理中检查状态"
+                      : error instanceof Error
+                        ? error.message
+                        : "上传失败，请稍后再试",
+                    outcome: id ? "indeterminate" : "failed",
+                  },
+                };
+              }
+            },
+          ),
+      )),
+    );
+  }
   const media = results.flatMap((result) =>
     result.media ? [result.media] : [],
   );
@@ -129,170 +111,216 @@ export async function submitMediaUpload({
     result.failed ? [result.failed] : [],
   );
   if (!failed.length) return { state: "success", media };
-  const message = failed
-    .map(
-      (failure) =>
-        `${failure.name}: ${failure.message}${failure.cleanupFailed ? "（存储清理失败）" : ""}`,
-    )
-    .join("；");
+  const message = failed.map((f) => `${f.name}: ${f.message}`).join("；");
   return media.length
     ? { state: "partial", media, failed, message }
     : { state: "error", failed, message };
 }
-
-type SubmitMediaDeleteOptions = {
-  id: string;
-  destroy: (input: { ids: string[] }) => Promise<MediaDeleteResult>;
-};
-
 export type MediaDeleteActionResult =
   | { state: "success" }
   | { state: "indeterminate"; message: string }
-  | { state: "error" };
-
+  | { state: "error"; message: string };
 export async function submitMediaDelete({
   id,
   destroy,
-}: SubmitMediaDeleteOptions): Promise<MediaDeleteActionResult> {
+}: {
+  id: string;
+  destroy: (input: {
+    ids: string[];
+    acknowledgeUnknownReferences: true;
+  }) => Promise<MediaDeleteResult>;
+}): Promise<MediaDeleteActionResult> {
   try {
-    const result = await destroy({ ids: [id] });
+    const result = await destroy({
+      ids: [id],
+      acknowledgeUnknownReferences: true,
+    });
     return result.success
       ? { state: "success" }
       : { state: "indeterminate", message: result.message };
-  } catch {
-    return { state: "error" };
+  } catch (error) {
+    const code =
+      typeof error === "object" && error !== null && "data" in error
+        ? (error.data as { code?: string } | undefined)?.code
+        : undefined;
+    if (
+      code &&
+      [
+        "CONFLICT",
+        "BAD_REQUEST",
+        "FORBIDDEN",
+        "UNAUTHORIZED",
+        "NOT_FOUND",
+      ].includes(code)
+    )
+      return {
+        state: "error",
+        message: error instanceof Error ? error.message : "删除失败",
+      };
+    return {
+      state: "indeterminate",
+      message: "删除结果待确认，请检查状态后再操作",
+    };
   }
 }
-
-function getImageMetadata(file: File): Promise<ImageMetadata> {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith("image/")) {
-      resolve({ width: 0, height: 0 });
-      return;
-    }
-
-    const image = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-
-      let color: string | undefined;
-      try {
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        if (context) {
-          canvas.width = 1;
-          canvas.height = 1;
-          context.drawImage(image, 0, 0, image.width, image.height, 0, 0, 1, 1);
-          const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
-          color = `rgb(${red},${green},${blue})`;
-        }
-      } catch {
-        clientLogger.warn(LogEvent.clientError, {
-          operation: "media.extract-image-color",
-          outcome: "error",
-        });
-      }
-
-      resolve({ width: image.width, height: image.height, color });
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve({ width: 0, height: 0 });
-    };
-    image.src = objectUrl;
-  });
-}
-
 async function uploadToStorage(url: string, file: File) {
   const response = await fetch(url, {
     method: "PUT",
     body: file,
     headers: { "Content-Type": file.type },
   });
-
-  if (!response.ok) {
-    throw new Error(`文件 ${file.name} 上传到存储失败`);
-  }
+  if (!response.ok) throw new Error(`文件 ${file.name} 上传到存储失败`);
 }
-
 type UseMediaActionsOptions = {
   refetch: () => unknown;
-  onUploadComplete: (media: MediaViewModel) => void;
-  onDeleteComplete: () => void;
+  onUploadComplete: (media: MediaRecord) => void;
+  onDeleteComplete: (id: string) => void;
+  scopeKey?: string;
+  selectionKey?: string;
 };
-
 export function useMediaActions({
   refetch,
   onUploadComplete,
   onDeleteComplete,
+  scopeKey,
+  selectionKey,
 }: UseMediaActionsOptions) {
   const [loading, setLoading] = useState(false);
+  const [unavailableIds, setUnavailableIds] = useState<string[]>([]);
+  const [failures, setFailures] = useState<FailedUpload[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const destroyMedia = trpc.media.destroy.useMutation();
-  const getPresignedUrl = trpc.media.getPresignedUrl.useMutation();
-  const uploadMedia = trpc.media.upload.useMutation();
-
+  const active = useRef(true);
+  const scope = useRef(scopeKey);
+  useLayoutEffect(() => {
+    scope.current = scopeKey;
+  }, [scopeKey]);
+  const selection = useRef(selectionKey);
+  useLayoutEffect(() => {
+    selection.current = selectionKey;
+  }, [selectionKey]);
+  const uploadBusy = useRef(false);
+  const busy = useRef(new Set<string>());
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  const destroy = trpc.media.destroy.useMutation();
+  const begin = trpc.media.beginUpload.useMutation();
+  const confirm = trpc.media.confirmUpload.useMutation();
+  const reconcile = trpc.media.reconcile.useMutation();
+  const safeRefresh = async () => {
+    try {
+      await refetch();
+    } catch {
+      /* A refresh failure never replays a storage operation. */
+    }
+  };
   const handleUpload = async (files: FileList | null) => {
+    if (uploadBusy.current) return;
+    uploadBusy.current = true;
     setLoading(true);
-    const cleanupUrls = new Map<string, string>();
-    const result = await submitMediaUpload({
-      files: files ? Array.from(files) : [],
-      getImageMetadata,
-      getPresignedUrl: async (input) => {
-        const signed = await getPresignedUrl.mutateAsync(input);
-        cleanupUrls.set(signed.key, signed.cleanupUrl);
-        return signed;
-      },
-      uploadToStorage,
-      createMedia: uploadMedia.mutateAsync,
-      cleanupObject: async (key) => {
-        const url = cleanupUrls.get(key);
-        if (!url) throw new Error("缺少清理地址");
-        const response = await fetch(url, { method: "DELETE" });
-        if (!response.ok) throw new Error("存储清理失败");
-      },
-    });
-
-    if (result.state === "success" || result.state === "partial") {
-      if (result.state === "success")
-        toast.success(`成功上传 ${result.media.length} 个文件`);
-      else
-        toast.error(
-          `成功上传 ${result.media.length} 个文件，${result.failed.filter((failure) => failure.outcome === "failed").length} 个失败，${result.failed.filter((failure) => failure.outcome === "indeterminate").length} 个待确认：${result.message}`,
-        );
-      const lastMedia = result.media.at(-1);
-      if (lastMedia) onUploadComplete(lastMedia);
-      refetch();
-    } else if (result.state === "error") {
-      toast.error(result.message);
-      if (result.failed?.some((failure) => failure.outcome === "indeterminate"))
-        refetch();
+    const startedScope = scope.current;
+    const startedSelection = selection.current;
+    try {
+      const result = await submitMediaUpload({
+        files: files ? Array.from(files) : [],
+        beginUpload: begin.mutateAsync,
+        uploadToStorage,
+        confirmUpload: confirm.mutateAsync,
+        isCurrent: () => active.current && scope.current === startedScope,
+      });
+      if (!active.current || scope.current !== startedScope) return;
+      setFailures("failed" in result ? (result.failed ?? []) : []);
+      if (result.state === "success" || result.state === "partial") {
+        if (result.state === "success")
+          toast.success(`成功上传 ${result.media.length} 个文件`);
+        else
+          toast.error(
+            `成功上传 ${result.media.length} 个文件，${result.failed.filter((f) => f.outcome === "failed").length} 个失败，${result.failed.filter((f) => f.outcome === "indeterminate").length} 个待确认：${result.message}`,
+          );
+        const last = result.media.at(-1);
+        if (last && selection.current === startedSelection)
+          onUploadComplete(last);
+        await safeRefresh();
+      } else if (result.state === "error") {
+        toast.error(result.message);
+        if (result.failed?.some((f) => f.id)) await safeRefresh();
+      }
+    } finally {
+      uploadBusy.current = false;
+      if (active.current) {
+        setLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     }
-    setLoading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
-
   const handleDelete = async (id: string) => {
-    const result = await submitMediaDelete({
-      id,
-      destroy: destroyMedia.mutateAsync,
-    });
-
-    if (result.state === "success") {
-      toast.success("删除成功");
-      onDeleteComplete();
-      refetch();
-    } else if (result.state === "error") {
-      toast.error("删除失败");
-    } else if (result.state === "indeterminate") {
-      toast.error(result.message);
-      refetch();
+    if (busy.current.has(id)) return false;
+    busy.current.add(id);
+    setUnavailableIds((current) => [...new Set([...current, id])]);
+    onDeleteComplete(id);
+    const startedScope = scope.current;
+    try {
+      const result = await submitMediaDelete({
+        id,
+        destroy: destroy.mutateAsync,
+      });
+      if (!active.current || scope.current !== startedScope) return false;
+      if (result.state === "success") {
+        toast.success("删除成功");
+      } else {
+        toast.error(result.message);
+        if (result.state === "error")
+          setUnavailableIds((current) =>
+            current.filter((value) => value !== id),
+          );
+      }
+      if (result.state !== "error") await safeRefresh();
+      return result.state === "success";
+    } finally {
+      busy.current.delete(id);
     }
   };
-
-  return { fileInputRef, handleDelete, handleUpload, loading };
+  const handleReconcile = async (
+    id: string,
+    acknowledgeUnknownReferences?: true,
+  ) => {
+    if (busy.current.has(id)) return false;
+    busy.current.add(id);
+    const startedScope = scope.current;
+    try {
+      const result = await reconcile.mutateAsync({
+        id,
+        ...(acknowledgeUnknownReferences
+          ? { acknowledgeUnknownReferences }
+          : {}),
+      });
+      if (!active.current || scope.current !== startedScope) return false;
+      const success =
+        "success" in result ? result.success : result.state === "ready";
+      if (success) {
+        toast.success("状态已确认");
+        setFailures((current) => current.filter((f) => f.id !== id));
+      } else if ("message" in result) toast.error(result.message);
+      await safeRefresh();
+      return success;
+    } catch (error) {
+      if (active.current && scope.current === startedScope)
+        toast.error(error instanceof Error ? error.message : "状态检查失败");
+      return false;
+    } finally {
+      busy.current.delete(id);
+    }
+  };
+  return {
+    fileInputRef,
+    handleDelete,
+    handleUpload,
+    handleReconcile,
+    loading,
+    failures,
+    unavailableIds,
+  };
 }
-/**
- * 媒体上传、删除及相关客户端 Mutation 编排。
- */

@@ -14,17 +14,53 @@ function componentDirectories(): string[] {
 }
 
 describe("App Router composition boundaries", () => {
+  it("keeps admin routing directly under admin without a pass-through root group", () => {
+    expect(existsSync(join(appRoot, "admin/(root)"))).toBe(false);
+    for (const route of [
+      "login/page.tsx",
+      "forbidden/page.tsx",
+      "(dashboard)/layout.tsx",
+      "(dashboard)/template.tsx",
+    ]) {
+      expect(existsSync(join(appRoot, "admin", route)), route).toBe(true);
+    }
+  });
+
+  it.each(["post", "page"])(
+    "owns the %s root redirect without a feature shell",
+    (feature) => {
+      expect(
+        existsSync(
+          join(process.cwd(), "src/features", feature, "admin/page.tsx"),
+        ),
+      ).toBe(false);
+    },
+  );
+
   it("keeps business admin routes as composition of feature-owned pages", () => {
     const pages = appFiles.filter(
-      (path) =>
-        path.includes("/(root)/(dashboard)/") && path.endsWith("/page.tsx"),
+      (path) => path.includes("/(dashboard)/") && path.endsWith("/page.tsx"),
     );
     expect(pages.length).toBeGreaterThan(10);
     for (const path of pages) {
       const source = readFileSync(path, "utf8");
-      expect(source, relative(process.cwd(), path)).toMatch(
-        /from ["']@\/features\//,
-      );
+      const route = relative(appRoot, path);
+      const redirectTarget = new Map([
+        ["admin/(dashboard)/post/page.tsx", "/admin/post/list"],
+        ["admin/(dashboard)/page/page.tsx", "/admin/page/list"],
+      ]).get(route);
+      if (redirectTarget) {
+        // Only these two framework-owned redirects may omit a feature page.
+        expect(source, route).toContain('"use client"');
+        expect(source, route).toContain(`router.replace("${redirectTarget}")`);
+        expect(source, route).toContain("useLayoutEffect");
+        const imports = [...source.matchAll(/from ["']([^"']+)["']/g)].map(
+          (match) => match[1],
+        );
+        expect(imports, route).toEqual(["next/navigation", "react"]);
+      } else {
+        expect(source, route).toMatch(/from ["']@\/features\//);
+      }
       expect(source, relative(process.cwd(), path)).not.toMatch(
         /\b(?:useState|useReducer|useMutation|useQuery)\s*\(|(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
       );

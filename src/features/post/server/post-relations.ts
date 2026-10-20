@@ -57,7 +57,16 @@ function toPostViewModel(
   },
 ): PostWithRelations {
   return {
-    ...post,
+    id: post.id,
+    version: post.version,
+    authorId: post.authorId,
+    categoryId: post.categoryId,
+    coverId: post.coverId,
+    movieTime: post.movieTime,
+    galleryTime: post.galleryTime,
+    views: post.views,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
     title: translations?.title ?? null,
     content: translations?.content ?? null,
     excerpt: translations?.excerpt ?? null,
@@ -119,12 +128,10 @@ export async function loadPostRelations(
       }),
   );
   const relationMap = new Map(rows.map((row) => [row.id, row]));
-  const visiblePosts =
-    visibility === "PUBLISHED_ONLY"
-      ? posts.filter((post) => relationMap.has(post.id))
-      : posts;
-  return visiblePosts.map((item) => {
+  // Metadata, translations and relations must come from the same query payload.
+  return posts.flatMap((item) => {
     const row = relationMap.get(item.id);
+    if (!row) return [];
     const {
       author,
       cover,
@@ -132,14 +139,7 @@ export async function loadPostRelations(
       category,
       postTags: tags,
       ...currentPost
-    } = row ?? {
-      ...item,
-      author: null,
-      cover: null,
-      translations: [],
-      category: null,
-      postTags: [],
-    };
+    } = row;
     type RelatedTag = NonNullable<(typeof tags)[number]["tag"]>;
     const mapTags = (type: TagType) =>
       tags
@@ -168,7 +168,7 @@ export async function loadPostRelations(
         }
       : undefined;
     // Published metadata and translations must come from the same payload read.
-    const post = visibility === "PUBLISHED_ONLY" ? currentPost : item;
+    const post = currentPost;
     const localized = groupPostTranslations(translations).get(item.id);
     return toPostViewModel(post, localized, {
       category: category

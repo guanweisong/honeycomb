@@ -1,19 +1,51 @@
 import "server-only";
-import { requireWriteResult } from "@/lib/db/value-validation";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PostType } from "@/features/post/post-type";
-import { UserLevel } from "@/features/user/user";
 import { observeDbOperation } from "@/lib/observability/server";
 import {
   assembleSettingTranslations,
   patchSettingTranslationRows,
 } from "./server/setting-translations";
+import { SettingPatchSchema } from "./schema";
+import { can, Permission } from "@/lib/auth/permissions";
+import { UserStatus } from "@/features/user/user";
+import { ApplicationError } from "@/lib/errors/application-error";
 import type { SettingUpdate } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
+
+type SettingTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
+async function settingTransaction<T>(
+  db: Database,
+  operation: (tx: SettingTransaction) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    let entered = false;
+    try {
+      return await db.transaction((tx) => {
+        entered = true;
+        return operation(tx);
+      });
+    } catch (error) {
+      if (
+        entered ||
+        !error ||
+        typeof error !== "object" ||
+        !("code" in error) ||
+        error.code !== "SQLITE_BUSY"
+      )
+        throw error;
+      if (attempt >= 3)
+        throw new ApplicationError(
+          "CONFLICT",
+          "保存暂时繁忙，请核对最新版本后重试",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
+    }
+  }
+}
 
 function toSettingRecord(
   setting: typeof schema.setting.$inferSelect,
@@ -21,6 +53,7 @@ function toSettingRecord(
 ) {
   return {
     id: setting.id,
+    version: setting.version,
     siteRecordNo: setting.siteRecordNo,
     siteRecordUrl: setting.siteRecordUrl,
     createdAt: setting.createdAt,
@@ -29,7 +62,12 @@ function toSettingRecord(
   };
 }
 
+/** 在同一读取事务中取得设置版本与翻译，避免拼接不同版本的编辑快照。 */
 export async function getSetting(db: Database) {
+  return db.transaction((tx) => readSetting(tx));
+}
+
+async function readSetting(db: Pick<Database, "select">) {
   const [setting] = await observeDbOperation("setting.get", "select", () =>
     db
       .select()
@@ -47,13 +85,20 @@ export async function getSetting(db: Database) {
   return toSettingRecord(setting, translations);
 }
 
+/** 设置字段、翻译及版本 CAS 原子提交；事务内重新鉴权，提交后的缓存降级不撤销保存。 */
 export async function updateSetting(
   db: Database,
-  input: SettingUpdate,
+  submitted: SettingUpdate,
+  actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
+  const parsed = SettingPatchSchema.safeParse(submitted);
+  if (!parsed.success)
+    throw new ApplicationError("BAD_REQUEST", "设置保存输入不合法");
+  const input = parsed.data;
   const {
     id,
+    expectedVersion,
     siteName,
     siteSubName,
     siteSignature,
@@ -64,25 +109,52 @@ export async function updateSetting(
     "setting.update",
     "transaction",
     () =>
-      db.transaction(async (tx) => {
-        const [updated] = Object.keys(changes).length
-          ? await tx
-              .update(schema.setting)
-              .set(changes)
-              .where(eq(schema.setting.id, id))
-              .returning()
-          : await tx
-              .select()
-              .from(schema.setting)
-              .where(eq(schema.setting.id, id))
-              .limit(1);
-        const result = requireWriteResult(updated, "update", "setting");
+      settingTransaction(db, async (tx) => {
+        const [actor] = await tx
+          .select({ level: schema.user.level, status: schema.user.status })
+          .from(schema.user)
+          .where(eq(schema.user.id, actorId))
+          .limit(1);
+        if (
+          !actor ||
+          actor.status !== UserStatus.ENABLE ||
+          !can(actor.level, Permission.settingUpdate)
+        )
+          throw new ApplicationError("FORBIDDEN", "当前账户无权保存设置");
+        const [updated] = await tx
+          .update(schema.setting)
+          .set({
+            ...changes,
+            version: sql`${schema.setting.version} + 1`,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(
+            and(
+              eq(schema.setting.id, id),
+              eq(schema.setting.version, expectedVersion),
+            ),
+          )
+          .returning();
+        if (!updated) {
+          const [current] = await tx
+            .select({ id: schema.setting.id })
+            .from(schema.setting)
+            .where(eq(schema.setting.id, id))
+            .limit(1);
+          if (!current) throw new ApplicationError("NOT_FOUND", "设置不存在");
+          throw new ApplicationError(
+            "CONFLICT",
+            "设置已有更新，请核对最新版本",
+          );
+        }
+        const result = updated;
         const current = await tx
           .select()
           .from(schema.settingTranslation)
           .where(eq(schema.settingTranslation.settingId, id));
         const next = patchSettingTranslationRows(id, current, {
           id,
+          expectedVersion,
           siteName,
           siteSubName,
           siteSignature,
@@ -96,73 +168,8 @@ export async function updateSetting(
         return toSettingRecord(result, next);
       }),
   );
-  const publicSync = await invalidator.invalidate({ refreshLayout: true });
+  const publicSync = await invalidator
+    .invalidate({ refreshLayout: true })
+    .catch(() => ({ state: "degraded" as const }));
   return { ...persisted, publicSync: publicSync.state };
-}
-
-export async function getStatistics(db: Database) {
-  const countByValues = async <T extends string>(
-    values: readonly T[],
-    table: typeof schema.post | typeof schema.user | typeof schema.comment,
-    column: Parameters<typeof eq>[0],
-    operation: Parameters<typeof observeDbOperation>[0],
-  ) =>
-    Promise.all(
-      values.map(async (item) => {
-        const [row] = await observeDbOperation(operation, "select", () =>
-          db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(table)
-            .where(eq(column, item)),
-        );
-        return { item, count: Number(row?.count) || 0 };
-      }),
-    );
-  const [postType, userType, commentStatus, userList, postCounts] =
-    await Promise.all([
-      countByValues(
-        Object.values(PostType),
-        schema.post,
-        schema.post.type,
-        "statistics.posts-by-type",
-      ),
-      countByValues(
-        Object.values(UserLevel),
-        schema.user,
-        schema.user.level,
-        "statistics.users-by-level",
-      ),
-      countByValues(
-        Object.values(CommentStatus),
-        schema.comment,
-        schema.comment.status,
-        "statistics.comments-by-status",
-      ),
-      observeDbOperation("statistics.user-list", "select", () =>
-        db
-          .select({ id: schema.user.id, name: schema.user.name })
-          .from(schema.user),
-      ),
-      observeDbOperation("statistics.posts-by-author", "select", () =>
-        db
-          .select({
-            authorId: schema.post.authorId,
-            count: sql<number>`count(*)`.as("count"),
-          })
-          .from(schema.post)
-          .groupBy(schema.post.authorId),
-      ),
-    ]);
-  const postCountByAuthor = new Map(
-    postCounts.map((row) => [row.authorId, Number(row.count) || 0]),
-  );
-  return {
-    postType,
-    userType,
-    commentStatus,
-    userPost: userList.map((user) => ({
-      item: user.name ?? user.id,
-      count: postCountByAuthor.get(user.id) ?? 0,
-    })),
-  };
 }

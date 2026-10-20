@@ -1,121 +1,118 @@
 import { describe, expect, it, vi } from "vitest";
-
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 import { submitMediaDelete, submitMediaUpload } from "./media-actions";
-
-const uploadedMedia = {
-  id: "media-1",
-  name: "cover.png",
+import type { MediaRecord } from "../types";
+export const uploadedMedia = {
+  id: "ready",
+  name: "good.png",
   type: "image/png",
-  size: 3,
-  key: "media/cover.png",
-  url: "https://cdn.example.test/cover.png",
-  width: 20,
-  height: 10,
-  color: "rgb(1,2,3)",
-  createdAt: "2026-01-01T00:00:00.000Z",
+  size: 1,
+  key: "final/good",
+  url: "https://cdn.test/good",
+  width: null,
+  height: null,
+  color: null,
+  createdAt: null,
   updatedAt: null,
-} as MediaViewModel;
-
-describe("media action state", () => {
-  it("uploads image metadata through the existing presigned URL flow", async () => {
-    const file = new File(["png"], "cover.png", { type: "image/png" });
-    const getImageMetadata = vi.fn().mockResolvedValue({
-      width: 20,
-      height: 10,
-      color: "rgb(1,2,3)",
+} satisfies MediaRecord;
+export function dependencies() {
+  return {
+    beginUpload: vi.fn(async ({ name }: { name: string }) => ({
+      id: name,
+      uploadUrl: `https://temp.test/${name}`,
+      expiresAt: "later",
+    })),
+    uploadToStorage: vi.fn().mockResolvedValue(undefined),
+    confirmUpload: vi.fn(async ({ id }: { id: string }) =>
+      id === "bad.png"
+        ? { state: "rejected" as const, id, message: "invalid image" }
+        : { state: "ready" as const, media: uploadedMedia },
+    ),
+  };
+}
+export const file = (name = "good.png") =>
+  new File(["a"], name, { type: "image/png" });
+describe("media lifecycle actions", () => {
+  it("begins temporary upload and confirms only the operation ID", async () => {
+    const deps = dependencies();
+    expect(await submitMediaUpload({ ...deps, files: [file()] })).toEqual({
+      state: "success",
+      media: [uploadedMedia],
     });
-    const getPresignedUrl = vi.fn().mockResolvedValue({
-      url: "https://upload.example.test/cover.png",
-      key: "media/cover.png",
-    });
-    const uploadToStorage = vi.fn().mockResolvedValue(undefined);
-    const createMedia = vi
-      .fn()
-      .mockResolvedValue({ state: "created", media: uploadedMedia });
-
-    await expect(
-      submitMediaUpload({
-        files: [file],
-        getImageMetadata,
-        getPresignedUrl,
-        uploadToStorage,
-        createMedia,
-        cleanupObject: vi.fn(),
-      }),
-    ).resolves.toEqual({ state: "success", media: [uploadedMedia] });
-    expect(getPresignedUrl).toHaveBeenCalledWith({
-      name: "cover.png",
+    expect(deps.beginUpload).toHaveBeenCalledWith({
+      name: "good.png",
       type: "image/png",
-      size: 3,
+      size: 1,
     });
-    expect(uploadToStorage).toHaveBeenCalledWith(
-      "https://upload.example.test/cover.png",
-      file,
-    );
-    expect(createMedia).toHaveBeenCalledWith({
-      name: "cover.png",
-      type: "image/png",
-      size: 3,
-      key: "media/cover.png",
-      width: 20,
-      height: 10,
-      color: "rgb(1,2,3)",
+    expect(deps.confirmUpload).toHaveBeenCalledWith({ id: "good.png" });
+  });
+  it("requires explicit unknown-reference acknowledgment for deletion", async () => {
+    const destroy = vi.fn().mockResolvedValue({ success: true });
+    expect(await submitMediaDelete({ id: "ready", destroy })).toEqual({
+      state: "success",
+    });
+    expect(destroy).toHaveBeenCalledWith({
+      ids: ["ready"],
+      acknowledgeUnknownReferences: true,
     });
   });
-
-  it("keeps upload and delete failure states separate from successful refreshes", async () => {
-    await expect(
-      submitMediaUpload({
-        files: [],
-        getImageMetadata: vi.fn(),
-        getPresignedUrl: vi.fn(),
-        uploadToStorage: vi.fn(),
-        createMedia: vi.fn(),
-        cleanupObject: vi.fn(),
+  it("preserves conflict details and pending deletion", async () => {
+    expect(
+      await submitMediaDelete({
+        id: "ready",
+        destroy: vi.fn().mockRejectedValue(
+          Object.assign(new Error("仍被内容引用"), {
+            data: { code: "CONFLICT" },
+          }),
+        ),
       }),
-    ).resolves.toEqual({ state: "empty" });
-
-    await expect(
-      submitMediaDelete({
-        id: "media-1",
+    ).toEqual({ state: "error", message: "仍被内容引用" });
+    expect(
+      await submitMediaDelete({
+        id: "ready",
         destroy: vi.fn().mockResolvedValue({
           success: false,
           state: "indeterminate",
-          message: "删除结果待确认，请刷新媒体列表后重试",
+          message: "pending",
         }),
       }),
-    ).resolves.toEqual({
-      state: "indeterminate",
-      message: "删除结果待确认，请刷新媒体列表后重试",
-    });
-
-    await expect(
-      submitMediaUpload({
-        files: [new File(["image"], "image.png", { type: "image/png" })],
-        getImageMetadata: vi.fn().mockResolvedValue({ width: 1, height: 1 }),
-        getPresignedUrl: vi.fn().mockRejectedValue(new Error("sign failed")),
-        uploadToStorage: vi.fn(),
-        createMedia: vi.fn(),
-        cleanupObject: vi.fn(),
-      }),
-    ).resolves.toMatchObject({
-      state: "error",
-      message: "image.png: sign failed",
-    });
-
-    await expect(
-      submitMediaDelete({
-        id: "media-1",
-        destroy: vi.fn().mockResolvedValue({ success: true }),
-      }),
-    ).resolves.toEqual({ state: "success" });
-
-    await expect(
-      submitMediaDelete({
-        id: "media-1",
-        destroy: vi.fn().mockRejectedValue(new Error("delete failed")),
-      }),
-    ).resolves.toEqual({ state: "error" });
+    ).toEqual({ state: "indeterminate", message: "pending" });
   });
+});
+it("treats lost delete responses as indeterminate instead of safe-to-select failures", async () => {
+  expect(
+    await submitMediaDelete({
+      id: "ready",
+      destroy: vi.fn().mockRejectedValue(new Error("network lost")),
+    }),
+  ).toMatchObject({ state: "indeterminate" });
+});
+it("does not confirm an upload after its account or component is obsolete", async () => {
+  const deps = dependencies();
+  let active = true;
+  deps.uploadToStorage.mockImplementation(async () => {
+    active = false;
+  });
+  await submitMediaUpload({
+    ...deps,
+    files: [file()],
+    isCurrent: () => active,
+  });
+  expect(deps.confirmUpload).not.toHaveBeenCalled();
+});
+it("limits a batch to two concurrent uploads", async () => {
+  const deps = dependencies();
+  let active = 0;
+  let peak = 0;
+  deps.uploadToStorage.mockImplementation(async () => {
+    active++;
+    peak = Math.max(peak, active);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    active--;
+  });
+  const result = await submitMediaUpload({
+    ...deps,
+    files: Array.from({ length: 5 }, (_, i) => file(`${i}.png`)),
+  });
+  expect(result.state).toBe("success");
+  expect(peak).toBe(2);
 });

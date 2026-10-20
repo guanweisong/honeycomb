@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { clientLogger } from "@/lib/observability/client";
-import { LogEvent } from "@/lib/observability/core/names";
+import { z } from "zod";
 import {
   PageInsertSchema,
   PageUpdateSchema,
@@ -12,99 +11,151 @@ import {
 } from "@/features/page/schema";
 import { PageStatus } from "@/features/page/page-status";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { useRouter } from "next/navigation";
 import { notifyPublicSyncWarning } from "@/components/admin/action-state";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
 
 type PageEditorValues = Partial<PageInsert>;
 type PageSyncFeedback = { publicSync?: PublicCacheInvalidationResult["state"] };
-
+type SavedPage = { id: string; version: number } & PageSyncFeedback;
 type SubmitPageEditorOptions = {
   pageId?: string;
+  expectedVersion?: number;
   values: PageEditorValues;
   status: PageStatus;
-  create: (input: PageInsert) => Promise<{ id: string } & PageSyncFeedback>;
-  update: (input: PageUpdate) => Promise<PageSyncFeedback | undefined>;
+  create: (input: PageInsert) => Promise<SavedPage>;
+  update: (input: PageUpdate) => Promise<SavedPage>;
 };
-
 export type PageEditorSubmitResult =
-  | ({ state: "created"; id: string } & PageSyncFeedback)
-  | ({ state: "updated" } & PageSyncFeedback)
-  | { state: "error" };
+  | ({ state: "created" | "updated"; refreshFailed?: boolean } & SavedPage)
+  | { state: "error" | "unknown" | "conflict" | "stale" };
 
+/** 将确定拒绝、版本冲突和结果未知分开；网络异常不能解释为服务端未写入。 */
 export async function submitPageEditor({
   pageId,
+  expectedVersion,
   values,
   status,
   create,
   update,
 }: SubmitPageEditorOptions): Promise<PageEditorSubmitResult> {
-  const data = { ...values, status };
-
   try {
     if (pageId) {
-      const result = await update(
-        PageUpdateSchema.parse({ id: pageId, ...data }),
-      );
-      return { state: "updated", publicSync: result?.publicSync };
+      const input = PageUpdateSchema.parse({
+        ...values,
+        status,
+        id: pageId,
+        expectedVersion,
+      });
+      return { ...(await update(input)), state: "updated" };
     }
-
-    const result = await create(PageInsertSchema.parse(data));
-    return { state: "created", id: result.id, publicSync: result.publicSync };
-  } catch {
-    return { state: "error" };
+    return {
+      ...(await create(PageInsertSchema.parse({ ...values, status }))),
+      state: "created",
+    };
+  } catch (error) {
+    const code = z
+      .object({ data: z.object({ code: z.string() }) })
+      .safeParse(error);
+    if (code.success && code.data.data.code === "CONFLICT")
+      return { state: "conflict" };
+    if (
+      error instanceof z.ZodError ||
+      (code.success &&
+        ["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].includes(
+          code.data.data.code,
+        ))
+    )
+      return { state: "error" };
+    return { state: "unknown" };
   }
 }
 
-type UsePageEditorActionsOptions = {
-  pageId?: string;
-  refetch: () => unknown;
-};
-
+/** 隔离账户/页面切换后的迟到反馈；刷新失败不改变已确认的保存结果，也不自动重放写入。 */
 export function usePageEditorActions({
   pageId,
+  actorId,
+  expectedVersion,
   refetch,
-}: UsePageEditorActionsOptions) {
+}: {
+  pageId?: string;
+  actorId?: string;
+  expectedVersion?: number;
+  refetch: () => unknown;
+}) {
   const [loading, setLoading] = useState(false);
-  const [isNavigating, startNavigation] = useTransition();
-  const router = useRouter();
+  const generation = useRef(0);
+  const identity = `${actorId ?? ""}:${pageId ?? "new"}`;
+  const currentIdentity = useRef(identity);
+  useLayoutEffect(() => {
+    currentIdentity.current = identity;
+    return () => {
+      generation.current += 1;
+    };
+  }, [identity]);
+  const busy = useRef(false);
+  useEffect(() => {
+    busy.current = false;
+    setLoading(false);
+    return () => {
+      generation.current += 1;
+    };
+  }, [identity]);
   const createPage = trpc.page.create.useMutation();
   const updatePage = trpc.page.update.useMutation();
-
-  const submit = async (values: PageEditorValues, status: PageStatus) => {
+  const submit = async (
+    values: PageEditorValues,
+    status: PageStatus,
+  ): Promise<PageEditorSubmitResult> => {
+    if (busy.current || currentIdentity.current !== identity)
+      return { state: "stale" };
+    busy.current = true;
     setLoading(true);
-    const result = await submitPageEditor({
-      pageId,
-      values,
-      status,
-      create: createPage.mutateAsync,
-      update: updatePage.mutateAsync,
-    });
-    if (result.state === "updated") {
-      if (!notifyPublicSyncWarning(result, toast.warning))
-        toast.success("更新成功");
-      try {
-        await refetch();
-      } catch {
-        // The mutation already succeeded; a failed refresh must not undo it.
-      }
-    } else if (result.state === "created") {
-      if (!notifyPublicSyncWarning(result, toast.warning))
-        toast.success("添加成功");
-      startNavigation(() => router.push(`/admin/page/edit?id=${result.id}`));
-    } else {
-      clientLogger.error(LogEvent.clientError, {
-        operation: "page.submit",
-        outcome: "error",
+    const started = generation.current;
+    const active = () =>
+      generation.current === started && currentIdentity.current === identity;
+    try {
+      const result = await submitPageEditor({
+        pageId,
+        expectedVersion,
+        values,
+        status,
+        create: createPage.mutateAsync,
+        update: updatePage.mutateAsync,
       });
-      toast.error("提交失败，请检查表单内容");
+      if (!active()) return { state: "stale" };
+      if (result.state === "updated") {
+        let refreshFailed = false;
+        try {
+          const refreshed = await refetch();
+          refreshFailed =
+            !refreshed ||
+            (typeof refreshed === "object" &&
+              "isSuccess" in refreshed &&
+              refreshed.isSuccess !== true);
+        } catch {
+          refreshFailed = true;
+        }
+        if (!active()) return { state: "stale" };
+        if (refreshFailed) toast.warning("已保存，列表待刷新，请勿重复提交");
+        else if (!notifyPublicSyncWarning(result, toast.warning))
+          toast.success("更新成功");
+        return { ...result, refreshFailed };
+      }
+      if (result.state === "created") {
+        if (!notifyPublicSyncWarning(result, toast.warning))
+          toast.success("添加成功");
+      } else if (result.state === "conflict")
+        toast.error("服务器已有更新，本地内容已保留，请核对最新版本");
+      else if (result.state === "unknown")
+        toast.error("保存结果暂时无法确认，本地内容已保留，请先核对");
+      else toast.error("提交失败，请检查表单内容");
+      return result;
+    } finally {
+      if (active()) {
+        busy.current = false;
+        setLoading(false);
+      }
     }
-    setLoading(false);
-    return result;
   };
-
-  return { loading: loading || isNavigating, submit };
+  return { loading, submit };
 }
-/**
- * 页面编辑提交操作及表单 Mutation 编排。
- */

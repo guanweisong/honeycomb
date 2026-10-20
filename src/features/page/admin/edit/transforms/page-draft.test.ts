@@ -15,3 +15,13 @@ describe("page draft validation", () => {
     expect(parsePageDraft({ content: "bad" })).toBeNull();
   });
 });
+
+it("retains the editing version but strips creation credentials from drafts", () => {
+  expect(
+    parsePageDraft({
+      baseVersion: 4,
+      creationToken: "secret",
+      title: { zh: "中" },
+    }),
+  ).toEqual({ baseVersion: 4, title: { zh: "中" } });
+});

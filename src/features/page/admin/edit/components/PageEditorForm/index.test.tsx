@@ -19,6 +19,11 @@ vi.mock("@/components/DynamicForm/DynamicField", () => ({
 }));
 
 import { PageEditorForm } from ".";
+import { useForm } from "react-hook-form";
+import type { PageEditorValues } from "../../transforms/page-draft";
+function Harness() {
+  return <PageEditorForm form={useForm<PageEditorValues>()} />;
+}
 
 describe("PageEditorForm", () => {
   let container: HTMLDivElement;
@@ -35,9 +40,9 @@ describe("PageEditorForm", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
-    act(() => root.render(<PageEditorForm form={{} as never} />));
+    act(() => root.render(<Harness />));
 
-    expect(mocks.fields).toEqual([
+    expect(mocks.fields.slice(-3)).toEqual([
       expect.objectContaining({
         name: "title",
         type: "text",

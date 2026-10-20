@@ -6,7 +6,7 @@ import { postRouter } from "@/features/post/router";
 import * as schema from "@/lib/db/schema";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
-import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -284,7 +284,11 @@ describe("Post Router", () => {
       "should create post with admin permissions and %s public sync",
       async (state) => {
         mockInvalidatePublicContent.mockResolvedValue({ state });
+        mockDb.limit.mockResolvedValueOnce([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
         const newPost = {
+          version: 0,
           id: TEST_IDS.ID_3,
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
@@ -301,6 +305,7 @@ describe("Post Router", () => {
         );
 
         const result = await caller.create({
+          creationToken: "11111111-1111-4111-8111-111111111111",
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
           status: PostStatus.PUBLISHED,
@@ -308,7 +313,11 @@ describe("Post Router", () => {
           categoryId: TEST_IDS.ID_1,
         });
 
-        expect(result).toEqual({ ...newPost, publicSync: state });
+        expect(result).toEqual({
+          id: newPost.id,
+          version: 0,
+          publicSync: state,
+        });
         expect(mockDb.insert).toHaveBeenCalledWith(schema.post);
       },
     );
@@ -320,6 +329,7 @@ describe("Post Router", () => {
 
       await expect(
         caller.create({
+          creationToken: "11111111-1111-4111-8111-111111111111",
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
           status: PostStatus.PUBLISHED,
@@ -334,6 +344,7 @@ describe("Post Router", () => {
 
       await expect(
         caller.create({
+          creationToken: "11111111-1111-4111-8111-111111111111",
           title: { en: "New Post", zh: "新文章" },
           content: { en: "New Content", zh: "新内容" },
           status: PostStatus.PUBLISHED,
@@ -346,22 +357,21 @@ describe("Post Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete posts with admin permissions", async () => {
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { id: TEST_IDS.ID_1, categoryId: TEST_IDS.ID_1 },
-        { id: TEST_IDS.ID_2, categoryId: TEST_IDS.ID_2 },
+      mockDb.limit.mockResolvedValueOnce([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
       ]);
-
-      mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined);
+      mockDb.limit.mockResolvedValue([{ version: 0 }]);
+      mockDb.returning.mockResolvedValue([{ id: TEST_IDS.ID_1 }]);
 
       const caller = postRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.destroy({
-        ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+        items: [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+          id,
+          expectedVersion: 0,
+        })),
       });
 
       expect(result).toEqual({ success: true, publicSync: "completed" });
@@ -375,7 +385,10 @@ describe("Post Router", () => {
 
       await expect(
         caller.destroy({
-          ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+          items: [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+            id,
+            expectedVersion: 0,
+          })),
         }),
       ).rejects.toThrow("FORBIDDEN");
     });
@@ -394,21 +407,30 @@ describe("Post Router", () => {
           type: PostType.ARTICLE,
         };
 
-        mockDb.select.mockReturnValueOnce(mockDb);
-        mockDb.from.mockReturnValueOnce(mockDb);
-        mockDb.where.mockReturnValueOnce(mockDb);
-        mockDb.limit.mockResolvedValueOnce([{ status: PostStatus.DRAFT }]);
-        mockDb.update.mockReturnValueOnce(mockDb);
-        mockDb.set.mockReturnValueOnce(mockDb);
-        mockDb.where.mockReturnValueOnce(mockDb);
-        mockDb.returning.mockResolvedValueOnce([updatedPost]);
-        mockDb.where.mockResolvedValueOnce([]);
+        mockDb.limit.mockResolvedValueOnce([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+        mockDb.limit.mockResolvedValueOnce([
+          { status: PostStatus.DRAFT, version: 0 },
+        ]);
+        mockDb.returning.mockResolvedValueOnce([
+          { id: updatedPost.id, version: 1 },
+        ]);
+        mockDb.from.mockImplementation((table: object) => {
+          if (table === schema.postTranslation) {
+            const read = createMockDb();
+            read.where.mockResolvedValue([]);
+            return read;
+          }
+          return mockDb;
+        });
 
         const caller = postRouter.createCaller(
           createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
         );
 
         const result = await caller.update({
+          expectedVersion: 0,
           id: TEST_IDS.ID_1,
           title: { en: "Updated Post", zh: "更新的文章" },
           content: { en: "Updated Content", zh: "更新的内容" },
@@ -416,7 +438,11 @@ describe("Post Router", () => {
           type: PostType.ARTICLE,
         });
 
-        expect(result).toEqual({ ...updatedPost, publicSync: state });
+        expect(result).toEqual({
+          id: updatedPost.id,
+          version: 1,
+          publicSync: state,
+        });
         expect(mockDb.update).toHaveBeenCalledWith(schema.post);
         expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
           contents: [{ id: TEST_IDS.ID_1, type: "post" }],
@@ -434,6 +460,7 @@ describe("Post Router", () => {
 
       await expect(
         caller.update({
+          expectedVersion: 0,
           id: TEST_IDS.ID_1,
           title: { en: "Updated Post", zh: "更新的文章" },
           content: { en: "Updated Content", zh: "更新的内容" },
@@ -444,13 +471,27 @@ describe("Post Router", () => {
     });
   });
 
-  describe("updateTags procedure", () => {
+  describe("atomic relation update procedure", () => {
     it("should update post tags inside a transaction", async () => {
       const tx = createMockDb();
       const insertError = new Error("insert failed");
+      tx.from.mockImplementation((table: object) => {
+        if (table === schema.postTranslation) {
+          const translations = createMockDb();
+          translations.where.mockResolvedValue([]);
+          return translations;
+        }
+        return tx;
+      });
 
+      tx.limit.mockResolvedValueOnce([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+      ]);
+      tx.limit.mockResolvedValueOnce([
+        { version: 0, status: PostStatus.DRAFT },
+      ]);
+      tx.returning.mockResolvedValueOnce([{ id: TEST_IDS.ID_1, version: 1 }]);
       tx.delete.mockReturnValueOnce(tx);
-      tx.where.mockResolvedValueOnce(undefined);
       tx.insert.mockReturnValueOnce(tx);
       tx.values.mockRejectedValueOnce(insertError);
 
@@ -463,10 +504,10 @@ describe("Post Router", () => {
       );
 
       await expect(
-        caller.updateTags({
-          postId: TEST_IDS.ID_1,
-          tagIds: [TEST_IDS.ID_2],
-          type: TagType.ACTOR,
+        caller.update({
+          id: TEST_IDS.ID_1,
+          expectedVersion: 0,
+          movieActorIds: [TEST_IDS.ID_2],
         }),
       ).rejects.toThrow("insert failed");
 

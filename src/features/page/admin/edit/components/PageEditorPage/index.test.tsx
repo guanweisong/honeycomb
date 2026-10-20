@@ -16,10 +16,14 @@ import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
 
 type EditorDetail = Pick<
   PageViewModel,
-  "id" | "title" | "content" | "status" | "template"
+  "id" | "title" | "content" | "status" | "template" | "version"
 >;
 
 const mocks = vi.hoisted(() => ({
+  realActions: false,
+  actorId: "draft-user",
+  warning: vi.fn(),
+  creationCheck: vi.fn(),
   searchId: null as string | null,
   queryError: null as { data?: { code: string } } | null,
   detail: undefined as EditorDetail | null | undefined,
@@ -35,7 +39,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
-  useCurrentUser: () => ({ user: { id: "draft-user", level: "ADMIN" } }),
+  useCurrentUser: () => ({ user: { id: mocks.actorId, level: "ADMIN" } }),
+  useCan: () => true,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -45,7 +50,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("sonner", () => ({
-  toast: { success: mocks.success, error: mocks.error },
+  toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
 
 vi.mock("@/lib/observability/client", () => ({
@@ -55,6 +60,16 @@ vi.mock("@/lib/observability/client", () => ({
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
+      creationResult: {
+        useQuery: () => ({ data: null, refetch: mocks.creationCheck }),
+      },
+      adminDetail: {
+        useQuery: () => ({
+          data: mocks.detail,
+          refetch: mocks.refetch,
+          error: mocks.queryError,
+        }),
+      },
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
       update: { useMutation: () => ({ mutateAsync: mocks.update }) },
     },
@@ -68,14 +83,6 @@ vi.mock("@/components/admin/layout-context", async () => {
   return { ...actual, useAdminLayoutPageTitle: mocks.pageTitle };
 });
 
-vi.mock("../../page-editor-query", () => ({
-  usePageEditorQuery: () => ({
-    data: mocks.detail,
-    refetch: mocks.refetch,
-    error: mocks.queryError,
-  }),
-}));
-
 vi.mock("../PageEditorForm", () => ({
   PageEditorForm: ({ form }: ComponentProps<typeof PageEditorForm>) => {
     mocks.form = form;
@@ -83,16 +90,26 @@ vi.mock("../PageEditorForm", () => ({
   },
 }));
 
-vi.mock("../PageEditorActionButtons", () => ({
-  PageEditorActionButtons: ({
-    onSubmit,
-    loading,
-  }: ComponentProps<typeof PageEditorActionButtons>) => (
-    <button disabled={loading} onClick={() => onSubmit(PageStatus.PUBLISHED)}>
-      save
-    </button>
-  ),
-}));
+vi.mock("../PageEditorActionButtons", async () => {
+  const actual = await vi.importActual<
+    typeof import("../PageEditorActionButtons")
+  >("../PageEditorActionButtons");
+  return {
+    PageEditorActionButtons: (
+      props: ComponentProps<typeof PageEditorActionButtons>,
+    ) =>
+      mocks.realActions ? (
+        <actual.PageEditorActionButtons {...props} />
+      ) : (
+        <button
+          disabled={props.loading}
+          onClick={() => props.onSubmit(PageStatus.PUBLISHED)}
+        >
+          save
+        </button>
+      ),
+  };
+});
 
 import { PageEditorPage } from ".";
 
@@ -109,6 +126,7 @@ function LayoutHarness() {
 const pageId = "123456789012345678901234";
 const originalDetail = {
   id: pageId,
+  version: 0,
   title: { zh: "原标题", en: "Original title" },
   content: { zh: "原内容", en: "Original content" },
   status: PageStatus.DRAFT,
@@ -140,8 +158,10 @@ describe("PageEditorPage", () => {
     mocks.queryError = null;
     mocks.detail = undefined;
     mocks.form = undefined;
-    mocks.create.mockResolvedValue({ id: pageId });
-    mocks.update.mockResolvedValue({ id: pageId });
+    mocks.actorId = "draft-user";
+    mocks.realActions = false;
+    mocks.create.mockResolvedValue({ id: pageId, version: 0 });
+    mocks.update.mockResolvedValue({ id: pageId, version: 1 });
     mocks.refetch.mockResolvedValue({ isSuccess: false });
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -171,6 +191,42 @@ describe("PageEditorPage", () => {
   async function save() {
     await act(async () => container.querySelector("button")?.click());
   }
+
+  it.each([
+    [PageStatus.DRAFT, PageStatus.PUBLISHED, "发布", "更新"],
+    [PageStatus.PUBLISHED, PageStatus.DRAFT, "撤回为草稿", "保存"],
+  ] as const)(
+    "keeps confirmed %s -> %s status for the next real action after failed refresh",
+    async (initial, expected, transition, nextAction) => {
+      mocks.realActions = true;
+      mocks.detail = { ...originalDetail, status: initial };
+      mocks.refetch.mockRejectedValue(new Error("refresh unavailable"));
+      await render();
+      const clickHeader = async (label: string) => {
+        const button = Array.from(
+          container.querySelectorAll<HTMLButtonElement>("header button"),
+        ).find((item) => item.textContent === label);
+        expect(button, label).toBeDefined();
+        await act(async () => button?.click());
+      };
+      await clickHeader(transition);
+      if (initial === PageStatus.PUBLISHED) {
+        const confirm = document.querySelector<HTMLButtonElement>(
+          '[role="dialog"] button[data-slot="button"]',
+        );
+        expect(confirm).not.toBeNull();
+        await act(async () => confirm?.click());
+      }
+      expect(mocks.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: expected, expectedVersion: 0 }),
+      );
+      await editTitle("next edit");
+      await clickHeader(nextAction);
+      expect(mocks.update).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: expected, expectedVersion: 1 }),
+      );
+    },
+  );
 
   it.each([
     ["INTERNAL_SERVER_ERROR", "页面加载失败"],
@@ -235,7 +291,7 @@ describe("PageEditorPage", () => {
     expect(container.querySelector("output")?.textContent).toBe("pristine");
   });
 
-  it("makes the new-page form inert during creation and releases it on failure", async () => {
+  it("keeps the new-page form editable during creation and preserves it on failure", async () => {
     const create = deferred<{ id: string }>();
     mocks.create.mockReturnValue(create.promise);
     await render(null);
@@ -248,7 +304,7 @@ describe("PageEditorPage", () => {
     await save();
 
     const pendingForm = container.querySelector("[inert][aria-busy='true']");
-    expect(pendingForm?.contains(container.querySelector("output"))).toBe(true);
+    expect(pendingForm).toBeNull();
     await act(async () => create.reject(new Error("create unavailable")));
 
     expect(container.querySelector("[inert]")).toBeNull();
@@ -414,7 +470,9 @@ describe("PageEditorPage", () => {
       });
       expect(form.getValues("status")).toBe(PageStatus.PUBLISHED);
       expect(form.formState.isDirty).toBe(false);
-      expect(mocks.success).toHaveBeenCalledWith("更新成功");
+      expect(mocks.warning).toHaveBeenCalledWith(
+        "已保存，列表待刷新，请勿重复提交",
+      );
       expect(mocks.error).not.toHaveBeenCalled();
     },
   );
@@ -463,7 +521,9 @@ describe("PageEditorPage", () => {
     );
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
     expect(mocks.refetch).not.toHaveBeenCalled();
-    expect(mocks.error).toHaveBeenCalledWith("提交失败，请检查表单内容");
+    expect(mocks.error).toHaveBeenCalledWith(
+      "保存结果暂时无法确认，本地内容已保留，请先核对",
+    );
   });
 
   it("does not reset the next page when an earlier save finishes", async () => {
@@ -483,5 +543,179 @@ describe("PageEditorPage", () => {
       "下一页未保存标题",
     );
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
+  });
+  it("keeps the independent version after a dirty refetch and refreshes header closures after save", async () => {
+    mocks.detail = originalDetail;
+    await render();
+    await editTitle("local");
+    mocks.detail = { ...originalDetail, version: 7 };
+    await render();
+    await save();
+    expect(mocks.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedVersion: 0 }),
+    );
+    await editTitle("later");
+    await save();
+    expect(mocks.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ expectedVersion: 1 }),
+    );
+  });
+  it("suppresses all old-account effects before refresh", async () => {
+    mocks.detail = originalDetail;
+    const pending = deferred<{ id: string; version: number }>();
+    mocks.update.mockReturnValue(pending.promise);
+    await render();
+    await save();
+    mocks.actorId = "next-user";
+    await render();
+    await act(async () => pending.resolve({ id: pageId, version: 1 }));
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+  });
+
+  it("does not replay an unknown creation on remount and retries only its frozen input", async () => {
+    await render(null);
+    await act(async () => {
+      requireDefined(mocks.form).setValue("title", originalDetail.title, {
+        shouldDirty: true,
+      });
+      requireDefined(mocks.form).setValue("content", originalDetail.content, {
+        shouldDirty: true,
+      });
+    });
+    mocks.create.mockRejectedValueOnce(new Error("response lost"));
+    await save();
+    const frozen = mocks.create.mock.calls[0]?.[0];
+    expect(frozen.creationToken).toBeTruthy();
+    await editTitle("later input");
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await render(null);
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    mocks.creationCheck.mockResolvedValue({ isSuccess: true, data: null });
+    mocks.create.mockResolvedValue({ id: pageId, version: 0 });
+    const retry = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "已核对，重试原始创建",
+    );
+    await act(async () => retry?.click());
+    expect(mocks.create).toHaveBeenLastCalledWith(frozen);
+    expect(mocks.push).toHaveBeenCalledWith(`/admin/page/edit?id=${pageId}`);
+  });
+  it("keeps new typing during a creation and backs it up before navigation", async () => {
+    await render(null);
+    await act(async () => {
+      requireDefined(mocks.form).setValue("title", originalDetail.title);
+      requireDefined(mocks.form).setValue("content", originalDetail.content);
+    });
+    const pending = deferred<{ id: string; version: number }>();
+    mocks.create.mockReturnValue(pending.promise);
+    await save();
+    await editTitle("later creation edit");
+    await act(async () => pending.resolve({ id: pageId, version: 0 }));
+    const saved = JSON.parse(
+      localStorage.getItem(`honeycomb:draft:page:draft-user:${pageId}`) ??
+        "null",
+    );
+    expect(saved.values.title.zh).toBe("later creation edit");
+    expect(saved.values.baseVersion).toBe(0);
+    expect(mocks.push).toHaveBeenCalledTimes(1);
+  });
+  it("blocks creation when frozen input cannot be persisted, without clearing input", async () => {
+    await render(null);
+    await act(async () => {
+      requireDefined(mocks.form).setValue("title", originalDetail.title);
+      requireDefined(mocks.form).setValue("content", originalDetail.content);
+    });
+    const storage = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("quota");
+      });
+    try {
+      await save();
+      expect(mocks.create).not.toHaveBeenCalled();
+      expect(requireDefined(mocks.form).getValues("title")).toEqual(
+        originalDetail.title,
+      );
+      expect(mocks.error).toHaveBeenCalledWith(
+        "无法保存创建凭据，请允许浏览器本地存储后重试",
+      );
+    } finally {
+      storage.mockRestore();
+    }
+  });
+  it("keeps typing during explicit latest-version review instead of replacing it", async () => {
+    mocks.detail = originalDetail;
+    mocks.update.mockRejectedValue({ data: { code: "CONFLICT" } });
+    await render();
+    await editTitle("conflicted");
+    await save();
+    const pending = deferred<{ isSuccess: boolean; data: EditorDetail }>();
+    mocks.refetch.mockReturnValue(pending.promise);
+    const reload = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "保留本地内容并加载最新版本",
+    );
+    await act(async () => reload?.click());
+    await editTitle("typed while reviewing");
+    await act(async () =>
+      pending.resolve({
+        isSuccess: true,
+        data: { ...originalDetail, version: 6 },
+      }),
+    );
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe(
+      "typed while reviewing",
+    );
+    expect(mocks.warning).toHaveBeenCalledWith(
+      "加载期间有新的本地编辑，未替换表单，请核对后再次加载",
+    );
+  });
+  it("retains the submitted snapshot when an update result is unknown and typing continued", async () => {
+    mocks.detail = originalDetail;
+    const pending = deferred<{ id: string; version: number }>();
+    mocks.update.mockReturnValue(pending.promise);
+    await render();
+    await editTitle("submitted snapshot");
+    await save();
+    await editTitle("later unsaved typing");
+    await act(async () => pending.reject(new Error("lost response")));
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe(
+      "later unsaved typing",
+    );
+    const restore = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "恢复本地内容以核对",
+    );
+    expect(restore).toBeDefined();
+    await act(async () => restore?.click());
+    expect(requireDefined(mocks.form).getValues("title.zh")).toBe(
+      "submitted snapshot",
+    );
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires confirmation before abandoning an unknown intent and never automatically creates", async () => {
+    await render(null);
+    await act(async () => {
+      requireDefined(mocks.form).setValue("title", originalDetail.title);
+      requireDefined(mocks.form).setValue("content", originalDetail.content);
+    });
+    mocks.create.mockRejectedValueOnce(new Error("lost response"));
+    await save();
+    const restart = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "已核对列表，开始新的创建",
+    );
+    expect(restart).toBeDefined();
+    await act(async () => restart?.click());
+    const confirm = document.querySelector<HTMLButtonElement>(
+      '[role="dialog"] button[data-slot="button"]',
+    );
+    await act(async () => confirm?.click());
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(
+      localStorage.getItem("honeycomb:draft:page:draft-user:creation-attempt"),
+    ).toBeNull();
+    expect(requireDefined(mocks.form).getValues("title")).toEqual(
+      originalDetail.title,
+    );
   });
 });

@@ -11,139 +11,26 @@ metadata:
 
 # 同步 OpenSpec 规格
 
-Sync delta specs from a change to main specs.
+将已批准且有实现证据的增量语义合入主规格，保持活动变更和历史提案；规格同步不等于实施完成、CI 通过、发布或归档。
 
-This is an **agent-driven** operation - you will read delta specs and directly edit main specs to apply the changes. This allows intelligent merging (e.g., adding a scenario without copying the entire requirement).
+## 选择与读取
 
-**Input**: Optionally specify a change name. If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+1. 使用用户指定的变更，或上下文已明确的业务范围。跨多个已实现变更的文档漂移修复可按该范围选取相关增量；仅在范围确实不明确时运行 `openspec list --json` 并请用户选择，不扩大到所有活动提案。
+2. 对每个目标运行 `openspec status --change "<name>" --json`，从 `artifactPaths.specs.existingOutputPaths` 读取增量，同时读对应主规格、任务和必要设计说明。`isComplete` 仅表示工件完整，不证明实现或验收完成。
+3. 若 `actionContext.mode` 为 `workspace-planning`，停止仓库内同步，说明此工作流不支持该模式；不要绕过作用域去编辑链接仓库。
+4. 将每项增量与当前源码及相关行为测试交叉检查。区分已实现需求、被后续变更取代的旧规则和仍未实现的提案；不为消除文档差异修改运行时。
 
-**Steps**
+## 语义合并
 
-1. **If no change name provided, prompt for selection**
+- `ADDED`：增加不存在的 Requirement；已存在则合并，不重复创建。
+- `MODIFIED`：修改对应语义与冲突场景，保留仍有效的其他场景。
+- `REMOVED` / `RENAMED`：按已接受意图删除或改名，并检查其他规范和索引引用。
+- 新建 `openspec/specs/<capability>/spec.md` 时写清 `Purpose`、`Requirements` 和可验证 Scenario，不留 TBD。
+- 检索其他主规格中的相关术语，消除过期的竞争契约；用精确链接引用权威规则，不把域规则复制到 Skill。保留历史提案，不机械覆盖整份主规格、不自动勾选验收或归档。
+- 多个增量互相冲突时，以已批准的后续变更和实际实现证据核对；无法确定的项报告差异，不猜测新规则。媒体、版本、恢复和副作用等领域从[架构规则索引](../frontend-structure/references/architecture.md)定位。
 
-   Run `openspec list --json` to get available changes. Use the **AskUserQuestion tool** to let the user select.
+## 验证与交付
 
-   Show changes that have delta specs (under `specs/` directory).
+执行 `openspec validate --all --strict`、相关文档/架构门禁及 `git diff --check`；按[质量门禁](../frontend-structure/references/quality.md)和用户限定选择额外检查。文档同步不启动数据库、全套测试或发布。
 
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
-
-2. **Resolve change context**
-
-   Run:
-   ```bash
-   openspec status --change "<name>" --json
-   ```
-
-   If status reports `actionContext.mode: "workspace-planning"`, explain that workspace spec sync is not supported in this slice and STOP. Do not fall back to repo-local paths or edit linked repos.
-
-3. **Find delta specs**
-
-   Use `artifactPaths.specs.existingOutputPaths` from the status JSON as the list of delta spec files.
-
-   Each delta spec file contains sections like:
-   - `## ADDED Requirements` - New requirements to add
-   - `## MODIFIED Requirements` - Changes to existing requirements
-   - `## REMOVED Requirements` - Requirements to remove
-   - `## RENAMED Requirements` - Requirements to rename (FROM:/TO: format)
-
-   If no delta specs found, inform user and stop.
-
-4. **For each delta spec, apply changes to main specs**
-
-   For each repo-local capability delta spec path returned by the CLI:
-
-   a. **Read the delta spec** to understand the intended changes
-
-   b. **Read the main spec** at `openspec/specs/<capability>/spec.md` (may not exist yet)
-
-   c. **Apply changes intelligently**:
-
-      **ADDED Requirements:**
-      - If requirement doesn't exist in main spec → add it
-      - If requirement already exists → update it to match (treat as implicit MODIFIED)
-
-      **MODIFIED Requirements:**
-      - Find the requirement in main spec
-      - Apply the changes - this can be:
-        - Adding new scenarios (don't need to copy existing ones)
-        - Modifying existing scenarios
-        - Changing the requirement description
-      - Preserve scenarios/content not mentioned in the delta
-
-      **REMOVED Requirements:**
-      - Remove the entire requirement block from main spec
-
-      **RENAMED Requirements:**
-      - Find the FROM requirement, rename to TO
-
-   d. **Create new main spec** if capability doesn't exist yet:
-      - Create `openspec/specs/<capability>/spec.md`
-      - Add Purpose section (can be brief, mark as TBD)
-      - Add Requirements section with the ADDED requirements
-
-5. **Show summary**
-
-   After applying all changes, summarize:
-   - Which capabilities were updated
-   - What changes were made (requirements added/modified/removed/renamed)
-
-**Delta Spec Format Reference**
-
-```markdown
-## ADDED Requirements
-
-### Requirement: New Feature
-The system SHALL do something new.
-
-#### Scenario: Basic case
-- **WHEN** user does X
-- **THEN** system does Y
-
-## MODIFIED Requirements
-
-### Requirement: Existing Feature
-#### Scenario: New scenario to add
-- **WHEN** user does A
-- **THEN** system does B
-
-## REMOVED Requirements
-
-### Requirement: Deprecated Feature
-
-## RENAMED Requirements
-
-- FROM: `### Requirement: Old Name`
-- TO: `### Requirement: New Name`
-```
-
-**Key Principle: Intelligent Merging**
-
-Unlike programmatic merging, you can apply **partial updates**:
-- To add a scenario, just include that scenario under MODIFIED - don't copy existing scenarios
-- The delta represents *intent*, not a wholesale replacement
-- Use your judgment to merge changes sensibly
-
-**Output On Success**
-
-```
-## Specs Synced: <change-name>
-
-Updated main specs:
-
-**<capability-1>**:
-- Added requirement: "New Feature"
-- Modified requirement: "Existing Feature" (added 1 scenario)
-
-**<capability-2>**:
-- Created new spec file
-- Added requirement: "Another Feature"
-
-Main specs are now updated. The change remains active - archive when implementation is complete.
-```
-
-**Guardrails**
-- Read both delta and main specs before making changes
-- Preserve existing content not mentioned in delta
-- If something is unclear, ask for clarification
-- Show what you're changing as you go
-- The operation should be idempotent - running twice should give same result
+交付说明新增/修改的主规格、来源变更、已修正冲突与验证结果。分别报告实现证据、规格同步、当前提交的 CI 和发布状态；历史 CI 只证明其对应提交，未运行项不能记为通过。同步应幂等，重复执行不能产生重复 Requirement。只有用户要求且归档条件确已满足时，才进入归档 Skill。

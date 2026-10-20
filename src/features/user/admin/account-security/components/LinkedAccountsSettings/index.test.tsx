@@ -1,3 +1,6 @@
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: "user-1" } }),
+}));
 import React, { act } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRoot, type Root } from "react-dom/client";

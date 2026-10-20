@@ -8,7 +8,7 @@ type PageEditorActionButtonsProps = {
   isEdit: boolean;
   loading: boolean;
   status?: PageStatus | string;
-  onSubmit: (status: PageStatus) => void;
+  onSubmit: (status: PageStatus) => Promise<boolean>;
 };
 
 export function PageEditorActionButtons({

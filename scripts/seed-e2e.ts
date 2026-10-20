@@ -32,7 +32,7 @@ const ids = {
   replyComment: "000000000000000000000013",
 } as const;
 
-async function seed(): Promise<void> {
+export async function seed(): Promise<void> {
   const url = assertSafeE2ESeedTarget(process.env);
   const username = process.env.E2E_ADMIN_USERNAME ?? "guest";
   const password = process.env.E2E_ADMIN_PASSWORD ?? "123456";
@@ -331,6 +331,8 @@ async function seed(): Promise<void> {
           id: "000000000000000000000016",
           key: "e2e-search-cover",
           name: "Search cover fixture",
+          // Trusted local historical fixture, not a production upload or byte-verification claim.
+          state: "READY",
           size: 0,
           type: "image/jpeg",
           url: "/logo.jpg",

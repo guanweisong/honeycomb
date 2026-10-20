@@ -1,5 +1,7 @@
 # Simple Feature Architecture Implementation Plan
 
+> 历史检查点（冻结于 2026-10-20）：下文保留当时计划、目录、验证限制和授权顺序，不再作为当前实施清单。后续 [PR #13](https://github.com/guanweisong/honeycomb/pull/13) 已合并至 `bc07eb302e86d7a5c2bf8856f7a5cb32c5b1dea9`；[合并后 CI 39367870674](https://github.com/guanweisong/honeycomb/actions/runs/39367870674) 通过（1,984 单元、48 进程、64 E2E）。这些后续证据覆盖下文旧的“仅本地 / 待浏览器验证”状态，但不是新一轮验证结果，也不表示自动归档。当前架构见[架构与依赖边界](../../architecture-dependency-report.md)，本轮目录归属工作以 [refine-directory-ownership OpenSpec](../../../openspec/changes/refine-directory-ownership/proposal.md) 为准。
+
 > For agentic workers: execute the approved migration in coherent checkpoints, preserve behavior, and independently review the completed branch.
 
 **Goal:** Replace unpublished package layering with app composition, business features, generic components, and shared technical libraries.

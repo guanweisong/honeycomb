@@ -9,19 +9,19 @@ import {
   mapApplicationError,
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
-import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { IdSchema } from "@/lib/validation/id.schema";
 import {
   PostListQuerySchema,
   PostInsertSchema,
   PostUpdateSchema,
-  PostTagUpdateSchema,
+  PostDeleteSchema,
+  PostCreationResultInputSchema,
 } from "@/features/post/schema";
 import {
   createPost,
   destroyPosts,
   updatePost,
-  updatePostTags,
+  getPostCreationResult,
   incrementPostViews,
 } from "@/features/post/server/post-commands";
 import { listPosts, getPost } from "@/features/post/server/post-queries";
@@ -86,21 +86,34 @@ export const postRouter = createTRPCRouter({
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPost(ctx.db, input, ctx.user.id, publicContentInvalidator);
+      return createPost(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
 
   destroy: permissionProcedure(Permission.postDelete)
-    .input(DeleteBatchSchema)
+    .input(PostDeleteSchema)
     .mutation(async ({ input, ctx }) => {
-      return destroyPosts(ctx.db, input.ids, publicContentInvalidator);
+      return destroyPosts(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
 
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      return updatePost(ctx.db, input, publicContentInvalidator).catch(
-        mapApplicationError,
-      );
+      return updatePost(
+        ctx.db,
+        input,
+        ctx.user.id,
+        publicContentInvalidator,
+      ).catch(mapApplicationError);
     }),
 
   getRandomByCategory: publicProcedure
@@ -121,9 +134,11 @@ export const postRouter = createTRPCRouter({
     .input(z.object({ id: IdSchema }))
     .query(({ input, ctx }) => getPublishedPostCategoryId(ctx.db, input.id)),
 
-  updateTags: permissionProcedure(Permission.postManageTags)
-    .input(PostTagUpdateSchema)
-    .mutation(async ({ input, ctx }) => {
-      return updatePostTags(ctx.db, input, publicContentInvalidator);
-    }),
+  creationResult: permissionProcedure(Permission.postCreate)
+    .input(PostCreationResultInputSchema)
+    .query(({ input, ctx }) =>
+      getPostCreationResult(ctx.db, input.creationToken, ctx.user.id).catch(
+        mapApplicationError,
+      ),
+    ),
 });

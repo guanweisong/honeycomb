@@ -3,20 +3,17 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const settingActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath:
-      "(root)/(dashboard)/setting/components/SettingClient/index.tsx",
+    relativePath: "(dashboard)/setting/components/SettingClient/index.tsx",
     actions: [
       {
         id: "setting.update",
         permission: Permission.settingUpdate,
         control: {
-          tag: "DynamicForm",
-          attribute: "onSubmit",
-          reference: "handleSubmit",
+          tag: "Button",
+          attribute: "disabled",
         },
         guard: {
-          kind: "attribute",
-          attribute: "renderSubmitButton",
+          kind: "ancestor",
           polarity: "positive",
         },
       },

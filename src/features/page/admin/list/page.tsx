@@ -18,10 +18,7 @@ import { adminListQueryOptions } from "@/components/admin/query-options";
 import type { PageWithRelations as PageEntity } from "@/features/page/types";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
-import {
-  runAdminMutation,
-  submitAdminBatchDelete,
-} from "@/components/admin/action-state";
+import { runAdminMutation } from "@/components/admin/action-state";
 
 /**
  * 页面列表管理页面。
@@ -60,11 +57,24 @@ const Page = () => {
    * 删除事件
    * @param ids
    */
-  const handleDeleteItem = async (ids: string[]) => {
-    await runAdminMutation({
-      input: { ids },
+  const handleDeleteItem = async (rows: PageEntity[]) => {
+    return runAdminMutation({
+      input: {
+        items: rows.map(({ id, version }) => ({
+          id,
+          expectedVersion: version,
+        })),
+      },
       mutate: destroyPage.mutateAsync,
-      refetch,
+      refetch: async () => {
+        try {
+          const result = await refetch();
+          if (!result.isSuccess)
+            toast.warning("已删除，列表待刷新，请勿重复删除");
+        } catch {
+          toast.warning("已删除，列表待刷新，请勿重复删除");
+        }
+      },
       notifySuccess: toast.success,
       notifyWarning: toast.warning,
       notifyError: toast.error,
@@ -76,12 +86,12 @@ const Page = () => {
   /**
    * 批量删除
    */
-  const handleDeleteBatch = () =>
-    submitAdminBatchDelete({
-      selectedRows,
-      deleteItems: handleDeleteItem,
-      onSelectionChange: setSelectedRows,
-    });
+  const handleDeleteBatch = async () => {
+    const result = await handleDeleteItem(selectedRows);
+    if (result !== "success") return false;
+    setSelectedRows([]);
+    return true;
+  };
 
   return (
     <>
@@ -171,7 +181,7 @@ const Page = () => {
                 }
                 type="danger"
                 title="确定要删除吗？"
-                onOK={() => handleDeleteItem([row.id])}
+                onOK={async () => (await handleDeleteItem([row])) === "success"}
               />
             )}
           </div>

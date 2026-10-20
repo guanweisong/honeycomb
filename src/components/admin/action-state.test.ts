@@ -38,8 +38,8 @@ describe("admin action state", () => {
     ).toEqual({ id: "record-1", name: "Name" });
   });
 
-  it("deletes selected ids and clears selection after the action settles", async () => {
-    const deleteItems = vi.fn().mockResolvedValue("error");
+  it("deletes selected ids and clears selection only after success", async () => {
+    const deleteItems = vi.fn().mockResolvedValue("success");
     const onSelectionChange = vi.fn();
 
     await submitAdminBatchDelete({
@@ -51,6 +51,21 @@ describe("admin action state", () => {
     expect(deleteItems).toHaveBeenCalledWith(["record-1", "record-2"]);
     expect(onSelectionChange).toHaveBeenCalledWith([]);
   });
+
+  it.each(["error", "noop"] as const)(
+    "retains selected rows after %s",
+    async (state) => {
+      const onSelectionChange = vi.fn();
+      await expect(
+        submitAdminBatchDelete({
+          selectedRows: [{ id: "record-1" }],
+          deleteItems: async () => state,
+          onSelectionChange,
+        }),
+      ).resolves.toBe(false);
+      expect(onSelectionChange).not.toHaveBeenCalled();
+    },
+  );
 
   it("runs mutation feedback only for successful results", async () => {
     const refetch = vi.fn();

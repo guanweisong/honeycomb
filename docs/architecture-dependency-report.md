@@ -1,53 +1,27 @@
 # 架构与依赖边界
 
-本文描述当前的简单 feature 架构，不是执行结果或覆盖率报告。具体阅读入口见[代码阅读地图](code-reading-map.md)，迁移方法见[迁移说明](ddd-migration-guide.md)。历史审计的计数和检查结果不能当作本轮验证证据。
+本文解释简单 feature 架构的取舍，不是验收规范或执行报告。具体调用入口见[代码阅读地图](code-reading-map.md)，可验收规则按[架构规则索引](../.codex/skills/frontend-structure/references/architecture.md)定位到现有 OpenSpec Requirement；历史审计的计数和结果不能当作本轮验证证据。
 
-## 四种职责
+## 按改变原因组织代码
 
-- `src/app`：路由、布局、HTTP 适配与框架组合，包括根 tRPC router、服务端 caller 和公开内容的 Next.js 缓存入口。
-- `src/features/<feature>`：业务 router、输入 schema、业务类型、纯规则、服务端读写和所属业务 UI。
-- `src/components`：通用 UI 和编辑器。通过 props、回调或注入接收业务能力，不反向依赖 app 或 feature 运行时。
-- `src/lib`：数据库、认证、tRPC 核心、缓存、存储、可观测性、国际化等技术能力。业务状态、类型、展示选项不因有多个消费者就迁到 lib。
+app、features、components、lib 的区别是框架组合、业务、通用交互与技术能力，而不是四层必须依次经过的调用栈。把业务放回 feature 是为了从概念找到实现，不是要求所有 feature 具有同一目录树。可选文件示例见[目录模板](../.codex/skills/frontend-structure/references/directory-templates.md)。
 
-不再使用 `src/packages`，也不要求 feature 建立 `application/domain/infrastructure` 目录。目录按职责需要建立，而不是按模板补齐。
+例如统计与站点配置有不同的改变原因，dashboard 独立拥有统计更便于定位；分类树表达业务含义，Drizzle 查询构造和 UTC 格式化表达技术能力。当前具体归属及兼容要求见[目录归属变更](../openspec/changes/refine-directory-ownership/specs/directory-ownership/spec.md)，而非在多个说明中维护一份目录清单。
 
-## 最短业务路径
+## 缩短路径，不抹平职责
 
-```text
-Client UI → feature router → feature server 函数 → db / 技术适配器
-Server Component → feature server 读取函数
-业务 server 函数 → 纯规则（需要时）
-```
+普通客户端调用经 router 到 server 操作；服务端页面读取不必为形式绕回网络协议。router 关注入口与协议，server 函数表达业务过程。两者可直接阅读和测试，比层层转发更容易看清授权、事务和失败发生的位置。调用及写入要求见 [application-use-case-boundary](../openspec/specs/application-use-case-boundary/spec.md)。
 
-feature 的 `server.ts` 或 `server/` 可以直接使用 Drizzle 和 `lib/db`。函数接收实际所需的数据库、身份、输入或外部能力，明确事务边界与错误语义；不要求先创建 Repository 接口、factory、Use Case 或 handler。只有具有独立校验、授权、事务、转换、缓存或外部系统适配职责的函数才值得保留。
+是否保留 helper 取决于它承担的独立责任，不取决于名字叫 Repository、Use Case 还是 server。具备事务、映射、并发控制或外部适配职责的函数仍有价值；字段或代码表面相似也不意味着语义相同。契约与公开投影的区别见 [model-boundary-governance](../openspec/specs/model-boundary-governance/spec.md)。
 
-Router 处理输入校验、会话、入口 capability、限流和协议错误映射，业务写入与副作用顺序由 feature server 函数承担。可缓存 Server Component 不在渲染阶段执行写操作。页面和 router 不复制发布、审核、账号保护等规则。
+## 看依赖实际加载什么
 
-## 依赖与运行时边界
+纯类型依赖与运行时加载不同，目录名也不能证明某个模块可供浏览器使用。因此边界检查追踪间接 import、re-export、动态 import 与 require，而不只是禁止路径单词。跨 feature 的具名 UI 复用与 router 耦合不是同一件事；前者应保持业务所有权，通用组件则通过注入获得业务能力。
 
-- 根 router 在 `src/app/_trpc/router.ts`，服务端 caller 在 `src/app/_trpc/server.ts`。`lib/trpc` 只承载公共 core/context/client 及传输工具，不运行时导入业务 router 或 app。客户端为推导类型而 `import type` 根 `AppRouter` 是允许的例外。
-- 跨 feature 可直接引用对方拥有的纯 schema/type/catalog，以及有意复用的具名 UI 或 server 操作入口；不要求 public barrel 或集中 features/contracts。不能耦合另一 feature 的 router、反向导入 app，或让纯模块/浏览器加载服务端运行时。
-- app 是组合层，可接入 feature 的 router、server、admin 和 public 入口。feature 不反向导入 app。
-- `lib/db`、`lib/auth` 可以引用 feature 拥有的纯状态目录、schema 或类型；这些依赖不能传递加载业务 server 操作、UI、通知或根 router。这不是允许任意 lib 反向依赖 feature 的通行证。
-- 纯 schema、类型与规则不依赖 React、Next.js、tRPC server、数据库或外部 SDK。展示代码消费稳定结果模型，不接收数据库连接、ORM 查询对象或完整敏感记录；相同语义的 DTO 不为层次对称重复定义。
-- 浏览器代码不加载数据库、服务端认证、环境 secret、存储 SDK 或 Node-only 可观测性实现；Edge 路径不加载 Node-only SDK。边界检查须追踪间接 import、re-export、动态 import 与 require。
+根组合与跨 feature 规则见 [feature-business-boundaries](../openspec/specs/feature-business-boundaries/spec.md)；技术依赖及现有认证会话窄例外见 [package-layer-architecture](../openspec/specs/package-layer-architecture/spec.md) 的“技术依赖不加载业务运行时”。该例外的完整适用条件只在规范维护，不在每份 Skill 重写。
 
-## 不能因精简而丢失的行为
+## 用行为证明精简安全
 
-- 入口权限仍通过 `src/lib/auth/capability-registry.ts` 登记并由服务端执行。GUEST 列表访问不等于未发布内容或评论隐私访问；前端 `useCan` 不是授权边界。
-- 文章和页面的发布条件、错误码、事务、翻译更新语义和并发写入保护保持不变。分类父节点更新必须保留 SQL 循环保护，不能只留下更新前检查。
-- 公共文章作者仅返回 `id`、`name`。评论公开 DTO 必须实际选择允许字段；类型别名不会删除邮箱、IP 或 User-Agent。评论请求头先在入口转为普通元数据。
-- 评论验证码、公开目标、评论开关和父子同源校验必须在写入前完成。评论提交成功后通知失败只记录脱敏日志，不把成功写入变成失败。
-- 数据库提交是内容写入成功边界。`lib/cache/public-content-invalidator.ts` 保留结构化失效计划、有限重试和 `publicSync` 降级反馈。失效顺序仍为文章索引版本、sitemap、公开路由；范围去重、首次版本递增、关联快照刷新、sitemap TTL 和媒体幂等重试不得遗漏。
-- 媒体先删除对象，再删除数据库记录；对象失败保留记录，后续数据库失败返回不确定结果，不能伪报完全未执行。业务媒体选择属于 media feature，通用编辑器通过注入使用。
-- 草稿恢复、重复保存保护、Sentry 脱敏、浏览器/服务端/Edge 隔离和 public DSN 回退保持原语义。
+删掉一层不能证明行为不变。评审应沿实际数据流检查入口授权、数据库提交和后续副作用，尤其区分“写入失败”与“已提交、同步降级”。公开字段必须检查实际序列化结果，类型裁剪不等于数据裁剪。各行为的规范入口见[规则索引](../.codex/skills/frontend-structure/references/architecture.md)，权限解释见[权限矩阵](permission-matrix.md)。
 
-## 验证要求
-
-架构、权限、类型安全、持久化、缓存、浏览器和覆盖率测试必须随新路径更新，不得删除实质断言或降低阈值。相关入口包括 `tests/feature-boundaries.test.ts`、`tests/server-only-boundaries.test.ts`、`tests/architecture-complexity.test.ts`、`tests/readability-boundaries.test.ts`、`tests/capability-entrypoint-boundaries.test.ts` 和 `tests/public-cache-invalidation-boundaries.test.ts`。
-
-完整重构需要类型、Lint、全量单元与进程测试、覆盖率、生产构建及可运行的开发/生产 E2E。数据库测试仅使用显式隔离、可清理的本地 `file:` 数据库；不得以环境问题为由放宽安全边界。结果应逐项记录通过、失败或未运行，不沿用历史测试数和覆盖率。
-
-## 认证框架组合例外
-
-现有 `lib/trpc/context.ts` 为读取会话而延迟导入 `src/auth.ts` 是窄技术集成例外；`src/auth.ts` 绑定 Better Auth，认证 hook 与登录审计的框架组合位于 `app/_auth`。该例外不允许 lib/auth 运行时导入 feature 操作，也不允许 lib/trpc 组合业务 router。
+迁移步骤见[迁移说明](ddd-migration-guide.md)，验证选择见[质量门禁](../.codex/skills/frontend-structure/references/quality.md)，执行命令见[测试指南](../tests/README.md)。报告本轮实际通过、失败与未运行项，不沿用历史结果。

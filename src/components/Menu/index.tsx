@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { MenuTitle } from "./components/MenuTitle";
-import { motion, AnimatePresence } from "motion/react";
+import { MenuTitle } from "./MenuTitle";
+import { motion } from "motion/react";
 import { clsx } from "clsx";
 
 export interface MenuItem {
@@ -26,11 +26,25 @@ export const Menu = (props: MenuProps) => {
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   useEffect(() => {
-    const pathnameArr = pathname.split("/");
-    if (pathnameArr.length > 2) {
-      setOpenMenus((prev) => [...new Set([...prev, `/${pathnameArr[1]}`])]);
-    }
-  }, [pathname]);
+    const activeGroups: string[] = [];
+    const visit = (items: MenuItem[]): boolean => {
+      let hasActive = false;
+      for (const item of items) {
+        const activeChild = item.children ? visit(item.children) : false;
+        const active =
+          pathname === item.path || pathname.startsWith(`${item.path}/`);
+        if (item.children && (activeChild || active))
+          activeGroups.push(item.path);
+        hasActive ||= activeChild || active;
+      }
+      return hasActive;
+    };
+    visit(data);
+    setOpenMenus((prev) => {
+      const next = [...new Set([...prev, ...activeGroups])];
+      return next.length === prev.length ? prev : next;
+    });
+  }, [pathname, data]);
 
   const toggleMenu = (path: string) => {
     setOpenMenus((prev) =>
@@ -76,19 +90,17 @@ export const Menu = (props: MenuProps) => {
               })}
             />
           </motion.div>
-          <AnimatePresence>
-            {item.children && isOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                style={{ overflow: "hidden" }}
-              >
-                {renderMenu(item.children, depth + 1)}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {item.children && isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ overflow: "hidden" }}
+            >
+              {renderMenu(item.children, depth + 1)}
+            </motion.div>
+          )}
         </div>
       );
     });

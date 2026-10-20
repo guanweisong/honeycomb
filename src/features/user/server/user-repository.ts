@@ -6,13 +6,17 @@ import { UserLevel, UserStatus } from "@/features/user/user";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
 import { observeDbOperation } from "@/lib/observability/server";
 import {
   setCredentialPassword,
   type CredentialStore,
 } from "@/lib/auth/credentials";
 import { ApplicationError } from "@/lib/errors/application-error";
+import { assertUserLevelChange, isProtectedUser } from "../rules";
 import type {
   UserCommandInput,
   UserUpdateCommandInput,
@@ -168,9 +172,33 @@ export function createUserRepository(db: Database) {
     },
     async update(input: UserUpdateCommandInput) {
       const { id, password, ...rest } = input;
+      const protectsLevel = !!rest.level && !isProtectedUser(rest.level);
       const update = async (
         store: CredentialStore & Pick<Database, "delete">,
       ) => {
+        if (protectsLevel && rest.level) {
+          // The write transaction serializes this guard with competing promotions.
+          const [current] = await observeDbOperation(
+            "user.update",
+            "select",
+            () =>
+              store
+                .select({ level: schema.user.level })
+                .from(schema.user)
+                .where(eq(schema.user.id, id)),
+          );
+          if (current) {
+            assertUserLevelChange(
+              id,
+              parseEnumValue(
+                current.level,
+                Object.values(UserLevel),
+                "user.level",
+              ),
+              rest.level,
+            );
+          }
+        }
         const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
@@ -187,7 +215,7 @@ export function createUserRepository(db: Database) {
         }
         return validateUserState(user);
       };
-      return password ? db.transaction(update) : update(db);
+      return password || protectsLevel ? db.transaction(update) : update(db);
     },
   };
 }

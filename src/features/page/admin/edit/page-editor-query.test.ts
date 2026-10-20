@@ -4,17 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const trpcMocks = vi.hoisted(() => ({
   calls: [] as unknown[],
+  detail: { id: "page-42" },
   refetch: vi.fn(),
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
+      creationResult: { useQuery: () => ({ data: null }) },
       adminDetail: {
         useQuery: (input: unknown, options: unknown) => {
           trpcMocks.calls.push([input, options]);
           return {
-            data: { id: "page-42" },
+            data: trpcMocks.detail,
             refetch: trpcMocks.refetch,
             error: { data: { code: "NOT_FOUND" } },
           };
@@ -24,14 +26,38 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { usePageEditorQuery } from "./page-editor-query";
+const editorMocks = vi.hoisted(() => ({ id: null as string | null }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () =>
+    new URLSearchParams(editorMocks.id ? `id=${editorMocks.id}` : ""),
+}));
+vi.mock("./page-editor-actions", () => ({
+  usePageEditorActions: () => ({ loading: false }),
+}));
+vi.mock("@/components/admin/layout-context", () => ({
+  useAdminLayoutActions: () => {},
+  useAdminLayoutPageTitle: () => {},
+}));
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: null }),
+}));
+vi.mock("@/components/admin/local-draft", () => ({
+  useLocalDraft: () => ({}),
+  LocalDraftPrompt: () => null,
+}));
+vi.mock("./components/PageEditorForm", () => ({ PageEditorForm: () => null }));
+vi.mock("./components/PageEditorActionButtons", () => ({
+  PageEditorActionButtons: () => null,
+}));
+import { PageEditorPage } from "./components/PageEditorPage";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("page editor query", () => {
-  describe("hook", () => {
+  describe("component query", () => {
     let container: HTMLDivElement;
     let root: Root;
 
@@ -51,19 +77,9 @@ describe("page editor query", () => {
       [null, false],
       ["page-42", true],
     ])("binds id %s with enabled=%s", async (id, enabled) => {
-      let query: ReturnType<typeof usePageEditorQuery> | undefined;
-      function Harness() {
-        query = usePageEditorQuery(id);
-        return null;
-      }
-
-      await act(async () => root.render(React.createElement(Harness)));
+      editorMocks.id = id;
+      await act(async () => root.render(React.createElement(PageEditorPage)));
       expect(trpcMocks.calls.at(-1)).toEqual([{ id: id ?? "" }, { enabled }]);
-      expect(query).toEqual({
-        error: { data: { code: "NOT_FOUND" } },
-        data: { id: "page-42" },
-        refetch: trpcMocks.refetch,
-      });
     });
   });
 });

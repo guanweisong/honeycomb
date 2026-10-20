@@ -97,7 +97,7 @@ export function loadRouterSources(): RouterSource[] {
     ["menu", "menu"],
     ["page", "page"],
     ["setting", "setting"],
-    ["setting", "statistic"],
+    ["dashboard", "dashboard"],
     ["tag", "tag"],
     ["user", "user"],
     ["user", "account-security"],

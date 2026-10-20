@@ -1,6 +1,6 @@
 # Data and Contract Consistency Implementation Plan
 
-> 历史记录：本文记录当时方案与验证，不代表当前目录或分层要求。当前指导见[架构与依赖边界](../../architecture-dependency-report.md)；本轮迁移与验证见[重构结果](../../simple-feature-architecture-results.md)。
+> 历史记录：本文记录当时方案与验证，不代表当前目录或分层要求。当前指导见[架构与依赖边界](../../architecture-dependency-report.md)；历史迁移检查点见[旧重构结果](../../simple-feature-architecture-results.md)，当前实施与验证边界见[减法版结果](../../reduced-architecture-results.md)。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

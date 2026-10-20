@@ -1,143 +1,96 @@
 import { describe, expect, it, vi } from "vitest";
 import { submitMediaUpload } from "./media-actions";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import { createMedia as createMediaUseCase } from "../server";
-import type { MediaInsert } from "../schema";
-
-const successfulMedia = {
-  id: "media-1",
+const media = {
+  id: "ready",
   name: "good.png",
   type: "image/png",
   size: 1,
-  key: "good.png",
-  url: "https://example.test/good.png",
+  key: "final/good",
+  url: "https://cdn.test/good",
   width: null,
   height: null,
   color: null,
   createdAt: null,
   updatedAt: null,
-} satisfies MediaViewModel;
-function dependencies() {
+};
+const file = (name = "good.png") =>
+  new File(["a"], name, { type: "image/png" });
+function deps() {
   return {
-    getImageMetadata: vi.fn().mockResolvedValue({ width: 1, height: 1 }),
-    getPresignedUrl: vi.fn(async ({ name }: { name: string }) => ({
-      key: name,
-      url: `https://storage.test/${name}`,
-      cleanupUrl: `https://storage.test/delete/${name}`,
+    beginUpload: vi.fn(async ({ name }: { name: string }) => ({
+      id: name,
+      uploadUrl: `https://temp.test/${name}`,
+      expiresAt: "later",
     })),
     uploadToStorage: vi.fn().mockResolvedValue(undefined),
-    createMedia: vi.fn(async ({ name }: MediaInsert) => {
-      if (name === "bad.png")
-        return { state: "rejected" as const, message: "metadata failed" };
-      return { state: "created" as const, media: successfulMedia };
-    }),
-    cleanupObject: vi.fn().mockResolvedValue(undefined),
+    confirmUpload: vi.fn(async ({ id }: { id: string }) =>
+      id === "bad.png"
+        ? { state: "rejected" as const, id, message: "invalid image" }
+        : { state: "ready" as const, media },
+    ),
   };
 }
-describe("settled media uploads", () => {
-  it("keeps an object when metadata committed but the response was lost", async () => {
-    const deps = dependencies();
-    const committed: MediaViewModel[] = [];
-    deps.createMedia.mockImplementation(async (input) => {
-      await createMediaUseCase(
-        {
-          create: async () => {
-            committed.push(successfulMedia);
-            return successfulMedia;
-          },
-        },
-        input,
-      );
-      throw new Error("response lost");
-    });
+describe("settled lifecycle uploads", () => {
+  it("retains successful siblings without any browser cleanup", async () => {
+    const d = deps();
     const result = await submitMediaUpload({
-      ...deps,
-      files: [new File(["a"], "good.png", { type: "image/png" })],
+      ...d,
+      files: [file(), file("bad.png")],
     });
-    expect(result.state).toBe("error");
-    expect("failed" in result && result.failed).toEqual([
-      expect.objectContaining({
-        name: "good.png",
-        outcome: "indeterminate",
-        cleanupFailed: false,
-      }),
-    ]);
-    expect(deps.cleanupObject).not.toHaveBeenCalled();
-    expect(committed).toEqual([successfulMedia]);
+    expect(result).toMatchObject({
+      state: "partial",
+      media: [media],
+      failed: [{ id: "bad.png", name: "bad.png", outcome: "failed" }],
+    });
   });
-  it("retains successful siblings and cleans an object whose metadata failed", async () => {
-    const deps = dependencies();
-    const result = await submitMediaUpload({
-      ...deps,
-      files: [
-        new File(["a"], "good.png", { type: "image/png" }),
-        new File(["b"], "bad.png", { type: "image/png" }),
+  it.each(["put", "confirm"])(
+    "retains operation ID after uncertain %s and never replays",
+    async (stage) => {
+      const d = deps();
+      d[
+        stage === "put" ? "uploadToStorage" : "confirmUpload"
+      ].mockRejectedValue(new Error("lost response"));
+      const result = await submitMediaUpload({ ...d, files: [file()] });
+      expect(result).toMatchObject({
+        state: "error",
+        failed: [{ id: "good.png", outcome: "indeterminate" }],
+      });
+      expect(d.beginUpload).toHaveBeenCalledTimes(1);
+      if (stage === "put") expect(d.confirmUpload).not.toHaveBeenCalled();
+    },
+  );
+  it("exposes pending operations without selectable media", async () => {
+    const d = deps();
+    d.confirmUpload.mockResolvedValue({
+      state: "pending",
+      id: "good.png",
+      message: "check again",
+    } as never);
+    expect(await submitMediaUpload({ ...d, files: [file()] })).toMatchObject({
+      state: "error",
+      failed: [
+        { id: "good.png", outcome: "indeterminate", message: "check again" },
       ],
     });
-    expect(result.state).toBe("partial");
-    expect("media" in result && result.media).toEqual([successfulMedia]);
-    expect("failed" in result && result.failed).toEqual([
-      {
-        name: "bad.png",
-        message: "metadata failed",
-        cleanupFailed: false,
-        outcome: "failed",
-      },
-    ]);
-    expect(deps.cleanupObject).toHaveBeenCalledWith("bad.png");
   });
-  it("reports cleanup failure without losing the successful sibling", async () => {
-    const deps = dependencies();
-    deps.cleanupObject.mockRejectedValue(new Error("cleanup unavailable"));
-    const result = await submitMediaUpload({
-      ...deps,
-      files: [
-        new File(["a"], "good.png", { type: "image/png" }),
-        new File(["b"], "bad.png", { type: "image/png" }),
-      ],
-    });
-    expect(result.state).toBe("partial");
-    expect("media" in result && result.media).toEqual([successfulMedia]);
-    expect("failed" in result && result.failed).toEqual([
-      {
-        name: "bad.png",
-        message: "metadata failed",
-        cleanupFailed: true,
-        outcome: "failed",
-      },
-    ]);
-  });
-  it("does not clean objects whose PUT never succeeded", async () => {
-    const deps = dependencies();
-    deps.uploadToStorage.mockRejectedValue(new Error("PUT failed"));
+  it("validates batch and file policy before creating an operation", async () => {
+    const d = deps();
     expect(
       (
         await submitMediaUpload({
-          ...deps,
-          files: [new File(["a"], "good.png", { type: "image/png" })],
+          ...d,
+          files: Array.from({ length: 21 }, () => file()),
         })
       ).state,
     ).toBe("error");
-    expect(deps.cleanupObject).not.toHaveBeenCalled();
-  });
-  it("rejects batches exceeding 20 before any side effect", async () => {
-    const deps = dependencies();
-    const result = await submitMediaUpload({
-      ...deps,
-      files: Array.from(
-        { length: 21 },
-        () => new File(["a"], "good.png", { type: "image/png" }),
-      ),
-    });
-    expect(result.state).toBe("error");
-    expect(deps.getPresignedUrl).not.toHaveBeenCalled();
-  });
-  it("rejects unsupported or oversized files without presigning", async () => {
-    const deps = dependencies();
-    const file = new File(["svg"], "bad.svg", { type: "image/svg+xml" });
-    expect((await submitMediaUpload({ ...deps, files: [file] })).state).toBe(
-      "error",
-    );
-    expect(deps.getPresignedUrl).not.toHaveBeenCalled();
+    expect(
+      (
+        await submitMediaUpload({
+          ...d,
+          files: [new File(["x"], "x.svg", { type: "image/svg+xml" })],
+        })
+      ).state,
+    ).toBe("error");
+    expect(d.beginUpload).not.toHaveBeenCalled();
   });
 });

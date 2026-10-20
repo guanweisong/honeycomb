@@ -19,15 +19,20 @@ src/features/
 
 ### 📁 通用测试
 
+根目录按被验证职责浅分组，不按文件后缀或是否使用数据库推断测试运行环境。业务与技术模块的相邻测试继续留在 `src/`；现有测试库存、进程分组和覆盖率门槛保持不变。
+
 `tests/` 放置跨 feature 回归、架构与安全门禁、E2E，以及共享测试工具和配置；单一模块的行为测试通常与实现相邻：
 
 ```
 tests/
-├── setup/
-│   └── vitest.setup.ts        # 全局测试设置
-├── helpers/
-│   └── test-utils.ts         # 通用测试工具
-└── README.md                 # 测试文档
+├── architecture/            # 职责、类型、安全与运行时依赖门禁
+├── integration/             # 跨模块行为、持久化与框架组合回归（部分使用 mock）
+├── tooling/                 # 构建、配置、脚本与测试治理
+├── e2e/                     # 真实开发/生产浏览器流程
+├── fixtures/                # 边界测试夹具
+├── setup/                   # 全局测试设置
+├── helpers/                 # 共享测试工具及其相邻测试
+└── README.md
 ```
 
 ## 运行测试
@@ -35,12 +40,12 @@ tests/
 架构边界专项检查：
 
 ```bash
-bunx vitest run tests/feature-boundaries.test.ts tests/capability-entrypoint-boundaries.test.ts
+bunx vitest run tests/architecture/feature-boundaries.test.ts tests/architecture/capability-entrypoint-boundaries.test.ts
 ```
 
 它会检查 Feature Router 将业务操作交给所属 Feature 的 server.ts/server 模块、纯 schema/types/rules 不依赖持久化或 UI、共享组件不拥有业务，以及 lib 不反向编排业务。权限矩阵、菜单和管理入口继续使用已登记的 capability。
 
-`tests/library-boundaries.test.ts` 还跟踪 Client Component 的传递依赖，覆盖 import、re-export、动态 import 与 require，阻止数据库、服务端认证、原生 SDK 和 Node 模块进入浏览器。类型导入单独识别；lib/trpc/client 对 app/_trpc/router 的纯类型引用不产生运行时依赖。
+`tests/architecture/library-boundaries.test.ts` 还跟踪 Client Component 的传递依赖，覆盖 import、re-export、动态 import 与 require，阻止数据库、服务端认证、原生 SDK 和 Node 模块进入浏览器。类型导入单独识别；lib/trpc/client 对 app/_trpc/router 的纯类型引用不产生运行时依赖。
 
 ```bash
 # 运行所有单元测试（监听模式）
@@ -77,7 +82,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 | `src/app/sw.ts`                            | E2E-only service worker 薄入口；`/en/offline` 由 Serwist route 显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
 | `src/components/ui/**`                     | 未修改的 shadcn 基础组件；扩展组件和业务 UI 仍纳入统计                                                                                  |
 
-业务页面、hooks、Feature server/schema/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
+业务页面、hooks、Feature server/schema/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
 全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。Vitest 4.1 的顶层 `perFile` 会同时把全局门槛应用到每个文件，因此关键门槛使用“一文件一个精确 glob”；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
 

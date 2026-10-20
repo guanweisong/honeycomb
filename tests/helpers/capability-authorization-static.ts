@@ -182,7 +182,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   "src/app/admin/constants/menu-data.tsx",
   "src/app/admin/constants/route-capabilities.ts",
   // Admin route template 只把已复核的用户角色映射到登记的 route capability。
-  "src/app/admin/(root)/(dashboard)/template.tsx",
+  "src/app/admin/(dashboard)/template.tsx",
   "src/features/user/admin/use-current-user.ts",
   // User use case 只编排账号等级领域不变量，不决定入口授权。
   "src/features/user/server/user-commands.ts",
@@ -196,6 +196,51 @@ function assertNoRoleBasedAuthorization(
   sourceFile: ts.SourceFile,
 ): void {
   if (ROLE_POLICY_ALLOWLIST.has(fileName)) return;
+
+  // This assertion only prevents protected-account demotion. It never grants
+  // actor capabilities; recognize its exact import rather than exempting the file.
+  const invariantBindings = new Set<string>();
+  if (fileName === "src/features/user/server/user-repository.ts") {
+    for (const statement of sourceFile.statements) {
+      if (
+        ts.isImportDeclaration(statement) &&
+        ts.isStringLiteral(statement.moduleSpecifier) &&
+        statement.moduleSpecifier.text === "../rules" &&
+        !statement.importClause?.isTypeOnly
+      ) {
+        const bindings = statement.importClause?.namedBindings;
+        if (bindings && ts.isNamedImports(bindings)) {
+          for (const element of bindings.elements) {
+            if (
+              !element.isTypeOnly &&
+              (element.propertyName?.text ?? element.name.text) ===
+                "assertUserLevelChange"
+            ) {
+              invariantBindings.add(element.name.text);
+            }
+          }
+        }
+      }
+    }
+    // Fail closed even for an unrelated nested shadow, rather than accepting a
+    // same-named local function or parameter as the imported domain assertion.
+    const rejectShadowedBindings = (node: ts.Node): void => {
+      if (ts.isVariableDeclaration(node) || ts.isParameter(node)) {
+        for (const name of bindingIdentifiers(node.name))
+          invariantBindings.delete(name);
+      } else if (
+        (ts.isFunctionDeclaration(node) ||
+          ts.isFunctionExpression(node) ||
+          ts.isClassDeclaration(node) ||
+          ts.isClassExpression(node)) &&
+        node.name
+      ) {
+        invariantBindings.delete(node.name.text);
+      }
+      ts.forEachChild(node, rejectShadowedBindings);
+    };
+    rejectShadowedBindings(sourceFile);
+  }
 
   const roleEnumBindings = new Set(["UserLevel"]);
   const roleValueBindings = new Set<string>();
@@ -347,6 +392,9 @@ function assertNoRoleBasedAuthorization(
           : "";
       if (
         helperName !== "can" &&
+        !(
+          ts.isIdentifier(node.expression) && invariantBindings.has(helperName)
+        ) &&
         AUTHORIZATION_HELPER_NAME.test(helperName) &&
         node.arguments.some(isRoleExpression)
       ) {

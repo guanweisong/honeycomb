@@ -11,7 +11,8 @@ export const mockedAdminUser = {
 } satisfies Pick<UserViewModel, "id" | "name" | "email" | "level" | "status">;
 
 export const mockedSiteSetting = {
-  id: "setting-1",
+  id: "507f1f77bcf86cd799439012",
+  version: 0,
   siteName: { en: "Honeycomb", zh: "蜂巢" },
   siteSubName: { en: "Site", zh: "站点" },
   siteSignature: { en: "Signature", zh: "签名" },

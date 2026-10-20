@@ -75,7 +75,7 @@ const Tag = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    await runAdminMutation({
+    return runAdminMutation({
       input: { ids },
       mutate: destroyTag.mutateAsync,
       isSuccess: (result) => result.success,
@@ -196,7 +196,9 @@ const Tag = () => {
                   }
                   type="danger"
                   title="确定要删除吗？"
-                  onOK={() => handleDeleteItem([row.id])}
+                  onOK={async () =>
+                    (await handleDeleteItem([row.id])) === "success"
+                  }
                 />
               )}
             </div>

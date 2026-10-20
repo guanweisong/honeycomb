@@ -12,8 +12,8 @@ const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 const CONFIGURED_ASSET_URL =
   process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test";
 const ASSET_ORIGIN = resolveAssetOrigin(CONFIGURED_ASSET_URL);
-const CONFIGURED_R2_ACCOUNT_ID =
-  process.env.R2_ACCOUNT_ID ?? "0123456789abcdef0123456789abcdef";
+// The managed test server always uses this non-production fixture account.
+const CONFIGURED_R2_ACCOUNT_ID = "0123456789abcdef0123456789abcdef";
 const R2_UPLOAD_ORIGIN = resolveR2UploadOrigin(CONFIGURED_R2_ACCOUNT_ID);
 const R2_UPLOAD_BUCKET = "playwright-bucket";
 const R2_UPLOAD_KEY = "csp-probe";

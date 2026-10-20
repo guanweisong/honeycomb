@@ -7,6 +7,7 @@ import {
   text,
   integer,
   index,
+  uniqueIndex,
   check,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
@@ -45,6 +46,9 @@ export const post = sqliteTable(
     }), // 封面图ID，关联到 media 表
     status: text("status").default(PostStatus.TO_AUDIT).notNull(), // 文章状态，默认待审核
     type: text("type").default(PostType.ARTICLE).notNull(), // 文章类型，默认普通文章
+    version: integer("version").default(0).notNull(),
+    creationToken: text("creation_token"),
+    creationInputHash: text("creation_input_hash"),
     views: integer("views").default(0), // 浏览次数
     // --- 引言类型字段 ---
     ...withTimestamps(),
@@ -64,6 +68,10 @@ export const post = sqliteTable(
       table.authorId,
       table.createdAt,
     ),
+    postAuthorCreationTokenUnique: uniqueIndex(
+      "post_author_creation_token_unique",
+    ).on(table.authorId, table.creationToken),
+    postVersionCheck: check("post_version_check", sql`${table.version} >= 0`),
     postCoverIdx: index("post_cover_idx").on(table.coverId),
     postCommentStatusCheck: enumCheck(
       "post_comment_status_check",

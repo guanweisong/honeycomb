@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { metricValue } from "../../helpers/performance-metrics";
 import { openBlogHome } from "./helpers";
 
 function getThreshold(name: string, fallback: number): number {
@@ -6,13 +7,6 @@ function getThreshold(name: string, fallback: number): number {
   if (!raw) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function metricValue(
-  metrics: Array<{ name: string; value: number }>,
-  name: string,
-): number {
-  return metrics.find((m) => m.name === name)?.value ?? 0;
 }
 
 test.describe("blog performance budget", () => {
@@ -50,12 +44,11 @@ test.describe("blog performance budget", () => {
     });
 
     const firstPost = page.locator('a[href*="/en/archives/"]').first();
-    if (await firstPost.count()) {
-      await firstPost.click();
-      await expect(page).toHaveURL(/\/en\/archives\//);
-      await page.goBack({ waitUntil: "networkidle" });
-      await expect(page).toHaveURL(/\/en\/list\/category/);
-    }
+    await expect(firstPost).toBeVisible();
+    await firstPost.click();
+    await expect(page).toHaveURL(/\/en\/archives\//);
+    await page.goBack({ waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/en\/list\/category/);
 
     const wallSec = Math.max((Date.now() - wallStart) / 1000, 0.001);
     const finalPerf = await cdp.send("Performance.getMetrics");
@@ -69,6 +62,7 @@ test.describe("blog performance budget", () => {
       return count;
     });
 
+    expect(finalTaskDuration).toBeGreaterThanOrEqual(baselineTaskDuration);
     const cpuPercent =
       ((finalTaskDuration - baselineTaskDuration) / wallSec) * 100;
     const heapUsedMB = finalHeapUsed / (1024 * 1024);

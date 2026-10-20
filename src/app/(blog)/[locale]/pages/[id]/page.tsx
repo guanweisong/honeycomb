@@ -17,7 +17,7 @@ import { cn } from "@/lib/ui/utils";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";
-import { assertPublishedPost } from "./page.utils";
+import { assertPublishedPage } from "./page.utils";
 import {
   createLocalizedAlternates,
   defaultSocialImage,
@@ -46,7 +46,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const locale = normalizeMultiLangLocale(rawLocale);
   const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
   const pageDetail = await getPublicPageDetail(id);
-  const publishedPage = assertPublishedPost(pageDetail);
+  const publishedPage = assertPublishedPage(pageDetail);
   const postInfoT = await getTranslations("PostInfo");
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS

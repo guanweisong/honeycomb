@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getAuthenticatorName } from "@better-auth/passkey";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { useAccountMutation } from "../use-account-mutation";
 import { authClient } from "@/auth-client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog } from "@/components/Dialog";
-import { toast } from "sonner";
 
 function formatCreatedAt(value: Date | string | undefined) {
   if (!value) return "未知时间";
@@ -14,6 +15,12 @@ function formatCreatedAt(value: Date | string | undefined) {
 }
 
 const PasskeySettings = () => {
+  const { user } = useCurrentUser();
+  return <PasskeySettingsPanel key={user?.id} />;
+};
+
+const PasskeySettingsPanel = () => {
+  const mutation = useAccountMutation();
   const passkeysQuery = authClient.useListPasskeys();
   const nameInput = useRef<HTMLInputElement>(null);
   const [isSupported, setIsSupported] = useState(false);
@@ -31,47 +38,62 @@ const PasskeySettings = () => {
     );
   }, []);
 
-  const addPasskey = async () => {
-    const result = await authClient.passkey.addPasskey({
-      name: nameInput.current?.value.trim() || undefined,
-    });
-    if (result.error) {
-      toast.error(result.error.message || "Passkey 注册失败");
-      return;
+  const refreshPasskeys = async () => {
+    await passkeysQuery.refetch();
+    // BetterAuth resolves refetch even on failure and stores the error in its atom.
+    // Read the current atom, not the hook snapshot captured before this request.
+    const atom = authClient.$store.atoms.listPasskeys;
+    if (!atom) throw new Error("Passkey 列表刷新状态不可用");
+    const state: unknown = atom.get();
+    if (state && typeof state === "object" && "error" in state && state.error) {
+      throw new Error("Passkey 列表刷新失败");
     }
-    if (nameInput.current) nameInput.current.value = "";
-    toast.success("Passkey 注册成功");
   };
 
-  const renamePasskey = async () => {
-    if (!renameTarget || !renameName.trim()) return;
-    const result = await authClient.$fetch("/passkey/update-passkey", {
-      method: "POST",
-      body: { id: renameTarget.id, name: renameName.trim() },
+  const addPasskey = () =>
+    mutation.run({
+      mutate: () =>
+        authClient.passkey.addPasskey({
+          name: nameInput.current?.value.trim() || undefined,
+        }),
+      failure: "Passkey 注册失败",
+      success: "Passkey 注册成功",
+      committed: () => {
+        if (nameInput.current) nameInput.current.value = "";
+      },
     });
-    if (result.error) {
-      toast.error(result.error.message || "Passkey 重命名失败");
-      return;
-    }
-    await passkeysQuery.refetch();
-    setRenameTarget(null);
-    setRenameName("");
-    toast.success("Passkey 已重命名");
+
+  const renamePasskey = async () => {
+    if (!renameTarget || !renameName.trim()) return false;
+    return mutation.run({
+      mutate: () =>
+        authClient.$fetch("/passkey/update-passkey", {
+          method: "POST",
+          body: { id: renameTarget.id, name: renameName.trim() },
+        }),
+      failure: "Passkey 重命名失败",
+      success: "Passkey 已重命名",
+      committed: () => {
+        setRenameTarget(null);
+        setRenameName("");
+      },
+      refresh: refreshPasskeys,
+    });
   };
 
   const deletePasskey = async () => {
     if (!deleteTarget) return false;
-    const result = await authClient.$fetch("/passkey/delete-passkey", {
-      method: "POST",
-      body: { id: deleteTarget },
+    return mutation.run({
+      mutate: () =>
+        authClient.$fetch("/passkey/delete-passkey", {
+          method: "POST",
+          body: { id: deleteTarget },
+        }),
+      failure: "Passkey 删除失败",
+      success: "Passkey 已删除",
+      committed: () => setDeleteTarget(null),
+      refresh: refreshPasskeys,
     });
-    if (result.error) {
-      toast.error(result.error.message || "Passkey 删除失败");
-      return false;
-    }
-    await passkeysQuery.refetch();
-    setDeleteTarget(null);
-    toast.success("Passkey 已删除");
   };
 
   if (passkeysQuery.isPending) {
@@ -116,6 +138,7 @@ const PasskeySettings = () => {
           data-testid="passkey-add-button"
           type="button"
           onClick={addPasskey}
+          disabled={mutation.pending}
         >
           注册 Passkey
         </Button>
@@ -141,6 +164,7 @@ const PasskeySettings = () => {
                   data-testid="passkey-rename-button"
                   type="button"
                   variant="outline"
+                  disabled={mutation.pending}
                   size="sm"
                   onClick={() => {
                     setRenameTarget({ id: passkey.id, name: label });
@@ -153,6 +177,7 @@ const PasskeySettings = () => {
                   data-testid="passkey-delete-button"
                   type="button"
                   variant="destructive"
+                  disabled={mutation.pending}
                   size="sm"
                   onClick={() => setDeleteTarget(passkey.id)}
                 >
@@ -168,6 +193,7 @@ const PasskeySettings = () => {
         open={renameTarget !== null}
         onOpenChange={(open) => {
           if (!open) {
+            mutation.cancelFeedback();
             setRenameTarget(null);
             setRenameName("");
           }
@@ -176,7 +202,7 @@ const PasskeySettings = () => {
         onOK={renamePasskey}
         OKProps={{
           children: "保存",
-          disabled: !renameName.trim(),
+          disabled: mutation.pending || !renameName.trim(),
         }}
       >
         <input
@@ -192,7 +218,10 @@ const PasskeySettings = () => {
       <Dialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
+          if (!open) {
+            mutation.cancelFeedback();
+            setDeleteTarget(null);
+          }
         }}
         title="删除 Passkey"
         description="删除后将无法使用此 Passkey 登录。"
@@ -200,6 +229,7 @@ const PasskeySettings = () => {
         onOK={deletePasskey}
         OKProps={{
           children: "删除",
+          disabled: mutation.pending,
           id: "passkey-delete-confirm-button",
         }}
       />

@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { LinkListQuerySchema } from "@/features/link/schema";
+import {
+  LinkListQuerySchema,
+  type LinkListQueryInput,
+} from "@/features/link/schema";
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
@@ -13,14 +16,19 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { LinkFormDialog } from "../LinkFormDialog";
 import { useLinkActions } from "../../link-actions";
 import { linkTableColumns } from "../../link-columns";
-import { useLinkQuery } from "../../link-query";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 
 export function LinkPageShell() {
   const canCreateLink = useCan(Permission.linkCreate);
   const canUpdateLink = useCan(Permission.linkUpdate);
   const canDeleteLink = useCan(Permission.linkDelete);
   const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
-  const query = useLinkQuery();
+  const [searchParams, setSearchParams] = useState<LinkListQueryInput>({});
+  const query = trpc.link.adminIndex.useQuery(
+    searchParams,
+    adminListQueryOptions,
+  );
   const actions = useLinkActions({
     selectedRows,
     onSelectionChange: setSelectedRows,
@@ -44,7 +52,7 @@ export function LinkPageShell() {
           total: query.data?.total ?? 0,
         }}
         onChange={(params) =>
-          query.setSearchParams(LinkListQuerySchema.parse(params))
+          setSearchParams(LinkListQuerySchema.parse(params))
         }
         isFetching={query.isFetching}
         error={query.isError}
@@ -91,7 +99,7 @@ export function LinkPageShell() {
                     placeholder: "请输入链接名称进行搜索",
                   },
                 ]}
-                onSubmit={query.setSearchParams}
+                onSubmit={setSearchParams}
                 inline={true}
                 submitProps={{ children: "查询", variant: "outline" }}
               />
@@ -121,7 +129,7 @@ export function LinkPageShell() {
                       type="danger"
                       title="确定要删除吗？"
                       onOK={async () => {
-                        await handleDeleteItem([row.id]);
+                        return (await handleDeleteItem([row.id])) === "success";
                       }}
                     />
                   )}

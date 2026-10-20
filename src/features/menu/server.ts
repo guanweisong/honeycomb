@@ -1,7 +1,7 @@
 import "server-only";
 import { parseEnumValue } from "@/lib/db/value-validation";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
@@ -13,7 +13,43 @@ import { assembleRequiredLocalizedField } from "@/lib/db/translation-values";
 import type { MenuInput, MenuVisibility } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
+import { MenuSaveSnapshotSchema, type MenuSaveSnapshot } from "./schema";
+import { can, Permission } from "@/lib/auth/permissions";
+import { UserStatus } from "@/features/user/user";
+
 import { ApplicationError } from "@/lib/errors/application-error";
+
+type MenuTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
+async function menuTransaction<T>(
+  db: Database,
+  operation: (tx: MenuTransaction) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    let entered = false;
+    try {
+      return await db.transaction((tx) => {
+        entered = true;
+        return operation(tx);
+      });
+    } catch (error) {
+      if (
+        entered ||
+        !error ||
+        typeof error !== "object" ||
+        !("code" in error) ||
+        error.code !== "SQLITE_BUSY"
+      )
+        throw error;
+      if (attempt >= 3)
+        throw new ApplicationError(
+          "CONFLICT",
+          "保存暂时繁忙，请核对最新版本后重试",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
+    }
+  }
+}
 
 function validateMenuTree(input: MenuInput): void {
   if (input.length === 0)
@@ -45,20 +81,68 @@ function validateMenuTree(input: MenuInput): void {
     }
   }
 }
+/** 整树替换与单例版本 CAS 共用事务；重新鉴权和目标检查失败时，版本推进也一并回滚。 */
 export async function saveAllMenus(
   db: Database,
-  input: MenuInput,
+  submitted: MenuSaveSnapshot,
+  actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
+  const parsed = MenuSaveSnapshotSchema.safeParse(submitted);
+  if (!parsed.success)
+    throw new ApplicationError("BAD_REQUEST", "菜单保存输入不合法");
+  const { items: input, expectedVersion } = parsed.data;
   validateMenuTree(input);
 
   const persisted = await observeDbOperation(
     "menu.save-all",
     "transaction",
     () =>
-      db.transaction(async (tx) => {
+      menuTransaction(db, async (tx) => {
+        const [actor] = await tx
+          .select({ level: schema.user.level, status: schema.user.status })
+          .from(schema.user)
+          .where(eq(schema.user.id, actorId))
+          .limit(1);
+        if (
+          !actor ||
+          actor.status !== UserStatus.ENABLE ||
+          !can(actor.level, Permission.menuUpdate)
+        )
+          throw new ApplicationError("FORBIDDEN", "当前账户无权保存菜单");
+        const [revision] = await tx
+          .update(schema.menuRevision)
+          .set({ version: sql`${schema.menuRevision.version} + 1` })
+          .where(
+            and(
+              eq(schema.menuRevision.singletonKey, 1),
+              eq(schema.menuRevision.version, expectedVersion),
+            ),
+          )
+          .returning({ version: schema.menuRevision.version });
+        if (!revision)
+          throw new ApplicationError(
+            "CONFLICT",
+            "菜单已有更新，请核对最新版本",
+          );
+        for (const type of [MenuType.CATEGORY, MenuType.PAGE]) {
+          const ids = input
+            .filter((item) => item.type === type)
+            .map((item) => item.id);
+          if (!ids.length) continue;
+          const target =
+            type === MenuType.CATEGORY ? schema.category : schema.page;
+          const targets = await tx
+            .select({ id: target.id })
+            .from(target)
+            .where(inArray(target.id, ids));
+          if (targets.length !== ids.length)
+            throw new ApplicationError(
+              "BAD_REQUEST",
+              "菜单目标不存在，请移除失效菜单后保存",
+            );
+        }
         await tx.delete(schema.menu);
-        if (!input.length) return { count: 0 };
         const rowIdByBusinessId = new Map(
           input.map((item) => [item.id, crypto.randomUUID()]),
         );
@@ -80,17 +164,22 @@ export async function saveAllMenus(
             }),
           )
           .returning();
-        return { count: rows.length };
+        return { count: rows.length, version: revision.version };
       }),
   );
-  const publicSync = await invalidator.invalidate({
-    refreshLayout: true,
-    refreshSitemap: true,
-  });
+  const publicSync = await invalidator
+    .invalidate({
+      refreshLayout: true,
+      refreshSitemap: true,
+    })
+    .catch(() => ({ state: "degraded" as const }));
   return { ...persisted, publicSync: publicSync.state };
 }
 
-export async function listMenus(db: Database, visibility: MenuVisibility) {
+export async function listMenus(
+  db: Pick<Database, "select" | "query">,
+  visibility: MenuVisibility,
+) {
   const rows = await observeDbOperation("menu.service.list", "select", () =>
     db.query.menu.findMany({ orderBy: [asc(schema.menu.power)] }),
   );
@@ -254,4 +343,51 @@ export async function listMenus(db: Database, visibility: MenuVisibility) {
     };
   });
   return { list, total: list.length };
+}
+
+/** Read the revision and full editable tree from one database snapshot. */
+export async function getMenuSnapshot(db: Database) {
+  return db.transaction(async (tx) => {
+    const [revision] = await tx
+      .select()
+      .from(schema.menuRevision)
+      .where(eq(schema.menuRevision.singletonKey, 1))
+      .limit(1);
+    if (!revision)
+      throw new ApplicationError("INTERNAL_SERVER_ERROR", "菜单版本尚未初始化");
+    return { ...(await listMenus(tx, "ALL")), version: revision.version };
+  });
+}
+
+async function bumpMenuRevisionForTargets(
+  tx: MenuTransaction,
+  field: typeof schema.menu.pageId | typeof schema.menu.categoryId,
+  ids: string[],
+) {
+  if (!ids.length) return;
+  const [affected] = await tx
+    .select({ id: schema.menu.id })
+    .from(schema.menu)
+    .where(inArray(field, ids))
+    .limit(1);
+  if (!affected) return;
+  const [revision] = await tx
+    .update(schema.menuRevision)
+    .set({ version: sql`${schema.menuRevision.version} + 1` })
+    .where(eq(schema.menuRevision.singletonKey, 1))
+    .returning({ version: schema.menuRevision.version });
+  if (!revision)
+    throw new ApplicationError("INTERNAL_SERVER_ERROR", "菜单版本尚未初始化");
+}
+export async function bumpMenuRevisionForPageDeletion(
+  tx: MenuTransaction,
+  ids: string[],
+) {
+  await bumpMenuRevisionForTargets(tx, schema.menu.pageId, ids);
+}
+export async function bumpMenuRevisionForCategoryDeletion(
+  tx: MenuTransaction,
+  ids: string[],
+) {
+  await bumpMenuRevisionForTargets(tx, schema.menu.categoryId, ids);
 }

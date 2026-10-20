@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { TagType } from "@/features/tag/tag-kind";
 import type { TagRecord as TagEntity } from "@/features/tag/types";
 import { clientLogger } from "@/lib/observability/client";
@@ -11,7 +12,7 @@ import { trpc } from "@/lib/trpc/client/trpc";
 
 export type PostTagOption = Pick<TagEntity, "id" | "name">;
 
-/** 多标签选择器的查询、创建和关联状态。 */
+/** 多标签选择器的查询、全局创建和本地选择状态。 */
 export function useMultiTag({
   postId,
   type,
@@ -23,7 +24,18 @@ export function useMultiTag({
   value: PostTagOption[];
   onChange: (tags: PostTagOption[]) => void;
 }) {
-  const selectedTags = value ?? [];
+  const selectedTags = useRef(value);
+  const { user } = useCurrentUser();
+  const generation = useRef(0);
+  useEffect(() => {
+    selectedTags.current = value;
+  }, [value]);
+  useEffect(() => {
+    return () => {
+      generation.current += 1;
+      if (timeout.current) clearTimeout(timeout.current);
+    };
+  }, [postId, type, user?.id]);
   const [input, setInput] = useState("");
   const [options, setOptions] = useState<TagEntity[]>([]);
   const [open, setOpen] = useState(false);
@@ -33,63 +45,40 @@ export function useMultiTag({
     trpc.tag.index.useQuery(searchParams, { enabled: !!searchParams.name });
   const { mutateAsync: createTag, isPending: isCreating } =
     trpc.tag.create.useMutation();
-  const { mutateAsync: updateTags, isPending: isUpdating } =
-    trpc.post.updateTags.useMutation();
 
   useEffect(() => {
     if (searchResult) setOptions(searchResult.list ?? []);
   }, [searchResult]);
 
-  const updateTagRelation = async (
-    tags: PostTagOption[],
-    operation: string,
-  ) => {
+  const stageTags = (tags: PostTagOption[]) => {
+    selectedTags.current = tags;
     onChange(tags);
-    if (!postId) return;
-    try {
-      const result = await updateTags({
-        postId,
-        tagIds: tags.map((tag) => tag.id),
-        type,
-      });
-      notifyPublicSyncWarning(result, toast.warning);
-      return result;
-    } catch {
-      clientLogger.error(LogEvent.clientError, { operation, outcome: "error" });
-      return null;
-    }
   };
 
   const removeTag = (id: string) =>
-    updateTagRelation(
-      selectedTags.filter((tag) => tag.id !== id),
-      "tag.remove",
-    );
+    stageTags(selectedTags.current.filter((tag) => tag.id !== id));
 
-  const addTag = async (tag: PostTagOption) => {
-    if (selectedTags.some((item) => item.id === tag.id)) return;
-    const result = await updateTagRelation(
-      [...selectedTags, { id: tag.id, name: tag.name }],
-      "tag.add",
-    );
+  const addTag = (tag: PostTagOption) => {
+    if (selectedTags.current.some((item) => item.id === tag.id)) return;
+    stageTags([...selectedTags.current, { id: tag.id, name: tag.name }]);
     setInput("");
     setOpen(false);
-    return result;
   };
 
   const createNewTag = async (name: string) => {
+    const requestGeneration = generation.current;
     try {
       const tag = await createTag({ name: { zh: name, en: name } });
-      const relation = await addTag(tag);
-      // A failed association is not a saved post; avoid a misleading or duplicate warning.
-      if (relation !== null && relation?.publicSync !== "degraded") {
-        notifyPublicSyncWarning(tag, toast.warning);
-      }
+      if (generation.current !== requestGeneration) return;
+      addTag(tag);
+      notifyPublicSyncWarning(tag, toast.warning);
     } catch {
+      if (generation.current !== requestGeneration) return;
       clientLogger.error(LogEvent.clientError, {
         operation: "tag.create",
         outcome: "error",
       });
+      toast.error("标签创建失败，请重试");
     }
   };
 
@@ -112,7 +101,6 @@ export function useMultiTag({
     input,
     isCreating,
     isSearching,
-    isUpdating,
     options,
     open,
     removeTag,

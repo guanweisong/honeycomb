@@ -9,7 +9,6 @@ import { cn } from "../../lib/ui/utils";
 import { DataTableBody } from "./Body";
 import { DataTableHeader } from "./Header";
 import { DataTablePagination } from "./Pagination";
-import { DataTableToolbar } from "./Toolbar";
 import { useDataTableState } from "./useDataTableState";
 import { useRowSelection } from "./useRowSelection";
 import LoadingState from "@/components/LoadingState";
@@ -96,9 +95,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
 
   return (
     <div className={cn("flex min-h-0 flex-col gap-2", className)}>
-      <DataTableToolbar>
-        {typeof toolBar === "function" ? toolBar(table) : toolBar}
-      </DataTableToolbar>
+      {typeof toolBar === "function" ? toolBar(table) : toolBar}
       <div
         className={tableWrapperClassName}
         style={

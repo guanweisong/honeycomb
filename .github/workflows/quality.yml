@@ -34,8 +34,6 @@ jobs:
     env:
       QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_PUBLIC_SITE_URL: https://example.test
-      TURSO_URL: file:/tmp/honeycomb-ci.db
-      TURSO_TOKEN: local
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
       E2E_SEED: "1"
@@ -56,14 +54,39 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run check-types
-      - run: bun run lint
-      - run: bun run db:migrations:check
-      - run: bun run db:invariants:audit
-      - run: bunx drizzle-kit migrate
-      - run: bun run db:e2e:seed
-      - run: bun run test:unit:coverage
-      - run: bun run test:unit:process
+      - name: Verify with an exclusive disposable database
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          cleanup() {
+            status=$?
+            trap - EXIT HUP INT TERM
+            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
+              rm -rf -- "$HONEYCOMB_TEST_DIR"
+              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
+            else
+              echo "Test directory cleanup could not verify ownership" >&2
+              status=1
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+          trap 'exit 129' HUP
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          bun scripts/e2e-seed-policy.ts --initialize
+          bun run check-types
+          bun run lint
+          bun run db:migrations:check
+          bun scripts/e2e-seed-policy.ts
+          bun run db:invariants:audit
+          bun run db:migrate
+          bun run db:e2e:seed
+          bun run test:unit:coverage
+          bun run test:unit:process
+          bun run audit:production
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -71,15 +94,12 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
           retention-days: 14
-      - run: bun run audit:production
   build_e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_PUBLIC_SITE_URL: https://example.test
-      TURSO_URL: file:/tmp/honeycomb-ci.db
-      TURSO_TOKEN: local
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
       E2E_SEED: "1"
@@ -100,10 +120,38 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bunx drizzle-kit migrate
-      - run: bun run db:e2e:seed
-      - run: bun run build
-      - run: timeout 10m bun run analyze
+      - run: bunx playwright install --with-deps chromium
+      - name: Build and test with an exclusive disposable database
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          cleanup() {
+            status=$?
+            trap - EXIT HUP INT TERM
+            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
+              rm -rf -- "$HONEYCOMB_TEST_DIR"
+              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
+            else
+              echo "Test directory cleanup could not verify ownership" >&2
+              status=1
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+          trap 'exit 129' HUP
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          bun scripts/e2e-seed-policy.ts --initialize
+          bun scripts/e2e-seed-policy.ts
+          bun run db:invariants:audit
+          bun run db:migrate
+          bun run db:e2e:seed
+          bun run build
+          timeout 10m bun run analyze
+          PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development
+          PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -111,19 +159,6 @@ jobs:
           path: .next/diagnostics/analyze/
           if-no-files-found: ignore
           retention-days: 14
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e:development
-        env:
-          PLAYWRIGHT_USE_DEV_SERVER: "1"
-          PLAYWRIGHT_PORT: "3100"
-          PLAYWRIGHT_OUTPUT_DIR: /tmp/honeycomb-e2e-development-results
-          PLAYWRIGHT_HTML_REPORT: /tmp/honeycomb-e2e-development-report
-      - run: bun run test:e2e:production
-        env:
-          PLAYWRIGHT_USE_DEV_SERVER: "0"
-          PLAYWRIGHT_PORT: "3101"
-          PLAYWRIGHT_OUTPUT_DIR: /tmp/honeycomb-e2e-production-results
-          PLAYWRIGHT_HTML_REPORT: /tmp/honeycomb-e2e-production-report
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 5

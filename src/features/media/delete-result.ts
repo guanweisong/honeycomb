@@ -1,5 +1,5 @@
 export type MediaDeleteResult =
-  | { success: true }
+  | { success: true; publicSync?: "completed" | "degraded" }
   | {
       success: false;
       state: "indeterminate";

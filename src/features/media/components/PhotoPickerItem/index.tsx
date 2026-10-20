@@ -5,7 +5,7 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import React from "react";
-import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
+import type { MediaRecord } from "@/features/media/types";
 import Image from "next/image";
 
 /**
@@ -15,7 +15,7 @@ export interface PhotoPickerItemProps {
   /**
    * 封面图片对象，用于显示预览。
    */
-  cover?: PostDetailEntity["cover"];
+  cover?: Pick<MediaRecord, "id" | "url" | "width" | "height"> | null;
   coverId?: string | null;
   /**
    * 图片选择器项的标题。

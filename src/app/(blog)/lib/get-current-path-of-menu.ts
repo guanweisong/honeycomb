@@ -27,32 +27,14 @@ export interface GetCurrentPathProps {
 const getCurrentPathOfMenu = (props: GetCurrentPathProps) => {
   const { id, familyProp, menu } = props;
   const path: string[] = [];
-  if (id) {
-    const find = (data: MenuEntity[]) => {
-      /**
-       * 递归查找菜单项的父级，并将其指定属性添加到路径数组中。
-       * @param {MenuEntity[]} data - 当前层级的菜单数据，用于查找父级。
-       */
-      if (data.length === 1) {
-        const value = data[0]?.[familyProp];
-        if (typeof value === "string") {
-          path.push(value);
-        }
-      } else {
-        data.forEach((item) => {
-          if (item.id === id) {
-            const value = item[familyProp];
-            if (typeof value === "string") {
-              path.push(value);
-            }
-            if (item.parent !== "0") {
-              find(data.filter((m) => m.id === item.parent));
-            }
-          }
-        });
-      }
-    };
-    find(menu);
+  const byId = new Map(menu.map((item) => [item.id, item]));
+  const visited = new Set<string>();
+  let current = id ? byId.get(id) : undefined;
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    const value = current[familyProp];
+    if (typeof value === "string") path.push(value);
+    current = current.parent ? byId.get(current.parent) : undefined;
   }
   return path.reverse();
 };

@@ -374,33 +374,29 @@ describe("Post Router", () => {
 
   describe("getRandomByCategory procedure", () => {
     it("should return random posts from category", async () => {
-      const mockPosts = [
-        { id: TEST_IDS.ID_1, title: "Post 1" },
-        { id: TEST_IDS.ID_2, title: "Post 2" },
-        { id: TEST_IDS.ID_3, title: "Post 3" },
-      ];
-
       // 设置带排序的随机文章查询模拟调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce(mockPosts);
-      mockDb.where.mockResolvedValueOnce([
+      mockDb.limit.mockReturnValueOnce({
+        as: () => ({ id: schema.post.id }),
+      });
+      mockDb.leftJoin.mockResolvedValueOnce([
         {
-          postId: TEST_IDS.ID_1,
+          id: TEST_IDS.ID_1,
           locale: "en",
           title: "Post 1",
           quoteContent: null,
         },
         {
-          postId: TEST_IDS.ID_2,
+          id: TEST_IDS.ID_2,
           locale: "en",
           title: "Post 2",
           quoteContent: null,
         },
         {
-          postId: TEST_IDS.ID_3,
+          id: TEST_IDS.ID_3,
           locale: "en",
           title: "Post 3",
           quoteContent: null,

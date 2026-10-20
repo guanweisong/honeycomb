@@ -13,6 +13,11 @@ test.describe("admin page editor", () => {
     page,
   }) => {
     const records = new Map<string, PageViewModel>();
+    const creationIntents = new Map<
+      string,
+      { id: string; input: PageInsert }
+    >();
+    const creationScope = (token: string) => `${mockedAdminUser.id}:${token}`;
     const createInputs: unknown[] = [];
     const detailInputs: unknown[] = [];
     const updateInputs: unknown[] = [];
@@ -35,12 +40,43 @@ test.describe("admin page editor", () => {
         }
         if (procedure === "setting.index")
           return { result: { data: mockedSiteSetting } };
+        if (procedure === "page.creationResult") {
+          const { creationToken } = input as { creationToken: string };
+          const intent = creationIntents.get(creationScope(creationToken));
+          const existing = intent ? records.get(intent.id) : undefined;
+          return {
+            result: {
+              data: existing
+                ? { id: existing.id, version: existing.version }
+                : null,
+            },
+          };
+        }
         if (procedure === "page.create") {
           createInputs.push(input);
           const values = input as PageInsert;
+          const { creationToken, ...fields } = values;
+          const scope = creationScope(creationToken);
+          const original = creationIntents.get(scope);
+          if (original) {
+            expect(values).toEqual(original.input);
+            const existing = records.get(original.id);
+            if (!existing)
+              throw new Error(`Missing created page: ${original.id}`);
+            return {
+              result: {
+                data: {
+                  id: existing.id,
+                  version: existing.version,
+                  publicSync: "completed",
+                },
+              },
+            };
+          }
           const record = {
-            ...values,
+            ...fields,
             id: PAGE_ID,
+            version: 0,
             status: values.status ?? PageStatus.DRAFT,
             authorId: mockedAdminUser.id,
             views: 0,
@@ -50,7 +86,19 @@ test.describe("admin page editor", () => {
             imagesInContent: [],
           } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: { id: record.id } } };
+          creationIntents.set(scope, {
+            id: record.id,
+            input: structuredClone(values),
+          });
+          return {
+            result: {
+              data: {
+                id: record.id,
+                version: record.version,
+                publicSync: "completed",
+              },
+            },
+          };
         }
         if (procedure === "page.adminDetail") {
           if (!input) return { result: { data: null } };
@@ -64,13 +112,24 @@ test.describe("admin page editor", () => {
           const values = input as PageUpdate;
           const current = records.get(values.id);
           if (!current) throw new Error(`Unknown page: ${values.id}`);
+          const { expectedVersion, ...changes } = values;
+          expect(expectedVersion).toBe(current.version);
           const record = {
             ...current,
-            ...values,
+            ...changes,
+            version: current.version + 1,
             updatedAt: "2026-01-03T03:04:05.000Z",
           } satisfies PageViewModel;
           records.set(record.id, record);
-          return { result: { data: { id: record.id } } };
+          return {
+            result: {
+              data: {
+                id: record.id,
+                version: record.version,
+                publicSync: "completed",
+              },
+            },
+          };
         }
         throw new Error(`Unhandled tRPC procedure: ${procedure}`);
       });
@@ -99,6 +158,9 @@ test.describe("admin page editor", () => {
     await expect(page.getByText("添加成功")).toBeVisible();
     expect(createInputs).toEqual([
       {
+        creationToken: expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
         title: { en: "About us", zh: "关于我们" },
         content: { en: "<p>English content</p>", zh: "<p>中文内容</p>" },
         template: "default",
@@ -119,6 +181,7 @@ test.describe("admin page editor", () => {
       .toEqual([
         {
           id: PAGE_ID,
+          expectedVersion: 0,
           title: { en: "About us", zh: "更新后的页面" },
           content: { en: "<p>English content</p>", zh: "<p>中文内容</p>" },
           template: "default",

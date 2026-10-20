@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { PostStatus } from "@/features/post/post-status";
+import { PageStatus } from "@/features/page/page-status";
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
@@ -9,28 +10,41 @@ vi.mock("next/navigation", () => ({
   notFound: () => mockNotFound(),
 }));
 
-import { assertPublishedPost } from "./page.utils";
+import { assertPublishedPage } from "./page.utils";
 
-describe("assertPublishedPost", () => {
+describe("assertPublishedPage", () => {
+  it("uses the page status owner rather than post status", () => {
+    const source = readFileSync(
+      "src/app/(blog)/[locale]/pages/[id]/page.utils.ts",
+      "utf8",
+    );
+    expect(source).not.toContain("@/features/post/post-status");
+    expect(source).toContain("@/features/page/page-status");
+  });
+
   beforeEach(() => {
     mockNotFound.mockClear();
   });
 
-  it("throws notFound for missing page detail", () => {
-    expect(() => assertPublishedPost(null)).toThrow("NEXT_NOT_FOUND");
-    expect(mockNotFound).toHaveBeenCalledTimes(1);
-  });
+  it.each([null, undefined])(
+    "throws notFound for missing page detail %s",
+    (detail) => {
+      expect(() => assertPublishedPage(detail)).toThrow("NEXT_NOT_FOUND");
+      expect(mockNotFound).toHaveBeenCalledTimes(1);
+    },
+  );
 
-  it("throws notFound for draft page detail", () => {
-    expect(() => assertPublishedPost({ status: PostStatus.DRAFT })).toThrow(
-      "NEXT_NOT_FOUND",
-    );
-    expect(mockNotFound).toHaveBeenCalledTimes(1);
-  });
+  it.each([PageStatus.DRAFT, PageStatus.TO_AUDIT, "unknown", null, undefined])(
+    "throws notFound for nonpublished page status %s",
+    (status) => {
+      expect(() => assertPublishedPage({ status })).toThrow("NEXT_NOT_FOUND");
+      expect(mockNotFound).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("returns published page detail unchanged", () => {
-    const pageDetail = { status: PostStatus.PUBLISHED, id: "page-id" };
+    const pageDetail = { status: PageStatus.PUBLISHED, id: "page-id" };
 
-    expect(assertPublishedPost(pageDetail)).toBe(pageDetail);
+    expect(assertPublishedPage(pageDetail)).toBe(pageDetail);
   });
 });

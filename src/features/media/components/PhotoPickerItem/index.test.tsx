@@ -43,7 +43,7 @@ vi.mock("next/image", () => ({
   ),
 }));
 
-import PhotoPickerItem from "./index";
+import PhotoPickerItem, { type PhotoPickerItemProps } from "./index";
 
 describe("PhotoPickerItem", () => {
   let container: HTMLDivElement;
@@ -62,16 +62,11 @@ describe("PhotoPickerItem", () => {
     container.remove();
   });
 
-  async function renderPicker(cover?: {
-    height?: number;
-    id: string;
-    url: string;
-    width?: number;
-  }) {
+  async function renderPicker(cover?: PhotoPickerItemProps["cover"]) {
     await act(async () => {
       root.render(
         React.createElement(PhotoPickerItem, {
-          cover: cover as never,
+          cover,
           handlePhotoClear: () => actions.push("clear"),
           openPhotoPicker: () => actions.push("open"),
           size: "1920*1080",
@@ -118,7 +113,12 @@ describe("PhotoPickerItem", () => {
   });
 
   it("uses safe preview dimensions and exposes replace and clear actions", async () => {
-    await renderPicker({ id: "cover-1", url: "/cover.jpg" });
+    await renderPicker({
+      id: "cover-1",
+      url: "/cover.jpg",
+      width: null,
+      height: null,
+    });
 
     const image = container.querySelector("img");
     expect(image?.getAttribute("src")).toBe("/cover.jpg");

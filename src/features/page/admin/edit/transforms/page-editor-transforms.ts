@@ -1,8 +1,8 @@
 import type { z } from "zod";
-import { PageInsertSchema } from "@/features/page/schema";
+import { PageFieldsSchema } from "@/features/page/schema";
 import { PageTemplate } from "@/features/page/page-template";
 
-type PageEditorFormValues = z.infer<typeof PageInsertSchema>;
+type PageEditorFormValues = z.infer<typeof PageFieldsSchema>;
 
 type PageEditorDetail = {
   title?: PageEditorFormValues["title"] | null;

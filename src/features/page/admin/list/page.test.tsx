@@ -20,7 +20,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     page: {
       adminIndex: {
         useQuery: () => ({
-          data: { list: [{ id: "page-1" }], total: 1 },
+          data: { list: [{ id: "page-1", version: 4 }], total: 1 },
           refetch: mocks.refetch,
         }),
       },
@@ -83,17 +83,19 @@ describe("page deletion public sync feedback", () => {
       mocks.refetch.mockRejectedValue(new Error("refresh failed"));
       await deletePage();
       expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({
-        ids: ["page-1"],
+        items: [{ id: "page-1", expectedVersion: 4 }],
       });
       expect(mocks.error).not.toHaveBeenCalled();
       if (publicSync === "degraded") {
-        expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
+        expect(mocks.warning).toHaveBeenCalledWith(
           "已保存，公开内容同步未完成，请稍后检查公开页面",
         );
         expect(mocks.success).not.toHaveBeenCalled();
       } else {
         expect(mocks.success).toHaveBeenCalledExactlyOnceWith("删除成功");
-        expect(mocks.warning).not.toHaveBeenCalled();
+        expect(mocks.warning).toHaveBeenCalledWith(
+          "已删除，列表待刷新，请勿重复删除",
+        );
       }
     },
   );

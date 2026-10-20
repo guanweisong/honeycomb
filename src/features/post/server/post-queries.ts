@@ -3,10 +3,12 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
-import { ApplicationError } from "@/lib/errors/application-error";
 import { PostStatus } from "../post-status";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
-import { getLocalizedImageLinks } from "@/lib/content/parser/get-all-image-link-form-html";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
+import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { observeDbOperation } from "@/lib/observability/server";
 import { loadPostRelations, toMediaRecord } from "./post-relations";
 import type {
@@ -137,12 +139,7 @@ export async function getPost(
   );
   if (!item) return null;
   const [result] = await loadPostRelations(db, [item], visibility);
-  if (!result && visibility === "PUBLISHED_ONLY") return null;
-  if (!result)
-    throw new ApplicationError(
-      "INTERNAL_SERVER_ERROR",
-      "post detail relation mapping returned no record",
-    );
+  if (!result) return null;
   const urls = getLocalizedImageLinks(result.content);
   const imagesInContent = urls.length
     ? await observeDbOperation("post.service.detail-images", "select", () =>

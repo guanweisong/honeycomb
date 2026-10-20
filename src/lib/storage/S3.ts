@@ -2,12 +2,15 @@ import "server-only";
 
 import {
   S3Client,
+  CopyObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   DeleteObjectsCommand,
-  DeleteObjectCommand,
   type PutObjectCommandInput,
   type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
+import { Readable } from "node:stream";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { clientEnv } from "@/env/client";
 import { getR2Env } from "@/env/server";
@@ -25,12 +28,13 @@ class S3 {
   /**
    * 实例初始化
    */
-  static S3 = () => {
+  static S3 = (maxAttempts = 3) => {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
 
     return new S3Client({
       region: "auto",
+      maxAttempts,
       endpoint: `https://${r2.accountId}.r2.cloudflarestorage.com`,
       forcePathStyle: true,
       credentials: {
@@ -88,17 +92,74 @@ class S3 {
     );
   };
 
-  /** 为当前上传的独立对象签发短期清理能力，失败时可删除孤立对象。 */
-  static getPresignedDeleteUrl = async (key: string): Promise<string> => {
+  /** A candidate is written once. Retrying COPY could replace already validated bytes. */
+  static copyCandidate = async (
+    source: string,
+    candidate: string,
+    type: string,
+  ) => {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    return observeExternalServiceOperation("object-storage", "presign", () =>
-      getSignedUrl(
-        S3.S3(),
-        new DeleteObjectCommand({ Bucket: r2.bucketName, Key: key }),
-        { expiresIn: 3600 },
-      ),
+    await S3.S3(1).send(
+      new CopyObjectCommand({
+        Bucket: r2.bucketName,
+        Key: candidate,
+        CopySource: `${r2.bucketName}/${source.split("/").map(encodeURIComponent).join("/")}`,
+        MetadataDirective: "REPLACE",
+        ContentType: type,
+      }),
     );
+  };
+
+  static headObject = async (key: string) => {
+    const r2 = getR2Env();
+    if (!r2) throw new Error("R2 integration is not configured");
+    try {
+      const result = await S3.S3().send(
+        new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }),
+      );
+      return { size: result.ContentLength, type: result.ContentType };
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "$metadata" in error &&
+        error.$metadata &&
+        typeof error.$metadata === "object" &&
+        "httpStatusCode" in error.$metadata &&
+        error.$metadata.httpStatusCode === 404
+      )
+        return null;
+      throw error;
+    }
+  };
+
+  /** Read from authenticated storage with a hard streaming byte limit, never the CDN. */
+  static readObject = async (
+    key: string,
+    maxBytes: number,
+  ): Promise<Uint8Array> => {
+    const r2 = getR2Env();
+    if (!r2) throw new Error("R2 integration is not configured");
+    const result = await S3.S3().send(
+      new GetObjectCommand({ Bucket: r2.bucketName, Key: key }),
+    );
+    if (!(result.Body instanceof Readable))
+      throw new Error("Unsupported object stream");
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    try {
+      for await (const chunk of result.Body) {
+        if (!(chunk instanceof Uint8Array))
+          throw new Error("Invalid object stream");
+        size += chunk.byteLength;
+        if (size > maxBytes) throw new Error("Object exceeds byte limit");
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks, size);
+    } finally {
+      result.Body.destroy();
+    }
   };
 
   /**

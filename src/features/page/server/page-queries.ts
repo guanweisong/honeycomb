@@ -6,8 +6,11 @@ import { PageTemplate } from "@/features/page/page-template";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
-import { getLocalizedImageLinks } from "@/lib/content/parser/get-all-image-link-form-html";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
+import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { PageStatus } from "@/features/page/page-status";
 import { observeDbOperation } from "@/lib/observability/server";
 import type { PageWithRelations, PageInput, PageVisibility } from "../types";
@@ -19,12 +22,14 @@ type PageTranslations =
     ? Value
     : never;
 
+/** 显式白名单投影，避免创建令牌与原始意图哈希经详情或列表泄漏。 */
 function toPageRecord(
   page: PageRow & { translations?: unknown; author?: unknown },
   translations: PageTranslations | undefined,
 ) {
   return {
     id: page.id,
+    version: page.version,
     authorId: page.authorId,
     views: page.views,
     createdAt: page.createdAt,
@@ -76,13 +81,10 @@ async function mapRelations(
     rows.flatMap((row) => row.translations),
   );
   const relationMap = new Map(rows.map((row) => [row.id, row]));
-  const visiblePages =
-    visibility === "PUBLISHED_ONLY"
-      ? pages.flatMap((page) => {
-          const row = relationMap.get(page.id);
-          return row ? [row] : [];
-        })
-      : pages;
+  const visiblePages = pages.flatMap((page) => {
+    const row = relationMap.get(page.id);
+    return row ? [row] : [];
+  });
   const localizedPages = visiblePages.map((page) => ({
     ...toPageRecord(page, translations.get(page.id)),
     author: relationMap.get(page.id)?.author ?? null,

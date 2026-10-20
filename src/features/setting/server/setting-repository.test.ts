@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import { getSetting, updateSetting } from "../server";
@@ -46,16 +47,24 @@ describe("setting localized persistence", () => {
       await client.executeMultiple(readFileSync(join("drizzle", file), "utf8"));
     }
     const db = drizzle(client, { schema });
-    await db.insert(schema.setting).values({ id: "setting" });
+    await db.insert(schema.user).values({
+      id: "actor",
+      name: "Admin",
+      email: "setting-admin@example.test",
+      emailVerified: true,
+      level: UserLevel.ADMIN,
+      status: UserStatus.ENABLE,
+    });
+    await db.insert(schema.setting).values({ id: "444444444444444444444444" });
     await db.insert(schema.settingTranslation).values([
       {
-        settingId: "setting",
+        settingId: "444444444444444444444444",
         locale: MultiLangEnum.En,
         siteName: "Original",
         siteSubName: "Subtitle",
       },
       {
-        settingId: "setting",
+        settingId: "444444444444444444444444",
         locale: MultiLangEnum.Zh,
         siteName: "原始",
         siteSubName: "副标题",
@@ -73,7 +82,12 @@ describe("setting localized persistence", () => {
   it("preserves omitted fields and merges partial locales", async () => {
     await updateSetting(
       database,
-      { id: "setting", siteName: { zh: "新版" } },
+      {
+        id: "444444444444444444444444",
+        expectedVersion: 0,
+        siteName: { zh: "新版" },
+      },
+      "actor",
       invalidator,
     );
     await expect(getSetting(database)).resolves.toMatchObject({
@@ -83,7 +97,8 @@ describe("setting localized persistence", () => {
 
     await updateSetting(
       database,
-      { id: "setting", siteName: null },
+      { id: "444444444444444444444444", expectedVersion: 1, siteName: null },
+      "actor",
       invalidator,
     );
     await expect(getSetting(database)).resolves.toMatchObject({
@@ -95,7 +110,12 @@ describe("setting localized persistence", () => {
     await expect(
       updateSetting(
         database,
-        { id: "missing", siteRecordNo: "record" },
+        {
+          id: "999999999999999999999999",
+          expectedVersion: 0,
+          siteRecordNo: "record",
+        },
+        "actor",
         invalidator,
       ),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });

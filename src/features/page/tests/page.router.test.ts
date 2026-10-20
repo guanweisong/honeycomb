@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "@/features/page/router";
 import * as schema from "@/lib/db/schema";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import { PageTemplate } from "@/features/page/page-template";
 import { PageStatus } from "@/features/page/page-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
@@ -32,12 +33,33 @@ describe("Page Router", () => {
     vi.clearAllMocks();
     mockInvalidatePublicContent.mockResolvedValue({ state: "completed" });
     resetMockDb(mockDb);
+    mockDb.from.mockImplementation((table: object) => {
+      if (table === schema.user) {
+        const actor = createMockDb();
+        actor.limit.mockResolvedValue([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+        return actor;
+      }
+      if (table === schema.pageTranslation) {
+        const translations = createMockDb();
+        translations.where.mockResolvedValue([]);
+        return translations;
+      }
+      if (table === schema.menu) {
+        const menu = createMockDb();
+        menu.limit.mockResolvedValue([]);
+        return menu;
+      }
+      return mockDb;
+    });
   });
 
   describe("create procedure", () => {
     it("should create page with admin permissions", async () => {
       const newPage = {
         id: TEST_IDS.ID_3,
+        version: 0,
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
         status: PageStatus.PUBLISHED,
@@ -53,13 +75,18 @@ describe("Page Router", () => {
       );
 
       const result = await caller.create({
+        creationToken: "11111111-1111-4111-8111-111111111111",
         title: { en: "New Page", zh: "新页面" },
         content: { en: "New Content", zh: "新内容" },
         status: PageStatus.PUBLISHED,
         template: PageTemplate.DEFAULT,
       });
 
-      expect(result).toEqual({ ...newPage, publicSync: "completed" });
+      expect(result).toEqual({
+        id: newPage.id,
+        version: 0,
+        publicSync: "completed",
+      });
       expect(mockDb.insert).toHaveBeenCalledWith(schema.page);
     });
 
@@ -70,6 +97,7 @@ describe("Page Router", () => {
 
       await expect(
         caller.create({
+          creationToken: "11111111-1111-4111-8111-111111111111",
           title: { en: "New Page", zh: "新页面" },
           content: { en: "New Content", zh: "新内容" },
           status: PageStatus.PUBLISHED,
@@ -83,6 +111,7 @@ describe("Page Router", () => {
 
       await expect(
         caller.create({
+          creationToken: "11111111-1111-4111-8111-111111111111",
           title: { en: "New Page", zh: "新页面" },
           content: { en: "New Content", zh: "新内容" },
           status: PageStatus.PUBLISHED,
@@ -94,18 +123,18 @@ describe("Page Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete pages with admin permissions", async () => {
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
-      mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined);
+      mockDb.limit.mockResolvedValue([{ version: 0 }]);
+      mockDb.returning.mockResolvedValue([{ id: TEST_IDS.ID_1 }]);
 
       const caller = pageRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.destroy({
-        ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+        items: [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+          id,
+          expectedVersion: 0,
+        })),
       });
 
       expect(result).toEqual({ success: true, publicSync: "completed" });
@@ -119,7 +148,10 @@ describe("Page Router", () => {
 
       await expect(
         caller.destroy({
-          ids: [TEST_IDS.ID_1, TEST_IDS.ID_2],
+          items: [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+            id,
+            expectedVersion: 0,
+          })),
         }),
       ).rejects.toThrow("FORBIDDEN");
     });
@@ -129,6 +161,7 @@ describe("Page Router", () => {
     it("should update page with admin permissions", async () => {
       const updatedPage = {
         id: TEST_IDS.ID_1,
+        version: 1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
         status: "PUBLISHED",
@@ -146,10 +179,12 @@ describe("Page Router", () => {
       );
 
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([{ status: PageStatus.DRAFT }]);
+      mockDb.limit.mockResolvedValueOnce([
+        { status: PageStatus.DRAFT, version: 0 },
+      ]);
       const result = await caller.update({
+        expectedVersion: 0,
         id: TEST_IDS.ID_1,
         title: { en: "Updated Page", zh: "更新的页面" },
         content: { en: "Updated Content", zh: "更新的内容" },
@@ -157,7 +192,11 @@ describe("Page Router", () => {
         template: PageTemplate.DEFAULT,
       });
 
-      expect(result).toEqual({ ...updatedPage, publicSync: "completed" });
+      expect(result).toEqual({
+        id: updatedPage.id,
+        version: 1,
+        publicSync: "completed",
+      });
       expect(mockDb.update).toHaveBeenCalledWith(schema.page);
       expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
         contents: [{ id: TEST_IDS.ID_1, type: "page" }],
@@ -173,6 +212,7 @@ describe("Page Router", () => {
 
       await expect(
         caller.update({
+          expectedVersion: 0,
           id: TEST_IDS.ID_1,
           title: { en: "Updated Page", zh: "更新的页面" },
           content: { en: "Updated Content", zh: "更新的内容" },

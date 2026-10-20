@@ -112,6 +112,65 @@ describe("blog menu navigation", () => {
     });
   }
 
+  it("opens nested destinations with focusable semantic controls and Escape restores focus", async () => {
+    await act(async () =>
+      root.render(
+        React.createElement(Menu, {
+          flatMenuData: flatMenu,
+          data: [
+            {
+              label: "父分类",
+              link: "/list/category/parent",
+              children: [
+                {
+                  label: "子分类",
+                  link: "/list/category/parent/child",
+                  children: [
+                    {
+                      label: "孙分类",
+                      link: "/list/category/parent/child/grandchild",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+    const toggle = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open menu"]',
+    );
+    await act(async () => toggle?.click());
+    const parent = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="父分类"]',
+    );
+    expect(parent).not.toBeNull();
+    expect(parent?.type).toBe("button");
+    parent?.focus();
+    expect(document.activeElement).toBe(parent);
+    await act(async () => parent?.click());
+    expect(parent?.getAttribute("aria-expanded")).toBe("true");
+    const child = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="子分类"]',
+    );
+    await act(async () => child?.click());
+    const leaf = container.querySelector<HTMLAnchorElement>(
+      'a[href="/list/category/parent/child/grandchild"]',
+    );
+    expect(leaf?.closest("ul[hidden]")).toBeNull();
+    leaf?.focus();
+    await act(async () =>
+      leaf?.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      ),
+    );
+    expect(child?.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(child);
+    expect(leaf?.closest("ul[hidden]")).not.toBeNull();
+  });
+
   it("marks the parent category active for a nested list route", async () => {
     await renderMenu();
 
@@ -271,5 +330,58 @@ describe("get-current-path-of-menu", () => {
         ],
       }),
     ).toEqual(["root"]);
+  });
+});
+
+describe("deep menu ancestry", () => {
+  const record = (id: string, parent: string | null): MenuViewModel => ({
+    id,
+    parent,
+    path: id,
+    power: 0,
+    type: MenuType.CATEGORY,
+    createdAt: null,
+    updatedAt: null,
+  });
+  it("walks every ancestor using the full menu", () => {
+    expect(
+      getCurrentPathOfMenu({
+        id: "c",
+        familyProp: "path",
+        menu: [record("a", null), record("b", "a"), record("c", "b")],
+      }),
+    ).toEqual(["a", "b", "c"]);
+  });
+  it("does not treat an unrelated singleton as the requested id", () => {
+    expect(
+      getCurrentPathOfMenu({
+        id: "missing",
+        familyProp: "path",
+        menu: [record("a", null)],
+      }),
+    ).toEqual([]);
+  });
+  it("retains the known path for an orphan and stops cycles without duplicates", () => {
+    expect(
+      getCurrentPathOfMenu({
+        id: "b",
+        familyProp: "path",
+        menu: [record("a", "missing"), record("b", "a")],
+      }),
+    ).toEqual(["a", "b"]);
+    expect(
+      getCurrentPathOfMenu({
+        id: "b",
+        familyProp: "path",
+        menu: [record("a", "b"), record("b", "a")],
+      }),
+    ).toEqual(["a", "b"]);
+    expect(
+      getCurrentPathOfMenu({
+        id: "a",
+        familyProp: "path",
+        menu: [record("a", "a")],
+      }),
+    ).toEqual(["a"]);
   });
 });

@@ -10,7 +10,7 @@ import {
 
 describe("Admin route capability registry", () => {
   it("登记所有受保护后台页面", () => {
-    const root = join(process.cwd(), "src/app/admin/(root)/(dashboard)");
+    const root = join(process.cwd(), "src/app/admin/(dashboard)");
     const pages = sourceFiles(root)
       .filter((path) => path.endsWith("/page.tsx"))
       .map((path) => {

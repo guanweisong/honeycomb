@@ -1,5 +1,9 @@
 import "server-only";
-import { listMenus, saveAllMenus } from "@/features/menu/server";
+import {
+  listMenus,
+  saveAllMenus,
+  getMenuSnapshot,
+} from "@/features/menu/server";
 
 import {
   createTRPCRouter,
@@ -10,7 +14,7 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/schema";
+import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schema";
 
 import { publicContentInvalidator } from "@/lib/cache/refresh-path";
 
@@ -18,12 +22,12 @@ import { publicContentInvalidator } from "@/lib/cache/refresh-path";
 export const menuRouter = createTRPCRouter({
   index: publicProcedure.query(({ ctx }) => listMenus(ctx.db, "PUBLIC_ONLY")),
   adminIndex: permissionProcedure(Permission.menuReadAll).query(({ ctx }) =>
-    listMenus(ctx.db, "ALL"),
+    getMenuSnapshot(ctx.db),
   ),
   saveAll: permissionProcedure(Permission.menuUpdate)
     .input(MenuUpdateSchema)
     .mutation(({ input, ctx }) =>
-      saveAllMenus(ctx.db, input, publicContentInvalidator).catch(
+      saveAllMenus(ctx.db, input, ctx.user.id, publicContentInvalidator).catch(
         mapApplicationError,
       ),
     ),

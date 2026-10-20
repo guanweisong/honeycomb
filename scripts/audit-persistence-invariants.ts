@@ -93,6 +93,36 @@ export async function findPersistenceInvariantViolations(
     if (count > 0)
       violations.push({ table: "setting", field: "singleton", count });
   }
+  // Forward-only guard for databases that still have the legacy JSON columns.
+  // CASE prevents malformed JSON from reaching json_type/json_extract.
+  for (const [table, fields] of Object.entries({
+    post: [
+      "title",
+      "content",
+      "excerpt",
+      "gallery_location",
+      "quote_author",
+      "quote_content",
+    ],
+    setting: ["site_name", "site_sub_name", "site_signature", "site_copyright"],
+  })) {
+    if (!tables.has(table)) continue;
+    const columns = await client.execute(`pragma table_info("${table}")`);
+    const names = new Set(columns.rows.map((row) => String(row.name)));
+    for (const field of fields) {
+      if (!names.has(field)) continue;
+      const result =
+        await client.execute(`select count(*) as count from "${table}" where
+        case when "${field}" is null then 0
+          when json_valid("${field}") <> 1 then 1
+          when json_type("${field}") <> 'object' then 1
+          when coalesce(json_type("${field}", '$.en'), 'null') not in ('text', 'null') then 1
+          when coalesce(json_type("${field}", '$.zh'), 'null') not in ('text', 'null') then 1
+          else 0 end = 1`);
+      const count = Number(result.rows[0]?.count ?? 0);
+      if (count > 0) violations.push({ table, field, count });
+    }
+  }
   return violations;
 }
 

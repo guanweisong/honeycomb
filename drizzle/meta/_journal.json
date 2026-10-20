@@ -29,6 +29,34 @@
       "when": 1789186699951,
       "tag": "0003_enforce_persistence_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792483414804,
+      "tag": "0004_post_editor_revision",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792487645566,
+      "tag": "0005_page_editor_revision",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792487680843,
+      "tag": "0006_site_snapshot_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792487840196,
+      "tag": "0007_media_lifecycle",
+      "breakpoints": true
     }
   ]
 }

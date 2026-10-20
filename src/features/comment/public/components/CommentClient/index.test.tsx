@@ -142,16 +142,17 @@ describe("CommentClient", () => {
       container.querySelector('textarea[name="content"]') as HTMLTextAreaElement
     ).value = "Hello world";
 
-    const form = container.querySelector("form");
-    expect(form).not.toBeNull();
+    const submit = container.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    expect(submit?.disabled).toBe(false);
 
     await act(async () => {
-      form?.dispatchEvent(
-        new Event("submit", { bubbles: true, cancelable: true }),
-      );
+      submit?.click();
     });
 
     expect(mockToastError).toHaveBeenCalledWith("请先完成验证码验证");
+    expect(mockMutateAsync).not.toHaveBeenCalled();
     expect(alertSpy).not.toHaveBeenCalled();
   });
 

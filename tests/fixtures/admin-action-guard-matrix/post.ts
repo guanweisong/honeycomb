@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/post/category/page.tsx",
+    relativePath: "(dashboard)/post/category/page.tsx",
     actions: [
       {
         id: "category.create",
@@ -62,7 +62,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/post/edit/components/MultiTag/index.tsx",
+    relativePath: "(dashboard)/post/edit/components/MultiTag/index.tsx",
     actions: [
       {
         id: "post-tags.manage",
@@ -98,7 +98,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   },
   {
     relativePath:
-      "(root)/(dashboard)/post/edit/components/PostEditorActions/index.tsx",
+      "(dashboard)/post/edit/components/PostEditorActions/index.tsx",
     actions: [
       {
         id: "post-editor.create",
@@ -136,7 +136,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   },
   {
     relativePath:
-      "(root)/(dashboard)/post/edit/components/PostSidebarFields/index.tsx",
+      "(dashboard)/post/edit/components/PostSidebarFields/index.tsx",
     actions: [
       {
         id: "post-sidebar.create-category",
@@ -151,8 +151,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath:
-      "(root)/(dashboard)/post/list/components/PostListClient/index.tsx",
+    relativePath: "(dashboard)/post/list/components/PostListClient/index.tsx",
     actions: [
       {
         id: "post-list.create",
@@ -181,9 +180,9 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "post-list.delete",
         permission: Permission.postDelete,
         control: {
-          tag: "Dialog",
-          attribute: "onOK",
-          call: { callee: "handleDeleteItem" },
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "setDeleteItems", argument: "row.id" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -191,9 +190,9 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "post-list.delete-batch",
         permission: Permission.postDelete,
         control: {
-          tag: "Dialog",
-          attribute: "onOK",
-          reference: "handleDeleteBatch",
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "setDeleteItems", argument: "selectedRows" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },

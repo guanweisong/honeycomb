@@ -18,3 +18,11 @@ describe("post draft validation", () => {
     expect(parsePostDraft(null)).toBeNull();
   });
 });
+
+it("retains staged tag options and the edit baseline in recoverable drafts", () => {
+  const draft = {
+    movieActors: [{ id: "actor", name: { zh: "演员", en: "Actor" } }],
+    baseVersion: 7,
+  };
+  expect(parsePostDraft(draft)).toEqual(draft);
+});

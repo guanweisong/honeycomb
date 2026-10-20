@@ -4,9 +4,12 @@ import {
   getVisibleNodeCount,
   SortableTree,
 } from "@nosferatu500/react-sortable-tree";
+import { useState } from "react";
+import { toast } from "sonner";
+import type { CheckedMenuData } from "../../menu-transforms";
 import { Save } from "lucide-react";
 import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import { useCan } from "@/features/user/admin/use-current-user";
+import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { MenuType } from "@/features/menu/menu-types";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,11 @@ import { useMenuTreeEditor } from "../../use-menu-tree-editor";
 const MENU_TREE_ROW_HEIGHT = 50;
 
 export function MenuPageShell() {
+  const { user } = useCurrentUser();
+  return <MenuEditor key={user?.id ?? "signed-out"} />;
+}
+
+function MenuEditor() {
   const canUpdateMenu = useCan(Permission.menuUpdate);
   const {
     pageList,
@@ -31,7 +39,23 @@ export function MenuPageShell() {
     refetchMenu,
   } = useMenuQuery();
   const editor = useMenuTreeEditor(checkedData);
-  const { submit } = useMenuActions(editor.checkedList, refetchMenu);
+  const { submit, loading, blocked, clearBlocked } = useMenuActions(
+    editor.checkedList,
+    editor.baseVersion,
+    refetchMenu,
+    editor.acknowledge,
+    editor.setProtected,
+  );
+  const [latest, setLatest] = useState<CheckedMenuData>();
+  const reviewLatest = async () => {
+    try {
+      const response = await refetchMenu();
+      if (!response.isSuccess || !response.data) throw new Error("refresh");
+      setLatest(response.data);
+    } catch {
+      toast.error("最新菜单读取失败，本地输入已保留");
+    }
+  };
   const menuTreeHeight =
     Math.max(getVisibleNodeCount({ treeData: editor.menuTree }), 1) *
     MENU_TREE_ROW_HEIGHT;
@@ -120,9 +144,56 @@ export function MenuPageShell() {
             : "请先从左侧选择菜单"}
         </div>
         {canUpdateMenu && (
-          <Button onClick={submit} className="mb-1 mt-2">
+          <Button
+            onClick={submit}
+            disabled={
+              loading ||
+              blocked ||
+              editor.baseVersion === undefined ||
+              !editor.dirty
+            }
+            className="mb-1 mt-2"
+          >
             <Save /> 保存
           </Button>
+        )}
+        <p role="status">
+          {editor.dirty ? "有未保存的更改" : "已与服务器同步"}
+        </p>
+        {blocked && (
+          <div role="alert">
+            保存发生冲突或结果未知，请先核对服务器。
+            <Button onClick={reviewLatest}>读取最新菜单供核对</Button>
+          </div>
+        )}
+        {latest && (
+          <div>
+            <p>
+              服务器版本 {latest.version}
+              。确认后保留本地菜单，以此版本继续保存；或放弃本地更改。
+            </p>
+            <pre className="max-h-48 overflow-auto">
+              {JSON.stringify(latest.list, null, 2)}
+            </pre>
+            <Button
+              onClick={() => {
+                editor.acceptLatest(latest, true);
+                clearBlocked();
+                setLatest(undefined);
+              }}
+            >
+              已核对，保留本地并使用此版本
+            </Button>
+            <Button
+              onClick={() => {
+                editor.acceptLatest(latest, false);
+                clearBlocked();
+                setLatest(undefined);
+              }}
+            >
+              放弃本地，加载服务器菜单
+            </Button>
+          </div>
         )}
         <div className="bg-gray-50 my-2 py-2">
           {menuLoading ? (
@@ -133,6 +204,25 @@ export function MenuPageShell() {
               className="menu-tree"
               treeData={editor.menuTree}
               onChange={editor.onDragEnd}
+              generateNodeProps={({ node }) => ({
+                buttons:
+                  canUpdateMenu && typeof node.id === "string"
+                    ? [
+                        <Button
+                          key="remove"
+                          size="sm"
+                          variant="outline"
+                          aria-label={`移除此菜单及子项：${node.title}`}
+                          onClick={() => {
+                            if (typeof node.id === "string")
+                              editor.removeBranch(node.id);
+                          }}
+                        >
+                          移除
+                        </Button>,
+                      ]
+                    : [],
+              })}
               rowHeight={MENU_TREE_ROW_HEIGHT}
               style={{ height: menuTreeHeight }}
             />

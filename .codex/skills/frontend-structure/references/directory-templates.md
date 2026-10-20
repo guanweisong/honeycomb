@@ -1,6 +1,6 @@
 # 目录与文件模板
 
-以下按需创建，不要求每个业务补齐全部文件。
+以下按需创建，不要求每个业务补齐全部文件或采用完全相同的树形结构；选择最小有意义的路径，不机械压平职责明确的子目录。
 
 ```text
 src/
@@ -19,10 +19,6 @@ src/
   lib/                     # db/auth/trpc/cache/storage/observability/i18n
 ```
 
-较复杂功能可把 server.ts 拆为 server/ 下具名文件；并非强制目录。不同查询和表单校验可以按语义拆分 schemas/，但不要保留只重新导出 schema.ts 的中间文件。状态、类型或显示选项属于其 feature，不建立集中业务 contracts 或共享 domain 包。
+较复杂功能可把 server.ts 拆为 server/ 下具名文件；文件名选择稳定、可搜索的业务概念。此树是按需示例，不是待补齐清单。
 
-不创建 application/domain/infrastructure、单方法 Repository、只返回对象方法的 factory、仅原样调用另一函数的 Use Case。已有 helper 有事务、映射、并发或外部适配职责时应保留，不为减少行数合并不同安全边界。
-
-文件名使用稳定、可搜索的业务概念；utils.ts/helpers.ts 不能成为无边界杂物箱。迁移必须同步 import、mock、配置、测试和文档后删除旧路径，不保留兼容转发入口。
-
-App Router 的 page.tsx、layout.tsx、route.ts 等约定入口必须保留；入口直接导出具名业务组件是框架适配，不等同于应删除的重复 feature 转发层。删除文件前检查框架约定、动态引用和配置，不只看静态 import。
+创建或删除入口前，按[架构规则索引](architecture.md)检查职责与消费者；框架约定、动态引用和配置入口不能只靠静态 import 判断。路由特例见 [Next.js 约束](nextjs.md)，批量迁移见[迁移说明](../../../../docs/ddd-migration-guide.md)。

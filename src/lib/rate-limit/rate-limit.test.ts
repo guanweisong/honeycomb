@@ -1,11 +1,15 @@
 // @vitest-environment node
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createApiRatelimit,
   getClientIp,
   limitWithTimeout,
 } from "./rate-limit";
+
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
+import { configureObservability } from "@/lib/observability/server/registry";
+import { MetricName } from "@/lib/observability/core/names";
 
 const originalEnv = {
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -104,4 +108,60 @@ describe("getClientIp", () => {
       limitWithTimeout(failing, "client", { environment: "development" }),
     ).resolves.toMatchObject({ success: true, unavailable: true });
   });
+});
+
+describe("rate-limit metric labels through the safe registry", () => {
+  afterEach(() => {
+    configureObservability();
+    vi.useRealTimers();
+  });
+
+  it.each(["allowed", "limited", "unavailable", "timeout"] as const)(
+    "retains bounded labels for %s",
+    async (outcome) => {
+      const memory = createMemoryObservability();
+      configureObservability(memory);
+      vi.useFakeTimers();
+      const limiter = {
+        limit: async () => {
+          if (outcome === "unavailable")
+            throw new Error("dummy provider failure");
+          if (outcome === "timeout") return new Promise<never>(() => {});
+          return {
+            success: outcome === "allowed",
+            limit: 10,
+            remaining: outcome === "allowed" ? 9 : 0,
+            reset: 1000,
+          };
+        },
+      };
+      const pending = limitWithTimeout(limiter, "dummy-client", {
+        environment: "production",
+        timeoutMs: 50,
+      });
+      if (outcome === "timeout") await vi.advanceTimersByTimeAsync(50);
+      await pending;
+      const labels = {
+        service: "upstash-rate-limit",
+        operation: "limit",
+        outcome: outcome === "timeout" ? "unavailable" : outcome,
+      };
+      expect(memory.metricEvents).toEqual([
+        {
+          type: "increment",
+          name: MetricName.externalServiceOperationsTotal,
+          labels,
+        },
+        ...(outcome === "unavailable" || outcome === "timeout"
+          ? [
+              {
+                type: "increment",
+                name: MetricName.externalServiceErrorsTotal,
+                labels,
+              },
+            ]
+          : []),
+      ]);
+    },
+  );
 });

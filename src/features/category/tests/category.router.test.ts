@@ -22,12 +22,13 @@ vi.mock("@/lib/cache/refresh-path", () => ({
   },
 }));
 
-vi.mock("@/lib/db/query/tools", () => ({
+vi.mock("@/lib/db/query/query-builders", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
-  default: {
-    sonsTree: vi.fn((list) => list),
-  },
+}));
+
+vi.mock("@/features/category/tree", () => ({
+  sonsTree: vi.fn((list) => list),
 }));
 
 const mockDb = createMockDb();
@@ -173,6 +174,9 @@ describe("Category Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete categories with admin permissions", async () => {
+      const menuReferences = createMockDb();
+      menuReferences.limit.mockResolvedValue([]);
+      mockDb.select.mockReturnValue(menuReferences);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
@@ -186,6 +190,10 @@ describe("Category Router", () => {
 
       expect(result).toEqual({ success: true, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.category);
+      expect(mockDb.transaction).toHaveBeenCalledOnce();
+      expect(menuReferences.from).toHaveBeenCalledWith(schema.menu);
+      expect(menuReferences.limit).toHaveBeenCalledWith(1);
+      expect(mockDb.update).not.toHaveBeenCalled();
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

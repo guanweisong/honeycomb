@@ -37,6 +37,15 @@ const pageMenu = {
 } as MenuEntityTree;
 
 describe("menu transforms", () => {
+  it("preserves all menu type labels in rendered tree subtitles", () => {
+    expect(
+      formatMenuTree([
+        { ...categoryMenu, id: "category", type: MenuType.CATEGORY },
+        { ...categoryMenu, id: "page", type: MenuType.PAGE },
+        { ...categoryMenu, id: "custom", type: MenuType.CUSTOM },
+      ]).map((node) => node.subtitle),
+    ).toEqual(["分类", "页面", "自定义"]);
+  });
   it("syncs the checked list from the admin menu query response", () => {
     expect(getCheckedMenuList(undefined)).toEqual([]);
     expect(getCheckedMenuList({ list: [categoryMenu] })).toEqual([

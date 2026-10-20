@@ -20,6 +20,7 @@ vi.mock("@/lib/cache/upstash-cache", () => ({
 
 const post: PostWithRelations = {
   id: "post",
+  version: 0,
   authorId: "author",
   categoryId: "category",
   title: null,
@@ -101,6 +102,7 @@ describe("post list cache validation", () => {
   );
 
   it.each([
+    { list: [{ ...post, version: undefined }], total: 1 },
     { list: [{ ...post, status: "UNKNOWN" }], total: 1 },
     {
       list: [

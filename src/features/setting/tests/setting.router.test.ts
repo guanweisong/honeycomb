@@ -76,6 +76,7 @@ describe("Setting Router", () => {
     it("should update setting with admin permissions", async () => {
       const updatedSetting = {
         id: TEST_IDS.ID_1,
+        version: 1,
         siteName: { en: "Updated Site Name", zh: "更新的网站名称" },
         siteSubName: { en: "Updated Sub Name", zh: "更新的副标题" },
         siteSignature: { en: "Updated Signature", zh: "更新的签名" },
@@ -83,7 +84,13 @@ describe("Setting Router", () => {
       };
 
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
+      mockDb.limit.mockResolvedValueOnce([
+        { level: "ADMIN", status: "ENABLE" },
+      ]);
+      mockDb.returning.mockResolvedValueOnce([
+        { id: TEST_IDS.ID_1, version: 1 },
+      ]);
+      mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
         {
           settingId: TEST_IDS.ID_1,
@@ -108,6 +115,7 @@ describe("Setting Router", () => {
       );
 
       const result = await caller.update({
+        expectedVersion: 0,
         id: TEST_IDS.ID_1,
         siteName: { en: "Updated Site Name", zh: "更新的网站名称" },
         siteSubName: { en: "Updated Sub Name", zh: "更新的副标题" },
@@ -125,6 +133,7 @@ describe("Setting Router", () => {
 
       await expect(
         caller.update({
+          expectedVersion: 0,
           id: TEST_IDS.ID_1,
           siteName: { en: "Updated Site Name", zh: "更新的网站名称" },
           siteSubName: { en: "Updated Sub Name", zh: "更新的副标题" },

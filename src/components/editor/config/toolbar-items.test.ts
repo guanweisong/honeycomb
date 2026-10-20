@@ -15,10 +15,6 @@ vi.mock("../components/ToolbarImageItem", () => ({
   ToolbarImageItem: () => React.createElement("span", null, "image-control"),
 }));
 
-vi.mock("../components/ToolbarVideoItem", () => ({
-  ToolbarVideoItem: () => React.createElement("span", null, "video-control"),
-}));
-
 import {
   toolbarItems,
   type ToolbarItem,
@@ -83,6 +79,12 @@ describe("toolbar-items", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("does not offer unsupported video insertion", () => {
+    expect(actionableItems.some((item) => item.label === "上传视频")).toBe(
+      false,
+    );
   });
 
   it.each([
@@ -182,7 +184,6 @@ describe("toolbar-items", () => {
   it.each([
     ["超链接", "link-control"],
     ["上传图片", "image-control"],
-    ["上传视频", "video-control"],
   ] as const)("%s renders its interactive control", async (label, text) => {
     const item = getItem(label);
     const { editor } = createEditor();

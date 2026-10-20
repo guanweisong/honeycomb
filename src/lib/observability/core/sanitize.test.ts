@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
+import { DrizzleQueryError } from "drizzle-orm/errors";
 
 import {
   sanitizeContext,
@@ -180,6 +181,34 @@ describe("sanitizeMetricLabels", () => {
 });
 
 describe("serializeError", () => {
+  it("suppresses query errors beyond the output cause depth, including cyclic driver causes", () => {
+    const databaseError = new DrizzleQueryError(
+      "dummy query",
+      ["dummy private binding"],
+      new Error("dummy driver echo"),
+    );
+    databaseError.cause = databaseError;
+    const wrapper = new Error(databaseError.message, {
+      cause: new Error(databaseError.message, { cause: databaseError }),
+    });
+
+    expect(serializeError(wrapper, { maxCauseDepth: 0 })).toEqual({
+      name: "DatabaseError",
+      message: "Database operation failed",
+    });
+  });
+
+  it("fails closed when a cause chain is too deep to inspect safely", () => {
+    let error = new Error("dummy private binding");
+    for (let depth = 0; depth < 20; depth += 1) {
+      error = new Error("dummy private binding", { cause: error });
+    }
+    expect(serializeError(error)).toEqual({
+      name: "Error",
+      message: "[Truncated]",
+    });
+  });
+
   it("redacts sensitive values from an error message and stack", () => {
     const error = new Error(
       "email=person@example.com ip=203.0.113.7 token=token-value cookie=session=abc authorization=Bearer bearer-token secret=top-secret",

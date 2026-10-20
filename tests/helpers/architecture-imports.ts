@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { builtinModules } from "node:module";
 import ts from "typescript";
 
 export interface ModuleDependency {
@@ -136,4 +137,31 @@ export function runtimeDependencyViolations(
   }
   visit(entry);
   return [...violations].sort();
+}
+
+export function isContractForbidden(
+  path: string,
+  source: string,
+  includeTypeOnly = false,
+) {
+  return (
+    /\/(?:server|admin|public|components|notifications|presentation)(?:\/|\.tsx?$)/.test(
+      path,
+    ) ||
+    /^src\/lib\/(?:db|trpc)\//.test(path) ||
+    moduleDependencies(source, path).some(
+      ({ specifier, typeOnly }) =>
+        (includeTypeOnly || !typeOnly) &&
+        (/^(?:react|next(?:\/|$)|@trpc\/|drizzle-orm|drizzle-zod|node:|bun:|@libsql\/|@aws-sdk\/|@sentry\/node|resend$|better-auth$|server-only$)/.test(
+          specifier,
+        ) ||
+          builtinModules.includes(specifier) ||
+          /^(?:src\/(?:app|components)\/)|\/(?:server|admin|public|notifications)(?:\/|$)|(?:\/|\.)router$/.test(
+            localModulePath(path, specifier) ?? "",
+          ) ||
+          /(?:\/server(?:\/|$)|\/router$|^@\/lib\/(?:db|trpc)\/|^@\/components\/|\/admin\/|\/public\/)/.test(
+            specifier,
+          )),
+    )
+  );
 }

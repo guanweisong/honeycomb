@@ -32,6 +32,7 @@ export const PostAuthorRecordSchema = z.object({
 export const PostWithRelationsSchema = z.object({
   id: z.string(),
   authorId: z.string(),
+  version: z.number().int().nonnegative(),
   categoryId: z.string(),
   title: localized,
   content: localized,

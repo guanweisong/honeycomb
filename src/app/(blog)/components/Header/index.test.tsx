@@ -18,48 +18,6 @@ vi.mock("next-intl/server", () => ({
   getLocale: async () => "zh",
 }));
 
-vi.mock("@/app/_trpc/server", () => ({
-  createServerClient: async () => ({
-    menu: {
-      index: async () => ({
-        list: [
-          {
-            id: "links",
-            parent: "0",
-            path: "/friend-links",
-            title: { zh: "友链" },
-            type: "CUSTOM",
-          },
-          {
-            id: "page-1",
-            parent: "0",
-            path: "about",
-            title: { zh: "关于" },
-            type: "PAGE",
-          },
-          {
-            id: "parent-id",
-            parent: "0",
-            path: "parent",
-            title: { zh: "父分类" },
-            type: "CATEGORY",
-          },
-          {
-            id: "child-id",
-            parent: "parent-id",
-            path: "child",
-            title: { zh: "子分类" },
-            type: "CATEGORY",
-          },
-        ],
-      }),
-    },
-    setting: {
-      index: async () => ({ siteName: { zh: "蜂巢博客" } }),
-    },
-  }),
-}));
-
 vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicMenu: async () => ({
     list: [
@@ -91,6 +49,13 @@ vi.mock("@/app/lib/server/public-queries", () => ({
         title: { zh: "子分类" },
         type: "CATEGORY",
       },
+      {
+        id: "grandchild-id",
+        parent: "child-id",
+        path: "grandchild",
+        title: { zh: "孙分类" },
+        type: "CATEGORY",
+      },
     ],
   }),
   getPublicSetting: async () => ({ siteName: { zh: "蜂巢博客" } }),
@@ -111,45 +76,12 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
   },
 }));
 
-vi.mock("@/app/(blog)/components/Menu", () => ({
-  default: ({
-    data,
-    flatMenuData,
-  }: {
-    data: Array<{
-      children?: Array<unknown>;
-      label: string;
-      link?: string;
-    }>;
-    flatMenuData: unknown[];
-  }) => {
-    const renderItems = (
-      items: Array<{
-        children?: Array<unknown>;
-        label: string;
-        link?: string;
-      }>,
-    ): React.ReactNode =>
-      React.createElement(
-        "ul",
-        null,
-        items.map((item) =>
-          React.createElement(
-            "li",
-            { key: item.label },
-            React.createElement("a", { href: item.link }, item.label),
-            item.children
-              ? renderItems(item.children as typeof items)
-              : undefined,
-          ),
-        ),
-      );
-    return React.createElement(
-      "nav",
-      { "data-flat-count": flatMenuData.length },
-      renderItems(data),
-    );
-  },
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/list/category/parent/child/grandchild",
+  useSelectedLayoutSegments: () => ["list", "category/parent/child/grandchild"],
+}));
+vi.mock("@/lib/trpc/client/trpc", () => ({
+  trpc: { post: { getCategoryId: { useQuery: () => ({ data: undefined }) } } },
 }));
 
 vi.mock("@/app/(blog)/components/Breadcrumb", () => ({
@@ -210,13 +142,15 @@ describe("blog Header", () => {
         ?.textContent,
     ).toBe("子分类");
     expect(
-      container.querySelector("nav")?.getAttribute("data-flat-count"),
-    ).toBe("4");
+      container.querySelector(
+        'a[href="/list/category/parent/child/grandchild"]',
+      )?.textContent,
+    ).toBe("孙分类");
     expect(
       container
         .querySelector("[data-breadcrumb-count]")
         ?.getAttribute("data-breadcrumb-count"),
-    ).toBe("5");
+    ).toBe("6");
     expect(container.textContent).toContain("主题");
     expect(container.textContent).toContain("语言");
     expect(container.textContent).toContain("搜索");

@@ -58,6 +58,14 @@ vi.mock("@/app/(blog)/components/NoData", () => ({
 }));
 
 import List, { generateMetadata } from "./page";
+import { resolveListContext } from "./page.utils";
+import { IdSchema } from "@/lib/validation/id.schema";
+import { TagListQuerySchema } from "@/features/tag/schema";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
+
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+}));
 
 describe("blog list page", () => {
   let container: HTMLDivElement;
@@ -91,18 +99,20 @@ describe("blog list page", () => {
       ],
     });
     mockTagIndex.mockReset().mockResolvedValue({
-      list: [{ id: "resolved-tag", name: { zh: "标签名称" } }],
+      list: [{ id: "111111111111111111111111", name: { zh: "标签名称" } }],
     });
-    mockPublicTag
-      .mockReset()
-      .mockImplementation(async () => (await mockTagIndex({})).list[0]);
+    mockPublicTag.mockReset().mockImplementation(async (id: string) => {
+      const input = TagListQuerySchema.parse({ limit: 1, page: 1, id: [id] });
+      return (await mockTagIndex(input)).list[0];
+    });
     mockUserDetail.mockReset().mockResolvedValue({
-      id: "resolved-author",
+      id: "222222222222222222222222",
       name: "作者名称",
     });
-    mockPublicAuthor
-      .mockReset()
-      .mockImplementation((input) => mockUserDetail(input));
+    mockPublicAuthor.mockReset().mockImplementation((id: string) => {
+      IdSchema.parse(id);
+      return mockUserDetail({ id });
+    });
     mockPostIndex.mockReset().mockResolvedValue({
       list: [{ id: "post-1" }],
       total: 1,
@@ -131,6 +141,41 @@ describe("blog list page", () => {
     return JSON.parse(output.textContent ?? "") as Record<string, unknown>;
   }
 
+  describe.each(["tags", "authors"])("invalid %s route IDs", (type) => {
+    describe.each(["content", "metadata"])("%s entry point", (entryPoint) => {
+      it.each([undefined, "", "short", "x".repeat(25)])(
+        "returns notFound before lookup for %s",
+        async (id) => {
+          const slug = id === undefined ? [type] : [type, id];
+          const result =
+            entryPoint === "content"
+              ? resolveListContext({
+                  locale: MultiLangEnum.Zh,
+                  menu: { list: [], total: 0 },
+                  slug,
+                })
+              : generateMetadata({
+                  params: Promise.resolve({ locale: "zh", slug }),
+                  searchParams: Promise.resolve({}),
+                });
+          await expect(result).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+          expect(mockPublicTag).not.toHaveBeenCalled();
+          expect(mockPublicAuthor).not.toHaveBeenCalled();
+          expect(mockPublicPostList).not.toHaveBeenCalled();
+        },
+      );
+    });
+  });
+
+  it("keeps the category root as the published-post index", async () => {
+    await renderList(["category"]);
+    expect(renderedQuery()).toEqual({
+      limit: 10,
+      sortField: "createdAt",
+      status: ["PUBLISHED"],
+    });
+  });
+
   it("resolves category paths to the category id used by the post query", async () => {
     await renderList(["category", "tech"]);
 
@@ -144,13 +189,13 @@ describe("blog list page", () => {
   });
 
   it("uses the resolved tag id and localized tag heading", async () => {
-    await renderList(["tags", "tag-from-url"]);
+    await renderList(["tags", "111111111111111111111111"]);
 
     expect(renderedQuery()).toEqual({
       limit: 10,
       sortField: "createdAt",
       status: ["PUBLISHED"],
-      tagId: "resolved-tag",
+      tagId: "111111111111111111111111",
     });
     expect(container.textContent).toContain("标签：标签名称");
   });
@@ -159,7 +204,7 @@ describe("blog list page", () => {
     mockTagIndex.mockResolvedValue({ list: [] });
     mockPostIndex.mockResolvedValue({ list: [], total: 0 });
 
-    await renderList(["tags", "unknown-tag"]);
+    await renderList(["tags", "ffffffffffffffffffffffff"]);
 
     expect(container.textContent).toContain("标签：");
     expect(
@@ -168,10 +213,10 @@ describe("blog list page", () => {
   });
 
   it("uses the resolved author id and author heading", async () => {
-    await renderList(["authors", "author-from-url"]);
+    await renderList(["authors", "222222222222222222222222"]);
 
     expect(renderedQuery()).toEqual({
-      authorId: "resolved-author",
+      authorId: "222222222222222222222222",
       limit: 10,
       sortField: "createdAt",
       status: ["PUBLISHED"],
@@ -182,9 +227,11 @@ describe("blog list page", () => {
   it("keeps an unknown author id without inventing an author name", async () => {
     mockUserDetail.mockResolvedValue(null);
 
-    await renderList(["authors", "unknown-author"]);
+    await renderList(["authors", "eeeeeeeeeeeeeeeeeeeeeeee"]);
 
-    expect(renderedQuery()).toMatchObject({ authorId: "unknown-author" });
+    expect(renderedQuery()).toMatchObject({
+      authorId: "eeeeeeeeeeeeeeeeeeeeeeee",
+    });
     expect(container.textContent).toContain("作者：");
   });
 
@@ -213,7 +260,7 @@ describe("blog list page", () => {
       },
     ],
     [
-      ["tags", "tag-from-url"],
+      ["tags", "111111111111111111111111"],
       {
         description: "记录值得分享的事",
         openGraph: {
@@ -226,7 +273,7 @@ describe("blog list page", () => {
       },
     ],
     [
-      ["authors", "author-from-url"],
+      ["authors", "222222222222222222222222"],
       {
         description: "记录值得分享的事",
         openGraph: {
@@ -265,7 +312,7 @@ describe("blog list page", () => {
 
     const metadata = await generateMetadata({
       params: Promise.resolve({
-        slug: ["tags", "unknown-tag"],
+        slug: ["tags", "ffffffffffffffffffffffff"],
         locale: "zh",
       }),
       searchParams: Promise.resolve({}),

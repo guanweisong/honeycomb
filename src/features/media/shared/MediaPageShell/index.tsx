@@ -2,7 +2,7 @@
 
 import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCan } from "@/features/user/admin/use-current-user";
+import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 import { Button } from "@/components/ui/button";
@@ -10,32 +10,97 @@ import LoadingState from "@/components/LoadingState";
 import { MediaGrid } from "../MediaGrid";
 import { useMediaActions } from "../media-actions";
 import { useMediaQuery } from "../media-query";
+import { MEDIA_STATES, type MediaState } from "../../lifecycle";
 import { MEDIA_MIME_TYPES } from "../../upload-policy";
 
 export interface MediaProps {
-  onSelect?: (media: MediaViewModel) => void;
+  onSelect?: (media: MediaViewModel | undefined) => void;
 }
 
 export function MediaPageShell({ onSelect }: MediaProps) {
+  const { user } = useCurrentUser();
+  const [state, setState] = useState<MediaState>("READY");
+  const selectedState = onSelect ? "READY" : state;
+  const callback = useRef(onSelect);
+  useEffect(() => {
+    callback.current = onSelect;
+  }, [onSelect]);
+  const previousAccount = useRef(user?.id);
+  useEffect(() => {
+    if (previousAccount.current !== user?.id) callback.current?.(undefined);
+    previousAccount.current = user?.id;
+  }, [user?.id]);
+  return (
+    <>
+      {!onSelect && (
+        <label>
+          媒体状态{" "}
+          <select
+            aria-label="媒体状态"
+            value={state}
+            onChange={(event) => setState(event.target.value as MediaState)}
+          >
+            {MEDIA_STATES.map((value) => (
+              <option key={value} value={value}>
+                {
+                  {
+                    UPLOADING: "上传待确认",
+                    READY: "可使用",
+                    DELETING: "删除待确认",
+                    DELETED: "已删除",
+                  }[value]
+                }
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <MediaPanel
+        key={`${user?.id ?? "signed-out"}:${selectedState}`}
+        onSelect={onSelect}
+        state={selectedState}
+        scopeKey={user?.id ?? "signed-out"}
+      />
+    </>
+  );
+}
+function MediaPanel({
+  onSelect,
+  state,
+  scopeKey,
+}: MediaProps & { state: MediaState; scopeKey: string }) {
   const canUploadMedia = useCan(Permission.mediaUpload);
   const [currentItem, setCurrentItem] = useState<MediaViewModel>();
   const onSelectRef = useRef(onSelect);
-  const query = useMediaQuery();
+  const hadSelection = useRef(false);
+  const query = useMediaQuery(state === "READY" ? undefined : state);
   const { hasMore, loadMore } = query;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const actions = useMediaActions({
     refetch: query.refetch,
+    scopeKey,
+    selectionKey: currentItem?.id,
     onUploadComplete: setCurrentItem,
-    onDeleteComplete: () => setCurrentItem(undefined),
+    onDeleteComplete: (id) =>
+      setCurrentItem((current) => (current?.id === id ? undefined : current)),
   });
-  const { fileInputRef, handleDelete, handleUpload, loading } = actions;
+  const {
+    fileInputRef,
+    handleDelete,
+    handleUpload,
+    handleReconcile,
+    loading,
+    failures,
+    unavailableIds,
+  } = actions;
 
   useEffect(() => {
     onSelectRef.current = onSelect;
   }, [onSelect]);
 
   useEffect(() => {
-    if (currentItem) onSelectRef.current?.(currentItem);
+    if (currentItem || hadSelection.current) onSelectRef.current?.(currentItem);
+    hadSelection.current = currentItem !== undefined;
   }, [currentItem]);
 
   useEffect(() => {
@@ -82,12 +147,30 @@ export function MediaPageShell({ onSelect }: MediaProps) {
           </Button>
         </div>
       )}
+      {failures.length > 0 && (
+        <ul aria-label="本批上传结果">
+          {failures.map((failure, index) => (
+            <li key={`${failure.id ?? failure.name}:${index}`}>
+              {failure.name}: {failure.message}
+              {failure.id &&
+                failure.outcome === "indeterminate" &&
+                canUploadMedia && (
+                  <Button onClick={() => handleReconcile(failure.id!)}>
+                    检查状态
+                  </Button>
+                )}
+            </li>
+          ))}
+        </ul>
+      )}
       <MediaGrid
         media={query.data?.list}
         isLoading={query.isLoading}
         error={query.error}
         currentItem={currentItem}
+        unavailableIds={unavailableIds}
         onDelete={handleDelete}
+        onReconcile={handleReconcile}
         onSelect={setCurrentItem}
       />
       <div

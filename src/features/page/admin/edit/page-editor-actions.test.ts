@@ -12,19 +12,25 @@ const values = {
 
 describe("page editor action state", () => {
   it("creates with the requested status and returns the new page id", async () => {
-    const create = vi.fn().mockResolvedValue({ id: "page-created" });
+    const create = vi
+      .fn()
+      .mockResolvedValue({ id: "page-created", version: 0 });
 
     await expect(
       submitPageEditor({
         pageId: undefined,
-        values,
+        values: {
+          ...values,
+          creationToken: "11111111-1111-4111-8111-111111111111",
+        },
         status: PageStatus.DRAFT,
         create,
         update: vi.fn(),
       }),
-    ).resolves.toEqual({ state: "created", id: "page-created" });
+    ).resolves.toEqual({ state: "created", id: "page-created", version: 0 });
     expect(create).toHaveBeenCalledWith({
       ...values,
+      creationToken: "11111111-1111-4111-8111-111111111111",
       status: PageStatus.DRAFT,
     });
   });
@@ -35,28 +41,35 @@ describe("page editor action state", () => {
     await expect(
       submitPageEditor({
         pageId: "507f1f77bcf86cd799439011",
+        expectedVersion: 3,
         values,
         status: PageStatus.PUBLISHED,
         create: vi.fn(),
         update,
       }),
-    ).resolves.toEqual({ state: "error" });
+    ).resolves.toEqual({ state: "unknown" });
     expect(update).toHaveBeenCalledWith({
       id: "507f1f77bcf86cd799439011",
+      expectedVersion: 3,
       ...values,
       status: PageStatus.PUBLISHED,
     });
 
-    update.mockResolvedValue(undefined);
+    update.mockResolvedValue({ id: "507f1f77bcf86cd799439011", version: 4 });
     await expect(
       submitPageEditor({
         pageId: "507f1f77bcf86cd799439011",
+        expectedVersion: 3,
         values,
         status: PageStatus.PUBLISHED,
         create: vi.fn(),
         update,
       }),
-    ).resolves.toEqual({ state: "updated" });
+    ).resolves.toEqual({
+      state: "updated",
+      id: "507f1f77bcf86cd799439011",
+      version: 4,
+    });
 
     await expect(
       submitPageEditor({
@@ -66,5 +79,34 @@ describe("page editor action state", () => {
         update: vi.fn(),
       }),
     ).resolves.toEqual({ state: "error" });
+  });
+});
+
+describe("versioned page outcomes", () => {
+  it("keeps an unavailable response distinct from a rejected write", async () => {
+    const result = await submitPageEditor({
+      pageId: "507f1f77bcf86cd799439011",
+      expectedVersion: 3,
+      values,
+      status: PageStatus.DRAFT,
+      create: vi.fn(),
+      update: vi.fn().mockRejectedValue(new Error("offline")),
+    });
+    expect(result.state).toBe("unknown");
+  });
+  it("reports a concurrency conflict without discarding input", async () => {
+    const update = vi.fn().mockRejectedValue({ data: { code: "CONFLICT" } });
+    const result = await submitPageEditor({
+      pageId: "507f1f77bcf86cd799439011",
+      expectedVersion: 3,
+      values,
+      status: PageStatus.DRAFT,
+      create: vi.fn(),
+      update,
+    });
+    expect(result.state).toBe("conflict");
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedVersion: 3 }),
+    );
   });
 });

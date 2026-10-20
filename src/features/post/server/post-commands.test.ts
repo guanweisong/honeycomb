@@ -1,17 +1,40 @@
-import { TagType } from "@/features/tag/tag-kind";
+// @vitest-environment node
+import { createClient, type Client } from "@libsql/client/node";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { mkdtempSync, rmSync, existsSync, lstatSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import { describe, expect, it, vi } from "vitest";
-import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { PostStatus } from "@/features/post/post-status";
+import type { Database } from "@/lib/db/db";
+import * as permissions from "@/lib/auth/permissions";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import { PostStatus } from "../post-status";
+import { TagType } from "@/features/tag/tag-kind";
 import {
   createPost,
   updatePost,
   destroyPosts,
-  updatePostTags,
+  getPostCreationResult,
+  incrementPostViews,
 } from "./post-commands";
+import { getPost } from "./post-queries";
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
-const input = { categoryId: "category" };
-const id = "post-1";
+vi.mock("@/env/client", () => ({
+  clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test/files" },
+}));
+vi.mock("@/lib/observability/server", () => ({
+  observeDbOperation: (_name: string, _kind: string, run: () => unknown) =>
+    run(),
+}));
+const actorId = "author";
+const input = {
+  categoryId: "category",
+  creationToken: "1d40d08b-55cc-4c2c-9dc0-6b151b9866f4",
+};
 const cache = (state: "completed" | "degraded" = "completed") => ({
   invalidate: vi.fn().mockResolvedValue({ state }),
 });
@@ -22,275 +45,802 @@ const targets = (ids: string[]) => ({
   refreshSitemap: true,
 });
 
-describe("post direct writes and public synchronization", () => {
-  it("creates the record in a transaction before invalidating public data", async () => {
-    const fake = createMockDb();
-    const order: string[] = [];
-    fake.returning.mockImplementation(async () => {
-      order.push("write");
-      return [{ id }];
+describe("atomic post writes", () => {
+  let directory: string | undefined;
+  let client: Client | undefined;
+  let db: Database;
+  afterEach(() => {
+    client?.close();
+    if (directory) {
+      rmSync(directory, { recursive: true, force: true });
+      expect(existsSync(directory)).toBe(false);
+    }
+    client = undefined;
+    directory = undefined;
+  });
+  beforeEach(async () => {
+    directory = mkdtempSync(join(tmpdir(), "honeycomb-post-atomic-"));
+    const stat = lstatSync(directory);
+    expect(stat.isSymbolicLink()).toBe(false);
+    expect(stat.uid).toBe(process.getuid?.());
+    client = createClient({ url: `file:${join(directory, "post.db")}` });
+    db = drizzle(client, { schema });
+    await migrate(db, { migrationsFolder: "drizzle" });
+    await client.execute("pragma foreign_keys = on");
+    await db.insert(schema.user).values({
+      id: actorId,
+      level: UserLevel.ADMIN,
+      status: UserStatus.ENABLE,
     });
-    const invalidator = {
-      invalidate: vi.fn(async () => {
-        order.push("invalidate");
-        return { state: "completed" as const };
-      }),
-    };
-    await expect(
-      createPost(asMockDatabase(fake), input, "author", invalidator),
-    ).resolves.toEqual({ id, publicSync: "completed" });
-    expect(order).toEqual(["write", "invalidate"]);
-    expect(fake.transaction).toHaveBeenCalledOnce();
-    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
-      targets([id]),
+    await db
+      .insert(schema.category)
+      .values({ id: "category", path: "category" });
+    await db
+      .insert(schema.tag)
+      .values([
+        { id: "507f1f77bcf86cd799439021" },
+        { id: "507f1f77bcf86cd799439022" },
+      ]);
+  });
+  async function row(id: string) {
+    const [result] = await db
+      .select()
+      .from(schema.post)
+      .where(eq(schema.post.id, id));
+    if (!result) throw new Error("Expected fixture post to exist");
+    return result;
+  }
+  async function create() {
+    return createPost(
+      db,
+      {
+        ...input,
+        status: PostStatus.DRAFT,
+        title: { en: "original", zh: "原文" },
+        movieActorIds: ["507f1f77bcf86cd799439021"],
+      },
+      actorId,
+      cache(),
     );
-  });
-  it("does not invalidate public data after a failed create", async () => {
-    const fake = createMockDb();
-    fake.returning.mockRejectedValue(new Error("database failed"));
-    const invalidator = cache();
-    await expect(
-      createPost(asMockDatabase(fake), input, "author", invalidator),
-    ).rejects.toThrow("database failed");
-    expect(invalidator.invalidate).not.toHaveBeenCalled();
-  });
-  it("invalidates every deleted item only after deleting", async () => {
-    const fake = createMockDb();
-    const order: string[] = [];
-    fake.where.mockImplementation(async () => {
-      order.push("delete");
-    });
-    const invalidator = {
-      invalidate: vi.fn(async () => {
-        order.push("invalidate");
-        return { state: "completed" as const };
-      }),
-    };
-    await expect(
-      destroyPosts(asMockDatabase(fake), [id, "second"], invalidator),
-    ).resolves.toEqual({ success: true, publicSync: "completed" });
-    expect(order).toEqual(["delete", "invalidate"]);
-    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
-      targets([id, "second"]),
-    );
-  });
+  }
+
   it.each(["completed", "degraded"] as const)(
-    "returns committed writes with %s public synchronization without retrying",
+    "commits all fields before %s public synchronization",
     async (state) => {
-      const fake = createMockDb();
-      fake.returning.mockResolvedValue([{ id }]);
-      fake.limit.mockResolvedValue([{ id }]);
       const invalidator = cache(state);
-      await expect(
-        createPost(asMockDatabase(fake), input, "author", invalidator),
-      ).resolves.toEqual({ id, publicSync: state });
-      await expect(
-        updatePost(asMockDatabase(fake), { id }, invalidator),
-      ).resolves.toEqual({ id, publicSync: state });
-      expect(fake.returning).toHaveBeenCalledOnce();
-      expect(fake.transaction).toHaveBeenCalledTimes(2);
-      expect(invalidator.invalidate).toHaveBeenCalledTimes(2);
-      expect(invalidator.invalidate).toHaveBeenLastCalledWith(targets([id]));
+      const result = await createPost(
+        db,
+        {
+          ...input,
+          title: { en: "created" },
+          movieActorIds: [
+            "507f1f77bcf86cd799439021",
+            "507f1f77bcf86cd799439021",
+          ],
+          movieDirectorIds: ["507f1f77bcf86cd799439022"],
+        },
+        actorId,
+        invalidator,
+      );
+      expect(result).toEqual({
+        id: expect.any(String),
+        version: 0,
+        publicSync: state,
+      });
+      expect(await db.select().from(schema.postTranslation)).toHaveLength(1);
+      expect(await db.select().from(schema.postTag)).toHaveLength(2);
+      expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
+        targets([result.id]),
+      );
     },
   );
-  it("rejects missing persisted create and update results", async () => {
-    const fake = createMockDb();
-    fake.returning.mockResolvedValue([]);
-    fake.limit.mockResolvedValue([]);
+  it("rolls back parent, translations and relations when creating a bad relation", async () => {
     const invalidator = cache();
     await expect(
-      createPost(asMockDatabase(fake), input, "author", invalidator),
-    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    await expect(
-      updatePost(asMockDatabase(fake), { id }, invalidator),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      createPost(
+        db,
+        {
+          ...input,
+          title: { en: "new" },
+          movieActorIds: ["507f1f77bcf86cd799439099"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toThrow();
+    expect(await db.select().from(schema.post)).toEqual([]);
+    expect(await db.select().from(schema.postTranslation)).toEqual([]);
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
-});
-
-describe("post update sequencing", () => {
+  it("rolls back a new version and translations when any update relation fails", async () => {
+    const created = await create();
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          title: { en: "changed" },
+          movieActorIds: [],
+          movieDirectorIds: ["507f1f77bcf86cd799439099"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toThrow();
+    expect((await row(created.id)).version).toBe(0);
+    expect(await getPost(db, created.id, "ALL")).toMatchObject({
+      title: { en: "original" },
+      movieActors: [{ id: "507f1f77bcf86cd799439021" }],
+    });
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("patches locales and only supplied relation roles, with explicit null and clear semantics", async () => {
+    const created = await create();
+    await updatePost(
+      db,
+      {
+        id: created.id,
+        expectedVersion: 0,
+        title: { en: "changed" },
+        movieDirectorIds: ["507f1f77bcf86cd799439022"],
+      },
+      actorId,
+      cache(),
+    );
+    expect(await getPost(db, created.id, "ALL")).toMatchObject({
+      version: 1,
+      title: { en: "changed", zh: "原文" },
+      movieActors: [{ id: "507f1f77bcf86cd799439021" }],
+      movieDirectors: [{ id: "507f1f77bcf86cd799439022" }],
+    });
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 1, title: null, movieActorIds: [] },
+      actorId,
+      cache(),
+    );
+    expect(await getPost(db, created.id, "ALL")).toMatchObject({
+      version: 2,
+      title: null,
+      movieActors: [],
+      movieDirectors: [{ id: "507f1f77bcf86cd799439022" }],
+    });
+  });
+  it("removes only the explicitly requested locale in one versioned save", async () => {
+    const created = await create();
+    const result = await updatePost(
+      db,
+      {
+        id: created.id,
+        expectedVersion: 0,
+        removeLocales: ["en"],
+        title: { zh: "保留" },
+        movieActorIds: [],
+      },
+      actorId,
+      cache(),
+    );
+    expect(result.version).toBe(1);
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "zh", title: "保留" },
+    ]);
+    expect(await db.select().from(schema.postTag)).toEqual([]);
+  });
+  it("clears values without implicitly removing the existing locale rows", async () => {
+    const created = await create();
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: null },
+      actorId,
+      cache(),
+    );
+    const rows = await db.select().from(schema.postTranslation);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.title === null)).toBe(true);
+  });
+  it("does not materialize absent locales on null clearing and preserves empty strings", async () => {
+    const created = await createPost(
+      db,
+      { ...input, title: { en: "original" } },
+      actorId,
+      cache(),
+    );
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: null },
+      actorId,
+      cache(),
+    );
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "en", title: null },
+    ]);
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 1, title: { en: "" } },
+      actorId,
+      cache(),
+    );
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "en", title: "" },
+    ]);
+  });
+  it("rolls back explicit removal when a later relation write fails", async () => {
+    const created = await create();
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          removeLocales: ["en"],
+          movieDirectorIds: ["507f1f77bcf86cd799439099"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toThrow();
+    expect((await row(created.id)).version).toBe(0);
+    expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("validates direct command inputs before writing or invalidating", async () => {
+    const created = await create();
+    const invalidator = cache();
+    const invalidUpdate = {
+      id: created.id,
+      expectedVersion: 0,
+      movieTime: "bad",
+      authorId: "forged",
+    };
+    await expect(
+      updatePost(db, invalidUpdate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          title: { en: "bad" },
+          removeLocales: ["en"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const invalidCreate = { ...input, views: 10 };
+    await expect(
+      createPost(db, invalidCreate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect((await row(created.id)).version).toBe(0);
+    expect(await db.select().from(schema.post)).toHaveLength(1);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("rejects newly introduced unregistered managed media without a partial save", async () => {
+    const invalidator = cache();
+    await expect(
+      createPost(
+        db,
+        {
+          ...input,
+          content: {
+            en: '<img src="https://assets.example.test/files/missing.png">',
+          },
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await db.select().from(schema.post)).toEqual([]);
+    const created = await create();
+    await expect(
+      updatePost(
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          content: {
+            en: '<img src="https://assets.example.test/files/missing.png">',
+          },
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await row(created.id)).version).toBe(0);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("permits unchanged historical managed content and explicit locale removal", async () => {
+    const created = await create();
+    await db
+      .update(schema.postTranslation)
+      .set({
+        content: '<img src="https://assets.example.test/files/historical.png">',
+      })
+      .where(eq(schema.postTranslation.postId, created.id));
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, title: { en: "changed" } },
+      actorId,
+      cache(),
+    );
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 1, removeLocales: ["en"] },
+      actorId,
+      cache(),
+    );
+    expect((await row(created.id)).version).toBe(2);
+    expect(await db.select().from(schema.postTranslation)).toMatchObject([
+      { locale: "zh" },
+    ]);
+  });
+  it("checks effective cover and content readiness even when omitted from the patch", async () => {
+    const mediaId = "507f1f77bcf86cd799439033";
+    const image = '<img src="https://assets.example.test/files/ready.png">';
+    await db.insert(schema.media).values({
+      id: mediaId,
+      state: "READY",
+      key: "ready.png",
+      name: "ready",
+      size: 1,
+      type: "image/png",
+      url: "https://assets.example.test/files/ready.png",
+    });
+    const created = await createPost(
+      db,
+      { ...input, coverId: mediaId, content: { en: image } },
+      actorId,
+      cache(),
+    );
+    await db
+      .update(schema.media)
+      .set({ state: "DELETING" })
+      .where(eq(schema.media.id, mediaId));
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, title: { zh: "edit" } },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, coverId: null },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await row(created.id)).version).toBe(0);
+    await updatePost(
+      db,
+      {
+        id: created.id,
+        expectedVersion: 0,
+        coverId: null,
+        removeLocales: ["en"],
+      },
+      actorId,
+      cache(),
+    );
+    expect((await row(created.id)).version).toBe(1);
+  });
+  it("rejects UPLOADING media as a new cover and as new managed content", async () => {
+    const mediaId = "507f1f77bcf86cd799439034";
+    await db.insert(schema.media).values({
+      id: mediaId,
+      key: "pending.png",
+      name: "pending",
+      size: 1,
+      type: "image/png",
+      url: "https://assets.example.test/files/pending.png",
+    });
+    await expect(
+      createPost(db, { ...input, coverId: mediaId }, actorId, cache()),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      createPost(
+        db,
+        {
+          ...input,
+          content: {
+            en: '<img src="https://assets.example.test/files/pending.png">',
+          },
+        },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await db.select().from(schema.post)).toEqual([]);
+  });
+  it("allows only one concurrent writer at the same expected version", async () => {
+    const created = await create();
+    const invalidator = cache();
+    const outcomes = await Promise.allSettled([
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, movieTime: "first" },
+        actorId,
+        invalidator,
+      ),
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, movieTime: "second" },
+        actorId,
+        invalidator,
+      ),
+    ]);
+    expect(
+      outcomes.filter(({ status }) => status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(outcomes.filter(({ status }) => status === "rejected")).toHaveLength(
+      1,
+    );
+    expect(
+      outcomes.find((outcome) => outcome.status === "rejected"),
+    ).toMatchObject({ reason: { code: "CONFLICT" } });
+    expect((await row(created.id)).version).toBe(1);
+    expect(invalidator.invalidate).toHaveBeenCalledOnce();
+  });
+  it("returns CONFLICT for a stale editor without invalidating", async () => {
+    const created = await create();
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, movieTime: "new" },
+      actorId,
+      cache(),
+    );
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, movieActorIds: [] },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("replays the same creation intent after later edits without overwriting them", async () => {
+    const created = await createPost(db, input, actorId, cache());
+    await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, movieTime: "later" },
+      actorId,
+      cache(),
+    );
+    expect(
+      await createPost(
+        db,
+        { creationToken: input.creationToken, categoryId: input.categoryId },
+        actorId,
+        cache(),
+      ),
+    ).toEqual({ id: created.id, version: 1, publicSync: "completed" });
+    expect((await row(created.id)).movieTime).toBe("later");
+    expect(
+      await getPostCreationResult(db, input.creationToken, actorId),
+    ).toEqual({ id: created.id, version: 1 });
+  });
+  it("rejects a reused token with different original intent", async () => {
+    await createPost(db, input, actorId, cache());
+    await expect(
+      createPost(
+        db,
+        { ...input, title: { en: "different" } },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+  it("scopes creation tokens and result lookup to the authenticated actor", async () => {
+    const first = await createPost(db, input, actorId, cache());
+    await db
+      .insert(schema.user)
+      .values({ id: "another", level: UserLevel.ADMIN });
+    expect(
+      await getPostCreationResult(db, input.creationToken, "another"),
+    ).toBeNull();
+    const second = await createPost(db, input, "another", cache());
+    expect(second.id).not.toBe(first.id);
+  });
+  it("deduplicates concurrent creation for the same actor and token", async () => {
+    const results = await Promise.all([
+      createPost(db, input, actorId, cache()),
+      createPost(db, input, actorId, cache()),
+    ]);
+    expect(results[0].id).toBe(results[1].id);
+    expect(await db.select().from(schema.post)).toHaveLength(1);
+  });
+  it.each([UserStatus.DISABLE, UserStatus.DELETED])(
+    "rechecks %s actor on replay, update, delete and creation lookup",
+    async (status) => {
+      const created = await createPost(db, input, actorId, cache());
+      await db
+        .update(schema.user)
+        .set({ status })
+        .where(eq(schema.user.id, actorId));
+      await expect(
+        createPost(db, input, actorId, cache()),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        updatePost(
+          db,
+          { id: created.id, expectedVersion: 0, movieActorIds: [] },
+          actorId,
+          cache(),
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        destroyPosts(
+          db,
+          { items: [{ id: created.id, expectedVersion: 0 }] },
+          actorId,
+          cache(),
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        getPostCreationResult(db, input.creationToken, actorId),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    },
+  );
+  it("rejects revoked role even when router previously admitted the account", async () => {
+    const created = await create();
+    await db
+      .update(schema.user)
+      .set({ level: UserLevel.GUEST })
+      .where(eq(schema.user.id, actorId));
+    await expect(
+      updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, movieActorIds: [] },
+        actorId,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+  it("requires tag management for any relation patch including clears and replays", async () => {
+    const created = await create();
+    const originalCan = permissions.can;
+    const permission = vi
+      .spyOn(permissions, "can")
+      .mockImplementation(
+        (role, capability) =>
+          capability !== permissions.Permission.postManageTags &&
+          originalCan(role, capability),
+      );
+    try {
+      await updatePost(
+        db,
+        { id: created.id, expectedVersion: 0, movieTime: "allowed" },
+        actorId,
+        cache(),
+      );
+      await expect(
+        updatePost(
+          db,
+          { id: created.id, expectedVersion: 1, movieActorIds: [] },
+          actorId,
+          cache(),
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        createPost(
+          db,
+          {
+            ...input,
+            status: PostStatus.DRAFT,
+            title: { en: "original", zh: "原文" },
+            movieActorIds: ["507f1f77bcf86cd799439021"],
+          },
+          actorId,
+          cache(),
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    } finally {
+      permission.mockRestore();
+    }
+  });
+  it("never leaks private creation metadata on mutation or detail", async () => {
+    const result = await createPost(db, input, actorId, cache());
+    expect(await row(result.id)).toMatchObject({
+      creationToken: input.creationToken,
+      creationInputHash: expect.any(String),
+    });
+    expect(Object.keys(result).sort()).toEqual(["id", "publicSync", "version"]);
+    for (const visibility of ["ALL", "PUBLISHED_ONLY"] as const) {
+      await db
+        .update(schema.post)
+        .set({ status: PostStatus.PUBLISHED })
+        .where(eq(schema.post.id, result.id));
+      const detail = await getPost(db, result.id, visibility);
+      expect(detail).not.toHaveProperty("creationToken");
+      expect(detail).not.toHaveProperty("creationInputHash");
+    }
+  });
+  it.each(["unknown-root", "unknown-item", "duplicate", "empty"] as const)(
+    "rejects %s direct delete input before any write or invalidation",
+    async (kind) => {
+      const created = await create();
+      const item = { id: created.id, expectedVersion: 0 };
+      const input =
+        kind === "unknown-root"
+          ? { items: [item], force: true }
+          : kind === "unknown-item"
+            ? { items: [{ ...item, authorId: "forged" }] }
+            : kind === "duplicate"
+              ? { items: [item, item] }
+              : { items: [] };
+      const invalidator = cache();
+      await expect(
+        destroyPosts(db, input, actorId, invalidator),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect((await row(created.id)).version).toBe(0);
+      expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
+      expect(await db.select().from(schema.postTag)).toHaveLength(1);
+      expect(invalidator.invalidate).not.toHaveBeenCalled();
+    },
+  );
+  it("rolls back an entire batch delete on any stale version", async () => {
+    const first = await create();
+    const second = await createPost(
+      db,
+      { ...input, creationToken: "1730ef5b-f5e9-4f80-aa54-cf60f71c4397" },
+      actorId,
+      cache(),
+    );
+    const invalidator = cache();
+    await expect(
+      destroyPosts(
+        db,
+        {
+          items: [
+            { id: first.id, expectedVersion: 0 },
+            { id: second.id, expectedVersion: 2 },
+          ],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await db.select().from(schema.post)).toHaveLength(2);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+    await destroyPosts(
+      db,
+      {
+        items: [
+          { id: first.id, expectedVersion: 0 },
+          { id: second.id, expectedVersion: 0 },
+        ],
+      },
+      actorId,
+      invalidator,
+    );
+    expect(await db.select().from(schema.post)).toEqual([]);
+    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
+      targets([first.id, second.id]),
+    );
+    expect(
+      await getPostCreationResult(db, input.creationToken, actorId),
+    ).toBeNull();
+  });
+  it("keeps views independent from edit version and timestamp", async () => {
+    const created = await createPost(
+      db,
+      { ...input, status: PostStatus.PUBLISHED },
+      actorId,
+      cache(),
+    );
+    const before = await row(created.id);
+    await incrementPostViews(db, created.id);
+    expect(await row(created.id)).toMatchObject({
+      version: 0,
+      updatedAt: before.updatedAt,
+      views: 1,
+    });
+  });
   it.each([
     [PostStatus.DRAFT, PostStatus.PUBLISHED],
     [PostStatus.TO_AUDIT, PostStatus.PUBLISHED],
     [PostStatus.PUBLISHED, PostStatus.DRAFT],
-  ])(
-    "%s → %s reads current status, writes, then invalidates",
-    async (current, target) => {
-      const fake = createMockDb();
-      const order: string[] = [];
-      fake.limit.mockImplementation(async () => {
-        order.push("read");
-        return [{ status: current }];
-      });
-      fake.returning.mockImplementation(async () => {
-        order.push("write");
-        return [{ id }];
-      });
-      const invalidator = {
-        invalidate: vi.fn(async () => {
-          order.push("invalidate");
-          return { state: "completed" as const };
-        }),
-      };
-      await expect(
-        updatePost(asMockDatabase(fake), { id, status: target }, invalidator),
-      ).resolves.toEqual({ id, publicSync: "completed" });
-      expect(order).toEqual(["read", "write", "invalidate"]);
-      expect(fake.set).toHaveBeenCalledWith(
-        expect.objectContaining({ status: target }),
-      );
-      expect(fake.transaction).toHaveBeenCalledOnce();
-    },
-  );
-  it("does not read current status when status is omitted", async () => {
-    const fake = createMockDb();
-    fake.returning.mockResolvedValue([{ id }]);
-    fake.where.mockReturnValueOnce(fake).mockResolvedValueOnce([]);
-    await updatePost(
-      asMockDatabase(fake),
-      { id, title: { zh: "标题", en: "Title" } },
+  ])("keeps valid transition %s → %s", async (current, target) => {
+    const created = await createPost(
+      db,
+      { ...input, status: current },
+      actorId,
       cache(),
     );
-    expect(fake.limit).not.toHaveBeenCalled();
+    const result = await updatePost(
+      db,
+      { id: created.id, expectedVersion: 0, status: target },
+      actorId,
+      cache(),
+    );
+    expect(result.version).toBe(1);
+    expect((await row(created.id)).status).toBe(target);
   });
-  it.each([PostStatus.PUBLISHED, PostStatus.DRAFT, PostStatus.TO_AUDIT])(
-    "keeps an unchanged %s status",
-    async (status) => {
-      const fake = createMockDb();
-      fake.limit.mockResolvedValue([{ status }]);
-      fake.returning.mockResolvedValue([{ id }]);
-      await expect(
-        updatePost(asMockDatabase(fake), { id, status }, cache()),
-      ).resolves.toMatchObject({ id });
-      expect(fake.set).toHaveBeenCalledWith(
-        expect.objectContaining({ status }),
-      );
-    },
-  );
-  it.each([
-    {
-      current: null,
-      target: PostStatus.PUBLISHED,
-      code: "POST_NOT_FOUND",
-      message: "文章不存在",
-    },
-    {
-      current: "UNKNOWN",
-      target: PostStatus.PUBLISHED,
-      code: "INTERNAL_SERVER_ERROR",
-    },
-    {
-      current: "UNKNOWN",
-      target: PostStatus.DRAFT,
-      code: "INTERNAL_SERVER_ERROR",
-    },
-    {
-      current: PostStatus.TO_AUDIT,
-      target: PostStatus.DRAFT,
-      code: "INVALID_STATE_TRANSITION",
-      message: "只有已发布文章可以撤回",
-    },
-    {
-      current: PostStatus.PUBLISHED,
-      target: PostStatus.TO_AUDIT,
-      code: "INVALID_POST_STATUS",
-      message: `文章不支持变更为 ${PostStatus.TO_AUDIT}`,
-    },
-  ])(
-    "rejects $current → $target before writes or invalidation",
-    async ({ current, target, ...error }) => {
-      const fake = createMockDb();
-      fake.limit.mockResolvedValue(
-        current === null ? [] : [{ status: current }],
-      );
-      const invalidator = cache();
-      await expect(
-        updatePost(asMockDatabase(fake), { id, status: target }, invalidator),
-      ).rejects.toMatchObject(error);
-      expect(fake.transaction).not.toHaveBeenCalled();
-      expect(invalidator.invalidate).not.toHaveBeenCalled();
-    },
-  );
-  it("does not invalidate when the status write fails", async () => {
-    const fake = createMockDb();
-    fake.limit.mockResolvedValue([{ status: PostStatus.DRAFT }]);
-    const failure = new Error("write failed");
-    fake.returning.mockRejectedValue(failure);
-    const invalidator = cache();
+  it("rejects invalid transition before changing relations", async () => {
+    const created = await createPost(
+      db,
+      { ...input, status: PostStatus.TO_AUDIT },
+      actorId,
+      cache(),
+    );
     await expect(
       updatePost(
-        asMockDatabase(fake),
-        { id, status: PostStatus.PUBLISHED },
-        invalidator,
+        db,
+        {
+          id: created.id,
+          expectedVersion: 0,
+          status: PostStatus.DRAFT,
+          movieActorIds: ["507f1f77bcf86cd799439021"],
+        },
+        actorId,
+        cache(),
       ),
-    ).rejects.toBe(failure);
-    expect(invalidator.invalidate).not.toHaveBeenCalled();
+    ).rejects.toMatchObject({ code: "INVALID_STATE_TRANSITION" });
+    expect((await row(created.id)).version).toBe(0);
+    expect(await db.select().from(schema.postTag)).toEqual([]);
+  });
+  it("stores the four typed relation roles distinctly", async () => {
+    await createPost(
+      db,
+      {
+        ...input,
+        movieActorIds: ["507f1f77bcf86cd799439021"],
+        movieDirectorIds: ["507f1f77bcf86cd799439021"],
+        movieStyleIds: ["507f1f77bcf86cd799439021"],
+        galleryStyleIds: ["507f1f77bcf86cd799439021"],
+      },
+      actorId,
+      cache(),
+    );
+    expect(
+      (await db.select().from(schema.postTag)).map(({ type }) => type).sort(),
+    ).toEqual(Object.values(TagType).sort());
   });
 });
 
-describe("post tag writes", () => {
-  it("deduplicates tags inside one transaction before invalidating the post", async () => {
+describe("post transaction retry boundary", () => {
+  it("does not retry an unknown network outcome", async () => {
     const fake = createMockDb();
-    const order: string[] = [];
-    fake.values.mockImplementation(async () => {
-      order.push("tags");
+    const failure = Object.assign(new Error("connection lost after commit"), {
+      code: "CONNECTION_CLOSED",
     });
-    const invalidator = {
-      invalidate: vi.fn(async () => {
-        order.push("invalidate");
-        return { state: "degraded" as const };
-      }),
-    };
+    fake.transaction.mockRejectedValue(failure);
     await expect(
-      updatePostTags(
-        asMockDatabase(fake),
-        {
-          postId: id,
-          tagIds: ["tag-1", "tag-1", "tag-2"],
-          type: TagType.ACTOR,
-        },
-        invalidator,
-      ),
-    ).resolves.toEqual({ success: true, publicSync: "degraded" });
-    expect(fake.transaction).toHaveBeenCalledOnce();
-    expect(fake.delete).toHaveBeenCalledWith(schema.postTag);
-    expect(fake.values).toHaveBeenCalledExactlyOnceWith([
-      { postId: id, tagId: "tag-1", type: TagType.ACTOR },
-      { postId: id, tagId: "tag-2", type: TagType.ACTOR },
-    ]);
-    expect(order).toEqual(["tags", "invalidate"]);
-    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
-      targets([id]),
-    );
-  });
-  it("clears the selected tag type without an empty insert", async () => {
-    const fake = createMockDb();
-    const invalidator = cache();
-    await expect(
-      updatePostTags(
-        asMockDatabase(fake),
-        { postId: id, tagIds: [], type: TagType.ACTOR },
-        invalidator,
-      ),
-    ).resolves.toEqual({ success: true, publicSync: "completed" });
-    expect(fake.delete).toHaveBeenCalledWith(schema.postTag);
-    expect(fake.insert).not.toHaveBeenCalled();
-    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
-      targets([id]),
-    );
-  });
-  it("does not invalidate after a failed tag transaction", async () => {
-    const fake = createMockDb();
-    const failure = new Error("tag insert failed");
-    fake.values.mockRejectedValue(failure);
-    const invalidator = cache();
-    await expect(
-      updatePostTags(
-        asMockDatabase(fake),
-        { postId: id, tagIds: ["tag-1"], type: TagType.ACTOR },
-        invalidator,
-      ),
+      createPost(asMockDatabase(fake), input, actorId, cache()),
     ).rejects.toBe(failure);
-    expect(invalidator.invalidate).not.toHaveBeenCalled();
+    expect(fake.transaction).toHaveBeenCalledOnce();
+  });
+  it("does not retry a failure after the transaction callback started, including failed rollback", async () => {
+    const fake = createMockDb();
+    const failure = Object.assign(new Error("rollback failed"), {
+      code: "SQLITE_BUSY",
+    });
+    fake.limit.mockRejectedValue(failure);
+    await expect(
+      createPost(asMockDatabase(fake), input, actorId, cache()),
+    ).rejects.toBe(failure);
+    expect(fake.transaction).toHaveBeenCalledOnce();
+  });
+  it("bounds known BEGIN contention and reports a non-specific conflict", async () => {
+    const fake = createMockDb();
+    fake.transaction.mockRejectedValue(
+      Object.assign(new Error("busy"), { code: "SQLITE_BUSY" }),
+    );
+    await expect(
+      createPost(asMockDatabase(fake), input, actorId, cache()),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "保存暂时繁忙，请核对结果后重试",
+    });
+    expect(fake.transaction).toHaveBeenCalledTimes(4);
+    expect(fake.insert).not.toHaveBeenCalled();
   });
 });

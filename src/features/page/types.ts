@@ -12,6 +12,7 @@ export type PageInput = PaginationInput & {
 };
 export interface PageRecord {
   id: string;
+  version: number;
   authorId: string;
   content: I18n | null;
   status: PageStatus;

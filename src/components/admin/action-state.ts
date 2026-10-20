@@ -106,7 +106,7 @@ export async function runAdminMutation<Input, Result>({
 
 interface SubmitAdminBatchDeleteOptions<Selection> {
   selectedRows: readonly { id: string }[];
-  deleteItems: (ids: string[]) => Promise<unknown>;
+  deleteItems: (ids: string[]) => Promise<AdminMutationState>;
   onSelectionChange: (rows: Selection[]) => void;
 }
 
@@ -114,7 +114,9 @@ export async function submitAdminBatchDelete<Selection>({
   selectedRows,
   deleteItems,
   onSelectionChange,
-}: SubmitAdminBatchDeleteOptions<Selection>): Promise<void> {
-  await deleteItems(selectedRows.map((row) => row.id));
+}: SubmitAdminBatchDeleteOptions<Selection>): Promise<boolean> {
+  const state = await deleteItems(selectedRows.map((row) => row.id));
+  if (state !== "success") return false;
   onSelectionChange([]);
+  return true;
 }

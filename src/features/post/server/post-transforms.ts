@@ -1,10 +1,10 @@
 import type { InferInsertModel } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
-import type { PostInsert, PostUpdate } from "../schema";
+import type { PostFields } from "../schema";
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 /** 将文章输入转换为可持久化结构。 */
 export function toPostInsertValues(
-  input: PostInsert,
+  input: PostFields,
   authorId: string,
 ): PostInsertValues {
   return {
@@ -20,7 +20,7 @@ export function toPostInsertValues(
 }
 /** 将文章更新输入转换为可持久化结构。 */
 export function toPostUpdateValues(
-  input: Omit<PostUpdate, "id">,
+  input: Partial<PostFields>,
 ): Partial<PostInsertValues> {
   return {
     ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),

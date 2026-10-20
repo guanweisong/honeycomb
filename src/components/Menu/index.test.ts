@@ -2,8 +2,10 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+let pathname = "/admin";
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/admin",
+  usePathname: () => pathname,
 }));
 
 vi.mock("motion/react", () => ({
@@ -14,30 +16,15 @@ vi.mock("motion/react", () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("./components/MenuTitle", () => ({
-  MenuTitle: ({
-    item,
-    toggleMenu,
-  }: {
-    item: { name: string; path: string; children?: unknown[] };
-    toggleMenu?: (path: string) => void;
-  }) =>
-    item.children
-      ? React.createElement(
-          "button",
-          { onClick: () => toggleMenu?.(item.path) },
-          item.name,
-        )
-      : React.createElement("a", { href: item.path }, item.name),
-}));
-
 import { Menu } from "./index";
+import { menu } from "@/app/admin/constants/menu-data";
 
 describe("Menu", () => {
   let container: HTMLDivElement;
   let root: Root;
 
   beforeEach(() => {
+    pathname = "/admin";
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -47,6 +34,26 @@ describe("Menu", () => {
     await act(async () => root.unmount());
     container.remove();
   });
+
+  it.each(["/admin/post/list", "/admin/page/edit"])(
+    "opens the actual active ancestor for %s",
+    async (route) => {
+      pathname = route;
+      await act(async () =>
+        root.render(React.createElement(Menu, { data: menu })),
+      );
+      expect(container.querySelector(`a[href="${route}"]`)).not.toBeNull();
+      const parent = container.querySelector<HTMLButtonElement>(
+        `button[aria-label="${route.includes("/post/") ? "文章" : "页面"}"]`,
+      );
+      expect(parent?.getAttribute("aria-expanded")).toBe("true");
+      expect(
+        container.querySelector(
+          `a[href="${route.includes("/post/") ? "/admin/page/edit" : "/admin/post/list"}"]`,
+        ),
+      ).toBeNull();
+    },
+  );
 
   it("renders leaf links and toggles nested menu items", async () => {
     await act(async () => {

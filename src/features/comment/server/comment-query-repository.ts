@@ -12,7 +12,10 @@ import { and, asc, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { observeDbOperation } from "@/lib/observability/server";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
 import { assembleLocalizedField } from "@/lib/db/translation-values";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 

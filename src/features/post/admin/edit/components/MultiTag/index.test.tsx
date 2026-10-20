@@ -7,12 +7,12 @@ import { TagType } from "@/features/tag/tag-kind";
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-const toastMocks = vi.hoisted(() => ({ warning: vi.fn() }));
+const toastMocks = vi.hoisted(() => ({ warning: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 
+let accountId = "account-a";
 const grantedPermissions = new Set<string>();
 const queryInputs: Array<{ name?: string }> = [];
-const updateInputs: unknown[] = [];
 const createInputs: unknown[] = [];
 const loggedErrors: unknown[] = [];
 
@@ -28,20 +28,13 @@ let createState: {
     publicSync?: "completed" | "degraded";
   }>;
 };
-let updateState: {
-  isPending: boolean;
-  mutateAsync: (input: unknown) => Promise<unknown>;
-};
-
 vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: accountId } }),
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
-    post: {
-      updateTags: { useMutation: () => updateState },
-    },
     tag: {
       create: { useMutation: () => createState },
       index: {
@@ -130,13 +123,14 @@ describe("MultiTag", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     toastMocks.warning.mockReset();
+    toastMocks.error.mockReset();
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
 
+    accountId = "account-a";
     grantedPermissions.clear();
     queryInputs.length = 0;
-    updateInputs.length = 0;
     createInputs.length = 0;
     loggedErrors.length = 0;
     queryState = { isFetching: false };
@@ -145,13 +139,6 @@ describe("MultiTag", () => {
       mutateAsync: async (input) => {
         createInputs.push(input);
         return { id: "created-tag", name: { en: "React", zh: "React" } };
-      },
-    };
-    updateState = {
-      isPending: false,
-      mutateAsync: async (input) => {
-        updateInputs.push(input);
-        return { success: true };
       },
     };
   });
@@ -204,7 +191,7 @@ describe("MultiTag", () => {
     ).toBeNull();
   });
 
-  it("removes a selected tag and persists the remaining ids", async () => {
+  it("stages removal immediately without persisting relations", async () => {
     grantedPermissions.add("post:manage-tags");
     const changes: unknown[] = [];
     await renderMultiTag({
@@ -226,12 +213,119 @@ describe("MultiTag", () => {
     expect(changes).toEqual([
       [{ id: "keep", name: { en: "Keep", zh: "保留" } }],
     ]);
-    expect(updateInputs).toEqual([
-      { postId: "post-1", tagIds: ["keep"], type: "ACTOR" },
-    ]);
   });
 
-  it("does not add or persist a duplicate tag", async () => {
+  it("hides global creation without tag-create capability", async () => {
+    grantedPermissions.add("post:manage-tags");
+    await renderMultiTag();
+    await setSearch("New");
+    expect(findButton("添加")).toBeDefined();
+    expect(findButton("新建")).toBeUndefined();
+    expect(createInputs).toEqual([]);
+  });
+
+  it("composes rapid local selections before the controlled value rerenders", async () => {
+    grantedPermissions.add("post:manage-tags");
+    const first = { id: "first", name: { en: "First", zh: "一" } };
+    const second = { id: "second", name: { en: "Second", zh: "二" } };
+    queryState = { data: { list: [first, second] }, isFetching: false };
+    const onChange = vi.fn();
+    await renderMultiTag({ value: [], onChange });
+    const options = container.querySelectorAll<HTMLButtonElement>(
+      '[data-testid="command-item"]',
+    );
+    await act(async () => {
+      options.item(0).click();
+      options.item(1).click();
+      options.item(0).click();
+    });
+    expect(onChange.mock.calls).toEqual([[[first]], [[first, second]]]);
+  });
+
+  it("does not submit a real surrounding form when removing a tag", async () => {
+    grantedPermissions.add("post:manage-tags");
+    const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
+    await act(async () =>
+      root.render(
+        <form onSubmit={onSubmit}>
+          <MultiTag
+            postId="post-a"
+            type={TagType.ACTOR}
+            title="演员"
+            value={[{ id: "a", name: { en: "A", zh: "A" } }]}
+            onChange={vi.fn()}
+          />
+        </form>,
+      ),
+    );
+    const location = window.location.href;
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="tag-badge"] button')
+        ?.click(),
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(window.location.href).toBe(location);
+  });
+
+  it.each(["switch", "return", "unmount", "account", "account-return", "type"])(
+    "ignores late tag creation after %s",
+    async (mode) => {
+      grantedPermissions.add("post:manage-tags");
+      grantedPermissions.add("tag:create");
+      let resolve:
+        | ((tag: Awaited<ReturnType<typeof createState.mutateAsync>>) => void)
+        | undefined;
+      createState.mutateAsync = () =>
+        new Promise((done) => {
+          resolve = done;
+        });
+      const onChange = vi.fn();
+      await renderMultiTag({ postId: "a", onChange });
+      await setSearch("New");
+      await act(async () => findButton("新建")?.click());
+      if (mode === "unmount") await act(async () => root.render(<div />));
+      else if (mode === "account" || mode === "account-return") {
+        accountId = "account-b";
+        await renderMultiTag({ postId: "a", onChange });
+        if (mode === "account-return") {
+          accountId = "account-a";
+          await renderMultiTag({ postId: "a", onChange });
+        }
+      } else if (mode === "type") {
+        await renderMultiTag({ postId: "a", type: TagType.DIRECTOR, onChange });
+      } else {
+        await renderMultiTag({ postId: "b", onChange });
+        if (mode === "return") await renderMultiTag({ postId: "a", onChange });
+      }
+      await act(async () =>
+        resolve?.({ id: "created", name: { en: "New", zh: "New" } }),
+      );
+      expect(onChange).not.toHaveBeenCalled();
+    },
+  );
+
+  it("stages an existing tag immediately without any post mutation API", async () => {
+    grantedPermissions.add("post:manage-tags");
+    queryState = {
+      data: { list: [{ id: "new", name: { en: "New", zh: "新" } }] },
+      isFetching: false,
+    };
+    const onChange = vi.fn();
+    await renderMultiTag({ value: [], onChange });
+    await setSearch("New");
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="command-item"]')
+        ?.click(),
+    );
+    expect(onChange).toHaveBeenCalledExactlyOnceWith([
+      { id: "new", name: { en: "New", zh: "新" } },
+    ]);
+    expect(container.querySelector("input")?.value).toBe("");
+  });
+
+  it("does not stage a duplicate tag", async () => {
     grantedPermissions.add("post:manage-tags");
     queryState = {
       data: {
@@ -249,7 +343,6 @@ describe("MultiTag", () => {
     });
 
     expect(changes).toEqual([]);
-    expect(updateInputs).toEqual([]);
   });
 
   it("adds a search result locally without a post id", async () => {
@@ -277,7 +370,6 @@ describe("MultiTag", () => {
     expect(changes).toEqual([
       [{ id: "new-tag", name: { en: "New", zh: "新标签" } }],
     ]);
-    expect(updateInputs).toEqual([]);
   });
 
   it("debounces searches and clears stale options for an empty input", async () => {
@@ -301,7 +393,7 @@ describe("MultiTag", () => {
     expect(container.querySelector('[data-testid="command-item"]')).toBeNull();
   });
 
-  it("creates a permitted tag and associates it with the post", async () => {
+  it("creates a permitted global tag and stages its selection only", async () => {
     grantedPermissions.add("post:manage-tags");
     grantedPermissions.add("tag:create");
     const changes: unknown[] = [];
@@ -321,9 +413,6 @@ describe("MultiTag", () => {
     expect(createInputs).toEqual([{ name: { en: "React", zh: "React" } }]);
     expect(changes).toEqual([
       [{ id: "created-tag", name: { en: "React", zh: "React" } }],
-    ]);
-    expect(updateInputs).toEqual([
-      { postId: "post-1", tagIds: ["created-tag"], type: "ACTOR" },
     ]);
   });
 
@@ -348,91 +437,40 @@ describe("MultiTag", () => {
     });
 
     expect(changes).toEqual([]);
+    expect(container.querySelector("input")?.value).toBe("Broken");
+    expect(toastMocks.error).toHaveBeenCalledExactlyOnceWith(
+      "标签创建失败，请重试",
+    );
     expect(loggedErrors).toEqual([
       ["client.error", { operation: "tag.create", outcome: "error" }],
     ]);
   });
 
-  it("keeps the local removal and records an association update failure", async () => {
-    grantedPermissions.add("post:manage-tags");
-    updateState.mutateAsync = async () => {
-      throw new Error("update failed");
-    };
-    const changes: unknown[] = [];
-    await renderMultiTag({ onChange: (tags) => changes.push(tags) });
-
-    await act(async () => {
-      container
-        .querySelector('[data-testid="tag-badge"] button')
-        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      await Promise.resolve();
-    });
-
-    expect(changes).toEqual([[]]);
-    expect(loggedErrors).toEqual([
-      ["client.error", { operation: "tag.remove", outcome: "error" }],
-    ]);
-  });
   it.each([
-    ["completed", "completed", 0],
-    ["degraded", "completed", 1],
-    ["completed", "degraded", 1],
-    ["degraded", "degraded", 1],
-    ["degraded", "failed", 0],
-    ["degraded", "local", 1],
+    ["completed", 0],
+    ["degraded", 1],
   ] as const)(
-    "handles create %s then association %s without duplicate or misleading warnings",
-    async (creationSync, relationSync, warnings) => {
+    "reports global tag creation %s synchronization only",
+    async (publicSync, warnings) => {
       grantedPermissions.add("post:manage-tags");
       grantedPermissions.add("tag:create");
       createState.mutateAsync = async () => ({
         id: "created-tag",
         name: { en: "React", zh: "React" },
-        publicSync: creationSync,
+        publicSync,
       });
-      updateState.mutateAsync = async () => {
-        if (relationSync === "failed") throw new Error("association failed");
-        return { success: true, publicSync: relationSync };
-      };
-      const changes: unknown[] = [];
-      await renderMultiTag({
-        value: [],
-        postId: relationSync === "local" ? "" : "post-1",
-        onChange: (tags) => changes.push(tags),
-      });
+      const onChange = vi.fn();
+      await renderMultiTag({ value: [], onChange });
       await setSearch("React");
-      await act(async () => {
-        findButton("新建")?.click();
-      });
+      await act(async () => findButton("新建")?.click());
+      expect(onChange).toHaveBeenCalledExactlyOnceWith([
+        { id: "created-tag", name: { en: "React", zh: "React" } },
+      ]);
       expect(toastMocks.warning).toHaveBeenCalledTimes(warnings);
       if (warnings)
         expect(toastMocks.warning).toHaveBeenCalledWith(
           "已保存，公开内容同步未完成，请稍后检查公开页面",
         );
-      expect(changes).toEqual([
-        [{ id: "created-tag", name: { en: "React", zh: "React" } }],
-      ]);
-      if (relationSync === "failed")
-        expect(loggedErrors).toEqual([
-          ["client.error", { operation: "tag.add", outcome: "error" }],
-        ]);
     },
   );
-
-  it("warns when removing a tag saves with degraded synchronization", async () => {
-    grantedPermissions.add("post:manage-tags");
-    updateState.mutateAsync = async () => ({
-      success: true,
-      publicSync: "degraded",
-    });
-    await renderMultiTag();
-    await act(async () => {
-      container
-        .querySelector<HTMLButtonElement>('[data-testid="tag-badge"] button')
-        ?.click();
-    });
-    expect(toastMocks.warning).toHaveBeenCalledExactlyOnceWith(
-      "已保存，公开内容同步未完成，请稍后检查公开页面",
-    );
-  });
 });

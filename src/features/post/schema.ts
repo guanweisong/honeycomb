@@ -3,30 +3,21 @@ import {
   queryString,
   QueryStringArraySchema,
 } from "@/lib/validation/query.string.schema";
-import { NullableLocalizedInputSchema } from "@/lib/i18n/i18n";
-const OptionalI18nSchema = NullableLocalizedInputSchema.optional();
-import {
-  hasUpdateFields,
-  requiredString,
-  type CleanZod,
-} from "@/lib/validation/validation";
+import { requiredString, type CleanZod } from "@/lib/validation/validation";
 import { z } from "zod";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { TagType } from "@/features/tag/tag-kind";
 import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
 
-export const PostTagUpdateSchema = z.object({
-  postId: IdSchema,
-  tagIds: z
-    .array(IdSchema)
-    .max(MAX_BATCH_SIZE)
-    .transform((ids) => [...new Set(ids)]),
-  type: z.enum(TagType),
-});
-export type PostTagUpdate = z.output<typeof PostTagUpdateSchema>;
+const OptionalI18nSchema = z
+  .strictObject({
+    en: z.string().nullish(),
+    zh: z.string().nullish(),
+  })
+  .nullable()
+  .optional();
 
 /**
  * 新增文章时的数据验证 schema。
@@ -38,7 +29,7 @@ export type PostTagUpdate = z.output<typeof PostTagUpdateSchema>;
  * - **电影类型文章字段**: movieTime
  * - **图库类型文章字段**: galleryLocation, galleryTime
  */
-export const PostInsertSchema = z.object({
+export const PostFieldsSchema = z.object({
   status: z.enum(PostStatus).optional(),
   type: z.enum(PostType).optional(),
   categoryId: requiredString("分类目录不能为空"),
@@ -54,13 +45,83 @@ export const PostInsertSchema = z.object({
   galleryLocation: OptionalI18nSchema,
 });
 
+export type PostFields = z.output<typeof PostFieldsSchema>;
+const relationIds = z
+  .array(IdSchema)
+  .max(MAX_BATCH_SIZE)
+  .transform((ids) => [...new Set(ids)]);
+export const PostRelationPatchSchema = z.strictObject({
+  movieActorIds: relationIds.optional(),
+  movieDirectorIds: relationIds.optional(),
+  movieStyleIds: relationIds.optional(),
+  galleryStyleIds: relationIds.optional(),
+});
+export type PostRelationPatch = z.output<typeof PostRelationPatchSchema>;
+export const PostInsertSchema = PostFieldsSchema.extend(
+  PostRelationPatchSchema.shape,
+)
+  .extend({
+    creationToken: z.uuid(),
+  })
+  .strict();
 export type PostInsert = z.output<typeof PostInsertSchema>;
-
-export const PostUpdateSchema = PostInsertSchema.partial()
-  .extend({ id: IdSchema })
-  .refine(hasUpdateFields, "至少修改一个字段");
-
+const version = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+export const PostUpdateSchema = PostFieldsSchema.partial()
+  .extend(PostRelationPatchSchema.shape)
+  .extend({
+    id: IdSchema,
+    expectedVersion: version,
+    removeLocales: z
+      .array(z.enum(["en", "zh"]))
+      .max(2)
+      .refine(
+        (locales) => new Set(locales).size === locales.length,
+        "删除语言不能重复",
+      )
+      .optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      (value.removeLocales ?? []).every((locale) =>
+        [
+          value.title,
+          value.content,
+          value.excerpt,
+          value.quoteAuthor,
+          value.quoteContent,
+          value.galleryLocation,
+        ].every(
+          (field) =>
+            field !== null &&
+            (field === undefined || !Object.hasOwn(field, locale)),
+        ),
+      ),
+    "不能同时修改和删除同一语言",
+  )
+  .refine(
+    (value) =>
+      Object.entries(value).some(
+        ([key, field]) =>
+          key !== "id" && key !== "expectedVersion" && field !== undefined,
+      ),
+    "至少修改一个字段",
+  );
 export type PostUpdate = z.output<typeof PostUpdateSchema>;
+export const PostDeleteSchema = z.strictObject({
+  items: z
+    .array(z.strictObject({ id: IdSchema, expectedVersion: version }))
+    .min(1)
+    .max(MAX_BATCH_SIZE)
+    .refine(
+      (items) => new Set(items.map(({ id }) => id)).size === items.length,
+      "文章不能重复",
+    ),
+});
+export type PostDelete = z.output<typeof PostDeleteSchema>;
+export const PostCreationResultInputSchema = z.object({
+  creationToken: z.uuid(),
+});
 
 /**
  * 获取文章列表时的查询参数验证 schema。

@@ -1,7 +1,6 @@
+import { MediaStateSchema, MediaErrorCodeSchema } from "./lifecycle";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import { z } from "zod";
-
-export type { MediaInsert } from "./schema";
 
 /** 媒体读模型，明确脱离数据库表结构。 */
 export const MediaRecordSchema = z.object({
@@ -19,9 +18,27 @@ export const MediaRecordSchema = z.object({
 });
 export type MediaRecord = z.infer<typeof MediaRecordSchema>;
 
-export type MediaListInput = PaginationInput;
-
-export interface MediaDeleteTarget {
-  id: string;
-  key: string;
-}
+export const MediaManagementRecordSchema = MediaRecordSchema.extend({
+  state: MediaStateSchema,
+  verifiedAt: z.string().nullable(),
+  lastAttemptAt: z.string().nullable(),
+  lastErrorCode: MediaErrorCodeSchema.nullable(),
+});
+export type MediaManagementRecord = z.infer<typeof MediaManagementRecordSchema>;
+export type MediaListInput = PaginationInput & {
+  state?: z.infer<typeof MediaStateSchema>;
+};
+export const MediaConfirmResultSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("ready"), media: MediaRecordSchema }),
+  z.object({
+    state: z.literal("pending"),
+    id: z.string(),
+    message: z.string(),
+  }),
+  z.object({
+    state: z.literal("rejected"),
+    id: z.string(),
+    message: z.string(),
+  }),
+]);
+export type MediaConfirmResult = z.infer<typeof MediaConfirmResultSchema>;

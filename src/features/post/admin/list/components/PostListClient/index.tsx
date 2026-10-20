@@ -12,6 +12,7 @@ import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
 import {
+  type PostDelete,
   PostListQueryInput,
   PostListQuerySchema,
 } from "@/features/post/schema";
@@ -28,6 +29,9 @@ export default function PostListClient() {
   const canUpdatePost = useCan(Permission.postUpdate);
   const canDeletePost = useCan(Permission.postDelete);
   const [selectedRows, setSelectedRows] = useState<PostListItemEntity[]>([]);
+  const [deleteItems, setDeleteItems] = useState<PostDelete["items"] | null>(
+    null,
+  );
   const [searchParams, setSearchParams] = useState<PostListQueryInput>({});
   const router = useRouter();
   const { data, isFetching, isError, refetch } = trpc.post.adminIndex.useQuery(
@@ -36,9 +40,9 @@ export default function PostListClient() {
   );
   const destroyPost = trpc.post.destroy.useMutation();
 
-  const handleDeleteItem = async (ids: string[]) => {
-    await runAdminMutation({
-      input: { ids },
+  const handleDeleteItem = async (items: PostDelete["items"]) => {
+    return runAdminMutation({
+      input: { items },
       mutate: destroyPost.mutateAsync,
       refetch,
       notifySuccess: toast.success,
@@ -49,94 +53,114 @@ export default function PostListClient() {
     });
   };
 
-  const handleDeleteBatch = async () => {
-    await handleDeleteItem(selectedRows.map((item) => item.id));
+  const handleConfirmDelete = async () => {
+    if (!deleteItems) return false;
+    const result = await handleDeleteItem(deleteItems);
+    if (result !== "success") return false;
     setSelectedRows([]);
+    return true;
   };
 
   return (
-    <DataTable<PostListItemEntity>
-      data={{
-        list: data?.list ?? [],
-        total: data?.total ?? 0,
-      }}
-      onChange={(params) => setSearchParams(PostListQuerySchema.parse(params))}
-      columns={postListTableColumns}
-      isFetching={isFetching}
-      error={isError}
-      onRetry={() => {
-        void refetch();
-      }}
-      selectableRows={canDeletePost}
-      selectedRows={selectedRows}
-      onSelectionChange={setSelectedRows}
-      toolBar={(table) => (
-        <div className="flex justify-between">
+    <>
+      <DataTable<PostListItemEntity>
+        data={{
+          list: data?.list ?? [],
+          total: data?.total ?? 0,
+        }}
+        onChange={(params) =>
+          setSearchParams(PostListQuerySchema.parse(params))
+        }
+        columns={postListTableColumns}
+        isFetching={isFetching}
+        error={isError}
+        onRetry={() => {
+          void refetch();
+        }}
+        selectableRows={canDeletePost}
+        selectedRows={selectedRows}
+        onSelectionChange={setSelectedRows}
+        toolBar={(table) => (
+          <div className="flex justify-between">
+            <div className="flex gap-1">
+              {canCreatePost && (
+                <Button
+                  onClick={() => router.push("/admin/post/edit")}
+                  variant="outline"
+                >
+                  <Plus /> 添加新文章
+                </Button>
+              )}
+              {canDeletePost && (
+                <Button
+                  variant="outline"
+                  disabled={!selectedRows.length}
+                  onClick={() =>
+                    setDeleteItems(
+                      selectedRows.map(({ id, version }) => ({
+                        id,
+                        expectedVersion: version,
+                      })),
+                    )
+                  }
+                >
+                  <Trash /> 批量删除
+                </Button>
+              )}
+            </div>
+            <DynamicForm
+              schema={PostListQuerySchema}
+              fields={[
+                {
+                  name: "title",
+                  type: "text",
+                  placeholder: "请输入文章名称进行搜索",
+                },
+              ]}
+              onSubmit={({ title }) =>
+                table.getColumn("title")?.setFilterValue(title)
+              }
+              inline
+              submitProps={{ children: "查询", variant: "outline" }}
+            />
+          </div>
+        )}
+        rowActions={(row) => (
           <div className="flex gap-1">
-            {canCreatePost && (
+            {canUpdatePost && (
               <Button
-                onClick={() => router.push("/admin/post/edit")}
-                variant="outline"
+                variant="secondary"
+                size="sm"
+                aria-label="编辑文章"
+                onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
               >
-                <Plus /> 添加新文章
+                <Pencil />
               </Button>
             )}
             {canDeletePost && (
-              <Dialog
-                trigger={
-                  <Button variant="outline" disabled={!selectedRows.length}>
-                    <Trash /> 批量删除
-                  </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="删除文章"
+                onClick={() =>
+                  setDeleteItems([{ id: row.id, expectedVersion: row.version }])
                 }
-                type="danger"
-                title="确定要删除吗？"
-                onOK={handleDeleteBatch}
-              />
+              >
+                <Trash />
+              </Button>
             )}
           </div>
-          <DynamicForm
-            schema={PostListQuerySchema}
-            fields={[
-              {
-                name: "title",
-                type: "text",
-                placeholder: "请输入文章名称进行搜索",
-              },
-            ]}
-            onSubmit={({ title }) =>
-              table.getColumn("title")?.setFilterValue(title)
-            }
-            inline
-            submitProps={{ children: "查询", variant: "outline" }}
-          />
-        </div>
-      )}
-      rowActions={(row) => (
-        <div className="flex gap-1">
-          {canUpdatePost && (
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label="编辑文章"
-              onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
-            >
-              <Pencil />
-            </Button>
-          )}
-          {canDeletePost && (
-            <Dialog
-              trigger={
-                <Button variant="secondary" size="sm" aria-label="删除文章">
-                  <Trash />
-                </Button>
-              }
-              type="danger"
-              title="确定要删除吗？"
-              onOK={() => handleDeleteItem([row.id])}
-            />
-          )}
-        </div>
-      )}
-    />
+        )}
+      />
+      <Dialog
+        open={deleteItems !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteItems(null);
+        }}
+        type="danger"
+        title="确定要删除吗？"
+        onOK={handleConfirmDelete}
+      />
+    </>
   );
 }

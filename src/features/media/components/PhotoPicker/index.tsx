@@ -1,7 +1,7 @@
 "use client";
 
 import { Sheet } from "@/components/Sheet";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { MediaRecord as MediaEntity } from "@/features/media/types";
 
@@ -9,7 +9,9 @@ import type { MediaRecord as MediaEntity } from "@/features/media/types";
  * 图片选择器模态框的属性接口。
  */
 export interface PhotoPickerModalProps {
-  pickerContent: (onSelect: (media: MediaEntity) => void) => React.ReactNode;
+  pickerContent: (
+    onSelect: (media: MediaEntity | undefined) => void,
+  ) => React.ReactNode;
   /**
    * 控制图片选择器模态框的显示与隐藏。
    */
@@ -31,7 +33,10 @@ export interface PhotoPickerModalProps {
  * @param {PhotoPickerModalProps} props - 组件属性。
  * @returns {JSX.Element} 图片选择器模态框。
  */
-const PhotoPickerModal = (props: PhotoPickerModalProps) => {
+const PhotoPickerModal = (props: PhotoPickerModalProps) =>
+  props.showPhotoPicker ? <PhotoPickerSession {...props} /> : null;
+
+const PhotoPickerSession = (props: PhotoPickerModalProps) => {
   const {
     showPhotoPicker,
     handlePhotoPickerOk,
@@ -39,13 +44,25 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
     pickerContent,
   } = props;
   const [selectItem, setSelectItem] = useState<MediaEntity>();
+  const active = useRef(true);
+  const confirmed = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showPhotoPicker) setSelectItem(undefined);
+  }, [showPhotoPicker]);
 
   /**
    * 处理图片选择事件。
    * 当用户在 `PhotoPickerPanel` 中选择一张图片时调用，更新内部状态 `selectItem`。
    * @param {MediaEntity} media - 被选中的图片媒体实体。
    */
-  const onSelect = (media: MediaEntity) => {
+  const onSelect = (media: MediaEntity | undefined) => {
     setSelectItem(media);
   };
 
@@ -54,10 +71,12 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
    * 检查是否已选择图片，如果已选择则调用 `handlePhotoPickerOk` 回调函数，否则显示提示信息。
    */
   const onOk = () => {
+    if (!active.current || confirmed.current) return;
     if (!selectItem) {
       toast.info("请选择图片");
       return;
     }
+    confirmed.current = true;
     handlePhotoPickerOk(selectItem);
   };
 

@@ -53,23 +53,30 @@ describe("Menu Router", () => {
         },
       ];
 
-      // 设置删除操作的模拟调用。
-      mockDb.delete.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(undefined);
+      mockDb.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+      mockDb.where
+        .mockReturnValueOnce(mockDb)
+        .mockReturnValueOnce(mockDb)
+        .mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }])
+        .mockResolvedValueOnce([{ id: TEST_IDS.ID_2 }]);
 
       // 设置插入操作的模拟调用。
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce(menuItems);
+      mockDb.returning
+        .mockResolvedValueOnce([{ version: 1 }])
+        .mockResolvedValueOnce(menuItems);
 
       const caller = menuRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
-      const result = await caller.saveAll(menuItems);
+      const result = await caller.saveAll({
+        items: menuItems.map(({ id, type, power }) => ({ id, type, power })),
+        expectedVersion: 0,
+      });
 
-      expect(result).toEqual({ count: 2, publicSync: "completed" });
+      expect(result).toEqual({ count: 2, version: 1, publicSync: "completed" });
       expect(mockDb.delete).toHaveBeenCalledWith(schema.menu);
       expect(mockDb.insert).toHaveBeenCalledWith(schema.menu);
     });
@@ -84,7 +91,9 @@ describe("Menu Router", () => {
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
-      await expect(caller.saveAll([])).rejects.toMatchObject({
+      await expect(
+        caller.saveAll({ items: [], expectedVersion: 0 }),
+      ).rejects.toMatchObject({
         code: "BAD_REQUEST",
       });
       expect(mockDb.delete).not.toHaveBeenCalled();
@@ -105,10 +114,17 @@ describe("Menu Router", () => {
         },
       ];
 
+      tx.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+      tx.where
+        .mockReturnValueOnce(tx)
+        .mockReturnValueOnce(tx)
+        .mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       tx.delete.mockResolvedValueOnce(undefined);
       tx.insert.mockReturnValueOnce(tx);
       tx.values.mockReturnValueOnce(tx);
-      tx.returning.mockRejectedValueOnce(insertError);
+      tx.returning
+        .mockResolvedValueOnce([{ version: 1 }])
+        .mockRejectedValueOnce(insertError);
       mockDb.transaction.mockImplementationOnce(
         async (callback: (txDb: typeof tx) => Promise<unknown>) => callback(tx),
       );
@@ -117,7 +133,12 @@ describe("Menu Router", () => {
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
-      await expect(caller.saveAll(menuItems)).rejects.toThrow("insert failed");
+      await expect(
+        caller.saveAll({
+          items: menuItems.map(({ id, type, power }) => ({ id, type, power })),
+          expectedVersion: 0,
+        }),
+      ).rejects.toThrow("insert failed");
 
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
       expect(tx.delete).toHaveBeenCalledWith(schema.menu);
@@ -143,7 +164,12 @@ describe("Menu Router", () => {
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
-      await expect(caller.saveAll(menuItems)).rejects.toThrow("FORBIDDEN");
+      await expect(
+        caller.saveAll({
+          items: menuItems.map(({ id, type, power }) => ({ id, type, power })),
+          expectedVersion: 0,
+        }),
+      ).rejects.toThrow("FORBIDDEN");
     });
 
     it("should throw UNAUTHORIZED error for unauthenticated users", async () => {
@@ -161,7 +187,12 @@ describe("Menu Router", () => {
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(caller.saveAll(menuItems)).rejects.toThrow("UNAUTHORIZED");
+      await expect(
+        caller.saveAll({
+          items: menuItems.map(({ id, type, power }) => ({ id, type, power })),
+          expectedVersion: 0,
+        }),
+      ).rejects.toThrow("UNAUTHORIZED");
     });
   });
 });

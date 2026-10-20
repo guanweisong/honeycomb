@@ -1,4 +1,5 @@
 import "server-only";
+import { bumpMenuRevisionForCategoryDeletion } from "@/features/menu/server";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
 
@@ -6,8 +7,11 @@ import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
-import Tools from "@/lib/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
+import { sonsTree } from "./tree";
 import { observeDbOperation } from "@/lib/observability/server";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { supportedLanguages } from "@/lib/i18n/i18n";
@@ -287,7 +291,10 @@ export async function destroyCategories(
   invalidator: PublicContentInvalidator,
 ) {
   await observeDbOperation("category.destroy", "delete", () =>
-    db.delete(schema.category).where(inArray(schema.category.id, ids)),
+    db.transaction(async (tx) => {
+      await bumpMenuRevisionForCategoryDeletion(tx, ids);
+      await tx.delete(schema.category).where(inArray(schema.category.id, ids));
+    }),
   );
   const persisted = { success: true } as const;
   const publicSync = await invalidator.invalidate({
@@ -376,7 +383,7 @@ export async function getCategoryTree(
   // Assemble before visibility filtering so hidden parents also hide their subtree.
   const visible = new Map<string, boolean>();
   const localizedRows = await withTranslations(db, rows);
-  const list = Tools.sonsTree(localizedRows).filter((item) => {
+  const list = sonsTree(localizedRows).filter((item) => {
     const enabled =
       visibility === "ALL" ||
       (item.status === EnableStatus.ENABLE &&

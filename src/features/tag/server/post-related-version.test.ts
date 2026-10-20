@@ -1,0 +1,280 @@
+// @vitest-environment node
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createClient } from "@libsql/client/node";
+import { drizzle } from "drizzle-orm/libsql";
+import { describe, expect, it, vi } from "vitest";
+import * as schema from "@/lib/db/schema";
+import type { Database } from "@/lib/db/db";
+import { TagType } from "@/features/tag/tag-kind";
+import { destroyTags } from "../server";
+import { createMediaRepository } from "@/features/media/server/media-repository";
+import { destroyMedia } from "@/features/media/server";
+import { UserLevel, UserStatus } from "@/features/user/user";
+
+vi.mock("@/lib/observability/server", () => ({
+  observeDbOperation: (
+    _name: string,
+    _kind: string,
+    operation: () => unknown,
+  ) => operation(),
+}));
+vi.mock("@/env/client", () => ({
+  clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test" },
+}));
+
+async function withDatabase(
+  run: (
+    db: ReturnType<typeof drizzle<typeof schema>>,
+    client: ReturnType<typeof createClient>,
+  ) => Promise<void>,
+) {
+  const directory = mkdtempSync(join(tmpdir(), "honeycomb-related-version-"));
+  let client: ReturnType<typeof createClient> | undefined;
+  try {
+    const stat = lstatSync(directory);
+    expect(stat.isSymbolicLink()).toBe(false);
+    if (process.getuid) expect(stat.uid).toBe(process.getuid());
+    client = createClient({
+      url: `file:${join(directory, "test.db")}`,
+      authToken: "local-test-sentinel",
+    });
+    const db = drizzle(client, { schema });
+    for (const file of readdirSync("drizzle")
+      .filter((file) => file.endsWith(".sql"))
+      .sort()) {
+      await client.executeMultiple(readFileSync(`drizzle/${file}`, "utf8"));
+    }
+    await db.insert(schema.user).values({
+      id: "author",
+      name: "Author",
+      email: "author@example.test",
+      level: UserLevel.ADMIN,
+      status: UserStatus.ENABLE,
+    });
+    await db
+      .insert(schema.category)
+      .values({ id: "category", path: "category" });
+    await db.insert(schema.media).values(
+      ["cover", "other-cover"].map((id) => ({
+        id,
+        key: `${id}.jpg`,
+        name: id,
+        size: 1,
+        type: "image/jpeg",
+        state: "READY" as const,
+        url: `https://assets.example.test/${id}.jpg`,
+      })),
+    );
+    await db.insert(schema.post).values(
+      [
+        { id: "affected", coverId: "cover" },
+        { id: "also-affected", coverId: "cover" },
+        { id: "unaffected", coverId: "other-cover" },
+      ].map((post) => ({
+        ...post,
+        authorId: "author",
+        categoryId: "category",
+        version: 7,
+        updatedAt: "2020-01-01T00:00:00.000Z",
+      })),
+    );
+    await db
+      .insert(schema.tag)
+      .values(["a", "b", "keep"].map((id) => ({ id })));
+    await db.insert(schema.postTag).values([
+      { postId: "affected", tagId: "a", type: TagType.ACTOR },
+      { postId: "affected", tagId: "a", type: TagType.DIRECTOR },
+      { postId: "affected", tagId: "b", type: TagType.ACTOR },
+      { postId: "also-affected", tagId: "b", type: TagType.ACTOR },
+      { postId: "unaffected", tagId: "keep", type: TagType.ACTOR },
+    ]);
+    await run(db, client);
+  } finally {
+    client?.close();
+    rmSync(directory, { recursive: true, force: true });
+    expect(existsSync(directory)).toBe(false);
+  }
+}
+const invalidator = () => ({
+  invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+});
+async function versions(db: Database) {
+  const rows = await db.select().from(schema.post);
+  expect(
+    rows.every((row) => row.updatedAt === "2020-01-01T00:00:00.000Z"),
+  ).toBe(true);
+  return Object.fromEntries(rows.map(({ id, version }) => [id, version]));
+}
+const original = { affected: 7, "also-affected": 7, unaffected: 7 };
+const advanced = { affected: 8, "also-affected": 8, unaffected: 7 };
+
+describe("post versions on related deletion", () => {
+  it("increments once per affected post across multiple deleted tags and roles, not on retries", () =>
+    withDatabase(async (db) => {
+      const cache = invalidator();
+      await expect(
+        destroyTags(db, ["a", "b", "a", "missing"], cache),
+      ).resolves.toEqual({ success: true, publicSync: "completed" });
+      expect(await versions(db)).toEqual(advanced);
+      expect(await db.select().from(schema.postTag)).toEqual([
+        { postId: "unaffected", tagId: "keep", type: TagType.ACTOR },
+      ]);
+      await destroyTags(db, ["a", "b"], cache);
+      await destroyTags(db, [], cache);
+      expect(await versions(db)).toEqual(advanced);
+      expect(cache.invalidate).toHaveBeenCalledTimes(3);
+    }));
+  it("rolls back tag deletion and revision together and never invalidates", () =>
+    withDatabase(async (db, client) => {
+      await client.execute(
+        "CREATE TRIGGER reject_tag_delete BEFORE DELETE ON tag BEGIN SELECT RAISE(ABORT, 'test deletion rejected'); END",
+      );
+      const cache = invalidator();
+      await expect(destroyTags(db, ["a", "b"], cache)).rejects.toThrow();
+      expect(await versions(db)).toEqual(original);
+      expect(await db.select().from(schema.postTag)).toHaveLength(5);
+      expect(await db.select().from(schema.tag)).toHaveLength(3);
+      expect(cache.invalidate).not.toHaveBeenCalled();
+    }));
+  it("rejects known cover references before storage and preserves all post versions", () =>
+    withDatabase(async (db) => {
+      const cache = invalidator();
+      const storage = { deleteObjects: vi.fn(), headObject: vi.fn() };
+      await expect(
+        destroyMedia(
+          createMediaRepository(db),
+          storage,
+          ["cover"],
+          cache,
+          "author",
+          true,
+        ),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(await versions(db)).toEqual(original);
+      const posts = await db.select().from(schema.post);
+      expect(
+        posts
+          .filter((post) => post.id !== "unaffected")
+          .every((post) => post.coverId === "cover"),
+      ).toBe(true);
+      expect(
+        (await db.select().from(schema.media)).every(
+          (row) => row.state === "READY",
+        ),
+      ).toBe(true);
+      expect(storage.deleteObjects).not.toHaveBeenCalled();
+      expect(storage.headObject).not.toHaveBeenCalled();
+      expect(cache.invalidate).not.toHaveBeenCalled();
+    }));
+  it("preserves recovery state and unrelated covers when tombstone persistence fails", () =>
+    withDatabase(async (db, client) => {
+      await db.insert(schema.media).values({
+        id: "unused",
+        key: "unused.jpg",
+        name: "unused",
+        size: 1,
+        type: "image/jpeg",
+        state: "READY",
+        url: "https://assets.example.test/unused.jpg",
+      });
+      await client.execute(
+        "CREATE TRIGGER reject_media_tombstone BEFORE UPDATE ON media WHEN NEW.state = 'DELETED' BEGIN SELECT RAISE(ABORT, 'test tombstone rejected'); END",
+      );
+      const cache = invalidator();
+      const storage = {
+        deleteObjects: vi.fn().mockResolvedValue(undefined),
+        headObject: vi
+          .fn()
+          .mockResolvedValueOnce({ size: 1 })
+          .mockResolvedValue(null),
+      };
+      await expect(
+        destroyMedia(
+          createMediaRepository(db),
+          storage,
+          ["unused"],
+          cache,
+          "author",
+          true,
+        ),
+      ).resolves.toMatchObject({ success: false, state: "indeterminate" });
+      expect(await versions(db)).toEqual(original);
+      expect(
+        (await db.select().from(schema.post)).find(
+          (row) => row.id === "affected",
+        )?.coverId,
+      ).toBe("cover");
+      expect(
+        (await db.select().from(schema.media)).find(
+          (row) => row.id === "unused",
+        ),
+      ).toMatchObject({
+        state: "DELETING",
+        key: "unused.jpg",
+        lastErrorCode: "DELETE_PENDING",
+      });
+      expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith([
+        "unused.jpg",
+      ]);
+      expect(cache.invalidate).not.toHaveBeenCalled();
+    }));
+  it("does not repeat storage deletion when tombstone commit succeeds but acknowledgement is lost", () =>
+    withDatabase(async (db) => {
+      await db.insert(schema.media).values({
+        id: "unused",
+        key: "unused.jpg",
+        name: "unused",
+        size: 1,
+        type: "image/jpeg",
+        state: "READY",
+        url: "https://assets.example.test/unused.jpg",
+      });
+      const repository = createMediaRepository(db);
+      const cache = invalidator();
+      const storage = {
+        deleteObjects: vi.fn().mockResolvedValue(undefined),
+        headObject: vi
+          .fn()
+          .mockResolvedValueOnce({ size: 1 })
+          .mockResolvedValue(null),
+      };
+      await expect(
+        destroyMedia(
+          {
+            ...repository,
+            finishDelete: async (id) => {
+              await repository.finishDelete(id);
+              throw new Error("response lost");
+            },
+          },
+          storage,
+          ["unused"],
+          cache,
+          "author",
+          true,
+        ),
+      ).resolves.toMatchObject({ success: false, state: "indeterminate" });
+      expect(await versions(db)).toEqual(original);
+      expect(cache.invalidate).not.toHaveBeenCalled();
+      expect(
+        (await db.select().from(schema.media)).find(
+          (row) => row.id === "unused",
+        ),
+      ).toMatchObject({ state: "DELETED", key: "unused.jpg" });
+      await expect(
+        destroyMedia(repository, storage, ["unused"], cache, "author", true),
+      ).resolves.toEqual({ success: true, publicSync: "completed" });
+      expect(await versions(db)).toEqual(original);
+      expect(storage.deleteObjects).toHaveBeenCalledTimes(1);
+      expect(cache.invalidate).toHaveBeenCalledTimes(1);
+    }));
+});

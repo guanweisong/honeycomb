@@ -1,8 +1,8 @@
-import type { PostInsert, PostUpdate } from "@/features/post/schema";
+import type { PostEditorValues } from "./post-draft";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
 
-export type PostFormValues = Partial<PostInsert> | PostUpdate;
+export type PostFormValues = PostEditorValues;
 
 type NormalizePostFormResult<T extends PostFormValues> =
   | { ok: true; data: Omit<T, "status"> & { status: PostStatus } }

@@ -102,7 +102,15 @@ it("names the icon-only row actions", async () => {
   mocks.can.mockReturnValue(true);
   mocks.query.mockReturnValue({
     data: {
-      list: [{ id: "post-1", title: null, type: "ARTICLE", status: "DRAFT" }],
+      list: [
+        {
+          id: "post-1",
+          version: 3,
+          title: null,
+          type: "ARTICLE",
+          status: "DRAFT",
+        },
+      ],
       total: 1,
     },
     isFetching: false,
@@ -201,7 +209,15 @@ it.each(["completed", "degraded"])(
     mocks.can.mockReturnValue(true);
     mocks.query.mockReturnValue({
       data: {
-        list: [{ id: "post-1", title: null, type: "ARTICLE", status: "DRAFT" }],
+        list: [
+          {
+            id: "post-1",
+            version: 3,
+            title: null,
+            type: "ARTICLE",
+            status: "DRAFT",
+          },
+        ],
         total: 1,
       },
       isFetching: false,
@@ -223,7 +239,9 @@ it.each(["completed", "degraded"])(
         ),
       ).click();
     });
-    expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({ ids: ["post-1"] });
+    expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({
+      items: [{ id: "post-1", expectedVersion: 3 }],
+    });
     expect(mocks.error).not.toHaveBeenCalled();
     if (publicSync === "degraded") {
       expect(mocks.warning).toHaveBeenCalledExactlyOnceWith(
@@ -234,5 +252,99 @@ it.each(["completed", "degraded"])(
       expect(mocks.success).toHaveBeenCalledExactlyOnceWith("删除成功");
       expect(mocks.warning).not.toHaveBeenCalled();
     }
+  },
+);
+
+async function confirmDelete() {
+  await act(async () =>
+    requireDefined(
+      Array.from(document.querySelectorAll("button")).find(
+        (button) => button.textContent === "确定",
+      ),
+    ).click(),
+  );
+}
+
+function showPosts(version = 3) {
+  mocks.can.mockReturnValue(true);
+  mocks.query.mockReturnValue({
+    data: {
+      list: [
+        {
+          id: "post-1",
+          version,
+          title: null,
+          type: "ARTICLE",
+          status: "DRAFT",
+        },
+        {
+          id: "post-2",
+          version: 7,
+          title: null,
+          type: "ARTICLE",
+          status: "DRAFT",
+        },
+      ],
+      total: 2,
+    },
+    isFetching: false,
+    isError: false,
+    refetch: mocks.refetch,
+  });
+}
+
+it("deletes the clicked version even if the list refreshes before confirmation", async () => {
+  showPosts();
+  mocks.destroy.mockResolvedValue({ success: true });
+  await act(async () => root.render(<PostListClient />));
+  await act(async () =>
+    requireDefined(
+      container.querySelector<HTMLButtonElement>('[aria-label="删除文章"]'),
+    ).click(),
+  );
+  showPosts(4);
+  await act(async () => root.render(<PostListClient />));
+  await confirmDelete();
+  expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({
+    items: [{ id: "post-1", expectedVersion: 3 }],
+  });
+});
+
+it.each(["CONFLICT", "offline"])(
+  "keeps batch selection and dialog on %s, then clears after success",
+  async (failure) => {
+    showPosts();
+    mocks.destroy
+      .mockRejectedValueOnce(new Error(failure))
+      .mockResolvedValueOnce({ success: true });
+    await act(async () => root.render(<PostListClient />));
+    const checkboxes = container.querySelectorAll<HTMLButtonElement>(
+      'tbody [role="checkbox"]',
+    );
+    await act(async () => checkboxes.item(0).click());
+    await act(async () => checkboxes.item(1).click());
+    const batchButton = () =>
+      requireDefined(
+        Array.from(container.querySelectorAll("button")).find((button) =>
+          button.textContent?.includes("批量删除"),
+        ),
+      );
+    await act(async () => batchButton().click());
+    showPosts(9);
+    await act(async () => root.render(<PostListClient />));
+    await confirmDelete();
+    expect(mocks.destroy).toHaveBeenLastCalledWith({
+      items: expect.arrayContaining([
+        { id: "post-1", expectedVersion: 3 },
+        { id: "post-2", expectedVersion: 7 },
+      ]),
+    });
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(batchButton().disabled).toBe(false);
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    await confirmDelete();
+    expect(mocks.destroy.mock.calls[1]).toEqual(mocks.destroy.mock.calls[0]);
+    expect(batchButton().disabled).toBe(true);
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
   },
 );

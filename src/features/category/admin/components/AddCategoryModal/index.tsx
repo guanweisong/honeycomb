@@ -56,6 +56,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
   const defaultValues = modalProps?.record
     ? {
         ...modalProps.record,
+        parent: modalProps.record.parent ?? "0",
         title: modalProps.record.title ?? undefined,
         description: modalProps.record.description ?? undefined,
       }
@@ -100,7 +101,8 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
       return;
     }
     if (values.parent === "0") {
-      delete values.parent;
+      if (modalType === ModalType.EDIT) values.parent = null;
+      else delete values.parent;
     }
     const feedback = {
       refetch: categoryQuery.refetch,
@@ -153,10 +155,13 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
       label: "父级分类",
       name: "parent",
       type: "select",
-      options: list.map((option) => ({
-        label: creatCategoryTitleByDepth(option.title?.zh ?? "", option),
-        value: option.id ?? "0",
-      })),
+      options: [
+        { label: "根分类", value: "0" },
+        ...list.map((option) => ({
+          label: creatCategoryTitleByDepth(option.title?.zh ?? "", option),
+          value: option.id,
+        })),
+      ],
       placeholder: "请选择父级分类",
     },
     {

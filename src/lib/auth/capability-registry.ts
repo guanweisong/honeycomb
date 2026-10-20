@@ -5,7 +5,7 @@ import {
 } from "./permissions";
 
 export type CapabilityConsumer =
-  "trpc" | "trpc-data" | "admin-action" | "admin-route" | "menu";
+  "trpc" | "trpc-data" | "command" | "admin-action" | "admin-route" | "menu";
 
 export interface CapabilityDefinition {
   readonly consumers: readonly CapabilityConsumer[];
@@ -27,6 +27,7 @@ export const capabilityRegistry = {
   [Permission.mediaReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.mediaUpload]: { consumers: ["trpc", "admin-action"] },
   [Permission.mediaDelete]: { consumers: ["trpc", "admin-action"] },
+  [Permission.mediaManageUploads]: { consumers: ["command"] },
   [Permission.menuReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.menuUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.pageReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
@@ -39,7 +40,7 @@ export const capabilityRegistry = {
   [Permission.postCreate]: { consumers: ["trpc", "admin-action"] },
   [Permission.postDelete]: { consumers: ["trpc", "admin-action"] },
   [Permission.postUpdate]: { consumers: ["trpc", "admin-action"] },
-  [Permission.postManageTags]: { consumers: ["trpc", "admin-action"] },
+  [Permission.postManageTags]: { consumers: ["command", "admin-action"] },
   [Permission.settingUpdate]: { consumers: ["trpc", "admin-action"] },
   [Permission.statisticsRead]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.tagCreate]: { consumers: ["trpc", "admin-action"] },

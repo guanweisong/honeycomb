@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { utcFormat } from "@/components/blog/utc-format";
+import { utcFormat } from "@/lib/ui/utc-format";
 import { CommentStatus } from "@/features/comment/comment-status";
 import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 

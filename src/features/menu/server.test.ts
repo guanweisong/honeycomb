@@ -12,9 +12,9 @@ import { MenuType } from "./menu-types";
 import { saveAllMenus } from "./server";
 
 const item = (id: string, parent?: string | null) => ({
-  id,
+  id: id.padEnd(24, "0"),
   type: MenuType.CUSTOM,
-  parent,
+  parent: parent ? parent.padEnd(24, "0") : parent,
   power: 1,
 });
 const invalidator = () => ({
@@ -31,23 +31,42 @@ describe("Menu server operations", () => {
   ])("拒绝%s", async (_name, input) => {
     const db = createMockDb();
     await expect(
-      saveAllMenus(asMockDatabase(db), input, invalidator()),
+      saveAllMenus(
+        asMockDatabase(db),
+        { items: input, expectedVersion: 0 },
+        "actor",
+        invalidator(),
+      ),
     ).rejects.toThrow();
     expect(db.transaction).not.toHaveBeenCalled();
   });
 
   it("通过校验后保存菜单树", async () => {
     const db = createMockDb();
-    db.returning.mockResolvedValue([{ id: "first" }, { id: "second" }]);
+    db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+    db.returning
+      .mockResolvedValueOnce([{ version: 1 }])
+      .mockResolvedValueOnce([{ id: "first" }, { id: "second" }]);
     const cache = invalidator();
     await expect(
-      saveAllMenus(asMockDatabase(db), [item("a"), item("b", "a")], cache),
-    ).resolves.toEqual({ count: 2, publicSync: "completed" });
+      saveAllMenus(
+        asMockDatabase(db),
+        { items: [item("a"), item("b", "a")], expectedVersion: 0 },
+        "actor",
+        cache,
+      ),
+    ).resolves.toEqual({ count: 2, version: 1, publicSync: "completed" });
     expect(db.transaction).toHaveBeenCalledOnce();
     const rows = db.values.mock.calls[0]?.[0];
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({ customId: "a", parent: null });
-    expect(rows[1]).toMatchObject({ customId: "b", parent: rows[0].id });
+    expect(rows[0]).toMatchObject({
+      customId: "a".padEnd(24, "0"),
+      parent: null,
+    });
+    expect(rows[1]).toMatchObject({
+      customId: "b".padEnd(24, "0"),
+      parent: rows[0].id,
+    });
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
       refreshSitemap: true,
@@ -59,7 +78,12 @@ describe("Menu server operations", () => {
     db.transaction.mockRejectedValue(new Error("database failed"));
     const cache = invalidator();
     await expect(
-      saveAllMenus(asMockDatabase(db), [item("a")], cache),
+      saveAllMenus(
+        asMockDatabase(db),
+        { items: [item("a")], expectedVersion: 0 },
+        "actor",
+        cache,
+      ),
     ).rejects.toThrow("database failed");
     expect(cache.invalidate).not.toHaveBeenCalled();
   });
