@@ -15,14 +15,16 @@ const mocks = vi.hoisted(() => ({
   refetch: vi.fn(),
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({ useCan: () => true }));
-vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCan: () => true,
+}));
+vi.mock("@/features/setting/admin/use-site-setting", () => ({
   useSiteSetting: () => ({
     setting: mocks.setting,
     refreshSetting: mocks.refetch,
   }),
 }));
-vi.mock("@/packages/ui/extended/DynamicForm", () => ({
+vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: ({
     defaultValues,
     onSubmit,
@@ -39,7 +41,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
     });
   },
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     useUtils: () => ({ setting: { index: { invalidate: vi.fn() } } }),
     setting: { update: { useMutation: () => ({ mutateAsync: mocks.update }) } },

@@ -46,16 +46,16 @@ describe("production dependency audit policy", () => {
   });
 
   it("fails closed when audit JSON is missing or ambiguous", () => {
-    expect(() => parseBunAuditOutput("bun audit v1.3.3\nNo vulnerabilities"))
-      .toThrow(/JSON/i);
-    expect(() => parseBunAuditOutput("{}\n{}"))
-      .toThrow(/multiple|unique|ambiguous/i);
+    expect(() =>
+      parseBunAuditOutput("bun audit v1.3.3\nNo vulnerabilities"),
+    ).toThrow(/JSON/i);
+    expect(() => parseBunAuditOutput("{}\n{}")).toThrow(
+      /multiple|unique|ambiguous/i,
+    );
   });
 
   it("accepts Bun 1.4 audit JSON written to stderr", () => {
-    expect(parseBunAuditProcessOutput("", '[0.10ms] ".env"\n{}\n')).toEqual(
-      {},
-    );
+    expect(parseBunAuditProcessOutput("", '[0.10ms] ".env"\n{}\n')).toEqual({});
   });
 
   it("follows transitive runtime dependencies and skips unresolved or development-only packages", () => {
@@ -66,28 +66,40 @@ describe("production dependency audit policy", () => {
       vulnerable_versions: "<2.0.0",
     };
 
-    expect(createProductionFindings(
-      { transport: [advisory], development: [advisory] },
-      {
-        workspaces: { "": { dependencies: { runtime: "1.0.0" } } },
-        packages: {
-          runtime: ["runtime@1.0.0", "", { dependencies: { bridge: "1.0.0" } }],
-          bridge: ["bridge@1.0.0", "", {
-            dependencies: { transport: "1.0.0", missing: "1.0.0" },
-            peerDependencies: { development: "1.0.0" },
-            optionalPeers: ["development"],
-          }],
-          transport: ["transport@1.0.0", ""],
-          development: ["development@1.0.0", ""],
+    expect(
+      createProductionFindings(
+        { transport: [advisory], development: [advisory] },
+        {
+          workspaces: { "": { dependencies: { runtime: "1.0.0" } } },
+          packages: {
+            runtime: [
+              "runtime@1.0.0",
+              "",
+              { dependencies: { bridge: "1.0.0" } },
+            ],
+            bridge: [
+              "bridge@1.0.0",
+              "",
+              {
+                dependencies: { transport: "1.0.0", missing: "1.0.0" },
+                peerDependencies: { development: "1.0.0" },
+                optionalPeers: ["development"],
+              },
+            ],
+            transport: ["transport@1.0.0", ""],
+            development: ["development@1.0.0", ""],
+          },
         },
+      ),
+    ).toEqual([
+      {
+        advisory: "GHSA-aaaa-bbbb-cccc",
+        dependencyPath: "runtime@1.0.0>bridge@1.0.0>transport@1.0.0",
+        packageName: "transport",
+        severity: "high",
+        title: "Transitive vulnerability",
       },
-    )).toEqual([{
-      advisory: "GHSA-aaaa-bbbb-cccc",
-      dependencyPath: "runtime@1.0.0>bridge@1.0.0>transport@1.0.0",
-      packageName: "transport",
-      severity: "high",
-      title: "Transitive vulnerability",
-    }]);
+    ]);
   });
 
   it("blocks an unexcepted production High finding", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import { buildCommentInput } from "./comment-input";
 
 const identity = {

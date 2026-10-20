@@ -20,28 +20,45 @@ import {
 describe("migration governance checker", () => {
   it("rejects an index present only in the current Drizzle schema", () => {
     const replay: SchemaInventory = {
-      tables: [{
-        name: "post",
-        sql: "CREATE TABLE `post` (`id` text PRIMARY KEY NOT NULL)",
-        columns: [{ cid: 0, name: "id", type: "TEXT", notnull: 1, dfltValue: null, pk: 1 }],
-        indexes: [],
-        foreignKeys: [],
-      }],
+      tables: [
+        {
+          name: "post",
+          sql: "CREATE TABLE `post` (`id` text PRIMARY KEY NOT NULL)",
+          columns: [
+            {
+              cid: 0,
+              name: "id",
+              type: "TEXT",
+              notnull: 1,
+              dfltValue: null,
+              pk: 1,
+            },
+          ],
+          indexes: [],
+          foreignKeys: [],
+        },
+      ],
     };
     const replayTable = replay.tables[0];
     if (!replayTable) throw new Error("Expected replay table fixture");
     const current: SchemaInventory = {
-      tables: [{
-        ...replayTable,
-        indexes: [{
-          name: "post_status_idx",
-          unique: 0,
-          origin: "c",
-          partial: 0,
-          columns: [{ seqno: 0, name: "id", desc: 0, collation: "BINARY", key: 1 }],
-          sql: "CREATE INDEX `post_status_idx` ON `post` (`id`)",
-        }],
-      }],
+      tables: [
+        {
+          ...replayTable,
+          indexes: [
+            {
+              name: "post_status_idx",
+              unique: 0,
+              origin: "c",
+              partial: 0,
+              columns: [
+                { seqno: 0, name: "id", desc: 0, collation: "BINARY", key: 1 },
+              ],
+              sql: "CREATE INDEX `post_status_idx` ON `post` (`id`)",
+            },
+          ],
+        },
+      ],
     };
 
     expect(findSchemaStructureErrors(replay, current)).toEqual([
@@ -51,8 +68,12 @@ describe("migration governance checker", () => {
 
   it("rejects matching index names that target different columns", async () => {
     const directory = mkdtempSync(join(tmpdir(), "honeycomb-index-structure-"));
-    const replay = createClient({ url: `file:${join(directory, "replay.db")}` });
-    const current = createClient({ url: `file:${join(directory, "current.db")}` });
+    const replay = createClient({
+      url: `file:${join(directory, "replay.db")}`,
+    });
+    const current = createClient({
+      url: `file:${join(directory, "current.db")}`,
+    });
     try {
       for (const client of [replay, current]) {
         await client.execute("create table sample (a text, b text)");
@@ -96,8 +117,9 @@ describe("migration governance checker", () => {
       compositePrimaryKeys: {},
     };
 
-    expect(findSnapshotTableErrors(table, snapshot))
-      .toContain("Migration replay check differs for sample.sample_a_check");
+    expect(findSnapshotTableErrors(table, snapshot)).toContain(
+      "Migration replay check differs for sample.sample_a_check",
+    );
   });
 
   it("force-stops a migration child that ignores the graceful signal", async () => {
@@ -123,7 +145,9 @@ describe("migration governance checker", () => {
     } finally {
       if (child.exitCode === null && child.signalCode === null) {
         child.kill("SIGKILL");
-        await new Promise<void>((resolve) => child.once("close", () => resolve()));
+        await new Promise<void>((resolve) =>
+          child.once("close", () => resolve()),
+        );
       }
     }
   });
@@ -140,7 +164,10 @@ describe("migration governance checker", () => {
 
       await expect(
         Promise.race([
-          waiting.then(() => "resolved", () => "rejected"),
+          waiting.then(
+            () => "resolved",
+            () => "rejected",
+          ),
           new Promise<string>((resolve) => {
             setTimeout(() => resolve("pending"), 25);
           }),
@@ -148,11 +175,15 @@ describe("migration governance checker", () => {
       ).resolves.toBe("pending");
 
       child.kill("SIGKILL");
-      await expect(waiting).rejects.toThrow("Migration check interrupted by SIGTERM");
+      await expect(waiting).rejects.toThrow(
+        "Migration check interrupted by SIGTERM",
+      );
     } finally {
       if (child.exitCode === null && child.signalCode === null) {
         child.kill("SIGKILL");
-        await new Promise<void>((resolve) => child.once("close", () => resolve()));
+        await new Promise<void>((resolve) =>
+          child.once("close", () => resolve()),
+        );
       }
     }
   });
@@ -198,8 +229,12 @@ describe("migration governance checker", () => {
       ],
       trackedFiles: [],
     });
-    expect(errors).toContain("Migration SQL 0001_extra has no matching journal entry");
-    expect(errors).toContain("Snapshot 0001_snapshot has no matching journal entry");
+    expect(errors).toContain(
+      "Migration SQL 0001_extra has no matching journal entry",
+    );
+    expect(errors).toContain(
+      "Snapshot 0001_snapshot has no matching journal entry",
+    );
   });
 
   it("rejects missing snapshots and non-contiguous or mismatched indexes", () => {
@@ -216,7 +251,11 @@ describe("migration governance checker", () => {
       trackedFiles: [],
     });
     expect(errors).toContain("Journal index 2 is not contiguous; expected 1");
-    expect(errors).toContain("Journal entry 0001_wrong_index index prefix does not match idx 2");
-    expect(errors).toContain("Journal entry 0001_wrong_index has no matching snapshot");
+    expect(errors).toContain(
+      "Journal entry 0001_wrong_index index prefix does not match idx 2",
+    );
+    expect(errors).toContain(
+      "Journal entry 0001_wrong_index has no matching snapshot",
+    );
   });
 });

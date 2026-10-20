@@ -1,12 +1,12 @@
-import { expect, Page } from '@playwright/test';
+import { expect, Page } from "@playwright/test";
 
-export const BLOG_HOME_PATH = '/en/list/category';
-export const FAKE_ID = 'ffffffffffffffffffffffff';
+export const BLOG_HOME_PATH = "/en/list/category";
+export const FAKE_ID = "ffffffffffffffffffffffff";
 
 export async function openBlogHome(page: Page) {
-  await page.goto(BLOG_HOME_PATH, { waitUntil: 'domcontentloaded' });
+  await page.goto(BLOG_HOME_PATH, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(/\/en\/list\/category/);
-  await expect(page.locator('main')).toBeVisible();
+  await expect(page.locator("main")).toBeVisible();
 }
 
 export async function openFirstPostDetail(page: Page) {

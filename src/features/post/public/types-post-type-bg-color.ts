@@ -1,4 +1,4 @@
-import { PostType } from "@/packages/domain/content/post";
+import { PostType } from "@/features/post/post-type";
 
 /**
  * 文章类型对应的背景颜色映射。

@@ -1,344 +1,368 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import {
+  existsSync,
+  readFileSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+} from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { builtinModules } from "node:module";
 import ts from "typescript";
-import { preProcessFile } from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
+import {
+  localModulePath,
+  moduleDependencies,
+  runtimeDependencyViolations,
+  resolveSourceModule,
+} from "@tests/helpers/architecture-imports";
 
-const featuresRoot = join(process.cwd(), "src/features");
-const featureNames = readdirSync(featuresRoot, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && entry.name !== "contracts")
-  .map((entry) => entry.name);
+import {
+  featureInventory,
+  isFeatureRouter,
+} from "@tests/helpers/feature-inventory";
 
-type FeatureSource = { path: string; source: string };
+const featuresRoot = "src/features";
+const features = featureInventory(featuresRoot);
+const featureFiles = features.flatMap(({ files }) => files);
+const routers = featureFiles.filter(isFeatureRouter);
 
-function findCrossFeatureImportViolations(files: readonly FeatureSource[]) {
-  return files.flatMap(({ path, source }) => {
-    const current = path.match(/src\/features\/([^/]+)\//)?.[1];
-    if (!current || current === "contracts") return [];
-    return preProcessFile(source, true, true).importedFiles.flatMap(
-      ({ fileName }) => {
-        const importedPath = fileName.startsWith("@/")
-          ? join("src", fileName.slice(2))
-          : fileName.startsWith(".")
-            ? relative(process.cwd(), resolve(dirname(path), fileName))
+/** Inspect values actually mounted in appRouter, not merely imported routers. */
+function composedRouters(source: string, path = "src/app/_trpc/router.ts") {
+  const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+  const imports = new Map<string, { specifier: string; imported: string }>();
+  for (const statement of file.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    )
+      continue;
+    const clause = statement.importClause;
+    const bindings = clause?.namedBindings;
+    if (clause?.isTypeOnly || !bindings || !ts.isNamedImports(bindings))
+      continue;
+    for (const binding of bindings.elements) {
+      if (!binding.isTypeOnly)
+        imports.set(binding.name.text, {
+          specifier: statement.moduleSpecifier.text,
+          imported: (binding.propertyName ?? binding.name).text,
+        });
+    }
+  }
+  const mounted: string[] = [];
+  let found = false;
+  function visit(node: ts.Node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === "appRouter"
+    ) {
+      found = true;
+      const call = node.initializer;
+      const factory =
+        call && ts.isCallExpression(call) && ts.isIdentifier(call.expression)
+          ? imports.get(call.expression.text)
+          : undefined;
+      if (
+        !call ||
+        !ts.isCallExpression(call) ||
+        !ts.isIdentifier(call.expression) ||
+        !factory ||
+        factory.imported !== "createTRPCRouter" ||
+        localModulePath(path, factory.specifier) !== "src/lib/trpc/core"
+      )
+        throw new Error(
+          "appRouter must use the imported tRPC composition function",
+        );
+      const object = call.arguments[0];
+      if (!object || !ts.isObjectLiteralExpression(object))
+        throw new Error("appRouter composition must be inspectable");
+      for (const property of object.properties) {
+        const value = ts.isPropertyAssignment(property)
+          ? property.initializer
+          : ts.isShorthandPropertyAssignment(property)
+            ? property.name
             : undefined;
-        const match = importedPath
-          ?.replaceAll("\\", "/")
-          .match(/^src\/features\/([^/]+)(?:\/([^/]+))?/);
-        const target = match?.[1];
-        const segment = match?.[2];
-        return !target ||
-          target === current ||
-          target === "contracts" ||
-          segment === "public"
-          ? []
-          : [`${path} -> ${target}/${segment ?? "<root>"}`];
-      },
-    );
-  });
-}
-
-function isRepositoryForwardingRead(
-  name: string,
-  body: ts.ConciseBody | undefined,
-): boolean {
-  if (!/^(get|list|find|query)[A-Z]/.test(name) || !body) return false;
-
-  const statement =
-    ts.isBlock(body) && body.statements.length === 1
-      ? body.statements[0]
-      : undefined;
-  const returned = ts.isBlock(body)
-    ? statement && ts.isReturnStatement(statement)
-      ? statement.expression
-      : undefined
-    : body;
-  const expression =
-    returned && ts.isAwaitExpression(returned) ? returned.expression : returned;
-
-  return Boolean(
-    expression &&
-    ts.isCallExpression(expression) &&
-    ts.isPropertyAccessExpression(expression.expression) &&
-    ts.isIdentifier(expression.expression.expression) &&
-    expression.expression.expression.text === "repository",
-  );
-}
-
-function findReadForwardingViolations(files: readonly string[]) {
-  return files.flatMap((path) => {
-    if (!path.includes("/application/")) return [];
-
-    const source = ts.createSourceFile(
-      path,
-      readFileSync(path, "utf8"),
-      ts.ScriptTarget.Latest,
-      true,
-    );
-    const violations: string[] = [];
-    const visit = (node: ts.Node) => {
-      if (ts.isFunctionDeclaration(node) && node.name) {
-        if (isRepositoryForwardingRead(node.name.text, node.body)) {
-          violations.push(`${relative(process.cwd(), path)}:${node.name.text}`);
-        }
-      }
-      if (
-        ts.isVariableDeclaration(node) &&
-        ts.isIdentifier(node.name) &&
-        node.initializer &&
-        (ts.isArrowFunction(node.initializer) ||
-          ts.isFunctionExpression(node.initializer)) &&
-        isRepositoryForwardingRead(node.name.text, node.initializer.body)
-      ) {
-        violations.push(`${relative(process.cwd(), path)}:${node.name.text}`);
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(source);
-    return violations;
-  });
-}
-
-function findMutationUseCaseViolations(files: readonly FeatureSource[]) {
-  return files.flatMap(({ path, source }) => {
-    const feature = path.match(/src\/features\/([^/]+)\//)?.[1];
-    if (!feature || feature === "contracts" || !path.endsWith(".router.ts")) {
-      return [];
-    }
-
-    const sourceFile = ts.createSourceFile(
-      path,
-      source,
-      ts.ScriptTarget.Latest,
-      true,
-    );
-    const applicationFunctions = new Set<string>();
-
-    for (const statement of sourceFile.statements) {
-      if (!ts.isImportDeclaration(statement) || !statement.importClause) {
-        continue;
-      }
-      const moduleName = ts.isStringLiteral(statement.moduleSpecifier)
-        ? statement.moduleSpecifier.text
-        : "";
-      const isFeatureApplication =
-        moduleName.startsWith(`@/features/${feature}/application/`) ||
-        moduleName.startsWith(`./application/`);
-      if (!isFeatureApplication || statement.importClause.isTypeOnly) continue;
-
-      const bindings = statement.importClause.namedBindings;
-      if (!bindings || !ts.isNamedImports(bindings)) continue;
-      for (const specifier of bindings.elements) {
-        if (!specifier.isTypeOnly) {
-          applicationFunctions.add(specifier.name.text);
-        }
+        if (!value || !ts.isIdentifier(value))
+          throw new Error("Uninspectable appRouter member");
+        const specifier = imports.get(value.text)?.specifier;
+        const target = specifier && resolveSourceModule(path, specifier);
+        if (!target || !isFeatureRouter(target))
+          throw new Error(`Unresolved feature router: ${value.text}`);
+        mounted.push(target);
       }
     }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  if (!found || mounted.length === 0)
+    throw new Error("No feature routers mounted in appRouter");
+  return mounted.sort();
+}
 
-    const violations: string[] = [];
-    const visit = (node: ts.Node) => {
-      if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.name.text === "mutation"
-      ) {
-        const handler = node.arguments[0];
-        const calledApplicationFunction = new Set<string>();
+function mutationBoundaryViolations(path: string, source: string) {
+  const feature = path.match(/^src\/features\/([^/]+)\//)?.[1];
+  const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+  const operations = new Set<string>();
+  for (const statement of file.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      !statement.importClause ||
+      statement.importClause.isTypeOnly
+    )
+      continue;
+    const target = localModulePath(path, statement.moduleSpecifier.text);
+    if (
+      !(
+        target === `src/features/${feature}/server` ||
+        target?.startsWith(`src/features/${feature}/server/`)
+      ) &&
+      !target?.startsWith(`src/features/${feature}/account-security/server/`)
+    )
+      continue;
+    const bindings = statement.importClause.namedBindings;
+    if (bindings && ts.isNamedImports(bindings)) {
+      for (const binding of bindings.elements)
+        if (!binding.isTypeOnly) operations.add(binding.name.text);
+    }
+  }
+  const violations: string[] = [];
+  function visit(node: ts.Node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "mutation"
+    ) {
+      const handler = node.arguments[0];
+      let callsOperation = false;
+      function inspect(child: ts.Node) {
         if (
-          handler &&
-          (ts.isArrowFunction(handler) || ts.isFunctionExpression(handler))
-        ) {
-          const findApplicationCall = (handlerNode: ts.Node) => {
-            if (
-              ts.isCallExpression(handlerNode) &&
-              ts.isIdentifier(handlerNode.expression) &&
-              applicationFunctions.has(handlerNode.expression.text)
-            ) {
-              calledApplicationFunction.add(handlerNode.expression.text);
-            }
-            ts.forEachChild(handlerNode, findApplicationCall);
-          };
-          findApplicationCall(handler);
-        }
-
-        if (calledApplicationFunction.size === 0) {
-          const line =
-            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-          violations.push(`${path}:${line}`);
-        }
+          ts.isCallExpression(child) &&
+          ts.isIdentifier(child.expression) &&
+          operations.has(child.expression.text)
+        )
+          callsOperation = true;
+        ts.forEachChild(child, inspect);
       }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
-    return violations;
-  });
+      if (handler) inspect(handler);
+      if (!callsOperation)
+        violations.push(
+          `${path}:${file.getLineAndCharacterOfPosition(node.getStart()).line + 1}`,
+        );
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return violations;
 }
 
-describe("业务功能边界", () => {
-  it("简单只读查询不保留纯 Repository 转发用例", () => {
-    expect(findReadForwardingViolations(sourceFiles(featuresRoot))).toEqual([]);
-  });
-
-  it("识别没有调用本 Feature Application 的 mutation", () => {
-    const violations = findMutationUseCaseViolations([
-      {
-        path: "src/features/post/post.router.ts",
-        source: [
-          'import { createPost } from "@/features/post/application/post-commands";',
-          "createTRPCRouter({ save: procedure.mutation(({ ctx }) => ctx.db.insert(ctx.input)) });",
-        ].join("\n"),
-      },
-    ]);
-
-    expect(violations).toEqual(["src/features/post/post.router.ts:2"]);
-  });
-
-  it("所有 Feature Router 的 mutation 都调用本 Feature Application", () => {
-    const routers = sourceFiles(featuresRoot)
-      .filter((path) => path.endsWith(".router.ts"))
-      .map((path) => ({
-        path: relative(process.cwd(), path),
-        source: readFileSync(path, "utf8"),
-      }));
-
-    expect(findMutationUseCaseViolations(routers)).toEqual([]);
-  });
-
-  it("feature 生产代码只从 feature 目录导入业务 schema", () => {
-    const violations = sourceFiles(featuresRoot).flatMap((path) => {
-      const source = readFileSync(path, "utf8");
-      return /@\/packages\/trpc\/api\/modules\/.+\/schemas\//.test(source)
-        ? [relative(process.cwd(), path)]
-        : [];
-    });
-
-    expect(violations).toEqual([]);
-  });
-
-  it("共享公开契约不依赖普通 CRUD feature 的 service", () => {
-    const source = readFileSync(
-      join(featuresRoot, "contracts", "content.ts"),
-      "utf8",
-    );
-    expect(source).not.toMatch(
-      /features\/(category|link|tag|page|media|menu|setting)\/service/,
-    );
-  });
-
-  it("核心 feature 具备 domain、application 和 repository 边界", () => {
-    for (const feature of ["post", "comment", "user"]) {
-      expect(existsSync(join(featuresRoot, feature, "domain"))).toBe(true);
-      expect(existsSync(join(featuresRoot, feature, "application"))).toBe(true);
-      expect(
-        existsSync(join(featuresRoot, feature, "application", "repository.ts")),
-      ).toBe(true);
-    }
-  });
-
-  it("domain 不依赖 infrastructure 或数据库实现", () => {
-    const violations = ["post", "comment", "user"].flatMap((feature) =>
-      sourceFiles(join(featuresRoot, feature, "domain")).filter((path) =>
-        /infrastructure\/|drizzle-orm|packages\/infrastructure/.test(
-          readFileSync(path, "utf8"),
-        ),
-      ),
-    );
-
-    expect(violations).toEqual([]);
-  });
-  it("为业务提供仓储协议和按需的公开入口", () => {
-    for (const feature of featureNames) {
-      expect(
-        statSync(join(featuresRoot, feature, "application")).isDirectory(),
-      ).toBe(true);
-      expect(
-        statSync(join(featuresRoot, feature, "infrastructure")),
-      ).toBeTruthy();
-      if (["post", "comment", "user"].includes(feature)) {
-        expect(statSync(join(featuresRoot, feature, "domain"))).toBeTruthy();
-      }
-    }
-  });
-
-  it("业务模块不重新引入历史分层目录", () => {
-    for (const feature of featureNames) {
-      for (const legacyDirectory of ["interfaces", "contracts"]) {
-        expect(() =>
-          statSync(join(featuresRoot, feature, legacyDirectory)),
-        ).toThrow();
-      }
-    }
-  });
-
-  it("禁止 feature 直接导入其他 feature 的内部实现", () => {
-    const violations = findCrossFeatureImportViolations(
-      sourceFiles(featuresRoot).map((path) => ({
-        path: relative(process.cwd(), path),
-        source: readFileSync(path, "utf8"),
-      })),
-    );
-
-    expect(violations).toEqual([]);
-  });
-
-  it.each(["domain", "infrastructure", "schemas", "presentation", "admin"])(
-    "识别跨 Feature 的 %s 深导入",
-    (segment) => {
-      expect(
-        findCrossFeatureImportViolations([
-          {
-            path: "src/features/post/application/example.ts",
-            source: `import x from \"@/features/comment/${segment}/x\";`,
-          },
-        ]),
-      ).toEqual([
-        `src/features/post/application/example.ts -> comment/${segment}`,
-      ]);
-    },
+function isPureContract(path: string) {
+  return /^src\/features\/[^/]+\/(?:types|schema|rules|[^/]+-status|[^/]+-type|[^/]+-types|[^/]+-kind|[^/]+-template|user)\.ts$/.test(
+    path,
   );
+}
 
-  it("识别相对路径形式的跨 Feature 深导入", () => {
-    expect(
-      findCrossFeatureImportViolations([
-        {
-          path: "src/features/post/application/example.ts",
-          source: 'import x from "../../comment/domain/x";',
-        },
-      ]),
-    ).toEqual(["src/features/post/application/example.ts -> comment/domain"]);
+describe("feature-owned business boundaries", () => {
+  it("discovers every feature source without requiring unused responsibility files", () => {
+    expect(features.length).toBeGreaterThan(0);
+    expect(featureFiles.length).toBeGreaterThan(0);
+    expect(featureFiles.toSorted()).toEqual(sourceFiles(featuresRoot));
+    for (const feature of features)
+      expect(feature.files.length, feature.name).toBeGreaterThan(0);
   });
 
-  it("允许本 Feature、共享 contracts 与显式 public 出口", () => {
-    expect(
-      findCrossFeatureImportViolations([
+  it("discovers future UI-only and server-read-only features without boilerplate contracts or routers", () => {
+    const root = mkdtempSync(join(tmpdir(), "feature-inventory-"));
+    try {
+      mkdirSync(join(root, "future-banner", "public"), { recursive: true });
+      mkdirSync(join(root, "future-report"));
+      writeFileSync(
+        join(root, "future-banner", "public", "Banner.tsx"),
+        "export const Banner = () => null;",
+      );
+      writeFileSync(
+        join(root, "future-report", "server.ts"),
+        "export const readReport = () => []; ",
+      );
+      const discovered = featureInventory(root);
+      expect(discovered).toEqual([
         {
-          path: "src/features/post/application/example.ts",
-          source: [
-            'import a from "@/features/post/domain/x";',
-            'import b from "@/features/contracts";',
-            'import c from "@/features/comment/public";',
-          ].join("\n"),
+          name: "future-banner",
+          files: [join(root, "future-banner", "public", "Banner.tsx")],
         },
-      ]),
+        {
+          name: "future-report",
+          files: [join(root, "future-report", "server.ts")],
+        },
+      ]);
+      expect(
+        discovered.flatMap(({ files }) => files).filter(isFeatureRouter),
+      ).toEqual([]);
+      mkdirSync(join(root, "future-report", "nested"));
+      writeFileSync(
+        join(root, "future-report", "nested", "audit.router.ts"),
+        "export const auditRouter = {}; ",
+      );
+      expect(
+        featureInventory(root)
+          .flatMap(({ files }) => files)
+          .filter(isFeatureRouter),
+      ).toEqual([join(root, "future-report", "nested", "audit.router.ts")]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("mounts every discovered feature router in the actual root composition", () => {
+    expect(routers.length).toBeGreaterThan(0);
+    expect(
+      composedRouters(readFileSync("src/app/_trpc/router.ts", "utf8")),
+    ).toEqual(routers.toSorted());
+  });
+
+  it("detects imported but unmounted routers and rejects vacuous or opaque composition", () => {
+    const imports = [
+      'import { createTRPCRouter } from "../../lib/trpc/core";',
+      'import { postRouter as posts } from "@/features/post/router";',
+      'import { tagRouter } from "@/features/tag/router";',
+    ].join("\n");
+    expect(
+      composedRouters(
+        `${imports} export const appRouter = createTRPCRouter({ posts });`,
+      ),
+    ).toEqual(["src/features/post/router.ts"]);
+    expect(
+      composedRouters(
+        `${imports} export const appRouter = createTRPCRouter({ posts, tags: tagRouter });`,
+      ),
+    ).toEqual(["src/features/post/router.ts", "src/features/tag/router.ts"]);
+    for (const source of [
+      imports,
+      `${imports} export const appRouter = createTRPCRouter({});`,
+      `${imports} export const appRouter = createTRPCRouter({ ...posts });`,
+      `${imports} export const appRouter = createTRPCRouter({ posts: missing });`,
+      `${imports} import type { userRouter } from "@/features/user/router"; export const appRouter = createTRPCRouter({ userRouter });`,
+    ]) {
+      expect(() => composedRouters(source)).toThrow();
+    }
+  });
+
+  it("does not recreate packages, central contracts or artificial layered directories", () => {
+    expect(existsSync("src/packages")).toBe(false);
+    expect(existsSync("src/features/contracts")).toBe(false);
+    const retired =
+      /\/(?:application|domain|infrastructure|interfaces|contracts)\//;
+    expect(featureFiles.filter((path) => retired.test(path))).toEqual([]);
+  });
+
+  it("detects a mutation bypassing its feature server operation", () => {
+    expect(
+      mutationBoundaryViolations(
+        "src/features/post/router.ts",
+        [
+          'import { createPost } from "./server/post-commands";',
+          "router({ save: procedure.mutation(({ ctx }) => ctx.db.insert(ctx.input)) });",
+        ].join("\n"),
+      ),
+    ).toEqual(["src/features/post/router.ts:2"]);
+    expect(
+      mutationBoundaryViolations(
+        "src/features/post/router.ts",
+        [
+          'import { createPost } from "./server/post-commands";',
+          "router({ save: procedure.mutation(({ ctx, input }) => createPost(ctx.db, input)) });",
+        ].join("\n"),
+      ),
     ).toEqual([]);
   });
 
-  it("禁止用例层直接依赖数据库实现", () => {
-    const violations = sourceFiles(featuresRoot)
-      .filter((path) => path.includes("/application/"))
-      .flatMap((path) => {
-        const source = readFileSync(path, "utf8");
-        const imports = source.match(
-          /from ["'](?:@\/packages\/infrastructure\/db|drizzle-orm)(?:[^"']*)["']/g,
-        );
-        return (imports ?? []).map(
-          (specifier) => `${relative(process.cwd(), path)}: ${specifier}`,
-        );
-      });
+  it("keeps all mutations behind feature-owned server operations without prescribing their internal call chain", () => {
+    expect(routers.length).toBeGreaterThan(0);
+    expect(
+      routers.flatMap((path) =>
+        mutationBoundaryViolations(path, readFileSync(path, "utf8")),
+      ),
+    ).toEqual([]);
+  });
 
+  it("keeps routers free of direct ORM writes and business side effects", () => {
+    const violations = featureFiles.filter(isFeatureRouter).filter((path) => {
+      const source = readFileSync(path, "utf8");
+      return (
+        /\b(?:ctx\.)?db\s*\.\s*(?:insert|update|delete|transaction)\s*\(/.test(
+          source,
+        ) ||
+        /S3\.(?:deleteObjects|getPresignedUrl)|sendCommentEmail\s*\(/.test(
+          source,
+        )
+      );
+    });
+    expect(violations).toEqual([]);
+  });
+
+  it("shares contracts directly without importing another feature's transport or app composition", () => {
+    const violations = featureFiles.flatMap((path) =>
+      moduleDependencies(readFileSync(path, "utf8"), path).flatMap(
+        ({ specifier }) => {
+          const target = localModulePath(path, specifier);
+          return target &&
+            (/^src\/app(?:\/|$)/.test(target) ||
+              /^src\/features\/[^/]+\/(?:[^/]+\.)?router$/.test(target))
+            ? [`${path} -> ${specifier}`]
+            : [];
+        },
+      ),
+    );
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps business schemas, types, rules and catalogs independent of runtime/UI/persistence modules", () => {
+    const contracts = featureFiles.filter(isPureContract);
+    expect(contracts.length).toBeGreaterThan(0);
+    const violations = contracts.flatMap((path) => {
+      const direct = moduleDependencies(readFileSync(path, "utf8"), path)
+        .filter(
+          ({ specifier }) =>
+            /^(?:react|next(?:\/|$)|@trpc\/|drizzle-orm|drizzle-zod|node:|bun:|@libsql\/|@aws-sdk\/|@sentry\/node|resend$|better-auth$)/.test(
+              specifier,
+            ) ||
+            builtinModules.includes(specifier) ||
+            /(?:\/server(?:\/|$)|\/router$|^@\/lib\/(?:db|trpc)\/|^@\/components\/|\/admin\/|\/public\/)/.test(
+              specifier,
+            ),
+        )
+        .map(({ specifier }) => `${path} -> ${specifier}`);
+      return [
+        ...direct,
+        ...runtimeDependencyViolations(
+          path,
+          (target, source) =>
+            /\/(?:server|admin|public|components)(?:\/|\.tsx?$)/.test(target) ||
+            /^src\/lib\/(?:db|trpc)\//.test(target) ||
+            /import ["']server-only["']/.test(source),
+        ),
+      ];
+    });
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps feature UI independent of ORM/database contracts", () => {
+    const violations = featureFiles
+      .filter((path) =>
+        /\/(?:admin|public|shared|components|presentation)\//.test(path),
+      )
+      .flatMap((path) =>
+        moduleDependencies(readFileSync(path, "utf8"), path)
+          .filter(({ specifier }) =>
+            /(?:^drizzle-|^@\/lib\/db(?:\/|$))/.test(specifier),
+          )
+          .map(({ specifier }) => `${path} -> ${specifier}`),
+      );
     expect(violations).toEqual([]);
   });
 });

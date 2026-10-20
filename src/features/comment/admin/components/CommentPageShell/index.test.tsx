@@ -11,7 +11,7 @@ import {
 } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import { Permission } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/lib/auth/permissions";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -43,11 +43,11 @@ const trpcMocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: (permission: Permission) => allowedPermissions.has(permission),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     comment: {
       index: {

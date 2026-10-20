@@ -18,7 +18,7 @@ vi.mock("next-intl/server", () => ({
   getLocale: async () => "zh",
 }));
 
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: async () => ({
     menu: {
       index: async () => ({
@@ -96,7 +96,7 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: async () => ({ siteName: { zh: "蜂巢博客" } }),
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({
     children,
     href,
@@ -165,8 +165,8 @@ vi.mock("@/app/(blog)/components/LanguageSwitcher", () => ({
   default: () => React.createElement("button", null, "语言"),
 }));
 
-vi.mock("@/features/post/public", () => ({
-  PostSearch: () => React.createElement("button", null, "搜索"),
+vi.mock("@/features/post/public/components/PostSearch", () => ({
+  default: () => React.createElement("button", null, "搜索"),
 }));
 
 import Header from "./index";

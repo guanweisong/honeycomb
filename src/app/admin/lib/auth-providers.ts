@@ -4,7 +4,7 @@ import { getAuthEnv } from "@/env/server";
 import {
   getConfiguredProviderIds,
   SOCIAL_PROVIDER_LABELS,
-} from "@/packages/identity/auth/providers";
+} from "@/lib/auth/providers";
 
 export function getAuthProviders() {
   const env = getAuthEnv();

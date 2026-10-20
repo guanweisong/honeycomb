@@ -1,20 +1,20 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
+import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
 import {
   UserInsertSchema,
   UserUpdateSchema,
   type UserInsert,
   type UserUpdate,
-} from "@/features/user/application/write-schema";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
+} from "@/features/user/schema";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import {
   userLevelOptions,
   userStatusOptions,
-} from "@/packages/ui/admin/user-options";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import type { UserDialogState } from "../../actions/user-actions";
+} from "@/features/user/admin/options";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
+import type { UserDialogState } from "@/features/user/admin/user-actions";
 import {
   isUserResourceProtected,
   toUserFormDefaults,

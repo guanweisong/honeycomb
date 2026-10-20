@@ -2,15 +2,12 @@ import type {
   Logger,
   LogContext,
   Metrics,
-} from "@/packages/infrastructure/observability/core/contracts";
-import type {
-  LogEvent,
-  MetricName,
-} from "@/packages/infrastructure/observability/core/names";
+} from "@/lib/observability/core/contracts";
+import type { LogEvent, MetricName } from "@/lib/observability/core/names";
 import {
   sanitizeContext,
   sanitizeMetricLabels,
-} from "@/packages/infrastructure/observability/core/sanitize";
+} from "@/lib/observability/core/sanitize";
 
 export interface MemoryLogEvent {
   level: "info" | "warn" | "error";
@@ -20,16 +17,16 @@ export interface MemoryLogEvent {
 
 export type MemoryMetricEvent =
   | {
-    type: "increment";
-    name: MetricName;
-    labels: Record<string, string>;
-  }
+      type: "increment";
+      name: MetricName;
+      labels: Record<string, string>;
+    }
   | {
-    type: "duration";
-    name: MetricName;
-    value: number;
-    labels: Record<string, string>;
-  };
+      type: "duration";
+      name: MetricName;
+      value: number;
+      labels: Record<string, string>;
+    };
 
 export interface MemoryObservability {
   logger: Logger;
@@ -41,7 +38,11 @@ export interface MemoryObservability {
 export function createMemoryObservability(): MemoryObservability {
   const logEvents: MemoryLogEvent[] = [];
   const metricEvents: MemoryMetricEvent[] = [];
-  const captureLog = (level: MemoryLogEvent["level"], event: LogEvent, context?: LogContext) => {
+  const captureLog = (
+    level: MemoryLogEvent["level"],
+    event: LogEvent,
+    context?: LogContext,
+  ) => {
     logEvents.push({ level, event, context: sanitizeContext(context ?? {}) });
   };
 

@@ -1,7 +1,7 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import * as providers from "@/packages/identity/auth/providers";
-import * as validation from "@/packages/infrastructure/db/value-validation";
+import * as providers from "@/lib/auth/providers";
+import * as validation from "@/lib/db/value-validation";
 import { sourceFile } from "@tests/helpers/source-files";
 
 describe("配置与契约所有权", () => {
@@ -29,7 +29,7 @@ describe("配置与契约所有权", () => {
         violations.push(node.getText());
       ts.forEachChild(node, visit);
     }
-    visit(sourceFile("src/packages/infrastructure/db/schema/content.ts"));
+    visit(sourceFile("src/lib/db/schema/content.ts"));
     expect(violations).toEqual([]);
   });
 
@@ -44,7 +44,7 @@ describe("配置与契约所有权", () => {
         violations.push(node.getText());
       ts.forEachChild(node, visit);
     }
-    visit(sourceFile("src/packages/ui/navigation/routing.ts"));
+    visit(sourceFile("src/lib/i18n/routing.ts"));
     expect(violations).toEqual([]);
   });
   it("提供商目录同时负责筛选已配置的登录方式", () => {
@@ -64,8 +64,8 @@ describe("配置与契约所有权", () => {
   });
 
   it.each([
-    "src/features/user/application/login-history-port.ts",
-    "src/app/admin/(root)/(dashboard)/account/security/components/LoginHistorySettings/index.tsx",
+    "src/features/user/account-security/login-history.ts",
+    "src/features/user/admin/account-security/components/LoginHistorySettings/index.tsx",
   ])("%s 引用登录历史事件类型，不重写联合", (path) => {
     const violations: string[] = [];
     function visit(node: ts.Node) {
@@ -101,7 +101,7 @@ describe("配置与契约所有权", () => {
         }
         ts.forEachChild(node, visit);
       }
-      visit(sourceFile(`src/features/${feature}/application/repository.ts`));
+      visit(sourceFile(`src/features/${feature}/types.ts`));
       expect(violations).toEqual([]);
     },
   );

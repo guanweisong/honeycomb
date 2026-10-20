@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { pageRouter } from "@/features/page/page.router";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { PageTemplate } from "@/packages/domain/content/page-template";
-import { PageStatus } from "@/packages/domain/content/page";
+import { pageRouter } from "@/features/page/router";
+import * as schema from "@/lib/db/schema";
+import { PageTemplate } from "@/features/page/page-template";
+import { PageStatus } from "@/features/page/page-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -14,14 +14,14 @@ import {
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
 }));
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 

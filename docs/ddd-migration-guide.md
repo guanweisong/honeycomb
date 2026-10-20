@@ -1,45 +1,33 @@
-# 单服务 DDD 迁移说明
+# 简单 Feature 架构迁移说明
 
-## 目标
+此文件保留原链接，但当前规范已由简单 feature 架构取代旧 DDD 目录约定。工程仍是单服务，不拆微服务、不更换数据库，不改变 URL、tRPC 输入输出、权限和用户行为。
 
-本工程采用单服务模块化单体，不拆分微服务、不更换数据库、不改变现有 tRPC、
-Admin 和公开页面接口。DDD 的目标是隔离业务规则与技术细节，而不是增加无意义
-的层次。
+## 放置代码
 
-当前具体入口见[代码阅读地图](code-reading-map.md)。
+- `app` 负责路由、布局、HTTP、根 tRPC 组合和框架缓存。
+- `features/<feature>` 负责自己的 router、schema、types、纯 rules、server 操作与 admin/public UI。
+- `components` 负责通用 UI/编辑器，以注入接入媒体选择等业务能力。
+- `lib` 负责 db、auth、trpc、cache、storage、observability、i18n 等技术能力。
 
-## 新模块约定
+feature 直接使用 `server.ts` 或有实际拆分需要的 `server/`。简单读取与写入均可在该处直接使用数据库；不要求 Repository 接口、factory、Use Case 或 `application/domain/infrastructure` 层。保留函数的依据是实质职责，而不是旧文件名。
 
-- `domain`：聚合、值对象、领域错误、领域事件；禁止导入 Drizzle 和 Next.js。
-- 业务写入：`application/*-commands.ts` 或已有 `*-use-cases.ts` 放实际编排，不额外添加转发文件；简单查询可直达 Query/Repository。复杂业务在 domain 中承载不变量。
-- `infrastructure`：repository、数据库映射、存储和第三方服务适配器。
-- `application/repository.ts`：模块 Application 边界的仓储协议和稳定读写契约；具体实现位于 `infrastructure`。
-- `*.router.ts`、`admin`、`public`：只负责入口适配、权限和依赖注入，不复制领域规则。
+## 迁移顺序
 
-## 核心聚合
+1. 找出实际入口、调用链和行为测试，记录权限、状态转换、事务、并发保护及副作用失败语义。
+2. 将业务枚举、schema、类型和 UI 选项归回所属 feature；通用技术实现归入 lib，通用组件归入 components。
+3. 合并仅转发参数的入口和重复接口，以直接的 server 函数表达查询或业务流程。稳定纯规则保留可独立测试的函数，不为它重新制造聚合生命周期。
+4. 同步全部消费者、测试、mock、配置、文档和 OpenSpec，再删除旧出口；不保留中央 contracts 或兼容转发层。
+5. 检查浏览器、服务端与 Edge 依赖图。根 tRPC 组合留在 app，lib/trpc 的根类型引用必须是 type-only。
+6. 运行受影响行为测试及完整质量门禁，逐项报告真实结果。数据库验证只用独占临时本地数据库，不执行生产写入。
 
-存在稳定业务不变量的模块可定义聚合：例如发布、审核或账号状态流转。聚合在
-成功更新后可发布领域事件，副作用通过事件处理器执行，并要求处理器具备幂等性；
-简单 CRUD 不强制创建聚合或领域事件。
+## 保留的类型安全要求
 
-## 新增功能流程
+- 同语义模型只有一个权威定义；需要运行时验证时从唯一 schema 推导类型，不用 `satisfies` 连接两套字段清单。
+- server 函数可使用数据库类型，但公开输出、UI props 和纯业务 schema 不依赖 ORM 实现。公开响应必须真正裁剪敏感字段。
+- 禁止显式 `any`、`as never` 和规则抑制掩盖契约；使用准确 fixture、typed mock、最小依赖子集及明确空值分支。
+- 允许 `as const` 与有具体原因的最小第三方适配断言；不得引入通用强转工具。
+- `lib/db`、`lib/auth` 对 feature 的引用仅限纯目录、schema 和类型，不得加载业务操作。
 
-1. 复杂模块先在 feature 的 `domain` 中定义状态和不变量；简单 CRUD 从 `application` 用例开始。
-2. 在 `application/repository.ts` 中定义 Repository 接口和稳定读写契约；Domain 不访问 Repository。
-3. 在 `application` 编写需要协调的命令与查询；简单读取不创建空用例，复杂模块才按需增加聚合和领域事件。
-4. 在 `infrastructure` 中实现数据库映射，禁止把 Drizzle 类型泄漏到 domain、application 或 presentation。
+## 不变的安全与可靠性约束
 
-## 类型安全边界
-
-- Application Repository 必须使用明确 DTO，禁止显式 `any`、开放式 `Record<string, any>` 和 `no-explicit-any` 抑制。
-- 用例函数只接收实际使用的端口子集，例如 `Pick<Repository, "find" | "update">`，使测试 fake 能直接满足真实契约。
-- 优先用源类型修正、控制流窄化、类型谓词和显式空值分支替代断言；测试不得用 `as never` 掩盖不完整 fixture。
-- `as const`、校验后构造的品牌类型以及第三方泛型无法表达时的最小适配断言可以保留；非显然双重断言必须在局部说明边界原因。
-- Drizzle、Better Auth 等未公开内部结构的测试应通过单一辅助函数集中建立 `unknown` 边界，调用点使用正常类型。
-
-5. 在 feature 根部 router，或按需保留的 admin/public 入口中接入现有入口。
-6. 增加 fake repository、边界测试和至少一个失败路径测试。
-
-## 稳定性原则
-
-不新增 facade、空接口层或重复的兼容出口。简单查询可直达 Query/Repository；改变状态、触发副作用或需要多步骤协调的行为必须通过 Application Use Case，并由类型检查、单元测试和架构边界测试保证入口稳定。
+服务端 capability、GUEST 可见性、公开 DTO、发布与账号保护、分类 SQL 防环、事务和条件写入、评论通知容错、缓存 `publicSync` 降级、媒体删除不确定结果、草稿恢复及 Sentry 隐私边界均须保留。详细说明见[架构与依赖边界](architecture-dependency-report.md)和[权限矩阵](permission-matrix.md)。

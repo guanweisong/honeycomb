@@ -1,5 +1,5 @@
-import { UserLevel } from "@/packages/domain/identity/user";
-import type { Context } from "@/packages/trpc/api/context";
+import { UserLevel } from "@/features/user/user";
+import type { Context } from "@/lib/trpc/context";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -87,17 +87,31 @@ export function callActualProcedure(
   return input === undefined ? procedure() : procedure(input);
 }
 
-/** 加载已注册的 package 与 feature Router 源码，供静态矩阵断言使用。 */
+/** 加载 app 注册的 feature Router 源码，供静态矩阵断言使用。 */
 export function loadRouterSources(): RouterSource[] {
   const featureRouterEntries = [
-    ["comment", "comment"], ["post", "post"], ["media", "media"],
-    ["link", "link"], ["menu", "menu"], ["page", "page"],
-    ["setting", "setting"], ["setting", "statistic"], ["tag", "tag"],
-    ["user", "user"], ["user", "account-security"], ["category", "category"],
+    ["comment", "comment"],
+    ["post", "post"],
+    ["media", "media"],
+    ["link", "link"],
+    ["menu", "menu"],
+    ["page", "page"],
+    ["setting", "setting"],
+    ["setting", "statistic"],
+    ["tag", "tag"],
+    ["user", "user"],
+    ["user", "account-security"],
+    ["category", "category"],
   ] as const;
-  return featureRouterEntries.map(([feature, router]) => ({
-      moduleSpecifier: `@/features/${feature}/${router}.router`,
-      fileName: `${router}.router.ts`,
-      source: readFileSync(join(process.cwd(), "src/features", feature, `${router}.router.ts`), "utf8"),
-    }));
+  return featureRouterEntries.map(([feature, router]) => {
+    const moduleName = router === feature ? "router" : `${router}.router`;
+    return {
+      moduleSpecifier: `@/features/${feature}/${moduleName}`,
+      fileName: `${moduleName}.ts`,
+      source: readFileSync(
+        join(process.cwd(), "src/features", feature, `${moduleName}.ts`),
+        "utf8",
+      ),
+    };
+  });
 }

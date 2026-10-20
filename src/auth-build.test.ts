@@ -26,9 +26,11 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_TOKEN", "");
 
     const authModule = await import("./auth");
-    const options = (authModule.auth as unknown as {
-      options: { emailAndPassword: { minPasswordLength?: number } };
-    }).options;
+    const options = (
+      authModule.auth as unknown as {
+        options: { emailAndPassword: { minPasswordLength?: number } };
+      }
+    ).options;
 
     expect(options.emailAndPassword.minPasswordLength).toBe(6);
   });
@@ -41,13 +43,15 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_TOKEN", "");
 
     const authModule = await import("./auth");
-    const options = (authModule.auth as unknown as {
-      options: {
-        account: {
-          accountLinking: { disableImplicitLinking?: boolean };
+    const options = (
+      authModule.auth as unknown as {
+        options: {
+          account: {
+            accountLinking: { disableImplicitLinking?: boolean };
+          };
         };
-      };
-    }).options;
+      }
+    ).options;
 
     expect(options.account.accountLinking.disableImplicitLinking).toBe(true);
   });

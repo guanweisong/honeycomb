@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { PostInsertSchema } from "@/features/post/application/write-schema";
-import { PageInsertSchema } from "@/features/page/application/write-schema";
-import { MediaInsertSchema } from "@/features/media/application/write-schema";
-import { LinkInsertSchema } from "@/features/link/application/write-schema";
-import { CategoryInsertSchema } from "@/features/category/application/write-schema";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { routing } from "@/packages/ui/navigation/routing";
-import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import { cacheNamespaceValues } from "@/packages/infrastructure/cache/cache-namespaces";
-import { metricLabelValueCatalog } from "@/packages/infrastructure/observability/core/metric-label-values";
+import { PostInsertSchema } from "@/features/post/schema";
+import { PageInsertSchema } from "@/features/page/schema";
+import { MediaInsertSchema } from "@/features/media/schema";
+import { LinkInsertSchema } from "@/features/link/schema";
+import { CategoryInsertSchema } from "@/features/category/schema";
+import { EnableStatus } from "@/lib/validation/enable-status";
+import { routing } from "@/lib/i18n/routing";
+import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
+import { cacheNamespaceValues } from "@/lib/cache/cache-namespaces";
+import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";
 
 describe("唯一写入契约及边界行为", () => {
   it("文章保留可空局部语言并规范化分类 ID", () => {

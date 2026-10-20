@@ -3,7 +3,7 @@ import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
 import { DashboardClientShell } from "./components/DashboardClientShell";
 import { AdminProviders } from "@/app/admin/AdminProviders";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 
 export default function AdminDashboardLayout({
   children,

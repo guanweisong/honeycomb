@@ -12,7 +12,7 @@ const { limitMock, getClientIpMock, i18nHandlerMock } = vi.hoisted(() => ({
   i18nHandlerMock: vi.fn(() => new Response("i18n", { status: 200 })),
 }));
 
-vi.mock("@/packages/infrastructure/rate-limit/rate-limit", () => ({
+vi.mock("@/lib/rate-limit/rate-limit", () => ({
   apiRatelimit: {
     limit: limitMock,
   },
@@ -107,7 +107,9 @@ describe("proxy", () => {
   });
 
   it("把可信后台 pathname 写入上游请求头并覆盖客户端伪造值", () => {
-    const incoming = new Headers({ "x-honeycomb-admin-pathname": "/admin/user" });
+    const incoming = new Headers({
+      "x-honeycomb-admin-pathname": "/admin/user",
+    });
 
     const result = createAdminRequestHeaders(incoming, "/admin/tag");
 

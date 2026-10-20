@@ -1,9 +1,6 @@
-import type {
-  PostInsert,
-  PostUpdate,
-} from "@/features/post/application/write-schema";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
+import type { PostInsert, PostUpdate } from "@/features/post/schema";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
 
 export type PostFormValues = Partial<PostInsert> | PostUpdate;
 

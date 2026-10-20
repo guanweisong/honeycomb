@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commentRouter } from "@/features/comment/comment.router";
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { commentRouter } from "@/features/comment/router";
+import { CommentStatus } from "@/features/comment/comment-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -9,25 +9,24 @@ import {
   createMockDb,
   resetMockDb,
 } from "@tests/helpers/test-utils";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import * as commandRepositories from "@/features/comment/infrastructure/comment-command-repository";
+import { PostStatus } from "@/features/post/post-status";
+import { EnableStatus } from "@/lib/validation/enable-status";
+import * as commandRepositories from "@/features/comment/server/comment-command-repository";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
-    invalidate: (...args: unknown[]) =>
-      mockInvalidatePublicContent(...args),
+    invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
 }));
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/security/validate-captcha", () => ({
+vi.mock("@/lib/security/validate-captcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 

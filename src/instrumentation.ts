@@ -1,12 +1,12 @@
 import type { Instrumentation } from "next";
 
 import { getServerEnv } from "./env/server";
-import { LogEvent } from "./packages/infrastructure/observability/core/names";
+import { LogEvent } from "./lib/observability/core/names";
 import {
   configureObservability,
   getLogger,
-} from "./packages/infrastructure/observability/server/registry";
-import { createRequestContext } from "./packages/infrastructure/observability/server/request-context";
+} from "./lib/observability/server/registry";
+import { createRequestContext } from "./lib/observability/server/request-context";
 
 export function register() {
   configureObservability();
@@ -24,7 +24,7 @@ export function register() {
     process.env.NEXT_PHASE !== "phase-production-build" &&
     dsn
   ) {
-    return import("./packages/infrastructure/observability/server/sentry")
+    return import("./lib/observability/server/sentry")
       .then(({ configureSentryLogs }) => configureSentryLogs(dsn))
       .catch(() => {
         // Telemetry initialization must not prevent the app from serving requests.

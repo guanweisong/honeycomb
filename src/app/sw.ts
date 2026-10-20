@@ -1,6 +1,10 @@
-import type { PrecacheEntry, SerwistGlobalConfig, SerwistPlugin } from "serwist";
+import type {
+  PrecacheEntry,
+  SerwistGlobalConfig,
+  SerwistPlugin,
+} from "serwist";
 import { Serwist, Strategy } from "serwist";
-import { createStaticOfflineDocument } from "@/packages/infrastructure/pwa/offline-document";
+import { createStaticOfflineDocument } from "@/lib/pwa/offline-document";
 import { runtimeCache } from "./service-worker-runtime-cache";
 
 declare const self: WorkerGlobalScope;

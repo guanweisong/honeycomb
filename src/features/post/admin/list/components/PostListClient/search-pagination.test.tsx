@@ -17,10 +17,10 @@ vi.mock("sonner", () => ({
   toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: mocks.can,
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     post: {
       adminIndex: { useQuery: mocks.query },
@@ -28,7 +28,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     },
   },
 }));
-vi.mock("@/packages/ui/extended/DynamicForm", () => ({
+vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: ({
     onSubmit,
   }: {
@@ -47,7 +47,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
     </form>
   ),
 }));
-vi.mock("@/packages/ui/extended/MultiSelect", () => ({
+vi.mock("@/components/MultiSelect", () => ({
   MultiSelect: ({
     options,
     value,

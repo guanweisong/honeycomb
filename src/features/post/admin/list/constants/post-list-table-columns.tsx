@@ -1,14 +1,14 @@
 import { ColumnDef } from "@tanstack/react-table";
-import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
+import MultiLangText from "@/components/admin/MultiLangText";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
 import {
   postStatusOptions,
   postTypeOptions,
-} from "@/packages/ui/admin/post-options";
-import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
-import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
-import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
-import { publicationStatusToneMap } from "@/packages/ui/admin/publication-status-tone";
+} from "@/features/post/admin/options";
+import { StatusBadge } from "@/components/StatusBadge";
+import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
+import { formatAdminDateTime } from "@/components/admin/date-time";
+import { publicationStatusToneMap } from "@/components/admin/publication-status-tone";
 
 /**
  * 文章列表的表格列定义。

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { Permission, can } from "@/packages/identity/auth/permissions";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { UserStatus } from "@/packages/domain/identity/user";
-import type { UserRecord as UserEntity } from "@/features/user/application/repository";
+import { Permission, can } from "@/lib/auth/permissions";
+import { UserLevel } from "@/features/user/user";
+import { UserStatus } from "@/features/user/user";
+import type { UserRecord as UserEntity } from "@/features/user/types";
 
 import {
   buildUserUpdateInput,

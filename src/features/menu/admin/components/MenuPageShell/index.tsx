@@ -5,17 +5,17 @@ import {
   SortableTree,
 } from "@nosferatu500/react-sortable-tree";
 import { Save } from "lucide-react";
-import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { Button } from "@/packages/ui/components/button";
-import { Checkbox } from "@/packages/ui/extended/Checkbox";
-import { Tabs } from "@/packages/ui/extended/Tabs";
-import LoadingState from "@/packages/ui/extended/LoadingState";
-import { useMenuActions } from "../../actions/menu-actions";
-import { useMenuQuery } from "../../queries/menu-query";
-import { useMenuTreeEditor } from "../../hooks/use-menu-tree-editor";
+import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import { MenuType } from "@/features/menu/menu-types";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/Checkbox";
+import { Tabs } from "@/components/Tabs";
+import LoadingState from "@/components/LoadingState";
+import { useMenuActions } from "../../menu-actions";
+import { useMenuQuery } from "../../menu-query";
+import { useMenuTreeEditor } from "../../use-menu-tree-editor";
 
 const MENU_TREE_ROW_HEIGHT = 50;
 

@@ -1,22 +1,22 @@
 import React, { Suspense } from "react";
-import PostInfo, { PostCommentCount } from "@/app/(blog)/components/PostInfo";
-import { Comment } from "@/features/comment/public";
+import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
+import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import { MenuType } from "@/features/menu/menu-types";
 import {
   getPublicComments,
   getPublicPageDetail,
   getPublicSetting,
   getPublicLinks,
 } from "@/app/lib/server/public-queries";
-import { RichText } from "@/app/(blog)/components/RichText";
-import { PageViewTracker } from "@/app/(blog)/components/ViewTracker";
-import { PageTemplate } from "@/packages/domain/content/page-template";
-import { cn } from "@/packages/ui/lib/utils";
+import { RichText } from "@/features/media/public/RichText";
+import { PageViewTracker } from "@/features/page/public/PageViewTracker";
+import { PageTemplate } from "@/features/page/page-template";
+import { cn } from "@/lib/ui/utils";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 import { assertPublishedPost } from "./page.utils";
 import {
   createLocalizedAlternates,

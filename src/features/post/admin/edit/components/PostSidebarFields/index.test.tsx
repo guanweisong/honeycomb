@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PostType } from "@/packages/domain/content/post";
+import { PostType } from "@/features/post/post-type";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -9,11 +9,11 @@ import { PostType } from "@/packages/domain/content/post";
 
 const grantedPermissions = new Set<string>();
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 
-vi.mock("@/packages/ui/components/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     variant: _variant,
@@ -24,7 +24,7 @@ vi.mock("@/packages/ui/components/button", () => ({
   ),
 }));
 
-vi.mock("@/packages/ui/extended/DynamicForm/DynamicField", () => ({
+vi.mock("@/components/DynamicForm/DynamicField", () => ({
   DynamicField: ({
     label,
     name,
@@ -53,7 +53,7 @@ vi.mock("../MultiTag", () => ({
     React.createElement("div", { "data-testid": "multi-tag" }, title),
 }));
 
-vi.mock("../PhotoPickerItem", () => ({
+vi.mock("../../../../../media/components/PhotoPickerItem", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "photo-picker" }, title),
 }));

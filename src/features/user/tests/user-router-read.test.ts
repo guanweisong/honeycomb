@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { userRouter } from "@/features/user/user.router";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { UserStatus } from "@/packages/domain/identity/user";
+import { userRouter } from "@/features/user/router";
+import { UserLevel } from "@/features/user/user";
+import { UserStatus } from "@/features/user/user";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
@@ -13,12 +13,12 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
 // 模拟工具模块。
-vi.mock("@/packages/infrastructure/db/query/tools", () => ({
+vi.mock("@/lib/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));
@@ -47,10 +47,7 @@ describe("User Router", () => {
       mockDb.limit.mockResolvedValueOnce([currentUser]);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.current();
@@ -68,10 +65,7 @@ describe("User Router", () => {
   describe("index procedure", () => {
     it("rejects guest users to prevent email enumeration", async () => {
       const caller = userRouter.createCaller(
-        createMockContext(
-          createGuestUser(TEST_IDS.ID_2),
-          mockDb,
-        ),
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(caller.index({ page: 1, limit: 10 })).rejects.toThrow(
@@ -117,10 +111,7 @@ describe("User Router", () => {
 
       // 使用模拟上下文创建调用方。
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.index({ page: 1, limit: 10 });
@@ -147,10 +138,7 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce(mockCount);
 
       const caller = userRouter.createCaller(
-        createMockContext(
-          createAdminUser(TEST_IDS.ID_1),
-          mockDb,
-        ),
+        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
       const result = await caller.index({ page: 1, limit: 10 });

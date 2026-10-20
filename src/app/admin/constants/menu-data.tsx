@@ -1,11 +1,11 @@
 import React from "react";
-import { MenuItem } from "@/packages/ui/extended/Menu";
+import { MenuItem } from "@/components/Menu";
 import {
   Permission,
   type Permission as PermissionValue,
-} from "@/packages/identity/auth/permissions";
-import { authorize } from "@/packages/identity/auth/authorize";
-import { isCapability } from "@/packages/identity/auth/capability-registry";
+} from "@/lib/auth/permissions";
+import { authorize } from "@/lib/auth/authorize";
+import { isCapability } from "@/lib/auth/capability-registry";
 import {
   FileChartColumn,
   Gauge,

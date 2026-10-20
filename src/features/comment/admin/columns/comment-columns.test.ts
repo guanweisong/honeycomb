@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { StatusBadgeTone } from "@/components/StatusBadge";
 import { getCommentStatusPresentation } from "./comment-columns";
 
 describe("comment column presentation", () => {

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
-import type { MediaViewModel } from "@/features/contracts";
-import type { MediaInsert } from "@/features/media/application/write-schema";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaInsert } from "@/features/media/schema";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
 
@@ -70,7 +70,6 @@ test.describe("admin media upload", () => {
           body: request.postData(),
         });
         const result = calls.map(({ procedure, input }) => {
-
           if (procedure === "user.current") {
             return {
               result: {

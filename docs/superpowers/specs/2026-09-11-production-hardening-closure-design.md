@@ -1,5 +1,7 @@
 # Production Hardening Closure Design
 
+> 历史记录：本文记录当时方案与验证，不代表当前目录或分层要求。当前指导见[架构与依赖边界](../../architecture-dependency-report.md)；本轮迁移与验证见[重构结果](../../simple-feature-architecture-results.md)。
+
 ## Context
 
 The current branch has strong module boundaries, runtime schemas, capability-based authorization, cache invalidation ports, and broad automated verification. A repository-wide audit nevertheless found security and correctness gaps that cross authentication, PWA caching, comment moderation, hierarchical data, media storage, and engineering governance.

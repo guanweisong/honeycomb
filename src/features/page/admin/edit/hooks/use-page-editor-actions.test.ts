@@ -1,8 +1,8 @@
 import React, { act, Suspense, use, useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
 import { requireDefined } from "@tests/helpers/require-defined";
 
 (
@@ -24,10 +24,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success, warning: mocks.warning },
 }));
-vi.mock("@/packages/infrastructure/observability/client", () => ({
+vi.mock("@/lib/observability/client", () => ({
   clientLogger: { error: mocks.logger },
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
@@ -36,7 +36,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-import { usePageEditorActions } from "../actions/page-editor-actions";
+import { usePageEditorActions } from "../page-editor-actions";
 
 const values = {
   title: { en: "About", zh: "关于" },

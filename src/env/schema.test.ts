@@ -77,11 +77,19 @@ describe("environment schemas", () => {
     const unsafeValue = "short-production-secret";
 
     expect(() =>
-      parseServerEnv({ ...validCoreEnv, AUTH_SECRET: unsafeValue, NODE_ENV: "production" }),
+      parseServerEnv({
+        ...validCoreEnv,
+        AUTH_SECRET: unsafeValue,
+        NODE_ENV: "production",
+      }),
     ).toThrow(/AUTH_SECRET/);
 
     try {
-      parseServerEnv({ ...validCoreEnv, AUTH_SECRET: unsafeValue, NODE_ENV: "production" });
+      parseServerEnv({
+        ...validCoreEnv,
+        AUTH_SECRET: unsafeValue,
+        NODE_ENV: "production",
+      });
     } catch (error) {
       expect((error as Error).message).not.toContain(unsafeValue);
     }
@@ -157,23 +165,29 @@ describe("environment schemas", () => {
   });
 
   it("parses each optional integration independently", () => {
-    expect(parseTurnstileEnv({
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key",
-      TURNSTILE_SECRET_KEY: "secret-key",
-    })).toEqual({ siteKey: "site-key", secretKey: "secret-key" });
-    expect(parseResendEnv({
-      RESEND_API_KEY: "resend-key",
-      RESEND_FROM_EMAIL: "noreply@example.com",
-      ADMIN_EMAIL: "admin@example.com",
-    })).toEqual({
+    expect(
+      parseTurnstileEnv({
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: "site-key",
+        TURNSTILE_SECRET_KEY: "secret-key",
+      }),
+    ).toEqual({ siteKey: "site-key", secretKey: "secret-key" });
+    expect(
+      parseResendEnv({
+        RESEND_API_KEY: "resend-key",
+        RESEND_FROM_EMAIL: "noreply@example.com",
+        ADMIN_EMAIL: "admin@example.com",
+      }),
+    ).toEqual({
       apiKey: "resend-key",
       fromEmail: "noreply@example.com",
       adminEmail: "admin@example.com",
     });
-    expect(parseUpstashEnv({
-      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
-      UPSTASH_REDIS_REST_TOKEN: "token",
-    })).toEqual({ url: "https://example.upstash.io", token: "token" });
+    expect(
+      parseUpstashEnv({
+        UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+        UPSTASH_REDIS_REST_TOKEN: "token",
+      }),
+    ).toEqual({ url: "https://example.upstash.io", token: "token" });
   });
 
   it("parses database, auth, and build auth environments", () => {
@@ -181,13 +195,17 @@ describe("environment schemas", () => {
       TURSO_URL: validCoreEnv.TURSO_URL,
       TURSO_TOKEN: validCoreEnv.TURSO_TOKEN,
     });
-    expect(parseAuthEnv(validCoreEnv)).toMatchObject({ AUTH_SECRET: "auth-secret" });
-    expect(parseBuildAuthEnv({
-      AUTH_SECRET: "build-secret",
-      AUTH_URL: "https://example.com",
-      AUTH_GOOGLE_ID: "google-id",
-      AUTH_GOOGLE_SECRET: "google-secret",
-    }).google).toEqual({ clientId: "google-id", clientSecret: "google-secret" });
+    expect(parseAuthEnv(validCoreEnv)).toMatchObject({
+      AUTH_SECRET: "auth-secret",
+    });
+    expect(
+      parseBuildAuthEnv({
+        AUTH_SECRET: "build-secret",
+        AUTH_URL: "https://example.com",
+        AUTH_GOOGLE_ID: "google-id",
+        AUTH_GOOGLE_SECRET: "google-secret",
+      }).google,
+    ).toEqual({ clientId: "google-id", clientSecret: "google-secret" });
   });
 
   it("rejects an R2 account ID that cannot be a Cloudflare account hostname", () => {
@@ -225,7 +243,8 @@ describe("environment schemas", () => {
       ADMIN_EMAIL: "admin@example.com",
       UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
       UPSTASH_REDIS_REST_TOKEN: "upstash-token",
-    })) vi.stubEnv(key, value);
+    }))
+      vi.stubEnv(key, value);
 
     expect(getServerEnv().r2?.bucketName).toBe("bucket");
     expect(getAuthEnv().turnstile?.secretKey).toBe("turnstile-secret");

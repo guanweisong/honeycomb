@@ -1,29 +1,28 @@
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { injectManifest } from "@serwist/build";
-import {
-  offlinePrecacheUrl,
-  pwaGlobIgnores,
-} from "@/packages/infrastructure/pwa/precache-config";
+import { offlinePrecacheUrl, pwaGlobIgnores } from "@/lib/pwa/precache-config";
 
 const isProduction = process.argv.includes("--production");
 const buildDirectory = resolve(".serwist-build");
 const workerSource = join(buildDirectory, "sw.js");
 const workerOutput = resolve("public/serwist/sw.js");
 
-const bun = (globalThis as typeof globalThis & {
-  Bun: {
-    build(config: {
-      entrypoints: string[];
-      outdir: string;
-      target: "browser";
-      format: "esm";
-      minify: boolean;
-      define: Record<string, string>;
-      sourcemap: "none";
-    }): Promise<{ success: boolean; logs: unknown[] }>;
-  };
-}).Bun;
+const bun = (
+  globalThis as typeof globalThis & {
+    Bun: {
+      build(config: {
+        entrypoints: string[];
+        outdir: string;
+        target: "browser";
+        format: "esm";
+        minify: boolean;
+        define: Record<string, string>;
+        sourcemap: "none";
+      }): Promise<{ success: boolean; logs: unknown[] }>;
+    };
+  }
+).Bun;
 
 const bundle = await bun.build({
   entrypoints: ["src/app/sw.ts"],
@@ -60,9 +59,7 @@ await injectManifest({
   swSrc: workerSource,
   swDest: workerOutput,
   globDirectory: process.cwd(),
-  globPatterns: isProduction
-    ? [".next/static/**/*", "public/**/*"]
-    : [],
+  globPatterns: isProduction ? [".next/static/**/*", "public/**/*"] : [],
   globIgnores: [
     ...pwaGlobIgnores,
     ".serwist-build/**/*",

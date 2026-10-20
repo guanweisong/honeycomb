@@ -10,25 +10,23 @@ const sourceRoot = join(process.cwd(), "src");
 const explicitUnsafeType =
   /(?:\bas\s+(?:any|never)\b|:\s*any\b|<any>|\bany\[\]|Record<[^>]*,\s*any>|no-explicit-any)/;
 
-function applicationRepositoryFiles(): string[] {
-  return sourceFiles(featuresRoot).filter(
-    (path) => path.includes(`${join("application", "")}`) && /repository\.ts$/.test(path),
+function featureContractFiles(): string[] {
+  return sourceFiles(featuresRoot).filter((path) =>
+    /\/(?:types|schema|rules)\.ts$/.test(path),
   );
 }
 
 describe("类型安全治理", () => {
   it("Post/Page command DTO 使用封闭且明确的字段类型", () => {
     const commandContracts = [
-      "src/features/post/application/repository.ts",
-      "src/features/page/application/repository.ts",
+      "src/features/post/schema.ts",
+      "src/features/page/schema.ts",
     ];
     const violations = commandContracts.flatMap((path) => {
       const source = readFileSync(path, "utf8");
-      const commandSection =
-        source
-          .split("export type PostVisibility")[0]
-          ?.split("export type PageVisibility")[0] ?? source;
-      return /\bunknown\b|\[key:\s*string\]|Record<string/.test(commandSection)
+      return /\bunknown\b|\[key:\s*string\]|Record<string|z\.(?:any|unknown|record)\s*\(/.test(
+        source,
+      )
         ? [path]
         : [];
     });
@@ -37,10 +35,10 @@ describe("类型安全治理", () => {
   });
 
   it("Post/Page command mapper 不使用整体 Drizzle model 断言", () => {
-    const mapperFiles = [
-      "src/features/post/infrastructure/post-transforms.ts",
-      "src/features/page/infrastructure/page-command-repository.ts",
-    ];
+    const mapperFiles = sourceFiles(featuresRoot).filter((path) =>
+      /features\/(?:post|page)\/server(?:\/|\.ts$)/.test(path),
+    );
+    expect(mapperFiles.length).toBeGreaterThan(1);
     const violations = mapperFiles.flatMap((path) => {
       const source = readFileSync(path, "utf8");
       return /\bas\s+(?:PostInsertValues|typeof\s+schema\.(?:post|page)\.\$inferInsert)\b/.test(
@@ -53,8 +51,8 @@ describe("类型安全治理", () => {
     expect(violations).toEqual([]);
   });
 
-  it("Application Repository 契约不使用显式 any 或规则抑制", () => {
-    const violations = applicationRepositoryFiles().flatMap((path) => {
+  it("Feature 业务契约不使用显式 any 或规则抑制", () => {
+    const violations = featureContractFiles().flatMap((path) => {
       const source = readFileSync(path, "utf8");
       const lines = source.split("\n");
 

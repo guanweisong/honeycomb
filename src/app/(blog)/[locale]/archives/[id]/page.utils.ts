@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { notFound } from "next/navigation";
-import { PostType } from "@/packages/domain/content/post";
-import { utcFormat } from "@/packages/ui/blog/utc-format";
-import type { MultiLang } from "@/packages/domain/localization/multi-lang";
+import { PostType } from "@/features/post/post-type";
+import { utcFormat } from "@/components/blog/utc-format";
+import type { MultiLang } from "@/lib/i18n/multi-lang";
 
 export function assertPostDetail<T>(postDetail: T | null | undefined): T {
   if (!postDetail) {
@@ -12,9 +12,10 @@ export function assertPostDetail<T>(postDetail: T | null | undefined): T {
   return postDetail;
 }
 
-export function assertPostCategory(
-  postDetail: { id: string; category?: { id: string } | null },
-) {
+export function assertPostCategory(postDetail: {
+  id: string;
+  category?: { id: string } | null;
+}) {
   if (!postDetail.category) {
     throw new Error(`Post ${postDetail.id} is missing category relation`);
   }
@@ -45,7 +46,9 @@ export function getPostTitle(
 ): string | null | undefined {
   if (post.type === PostType.MOVIE) {
     const title = post.title?.[locale];
-    return post.movieTime ? `${title ?? ""} (${utcFormat(post.movieTime, "YYYY")})` : title;
+    return post.movieTime
+      ? `${title ?? ""} (${utcFormat(post.movieTime, "YYYY")})`
+      : title;
   }
   return post.title?.[locale] ?? post.quoteContent?.[locale];
 }

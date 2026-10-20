@@ -1,9 +1,10 @@
-import { Permission } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/lib/auth/permissions";
 import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx",
+    relativePath:
+      "(root)/(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx",
     actions: [
       {
         id: "page-editor.create",

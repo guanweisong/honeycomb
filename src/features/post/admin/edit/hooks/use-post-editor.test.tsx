@@ -2,9 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import type { PostDetailResult as PostDetailViewModel } from "@/features/post/application/repository";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import type { PostDetailResult as PostDetailViewModel } from "@/features/post/types";
 
 type EditorDetail = Pick<
   PostDetailViewModel,
@@ -26,7 +26,7 @@ const mocks = vi.hoisted(() => ({
   queryError: null as { data?: { code: string } } | null,
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: mocks.userId, level: "ADMIN" } }),
 }));
 
@@ -34,10 +34,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("sonner", () => ({
   toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
-vi.mock("@/packages/infrastructure/observability/client", () => ({
+vi.mock("@/lib/observability/client", () => ({
   clientLogger: { warn: mocks.warn },
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     category: { adminTree: { useQuery: () => ({ data: [] }) } },
     post: {

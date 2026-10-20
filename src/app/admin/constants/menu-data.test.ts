@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Permission, can } from "@/packages/identity/auth/permissions";
-import { UserLevel } from "@/packages/domain/identity/user";
+import { Permission, can } from "@/lib/auth/permissions";
+import { UserLevel } from "@/features/user/user";
 
 import { getMenuForCapabilities, menu } from "./menu-data";
 

@@ -1,12 +1,13 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 // React 19 requires this flag before any test renderer is created.
 // Keeping it in the shared setup avoids every component test repeating it.
-;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-  .IS_REACT_ACT_ENVIRONMENT = true
+(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: vi.fn(),
@@ -15,28 +16,29 @@ vi.mock('next/navigation', () => ({
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
-    }
+    };
   },
   useSearchParams() {
-    return new URLSearchParams()
+    return new URLSearchParams();
   },
   usePathname() {
-    return '/'
+    return "/";
   },
-}))
+}));
 
 // Mock Next.js environment
-if (typeof window !== 'undefined') Object.defineProperty(window, 'location', {
-  value: {
-    href: 'http://localhost:3000',
-    origin: 'http://localhost:3000',
-    protocol: 'http:',
-    host: 'localhost:3000',
-    hostname: 'localhost',
-    port: '3000',
-    pathname: '/',
-    search: '',
-    hash: '',
-  },
-  writable: true,
-})
+if (typeof window !== "undefined")
+  Object.defineProperty(window, "location", {
+    value: {
+      href: "http://localhost:3000",
+      origin: "http://localhost:3000",
+      protocol: "http:",
+      host: "localhost:3000",
+      hostname: "localhost",
+      port: "3000",
+      pathname: "/",
+      search: "",
+      hash: "",
+    },
+    writable: true,
+  });

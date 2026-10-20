@@ -7,13 +7,15 @@ import {
 describe("logout browser state", () => {
   it("deletes every runtime cache while preserving precache assets", async () => {
     const cacheStorage = {
-      keys: vi.fn().mockResolvedValue([
-        "serwist-precache-v2",
-        "workbox-precache-v2",
-        "apis",
-        "pages-rsc",
-        "legacy-runtime-cache",
-      ]),
+      keys: vi
+        .fn()
+        .mockResolvedValue([
+          "serwist-precache-v2",
+          "workbox-precache-v2",
+          "apis",
+          "pages-rsc",
+          "legacy-runtime-cache",
+        ]),
       delete: vi.fn().mockResolvedValue(true),
     };
 

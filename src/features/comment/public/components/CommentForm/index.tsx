@@ -2,7 +2,7 @@
 
 import { useId, type FormEventHandler, type RefObject } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/packages/ui/components/button";
+import { Button } from "@/components/ui/button";
 import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 

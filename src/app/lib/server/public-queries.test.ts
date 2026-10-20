@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 
 const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: mocks.createServerClient,
 }));
 vi.mock("next/cache", () => ({

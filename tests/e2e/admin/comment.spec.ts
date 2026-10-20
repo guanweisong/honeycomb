@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
-import {
-  refreshMockedAdminUser,
-  signInAsDashboardTestUser,
-} from "./auth";
-import type { AdminCommentViewModel } from "@/features/contracts";
+import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
+import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { CommentStatus } from "@/features/comment/comment-status";
 
 test.describe("admin comment moderation", () => {
   test("@regression moderates and batch deletes comments through the browser contract", async ({
@@ -46,7 +43,6 @@ test.describe("admin comment moderation", () => {
         body: request.postData(),
       });
       const result = calls.map(({ procedure, input }) => {
-
         if (procedure === "user.current") {
           return {
             result: {
@@ -59,7 +55,9 @@ test.describe("admin comment moderation", () => {
         }
         if (procedure === "comment.index") {
           commentIndexInputs.push(input);
-          return { result: { data: { list: comments, total: comments.length } } };
+          return {
+            result: { data: { list: comments, total: comments.length } },
+          };
         }
         if (procedure === "comment.update") {
           updateInputs.push(input);
@@ -98,9 +96,9 @@ test.describe("admin comment moderation", () => {
 
     await page.getByRole("button", { name: "通过" }).click();
     await page.getByRole("button", { name: "确定" }).click();
-    await expect.poll(() => updateInputs).toEqual([
-      { id: "comment-1", status: "PUBLISH" },
-    ]);
+    await expect
+      .poll(() => updateInputs)
+      .toEqual([{ id: "comment-1", status: "PUBLISH" }]);
     await expect(page.getByText("更新成功")).toBeVisible();
     await expect
       .poll(() => commentIndexInputs.length)

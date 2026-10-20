@@ -61,7 +61,8 @@ async function respondWithRegisteredCacheFirst(cachedResponse: Response) {
 
   try {
     const [responseDone, cacheDone] = strategy.handleAll({
-      event: new TestExtendableEvent() as unknown as RouteMatchCallbackOptions["event"],
+      event:
+        new TestExtendableEvent() as unknown as RouteMatchCallbackOptions["event"],
       request: new Request("https://fonts.gstatic.com/inter.woff2"),
     });
 
@@ -85,9 +86,10 @@ describe("Service Worker runtime cache policy", () => {
 
   it("installs the shared response guard on every runtime strategy", () => {
     expect(
-      runtimeCache.every(({ handler }) =>
-        handler instanceof Strategy &&
-        handler.plugins.includes(runtimeResponseCacheabilityPlugin),
+      runtimeCache.every(
+        ({ handler }) =>
+          handler instanceof Strategy &&
+          handler.plugins.includes(runtimeResponseCacheabilityPlugin),
       ),
     ).toBe(true);
   });
@@ -99,24 +101,49 @@ describe("Service Worker runtime cache policy", () => {
     runtimeRequest("/admin/dashboard", { "Content-Type": "text/html" }),
     runtimeRequest("/admin/dashboard", { RSC: "1" }),
     runtimeRequest("/admin/dashboard.js"),
-  ])("does not register a matching cache strategy for private requests", (request) => {
-    expect(matchingStrategies(request)).toEqual([]);
-  });
+  ])(
+    "does not register a matching cache strategy for private requests",
+    (request) => {
+      expect(matchingStrategies(request)).toEqual([]);
+    },
+  );
 
   it("registers strategies for public document, RSC, and static asset requests", () => {
     expect(
-      matchingStrategies(runtimeRequest("/en/posts", { "Content-Type": "text/html" })),
+      matchingStrategies(
+        runtimeRequest("/en/posts", { "Content-Type": "text/html" }),
+      ),
     ).not.toEqual([]);
-    expect(matchingStrategies(runtimeRequest("/en/posts", { RSC: "1" }))).not.toEqual(
-      [],
-    );
-    expect(matchingStrategies(runtimeRequest("/_next/static/app.js"))).not.toEqual([]);
+    expect(
+      matchingStrategies(runtimeRequest("/en/posts", { RSC: "1" })),
+    ).not.toEqual([]);
+    expect(
+      matchingStrategies(runtimeRequest("/_next/static/app.js")),
+    ).not.toEqual([]);
   });
 
   it.each([
-    ["private", new Response("private", { headers: { "Cache-Control": "private, max-age=60" } }), false],
-    ["no-store", new Response("no-store", { headers: { "Cache-Control": "public, no-store" } }), false],
-    ["cacheable", new Response("cacheable", { headers: { "Cache-Control": "public, max-age=60" } }), true],
+    [
+      "private",
+      new Response("private", {
+        headers: { "Cache-Control": "private, max-age=60" },
+      }),
+      false,
+    ],
+    [
+      "no-store",
+      new Response("no-store", {
+        headers: { "Cache-Control": "public, no-store" },
+      }),
+      false,
+    ],
+    [
+      "cacheable",
+      new Response("cacheable", {
+        headers: { "Cache-Control": "public, max-age=60" },
+      }),
+      true,
+    ],
   ])("treats %s responses as cacheable: %s", (_name, response, expected) => {
     expect(isRuntimeResponseCacheable(response)).toBe(expected);
   });
@@ -124,21 +151,28 @@ describe("Service Worker runtime cache policy", () => {
   it.each([
     ["private", "private, max-age=60"],
     ["no-store", "public, no-store"],
-  ])("does not serve a %s legacy runtime cache response", async (_name, cacheControl) => {
-    const { fetchFromNetwork, response } = await respondWithRegisteredCacheFirst(
-      new Response("forbidden cache", { headers: { "Cache-Control": cacheControl } }),
-    );
+  ])(
+    "does not serve a %s legacy runtime cache response",
+    async (_name, cacheControl) => {
+      const { fetchFromNetwork, response } =
+        await respondWithRegisteredCacheFirst(
+          new Response("forbidden cache", {
+            headers: { "Cache-Control": cacheControl },
+          }),
+        );
 
-    expect(await response.text()).toBe("network response");
-    expect(fetchFromNetwork).toHaveBeenCalledTimes(1);
-  });
+      expect(await response.text()).toBe("network response");
+      expect(fetchFromNetwork).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("continues to serve cacheable legacy runtime content", async () => {
-    const { fetchFromNetwork, response } = await respondWithRegisteredCacheFirst(
-      new Response("public cache", {
-        headers: { "Cache-Control": "public, max-age=60" },
-      }),
-    );
+    const { fetchFromNetwork, response } =
+      await respondWithRegisteredCacheFirst(
+        new Response("public cache", {
+          headers: { "Cache-Control": "public, max-age=60" },
+        }),
+      );
 
     expect(await response.text()).toBe("public cache");
     expect(fetchFromNetwork).not.toHaveBeenCalled();

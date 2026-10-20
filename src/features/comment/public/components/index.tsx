@@ -1,6 +1,6 @@
 import React from "react";
 import CommentClient from "./CommentClient";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import type { CommentTreeViewResponse } from "../../presentation/comment-view-model";
 
 /**

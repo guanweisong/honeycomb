@@ -53,19 +53,19 @@
 - **WHEN** 登录历史 tRPC query 成功返回空列表
 - **THEN** 页面展示“暂无登录历史”空状态
 
-### Requirement: 登录历史使用中立账号安全领域包
+### Requirement: 登录历史由 user feature 的账号安全模块持有
 
-系统 MUST 将登录历史模型、repository、查询限制和保留策略放在独立的账号安全领域包中；Auth 和 tRPC SHALL 依赖该领域包，账号安全领域包 MUST NOT 依赖 Auth 或 tRPC。
+系统 MUST 将登录历史模型、持久化操作、查询限制和保留策略放在 `features/user/account-security`；`app/_auth` 的认证事件组合和 feature 的 tRPC router SHALL 调用该模块。登录历史纯规则和持久化操作 MUST NOT 反向依赖 Auth 实例或 tRPC，MUST NOT 为此建立独立 packages 层级。
 
 #### Scenario: Auth 记录认证事件
 
 - **WHEN** Better Auth hooks 或请求审计需要记录登录、失败、退出事件
-- **THEN** Auth 调用账号安全领域包写入记录，而不通过 tRPC
+- **THEN** `app/_auth` 认证事件组合调用账号安全模块写入记录，而不通过 tRPC
 
 #### Scenario: tRPC 查询登录历史
 
 - **WHEN** `accountSecurity.loginHistory` 查询当前用户历史
-- **THEN** tRPC 调用账号安全领域包读取安全数据库列，而账号安全领域包不引用 tRPC 类型
+- **THEN** feature 的 tRPC router 调用账号安全持久化操作读取安全数据库列，而持久化操作不引用 tRPC 类型
 
 #### Scenario: 识别 Better Auth 认证路径
 

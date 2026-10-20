@@ -1,8 +1,8 @@
 import { vi, type Mock } from "vitest";
-import type { User } from "@/packages/trpc/api/context";
-import type { Context } from "@/packages/trpc/api/context";
-import { UserLevel } from "@/packages/domain/identity/user";
-import type { Database } from "@/packages/infrastructure/db/db";
+import type { User } from "@/lib/trpc/context";
+import type { Context } from "@/lib/trpc/context";
+import { UserLevel } from "@/features/user/user";
+import type { Database } from "@/lib/db/db";
 
 type MockQueryModel = {
   findMany: Mock;

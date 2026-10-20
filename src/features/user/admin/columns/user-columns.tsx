@@ -1,15 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { UserRecord as UserEntity } from "@/features/user/application/repository";
+import type { UserRecord as UserEntity } from "@/features/user/types";
 import {
   UserLevelName,
   userLevelOptions,
   userStatusOptions,
-} from "@/packages/ui/admin/user-options";
-import {
-  StatusBadge,
-  StatusBadgeTone,
-} from "@/packages/ui/extended/StatusBadge";
-import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
+} from "@/features/user/admin/options";
+import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
+import { formatAdminDateTime } from "@/components/admin/date-time";
 
 export function getUserStatusPresentation(status: string) {
   const label =

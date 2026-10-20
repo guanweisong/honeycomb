@@ -1,9 +1,9 @@
+import type { CommentNotificationRepository } from "../server/comment-notification-repository";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
-import { configureObservability } from "@/packages/infrastructure/observability/server";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import type { CommentNotificationRepository } from "../application/repository";
+import { configureObservability } from "@/lib/observability/server";
+import { CommentStatus } from "@/features/comment/comment-status";
 import { sendCommentEmail } from "./comment-email";
 import {
   logCommentNotificationFailure,
@@ -171,7 +171,9 @@ describe("comment notification delivery logs", () => {
       outcome: "error",
       errorType: "Error",
     });
-    expect(JSON.stringify(memory.logEvents)).not.toContain("visitor@example.test");
+    expect(JSON.stringify(memory.logEvents)).not.toContain(
+      "visitor@example.test",
+    );
     expect(JSON.stringify(memory.logEvents)).not.toContain("private email");
 
     parentLookupGate.resolve(undefined);
@@ -193,7 +195,9 @@ describe("comment notification delivery logs", () => {
       outcome: "error",
       errorType: "Error",
     });
-    expect(JSON.stringify(memory.logEvents)).not.toContain("visitor@example.test");
+    expect(JSON.stringify(memory.logEvents)).not.toContain(
+      "visitor@example.test",
+    );
     expect(JSON.stringify(memory.logEvents)).not.toContain("203.0.113.10");
     expect(JSON.stringify(memory.logEvents)).not.toContain("private comment");
   });

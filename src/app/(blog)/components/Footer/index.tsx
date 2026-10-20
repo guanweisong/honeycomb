@@ -3,8 +3,8 @@ import { format } from "date-fns";
 import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import LoadingState from "@/components/LoadingState";
 
 /**
  * 网站底部组件。

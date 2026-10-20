@@ -1,14 +1,14 @@
 import { createClient, type Client } from "@libsql/client";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
-import { PostType } from "@/packages/domain/content/post";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { TagType } from "@/packages/domain/content/tag";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { loginHistoryEvents } from "@/packages/identity/account-security/login-history-events";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
+import { PostType } from "@/features/post/post-type";
+import { PostStatus } from "@/features/post/post-status";
+import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import { loginHistoryEvents } from "@/features/user/account-security/login-history-events";
+import { MenuType } from "@/features/menu/menu-types";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 export type PersistenceInvariantViolation = {
   table: string;
@@ -23,22 +23,46 @@ function sqlValues(values: readonly string[]): string {
 }
 
 const rules = [
-  ["category", "status", `status not in (${sqlValues(Object.values(EnableStatus))})`],
+  [
+    "category",
+    "status",
+    `status not in (${sqlValues(Object.values(EnableStatus))})`,
+  ],
   ["post", "status", `status not in (${sqlValues(Object.values(PostStatus))})`],
   ["post", "type", `type not in (${sqlValues(Object.values(PostType))})`],
-  ["post", "comment_status", `comment_status not in (${sqlValues(Object.values(EnableStatus))})`],
+  [
+    "post",
+    "comment_status",
+    `comment_status not in (${sqlValues(Object.values(EnableStatus))})`,
+  ],
   ["post", "views", "views < 0"],
   ["page", "status", `status not in (${sqlValues(Object.values(PageStatus))})`],
-  ["page", "template", `template not in (${sqlValues(Object.values(PageTemplate))})`],
+  [
+    "page",
+    "template",
+    `template not in (${sqlValues(Object.values(PageTemplate))})`,
+  ],
   ["page", "views", "views < 0"],
-  ["comment", "status", `status not in (${sqlValues(Object.values(CommentStatus))})`],
-  ["comment", "target", "(post_id is not null) + (page_id is not null) + (custom_id is not null) <> 1"],
+  [
+    "comment",
+    "status",
+    `status not in (${sqlValues(Object.values(CommentStatus))})`,
+  ],
+  [
+    "comment",
+    "target",
+    "(post_id is not null) + (page_id is not null) + (custom_id is not null) <> 1",
+  ],
   ["media", "size", "size < 0"],
   ["media", "width", "width < 0"],
   ["media", "height", "height < 0"],
   ["menu", "type", `type not in (${sqlValues(Object.values(MenuType))})`],
   ["post_tag", "type", `type not in (${sqlValues(Object.values(TagType))})`],
-  ["link", "status", `status not in (${sqlValues(Object.values(EnableStatus))})`],
+  [
+    "link",
+    "status",
+    `status not in (${sqlValues(Object.values(EnableStatus))})`,
+  ],
   ["user", "level", `level not in (${sqlValues(Object.values(UserLevel))})`],
   ["user", "status", `status not in (${sqlValues(Object.values(UserStatus))})`],
   ["login_history", "event", `event not in (${sqlValues(loginHistoryEvents)})`],
@@ -66,7 +90,8 @@ export async function findPersistenceInvariantViolations(
       "select max(count(*) - 1, 0) as count from setting",
     );
     const count = Number(result.rows[0]?.count ?? 0);
-    if (count > 0) violations.push({ table: "setting", field: "singleton", count });
+    if (count > 0)
+      violations.push({ table: "setting", field: "singleton", count });
   }
   return violations;
 }

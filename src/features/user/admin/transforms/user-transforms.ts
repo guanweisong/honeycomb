@@ -1,8 +1,8 @@
-import type { UserUpdate } from "@/features/user/application/write-schema";
-import type { UserRecord as UserEntity } from "@/features/user/application/repository";
-import { UserStatus } from "@/packages/domain/identity/user";
-import { isProtectedUser } from "../../domain/user";
-import { withAdminRecordId } from "@/packages/ui/admin/action-state";
+import type { UserUpdate } from "@/features/user/schema";
+import type { UserRecord as UserEntity } from "@/features/user/types";
+import { UserStatus } from "@/features/user/user";
+import { isProtectedUser } from "../../rules";
+import { withAdminRecordId } from "@/components/admin/action-state";
 
 export function toUserFormDefaults(
   record?: UserEntity,

@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { UserListQuerySchema } from "@/features/user/schemas/user.list.query.schema";
-import type { UserRecord as UserEntity } from "@/features/user/application/repository";
-import { Button } from "@/packages/ui/components/button";
-import { DataTable } from "@/packages/ui/extended/DataTable";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import { UserListQuerySchema } from "@/features/user/schema";
+import type { UserRecord as UserEntity } from "@/features/user/types";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/DataTable";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
 import { UserFormDialog } from "../UserFormDialog";
-import { useUserActions } from "../../actions/user-actions";
+import { useUserActions } from "@/features/user/admin/user-actions";
 import { userTableColumns } from "../../columns/user-columns";
-import { useUserQuery } from "../../queries/user-query";
+import { useUserQuery } from "@/features/user/admin/user-query";
 import {
   canDeleteUserResource,
   isUserResourceProtected,

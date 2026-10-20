@@ -3,9 +3,9 @@ import { getAuthProviders } from "@/app/admin/lib/auth-providers";
 import { getSiteSetting } from "@/app/lib/server/site-setting";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import LoginClient from "./components/LoginClient";
-import { normalizeAdminCallback } from "./safe-admin-callback";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoginClient from "../../../../features/user/login/components/LoginClient";
+import { normalizeAdminCallback } from "../../../../features/user/login/safe-admin-callback";
+import LoadingState from "@/components/LoadingState";
 
 export default function LoginPage({ searchParams }: PageProps<"/admin/login">) {
   return (

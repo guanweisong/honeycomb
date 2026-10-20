@@ -2,7 +2,7 @@ import React, { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import type { TagRecord } from "@/features/tag/application/repository";
+import type { TagRecord } from "@/features/tag/types";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("sonner", () => ({
   toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     tag: {
       index: {
@@ -32,9 +32,11 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     },
   },
 }));
-vi.mock("@/packages/ui/admin/use-current-user", () => ({ useCan: () => true }));
-vi.mock("./constants/tag-table-columns", () => ({ tagTableColumns: [] }));
-vi.mock("@/packages/ui/extended/DataTable", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCan: () => true,
+}));
+vi.mock("./tag-table-columns", () => ({ tagTableColumns: [] }));
+vi.mock("@/components/DataTable", () => ({
   DataTable: ({ rowActions }: { rowActions: (row: TagRecord) => ReactNode }) =>
     rowActions({
       id: "507f1f77bcf86cd799439011",
@@ -43,7 +45,7 @@ vi.mock("@/packages/ui/extended/DataTable", () => ({
       updatedAt: null,
     }),
 }));
-vi.mock("@/packages/ui/extended/Dialog", () => ({
+vi.mock("@/components/Dialog", () => ({
   Dialog: ({
     children,
     onOK,
@@ -61,7 +63,7 @@ vi.mock("@/packages/ui/extended/Dialog", () => ({
     </>
   ),
 }));
-vi.mock("@/packages/ui/extended/DynamicForm", () => ({
+vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: ({
     onSubmit,
   }: {

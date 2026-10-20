@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
-import { PostList } from "@/features/post/public";
+import PostList from "@/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/components/NoData";
 import { getTranslations } from "next-intl/server";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import {
   getPublicMenu,
   getPublicPostList,
@@ -15,7 +15,7 @@ import {
 } from "@/app/(blog)/lib/metadata";
 import { resolveListContext, resolveListTitle } from "./page.utils";
 import { connection } from "next/server";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 
 /**
  * 列表页面组件。

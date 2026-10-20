@@ -1,13 +1,13 @@
 import React, { Suspense, ViewTransition } from "react";
-import PostInfo, { PostCommentCount } from "@/app/(blog)/components/PostInfo";
-import Tags from "@/app/(blog)/components/Tags";
-import Card from "@/packages/ui/blog/Card";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
-import { Comment } from "@/features/comment/public";
+import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
+import Tags from "@/features/post/public/Tags";
+import Card from "@/components/blog/Card";
+import { Link } from "@/lib/i18n/blog-navigation";
+import Comment from "@/features/comment/public/components";
 import PageTitle from "@/app/(blog)/components/PageTitle";
-import { utcFormat } from "@/packages/ui/blog/utc-format";
+import { utcFormat } from "@/components/blog/utc-format";
 import { getTranslations } from "next-intl/server";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import {
@@ -16,11 +16,11 @@ import {
   getPublicRandomPosts,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { PostType } from "@/packages/domain/content/post";
-import { RichText } from "@/app/(blog)/components/RichText";
-import { PostViewTracker } from "@/app/(blog)/components/ViewTracker";
-import { serializeJsonLd } from "@/packages/infrastructure/security/serialize-json-ld";
+import { MenuType } from "@/features/menu/menu-types";
+import { PostType } from "@/features/post/post-type";
+import { RichText } from "@/features/media/public/RichText";
+import { PostViewTracker } from "@/features/post/public/PostViewTracker";
+import { serializeJsonLd } from "@/lib/security/serialize-json-ld";
 import {
   assertPostDetail,
   assertPostCategory,
@@ -33,7 +33,7 @@ import {
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
 import { connection } from "next/server";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 
 /**
  * 归档页面组件。
@@ -149,7 +149,9 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
       )}
       <Tags {...postDetail} />
       <Suspense
-        fallback={<LoadingState variant="region" label={postInfoT("loading")} />}
+        fallback={
+          <LoadingState variant="region" label={postInfoT("loading")} />
+        }
       >
         <RecommendedPosts
           categoryId={category.id}

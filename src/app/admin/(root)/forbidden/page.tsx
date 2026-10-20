@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ShieldX } from "lucide-react";
-import { Button } from "@/packages/ui/components/button";
-import { PageState } from "@/packages/ui/extended/PageState";
+import { Button } from "@/components/ui/button";
+import { PageState } from "@/components/PageState";
 
 export default function ForbiddenPage() {
   return (

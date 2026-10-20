@@ -1,14 +1,14 @@
 "use client";
 
 import { toast } from "sonner";
-import { runAdminMutation } from "@/packages/ui/admin/action-state";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
-import { trpc } from "@/packages/trpc/client/trpc";
+import { runAdminMutation } from "@/components/admin/action-state";
+import { DynamicForm } from "@/components/DynamicForm";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
+import { trpc } from "@/lib/trpc/client/trpc";
 import { z } from "zod";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { useSiteSetting } from "@/features/setting/admin/use-site-setting";
 
 type SettingFormValues = z.infer<typeof SettingUpdateSchema>;
 

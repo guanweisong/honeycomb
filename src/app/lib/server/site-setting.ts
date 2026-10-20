@@ -1,8 +1,8 @@
 import "server-only";
 
 import { cache } from "react";
-import type { SettingViewModel as SettingEntity } from "@/features/contracts";
-import { createServerClient } from "@/packages/trpc/api";
+import type { SettingViewModel as SettingEntity } from "@/features/setting/types";
+import { createServerClient } from "@/app/_trpc/server";
 import { getPublicSetting } from "./public-queries";
 
 const getSiteSettingWithHeaders = cache(

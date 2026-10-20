@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PageInsertSchema } from "@/features/page/application/write-schema";
+import { PageInsertSchema } from "@/features/page/schema";
 
 const localizedDraft = z.object({
   zh: z.string().optional(),

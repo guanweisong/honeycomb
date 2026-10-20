@@ -54,7 +54,7 @@ it("shares one admin lookup between layout and template only within a server ren
             builder.onResolve(
               {
                 filter:
-                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/admin-user|@\/features\/user\/infrastructure\/user-repository|@\/packages\/infrastructure\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/DashboardClientShell|@\/packages\/ui\/extended\/LoadingState)$/,
+                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/DashboardClientShell|@\/components\/LoadingState)$/,
               },
               (args) => ({ path: args.path, namespace: "fixture" }),
             );
@@ -69,15 +69,14 @@ it("shares one admin lookup between layout and template only within a server ren
                   'export function redirect(path) { throw new Error("redirect:" + path); }',
                 "@/features/user/admin-user":
                   'import { state } from "auth-fixture"; export async function getAdminUser() { state.calls++; return state.user; }',
-                "@/features/user/infrastructure/user-repository":
+                "@/features/user/server/user-repository":
                   "export function createUserRepository() { return {}; }",
-                "@/packages/infrastructure/db/db":
-                  "export function getDb() { return {}; }",
+                "@/lib/db/db": "export function getDb() { return {}; }",
                 "@/app/admin/AdminProviders":
                   "export function AdminProviders({ children }) { return children; }",
                 "./components/DashboardClientShell":
                   "export function DashboardClientShell({ user, children }) { return [user.id, children]; }",
-                "@/packages/ui/extended/LoadingState":
+                "@/components/LoadingState":
                   "export default function LoadingState() { return null; }",
               };
               return { contents: modules[args.path], loader: "js" };

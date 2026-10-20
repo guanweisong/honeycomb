@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { tagRouter } from "@/features/tag/tag.router";
-import * as schema from "@/packages/infrastructure/db/schema";
+import { tagRouter } from "@/features/tag/router";
+import * as schema from "@/lib/db/schema";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -11,11 +11,11 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -186,12 +186,10 @@ describe("Tag Router", () => {
       };
 
       mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
-      mockDb.where
-        .mockReturnValueOnce(mockDb)
-        .mockResolvedValueOnce([
-          { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
-          { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },
-        ]);
+      mockDb.where.mockReturnValueOnce(mockDb).mockResolvedValueOnce([
+        { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
+        { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },
+      ]);
 
       const caller = tagRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),

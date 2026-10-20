@@ -175,20 +175,20 @@ const ROLE_VALUE_NAME = /(?:role|level)/i;
 const AUTHORIZATION_HELPER_NAME =
   /(?:authori[sz]|auth|access|allow|permission|privilege|role|level)/i;
 const ROLE_POLICY_ALLOWLIST = new Set([
-  "src/packages/identity/auth/permissions.ts",
-  "src/packages/identity/auth/authorize.ts",
+  "src/lib/auth/permissions.ts",
+  "src/lib/auth/authorize.ts",
   // tRPC transport adapter 只负责把会话映射为统一授权 context。
-  "src/packages/trpc/api/core.ts",
+  "src/lib/trpc/core.ts",
   "src/app/admin/constants/menu-data.tsx",
   "src/app/admin/constants/route-capabilities.ts",
   // Admin route template 只把已复核的用户角色映射到登记的 route capability。
   "src/app/admin/(root)/(dashboard)/template.tsx",
-  "src/packages/ui/admin/use-current-user.ts",
+  "src/features/user/admin/use-current-user.ts",
   // User use case 只编排账号等级领域不变量，不决定入口授权。
-  "src/features/user/application/user-commands.ts",
-  "src/packages/infrastructure/db/schema/index.ts",
-  "src/packages/domain/identity/user.ts",
-  "src/features/user/domain/user.ts",
+  "src/features/user/server/user-commands.ts",
+  "src/lib/db/schema/index.ts",
+  "src/features/user/user.ts",
+  "src/features/user/rules.ts",
 ]);
 
 function assertNoRoleBasedAuthorization(

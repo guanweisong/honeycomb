@@ -1,5 +1,5 @@
 import PageEditorPage from "@/features/page/admin/edit/page";
-import { EditorMediaProvider } from "@/features/post/admin/edit/components/EditorMediaProvider";
+import { EditorMediaProvider } from "@/features/media/components/EditorMediaProvider/index";
 
 export default function Page() {
   return (

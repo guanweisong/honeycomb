@@ -1,9 +1,12 @@
 // @vitest-environment node
 
-import { dirname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { sourceFile, sourceFiles } from "@tests/helpers/source-files";
+import {
+  localModulePath,
+  moduleDependencies,
+} from "@tests/helpers/architecture-imports";
 
 function displayExports(source: ts.SourceFile): string[] {
   return source.statements.flatMap((statement) => {
@@ -19,9 +22,8 @@ function displayExports(source: ts.SourceFile): string[] {
       !ts
         .getModifiers(statement)
         ?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)
-    ) {
+    )
       return [];
-    }
     const names = ts.isEnumDeclaration(statement)
       ? [statement.name.text]
       : ts.isVariableStatement(statement)
@@ -33,10 +35,17 @@ function displayExports(source: ts.SourceFile): string[] {
   });
 }
 
-describe("domain display boundaries", () => {
+const featureCatalogs = () =>
+  sourceFiles("src/features").filter((path) =>
+    /^src\/features\/[^/]+\/(?:rules|[^/]+-status|[^/]+-type|[^/]+-types|[^/]+-kind|[^/]+-template|user)\.ts$/.test(
+      path,
+    ),
+  );
+
+describe("feature catalog and display boundaries", () => {
   it("recognizes display declarations and named re-exports", () => {
     const source = ts.createSourceFile(
-      "domain.ts",
+      "catalog.ts",
       [
         'export enum PostStatusName { DRAFT = "草稿" }',
         "export const postStatusOptions = [];",
@@ -53,29 +62,28 @@ describe("domain display boundaries", () => {
     ]);
   });
 
-  it("does not export UI display names or options from domain modules", () => {
-    const violations = sourceFiles("src/packages/domain").flatMap((path) =>
-      displayExports(sourceFile(path)).map((name) => `${path}: ${name}`),
-    );
-    expect(violations).toEqual([]);
+  it("keeps display options out of reusable business catalogs and rules", () => {
+    const files = featureCatalogs();
+    expect(files.length).toBeGreaterThan(10);
+    expect(
+      files.flatMap((path) =>
+        displayExports(sourceFile(path)).map((name) => `${path}: ${name}`),
+      ),
+    ).toEqual([]);
   });
 
-  it("does not import or re-export UI modules from domain", () => {
-    const violations = sourceFiles("src/packages/domain").flatMap((path) =>
-      ts
-        .preProcessFile(sourceFile(path).text, true, true)
-        .importedFiles.flatMap(({ fileName }) => {
-          const importedPath = fileName.startsWith("@/")
-            ? join("src", fileName.slice(2))
-            : fileName.startsWith(".")
-              ? relative(process.cwd(), resolve(dirname(path), fileName))
-              : fileName;
-          return importedPath
-            .replaceAll("\\", "/")
-            .startsWith("src/packages/ui/")
-            ? [`${path} -> ${fileName}`]
+  it("prevents pure catalogs from importing or re-exporting presentation modules", () => {
+    const violations = featureCatalogs().flatMap((path) =>
+      moduleDependencies(sourceFile(path).text, path).flatMap(
+        ({ specifier }) => {
+          const target = localModulePath(path, specifier);
+          return target &&
+            (/^src\/components\//.test(target) ||
+              /\/(?:admin|public|presentation)\//.test(target))
+            ? [`${path} -> ${specifier}`]
             : [];
-        }),
+        },
+      ),
     );
     expect(violations).toEqual([]);
   });

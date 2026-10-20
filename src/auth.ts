@@ -5,14 +5,14 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
 import { captcha, username } from "better-auth/plugins";
 import { getAuthEnv } from "@/env/server";
-import { getDb } from "@/packages/infrastructure/db/db";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { getPasskeyConfig } from "@/packages/identity/auth/passkey-config";
-import { createAuthDatabaseHooks } from "@/packages/identity/auth/server/auth-hooks";
+import { getDb } from "@/lib/db/db";
+import * as schema from "@/lib/db/schema";
+import { getPasskeyConfig } from "@/lib/auth/passkey-config";
+import { createAuthDatabaseHooks } from "@/app/_auth/auth-hooks";
 import {
   CREDENTIAL_PASSWORD_MAX_LENGTH,
   CREDENTIAL_PASSWORD_MIN_LENGTH,
-} from "@/packages/identity/auth/password-policy";
+} from "@/lib/auth/password-policy";
 
 const authEnv = getAuthEnv();
 const authBaseURL = authEnv.AUTH_URL;
@@ -39,7 +39,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
       usernameNormalization: false,
       usernameValidator: (value) => value.trim().length > 0,
     }),
-  passkey(getPasskeyConfig(authBaseURL || "http://localhost:3000")),
+    passkey(getPasskeyConfig(authBaseURL || "http://localhost:3000")),
   ];
 
   if (authEnv.turnstile) {

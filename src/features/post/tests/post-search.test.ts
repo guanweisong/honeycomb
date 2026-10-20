@@ -6,13 +6,13 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import * as schema from "@/packages/infrastructure/db/schema";
-import type { Database } from "@/packages/infrastructure/db/db";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import { MultiLangEnum } from "@/packages/domain/localization/i18n";
+import * as schema from "@/lib/db/schema";
+import type { Database } from "@/lib/db/db";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
 import { createAdminUser, createMockContext } from "@tests/helpers/test-utils";
-import { postRouter } from "../post.router";
+import { postRouter } from "../router";
 
 describe("public post search with real libSQL", () => {
   let directory: string;

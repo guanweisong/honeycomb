@@ -1,16 +1,10 @@
 import { expect, test } from "@playwright/test";
-import {
-  refreshMockedAdminUser,
-  signInAsDashboardTestUser,
-} from "./auth";
-import type { PageViewModel } from "@/features/contracts";
-import type {
-  PageInsert,
-  PageUpdate,
-} from "@/features/page/application/write-schema";
+import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
+import type { PageWithRelations as PageViewModel } from "@/features/page/types";
+import type { PageInsert, PageUpdate } from "@/features/page/schema";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
-import { PageStatus } from "@/packages/domain/content/page";
+import { PageStatus } from "@/features/page/page-status";
 
 const PAGE_ID = "0123456789abcdef01234567";
 

@@ -1,8 +1,8 @@
 import {
   Permission,
   type Permission as PermissionValue,
-} from "@/packages/identity/auth/permissions";
-import { UserLevel } from "@/packages/domain/identity/user";
+} from "@/lib/auth/permissions";
+import { UserLevel } from "@/features/user/user";
 import {
   ADMIN_EDITOR,
   ADMIN_ONLY,

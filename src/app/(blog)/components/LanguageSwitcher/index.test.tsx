@@ -36,11 +36,13 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: (props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    hrefLang?: string;
-    prefetch?: boolean | "auto" | null;
-    replace?: boolean;
-  }) => {
+  default: (
+    props: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+      hrefLang?: string;
+      prefetch?: boolean | "auto" | null;
+      replace?: boolean;
+    },
+  ) => {
     mocks.linkKind = "next";
     mocks.linkProps = props;
     return (
@@ -51,7 +53,7 @@ vi.mock("next/link", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   usePathname: () => mocks.pathname,
   getPathname: ({ href, locale }: { href: string; locale: string }) =>
     `/${locale}${href}`,

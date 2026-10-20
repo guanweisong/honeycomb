@@ -1,18 +1,18 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { Button } from "@/packages/ui/components/button";
-import { DynamicField } from "@/packages/ui/extended/DynamicForm/DynamicField";
-import { creatCategoryTitleByDepth } from "@/packages/ui/admin/category-title";
-import { ModalType } from "@/packages/ui/admin/modal-type";
-import { PostType } from "@/packages/domain/content/post";
-import { postTypeOptions } from "@/packages/ui/admin/post-options";
-import { TagType } from "@/packages/domain/content/tag";
+import { Button } from "@/components/ui/button";
+import { DynamicField } from "@/components/DynamicForm/DynamicField";
+import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { ModalType } from "@/components/admin/modal-type";
+import { PostType } from "@/features/post/post-type";
+import { postTypeOptions } from "@/features/post/admin/options";
+import { TagType } from "@/features/tag/tag-kind";
 import MultiTag from "../MultiTag";
-import PhotoPickerItem from "../PhotoPickerItem";
+import PhotoPickerItem from "../../../../../media/components/PhotoPickerItem";
 import type { usePostEditor } from "../../hooks/use-post-editor";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
 
 type Editor = ReturnType<typeof usePostEditor>;
 

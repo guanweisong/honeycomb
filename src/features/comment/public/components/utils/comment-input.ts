@@ -1,4 +1,4 @@
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import type { CommentInsertInput } from "@/features/comment/schemas/comment.insert.schema";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 

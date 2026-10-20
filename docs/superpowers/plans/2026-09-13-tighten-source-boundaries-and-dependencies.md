@@ -1,5 +1,7 @@
 # Tighten Source Boundaries and Dependencies Implementation Plan
 
+> 历史记录：本文记录当时方案与验证，不代表当前目录或分层要求。当前指导见[架构与依赖边界](../../architecture-dependency-report.md)；本轮迁移与验证见[重构结果](../../simple-feature-architecture-results.md)。
+
 > **For agentic workers:** This plan is executed inline in the current branch. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove test-only modules and pass-through schema files from production source, remove stale bcryptjs usage, and preserve all application behavior.

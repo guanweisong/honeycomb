@@ -36,7 +36,7 @@ vi.mock("next/image", () => ({
     }),
 }));
 
-vi.mock("@/packages/ui/hooks/use-scroll-position", () => ({
+vi.mock("@/lib/hooks/use-scroll-position", () => ({
   useScrollPosition: () => ({ left: 0, top: scrollState?.top ?? 0 }),
 }));
 
@@ -51,7 +51,7 @@ vi.mock(
   }),
 );
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
 }));
@@ -63,10 +63,10 @@ vi.mock("next-intl", () => ({
 }));
 
 import PostList from "./index";
-import type { PostWithRelations as PostListViewModel } from "@/features/post/application/repository";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import type { PostWithRelations as PostListViewModel } from "@/features/post/types";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 const makePost = (
   overrides: Partial<PostListViewModel> &

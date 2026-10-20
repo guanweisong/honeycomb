@@ -1,13 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
+import MultiLangText from "@/components/admin/MultiLangText";
+import { formatAdminDateTime } from "@/components/admin/date-time";
 import type { AdminCommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
-import { commentStatusOptions } from "@/packages/ui/admin/comment-options";
-import {
-  StatusBadge,
-  StatusBadgeTone,
-} from "@/packages/ui/extended/StatusBadge";
-import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
+import { commentStatusOptions } from "@/features/comment/admin/options";
+import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
+import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
 
 export function getCommentStatusPresentation(status?: string | null) {
   const toneMap = {

@@ -1,5 +1,7 @@
 # 实施计划
 
+> 后续架构说明：本变更记录先前阅读路径整理。其 packages、application/domain/infrastructure、中央 contracts 及共享 UI 所有权约定已由 simplify-feature-architecture 取代；既有行为与安全约束继续保留。此处的旧验证结果不是新迁移的验证证据，未完成发布任务也不构成本轮发布授权。
+
 执行方式：在 master 的独立 worktree 和 refactor/readability-boundaries 分支实施；可并行处理互不重叠的选项迁移及命令简化，集成后由独立审查者复核。无直接合并或生产操作。
 
 ## 1. 基线与回归保护

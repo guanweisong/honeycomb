@@ -15,9 +15,10 @@ const withExpiration = (maxEntries: number, maxAgeSeconds: number) => [
 ];
 
 const matchesPublicAsset = (
-  { sameOrigin, url }: Parameters<
-    Exclude<RuntimeCaching["matcher"], string | RegExp>
-  >[0],
+  {
+    sameOrigin,
+    url,
+  }: Parameters<Exclude<RuntimeCaching["matcher"], string | RegExp>>[0],
   pattern: RegExp,
 ) => isPublicRuntimeRequest({ sameOrigin, url }) && pattern.test(url.href);
 
@@ -38,7 +39,10 @@ export const runtimeCache: RuntimeCaching[] = [
   },
   {
     matcher: (options) =>
-      matchesPublicAsset(options, /\.(?:eot|otf|ttc|ttf|woff|woff2|font\.css)$/i),
+      matchesPublicAsset(
+        options,
+        /\.(?:eot|otf|ttc|ttf|woff|woff2|font\.css)$/i,
+      ),
     handler: new StaleWhileRevalidate({
       cacheName: "static-font-assets",
       plugins: withExpiration(4, 7 * 24 * 60 * 60),
@@ -140,7 +144,8 @@ export const runtimeCache: RuntimeCaching[] = [
     }),
   },
   {
-    matcher: ({ sameOrigin, url }) => isPublicRuntimeRequest({ sameOrigin, url }),
+    matcher: ({ sameOrigin, url }) =>
+      isPublicRuntimeRequest({ sameOrigin, url }),
     handler: new NetworkFirst({
       cacheName: "others",
       plugins: withExpiration(32, 24 * 60 * 60),

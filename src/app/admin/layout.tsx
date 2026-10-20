@@ -1,7 +1,7 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
 import React from "react";
-import { Toaster } from "@/packages/ui/components/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";

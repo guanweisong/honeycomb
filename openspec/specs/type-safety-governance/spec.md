@@ -1,31 +1,31 @@
 ## Purpose
 
-建立覆盖跨层 DTO、类型断言、可空数据和测试替身的持续类型安全治理，以自动化门禁阻止不安全类型逃逸重新进入 Application 与生产代码。
+建立覆盖跨层 DTO、类型断言、可空数据和测试替身的持续类型安全治理，以自动化门禁阻止不安全类型逃逸重新进入 feature server 与生产代码。
 
 ## Requirements
 
-### Requirement: Application Repository 契约禁止显式 any
+### Requirement: Feature 数据契约禁止显式 any
 
-系统 SHALL 使生产代码中的 Application Repository 类型和接口不包含显式 `any`，也不得通过关闭 `@typescript-eslint/no-explicit-any` 规避该要求。
+系统 SHALL 使生产代码中的 Feature 数据契约类型和接口不包含显式 `any`，也不得通过关闭 `@typescript-eslint/no-explicit-any` 规避该要求。
 
-#### Scenario: 新增或修改 Application Repository 契约
+#### Scenario: 新增或修改 Feature 数据契约
 
-- **WHEN** 开发者新增或修改 `src/features/*/application` 中的 Repository 契约
+- **WHEN** 开发者新增或修改 feature schema、types 或 server 中的数据契约
 - **THEN** 自动化治理测试必须拒绝显式 `any` 和对应 ESLint 抑制
 
 ### Requirement: 跨层 DTO 必须表达稳定字段
 
-系统 MUST 由 Application 层拥有跨层 Repository DTO，并显式描述用例所需字段；Application DTO 不得依赖 Drizzle schema 或 tRPC procedure output。
+系统 MUST 由所属 feature 拥有稳定输入输出模型，并显式描述业务所需字段；纯契约不得依赖 Drizzle schema 或 tRPC procedure output，server 实现可以直接使用 ORM 类型。
 
-#### Scenario: Infrastructure 实现 Application Repository
+#### Scenario: server 实现持久化读取
 
-- **WHEN** Infrastructure adapter 读写持久化模型
-- **THEN** adapter 必须在持久化边界完成 Application DTO 与 Drizzle 类型之间的映射
+- **WHEN** server 函数读写持久化模型
+- **THEN** 函数必须在需要裁剪、规范化或转换的持久化边界显式构造稳定结果，不创建无职责 mapper
 
-#### Scenario: Transport 调用 Application Use Case
+#### Scenario: Transport 调用 Feature server 操作
 
-- **WHEN** tRPC、Server Action 或其他 Transport 入口调用 Application Use Case
-- **THEN** Application 契约必须能够脱离该 Transport 的 Zod schema 或 procedure output 独立完成类型检查
+- **WHEN** tRPC、Server Action 或其他 Transport 入口调用 Feature server 操作
+- **THEN** 输入契约必须直接复用所属 feature 的权威 schema，不依赖 router 实现或 procedure output
 
 ### Requirement: 可明确建模的断言必须被消除
 
@@ -59,10 +59,10 @@
 
 测试代码 SHALL 优先使用类型化 fixture、结构化 fake、接口子集或 `satisfies`，替代能够清理的 `as never`、双重断言和非空断言。
 
-#### Scenario: 为 Use Case 构造 Repository fake
+#### Scenario: 为 server 操作构造真实依赖替身
 
-- **WHEN** 测试只需要 Repository 接口的一部分行为
-- **THEN** fake 必须通过明确的接口子集或工厂表达所需方法，使接口变化能够触发类型错误
+- **WHEN** 测试只需要数据库或技术接口的一部分行为
+- **THEN** 替身必须使用真实签名、typed fixture/mock 或最小接口子集，使接口变化触发类型错误；不为测试另建生产 Repository 层
 
 #### Scenario: 测试要求 DOM 节点存在
 
@@ -71,12 +71,12 @@
 
 ### Requirement: 同一语义契约必须具有唯一事实源
 
-系统 SHALL 让同一读取模型的运行时 schema 与静态类型共享定义；contracts 仅重新导出所属 Feature 的模型，不独立重建。不同语义模型 SHALL 明确命名。
+系统 SHALL 让同一读取模型的运行时 schema 与静态类型共享定义；消费者直接复用所属 feature 的纯契约，不建立集中 contracts 转发。不同语义模型 SHALL 明确命名。
 
 #### Scenario: 复用媒体与标签读取模型
 
 - **WHEN** 文章、页面或缓存需要完整媒体/标签数据
-- **THEN** 通过所属模块公开 Application 契约复用，不重新手写完整字段集合
+- **THEN** 通过所属模块纯契约或明确 public 出口复用，不重新手写完整字段集合
 
 #### Scenario: 区分评论响应
 
@@ -86,21 +86,21 @@
 #### Scenario: 写入契约及配置目录复用
 
 - **WHEN** 写入校验、OAuth 提供商、登录事件、分页参数、语言或缓存 namespace 被多个消费者使用
-- **THEN** 同语义定义由所属模块提供，静态类型推导、传输出口重新导出，消费者不得平行维护完整字段或成员清单
+- **THEN** 同语义定义由所属模块提供，静态类型推导、传输入口直接引用，消费者不得平行维护完整字段或成员清单
 
 #### Scenario: 保留边界默认值与转换语义
 
-- **WHEN** 收敛 API、Repository、UI 的分页策略或评论记录映射
-- **THEN** API 默认 updatedAt、Repository 默认 createdAt、UI 每页 20 条保持不变；评论读写及通知复用统一记录映射，同时保留各自关联和公开字段边界
+- **WHEN** 收敛 API、持久化读取、UI 的分页策略或评论记录映射
+- **THEN** API 默认 updatedAt、持久化读取默认 createdAt、UI 每页 20 条保持不变；评论读写及通知复用统一记录映射，同时保留各自关联和公开字段边界
 
 ### Requirement: 设置写入契约必须区分真实语义
 
-Setting 所属 Application MUST 拥有后台更新运行时 schema 和内部 nullable patch schema，静态类型 MUST 从对应 schema 推导，transport MUST 仅重新导出其消费的权威 schema。
+Setting feature MUST 拥有后台更新运行时 schema 和内部 nullable patch schema，静态类型 MUST 从对应 schema 推导，transport MUST 直接引用其消费的权威 schema。
 
 #### Scenario: 后台更新设置
 
 - **WHEN** 后台表单或 tRPC 更新 Setting
-- **THEN** 输入 MUST 使用 Application 拥有的后台更新 schema，transport 不得重写字段清单
+- **THEN** 输入 MUST 使用 Setting feature 拥有的后台更新 schema，transport 不得重写字段清单
 
 #### Scenario: 内部清空本地化字段
 
@@ -109,7 +109,7 @@ Setting 所属 Application MUST 拥有后台更新运行时 schema 和内部 nul
 
 ### Requirement: 菜单契约不得使用开放索引签名
 
-Menu 保存输入 MUST 从 Application 运行时 schema 推导，Menu 读取模型 MUST 只声明真实字段且不得包含 `[key: string]: unknown`。
+Menu 保存输入 MUST 从 Menu feature 运行时 schema 推导，Menu 读取模型 MUST 只声明真实字段且不得包含 `[key: string]: unknown`。
 
 #### Scenario: 拼错菜单读取字段
 
@@ -123,7 +123,7 @@ Menu 保存输入 MUST 从 Application 运行时 schema 推导，Menu 读取模�
 #### Scenario: 评论失效公开缓存
 
 - **WHEN** 评论创建、更新或删除影响公开内容
-- **THEN** Comment Application MUST 构造权威计划并调用唯一 `invalidate(plan)` 端口
+- **THEN** Comment server 操作 MUST 构造权威计划并调用唯一 `invalidate(plan)` 端口
 
 #### Scenario: 扫描兼容入口
 
@@ -141,7 +141,7 @@ Menu 保存输入 MUST 从 Application 运行时 schema 推导，Menu 读取模�
 
 ### Requirement: 持久化边界必须兑现返回契约
 
-Repository SHALL 在返回领域枚举前验证持久化值，并对必需写入结果建立运行时存在保证。
+server 持久化读取 SHALL 在返回业务枚举前验证持久化值，并对必需写入结果建立运行时存在保证。
 
 #### Scenario: 写入未返回记录
 

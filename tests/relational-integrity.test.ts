@@ -1,20 +1,33 @@
-import { existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { updatePostTags } from "@/features/post/server/post-commands";
+import {
+  listCategories,
+  getCategoryTree,
+  createCategory,
+  updateCategory,
+} from "@/features/category/server";
+import { listPosts } from "@/features/post/server/post-queries";
+import {
+  existsSync,
+  lstatSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient } from "@libsql/client/node";
 import { drizzle } from "drizzle-orm/libsql";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { createCategoryRepository } from "@/features/category/infrastructure/category-repository";
-import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
-import { createPostCommandRepository } from "@/features/post/infrastructure/post-command-repository";
-import { createUserRepository } from "@/features/user/infrastructure/user-repository";
-import { updateCategory } from "@/features/category/application/category-use-cases";
-import { destroyUsers } from "@/features/user/application/user-commands";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { TagType } from "@/packages/domain/content/tag";
-import { MultiLangEnum } from "@/packages/domain/localization/i18n";
+import * as schema from "@/lib/db/schema";
+
+import { createUserRepository } from "@/features/user/server/user-repository";
+
+import { destroyUsers } from "@/features/user/server/user-commands";
+import { UserLevel } from "@/features/user/user";
+import { TagType } from "@/features/tag/tag-kind";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
 
 const categoryValues = (id: string, parent?: string) => ({
   id,
@@ -26,7 +39,7 @@ const categoryInput = (id: string, parent?: string) => ({
   title: { en: id, zh: id },
   description: { en: id, zh: id },
 });
-vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
+vi.mock("@/lib/cache/upstash-cache", () => ({
   bumpCacheVersion: async () => {},
 }));
 const invalidator = {
@@ -41,7 +54,8 @@ describe("relational integrity with real libSQL", () => {
     directory = mkdtempSync(join(tmpdir(), "honeycomb-relational-"));
     const stat = lstatSync(directory);
     expect(stat.isSymbolicLink()).toBe(false);
-    if (typeof process.getuid === "function") expect(stat.uid).toBe(process.getuid());
+    if (typeof process.getuid === "function")
+      expect(stat.uid).toBe(process.getuid());
     client = createClient({ url: `file:${join(directory, "relational.db")}` });
     db = drizzle(client, { schema });
     for (const file of readdirSync("drizzle")
@@ -58,8 +72,18 @@ describe("relational integrity with real libSQL", () => {
       ]);
     await db.insert(schema.categoryTranslation).values(
       ["root", "child", "grandchild"].flatMap((categoryId) => [
-        { categoryId, locale: MultiLangEnum.En, title: categoryId, description: categoryId },
-        { categoryId, locale: MultiLangEnum.Zh, title: categoryId, description: categoryId },
+        {
+          categoryId,
+          locale: MultiLangEnum.En,
+          title: categoryId,
+          description: categoryId,
+        },
+        {
+          categoryId,
+          locale: MultiLangEnum.Zh,
+          title: categoryId,
+          description: categoryId,
+        },
       ]),
     );
   });
@@ -70,21 +94,38 @@ describe("relational integrity with real libSQL", () => {
   });
 
   it("includes grandchildren in ancestor post filters", async () => {
-    expect(await createPostQueryRepository(db).categoryFilter("root")).toEqual([
-      "root",
-      "child",
-      "grandchild",
+    await db
+      .insert(schema.user)
+      .values({ id: "author", name: "Author", email: "author@example.test" });
+    await db.insert(schema.category).values(categoryValues("outside"));
+    await db.insert(schema.post).values(
+      ["root", "child", "grandchild", "outside"].map((categoryId) => ({
+        id: `post-${categoryId}`,
+        categoryId,
+        authorId: "author",
+      })),
+    );
+    const result = await listPosts(
+      db,
+      { categoryId: "root", limit: 100 },
+      "ALL",
+    );
+    expect(result.list.map(({ id }) => id).sort()).toEqual([
+      "post-child",
+      "post-grandchild",
+      "post-root",
     ]);
+    expect(result.total).toBe(3);
   });
   it("returns a complete tree separately from a conventional flat page", async () => {
-    const repository = createCategoryRepository(db);
-    const page = await repository.list(
+    const page = await listCategories(
+      db,
       { page: 2, limit: 1, sortField: "path", sortOrder: "asc" },
       "ALL",
     );
     expect(page.list.map(({ id }) => id)).toEqual(["grandchild"]);
     expect(page.total).toBe(3);
-    const tree = await repository.tree("ALL");
+    const tree = await getCategoryTree(db, "ALL");
     expect(tree.list.map(({ id }) => id)).toEqual([
       "root",
       "child",
@@ -94,10 +135,14 @@ describe("relational integrity with real libSQL", () => {
   });
   it("maps a racing duplicate path to the friendly application error", async () => {
     await expect(
-      createCategoryRepository(db).create({
-        ...categoryInput("other"),
-        path: "root",
-      }),
+      createCategory(
+        db,
+        {
+          ...categoryInput("other"),
+          path: "root",
+        },
+        invalidator,
+      ),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
       db
@@ -109,16 +154,46 @@ describe("relational integrity with real libSQL", () => {
     await db
       .insert(schema.category)
       .values([categoryValues("a"), categoryValues("b")]);
-    const repository = createCategoryRepository(db);
-    await repository.update({ id: "a", parent: "b" });
-    await expect(repository.update({ id: "b", parent: "a" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    await updateCategory(db, { id: "a", parent: "b" }, invalidator);
     await expect(
-      updateCategory(
-        repository,
-        { id: "root", parent: "grandchild" },
-        invalidator,
-      ),
+      updateCategory(db, { id: "b", parent: "a" }, invalidator),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      updateCategory(db, { id: "root", parent: "grandchild" }, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+  it("rejects a cycle introduced after the parent preflight but before its write", async () => {
+    await db
+      .insert(schema.category)
+      .values([categoryValues("race-a"), categoryValues("race-b")]);
+    const transaction = db.transaction.bind(db);
+    const transactionSpy = vi
+      .spyOn(db, "transaction")
+      .mockImplementationOnce((callback, config) =>
+        transaction(async (tx) => {
+          // Model the other writer committing after this operation read race-b.
+          await tx
+            .update(schema.category)
+            .set({ parent: "race-a" })
+            .where(eq(schema.category.id, "race-b"));
+          return callback(tx);
+        }, config),
+      );
+    const invalidate = vi.fn(async () => ({ state: "completed" as const }));
+    try {
+      await expect(
+        updateCategory(db, { id: "race-a", parent: "race-b" }, { invalidate }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(invalidate).not.toHaveBeenCalled();
+      // The rejected transaction rolls back both the simulated race and write.
+      const rows = await db
+        .select({ id: schema.category.id, parent: schema.category.parent })
+        .from(schema.category);
+      expect(rows.find(({ id }) => id === "race-a")?.parent).toBeNull();
+    } finally {
+      transactionSpy.mockRestore();
+    }
   });
   it("de-duplicates tags and rejects direct duplicate associations", async () => {
     await db
@@ -127,14 +202,16 @@ describe("relational integrity with real libSQL", () => {
     await db
       .insert(schema.post)
       .values({ id: "post", categoryId: "root", authorId: "author" });
-    await db
-      .insert(schema.tag)
-      .values(["tagA", "tagB"].map((id) => ({ id })));
-    await createPostCommandRepository(db).updateTags({
-      postId: "post",
-      tagIds: ["tagA", "tagA", "tagB"],
-      type: TagType.ACTOR,
-    });
+    await db.insert(schema.tag).values(["tagA", "tagB"].map((id) => ({ id })));
+    await updatePostTags(
+      db,
+      {
+        postId: "post",
+        tagIds: ["tagA", "tagA", "tagB"],
+        type: TagType.ACTOR,
+      },
+      invalidator,
+    );
     expect(
       (await db.select().from(schema.postTag)).map(({ tagId }) => tagId),
     ).toEqual(["tagA", "tagB"]);
@@ -178,16 +255,14 @@ describe("relational integrity with real libSQL", () => {
     ).toEqual(["ACTOR", "DIRECTOR"]);
   });
   it("rejects the entire deletion batch when a target is promoted after the application pre-read", async () => {
-    await db
-      .insert(schema.user)
-      .values(
-        ["promoted", "guest"].map((id) => ({
-          id,
-          name: id,
-          email: `${id}@example.com`,
-          level: UserLevel.GUEST,
-        })),
-      );
+    await db.insert(schema.user).values(
+      ["promoted", "guest"].map((id) => ({
+        id,
+        name: id,
+        email: `${id}@example.com`,
+        level: UserLevel.GUEST,
+      })),
+    );
     const repository = createUserRepository(db);
     await expect(
       destroyUsers(

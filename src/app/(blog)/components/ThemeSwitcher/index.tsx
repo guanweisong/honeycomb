@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Theme } from "@/app/(blog)/types/Theme";
-import { useMounted } from "@/packages/ui/hooks/use-mounted";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 /**
  * 主题切换组件。

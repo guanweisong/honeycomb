@@ -21,7 +21,7 @@
 
 ## Add a schema change
 
-1. Modify `src/packages/infrastructure/db/schema/`.
+1. Modify `src/lib/db/schema/`.
 2. Run `bun run db:generate` and review the generated SQL and snapshot.
 3. Run `bun run db:migrations:check` and the test suite.
 4. Apply the migration to a disposable database before deployment.

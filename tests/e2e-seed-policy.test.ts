@@ -22,8 +22,8 @@ describe("E2E seed safety policy", () => {
         TURSO_URL: "libsql://production.example.com",
       }),
     ).toThrow(/local file/i);
-    expect(() =>
-      assertSafeE2ESeedTarget({ E2E_SEED: "1" }),
-    ).toThrow(/TURSO_URL/);
+    expect(() => assertSafeE2ESeedTarget({ E2E_SEED: "1" })).toThrow(
+      /TURSO_URL/,
+    );
   });
 });

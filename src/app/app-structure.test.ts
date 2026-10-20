@@ -1,38 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { sourceFiles } from "@tests/helpers/source-files";
 
 const appRoot = join(process.cwd(), "src", "app");
 
-const routeFiles = new Set([
-  "page.tsx",
-  "layout.tsx",
-  "loading.tsx",
-  "error.tsx",
-  "global-error.tsx",
-  "not-found.tsx",
-  "default.tsx",
-]);
-
-const appFiles = sourceFiles(appRoot, { includeTests: true });
-
-function componentFiles(): string[] {
-  return appFiles.filter((path) => {
-    if (!path.endsWith(".tsx") || path.includes(`${join("src", "app", "api")}`)) {
-      return false;
-    }
-
-    const segments = relative(appRoot, path).split("/");
-    const fileName = segments.at(-1) ?? "";
-    if (routeFiles.has(fileName)) return false;
-    if (["Providers.tsx", "AdminProviders.tsx"].includes(fileName)) return false;
-    if (["constants", "hooks", "lib", "types", "utils"].some((name) => segments.includes(name))) {
-      return false;
-    }
-    return !segments.includes("components") && /^[A-Z]/.test(fileName);
-  });
-}
+const appFiles = sourceFiles(appRoot);
 
 function componentDirectories(): string[] {
   return appFiles
@@ -40,35 +13,55 @@ function componentDirectories(): string[] {
     .map((path) => path.slice(0, -"/index.tsx".length));
 }
 
-function componentDirectoryViolations(): string[] {
-  return componentDirectories().flatMap((directory) => {
-    const componentName = directory.split("/").at(-1) ?? "";
-    const violations = /^[A-Z][A-Za-z0-9]*$/.test(componentName)
-      ? []
-      : [`${relative(process.cwd(), directory)}: 组件目录必须使用大驼峰`];
-
-    return readdirSync(directory)
-      .filter((entry) => entry.endsWith(".tsx") && !["index.tsx", "index.test.tsx"].includes(entry))
-      .map((entry) => `${relative(process.cwd(), join(directory, entry))}: 组件目录只能保留 index.tsx`)
-      .concat(violations);
+describe("App Router composition boundaries", () => {
+  it("keeps business admin routes as composition of feature-owned pages", () => {
+    const pages = appFiles.filter(
+      (path) =>
+        path.includes("/(root)/(dashboard)/") && path.endsWith("/page.tsx"),
+    );
+    expect(pages.length).toBeGreaterThan(10);
+    for (const path of pages) {
+      const source = readFileSync(path, "utf8");
+      expect(source, relative(process.cwd(), path)).toMatch(
+        /from ["']@\/features\//,
+      );
+      expect(source, relative(process.cwd(), path)).not.toMatch(
+        /\b(?:useState|useReducer|useMutation|useQuery)\s*\(|(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
+      );
+    }
   });
-}
 
-describe("App Router 业务组件目录约束", () => {
-  it("业务组件必须位于业务目录下的 components/组件名/index.tsx", () => {
-    expect(componentFiles().map((path) => relative(process.cwd(), path))).toEqual([]);
-  });
-
-  it("每个组件目录必须配套 index.test.tsx", () => {
+  it("keeps app shell entrypoints covered without prescribing TSX test syntax", () => {
     const missingTests = componentDirectories()
-      .filter((directory) => !existsSync(join(directory, "index.test.tsx")))
+      .filter(
+        (directory) =>
+          !["index.test.ts", "index.test.tsx"].some((file) =>
+            existsSync(join(directory, file)),
+          ),
+      )
       .map((directory) => relative(process.cwd(), directory));
-
     expect(missingTests).toEqual([]);
   });
 
-  it("组件目录必须使用大驼峰且只保留标准入口文件", () => {
-    expect(componentDirectoryViolations()).toEqual([]);
+  it("allows cohesive shell helper components but keeps business editors and CRUD UI in features", () => {
+    const businessComponents = appFiles.filter((path) =>
+      /\/(?:AddCategoryModal|PhotoPicker|PostEditorActions|PageEditorActionButtons|CommentPageShell|MediaPageShell|LinkPageShell|UserPageShell|PostInfo|Tags|ViewTracker|RichText)\//.test(
+        path,
+      ),
+    );
+    expect(businessComponents).toEqual([]);
+    const invalidDirectories = componentDirectories()
+      .filter(
+        (directory) =>
+          !/^[A-Z][A-Za-z0-9]*$/.test(directory.split("/").at(-1) ?? ""),
+      )
+      .map((directory) => relative(process.cwd(), directory));
+    expect(invalidDirectories).toEqual([]);
+    expect(
+      existsSync(
+        join(appRoot, "admin/components/AdminLayout/AdminSidebar.tsx"),
+      ),
+    ).toBe(true);
   });
 });
 

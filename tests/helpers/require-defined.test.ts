@@ -11,6 +11,8 @@ describe("requireDefined", () => {
   });
 
   it.each([null, undefined])("rejects missing fixtures: %s", (value) => {
-    expect(() => requireDefined(value)).toThrow("Expected a defined test value");
+    expect(() => requireDefined(value)).toThrow(
+      "Expected a defined test value",
+    );
   });
 });

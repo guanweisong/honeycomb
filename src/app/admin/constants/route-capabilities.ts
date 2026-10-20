@@ -1,8 +1,8 @@
 import {
   Permission,
   type Permission as PermissionValue,
-} from "@/packages/identity/auth/permissions";
-import { authorize } from "@/packages/identity/auth/authorize";
+} from "@/lib/auth/permissions";
+import { authorize } from "@/lib/auth/authorize";
 
 export const ADMIN_PATHNAME_HEADER = "x-honeycomb-admin-pathname";
 

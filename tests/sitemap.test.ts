@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
-import { PageListQuerySchema } from "@/features/page/schemas/page.list.query.schema";
+import { PostListQuerySchema } from "@/features/post/schema";
+import { PageListQuerySchema } from "@/features/page/schema";
 
 const {
   cacheRegistrations,
@@ -49,7 +49,7 @@ vi.mock("next/cache", () => ({
   unstable_cache: unstableCacheMock,
 }));
 
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: createServerClientMock,
 }));
 

@@ -1,34 +1,52 @@
 import { describe, expect, it, vi } from "vitest";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { CommentAggregate } from "@/features/comment/domain/comment";
-import { PostAggregate } from "@/features/post/domain/post";
-import { UserAggregate } from "@/features/user/domain/user";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { PostStatus } from "@/features/post/post-status";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import { assertCommentTransition } from "@/features/comment/rules";
+import {
+  getPostPublishStatus,
+  getPostWithdrawStatus,
+} from "@/features/post/rules";
+import { assertUserStatusChange } from "@/features/user/rules";
 
-describe("核心聚合 fake repository 契约", () => {
-  it("Comment 聚合可在无数据库环境完成审核状态机", () => {
+describe("pure feature business rules", () => {
+  it("moderates a comment without a database", () => {
     const save = vi.fn();
-    const aggregate = CommentAggregate.rehydrate("comment-1", CommentStatus.TO_AUDIT);
-    aggregate.moderate(CommentStatus.PUBLISH);
-    save({ id: aggregate.id, status: aggregate.currentStatus });
-    expect(save).toHaveBeenCalledWith({ id: "comment-1", status: CommentStatus.PUBLISH });
+    assertCommentTransition(
+      "comment-1",
+      CommentStatus.TO_AUDIT,
+      CommentStatus.PUBLISH,
+    );
+    save({ id: "comment-1", status: CommentStatus.PUBLISH });
+    expect(save).toHaveBeenCalledWith({
+      id: "comment-1",
+      status: CommentStatus.PUBLISH,
+    });
   });
-
-  it("Post 聚合可在无数据库环境完成发布和撤回", () => {
+  it("publishes and withdraws a post without a database", () => {
     const save = vi.fn();
-    const aggregate = PostAggregate.rehydrate("post-1", PostStatus.DRAFT);
-    aggregate.publish();
-    save({ id: aggregate.id, status: aggregate.currentStatus });
-    aggregate.withdraw();
-    save({ id: aggregate.id, status: aggregate.currentStatus });
-    expect(save).toHaveBeenNthCalledWith(1, { id: "post-1", status: PostStatus.PUBLISHED });
-    expect(save).toHaveBeenNthCalledWith(2, { id: "post-1", status: PostStatus.DRAFT });
+    const published = getPostPublishStatus("post-1", PostStatus.DRAFT);
+    save({ id: "post-1", status: published });
+    save({ id: "post-1", status: getPostWithdrawStatus("post-1", published) });
+    expect(save).toHaveBeenNthCalledWith(1, {
+      id: "post-1",
+      status: PostStatus.PUBLISHED,
+    });
+    expect(save).toHaveBeenNthCalledWith(2, {
+      id: "post-1",
+      status: PostStatus.DRAFT,
+    });
   });
-
-  it("User 聚合可在 fake actor 下保护管理员账号", () => {
-    const aggregate = UserAggregate.rehydrate("user-1", UserStatus.ENABLE, UserLevel.EDITOR);
-    aggregate.changeStatus(UserStatus.DISABLE, UserLevel.ADMIN);
-    expect(aggregate.currentStatus).toBe(UserStatus.DISABLE);
+  it("authorizes user status changes against the actor", () => {
+    const save = vi.fn();
+    assertUserStatusChange("user-1", UserLevel.EDITOR, UserLevel.ADMIN);
+    save({ id: "user-1", status: UserStatus.DISABLE });
+    expect(save).toHaveBeenCalledWith({
+      id: "user-1",
+      status: UserStatus.DISABLE,
+    });
+    expect(() =>
+      assertUserStatusChange("admin", UserLevel.ADMIN, UserLevel.EDITOR),
+    ).toThrow("非管理员不能修改管理员账号");
   });
 });

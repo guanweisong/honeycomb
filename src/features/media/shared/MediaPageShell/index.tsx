@@ -2,15 +2,15 @@
 
 import { UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaViewModel } from "../media-view-model";
-import { Button } from "@/packages/ui/components/button";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import { Button } from "@/components/ui/button";
+import LoadingState from "@/components/LoadingState";
 import { MediaGrid } from "../MediaGrid";
-import { useMediaActions } from "../actions/media-actions";
-import { useMediaQuery } from "../queries/media-query";
-import { MEDIA_MIME_TYPES } from "../../application/upload-policy";
+import { useMediaActions } from "../media-actions";
+import { useMediaQuery } from "../media-query";
+import { MEDIA_MIME_TYPES } from "../../upload-policy";
 
 export interface MediaProps {
   onSelect?: (media: MediaViewModel) => void;

@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Trash } from "lucide-react";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
 import type { AdminCommentViewModel as CommentEntity } from "../../../presentation/comment-view-model";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { Button } from "@/packages/ui/components/button";
-import { DataTable } from "@/packages/ui/extended/DataTable";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { useCommentActions } from "../../actions/comment-actions";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/DataTable";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
+import { useCommentActions } from "@/features/comment/admin/comment-actions";
 import { commentTableColumns } from "../../columns/comment-columns";
-import { useCommentQuery } from "../../queries/comment-query";
+import { useCommentQuery } from "@/features/comment/admin/comment-query";
 
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);

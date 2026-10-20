@@ -28,7 +28,10 @@ const databaseEnvSchema = coreServerEnvSchema.pick({
   TURSO_TOKEN: true,
 });
 
-const authEnvSchema = coreServerEnvSchema.pick({ AUTH_SECRET: true, AUTH_URL: true });
+const authEnvSchema = coreServerEnvSchema.pick({
+  AUTH_SECRET: true,
+  AUTH_URL: true,
+});
 
 function validateProductionAuthSecret(environment: Environment) {
   if (environment.NODE_ENV !== "production") return;
@@ -38,7 +41,10 @@ function validateProductionAuthSecret(environment: Environment) {
     (pattern) => pattern.test(secret),
   ).length;
 
-  if (secret.length < minimumProductionAuthSecretLength || characterClasses < 3) {
+  if (
+    secret.length < minimumProductionAuthSecretLength ||
+    characterClasses < 3
+  ) {
     throw new EnvironmentValidationError([
       `AUTH_SECRET: must be at least ${minimumProductionAuthSecretLength} characters and use at least three character classes in production`,
     ]);
@@ -61,7 +67,6 @@ const turnstileSchema = z.object({
   siteKey: requiredString,
   secretKey: requiredString,
 });
-
 
 const resendSchema = z.object({
   apiKey: requiredString,

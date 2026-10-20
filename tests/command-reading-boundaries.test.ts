@@ -12,10 +12,10 @@ function dependencies(path: string) {
 
 describe("命令阅读路径", () => {
   it("文章 router 直接进入有实际编排的命令文件", () => {
-    expect(dependencies("src/features/post/post.router.ts")).toContain(
-      "@/features/post/application/post-commands",
+    expect(dependencies("src/features/post/router.ts")).toContain(
+      "@/features/post/server/post-commands",
     );
-    expect(existsSync("src/features/post/application/post-use-cases.ts")).toBe(
+    expect(existsSync("src/features/post/server/post-use-cases.ts")).toBe(
       false,
     );
   });
@@ -23,7 +23,7 @@ describe("命令阅读路径", () => {
   it.each(["post", "user"])(
     "%s 的单用途状态处理不再增加独立文件跳转",
     (feature) => {
-      const directory = `src/features/${feature}/application`;
+      const directory = `src/features/${feature}/server`;
       expect(existsSync(`${directory}/${feature}-command-handlers.ts`)).toBe(
         false,
       );

@@ -1,7 +1,11 @@
-import { UserLevel } from "@/packages/domain/identity/user";
+import { UserLevel } from "@/features/user/user";
 
 /** 权限矩阵测试共享的稳定输入数据。 */
-export const ALL_ROLES = [UserLevel.ADMIN, UserLevel.EDITOR, UserLevel.GUEST] as const;
+export const ALL_ROLES = [
+  UserLevel.ADMIN,
+  UserLevel.EDITOR,
+  UserLevel.GUEST,
+] as const;
 export const ADMIN_EDITOR = [UserLevel.ADMIN, UserLevel.EDITOR] as const;
 export const ADMIN_ONLY = [UserLevel.ADMIN] as const;
 export const TEST_ID = "0123456789abcdef01234567";

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
-import { MetricName } from "@/packages/infrastructure/observability/core/names";
-import { configureObservability } from "@/packages/infrastructure/observability/server";
+import { MetricName } from "@/lib/observability/core/names";
+import { configureObservability } from "@/lib/observability/server";
 
 const sendMock = vi.fn();
 
@@ -22,11 +22,22 @@ import { sendCommentEmail } from "./comment-email";
 const payload = {
   setting: { siteName: { zh: "站点", en: "Site" } },
   currentComment: {
-    id: "comment-1", author: "Reader", content: "Comment",
-    site: null, email: "reader@example.com", parentId: null,
-    postId: null, pageId: null, customId: null, status: null,
-    createdAt: null, updatedAt: null, userAgent: null, ip: null,
-    post: null, page: null,
+    id: "comment-1",
+    author: "Reader",
+    content: "Comment",
+    site: null,
+    email: "reader@example.com",
+    parentId: null,
+    postId: null,
+    pageId: null,
+    customId: null,
+    status: null,
+    createdAt: null,
+    updatedAt: null,
+    userAgent: null,
+    ip: null,
+    post: null,
+    page: null,
   },
 } satisfies Parameters<typeof sendCommentEmail>[1];
 

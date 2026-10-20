@@ -1,22 +1,22 @@
 "use client";
 
-import { LocalDraftPrompt } from "@/packages/ui/admin/local-draft";
+import { LocalDraftPrompt } from "@/components/admin/local-draft";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import PhotoPickerModal from "@/features/post/admin/edit/components/PhotoPicker";
-import { MediaPageShell } from "@/features/media/public";
-import { Form } from "@/packages/ui/components/form";
+import PhotoPickerModal from "@/features/media/components/PhotoPicker/index";
+import { MediaPageShell } from "@/features/media/shared/MediaPageShell";
+import { Form } from "@/components/ui/form";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
-} from "@/packages/ui/extended/AdminLayout";
-import AddCategoryModal from "../category/components/AddCategoryModal";
+} from "@/components/admin/layout-context";
+import AddCategoryModal from "../../../category/admin/components/AddCategoryModal";
 import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
 import { usePostEditor } from "./hooks/use-post-editor";
-import { EditorLoadError } from "@/packages/ui/admin/editor-load-error";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import { EditorLoadError } from "@/components/admin/editor-load-error";
+import LoadingState from "@/components/LoadingState";
 
 function PostDetailContent() {
   const id = useSearchParams().get("id");

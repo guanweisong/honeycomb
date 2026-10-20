@@ -1,25 +1,25 @@
 "use client";
 
 import React, { JSX } from "react";
-import { Badge } from "@/packages/ui/components/badge";
-import { Button } from "@/packages/ui/components/button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/packages/ui/components/popover";
+} from "@/components/ui/popover";
 import {
   Command,
   CommandInput,
   CommandItem,
   CommandList,
   CommandEmpty,
-} from "@/packages/ui/components/command";
+} from "@/components/ui/command";
 import { X, Plus } from "lucide-react";
-import { TagType } from "@/packages/domain/content/tag";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import { TagType } from "@/features/tag/tag-kind";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
+import LoadingState from "@/components/LoadingState";
 import { PostTagOption, useMultiTag } from "./use-multi-tag";
 
 /**

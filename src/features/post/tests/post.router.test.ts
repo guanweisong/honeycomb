@@ -1,12 +1,12 @@
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { parseEnumValue } from "@/packages/infrastructure/db/value-validation";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { parseEnumValue } from "@/lib/db/value-validation";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { postRouter } from "@/features/post/post.router";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import { TagType } from "@/packages/domain/content/tag";
+import { postRouter } from "@/features/post/router";
+import * as schema from "@/lib/db/schema";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import { TagType } from "@/features/tag/tag-kind";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -18,28 +18,33 @@ import {
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
 }));
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
 // 模拟文章关联数据加载函数。
-vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
+vi.mock("@/features/post/server/post-relations", async () => {
   const actual = await vi.importActual<
-    typeof import("@/features/post/infrastructure/post-query-repository")
-  >("@/features/post/infrastructure/post-query-repository");
+    typeof import("@/features/post/server/post-relations")
+  >("@/features/post/server/post-relations");
   const mockedLoadPostRelations = vi.fn<typeof actual.loadPostRelations>(
     async (_db, posts) => {
       // 对于 detail 测试，返回关联数据
       if (posts.length === 1) {
         return posts.map((post) => ({
-          title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
+          title: null,
+          content: null,
+          excerpt: null,
+          galleryLocation: null,
+          quoteAuthor: null,
+          quoteContent: null,
           ...post,
           status: parseEnumValue(
             post.status,
@@ -89,7 +94,12 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
       }
       // 对于 list 测试，返回空关联数据
       return posts.map((post) => ({
-        title: null, content: null, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null,
+        title: null,
+        content: null,
+        excerpt: null,
+        galleryLocation: null,
+        quoteAuthor: null,
+        quoteContent: null,
         ...post,
         status: parseEnumValue(
           post.status,
@@ -114,17 +124,11 @@ vi.mock("@/features/post/infrastructure/post-query-repository", async () => {
   );
   return {
     ...actual,
-    createPostQueryRepository: (
-      db: Parameters<typeof actual.createPostQueryRepository>[0],
-    ) =>
-      actual.createPostQueryRepository(db, {
-        loadRelations: mockedLoadPostRelations,
-      }),
     loadPostRelations: mockedLoadPostRelations,
   };
 });
 
-vi.mock("@/packages/infrastructure/cache/upstash-cache", () => ({
+vi.mock("@/lib/cache/upstash-cache", () => ({
   bumpCacheVersion: vi.fn().mockResolvedValue(1),
   getCacheVersion: vi.fn().mockResolvedValue(1),
   getCacheJSON: vi.fn().mockResolvedValue(null),
@@ -276,35 +280,38 @@ describe("Post Router", () => {
   });
 
   describe("create procedure", () => {
-    it.each(["completed", "degraded"] as const)("should create post with admin permissions and %s public sync", async (state) => {
-      mockInvalidatePublicContent.mockResolvedValue({ state });
-      const newPost = {
-        id: TEST_IDS.ID_3,
-        title: { en: "New Post", zh: "新文章" },
-        content: { en: "New Content", zh: "新内容" },
-        status: PostStatus.PUBLISHED,
-        type: PostType.ARTICLE,
-      };
+    it.each(["completed", "degraded"] as const)(
+      "should create post with admin permissions and %s public sync",
+      async (state) => {
+        mockInvalidatePublicContent.mockResolvedValue({ state });
+        const newPost = {
+          id: TEST_IDS.ID_3,
+          title: { en: "New Post", zh: "新文章" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PostStatus.PUBLISHED,
+          type: PostType.ARTICLE,
+        };
 
-      mockDb.insert.mockReturnValueOnce(mockDb);
-      mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([newPost]);
+        mockDb.insert.mockReturnValueOnce(mockDb);
+        mockDb.values.mockReturnValueOnce(mockDb);
+        mockDb.returning.mockResolvedValueOnce([newPost]);
 
-      const caller = postRouter.createCaller(
-        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
-      );
+        const caller = postRouter.createCaller(
+          createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+        );
 
-      const result = await caller.create({
-        title: { en: "New Post", zh: "新文章" },
-        content: { en: "New Content", zh: "新内容" },
-        status: PostStatus.PUBLISHED,
-        type: PostType.ARTICLE,
-        categoryId: TEST_IDS.ID_1,
-      });
+        const result = await caller.create({
+          title: { en: "New Post", zh: "新文章" },
+          content: { en: "New Content", zh: "新内容" },
+          status: PostStatus.PUBLISHED,
+          type: PostType.ARTICLE,
+          categoryId: TEST_IDS.ID_1,
+        });
 
-      expect(result).toEqual({ ...newPost, publicSync: state });
-      expect(mockDb.insert).toHaveBeenCalledWith(schema.post);
-    });
+        expect(result).toEqual({ ...newPost, publicSync: state });
+        expect(mockDb.insert).toHaveBeenCalledWith(schema.post);
+      },
+    );
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller(
@@ -375,47 +382,50 @@ describe("Post Router", () => {
   });
 
   describe("update procedure", () => {
-    it.each(["completed", "degraded"] as const)("should update post with admin permissions and %s public sync", async (state) => {
-      mockInvalidatePublicContent.mockResolvedValue({ state });
-      const updatedPost = {
-        id: TEST_IDS.ID_1,
-        title: { en: "Updated Post", zh: "更新的文章" },
-        content: { en: "Updated Content", zh: "更新的内容" },
-        status: PostStatus.PUBLISHED,
-        type: PostType.ARTICLE,
-      };
+    it.each(["completed", "degraded"] as const)(
+      "should update post with admin permissions and %s public sync",
+      async (state) => {
+        mockInvalidatePublicContent.mockResolvedValue({ state });
+        const updatedPost = {
+          id: TEST_IDS.ID_1,
+          title: { en: "Updated Post", zh: "更新的文章" },
+          content: { en: "Updated Content", zh: "更新的内容" },
+          status: PostStatus.PUBLISHED,
+          type: PostType.ARTICLE,
+        };
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([{ status: PostStatus.DRAFT }]);
-      mockDb.update.mockReturnValueOnce(mockDb);
-      mockDb.set.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedPost]);
-      mockDb.where.mockResolvedValueOnce([]);
+        mockDb.select.mockReturnValueOnce(mockDb);
+        mockDb.from.mockReturnValueOnce(mockDb);
+        mockDb.where.mockReturnValueOnce(mockDb);
+        mockDb.limit.mockResolvedValueOnce([{ status: PostStatus.DRAFT }]);
+        mockDb.update.mockReturnValueOnce(mockDb);
+        mockDb.set.mockReturnValueOnce(mockDb);
+        mockDb.where.mockReturnValueOnce(mockDb);
+        mockDb.returning.mockResolvedValueOnce([updatedPost]);
+        mockDb.where.mockResolvedValueOnce([]);
 
-      const caller = postRouter.createCaller(
-        createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
-      );
+        const caller = postRouter.createCaller(
+          createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
+        );
 
-      const result = await caller.update({
-        id: TEST_IDS.ID_1,
-        title: { en: "Updated Post", zh: "更新的文章" },
-        content: { en: "Updated Content", zh: "更新的内容" },
-        status: PostStatus.PUBLISHED,
-        type: PostType.ARTICLE,
-      });
+        const result = await caller.update({
+          id: TEST_IDS.ID_1,
+          title: { en: "Updated Post", zh: "更新的文章" },
+          content: { en: "Updated Content", zh: "更新的内容" },
+          status: PostStatus.PUBLISHED,
+          type: PostType.ARTICLE,
+        });
 
-      expect(result).toEqual({ ...updatedPost, publicSync: state });
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
-      expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
-        contents: [{ id: TEST_IDS.ID_1, type: "post" }],
-        refreshLayout: true,
-        refreshPostIndex: true,
-        refreshSitemap: true,
-      });
-    });
+        expect(result).toEqual({ ...updatedPost, publicSync: state });
+        expect(mockDb.update).toHaveBeenCalledWith(schema.post);
+        expect(mockInvalidatePublicContent).toHaveBeenCalledWith({
+          contents: [{ id: TEST_IDS.ID_1, type: "post" }],
+          refreshLayout: true,
+          refreshPostIndex: true,
+          refreshSitemap: true,
+        });
+      },
+    );
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {
       const caller = postRouter.createCaller(

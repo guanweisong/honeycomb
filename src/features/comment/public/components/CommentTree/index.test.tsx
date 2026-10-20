@@ -19,11 +19,11 @@ vi.mock("next-intl", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/blog/utc-format", () => ({
+vi.mock("@/components/blog/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { CommentStatus } from "@/features/comment/comment-status";
 import { CommentTree } from ".";
 import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 

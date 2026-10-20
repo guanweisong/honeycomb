@@ -1,0 +1,77 @@
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ReactNode } from "react";
+import { cn } from "@/lib/ui/utils";
+
+interface ToolbarButtonProps {
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  className?: string;
+}
+
+export function ToolbarButton({
+  icon,
+  label,
+  active,
+  onClick,
+  children,
+  open,
+  onOpenChange,
+  className,
+}: ToolbarButtonProps) {
+  const button = (
+    <Button
+      type="button"
+      size="icon"
+      className={cn(active ? "!text-purple-600" : "", className)}
+      variant={"ghost"}
+      onClick={onClick}
+    >
+      {icon}
+    </Button>
+  );
+
+  // 如果有children，使用Popover包装
+  if (children && open !== undefined && onOpenChange) {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Popover open={open} onOpenChange={onOpenChange}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>{button}</PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{label}</TooltipContent>
+          </Tooltip>
+          <PopoverContent align="start" className="p-3">
+            {children}
+          </PopoverContent>
+        </Popover>
+      </TooltipProvider>
+    );
+  }
+
+  // 普通按钮模式
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

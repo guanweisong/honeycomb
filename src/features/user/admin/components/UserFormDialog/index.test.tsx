@@ -13,21 +13,21 @@ const mocks = vi.hoisted(() => ({
     | undefined,
 }));
 
-vi.mock("@/packages/ui/extended/Dialog", () => ({
+vi.mock("@/components/Dialog", () => ({
   Dialog: (props: { children: React.ReactNode }) => <div>{props.children}</div>,
 }));
 
-vi.mock("@/packages/ui/extended/DynamicForm", () => ({
+vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: typeof mocks.formProps) => {
     mocks.formProps = props as NonNullable<typeof mocks.formProps>;
     return <div>dynamic-form</div>;
   },
 }));
 
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { ModalType } from "@/packages/ui/admin/modal-type";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import { ModalType } from "@/components/admin/modal-type";
 import { UserFormDialog } from ".";
-import type { UserDialogState } from "../../actions/user-actions";
+import type { UserDialogState } from "@/features/user/admin/user-actions";
 
 describe("UserFormDialog", () => {
   let container: HTMLDivElement;
@@ -39,10 +39,7 @@ describe("UserFormDialog", () => {
     mocks.formProps = undefined;
   });
 
-  function render(
-    state: UserDialogState,
-    onSubmit = vi.fn(),
-  ) {
+  function render(state: UserDialogState, onSubmit = vi.fn()) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);

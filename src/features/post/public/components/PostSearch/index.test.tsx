@@ -24,10 +24,10 @@ vi.mock("next/image", () => ({
     <img src={src} alt={alt} className={className} sizes={sizes} />
   ),
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { post: { search: { query: search } } },
 }));
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({
     children,
     href,
@@ -109,8 +109,20 @@ afterEach(async () => {
 describe("public blog search", () => {
   it("uses quote body text without a title or untitled fallback and retains comfortable inner result padding", async () => {
     search.mockResolvedValue([
-      { id: "quote-titled", title: "不应展示的标题", excerpt: "引用正文", type: "QUOTE", cover: null },
-      { id: "quote-untitled", title: "", excerpt: "另一段引用", type: "QUOTE", cover: null },
+      {
+        id: "quote-titled",
+        title: "不应展示的标题",
+        excerpt: "引用正文",
+        type: "QUOTE",
+        cover: null,
+      },
+      {
+        id: "quote-untitled",
+        title: "",
+        excerpt: "另一段引用",
+        type: "QUOTE",
+        cover: null,
+      },
     ]);
     await open();
     await type("引用");

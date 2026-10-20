@@ -5,11 +5,10 @@ declare module "react-toggle-dark-mode" {
     FunctionComponent,
   } from "react";
 
-  export interface Props
-    extends Omit<
-      ButtonHTMLAttributes<HTMLButtonElement>,
-      "children" | "onChange"
-    > {
+  export interface Props extends Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "onChange"
+  > {
     checked: boolean;
     onChange: (checked: boolean) => void;
     style?: CSSProperties;

@@ -4,7 +4,7 @@ import { expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { PostEditorActions } from "./index";
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,
 }));
 

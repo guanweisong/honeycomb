@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
+import { Link } from "@/lib/i18n/blog-navigation";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
-import { cn } from "@/packages/ui/lib/utils";
-import { trpc } from "@/packages/trpc/client/trpc";
+import { cn } from "@/lib/ui/utils";
+import { trpc } from "@/lib/trpc/client/trpc";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import type { MenuViewModel as MenuEntity } from "@/features/contracts";
+import type { MenuItem as MenuEntity } from "@/features/menu/types";
 
 /**
  * 菜单组件的属性接口。

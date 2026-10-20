@@ -15,12 +15,16 @@ const requiredBoundaries = [
 describe("route recovery boundaries", () => {
   it("provides public, admin, and global recovery boundaries", async () => {
     await Promise.all(
-      requiredBoundaries.map((path) => expect(access(path, constants.R_OK)).resolves.toBeUndefined()),
+      requiredBoundaries.map((path) =>
+        expect(access(path, constants.R_OK)).resolves.toBeUndefined(),
+      ),
     );
   });
 
   it("does not render raw error messages", async () => {
-    const contents = await Promise.all(requiredBoundaries.map((path) => readFile(path, "utf8")));
+    const contents = await Promise.all(
+      requiredBoundaries.map((path) => readFile(path, "utf8")),
+    );
 
     expect(contents.join("\n")).not.toMatch(/error\.message|String\(error\)/);
   });

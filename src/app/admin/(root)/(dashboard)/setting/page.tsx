@@ -1,1 +1,1 @@
-export { default } from "@/features/setting/admin/page";
+export { default } from "@/features/setting/admin/components/SettingClient";

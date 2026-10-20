@@ -1,8 +1,8 @@
-import { Button } from "@/packages/ui/components/button";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { PageStatus } from "@/packages/domain/content/page";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/Dialog";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import { PageStatus } from "@/features/page/page-status";
 
 type PageEditorActionButtonsProps = {
   isEdit: boolean;
