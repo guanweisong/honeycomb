@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
+import ts from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
 import {
   localModulePath,
@@ -35,6 +36,26 @@ function libraryImportViolations(path: string, source: string) {
   });
 }
 
+/** Comments are trivia; only top-level directive-prologue strings define clients. */
+function isClientEntry(source: string) {
+  const file = ts.createSourceFile(
+    "entry.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  for (const statement of file.statements) {
+    if (
+      !ts.isExpressionStatement(statement) ||
+      !ts.isStringLiteral(statement.expression)
+    )
+      return false;
+    if (statement.expression.text === "use client") return true;
+  }
+  return false;
+}
+
 function isBrowserForbidden(path: string, source: string) {
   return (
     /import\s*["']server-only["']/.test(source) ||
@@ -53,6 +74,23 @@ function isBrowserForbidden(path: string, source: string) {
 }
 
 describe("technical library and browser dependency boundaries", () => {
+  it.each([
+    ['"use client"; export const View = () => null;', true],
+    ['// License header\n"use client"; export const View = () => null;', true],
+    ['/* License header */\n"use client"; export const View = () => null;', true],
+    [
+      '"use strict"; /* comment */ "use client"; export const View = () => null;',
+      true,
+    ],
+    ['const value = 1; "use client";', false],
+    ['import "./dependency"; "use client";', false],
+    ['function nested() { "use client"; }', false],
+    ['// "use client"\nexport const View = () => null;', false],
+    ['"use client" + " suffix";', false],
+  ])("recognizes client directive prologues: %s", (source, expected) => {
+    expect(isClientEntry(source)).toBe(expected);
+  });
+
   it("recognizes static, type-only, re-export, dynamic and require dependencies", () => {
     expect(
       moduleDependencies(
@@ -202,7 +240,7 @@ describe("technical library and browser dependency boundaries", () => {
 
   it("protects every client entry from transitive server, database, SDK and Node imports", () => {
     const clients = sourceFiles("src").filter((path) =>
-      /^\s*["']use client["']/.test(readFileSync(path, "utf8")),
+      isClientEntry(readFileSync(path, "utf8")),
     );
     expect(clients.length).toBeGreaterThan(50);
     const violations = clients.flatMap((path) => {

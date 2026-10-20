@@ -78,7 +78,20 @@ Fixed implementation rather than relaxing valid rules: auth hook tests now use c
 
 Final verification: 341 unit suites / 1,975 tests passed with unchanged coverage thresholds (90.42% statements, 84.20% branches, 88.07% functions, 91.47% lines), 48 process tests, TypeScript, ESLint, all 44 strict OpenSpec items and whitespace checks passed. This follow-up changes tests, skills and documentation only; it does not claim a new production build or browser run. The preceding cleanup build remains the latest build evidence. Browser E2E is now an explicit pending task 4.5, so the change is not ready for archive. No push, PR, merge or deployment was performed.
 
-
 ## Push authorization update — 2026-10-20
 
 The user subsequently authorized committing and pushing the completed work to `origin/refactor/simple-feature-architecture`. This supersedes the earlier local-only checkpoint for this branch only. Browser E2E remains pending under task 4.5; no PR, merge, deployment or archive is authorized by this update. Remote push verification is reported separately after the operation, rather than claimed in advance here.
+
+## Publication and full-diff review — 2026-10-20
+
+After separate user approval of the connected GitHub route and regenerated commit history, branch `refactor/simple-feature-architecture` was published at `4b579b3c1c70488fe79ce80fbe5d5a2232d3b7d3`. Remote tree `6ba81e81525c9ae3ae085d16c600bd0977c5f3bb` was verified equal to local commit `ec719167e535c70bf75857857889d27b38d72a81`. Local history was not rewritten. No PR, merge or deployment was performed. The review follow-up described below is local and is not included in that published commit.
+
+Fresh baseline-to-HEAD review covered content servers/routers, authorization, DTOs, transactions and cache side effects, authentication/comments/media, and route/provider/editor/configuration changes. No introduced production behavior or security defect was confirmed. This is a bounded code review, not proof of full equivalence or a substitute for browser validation.
+
+One introduced test blind spot was confirmed: the client-entry dependency gate recognized `use client` only with a beginning-of-file regex, missing a valid directive preceded by a comment. No current production file was found leaking server code through that gap. The fix uses the parsed directive prologue and preserves recursive runtime checks.
+
+Separately, the baseline homepage infinite-scroll E2E swallows loader timeouts and accepts unchanged item counts (`tests/e2e/blog/home.spec.ts`); it does not prove that a next page loads. This is pre-existing and was not silently rewritten or claimed as validated. Before final E2E acceptance, deterministic next-page data and strict request/item-growth assertions should be added and run in a supported browser environment. Task 4.5 remains pending.
+
+The client-directive fix was verified RED/GREEN: the previous regex failed four of nine new directive cases; the AST implementation passes all nine. The complete follow-up run passed 341 suites / 1,984 unit tests with unchanged coverage, all 48 process tests, TypeScript, ESLint and all 44 strict OpenSpec items. No production code was changed in that review. The user subsequently authorized strengthening the infinite-scroll E2E, updating the branch, opening a PR and merging to master only after successful quality/E2E checks. Those remote acceptance results are not claimed by this local review checkpoint.
+
+The homepage E2E now requires the real `post.index` page-two request, a successful response and growth from ten to twelve distinct visible post identities with the expected appended fixtures. The existing guarded seed adds ten older translated articles without changing the original first-post/search fixtures. TypeScript, targeted ESLint, Playwright inventory and 35 relevant unit tests passed; this is preparation for CI, not a claim that the browser test has run locally.

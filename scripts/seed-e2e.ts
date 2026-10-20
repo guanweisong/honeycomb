@@ -367,6 +367,45 @@ async function seed(): Promise<void> {
         ])
         .onConflictDoNothing();
 
+      // Home renders ten posts per page. Add ten older articles so the real
+      // browser smoke test must fetch page two instead of passing with no growth.
+      // Keep the existing first-post, cover and search fixtures unchanged.
+      for (let index = 0; index < 10; index += 1) {
+        const id = `1000000000000000000000${String(index).padStart(2, "0")}`;
+        const createdAt = `1999-01-${String(10 - index).padStart(2, "0")}T00:00:00.000Z`;
+        await tx
+          .insert(schema.post)
+          .values({
+            id,
+            authorId: ids.user,
+            categoryId: ids.grandchildCategory,
+            status: PostStatus.PUBLISHED,
+            type: PostType.ARTICLE,
+            createdAt,
+            updatedAt: createdAt,
+          })
+          .onConflictDoNothing();
+        await tx
+          .insert(schema.postTranslation)
+          .values([
+            {
+              postId: id,
+              locale: MultiLangEnum.En,
+              title: `Pagination fixture ${index + 1}`,
+              content: "<p>Older article for infinite scrolling.</p>",
+              excerpt: "An older article on the paginated home list.",
+            },
+            {
+              postId: id,
+              locale: MultiLangEnum.Zh,
+              title: `分页文章 ${index + 1}`,
+              content: "<p>用于无限滚动的历史文章。</p>",
+              excerpt: "首页分页列表中的历史文章。",
+            },
+          ])
+          .onConflictDoNothing();
+      }
+
       for (const comment of [
         {
           id: ids.bannedComment,
