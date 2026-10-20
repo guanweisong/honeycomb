@@ -267,3 +267,36 @@ describe("createAssetRemotePattern", () => {
     expect(createAssetRemotePattern("file:///tmp/assets")).toBeUndefined();
   });
 });
+
+describe("browser Sentry CSP", () => {
+  it("allows only the configured public DSN origin", () => {
+    const headers = asRecord(
+      createSecurityHeaders(
+        createSecurityHeaderOptions({
+          NEXT_PUBLIC_SENTRY_DSN: "https://public@o123.ingest.sentry.io/1",
+        }),
+      ),
+    );
+    const connect = getDirectiveSources(
+      requireDefined(headers["Content-Security-Policy"]),
+      "connect-src",
+    );
+    expect(connect).toContain("https://o123.ingest.sentry.io");
+    expect(headers["Content-Security-Policy"]).not.toContain("public@");
+    expect(headers["Content-Security-Policy"]).not.toContain("*.sentry.io");
+  });
+  it.each([
+    undefined,
+    "",
+    "not-a-url",
+    "javascript:alert(1)",
+    "https://safe.test; connect-src https://attacker.test",
+  ])("does not allow invalid or absent DSN %s", (dsn) => {
+    const headers = createSecurityHeaders(
+      createSecurityHeaderOptions({ NEXT_PUBLIC_SENTRY_DSN: dsn }),
+    );
+    expect(headers).toEqual(
+      createSecurityHeaders(createSecurityHeaderOptions({})),
+    );
+  });
+});

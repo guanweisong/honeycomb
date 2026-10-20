@@ -18,12 +18,12 @@ export function register() {
     getServerEnv();
   }
 
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
   if (
     process.env.NEXT_RUNTIME === "nodejs" &&
     process.env.NEXT_PHASE !== "phase-production-build" &&
-    process.env.SENTRY_DSN
+    dsn
   ) {
-    const dsn = process.env.SENTRY_DSN;
     return import("./packages/infrastructure/observability/server/sentry")
       .then(({ configureSentryLogs }) => configureSentryLogs(dsn))
       .catch(() => {

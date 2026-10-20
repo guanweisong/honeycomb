@@ -13,6 +13,7 @@ export type SecurityHeadersOptions = {
   turnstileEnabled?: boolean;
   r2UploadOrigin?: string;
   cspReportOnly?: boolean;
+  sentryDsn?: string;
 };
 
 export type SecurityHeaderEnvironment = Record<string, string | undefined>;
@@ -87,6 +88,7 @@ export function createSecurityHeaderOptions(
     turnstileEnabled: isConfigured(environment.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
     r2UploadOrigin: resolveR2UploadOrigin(environment),
     cspReportOnly: environment.CSP_REPORT_ONLY === "true",
+    sentryDsn: environment.NEXT_PUBLIC_SENTRY_DSN,
   };
 }
 
@@ -116,6 +118,7 @@ function createContentSecurityPolicy({
   googleAnalyticsEnabled,
   turnstileEnabled,
   r2UploadOrigin,
+  sentryDsn,
 }: SecurityHeadersOptions) {
   const isDevelopment = environment === "development";
   const isProduction = environment === "production";
@@ -131,6 +134,8 @@ function createContentSecurityPolicy({
   ];
   const imageSources = ["'self'", "blob:", "data:", "https://cravatar.cn"];
   const connectSources = ["'self'"];
+  const sentryOrigin = parseHttpUrl(sentryDsn)?.origin;
+  if (sentryOrigin) connectSources.push(sentryOrigin);
   const mediaSources = ["'self'"];
   const frameSources = ["'self'"];
 
