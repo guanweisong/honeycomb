@@ -13,6 +13,11 @@ test.describe("admin page editor", () => {
     page,
   }) => {
     const records = new Map<string, PageViewModel>();
+    const creationIntents = new Map<
+      string,
+      { id: string; input: PageInsert }
+    >();
+    const creationScope = (token: string) => `${mockedAdminUser.id}:${token}`;
     const createInputs: unknown[] = [];
     const detailInputs: unknown[] = [];
     const updateInputs: unknown[] = [];
@@ -35,11 +40,41 @@ test.describe("admin page editor", () => {
         }
         if (procedure === "setting.index")
           return { result: { data: mockedSiteSetting } };
+        if (procedure === "page.creationResult") {
+          const { creationToken } = input as { creationToken: string };
+          const intent = creationIntents.get(creationScope(creationToken));
+          const existing = intent ? records.get(intent.id) : undefined;
+          return {
+            result: {
+              data: existing
+                ? { id: existing.id, version: existing.version }
+                : null,
+            },
+          };
+        }
         if (procedure === "page.create") {
           createInputs.push(input);
           const values = input as PageInsert;
+          const { creationToken, ...fields } = values;
+          const scope = creationScope(creationToken);
+          const original = creationIntents.get(scope);
+          if (original) {
+            expect(values).toEqual(original.input);
+            const existing = records.get(original.id);
+            if (!existing)
+              throw new Error(`Missing created page: ${original.id}`);
+            return {
+              result: {
+                data: {
+                  id: existing.id,
+                  version: existing.version,
+                  publicSync: "completed",
+                },
+              },
+            };
+          }
           const record = {
-            ...values,
+            ...fields,
             id: PAGE_ID,
             version: 0,
             status: values.status ?? PageStatus.DRAFT,
@@ -51,6 +86,10 @@ test.describe("admin page editor", () => {
             imagesInContent: [],
           } satisfies PageViewModel;
           records.set(record.id, record);
+          creationIntents.set(scope, {
+            id: record.id,
+            input: structuredClone(values),
+          });
           return {
             result: {
               data: {
@@ -73,10 +112,11 @@ test.describe("admin page editor", () => {
           const values = input as PageUpdate;
           const current = records.get(values.id);
           if (!current) throw new Error(`Unknown page: ${values.id}`);
-          expect(values.expectedVersion).toBe(current.version);
+          const { expectedVersion, ...changes } = values;
+          expect(expectedVersion).toBe(current.version);
           const record = {
             ...current,
-            ...values,
+            ...changes,
             version: current.version + 1,
             updatedAt: "2026-01-03T03:04:05.000Z",
           } satisfies PageViewModel;

@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-/** Local UI lifetime guard only. BetterAuth remains responsible for mutation semantics. */
+/**
+ * 只守护当前界面的提交与反馈生命周期，不替代 BetterAuth 的业务语义。
+ * Promise resolve 仍可能携带 error；请求抛错表示结果未知，刷新失败则不能否认已确认的提交。
+ * cancelFeedback 仅抑制迟到反馈，不取消服务端操作。
+ */
 export function useAccountMutation() {
   const mounted = useRef(false);
   const generation = useRef(0);

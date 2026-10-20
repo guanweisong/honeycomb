@@ -15,7 +15,7 @@
 1. Create an empty LibSQL/Turso database.
 2. Set `TURSO_URL` and `TURSO_TOKEN` for that new database.
 3. Run `bun run db:migrate`.
-4. Run `bun run db:schema:audit -- --local <database-url>` and compare the
+4. Run `bun run db:schema:audit -- --local <database-url> --output <new-report-path>` and compare the
    inventory with the reviewed migration chain and current generated schema.
    `docs/production-schema-baseline-report.md` records the historical baseline,
    not the expected schema after subsequent migrations.
@@ -37,8 +37,13 @@ Status: **not executed — explicit approval required**.
 Before adoption:
 
 1. Create and verify a restorable production backup.
-2. Re-run the read-only `bun run db:schema:audit` and confirm the report still
-   says `No unresolved differences`.
+2. Re-run the read-only `bun run db:schema:audit -- --output <new-report-path>`
+   without overwriting the historical baseline report. The command inventories
+   the target only and explicitly reports `Not compared`; it cannot certify
+   `No unresolved differences`. Separately compare the complete target schema
+   with the reviewed baseline SQL/snapshot, resolve every discrepancy, and record
+   that comparison before adoption. Do not rely on the historical report as a
+   fresh equivalence check.
 3. Verify the baseline file SHA-256 is
    `72a1c0df496985446b0beb5c5fa140d6b28316a6105dac1b13be2c84d0ab620a`.
 4. Verify production does not already contain conflicting rows in

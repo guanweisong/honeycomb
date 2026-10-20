@@ -17,6 +17,10 @@ import {
   POST_CACHE_NAMESPACE as namespace,
   POST_CACHE_VERSION_KEY as versionKey,
 } from "@/lib/cache/public-cache-keys";
+/**
+ * 仅缓存公开文章投影；缓存命中仍按读模型解析，移除不属于公开契约的字段。
+ * Redis 读取/解码/回填失败可退回数据库，但数据库失败不能伪装成空列表。
+ */
 export async function getCachedPostList(db: Database, input: PostListInput) {
   let key: string | undefined;
   try {

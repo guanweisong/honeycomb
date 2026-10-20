@@ -4,8 +4,8 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.0-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -84,7 +84,7 @@
 
 ### 环境要求
 
-- Node.js >= 22.12
+- Node.js 22.x（与 `package.json` engines 一致）
 - Bun >= 1.4.2
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
@@ -270,7 +270,7 @@ fail-open：放行请求，并省略不可用的限流响应头。评论创建�
 - **post** - 文章表（支持多种类型：文章、电影、图库、引言）
 - **page** - 页面表（独立页面）
 - **comment** - 评论表（支持嵌套评论）
-- **media** - 媒体文件表（图片、视频等）
+- **media** - 图片媒体及上传/删除生命周期（当前上传不支持视频）
 - **setting** - 网站设置表
 - **menu** - 菜单表（导航菜单）
 - **tag** - 标签表

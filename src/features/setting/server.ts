@@ -16,7 +16,7 @@ import type { SettingUpdate } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
 type SettingTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-// Retry BEGIN contention only; never replay a callback that may have committed.
+/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
 async function settingTransaction<T>(
   db: Database,
   operation: (tx: SettingTransaction) => Promise<T>,
@@ -62,6 +62,7 @@ function toSettingRecord(
   };
 }
 
+/** 在同一读取事务中取得设置版本与翻译，避免拼接不同版本的编辑快照。 */
 export async function getSetting(db: Database) {
   return db.transaction((tx) => readSetting(tx));
 }
@@ -84,6 +85,7 @@ async function readSetting(db: Pick<Database, "select">) {
   return toSettingRecord(setting, translations);
 }
 
+/** 设置字段、翻译及版本 CAS 原子提交；事务内重新鉴权，提交后的缓存降级不撤销保存。 */
 export async function updateSetting(
   db: Database,
   submitted: SettingUpdate,

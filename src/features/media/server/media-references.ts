@@ -28,7 +28,10 @@ export function managedMediaKey(value: string): string | null {
   }
 }
 
-/** Must run in the same write transaction as saving the owning content. */
+/**
+ * 必须与所属正文写入共用事务，避免校验与保存之间穿插删除。
+ * 仅检查封面及受管图片 URL；未知历史 URL 可原样保留，但不能新增。
+ */
 export async function assertMediaReferencesReady(
   tx: Transaction,
   input: {
@@ -76,7 +79,7 @@ export async function assertMediaReferencesReady(
   }
 }
 
-/** Evidence of known usage only, not a claim that all historical/external usage is indexed. */
+/** 只证明已知字段中的引用；无结果不代表历史、外部或未登记用途均不存在。 */
 export async function findKnownMediaReferences(
   tx: Transaction,
   targets: readonly { id: string; key: string; url: string }[],

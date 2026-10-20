@@ -11,7 +11,7 @@ const mimeByFormat: Record<string, string> = {
   webp: "image/webp",
   heif: "image/avif",
 };
-/** Decode the immutable candidate, not browser metadata or a mutable upload key. */
+/** 解码完整候选字节并推导元数据，不信任浏览器声明或仍可覆盖的临时上传对象。 */
 export async function validateMediaImage(
   bytes: Uint8Array,
   expected: { type: string; size: number },
@@ -50,8 +50,8 @@ export async function validateMediaImage(
   return { type, size: bytes.byteLength, width, height, color: null };
 }
 
-// Per-process admission, not a queue or durable work system. Acquire before object GET.
 let activeValidations = 0;
+/** 仅限制本进程同时缓冲/解码的数量；GET 前取得名额，不是跨实例锁或持久任务队列。 */
 export function tryAcquireMediaValidation(): (() => void) | null {
   if (activeValidations >= 2) return null;
   activeValidations += 1;

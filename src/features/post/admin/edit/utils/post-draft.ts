@@ -15,7 +15,7 @@ export const PostEditorSchema = PostFieldsSchema.partial().extend({
   movieStyles: tagOptions.optional(),
 });
 export type PostEditorValues = z.infer<typeof PostEditorSchema>;
-// Drafts are incomplete editor input, never identity or publication authority.
+// 草稿只保存不完整编辑输入，不能恢复记录身份或授予发布权限。
 const PostDraftSchema = PostEditorSchema.omit({
   id: true,
   status: true,
@@ -31,7 +31,7 @@ export function parsePostDraft(value: unknown): PostDraft | null {
 
 const attemptKey = (userId: string) =>
   `honeycomb:draft:post:${encodeURIComponent(userId)}:creation-attempt`;
-/** One frozen, account-scoped creation intent. Persist before sending, not on a debounce. */
+/** 按账户保存不可变创建意图；发送前同步写入并回读确认，不能依赖草稿防抖落盘。 */
 export function writePostCreationAttempt(
   userId: string,
   input: PostInsert,

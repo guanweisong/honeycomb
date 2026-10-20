@@ -29,6 +29,7 @@ export type PageEditorSubmitResult =
   | ({ state: "created" | "updated"; refreshFailed?: boolean } & SavedPage)
   | { state: "error" | "unknown" | "conflict" | "stale" };
 
+/** 将确定拒绝、版本冲突和结果未知分开；网络异常不能解释为服务端未写入。 */
 export async function submitPageEditor({
   pageId,
   expectedVersion,
@@ -69,6 +70,7 @@ export async function submitPageEditor({
   }
 }
 
+/** 隔离账户/页面切换后的迟到反馈；刷新失败不改变已确认的保存结果，也不自动重放写入。 */
 export function usePageEditorActions({
   pageId,
   actorId,

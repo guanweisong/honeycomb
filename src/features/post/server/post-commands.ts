@@ -34,8 +34,7 @@ import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
 import { assertMediaReferencesReady } from "@/features/media/server/media-references";
 
 type PostTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-// libSQL starts a transaction before Drizzle enters this callback. Retry only
-// BEGIN contention: no callback means no business write or uncertain commit.
+/** 只重试回调尚未进入时的 BEGIN 锁竞争；业务写入或提交结果未知后绝不自动重放。 */
 async function postTransaction<T>(
   db: Database,
   operation: (tx: PostTransaction) => Promise<T>,
@@ -114,7 +113,7 @@ async function patchRelations(
         );
   }
 }
-// Hash the original validated intent, not sanitized or subsequently edited storage.
+// 对已校验的原始意图求哈希，不使用清洗后或随后被编辑的存储内容。
 function canonicalInput(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalInput).join(",")}]`;
   if (value !== null && typeof value === "object") {
@@ -142,6 +141,10 @@ async function invalidatePosts(
     refreshSitemap: true,
   });
 }
+/**
+ * 原子创建文章及关联数据；同一作者的令牌仅允许重放相同原始意图，不覆盖后续编辑。
+ * 公开缓存失效发生在提交后，publicSync 不代表数据库写入是否成功。
+ */
 export async function createPost(
   db: Database,
   input: PostInsert,
@@ -209,6 +212,7 @@ export async function createPost(
   return { ...result, publicSync: publicSync.state };
 }
 
+/** 按当前作者核对创建结果；返回 null 仅表示当前无记录，不是永久保留的删除回执。 */
 export async function getPostCreationResult(
   db: Database,
   creationToken: string,
@@ -230,6 +234,7 @@ export async function getPostCreationResult(
   });
 }
 
+/** 整批按版本删除；任一目标缺失或过期会回滚全批，不能退化为部分成功。 */
 export async function destroyPosts(
   db: Database,
   input: PostDelete,
@@ -273,6 +278,7 @@ export async function destroyPosts(
   return { success: true as const, publicSync: publicSync.state };
 }
 
+/** 在同一事务重新鉴权、校验版本与媒体引用，并原子提交正文及关联变更。 */
 export async function updatePost(
   db: Database,
   input: PostUpdate,
@@ -384,6 +390,7 @@ export async function updatePost(
   return { ...result, publicSync: publicSync.state };
 }
 
+/** 浏览计数不推进编辑版本或更新时间，避免公开访问使编辑器产生无意义冲突。 */
 export async function incrementPostViews(db: Database, id: string) {
   const [post] = await observeDbOperation(
     "post.increment-views",

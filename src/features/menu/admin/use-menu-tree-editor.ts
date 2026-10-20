@@ -33,6 +33,10 @@ export type MenuTreeEditor = {
   getDisabledStatus: (item: MenuSelectableItem) => boolean;
 };
 
+/**
+ * 菜单整树快照与版本共同构成保存基线；dirty 或保存/核对保护期内不自动接纳查询结果。
+ * acknowledge 仅确认已提交快照，acceptLatest 才是用户主动选择新基线的恢复入口。
+ */
 export function useMenuTreeEditor(
   checkedData: CheckedMenuData | undefined,
 ): MenuTreeEditor {

@@ -33,8 +33,7 @@ import { UserStatus } from "@/features/user/user";
 import { can, Permission } from "@/lib/auth/permissions";
 import { getPagePublishStatus, getPageWithdrawStatus } from "./rules";
 type PageTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-// libSQL starts a transaction before Drizzle enters this callback. Retry only
-// BEGIN contention: no callback means no business write or uncertain commit.
+/** 只重试回调尚未进入时的 BEGIN 锁竞争；业务写入或提交结果未知后绝不自动重放。 */
 async function pageTransaction<T>(
   db: Database,
   operation: (tx: PageTransaction) => Promise<T>,
@@ -81,7 +80,7 @@ async function requireActor(
     throw new ApplicationError("FORBIDDEN", "当前账户无权保存此页面");
   }
 }
-// Hash the original validated intent, not sanitized or subsequently edited storage.
+// 对已校验的原始意图求哈希，不使用清洗后或随后被编辑的存储内容。
 function canonicalInput(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalInput).join(",")}]`;
   if (value !== null && typeof value === "object") {
@@ -108,6 +107,10 @@ async function invalidatePages(
     refreshSitemap: true,
   });
 }
+/**
+ * 原子创建页面及关联数据；同一作者的令牌仅允许重放相同原始意图，不覆盖后续编辑。
+ * 公开缓存失效发生在提交后，publicSync 不代表数据库写入是否成功。
+ */
 export async function createPage(
   db: Database,
   input: PageInsert,
@@ -173,6 +176,7 @@ export async function createPage(
   return { ...result, publicSync: publicSync.state };
 }
 
+/** 按当前作者核对创建结果；返回 null 仅表示当前无记录，不是永久保留的删除回执。 */
 export async function getPageCreationResult(
   db: Database,
   creationToken: string,
@@ -194,6 +198,7 @@ export async function getPageCreationResult(
   });
 }
 
+/** 整批按版本删除；任一目标缺失或过期会回滚全批，不能退化为部分成功。 */
 export async function destroyPages(
   db: Database,
   input: PageDelete,
@@ -241,6 +246,7 @@ export async function destroyPages(
   return { success: true as const, publicSync: publicSync.state };
 }
 
+/** 在同一事务重新鉴权、校验版本与媒体引用，并原子提交正文及关联变更。 */
 export async function updatePage(
   db: Database,
   input: PageUpdate,
@@ -364,6 +370,7 @@ export async function updatePage(
   const publicSync = await invalidatePages(invalidator, [result.id]);
   return { ...result, publicSync: publicSync.state };
 }
+/** 浏览计数不推进编辑版本或更新时间，避免公开访问使编辑器产生无意义冲突。 */
 export async function incrementPageViews(db: Database, id: string) {
   const [page] = await observeDbOperation(
     "page.increment-views",

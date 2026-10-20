@@ -13,6 +13,20 @@
 
 server 函数直接访问数据库，不额外创建只转发参数的工厂或用例。成功写入后的缓存降级通过 `publicSync` 表达，不能误报成写入失败。
 
+### 版本化编辑与创建恢复
+
+文章、页面的 `create` 输入必须包含 `creationToken`；`update` 必须包含 `expectedVersion`，`destroy` 使用 `{ items: [{ id, expectedVersion }] }`，不再接受只有 ID 的删除批次。具体字段以各 feature 的 `schema.ts` 为准，不把表单类型当作持久化输入。
+
+`post.creationResult` / `page.creationResult` 在当前账户与创建权限下按 token 查询，返回 `{ id, version }` 或 `null`，不是完整编辑快照或永久幂等回执。确认已有资源后重新读取详情；资源删除后查询不到不能证明请求从未成功，也不能据此自动重放未知结果。
+
+菜单后台读取 `menu.adminIndex` 的 `{ version, list, total }` 快照，`menu.saveAll` 提交 `{ expectedVersion, items }`；公开 `menu.index` 仍是公开菜单列表。设置从 `setting.index` 读取版本，`setting.update` 提交完整后台快照及 `expectedVersion`。实现入口为各 feature 的 `router.ts`、`schema.ts` 和 `server.ts`；上线顺序见[迁移手册](database-migration-runbook.md)。
+
+### 媒体上传与人工恢复
+
+`src/features/media/router.ts` 提供 `beginUpload` → 浏览器临时 PUT → `confirmUpload`，结果按 `ready` / `pending` / `rejected` 分支处理。`status` 与 `reconcile` 用于原上传行核对，不是另一次上传；旧 `getPresignedUrl` / `upload` tRPC 入口已移除（存储适配器内部仍有签名方法）。当前管理列表默认 READY，可按状态查看有权访问的恢复记录。
+
+最终字节校验在 `server/image-validation.ts`，事务授权及引用保护在 `server/media-repository.ts` / `server/media-references.ts`。生命周期、删除确认和运行时限制只在[媒体运行手册](media-storage-runbook.md)集中说明。
+
 ### 读取公开内容
 
 1. 页面组合：`src/app/(blog)/[locale]` 对应路由。
@@ -21,6 +35,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 4. UI 使用 feature 拥有的模型与有意复用的具体入口（可在 public/admin/components）；不要求 public barrel 或中央 contracts 转发。
 
 文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
+
+文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体公共读取模型与管理恢复模型分别在 `src/features/media/types.ts`，不把临时 key、尝试信息等恢复字段透传给公开消费者。
 
 评论公开 DTO 必须真正挑选允许字段，不能用类型别名代替脱敏。评论组件接收数据，不反向导入 app 查询实现。GUEST 后台读取同样受服务端数据范围限制。
 
@@ -37,9 +53,9 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台统计与路由
 
-1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；业务 UI 在 `src/features/dashboard/admin/page.tsx`。
+1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；业务 UI 在 `src/features/dashboard/admin/components/DashboardPageClient/index.tsx`。
 2. 统计入口与读取：`src/features/dashboard/router.ts` → `server.ts`；结果类型从实现经 tRPC 推断，不保留仅供测试引用的平行模型。
-3. `src/app/_trpc/router.ts` 仍挂载 `statistic`，保留原有 `statisticsRead` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
+3. `src/app/_trpc/router.ts` 仍挂载 `statistic`，保留 `Permission.statisticsRead` 对应的 `statistics:read` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
 
 `src/app/admin/(dashboard)/layout.tsx` 与 `template.tsx` 是认证和页面边界；login、forbidden 直接位于 admin 下，不再套无职责的 `(root)`。post/page 根路由只是客户端导航，直接在 app 保留 `useLayoutEffect` / `router.replace`，不需要 feature 壳或改成服务端 redirect。
 

@@ -12,7 +12,7 @@ import { withTimestamps } from "../timestamps";
 
 /**
  * 媒体文件表 (media)
- * 存储上传的图片、视频等媒体文件信息。
+ * 记录图片上传与删除生命周期；当前上传入口仅支持图片，不承诺历史行已重新验证。
  */
 export const media = sqliteTable(
   "media",

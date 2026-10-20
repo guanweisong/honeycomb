@@ -5,6 +5,8 @@ description: 当在 Honeycomb 中生成、修改或审查 TypeScript 类型、Zo
 
 # 类型安全治理
 
+规范验收以 [type-safety-governance](../../../openspec/specs/type-safety-governance/spec.md) 为权威；以下内容指导查找、迁移和验证，不另定义业务写入或恢复协议。涉及具体业务协议时按[架构规则索引](../frontend-structure/references/architecture.md)定位。
+
 ## 核心原则
 
 生成或修改类型敏感代码时，先按本 Skill 设计真实契约，审计清理只是补救。目标是消除不真实的类型承诺，而不是追求字符层面的“零断言”。先修正信息来源，再窄化；只有公开类型确实无法表达时，才保留最小且有说明的适配断言。
@@ -80,7 +82,7 @@ description: 当在 Honeycomb 中生成、修改或审查 TypeScript 类型、Zo
 
 验证应与改动风险成比例，并遵循受影响工程 Skill 的质量门禁：
 
-- 始终运行 `bun run check-types`、`bun run lint`、相关测试和 `git diff --check`；
+- 修改类型或运行时代码时运行 `bun run check-types`、`bun run lint`、相关测试和 `git diff --check`；仅文档/Skill 同步按质量门禁选择规格、链接与文档检查；用户限定或环境阻塞的未运行项明确披露；
 - 跨边界契约、共享测试基础设施或大范围治理变更运行完整单元测试与覆盖率；
 - 仅在变更影响生产构建、框架边界，或对应质量门禁要求时运行 `bun run build`。
 

@@ -35,6 +35,7 @@ async function requireActor(
     throw new ApplicationError("FORBIDDEN", "当前账户无权操作媒体");
   return actor;
 }
+/** 每次确认都重新验证上传权限与归属；管理他人上传另需 mediaManageUploads。 */
 async function requireUpload(tx: Transaction, id: string, actorId: string) {
   const actor = await requireActor(tx, actorId, Permission.mediaUpload);
   const [row] = await tx
@@ -100,6 +101,7 @@ export function createMediaRepository(db: Database) {
         return MediaManagementRecordSchema.parse(row);
       });
     },
+    /** 持久化一次性 COPY 认领，不是可过期租约；已认领后重试只能核对现有候选。 */
     async claimCopy(id: string, actorId: string) {
       return db.transaction(async (tx) => {
         await requireUpload(tx, id, actorId);

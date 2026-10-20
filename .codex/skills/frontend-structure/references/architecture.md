@@ -13,6 +13,19 @@
 | 类型、schema、常量唯一事实源 | [type-safety-governance](../../../../openspec/specs/type-safety-governance/spec.md) |
 | 死出口、框架约定入口及动态 feature 门禁 | [architecture-complexity-governance](../../../../openspec/specs/architecture-complexity-governance/spec.md)：架构复杂度必须有可追踪预算、Feature 边界门禁必须动态覆盖现有模块 |
 
+## 编辑、恢复与媒体行为
+
+以下主规格是已同步行为的验收入口；来源增量仍可保持活动状态，不能据此推断 CI、真实存储验证或生产发布完成。
+
+| 主题 | 权威规范 |
+| --- | --- |
+| 文章原子表单、标签关系、版本与创建恢复 | [post-edit-consistency](../../../../openspec/specs/post-edit-consistency/spec.md) |
+| 文章严格 patch、removeLocales 与随机公开快照 | [post-patch-contract](../../../../openspec/specs/post-patch-contract/spec.md)；[normalized-content-translations](../../../../openspec/specs/normalized-content-translations/spec.md) |
+| 页面版本、双语事务和创建恢复 | [page-edit-consistency](../../../../openspec/specs/page-edit-consistency/spec.md) |
+| 菜单整树与设置版本、保存后刷新 | [site-snapshot-safety](../../../../openspec/specs/site-snapshot-safety/spec.md) |
+| 账号操作结果与过期回调 | [account-mutation-feedback](../../../../openspec/specs/account-mutation-feedback/spec.md) |
+| 媒体上传验证、已知引用拒删及人工核对 | [media-lifecycle](../../../../openspec/specs/media-lifecycle/spec.md)；[side-effect-consistency](../../../../openspec/specs/side-effect-consistency/spec.md) |
+
 涉及行为而非仅路径时，继续读取对应规范：[授权](../../../../openspec/specs/capability-authorization/spec.md)、[入口权限统一](../../../../openspec/specs/capability-authorization-unification/spec.md)、[持久化不变量](../../../../openspec/specs/persistence-integrity/spec.md)、[公开内容安全](../../../../openspec/specs/public-content-safety/spec.md)、[缓存新鲜度](../../../../openspec/specs/public-content-freshness/spec.md)、[副作用一致性](../../../../openspec/specs/side-effect-consistency/spec.md)、[运行时错误捕获](../../../../openspec/specs/runtime-error-capture/spec.md)。
 
 本轮 dashboard、媒体选择契约、app 重定向和纯工具归属的补充验收仍在[目录归属变更](../../../../openspec/changes/refine-directory-ownership/specs/directory-ownership/spec.md)；它尚未归档，不把历史报告当作当前验证证据。

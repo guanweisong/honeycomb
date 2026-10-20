@@ -24,6 +24,7 @@ export interface MediaStorage {
   readObject(key: string, maxBytes: number): Promise<Uint8Array>;
   deleteObjects(keys: readonly string[]): Promise<void>;
 }
+/** 先建立账户归属的 UPLOADING 记录，再签发临时对象上传地址；此时尚不可用于正文。 */
 export async function beginMediaUpload(
   repository: Pick<MediaPersistence, "begin">,
   storage: Pick<MediaStorage, "getPresignedUrl">,
@@ -46,6 +47,10 @@ export async function beginMediaUpload(
     expiresAt: row.uploadExpiresAt,
   };
 }
+/**
+ * 一次性认领 COPY 后只检查同一候选对象，验证真实字节通过才绑定 READY。
+ * 存储或数据库结果未知时保留 pending，不覆盖候选对象、不自动重新 COPY。
+ */
 export async function confirmMediaUpload(
   repository: Pick<
     MediaPersistence,
@@ -56,6 +61,7 @@ export async function confirmMediaUpload(
   actorId: string,
 ): Promise<MediaConfirmResult> {
   const row = await repository.findForUpload(id, actorId);
+  // 兼容历史 READY 记录：此分支不重新解码，不能据此推断旧对象已通过新验证。
   if (row.state === "READY")
     return { state: "ready", media: MediaRecordSchema.parse(row) };
   if (row.state !== "UPLOADING")
@@ -70,7 +76,7 @@ export async function confirmMediaUpload(
       message: "结果待确认，请稍后核对；请勿删除或覆盖候选对象",
     };
   };
-  // Persist claim before the external write. Even an uncertain claim must not cause a COPY.
+  // 外部写入前持久化认领；认领结果不确定时也不能 COPY，避免重试覆盖已验证候选。
   let claimed: Awaited<ReturnType<MediaPersistence["claimCopy"]>>;
   try {
     claimed = await repository.claimCopy(id, actorId);
@@ -140,7 +146,7 @@ export async function confirmMediaUpload(
   }
 }
 
-/** Mark first, delete outside the transaction, retain tombstones and original recovery keys. */
+/** 事务内先标记删除，事务外核对对象删除；保留墓碑和原恢复键，未知结果不宣称成功。 */
 export async function destroyMedia(
   repository: Pick<MediaPersistence, "beginDelete" | "finishDelete" | "note">,
   storage: Pick<MediaStorage, "deleteObjects" | "headObject">,

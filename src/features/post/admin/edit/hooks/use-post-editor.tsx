@@ -41,6 +41,10 @@ import {
 
 export type PostSubmitAction = "create" | "update";
 
+/**
+ * 维护文章编辑快照、版本和账户隔离的创建尝试；未知结果必须先核对，不能换令牌重建。
+ * 保存成功后的刷新失败与写入失败分开反馈，提交期间的新输入仍保留为未保存编辑。
+ */
 export function usePostEditor(id: string | null) {
   const router = useRouter();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -566,6 +570,3 @@ export function usePostEditor(id: string | null) {
     type,
   };
 }
-/**
- * 文章编辑 Hook，负责表单状态、文章查询和提交编排。
- */

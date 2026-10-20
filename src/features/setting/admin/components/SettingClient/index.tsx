@@ -22,6 +22,10 @@ import type { SettingRecord } from "../../../types";
 
 export default function Setting() {
   const { user } = useCurrentUser();
+  const { setting } = useSiteSetting();
+  // Wait for a baseline before mounting controllers: StrictMode registration of
+  // empty fields can mark the form dirty and block the first snapshot adoption.
+  if (!setting) return <p role="status">设置尚未加载；若持续未显示，请刷新页面重试。</p>;
   return <SettingEditor key={user?.id ?? "signed-out"} />;
 }
 

@@ -1,5 +1,6 @@
 import { test, expect, type Locator } from "@playwright/test";
 import { openBlogHome } from "./helpers";
+import { observeSearch } from "../../helpers/search-diagnostics";
 
 async function expectSameHorizontalBounds(input: Locator, result: Locator) {
   await expect(async () => {
@@ -93,9 +94,22 @@ test.describe("blog search", () => {
       expect(box!.width).toBeCloseTo(390, 0);
       expect(box!.height).toBeCloseTo(844, 0);
     }).toPass({ timeout: 5_000 });
-    await dialog.getByRole("searchbox").fill("确定性浏览器测试内容");
+    const diagnostics = observeSearch(
+      page,
+      "确定性浏览器测试内容",
+      "zh",
+      "000000000000000000000005",
+    );
     const result = dialog.getByRole("link", { name: /可靠浏览器门禁/ });
-    await expect(result).toBeVisible();
+    try {
+      await dialog.getByRole("searchbox").fill("确定性浏览器测试内容");
+      await expect(result).toBeVisible();
+    } catch (error) {
+      console.log("Mobile Chinese search failure:", diagnostics.summary());
+      throw error;
+    } finally {
+      diagnostics.stop();
+    }
     await expectSameHorizontalBounds(dialog.getByRole("searchbox"), result);
     await dialog.getByRole("button", { name: "关闭搜索" }).click();
     await expect(dialog).toHaveCount(0);

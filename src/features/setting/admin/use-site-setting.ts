@@ -54,9 +54,8 @@ function createContextProvider(
 
 /**
  * 后台全局站点设置 Hook。
- * 使用 tRPC 读取站点设置，并暴露一个刷新方法供后台布局和页面复用。
- *
- * @returns {{ setting: SettingData | undefined; isLoading: boolean; refreshSetting: () => Promise<unknown> }} 当前设置数据、加载状态和刷新方法。
+ * 读取 Provider 提供的设置与刷新方法；查询由 Provider 负责，此处 isLoading 固定为 false。
+ * 无 Provider 时返回空设置与无操作刷新，不表示一次查询已成功。
  */
 export const useSiteSetting = () => {
   const context = useContext(SiteSettingContext);

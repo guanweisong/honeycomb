@@ -11,6 +11,7 @@ const localizedDraft = z.object({
 });
 export const PageEditorSchema = PageFieldsSchema;
 export type PageEditorValues = z.infer<typeof PageEditorSchema>;
+// 草稿不携带发布状态；baseVersion 只供恢复时比对，不能绕过服务端版本校验。
 const PageDraftSchema = PageFieldsSchema.omit({ status: true })
   .strip()
   .partial()
@@ -36,6 +37,7 @@ export function readPageCreationAttempt(userId: string): PageInsert | null {
     return null;
   }
 }
+/** 发送前按账户同步保存并回读创建意图；结果未知时必须复用原令牌与内容核对。 */
 export function writePageCreationAttempt(
   userId: string,
   input: PageInsert,
@@ -58,6 +60,7 @@ export function clearPageCreationAttempt(userId: string, token: string) {
     /* Retain the form when browser storage is unavailable. */
   }
 }
+/** 用户加载冲突版本前保留被替换的本地输入；写入失败时由调用方阻止丢弃编辑。 */
 export function preservePageDraft(
   userId: string,
   id: string,

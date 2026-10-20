@@ -20,7 +20,7 @@ import { UserStatus } from "@/features/user/user";
 import { ApplicationError } from "@/lib/errors/application-error";
 
 type MenuTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-// Retry BEGIN contention only; never replay a callback that may have committed.
+/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
 async function menuTransaction<T>(
   db: Database,
   operation: (tx: MenuTransaction) => Promise<T>,
@@ -81,6 +81,7 @@ function validateMenuTree(input: MenuInput): void {
     }
   }
 }
+/** 整树替换与单例版本 CAS 共用事务；重新鉴权和目标检查失败时，版本推进也一并回滚。 */
 export async function saveAllMenus(
   db: Database,
   submitted: MenuSaveSnapshot,

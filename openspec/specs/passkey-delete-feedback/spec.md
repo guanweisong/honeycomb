@@ -17,12 +17,12 @@
 
 ### Requirement: 删除成功后同步列表
 
-系统 SHALL 在 Passkey 删除请求成功后刷新列表、关闭确认 Dialog 并提示成功。
+系统 SHALL 在 Passkey 删除请求明确成功后关闭确认 Dialog 并提示成功，再独立刷新列表；刷新失败 MUST NOT 撤销成功反馈或重开确认框。未知结果与旧响应隔离遵循 [账号写入反馈](../account-mutation-feedback/spec.md)。
 
 #### Scenario: 确认删除成功
 
 - **WHEN** 用户在确认 Dialog 中执行删除且 Better Auth 返回成功
-- **THEN** 系统调用删除 endpoint、重新获取 Passkey 列表并关闭 Dialog
+- **THEN** 系统关闭 Dialog、提示删除成功并重新获取 Passkey 列表；刷新失败仅提示已完成但需核对列表
 
 #### Scenario: 删除失败
 

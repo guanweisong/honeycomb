@@ -19,6 +19,10 @@ export function settingFormValues(setting: SettingRecord): SettingFormValues {
     siteRecordUrl: setting.siteRecordUrl ?? "",
   };
 }
+/**
+ * 以服务端版本维护表单基线；保存或核对期间即使输入回到原值，也不能被查询刷新覆盖。
+ * 调用方通过 protectedSnapshot 保护该窗口，dirty 本身不足以表示请求仍在进行。
+ */
 export function useSettingSnapshotForm(
   setting: SettingRecord | undefined,
   protectedSnapshot = false,
@@ -43,6 +47,7 @@ export function useSettingSnapshotForm(
   }, [setting, isDirty, form, protectedSnapshot]);
   return {
     form,
+    // 只确认实际提交的快照为新基线，保留提交后继续输入的内容及其 dirty 状态。
     acknowledge: (submitted: SettingFormValues, version: number) => {
       const current = { ...form.getValues(), expectedVersion: version };
       baseVersion.current = version;

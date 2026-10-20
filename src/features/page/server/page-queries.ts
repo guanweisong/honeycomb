@@ -22,6 +22,7 @@ type PageTranslations =
     ? Value
     : never;
 
+/** 显式白名单投影，避免创建令牌与原始意图哈希经详情或列表泄漏。 */
 function toPageRecord(
   page: PageRow & { translations?: unknown; author?: unknown },
   translations: PageTranslations | undefined,
