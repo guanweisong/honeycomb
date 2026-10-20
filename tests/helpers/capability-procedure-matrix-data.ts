@@ -1,3 +1,4 @@
+import { createUploadIntent } from "@/features/media/server/upload-intent";
 import {
   Permission,
   type Permission as PermissionValue,
@@ -119,17 +120,27 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
   ],
   ["media.index", Permission.mediaReadAll, ALL_ROLES, LIST_INPUT, "database"],
   [
-    "media.beginUpload",
+    "media.prepareUpload",
     Permission.mediaUpload,
     ADMIN_EDITOR,
-    { name: "test.jpg", type: "image/jpeg", size: 1 },
+    { name: "test.jpg", type: "image/jpeg", size: 1, sha256: "a".repeat(64) },
     "database",
   ],
   [
-    "media.confirmUpload",
+    "media.registerUpload",
     Permission.mediaUpload,
     ADMIN_EDITOR,
-    { id: TEST_ID },
+    {
+      intent: createUploadIntent(
+        {
+          name: "test.jpg",
+          type: "image/jpeg",
+          size: 1,
+          sha256: "a".repeat(64),
+        },
+        "matrix-user",
+      ).intent,
+    },
     "database",
   ],
   [
@@ -137,20 +148,6 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     Permission.mediaDelete,
     ADMIN_EDITOR,
     { ...DELETE_INPUT, acknowledgeUnknownReferences: true },
-    "database",
-  ],
-  [
-    "media.status",
-    Permission.mediaReadAll,
-    ALL_ROLES,
-    { id: TEST_ID },
-    "database",
-  ],
-  [
-    "media.reconcile",
-    Permission.mediaReadAll,
-    ALL_ROLES,
-    { id: TEST_ID },
     "database",
   ],
   ["menu.adminIndex", Permission.menuReadAll, ALL_ROLES, undefined, "database"],

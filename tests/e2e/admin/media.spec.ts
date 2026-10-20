@@ -1,15 +1,23 @@
+import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import type { MediaUploadFile } from "@/features/media/upload-policy";
+import {
+  MediaUploadIntentInputSchema,
+  type MediaUploadIntentInput,
+} from "@/features/media/upload-policy";
+import {
+  MediaRegisterUploadSchema,
+  MediaDeleteSchema,
+} from "@/features/media/schema";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
 
 test.use({ bypassCSP: true });
 
 test.describe("admin media upload", () => {
-  for (const scenario of ["success", "partial", "pending"] as const) {
-    test(`@regression ${scenario}: uploads, preserves uncertain objects and removes ready media through the browser contract`, async ({
+  for (const scenario of ["success", "partial", "lost-response"] as const) {
+    test(`@regression ${scenario}: uploads, preserves uncertain objects and removes registered media through the browser contract`, async ({
       page,
     }) => {
       const file = {
@@ -25,7 +33,7 @@ test.describe("admin media upload", () => {
       const cleanupRequests: string[] = [];
       const presignedInputs: unknown[] = [];
       const uploadInputs: unknown[] = [];
-      const operations = new Map<string, MediaUploadFile>();
+      const operations = new Map<string, MediaUploadIntentInput>();
       const destroyInputs: unknown[] = [];
       const storageRequests: {
         body: Buffer | null;
@@ -87,13 +95,7 @@ test.describe("admin media upload", () => {
             return {
               result: {
                 data: {
-                  list: media.map((record) => ({
-                    ...record,
-                    state: "READY",
-                    verifiedAt: "2026-01-02T03:04:05.000Z",
-                    lastAttemptAt: null,
-                    lastErrorCode: null,
-                  })),
+                  list: media,
                   total: media.length,
                 },
               },
@@ -102,9 +104,9 @@ test.describe("admin media upload", () => {
           if (procedure === "setting.index") {
             return { result: { data: mockedSiteSetting } };
           }
-          if (procedure === "media.beginUpload") {
+          if (procedure === "media.prepareUpload") {
             presignedInputs.push(input);
-            const values = input as MediaUploadFile;
+            const values = MediaUploadIntentInputSchema.parse(input);
             const id =
               values.name === file.name
                 ? "507f1f77bcf86cd799439011"
@@ -113,33 +115,37 @@ test.describe("admin media upload", () => {
             return {
               result: {
                 data: {
-                  id,
+                  intent: id,
                   uploadUrl: `https://upload.honeycomb.test/${values.name}`,
                   expiresAt: "2026-10-20T12:00:00.000Z",
                 },
               },
             };
           }
-          if (procedure === "media.confirmUpload") {
+          if (procedure === "media.registerUpload") {
             uploadInputs.push(input);
-            const { id } = input as { id: string };
+            const { intent: id } = MediaRegisterUploadSchema.parse(input);
             const values = operations.get(id);
             if (!values) throw new Error(`Unknown upload: ${id}`);
             if (values.name === rejectedFile.name)
               return {
-                result: {
+                error: {
+                  message:
+                    scenario === "lost-response"
+                      ? "保存结果未知，请人工核对"
+                      : "图片内容未通过验证",
+                  code: -32603,
                   data: {
-                    state: scenario === "pending" ? "pending" : "rejected",
-                    id,
-                    message:
-                      scenario === "pending"
-                        ? "保存结果待确认"
-                        : "图片内容未通过验证",
+                    code: "INTERNAL_SERVER_ERROR",
+                    httpStatus: 500,
+                    path: procedure,
                   },
                 },
               };
             const record = {
-              ...values,
+              name: values.name,
+              type: values.type,
+              size: values.size,
               id,
               key: `media/${values.name}`,
               url: `https://assets.honeycomb.test/media/${values.name}`,
@@ -150,11 +156,11 @@ test.describe("admin media upload", () => {
               updatedAt: "2026-01-02T03:04:05.000Z",
             } satisfies MediaViewModel;
             media.push(record);
-            return { result: { data: { state: "ready", media: record } } };
+            return { result: { data: record } };
           }
           if (procedure === "media.destroy") {
             destroyInputs.push(input);
-            const ids = (input as { ids: string[] }).ids;
+            const { ids } = MediaDeleteSchema.parse(input);
             for (const id of ids) {
               const indexToDelete = media.findIndex((item) => item.id === id);
               if (indexToDelete >= 0) media.splice(indexToDelete, 1);
@@ -189,15 +195,20 @@ test.describe("admin media upload", () => {
       await expect.poll(() => presignedInputs.length).toBe(expectedCount);
       expect(presignedInputs).toEqual(
         expect.arrayContaining([
-          { name: file.name, type: file.mimeType, size: file.buffer.length },
+          {
+            name: file.name,
+            type: file.mimeType,
+            size: file.buffer.length,
+            sha256: createHash("sha256").update(file.buffer).digest("hex"),
+          },
         ]),
       );
       await expect.poll(() => uploadInputs.length).toBe(expectedCount);
       expect(uploadInputs).toEqual(
-        expect.arrayContaining([{ id: "507f1f77bcf86cd799439011" }]),
+        expect.arrayContaining([{ intent: "507f1f77bcf86cd799439011" }]),
       );
       for (const input of uploadInputs)
-        expect(Object.keys(input as object)).toEqual(["id"]);
+        expect(input).toEqual({ intent: expect.any(String) });
       expect(storageRequests).toHaveLength(expectedCount);
       for (const request of storageRequests)
         expect(request).toEqual({
@@ -211,15 +222,11 @@ test.describe("admin media upload", () => {
         expect(cleanupRequests).toEqual([]);
       } else {
         await expect(
-          page.getByText(
-            scenario === "pending"
-              ? /成功上传 1 个文件，0 个失败，1 个待确认/
-              : /成功上传 1 个文件，1 个失败，0 个待确认/,
-          ),
+          page.getByText(/成功上传 1 个文件，1 个失败/),
         ).toBeVisible();
         expect(media.map((item) => item.name)).toEqual([file.name]);
       }
-      // Neither validation rejection nor ambiguous confirmation permits browser cleanup.
+      // Neither validation rejection nor ambiguous registration permits browser cleanup.
       expect(cleanupRequests).toEqual([]);
 
       const tile = page.getByTitle(file.name);

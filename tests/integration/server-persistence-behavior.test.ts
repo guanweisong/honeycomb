@@ -38,49 +38,18 @@ function fakeDb() {
 describe("feature server 持久化行为", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("media begin generates server-owned isolated upload and asset keys", async () => {
+  it("media authorization does not create provisional records", async () => {
     const db = createMockDb();
-    const row = {
-      id: "507f1f77bcf86cd799439011",
-      url: "https://assets.test/media/a.png",
-    };
     db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
-    db.returning.mockResolvedValue([row]);
-    const result = await createMediaRepository(asMockDatabase(db)).begin(
-      { name: "a.png", size: 10, type: "image/png" },
-      "author",
-    );
-    expect(result).toEqual(row);
-    expect(db.values).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({
-        id: expect.stringMatching(/^[0-9a-f]{24}$/),
-        name: "a.png",
-        size: 10,
-        type: "image/png",
-        state: "UPLOADING",
-        uploadedBy: "author",
-        key: expect.stringMatching(/^media\/[0-9a-f-]+\.png$/),
-        uploadKey: expect.stringMatching(/^temporary\/[0-9a-f-]+\.png$/),
-        url: expect.stringMatching(
-          /^https:\/\/assets\.test\/media\/[0-9a-f-]+\.png$/,
-        ),
-        uploadExpiresAt: expect.any(String),
-      }),
-    );
+    await createMediaRepository(asMockDatabase(db)).authorizeUpload("author");
     expect(db.transaction).toHaveBeenCalledOnce();
-    expect(db.returning).toHaveBeenCalled();
+    expect(db.insert).not.toHaveBeenCalled();
   });
 
-  it("media deletion marks eligible targets and retains tombstones instead of deleting records", async () => {
+  it("media deletion runs storage before physical row deletion in one transaction", async () => {
     const db = createMockDb();
-    const targets = [
-      {
-        id: "507f1f77bcf86cd799439011",
-        key: "a.png",
-        url: "https://assets.test/a.png",
-        state: "READY",
-      },
-    ];
+    const { mediaRow } = await import("@tests/helpers/media-registration");
+    const targets = [mediaRow()];
     db.select.mockImplementation((projection?: object) => ({
       from: (table: object) => {
         if (table === schema.user && !projection) {
@@ -98,18 +67,17 @@ describe("feature server 持久化行为", () => {
         return [];
       },
     }));
-    const repository = createMediaRepository(asMockDatabase(db));
-    await expect(
-      repository.beginDelete([targets[0]!.id], "author"),
-    ).resolves.toEqual(targets);
-    expect(db.set).toHaveBeenCalledWith(
-      expect.objectContaining({ state: "DELETING", lastErrorCode: null }),
+    const remove = vi.fn(async () => {
+      expect(db.delete).not.toHaveBeenCalled();
+    });
+    await createMediaRepository(asMockDatabase(db)).deleteWithStorage(
+      targets.map((row) => row.id),
+      "author",
+      remove,
     );
-    await repository.finishDelete(targets[0]!.id);
-    expect(db.set).toHaveBeenLastCalledWith(
-      expect.objectContaining({ state: "DELETED", lastErrorCode: null }),
-    );
-    expect(db.delete).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledWith(targets);
+    expect(db.delete).toHaveBeenCalledWith(schema.media);
+    expect(db.update).not.toHaveBeenCalled();
     expect(db.transaction).toHaveBeenCalledOnce();
   });
 

@@ -388,28 +388,33 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("catalogs every changed content lifecycle procedure without dynamic labels", () => {
+  it("catalogs ordinary media procedures and retires lifecycle endpoints", () => {
     const registered = new Set(capabilityProcedureMatrix.map(([path]) => path));
     for (const procedure of [
       "page.creationResult",
+      "media.prepareUpload",
+      "media.registerUpload",
+    ]) {
+      expect(registered.has(procedure)).toBe(true);
+      expect(metricLabelValueCatalog.procedure.has(procedure)).toBe(true);
+    }
+    for (const retired of [
+      "media.getPresignedUrl",
+      "media.upload",
       "media.beginUpload",
       "media.confirmUpload",
       "media.status",
       "media.reconcile",
     ]) {
-      expect(registered.has(procedure)).toBe(true);
-      expect(metricLabelValueCatalog.procedure.has(procedure)).toBe(true);
-    }
-    for (const retired of ["media.getPresignedUrl", "media.upload"]) {
       expect(registered.has(retired)).toBe(false);
       expect(metricLabelValueCatalog.procedure.has(retired)).toBe(false);
     }
   });
 
-  it("covers all 36 permissions with 43 procedure gates, three data scopes and two conditional command gates", () => {
-    expect(capabilityProcedureMatrix).toHaveLength(43);
+  it("covers all 35 permissions with 41 procedure gates, three data scopes and one conditional command gate", () => {
+    expect(capabilityProcedureMatrix).toHaveLength(41);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
-      43,
+      41,
     );
     const procedurePermissions = new Set(
       capabilityProcedureMatrix.map(([, permission]) => permission),
@@ -426,16 +431,14 @@ describe("capability procedure matrix", () => {
         return consumers.includes("trpc");
       },
     );
+    expect(ALL_PERMISSIONS).not.toContain("media:manage-uploads");
     expect(procedurePermissions.size).toBe(31);
     const commandPermissions = ALL_PERMISSIONS.filter((permission) => {
       const consumers: readonly CapabilityConsumer[] =
         capabilityRegistry[permission].consumers;
       return consumers.includes("command");
     });
-    expect(commandPermissions).toEqual([
-      Permission.mediaManageUploads,
-      Permission.postManageTags,
-    ]);
+    expect(commandPermissions).toEqual([Permission.postManageTags]);
     expect(procedurePermissions).toEqual(
       new Set(registeredProcedurePermissions),
     );

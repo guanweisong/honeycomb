@@ -35,7 +35,7 @@ import type {
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
-import { assertMediaReferencesReady } from "@/features/media/server/media-references";
+import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";
 
@@ -161,7 +161,7 @@ export async function createPost(
         created.id,
         sanitizePostTranslationInput(input),
       );
-      await assertMediaReferencesReady(tx, {
+      await assertMediaReferencesExist(tx, {
         coverId: input.coverId,
         content: groupPostTranslations(translations).get(created.id)?.content,
       });
@@ -331,7 +331,7 @@ export async function updatePost(
         translationInput,
         input.removeLocales,
       );
-      await assertMediaReferencesReady(tx, {
+      await assertMediaReferencesExist(tx, {
         coverId: input.coverId === undefined ? current.coverId : input.coverId,
         content: groupPostTranslations(next).get(input.id)?.content,
         previousContent: groupPostTranslations(rows).get(input.id)?.content,

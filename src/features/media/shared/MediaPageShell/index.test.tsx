@@ -1,3 +1,5 @@
+import { File as NodeFile } from "node:buffer";
+import { webcrypto } from "node:crypto";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -52,11 +54,10 @@ const nextMedia: MediaViewModel = {
 };
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
-  beginUpload: vi.fn(),
+  prepareUpload: vi.fn(),
   input: undefined as { page?: number; limit?: number } | undefined,
   refetch: vi.fn(),
-  confirmUpload: vi.fn(),
-  reconcile: vi.fn(),
+  registerUpload: vi.fn(),
 }));
 const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
@@ -86,12 +87,11 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
         },
       },
       destroy: { useMutation: () => ({ mutateAsync: trpcMocks.destroy }) },
-      beginUpload: {
-        useMutation: () => ({ mutateAsync: trpcMocks.beginUpload }),
+      prepareUpload: {
+        useMutation: () => ({ mutateAsync: trpcMocks.prepareUpload }),
       },
-      reconcile: { useMutation: () => ({ mutateAsync: trpcMocks.reconcile }) },
-      confirmUpload: {
-        useMutation: () => ({ mutateAsync: trpcMocks.confirmUpload }),
+      registerUpload: {
+        useMutation: () => ({ mutateAsync: trpcMocks.registerUpload }),
       },
     },
   },
@@ -140,7 +140,7 @@ async function changeFile(input: HTMLInputElement, file: File | File[]) {
   });
   await act(async () => {
     input.dispatchEvent(new Event("change", { bubbles: true }));
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 25));
   });
 }
 
@@ -149,6 +149,8 @@ describe("MediaPageShell", () => {
   let root: Root;
 
   beforeEach(() => {
+    vi.stubGlobal("crypto", webcrypto);
+    vi.stubGlobal("File", NodeFile);
     accountId = "user-1";
     allowedPermissions = new Set();
     vi.stubGlobal(
@@ -165,10 +167,10 @@ describe("MediaPageShell", () => {
     URL.createObjectURL = vi.fn(() => "blob:test");
     URL.revokeObjectURL = vi.fn();
     trpcMocks.destroy.mockReset();
-    trpcMocks.beginUpload.mockReset();
+    trpcMocks.prepareUpload.mockReset();
     trpcMocks.input = undefined;
     trpcMocks.refetch.mockReset();
-    trpcMocks.confirmUpload.mockReset();
+    trpcMocks.registerUpload.mockReset();
     toastMocks.error.mockReset();
     toastMocks.success.mockReset();
     container = document.createElement("div");
@@ -182,17 +184,13 @@ describe("MediaPageShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("offers management state filters but keeps pickers READY-only", async () => {
+  it("uses ordinary media in management and pickers without lifecycle controls", async () => {
     await act(async () => root.render(<MediaPageShell />));
-    const filter = container.querySelector<HTMLSelectElement>(
-      'select[aria-label="媒体状态"]',
+    expect(container.querySelector("select")).toBeNull();
+    expect(container.textContent).not.toMatch(
+      /媒体状态|检查状态|上传待确认|可使用/,
     );
-    expect(filter).not.toBeNull();
-    await act(async () => {
-      filter!.value = "UPLOADING";
-      filter!.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(trpcMocks.input).toEqual({ page: 1, limit: 50, state: "UPLOADING" });
+    expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
     await act(async () => root.render(<MediaPageShell onSelect={vi.fn()} />));
     expect(container.querySelector("select")).toBeNull();
     expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
@@ -201,7 +199,7 @@ describe("MediaPageShell", () => {
     allowedPermissions = new Set([Permission.mediaUpload]);
     const onSelect = vi.fn();
     const pending = createDeferred<unknown>();
-    trpcMocks.beginUpload.mockReturnValue(pending.promise);
+    trpcMocks.prepareUpload.mockReturnValue(pending.promise);
     await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
     await changeFile(
       container.querySelector<HTMLInputElement>('input[type="file"]')!,
@@ -218,15 +216,12 @@ describe("MediaPageShell", () => {
     allowedPermissions = new Set([Permission.mediaUpload]);
     const onSelect = vi.fn();
     const pending = createDeferred<Response>();
-    trpcMocks.beginUpload.mockResolvedValue({
-      id: "media-2",
+    trpcMocks.prepareUpload.mockResolvedValue({
+      intent: "media-2",
       uploadUrl: "https://temp.test/x",
       expiresAt: "later",
     });
-    trpcMocks.confirmUpload.mockResolvedValue({
-      state: "ready",
-      media: uploadedMedia,
-    });
+    trpcMocks.registerUpload.mockResolvedValue(uploadedMedia);
     vi.stubGlobal(
       "fetch",
       vi.fn(() => pending.promise),
@@ -237,7 +232,7 @@ describe("MediaPageShell", () => {
     const file = new File(["x"], "x.png", { type: "image/png" });
     await changeFile(input, file);
     await changeFile(input, file);
-    expect(trpcMocks.beginUpload).toHaveBeenCalledTimes(1);
+    expect(trpcMocks.prepareUpload).toHaveBeenCalledTimes(1);
     await act(async () =>
       container
         .querySelector<HTMLButtonElement>('[title="cover.png"]')
@@ -246,7 +241,7 @@ describe("MediaPageShell", () => {
     await act(async () => pending.resolve(new Response(null, { status: 200 })));
     expect(onSelect).toHaveBeenCalledExactlyOnceWith(existingMedia);
   });
-  it("invalidates selection immediately while deletion is in flight", async () => {
+  it("preserves selection until deletion succeeds", async () => {
     allowedPermissions = new Set([Permission.mediaDelete]);
     const onSelect = vi.fn();
     const pending = createDeferred<{ success: true }>();
@@ -267,12 +262,13 @@ describe("MediaPageShell", () => {
         .find((b) => b.textContent === "确定")
         ?.click(),
     );
-    expect(onSelect).toHaveBeenLastCalledWith(undefined);
+    expect(onSelect).toHaveBeenLastCalledWith(existingMedia);
     expect(
       container.querySelector<HTMLButtonElement>('[title="cover.png"]')
         ?.disabled,
     ).toBe(true);
     await act(async () => pending.resolve({ success: true }));
+    expect(onSelect).toHaveBeenLastCalledWith(undefined);
   });
   it("blocks duplicate delete clicks while an operation is pending", async () => {
     const pending = createDeferred<{ success: true }>();
@@ -346,15 +342,12 @@ describe("MediaPageShell", () => {
     const storageResponse = createDeferred<Response>();
     const fetchMock = vi.fn().mockReturnValue(storageResponse.promise);
     vi.stubGlobal("fetch", fetchMock);
-    trpcMocks.beginUpload.mockResolvedValue({
+    trpcMocks.prepareUpload.mockResolvedValue({
       uploadUrl: "https://upload.example.test/image.png",
-      id: "media-2",
+      intent: "media-2",
       expiresAt: "later",
     });
-    trpcMocks.confirmUpload.mockResolvedValue({
-      state: "ready",
-      media: uploadedMedia,
-    });
+    trpcMocks.registerUpload.mockResolvedValue(uploadedMedia);
     await act(async () =>
       root.render(React.createElement(MediaPageShell, { onSelect })),
     );
@@ -384,17 +377,19 @@ describe("MediaPageShell", () => {
       expect(toastMocks.success).toHaveBeenCalledWith("成功上传 1 个文件"),
     );
 
-    expect(trpcMocks.confirmUpload).toHaveBeenCalledWith({ id: "media-2" });
+    expect(trpcMocks.registerUpload).toHaveBeenCalledWith({
+      intent: "media-2",
+    });
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
     expect(onSelect).toHaveBeenCalledWith(uploadedMedia);
     expect(container.textContent).toContain("点击上传文件");
   });
 
-  it("restores loading and avoids selection or refresh when upload fails", async () => {
+  it("restores loading and avoids selection when upload fails", async () => {
     allowedPermissions = new Set([Permission.mediaUpload]);
     const onSelect = vi.fn();
     const presignedUrl = createDeferred<{ url: string; key: string }>();
-    trpcMocks.beginUpload.mockReturnValue(presignedUrl.promise);
+    trpcMocks.prepareUpload.mockReturnValue(presignedUrl.promise);
     await act(async () =>
       root.render(React.createElement(MediaPageShell, { onSelect })),
     );
@@ -413,12 +408,12 @@ describe("MediaPageShell", () => {
     });
     await vi.waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(
-        "image.png: 上传服务不可用",
+        "image.png: 上传服务不可用；请人工核对后重试",
       ),
     );
 
     expect(container.textContent).toContain("点击上传文件");
-    expect(trpcMocks.refetch).not.toHaveBeenCalled();
+    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
     expect(onSelect).not.toHaveBeenCalled();
   });
 
@@ -485,8 +480,8 @@ describe("MediaPageShell", () => {
     ).not.toContain("border-blue-500");
   });
 
-  it.each(["success", "failed", "indeterminate"] as const)(
-    "composed picker handles %s deletion without confirming a deleted URL",
+  it.each(["success", "failed"] as const)(
+    "composed picker clears only successfully deleted selections: %s",
     async (outcome) => {
       allowedPermissions = new Set([Permission.mediaDelete]);
       const onConfirm = vi.fn();
@@ -494,12 +489,7 @@ describe("MediaPageShell", () => {
         trpcMocks.destroy.mockRejectedValue(
           Object.assign(new Error("failed"), { data: { code: "CONFLICT" } }),
         );
-      else
-        trpcMocks.destroy.mockResolvedValue(
-          outcome === "success"
-            ? { success: true }
-            : { success: false, state: "indeterminate", message: "待确认" },
-        );
+      else trpcMocks.destroy.mockResolvedValue({ success: true });
       await act(async () =>
         root.render(
           <PhotoPickerModal
@@ -532,12 +522,14 @@ describe("MediaPageShell", () => {
           .find((button) => button.textContent === "confirm picker")
           ?.click(),
       );
-      expect(onConfirm).not.toHaveBeenCalled();
-      expect(toastMocks.info).toHaveBeenCalledWith("请选择图片");
+      if (outcome === "success") {
+        expect(onConfirm).not.toHaveBeenCalled();
+        expect(toastMocks.info).toHaveBeenCalledWith("请选择图片");
+      } else expect(onConfirm).toHaveBeenCalledWith(existingMedia);
     },
   );
 
-  it("requires deliberate reselection when deletion fails", async () => {
+  it("retains the row and selection when deletion fails", async () => {
     allowedPermissions = new Set([Permission.mediaDelete]);
     const onSelect = vi.fn();
     trpcMocks.destroy.mockRejectedValue(
@@ -560,63 +552,38 @@ describe("MediaPageShell", () => {
     ).find((button) => button.textContent === "确定");
     await act(async () => confirmButton?.click());
     await vi.waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith("删除失败"),
-    );
-
-    expect(trpcMocks.refetch).not.toHaveBeenCalled();
-    expect(onSelect).toHaveBeenCalledTimes(2);
-    expect(onSelect).toHaveBeenLastCalledWith(undefined);
-  });
-
-  it("refreshes and clears selection when deletion is indeterminate", async () => {
-    allowedPermissions = new Set([Permission.mediaDelete]);
-    const onSelect = vi.fn();
-    trpcMocks.destroy.mockResolvedValue({
-      success: false,
-      state: "indeterminate",
-      message: "删除结果待确认，请刷新媒体列表后重试",
-    });
-    await act(async () =>
-      root.render(React.createElement(MediaPageShell, { onSelect })),
-    );
-
-    const tile = container.querySelector('[title="cover.png"]');
-    await act(async () =>
-      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
-    );
-    const deleteButton = Array.from(container.querySelectorAll("button")).at(
-      -1,
-    );
-    await act(async () => deleteButton?.click());
-    const confirmButton = Array.from(
-      document.body.querySelectorAll("button"),
-    ).find((button) => button.textContent === "确定");
-    await act(async () => confirmButton?.click());
-    await vi.waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(
-        "删除结果待确认，请刷新媒体列表后重试",
+        expect.stringContaining("删除失败"),
       ),
     );
 
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
-    expect(onSelect).toHaveBeenCalledTimes(2);
-    expect(onSelect).toHaveBeenLastCalledWith(undefined);
-    expect(toastMocks.success).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(onSelect).toHaveBeenLastCalledWith(existingMedia);
+    expect(
+      container.querySelector<HTMLButtonElement>('[title="cover.png"]')
+        ?.disabled,
+    ).toBe(false);
   });
+
   it("retains partial success without client-side cleanup", async () => {
     allowedPermissions = new Set([Permission.mediaUpload]);
     const onSelect = vi.fn();
-    trpcMocks.beginUpload.mockImplementation(async ({ name }) => ({
-      id: name,
+    trpcMocks.prepareUpload.mockImplementation(async ({ name }) => ({
+      intent: name,
       uploadUrl: `https://storage.test/${name}`,
       expiresAt: "later",
     }));
-    trpcMocks.confirmUpload.mockImplementation(async ({ id }) =>
-      id === "bad.png"
-        ? { state: "rejected", id, message: "invalid image" }
-        : { state: "ready", media: uploadedMedia },
+    trpcMocks.registerUpload.mockImplementation(
+      async ({ intent }: { intent: string }) => {
+        if (intent === "bad.png") throw new Error("invalid image");
+        return uploadedMedia;
+      },
     );
-    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(null, { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
     await changeFile(
@@ -628,25 +595,22 @@ describe("MediaPageShell", () => {
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(
-      fetchMock.mock.calls.every(
-        (call) =>
-          (call as unknown as [string, RequestInit])[1]?.method === "PUT",
-      ),
+      fetchMock.mock.calls.every((call) => call[1]?.method === "PUT"),
     ).toBe(true);
     expect(onSelect).toHaveBeenCalledWith(uploadedMedia);
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
     expect(toastMocks.error).toHaveBeenCalledWith(
-      expect.stringContaining("成功上传 1 个文件，1 个失败，0 个待确认"),
+      expect.stringContaining("成功上传 1 个文件，1 个失败"),
     );
   });
   it("keeps a possibly committed object and refreshes the list when metadata response is lost", async () => {
     allowedPermissions = new Set([Permission.mediaUpload]);
-    trpcMocks.beginUpload.mockResolvedValue({
-      id: "image.png",
+    trpcMocks.prepareUpload.mockResolvedValue({
+      intent: "image.png",
       uploadUrl: "https://storage.test/image.png",
       expiresAt: "later",
     });
-    trpcMocks.confirmUpload.mockRejectedValue(new Error("response lost"));
+    trpcMocks.registerUpload.mockRejectedValue(new Error("response lost"));
     const fetchMock = vi
       .fn()
       .mockResolvedValue(new Response(null, { status: 200 }));
@@ -661,7 +625,7 @@ describe("MediaPageShell", () => {
     );
     await vi.waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(
-        expect.stringContaining("上传结果待确认"),
+        expect.stringContaining("response lost"),
       ),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);

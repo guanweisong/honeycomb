@@ -59,16 +59,6 @@ describe("Page Router", () => {
     ] satisfies MediaRecord[];
     const mediaRows = publicImages.map((image) => ({
       ...image,
-      ...({
-        state: "READY",
-        uploadKey: "private-upload-key-sentinel",
-        uploadedBy: "private-uploader-sentinel",
-        uploadExpiresAt: "2026-10-03T00:00:00.000Z",
-        copyStartedAt: "2026-10-04T00:00:00.000Z",
-        verifiedAt: "2026-10-05T00:00:00.000Z",
-        lastAttemptAt: "2026-10-06T00:00:00.000Z",
-        lastErrorCode: "STORAGE_PENDING",
-      } satisfies Omit<typeof schema.media.$inferSelect, keyof typeof image>),
       futureInternalField: "private-future-field-sentinel",
     }));
     const pageRow = {

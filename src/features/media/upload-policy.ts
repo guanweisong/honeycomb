@@ -54,3 +54,10 @@ export const MediaUploadFileSchema = z
     },
   );
 export type MediaUploadFile = z.output<typeof MediaUploadFileSchema>;
+
+export const MediaUploadIntentInputSchema = MediaUploadFileSchema.safeExtend({
+  sha256: z.string().regex(/^[a-f0-9]{64}$/, "无效的 SHA-256 摘要"),
+});
+export type MediaUploadIntentInput = z.output<
+  typeof MediaUploadIntentInputSchema
+>;

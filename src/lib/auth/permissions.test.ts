@@ -26,7 +26,6 @@ const expectedPermissions = [
   "media:read-all",
   "media:upload",
   "media:delete",
-  "media:manage-uploads",
   "menu:read-all",
   "menu:update",
   "page:read-all",
@@ -125,8 +124,8 @@ describe("capability authorization", () => {
   });
 });
 
-it("reserves other-user upload management for ADMIN without changing editor deletion", () => {
-  expect(can(UserLevel.ADMIN, "media:manage-uploads")).toBe(true);
+it("denies retired upload recovery permission without changing editor deletion", () => {
+  expect(can(UserLevel.ADMIN, "media:manage-uploads")).toBe(false);
   expect(can(UserLevel.EDITOR, "media:manage-uploads")).toBe(false);
   expect(can(UserLevel.GUEST, "media:manage-uploads")).toBe(false);
   expect(can(UserLevel.EDITOR, Permission.mediaDelete)).toBe(true);

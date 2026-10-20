@@ -2,29 +2,27 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { MediaRecord, MediaConfirmResult } from "../types";
+import type { MediaRecord } from "../types";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   MEDIA_MAX_BATCH_FILES,
   MediaUploadFileSchema,
-  type MediaUploadFile,
+  type MediaUploadIntentInput,
 } from "../upload-policy";
 import type { MediaDeleteResult } from "../delete-result";
 
 type SubmitMediaUploadOptions = {
   files: readonly File[];
   isCurrent?: () => boolean;
-  beginUpload: (
-    input: MediaUploadFile,
-  ) => Promise<{ id: string; uploadUrl: string; expiresAt: string }>;
+  prepareUpload: (
+    input: MediaUploadIntentInput,
+  ) => Promise<{ intent: string; uploadUrl: string; expiresAt: string }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  confirmUpload: (input: { id: string }) => Promise<MediaConfirmResult>;
+  registerUpload: (input: { intent: string }) => Promise<MediaRecord>;
 };
 export type FailedUpload = {
-  id?: string;
   name: string;
   message: string;
-  outcome: "failed" | "indeterminate";
 };
 export type MediaUploadActionResult =
   | { state: "empty" }
@@ -39,9 +37,9 @@ export type MediaUploadActionResult =
 
 export async function submitMediaUpload({
   files,
-  beginUpload,
+  prepareUpload,
   uploadToStorage,
-  confirmUpload,
+  registerUpload,
   isCurrent = () => true,
 }: SubmitMediaUploadOptions): Promise<MediaUploadActionResult> {
   if (!files.length) return { state: "empty" };
@@ -57,7 +55,6 @@ export async function submitMediaUpload({
             async (
               file,
             ): Promise<{ media?: MediaRecord; failed?: FailedUpload }> => {
-              let id: string | undefined;
               try {
                 const parsed = MediaUploadFileSchema.safeParse({
                   name: file.name,
@@ -69,33 +66,29 @@ export async function submitMediaUpload({
                     parsed.error.issues[0]?.message ?? "无效的媒体文件",
                   );
                 if (!isCurrent()) throw new Error("操作已过期");
-                const operation = await beginUpload(parsed.data);
-                id = operation.id;
+                const digest = await crypto.subtle.digest(
+                  "SHA-256",
+                  await file.arrayBuffer(),
+                );
+                const sha256 = Array.from(new Uint8Array(digest), (byte) =>
+                  byte.toString(16).padStart(2, "0"),
+                ).join("");
+                if (!isCurrent()) throw new Error("操作已过期");
+                const operation = await prepareUpload({
+                  ...parsed.data,
+                  sha256,
+                });
                 if (!isCurrent()) throw new Error("操作已过期");
                 await uploadToStorage(operation.uploadUrl, file);
                 if (!isCurrent()) throw new Error("操作已过期");
-                const result = await confirmUpload({ id });
-                if (result.state === "ready") return { media: result.media };
                 return {
-                  failed: {
-                    id,
-                    name: file.name,
-                    message: result.message,
-                    outcome:
-                      result.state === "pending" ? "indeterminate" : "failed",
-                  },
+                  media: await registerUpload({ intent: operation.intent }),
                 };
               } catch (error) {
                 return {
                   failed: {
-                    id,
                     name: file.name,
-                    message: id
-                      ? "上传结果待确认，请在媒体管理中检查状态"
-                      : error instanceof Error
-                        ? error.message
-                        : "上传失败，请稍后再试",
-                    outcome: id ? "indeterminate" : "failed",
+                    message: `${error instanceof Error ? error.message : "上传失败"}；请人工核对后重试`,
                   },
                 };
               }
@@ -117,9 +110,7 @@ export async function submitMediaUpload({
     : { state: "error", failed, message };
 }
 export type MediaDeleteActionResult =
-  | { state: "success" }
-  | { state: "indeterminate"; message: string }
-  | { state: "error"; message: string };
+  { state: "success" } | { state: "error"; message: string };
 export async function submitMediaDelete({
   id,
   destroy,
@@ -131,35 +122,12 @@ export async function submitMediaDelete({
   }) => Promise<MediaDeleteResult>;
 }): Promise<MediaDeleteActionResult> {
   try {
-    const result = await destroy({
-      ids: [id],
-      acknowledgeUnknownReferences: true,
-    });
-    return result.success
-      ? { state: "success" }
-      : { state: "indeterminate", message: result.message };
+    await destroy({ ids: [id], acknowledgeUnknownReferences: true });
+    return { state: "success" };
   } catch (error) {
-    const code =
-      typeof error === "object" && error !== null && "data" in error
-        ? (error.data as { code?: string } | undefined)?.code
-        : undefined;
-    if (
-      code &&
-      [
-        "CONFLICT",
-        "BAD_REQUEST",
-        "FORBIDDEN",
-        "UNAUTHORIZED",
-        "NOT_FOUND",
-      ].includes(code)
-    )
-      return {
-        state: "error",
-        message: error instanceof Error ? error.message : "删除失败",
-      };
     return {
-      state: "indeterminate",
-      message: "删除结果待确认，请检查状态后再操作",
+      state: "error",
+      message: `${error instanceof Error ? error.message : "删除失败"}；删除结果可能未完成，请人工核对后再重试`,
     };
   }
 }
@@ -207,9 +175,8 @@ export function useMediaActions({
     };
   }, []);
   const destroy = trpc.media.destroy.useMutation();
-  const begin = trpc.media.beginUpload.useMutation();
-  const confirm = trpc.media.confirmUpload.useMutation();
-  const reconcile = trpc.media.reconcile.useMutation();
+  const prepare = trpc.media.prepareUpload.useMutation();
+  const register = trpc.media.registerUpload.useMutation();
   const safeRefresh = async () => {
     try {
       await refetch();
@@ -226,9 +193,9 @@ export function useMediaActions({
     try {
       const result = await submitMediaUpload({
         files: files ? Array.from(files) : [],
-        beginUpload: begin.mutateAsync,
+        prepareUpload: prepare.mutateAsync,
         uploadToStorage,
-        confirmUpload: confirm.mutateAsync,
+        registerUpload: register.mutateAsync,
         isCurrent: () => active.current && scope.current === startedScope,
       });
       if (!active.current || scope.current !== startedScope) return;
@@ -238,7 +205,7 @@ export function useMediaActions({
           toast.success(`成功上传 ${result.media.length} 个文件`);
         else
           toast.error(
-            `成功上传 ${result.media.length} 个文件，${result.failed.filter((f) => f.outcome === "failed").length} 个失败，${result.failed.filter((f) => f.outcome === "indeterminate").length} 个待确认：${result.message}`,
+            `成功上传 ${result.media.length} 个文件，${result.failed.length} 个失败：${result.message}`,
           );
         const last = result.media.at(-1);
         if (last && selection.current === startedSelection)
@@ -246,7 +213,7 @@ export function useMediaActions({
         await safeRefresh();
       } else if (result.state === "error") {
         toast.error(result.message);
-        if (result.failed?.some((f) => f.id)) await safeRefresh();
+        await safeRefresh();
       }
     } finally {
       uploadBusy.current = false;
@@ -260,7 +227,6 @@ export function useMediaActions({
     if (busy.current.has(id)) return false;
     busy.current.add(id);
     setUnavailableIds((current) => [...new Set([...current, id])]);
-    onDeleteComplete(id);
     const startedScope = scope.current;
     try {
       const result = await submitMediaDelete({
@@ -269,47 +235,14 @@ export function useMediaActions({
       });
       if (!active.current || scope.current !== startedScope) return false;
       if (result.state === "success") {
+        onDeleteComplete(id);
         toast.success("删除成功");
       } else {
         toast.error(result.message);
-        if (result.state === "error")
-          setUnavailableIds((current) =>
-            current.filter((value) => value !== id),
-          );
+        setUnavailableIds((current) => current.filter((value) => value !== id));
       }
-      if (result.state !== "error") await safeRefresh();
-      return result.state === "success";
-    } finally {
-      busy.current.delete(id);
-    }
-  };
-  const handleReconcile = async (
-    id: string,
-    acknowledgeUnknownReferences?: true,
-  ) => {
-    if (busy.current.has(id)) return false;
-    busy.current.add(id);
-    const startedScope = scope.current;
-    try {
-      const result = await reconcile.mutateAsync({
-        id,
-        ...(acknowledgeUnknownReferences
-          ? { acknowledgeUnknownReferences }
-          : {}),
-      });
-      if (!active.current || scope.current !== startedScope) return false;
-      const success =
-        "success" in result ? result.success : result.state === "ready";
-      if (success) {
-        toast.success("状态已确认");
-        setFailures((current) => current.filter((f) => f.id !== id));
-      } else if ("message" in result) toast.error(result.message);
       await safeRefresh();
-      return success;
-    } catch (error) {
-      if (active.current && scope.current === startedScope)
-        toast.error(error instanceof Error ? error.message : "状态检查失败");
-      return false;
+      return result.state === "success";
     } finally {
       busy.current.delete(id);
     }
@@ -318,7 +251,6 @@ export function useMediaActions({
     fileInputRef,
     handleDelete,
     handleUpload,
-    handleReconcile,
     loading,
     failures,
     unavailableIds,

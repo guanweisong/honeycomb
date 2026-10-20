@@ -138,24 +138,6 @@ describe("post revision migration", () => {
           ).rows,
         ).toEqual(before[index]);
       }
-      expect(
-        (
-          await client.execute(
-            "SELECT state, upload_key, upload_expires_at, copy_started_at, uploaded_by, verified_at, last_attempt_at, last_error_code FROM media WHERE id = 'cover'",
-          )
-        ).rows,
-      ).toEqual([
-        {
-          state: "READY",
-          upload_key: null,
-          upload_expires_at: null,
-          copy_started_at: null,
-          uploaded_by: null,
-          verified_at: null,
-          last_attempt_at: null,
-          last_error_code: null,
-        },
-      ]);
       expect((await client.execute("PRAGMA foreign_key_check")).rows).toEqual(
         [],
       );

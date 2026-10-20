@@ -16,7 +16,9 @@ describe("S3 observability", () => {
     process.env.R2_ACCESS_KEY_ID = "access";
     process.env.R2_SECRET_ACCESS_KEY = "secret";
     process.env.R2_BUCKET_NAME = "bucket";
-    vi.spyOn(S3, "S3").mockReturnValue({ send } as never);
+    const client = S3.S3();
+    vi.spyOn(client, "send").mockImplementation(send);
+    vi.spyOn(S3, "S3").mockReturnValue(client);
   });
 
   afterEach(() => {
@@ -189,7 +191,7 @@ describe("S3 observability", () => {
 
 describe("immutable candidate storage", () => {
   afterEach(() => vi.restoreAllMocks());
-  it("copies only once with automatic retry disabled", async () => {
+  it("puts exact validated bytes once with automatic retry disabled", async () => {
     const send = vi.fn().mockResolvedValue({});
     const client = S3.S3();
     vi.spyOn(client, "send").mockImplementation(send);
@@ -198,12 +200,13 @@ describe("immutable candidate storage", () => {
     process.env.R2_ACCESS_KEY_ID = "test";
     process.env.R2_SECRET_ACCESS_KEY = "test";
     process.env.R2_BUCKET_NAME = "bucket";
-    await S3.copyCandidate("temporary/a.png", "media/a.png", "image/png");
+    const bytes = Buffer.from("validated");
+    await S3.putValidatedObject("media/a.png", bytes, "image/png");
     expect(factory).toHaveBeenCalledWith(1);
     expect(send.mock.calls[0]?.[0].input).toMatchObject({
       Key: "media/a.png",
-      CopySource: "bucket/temporary/a.png",
-      MetadataDirective: "REPLACE",
+      Body: bytes,
+      ContentLength: bytes.byteLength,
       ContentType: "image/png",
     });
   });

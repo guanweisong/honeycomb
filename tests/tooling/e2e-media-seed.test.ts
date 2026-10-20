@@ -9,7 +9,7 @@ import { expect, it, vi } from "vitest";
 import { initializeE2ETestTarget } from "../../scripts/e2e-seed-policy";
 import { seed } from "../../scripts/seed-e2e";
 
-it("seeds the local cover as available historical media without claiming upload verification", async () => {
+it("seeds an ordinary local cover without lifecycle fields and preserves idempotency", async () => {
   const directory = mkdtempSync(join(tmpdir(), "honeycomb-media-seed-"));
   const environment = {
     E2E_SEED: "1",
@@ -25,20 +25,19 @@ it("seeds the local cover as available historical media without claiming upload 
     client = createClient({ url: environment.TURSO_URL });
     await migrate(drizzle(client), { migrationsFolder: "drizzle" });
     await seed();
+    const columnNames = (
+      await client.execute("PRAGMA table_info(media)")
+    ).rows.map((row) => row.name);
+    expect(columnNames).not.toContain("state");
+    expect(columnNames).not.toContain("verified_at");
+    expect(columnNames).not.toContain("upload_key");
     expect(
-      (
-        await client.execute(
-          "SELECT id, name, url, state, verified_at, upload_key FROM media WHERE state = 'READY'",
-        )
-      ).rows,
+      (await client.execute("SELECT id, name, url FROM media")).rows,
     ).toEqual([
       {
         id: "000000000000000000000016",
         name: "Search cover fixture",
         url: "/logo.jpg",
-        state: "READY",
-        verified_at: null,
-        upload_key: null,
       },
     ]);
     expect(
@@ -50,11 +49,7 @@ it("seeds the local cover as available historical media without claiming upload 
     ).toEqual([{ cover_id: "000000000000000000000016" }]);
     await seed();
     expect(
-      (
-        await client.execute(
-          "SELECT count(*) AS count FROM media WHERE state = 'READY'",
-        )
-      ).rows,
+      (await client.execute("SELECT count(*) AS count FROM media")).rows,
     ).toEqual([{ count: 1 }]);
   } finally {
     client?.close();

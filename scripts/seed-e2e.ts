@@ -332,7 +332,6 @@ export async function seed(): Promise<void> {
           key: "e2e-search-cover",
           name: "Search cover fixture",
           // Trusted local historical fixture, not a production upload or byte-verification claim.
-          state: "READY",
           size: 0,
           type: "image/jpeg",
           url: "/logo.jpg",

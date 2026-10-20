@@ -3,7 +3,7 @@ import {
   transactionWithBeginRetry,
   type DatabaseTransaction,
 } from "@/lib/db/transaction-begin-retry";
-import { assertMediaReferencesReady } from "@/features/media/server/media-references";
+import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 import { bumpMenuRevisionForPageDeletion } from "@/features/menu/server";
 import { hashCanonicalInput } from "@/lib/canonical-input-hash";
 import { parseEnumValue } from "@/lib/db/value-validation";
@@ -122,7 +122,7 @@ export async function createPage(
         return safeResult(existing);
       }
       const sanitizedContent = sanitizeOptionalI18nHtml(input.content);
-      await assertMediaReferencesReady(tx, { content: sanitizedContent });
+      await assertMediaReferencesExist(tx, { content: sanitizedContent });
       await tx
         .insert(schema.pageTranslation)
         .values(
@@ -256,7 +256,7 @@ export async function updatePage(
         groupPageTranslations(previousRows).get(id)?.content;
       const sanitizedContent =
         content === undefined ? undefined : sanitizeOptionalI18nHtml(content);
-      await assertMediaReferencesReady(tx, {
+      await assertMediaReferencesExist(tx, {
         content: content === undefined ? previousContent : sanitizedContent,
         previousContent,
       });

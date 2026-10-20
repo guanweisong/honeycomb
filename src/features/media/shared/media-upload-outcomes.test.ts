@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { submitMediaUpload } from "./media-actions";
-const media = {
+import { File as NodeFile } from "node:buffer";
+import { webcrypto } from "node:crypto";
+import { beforeEach } from "vitest";
+import type { MediaRecord } from "../types";
+beforeEach(() => {
+  vi.stubGlobal("crypto", webcrypto);
+  vi.stubGlobal("File", NodeFile);
+});
+const media: MediaRecord = {
   id: "ready",
   name: "good.png",
   type: "image/png",
@@ -17,20 +25,19 @@ const file = (name = "good.png") =>
   new File(["a"], name, { type: "image/png" });
 function deps() {
   return {
-    beginUpload: vi.fn(async ({ name }: { name: string }) => ({
-      id: name,
+    prepareUpload: vi.fn(async ({ name }: { name: string }) => ({
+      intent: name,
       uploadUrl: `https://temp.test/${name}`,
       expiresAt: "later",
     })),
     uploadToStorage: vi.fn().mockResolvedValue(undefined),
-    confirmUpload: vi.fn(async ({ id }: { id: string }) =>
-      id === "bad.png"
-        ? { state: "rejected" as const, id, message: "invalid image" }
-        : { state: "ready" as const, media },
-    ),
+    registerUpload: vi.fn(async ({ intent }: { intent: string }) => {
+      if (intent === "bad.png") throw new Error("invalid image");
+      return media;
+    }),
   };
 }
-describe("settled lifecycle uploads", () => {
+describe("settled registration uploads", () => {
   it("retains successful siblings without any browser cleanup", async () => {
     const d = deps();
     const result = await submitMediaUpload({
@@ -40,39 +47,32 @@ describe("settled lifecycle uploads", () => {
     expect(result).toMatchObject({
       state: "partial",
       media: [media],
-      failed: [{ id: "bad.png", name: "bad.png", outcome: "failed" }],
+      failed: [
+        { name: "bad.png", message: expect.stringContaining("invalid image") },
+      ],
     });
   });
   it.each(["put", "confirm"])(
-    "retains operation ID after uncertain %s and never replays",
+    "retains truthful errors after failed %s and never replays",
     async (stage) => {
       const d = deps();
       d[
-        stage === "put" ? "uploadToStorage" : "confirmUpload"
+        stage === "put" ? "uploadToStorage" : "registerUpload"
       ].mockRejectedValue(new Error("lost response"));
       const result = await submitMediaUpload({ ...d, files: [file()] });
       expect(result).toMatchObject({
         state: "error",
-        failed: [{ id: "good.png", outcome: "indeterminate" }],
+        failed: [
+          {
+            name: "good.png",
+            message: expect.stringContaining("lost response"),
+          },
+        ],
       });
-      expect(d.beginUpload).toHaveBeenCalledTimes(1);
-      if (stage === "put") expect(d.confirmUpload).not.toHaveBeenCalled();
+      expect(d.prepareUpload).toHaveBeenCalledTimes(1);
+      if (stage === "put") expect(d.registerUpload).not.toHaveBeenCalled();
     },
   );
-  it("exposes pending operations without selectable media", async () => {
-    const d = deps();
-    d.confirmUpload.mockResolvedValue({
-      state: "pending",
-      id: "good.png",
-      message: "check again",
-    } as never);
-    expect(await submitMediaUpload({ ...d, files: [file()] })).toMatchObject({
-      state: "error",
-      failed: [
-        { id: "good.png", outcome: "indeterminate", message: "check again" },
-      ],
-    });
-  });
   it("validates batch and file policy before creating an operation", async () => {
     const d = deps();
     expect(
@@ -91,6 +91,6 @@ describe("settled lifecycle uploads", () => {
         })
       ).state,
     ).toBe("error");
-    expect(d.beginUpload).not.toHaveBeenCalled();
+    expect(d.prepareUpload).not.toHaveBeenCalled();
   });
 });

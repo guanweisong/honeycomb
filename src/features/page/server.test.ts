@@ -387,17 +387,8 @@ describe("atomic versioned page writes", () => {
       ),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
-  it("rejects non-ready managed media in the same page save transaction", async () => {
+  it("rejects unknown managed media in the same page save transaction", async () => {
     const a = await create();
-    await db.insert(schema.media).values({
-      id: "media",
-      key: "unready.png",
-      name: "unready",
-      size: 1,
-      type: "image/png",
-      url: "https://assets.test/unready.png",
-      state: "DELETING",
-    });
     const invalidator = cache();
     await expect(
       commands.updatePage(
@@ -419,6 +410,33 @@ describe("atomic versioned page writes", () => {
       content: input.content,
     });
     expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it("accepts ordinary managed media in the page save transaction", async () => {
+    const a = await create();
+    await db
+      .insert(schema.media)
+      .values({
+        id: "media",
+        key: "ordinary.png",
+        name: "ordinary",
+        size: 1,
+        type: "image/png",
+        url: "https://assets.test/ordinary.png",
+      });
+    await commands.updatePage(
+      db,
+      {
+        id: a.id,
+        expectedVersion: 0,
+        content: {
+          en: '<img src="https://assets.test/ordinary.png">',
+          zh: "正文",
+        },
+      },
+      "author",
+      cache(),
+    );
+    expect(await getPage(db, a.id, "ALL")).toMatchObject({ version: 1 });
   });
   it("updates both bilingual fields atomically and accepts unchanged status", async () => {
     const a = await create();

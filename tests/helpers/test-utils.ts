@@ -48,6 +48,25 @@ export type MockDb = {
   query: MockQuery;
 };
 
+const ordinaryMediaColumns = [
+  "id",
+  "key",
+  "name",
+  "size",
+  "type",
+  "url",
+  "color",
+  "height",
+  "width",
+  "created_at",
+  "updated_at",
+];
+/** Exact technical-schema probe only; other all() calls retain the existing chain behavior. */
+const mockAll = (mockDb: MockDb, query: unknown) =>
+  query === "PRAGMA table_info(media)"
+    ? Promise.resolve(ordinaryMediaColumns.map((name) => ({ name })))
+    : mockDb;
+
 export const createMockDb = (): MockDb => {
   const chain = (): MockDb => mockDb;
   const queryChain = (): MockDb => mockDb;
@@ -74,7 +93,7 @@ export const createMockDb = (): MockDb => {
     _: vi.fn(chain),
     prepare: vi.fn(chain),
     run: vi.fn(chain),
-    all: vi.fn(chain),
+    all: vi.fn((query: unknown) => mockAll(mockDb, query)),
     get: vi.fn(chain),
     dbValues: vi.fn(chain),
     execute: vi.fn(chain),
@@ -137,7 +156,8 @@ export const resetMockDb = (mockDb: MockDb) => {
   reset(mockDb._);
   reset(mockDb.prepare);
   reset(mockDb.run);
-  reset(mockDb.all);
+  mockDb.all.mockReset();
+  mockDb.all.mockImplementation((query: unknown) => mockAll(mockDb, query));
   reset(mockDb.get);
   reset(mockDb.dbValues);
   reset(mockDb.execute);
