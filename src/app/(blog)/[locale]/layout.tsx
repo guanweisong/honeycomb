@@ -15,6 +15,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
+import { Toaster } from "@/components/ui/sonner";
 
 export async function generateMetadata({
   params,
@@ -92,6 +93,7 @@ export default async function LocaleLayout({
               </main>
               <Footer />
               <BackToTop />
+              <Toaster />
             </NextIntlClientProvider>
           </div>
         </ThemeProvider>
