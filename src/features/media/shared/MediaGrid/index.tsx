@@ -43,7 +43,7 @@ export function MediaGrid({
           <div
             key={item.id}
             className={cn(
-              "group relative w-48 m-1 border-2 bg-gray-100",
+              "group relative w-32 h-32 m-1 border-2 bg-gray-100",
               item.id === currentItem?.id
                 ? "border-blue-500"
                 : "border-gray-100",
@@ -51,7 +51,7 @@ export function MediaGrid({
           >
             <button
               type="button"
-              className="relative block w-full h-32 focus-visible:outline-2 focus-visible:outline-blue-500"
+              className="absolute inset-0 focus-visible:outline-2 focus-visible:outline-blue-500"
               disabled={unavailableIds.includes(item.id)}
               onClick={() => onSelect(item)}
               title={item.name}
@@ -70,7 +70,7 @@ export function MediaGrid({
                 <File className="w-full h-full p-8 text-gray-400" />
               )}
             </button>
-            <div className="bg-black/40 flex flex-wrap items-center justify-center gap-2 text-white">
+            <div className="absolute bottom-0 inset-x-0 bg-black/40 opacity-100 sm:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center justify-center space-x-2 text-white transition">
               <Button
                 type="button"
                 aria-label={`复制 ${item.name} 的链接`}
