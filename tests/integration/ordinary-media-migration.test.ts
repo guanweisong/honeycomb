@@ -97,7 +97,7 @@ describe("ordinary media migration", () => {
       columns,
     );
   });
-  it("preserves metadata, covers and dependent rows with foreign keys enabled", async () => {
+  it("preserves metadata, covers and dependent rows through the actual Drizzle migrator", async () => {
     await withLegacyDatabase(async (client) => {
       const before = (
         await client.execute(`SELECT ${columns.join(",")} FROM media`)
@@ -200,6 +200,155 @@ describe("ordinary media migration", () => {
       expect((await client.execute("PRAGMA foreign_key_check")).rows).toEqual(
         [],
       );
+    });
+  });
+  it("replays exact 0008 with foreign keys enabled throughout and restores DROP-nullified covers", async () => {
+    await withLegacyDatabase(async (client) => {
+      await client.execute("PRAGMA foreign_keys=ON");
+      await client.execute(
+        "UPDATE post SET version = 7, created_at = '2020-01-02', updated_at = '2021-02-03' WHERE id = 'legacy'",
+      );
+      const before = (
+        await client.execute(`SELECT ${columns.join(",")} FROM media`)
+      ).rows;
+      const posts = (await client.execute("SELECT * FROM post")).rows;
+      const translations = (
+        await client.execute("SELECT * FROM post_translation")
+      ).rows;
+      const journal = (
+        await client.execute("SELECT * FROM __drizzle_migrations")
+      ).rows;
+      const statements = readFileSync("drizzle/0008_ordinary_media.sql", "utf8")
+        .split("--> statement-breakpoint")
+        .map((statement) => statement.trim())
+        .filter(Boolean);
+      const tx = await client.transaction("write");
+      let observedCoverNullification = false;
+      try {
+        for (const statement of statements) {
+          expect(
+            (await tx.execute("PRAGMA foreign_keys")).rows[0]?.foreign_keys,
+          ).toBe(1);
+          await tx.execute(statement);
+          if (statement === "DROP TABLE `media`;") {
+            expect(
+              (
+                await tx.execute(
+                  "SELECT cover_id FROM post WHERE id = 'legacy'",
+                )
+              ).rows,
+            ).toEqual([{ cover_id: null }]);
+            observedCoverNullification = true;
+          }
+        }
+        expect(
+          (await tx.execute("PRAGMA foreign_keys")).rows[0]?.foreign_keys,
+        ).toBe(1);
+        expect(observedCoverNullification).toBe(true);
+        expect((await tx.execute("SELECT * FROM media")).rows).toEqual(before);
+        expect((await tx.execute("SELECT * FROM post")).rows).toEqual(posts);
+        expect((await tx.execute("PRAGMA foreign_key_check")).rows).toEqual([]);
+        await tx.commit();
+      } finally {
+        if (!tx.closed) await tx.rollback();
+        tx.close();
+      }
+      expect((await client.execute("SELECT * FROM media")).rows).toEqual(
+        before,
+      );
+      expect((await client.execute("SELECT * FROM post")).rows).toEqual(posts);
+      expect(
+        (await client.execute("SELECT * FROM post_translation")).rows,
+      ).toEqual(translations);
+      expect(
+        (await client.execute("SELECT * FROM __drizzle_migrations")).rows,
+      ).toEqual(journal);
+      expect(
+        (await client.execute("PRAGMA table_info(media)")).rows.map(
+          (row) => row.name,
+        ),
+      ).toEqual(columns);
+      expect((await client.execute("PRAGMA foreign_key_check")).rows).toEqual(
+        [],
+      );
+    });
+  });
+
+  it("rolls back exact 0008 after FK-enabled DROP and injected cover-restoration failure", async () => {
+    await withLegacyDatabase(async (client) => {
+      await client.execute("PRAGMA foreign_keys=ON");
+      await client.execute(
+        "UPDATE post SET version = 9, created_at = '2020-01-02', updated_at = '2021-02-03' WHERE id = 'legacy'",
+      );
+      await client.execute(
+        "CREATE TRIGGER reject_fk_enabled_restore BEFORE UPDATE OF cover_id ON post WHEN NEW.cover_id IS NOT NULL BEGIN SELECT RAISE(ABORT, 'FK-enabled restoration rejected'); END",
+      );
+      const rows = (await client.execute("SELECT * FROM media")).rows;
+      const posts = (await client.execute("SELECT * FROM post")).rows;
+      const translations = (
+        await client.execute("SELECT * FROM post_translation")
+      ).rows;
+      const journal = (
+        await client.execute("SELECT * FROM __drizzle_migrations")
+      ).rows;
+      const originalColumns = (await client.execute("PRAGMA table_info(media)"))
+        .rows;
+      const statements = readFileSync("drizzle/0008_ordinary_media.sql", "utf8")
+        .split("--> statement-breakpoint")
+        .map((statement) => statement.trim())
+        .filter(Boolean);
+      const tx = await client.transaction("write");
+      let observedCoverNullification = false;
+      try {
+        await expect(
+          (async () => {
+            for (const statement of statements) {
+              expect(
+                (await tx.execute("PRAGMA foreign_keys")).rows[0]?.foreign_keys,
+              ).toBe(1);
+              await tx.execute(statement);
+              if (statement === "DROP TABLE `media`;") {
+                expect(
+                  (
+                    await tx.execute(
+                      "SELECT cover_id FROM post WHERE id = 'legacy'",
+                    )
+                  ).rows,
+                ).toEqual([{ cover_id: null }]);
+                observedCoverNullification = true;
+              }
+            }
+          })(),
+        ).rejects.toThrow(/FK-enabled restoration rejected/);
+        expect(observedCoverNullification).toBe(true);
+        expect(
+          (await tx.execute("PRAGMA foreign_keys")).rows[0]?.foreign_keys,
+        ).toBe(1);
+      } finally {
+        if (!tx.closed) await tx.rollback();
+        tx.close();
+      }
+      expect((await client.execute("SELECT * FROM media")).rows).toEqual(rows);
+      expect((await client.execute("SELECT * FROM post")).rows).toEqual(posts);
+      expect(
+        (await client.execute("SELECT * FROM post_translation")).rows,
+      ).toEqual(translations);
+      expect(
+        (await client.execute("SELECT * FROM __drizzle_migrations")).rows,
+      ).toEqual(journal);
+      expect((await client.execute("PRAGMA table_info(media)")).rows).toEqual(
+        originalColumns,
+      );
+      expect((await client.execute("PRAGMA foreign_key_check")).rows).toEqual(
+        [],
+      );
+      expect(
+        (
+          await client.execute(
+            "SELECT name FROM sqlite_master WHERE name LIKE '__%0008%'",
+          )
+        ).rows,
+      ).toEqual([]);
     });
   });
 });
