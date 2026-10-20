@@ -19,7 +19,7 @@ vi.mock("next-intl", () => ({
   },
 }));
 
-vi.mock("@/components/blog/utc-format", () => ({
+vi.mock("@/lib/ui/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 

@@ -1,7 +1,19 @@
+import { requireDefined } from "@tests/helpers/require-defined";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import type { UserRecord } from "@/features/user/types";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
+const user: UserRecord = {
+  id: "user-1",
+  name: "Editor",
+  email: "editor@example.test",
+  level: UserLevel.EDITOR,
+  status: UserStatus.ENABLE,
+  createdAt: null,
+  updatedAt: null,
+};
 let canManageUsers = false;
 const trpcMocks = vi.hoisted(() => ({
   refetch: vi.fn(),
@@ -17,7 +29,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     user: {
       index: {
         useQuery: () => ({
-          data: { list: [], total: 0 },
+          data: { list: [user], total: 1 },
           isFetching: false,
           isError: false,
           refetch: trpcMocks.refetch,
@@ -43,6 +55,11 @@ describe("UserPageShell", () => {
   let root: Root;
 
   beforeEach(() => {
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
     canManageUsers = false;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -53,6 +70,56 @@ describe("UserPageShell", () => {
     await act(async () => root.unmount());
     container.remove();
   });
+
+  it.each(["batch", "single"])(
+    "retains the real %s delete dialog and selection after failure, then closes after committed retry",
+    async (mode) => {
+      canManageUsers = true;
+      trpcMocks.mutateAsync
+        .mockReset()
+        .mockRejectedValueOnce(new Error("write failed"))
+        .mockResolvedValueOnce({ success: true, publicSync: "degraded" });
+      trpcMocks.refetch
+        .mockReset()
+        .mockRejectedValue(new Error("refresh failed"));
+      await act(async () => root.render(<UserPageShell />));
+      await act(async () =>
+        requireDefined(
+          container.querySelectorAll<HTMLElement>('[role="checkbox"]')[1],
+        ).click(),
+      );
+      const batch = requireDefined(
+        Array.from(container.querySelectorAll("button")).find((button) =>
+          button.textContent?.includes("批量删除"),
+        ),
+      );
+      const trigger =
+        mode === "batch"
+          ? batch
+          : requireDefined(
+              Array.from(
+                container.querySelectorAll<HTMLButtonElement>("tbody button"),
+              ).at(-1),
+            );
+      await act(async () => trigger.click());
+      const confirm = () =>
+        requireDefined(
+          Array.from(document.body.querySelectorAll("button")).find(
+            (button) => button.textContent === "确定",
+          ),
+        );
+      await act(async () => confirm().click());
+      expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+      expect(batch.disabled).toBe(false);
+      await act(async () => confirm().click());
+      expect(trpcMocks.mutateAsync.mock.calls).toEqual([
+        [{ ids: ["user-1"] }],
+        [{ ids: ["user-1"] }],
+      ]);
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+      if (mode === "batch") expect(batch.disabled).toBe(true);
+    },
+  );
 
   it("keeps search copy while hiding user management controls", async () => {
     await act(async () => root.render(React.createElement(UserPageShell)));

@@ -36,6 +36,7 @@ function page(id: string, total = 3): PostListResult {
     list: [
       {
         id,
+        version: 0,
         authorId: "author",
         categoryId: "category",
         commentStatus: EnableStatus.ENABLE,

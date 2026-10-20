@@ -1,30 +1,22 @@
-# 架构边界
+# 架构规则索引
 
-## 调用路径
+按本次改动读取下面指定的 Requirement 及其 Scenario。规则修改进入对应 OpenSpec；Skill 保留实施方法，[架构说明](../../../../docs/architecture-dependency-report.md)保留设计解释，不在这些入口复制验收正文。
 
-- Client 通过 feature router 调用 server 函数；server 函数直接使用 db 与技术适配器。
-- Server Component 可直接调用 feature server 的读取函数。共享缓存只缓存允许公开的数据；写入不在可缓存渲染阶段执行。
-- Router 保留输入、会话、入口 capability、限流与协议错误映射。业务规则、事务、并发保护和副作用顺序由 server 函数负责，不复制到 UI 或页面。
-- 纯业务 rules 按需抽取为可直接测试的函数，不依赖数据库或框架；不需要额外聚合、端口或用例层。
+| 主题 | 权威规范与具体章节 |
+| --- | --- |
+| 四种源码职责、业务概念归属 | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：源码采用四种职责目录、业务概念归属于 Feature |
+| 技术库、通用 UI 与认证会话例外 | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：技术依赖不加载业务运行时 |
+| 纯模块的直接与间接依赖 | [feature-module-contract](../../../../openspec/specs/feature-module-contract/spec.md)：模块依赖方向必须可自动验证 |
+| 根 tRPC 组合、跨 feature 具名入口 | [feature-business-boundaries](../../../../openspec/specs/feature-business-boundaries/spec.md)：Transport infrastructure is separate from business features、跨 Feature 导入必须经过公开边界 |
+| server 操作、入口保护、直接数据库访问、纯转发层 | [application-use-case-boundary](../../../../openspec/specs/application-use-case-boundary/spec.md)：业务操作由 Feature server 函数负责、服务端操作允许直接数据库访问、纯转发层不得作为业务抽象保留 |
+| ORM 隔离与公开字段实际裁剪 | [model-boundary-governance](../../../../openspec/specs/model-boundary-governance/spec.md)：持久化实现与纯契约必须隔离 |
+| 类型、schema、常量唯一事实源 | [type-safety-governance](../../../../openspec/specs/type-safety-governance/spec.md) |
+| 死出口、框架约定入口及动态 feature 门禁 | [architecture-complexity-governance](../../../../openspec/specs/architecture-complexity-governance/spec.md)：架构复杂度必须有可追踪预算、Feature 边界门禁必须动态覆盖现有模块 |
 
-## 依赖方向
+涉及行为而非仅路径时，继续读取对应规范：[授权](../../../../openspec/specs/capability-authorization/spec.md)、[入口权限统一](../../../../openspec/specs/capability-authorization-unification/spec.md)、[持久化不变量](../../../../openspec/specs/persistence-integrity/spec.md)、[公开内容安全](../../../../openspec/specs/public-content-safety/spec.md)、[缓存新鲜度](../../../../openspec/specs/public-content-freshness/spec.md)、[副作用一致性](../../../../openspec/specs/side-effect-consistency/spec.md)、[运行时错误捕获](../../../../openspec/specs/runtime-error-capture/spec.md)。
 
-- app 是框架组合根，可组合 feature 的 router、server、admin 与 public 入口。
-- feature 不运行时依赖 app。跨 feature 可直接使用稳定纯 schema/type/catalog、有意复用的 UI 或 server 操作具体入口；不能耦合其他 feature router，也不能穿透纯模块或浏览器的运行时边界。admin/components/server 目录名本身不是禁用理由，不要求新增 public barrel。
-- components 是通用 UI/编辑器，通过 props、回调或 provider 注入业务能力；不反向导入 app 或 feature 运行时。
-- lib 负责 db/auth/trpc/cache/storage/observability/i18n 等技术能力；业务专属类型、状态、选项归所属 feature。
-- lib/db 与 lib/auth 可以引用 feature 纯 catalog/schema/type；该依赖链不得加载业务 server、UI、通知或根 router。
-- app/_trpc/router.ts 组合业务 router，app/_trpc/server.ts 提供服务端 caller。lib/trpc 不组合业务 router；客户端仅允许 type-only 引用根 AppRouter。
-- 浏览器不得传递加载数据库、服务端认证、环境 secret 或 Node-only SDK；Edge 不得加载 Node-only 实现。server-only 边界与递归依赖检查必须保持。
+本轮 dashboard、媒体选择契约、app 重定向和纯工具归属的补充验收仍在[目录归属变更](../../../../openspec/changes/refine-directory-ownership/specs/directory-ownership/spec.md)；它尚未归档，不把历史报告当作当前验证证据。
 
-## 复杂度控制
+交互修改另读尚未归档的[后台读取与保存安全](../../../../openspec/changes/protect-guest-reads-and-pending-saves/specs/admin-data-and-save-safety/spec.md)，保留待保存输入与过期响应隔离。现有本地草稿恢复和重复提交拦截是路径整理不得删减的行为；不能因为这些要求尚未同步进主规范而忽略。
 
-不再使用 src/packages、人工 application/domain/infrastructure 层或 features/contracts。server.ts 与 server/ 均可，按职责和规模决定。数据库访问不需要必经 Repository/factory；只有独立校验、授权、事务、映射、缓存或真实外部适配才保留单独函数。
-
-稳定输出模型与纯输入 schema 不依赖 ORM；server 内可以使用 Drizzle。字段形状相同不代表需要多个模型，类型裁剪也不等于运行时脱敏。共享抽象必须有稳定的真实消费者，不能为减少文件而抹平语义区别。
-
-例如 post 可直接复用 user/admin/use-current-user、category/admin/category-title 与 media/components/PhotoPicker。业务 UI 留在所属 feature，不因跨 feature 复用就移动到通用 components；server 操作只能由服务端消费者使用。
-
-## 认证框架组合例外
-
-现有 `lib/trpc/context.ts` 为读取会话而延迟导入 `src/auth.ts` 是窄技术集成例外；`src/auth.ts` 绑定 Better Auth，认证 hook 与登录审计的框架组合位于 `app/_auth`。该例外不允许 lib/auth 运行时导入 feature 操作，也不允许 lib/trpc 组合业务 router。
+日志与初始化另读 [Sentry 接入说明](../../../../docs/sentry-logging.md) 的隐私边界、浏览器/服务端配置和 public DSN 回退；运行时错误捕获规范不能替代这些独有约束。

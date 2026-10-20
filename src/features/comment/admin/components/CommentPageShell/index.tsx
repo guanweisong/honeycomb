@@ -1,5 +1,6 @@
 "use client";
 
+import type { z } from "zod";
 import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
@@ -13,7 +14,8 @@ import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { useCommentActions } from "@/features/comment/admin/comment-actions";
 import { commentTableColumns } from "../../columns/comment-columns";
-import { useCommentQuery } from "@/features/comment/admin/comment-query";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);
@@ -34,7 +36,13 @@ export function CommentPageShell() {
             : column,
         );
   const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
-  const query = useCommentQuery();
+  const [searchParams, setSearchParams] = useState<
+    z.input<typeof CommentListQuerySchema>
+  >({});
+  const query = trpc.comment.index.useQuery(
+    searchParams,
+    adminListQueryOptions,
+  );
   const { handleSetStatus, handleDelete, handleDeleteBatch } =
     useCommentActions({
       selectedRows,
@@ -57,7 +65,10 @@ export function CommentPageShell() {
             type="warning"
             title="确定要通过吗？"
             onOK={async () => {
-              await handleSetStatus(record.id, CommentStatus.PUBLISH);
+              return (
+                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
+                "success"
+              );
             }}
           />,
         );
@@ -72,7 +83,10 @@ export function CommentPageShell() {
             type="warning"
             title="确定要驳回吗？"
             onOK={async () => {
-              await handleSetStatus(record.id, CommentStatus.RUBBISH);
+              return (
+                (await handleSetStatus(record.id, CommentStatus.RUBBISH)) ===
+                "success"
+              );
             }}
           />,
         );
@@ -89,7 +103,10 @@ export function CommentPageShell() {
             type="warning"
             title="确定要屏蔽吗？"
             onOK={async () => {
-              await handleSetStatus(record.id, CommentStatus.BAN);
+              return (
+                (await handleSetStatus(record.id, CommentStatus.BAN)) ===
+                "success"
+              );
             }}
           />,
         );
@@ -106,7 +123,10 @@ export function CommentPageShell() {
             type="warning"
             title="确定要通过吗？"
             onOK={async () => {
-              await handleSetStatus(record.id, CommentStatus.PUBLISH);
+              return (
+                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
+                "success"
+              );
             }}
           />,
         );
@@ -114,6 +134,7 @@ export function CommentPageShell() {
       case CommentStatus.BAN:
         actionsByStatus.push(
           <Dialog
+            key="unban"
             trigger={
               <Button variant="secondary" size="sm">
                 解除屏蔽
@@ -122,7 +143,10 @@ export function CommentPageShell() {
             type="warning"
             title="确定要解除屏蔽吗？"
             onOK={async () => {
-              await handleSetStatus(record.id, CommentStatus.PUBLISH);
+              return (
+                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
+                "success"
+              );
             }}
           />,
         );
@@ -139,7 +163,7 @@ export function CommentPageShell() {
         type="danger"
         title="确定要删除吗？"
         onOK={async () => {
-          await handleDelete([record.id]);
+          return (await handleDelete([record.id])) === "success";
         }}
       />,
     );
@@ -159,7 +183,7 @@ export function CommentPageShell() {
         void query.refetch();
       }}
       onChange={(params) =>
-        query.setSearchParams(CommentListQuerySchema.parse(params))
+        setSearchParams(CommentListQuerySchema.parse(params))
       }
       selectableRows={canModerateComments}
       selectedRows={selectedRows}
@@ -194,7 +218,7 @@ export function CommentPageShell() {
                   placeholder: "请输入评论内容进行搜索",
                 },
               ]}
-              onSubmit={query.setSearchParams}
+              onSubmit={setSearchParams}
               inline={true}
               submitProps={{ children: "查询", variant: "outline" }}
             />

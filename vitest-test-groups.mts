@@ -1,4 +1,4 @@
 export const processHeavyTests = [
-  "tests/coverage-governance.test.ts",
-  "tests/server-only-boundaries.test.ts",
+  "tests/tooling/coverage-governance.test.ts",
+  "tests/architecture/server-only-boundaries.test.ts",
 ];

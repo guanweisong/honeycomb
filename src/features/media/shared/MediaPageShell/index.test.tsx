@@ -10,13 +10,20 @@ import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 let allowedPermissions = new Set<Permission>();
-const existingMedia = {
+const existingMedia: MediaViewModel = {
   id: "media-1",
   name: "cover.png",
   type: "image/png",
   url: "https://cdn.example.test/cover.png",
-} as MediaViewModel;
-const uploadedMedia = {
+  key: "media/cover.png",
+  size: 1,
+  width: null,
+  height: null,
+  color: null,
+  createdAt: null,
+  updatedAt: null,
+};
+const uploadedMedia: MediaViewModel = {
   id: "media-2",
   name: "image.png",
   type: "image/png",
@@ -26,13 +33,22 @@ const uploadedMedia = {
   width: null,
   height: null,
   color: null,
-} as MediaViewModel;
-const nextMedia = {
+  createdAt: null,
+  updatedAt: null,
+};
+const nextMedia: MediaViewModel = {
   id: "media-3",
   name: "next.png",
   type: "image/png",
   url: "https://cdn.example.test/next.png",
-} as MediaViewModel;
+  key: "media/next.png",
+  size: 1,
+  width: null,
+  height: null,
+  color: null,
+  createdAt: null,
+  updatedAt: null,
+};
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
   getPresignedUrl: vi.fn(),
@@ -42,6 +58,7 @@ const trpcMocks = vi.hoisted(() => ({
 }));
 const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
+  info: vi.fn(),
   success: vi.fn(),
 }));
 
@@ -81,7 +98,24 @@ vi.mock("next/image", () => ({
 
 vi.mock("sonner", () => ({ toast: toastMocks }));
 
+vi.mock("@/components/Sheet", () => ({
+  Sheet: ({
+    children,
+    onConfirm,
+  }: {
+    children: React.ReactNode;
+    onConfirm: () => void;
+  }) => (
+    <div>
+      {children}
+      <button onClick={onConfirm}>confirm picker</button>
+    </div>
+  ),
+}));
+import PhotoPickerModal from "../../components/PhotoPicker";
 import { MediaPageShell } from "./index";
+import { useMediaActions } from "../media-actions";
+import { requireDefined } from "@tests/helpers/require-defined";
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -277,7 +311,34 @@ describe("MediaPageShell", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it("deletes the selected media and clears only its internal selection", async () => {
+  it.each([false, true])(
+    "does not retry a committed media deletion when refresh fails (async: %s)",
+    async (asyncFailure) => {
+      trpcMocks.destroy.mockResolvedValue({ success: true });
+      const onDeleteComplete = vi.fn();
+      let actions: ReturnType<typeof useMediaActions> | undefined;
+      function Harness() {
+        actions = useMediaActions({
+          refetch: () => {
+            if (asyncFailure)
+              return Promise.reject(new Error("refresh failed"));
+            throw new Error("refresh failed");
+          },
+          onUploadComplete: vi.fn(),
+          onDeleteComplete,
+        });
+        return null;
+      }
+      await act(async () => root.render(<Harness />));
+      await expect(
+        requireDefined(actions).handleDelete("media-1"),
+      ).resolves.toBe(true);
+      expect(onDeleteComplete).toHaveBeenCalledExactlyOnceWith("media-1");
+      expect(trpcMocks.destroy).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("deletes the selected media and invalidates the external selection", async () => {
     allowedPermissions = new Set([Permission.mediaDelete]);
     const onSelect = vi.fn();
     trpcMocks.destroy.mockResolvedValue({ success: true });
@@ -303,12 +364,64 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.destroy).toHaveBeenCalledWith({ ids: ["media-1"] });
     expect(toastMocks.success).toHaveBeenCalledWith("删除成功");
     expect(trpcMocks.refetch).toHaveBeenCalledOnce();
-    expect(onSelect).toHaveBeenCalledOnce();
-    expect(onSelect).toHaveBeenCalledWith(existingMedia);
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect).toHaveBeenLastCalledWith(undefined);
     expect(
       container.querySelector('[title="cover.png"]')?.className,
     ).not.toContain("border-blue-500");
   });
+
+  it.each(["success", "failed", "indeterminate"] as const)(
+    "composed picker handles %s deletion without confirming a deleted URL",
+    async (outcome) => {
+      allowedPermissions = new Set([Permission.mediaDelete]);
+      const onConfirm = vi.fn();
+      if (outcome === "failed")
+        trpcMocks.destroy.mockRejectedValue(new Error("failed"));
+      else
+        trpcMocks.destroy.mockResolvedValue(
+          outcome === "success"
+            ? { success: true }
+            : { success: false, state: "indeterminate", message: "待确认" },
+        );
+      await act(async () =>
+        root.render(
+          <PhotoPickerModal
+            showPhotoPicker
+            handlePhotoPickerOk={onConfirm}
+            handlePhotoPickerCancel={vi.fn()}
+            pickerContent={(onSelect) => <MediaPageShell onSelect={onSelect} />}
+          />,
+        ),
+      );
+      await act(async () =>
+        container
+          .querySelector('[title="cover.png"]')
+          ?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+      );
+      const remove = container.querySelector<HTMLButtonElement>(
+        '[aria-label="删除 cover.png"]',
+      );
+      expect(remove).not.toBeNull();
+      await act(async () => remove?.click());
+      const confirmDelete = Array.from(
+        document.body.querySelectorAll("button"),
+      ).find((button) => button.textContent === "确定");
+      expect(confirmDelete).toBeDefined();
+      await act(async () => confirmDelete?.click());
+      if (outcome !== "success")
+        expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+      await act(async () =>
+        Array.from(container.querySelectorAll("button"))
+          .find((button) => button.textContent === "confirm picker")
+          ?.click(),
+      );
+      if (outcome === "success") {
+        expect(onConfirm).not.toHaveBeenCalled();
+        expect(toastMocks.info).toHaveBeenCalledWith("请选择图片");
+      } else expect(onConfirm).toHaveBeenCalledWith(existingMedia);
+    },
+  );
 
   it("keeps selection intact when deletion fails", async () => {
     allowedPermissions = new Set([Permission.mediaDelete]);

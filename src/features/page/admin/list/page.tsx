@@ -61,7 +61,7 @@ const Page = () => {
    * @param ids
    */
   const handleDeleteItem = async (ids: string[]) => {
-    await runAdminMutation({
+    return runAdminMutation({
       input: { ids },
       mutate: destroyPage.mutateAsync,
       refetch,
@@ -171,7 +171,9 @@ const Page = () => {
                 }
                 type="danger"
                 title="确定要删除吗？"
-                onOK={() => handleDeleteItem([row.id])}
+                onOK={async () =>
+                  (await handleDeleteItem([row.id])) === "success"
+                }
               />
             )}
           </div>

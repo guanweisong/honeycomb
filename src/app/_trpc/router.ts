@@ -6,7 +6,7 @@ import { userRouter } from "@/features/user/router";
 import { categoryRouter } from "@/features/category/router";
 import { tagRouter } from "@/features/tag/router";
 import { settingRouter } from "@/features/setting/router";
-import { statisticRouter } from "@/features/setting/statistic.router";
+import { statisticRouter } from "@/features/dashboard/router";
 import { menuRouter } from "@/features/menu/router";
 import { mediaRouter } from "@/features/media/router";
 import { pageRouter } from "@/features/page/router";

@@ -1,3 +1,5 @@
+import type { LinkRecord } from "@/features/link/types";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import {
@@ -26,13 +28,13 @@ beforeAll(() => {
 });
 
 let allowedPermissions = new Set<Permission>();
-const link = {
+const link: LinkRecord = {
   id: "link-1",
   name: "OpenAI",
   url: "https://openai.com",
   logo: "https://openai.com/logo.png",
   description: null,
-  status: "ENABLE",
+  status: EnableStatus.ENABLE,
   createdAt: "2026-01-02T03:04:05.000Z",
   updatedAt: null,
 };
@@ -116,6 +118,56 @@ describe("LinkPageShell", () => {
     await act(async () => requireDefined(checkboxes[1]).click());
     expect((batchButton as HTMLButtonElement).disabled).toBe(false);
   });
+
+  it.each(["batch", "single"])(
+    "retains the real %s delete dialog and selection after failure, then closes after committed retry",
+    async (mode) => {
+      allowedPermissions = new Set([Permission.linkDelete]);
+      trpcMocks.mutateAsync
+        .mockReset()
+        .mockRejectedValueOnce(new Error("write failed"))
+        .mockResolvedValueOnce({ success: true, publicSync: "degraded" });
+      trpcMocks.refetch
+        .mockReset()
+        .mockRejectedValue(new Error("refresh failed"));
+      await act(async () => root.render(<LinkPageShell />));
+      await act(async () =>
+        requireDefined(
+          container.querySelectorAll<HTMLElement>('[role="checkbox"]')[1],
+        ).click(),
+      );
+      const batch = requireDefined(
+        Array.from(container.querySelectorAll("button")).find((button) =>
+          button.textContent?.includes("批量删除"),
+        ),
+      );
+      const trigger =
+        mode === "batch"
+          ? batch
+          : requireDefined(
+              Array.from(
+                container.querySelectorAll<HTMLButtonElement>("tbody button"),
+              ).at(-1),
+            );
+      await act(async () => trigger.click());
+      const confirm = () =>
+        requireDefined(
+          Array.from(document.body.querySelectorAll("button")).find(
+            (button) => button.textContent === "确定",
+          ),
+        );
+      await act(async () => confirm().click());
+      expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+      expect(batch.disabled).toBe(false);
+      await act(async () => confirm().click());
+      expect(trpcMocks.mutateAsync.mock.calls).toEqual([
+        [{ ids: ["link-1"] }],
+        [{ ids: ["link-1"] }],
+      ]);
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+      if (mode === "batch") expect(batch.disabled).toBe(true);
+    },
+  );
 
   it("opens the existing add-link form for create permission", async () => {
     allowedPermissions = new Set([Permission.linkCreate]);

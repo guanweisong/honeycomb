@@ -22,12 +22,13 @@ vi.mock("@/lib/cache/refresh-path", () => ({
   },
 }));
 
-vi.mock("@/lib/db/query/tools", () => ({
+vi.mock("@/lib/db/query/query-builders", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
-  default: {
-    sonsTree: vi.fn((list) => list),
-  },
+}));
+
+vi.mock("@/features/category/tree", () => ({
+  sonsTree: vi.fn((list) => list),
 }));
 
 const mockDb = createMockDb();

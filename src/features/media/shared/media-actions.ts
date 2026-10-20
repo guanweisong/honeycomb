@@ -219,7 +219,7 @@ async function uploadToStorage(url: string, file: File) {
 type UseMediaActionsOptions = {
   refetch: () => unknown;
   onUploadComplete: (media: MediaViewModel) => void;
-  onDeleteComplete: () => void;
+  onDeleteComplete: (id: string) => void;
 };
 
 export function useMediaActions({
@@ -281,14 +281,20 @@ export function useMediaActions({
 
     if (result.state === "success") {
       toast.success("删除成功");
-      onDeleteComplete();
-      refetch();
+      onDeleteComplete(id);
     } else if (result.state === "error") {
       toast.error("删除失败");
     } else if (result.state === "indeterminate") {
       toast.error(result.message);
-      refetch();
     }
+    if (result.state === "success" || result.state === "indeterminate") {
+      try {
+        await refetch();
+      } catch {
+        // Refresh cannot turn a committed or uncertain deletion into a retryable failure.
+      }
+    }
+    return result.state === "success";
   };
 
   return { fileInputRef, handleDelete, handleUpload, loading };

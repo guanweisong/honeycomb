@@ -6,6 +6,8 @@ import {
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 import { PostStatus } from "@/features/post/post-status";
 import type { PostListQueryInput } from "@/features/post/schema";
+import { IdSchema } from "@/lib/validation/id.schema";
+import { notFound } from "next/navigation";
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +25,12 @@ export async function resolveListContext({
 }: ListContextInput) {
   const type = slug[0];
   const typeValue = slug.at(-1) ?? "";
+  if (
+    (type === "tags" || type === "authors") &&
+    !IdSchema.safeParse(typeValue).success
+  ) {
+    notFound();
+  }
   let typeName = typeValue;
   let queryParams: PostListQueryInput = {
     status: [PostStatus.PUBLISHED],

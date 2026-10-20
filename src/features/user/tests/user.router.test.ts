@@ -25,7 +25,7 @@ vi.mock("@/lib/cache/refresh-path", () => ({
 }));
 
 // 模拟工具模块。
-vi.mock("@/lib/db/query/tools", () => ({
+vi.mock("@/lib/db/query/query-builders", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));
@@ -205,6 +205,10 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce([
         { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
       ]);
+      // The repository rechecks the persisted level inside its write transaction.
+      mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockResolvedValueOnce([{ level: UserLevel.EDITOR }]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);

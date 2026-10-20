@@ -1,0 +1,56 @@
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { getManifest } from "@serwist/build";
+import { offlinePrecacheUrl, pwaGlobIgnores } from "@/lib/pwa/precache-config";
+
+let fixture = "";
+
+afterEach(() => {
+  if (fixture) rmSync(fixture, { recursive: true, force: true });
+});
+
+describe("PWA precache configuration", () => {
+  it("excludes screenshots, source maps and admin route assets", async () => {
+    fixture = mkdtempSync(join(tmpdir(), "honeycomb-precache-"));
+    const files = [
+      "public/static/images/desktop.png",
+      "public/static/images/mobile.png",
+      "public/static/images/logo.png",
+      ".next/static/app/admin/dashboard.js",
+      ".next/static/chunks/app/admin/(dashboard)/page-123.js",
+      ".next/static/chunks/app/admin/login/page-456.js",
+      ".next/static/chunks/public.js",
+      ".next/static/chunks/public.js.map",
+      ".serwist-build/sw.js",
+      "public/serwist/sw.js",
+    ];
+    for (const file of files) {
+      mkdirSync(join(fixture, file, ".."), { recursive: true });
+      writeFileSync(join(fixture, file), file);
+    }
+
+    const result = await getManifest({
+      globDirectory: fixture,
+      globPatterns: ["public/**/*", ".next/**/*"],
+      globIgnores: [...pwaGlobIgnores],
+      additionalPrecacheEntries: [
+        { url: offlinePrecacheUrl, revision: "test" },
+      ],
+    });
+    const urls = result.manifestEntries?.map((entry) => entry.url) ?? [];
+
+    expect(pwaGlobIgnores).toContain(".next/static/chunks/app/admin/**/*");
+    expect(urls.filter((url) => url.includes("/admin/"))).toEqual([]);
+    expect(urls).toContain("public/static/images/logo.png");
+    expect(urls).toContain(".next/static/chunks/public.js");
+    expect(urls).toContain(offlinePrecacheUrl);
+    expect(urls).not.toContain("public/static/images/desktop.png");
+    expect(urls).not.toContain("public/static/images/mobile.png");
+    expect(urls).not.toContain(".next/static/app/admin/dashboard.js");
+    expect(urls).not.toContain(".next/static/chunks/public.js.map");
+    expect(urls).not.toContain(".serwist-build/sw.js");
+    expect(urls).not.toContain("public/serwist/sw.js");
+  });
+});

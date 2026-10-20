@@ -18,7 +18,7 @@ vi.mock("@/lib/db/db", () => ({
 }));
 
 // 模拟工具模块。
-vi.mock("@/lib/db/query/tools", () => ({
+vi.mock("@/lib/db/query/query-builders", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));

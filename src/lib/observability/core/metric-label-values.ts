@@ -66,7 +66,6 @@ export const databaseQueryNames = [
   "post.service.list",
   "post.service.relations",
   "post.update",
-  "post.update-tags",
   "setting.get",
   "setting.update",
   "statistics.comments-by-status",
@@ -134,7 +133,7 @@ const procedureNames = [
   "post.index",
   "post.search",
   "post.update",
-  "post.updateTags",
+  "post.creationResult",
   "setting.index",
   "setting.update",
   "statistic.index",
@@ -160,6 +159,9 @@ const metricLabelValues = {
     "error",
     "completed",
     "degraded",
+    "allowed",
+    "limited",
+    "unavailable",
     "PARSE_ERROR",
     "BAD_REQUEST",
     "INTERNAL_SERVER_ERROR",
@@ -198,9 +200,10 @@ const metricLabelValues = {
     "put",
     "presign",
     "invalidate",
+    "limit",
   ],
   namespace: cacheNamespaceValues,
-  service: ["captcha", "email", "object-storage"],
+  service: ["captcha", "email", "object-storage", "upstash-rate-limit"],
 } as const satisfies Record<MetricLabelName, readonly string[]>;
 
 export const metricLabelValueCatalog: Readonly<

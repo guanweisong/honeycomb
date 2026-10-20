@@ -383,7 +383,7 @@ describe("capability procedure matrix", () => {
   });
   afterEach(() => configureObservability());
 
-  it("covers all 35 permissions with 40 procedure gates and three explicit data scopes", () => {
+  it("covers all 35 permissions with 40 procedure gates, three data scopes and one conditional command gate", () => {
     expect(capabilityProcedureMatrix).toHaveLength(40);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
       40,
@@ -403,7 +403,13 @@ describe("capability procedure matrix", () => {
         return consumers.includes("trpc");
       },
     );
-    expect(procedurePermissions.size).toBe(32);
+    expect(procedurePermissions.size).toBe(31);
+    const commandPermissions = ALL_PERMISSIONS.filter((permission) => {
+      const consumers: readonly CapabilityConsumer[] =
+        capabilityRegistry[permission].consumers;
+      return consumers.includes("command");
+    });
+    expect(commandPermissions).toEqual([Permission.postManageTags]);
     expect(procedurePermissions).toEqual(
       new Set(registeredProcedurePermissions),
     );
@@ -417,9 +423,13 @@ describe("capability procedure matrix", () => {
         procedurePermissions.has(permission),
       ),
     ).toBe(false);
-    expect(new Set([...procedurePermissions, ...dataScopePermissions])).toEqual(
-      new Set(ALL_PERMISSIONS),
-    );
+    expect(
+      new Set([
+        ...procedurePermissions,
+        ...dataScopePermissions,
+        ...commandPermissions,
+      ]),
+    ).toEqual(new Set(ALL_PERMISSIONS));
   });
 
   it("matches direct capability declarations in every real registered router", () => {

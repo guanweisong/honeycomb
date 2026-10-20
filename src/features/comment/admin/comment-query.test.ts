@@ -1,3 +1,7 @@
+import type { DataTableProps } from "@/components/DataTable";
+import type { z } from "zod";
+import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
+type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,13 +9,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],
   refetch: vi.fn(),
+  options: [] as unknown[],
+  table: undefined as DataTableProps<unknown> | undefined,
+  submit: undefined as ((input: CommentListQueryInput) => void) | undefined,
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     comment: {
+      create: { useMutation: () => ({ mutateAsync: vi.fn() }) },
+      update: { useMutation: () => ({ mutateAsync: vi.fn() }) },
+      destroy: { useMutation: () => ({ mutateAsync: vi.fn() }) },
       index: {
-        useQuery: (input: unknown) => {
+        useQuery: (input: unknown, options: unknown) => {
+          trpcMocks.options.push(options);
           trpcMocks.queryInputs.push(input);
           return {
             data: undefined,
@@ -25,20 +36,25 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { useCommentQuery } from "@/features/comment/admin/comment-query";
-
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-
-function CommentQueryHarness({
-  onReady,
-}: {
-  onReady: (query: ReturnType<typeof useCommentQuery>) => void;
-}) {
-  onReady(useCommentQuery());
-  return null;
-}
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCan: () => false,
+}));
+vi.mock("@/components/DataTable", () => ({
+  DataTable: (props: DataTableProps<unknown>) => {
+    trpcMocks.table = props;
+    return props.toolBar;
+  },
+}));
+vi.mock("@/components/DynamicForm", () => ({
+  DynamicForm: (props: {
+    onSubmit: (input: CommentListQueryInput) => void;
+  }) => {
+    trpcMocks.submit = props.onSubmit;
+    return null;
+  },
+}));
+import { CommentPageShell } from "./components/CommentPageShell";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 
 describe("comment query parameters", () => {
   let container: HTMLDivElement;
@@ -46,6 +62,7 @@ describe("comment query parameters", () => {
 
   beforeEach(() => {
     trpcMocks.queryInputs.length = 0;
+    trpcMocks.options.length = 0;
     trpcMocks.refetch.mockClear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -58,19 +75,13 @@ describe("comment query parameters", () => {
   });
 
   it("replaces and clears submitted filters and pagination", async () => {
-    let query: ReturnType<typeof useCommentQuery> | undefined;
-
     await act(async () => {
-      root.render(
-        React.createElement(CommentQueryHarness, {
-          onReady: (value) => (query = value),
-        }),
-      );
+      root.render(React.createElement(CommentPageShell));
     });
     expect(trpcMocks.queryInputs).toEqual([{}]);
 
     await act(async () => {
-      query?.setSearchParams({
+      trpcMocks.submit?.({
         content: "needs review",
         status: ["TO_AUDIT"],
         page: 2,
@@ -79,13 +90,16 @@ describe("comment query parameters", () => {
     });
 
     await act(async () => {
-      query?.setSearchParams({ content: "approved" });
+      trpcMocks.submit?.({ content: "approved" });
     });
 
     await act(async () => {
-      query?.setSearchParams({});
+      trpcMocks.submit?.({});
     });
 
+    expect(
+      trpcMocks.options.every((options) => options === adminListQueryOptions),
+    ).toBe(true);
     expect(trpcMocks.queryInputs).toEqual([
       {},
       {

@@ -23,7 +23,6 @@ import {
   UserStatusName,
   userStatusOptions,
 } from "../../features/user/admin/options";
-import { MenuTypeName } from "../../features/menu/admin/options";
 import { EnableStatusName, enableStatusOptions } from "./enable-status-options";
 
 describe("admin display names and options", () => {
@@ -118,14 +117,6 @@ describe("admin display names and options", () => {
       { label: "禁用", value: "DISABLE" },
       { label: "启用", value: "ENABLE" },
     ]);
-  });
-
-  it("preserves menu type labels", () => {
-    expect(MenuTypeName).toEqual({
-      CATEGORY: "分类",
-      PAGE: "页面",
-      CUSTOM: "自定义",
-    });
   });
 
   it("preserves enabled status labels and option order", () => {

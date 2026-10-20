@@ -15,7 +15,7 @@ import { EditorLoadError } from "@/components/admin/editor-load-error";
 import { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { PageEditorForm } from "../PageEditorForm";
 import { usePageEditorActions } from "../../page-editor-actions";
-import { usePageEditorQuery } from "../../page-editor-query";
+import { trpc } from "@/lib/trpc/client/trpc";
 import {
   getPageEditorId,
   toPageEditorFormValues,
@@ -35,7 +35,10 @@ export function PageEditorPage() {
     resolver: zodResolver(PageInsertSchema),
     defaultValues: { template: PageTemplate.DEFAULT },
   });
-  const query = usePageEditorQuery(id);
+  const query = trpc.page.adminDetail.useQuery(
+    { id: id ?? "" },
+    { enabled: !!id },
+  );
   const detail = query.data;
   const actions = usePageEditorActions({
     pageId: detail?.id,

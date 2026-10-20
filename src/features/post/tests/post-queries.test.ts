@@ -12,7 +12,7 @@ import {
   type MockInstance,
 } from "vitest";
 import * as schema from "@/lib/db/schema";
-import * as tools from "@/lib/db/query/tools";
+import * as tools from "@/lib/db/query/query-builders";
 import * as relations from "@/features/post/server/post-relations";
 import { listPosts } from "@/features/post/server/post-queries";
 import { TEST_IDS } from "@tests/helpers/test-constants";

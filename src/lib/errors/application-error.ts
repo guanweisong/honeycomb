@@ -4,6 +4,7 @@ export class ApplicationError extends Error {
 
   constructor(
     public readonly code:
+      | "CONFLICT"
       | "FORBIDDEN"
       | "UNAUTHORIZED"
       | "NOT_FOUND"

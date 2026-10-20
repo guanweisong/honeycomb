@@ -29,6 +29,13 @@
       "when": 1789186699951,
       "tag": "0003_enforce_persistence_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792483414804,
+      "tag": "0004_post_editor_revision",
+      "breakpoints": true
     }
   ]
 }

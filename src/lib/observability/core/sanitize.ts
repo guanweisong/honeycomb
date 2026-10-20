@@ -32,8 +32,46 @@ export function serializeError(
   error: unknown,
   options: { maxCauseDepth?: number } = {},
 ): SerializedError {
+  const classification = classifyErrorChain(error);
+  if (classification === "database") {
+    return { name: "DatabaseError", message: "Database operation failed" };
+  }
+  if (classification === "truncated") {
+    return { name: "Error", message: TRUNCATED };
+  }
   const maxCauseDepth = options.maxCauseDepth ?? 3;
   return serializeErrorValue(error, new WeakSet(), 0, maxCauseDepth);
+}
+
+/**
+ * Drizzle query errors carry arbitrary bindings in message/stack, and wrappers
+ * or driver causes can copy them. Classify the whole chain before serializing
+ * any text; shared browser/Edge code must not import the ORM to recognize it.
+ */
+function classifyErrorChain(
+  error: unknown,
+): "database" | "truncated" | undefined {
+  const seen = new WeakSet<object>();
+  let current = error;
+  let depth = 0;
+  while (typeof current === "object" && current !== null) {
+    if (seen.has(current)) return undefined;
+    seen.add(current);
+    if (
+      "query" in current &&
+      typeof current.query === "string" &&
+      "params" in current &&
+      Array.isArray(current.params)
+    ) {
+      return "database";
+    }
+    if (!("cause" in current)) return undefined;
+    // An uninspected tail may contain a query error copied into an outer message.
+    if (depth >= MAX_CONTEXT_DEPTH) return "truncated";
+    current = current.cause;
+    depth += 1;
+  }
+  return undefined;
 }
 
 export function sanitizeMetricLabels(

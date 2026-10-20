@@ -8,7 +8,8 @@ import type { MediaRecord as MediaEntity } from "@/features/media/types";
 const { toastInfo, selectMediaRef } = vi.hoisted(() => ({
   toastInfo: vi.fn(),
   selectMediaRef: {
-    current: undefined as ((media: MediaEntity) => void) | undefined,
+    current: undefined as
+      ((media: MediaEntity | undefined) => void) | undefined,
   },
 }));
 
@@ -36,7 +37,9 @@ vi.mock("@/components/Sheet", () => ({
 }));
 
 vi.mock("@/features/media/shared/MediaPageShell", () => ({
-  MediaPageShell: (props: { onSelect: (media: MediaEntity) => void }) => {
+  MediaPageShell: (props: {
+    onSelect: (media: MediaEntity | undefined) => void;
+  }) => {
     selectMediaRef.current = props.onSelect;
     return <div>media-page</div>;
   },
@@ -90,13 +93,57 @@ describe("PhotoPickerModal", () => {
     const media = {
       id: "media-1",
       url: "https://example.test/image.jpg",
-    } as MediaEntity;
+      key: "image.jpg",
+      name: "image.jpg",
+      type: "image/jpeg",
+      size: 1,
+      color: null,
+      width: null,
+      height: null,
+      createdAt: null,
+      updatedAt: null,
+    } satisfies MediaEntity;
     const { handlePhotoPickerOk } = render();
 
     act(() => selectMediaRef.current?.(media));
     act(() => container.querySelector<HTMLButtonElement>("button")?.click());
 
     expect(handlePhotoPickerOk).toHaveBeenCalledWith(media);
+  });
+
+  it("does not reuse a previous selection when the mounted picker is reopened", () => {
+    const confirm = vi.fn();
+    render(confirm);
+    const media: MediaEntity = {
+      id: "media-1",
+      key: "image.jpg",
+      name: "image.jpg",
+      url: "https://example.test/image.jpg",
+      type: "image/jpeg",
+      size: 1,
+      color: null,
+      width: null,
+      height: null,
+      createdAt: null,
+      updatedAt: null,
+    };
+    act(() => selectMediaRef.current?.(media));
+    const picker = (open: boolean) => (
+      <PhotoPickerModal
+        showPhotoPicker={open}
+        handlePhotoPickerOk={confirm}
+        handlePhotoPickerCancel={vi.fn()}
+        pickerContent={(onSelect) => {
+          selectMediaRef.current = onSelect;
+          return null;
+        }}
+      />
+    );
+    act(() => root.render(picker(false)));
+    act(() => root.render(picker(true)));
+    act(() => container.querySelector<HTMLButtonElement>("button")?.click());
+    expect(confirm).not.toHaveBeenCalled();
+    expect(toastInfo).toHaveBeenCalledWith("请选择图片");
   });
 
   it("forwards cancellation from the sheet", () => {

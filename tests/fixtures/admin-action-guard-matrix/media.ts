@@ -3,8 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath:
-      "(root)/(dashboard)/media/components/MediaPageShell/index.tsx",
+    relativePath: "(dashboard)/media/components/MediaPageShell/index.tsx",
     actions: [
       {
         id: "media.upload",
@@ -29,7 +28,7 @@ export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(root)/(dashboard)/media/components/MediaGrid/index.tsx",
+    relativePath: "(dashboard)/media/components/MediaGrid/index.tsx",
     actions: [
       {
         id: "media.delete",

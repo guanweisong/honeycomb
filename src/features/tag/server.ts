@@ -5,7 +5,10 @@ import { requireWriteResult } from "@/lib/db/value-validation";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
 import { observeDbOperation } from "@/lib/observability/server";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import {
@@ -107,7 +110,24 @@ export async function destroyTags(
   invalidator: PublicContentInvalidator,
 ) {
   await observeDbOperation("tag.destroy", "delete", () =>
-    db.delete(schema.tag).where(inArray(schema.tag.id, ids)),
+    db.transaction(async (tx) => {
+      await tx
+        .update(schema.post)
+        .set({
+          version: sql`${schema.post.version} + 1`,
+          updatedAt: sql`${schema.post.updatedAt}`,
+        })
+        .where(
+          inArray(
+            schema.post.id,
+            tx
+              .select({ postId: schema.postTag.postId })
+              .from(schema.postTag)
+              .where(inArray(schema.postTag.tagId, ids)),
+          ),
+        );
+      await tx.delete(schema.tag).where(inArray(schema.tag.id, ids));
+    }),
   );
   const persisted = { success: true } as const;
   const publicSync = await invalidator.invalidate({

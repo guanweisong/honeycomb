@@ -1,3 +1,5 @@
+import type { DataTableProps } from "@/components/DataTable";
+import type { UserListQueryInput } from "@/features/user/schema";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,13 +9,20 @@ import { UserLevel } from "@/features/user/user";
 const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],
   refetch: vi.fn(),
+  options: [] as unknown[],
+  table: undefined as DataTableProps<unknown> | undefined,
+  submit: undefined as ((input: UserListQueryInput) => void) | undefined,
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     user: {
+      create: { useMutation: () => ({ mutateAsync: vi.fn() }) },
+      update: { useMutation: () => ({ mutateAsync: vi.fn() }) },
+      destroy: { useMutation: () => ({ mutateAsync: vi.fn() }) },
       index: {
-        useQuery: (input: unknown) => {
+        useQuery: (input: unknown, options: unknown) => {
+          trpcMocks.options.push(options);
           trpcMocks.queryInputs.push(input);
           return {
             data: { list: [], total: 0 },
@@ -27,20 +36,24 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { useUserQuery } from "@/features/user/admin/user-query";
-
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-
-function UserQueryHarness({
-  onReady,
-}: {
-  onReady: (query: ReturnType<typeof useUserQuery>) => void;
-}) {
-  onReady(useUserQuery());
-  return null;
-}
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCan: () => false,
+}));
+vi.mock("@/components/DataTable", () => ({
+  DataTable: (props: DataTableProps<unknown>) => {
+    trpcMocks.table = props;
+    return props.toolBar;
+  },
+}));
+vi.mock("@/components/DynamicForm", () => ({
+  DynamicForm: (props: { onSubmit: (input: UserListQueryInput) => void }) => {
+    trpcMocks.submit = props.onSubmit;
+    return null;
+  },
+}));
+vi.mock("./components/UserFormDialog", () => ({ UserFormDialog: () => null }));
+import { UserPageShell } from "./components/UserPageShell";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 
 describe("user query state", () => {
   let container: HTMLDivElement;
@@ -48,6 +61,7 @@ describe("user query state", () => {
 
   beforeEach(() => {
     trpcMocks.queryInputs.length = 0;
+    trpcMocks.options.length = 0;
     trpcMocks.refetch.mockClear();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -60,23 +74,18 @@ describe("user query state", () => {
   });
 
   it("sends the exact replacement params and forwards query status", async () => {
-    let query: ReturnType<typeof useUserQuery> | undefined;
-
     await act(async () => {
-      root.render(
-        React.createElement(UserQueryHarness, {
-          onReady: (value) => (query = value),
-        }),
-      );
+      root.render(React.createElement(UserPageShell));
     });
 
-    expect(query?.data).toEqual({ list: [], total: 0 });
-    expect(query?.isFetching).toBe(true);
-    expect(query?.isError).toBe(false);
-    expect(query?.refetch).toBe(trpcMocks.refetch);
+    expect(trpcMocks.table?.data).toEqual({ list: [], total: 0 });
+    expect(trpcMocks.table?.isFetching).toBe(true);
+    expect(trpcMocks.table?.error).toBe(false);
+    await act(async () => trpcMocks.table?.onRetry?.());
+    expect(trpcMocks.refetch).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      query?.setSearchParams({
+      trpcMocks.submit?.({
         page: 2,
         limit: 25,
         name: "alice",
@@ -85,13 +94,16 @@ describe("user query state", () => {
     });
 
     await act(async () => {
-      query?.setSearchParams({ name: "bob" });
+      trpcMocks.submit?.({ name: "bob" });
     });
 
     await act(async () => {
-      query?.setSearchParams({});
+      trpcMocks.submit?.({});
     });
 
+    expect(
+      trpcMocks.options.every((options) => options === adminListQueryOptions),
+    ).toBe(true);
     expect(trpcMocks.queryInputs).toEqual([
       {},
       {

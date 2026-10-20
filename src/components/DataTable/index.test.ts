@@ -91,6 +91,38 @@ describe("DataTable", () => {
     container.remove();
   });
 
+  it("renders static and table-aware toolbar content without changing its behavior", async () => {
+    await act(async () =>
+      root.render(
+        React.createElement(DataTable<Person>, {
+          columns,
+          data: { list: people, total: people.length },
+          pagination: false,
+          toolBar: React.createElement("button", { type: "button" }, "添加"),
+        }),
+      ),
+    );
+    expect(findButton(container, "添加")).toBeDefined();
+    await act(async () =>
+      root.render(
+        React.createElement(DataTable<Person>, {
+          columns,
+          data: { list: people, total: people.length },
+          pagination: false,
+          toolBar: (table) =>
+            React.createElement(
+              "span",
+              { "data-testid": "row-count" },
+              table.getRowModel().rows.length,
+            ),
+        }),
+      ),
+    );
+    expect(
+      container.querySelector('[data-testid="row-count"]')?.textContent,
+    ).toBe("2");
+  });
+
   it("emits pagination, sorting, and filter request parameters and resets selection", async () => {
     const onChange = vi.fn<(params: PersonRequest) => void>();
     const onSelectionChange = vi.fn<(rows: Person[]) => void>();

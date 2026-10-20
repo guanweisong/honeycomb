@@ -1,204 +1,352 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { observeDbOperation } from "@/lib/observability/server";
 import { PostStatus } from "@/features/post/post-status";
+import { TagType } from "@/features/tag/tag-kind";
+import { UserStatus } from "@/features/user/user";
+import { can, Permission } from "@/lib/auth/permissions";
+import { ApplicationError } from "@/lib/errors/application-error";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 import {
   patchPostTranslationRows,
   sanitizePostTranslationInput,
   toPostTranslationRows,
-  type PostTranslationInput,
 } from "./post-translations";
-import type { PostInsert, PostUpdate, PostTagUpdate } from "../schema";
+import type {
+  PostInsert,
+  PostUpdate,
+  PostDelete,
+  PostRelationPatch,
+} from "../schema";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
 
-export async function createPost(
+type PostTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+// libSQL starts a transaction before Drizzle enters this callback. Retry only
+// BEGIN contention: no callback means no business write or uncertain commit.
+async function postTransaction<T>(
   db: Database,
-  input: PostInsert,
-  authorId: string,
-  invalidator: PublicContentInvalidator,
+  operation: (tx: PostTransaction) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    let entered = false;
+    try {
+      return await db.transaction((tx) => {
+        entered = true;
+        return operation(tx);
+      });
+    } catch (error) {
+      const busyAtBegin =
+        !entered &&
+        error !== null &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "SQLITE_BUSY";
+      if (!busyAtBegin) throw error;
+      if (attempt >= 3)
+        throw new ApplicationError(
+          "CONFLICT",
+          "保存暂时繁忙，请核对结果后重试",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
+    }
+  }
+}
+const relationRoles = {
+  movieActorIds: TagType.ACTOR,
+  movieDirectorIds: TagType.DIRECTOR,
+  movieStyleIds: TagType.MOVIE_STYLE,
+  galleryStyleIds: TagType.GALLERY_STYLE,
+} as const;
+const relationKeys = Object.keys(
+  relationRoles,
+) as (keyof typeof relationRoles)[];
+function hasRelationPatch(input: PostRelationPatch) {
+  return relationKeys.some((key) => input[key] !== undefined);
+}
+async function requireActor(
+  tx: PostTransaction,
+  actorId: string,
+  permissions: Permission[],
 ) {
-  const post = await observeDbOperation("post.create", "transaction", () =>
-    db.transaction(async (tx) => {
-      const [created] = await tx
-        .insert(schema.post)
-        .values(toPostInsertValues(input, authorId))
-        .returning();
-      const result = requireWriteResult(created, "create", "post");
-      const translations = toPostTranslationRows(
-        result.id,
-        sanitizePostTranslationInput(input),
-      );
-      if (translations.length) {
-        await tx.insert(schema.postTranslation).values(translations);
-      }
-      return result;
-    }),
-  );
-  const publicSync = await invalidator.invalidate({
-    contents: [{ id: post.id, type: "post" }],
+  const [actor] = await tx
+    .select({ level: schema.user.level, status: schema.user.status })
+    .from(schema.user)
+    .where(eq(schema.user.id, actorId))
+    .limit(1);
+  if (
+    !actor ||
+    actor.status !== UserStatus.ENABLE ||
+    permissions.some((permission) => !can(actor.level, permission))
+  ) {
+    throw new ApplicationError("FORBIDDEN", "当前账户无权保存此文章");
+  }
+}
+async function patchRelations(
+  tx: PostTransaction,
+  id: string,
+  input: PostRelationPatch,
+) {
+  for (const key of relationKeys) {
+    const ids = input[key];
+    if (ids === undefined) continue;
+    const type = relationRoles[key];
+    await tx
+      .delete(schema.postTag)
+      .where(and(eq(schema.postTag.postId, id), eq(schema.postTag.type, type)));
+    if (ids.length)
+      await tx
+        .insert(schema.postTag)
+        .values(
+          [...new Set(ids)].map((tagId) => ({ postId: id, tagId, type })),
+        );
+  }
+}
+// Hash the original validated intent, not sanitized or subsequently edited storage.
+function canonicalInput(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalInput).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    return `{${Object.entries(value)
+      .filter(([, field]) => field !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, field]) => `${JSON.stringify(key)}:${canonicalInput(field)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+function safeResult(
+  row: Pick<typeof schema.post.$inferSelect, "id" | "version">,
+) {
+  return { id: row.id, version: row.version };
+}
+async function invalidatePosts(
+  invalidator: PublicContentInvalidator,
+  ids: string[],
+) {
+  return invalidator.invalidate({
+    contents: ids.map((id) => ({ id, type: "post" as const })),
     refreshLayout: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
-  return { ...post, publicSync: publicSync.state };
+}
+export async function createPost(
+  db: Database,
+  input: PostInsert,
+  actorId: string,
+  invalidator: PublicContentInvalidator,
+) {
+  const { creationToken, ...intent } = input;
+  const creationInputHash = createHash("sha256")
+    .update(canonicalInput(intent))
+    .digest("hex");
+  const result = await observeDbOperation("post.create", "transaction", () =>
+    postTransaction(db, async (tx) => {
+      await requireActor(tx, actorId, [
+        Permission.postCreate,
+        ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
+      ]);
+      const [created] = await tx
+        .insert(schema.post)
+        .values({
+          ...toPostInsertValues(input, actorId),
+          creationToken,
+          creationInputHash,
+        })
+        .onConflictDoNothing({
+          target: [schema.post.authorId, schema.post.creationToken],
+        })
+        .returning();
+      if (!created) {
+        const [existing] = await tx
+          .select()
+          .from(schema.post)
+          .where(
+            and(
+              eq(schema.post.authorId, actorId),
+              eq(schema.post.creationToken, creationToken),
+            ),
+          )
+          .limit(1);
+        if (!existing || existing.creationInputHash !== creationInputHash)
+          throw new ApplicationError(
+            "CONFLICT",
+            "创建请求与原始内容不一致，请核对已创建文章",
+          );
+        return safeResult(existing);
+      }
+      const translations = toPostTranslationRows(
+        created.id,
+        sanitizePostTranslationInput(input),
+      );
+      if (translations.length)
+        await tx.insert(schema.postTranslation).values(translations);
+      await patchRelations(tx, created.id, input);
+      return safeResult(created);
+    }),
+  );
+  const publicSync = await invalidatePosts(invalidator, [result.id]);
+  return { ...result, publicSync: publicSync.state };
+}
+
+export async function getPostCreationResult(
+  db: Database,
+  creationToken: string,
+  actorId: string,
+) {
+  return postTransaction(db, async (tx) => {
+    await requireActor(tx, actorId, [Permission.postCreate]);
+    const [result] = await tx
+      .select({ id: schema.post.id, version: schema.post.version })
+      .from(schema.post)
+      .where(
+        and(
+          eq(schema.post.authorId, actorId),
+          eq(schema.post.creationToken, creationToken),
+        ),
+      )
+      .limit(1);
+    return result ? safeResult(result) : null;
+  });
 }
 
 export async function destroyPosts(
   db: Database,
-  ids: string[],
+  input: PostDelete,
+  actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
-  await observeDbOperation("post.destroy", "delete", () =>
-    db.delete(schema.post).where(inArray(schema.post.id, ids)),
+  await observeDbOperation("post.destroy", "transaction", () =>
+    postTransaction(db, async (tx) => {
+      await requireActor(tx, actorId, [Permission.postDelete]);
+      for (const item of input.items) {
+        const [current] = await tx
+          .select({ version: schema.post.version })
+          .from(schema.post)
+          .where(eq(schema.post.id, item.id))
+          .limit(1);
+        if (!current) throw new ApplicationError("NOT_FOUND", "文章不存在");
+        if (current.version !== item.expectedVersion)
+          throw new ApplicationError("CONFLICT", "文章已修改，请刷新后再删除");
+        const [deleted] = await tx
+          .delete(schema.post)
+          .where(
+            and(
+              eq(schema.post.id, item.id),
+              eq(schema.post.version, item.expectedVersion),
+            ),
+          )
+          .returning({ id: schema.post.id });
+        if (!deleted)
+          throw new ApplicationError("CONFLICT", "文章已修改，请刷新后再删除");
+      }
+    }),
   );
-  const result = { success: true } as const;
-  const publicSync = await invalidator.invalidate({
-    contents: ids.map((id) => ({ id, type: "post" })),
-    refreshLayout: true,
-    refreshPostIndex: true,
-    refreshSitemap: true,
-  });
-  return { ...result, publicSync: publicSync.state };
+  const publicSync = await invalidatePosts(
+    invalidator,
+    input.items.map(({ id }) => id),
+  );
+  return { success: true as const, publicSync: publicSync.state };
 }
 
 export async function updatePost(
   db: Database,
   input: PostUpdate,
+  actorId: string,
   invalidator: PublicContentInvalidator,
 ) {
-  // input.status 是目标状态；迁移规则依据数据库当前状态，状态不变时仍允许普通内容编辑。
-  if (input.status !== undefined) {
-    const [post] = await observeDbOperation("post.update", "select", () =>
-      db
-        .select({ status: schema.post.status })
+  const result = await observeDbOperation("post.update", "transaction", () =>
+    postTransaction(db, async (tx) => {
+      await requireActor(tx, actorId, [
+        Permission.postUpdate,
+        ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
+      ]);
+      const [current] = await tx
+        .select()
         .from(schema.post)
         .where(eq(schema.post.id, input.id))
-        .limit(1),
-    );
-    const currentStatus = post
-      ? parseEnumValue(post.status, Object.values(PostStatus), "post.status")
-      : null;
-    if (!currentStatus) throw new DomainError("文章不存在", "POST_NOT_FOUND");
-    if (currentStatus !== input.status) {
-      if (input.status === PostStatus.PUBLISHED) {
-        input = {
-          ...input,
-          status: getPostPublishStatus(input.id, currentStatus),
-        };
-      } else if (input.status === PostStatus.DRAFT) {
-        input = {
-          ...input,
-          status: getPostWithdrawStatus(input.id, currentStatus),
-        };
-      } else {
-        throw new DomainError(
-          `文章不支持变更为 ${input.status}`,
-          "INVALID_POST_STATUS",
+        .limit(1);
+      if (!current) throw new ApplicationError("NOT_FOUND", "文章不存在");
+      if (current.version !== input.expectedVersion)
+        throw new ApplicationError(
+          "CONFLICT",
+          "文章已修改，请核对最新内容后重试",
         );
+      const currentStatus = parseEnumValue(
+        current.status,
+        Object.values(PostStatus),
+        "post.status",
+      );
+      let status = input.status;
+      if (status !== undefined && status !== currentStatus) {
+        if (status === PostStatus.PUBLISHED)
+          status = getPostPublishStatus(input.id, currentStatus);
+        else if (status === PostStatus.DRAFT)
+          status = getPostWithdrawStatus(input.id, currentStatus);
+        else
+          throw new DomainError(
+            `文章不支持变更为 ${status}`,
+            "INVALID_POST_STATUS",
+          );
       }
-    }
-  }
-  const {
-    id,
-    title,
-    content,
-    excerpt,
-    galleryLocation,
-    quoteAuthor,
-    quoteContent,
-    ...rest
-  } = input;
-  const translationInput = sanitizePostTranslationInput({
-    title,
-    content,
-    excerpt,
-    galleryLocation,
-    quoteAuthor,
-    quoteContent,
-  } satisfies PostTranslationInput);
-  const hasTranslationChanges = Object.values(translationInput).some(
-    (value) => value !== undefined,
-  );
-  const post = await observeDbOperation("post.update", "transaction", () =>
-    db.transaction(async (tx) => {
-      // 主记录时间戳与各语言内容同事务提交，避免部分翻译成功却报告整次保存失败。
-      const parentValues = toPostUpdateValues(rest);
-      if (hasTranslationChanges) {
-        parentValues.updatedAt = new Date().toISOString();
-      }
-      const [updated] = Object.keys(parentValues).length
-        ? await tx
-            .update(schema.post)
-            .set(parentValues)
-            .where(eq(schema.post.id, id))
-            .returning()
-        : await tx
-            .select()
-            .from(schema.post)
-            .where(eq(schema.post.id, id))
-            .limit(1);
-      if (updated && hasTranslationChanges) {
-        const current = await tx
-          .select()
-          .from(schema.postTranslation)
-          .where(eq(schema.postTranslation.postId, id));
-        const next = patchPostTranslationRows(id, current, translationInput);
-        await tx
-          .delete(schema.postTranslation)
-          .where(eq(schema.postTranslation.postId, id));
-        if (next.length) await tx.insert(schema.postTranslation).values(next);
-      }
-      return updated;
-    }),
-  );
-  const result = requireWriteResult(post, "update", "post");
-  const publicSync = await invalidator.invalidate({
-    contents: [{ id: input.id, type: "post" }],
-    refreshLayout: true,
-    refreshPostIndex: true,
-    refreshSitemap: true,
-  });
-  return { ...result, publicSync: publicSync.state };
-}
-
-export async function updatePostTags(
-  db: Database,
-  input: PostTagUpdate,
-  invalidator: PublicContentInvalidator,
-) {
-  await observeDbOperation("post.update-tags", "transaction", () =>
-    db.transaction(async (tx) => {
-      await tx
-        .delete(schema.postTag)
+      const [updated] = await tx
+        .update(schema.post)
+        .set({
+          ...toPostUpdateValues({ ...input, status }),
+          version: sql`${schema.post.version} + 1`,
+          updatedAt: new Date().toISOString(),
+        })
         .where(
           and(
-            eq(schema.postTag.postId, input.postId),
-            eq(schema.postTag.type, input.type),
+            eq(schema.post.id, input.id),
+            eq(schema.post.version, input.expectedVersion),
           ),
+        )
+        .returning({ id: schema.post.id, version: schema.post.version });
+      if (!updated)
+        throw new ApplicationError(
+          "CONFLICT",
+          "文章已修改，请核对最新内容后重试",
         );
-      if (input.tagIds.length)
-        await tx.insert(schema.postTag).values(
-          [...new Set(input.tagIds)].map((tagId) => ({
-            postId: input.postId,
-            tagId,
-            type: input.type,
-          })),
-        );
+      const {
+        title,
+        content,
+        excerpt,
+        galleryLocation,
+        quoteAuthor,
+        quoteContent,
+      } = input;
+      const translationInput = sanitizePostTranslationInput({
+        title,
+        content,
+        excerpt,
+        galleryLocation,
+        quoteAuthor,
+        quoteContent,
+      });
+      if (
+        Object.values(translationInput).some((value) => value !== undefined)
+      ) {
+        const rows = await tx
+          .select()
+          .from(schema.postTranslation)
+          .where(eq(schema.postTranslation.postId, input.id));
+        const next = patchPostTranslationRows(input.id, rows, translationInput);
+        await tx
+          .delete(schema.postTranslation)
+          .where(eq(schema.postTranslation.postId, input.id));
+        if (next.length) await tx.insert(schema.postTranslation).values(next);
+      }
+      await patchRelations(tx, input.id, input);
+      return safeResult(requireWriteResult(updated, "update", "post"));
     }),
   );
-  const result = { success: true } as const;
-  const publicSync = await invalidator.invalidate({
-    contents: [{ id: input.postId, type: "post" }],
-    refreshLayout: true,
-    refreshPostIndex: true,
-    refreshSitemap: true,
-  });
+  const publicSync = await invalidatePosts(invalidator, [result.id]);
   return { ...result, publicSync: publicSync.state };
 }
 

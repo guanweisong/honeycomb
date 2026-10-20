@@ -20,7 +20,7 @@ vi.mock("@/lib/cache/refresh-path", () => ({
   },
 }));
 
-vi.mock("@/lib/db/query/tools", () => ({
+vi.mock("@/lib/db/query/query-builders", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));

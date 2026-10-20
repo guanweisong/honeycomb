@@ -6,8 +6,11 @@ import { PageTemplate } from "@/features/page/page-template";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
-import { getLocalizedImageLinks } from "@/lib/content/parser/get-all-image-link-form-html";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
+import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { PageStatus } from "@/features/page/page-status";
 import { observeDbOperation } from "@/lib/observability/server";
 import type { PageWithRelations, PageInput, PageVisibility } from "../types";

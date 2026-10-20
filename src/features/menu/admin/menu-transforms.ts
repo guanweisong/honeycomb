@@ -3,8 +3,13 @@ import {
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
 import { MenuType } from "@/features/menu/menu-types";
-import { MenuTypeName } from "@/features/menu/admin/options";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
+
+enum MenuTypeName {
+  CATEGORY = "分类",
+  PAGE = "页面",
+  CUSTOM = "自定义",
+}
 
 export type MenuEntityTree = {
   id: string;

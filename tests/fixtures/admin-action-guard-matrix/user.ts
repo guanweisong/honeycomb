@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const userActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/user/components/UserPageShell/index.tsx",
+    relativePath: "(dashboard)/user/components/UserPageShell/index.tsx",
     actions: [
       {
         id: "user.create",

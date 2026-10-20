@@ -1,0 +1,135 @@
+// @vitest-environment node
+
+import { requireDefined } from "@tests/helpers/require-defined";
+import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { sourceFiles } from "@tests/helpers/source-files";
+
+const sourceRoot = join(process.cwd(), "src");
+
+function imports(source: string): string[] {
+  return [
+    ...new Set(
+      [
+        ...source.matchAll(/from\s+["']([^"']+)["']/g),
+        ...source.matchAll(/import\s+["']([^"']+)["']/g),
+        ...source.matchAll(/import\s*\(\s*["']([^"']+)["']\s*\)/g),
+        ...source.matchAll(/require\s*\(\s*["']([^"']+)["']\s*\)/g),
+      ].map((match) => requireDefined(match[1])),
+    ),
+  ];
+}
+
+describe("架构复杂度治理", () => {
+  it("不保留无消费者 barrel、测试专用源码与 schema 转发文件", () => {
+    const obsoleteFiles = [
+      "src/features/comment/domain/index.ts",
+      "src/features/page/domain/index.ts",
+      "src/features/post/domain/index.ts",
+      "src/features/user/domain/index.ts",
+      "src/lib/db/index.ts",
+      "src/packages/trpc/typings.d.ts",
+      ...[
+        "comment",
+        "link",
+        "media",
+        "menu",
+        "page",
+        "post",
+        "setting",
+        "tag",
+        "user",
+      ].map(
+        (feature) =>
+          `src/features/${feature}/admin/constants/admin-action-guard.ts`,
+      ),
+      "src/lib/auth/admin-action-guard-types.ts",
+      "src/lib/validation/i18n.schema.ts",
+      ...[
+        ["page", "insert"],
+        ["page", "update"],
+        ["post", "insert"],
+        ["post", "update"],
+        ["category", "insert"],
+        ["category", "update"],
+        ["comment", "update"],
+        ["user", "insert"],
+        ["user", "update"],
+        ["link", "insert"],
+        ["link", "update"],
+        ["menu", "update"],
+        ["setting", "update"],
+        ["tag", "insert"],
+        ["tag", "update"],
+        ["media", "insert"],
+      ].map(
+        ([feature, operation]) =>
+          `src/features/${feature}/schemas/${feature}.${operation}.schema.ts`,
+      ),
+    ].filter((path) => existsSync(join(process.cwd(), path)));
+
+    expect(obsoleteFiles).toEqual([]);
+  });
+
+  it("依赖清单只声明真实直接消费者并显式列出测试工具", () => {
+    const manifest = JSON.parse(
+      readFileSync(join(process.cwd(), "package.json"), "utf8"),
+    ) as {
+      main?: string;
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const redundantDependencies = [
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-label",
+      "@radix-ui/react-select",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-radio-group",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "drizzle-zod",
+      "list-to-tree-lite",
+      "autoprefixer",
+      "bcryptjs",
+    ].filter(
+      (dependency) =>
+        manifest.dependencies?.[dependency] !== undefined ||
+        manifest.devDependencies?.[dependency] !== undefined,
+    );
+
+    expect(redundantDependencies).toEqual([]);
+    expect(manifest.devDependencies).toMatchObject({
+      "@serwist/build": expect.any(String),
+      tinyglobby: expect.any(String),
+    });
+    expect(manifest.main).toBeUndefined();
+  });
+
+  it("Radix primitives 统一通过 radix-ui 聚合包导入", () => {
+    const violations = sourceFiles(sourceRoot).flatMap((path) =>
+      imports(readFileSync(path, "utf8"))
+        .filter((specifier) => /^@radix-ui\/react-/.test(specifier))
+        .map((specifier) => `${relative(process.cwd(), path)} -> ${specifier}`),
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("生产代码中的单文件行数不超过治理上限", () => {
+    const oversized = sourceFiles(sourceRoot)
+      .map((path) => ({
+        path,
+        lines: readFileSync(path, "utf8").split("\n").length,
+      }))
+      .filter(({ lines }) => lines > 600)
+      .map(({ path, lines }) => `${relative(process.cwd(), path)} (${lines})`);
+
+    expect(oversized).toEqual([]);
+  });
+});

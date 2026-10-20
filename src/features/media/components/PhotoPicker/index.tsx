@@ -1,7 +1,7 @@
 "use client";
 
 import { Sheet } from "@/components/Sheet";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { MediaRecord as MediaEntity } from "@/features/media/types";
 
@@ -9,7 +9,9 @@ import type { MediaRecord as MediaEntity } from "@/features/media/types";
  * 图片选择器模态框的属性接口。
  */
 export interface PhotoPickerModalProps {
-  pickerContent: (onSelect: (media: MediaEntity) => void) => React.ReactNode;
+  pickerContent: (
+    onSelect: (media: MediaEntity | undefined) => void,
+  ) => React.ReactNode;
   /**
    * 控制图片选择器模态框的显示与隐藏。
    */
@@ -40,12 +42,16 @@ const PhotoPickerModal = (props: PhotoPickerModalProps) => {
   } = props;
   const [selectItem, setSelectItem] = useState<MediaEntity>();
 
+  useEffect(() => {
+    if (!showPhotoPicker) setSelectItem(undefined);
+  }, [showPhotoPicker]);
+
   /**
    * 处理图片选择事件。
    * 当用户在 `PhotoPickerPanel` 中选择一张图片时调用，更新内部状态 `selectItem`。
    * @param {MediaEntity} media - 被选中的图片媒体实体。
    */
-  const onSelect = (media: MediaEntity) => {
+  const onSelect = (media: MediaEntity | undefined) => {
     setSelectItem(media);
   };
 

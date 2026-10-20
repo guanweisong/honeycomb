@@ -8,7 +8,7 @@ export type MediaPickerSelection = {
 
 export type MediaPickerRenderer = (props: {
   open: boolean;
-  kind: "image" | "video";
+  kind: "image";
   onConfirm: (selection: MediaPickerSelection) => void;
   onCancel: () => void;
 }) => ReactNode;

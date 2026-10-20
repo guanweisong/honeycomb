@@ -18,7 +18,7 @@ vi.mock("next-intl", () => ({
       : `${values?.count ?? 0} 次浏览`,
 }));
 
-vi.mock("@/components/blog/utc-format", () => ({
+vi.mock("@/lib/ui/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 

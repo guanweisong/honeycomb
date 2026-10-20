@@ -13,20 +13,22 @@ import { useMediaQuery } from "../media-query";
 import { MEDIA_MIME_TYPES } from "../../upload-policy";
 
 export interface MediaProps {
-  onSelect?: (media: MediaViewModel) => void;
+  onSelect?: (media: MediaViewModel | undefined) => void;
 }
 
 export function MediaPageShell({ onSelect }: MediaProps) {
   const canUploadMedia = useCan(Permission.mediaUpload);
   const [currentItem, setCurrentItem] = useState<MediaViewModel>();
   const onSelectRef = useRef(onSelect);
+  const hadSelection = useRef(false);
   const query = useMediaQuery();
   const { hasMore, loadMore } = query;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const actions = useMediaActions({
     refetch: query.refetch,
     onUploadComplete: setCurrentItem,
-    onDeleteComplete: () => setCurrentItem(undefined),
+    onDeleteComplete: (id) =>
+      setCurrentItem((current) => (current?.id === id ? undefined : current)),
   });
   const { fileInputRef, handleDelete, handleUpload, loading } = actions;
 
@@ -35,7 +37,8 @@ export function MediaPageShell({ onSelect }: MediaProps) {
   }, [onSelect]);
 
   useEffect(() => {
-    if (currentItem) onSelectRef.current?.(currentItem);
+    if (currentItem || hadSelection.current) onSelectRef.current?.(currentItem);
+    hadSelection.current = currentItem !== undefined;
   }, [currentItem]);
 
   useEffect(() => {

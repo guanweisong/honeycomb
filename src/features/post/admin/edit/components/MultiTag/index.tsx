@@ -27,7 +27,7 @@ import { PostTagOption, useMultiTag } from "./use-multi-tag";
  */
 export interface MultiTagProps {
   /**
-   * 文章 ID，用于更新中间表
+   * 文章 ID，用于隔离异步标签创建结果
    */
   postId: string;
   /**
@@ -50,7 +50,7 @@ export interface MultiTagProps {
 
 /**
  * 多标签选择组件。
- * 允许用户从现有标签中选择或创建新标签，并通过中间表关联到文章。
+ * 允许用户从现有标签中选择或创建新标签，并暂存选择，随文章表单统一保存。
  * @param {MultiTagProps} props - 组件属性。
  * @returns {JSX.Element} 多标签选择器。
  */
@@ -72,7 +72,6 @@ const MultiTag = ({
     input,
     isCreating,
     isSearching,
-    isUpdating,
     options,
     open,
     removeTag,
@@ -88,11 +87,11 @@ const MultiTag = ({
             {tag.name?.zh ?? ""}
             {canManagePostTags && (
               <Button
+                type="button"
                 onClick={() => removeTag(tag.id)}
                 variant="ghost"
                 size="icon"
                 className="size-4"
-                disabled={isUpdating}
               >
                 <X className="h-3 w-3 text-muted-foreground" />
               </Button>
@@ -103,7 +102,12 @@ const MultiTag = ({
       {canManagePostTags && (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(true)}
+            >
               <Plus className="mr-1" />
               添加
             </Button>
@@ -137,6 +141,7 @@ const MultiTag = ({
                           无匹配，你可以
                           {canCreateTag && (
                             <Button
+                              type="button"
                               size="sm"
                               variant="link"
                               onClick={() => createNewTag(input)}

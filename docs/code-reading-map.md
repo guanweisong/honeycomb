@@ -2,7 +2,7 @@
 
 先找业务入口，再顺着实际调用走。当前架构为 `app / features / components / lib`；不需要逐层经过 Use Case、Repository 或聚合。
 
-## 三条常用路径
+## 常用路径
 
 ### 修改文章
 
@@ -34,6 +34,22 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
 
 `useCan` 只控制界面呈现。认证技术实现可引用 feature 纯角色目录，但不能反向加载用户业务写入。
+
+### 后台统计与路由
+
+1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；业务 UI 在 `src/features/dashboard/admin/page.tsx`。
+2. 统计入口与读取：`src/features/dashboard/router.ts` → `server.ts`；结果类型从实现经 tRPC 推断，不保留仅供测试引用的平行模型。
+3. `src/app/_trpc/router.ts` 仍挂载 `statistic`，保留原有 `statisticsRead` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
+
+`src/app/admin/(dashboard)/layout.tsx` 与 `template.tsx` 是认证和页面边界；login、forbidden 直接位于 admin 下，不再套无职责的 `(root)`。post/page 根路由只是客户端导航，直接在 app 保留 `useLayoutEffect` / `router.replace`，不需要 feature 壳或改成服务端 redirect。
+
+### 具名纯工具与直接入口
+
+- 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
+- UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
+- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/components/Menu/MenuTitle.tsx`。
+
+这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 
 ## 改动放哪里
 

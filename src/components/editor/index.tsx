@@ -2,7 +2,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import Video from "./components/VideoNode";
 import { ToolbarButton } from "./components/ToolbarButton";
 import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 import { toolbarItems } from "@/components/editor/config/toolbar-items";
@@ -51,7 +50,6 @@ export default function Tiptap({
       }),
       TaskList,
       TaskItem,
-      Video,
       Image,
       TextAlign.configure({
         types: ["heading", "paragraph"],

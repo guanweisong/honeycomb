@@ -1,3 +1,5 @@
+import type { CommentListItem } from "@/features/comment/types";
+import { CommentStatus } from "@/features/comment/comment-status";
 import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import {
@@ -26,7 +28,7 @@ beforeAll(() => {
 });
 
 let allowedPermissions = new Set<Permission>();
-const comment = {
+const comment: CommentListItem = {
   id: "comment-1",
   content: "需要审核的评论",
   postId: "post-1",
@@ -34,7 +36,14 @@ const comment = {
   email: "commenter@example.com",
   site: null,
   ip: "127.0.0.1",
-  status: "TO_AUDIT",
+  status: CommentStatus.TO_AUDIT,
+  parentId: null,
+  pageId: null,
+  customId: null,
+  userAgent: null,
+  post: null,
+  page: null,
+  custom: null,
   createdAt: "2026-01-02T03:04:05.000Z",
   updatedAt: "2026-01-02T03:04:05.000Z",
 };
@@ -71,6 +80,7 @@ describe("CommentPageShell", () => {
   let root: Root;
 
   beforeEach(() => {
+    comment.status = CommentStatus.TO_AUDIT;
     allowedPermissions = new Set();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -81,6 +91,115 @@ describe("CommentPageShell", () => {
     await act(async () => root.unmount());
     container.remove();
   });
+
+  it.each(["batch", "single"])(
+    "retains the real %s delete dialog and selection after failure, then closes after committed retry",
+    async (mode) => {
+      allowedPermissions = new Set([Permission.commentModerate]);
+      trpcMocks.mutateAsync
+        .mockReset()
+        .mockRejectedValueOnce(new Error("write failed"))
+        .mockResolvedValueOnce({ success: true, publicSync: "degraded" });
+      trpcMocks.refetch
+        .mockReset()
+        .mockRejectedValue(new Error("refresh failed"));
+      await act(async () => root.render(<CommentPageShell />));
+      await act(async () =>
+        requireDefined(
+          container.querySelectorAll<HTMLElement>('[role="checkbox"]')[1],
+        ).click(),
+      );
+      const batch = requireDefined(
+        Array.from(container.querySelectorAll("button")).find((button) =>
+          button.textContent?.includes("批量删除"),
+        ),
+      );
+      const trigger =
+        mode === "batch"
+          ? batch
+          : requireDefined(
+              Array.from(
+                container.querySelectorAll<HTMLButtonElement>("tbody button"),
+              ).at(-1),
+            );
+      await act(async () => trigger.click());
+      const confirm = () =>
+        requireDefined(
+          Array.from(document.body.querySelectorAll("button")).find(
+            (button) => button.textContent === "确定",
+          ),
+        );
+      await act(async () => confirm().click());
+      expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+      expect(batch.disabled).toBe(false);
+      await act(async () => confirm().click());
+      expect(trpcMocks.mutateAsync.mock.calls).toEqual([
+        [{ ids: ["comment-1"] }],
+        [{ ids: ["comment-1"] }],
+      ]);
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+      if (mode === "batch") expect(batch.disabled).toBe(true);
+    },
+  );
+
+  it.each([
+    {
+      status: CommentStatus.TO_AUDIT,
+      button: "通过",
+      next: CommentStatus.PUBLISH,
+    },
+    {
+      status: CommentStatus.TO_AUDIT,
+      button: "驳回",
+      next: CommentStatus.RUBBISH,
+    },
+    { status: CommentStatus.PUBLISH, button: "屏蔽", next: CommentStatus.BAN },
+    {
+      status: CommentStatus.RUBBISH,
+      button: "通过",
+      next: CommentStatus.PUBLISH,
+    },
+    {
+      status: CommentStatus.BAN,
+      button: "解除屏蔽",
+      next: CommentStatus.PUBLISH,
+    },
+  ])(
+    "retains $status → $next confirmation after failure and closes after committed retry",
+    async ({ status, button, next }) => {
+      comment.status = status;
+      allowedPermissions = new Set([Permission.commentModerate]);
+      trpcMocks.mutateAsync
+        .mockReset()
+        .mockRejectedValueOnce(new Error("write failed"))
+        .mockResolvedValueOnce({ publicSync: "degraded" });
+      trpcMocks.refetch
+        .mockReset()
+        .mockRejectedValue(new Error("refresh failed"));
+      await act(async () => root.render(<CommentPageShell />));
+      await act(async () =>
+        requireDefined(
+          Array.from(container.querySelectorAll("button")).find(
+            (item) => item.textContent === button,
+          ),
+        ).click(),
+      );
+      const confirm = () =>
+        requireDefined(
+          Array.from(document.body.querySelectorAll("button")).find(
+            (item) => item.textContent === "确定",
+          ),
+        );
+      await act(async () => confirm().click());
+      expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
+      await act(async () => confirm().click());
+      expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+      expect(trpcMocks.mutateAsync.mock.calls).toEqual([
+        [{ id: comment.id, status: next }],
+        [{ id: comment.id, status: next }],
+      ]);
+    },
+  );
 
   it("keeps comment search available while hiding moderation controls", async () => {
     await act(async () => root.render(React.createElement(CommentPageShell)));

@@ -1,19 +1,19 @@
 import { notFound } from "next/navigation";
-import { PostStatus } from "@/features/post/post-status";
+import { PageStatus } from "@/features/page/page-status";
 
-type PostDetailLike =
+type PageDetailLike =
   | {
-      status?: PostStatus | string | null;
+      status?: PageStatus | string | null;
     }
   | null
   | undefined;
 
-export function assertPublishedPost<T extends NonNullable<PostDetailLike>>(
-  postDetail: T | null | undefined,
+export function assertPublishedPage<T extends NonNullable<PageDetailLike>>(
+  pageDetail: T | null | undefined,
 ): T {
-  if (!postDetail || postDetail.status !== PostStatus.PUBLISHED) {
+  if (!pageDetail || pageDetail.status !== PageStatus.PUBLISHED) {
     notFound();
   }
 
-  return postDetail;
+  return pageDetail;
 }

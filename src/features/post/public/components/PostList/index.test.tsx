@@ -40,16 +40,13 @@ vi.mock("@/lib/hooks/use-scroll-position", () => ({
   useScrollPosition: () => ({ left: 0, top: scrollState?.top ?? 0 }),
 }));
 
-vi.mock(
-  "@/features/post/public/hooks/rq/post/use.infinite.query.post.list",
-  () => ({
-    default: () => ({
-      ...listState,
-      fetchNextPage: () => fetches.push("next"),
-      refetch: () => fetches.push("refetch"),
-    }),
+vi.mock("@/features/post/public/use-post-list", () => ({
+  default: () => ({
+    ...listState,
+    fetchNextPage: () => fetches.push("next"),
+    refetch: () => fetches.push("refetch"),
   }),
-);
+}));
 
 vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
@@ -72,6 +69,7 @@ const makePost = (
   overrides: Partial<PostListViewModel> &
     Pick<PostListViewModel, "id" | "type">,
 ): PostListViewModel => ({
+  version: 0,
   authorId: "author-1",
   categoryId: "category-1",
   commentStatus: EnableStatus.ENABLE,

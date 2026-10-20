@@ -16,7 +16,7 @@ type MediaGridProps = {
   isLoading?: boolean;
   error?: string;
   currentItem?: MediaViewModel;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => boolean | Promise<boolean>;
   onSelect: (media: MediaViewModel) => void;
 };
 

@@ -14,7 +14,6 @@ import {
   TextQuote,
   Image as ImageIcon,
   Link,
-  Film,
   TextAlignStart,
   TextAlignCenter,
   TextAlignEnd,
@@ -30,7 +29,6 @@ import { Editor } from "@tiptap/core";
 import { ReactNode } from "react";
 import { ToolbarLinkItem } from "@/components/editor/components/ToolbarLinkItem";
 import { ToolbarImageItem } from "@/components/editor/components/ToolbarImageItem";
-import { ToolbarVideoItem } from "@/components/editor/components/ToolbarVideoItem";
 
 export interface ToolbarItem {
   icon: ReactNode;
@@ -278,11 +276,6 @@ export const toolbarItems: ToolbarItemOrGroup[][] = [
       icon: <ImageIcon className="h-4 w-4" aria-hidden />,
       label: "上传图片",
       render: (editor: Editor) => <ToolbarImageItem editor={editor} />,
-    },
-    {
-      icon: <Film className="h-4 w-4" />,
-      label: "上传视频",
-      render: (editor: Editor) => <ToolbarVideoItem editor={editor} />,
     },
   ],
   [

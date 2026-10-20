@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { UserListQuerySchema } from "@/features/user/schema";
+import {
+  UserListQuerySchema,
+  type UserListQueryInput,
+} from "@/features/user/schema";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
@@ -13,7 +16,8 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { UserFormDialog } from "../UserFormDialog";
 import { useUserActions } from "@/features/user/admin/user-actions";
 import { userTableColumns } from "../../columns/user-columns";
-import { useUserQuery } from "@/features/user/admin/user-query";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 import {
   canDeleteUserResource,
   isUserResourceProtected,
@@ -22,7 +26,8 @@ import {
 export function UserPageShell() {
   const canManageUsers = useCan(Permission.userManage);
   const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
-  const query = useUserQuery();
+  const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
+  const query = trpc.user.index.useQuery(searchParams, adminListQueryOptions);
   const actions = useUserActions({
     selectedRows,
     onSelectionChange: setSelectedRows,
@@ -56,7 +61,7 @@ export function UserPageShell() {
         selectedRows={selectedRows}
         onSelectionChange={setSelectedRows}
         onChange={(params) =>
-          query.setSearchParams(UserListQuerySchema.parse(params))
+          setSearchParams(UserListQuerySchema.parse(params))
         }
         toolBar={
           <div className="flex justify-between">
@@ -92,7 +97,7 @@ export function UserPageShell() {
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
-                onSubmit={query.setSearchParams}
+                onSubmit={setSearchParams}
                 inline={true}
                 submitProps={{ children: "查询", variant: "outline" }}
               />
@@ -120,7 +125,7 @@ export function UserPageShell() {
                       type="danger"
                       title="确定要删除吗？"
                       onOK={async () => {
-                        await handleDeleteItem([row.id]);
+                        return (await handleDeleteItem([row.id])) === "success";
                       }}
                     />
                   )}

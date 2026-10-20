@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
+import { UserLevel } from "@/features/user/user";
+import { updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
 
 vi.mock("@/lib/observability/server", () => ({
@@ -62,6 +64,101 @@ describe("administrator credential resets", () => {
     client.close();
     rmSync(directory, { recursive: true });
   });
+
+  it("allows an ordinary user's level change", async () => {
+    await db
+      .update(schema.user)
+      .set({ level: UserLevel.EDITOR })
+      .where(eq(schema.user.id, "target"));
+
+    const result = await createUserRepository(db).update({
+      id: "target",
+      level: UserLevel.GUEST,
+    });
+
+    expect(result.level).toBe(UserLevel.GUEST);
+    expect(await db.select().from(schema.session)).toHaveLength(3);
+  });
+
+  it("preserves not-found errors for missing role-update targets", async () => {
+    await expect(
+      createUserRepository(db).update({
+        id: "missing",
+        level: UserLevel.GUEST,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it.each([true, false])(
+    "rejects stale demotion after promotion without changing data (password: %s)",
+    async (withPassword) => {
+      const id = "000000000000000000000001";
+      await db.insert(schema.user).values({
+        id,
+        name: "Protected",
+        email: "protected@example.com",
+        level: UserLevel.EDITOR,
+      });
+      await db.insert(schema.account).values({
+        id: "protected-credential",
+        accountId: id,
+        providerId: "credential",
+        userId: id,
+        password: "protected-original-hash",
+      });
+      const now = new Date();
+      await db.insert(schema.session).values({
+        id: "protected-session",
+        token: "protected-token",
+        userId: id,
+        createdAt: now,
+        updatedAt: now,
+        expiresAt: new Date(now.getTime() + 60_000),
+      });
+      const repository = createUserRepository(db);
+      const getStatus = repository.getStatus;
+      vi.spyOn(repository, "getStatus").mockImplementationOnce(
+        async (userId) => {
+          const stale = await getStatus(userId);
+          expect(stale?.level).toBe(UserLevel.EDITOR);
+          // A competing request commits its promotion after the command's read.
+          await repository.update({ id: userId, level: UserLevel.ADMIN });
+          return stale;
+        },
+      );
+      const cache = {
+        invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+      };
+      const accounts = await db.select().from(schema.account);
+      const sessions = await db.select().from(schema.session);
+
+      await expect(
+        updateUser(
+          repository,
+          {
+            id,
+            name: "Stale name",
+            level: UserLevel.GUEST,
+            ...(withPassword ? { password: "new-password123" } : {}),
+          },
+          UserLevel.ADMIN,
+          cache,
+        ),
+      ).rejects.toMatchObject({
+        name: "DomainError",
+        code: "PROTECTED_USER",
+      });
+
+      const [user] = await db
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, id));
+      expect(user).toMatchObject({ level: UserLevel.ADMIN, name: "Protected" });
+      expect(await db.select().from(schema.account)).toEqual(accounts);
+      expect(await db.select().from(schema.session)).toEqual(sessions);
+      expect(cache.invalidate).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([true, false])(
     "revokes only the target user's sessions when a credential exists: %s",

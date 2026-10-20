@@ -26,27 +26,20 @@ describe("CommentInsertSchema", () => {
     ).toBe(true);
   });
 
-  it("should reject unsafe comment site URLs", () => {
-    const result = CommentInsertSchema.safeParse({
-      author: "Test User",
-      content: "New comment",
-      email: "test@example.com",
-      captchaToken: "valid-captcha",
-      site: "javascript:alert(1)",
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it("should reject invalid comment email addresses", () => {
-    const result = CommentInsertSchema.safeParse({
-      author: "Test User",
-      content: "New comment",
-      email: "not-an-email",
-      captchaToken: "valid-captcha",
+  it.each([
+    ["site", "javascript:alert(1)"],
+    ["email", "not-an-email"],
+  ])("rejects invalid %s on an otherwise valid target", (field, value) => {
+    const input = {
+      ...validComment,
+      postId: "post-id",
       site: "https://example.com",
-    });
-
+    };
+    expect(CommentInsertSchema.safeParse(input).success).toBe(true);
+    const result = CommentInsertSchema.safeParse({ ...input, [field]: value });
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.path)).toEqual([[field]]);
+    }
   });
 });

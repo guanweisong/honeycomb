@@ -5,6 +5,7 @@ import { loadPostRelations } from "../server/post-relations";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import type { PostWithRelations } from "../types";
+import { PostWithRelationsSchema } from "../post-read-model";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: vi.fn((_name, _operation, callback) => callback()),
@@ -132,18 +133,7 @@ describe("loadPostRelations", () => {
       loadPostRelations(asMockDatabase(db), [second, first]),
     ).resolves.toEqual([
       {
-        ...second,
-        title: null,
-        author: undefined,
-        category: undefined,
-        cover: undefined,
-        movieActors: [],
-        movieDirectors: [],
-        movieStyles: [],
-        galleryStyles: [],
-      },
-      {
-        ...first,
+        ...PostWithRelationsSchema.parse(first),
         category,
         author,
         cover,
@@ -161,4 +151,51 @@ describe("loadPostRelations", () => {
       }),
     );
   });
+});
+
+describe("post snapshot privacy", () => {
+  it.each(["ALL", "PUBLISHED_ONLY"] as const)(
+    "uses the newer complete %s relation snapshot and strips private columns",
+    async (visibility) => {
+      const older = createPostFixture({ version: 2, movieTime: "old" });
+      const latest = {
+        ...older,
+        version: 3,
+        movieTime: "new",
+        creationToken: "private-token",
+        creationInputHash: "private-hash",
+        translations: [],
+        category: null,
+        author: null,
+        cover: null,
+        postTags: [],
+      };
+      const db = {
+        query: { post: { findMany: vi.fn().mockResolvedValue([latest]) } },
+      };
+      const [result] = await loadPostRelations(
+        asMockDatabase(db),
+        [older],
+        visibility,
+      );
+      expect(result).toMatchObject({ version: 3, movieTime: "new" });
+      expect(result).not.toHaveProperty("creationToken");
+      expect(result).not.toHaveProperty("creationInputHash");
+    },
+  );
+  it.each(["ALL", "PUBLISHED_ONLY"] as const)(
+    "does not resurrect a deleted %s snapshot",
+    async (visibility) => {
+      const db = {
+        query: { post: { findMany: vi.fn().mockResolvedValue([]) } },
+      };
+      expect(
+        await loadPostRelations(
+          asMockDatabase(db),
+          [createPostFixture()],
+          visibility,
+        ),
+      ).toEqual([]);
+    },
+  );
 });

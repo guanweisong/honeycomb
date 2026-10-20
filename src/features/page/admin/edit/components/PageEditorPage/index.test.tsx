@@ -55,6 +55,13 @@ vi.mock("@/lib/observability/client", () => ({
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
+      adminDetail: {
+        useQuery: () => ({
+          data: mocks.detail,
+          refetch: mocks.refetch,
+          error: mocks.queryError,
+        }),
+      },
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
       update: { useMutation: () => ({ mutateAsync: mocks.update }) },
     },
@@ -67,14 +74,6 @@ vi.mock("@/components/admin/layout-context", async () => {
   >("@/components/admin/layout-context");
   return { ...actual, useAdminLayoutPageTitle: mocks.pageTitle };
 });
-
-vi.mock("../../page-editor-query", () => ({
-  usePageEditorQuery: () => ({
-    data: mocks.detail,
-    refetch: mocks.refetch,
-    error: mocks.queryError,
-  }),
-}));
 
 vi.mock("../PageEditorForm", () => ({
   PageEditorForm: ({ form }: ComponentProps<typeof PageEditorForm>) => {

@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import {
-  createPost,
-  updatePost,
-  destroyPosts,
-  updatePostTags,
-} from "./post-commands";
+import { createPost, updatePost, destroyPosts } from "./post-commands";
 import { createPage, updatePage } from "@/features/page/server";
 import { createCommentCommandRepository } from "@/features/comment/server/comment-command-repository";
 import { createCategory, updateCategory } from "@/features/category/server";
@@ -19,14 +14,14 @@ import { PostStatus } from "../post-status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import type { Database } from "@/lib/db/db";
 import { PageTemplate } from "@/features/page/page-template";
-import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import { loadPostRelations } from "./post-relations";
 import { getPage } from "@/features/page/server/page-queries";
 import { listMenus } from "@/features/menu/server";
 import { toPublicComment } from "@/features/comment/server/comment-public-dto";
 import { toPublicCommentSource } from "@/features/comment/server/comment-dto";
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
-import type * as schema from "@/lib/db/schema";
+import * as schema from "@/lib/db/schema";
 
 const mockBumpCacheVersion = vi.hoisted(() => vi.fn());
 
@@ -65,9 +60,29 @@ const invalidator = {
   invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
 };
 
+function authorize(db: ReturnType<typeof createMockDb>) {
+  db.from.mockImplementation((table: object) => {
+    if (table === schema.user) {
+      const actor = createMockDb();
+      actor.limit.mockResolvedValue([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+      ]);
+      return actor;
+    }
+    return db;
+  });
+}
+const creationToken = "11111111-1111-4111-8111-111111111111";
+
 describe("required persistence results", () => {
   const updates = [
-    updatePost,
+    (db: Database, input: { id: string }) =>
+      updatePost(
+        db,
+        { ...input, expectedVersion: 0, title: { en: "Changed" } },
+        "author",
+        invalidator,
+      ),
     updatePage,
     updateCategory,
     updateTag,
@@ -80,6 +95,7 @@ describe("required persistence results", () => {
   ];
   it.each(updates)("rejects a missing update target (%#)", async (update) => {
     const db = createMockDb();
+    authorize(db);
     db.returning.mockResolvedValue([]);
     db.limit.mockResolvedValue([]);
     await expect(
@@ -88,11 +104,19 @@ describe("required persistence results", () => {
   });
   it("rejects empty create results across repositories", async () => {
     const fake = createMockDb();
+    authorize(fake);
     fake.returning.mockResolvedValue([]);
     fake.limit.mockResolvedValue([]);
     const db = asMockDatabase(fake);
+    await expect(
+      createPost(
+        db,
+        { categoryId: "category", creationToken },
+        "author",
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
     const creates = [
-      () => createPost(db, { categoryId: "category" }, "author", invalidator),
       () =>
         createPage(
           db,
@@ -142,13 +166,19 @@ describe("required persistence results", () => {
   });
   it.each([
     (db: Database) =>
-      updatePost(db, { id: "id", status: PostStatus.PUBLISHED }, invalidator),
+      updatePost(
+        db,
+        { id: "id", expectedVersion: 0, status: PostStatus.PUBLISHED },
+        "author",
+        invalidator,
+      ),
     (db: Database) =>
       updatePage(db, { id: "id", status: PageStatus.PUBLISHED }, invalidator),
     (db: Database) => createCommentCommandRepository(db).findStatus("id"),
   ])("rejects unknown stored status (%#)", async (read) => {
     const db = createMockDb();
-    db.limit.mockResolvedValue([{ status: "UNKNOWN" }]);
+    authorize(db);
+    db.limit.mockResolvedValue([{ status: "UNKNOWN", version: 0 }]);
     await expect(read(asMockDatabase(db))).rejects.toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
     });
@@ -158,6 +188,9 @@ describe("required persistence results", () => {
     async (field) => {
       const row: typeof schema.post.$inferSelect = {
         id: "post",
+        version: 0,
+        creationToken: null,
+        creationInputHash: null,
         authorId: "author",
         categoryId: "category",
         status: "PUBLISHED",
@@ -171,7 +204,18 @@ describe("required persistence results", () => {
         updatedAt: null,
       };
       const db = createMockDb();
-      db.query.post.findMany.mockResolvedValue([]);
+      authorize(db);
+      db.query.post.findMany.mockResolvedValue([
+        {
+          ...row,
+          [field]: "UNKNOWN",
+          author: null,
+          cover: null,
+          category: null,
+          translations: [],
+          postTags: [],
+        },
+      ]);
       await expect(
         loadPostRelations(asMockDatabase(db), [{ ...row, [field]: "UNKNOWN" }]),
       ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
@@ -181,6 +225,7 @@ describe("required persistence results", () => {
     "rejects an unknown page %s during detail mapping",
     async (field) => {
       const db = createMockDb();
+      authorize(db);
       db.query.page.findFirst.mockResolvedValue({
         id: "page",
         status: "PUBLISHED",
@@ -200,6 +245,7 @@ describe("required persistence results", () => {
   );
   it("rejects an unknown menu type before constructing navigation", async () => {
     const db = createMockDb();
+    authorize(db);
     db.query.menu.findMany.mockResolvedValue([
       {
         id: "menu",
@@ -219,6 +265,7 @@ describe("required persistence results", () => {
   });
   it("does not claim a comment was created when the atomic target check rejects it", async () => {
     const db = createMockDb();
+    authorize(db);
     db.returning.mockResolvedValue([]);
     await expect(
       createCommentCommandRepository(asMockDatabase(db)).createIfTargetMatches(
@@ -244,6 +291,7 @@ describe("required persistence results", () => {
   });
   it("rejects invalid status when mapping a written comment", async () => {
     const db = createMockDb();
+    authorize(db);
     db.returning.mockResolvedValue([commentRow]);
     await expect(
       createCommentCommandRepository(asMockDatabase(db)).update({
@@ -253,6 +301,7 @@ describe("required persistence results", () => {
   });
   it("rejects invalid status when loading a notification comment", async () => {
     const db = createMockDb();
+    authorize(db);
     db.where.mockResolvedValue([{ ...commentRow, post: null, page: null }]);
     await expect(
       createCommentNotificationRepository(asMockDatabase(db)).getComment(
@@ -274,6 +323,7 @@ describe("required persistence results", () => {
   );
   it("preserves a nullable stored comment status", async () => {
     const db = createMockDb();
+    authorize(db);
     db.limit.mockResolvedValue([{ status: null }]);
     await expect(
       createCommentCommandRepository(asMockDatabase(db)).findStatus("comment"),
@@ -286,28 +336,36 @@ describe("required persistence results", () => {
 
   it("uses only the explicit invalidator for post public synchronization", async () => {
     const db = createMockDb();
-    db.returning.mockResolvedValue([{ id: "post" }]);
+    authorize(db);
+    db.returning.mockResolvedValue([{ id: "post", version: 1 }]);
     db.limit.mockResolvedValue([
-      { id: "post", authorId: "author", categoryId: "category" },
+      { id: "post", version: 0, status: PostStatus.DRAFT },
     ]);
     const database = asMockDatabase(db);
     invalidator.invalidate.mockClear();
 
     await createPost(
       database,
-      { categoryId: "category" },
+      { categoryId: "category", creationToken },
       "author",
       invalidator,
     );
-    await updatePost(database, { id: "post" }, invalidator);
-    await destroyPosts(database, ["post"], invalidator);
-    await updatePostTags(
+    await updatePost(
       database,
-      {
-        postId: "post",
-        tagIds: [],
-        type: TagType.ACTOR,
-      },
+      { id: "post", expectedVersion: 0, movieTime: null },
+      "author",
+      invalidator,
+    );
+    await destroyPosts(
+      database,
+      { items: [{ id: "post", expectedVersion: 0 }] },
+      "author",
+      invalidator,
+    );
+    await updatePost(
+      database,
+      { id: "post", expectedVersion: 0, movieActorIds: [] },
+      "author",
       invalidator,
     );
 

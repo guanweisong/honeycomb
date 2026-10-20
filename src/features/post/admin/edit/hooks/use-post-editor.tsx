@@ -6,7 +6,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { PhotoPickerItemProps } from "../../../../media/components/PhotoPickerItem";
-import { PostInsertSchema, PostUpdateSchema } from "@/features/post/schema";
+import {
+  PostInsertSchema,
+  PostUpdateSchema,
+  type PostInsert,
+} from "@/features/post/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
 import { PostStatus } from "@/features/post/post-status";
@@ -24,7 +28,16 @@ import {
 import { useLocalDraft } from "@/components/admin/local-draft";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { can, Permission } from "@/lib/auth/permissions";
-import { parsePostDraft } from "../utils/post-draft";
+import {
+  parsePostDraft,
+  PostEditorSchema,
+  type PostEditorValues,
+  type PostDraft,
+  preservePostDraft,
+  readPostCreationAttempt,
+  writePostCreationAttempt,
+  clearPostCreationAttempt,
+} from "../utils/post-draft";
 
 export type PostSubmitAction = "create" | "update";
 
@@ -45,15 +58,42 @@ export function usePostEditor(id: string | null) {
   );
   const [isNavigating, startNavigation] = useTransition();
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
-  const [galleryStyles, setGalleryStyles] = useState<PostTagOption[]>([]);
-  const [movieActors, setMovieActors] = useState<PostTagOption[]>([]);
-  const [movieDirectors, setMovieDirectors] = useState<PostTagOption[]>([]);
-  const [movieStyles, setMovieStyles] = useState<PostTagOption[]>([]);
-
-  const form = useForm({
-    resolver: zodResolver(id ? PostUpdateSchema : PostInsertSchema),
-    defaultValues: { type: PostType.ARTICLE },
+  const [baselineVersion, setBaselineVersion] = useState<number | undefined>(
+    undefined,
+  );
+  const [saveProblem, setSaveProblem] = useState<"conflict" | "unknown" | null>(
+    null,
+  );
+  const [preservedDraft, setPreservedDraft] = useState<PostDraft | null>(null);
+  const [creationAttempt, setCreationAttempt] = useState<PostInsert | null>(
+    null,
+  );
+  const form = useForm<PostEditorValues>({
+    resolver: zodResolver(PostEditorSchema),
+    defaultValues: {
+      type: PostType.ARTICLE,
+      galleryStyles: [],
+      movieActors: [],
+      movieDirectors: [],
+      movieStyles: [],
+    },
   });
+  const galleryStyles =
+    useWatch({ control: form.control, name: "galleryStyles" }) ?? [];
+  const movieActors =
+    useWatch({ control: form.control, name: "movieActors" }) ?? [];
+  const movieDirectors =
+    useWatch({ control: form.control, name: "movieDirectors" }) ?? [];
+  const movieStyles =
+    useWatch({ control: form.control, name: "movieStyles" }) ?? [];
+  const setGalleryStyles = (value: PostTagOption[]) =>
+    form.setValue("galleryStyles", value, { shouldDirty: true });
+  const setMovieActors = (value: PostTagOption[]) =>
+    form.setValue("movieActors", value, { shouldDirty: true });
+  const setMovieDirectors = (value: PostTagOption[]) =>
+    form.setValue("movieDirectors", value, { shouldDirty: true });
+  const setMovieStyles = (value: PostTagOption[]) =>
+    form.setValue("movieStyles", value, { shouldDirty: true });
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = watchedType ?? PostType.ARTICLE;
   const { data: category } = trpc.category.adminTree.useQuery();
@@ -69,7 +109,21 @@ export function usePostEditor(id: string | null) {
   const updatePost = trpc.post.update.useMutation();
   const { isDirty } = form.formState;
   const { user } = useCurrentUser();
-  const draftValues = parsePostDraft(useWatch({ control: form.control })) ?? {};
+  const userId = user?.id;
+  const draftValues =
+    parsePostDraft({
+      ...useWatch({ control: form.control }),
+      baseVersion: baselineVersion,
+    }) ?? {};
+  const creationResult = trpc.post.creationResult.useQuery(
+    { creationToken: creationAttempt?.creationToken ?? "" },
+    { enabled: Boolean(user && !id && creationAttempt), retry: false },
+  );
+  useEffect(() => {
+    setCreationAttempt(!id && userId ? readPostCreationAttempt(userId) : null);
+    setSaveProblem(null);
+    setPreservedDraft(null);
+  }, [id, userId]);
   const consumedSaveSnapshot = useRef<typeof detail>(undefined);
   const previousRecord = useRef<
     | {
@@ -81,12 +135,16 @@ export function usePostEditor(id: string | null) {
 
   const resetEditor = useCallback(
     (post?: PostDetailEntity | null) => {
-      form.reset(post ?? { type: PostType.ARTICLE });
+      setBaselineVersion(post?.version);
+      form.reset({
+        ...post,
+        type: post?.type ?? PostType.ARTICLE,
+        galleryStyles: post?.galleryStyles ?? [],
+        movieActors: post?.movieActors ?? [],
+        movieDirectors: post?.movieDirectors ?? [],
+        movieStyles: post?.movieStyles ?? [],
+      });
       setCoverPreview(post?.cover);
-      setGalleryStyles(post?.galleryStyles || []);
-      setMovieActors(post?.movieActors || []);
-      setMovieDirectors(post?.movieDirectors || []);
-      setMovieStyles(post?.movieStyles || []);
     },
     [form],
   );
@@ -128,6 +186,8 @@ export function usePostEditor(id: string | null) {
     ready: !id || detail?.id === id,
     parse: parsePostDraft,
     onRestore: (values) => {
+      setBaselineVersion(values.baseVersion);
+      if (id && values.baseVersion === undefined) setSaveProblem("conflict");
       form.reset(
         {
           ...values,
@@ -141,6 +201,38 @@ export function usePostEditor(id: string | null) {
     },
   });
 
+  const finishCreation = (
+    result: { id: string; version: number },
+    attempt: PostInsert,
+    submitted?: { json: string; draft: PostDraft },
+  ) => {
+    if (!user) return;
+    const currentValues = form.getValues();
+    if (
+      submitted
+        ? JSON.stringify(currentValues) !== submitted.json
+        : form.formState.isDirty
+    ) {
+      // A recovered creation can already have later server edits. Never adopt its current
+      // revision as the basis of our original creation content.
+      const laterDraft = parsePostDraft({
+        ...currentValues,
+        baseVersion: submitted ? result.version : 0,
+      });
+      if (laterDraft && !preservePostDraft(user.id, result.id, laterDraft)) {
+        setPreservedDraft(laterDraft);
+        toast.warning(
+          "文章已创建，但后续编辑无法备份。请保留当前页面并复制内容后打开文章",
+        );
+        return;
+      }
+    }
+    clearPostCreationAttempt(user.id, attempt.creationToken);
+    setCreationAttempt(null);
+    if (submitted) draft.clearSaved(submitted.draft);
+    startNavigation(() => router.push(`/admin/post/edit?id=${result.id}`));
+  };
+
   const submit = async (
     status: PostStatus,
     action: PostSubmitAction,
@@ -151,7 +243,9 @@ export function usePostEditor(id: string | null) {
     setLoading(true);
     let saved = false;
     const submittedValues = JSON.stringify(form.getValues());
-    const submittedDraft = parsePostDraft(form.getValues()) ?? {};
+    const submittedDraft =
+      parsePostDraft({ ...form.getValues(), baseVersion: baselineVersion }) ??
+      {};
     const submittedGeneration = recordGeneration.current;
 
     try {
@@ -164,14 +258,38 @@ export function usePostEditor(id: string | null) {
           }
 
           const data = normalized.data;
+          const relations =
+            user && can(user.level, Permission.postManageTags)
+              ? {
+                  movieActorIds: data.movieActors?.map(({ id }) => id) ?? [],
+                  movieDirectorIds:
+                    data.movieDirectors?.map(({ id }) => id) ?? [],
+                  movieStyleIds: data.movieStyles?.map(({ id }) => id) ?? [],
+                  galleryStyleIds:
+                    data.galleryStyles?.map(({ id }) => id) ?? [],
+                }
+              : {};
           if (action === "create") {
             if (!data.categoryId) {
               toast.error("请选择分类目录");
               return;
             }
-            const result = await createPost.mutateAsync(
-              PostInsertSchema.parse(data),
-            );
+            if (!user) return;
+            if (creationAttempt) {
+              toast.error("上次创建结果尚待核对，请使用下方的核对或重试操作");
+              return;
+            }
+            const attempt = PostInsertSchema.parse({
+              ...data,
+              ...relations,
+              creationToken: crypto.randomUUID(),
+            });
+            if (!writePostCreationAttempt(user.id, attempt)) {
+              toast.error("无法保存创建凭据，请允许浏览器本地存储后重试");
+              return;
+            }
+            setCreationAttempt(attempt);
+            const result = await createPost.mutateAsync(attempt);
             if (result.id) {
               saved = true;
               if (
@@ -179,13 +297,12 @@ export function usePostEditor(id: string | null) {
                 previousRecord.current?.id !== id
               )
                 return;
-              draft.clearSaved(submittedDraft);
-              form.reset(data);
+              finishCreation(result, attempt, {
+                json: submittedValues,
+                draft: submittedDraft,
+              });
               if (!notifyPublicSyncWarning(result, toast.warning))
                 toast.success("添加成功");
-              startNavigation(() =>
-                router.push(`/admin/post/edit?id=${result.id}`),
-              );
             }
             return;
           }
@@ -194,8 +311,18 @@ export function usePostEditor(id: string | null) {
             toast.error("文章尚未加载，无法更新");
             return;
           }
+          if (baselineVersion === undefined) {
+            setSaveProblem("conflict");
+            toast.error("缺少编辑版本，请先加载最新版本");
+            return;
+          }
           const result = await updatePost.mutateAsync(
-            PostUpdateSchema.parse({ ...data, id: detail.id }),
+            PostUpdateSchema.parse({
+              ...data,
+              ...relations,
+              id: detail.id,
+              expectedVersion: baselineVersion,
+            }),
           );
           if (result) {
             // Persistence has succeeded; a failed read must not invite retrying the write.
@@ -211,9 +338,13 @@ export function usePostEditor(id: string | null) {
             ) {
               draft.clearSaved(submittedDraft);
               const currentValues = form.getValues();
-              const savedDetail = refreshed?.isSuccess
-                ? refreshed.data
-                : undefined;
+              setBaselineVersion(result.version);
+              setSaveProblem(null);
+              const savedDetail =
+                refreshed?.isSuccess &&
+                refreshed.data?.version === result.version
+                  ? refreshed.data
+                  : undefined;
               if (savedDetail) {
                 // This snapshot is applied here, not again by query hydration.
                 consumedSaveSnapshot.current = savedDetail;
@@ -227,29 +358,8 @@ export function usePostEditor(id: string | null) {
                 );
               }
               if (savedDetail) {
-                // Tag relations save independently; do not replace newer selections.
                 setCoverPreview((current) =>
                   current === coverPreview ? savedDetail.cover : current,
-                );
-                setGalleryStyles((current) =>
-                  current === galleryStyles
-                    ? savedDetail.galleryStyles || []
-                    : current,
-                );
-                setMovieActors((current) =>
-                  current === movieActors
-                    ? savedDetail.movieActors || []
-                    : current,
-                );
-                setMovieDirectors((current) =>
-                  current === movieDirectors
-                    ? savedDetail.movieDirectors || []
-                    : current,
-                );
-                setMovieStyles((current) =>
-                  current === movieStyles
-                    ? savedDetail.movieStyles || []
-                    : current,
                 );
               }
             }
@@ -266,9 +376,103 @@ export function usePostEditor(id: string | null) {
         },
       )();
       return saved;
-    } catch {
-      toast.error(action === "create" ? "添加失败" : "更新失败");
+    } catch (error) {
+      if (recordGeneration.current !== submittedGeneration) return false;
+      const code =
+        typeof error === "object" &&
+        error !== null &&
+        "data" in error &&
+        typeof error.data === "object" &&
+        error.data !== null &&
+        "code" in error.data
+          ? error.data.code
+          : undefined;
+      if (code === "CONFLICT") {
+        setSaveProblem("conflict");
+        toast.error("服务器已有更新，本地内容已保留，请核对最新版本");
+      } else if (
+        ["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].includes(
+          String(code),
+        )
+      ) {
+        if (action === "create" && user) {
+          const attempt = readPostCreationAttempt(user.id);
+          if (attempt) clearPostCreationAttempt(user.id, attempt.creationToken);
+          setCreationAttempt(null);
+        }
+        toast.error(action === "create" ? "添加失败" : "更新失败");
+      } else {
+        setSaveProblem("unknown");
+        toast.error("保存结果暂时无法确认，本地内容已保留，请先核对");
+      }
       return false;
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
+
+  const loadLatest = async () => {
+    const local = parsePostDraft({
+      ...form.getValues(),
+      baseVersion: baselineVersion,
+    });
+    if (!local || !user || !id || !preservePostDraft(user.id, id, local)) {
+      toast.error("无法保留本地内容，暂未替换表单");
+      return;
+    }
+    setPreservedDraft(local);
+    const requestedValues = JSON.stringify(form.getValues());
+    const generation = recordGeneration.current;
+    let latest: Awaited<ReturnType<typeof refetch>>;
+    try {
+      latest = await refetch();
+    } catch {
+      toast.error("加载最新版本失败，本地内容已保留");
+      return;
+    }
+    if (
+      generation !== recordGeneration.current ||
+      !latest.isSuccess ||
+      !latest.data
+    )
+      return;
+    consumedSaveSnapshot.current = latest.data;
+    if (JSON.stringify(form.getValues()) !== requestedValues) {
+      toast.warning("加载期间有新的本地编辑，未替换表单，请核对后再次加载");
+      return;
+    }
+    resetEditor(latest.data);
+    setSaveProblem(null);
+  };
+  const openCreated = () => {
+    if (creationResult.data && user && creationAttempt) {
+      finishCreation(creationResult.data, creationAttempt);
+    }
+  };
+  const retryCreation = async () => {
+    if (!creationAttempt || !user || submitting.current) return;
+    const generation = recordGeneration.current;
+    submitting.current = true;
+    setLoading(true);
+    try {
+      const checked = await creationResult.refetch();
+      if (generation !== recordGeneration.current) return;
+      if (checked.data) {
+        finishCreation(checked.data, creationAttempt);
+        return;
+      }
+      if (!checked.isSuccess) {
+        toast.error("无法核对上次创建，请稍后重试");
+        return;
+      }
+      const result = await createPost.mutateAsync(creationAttempt);
+      if (generation !== recordGeneration.current) return;
+      finishCreation(result, creationAttempt);
+      if (!notifyPublicSyncWarning(result, toast.warning))
+        toast.success("已找到或保存上次创建");
+    } catch {
+      toast.error("上次创建结果仍无法确认，原始内容和凭据已保留");
     } finally {
       submitting.current = false;
       setLoading(false);
@@ -296,6 +500,29 @@ export function usePostEditor(id: string | null) {
 
   return {
     category,
+    actionsKey: `${userId ?? ""}:${user?.level ?? ""}:${id ?? "new"}:${baselineVersion ?? "unknown"}:${creationAttempt?.creationToken ?? "none"}`,
+    saveProblem,
+    preservedDraft,
+    restorePreservedDraft: () => {
+      if (!preservedDraft) return;
+      setBaselineVersion(preservedDraft.baseVersion);
+      form.reset(
+        {
+          ...preservedDraft,
+          id: form.getValues("id"),
+          status: form.getValues("status"),
+        },
+        { keepDefaultValues: true },
+      );
+      if (preservedDraft.coverId !== coverPreview?.id)
+        setCoverPreview(undefined);
+      setSaveProblem("conflict");
+    },
+    loadLatest,
+    creationAttempt,
+    creationResult,
+    openCreated,
+    retryCreation,
     loadError,
     retryLoad: refetch,
     detail,

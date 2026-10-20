@@ -1,3 +1,4 @@
+import { findPersistenceInvariantViolations } from "./audit-persistence-invariants";
 import { createClient } from "@libsql/client";
 import { requiredEnvironmentVariable } from "./cli";
 
@@ -21,6 +22,13 @@ const client = createClient({
 });
 
 try {
+  const violations = await findPersistenceInvariantViolations(client);
+  if (violations.length > 0) {
+    process.stdout.write(`${JSON.stringify(violations)}\n`);
+    throw new Error(
+      "Read-only translation preflight rejected incompatible data",
+    );
+  }
   const tableRows = await client.execute(
     "select name from sqlite_master where type = 'table' order by name",
   );

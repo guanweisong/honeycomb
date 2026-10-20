@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
@@ -54,6 +54,88 @@ const getActiveCategories = ({
 
   return [allCategoryPath];
 };
+
+function MenuBranch({
+  item,
+  activeCategories,
+  depth = 0,
+}: {
+  item: MenuLocalEntity;
+  activeCategories: string[];
+  depth?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const submenuId = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const active = activeCategories.includes(item.link ?? "");
+  return (
+    <li
+      className={cn("relative group", depth === 0 && "lg:flex lg:items-center")}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && expanded) {
+          event.stopPropagation();
+          setExpanded(false);
+          toggleRef.current?.focus();
+        }
+      }}
+    >
+      <div className="flex items-center">
+        <Link
+          href={item.link ?? ""}
+          aria-current={active ? "page" : undefined}
+          className={cn(
+            "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
+            {
+              "text-teal-500": active,
+              "group-hover:lg:text-teal-500": !active,
+            },
+          )}
+        >
+          {item.label}
+          {active && depth === 0 && (
+            <span
+              className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"
+              aria-hidden="true"
+            />
+          )}
+        </Link>
+        {!!item.children?.length && (
+          <button
+            ref={toggleRef}
+            type="button"
+            aria-label={item.label}
+            aria-expanded={expanded}
+            aria-controls={submenuId}
+            className="px-2 py-2 cursor-pointer"
+            onClick={() => setExpanded(!expanded)}
+          >
+            <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+          </button>
+        )}
+      </div>
+      {!!item.children?.length && (
+        <ul
+          id={submenuId}
+          hidden={!expanded}
+          className={cn(
+            "pl-4 bg-auto-back-gray/95",
+            depth === 0 &&
+              "lg:absolute lg:top-full lg:left-0 lg:min-w-48 lg:rounded-lg lg:shadow-lg",
+          )}
+        >
+          {item.children.map((child, index) => (
+            <MenuBranch
+              key={`${child.link}-${index}`}
+              item={child}
+              activeCategories={activeCategories}
+              depth={depth + 1}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
 
 /**
  * 导航菜单组件。
@@ -129,39 +211,28 @@ const Menu = (props: MenuProps) => {
         )}
         ref={ref1}
       >
-        {data.map((m) => (
-          <li
-            className="lg:relative lg:flex group"
-            key={`first-level-${m.link}`}
-          >
-            <Link
-              href={m.link ?? ""}
-              aria-current={m.link === activeCategories[0] ? "page" : undefined}
-              className={cn(
-                "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
-                {
-                  "text-teal-500": m.link === activeCategories[0],
-                  "group-hover:lg:text-teal-500":
-                    m.link !== activeCategories[0],
-                },
-              )}
-            >
-              {m.label}
-              {m.link === activeCategories[0] && (
-                <span
-                  className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"
-                  aria-hidden="true"
-                ></span>
-              )}
-            </Link>
-          </li>
+        {data.map((item, index) => (
+          <MenuBranch
+            key={`${item.link}-${index}`}
+            item={item}
+            activeCategories={activeCategories}
+          />
         ))}
       </ul>
     );
   };
   return (
-    <div className="flex h-full">
+    <div
+      className="flex h-full"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && visible) {
+          setVisible(false);
+          ref2.current?.focus();
+        }
+      }}
+    >
       <button
+        type="button"
         ref={ref2}
         className="w-9 px-2 cursor-pointer lg:hidden absolute left-0 top-[50%] -translate-y-1/2 bg-transparent border-0"
         onClick={() => setVisible(!visible)}

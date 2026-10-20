@@ -5,7 +5,10 @@ import { requireWriteResult } from "@/lib/db/value-validation";
 import { sql, inArray } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { buildDrizzleOrderBy, buildDrizzleWhere } from "@/lib/db/query/tools";
+import {
+  buildDrizzleOrderBy,
+  buildDrizzleWhere,
+} from "@/lib/db/query/query-builders";
 import { observeDbOperation } from "@/lib/observability/server";
 import { clientEnv } from "@/env/client";
 import type {
@@ -92,7 +95,16 @@ export function createMediaRepository(db: Database) {
     },
     async deleteRecords(ids: string[]) {
       await observeDbOperation("media.destroy.delete", "delete", () =>
-        db.delete(schema.media).where(inArray(schema.media.id, ids)),
+        db.transaction(async (tx) => {
+          await tx
+            .update(schema.post)
+            .set({
+              version: sql`${schema.post.version} + 1`,
+              updatedAt: sql`${schema.post.updatedAt}`,
+            })
+            .where(inArray(schema.post.coverId, ids));
+          await tx.delete(schema.media).where(inArray(schema.media.id, ids));
+        }),
       );
       return { success: true } as const;
     },

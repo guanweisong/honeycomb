@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import useInfiniteQueryPostList from "@/features/post/public/hooks/rq/post/use.infinite.query.post.list";
+import useInfiniteQueryPostList from "@/features/post/public/use-post-list";
 import React, { JSX, useEffect, ViewTransition } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import Signature from "@/components/blog/Signature";
-import { utcFormat } from "@/components/blog/utc-format";
+import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "@/lib/ui/utils";
@@ -15,9 +15,15 @@ import type { PostWithRelations as PostListItemEntity } from "@/features/post/ty
 import { PostType } from "@/features/post/post-type";
 import { PostTypeName } from "@/features/post/admin/options";
 import { PostListQueryInput } from "@/features/post/schema";
-import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
 import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
 import type { PostListResult } from "@/features/post/types";
+
+const PostTypeBgColor = Object.freeze({
+  [PostType.ARTICLE]: "bg-green-600",
+  [PostType.MOVIE]: "bg-orange-600",
+  [PostType.PHOTOGRAPH]: "bg-purple-600",
+  [PostType.QUOTE]: "bg-blue-600",
+} as const);
 
 /**
  * 文章列表组件的属性接口。

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { MenuItem } from "../../../../components/Menu";
 import type { CurrentUser } from "@/features/user/user";
 import { Button } from "../../../../components/ui/button";
@@ -12,6 +12,12 @@ import {
   AdminLayoutPageTitleContext,
 } from "../../../../components/admin/layout-context";
 import { AdminSidebar } from "./AdminSidebar";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { findMenuTitle } from "./menu-title";
 
 export interface AdminLayoutProps {
@@ -44,6 +50,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     onNavigateStart,
   } = props;
   const pathname = usePathname();
+  const sidebarToggleRef = useRef<HTMLButtonElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [layoutHydrated, setLayoutHydrated] = useState(false);
@@ -132,6 +139,8 @@ export const AdminLayout = (props: AdminLayoutProps) => {
             {!isMobile && (
               <div
                 data-testid="admin-sidebar"
+                inert={collapsed}
+                aria-hidden={collapsed}
                 className={cn(
                   "shrink-0 box-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
                   collapsed
@@ -158,7 +167,9 @@ export const AdminLayout = (props: AdminLayoutProps) => {
             >
               <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
                 <Button
+                  ref={sidebarToggleRef}
                   type="button"
+                  aria-expanded={isMobile ? isDrawerOpen : !collapsed}
                   variant="secondary"
                   size="icon-sm"
                   className="shrink-0"
@@ -194,29 +205,32 @@ export const AdminLayout = (props: AdminLayoutProps) => {
               )}
             </div>
             {isMobile && (
-              <>
-                <button
-                  type="button"
-                  aria-label="关闭侧边栏"
-                  aria-hidden={!isDrawerOpen}
-                  tabIndex={isDrawerOpen ? 0 : -1}
-                  className={cn(
-                    "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300",
-                    isDrawerOpen
-                      ? "opacity-100 pointer-events-auto"
-                      : "opacity-0 pointer-events-none",
-                  )}
-                  onClick={() => setMobileMenuOpen(false)}
-                />
-                <div
+              <Sheet open={isDrawerOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetContent
+                  side="left"
+                  showCloseButton={false}
                   data-testid="admin-sidebar-drawer"
-                  className={cn(
-                    "fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] box-border flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out",
-                    isDrawerOpen
-                      ? "translate-x-0"
-                      : "translate-x-[-100%] pointer-events-none",
-                  )}
+                  inert={!isDrawerOpen}
+                  aria-hidden={!isDrawerOpen}
+                  aria-describedby={undefined}
+                  className="w-[280px] max-w-[85vw] gap-0 bg-white"
+                  onCloseAutoFocus={(event) => {
+                    event.preventDefault();
+                    sidebarToggleRef.current?.focus();
+                  }}
                 >
+                  <SheetTitle className="sr-only">后台导航</SheetTitle>
+                  <SheetClose asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="absolute top-3 right-3"
+                      aria-label="关闭侧边栏"
+                    >
+                      <X />
+                    </Button>
+                  </SheetClose>
                   <AdminSidebar
                     title={title}
                     menu={menu}
@@ -225,8 +239,8 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                     pendingPath={pendingPath}
                     onNavigateStart={onNavigateStart}
                   />
-                </div>
-              </>
+                </SheetContent>
+              </Sheet>
             )}
           </div>
         </div>
