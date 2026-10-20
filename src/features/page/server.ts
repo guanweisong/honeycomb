@@ -1,7 +1,11 @@
 import "server-only";
+import {
+  transactionWithBeginRetry,
+  type DatabaseTransaction,
+} from "@/lib/db/transaction-begin-retry";
 import { assertMediaReferencesReady } from "@/features/media/server/media-references";
 import { bumpMenuRevisionForPageDeletion } from "@/features/menu/server";
-import { createHash } from "node:crypto";
+import { hashCanonicalInput } from "@/lib/canonical-input-hash";
 import { parseEnumValue } from "@/lib/db/value-validation";
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
@@ -32,38 +36,11 @@ import { ApplicationError } from "@/lib/errors/application-error";
 import { UserStatus } from "@/features/user/user";
 import { can, Permission } from "@/lib/auth/permissions";
 import { getPagePublishStatus, getPageWithdrawStatus } from "./rules";
-type PageTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-/** 只重试回调尚未进入时的 BEGIN 锁竞争；业务写入或提交结果未知后绝不自动重放。 */
-async function pageTransaction<T>(
-  db: Database,
-  operation: (tx: PageTransaction) => Promise<T>,
-): Promise<T> {
-  for (let attempt = 0; ; attempt += 1) {
-    let entered = false;
-    try {
-      return await db.transaction((tx) => {
-        entered = true;
-        return operation(tx);
-      });
-    } catch (error) {
-      const busyAtBegin =
-        !entered &&
-        error !== null &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "SQLITE_BUSY";
-      if (!busyAtBegin) throw error;
-      if (attempt >= 3)
-        throw new ApplicationError(
-          "CONFLICT",
-          "保存暂时繁忙，请核对结果后重试",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
-    }
-  }
-}
+
+const busyMessage = "保存暂时繁忙，请核对结果后重试";
+
 async function requireActor(
-  tx: PageTransaction,
+  tx: DatabaseTransaction,
   actorId: string,
   permissions: Permission[],
 ) {
@@ -80,18 +57,7 @@ async function requireActor(
     throw new ApplicationError("FORBIDDEN", "当前账户无权保存此页面");
   }
 }
-// 对已校验的原始意图求哈希，不使用清洗后或随后被编辑的存储内容。
-function canonicalInput(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalInput).join(",")}]`;
-  if (value !== null && typeof value === "object") {
-    return `{${Object.entries(value)
-      .filter(([, field]) => field !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, field]) => `${JSON.stringify(key)}:${canonicalInput(field)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "null";
-}
+
 function safeResult(
   row: Pick<typeof schema.page.$inferSelect, "id" | "version">,
 ) {
@@ -122,11 +88,9 @@ export async function createPage(
     throw new ApplicationError("BAD_REQUEST", "页面创建输入不合法");
   input = parsed.data;
   const { creationToken, ...intent } = input;
-  const creationInputHash = createHash("sha256")
-    .update(canonicalInput(intent))
-    .digest("hex");
+  const creationInputHash = hashCanonicalInput(intent);
   const result = await observeDbOperation("page.create", "transaction", () =>
-    pageTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [Permission.pageCreate]);
       const [created] = await tx
         .insert(schema.page)
@@ -157,17 +121,12 @@ export async function createPage(
           );
         return safeResult(existing);
       }
-      await assertMediaReferencesReady(tx, {
-        content: sanitizeOptionalI18nHtml(input.content),
-      });
+      const sanitizedContent = sanitizeOptionalI18nHtml(input.content);
+      await assertMediaReferencesReady(tx, { content: sanitizedContent });
       await tx
         .insert(schema.pageTranslation)
         .values(
-          toPageTranslationRows(
-            created.id,
-            input.title,
-            sanitizeOptionalI18nHtml(input.content),
-          ),
+          toPageTranslationRows(created.id, input.title, sanitizedContent),
         );
       return safeResult(created);
     }),
@@ -182,7 +141,7 @@ export async function getPageCreationResult(
   creationToken: string,
   actorId: string,
 ) {
-  return pageTransaction(db, async (tx) => {
+  return transactionWithBeginRetry(db, busyMessage, async (tx) => {
     await requireActor(tx, actorId, [Permission.pageCreate]);
     const [result] = await tx
       .select({ id: schema.page.id, version: schema.page.version })
@@ -210,7 +169,7 @@ export async function destroyPages(
     throw new ApplicationError("BAD_REQUEST", "页面删除输入不合法");
   input = parsed.data;
   await observeDbOperation("page.destroy", "transaction", () =>
-    pageTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [Permission.pageDelete]);
       await bumpMenuRevisionForPageDeletion(
         tx,
@@ -258,7 +217,7 @@ export async function updatePage(
     throw new ApplicationError("BAD_REQUEST", "页面更新输入不合法");
   input = parsed.data;
   const result = await observeDbOperation("page.update", "transaction", () =>
-    pageTransaction(db, async (tx) => {
+    transactionWithBeginRetry(db, busyMessage, async (tx) => {
       await requireActor(tx, actorId, [Permission.pageUpdate]);
       const [current] = await tx
         .select()
@@ -295,11 +254,10 @@ export async function updatePage(
         .where(eq(schema.pageTranslation.pageId, id));
       const previousContent =
         groupPageTranslations(previousRows).get(id)?.content;
+      const sanitizedContent =
+        content === undefined ? undefined : sanitizeOptionalI18nHtml(content);
       await assertMediaReferencesReady(tx, {
-        content:
-          content === undefined
-            ? previousContent
-            : sanitizeOptionalI18nHtml(content),
+        content: content === undefined ? previousContent : sanitizedContent,
         previousContent,
       });
 
@@ -323,8 +281,6 @@ export async function updatePage(
           "页面已修改，请核对最新内容后重试",
         );
       if (title !== undefined || content !== undefined) {
-        const sanitizedContent =
-          content === undefined ? undefined : sanitizeOptionalI18nHtml(content);
         for (const locale of supportedLanguages) {
           if (title !== undefined && sanitizedContent !== undefined) {
             await tx

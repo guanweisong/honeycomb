@@ -137,6 +137,41 @@ describe("use-page-editor-actions", () => {
     expect(mocks.success).not.toHaveBeenCalled();
     expect(mocks.warning).not.toHaveBeenCalled();
   });
+  it("keeps StrictMode saves usable and invalidates an A → B → A request", async () => {
+    const first = deferred<{ id: string; version: number }>();
+    const second = deferred<{ id: string; version: number }>();
+    const pageA = "123456789012345678901234";
+    const render = (pageId: string) =>
+      act(async () =>
+        root.render(
+          React.createElement(
+            React.StrictMode,
+            null,
+            React.createElement(Harness, { pageId }),
+          ),
+        ),
+      );
+    mocks.update
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    mocks.refetch.mockResolvedValue({ isSuccess: true });
+    await render(pageA);
+    await act(async () => container.querySelector("button")?.click());
+    expect(container.querySelector("output")?.textContent).toBe("loading");
+    await render("223456789012345678901234");
+    await render(pageA);
+    expect(container.querySelector("output")?.textContent).toBe("idle");
+    await act(async () => container.querySelector("button")?.click());
+    await act(async () => first.resolve({ id: pageA, version: 2 }));
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(container.querySelector("output")?.textContent).toBe("loading");
+    await act(async () => second.resolve({ id: pageA, version: 3 }));
+    expect(mocks.refetch).toHaveBeenCalledTimes(1);
+    expect(mocks.success).toHaveBeenCalledTimes(1);
+    expect(container.querySelector("output")?.textContent).toBe("idle");
+  });
+
   it("does not toast after unmount during refresh", async () => {
     const refresh = deferred<unknown>();
     mocks.update.mockResolvedValue({

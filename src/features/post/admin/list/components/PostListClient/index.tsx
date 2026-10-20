@@ -64,6 +64,7 @@ export default function PostListClient() {
   return (
     <>
       <DataTable<PostListItemEntity>
+        getRowId={(row) => row.id}
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,

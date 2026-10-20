@@ -11,7 +11,7 @@ interface DataTableBodyProps<TData> {
   error?: boolean;
   isFetching?: boolean;
   selectableRows: boolean;
-  selectedRows: TData[];
+  isRowSelected: (row: TData) => boolean;
   disabledRowSelectable?: (row: TData) => boolean;
   onSelectRow: (row: TData, checked: CheckedState) => void;
   rowActions?: (row: TData) => React.ReactNode;
@@ -25,7 +25,7 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
     error,
     isFetching,
     selectableRows,
-    selectedRows,
+    isRowSelected,
     disabledRowSelectable,
     onSelectRow,
     rowActions,
@@ -66,11 +66,11 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
             {selectableRows && (
               <TableCell>
                 <Checkbox
-                  checked={selectedRows.includes(row.original)}
+                  checked={isRowSelected(row.original)}
                   onCheckedChange={(checked) =>
                     onSelectRow(row.original, checked)
                   }
-                  disabled={disabledRowSelectable?.(row.original)}
+                  disabled={isFetching || disabledRowSelectable?.(row.original)}
                 />
               </TableCell>
             )}

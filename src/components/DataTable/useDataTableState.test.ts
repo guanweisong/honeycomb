@@ -134,4 +134,30 @@ describe("DataTable state", () => {
     });
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
   });
+  it("clears selection within the filter event before notifying the next query", async () => {
+    const events: string[] = [];
+    function Harness() {
+      const state = useDataTableState({
+        pagination: true,
+        onChange: () => events.push("query"),
+        onSelectionChange: () => events.push("clear"),
+      });
+      return React.createElement(
+        "button",
+        {
+          onClick: () => {
+            state.handleColumnFiltersChange([{ id: "name", value: "search" }]);
+            events.push("event-end");
+          },
+        },
+        "search",
+      );
+    }
+    await act(async () => root.render(React.createElement(Harness)));
+    events.length = 0;
+    await act(async () =>
+      requireDefined(container.querySelector("button")).click(),
+    );
+    expect(events).toEqual(["clear", "event-end", "query"]);
+  });
 });

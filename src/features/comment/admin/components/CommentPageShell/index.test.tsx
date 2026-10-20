@@ -143,6 +143,30 @@ describe("CommentPageShell", () => {
   );
 
   it.each([
+    { status: CommentStatus.TO_AUDIT, labels: ["通过", "驳回", ""] },
+    { status: CommentStatus.PUBLISH, labels: ["屏蔽", ""] },
+    { status: CommentStatus.RUBBISH, labels: ["通过", ""] },
+    { status: CommentStatus.BAN, labels: ["解除屏蔽", ""] },
+    { status: null, labels: [""] },
+  ])(
+    "keeps the complete $status action order with deletion last",
+    async ({ status, labels }) => {
+      comment.status = status;
+      allowedPermissions = new Set([Permission.commentModerate]);
+      await act(async () => root.render(<CommentPageShell />));
+      expect(
+        Array.from(
+          container.querySelectorAll('tbody button:not([role="checkbox"])'),
+          (button) => button.textContent,
+        ),
+      ).toEqual(labels);
+      expect(
+        container.querySelector("tbody button:last-child svg.lucide-trash"),
+      ).not.toBeNull();
+    },
+  );
+
+  it.each([
     {
       status: CommentStatus.TO_AUDIT,
       button: "通过",
@@ -184,6 +208,9 @@ describe("CommentPageShell", () => {
           ),
         ).click(),
       );
+      expect(
+        document.body.querySelector('[role="dialog"]')?.textContent,
+      ).toContain(`确定要${button}吗？`);
       const confirm = () =>
         requireDefined(
           Array.from(document.body.querySelectorAll("button")).find(

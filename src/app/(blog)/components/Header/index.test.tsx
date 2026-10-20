@@ -118,7 +118,7 @@ describe("blog Header", () => {
     container.remove();
   });
 
-  it("maps home, custom, page and nested category menu destinations", async () => {
+  it("renders root menu destinations while retaining all categories for breadcrumbs", async () => {
     const element = await Header();
     await act(async () => root.render(element));
 
@@ -137,15 +137,21 @@ describe("blog Header", () => {
     expect(
       container.querySelector('a[href="/list/category/parent"]')?.textContent,
     ).toBe("父分类");
+    const navigation = container.querySelector("#mobile-menu");
     expect(
-      container.querySelector('a[href="/list/category/parent/child"]')
-        ?.textContent,
-    ).toBe("子分类");
+      Array.from(navigation?.querySelectorAll("a") ?? []).map((link) =>
+        link.getAttribute("href"),
+      ),
+    ).toEqual([
+      "/list/category",
+      "/friend-links",
+      "/pages/page-1",
+      "/list/category/parent",
+    ]);
+    expect(navigation?.querySelector("ul, button")).toBeNull();
     expect(
-      container.querySelector(
-        'a[href="/list/category/parent/child/grandchild"]',
-      )?.textContent,
-    ).toBe("孙分类");
+      navigation?.querySelector('[aria-current="page"]')?.textContent,
+    ).toBe("父分类");
     expect(
       container
         .querySelector("[data-breadcrumb-count]")

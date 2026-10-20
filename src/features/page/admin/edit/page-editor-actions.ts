@@ -11,6 +11,10 @@ import {
 } from "@/features/page/schema";
 import { PageStatus } from "@/features/page/page-status";
 import { trpc } from "@/lib/trpc/client/trpc";
+import {
+  isDeterminateRejectionCode,
+  readTrpcErrorCode,
+} from "@/lib/trpc/client/mutation-error";
 import { notifyPublicSyncWarning } from "@/components/admin/action-state";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
 
@@ -53,18 +57,9 @@ export async function submitPageEditor({
       state: "created",
     };
   } catch (error) {
-    const code = z
-      .object({ data: z.object({ code: z.string() }) })
-      .safeParse(error);
-    if (code.success && code.data.data.code === "CONFLICT")
-      return { state: "conflict" };
-    if (
-      error instanceof z.ZodError ||
-      (code.success &&
-        ["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"].includes(
-          code.data.data.code,
-        ))
-    )
+    const code = readTrpcErrorCode(error);
+    if (code === "CONFLICT") return { state: "conflict" };
+    if (error instanceof z.ZodError || isDeterminateRejectionCode(code))
       return { state: "error" };
     return { state: "unknown" };
   }
@@ -96,9 +91,6 @@ export function usePageEditorActions({
   useEffect(() => {
     busy.current = false;
     setLoading(false);
-    return () => {
-      generation.current += 1;
-    };
   }, [identity]);
   const createPage = trpc.page.create.useMutation();
   const updatePage = trpc.page.update.useMutation();

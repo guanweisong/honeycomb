@@ -88,3 +88,57 @@ describe("Menu server operations", () => {
     expect(cache.invalidate).not.toHaveBeenCalled();
   });
 });
+
+describe("BEGIN-only transaction retries", () => {
+  it("keeps four attempts, 10/20/40ms delays and the existing conflict message", async () => {
+    vi.useFakeTimers();
+    try {
+      const db = createMockDb();
+      db.transaction.mockRejectedValue(
+        Object.assign(new Error("busy"), { code: "SQLITE_BUSY" }),
+      );
+      const cache = { invalidate: vi.fn() };
+      const pending = saveAllMenus(
+        asMockDatabase(db),
+        { items: [item("a")], expectedVersion: 0 },
+        "actor",
+        cache,
+      );
+      const rejected = expect(pending).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "保存暂时繁忙，请核对最新版本后重试",
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(db.transaction).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(10);
+      expect(db.transaction).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(20);
+      expect(db.transaction).toHaveBeenCalledTimes(3);
+      await vi.advanceTimersByTimeAsync(40);
+      await rejected;
+      expect(db.transaction).toHaveBeenCalledTimes(4);
+      expect(db.select).not.toHaveBeenCalled();
+      expect(cache.invalidate).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("does not replay SQLITE_BUSY after entering the callback", async () => {
+    const db = createMockDb();
+    const failure = Object.assign(new Error("callback failed"), {
+      code: "SQLITE_BUSY",
+    });
+    db.limit.mockRejectedValue(failure);
+    const cache = { invalidate: vi.fn() };
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        { items: [item("a")], expectedVersion: 0 },
+        "actor",
+        cache,
+      ),
+    ).rejects.toBe(failure);
+    expect(db.transaction).toHaveBeenCalledOnce();
+    expect(cache.invalidate).not.toHaveBeenCalled();
+  });
+});

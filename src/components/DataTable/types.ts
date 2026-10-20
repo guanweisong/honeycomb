@@ -25,6 +25,8 @@ export interface DataTableQueryParams extends PaginationInput {
 
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
+  /** 稳定业务标识，用于行渲染及刷新后的选择对齐。 */
+  getRowId: (row: TData) => string;
   data: DataTableDataSource<TData>;
   isFetching?: boolean;
   error?: boolean;
@@ -77,6 +79,8 @@ export interface UseDataTableStateResult {
 
 export interface UseRowSelectionOptions<TData> {
   rows: TData[];
+  isFetching?: boolean;
+  getRowId: (row: TData) => string;
   selectedRows: TData[];
   disabledRowSelectable?: (row: TData) => boolean;
   onSelectionChange?: (selectedRows: TData[]) => void;
@@ -84,6 +88,7 @@ export interface UseRowSelectionOptions<TData> {
 
 export interface UseRowSelectionResult<TData> {
   isAllSelectedOnCurrentPage: boolean;
+  isRowSelected: (row: TData) => boolean;
   handleSelectAll: (checked: CheckedState) => void;
   handleSelectRow: (row: TData, checked: CheckedState) => void;
 }

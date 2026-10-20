@@ -34,3 +34,20 @@ it("explicit review forces a fresh server fetch rather than reusing a fresh cach
     await act(async () => root.unmount());
   }
 });
+
+it("exposes only setting and refreshSetting, with a harmless no-provider fallback", async () => {
+  const root = createRoot(document.createElement("div"));
+  let value: ReturnType<typeof useSiteSetting> | undefined;
+  function Consumer() {
+    value = useSiteSetting();
+    return null;
+  }
+  try {
+    await act(async () => root.render(<Consumer />));
+    expect(Object.keys(value!).sort()).toEqual(["refreshSetting", "setting"]);
+    expect(value!.setting).toBeUndefined();
+    await expect(value!.refreshSetting()).resolves.toBeUndefined();
+  } finally {
+    await act(async () => root.unmount());
+  }
+});

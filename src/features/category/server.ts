@@ -37,7 +37,7 @@ function mapCategoryConstraint(error: unknown): never {
 }
 
 async function withTranslations<T extends typeof schema.category.$inferSelect>(
-  db: Database,
+  db: Pick<Database, "select">,
   rows: T[],
 ) {
   if (!rows.length) return [];
@@ -269,14 +269,15 @@ export async function updateCategory(
           }
         }
       }
-      return updated;
+      if (!updated) return undefined;
+      // Assemble the response before commit so a failed read rolls back the write.
+      const [result] = await withTranslations(tx, [updated]);
+      return requireWriteResult(result, "update", "category");
     }),
   ).catch(mapCategoryConstraint);
   if (!value && parentGuard)
     throw new ApplicationError("BAD_REQUEST", "分类不存在或父子关系形成循环");
-  const category = requireWriteResult(value, "update", "category");
-  const [result] = await withTranslations(db, [category]);
-  const persisted = requireWriteResult(result, "update", "category");
+  const persisted = requireWriteResult(value, "update", "category");
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,

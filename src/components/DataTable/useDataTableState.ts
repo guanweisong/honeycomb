@@ -79,10 +79,11 @@ export function useDataTableState<TData = unknown>(
 
   React.useEffect(() => {
     onSelectionChangeRef.current?.([]);
-  }, [columnFilters, paginationState, sorting]);
+  }, []);
 
   const handleSortingChange = React.useCallback(
     (updaterOrValue: React.SetStateAction<SortingState>) => {
+      onSelectionChangeRef.current?.([]);
       setSorting(updaterOrValue);
       if (pagination) {
         setPaginationState((previous) => ({
@@ -96,6 +97,7 @@ export function useDataTableState<TData = unknown>(
 
   const handleColumnFiltersChange = React.useCallback(
     (updaterOrValue: React.SetStateAction<ColumnFiltersState>) => {
+      onSelectionChangeRef.current?.([]);
       setColumnFilters(updaterOrValue);
       if (pagination) {
         setPaginationState((previous) => ({
@@ -107,13 +109,21 @@ export function useDataTableState<TData = unknown>(
     [pagination],
   );
 
+  const handlePaginationChange = React.useCallback(
+    (value: DataTablePaginationState) => {
+      onSelectionChangeRef.current?.([]);
+      setPaginationState(value);
+    },
+    [],
+  );
+
   return {
     sorting,
     columnFilters,
     columnVisibility,
     paginationState,
     requestParams,
-    handlePaginationChange: setPaginationState,
+    handlePaginationChange,
     handleSortingChange,
     handleColumnFiltersChange,
     setColumnVisibility,

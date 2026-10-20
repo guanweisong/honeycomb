@@ -11,7 +11,6 @@ import {
 } from "@/features/user/schema";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { buildUserUpdateInput } from "@/features/user/admin/transforms/user-transforms";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,
@@ -19,6 +18,7 @@ import {
   openEditAdminDialog,
   runAdminMutation,
   submitAdminBatchDelete,
+  withAdminRecordId,
   type AdminDialogState,
   type AdminListActionOptions,
   type AdminMutationFeedback,
@@ -48,7 +48,7 @@ export async function submitUserUpdate({
   }
 
   return runAdminMutation({
-    input: buildUserUpdateInput(record, values),
+    input: withAdminRecordId(record, values),
     mutate: update,
     refetch,
     notifySuccess,

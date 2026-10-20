@@ -2,7 +2,6 @@ import type { UserUpdate } from "@/features/user/schema";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 import { UserStatus } from "@/features/user/user";
 import { isProtectedUser } from "../../rules";
-import { withAdminRecordId } from "@/components/admin/action-state";
 
 export function toUserFormDefaults(
   record?: UserEntity,
@@ -18,13 +17,6 @@ export function toUserFormDefaults(
   };
 }
 
-export function buildUserUpdateInput(
-  record: UserEntity,
-  values: UserUpdate,
-): UserUpdate {
-  return withAdminRecordId(record, values);
-}
-
 export function isUserResourceProtected(record?: UserEntity): boolean {
   return record ? isProtectedUser(record.level) : false;
 }
@@ -35,5 +27,5 @@ export function canDeleteUserResource(record: UserEntity): boolean {
   );
 }
 /**
- * 用户表单、更新输入和资源删除权限的数据转换函数。
+ * 用户表单和资源删除权限的数据转换函数。
  */

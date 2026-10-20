@@ -130,7 +130,10 @@ describe("loadPostRelations", () => {
     };
 
     await expect(
-      loadPostRelations(asMockDatabase(db), [second, first]),
+      loadPostRelations(asMockDatabase(db), [
+        { id: second.id },
+        { id: first.id },
+      ]),
     ).resolves.toEqual([
       {
         ...PostWithRelationsSchema.parse(first),
@@ -175,7 +178,7 @@ describe("post snapshot privacy", () => {
       };
       const [result] = await loadPostRelations(
         asMockDatabase(db),
-        [older],
+        [{ id: older.id }],
         visibility,
       );
       expect(result).toMatchObject({ version: 3, movieTime: "new" });
@@ -192,7 +195,7 @@ describe("post snapshot privacy", () => {
       expect(
         await loadPostRelations(
           asMockDatabase(db),
-          [createPostFixture()],
+          [{ id: "deleted-post" }],
           visibility,
         ),
       ).toEqual([]);

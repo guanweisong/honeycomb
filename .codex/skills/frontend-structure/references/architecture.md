@@ -33,3 +33,5 @@
 交互修改另读尚未归档的[后台读取与保存安全](../../../../openspec/changes/protect-guest-reads-and-pending-saves/specs/admin-data-and-save-safety/spec.md)，保留待保存输入与过期响应隔离。现有本地草稿恢复和重复提交拦截是路径整理不得删减的行为；不能因为这些要求尚未同步进主规范而忽略。
 
 日志与初始化另读 [Sentry 接入说明](../../../../docs/sentry-logging.md) 的隐私边界、浏览器/服务端配置和 public DSN 回退；运行时错误捕获规范不能替代这些独有约束。
+
+当前审计边界修复的增量验收见[修复设计](../../../../openspec/changes/fix-audit-state-boundaries/design.md)及同目录 specs：文章已确认发布状态、页面嵌套媒体投影、表格查询与选择、分类/标签提交前结果组装。主规格与活动增量共同检查；实施、测试和发布状态以该变更 tasks 的实际证据为准，不因存在规格推断已上线。

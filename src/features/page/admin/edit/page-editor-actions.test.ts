@@ -110,3 +110,27 @@ describe("versioned page outcomes", () => {
     );
   });
 });
+
+describe("page transport error classification", () => {
+  it.each([
+    ["BAD_REQUEST", "error"],
+    ["FORBIDDEN", "error"],
+    ["UNAUTHORIZED", "error"],
+    ["NOT_FOUND", "error"],
+    ["CONFLICT", "conflict"],
+    ["INTERNAL_SERVER_ERROR", "unknown"],
+    [undefined, "unknown"],
+    [400, "unknown"],
+  ])("classifies code %s as %s", async (code, state) => {
+    await expect(
+      submitPageEditor({
+        pageId: "507f1f77bcf86cd799439011",
+        expectedVersion: 3,
+        values,
+        status: PageStatus.DRAFT,
+        create: vi.fn(),
+        update: vi.fn().mockRejectedValue({ data: { code } }),
+      }),
+    ).resolves.toEqual({ state });
+  });
+});

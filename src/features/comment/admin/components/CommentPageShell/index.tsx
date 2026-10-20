@@ -17,6 +17,25 @@ import { commentTableColumns } from "../../columns/comment-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
 
+const moderationActions = {
+  [CommentStatus.TO_AUDIT]: [
+    { key: "publish", label: "通过", status: CommentStatus.PUBLISH },
+    { key: "rubbish", label: "驳回", status: CommentStatus.RUBBISH },
+  ],
+  [CommentStatus.PUBLISH]: [
+    { key: "ban", label: "屏蔽", status: CommentStatus.BAN },
+  ],
+  [CommentStatus.RUBBISH]: [
+    { key: "publish", label: "通过", status: CommentStatus.PUBLISH },
+  ],
+  [CommentStatus.BAN]: [
+    { key: "unban", label: "解除屏蔽", status: CommentStatus.PUBLISH },
+  ],
+} satisfies Record<
+  CommentStatus,
+  { key: string; label: string; status: CommentStatus }[]
+>;
+
 export function CommentPageShell() {
   const canModerateComments = useCan(Permission.commentModerate);
   const canReadPrivate = useCan(Permission.commentReadPrivate);
@@ -51,107 +70,23 @@ export function CommentPageShell() {
     });
 
   const renderOpt = (record: CommentEntity): React.ReactNode => {
-    const actionsByStatus = [];
-    switch (record.status) {
-      case CommentStatus.TO_AUDIT:
-        actionsByStatus.push(
-          <Dialog
-            key="publish"
-            trigger={
-              <Button variant="secondary" size="sm">
-                通过
-              </Button>
-            }
-            type="warning"
-            title="确定要通过吗？"
-            onOK={async () => {
-              return (
-                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
-                "success"
-              );
-            }}
-          />,
-        );
-        actionsByStatus.push(
-          <Dialog
-            key="rubbish"
-            trigger={
-              <Button variant="secondary" size="sm">
-                驳回
-              </Button>
-            }
-            type="warning"
-            title="确定要驳回吗？"
-            onOK={async () => {
-              return (
-                (await handleSetStatus(record.id, CommentStatus.RUBBISH)) ===
-                "success"
-              );
-            }}
-          />,
-        );
-        break;
-      case CommentStatus.PUBLISH:
-        actionsByStatus.push(
-          <Dialog
-            key="ban"
-            trigger={
-              <Button variant="secondary" size="sm">
-                屏蔽
-              </Button>
-            }
-            type="warning"
-            title="确定要屏蔽吗？"
-            onOK={async () => {
-              return (
-                (await handleSetStatus(record.id, CommentStatus.BAN)) ===
-                "success"
-              );
-            }}
-          />,
-        );
-        break;
-      case CommentStatus.RUBBISH:
-        actionsByStatus.push(
-          <Dialog
-            key="publish"
-            trigger={
-              <Button variant="secondary" size="sm">
-                通过
-              </Button>
-            }
-            type="warning"
-            title="确定要通过吗？"
-            onOK={async () => {
-              return (
-                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
-                "success"
-              );
-            }}
-          />,
-        );
-        break;
-      case CommentStatus.BAN:
-        actionsByStatus.push(
-          <Dialog
-            key="unban"
-            trigger={
-              <Button variant="secondary" size="sm">
-                解除屏蔽
-              </Button>
-            }
-            type="warning"
-            title="确定要解除屏蔽吗？"
-            onOK={async () => {
-              return (
-                (await handleSetStatus(record.id, CommentStatus.PUBLISH)) ===
-                "success"
-              );
-            }}
-          />,
-        );
-        break;
-    }
+    const actionsByStatus = (
+      record.status === null ? [] : moderationActions[record.status]
+    ).map((action) => (
+      <Dialog
+        key={action.key}
+        trigger={
+          <Button variant="secondary" size="sm">
+            {action.label}
+          </Button>
+        }
+        type="warning"
+        title={`确定要${action.label}吗？`}
+        onOK={async () =>
+          (await handleSetStatus(record.id, action.status)) === "success"
+        }
+      />
+    ));
     actionsByStatus.push(
       <Dialog
         key="delete"
@@ -172,6 +107,7 @@ export function CommentPageShell() {
 
   return (
     <DataTable<CommentEntity>
+      getRowId={(row) => row.id}
       columns={columns}
       data={{
         list: query.data?.list ?? [],
@@ -188,7 +124,7 @@ export function CommentPageShell() {
       selectableRows={canModerateComments}
       selectedRows={selectedRows}
       onSelectionChange={setSelectedRows}
-      toolBar={
+      toolBar={(table) => (
         <div className="flex justify-between">
           {canModerateComments && (
             <div className="flex gap-1">
@@ -218,13 +154,15 @@ export function CommentPageShell() {
                   placeholder: "请输入评论内容进行搜索",
                 },
               ]}
-              onSubmit={setSearchParams}
+              onSubmit={({ content }) =>
+                table.getColumn("content")?.setFilterValue(content)
+              }
               inline={true}
               submitProps={{ children: "查询", variant: "outline" }}
             />
           </div>
         </div>
-      }
+      )}
       rowActions={
         canModerateComments
           ? (row) => <div className="flex gap-1">{renderOpt(row)}</div>

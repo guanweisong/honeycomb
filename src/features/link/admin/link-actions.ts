@@ -11,7 +11,6 @@ import {
 } from "@/features/link/schema";
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { buildLinkUpdateInput } from "./link-transforms";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,
@@ -19,6 +18,7 @@ import {
   openEditAdminDialog,
   runAdminMutation,
   submitAdminBatchDelete,
+  withAdminRecordId,
   type AdminDialogState,
   type AdminListActionOptions,
   type AdminMutationFeedback,
@@ -48,7 +48,7 @@ export async function submitLinkUpdate({
   }
 
   return runAdminMutation({
-    input: buildLinkUpdateInput(record, values),
+    input: withAdminRecordId(record, values),
     mutate: update,
     refetch,
     notifySuccess,

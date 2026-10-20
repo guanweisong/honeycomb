@@ -100,6 +100,7 @@ const Category = () => {
   return (
     <>
       <DataTable<CategoryEntity>
+        getRowId={(row) => row.id}
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],
@@ -114,7 +115,8 @@ const Category = () => {
         }}
         selectableRows={canDeleteCategory}
         disabledRowSelectable={(row) =>
-          selectedRows.length >= MAX_BATCH_SIZE && !selectedRows.includes(row)
+          selectedRows.length >= MAX_BATCH_SIZE &&
+          !selectedRows.some((selectedRow) => selectedRow.id === row.id)
         }
         selectedRows={selectedRows}
         onSelectionChange={handleSelectionChange}

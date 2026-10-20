@@ -2,7 +2,6 @@ import {
   createContext,
   createElement,
   useContext,
-  useState,
   type ReactNode,
 } from "react";
 import { trpc } from "@/lib/trpc/client/trpc";
@@ -24,20 +23,11 @@ export function SiteSettingProvider({
     initialData: setting,
     staleTime: 5 * 60 * 1000,
   });
-  const [currentSetting, setCurrentSetting] = useState<
-    SettingEntity | undefined
-  >(fetchedSetting);
   const utils = trpc.useUtils();
-  const resolvedSetting = fetchedSetting ?? currentSetting;
-  const refreshSetting = async () => {
-    const nextSetting = await utils.setting.index.fetch(undefined, {
-      staleTime: 0,
-    });
-    setCurrentSetting(nextSetting);
-    return nextSetting;
-  };
+  const refreshSetting = () =>
+    utils.setting.index.fetch(undefined, { staleTime: 0 });
 
-  return createContextProvider(children, resolvedSetting, refreshSetting);
+  return createContextProvider(children, fetchedSetting, refreshSetting);
 }
 
 function createContextProvider(
@@ -54,14 +44,13 @@ function createContextProvider(
 
 /**
  * 后台全局站点设置 Hook。
- * 读取 Provider 提供的设置与刷新方法；查询由 Provider 负责，此处 isLoading 固定为 false。
+ * 读取 Provider 提供的设置与刷新方法；远端快照由查询缓存统一维护。
  * 无 Provider 时返回空设置与无操作刷新，不表示一次查询已成功。
  */
 export const useSiteSetting = () => {
   const context = useContext(SiteSettingContext);
   return {
     setting: context?.setting,
-    isLoading: false,
     refreshSetting: context?.refreshSetting ?? (async () => undefined),
   };
 };

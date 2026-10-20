@@ -4,6 +4,8 @@ import * as schema from "@/lib/db/schema";
 import { UserLevel } from "@/features/user/user";
 import { PageStatus } from "@/features/page/page-status";
 import { PageTemplate } from "@/features/page/page-template";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
+import type { MediaRecord } from "@/features/media/types";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createGuestUser,
@@ -24,6 +26,111 @@ describe("Page Router", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetMockDb(mockDb);
+  });
+
+  describe("public media serialization", () => {
+    const publicImages = [
+      {
+        id: TEST_IDS.ID_2,
+        key: "images/first.png",
+        name: "first.png",
+        size: 123,
+        type: "image/png",
+        url: "https://example.com/first.png",
+        color: "#ffffff",
+        height: 100,
+        width: 200,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-02T00:00:00.000Z",
+      },
+      {
+        id: TEST_IDS.ID_3,
+        key: "images/second.png",
+        name: "second.png",
+        size: 456,
+        type: "image/png",
+        url: "https://example.com/second.png",
+        color: null,
+        height: null,
+        width: null,
+        createdAt: null,
+        updatedAt: null,
+      },
+    ] satisfies MediaRecord[];
+    const mediaRows = publicImages.map((image) => ({
+      ...image,
+      ...({
+        state: "READY",
+        uploadKey: "private-upload-key-sentinel",
+        uploadedBy: "private-uploader-sentinel",
+        uploadExpiresAt: "2026-10-03T00:00:00.000Z",
+        copyStartedAt: "2026-10-04T00:00:00.000Z",
+        verifiedAt: "2026-10-05T00:00:00.000Z",
+        lastAttemptAt: "2026-10-06T00:00:00.000Z",
+        lastErrorCode: "STORAGE_PENDING",
+      } satisfies Omit<typeof schema.media.$inferSelect, keyof typeof image>),
+      futureInternalField: "private-future-field-sentinel",
+    }));
+    const pageRow = {
+      id: TEST_IDS.ID_1,
+      authorId: TEST_IDS.ID_2,
+      version: 2,
+      status: PageStatus.PUBLISHED,
+      template: PageTemplate.DEFAULT,
+      views: 0,
+      createdAt: null,
+      updatedAt: null,
+      creationToken: "private-page-token",
+      creationInputHash: "private-page-hash",
+    } satisfies typeof schema.page.$inferSelect;
+    const translations = [
+      {
+        pageId: pageRow.id,
+        locale: MultiLangEnum.Zh,
+        title: "页面",
+        content:
+          '<img src="https://example.com/second.png"><img src="https://example.com/first.png"><img src="https://example.com/second.png"><img src="https://example.com/missing.png">',
+      },
+      {
+        pageId: pageRow.id,
+        locale: MultiLangEnum.En,
+        title: "Page",
+        content: '<img src="https://example.com/first.png">',
+      },
+    ] satisfies (typeof schema.pageTranslation.$inferSelect)[];
+
+    it.each(["index", "detail"] as const)(
+      "%s exposes only public media fields to anonymous callers",
+      async (procedure) => {
+        const relatedPage = { ...pageRow, author: null, translations };
+        if (procedure === "index") {
+          mockDb.offset.mockResolvedValueOnce([{ id: pageRow.id }]);
+          mockDb.where
+            .mockReturnValueOnce(mockDb)
+            .mockResolvedValueOnce([{ count: 1 }]);
+          mockDb.query.page.findMany.mockResolvedValueOnce([relatedPage]);
+        } else {
+          mockDb.query.page.findFirst.mockResolvedValueOnce(relatedPage);
+        }
+        mockDb.where.mockResolvedValueOnce([...mediaRows, mediaRows[0]]);
+        const caller = pageRouter.createCaller(createMockContext(null, mockDb));
+        const page =
+          procedure === "index"
+            ? (await caller.index({ page: 1, limit: 10 })).list[0]
+            : await caller.detail({ id: pageRow.id });
+        expect(page).toBeDefined();
+        const serializedImages: unknown = JSON.parse(
+          JSON.stringify(page?.imagesInContent),
+        );
+        // The list follows localized content order; detail retains DB order.
+        // Exact equality also rejects future internal columns, not just known ones.
+        expect(serializedImages).toEqual(
+          procedure === "index"
+            ? [publicImages[1], publicImages[0]]
+            : publicImages,
+        );
+      },
+    );
   });
 
   describe("index procedure", () => {

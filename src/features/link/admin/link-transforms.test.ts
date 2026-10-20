@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
 
-import { buildLinkUpdateInput, toLinkFormDefaults } from "./link-transforms";
+import { toLinkFormDefaults } from "./link-transforms";
 
 const link = {
   id: "link-1",
@@ -26,14 +26,5 @@ describe("link transforms", () => {
       description: undefined,
       status: "ENABLE",
     });
-  });
-
-  it("forces update payloads to use the selected link id", () => {
-    expect(
-      buildLinkUpdateInput(link, {
-        id: "forged-id",
-        name: "Updated OpenAI",
-      }),
-    ).toEqual({ id: "link-1", name: "Updated OpenAI" });
   });
 });

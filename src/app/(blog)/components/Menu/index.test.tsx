@@ -112,7 +112,7 @@ describe("blog menu navigation", () => {
     });
   }
 
-  it("opens nested destinations with focusable semantic controls and Escape restores focus", async () => {
+  it("renders only root links in order without submenu controls for nested input", async () => {
     await act(async () =>
       root.render(
         React.createElement(Menu, {
@@ -135,6 +135,7 @@ describe("blog menu navigation", () => {
                 },
               ],
             },
+            { label: "关于", link: "/pages/about", children: [] },
           ],
         }),
       ),
@@ -143,32 +144,50 @@ describe("blog menu navigation", () => {
       'button[aria-label="Open menu"]',
     );
     await act(async () => toggle?.click());
-    const parent = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="父分类"]',
+    const navigation = container.querySelector("#mobile-menu");
+    expect(
+      Array.from(navigation?.querySelectorAll("a") ?? []).map((link) => ({
+        label: link.textContent,
+        href: link.getAttribute("href"),
+      })),
+    ).toEqual([
+      { label: "父分类", href: "/list/category/parent" },
+      { label: "关于", href: "/pages/about" },
+    ]);
+    expect(
+      navigation?.querySelectorAll(
+        "ul, button, [aria-expanded], [aria-controls]",
+      ).length,
+    ).toBe(0);
+    expect(navigation?.textContent).not.toMatch(/[▴▾]/);
+    expect(
+      navigation?.querySelector('[aria-current="page"]')?.textContent,
+    ).toBe("父分类");
+  });
+
+  it("closes the mobile menu with Escape and restores toggle focus", async () => {
+    await renderMenu();
+    const toggle = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open menu"]',
     );
-    expect(parent).not.toBeNull();
-    expect(parent?.type).toBe("button");
-    parent?.focus();
-    expect(document.activeElement).toBe(parent);
-    await act(async () => parent?.click());
-    expect(parent?.getAttribute("aria-expanded")).toBe("true");
-    const child = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="子分类"]',
+    expect(toggle?.type).toBe("button");
+    expect(toggle?.getAttribute("aria-controls")).toBe("mobile-menu");
+    await act(async () => toggle?.click());
+    const link = container.querySelector<HTMLAnchorElement>(
+      'a[href="/list/category/parent"]',
     );
-    await act(async () => child?.click());
-    const leaf = container.querySelector<HTMLAnchorElement>(
-      'a[href="/list/category/parent/child/grandchild"]',
-    );
-    expect(leaf?.closest("ul[hidden]")).toBeNull();
-    leaf?.focus();
+    link?.focus();
+    expect(document.activeElement).toBe(link);
     await act(async () =>
-      leaf?.dispatchEvent(
+      link?.dispatchEvent(
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       ),
     );
-    expect(child?.getAttribute("aria-expanded")).toBe("false");
-    expect(document.activeElement).toBe(child);
-    expect(leaf?.closest("ul[hidden]")).not.toBeNull();
+    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+    expect(
+      container.querySelector("#mobile-menu")?.classList.contains("hidden"),
+    ).toBe(true);
+    expect(document.activeElement).toBe(toggle);
   });
 
   it("marks the parent category active for a nested list route", async () => {

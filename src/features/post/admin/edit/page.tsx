@@ -40,7 +40,7 @@ function PostDetailContent() {
       <PostEditorActions
         id={detail?.id}
         loading={loading}
-        status={detail?.status}
+        status={editor.confirmedStatus}
         submit={submit}
       />
     </div>
@@ -52,7 +52,7 @@ function PostDetailContent() {
   );
   useAdminLayoutActions(
     headerActions,
-    `${detail?.id ?? "new"}:${detail?.status ?? "draft"}:${loading}:${editor.loadError}:${editor.actionsKey}`,
+    `${detail?.id ?? "new"}:${editor.confirmedStatus ?? "draft"}:${loading}:${editor.loadError}:${editor.actionsKey}`,
   );
 
   if (editor.loadError) {

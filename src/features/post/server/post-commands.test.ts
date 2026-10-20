@@ -506,6 +506,12 @@ describe("atomic post writes", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
+  it("preserves the persisted creation hash golden bytes", async () => {
+    const created = await createPost(db, input, actorId, cache());
+    expect((await row(created.id)).creationInputHash).toBe(
+      "501ec3697c6f9741b1671bdc68056cd8f2a63660f369b9a902de82bb1ccd02de",
+    );
+  });
   it("replays the same creation intent after later edits without overwriting them", async () => {
     const created = await createPost(db, input, actorId, cache());
     await updatePost(
@@ -842,5 +848,39 @@ describe("post transaction retry boundary", () => {
     });
     expect(fake.transaction).toHaveBeenCalledTimes(4);
     expect(fake.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("post conditional write result", () => {
+  it("rejects a zero-row CAS result before translations and invalidation", async () => {
+    const fake = createMockDb();
+    fake.limit
+      .mockResolvedValueOnce([
+        { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "111111111111111111111111",
+          version: 0,
+          status: PostStatus.DRAFT,
+        },
+      ]);
+    fake.returning.mockResolvedValue([]);
+    const invalidator = cache();
+    await expect(
+      updatePost(
+        asMockDatabase(fake),
+        {
+          id: "111111111111111111111111",
+          expectedVersion: 0,
+          movieTime: "changed",
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(fake.insert).not.toHaveBeenCalled();
+    expect(fake.delete).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 });

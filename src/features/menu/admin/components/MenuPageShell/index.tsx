@@ -157,9 +157,6 @@ function MenuEditor() {
             <Save /> 保存
           </Button>
         )}
-        <p role="status">
-          {editor.dirty ? "有未保存的更改" : "已与服务器同步"}
-        </p>
         {blocked && (
           <div role="alert">
             保存发生冲突或结果未知，请先核对服务器。

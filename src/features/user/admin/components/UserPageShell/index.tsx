@@ -46,6 +46,7 @@ export function UserPageShell() {
   return (
     <>
       <DataTable<UserEntity>
+        getRowId={(row) => row.id}
         data={{
           list: query.data?.list ?? [],
           total: query.data?.total ?? 0,
@@ -63,7 +64,7 @@ export function UserPageShell() {
         onChange={(params) =>
           setSearchParams(UserListQuerySchema.parse(params))
         }
-        toolBar={
+        toolBar={(table) => (
           <div className="flex justify-between">
             {canManageUsers && (
               <div className="flex gap-1">
@@ -97,13 +98,15 @@ export function UserPageShell() {
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
-                onSubmit={setSearchParams}
+                onSubmit={({ name }) =>
+                  table.getColumn("name")?.setFilterValue(name)
+                }
                 inline={true}
                 submitProps={{ children: "查询", variant: "outline" }}
               />
             </div>
           </div>
-        }
+        )}
         rowActions={
           canManageUsers
             ? (row) => (

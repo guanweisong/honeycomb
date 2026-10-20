@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
@@ -55,91 +55,9 @@ const getActiveCategories = ({
   return [allCategoryPath];
 };
 
-function MenuBranch({
-  item,
-  activeCategories,
-  depth = 0,
-}: {
-  item: MenuLocalEntity;
-  activeCategories: string[];
-  depth?: number;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const submenuId = useId();
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const active = activeCategories.includes(item.link ?? "");
-  return (
-    <li
-      className={cn("relative group", depth === 0 && "lg:flex lg:items-center")}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && expanded) {
-          event.stopPropagation();
-          setExpanded(false);
-          toggleRef.current?.focus();
-        }
-      }}
-    >
-      <div className="flex items-center">
-        <Link
-          href={item.link ?? ""}
-          aria-current={active ? "page" : undefined}
-          className={cn(
-            "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
-            {
-              "text-teal-500": active,
-              "group-hover:lg:text-teal-500": !active,
-            },
-          )}
-        >
-          {item.label}
-          {active && depth === 0 && (
-            <span
-              className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"
-              aria-hidden="true"
-            />
-          )}
-        </Link>
-        {!!item.children?.length && (
-          <button
-            ref={toggleRef}
-            type="button"
-            aria-label={item.label}
-            aria-expanded={expanded}
-            aria-controls={submenuId}
-            className="px-2 py-2 cursor-pointer"
-            onClick={() => setExpanded(!expanded)}
-          >
-            <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
-          </button>
-        )}
-      </div>
-      {!!item.children?.length && (
-        <ul
-          id={submenuId}
-          hidden={!expanded}
-          className={cn(
-            "pl-4 bg-auto-back-gray/95",
-            depth === 0 &&
-              "lg:absolute lg:top-full lg:left-0 lg:min-w-48 lg:rounded-lg lg:shadow-lg",
-          )}
-        >
-          {item.children.map((child, index) => (
-            <MenuBranch
-              key={`${child.link}-${index}`}
-              item={child}
-              activeCategories={activeCategories}
-              depth={depth + 1}
-            />
-          ))}
-        </ul>
-      )}
-    </li>
-  );
-}
-
 /**
  * 导航菜单组件。
- * 支持多级菜单，响应式布局，并根据当前路由高亮显示菜单项。
+ * 仅展示根级菜单，支持响应式布局，并根据当前路由高亮显示菜单项。
  * @param {MenuProps} props - 组件属性。
  * @returns {JSX.Element} 导航菜单。
  */
@@ -191,7 +109,7 @@ const Menu = (props: MenuProps) => {
   }, []);
 
   /**
-   * 递归渲染菜单项。
+   * 渲染根级菜单项；分类层级仅用于路径与高亮，不展示为子菜单。
    * @param {MenuLocalEntity[]} data - 菜单项数据数组。
    * @returns {JSX.Element} 渲染后的菜单列表。
    */
@@ -211,13 +129,35 @@ const Menu = (props: MenuProps) => {
         )}
         ref={ref1}
       >
-        {data.map((item, index) => (
-          <MenuBranch
-            key={`${item.link}-${index}`}
-            item={item}
-            activeCategories={activeCategories}
-          />
-        ))}
+        {data.map((item, index) => {
+          const active = activeCategories.includes(item.link ?? "");
+          return (
+            <li
+              key={`${item.link}-${index}`}
+              className="relative group lg:flex lg:items-center"
+            >
+              <Link
+                href={item.link ?? ""}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center",
+                  {
+                    "text-teal-500": active,
+                    "group-hover:lg:text-teal-500": !active,
+                  },
+                )}
+              >
+                {item.label}
+                {active && (
+                  <span
+                    className="absolute hidden lg:block inset-x-1 -bottom-px h-px bg-linear-to-r from-teal-500/0 via-teal-500/40 to-teal-500/0 dark:from-teal-400/0 dark:via-teal-400/40 dark:to-teal-400/0"
+                    aria-hidden="true"
+                  />
+                )}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     );
   };

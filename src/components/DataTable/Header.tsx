@@ -11,6 +11,7 @@ import { DataTableColumnMetaSchema } from "./types";
 interface DataTableHeaderProps<TData> {
   table: TanStackTable<TData>;
   selectableRows: boolean;
+  isFetching?: boolean;
   isAllSelectedOnCurrentPage: boolean;
   onSelectAll: (checked: CheckedState) => void;
   hasRowActions: boolean;
@@ -20,6 +21,7 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
   const {
     table,
     selectableRows,
+    isFetching,
     isAllSelectedOnCurrentPage,
     onSelectAll,
     hasRowActions,
@@ -32,6 +34,7 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
           {selectableRows && (
             <TableHead>
               <Checkbox
+                disabled={isFetching}
                 checked={isAllSelectedOnCurrentPage}
                 onCheckedChange={onSelectAll}
               />

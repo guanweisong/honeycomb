@@ -1,4 +1,8 @@
 import "server-only";
+import {
+  transactionWithBeginRetry,
+  type DatabaseTransaction,
+} from "@/lib/db/transaction-begin-retry";
 import { parseEnumValue } from "@/lib/db/value-validation";
 
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
@@ -19,41 +23,9 @@ import { UserStatus } from "@/features/user/user";
 
 import { ApplicationError } from "@/lib/errors/application-error";
 
-type MenuTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-/** 仅重试未进入业务回调的 BEGIN 竞争；回调开始后包括未知提交结果都不自动重放。 */
-async function menuTransaction<T>(
-  db: Database,
-  operation: (tx: MenuTransaction) => Promise<T>,
-): Promise<T> {
-  for (let attempt = 0; ; attempt += 1) {
-    let entered = false;
-    try {
-      return await db.transaction((tx) => {
-        entered = true;
-        return operation(tx);
-      });
-    } catch (error) {
-      if (
-        entered ||
-        !error ||
-        typeof error !== "object" ||
-        !("code" in error) ||
-        error.code !== "SQLITE_BUSY"
-      )
-        throw error;
-      if (attempt >= 3)
-        throw new ApplicationError(
-          "CONFLICT",
-          "保存暂时繁忙，请核对最新版本后重试",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt));
-    }
-  }
-}
+const busyMessage = "保存暂时繁忙，请核对最新版本后重试";
 
 function validateMenuTree(input: MenuInput): void {
-  if (input.length === 0)
-    throw new ApplicationError("BAD_REQUEST", "菜单不能为空");
   const ids = new Set<string>();
   for (const item of input) {
     if (ids.has(item.id))
@@ -98,7 +70,7 @@ export async function saveAllMenus(
     "menu.save-all",
     "transaction",
     () =>
-      menuTransaction(db, async (tx) => {
+      transactionWithBeginRetry(db, busyMessage, async (tx) => {
         const [actor] = await tx
           .select({ level: schema.user.level, status: schema.user.status })
           .from(schema.user)
@@ -360,7 +332,7 @@ export async function getMenuSnapshot(db: Database) {
 }
 
 async function bumpMenuRevisionForTargets(
-  tx: MenuTransaction,
+  tx: DatabaseTransaction,
   field: typeof schema.menu.pageId | typeof schema.menu.categoryId,
   ids: string[],
 ) {
@@ -380,13 +352,13 @@ async function bumpMenuRevisionForTargets(
     throw new ApplicationError("INTERNAL_SERVER_ERROR", "菜单版本尚未初始化");
 }
 export async function bumpMenuRevisionForPageDeletion(
-  tx: MenuTransaction,
+  tx: DatabaseTransaction,
   ids: string[],
 ) {
   await bumpMenuRevisionForTargets(tx, schema.menu.pageId, ids);
 }
 export async function bumpMenuRevisionForCategoryDeletion(
-  tx: MenuTransaction,
+  tx: DatabaseTransaction,
   ids: string[],
 ) {
   await bumpMenuRevisionForTargets(tx, schema.menu.categoryId, ids);

@@ -1,6 +1,6 @@
 import { PostType } from "@/features/post/post-type";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { parseEnumValue } from "@/lib/db/value-validation";
+import { PostWithRelationsSchema } from "../post-read-model";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
@@ -20,105 +20,6 @@ vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-// 模拟文章关联数据加载函数。
-vi.mock("@/features/post/server/post-relations", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/features/post/server/post-relations")
-  >("@/features/post/server/post-relations");
-  const loadPostRelations = vi.fn<typeof actual.loadPostRelations>(
-    async (_db, posts) => {
-      // 对于 detail 测试，返回关联数据
-      if (posts.length === 1) {
-        return posts.map((post) => ({
-          title: null,
-          content: null,
-          excerpt: null,
-          galleryLocation: null,
-          quoteAuthor: null,
-          quoteContent: null,
-          ...post,
-          status: parseEnumValue(
-            post.status,
-            Object.values(PostStatus),
-            "post.status",
-          ),
-          type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-          commentStatus: parseEnumValue(
-            post.commentStatus,
-            Object.values(EnableStatus),
-            "post.commentStatus",
-          ),
-          author: {
-            id: post.authorId,
-            name: "Test Author",
-          },
-          category: {
-            id: post.categoryId,
-            title: { en: "Category 1", zh: "分类1" },
-            description: null,
-            parent: null,
-            status: EnableStatus.ENABLE,
-            path: "category",
-            createdAt: null,
-            updatedAt: null,
-          },
-          cover: post.coverId
-            ? {
-                id: post.coverId,
-                url: "https://example.com/cover.jpg",
-                key: "cover.jpg",
-                name: "cover.jpg",
-                size: 10,
-                type: "image/jpeg",
-                color: null,
-                width: null,
-                height: null,
-                createdAt: null,
-                updatedAt: null,
-              }
-            : undefined,
-          movieActors: [],
-          movieDirectors: [],
-          movieStyles: [],
-          galleryStyles: [],
-        }));
-      }
-      // 对于 list 测试，返回空关联数据
-      return posts.map((post) => ({
-        title: null,
-        content: null,
-        excerpt: null,
-        galleryLocation: null,
-        quoteAuthor: null,
-        quoteContent: null,
-        ...post,
-        status: parseEnumValue(
-          post.status,
-          Object.values(PostStatus),
-          "post.status",
-        ),
-        type: parseEnumValue(post.type, Object.values(PostType), "post.type"),
-        commentStatus: parseEnumValue(
-          post.commentStatus,
-          Object.values(EnableStatus),
-          "post.commentStatus",
-        ),
-        author: undefined,
-        category: undefined,
-        cover: undefined,
-        movieActors: [],
-        movieDirectors: [],
-        movieStyles: [],
-        galleryStyles: [],
-      }));
-    },
-  );
-  return {
-    ...actual,
-    loadPostRelations,
-  };
-});
-
 vi.mock("@/lib/cache/upstash-cache", () => ({
   bumpCacheVersion: vi.fn().mockResolvedValue(1),
   getCacheVersion: vi.fn().mockResolvedValue(1),
@@ -127,6 +28,29 @@ vi.mock("@/lib/cache/upstash-cache", () => ({
 }));
 
 const mockDb = createMockDb();
+
+function prepareDetail(
+  post: ReturnType<typeof createPostFixture>,
+  relations = {},
+) {
+  mockDb.limit.mockResolvedValueOnce([{ id: post.id }]);
+  mockDb.query.post.findMany.mockResolvedValueOnce([
+    {
+      ...post,
+      translations: ["en", "zh"].map((locale) => ({
+        postId: post.id,
+        locale,
+        title: post.title?.[locale as "en" | "zh"] ?? null,
+        content: post.content?.[locale as "en" | "zh"] ?? null,
+      })),
+      author: null,
+      category: null,
+      cover: null,
+      postTags: [],
+      ...relations,
+    },
+  ]);
+}
 
 describe("Post Router", () => {
   beforeEach(() => {
@@ -139,7 +63,7 @@ describe("Post Router", () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([
+      prepareDetail(
         createPostFixture({
           id: TEST_IDS.ID_1,
           title: { en: "Post 1", zh: "文章1" },
@@ -150,7 +74,7 @@ describe("Post Router", () => {
           categoryId: TEST_IDS.ID_1,
           coverId: null,
         }),
-      ]);
+      );
 
       const caller = postRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
@@ -200,36 +124,24 @@ describe("Post Router", () => {
         updatedAt: null,
       };
 
-      // 设置文章详情查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockPost]);
-
-      // 设置分类查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockCategory]);
-
-      // 设置作者查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockAuthor]);
-
-      // 设置封面查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockCover]);
+      prepareDetail(mockPost, {
+        category: {
+          ...mockCategory,
+          translations: [
+            { locale: "en", title: "Category 1", description: null },
+            { locale: "zh", title: "分类1", description: null },
+          ],
+        },
+        author: mockAuthor,
+        cover: mockCover,
+      });
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.detail({ id: TEST_IDS.ID_1 });
 
       expect(result).toEqual({
-        ...mockPost,
+        ...PostWithRelationsSchema.parse(mockPost),
         category: mockCategory,
         author: mockAuthor,
         cover: mockCover,

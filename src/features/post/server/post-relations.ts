@@ -95,7 +95,7 @@ function toPostViewModel(
 }
 export async function loadPostRelations(
   db: Database,
-  posts: PostRecord[],
+  posts: Pick<PostRecord, "id">[],
   visibility: PostVisibility = "ALL",
 ): Promise<PostWithRelations[]> {
   const postIds = Array.from(
