@@ -43,7 +43,7 @@ vi.mock("next-intl", () => ({
     `${values.count} views`,
 }));
 
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
     post: {
@@ -61,7 +61,7 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },
     post: {
@@ -72,7 +72,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/app/(blog)/components/PostInfo", () => ({
+vi.mock("@/features/post/public/PostInfo", () => ({
   default: ({ views, ...props }: Record<string, unknown>) =>
     React.createElement(
       "output",
@@ -83,11 +83,11 @@ vi.mock("@/app/(blog)/components/PostInfo", () => ({
   PostCommentCount: () => React.createElement("span", null, "3 comments"),
 }));
 
-vi.mock("@/app/(blog)/components/Tags", () => ({
+vi.mock("@/features/post/public/Tags", () => ({
   default: () => React.createElement("div", { "data-testid": "tags" }),
 }));
 
-vi.mock("@/packages/ui/blog/Card", () => ({
+vi.mock("@/components/blog/Card", () => ({
   default: ({
     children,
     title,
@@ -97,13 +97,13 @@ vi.mock("@/packages/ui/blog/Card", () => ({
   }) => React.createElement("section", { "data-title": title }, children),
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/features/comment/public", () => ({
-  Comment: ({ id }: { id: string }) =>
+vi.mock("@/features/comment/public/components", () => ({
+  default: ({ id }: { id: string }) =>
     React.createElement("div", { "data-testid": "comment" }, id),
 }));
 
@@ -112,7 +112,7 @@ vi.mock("@/app/(blog)/components/PageTitle", () => ({
     React.createElement("h1", null, children),
 }));
 
-vi.mock("@/app/(blog)/components/RichText", () => ({
+vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) =>
     React.createElement("article", { "data-testid": "rich-text" }, html),
 }));
@@ -306,7 +306,9 @@ describe("archives page", () => {
       title: { zh: '</script><script data-attack="stored">alert(1)</script>' },
     });
 
-    const script = container.querySelector('script[type="application/ld+json"]');
+    const script = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
     expect(script?.innerHTML).not.toContain("<");
     expect(container.querySelector('script[data-attack="stored"]')).toBeNull();
     expect(structuredData().name).toBe(
@@ -475,5 +477,4 @@ describe("archives page", () => {
       },
     });
   });
-
 });

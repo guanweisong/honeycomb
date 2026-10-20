@@ -2,9 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { UserLevel } from "@/packages/domain/identity/user";
-import { UserStatus } from "@/packages/domain/identity/user";
-import type { UserRecord as UserEntity } from "@/features/user/application/repository";
+import { UserLevel } from "@/features/user/user";
+import { UserStatus } from "@/features/user/user";
+import type { UserRecord as UserEntity } from "@/features/user/types";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success },
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     user: {
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
@@ -30,7 +30,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-import { useUserActions } from "../actions/user-actions";
+import { useUserActions } from "@/features/user/admin/user-actions";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

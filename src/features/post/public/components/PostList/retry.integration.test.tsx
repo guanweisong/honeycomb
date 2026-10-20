@@ -6,20 +6,20 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PostListResult } from "@/features/post/application/repository";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import type { PostListResult } from "@/features/post/types";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 const transport = vi.hoisted(() => ({ request: vi.fn() }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { post: { index: { query: transport.request } } },
 }));
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
   ViewTransition: ({ children }: { children: React.ReactNode }) => children,
 }));
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
 }));

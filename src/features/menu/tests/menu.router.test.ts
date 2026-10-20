@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { menuRouter } from "@/features/menu/menu.router";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { menuRouter } from "@/features/menu/router";
+import * as schema from "@/lib/db/schema";
+import { MenuType } from "@/features/menu/menu-types";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -12,11 +12,11 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -84,7 +84,9 @@ describe("Menu Router", () => {
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),
       );
 
-      await expect(caller.saveAll([])).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(caller.saveAll([])).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
       expect(mockDb.delete).not.toHaveBeenCalled();
     });
 

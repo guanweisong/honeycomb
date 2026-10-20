@@ -30,7 +30,7 @@ vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success },
 }));
 
-vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
+vi.mock("@/features/setting/admin/use-site-setting", () => ({
   useSiteSetting: () => ({
     setting: {
       siteName: { zh: "Honeycomb" },
@@ -39,7 +39,7 @@ vi.mock("@/features/setting/admin/hooks-use-site-setting", () => ({
   }),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     useUtils: () => ({
       user: {
@@ -61,7 +61,7 @@ vi.mock("./logout-browser-state", () => ({
   navigateToAdminLogin: mocks.navigateToLogin,
 }));
 
-vi.mock("@/packages/ui/extended/AdminLayout", () => ({
+vi.mock("@/app/admin/components/AdminLayout", () => ({
   AdminLayout: (props: {
     onLogout: () => Promise<void>;
     children: React.ReactNode;

@@ -1,8 +1,8 @@
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import type { PostWithRelations } from "@/features/post/application/repository";
-import type { post } from "@/packages/infrastructure/db/schema";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
+import { EnableStatus } from "@/lib/validation/enable-status";
+import type { PostWithRelations } from "@/features/post/types";
+import type { post } from "@/lib/db/schema";
 
 type PostFixture = PostWithRelations & typeof post.$inferSelect;
 

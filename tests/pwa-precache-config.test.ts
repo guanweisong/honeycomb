@@ -3,10 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { getManifest } from "@serwist/build";
-import {
-  offlinePrecacheUrl,
-  pwaGlobIgnores,
-} from "@/packages/infrastructure/pwa/precache-config";
+import { offlinePrecacheUrl, pwaGlobIgnores } from "@/lib/pwa/precache-config";
 
 let fixture = "";
 

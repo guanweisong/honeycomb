@@ -27,17 +27,17 @@
 
 ### Requirement: 对外多语言契约保持兼容
 
-系统 MUST 保持现有 `{ zh, en }` Application、tRPC、表单和读取模型契约，翻译行与 ORM 类型不得泄漏到上层。
+系统 MUST 保持现有 `{ zh, en }` Feature、tRPC、表单和读取模型契约，翻译行与 ORM 类型不得泄漏到上层。
 
 #### Scenario: 读取实体详情
 
-- **WHEN** Repository 从主表和翻译表读取实体
-- **THEN** Repository SHALL 显式组装与迁移前相同形状和可空语义的多语言对象
+- **WHEN** feature server 从主表和翻译表读取实体
+- **THEN** feature server SHALL 显式组装与迁移前相同形状和可空语义的多语言对象
 
 #### Scenario: 提交现有表单
 
 - **WHEN** 管理后台继续提交现有 `{ zh, en }` 输入
-- **THEN** transport 和 Application SHALL 无需了解翻译表即可调用原有业务操作
+- **THEN** transport 和表单 SHALL 无需了解翻译表即可调用既有业务操作，server 函数负责事务和翻译映射
 
 ### Requirement: 主记录与翻译写入保持原子性
 
@@ -75,12 +75,12 @@
 #### Scenario: 批量读取列表关系
 
 - **WHEN** 列表包含多个实体及分类、标签等多语言关系
-- **THEN** Repository SHALL 按实体集合批量加载翻译并组装读取模型，不得逐实体或逐语言查询
+- **THEN** feature server SHALL 按实体集合批量加载翻译并组装读取模型，不得逐实体或逐语言查询
 
 #### Scenario: 评论后台读取关联内容标题
 
 - **WHEN** 后台评论列表包含文章、页面或自定义文章关联
-- **THEN** Repository SHALL 批量加载对应翻译行并返回现有 `{ zh, en }` 标题模型
+- **THEN** feature server SHALL 批量加载对应翻译行并返回现有 `{ zh, en }` 标题模型
 
 ### Requirement: 历史多语言数据无损迁移
 

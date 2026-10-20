@@ -19,10 +19,10 @@ vi.mock("./hooks/use-post-editor", () => ({
     loading: state.readOnly,
   }),
 }));
-vi.mock("@/packages/ui/components/form", () => ({
+vi.mock("@/components/ui/form", () => ({
   Form: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
-vi.mock("@/packages/ui/extended/AdminLayout", () => ({
+vi.mock("@/components/admin/layout-context", () => ({
   useAdminLayoutActions: vi.fn(),
   useAdminLayoutPageTitle: vi.fn(),
 }));
@@ -35,14 +35,14 @@ vi.mock("./components/PostSidebarFields", () => ({
 vi.mock("./components/PostEditorActions", () => ({
   PostEditorActions: () => null,
 }));
-vi.mock("@/features/post/admin/edit/components/PhotoPicker", () => ({
+vi.mock("@/features/media/components/PhotoPicker/index", () => ({
   default: () => null,
 }));
-vi.mock("@/features/media/public", () => ({ MediaPageShell: () => null }));
-vi.mock("../category/components/AddCategoryModal", () => ({
+vi.mock("@/features/media/shared/MediaPageShell", () => ({ MediaPageShell: () => null }));
+vi.mock("../../../category/admin/components/AddCategoryModal", () => ({
   default: () => null,
 }));
-vi.mock("@/packages/ui/extended/LoadingState", () => ({ default: () => null }));
+vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
 import PostDetail from "./page";
 

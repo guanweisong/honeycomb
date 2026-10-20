@@ -1,4 +1,4 @@
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 
 export default function BlogLoading() {
   return <LoadingState variant="page" />;

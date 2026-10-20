@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
+import type { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
 export const defaultSocialImage = "/static/images/logo.png";
 

@@ -1,5 +1,7 @@
 # Public Cache Coherence Design
 
+> 历史记录：本文记录当时方案与验证，不代表当前目录或分层要求。当前指导见[架构与依赖边界](../../architecture-dependency-report.md)；本轮迁移与验证见[重构结果](../../simple-feature-architecture-results.md)。
+
 ## 背景
 
 公开内容当前同时使用 Next.js 路由缓存、Next.js `unstable_cache` sitemap 缓存和 Upstash 文章索引缓存。现有 `PublicContentInvalidator` 只表达详情路径与公开布局刷新，导致分类、标签、用户和媒体变更无法使内嵌关联快照的文章索引缓存失效；文章 Repository 又自行提升缓存版本，使副作用顺序隐藏在 Infrastructure 中。批量删除还会重复刷新公开布局。

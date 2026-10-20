@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostStatus } from "@/features/post/post-status";
 
 type PostDetailLike =
   | {

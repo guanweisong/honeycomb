@@ -2,23 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { runAdminMutation } from "@/packages/ui/admin/action-state";
+import { runAdminMutation } from "@/components/admin/action-state";
 import { postListTableColumns } from "../../constants/post-list-table-columns";
-import { Button } from "@/packages/ui/components/button";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { DataTable } from "@/packages/ui/extended/DataTable";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
+import { DataTable } from "@/components/DataTable";
 import {
   PostListQueryInput,
   PostListQuerySchema,
-} from "@/features/post/schemas/post.list.query.schema";
-import { trpc } from "@/packages/trpc/client/trpc";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
+} from "@/features/post/schema";
+import { trpc } from "@/lib/trpc/client/trpc";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
 
 /**
  * 文章列表客户端壳，负责查询、筛选、权限控制和删除交互。

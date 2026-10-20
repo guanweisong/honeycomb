@@ -2,8 +2,8 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
-import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaViewModel } from "../media-view-model";
+import { Permission } from "@/lib/auth/permissions";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -45,11 +45,11 @@ const toastMocks = vi.hoisted(() => ({
   success: vi.fn(),
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: (permission: Permission) => allowedPermissions.has(permission),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     media: {
       index: {

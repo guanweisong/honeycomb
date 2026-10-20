@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import type { MetadataRoute } from "next";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 
 /** 按当前语言在请求时生成 Web App Manifest。 */
 export async function GET(

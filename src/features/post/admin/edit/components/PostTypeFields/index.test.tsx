@@ -5,14 +5,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const fields: Array<Record<string, unknown>> = [];
 
-vi.mock("@/packages/ui/extended/DynamicForm/DynamicField", () => ({
+vi.mock("@/components/DynamicForm/DynamicField", () => ({
   DynamicField: (props: Record<string, unknown>) => {
     fields.push(props);
     return <div data-field={String(props.name)} />;
   },
 }));
 
-import { PostType } from "@/packages/domain/content/post";
+import { PostType } from "@/features/post/post-type";
 import { PostTypeFields } from ".";
 
 describe("PostTypeFields", () => {

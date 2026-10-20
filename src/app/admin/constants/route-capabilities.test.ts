@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { sourceFiles } from "@tests/helpers/source-files";
-import { UserLevel } from "@/packages/domain/identity/user";
+import { UserLevel } from "@/features/user/user";
 import {
   adminRouteCapabilities,
   canAccessAdminRoute,
@@ -14,11 +14,20 @@ describe("Admin route capability registry", () => {
     const pages = sourceFiles(root)
       .filter((path) => path.endsWith("/page.tsx"))
       .map((path) => {
-      const relative = path.slice(root.length).replace(/\/page\.tsx$/, "");
-      return `/admin${relative.replace(/\/page$/, "")}`;
+        const relative = path.slice(root.length).replace(/\/page\.tsx$/, "");
+        return `/admin${relative.replace(/\/page$/, "")}`;
       });
-    expect(pages.filter((path) => !adminRouteCapabilities[path as keyof typeof adminRouteCapabilities])).toEqual([]);
-    expect(Object.keys(adminRouteCapabilities).every((path) => path === "/admin" || path.startsWith("/admin/"))).toBe(true);
+    expect(
+      pages.filter(
+        (path) =>
+          !adminRouteCapabilities[path as keyof typeof adminRouteCapabilities],
+      ),
+    ).toEqual([]);
+    expect(
+      Object.keys(adminRouteCapabilities).every(
+        (path) => path === "/admin" || path.startsWith("/admin/"),
+      ),
+    ).toBe(true);
   });
 
   it("使用登记的 capability 判定后台页面访问权限", () => {

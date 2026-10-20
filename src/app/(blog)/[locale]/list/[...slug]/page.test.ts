@@ -26,7 +26,7 @@ vi.mock("next/server", async (importOriginal) => ({
   connection: async () => undefined,
 }));
 
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: async () => ({
     menu: { index: mockMenuIndex },
     post: { index: mockPostIndex },
@@ -43,8 +43,8 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicAuthor: (...args: unknown[]) => mockPublicAuthor(...args),
 }));
 
-vi.mock("@/features/post/public", () => ({
-  PostList: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
+vi.mock("@/features/post/public/components/PostList", () => ({
+  default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
     React.createElement(
       "output",
       { "data-testid": "post-list" },
@@ -93,23 +93,23 @@ describe("blog list page", () => {
     mockTagIndex.mockReset().mockResolvedValue({
       list: [{ id: "resolved-tag", name: { zh: "标签名称" } }],
     });
-    mockPublicTag.mockReset().mockImplementation(async () =>
-      (await mockTagIndex({})).list[0],
-    );
+    mockPublicTag
+      .mockReset()
+      .mockImplementation(async () => (await mockTagIndex({})).list[0]);
     mockUserDetail.mockReset().mockResolvedValue({
       id: "resolved-author",
       name: "作者名称",
     });
-    mockPublicAuthor.mockReset().mockImplementation((input) =>
-      mockUserDetail(input),
-    );
+    mockPublicAuthor
+      .mockReset()
+      .mockImplementation((input) => mockUserDetail(input));
     mockPostIndex.mockReset().mockResolvedValue({
       list: [{ id: "post-1" }],
       total: 1,
     });
-    mockPublicPostList.mockReset().mockImplementation((input) =>
-      mockPostIndex(input),
-    );
+    mockPublicPostList
+      .mockReset()
+      .mockImplementation((input) => mockPostIndex(input));
   });
 
   afterEach(async () => {
@@ -273,5 +273,4 @@ describe("blog list page", () => {
 
     expect(metadata.title).toBe("标签：");
   });
-
 });

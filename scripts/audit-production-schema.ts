@@ -256,7 +256,7 @@ ${details}
 ## Code schema comparison
 
 The normalized production introspection snapshot was compared with a fresh
-Drizzle snapshot generated from \`src/packages/infrastructure/db/schema/index.ts\`.
+Drizzle snapshot generated from \`src/lib/db/schema/index.ts\`.
 After excluding Drizzle's tool-only \`internal.indexes\` metadata, the snapshots
 are structurally identical.
 

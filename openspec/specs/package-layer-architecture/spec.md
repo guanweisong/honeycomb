@@ -1,34 +1,39 @@
-# Package Layer Architecture
+# 简单源码架构
 
 ## Purpose
 
-定义 packages 的六层目录结构、稳定领域概念的归属、旧目录的清理要求，以及每层之间必须长期遵守的依赖方向。
+以 app、features、components、lib 四种职责替代未发布的 packages 层级，让业务归属可搜索、技术能力可复用，并保持真实运行时与授权边界。
 
 ## Requirements
 
-### Requirement: packages 顶层采用六层架构
+### Requirement: 源码采用四种职责目录
 
-系统 MUST 将业务代码包组织为 `domain`、`identity`、`application`、`infrastructure`、`trpc` 和 `ui` 六个顶层层级。
+系统 MUST 使用 app 负责路由、布局、HTTP 与框架组合，features 负责业务，components 负责通用 UI/编辑器，lib 负责技术能力；MUST NOT 保留 src/packages 或人工 feature application/domain/infrastructure 分层。
 
-#### Scenario: 检查 packages 顶层目录
+#### Scenario: 检查源码目录
 
-- **WHEN** 执行包架构边界测试
-- **THEN** 测试确认不存在旧的 `auth`、`account-security`、`db`、`http`、`notifications`、`observability` 或 `security` 顶层包
+- **WHEN** 执行架构边界测试
+- **THEN** 测试 MUST 拒绝旧 packages 和人工 feature 分层目录，不要求每个 feature 建立全部可选文件
 
-### Requirement: 领域概念独立于传输层
+### Requirement: 业务概念归属于 Feature
 
-系统 MUST 在 domain 中定义用户、内容、导航、国际化和通用状态的稳定业务概念，且 domain 不依赖其他 packages。
+用户、内容、菜单等业务状态、类型、schema 和选项 MUST 归属相应 feature；通用国际化、数据库、认证、缓存和存储等技术能力 SHALL 位于 lib。
 
 #### Scenario: 引用文章状态
 
-- **WHEN** 数据库、tRPC 或 UI 需要文章状态、类型或显示选项
-- **THEN** 它们从 domain content 模块导入相同契约，而不从 tRPC feature 类型模块导入
+- **WHEN** 数据库、router 或 UI 需要文章状态
+- **THEN** 它们 SHALL 复用 post feature 拥有的同一纯目录，不建立共享 domain 或 contracts 副本
 
-### Requirement: 层级依赖方向受约束
+### Requirement: 技术依赖不加载业务运行时
 
-系统 MUST 保持 UI 独立于 tRPC 和 App Router，基础设施独立于 tRPC 和 App Router，且 identity 与 application 不依赖 tRPC。
+lib MUST NOT 承担业务 router 组合或直接加载 feature server 操作。lib/db 与 lib/auth MAY 引用 feature 纯 catalog/schema/type；lib/trpc 客户端 MAY type-only 引用根 AppRouter。通用 components MUST 不运行时依赖 app 或 feature。现有 lib/trpc/context.ts MAY 仅为会话读取延迟导入 src/auth.ts 技术绑定，其认证框架组合归 app/_auth；该窄例外不得扩大为 lib/auth 的运行时业务依赖。
 
 #### Scenario: 执行依赖边界测试
 
-- **WHEN** 新增或修改 packages 内生产代码
-- **THEN** 自动化测试拒绝违反既定层级方向的 import
+- **WHEN** 新增或修改 lib 或 components 的生产 import
+- **THEN** 自动化测试 MUST 追踪直接及间接依赖，允许规定的纯契约或类型引用并拒绝业务运行时加载
+
+#### Scenario: 认证会话技术集成
+
+- **WHEN** tRPC context 读取 Better Auth 会话
+- **THEN** 它 MAY 延迟加载 src/auth.ts 技术绑定，但业务 hook 与审计组合 MUST 留在 app/_auth，lib/auth MUST 不运行时导入 feature 操作

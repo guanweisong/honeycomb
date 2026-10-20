@@ -21,7 +21,8 @@ describe("global not-found", () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "404",
     );
-    expect(container.querySelector('a[href="/en/list/category"]')?.textContent)
-      .toBe("返回首页");
+    expect(
+      container.querySelector('a[href="/en/list/category"]')?.textContent,
+    ).toBe("返回首页");
   });
 });

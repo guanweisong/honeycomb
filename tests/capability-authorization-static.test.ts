@@ -48,7 +48,7 @@ describe("capability authorization static gate", () => {
     ],
     [
       "aliased legacy wrapper",
-      `import { protectedProcedure as legacy } from "@/packages/trpc/api/core";
+      `import { protectedProcedure as legacy } from "@/lib/trpc/core";
        const adminOnly = () => legacy([UserLevel.ADMIN]);
        const route = adminOnly().query(handler);`,
     ],

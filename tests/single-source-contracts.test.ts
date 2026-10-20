@@ -1,6 +1,7 @@
 import ts from "typescript";
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PublicCommentBaseSchema } from "@/features/comment/application/write-schema";
+import { PublicCommentBaseSchema } from "@/features/comment/schema";
 import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 import { sourceFile } from "@tests/helpers/source-files";
 
@@ -12,36 +13,25 @@ describe("唯一事实源架构门禁", () => {
       );
     }
   });
-  it("公开模型出口只能重新导出，不能另建同名模型", () => {
-    for (const path of [
-      "src/features/contracts/content.ts",
-      "src/features/contracts/index.ts",
-    ]) {
-      const definitions = sourceFile(path).statements.filter(
-        (node) => !ts.isExportDeclaration(node),
-      );
-      expect(
-        definitions.map((node) => node.getText()),
-        path,
-      ).toEqual([]);
-    }
+  it("公开模型直接由所属 Feature 提供，不保留中央转发副本", () => {
+    expect(existsSync("src/features/contracts")).toBe(false);
   });
 
   it.each([
-    ["src/features/post/application/repository.ts", "PostCreateCommand"],
-    ["src/features/page/application/repository.ts", "PageCreateCommand"],
-    ["src/features/media/application/write-schema.ts", "MediaInsert"],
-    ["src/features/link/application/repository.ts", "LinkInsert"],
-    ["src/features/media/application/repository.ts", "MediaRecord"],
-    ["src/features/tag/application/repository.ts", "TagRecord"],
-    ["src/features/post/application/repository.ts", "PostWithRelations"],
-    ["src/packages/trpc/api/context.ts", "User"],
-    ["src/features/page/application/repository.ts", "LocalizedText"],
-    ["src/features/category/application/repository.ts", "CategoryInsert"],
-    ["src/features/category/application/repository.ts", "CategoryUpdate"],
-    ["src/features/tag/application/repository.ts", "TagInsert"],
-    ["src/features/tag/application/repository.ts", "TagUpdate"],
-    ["src/features/comment/application/repository.ts", "PublicCommentInput"],
+    ["src/features/post/schema.ts", "PostInsert"],
+    ["src/features/page/schema.ts", "PageInsert"],
+    ["src/features/media/schema.ts", "MediaInsert"],
+    ["src/features/link/types.ts", "LinkInsert"],
+    ["src/features/media/types.ts", "MediaRecord"],
+    ["src/features/tag/types.ts", "TagRecord"],
+    ["src/features/post/types.ts", "PostWithRelations"],
+    ["src/lib/trpc/context.ts", "User"],
+    ["src/lib/i18n/i18n.ts", "I18n"],
+    ["src/features/category/types.ts", "CategoryInsert"],
+    ["src/features/category/types.ts", "CategoryUpdate"],
+    ["src/features/tag/types.ts", "TagInsert"],
+    ["src/features/tag/types.ts", "TagUpdate"],
+    ["src/features/comment/types.ts", "PublicCommentInput"],
   ])("%s 的 %s 必须引用或推导，不重写字段", (path, name) => {
     const declaration = sourceFile(path).statements.find(
       (node) =>
@@ -55,10 +45,10 @@ describe("唯一事实源架构门禁", () => {
     }
   });
 
-  it("Setting 与 Menu Repository 写入类型由 Application schema 推导", () => {
+  it("Setting 与 Menu 写入类型由 Feature schema 推导", () => {
     for (const path of [
-      "src/features/setting/application/repository.ts",
-      "src/features/menu/application/repository.ts",
+      "src/features/setting/types.ts",
+      "src/features/menu/types.ts",
     ]) {
       const handwrittenWriteTypes = sourceFile(path).statements.filter(
         (node) =>
@@ -77,21 +67,22 @@ describe("唯一事实源架构门禁", () => {
 
   it("MenuItem 不允许任意字符串索引扩张读模型", () => {
     const declaration = sourceFile(
-      "src/features/menu/application/repository.ts",
+      "src/features/menu/types.ts",
     ).statements.find(
-      (node) => ts.isInterfaceDeclaration(node) && node.name.text === "MenuItem",
+      (node) =>
+        ts.isInterfaceDeclaration(node) && node.name.text === "MenuItem",
     );
     expect(declaration && ts.isInterfaceDeclaration(declaration)).toBe(true);
     if (declaration && ts.isInterfaceDeclaration(declaration)) {
-      expect(declaration.members.filter(ts.isIndexSignatureDeclaration)).toEqual(
-        [],
-      );
+      expect(
+        declaration.members.filter(ts.isIndexSignatureDeclaration),
+      ).toEqual([]);
     }
   });
 
   it("评论写用例只依赖统一的 invalidate(plan) 端口", () => {
     const file = sourceFile(
-      "src/features/comment/application/comment-commands.ts",
+      "src/features/comment/server/comment-commands.ts",
     ).getFullText();
     expect(file).not.toMatch(/invalidateContent|invalidateAll/);
     expect(file).toMatch(/invalidator\.invalidate\(/);
@@ -100,7 +91,7 @@ describe("唯一事实源架构门禁", () => {
   it("评论读写适配共享单个记录映射", () => {
     for (const kind of ["query", "command"]) {
       const file = sourceFile(
-        `src/features/comment/infrastructure/comment-${kind}-repository.ts`,
+        `src/features/comment/server/comment-${kind}-repository.ts`,
       );
       expect(
         file.statements
@@ -116,7 +107,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("评论通知适配不重写完整评论字段映射", () => {
     const file = sourceFile(
-      "src/features/comment/infrastructure/comment-notification-repository.ts",
+      "src/features/comment/server/comment-notification-repository.ts",
     );
     const violations: string[] = [];
     function visit(node: ts.Node) {
@@ -221,7 +212,7 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("后台公共交互参数只维护一份反馈字段", () => {
-    const actionState = sourceFile("src/packages/ui/admin/action-state.ts");
+    const actionState = sourceFile("src/components/admin/action-state.ts");
     const runOptions = actionState.statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) &&
@@ -241,9 +232,7 @@ describe("唯一事实源架构门禁", () => {
       ).toEqual([]);
     }
 
-    const menuActions = sourceFile(
-      "src/features/menu/admin/actions/menu-actions.ts",
-    );
+    const menuActions = sourceFile("src/features/menu/admin/menu-actions.ts");
     const submitOptions = menuActions.statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) &&
@@ -253,9 +242,9 @@ describe("唯一事实源架构门禁", () => {
       true,
     );
     if (submitOptions && ts.isInterfaceDeclaration(submitOptions)) {
-      expect(submitOptions.heritageClauses?.[0]?.getText(menuActions)).toContain(
-        "AdminMutationFeedback",
-      );
+      expect(
+        submitOptions.heritageClauses?.[0]?.getText(menuActions),
+      ).toContain("AdminMutationFeedback");
     }
   });
 
@@ -274,7 +263,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("评论基础设施不保留旧的公开 DTO 包装器", () => {
     const declarations = sourceFile(
-      "src/features/comment/infrastructure/comment-dto.ts",
+      "src/features/comment/server/comment-dto.ts",
     ).statements.filter(
       (node) =>
         ts.isFunctionDeclaration(node) && node.name?.text === "toPublicComment",
@@ -284,7 +273,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("媒体写入 schema 导出语义明确的 MediaInsert 类型", () => {
     const aliases = sourceFile(
-      "src/features/media/application/write-schema.ts",
+      "src/features/media/schema.ts",
     ).statements.filter(ts.isTypeAliasDeclaration);
     expect(aliases.map((node) => node.name.text)).toContain("MediaInsert");
     expect(aliases.map((node) => node.name.text)).not.toContain("MediaEntity");

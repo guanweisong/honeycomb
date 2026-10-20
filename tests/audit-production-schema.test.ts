@@ -14,14 +14,16 @@ import {
 describe("production schema audit", () => {
   it("excludes only exact SQLite and Drizzle internal table prefixes", async () => {
     const directory = mkdtempSync(join(tmpdir(), "honeycomb-schema-filter-"));
-    const client = createClient({ url: `file:${join(directory, "schema.db")}` });
+    const client = createClient({
+      url: `file:${join(directory, "schema.db")}`,
+    });
     try {
       await client.execute("create table sqliteXbusiness (id text)");
       await client.execute("create table __drizzle_migrations (id text)");
 
-      expect((await inspectSchema(client)).tables.map(({ name }) => name)).toEqual([
-        "sqliteXbusiness",
-      ]);
+      expect(
+        (await inspectSchema(client)).tables.map(({ name }) => name),
+      ).toEqual(["sqliteXbusiness"]);
     } finally {
       client.close();
       rmSync(directory, { recursive: true });
@@ -34,7 +36,16 @@ describe("production schema audit", () => {
         {
           name: "z_table",
           sql: "CREATE TABLE z_table (id text)",
-          columns: [{ cid: 0, name: "id", type: "TEXT", notnull: 0, dfltValue: null, pk: 0 }],
+          columns: [
+            {
+              cid: 0,
+              name: "id",
+              type: "TEXT",
+              notnull: 0,
+              dfltValue: null,
+              pk: 0,
+            },
+          ],
           indexes: [],
           foreignKeys: [],
         },
@@ -42,23 +53,24 @@ describe("production schema audit", () => {
           name: "a_table",
           sql: "CREATE TABLE a_table (id text)",
           columns: [],
-          indexes: [{
-            name: "z_idx",
-            unique: 0,
-            origin: "c",
-            partial: 0,
-            columns: [],
-            sql: null,
-          }],
+          indexes: [
+            {
+              name: "z_idx",
+              unique: 0,
+              origin: "c",
+              partial: 0,
+              columns: [],
+              sql: null,
+            },
+          ],
           foreignKeys: [],
         },
       ],
     };
 
-    expect(normalizeSchemaInventory(inventory).tables.map(({ name }) => name)).toEqual([
-      "a_table",
-      "z_table",
-    ]);
+    expect(
+      normalizeSchemaInventory(inventory).tables.map(({ name }) => name),
+    ).toEqual(["a_table", "z_table"]);
   });
 
   it("redacts database URLs and tokens from report text", () => {

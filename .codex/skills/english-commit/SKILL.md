@@ -1,5 +1,5 @@
 ---
-name: English Commit Generator
+name: english-commit
 description: 当需要分析代码变更并生成规范、高质量的 Conventional Commits 英文提交信息时使用。
 ---
 

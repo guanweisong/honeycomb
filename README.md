@@ -76,65 +76,41 @@
 
 首次阅读建议从[代码阅读地图](docs/code-reading-map.md)开始，按文章写入、公开读取和当前用户三条路径定位。
 
-```
-honeycomb/
-├── src/
-│   ├── app/                   # Next.js 应用
-│   │   ├── (blog)/            # 前台应用
-│   │   │   ├── [locale]/      # 国际化路由
-│   │   │   ├── i18n/          # 国际化配置
-│   │   │   └── Providers.tsx  # 全局提供者
-│   │   ├── admin/             # 后台管理
-│   │   │   └── (root)/        # 管理后台路由
-│   │   ├── api/               # API 路由
-│   │   ├── serwist/           # PWA Service Worker 路由
-│   │   ├── sitemap.xml/       # 运行时 sitemap 索引
-│   │   └── sitemaps/          # 运行时 sitemap 分片
-│   ├── features/              # 业务功能模块（业务代码唯一归属边界）
-│   │   ├── category/          # 分类
-│   │   ├── comment/           # 评论
-│   │   ├── link/              # 友链
-│   │   ├── media/             # 媒体
-│   │   ├── menu/              # 菜单
-│   │   ├── page/              # 页面
-│   │   ├── post/              # 文章
-│   │   ├── setting/           # 设置
-│   │   ├── tag/               # 标签
-│   │   └── user/              # 用户
-│   └── packages/              # 跨业务共享包
-│       ├── application/       # 应用层共享能力
-│       ├── domain/            # 领域模型与领域契约
-│       ├── identity/          # 认证、授权与账号安全
-│       ├── infrastructure/    # 数据库、HTTP、安全与可观测性
-│       ├── trpc/              # tRPC 核心、上下文与客户端绑定
-│       │   ├── api/           # tRPC 服务端核心
-│       │   └── client/        # 客户端配置
-│       └── ui/                # UI 组件库
-│           ├── components/    # 基础组件
-│           ├── extended/      # 扩展组件
-│           └── lib/           # 工具函数
-├── public/                    # 静态资源
-├── tests/                     # 测试文件
-├── drizzle.config.ts          # Drizzle 配置
-├── next.config.ts             # Next.js 配置
-├── tailwind.config.ts         # Tailwind 配置
-├── tsconfig.json              # TypeScript 配置
-└── package.json               # 项目依赖
+```text
+src/
+├── app/                       # 路由、布局、HTTP 与框架组合
+│   ├── (blog)/[locale]/       # 公开页面，URL 不变
+│   ├── admin/                 # 后台路由与布局
+│   ├── api/                   # HTTP 入口
+│   └── _trpc/                 # 根 router 与服务端 caller
+├── features/                  # category/comment/link/media/menu/page/post/setting/tag/user
+│   └── <feature>/
+│       ├── router.ts          # 输入、入口权限与协议适配
+│       ├── schema.ts          # 权威业务输入 schema
+│       ├── types.ts           # 稳定业务类型
+│       ├── rules.ts           # 按需保留的纯业务规则
+│       ├── server.ts          # 直接数据库操作，复杂功能可拆成 server/
+│       ├── admin/             # 所属业务的后台 UI
+│       └── public/            # 按需提供的公开 UI/能力
+├── components/                # 通用 UI 与编辑器
+└── lib/                       # db/auth/trpc/cache/storage/observability/i18n 等技术能力
 ```
 
-### Feature 分层约束
+目录按实际需要创建，不要求每个 feature 都有全部文件。配置、迁移、静态资源和测试仍位于仓库根部相应目录。
 
-每个业务 feature 的 Application 只负责业务用例编排、领域规则与业务端口契约，不得直接
-导入数据库连接、Drizzle schema 或 ORM 查询工具。持久化、凭据和登录历史等端口定义在
-feature 的 `application` 目录，由 router 或 app 入口创建 infrastructure adapter 后注入用例。
-缓存失效、通知和对象存储等与业务操作相关的副作用也由 Application 决定顺序和失败语义；
-Router 只负责限流、会话、入口授权、错误映射以及 adapter 组装，不直接执行这些副作用。
-跨 Feature 的公开内容缓存契约位于 `src/packages/application/public-content-invalidator.ts`，
-Next.js `revalidatePath` 仅存在于对应 Infrastructure adapter。
+### Feature 职责边界
 
-权限入口统一登记在 `src/packages/identity/auth/capability-registry.ts`。tRPC、Admin
-Action、Admin route 和后台菜单只能使用已登记的 capability；相关边界测试位于
-`tests/feature-boundaries.test.ts` 和 `tests/capability-entrypoint-boundaries.test.ts`。
+默认路径是 `UI → feature router → feature server 函数 → db`；Server Component 可直接调用服务端读取函数。server 函数直接使用 Drizzle，负责业务规则、事务、条件写入和副作用顺序，不要求额外 Repository 接口、factory 或 Use Case 跳转。`src/packages` 与人工 `application/domain/infrastructure` 分层不再使用。
+
+业务 schema、类型、状态和选项属于相应 feature；跨功能可直接复用所属 feature 的纯契约、有意复用的 UI 或服务端操作，以具名具体入口表达依赖，不要求 public barrel 或中央 contracts 转发。通用组件通过注入获得业务能力，lib 只提供技术实现。`lib/db`、`lib/auth` 可引用 feature 拥有的纯目录、schema 或类型，但不能加载业务 server 操作。
+
+根 tRPC 组合在 `src/app/_trpc/router.ts`，服务端 caller 在 `src/app/_trpc/server.ts`。`lib/trpc` 只保留公共核心、上下文、客户端和传输工具；客户端可 type-only 引用根 `AppRouter`，不能运行时加载 app 或业务 router。
+
+Router 保留入口授权、限流和错误协议；发布条件、并发防护、数据库校验、公开 DTO 裁剪和副作用失败语义不变。数据库提交后缓存同步失败仍返回降级 `publicSync`，不能把已提交写入变成失败。浏览器/服务端/Edge 边界、草稿恢复和 Sentry 隐私约束均须保持。
+
+认证框架绑定保留在 `src/auth.ts`；认证 hook 与登录审计组合位于 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载该绑定，这是已有的窄技术集成，不允许 lib/auth 加载业务操作。
+
+权限入口统一登记在 `src/lib/auth/capability-registry.ts`。tRPC、Admin Action、Admin route 和后台菜单只能使用已登记 capability；前端检查不能替代服务端授权。详细规则见[架构与依赖边界](docs/architecture-dependency-report.md)及[权限矩阵](docs/permission-matrix.md)。
 
 ## 快速开始
 
@@ -297,8 +273,8 @@ E2E 测试默认把运行产物写入系统临时目录，避免项目目录内�
 项目已在 Proxy 层启用 API 限流，基于 `Upstash Redis + @upstash/ratelimit`：
 
 - 入口文件：`src/proxy.ts`
-- 限流工具：`src/packages/infrastructure/rate-limit/rate-limit.ts`
-- 当前策略：由 `src/packages/infrastructure/rate-limit/rate-limit.ts` 中的 `Ratelimit` 配置决定
+- 限流工具：`src/lib/rate-limit/rate-limit.ts`
+- 当前策略：由 `src/lib/rate-limit/rate-limit.ts` 中的 `Ratelimit` 配置决定
 - 生效范围：`/api/:path*`
 
 当请求超过阈值时：
@@ -426,14 +402,11 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 
 ### 接入自定义 adapter
 
-供应商接入只需实现 [`Logger`](src/packages/infrastructure/observability/core/contracts.ts) 和/或 [`Metrics`](src/packages/infrastructure/observability/core/contracts.ts)，并在服务端启动时配置：
+供应商接入只需实现 [`Logger`](src/lib/observability/core/contracts.ts) 和/或 [`Metrics`](src/lib/observability/core/contracts.ts)，并在服务端启动时配置：
 
 ```ts
-import type {
-  Logger,
-  Metrics,
-} from "@/packages/infrastructure/observability/core/contracts";
-import { configureObservability } from "@/packages/infrastructure/observability/server";
+import type { Logger, Metrics } from "@/lib/observability/core/contracts";
+import { configureObservability } from "@/lib/observability/server";
 
 const logger: Logger = {
   info: (event, context) => platformLog("info", event, context),
@@ -452,7 +425,9 @@ configureObservability({ logger, metrics });
 
 `configureObservability` 会对两个 adapter 自动应用脱敏、标签白名单和 fail-open 包装。adapter 内部不得反向调用 `getLogger()` 或 `getMetrics()` 报告自身错误，以免递归；其内部故障应由供应商 SDK 自身的诊断通道处理。若只替换其中一个 adapter，未提供的日志和指标仍使用结构化 console adapter。
 
-未来接入 OpenTelemetry 时，可将 `increment` 映射到 Counter、将 `recordDuration` 映射到 Histogram，并把 labels 作为低基数 attributes；接入 Sentry 时，可将 `Logger.error` 映射为错误事件，将 `event` 和已清洗 context 映射为稳定 tag/context；Vercel、Cloudflare 等平台原生接入可直接转发结构化日志，并将固定指标名映射到平台计数器和耗时分布。所有实现都必须保留现有名称、毫秒单位、标签白名单和 fail-open 语义，不得在 adapter 中加入原始 SQL、参数、请求体、凭据或个人信息。本项目当前不引入 OpenTelemetry、Sentry 或平台 SDK；具体 SDK 初始化、批量发送、采样和关闭刷新应由后续独立 adapter 完成。
+当前已接入 `@sentry/nextjs`：服务端现有 Logger 的事件同时写入本地 JSON console 和 Sentry Logs，`Logger.error` 不自动转为 Issues；浏览器将未处理错误、未处理 Promise rejection 及现有 React 错误边界捕获的错误发送到 Issues，并按白名单清洗事件。Metrics 和客户端 console 不转发到 Sentry，不启用 tracing、Replay 或用户信息自动采集。DSN 配置、服务端旧变量兼容及隐私限制见 [Sentry logging](docs/sentry-logging.md)。
+
+未来若接入 OpenTelemetry，可将 `increment` 映射到 Counter、将 `recordDuration` 映射到 Histogram，并把 labels 作为低基数 attributes。其他 adapter 仍须保留现有名称、毫秒单位、标签白名单和 fail-open 语义，不得加入原始 SQL、参数、请求体、凭据或个人信息。
 
 ## Sitemap 运行时策略
 

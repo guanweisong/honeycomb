@@ -1,10 +1,10 @@
-import { appRouter } from "@/packages/trpc/api/app-router";
-import { createTrpcContext } from "@/packages/trpc/api";
+import { appRouter } from "@/app/_trpc/router";
+import { createContext } from "@/lib/trpc/context";
 import {
   createRequestContext,
   REQUEST_ID_HEADER,
-} from "@/packages/infrastructure/observability/server/request-context";
-import { runWithRequestContext } from "@/packages/infrastructure/observability/server/node-request-context";
+} from "@/lib/observability/server/request-context";
+import { runWithRequestContext } from "@/lib/observability/server/node-request-context";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 /**
@@ -28,7 +28,7 @@ const handler = (req: Request) => {
       endpoint: "/api/trpc",
       req,
       router: appRouter,
-      createContext: () => createTrpcContext({ req, requestContext }),
+      createContext: () => createContext({ req, requestContext }),
     });
 
     response.headers.set(REQUEST_ID_HEADER, requestContext.requestId);

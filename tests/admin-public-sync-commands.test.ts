@@ -1,56 +1,55 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import type { Database } from "@/lib/db/db";
+import * as schema from "@/lib/db/schema";
+
+vi.mock("@/lib/observability/server", () => ({
+  observeDbOperation: (
+    _name: string,
+    _kind: string,
+    operation: () => unknown,
+  ) => operation(),
+}));
 import {
   createCategory,
   destroyCategories,
   updateCategory,
-} from "@/features/category/application/category-use-cases";
+} from "@/features/category/server";
 import {
   destroyComments,
   updateComment,
-} from "@/features/comment/application/comment-commands";
-import {
-  createLink,
-  destroyLinks,
-  updateLink,
-} from "@/features/link/application/link-use-cases";
-import { saveAllMenus } from "@/features/menu/application/menu-use-cases";
-import {
-  createPage,
-  destroyPages,
-  updatePage,
-} from "@/features/page/application/page-use-cases";
+} from "@/features/comment/server/comment-commands";
+import { createLink, destroyLinks, updateLink } from "@/features/link/server";
+import { saveAllMenus } from "@/features/menu/server";
+import { createPage, destroyPages, updatePage } from "@/features/page/server";
 import {
   createPost,
   destroyPosts,
   updatePost,
   updatePostTags,
-} from "@/features/post/application/post-commands";
-import { updateSetting } from "@/features/setting/application/setting-use-cases";
-import {
-  createTag,
-  destroyTags,
-  updateTag,
-} from "@/features/tag/application/tag-use-cases";
+} from "@/features/post/server/post-commands";
+import { updateSetting } from "@/features/setting/server";
+import { createTag, destroyTags, updateTag } from "@/features/tag/server";
 import {
   createUser,
   destroyUsers,
   updateUser,
-} from "@/features/user/application/user-commands";
-import type { CategoryRecord } from "@/features/category/application/repository";
-import type { CommentRecord } from "@/features/comment/application/repository";
-import type { LinkRecord } from "@/features/link/application/repository";
-import type { SettingRecord } from "@/features/setting/application/repository";
-import type { TagRecord } from "@/features/tag/application/repository";
-import type { UserRecord } from "@/features/user/application/repository";
-import type { PublicContentInvalidator } from "@/packages/application/public-content-invalidator";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { TagType } from "@/packages/domain/content/tag";
-import { UserLevel, UserStatus } from "@/packages/domain/identity/user";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+} from "@/features/user/server/user-commands";
+import type { CategoryRecord } from "@/features/category/types";
+import type { CommentRecord } from "@/features/comment/types";
+import type { LinkRecord } from "@/features/link/types";
+import type { SettingRecord } from "@/features/setting/types";
+import type { TagRecord } from "@/features/tag/types";
+import type { UserRecord } from "@/features/user/types";
+import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
+import { PostStatus } from "@/features/post/post-status";
+import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel, UserStatus } from "@/features/user/user";
+import { MenuType } from "@/features/menu/menu-types";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 const id = "507f1f77bcf86cd799439011";
 const localized = { en: "Saved", zh: "已保存" };
@@ -147,106 +146,173 @@ function commandCase<Result extends object>(
   };
 }
 
+// Real server operations receive a mocked Drizzle boundary. The tracked mock is
+// the transaction or statement that must finish before cache synchronization.
+function databaseCase<Result extends object>(
+  name: string,
+  saved: Result,
+  execute: (
+    db: Database,
+    invalidator: PublicContentInvalidator,
+  ) => Promise<unknown>,
+  writeKind: "transaction" | "returning" | "where" = "transaction",
+) {
+  return {
+    name,
+    saved,
+    setup() {
+      const db = createMockDb();
+      db.returning.mockResolvedValue([saved]);
+      db.select.mockImplementation((projection?: object) => {
+        const read = createMockDb();
+        const isPathCheck =
+          projection &&
+          Object.keys(projection).length === 1 &&
+          "id" in projection;
+        const isStatusCheck =
+          projection &&
+          Object.keys(projection).length === 1 &&
+          "status" in projection;
+        read.limit.mockResolvedValue(
+          isPathCheck ? [] : isStatusCheck ? [{ status: "DRAFT" }] : [saved],
+        );
+        read.from.mockImplementation((table: object) => {
+          let translations: object[] | undefined;
+          if (table === schema.categoryTranslation)
+            translations = [
+              {
+                categoryId: id,
+                locale: "en",
+                title: "Saved",
+                description: "Saved",
+              },
+              {
+                categoryId: id,
+                locale: "zh",
+                title: "已保存",
+                description: "已保存",
+              },
+            ];
+          if (table === schema.tagTranslation)
+            translations = [
+              { tagId: id, locale: "en", name: "Saved" },
+              { tagId: id, locale: "zh", name: "已保存" },
+            ];
+          if (
+            table === schema.settingTranslation ||
+            table === schema.postTranslation
+          )
+            translations = [];
+          if (translations) read.where.mockResolvedValue(translations);
+          return read;
+        });
+        return read;
+      });
+      if (writeKind === "where") db.where.mockResolvedValue(undefined);
+      const write: Mock = db[writeKind];
+      return {
+        write,
+        run: (invalidator: PublicContentInvalidator) =>
+          execute(asMockDatabase(db), invalidator),
+      };
+    },
+  };
+}
+
 const commands = [
-  commandCase("createCategory", category, (write, invalidator) =>
+  databaseCase("createCategory", category, (db, invalidator) =>
     createCategory(
-      { create: write, find: async () => null, pathExists: async () => false },
+      db,
       { title: localized, description: localized, path: category.path },
       invalidator,
     ),
   ),
-  commandCase("updateCategory", category, (write, invalidator) =>
-    updateCategory(
-      {
-        update: write,
-        find: async () => category,
-        pathExists: async () => false,
-      },
-      { id, title: localized },
-      invalidator,
-    ),
+  databaseCase("updateCategory", category, (db, invalidator) =>
+    updateCategory(db, { id, title: localized }, invalidator),
   ),
-  commandCase("destroyCategories", success, (write, invalidator) =>
-    destroyCategories({ destroy: write }, [id], invalidator),
+  databaseCase(
+    "destroyCategories",
+    success,
+    (db, invalidator) => destroyCategories(db, [id], invalidator),
+    "where",
   ),
-  commandCase("createLink", link, (write, invalidator) =>
-    createLink(
-      { create: write },
-      { name: link.name, url: link.url, logo: link.logo },
-      invalidator,
-    ),
+  databaseCase(
+    "createLink",
+    link,
+    (db, invalidator) =>
+      createLink(
+        db,
+        { name: link.name, url: link.url, logo: link.logo },
+        invalidator,
+      ),
+    "returning",
   ),
-  commandCase("updateLink", link, (write, invalidator) =>
-    updateLink({ update: write }, { id, name: link.name }, invalidator),
+  databaseCase(
+    "updateLink",
+    link,
+    (db, invalidator) => updateLink(db, { id, name: link.name }, invalidator),
+    "returning",
   ),
-  commandCase("destroyLinks", success, (write, invalidator) =>
-    destroyLinks({ destroy: write }, [id], invalidator),
+  databaseCase(
+    "destroyLinks",
+    success,
+    (db, invalidator) => destroyLinks(db, [id], invalidator),
+    "where",
   ),
-  commandCase("saveAllMenus", { count: 1 }, (write, invalidator) =>
-    saveAllMenus(
-      { saveAll: write },
-      [{ id, type: MenuType.CATEGORY, power: 0 }],
-      invalidator,
-    ),
+  databaseCase("saveAllMenus", { count: 1 }, (db, invalidator) =>
+    saveAllMenus(db, [{ id, type: MenuType.CATEGORY, power: 0 }], invalidator),
   ),
-  commandCase("createPage", { id }, (write, invalidator) =>
-    createPage({ create: write }, pageInput, "author", invalidator),
+  databaseCase("createPage", { id }, (db, invalidator) =>
+    createPage(db, pageInput, "author", invalidator),
   ),
-  commandCase("updatePage", { id }, (write, invalidator) =>
-    updatePage(
-      { update: write, findStatus: async () => PageStatus.DRAFT },
-      { id, title: localized },
-      invalidator,
-    ),
+  databaseCase("updatePage", { id }, (db, invalidator) =>
+    updatePage(db, { id, title: localized }, invalidator),
   ),
-  commandCase("publishPage", { id }, (write, invalidator) =>
-    updatePage(
-      { update: write, findStatus: async () => PageStatus.DRAFT },
-      { id, status: PageStatus.PUBLISHED },
-      invalidator,
-    ),
+  databaseCase("publishPage", { id }, (db, invalidator) =>
+    updatePage(db, { id, status: PageStatus.PUBLISHED }, invalidator),
   ),
-  commandCase("destroyPages", success, (write, invalidator) =>
-    destroyPages({ destroy: write }, [id], invalidator),
+  databaseCase(
+    "destroyPages",
+    success,
+    (db, invalidator) => destroyPages(db, [id], invalidator),
+    "where",
   ),
-  commandCase("createPost", { id }, (write, invalidator) =>
-    createPost({ create: write }, { categoryId: id }, "author", invalidator),
+  databaseCase("createPost", { id }, (db, invalidator) =>
+    createPost(db, { categoryId: id }, "author", invalidator),
   ),
-  commandCase("updatePost", { id }, (write, invalidator) =>
-    updatePost(
-      { update: write, findStatus: async () => PostStatus.DRAFT },
-      { id, title: localized },
-      invalidator,
-    ),
+  databaseCase("updatePost", { id }, (db, invalidator) =>
+    updatePost(db, { id, title: localized }, invalidator),
   ),
-  commandCase("publishPost", { id }, (write, invalidator) =>
-    updatePost(
-      { update: write, findStatus: async () => PostStatus.DRAFT },
-      { id, status: PostStatus.PUBLISHED },
-      invalidator,
-    ),
+  databaseCase("publishPost", { id }, (db, invalidator) =>
+    updatePost(db, { id, status: PostStatus.PUBLISHED }, invalidator),
   ),
-  commandCase("destroyPosts", success, (write, invalidator) =>
-    destroyPosts({ destroy: write }, [id], invalidator),
+  databaseCase(
+    "destroyPosts",
+    success,
+    (db, invalidator) => destroyPosts(db, [id], invalidator),
+    "where",
   ),
-  commandCase("updatePostTags", success, (write, invalidator) =>
+  databaseCase("updatePostTags", success, (db, invalidator) =>
     updatePostTags(
-      { updateTags: write },
+      db,
       { postId: id, tagIds: [], type: TagType.ACTOR },
       invalidator,
     ),
   ),
-  commandCase("updateSetting", setting, (write, invalidator) =>
-    updateSetting({ update: write }, { id, siteName: localized }, invalidator),
+  databaseCase("updateSetting", setting, (db, invalidator) =>
+    updateSetting(db, { id, siteName: localized }, invalidator),
   ),
-  commandCase("createTag", tag, (write, invalidator) =>
-    createTag({ create: write }, { name: localized }, invalidator),
+  databaseCase("createTag", tag, (db, invalidator) =>
+    createTag(db, { name: localized }, invalidator),
   ),
-  commandCase("updateTag", tag, (write, invalidator) =>
-    updateTag({ update: write }, { id, name: localized }, invalidator),
+  databaseCase("updateTag", tag, (db, invalidator) =>
+    updateTag(db, { id, name: localized }, invalidator),
   ),
-  commandCase("destroyTags", success, (write, invalidator) =>
-    destroyTags({ destroy: write }, [id], invalidator),
+  databaseCase(
+    "destroyTags",
+    success,
+    (db, invalidator) => destroyTags(db, [id], invalidator),
+    "where",
   ),
   commandCase("createUser", user, (write, invalidator) =>
     createUser(

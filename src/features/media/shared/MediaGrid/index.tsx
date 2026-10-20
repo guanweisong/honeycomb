@@ -3,13 +3,13 @@
 import { Copy, File, Trash } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import type { MediaViewModel } from "../media-view-model";
-import { Button } from "@/packages/ui/components/button";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import LoadingState from "@/packages/ui/extended/LoadingState";
-import { cn } from "@/packages/ui/lib/utils";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/Dialog";
+import LoadingState from "@/components/LoadingState";
+import { cn } from "@/lib/ui/utils";
 
 type MediaGridProps = {
   media?: MediaViewModel[];

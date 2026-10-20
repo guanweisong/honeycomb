@@ -7,12 +7,12 @@ import React, {
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
-import type { PageWithRelations as PageViewModel } from "@/features/page/application/repository";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
+import type { PageWithRelations as PageViewModel } from "@/features/page/types";
 import type { PageEditorForm } from "../PageEditorForm";
 import type { PageEditorActionButtons } from "../PageEditorActionButtons";
-import { AdminLayoutActionsContext } from "@/packages/ui/extended/AdminLayout/AdminLayoutContext";
+import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
 
 type EditorDetail = Pick<
   PageViewModel,
@@ -34,7 +34,7 @@ const mocks = vi.hoisted(() => ({
   pageTitle: vi.fn(),
 }));
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: "draft-user", level: "ADMIN" } }),
 }));
 
@@ -48,11 +48,11 @@ vi.mock("sonner", () => ({
   toast: { success: mocks.success, error: mocks.error },
 }));
 
-vi.mock("@/packages/infrastructure/observability/client", () => ({
+vi.mock("@/lib/observability/client", () => ({
   clientLogger: { error: mocks.logger },
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
@@ -61,13 +61,14 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/extended/AdminLayout", async () => {
-  const { useAdminLayoutActions } =
-    await import("@/packages/ui/extended/AdminLayout/AdminLayoutContext");
-  return { useAdminLayoutPageTitle: mocks.pageTitle, useAdminLayoutActions };
+vi.mock("@/components/admin/layout-context", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/components/admin/layout-context")
+  >("@/components/admin/layout-context");
+  return { ...actual, useAdminLayoutPageTitle: mocks.pageTitle };
 });
 
-vi.mock("../../queries/page-editor-query", () => ({
+vi.mock("../../page-editor-query", () => ({
   usePageEditorQuery: () => ({
     data: mocks.detail,
     refetch: mocks.refetch,

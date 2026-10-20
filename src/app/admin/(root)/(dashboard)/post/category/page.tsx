@@ -1,1 +1,1 @@
-export { default } from "@/features/post/admin/category/page";
+export { default } from "@/features/category/admin/page";

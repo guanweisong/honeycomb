@@ -1,14 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { CommentStatus } from "@/packages/domain/content/comment";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PageStatus } from "@/packages/domain/content/page";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { moderateComment } from "./application/comment-command-handlers";
+import { CommentStatus } from "@/features/comment/comment-status";
+import { PostStatus } from "@/features/post/post-status";
+import { PageStatus } from "@/features/page/page-status";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import {
   createComment,
   destroyComments,
   updateComment,
-} from "./application/comment-commands";
+} from "./server/comment-commands";
 
 describe("Comment command handlers", () => {
   const requestMetadata = {
@@ -370,22 +369,30 @@ describe("Comment command handlers", () => {
       .fn()
       .mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
     await expect(
-      moderateComment(
-        { update },
+      updateComment(
         {
-          id: "comment-1",
-          currentStatus: CommentStatus.TO_AUDIT,
-          status: CommentStatus.PUBLISH,
+          update,
+          findStatus: vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT),
+        },
+        { id: "comment-1", status: CommentStatus.PUBLISH },
+        {
+          invalidate: vi
+            .fn()
+            .mockResolvedValue({ state: "completed" as const }),
         },
       ),
-    ).resolves.toEqual({ id: "comment-1", status: CommentStatus.PUBLISH });
+    ).resolves.toEqual({
+      id: "comment-1",
+      status: CommentStatus.PUBLISH,
+      publicSync: "completed",
+    });
     expect(update).toHaveBeenCalledWith({
       id: "comment-1",
       status: CommentStatus.PUBLISH,
     });
   });
 
-  it("更新评论状态时必须先经过评论聚合", async () => {
+  it("更新评论状态时必须先校验审核规则", async () => {
     const findStatus = vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT);
     const update = vi
       .fn()
@@ -394,7 +401,9 @@ describe("Comment command handlers", () => {
     await updateComment(
       { findStatus, update },
       { id: "comment-1", status: CommentStatus.PUBLISH },
-      { invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }) },
+      {
+        invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+      },
     );
 
     expect(findStatus).toHaveBeenCalledWith("comment-1");
@@ -412,7 +421,11 @@ describe("Comment command handlers", () => {
       updateComment(
         { findStatus, update },
         { id: "comment-1", status: CommentStatus.TO_AUDIT },
-        { invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }) },
+        {
+          invalidate: vi
+            .fn()
+            .mockResolvedValue({ state: "completed" as const }),
+        },
       ),
     ).rejects.toThrow();
 
@@ -437,6 +450,56 @@ describe("Comment command handlers", () => {
       refreshLayout: true,
     });
     expect(invalidator.invalidate).toHaveBeenNthCalledWith(2, {
+      refreshLayout: true,
+    });
+  });
+  it("keeps unchanged moderation status updates legal and invalidates only after saving", async () => {
+    const order: string[] = [];
+    const saved = { ...createdComment, status: CommentStatus.PUBLISH };
+    const repository = {
+      findStatus: vi.fn(async () => {
+        order.push("read");
+        return CommentStatus.PUBLISH;
+      }),
+      update: vi.fn(async () => {
+        order.push("write");
+        return saved;
+      }),
+    };
+    const input = {
+      id: createdComment.id,
+      status: CommentStatus.PUBLISH,
+      content: "edited",
+    };
+    const invalidator = {
+      invalidate: vi.fn(async () => {
+        order.push("invalidate");
+        return { state: "completed" as const };
+      }),
+    };
+
+    await expect(
+      updateComment(repository, input, invalidator),
+    ).resolves.toEqual({ ...saved, publicSync: "completed" });
+    expect(repository.update).toHaveBeenCalledExactlyOnceWith(input);
+    expect(order).toEqual(["read", "write", "invalidate"]);
+  });
+
+  it("does not read moderation status for a content-only update", async () => {
+    const repository = {
+      findStatus: vi.fn(),
+      update: vi.fn().mockResolvedValue(createdComment),
+    };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
+    await updateComment(
+      repository,
+      { id: createdComment.id, content: "edited" },
+      invalidator,
+    );
+    expect(repository.findStatus).not.toHaveBeenCalled();
+    expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith({
       refreshLayout: true,
     });
   });

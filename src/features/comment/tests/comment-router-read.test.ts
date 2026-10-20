@@ -1,18 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { commentRouter } from "@/features/comment/comment.router";
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { commentRouter } from "@/features/comment/router";
+import { CommentStatus } from "@/features/comment/comment-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { createAdminUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { MenuType } from "@/features/menu/menu-types";
+import {
+  createAdminUser,
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "@tests/helpers/test-utils";
+import { PostStatus } from "@/features/post/post-status";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/security/validate-captcha", () => ({
+vi.mock("@/lib/security/validate-captcha", () => ({
   validateCaptcha: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -95,7 +100,9 @@ describe("Comment Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       await expect(
         caller.listByRef({
@@ -112,7 +119,9 @@ describe("Comment Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([]);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       await expect(
         caller.listByRef({
@@ -167,7 +176,9 @@ describe("Comment Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockImplementationOnce(async () => mockCount);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       const result = await caller.listByRef({
         id: TEST_IDS.ID_1,
@@ -210,7 +221,9 @@ describe("Comment Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockImplementationOnce(async () => mockCount);
 
-      const caller = commentRouter.createCaller(createMockContext(null, mockDb));
+      const caller = commentRouter.createCaller(
+        createMockContext(null, mockDb),
+      );
 
       const result = await caller.listByRef({
         id: TEST_IDS.ID_1,

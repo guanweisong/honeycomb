@@ -1,157 +1,53 @@
-# 架构依赖报告
+# 架构与依赖边界
 
-## 目标分层
+本文描述当前的简单 feature 架构，不是执行结果或覆盖率报告。具体阅读入口见[代码阅读地图](code-reading-map.md)，迁移方法见[迁移说明](ddd-migration-guide.md)。历史审计的计数和检查结果不能当作本轮验证证据。
 
-- `src/app`：框架入口、路由、布局与应用组合（例如公开内容缓存）。
-- `src/features`：按业务组织输入、用例、模型、适配器和 UI；查询与写入各走实际所需的最短路径。
-- `src/packages`：共享能力，不是统一的底层。domain/application 不依赖 UI 或数据库；ui/trpc 的组装层可以依赖公开业务契约。
+## 四种职责
 
-具体调用路径见[代码阅读地图](code-reading-map.md)。这不是 `app → features → packages` 的绝对单向目录树；按职责和实际 import 检查边界。
+- `src/app`：路由、布局、HTTP 适配与框架组合，包括根 tRPC router、服务端 caller 和公开内容的 Next.js 缓存入口。
+- `src/features/<feature>`：业务 router、输入 schema、业务类型、纯规则、服务端读写和所属业务 UI。
+- `src/components`：通用 UI 和编辑器。通过 props、回调或注入接收业务能力，不反向依赖 app 或 feature 运行时。
+- `src/lib`：数据库、认证、tRPC 核心、缓存、存储、可观测性、国际化等技术能力。业务状态、类型、展示选项不因有多个消费者就迁到 lib。
 
-## 复杂度治理目标
+不再使用 `src/packages`，也不要求 feature 建立 `application/domain/infrastructure` 目录。目录按职责需要建立，而不是按模板补齐。
 
-新的业务代码遵循以下稳定路径：
-
-```text
-Client UI → tRPC Query → Server Query/Router → Repository
-
-业务操作：
-Client/Server UI → Transport Adapter → Application Use Case
-                                      ├─ Domain（可选）
-                                      └─ Repository 接口 → Infrastructure
-```
-
-- `domain` MUST 不依赖框架、数据库和传输层。
-- `application` MUST 承载业务用例编排，不在 procedure 或页面中复制业务规则。
-- `infrastructure` MUST 隐藏数据库、存储、缓存和外部服务实现。
-- `transport` MUST 只组装副作用 adapter；缓存、通知和对象存储的执行顺序及失败语义由 Application Use Case 决定。
-- 展示层 MUST 使用 View Model，不直接接收 Drizzle schema 类型。
-- 权限 MUST 通过 capability registry 和统一授权服务判断。
-
-复杂度治理基线由 `tests/architecture-complexity.test.ts` 执行，后续迁移不得新增超过 600 行的生产文件、反向依赖或展示层数据库模型泄漏。
-
-跨业务复用必须通过 `features/*/public` 或 `features/contracts` 完成。其他业务
-不得直接依赖某个 feature 的 `admin`、用例或根部 router 内部实现。
-
-## 业务功能
-
-当前业务功能包括：
-
-`category`、`comment`、`link`、`media`、`menu`、`page`、`post`、`setting`、
-`tag` 和 `user`。
-
-业务功能按需提供以下边界；简单查询和 CRUD 不强制创建空目录：
-
-- `application/*-use-cases.ts`：业务操作编排；简单查询可由 Query/Repository 直接提供
-- `application/repository.ts`：Repository 接口和稳定读写契约
-- feature 根部 `*.router.ts`：tRPC 路由和传输适配
-- `admin`：管理端界面；只有多文件管理功能才保留目录
-- `public`：公开页面和跨业务公开能力；没有消费者时不创建目录
-
-Application 用例只编排业务用例和领域规则，不得导入 Drizzle、数据库连接、schema
-或 ORM 查询构造器。需要持久化时，必须依赖 feature 自己的窄端口；Drizzle adapter
-统一放在同一 feature 的 `infrastructure` 目录，并由 router 或 app 入口注入。
-缓存和外部服务同样通过窄端口注入；跨 Feature 的公开缓存端口由
-`src/packages/application/public-content-invalidator.ts` 统一定义，Next.js adapter 留在
-Infrastructure。写入 Use Case 通过一次结构化计划声明详情、公开布局、文章索引和
-sitemap 影响范围；adapter 对详情去重，并让每种共享缓存范围最多失效一次。多层失效按
-文章索引版本、sitemap 数据、公开路由的依赖顺序执行，避免路由从旧内层缓存重新生成。
-文章 Repository 不执行缓存副作用，分类、标签、用户和媒体删除会显式刷新含有关联快照的
-文章索引；分类和菜单变化会同步刷新 sitemap，sitemap 使用共享 tag 主动失效并保留 300 秒兜底 TTL。
-版本键缺失时第一次 Redis 递增会越过读取端的隐式默认版本，避免首次失效仍命中旧索引。
-媒体删除的非空幂等重试即使已找不到记录也会再次修复公开缓存。该约束由 `tests/feature-boundaries.test.ts`、
-`tests/architecture-complexity.test.ts` 和 `tests/public-cache-invalidation-boundaries.test.ts`
-持续检查。
-
-公开文章的作者读取模型只包含 `id` 与 `name`，数据库查询不读取邮箱、权限级别、账户状态或
-账户时间戳；旧缓存中的额外字段会在共享 Schema 解码时被剥离。后台用户写入只允许经过
-capability 保护的 User Application 入口，Better Auth 通用资料更新路由已禁用，避免旁路写入
-绕过领域规则与公开缓存失效。
-
-Comment Application 接收 transport 已提取的普通 `ip/userAgent` 元数据，不接收 HTTP
-对象；公开目标状态、评论开关和父评论同源规则均在 Use Case 写入前判断。数据库 adapter
-只返回类型化状态并执行持久化，通知 adapter 由 Router 直接注入。公共评论 DTO 与树构建由
-Application 定义，查询 adapter 仅选择公共字段及头像散列所需邮箱，响应不会暴露邮箱、IP
-或 User-Agent。架构门禁会递归跟踪本地 import、re-export、动态 import 与 require，阻止
-Application 通过兼容出口间接到达 Infrastructure 或通知 adapter；共享批量删除入口拒绝空 ID 集合。
-
-`features/media/shared` 存放媒体 UI 共享能力，供媒体管理页面和文章编辑器
-复用，避免文章功能直接依赖媒体管理端内部实现。
-
-## 单服务轻量 DDD 结构
-
-核心业务模块采用以下轻量边界；外围 CRUD 模块不强制复制全部目录：
+## 最短业务路径
 
 ```text
-feature transport / presentation
-                    ↓
-             application use case
-                    ├─ domain（可选）
-                    └─ application repository → infrastructure
+Client UI → feature router → feature server 函数 → db / 技术适配器
+Server Component → feature server 读取函数
+业务 server 函数 → 纯规则（需要时）
 ```
 
-`domain` 只包含业务状态、不变量和聚合行为；Application Use Case 负责
-用例编排与事务边界；`infrastructure` 负责 Drizzle、存储、通知等外部适配；
-Repository 接口由 Application 定义。简单模块不强制 Domain，复杂模块仅在存在
-稳定、可复用且需要独立测试的不变量时引入 Domain。
+feature 的 `server.ts` 或 `server/` 可以直接使用 Drizzle 和 `lib/db`。函数接收实际所需的数据库、身份、输入或外部能力，明确事务边界与错误语义；不要求先创建 Repository 接口、factory、Use Case 或 handler。只有具有独立校验、授权、事务、转换、缓存或外部系统适配职责的函数才值得保留。
 
-各 feature 按真实业务不变量选择是否使用聚合；简单 CRUD 保持 Query/Use Case
-和 Repository 的最小结构，避免过度复杂化。工程不保留没有生产消费者的进程内事件总线、
-pending event 队列或幂等事件处理器；现有缓存、通知和对象存储副作用由 Application
-Use Case 编排，Infrastructure adapter 执行，transport 只负责注入。
+Router 处理输入校验、会话、入口 capability、限流和协议错误映射，业务写入与副作用顺序由 feature server 函数承担。可缓存 Server Component 不在渲染阶段执行写操作。页面和 router 不复制发布、审核、账号保护等规则。
 
-## DDD 迁移记录
+## 依赖与运行时边界
 
-- 已为全部十个业务模块建立 `infrastructure`、Application 和按需的公开、管理边界；
-  Repository 契约统一迁入各 feature 的 `application/repository.ts`，旧根部契约已删除。
-- 已将核心命令接入 Post、Page、Comment、User 聚合，聚合只负责状态转换和不变量。
-- 已增加领域边界、聚合状态机和 fake repository 测试，并删除仅由测试使用的事件抽象。
-- 保留现有 tRPC、Admin Action 和公开页面入口，未改变外部输入输出契约。
-- 当前不保留无独立职责的业务 facade；新的业务操作必须进入 Application Use Case，
-  稳定业务不变量才进入 Domain。
+- 根 router 在 `src/app/_trpc/router.ts`，服务端 caller 在 `src/app/_trpc/server.ts`。`lib/trpc` 只承载公共 core/context/client 及传输工具，不运行时导入业务 router 或 app。客户端为推导类型而 `import type` 根 `AppRouter` 是允许的例外。
+- 跨 feature 可直接引用对方拥有的纯 schema/type/catalog，以及有意复用的具名 UI 或 server 操作入口；不要求 public barrel 或集中 features/contracts。不能耦合另一 feature 的 router、反向导入 app，或让纯模块/浏览器加载服务端运行时。
+- app 是组合层，可接入 feature 的 router、server、admin 和 public 入口。feature 不反向导入 app。
+- `lib/db`、`lib/auth` 可以引用 feature 拥有的纯状态目录、schema 或类型；这些依赖不能传递加载业务 server 操作、UI、通知或根 router。这不是允许任意 lib 反向依赖 feature 的通行证。
+- 纯 schema、类型与规则不依赖 React、Next.js、tRPC server、数据库或外部 SDK。展示代码消费稳定结果模型，不接收数据库连接、ORM 查询对象或完整敏感记录；相同语义的 DTO 不为层次对称重复定义。
+- 浏览器代码不加载数据库、服务端认证、环境 secret、存储 SDK 或 Node-only 可观测性实现；Edge 路径不加载 Node-only SDK。边界检查须追踪间接 import、re-export、动态 import 与 require。
 
-## 验证记录
+## 不能因精简而丢失的行为
 
-最近一次验证结果（2026-09-11）：类型检查、Lint、迁移治理、生产依赖审计和 Webpack
-生产构建均通过；273 个单元测试文件中的 1237 项测试和 52 项进程级测试均通过。
-最近一次完整覆盖率为语句 83.33%、分支 75.61%、函数 81.02%、行 84.58%，没有降低全局或关键文件门槛。
-安全响应头、RBAC 与 PWA 关键 Chromium E2E 为 6/6 通过；生产 PWA 离线导航还以
-同一用例连续两次通过验证时序稳定性。
+- 入口权限仍通过 `src/lib/auth/capability-registry.ts` 登记并由服务端执行。GUEST 列表访问不等于未发布内容或评论隐私访问；前端 `useCan` 不是授权边界。
+- 文章和页面的发布条件、错误码、事务、翻译更新语义和并发写入保护保持不变。分类父节点更新必须保留 SQL 循环保护，不能只留下更新前检查。
+- 公共文章作者仅返回 `id`、`name`。评论公开 DTO 必须实际选择允许字段；类型别名不会删除邮箱、IP 或 User-Agent。评论请求头先在入口转为普通元数据。
+- 评论验证码、公开目标、评论开关和父子同源校验必须在写入前完成。评论提交成功后通知失败只记录脱敏日志，不把成功写入变成失败。
+- 数据库提交是内容写入成功边界。`lib/cache/public-content-invalidator.ts` 保留结构化失效计划、有限重试和 `publicSync` 降级反馈。失效顺序仍为文章索引版本、sitemap、公开路由；范围去重、首次版本递增、关联快照刷新、sitemap TTL 和媒体幂等重试不得遗漏。
+- 媒体先删除对象，再删除数据库记录；对象失败保留记录，后续数据库失败返回不确定结果，不能伪报完全未执行。业务媒体选择属于 media feature，通用编辑器通过注入使用。
+- 草稿恢复、重复保存保护、Sentry 脱敏、浏览器/服务端/Edge 隔离和 public DSN 回退保持原语义。
 
-默认 Turbopack 构建在当前受限执行环境中因 PostCSS 子进程无法绑定内部端口而失败；
-相同隔离假配置下 Webpack 构建成功，且失败发生在任何数据库访问前。
-该环境限制不记录为分析成功，后续应在允许子进程本地通信的 CI/开发环境复跑。
+## 验证要求
 
-## 技术包
+架构、权限、类型安全、持久化、缓存、浏览器和覆盖率测试必须随新路径更新，不得删除实质断言或降低阈值。相关入口包括 `tests/feature-boundaries.test.ts`、`tests/server-only-boundaries.test.ts`、`tests/architecture-complexity.test.ts`、`tests/readability-boundaries.test.ts`、`tests/capability-entrypoint-boundaries.test.ts` 和 `tests/public-cache-invalidation-boundaries.test.ts`。
 
-- `domain`：与框架无关的领域基础类型和规则
-- `identity`：身份认证、授权和权限规则
-- `infrastructure`：数据库、存储、缓存、HTTP 和外部服务
-- `trpc`：tRPC 客户端/服务端集成和传输 schema
-- `ui`：可复用 UI、导航适配器和展示层工具
+完整重构需要类型、Lint、全量单元与进程测试、覆盖率、生产构建及可运行的开发/生产 E2E。数据库测试仅使用显式隔离、可清理的本地 `file:` 数据库；不得以环境问题为由放宽安全边界。结果应逐项记录通过、失败或未运行，不沿用历史测试数和覆盖率。
 
-技术包不得依赖 `app` 或 `features`。
+## 认证框架组合例外
 
-## 自动化约束
-
-以下测试负责持续检查架构边界：
-
-- `tests/feature-boundaries.test.ts`
-- `tests/server-only-boundaries.test.ts`
-- `src/packages/package-boundaries.test.ts`
-- `src/packages/trpc/api/capability-procedure-matrix.test.ts`
-- `tests/capability-entrypoint-boundaries.test.ts`
-- `src/packages/identity/auth/capability-registry.test.ts`
-
-这些检查用于阻止 feature 反向依赖 App Router、跨 feature 访问内部实现，以及
-技术包依赖路由层或传输细节。
-
-权限入口统一通过 `src/packages/identity/auth/capability-registry.ts` 登记。tRPC
-procedure、Admin Action、Admin route 和菜单只引用已登记 capability；registry 负责
-检查完整性、重复声明和入口消费者覆盖，权限矩阵仍负责表达具体角色结果。
-
-## 运行环境注意事项
-
-端到端测试需要 `.env` 中配置可访问的数据库地址。如果地址格式错误或数据库
-不可访问，可能出现 `TypeError: fetch failed` 或 `bad port`。这属于测试环境问题，
-应修复测试配置或环境变量，不应通过放宽架构边界来规避。
+现有 `lib/trpc/context.ts` 为读取会话而延迟导入 `src/auth.ts` 是窄技术集成例外；`src/auth.ts` 绑定 Better Auth，认证 hook 与登录审计的框架组合位于 `app/_auth`。该例外不允许 lib/auth 运行时导入 feature 操作，也不允许 lib/trpc 组合业务 router。

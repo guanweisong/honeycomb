@@ -1,7 +1,7 @@
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { menuRouter } from "@/features/menu/menu.router";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { menuRouter } from "@/features/menu/router";
+import { MenuType } from "@/features/menu/menu-types";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,
@@ -10,7 +10,7 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
@@ -76,8 +76,18 @@ describe("Menu Router", () => {
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockPages);
       mockDb.where.mockResolvedValueOnce([
-        { categoryId: TEST_IDS.ID_1, locale: "en", title: "Category 1", description: "" },
-        { categoryId: TEST_IDS.ID_1, locale: "zh", title: "分类1", description: "" },
+        {
+          categoryId: TEST_IDS.ID_1,
+          locale: "en",
+          title: "Category 1",
+          description: "",
+        },
+        {
+          categoryId: TEST_IDS.ID_1,
+          locale: "zh",
+          title: "分类1",
+          description: "",
+        },
       ]);
       mockDb.where.mockResolvedValueOnce([
         { pageId: TEST_IDS.ID_2, locale: "en", title: "Page 1", content: "" },

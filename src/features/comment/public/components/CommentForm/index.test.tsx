@@ -7,14 +7,14 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock("@/packages/ui/components/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button {...props} />
   ),
 }));
 
 import { CommentForm } from ".";
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { CommentStatus } from "@/features/comment/comment-status";
 
 describe("CommentForm", () => {
   let container: HTMLDivElement;

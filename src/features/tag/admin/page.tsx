@@ -1,23 +1,20 @@
 "use client";
 
-import type { TagRecord as TagEntity } from "@/features/tag/application/repository";
+import type { TagRecord as TagEntity } from "@/features/tag/types";
 import { useState } from "react";
-import { tagTableColumns } from "./constants/tag-table-columns";
-import { DataTable } from "@/packages/ui/extended/DataTable";
-import { Button } from "@/packages/ui/components/button";
+import { tagTableColumns } from "./tag-table-columns";
+import { DataTable } from "@/components/DataTable";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import {
-  TagListQueryInput,
-  TagListQuerySchema,
-} from "@/features/tag/schemas/tag.list.query.schema";
+import { TagListQueryInput, TagListQuerySchema } from "@/features/tag/schema";
 import AddTagDialog from "./components/AddTagDialog";
-import { trpc } from "@/packages/trpc/client/trpc";
-import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { adminListQueryOptions } from "@/components/admin/query-options";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,
@@ -26,7 +23,7 @@ import {
   runAdminMutation,
   submitAdminBatchDelete,
   type AdminDialogState,
-} from "@/packages/ui/admin/action-state";
+} from "@/components/admin/action-state";
 
 /**
  * 标签管理页面。

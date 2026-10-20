@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { notifyPublicSyncWarning } from "@/packages/ui/admin/action-state";
-import { TagType } from "@/packages/domain/content/tag";
-import type { TagViewModel as TagEntity } from "@/features/contracts";
-import { clientLogger } from "@/packages/infrastructure/observability/client";
-import { LogEvent } from "@/packages/infrastructure/observability/core/names";
-import { trpc } from "@/packages/trpc/client/trpc";
+import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { TagType } from "@/features/tag/tag-kind";
+import type { TagRecord as TagEntity } from "@/features/tag/types";
+import { clientLogger } from "@/lib/observability/client";
+import { LogEvent } from "@/lib/observability/core/names";
+import { trpc } from "@/lib/trpc/client/trpc";
 
 export type PostTagOption = Pick<TagEntity, "id" | "name">;
 

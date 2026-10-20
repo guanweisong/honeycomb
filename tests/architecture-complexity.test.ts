@@ -2,8 +2,8 @@
 
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, expect, it } from "vitest";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { sourceFiles } from "@tests/helpers/source-files";
 
 const sourceRoot = join(process.cwd(), "src");
@@ -22,54 +22,6 @@ function imports(source: string): string[] {
   ];
 }
 
-function resolveLocalImport(
-  importer: string,
-  specifier: string,
-): string | null {
-  const base = specifier.startsWith("@/")
-    ? join(sourceRoot, specifier.slice(2))
-    : specifier.startsWith(".")
-      ? resolve(dirname(importer), specifier)
-      : null;
-  if (!base) return null;
-
-  for (const candidate of [
-    base,
-    `${base}.ts`,
-    `${base}.tsx`,
-    join(base, "index.ts"),
-    join(base, "index.tsx"),
-  ]) {
-    if (statSync(candidate, { throwIfNoEntry: false })?.isFile())
-      return candidate;
-  }
-  return null;
-}
-
-function forbiddenTransitiveDependencies(entry: string): string[] {
-  const visited = new Set<string>();
-  const violations = new Set<string>();
-
-  function visit(path: string) {
-    if (visited.has(path)) return;
-    visited.add(path);
-    for (const specifier of imports(readFileSync(path, "utf8"))) {
-      const dependency = resolveLocalImport(path, specifier);
-      if (!dependency) continue;
-      if (/\/infrastructure\/|\/notifications\//.test(dependency)) {
-        violations.add(
-          `${relative(process.cwd(), entry)} -> ${relative(process.cwd(), dependency)}`,
-        );
-        continue;
-      }
-      visit(dependency);
-    }
-  }
-
-  visit(entry);
-  return [...violations];
-}
-
 describe("架构复杂度治理", () => {
   it("不保留无消费者 barrel、测试专用源码与 schema 转发文件", () => {
     const obsoleteFiles = [
@@ -77,7 +29,7 @@ describe("架构复杂度治理", () => {
       "src/features/page/domain/index.ts",
       "src/features/post/domain/index.ts",
       "src/features/user/domain/index.ts",
-      "src/packages/infrastructure/db/index.ts",
+      "src/lib/db/index.ts",
       "src/packages/trpc/typings.d.ts",
       ...[
         "comment",
@@ -93,8 +45,8 @@ describe("架构复杂度治理", () => {
         (feature) =>
           `src/features/${feature}/admin/constants/admin-action-guard.ts`,
       ),
-      "src/packages/identity/auth/admin-action-guard-types.ts",
-      "src/packages/trpc/api/schemas/i18n.schema.ts",
+      "src/lib/auth/admin-action-guard-types.ts",
+      "src/lib/validation/i18n.schema.ts",
       ...[
         ["page", "insert"],
         ["page", "update"],
@@ -119,20 +71,6 @@ describe("架构复杂度治理", () => {
     ].filter((path) => existsSync(join(process.cwd(), path)));
 
     expect(obsoleteFiles).toEqual([]);
-  });
-
-  it("App 组合层通过 Comment 与 Post 的 public 出口使用公共 UI", () => {
-    const violations = sourceFiles(join(sourceRoot, "app")).flatMap((path) =>
-      imports(readFileSync(path, "utf8"))
-        .filter((specifier) =>
-          /^@\/features\/(?:comment|post)\/public\//.test(specifier),
-        )
-        .map(
-          (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
-        ),
-    );
-
-    expect(violations).toEqual([]);
   });
 
   it("依赖清单只声明真实直接消费者并显式列出测试工具", () => {
@@ -178,53 +116,8 @@ describe("架构复杂度治理", () => {
     const violations = sourceFiles(sourceRoot).flatMap((path) =>
       imports(readFileSync(path, "utf8"))
         .filter((specifier) => /^@radix-ui\/react-/.test(specifier))
-        .map(
-          (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
-        ),
+        .map((specifier) => `${relative(process.cwd(), path)} -> ${specifier}`),
     );
-
-    expect(violations).toEqual([]);
-  });
-
-  it("所有 feature 都有明确的基础边界", () => {
-    const features = readdirSync(featureRoot).filter((entry) =>
-      statSync(join(featureRoot, entry)).isDirectory(),
-    );
-
-    expect(features).toEqual(
-      expect.arrayContaining([
-        "category",
-        "comment",
-        "link",
-        "media",
-        "menu",
-        "page",
-        "post",
-        "setting",
-        "tag",
-        "user",
-      ]),
-    );
-
-    for (const feature of features.filter((entry) => entry !== "contracts")) {
-      expect(
-        statSync(join(featureRoot, feature, "infrastructure")).isDirectory(),
-      ).toBe(true);
-    }
-  });
-
-  it("禁止 domain 和 infrastructure 反向依赖 transport", () => {
-    const violations = sourceFiles(sourceRoot)
-      .filter((path) => /\/domain\/|\/infrastructure\//.test(path))
-      .flatMap((path) =>
-        imports(readFileSync(path, "utf8"))
-          .filter((specifier) =>
-            /@\/app|@\/packages\/trpc\/(client|api)/.test(specifier),
-          )
-          .map(
-            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
-          ),
-      );
 
     expect(violations).toEqual([]);
   });
@@ -234,9 +127,7 @@ describe("架构复杂度治理", () => {
       .filter((path) => /\/admin\/|\/public\/|\/shared\//.test(path))
       .flatMap((path) =>
         imports(readFileSync(path, "utf8"))
-          .filter((specifier) =>
-            /packages\/infrastructure\/db\/schema/.test(specifier),
-          )
+          .filter((specifier) => /lib\/db\/schema/.test(specifier))
           .map(
             (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
           ),
@@ -249,7 +140,7 @@ describe("架构复杂度治理", () => {
     const mediaSharedRoot = join(featureRoot, "media", "shared");
     const violations = sourceFiles(mediaSharedRoot).flatMap((path) =>
       imports(readFileSync(path, "utf8"))
-        .filter((specifier) => specifier.includes("packages/trpc/api/outputs"))
+        .filter((specifier) => specifier.includes("lib/trpc/outputs"))
         .map((specifier) => `${relative(process.cwd(), path)} -> ${specifier}`),
     );
 
@@ -279,7 +170,7 @@ describe("架构复杂度治理", () => {
       "media",
     ];
     const violations = simpleFeatures.flatMap((feature) => {
-      const router = join(featureRoot, feature, `${feature}.router.ts`);
+      const router = join(featureRoot, feature, "router.ts");
       if (!statSync(router, { throwIfNoEntry: false })) return [];
       return imports(readFileSync(router, "utf8"))
         .filter((specifier) => specifier === `@/features/${feature}/service`)
@@ -291,112 +182,54 @@ describe("架构复杂度治理", () => {
     expect(violations).toEqual([]);
   });
 
-  it("Repository 契约必须位于 application，Application 不得依赖 infrastructure", () => {
-    const rootRepositoryFiles = readdirSync(featureRoot, {
-      withFileTypes: true,
-    }).flatMap((feature) => {
-      if (!feature.isDirectory()) return [];
-      const path = join(featureRoot, feature.name, "repository.ts");
-      return statSync(path, { throwIfNoEntry: false })
-        ? [relative(process.cwd(), path)]
-        : [];
-    });
-    expect(rootRepositoryFiles).toEqual([]);
-
-    const violations = sourceFiles(featureRoot)
-      .filter((path) => /\/application\//.test(path))
-      .flatMap((path) =>
-        imports(readFileSync(path, "utf8"))
-          .filter((specifier) => /\/infrastructure\//.test(specifier))
-          .map(
-            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
-          ),
-      );
-    expect(violations).toEqual([]);
-  });
-
-  it("Application 只依赖副作用端口，不直接依赖框架或外部服务 SDK", () => {
-    const forbidden =
-      /^(?:next\/cache|resend|@aws-sdk\/|@\/packages\/trpc(?:\/|$))|\/infrastructure\//;
-    const violations = sourceFiles(featureRoot)
-      .filter((path) => /\/application\//.test(path))
-      .flatMap((path) =>
-        imports(readFileSync(path, "utf8"))
-          .filter((specifier) => forbidden.test(specifier))
-          .map(
-            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
-          ),
-      );
-
-    expect(violations).toEqual([]);
-  });
-
-  it("Application 的本地依赖与转发出口不得间接到达 Infrastructure 或通知适配器", () => {
-    const violations = sourceFiles(featureRoot)
-      .filter((path) => /\/application\//.test(path))
-      .flatMap(forbiddenTransitiveDependencies);
-
-    expect(violations).toEqual([]);
-  });
-
-  it("Application 契约不得泄漏 HTTP 或 tRPC 类型", () => {
-    const forbiddenType = /\b(?:Headers|Request|Response|FormData|TRPCError)\b/;
-    const violations = sourceFiles(featureRoot)
-      .filter((path) => /\/application\//.test(path))
-      .filter((path) => forbiddenType.test(readFileSync(path, "utf8")))
-      .map((path) => relative(process.cwd(), path));
-
-    expect(violations).toEqual([]);
-  });
-
-  it("Feature 根目录不得拥有业务端口契约", () => {
-    const violations = readdirSync(featureRoot).flatMap((feature) => {
-      const directory = join(featureRoot, feature);
-      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory())
-        return [];
-
-      return readdirSync(directory)
-        .filter((entry) => entry === "ports.ts" || /-port\.ts$/.test(entry))
-        .map((entry) => relative(process.cwd(), join(directory, entry)));
-    });
-
-    expect(violations).toEqual([]);
-  });
-
-  it("生产源码不得保留未接线的通用领域事件基础设施", () => {
-    const eventsRoot = join(sourceRoot, "packages/domain/events");
-    const eventInfrastructure = statSync(eventsRoot, { throwIfNoEntry: false })
-      ? sourceFiles(eventsRoot).map((path) => relative(process.cwd(), path))
-      : [];
-
-    expect(eventInfrastructure).toEqual([]);
-  });
-
-  it("业务 commands、queries、handlers 必须位于 application", () => {
-    const violations = readdirSync(featureRoot).flatMap((feature) => {
-      const directory = join(featureRoot, feature);
-      if (!statSync(directory, { throwIfNoEntry: false })?.isDirectory())
-        return [];
-      return readdirSync(directory)
-        .filter((entry) => /(?:commands|queries|handlers)\.ts$/.test(entry))
-        .map((entry) => `${relative(process.cwd(), join(directory, entry))}`);
-    });
-
-    expect(violations).toEqual([]);
-  });
-
   it("生产 schema 和模型不得依赖 Drizzle persistence model", () => {
     const violations = sourceFiles(featureRoot)
-      .filter((path) => !/\/infrastructure\//.test(path))
+      .filter((path) => !/\/server(?:\/|\.ts$)/.test(path))
       .flatMap((path) => {
         const source = readFileSync(path, "utf8");
         const importsFromInfrastructure = imports(source).filter((specifier) =>
-          /packages\/infrastructure\/db\/schema|drizzle-zod/.test(specifier),
+          /lib\/db\/schema|drizzle-zod/.test(specifier),
         );
         return importsFromInfrastructure.map(
           (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
         );
       });
+    expect(violations).toEqual([]);
+  });
+  it("业务文件按职责命名，不重建用例转发或层级包装", () => {
+    const retired = sourceFiles(featureRoot).filter((path) =>
+      /(?:-use-cases|-command-handlers|\/service)\.ts$/.test(path),
+    );
+    expect(retired).toEqual([]);
+  });
+
+  it("纯业务契约不泄漏传输类型", () => {
+    const forbiddenType = /\b(?:Headers|Request|Response|FormData|TRPCError)\b/;
+    const violations = sourceFiles(featureRoot)
+      .filter((path) => /\/(?:schema|types|rules)\.ts$/.test(path))
+      .filter((path) => forbiddenType.test(readFileSync(path, "utf8")))
+      .map((path) => relative(process.cwd(), path));
+    expect(violations).toEqual([]);
+  });
+
+  it("规则与技术模块不依赖业务 Router 或应用 UI", () => {
+    const violations = sourceFiles(sourceRoot)
+      .filter(
+        (path) =>
+          /\/rules\.ts$/.test(path) ||
+          path.startsWith(join(sourceRoot, "lib") + "/"),
+      )
+      .flatMap((path) =>
+        imports(readFileSync(path, "utf8"))
+          .filter((specifier) =>
+            /^@\/features\/[^/]+\/(?:[^/]+\.)?router$|^@\/app\/(?!_trpc\/router$)/.test(
+              specifier,
+            ),
+          )
+          .map(
+            (specifier) => `${relative(process.cwd(), path)} -> ${specifier}`,
+          ),
+      );
     expect(violations).toEqual([]);
   });
 });

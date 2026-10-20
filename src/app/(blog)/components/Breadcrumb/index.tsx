@@ -2,10 +2,10 @@
 
 import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
+import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale } from "next-intl";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import type { MenuViewModel as MenuEntity } from "@/features/contracts";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import type { MenuItem as MenuEntity } from "@/features/menu/types";
 
 /**
  * 面包屑组件的属性接口。

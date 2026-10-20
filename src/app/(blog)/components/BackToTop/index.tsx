@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ChevronUp } from "lucide-react";
-import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";
+import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
 
 /**
  * 返回顶部组件。

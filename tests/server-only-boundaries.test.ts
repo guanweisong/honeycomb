@@ -6,33 +6,34 @@ import { describe, expect, it } from "vitest";
 
 const serverOnlyEntrypoints = [
   "src/auth.ts",
+  "src/app/_auth/auth-hooks.ts",
+  "src/app/_auth/auth-request-audit.ts",
   "src/env/server.ts",
-  "src/packages/infrastructure/db/db.ts",
-  "src/packages/infrastructure/observability/server/index.ts",
-  "src/packages/infrastructure/observability/server/registry.ts",
-  "src/packages/trpc/api/app-router.ts",
-  "src/packages/trpc/api/context.ts",
-  "src/packages/trpc/api/core.ts",
-  "src/packages/trpc/api/default-context.ts",
-  "src/packages/trpc/api/index.ts",
-  "src/features/comment/comment.router.ts",
-  "src/features/post/post.router.ts",
-  "src/features/media/media.router.ts",
-  "src/features/link/link.router.ts",
-  "src/features/menu/menu.router.ts",
-  "src/features/page/page.router.ts",
-  "src/features/setting/setting.router.ts",
+  "src/lib/db/db.ts",
+  "src/lib/observability/server/index.ts",
+  "src/lib/observability/server/registry.ts",
+  "src/app/_trpc/router.ts",
+  "src/lib/trpc/context.ts",
+  "src/lib/trpc/core.ts",
+  "src/app/_trpc/server.ts",
+  "src/features/comment/router.ts",
+  "src/features/post/router.ts",
+  "src/features/media/router.ts",
+  "src/features/link/router.ts",
+  "src/features/menu/router.ts",
+  "src/features/page/router.ts",
+  "src/features/setting/router.ts",
   "src/features/setting/statistic.router.ts",
-  "src/features/tag/tag.router.ts",
-  "src/features/user/user.router.ts",
+  "src/features/tag/router.ts",
+  "src/features/user/router.ts",
   "src/features/user/account-security.router.ts",
-  "src/features/category/category.router.ts",
-  "src/packages/infrastructure/storage/S3.ts",
-  "src/packages/infrastructure/rate-limit/rate-limit.ts",
+  "src/features/category/router.ts",
+  "src/lib/storage/S3.ts",
+  "src/lib/rate-limit/rate-limit.ts",
   "src/features/comment/notifications/comment-email.ts",
   "src/features/comment/notifications/comment-delivery.ts",
-  "src/packages/infrastructure/cache/upstash-cache.ts",
-  "src/packages/infrastructure/security/validate-captcha.ts",
+  "src/lib/cache/upstash-cache.ts",
+  "src/lib/security/validate-captcha.ts",
 ] as const;
 
 function findBackendModules(directory: string): string[] {
@@ -43,7 +44,9 @@ function findBackendModules(directory: string): string[] {
     .filter(
       (entry) =>
         entry.isFile() &&
-        (entry.name.endsWith(".router.ts") ||
+        (entry.name === "router.ts" ||
+          entry.name === "server.ts" ||
+          entry.name.endsWith(".router.ts") ||
           entry.name.endsWith(".service.ts")),
     )
     .map((entry) => {
@@ -54,32 +57,34 @@ function findBackendModules(directory: string): string[] {
 
 describe("server-only module boundaries", () => {
   const protectedModules = [
-    ...serverOnlyEntrypoints,
-    ...findBackendModules("src/features"),
+    ...new Set([
+      ...serverOnlyEntrypoints,
+      ...findBackendModules("src/features"),
+    ]),
   ];
 
   it.each(protectedModules)("%s declares the server-only boundary", (path) => {
     const source = readFileSync(resolve(process.cwd(), path), "utf8");
 
-    expect(source).toMatch(/^import "server-only";/);
+    expect(source).toMatch(/^import\s+["']server-only["'];?/m);
   });
 
   it("keeps shared contracts free of the server-only boundary", () => {
     const sharedContracts = [
-      "src/packages/domain/identity/user.ts",
-      "src/packages/application/validation.ts",
-      "src/packages/application/pagination.ts",
+      "src/features/user/user.ts",
+      "src/lib/validation/validation.ts",
+      "src/lib/validation/pagination.ts",
     ];
 
     for (const path of sharedContracts) {
       const source = readFileSync(resolve(process.cwd(), path), "utf8");
-      expect(source).not.toContain('import "server-only"');
+      expect(source).not.toMatch(/\bimport\s+["']server-only["']/);
     }
   });
 
   it("keeps tRPC context independent of Node request storage", () => {
     const source = readFileSync(
-      resolve(process.cwd(), "src/packages/trpc/api/context.ts"),
+      resolve(process.cwd(), "src/lib/trpc/context.ts"),
       "utf8",
     );
 
@@ -89,16 +94,13 @@ describe("server-only module boundaries", () => {
 
   it("keeps the shared request context Edge-safe", () => {
     const source = readFileSync(
-      resolve(
-        process.cwd(),
-        "src/packages/infrastructure/observability/server/request-context.ts",
-      ),
+      resolve(process.cwd(), "src/lib/observability/server/request-context.ts"),
       "utf8",
     );
 
     expect(source).not.toContain("node-request-context");
     expect(source).not.toContain("node:async_hooks");
-    expect(source).not.toContain('import "server-only"');
+    expect(source).not.toMatch(/\bimport\s+["']server-only["']/);
   });
 
   it("makes Next.js reject a Client Component importing observability/server", () => {

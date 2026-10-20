@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { routing } from "@/packages/ui/navigation/routing";
-import {
-  apiRatelimit,
-  limitWithTimeout,
-} from "@/packages/infrastructure/rate-limit/rate-limit";
-import { getClientIp } from "@/packages/infrastructure/http/client-ip";
+import { routing } from "@/lib/i18n/routing";
+import { apiRatelimit, limitWithTimeout } from "@/lib/rate-limit/rate-limit";
+import { getClientIp } from "@/lib/http/client-ip";
 import { ADMIN_PATHNAME_HEADER } from "@/app/admin/constants/route-capabilities";
 
 const i18nMiddleware = createMiddleware(routing);

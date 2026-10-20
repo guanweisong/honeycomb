@@ -7,11 +7,11 @@ const mocks = vi.hoisted(() => ({
   fields: [] as Array<Record<string, unknown>>,
 }));
 
-vi.mock("@/packages/ui/components/form", () => ({
+vi.mock("@/components/ui/form", () => ({
   Form: (props: { children: React.ReactNode }) => <div>{props.children}</div>,
 }));
 
-vi.mock("@/packages/ui/extended/DynamicForm/DynamicField", () => ({
+vi.mock("@/components/DynamicForm/DynamicField", () => ({
   DynamicField: (props: Record<string, unknown>) => {
     mocks.fields.push(props);
     return <div data-field={String(props.name)} />;
@@ -35,11 +35,7 @@ describe("PageEditorForm", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
-    act(() =>
-      root.render(
-        <PageEditorForm form={{} as never} />,
-      ),
-    );
+    act(() => root.render(<PageEditorForm form={{} as never} />));
 
     expect(mocks.fields).toEqual([
       expect.objectContaining({

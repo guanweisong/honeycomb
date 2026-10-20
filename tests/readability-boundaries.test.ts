@@ -2,77 +2,79 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import ts from "typescript";
-import { sourceFile, sourceFiles } from "@tests/helpers/source-files";
+import {
+  featureInventory,
+  isAuthoritativeContract,
+} from "@tests/helpers/feature-inventory";
+import { sourceFiles } from "@tests/helpers/source-files";
+import {
+  localModulePath,
+  moduleDependencies,
+} from "@tests/helpers/architecture-imports";
 
-// Runtime schema exports are deliberate data contracts, not permission for
-// providers, network queries or other executable UI to enter this boundary.
-const schemaOwners = new Map([
-  [
-    "MediaRecordSchema",
-    new Set(["@/features/media/application/repository", "./content"]),
-  ],
-  [
-    "TagRecordSchema",
-    new Set(["@/features/tag/application/repository", "./content"]),
-  ],
-]);
-
-function invalidRuntimeExports(source: ts.SourceFile) {
-  return source.statements.filter((node) => {
-    if (!ts.isExportDeclaration(node)) return true;
-    if (node.isTypeOnly) return false;
-    if (!node.exportClause || !ts.isNamedExports(node.exportClause))
-      return true;
-    const owner =
-      node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)
-        ? node.moduleSpecifier.text
-        : "";
-    return node.exportClause.elements.some(
-      (element) =>
-        !element.isTypeOnly &&
-        (!schemaOwners.get(element.name.text)?.has(owner) ||
-          (element.propertyName?.text ?? element.name.text) !==
-            element.name.text),
-    );
+function invalidContractDependencies(path: string, source: string) {
+  return moduleDependencies(source, path).flatMap(({ specifier }) => {
+    const target = localModulePath(path, specifier);
+    return target &&
+      (/^src\/(?:app|components)\//.test(target) ||
+        /\/(?:server|admin|public|notifications)(?:\/|$)|(?:\/|\.)router$/.test(
+          target,
+        ))
+      ? [specifier]
+      : [];
   });
 }
 
-describe("阅读路径与契约归属", () => {
-  it("共享契约仅重新导出权威数据，不承载 React 或请求运行时", () => {
-    for (const path of sourceFiles("src/features/contracts")) {
-      const definitions = invalidRuntimeExports(sourceFile(path));
-      expect(
-        definitions.map((node) => node.getText()),
-        path,
-      ).toEqual([]);
-    }
+describe("direct reading paths and contract ownership", () => {
+  it("consumers reach feature-owned contracts without a central forwarding layer", () => {
+    expect(existsSync("src/features/contracts")).toBe(false);
+    const violations = sourceFiles("src").flatMap((path) =>
+      moduleDependencies(readFileSync(path, "utf8"), path)
+        .filter(({ specifier }) =>
+          localModulePath(path, specifier)?.startsWith(
+            "src/features/contracts",
+          ),
+        )
+        .map(({ specifier }) => `${path} -> ${specifier}`),
+    );
+    expect(violations).toEqual([]);
   });
 
-  it("拒绝伪装成数据出口的 Provider、查询和任意运行时导出", () => {
-    const source = ts.createSourceFile(
-      "fixture.ts",
-      [
-        'export { CurrentUserProvider } from "@/packages/ui/admin/use-current-user";',
-        'export { getCurrentUser } from "@/features/user/application/user-queries";',
-        'export * from "@/features/contracts/admin/runtime";',
-        'export { MediaRecordSchema } from "@/features/media/application/repository";',
-        'export { type MediaRecord } from "@/features/media/application/repository";',
-        'export type { CurrentUserRecord } from "@/features/user/application/repository";',
-      ].join("\n"),
-      ts.ScriptTarget.Latest,
-      true,
-    );
-    expect(invalidRuntimeExports(source).map((node) => node.getText())).toEqual(
-      [
-        'export { CurrentUserProvider } from "@/packages/ui/admin/use-current-user";',
-        'export { getCurrentUser } from "@/features/user/application/user-queries";',
-        'export * from "@/features/contracts/admin/runtime";',
-      ],
-    );
+  it("detects providers, runtime operations and wildcard business exports hidden in data contracts", () => {
+    const source = [
+      'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
+      'export { getCurrentUser } from "./server/user-queries";',
+      'export * from "@/features/user/server";',
+      'export { MediaRecordSchema } from "@/features/media/types";',
+      'export type { CurrentUserRecord } from "./types";',
+    ].join("\n");
+    expect(
+      invalidContractDependencies("src/features/user/schema.ts", source),
+    ).toEqual([
+      "@/features/user/admin/use-current-user",
+      "./server/user-queries",
+      "@/features/user/server",
+    ]);
   });
 
-  it("纯别名展示文件不再隔开消费者和权威模型", () => {
+  it("keeps authoritative feature schemas and types free of UI/request runtime", () => {
+    const contracts = featureInventory("src/features")
+      .flatMap(({ files }) => files)
+      .filter(isAuthoritativeContract);
+    expect(contracts.length).toBeGreaterThan(0);
+    expect(contracts.toSorted()).toEqual(
+      sourceFiles("src/features").filter(isAuthoritativeContract),
+    );
+    expect(
+      contracts.flatMap((path) =>
+        invalidContractDependencies(path, readFileSync(path, "utf8")).map(
+          (specifier) => `${path} -> ${specifier}`,
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not retain trivial presentation aliases between consumers and authoritative models", () => {
     for (const feature of ["category", "link", "page", "post", "tag", "user"]) {
       expect(
         existsSync(
@@ -83,17 +85,15 @@ describe("阅读路径与契约归属", () => {
     }
   });
 
-  it("评论展示不反向引用应用组合层", () => {
-    for (const path of sourceFiles("src/features/comment/public")) {
-      const dependencies = ts.preProcessFile(
-        readFileSync(path, "utf8"),
-        true,
-        true,
-      ).importedFiles;
-      expect(
-        dependencies.filter(({ fileName }) => fileName.startsWith("@/app/")),
-        path,
-      ).toEqual([]);
-    }
+  it("comment public UI does not depend on app composition", () => {
+    const violations = sourceFiles("src/features/comment/public").flatMap(
+      (path) =>
+        moduleDependencies(readFileSync(path, "utf8"), path)
+          .filter(({ specifier }) =>
+            localModulePath(path, specifier)?.startsWith("src/app/"),
+          )
+          .map(({ specifier }) => `${path} -> ${specifier}`),
+    );
+    expect(violations).toEqual([]);
   });
 });

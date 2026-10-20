@@ -1,15 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { pageRouter } from "@/features/page/page.router";
-import * as schema from "@/packages/infrastructure/db/schema";
-import { UserLevel } from "@/packages/domain/identity/user";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
+import { pageRouter } from "@/features/page/router";
+import * as schema from "@/lib/db/schema";
+import { UserLevel } from "@/features/user/user";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { createGuestUser, createMockContext, createMockDb, resetMockDb } from "@tests/helpers/test-utils";
+import {
+  createGuestUser,
+  createMockContext,
+  createMockDb,
+  resetMockDb,
+} from "@tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
@@ -25,9 +30,9 @@ describe("Page Router", () => {
     it("rejects unauthenticated callers from adminIndex", async () => {
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
-      await expect(
-        caller.adminIndex({ page: 1, limit: 10 }),
-      ).rejects.toThrow("UNAUTHORIZED");
+      await expect(caller.adminIndex({ page: 1, limit: 10 })).rejects.toThrow(
+        "UNAUTHORIZED",
+      );
     });
 
     it("should return page list with pagination", async () => {
@@ -61,13 +66,25 @@ describe("Page Router", () => {
       mockDb.limit.mockReturnValueOnce(mockDb);
       mockDb.offset.mockResolvedValueOnce(mockPages);
 
-      mockDb.query.page.findMany.mockResolvedValueOnce(mockPages.map(({ title, content, ...page }) => ({
-        ...page,
-        translations: [
-          { pageId: page.id, locale: "en", title: title.en, content: content.en },
-          { pageId: page.id, locale: "zh", title: title.zh, content: content.zh },
-        ],
-      })));
+      mockDb.query.page.findMany.mockResolvedValueOnce(
+        mockPages.map(({ title, content, ...page }) => ({
+          ...page,
+          translations: [
+            {
+              pageId: page.id,
+              locale: "en",
+              title: title.en,
+              content: content.en,
+            },
+            {
+              pageId: page.id,
+              locale: "zh",
+              title: title.zh,
+              content: content.zh,
+            },
+          ],
+        })),
+      );
 
       // 设置总数查询的模拟调用。
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -122,8 +139,18 @@ describe("Page Router", () => {
         template: PageTemplate.DEFAULT,
         author: null,
         translations: [
-          { pageId: TEST_IDS.ID_1, locale: "en", title: "Page 1", content: "Content 1" },
-          { pageId: TEST_IDS.ID_1, locale: "zh", title: "页面1", content: "内容1" },
+          {
+            pageId: TEST_IDS.ID_1,
+            locale: "en",
+            title: "Page 1",
+            content: "Content 1",
+          },
+          {
+            pageId: TEST_IDS.ID_1,
+            locale: "zh",
+            title: "页面1",
+            content: "内容1",
+          },
         ],
       });
 
@@ -165,8 +192,18 @@ describe("Page Router", () => {
       mockDb.query.page.findFirst.mockResolvedValueOnce({
         ...mockPage,
         translations: [
-          { pageId: mockPage.id, locale: "en", title: mockPage.title.en, content: mockPage.content.en },
-          { pageId: mockPage.id, locale: "zh", title: mockPage.title.zh, content: mockPage.content.zh },
+          {
+            pageId: mockPage.id,
+            locale: "en",
+            title: mockPage.title.en,
+            content: mockPage.content.en,
+          },
+          {
+            pageId: mockPage.id,
+            locale: "zh",
+            title: mockPage.title.zh,
+            content: mockPage.content.zh,
+          },
         ],
         author: mockAuthor,
       });
@@ -252,7 +289,9 @@ describe("Page Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([updatedViews]);
 
-      const caller = pageRouter.createCaller(createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb));
+      const caller = pageRouter.createCaller(
+        createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
+      );
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 

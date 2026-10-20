@@ -1,35 +1,64 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApplicationError } from "@/lib/errors/application-error";
+import { UserLevel, UserStatus } from "./user";
 
-const mocks = vi.hoisted(() => ({
-  getSession: vi.fn(),
-  getCurrentUser: vi.fn(),
-}));
-
+const mocks = vi.hoisted(() => ({ getSession: vi.fn() }));
 vi.mock("@/auth", () => ({ auth: { api: { getSession: mocks.getSession } } }));
-vi.mock("./application/user-queries", () => ({ getCurrentUser: mocks.getCurrentUser }));
-
 import { getAdminUser } from "./admin-user";
 
-describe("应用层 Admin 用户查询", () => {
+const user = {
+  id: "user-1",
+  email: null,
+  level: UserLevel.ADMIN,
+  name: "Admin",
+  status: UserStatus.ENABLE,
+};
+
+describe("Admin session user query", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("只返回启用用户并把会话用户 ID 交给用户查询用例", async () => {
-    mocks.getSession.mockResolvedValueOnce({ user: { id: "user-1" } });
-    mocks.getCurrentUser.mockResolvedValueOnce({
-      id: "user-1", email: null, level: "ADMIN", name: "Admin", status: "ENABLE",
-    });
-
-    const repository = { current: vi.fn() };
-    await expect(getAdminUser(new Headers(), repository)).resolves.toMatchObject({ id: "user-1" });
-    expect(mocks.getCurrentUser).toHaveBeenCalledWith(repository, "user-1");
+  it("passes the session identity directly to the current-user query", async () => {
+    mocks.getSession.mockResolvedValueOnce({ user: { id: user.id } });
+    const repository = { current: vi.fn().mockResolvedValue(user) };
+    await expect(getAdminUser(new Headers(), repository)).resolves.toEqual(
+      user,
+    );
+    expect(repository.current).toHaveBeenCalledExactlyOnceWith(user.id);
   });
 
-  it("没有会话时不访问数据库", async () => {
+  it("does not query without a session", async () => {
     mocks.getSession.mockResolvedValueOnce(null);
+    const repository = { current: vi.fn() };
+    await expect(getAdminUser(new Headers(), repository)).resolves.toBeNull();
+    expect(repository.current).not.toHaveBeenCalled();
+  });
 
-    await expect(getAdminUser(new Headers(), { current: vi.fn() })).resolves.toBeNull();
-    expect(mocks.getCurrentUser).not.toHaveBeenCalled();
+  it("returns null when the persisted session user no longer exists", async () => {
+    mocks.getSession.mockResolvedValueOnce({ user: { id: user.id } });
+    const repository = {
+      current: vi.fn().mockRejectedValue(new ApplicationError("UNAUTHORIZED")),
+    };
+    await expect(getAdminUser(new Headers(), repository)).resolves.toBeNull();
+  });
+
+  it("returns null for disabled users", async () => {
+    mocks.getSession.mockResolvedValueOnce({ user: { id: user.id } });
+    const repository = {
+      current: vi
+        .fn()
+        .mockResolvedValue({ ...user, status: UserStatus.DISABLE }),
+    };
+    await expect(getAdminUser(new Headers(), repository)).resolves.toBeNull();
+  });
+
+  it.each([
+    new ApplicationError("NOT_FOUND"),
+    new Error("database unavailable"),
+  ])("preserves unrelated query errors: $message", async (failure) => {
+    mocks.getSession.mockResolvedValueOnce({ user: { id: user.id } });
+    const repository = { current: vi.fn().mockRejectedValue(failure) };
+    await expect(getAdminUser(new Headers(), repository)).rejects.toBe(failure);
   });
 });

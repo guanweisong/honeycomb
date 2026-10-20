@@ -1,4 +1,4 @@
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -20,7 +20,7 @@ vi.mock("next-intl", () => ({
   useLocale: () => "zh",
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     post: {
       getCategoryId: {
@@ -30,7 +30,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({
     children,
     href,
@@ -42,7 +42,7 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
 import Menu from "./index";
 import Breadcrumb from "../Breadcrumb";
 import getCurrentPathOfMenu from "../../lib/get-current-path-of-menu";
-import type { MenuViewModel } from "@/features/contracts";
+import type { MenuItem as MenuViewModel } from "@/features/menu/types";
 import type { MenuLocalEntity } from "../../types/menu.local.entity";
 
 const flatMenu: MenuViewModel[] = [
@@ -258,7 +258,17 @@ describe("get-current-path-of-menu", () => {
       getCurrentPathOfMenu({
         familyProp: "path",
         id: "only",
-        menu: [{ id: "only", parent: "0", path: "root", power: 0, type: MenuType.CUSTOM, createdAt: null, updatedAt: null }],
+        menu: [
+          {
+            id: "only",
+            parent: "0",
+            path: "root",
+            power: 0,
+            type: MenuType.CUSTOM,
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
       }),
     ).toEqual(["root"]);
   });

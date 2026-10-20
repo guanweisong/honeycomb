@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageState } from "@/packages/ui/extended/PageState";
+import { PageState } from "@/components/PageState";
 
 export default function NotFound() {
   return (

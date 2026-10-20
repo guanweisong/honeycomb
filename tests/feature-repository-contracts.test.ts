@@ -1,32 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import * as schema from "@/lib/db/schema";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
-import {
-  createMedia,
-  destroyMedia,
-} from "@/features/media/application/media-use-cases";
-import {
-  createTag,
-  destroyTags,
-  updateTag,
-} from "@/features/tag/application/tag-use-cases";
-import {
-  createCategory,
-  destroyCategories,
-} from "@/features/category/application/category-use-cases";
-import {
-  createLink,
-  destroyLinks,
-} from "@/features/link/application/link-use-cases";
-import { saveAllMenus } from "@/features/menu/application/menu-use-cases";
-import {
-  createPage,
-  destroyPages,
-} from "@/features/page/application/page-use-cases";
-import { updateSetting } from "@/features/setting/application/setting-use-cases";
-import { PageTemplate } from "@/packages/domain/content/page-template";
+vi.mock("@/lib/observability/server", () => ({
+  observeDbOperation: (
+    _name: string,
+    _kind: string,
+    operation: () => unknown,
+  ) => operation(),
+}));
 
-describe("feature repository 契约", () => {
+import { createMedia, destroyMedia } from "@/features/media/server";
+import { createTag, destroyTags, updateTag } from "@/features/tag/server";
+import { createCategory, destroyCategories } from "@/features/category/server";
+import { createLink, destroyLinks } from "@/features/link/server";
+import { saveAllMenus } from "@/features/menu/server";
+import { createPage, destroyPages } from "@/features/page/server";
+import { updateSetting } from "@/features/setting/server";
+import { PageTemplate } from "@/features/page/page-template";
+
+describe("feature persistence contracts", () => {
   const invalidator = () => ({
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   });
@@ -56,92 +51,132 @@ describe("feature repository 契约", () => {
     expect(repository.deleteRecords).toHaveBeenCalledWith(["media-1"]);
   });
 
-  it("tag commands preserve repository contracts", async () => {
-    const repository = {
-      create: vi.fn().mockResolvedValue({ id: "tag-1" }),
-      update: vi.fn().mockResolvedValue({ id: "tag-1" }),
-      destroy: vi.fn().mockResolvedValue({ success: true }),
-    };
-    await createTag(
-      repository,
-      { name: { en: "tag", zh: "标签" } },
-      invalidator(),
-    );
-    await updateTag(repository, { id: "tag-1" }, invalidator());
-    await destroyTags(repository, ["tag-1"], invalidator());
-    expect(repository.create).toHaveBeenCalled();
-    expect(repository.update).toHaveBeenCalledWith({ id: "tag-1" });
-    expect(repository.destroy).toHaveBeenCalledWith(["tag-1"]);
+  it("tag commands write and delete through the database", async () => {
+    const db = createMockDb();
+    const row = { id: "tag-1", createdAt: null, updatedAt: null };
+    db.returning.mockResolvedValue([row]);
+    db.limit.mockResolvedValue([row]);
+    db.where
+      .mockReturnValueOnce(db)
+      .mockResolvedValueOnce([
+        { tagId: row.id, locale: "en", name: "tag" },
+        { tagId: row.id, locale: "zh", name: "标签" },
+      ])
+      .mockReturnValue(db);
+    const database = asMockDatabase(db);
+    const name = { en: "tag", zh: "标签" };
+    await expect(
+      createTag(database, { name }, invalidator()),
+    ).resolves.toMatchObject({ ...row, name });
+    await expect(
+      updateTag(database, { id: row.id }, invalidator()),
+    ).resolves.toMatchObject({ ...row, name });
+    await expect(
+      destroyTags(database, [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.insert).toHaveBeenCalledWith(schema.tag);
+    expect(db.insert).toHaveBeenCalledWith(schema.tagTranslation);
+    expect(db.delete).toHaveBeenCalledWith(schema.tag);
   });
 
-  it("category、link、menu、page、setting commands preserve repository contracts", async () => {
-    const category = {
-      create: vi.fn(),
-      find: vi.fn().mockResolvedValue(null),
-      pathExists: vi.fn().mockResolvedValue(false),
-      update: vi.fn(),
-      destroy: vi.fn(),
+  it("category commands preserve localized writes and deletion", async () => {
+    const db = createMockDb();
+    const row = { id: "category-1", status: EnableStatus.ENABLE };
+    db.limit.mockResolvedValue([]);
+    db.returning.mockResolvedValue([row]);
+    const input = {
+      title: { en: "Category", zh: "分类" },
+      description: { en: "Description", zh: "描述" },
+      path: "category",
     };
-    await createCategory(
-      category,
-      {
-        title: { en: "Category", zh: "分类" },
-        description: { en: "Description", zh: "描述" },
-        path: "category",
-      },
-      invalidator(),
-    );
-    await destroyCategories(category, ["category-1"], invalidator());
-    expect(category.create).toHaveBeenCalled();
-    expect(category.destroy).toHaveBeenCalledWith(["category-1"]);
+    await expect(
+      createCategory(asMockDatabase(db), input, invalidator()),
+    ).resolves.toMatchObject({
+      ...row,
+      title: input.title,
+      description: input.description,
+    });
+    await expect(
+      destroyCategories(asMockDatabase(db), [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.insert).toHaveBeenCalledWith(schema.category);
+    expect(db.insert).toHaveBeenCalledWith(schema.categoryTranslation);
+    expect(db.delete).toHaveBeenCalledWith(schema.category);
+  });
 
-    const link = {
-      create: vi.fn(),
-      update: vi.fn(),
-      destroy: vi.fn(),
+  it("link commands write and delete through the database", async () => {
+    const db = createMockDb();
+    const input = {
+      name: "Link",
+      url: "https://example.test",
+      logo: "https://example.test/logo.png",
     };
-    await createLink(
-      link,
-      {
-        name: "Link",
-        url: "https://example.test",
-        logo: "https://example.test/logo.png",
-      },
-      invalidator(),
-    );
-    await destroyLinks(link, ["link-1"], invalidator());
-    expect(link.create).toHaveBeenCalled();
-    expect(link.destroy).toHaveBeenCalledWith(["link-1"]);
+    const row = { id: "link-1", ...input, status: null };
+    db.returning.mockResolvedValue([row]);
+    await expect(
+      createLink(asMockDatabase(db), input, invalidator()),
+    ).resolves.toMatchObject(row);
+    await expect(
+      destroyLinks(asMockDatabase(db), [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.values).toHaveBeenCalledWith(input);
+    expect(db.delete).toHaveBeenCalledWith(schema.link);
+  });
 
-    const menu = { saveAll: vi.fn() };
-    await saveAllMenus(
-      menu,
-      [{ id: "menu", type: MenuType.CATEGORY, power: 0 }],
-      invalidator(),
-    );
-    expect(menu.saveAll).toHaveBeenCalledWith([
-      { id: "menu", type: "CATEGORY", power: 0 },
+  it("menu writes preserve business identifiers inside one transaction", async () => {
+    const db = createMockDb();
+    db.returning.mockResolvedValue([{ id: "persisted-menu" }]);
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        [{ id: "menu", type: MenuType.CATEGORY, power: 0 }],
+        invalidator(),
+      ),
+    ).resolves.toEqual({ count: 1, publicSync: "completed" });
+    expect(db.transaction).toHaveBeenCalledOnce();
+    expect(db.values).toHaveBeenCalledWith([
+      expect.objectContaining({
+        categoryId: "menu",
+        type: "CATEGORY",
+        power: 0,
+      }),
     ]);
+  });
 
-    const page = {
-      create: vi.fn().mockResolvedValue({ id: "page-1" }),
-      destroy: vi.fn(),
-      update: vi.fn(),
-      incrementViews: vi.fn(),
-      author: vi.fn(),
-    };
-    const pageInput = {
+  it("page writes preserve author identity and localized content", async () => {
+    const db = createMockDb();
+    db.returning.mockResolvedValue([{ id: "page-1" }]);
+    const input = {
       title: { en: "About", zh: "关于" },
       content: { en: "Content", zh: "内容" },
       template: PageTemplate.DEFAULT,
     };
-    await createPage(page, pageInput, "user-1", invalidator());
-    await destroyPages(page, ["page-1"], invalidator());
-    expect(page.create).toHaveBeenCalledWith(pageInput, "user-1");
-    expect(page.destroy).toHaveBeenCalledWith(["page-1"]);
+    await expect(
+      createPage(asMockDatabase(db), input, "user-1", invalidator()),
+    ).resolves.toMatchObject({ id: "page-1" });
+    await expect(
+      destroyPages(asMockDatabase(db), ["page-1"], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorId: "user-1",
+        template: PageTemplate.DEFAULT,
+      }),
+    );
+    expect(db.insert).toHaveBeenCalledWith(schema.pageTranslation);
+    expect(db.delete).toHaveBeenCalledWith(schema.page);
+  });
 
-    const setting = { update: vi.fn() };
-    await updateSetting(setting, { id: "setting-1" }, invalidator());
-    expect(setting.update).toHaveBeenCalled();
+  it("setting writes preserve the saved identity", async () => {
+    const db = createMockDb();
+    db.limit.mockResolvedValue([{ id: "setting-1" }]);
+    db.where
+      .mockReturnValueOnce(db)
+      .mockResolvedValueOnce([])
+      .mockReturnValue(db);
+    await expect(
+      updateSetting(asMockDatabase(db), { id: "setting-1" }, invalidator()),
+    ).resolves.toMatchObject({ id: "setting-1", publicSync: "completed" });
+    expect(db.transaction).toHaveBeenCalledOnce();
   });
 });

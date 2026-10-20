@@ -5,8 +5,8 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
-import Card from "@/packages/ui/blog/Card";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import Card from "@/components/blog/Card";
+import LoadingState from "@/components/LoadingState";
 import type { CommentProps } from "../index";
 import type {
   CommentTreeViewModel as CommentTreeEntity,

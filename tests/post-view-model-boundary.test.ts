@@ -21,7 +21,9 @@ describe("Post View Model 边界", () => {
         migratedPaths.some((fragment) => path.includes(fragment)),
       )
       .filter((path) =>
-        readFileSync(path, "utf8").includes("packages/trpc/api/outputs"),
+        /(?:lib\/trpc\/outputs|app\/_trpc\/router|inferRouterOutputs)/.test(
+          readFileSync(path, "utf8"),
+        ),
       )
       .map((path) => relative(process.cwd(), path));
 

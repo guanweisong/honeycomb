@@ -21,15 +21,18 @@ describe("admin client dependency boundaries", () => {
 
   it("keeps charts and sortable trees route-local", () => {
     const dashboard = readFileSync(
-      "src/app/admin/(root)/(dashboard)/dashboard/page.tsx",
+      "src/features/setting/admin/dashboard/page.tsx",
       "utf8",
     );
-    const menu = readFileSync("src/features/menu/admin/page.tsx", "utf8");
+    const menu = readFileSync(
+      "src/app/admin/(root)/(dashboard)/menu/page.tsx",
+      "utf8",
+    );
 
     expect(dashboard).toContain("DashboardPageClient");
     expect(menu).toContain("MenuPageShell");
-    expect(readFileSync("src/app/admin/AdminProviders.tsx", "utf8")).not.toMatch(
-      /DashboardPageClient|MenuPageShell/,
-    );
+    expect(
+      readFileSync("src/app/admin/AdminProviders.tsx", "utf8"),
+    ).not.toMatch(/DashboardPageClient|MenuPageShell/);
   });
 });

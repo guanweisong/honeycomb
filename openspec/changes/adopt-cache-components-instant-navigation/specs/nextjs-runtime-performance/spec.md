@@ -7,7 +7,7 @@
 #### Scenario: 文章详情同时生成正文和 Metadata
 
 - **WHEN** Next.js 为同一文章参数生成 Metadata 和页面正文
-- **THEN** 文章详情读取复用相同的 tagged cache entry，且同次渲染不重复访问 Repository
+- **THEN** 文章详情读取复用相同的 tagged cache entry，且同次渲染不重复执行底层业务 server 查询
 
 #### Scenario: 布局和页面同时读取设置及菜单
 

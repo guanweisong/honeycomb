@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { UserStatus } from "@/packages/domain/identity/user";
-import { StatusBadgeTone } from "@/packages/ui/extended/StatusBadge";
+import { UserStatus } from "@/features/user/user";
+import { StatusBadgeTone } from "@/components/StatusBadge";
 
-import {
-  getUserStatusPresentation,
-  userTableColumns,
-} from "./user-columns";
+import { getUserStatusPresentation, userTableColumns } from "./user-columns";
 
 describe("user columns", () => {
   it("keeps the visible column order, labels, and sortable timestamps", () => {
@@ -40,5 +37,4 @@ describe("user columns", () => {
       tone: StatusBadgeTone.GRAY,
     });
   });
-
 });

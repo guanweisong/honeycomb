@@ -1,8 +1,8 @@
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import React, { act, type CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import type { MenuEntityTree } from "../../transforms/menu-transforms";
+import type { MenuEntityTree } from "../../menu-transforms";
 
 let canUpdateMenu = false;
 const queryMocks = vi.hoisted(
@@ -17,11 +17,11 @@ const queryMocks = vi.hoisted(
   }),
 );
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => canUpdateMenu,
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     useQueries: () => [],
     page: {

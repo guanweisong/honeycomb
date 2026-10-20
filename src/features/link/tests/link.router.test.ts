@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { linkRouter } from "@/features/link/link.router";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { linkRouter } from "@/features/link/router";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -10,17 +10,17 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
 }));
 
-vi.mock("@/packages/infrastructure/db/query/tools", () => ({
+vi.mock("@/lib/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => ({})),
   buildDrizzleOrderBy: vi.fn(() => ({})),
 }));

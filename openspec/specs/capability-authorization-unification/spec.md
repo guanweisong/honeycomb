@@ -20,7 +20,7 @@
 
 ### Requirement: 客户端权限状态不能替代服务端授权
 
-客户端组件 MAY 展示权限相关 UI，但服务端 MUST 在执行 use case 前完成最终授权。
+客户端组件 MAY 展示权限相关 UI，但服务端 MUST 在执行业务 server 操作前完成最终授权。
 
 #### Scenario: 恶意绕过客户端按钮
 

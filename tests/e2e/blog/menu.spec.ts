@@ -1,8 +1,10 @@
-import { test, expect } from '@playwright/test';
-import { openBlogHome } from './helpers';
+import { test, expect } from "@playwright/test";
+import { openBlogHome } from "./helpers";
 
-test.describe('blog menu', () => {
-  test('@regression category navigation and active state should work', async ({ page }) => {
+test.describe("blog menu", () => {
+  test("@regression category navigation and active state should work", async ({
+    page,
+  }) => {
     await openBlogHome(page);
 
     const categoryMenuLink = page
@@ -16,6 +18,6 @@ test.describe('blog menu', () => {
 
     const activeMenu = page.locator('header a[aria-current="page"]').first();
     await expect(activeMenu).toBeVisible();
-    await expect(activeMenu).toHaveAttribute('href', /\/en\/list\/category/);
+    await expect(activeMenu).toHaveAttribute("href", /\/en\/list\/category/);
   });
 });

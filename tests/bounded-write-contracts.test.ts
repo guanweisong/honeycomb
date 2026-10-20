@@ -1,21 +1,19 @@
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { describe, expect, it } from "vitest";
-import { PaginationQuerySchema } from "@/packages/trpc/api/schemas/pagination.query.schema";
-import { queryString } from "@/packages/trpc/api/schemas/query.string.schema";
-import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { CategoryUpdateSchema } from "@/features/category/application/write-schema";
-import { TagUpdateSchema } from "@/features/tag/application/write-schema";
-import {
-  PostUpdateSchema,
-  PostTagUpdateSchema,
-} from "@/features/post/application/write-schema";
-import { PageUpdateSchema } from "@/features/page/application/write-schema";
-import { LinkUpdateSchema } from "@/features/link/application/write-schema";
-import { UserUpdateSchema } from "@/features/user/application/write-schema";
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/application/write-schema";
-import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/application/write-schema";
-import { saveAllMenus } from "@/features/menu/application/menu-use-cases";
-import { PostListQuerySchema } from "@/features/post/schemas/post.list.query.schema";
-import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.query.schema";
+import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
+import { queryString } from "@/lib/validation/query.string.schema";
+import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
+import { CategoryUpdateSchema } from "@/features/category/schema";
+import { TagUpdateSchema } from "@/features/tag/schema";
+import { PostUpdateSchema, PostTagUpdateSchema } from "@/features/post/schema";
+import { PageUpdateSchema } from "@/features/page/schema";
+import { LinkUpdateSchema } from "@/features/link/schema";
+import { UserUpdateSchema } from "@/features/user/schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
+import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/schema";
+import { saveAllMenus } from "@/features/menu/server";
+import { PostListQuerySchema } from "@/features/post/schema";
+import { TagListQuerySchema } from "@/features/tag/schema";
 
 describe("bounded write contracts", () => {
   it("bounds page sizes, search text and destructive batches", () => {
@@ -56,15 +54,7 @@ describe("bounded write contracts", () => {
       invalidate: async () => ({ state: "completed" as const }),
     };
     await expect(
-      saveAllMenus(
-        {
-          saveAll: async () => {
-            throw new Error("must not write");
-          },
-        },
-        [],
-        invalidator,
-      ),
+      saveAllMenus(asMockDatabase(createMockDb()), [], invalidator),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
   it("bounds tag replacement before normalization while permitting explicit clearing", () => {

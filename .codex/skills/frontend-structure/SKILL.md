@@ -1,75 +1,38 @@
 ---
 name: frontend-structure
-description: 当在 Honeycomb Next.js 工程中修改或审查路由、页面、组件、交互、样式、依赖、包边界或前端架构时使用。
+description: 当在 Honeycomb Next.js 工程中修改或审查路由、页面、组件、交互、样式、依赖或 feature 架构时使用。
 ---
 
 # 前端工程结构规范
 
-目标：用最短可读路径完成需求，同时保持低复杂度、高可维护性、少样板、少重复定义，并用自动化验证质量。
+目标：用最短可读路径完成需求，保留真实安全与运行时边界，不为目录对称引入样板。
 
-## 先记住这 11 条
+## 核心规则
 
-1. 查询路径：Client 用 `UI → tRPC Query → Server Query/Router → Repository`；Server Component 的简单查询可直接调用服务端 Query/Repository。客户端调用方式和服务端实现路径属于同一次查询，不额外增加业务层；Repository 不得把 ORM/数据库记录直接暴露给 UI。
-2. 业务操作路径：`UI → Router → Use Case → Repository`。
-3. Domain 是 Use Case 内部的可选能力，不是第三条强制路径；只有存在稳定、可复用的业务不变量时才引入。
-4. 任何改变持久化状态、触发外部副作用或需要多个步骤协调的行为，都属于业务操作，必须经过 Use Case；Router 出现多步判断、多个数据源调用或状态顺序时必须提取。
-5. Client UI 不访问数据库、Repository 或服务端实现；Server Component 可直接调用服务端 Query/Repository；Router 只做输入校验、传输适配和入口鉴权；Domain 不依赖 Next.js、tRPC、数据库等基础设施。
-6. 同一业务概念和规则只保留一个权威来源；不同边界允许有转换模型，但转换必须显式，不复制规则。
-7. `features/<feature>/application` 只承载单功能用例及该功能拥有的稳定业务契约；跨功能编排及有真实跨功能消费者、无 UI/ORM 依赖的稳定应用契约可放 `src/packages/application`，不要互相复制 service。只有跨两个及以上独立 Feature 且调用关系稳定时，才能进入该共享层。
-8. Feature 不得依赖其他 Feature 的内部文件；跨功能只能通过公开契约或 Application 边界调用。
-9. 共享代码必须有真实的跨模块复用；包装层必须有独立职责，否则就地实现。
-10. 新功能、行为变化或架构调整先走 OpenSpec；小型 bug、文案、局部样式和机械修改可直接处理。
-11. 完成前至少运行类型检查、Lint、相关测试，并检查 diff；架构边界违规必须阻断 CI。详细门禁见 [quality.md](references/quality.md)。
+1. `app` 放路由、布局、HTTP 与框架组合；`features` 放所属业务；`components` 放通用 UI/编辑器；`lib` 放共享技术能力。
+2. 默认路径为 `UI → feature router → feature server 函数 → db`。Server Component 可直接调用服务端读取函数，不强制绕 tRPC。
+3. feature 按需提供 `router.ts`、`schema.ts`、`types.ts`、`rules.ts`、`server.ts` 或 `server/`、`admin/`、`public/`。不要创建人工 `application/domain/infrastructure` 层或中央 contracts。
+4. server 函数直接使用 Drizzle，负责业务校验、授权相关不变量、事务、并发保护和副作用顺序；不强制 Repository 接口、factory、Use Case 或 handler 跳转。
+5. Router 处理输入、会话、capability、限流和协议错误。页面与 router 不复制业务状态转换；可缓存渲染不得执行写操作。
+6. 纯 schema、类型、状态目录和 rules 不依赖 UI、数据库、服务端认证或框架实现；server 实现可以依赖数据库。客户端和 Edge 的真实运行时限制不变。
+7. 根 tRPC 组合与服务端 caller 位于 `app/_trpc`；`lib/trpc` 只承载公共核心、上下文、客户端及传输工具。根 `AppRouter` 的 type-only 引用允许，运行时反向依赖不允许。
+8. 跨 feature 可通过具体具名入口复用所属业务的纯契约、UI 或 server 操作，不强制 public barrel；禁止 router 耦合、反向 app 依赖及纯模块/浏览器的运行时泄漏。app 可组装业务入口。
+9. `lib/db`、`lib/auth` 可引用 feature 拥有的纯 catalog/schema/type，但不得加载业务操作。通用组件通过 props/回调注入业务能力。
+10. 模型、schema、权限、状态与规则只保留一个权威来源；不为分层复制同一字段清单。只有不同边界的真实转换才保留 mapper。
+11. 架构调整先更新 OpenSpec；完成前运行类型、Lint、相关测试和 diff 检查，大范围改动保留全量覆盖率与构建/E2E 门禁。
 
-## 选择主路径
+## 必须保留的行为
 
-| 场景 | 默认结构 |
-| --- | --- |
-| Client 查询、列表、详情、搜索 | UI → tRPC Query → Server Query/Router → Repository |
-| 创建、更新、删除或其他业务操作 | UI → Router → Use Case → Repository |
+入口 capability 与 GUEST 数据范围、公开 DTO 实际裁剪、发布条件、账号保护、分类 SQL 防环、事务和条件写入、缓存 `publicSync` 降级、评论通知容错、媒体删除不确定结果、草稿恢复、Sentry 隐私/public DSN 回退不得因重构改变。UI 权限控制不是服务端授权。
 
-当业务操作包含稳定、可复用的不变量时，Use Case 内部可以调用 Domain：
-
-```text
-UI → Router → Use Case
-                  ├─ Domain
-                  └─ Repository
-```
-
-Domain 不依赖 Repository；Use Case 负责协调 Domain 和 Repository。Server Component 的简单查询可以直接调用服务端 Query/Repository，但必须返回稳定的读取模型或经过 Query 映射的结果；业务操作必须调用 Use Case，不得直接调用写入 Repository。Client UI 通过 tRPC/HTTP Router，不为了形式统一而额外绕 tRPC。Router 是传输边界，不是所有读取都必须增加业务层。
-
-Query 只负责读取适配、查询组合和结果映射，不承载写入、跨步骤业务流程或外部副作用。
-
-## 单一事实源
-
-生成或修改 TypeScript 类型、schema、ViewModel、共享常量及转换函数时，**REQUIRED SUB-SKILL:** Use type-safety-governance，执行其「生成前：唯一事实源」。此处不维护第二套规则。
-
-- 同一业务概念和规则只保留一个权威来源；数据库记录、领域实体、API 输出和表单输入可以是不同边界的模型，但转换必须显式。
-- 权限必须在服务端业务入口校验：Router 负责外部请求的身份/能力入口校验，Use Case 负责不可绕过的业务授权；内部可信调用不重复校验。Domain 只判断业务不变量，不感知登录实现。
-- 不保留“旧 service + 新 use case”“旧 model + 新 model”两套并行入口；迁移完成后删除重复层。
-
-## 最小目录约定
-
-按功能组织：`src/features/<feature>/{components,queries,mutations,application,domain,infrastructure}`；公共 UI 放 `src/components`，跨功能应用编排放 `src/packages/application`，基础设施放对应 package。简单读取不强行创建 Use Case/Domain 目录。
-
-上述目录只是按需模板，不要求一次创建全部目录。
-
-完整文件模板、命名和迁移规则见 [directory-templates.md](references/directory-templates.md)。
+定义类型、schema、ViewModel、常量和转换时，**REQUIRED SUB-SKILL:** Use type-safety-governance，先执行唯一事实源检查。业务操作设计与精简时阅读 feature-architecture。
 
 ## 按需读取
 
-- 架构边界、例外和反模式：阅读 [architecture.md](references/architecture.md)。
-- 目录、文件模板和命名：阅读 [directory-templates.md](references/directory-templates.md)。
-- Next.js 路由、Server/Client、UI、样式和依赖：阅读 [nextjs.md](references/nextjs.md)。
-- 测试、文件规模、验证和评审：阅读 [quality.md](references/quality.md)。
-- OpenSpec 变更流程：阅读 [workflow.md](references/workflow.md)。
+- [架构边界](references/architecture.md)
+- [目录与文件模板](references/directory-templates.md)
+- [Next.js 约束](references/nextjs.md)
+- [质量门禁](references/quality.md)
+- [OpenSpec 流程](references/workflow.md)
 
-## 执行顺序
-
-1. 明确功能边界和调用路径。
-2. 搜索现有定义、组件、Repository 和测试，优先复用。
-3. 只新增当前路径所需的层和文件。
-4. 同步测试与文档，清理重复入口和无用代码。
-5. 按质量门禁验证，并在交付中说明路径选择和验证结果。
-
-架构边界应优先通过静态检查、import boundary 测试和 CI 门禁执行；文档只补充工具无法表达的判断规则。
+先确认业务归属和实际调用链，搜索现有定义与行为测试，再修改真实职责所在的函数。同步全部消费者与文档后删除旧出口，不保留没有职责的兼容层。

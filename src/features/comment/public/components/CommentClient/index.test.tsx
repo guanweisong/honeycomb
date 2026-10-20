@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { MenuType } from "@/packages/domain/navigation/menu";
-import { CommentStatus } from "@/packages/domain/content/comment";
+import { MenuType } from "@/features/menu/menu-types";
+import { CommentStatus } from "@/features/comment/comment-status";
 
 const {
   mockToastError,
@@ -40,12 +40,12 @@ vi.mock("next-intl", () => ({
   useTranslations: () => mockUseTranslations(),
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   useRouter: () => mockUseRouter(),
   usePathname: () => mockUsePathname(),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     comment: {
       create: {

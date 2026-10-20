@@ -1,27 +1,27 @@
 "use client";
 
-import { Button } from "@/packages/ui/components/button";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { pageListTableColumns } from "./constants/page-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import { DataTable } from "@/packages/ui/extended/DataTable";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
+import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
   PageListQueryInput,
   PageListQuerySchema,
-} from "@/features/page/schemas/page.list.query.schema";
-import { trpc } from "@/packages/trpc/client/trpc";
-import { adminListQueryOptions } from "@/packages/ui/admin/query-options";
-import type { PageWithRelations as PageEntity } from "@/features/page/application/repository";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { useCan } from "@/packages/ui/admin/use-current-user";
+} from "@/features/page/schema";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { adminListQueryOptions } from "@/components/admin/query-options";
+import type { PageWithRelations as PageEntity } from "@/features/page/types";
+import { Permission } from "@/lib/auth/permissions";
+import { useCan } from "@/features/user/admin/use-current-user";
 import {
   runAdminMutation,
   submitAdminBatchDelete,
-} from "@/packages/ui/admin/action-state";
+} from "@/components/admin/action-state";
 
 /**
  * 页面列表管理页面。

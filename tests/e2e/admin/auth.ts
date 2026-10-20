@@ -3,9 +3,9 @@ import { expect, type Page } from "@playwright/test";
 /** 建立真实服务端会话，让后台 E2E 能越过 Server Component 鉴权。 */
 export async function signInAsDashboardTestUser(page: Page) {
   await page.clock.install();
-  const response = await page.context().request.post(
-    "/api/auth/sign-in/username",
-    {
+  const response = await page
+    .context()
+    .request.post("/api/auth/sign-in/username", {
       data: {
         username: process.env.E2E_ADMIN_USERNAME ?? "guest",
         password: process.env.E2E_ADMIN_PASSWORD ?? "123456",
@@ -13,8 +13,7 @@ export async function signInAsDashboardTestUser(page: Page) {
       headers: {
         "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX",
       },
-    },
-  );
+    });
 
   await expect(response).toBeOK();
 }

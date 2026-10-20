@@ -11,7 +11,7 @@ import {
   type ActionGuardContract,
   type GuardPolarity,
 } from "@tests/helpers/admin-action-guard-matrix";
-import { Permission } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/lib/auth/permissions";
 
 function getAttribute(
   element: ts.JsxOpeningLikeElement,
@@ -213,7 +213,8 @@ function collectPermissionGuards(
         ts.isIdentifier(permission.expression) &&
         permission.expression.text === "Permission"
       ) {
-        const value = Permission[permission.name.text as keyof typeof Permission];
+        const value =
+          Permission[permission.name.text as keyof typeof Permission];
         guardByPermission.set(value ?? permission.name.text, node.name.text);
       }
     }
@@ -236,17 +237,21 @@ function findUnboundActionIds(
       ? requireDefined(featureMatch[2]).replace(/^components\//, "")
       : requireDefined(featureMatch[2])
     : "";
-  const fileName = featureMatch
-    ? join(
-        process.cwd(),
-        "src/features",
-        requireDefined(featureMatch[1]),
-        requireDefined(featureMatch[1]) === "media" && requireDefined(featureMatch[2]).startsWith("components/Media")
-          ? "shared"
-          : "admin",
-        featureRelativePath,
-      )
-    : join(process.cwd(), "src/app/admin", relativePath);
+  const fileName =
+    relativePath === "(root)/(dashboard)/post/category/page.tsx"
+      ? join(process.cwd(), "src/features/category/admin/page.tsx")
+      : featureMatch
+        ? join(
+            process.cwd(),
+            "src/features",
+            requireDefined(featureMatch[1]),
+            requireDefined(featureMatch[1]) === "media" &&
+              requireDefined(featureMatch[2]).startsWith("components/Media")
+              ? "shared"
+              : "admin",
+            featureRelativePath,
+          )
+        : join(process.cwd(), "src/app/admin", relativePath);
   const sourceFile = ts.createSourceFile(
     fileName,
     transformSource(readFileSync(fileName, "utf8")),
@@ -338,7 +343,8 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects a positive guard used as a disabled condition", () => {
-    const settingPath = "(root)/(dashboard)/setting/components/SettingClient/index.tsx";
+    const settingPath =
+      "(root)/(dashboard)/setting/components/SettingClient/index.tsx";
     const [settingAction] = getActions(settingPath);
     const disabledAction: ActionGuardContract = {
       ...requireDefined(settingAction),
@@ -374,7 +380,8 @@ describe("admin action capability guards", () => {
   });
 
   it("rejects an unguarded batch delete while row delete stays guarded", () => {
-    const linkPath = "(root)/(dashboard)/link/components/LinkPageShell/index.tsx";
+    const linkPath =
+      "(root)/(dashboard)/link/components/LinkPageShell/index.tsx";
 
     expect(
       findUnboundActionIds(linkPath, getActions(linkPath), (source) =>
@@ -398,6 +405,15 @@ describe("admin action capability guards", () => {
         ),
       ),
     ).toContain("post-tags.add");
+  });
+
+  it("keeps relocated category actions bound to their own capability guards", () => {
+    const categoryPath = "(root)/(dashboard)/post/category/page.tsx";
+    expect(
+      findUnboundActionIds(categoryPath, getActions(categoryPath), (source) =>
+        source.replaceAll("{canCreateCategory && (", "{true && ("),
+      ),
+    ).toContain("category.create");
   });
 
   it.each(actionGuardMatrix)(

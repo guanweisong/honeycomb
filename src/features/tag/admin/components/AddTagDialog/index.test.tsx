@@ -17,7 +17,7 @@ vi.mock("sonner", () => ({
   toast: { success: mocks.success, warning: mocks.warning, error: mocks.error },
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     tag: {
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
@@ -26,11 +26,11 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/extended/Dialog", () => ({
+vi.mock("@/components/Dialog", () => ({
   Dialog: (props: { children: React.ReactNode }) => <div>{props.children}</div>,
 }));
 
-vi.mock("@/packages/ui/extended/DynamicForm", () => ({
+vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: {
     onSubmit: (values: Record<string, unknown>) => Promise<void>;
   }) => {
@@ -39,7 +39,7 @@ vi.mock("@/packages/ui/extended/DynamicForm", () => ({
   },
 }));
 
-import { ModalType } from "@/packages/ui/admin/modal-type";
+import { ModalType } from "@/components/admin/modal-type";
 import AddTagDialog, { type AddTagDialogProps } from ".";
 
 describe("AddTagDialog", () => {

@@ -51,11 +51,15 @@ export function findMigrationGovernanceErrors({
       errors.push(`Journal entry ${tag} has no matching snapshot`);
     }
     if (idx !== position) {
-      errors.push(`Journal index ${idx} is not contiguous; expected ${position}`);
+      errors.push(
+        `Journal index ${idx} is not contiguous; expected ${position}`,
+      );
     }
     const prefix = tag.match(/^(\d{4})_/)?.[1];
     if (prefix !== String(idx).padStart(4, "0")) {
-      errors.push(`Journal entry ${tag} index prefix does not match idx ${idx}`);
+      errors.push(
+        `Journal entry ${tag} index prefix does not match idx ${idx}`,
+      );
     }
   }
   for (const name of migrationNames) {
@@ -84,9 +88,30 @@ export function findMigrationGovernanceErrors({
 }
 
 type SnapshotTable = {
-  columns: Record<string, { name: string; type: string; notNull: boolean; primaryKey: boolean; default?: unknown }>;
-  indexes: Record<string, { name: string; columns: string[]; isUnique: boolean }>;
-  foreignKeys: Record<string, { tableTo: string; columnsFrom: string[]; columnsTo: string[]; onDelete?: string; onUpdate?: string }>;
+  columns: Record<
+    string,
+    {
+      name: string;
+      type: string;
+      notNull: boolean;
+      primaryKey: boolean;
+      default?: unknown;
+    }
+  >;
+  indexes: Record<
+    string,
+    { name: string; columns: string[]; isUnique: boolean }
+  >;
+  foreignKeys: Record<
+    string,
+    {
+      tableTo: string;
+      columnsFrom: string[];
+      columnsTo: string[];
+      onDelete?: string;
+      onUpdate?: string;
+    }
+  >;
   checkConstraints: Record<string, { name: string; value: string }>;
   compositePrimaryKeys: Record<string, { columns: string[] }>;
 };
@@ -135,10 +160,13 @@ export async function terminateChildWithEscalation(
       if (child.exitCode === null && child.signalCode === null) {
         child.kill("SIGKILL");
       }
-      deadlineTimer = setTimeout(() => {
-        cleanupListeners();
-        reject(new Error("Migration child did not exit after SIGKILL"));
-      }, Math.max(graceMs, 100));
+      deadlineTimer = setTimeout(
+        () => {
+          cleanupListeners();
+          reject(new Error("Migration child did not exit after SIGKILL"));
+        },
+        Math.max(graceMs, 100),
+      );
     }, graceMs);
     child.kill(signal);
   });
@@ -158,12 +186,18 @@ export async function waitForMigrationChild(
       cleanupListeners();
       reject(error);
     };
-    const handleClose = (code: number | null, signal: NodeJS.Signals | null) => {
+    const handleClose = (
+      code: number | null,
+      signal: NodeJS.Signals | null,
+    ) => {
       cleanupListeners();
       const interrupted = receivedSignal();
       if (interrupted) reject(new MigrationCheckSignal(interrupted));
       else if (code === 0) resolve();
-      else reject(new Error(`Drizzle schema generation failed (${signal ?? code})`));
+      else
+        reject(
+          new Error(`Drizzle schema generation failed (${signal ?? code})`),
+        );
     };
 
     child.once("error", handleError);
@@ -196,14 +230,19 @@ export function findSnapshotTableErrors(
 ): string[] {
   const errors: string[] = [];
   const expectedIndexes = Object.values(expected.indexes)
-    .map(({ name, columns, isUnique }) =>
-      `${name}:${Number(isUnique)}:${columns.join(",")}`,
+    .map(
+      ({ name, columns, isUnique }) =>
+        `${name}:${Number(isUnique)}:${columns.join(",")}`,
     )
     .sort();
   const actualIndexes = table.indexes
     .filter(({ origin }) => origin === "c")
-    .map(({ name, unique, columns }) =>
-      `${name}:${unique}:${columns.filter(({ key }) => key === 1).map(({ name: column }) => column ?? "<expression>").join(",")}`,
+    .map(
+      ({ name, unique, columns }) =>
+        `${name}:${unique}:${columns
+          .filter(({ key }) => key === 1)
+          .map(({ name: column }) => column ?? "<expression>")
+          .join(",")}`,
     )
     .sort();
   if (JSON.stringify(actualIndexes) !== JSON.stringify(expectedIndexes)) {
@@ -220,7 +259,9 @@ export function findSnapshotTableErrors(
     }
   }
   const expectedChecks = Object.keys(expected.checkConstraints).sort();
-  const actualChecks = [...table.sql.matchAll(/CONSTRAINT\s+[`"]([^`"]+)[`"]\s+CHECK/giu)]
+  const actualChecks = [
+    ...table.sql.matchAll(/CONSTRAINT\s+[`"]([^`"]+)[`"]\s+CHECK/giu),
+  ]
     .map((match) => match[1])
     .sort();
   if (JSON.stringify(actualChecks) !== JSON.stringify(expectedChecks)) {
@@ -234,8 +275,12 @@ export function findSchemaStructureErrors(
   replay: SchemaInventory,
   current: SchemaInventory,
 ): string[] {
-  const replayByName = new Map(replay.tables.map((table) => [table.name, table]));
-  const currentByName = new Map(current.tables.map((table) => [table.name, table]));
+  const replayByName = new Map(
+    replay.tables.map((table) => [table.name, table]),
+  );
+  const currentByName = new Map(
+    current.tables.map((table) => [table.name, table]),
+  );
   const names = new Set([...replayByName.keys(), ...currentByName.keys()]);
 
   return [...names].sort().flatMap((name) => {
@@ -246,7 +291,9 @@ export function findSchemaStructureErrors(
       JSON.stringify(normalizedTable(replayTable)) ===
         JSON.stringify(normalizedTable(currentTable))
       ? []
-      : [`Migration replay differs from current Drizzle schema for table ${name}`];
+      : [
+          `Migration replay differs from current Drizzle schema for table ${name}`,
+        ];
   });
 }
 
@@ -255,11 +302,16 @@ async function replayStructureErrors(
   snapshotPath: string,
 ): Promise<string[]> {
   const directory = mkdtempSync(
-    join(tmpdir(), `honeycomb-migration-check-${process.getuid?.() ?? "user"}-`),
+    join(
+      tmpdir(),
+      `honeycomb-migration-check-${process.getuid?.() ?? "user"}-`,
+    ),
   );
   const sentinel = join(directory, ".honeycomb-test-db");
   try {
-    writeFileSync(sentinel, "honeycomb-test-db:migration-check\n", { mode: 0o600 });
+    writeFileSync(sentinel, "honeycomb-test-db:migration-check\n", {
+      mode: 0o600,
+    });
   } catch (error) {
     rmSync(directory, { recursive: true });
     throw error;
@@ -284,13 +336,15 @@ async function replayStructureErrors(
     if (
       !currentStat ||
       currentStat.isSymbolicLink() ||
-      (typeof process.getuid === "function" && currentStat.uid !== process.getuid()) ||
+      (typeof process.getuid === "function" &&
+        currentStat.uid !== process.getuid()) ||
       readFileSync(sentinel, "utf8") !== "honeycomb-test-db:migration-check\n"
     ) {
       throw new Error(`Unsafe migration check cleanup target: ${directory}`);
     }
     rmSync(directory, { recursive: true });
-    if (existsSync(directory)) throw new Error(`Migration check cleanup failed: ${directory}`);
+    if (existsSync(directory))
+      throw new Error(`Migration check cleanup failed: ${directory}`);
   };
   const signalHandlers = new Map<HandledSignal, () => void>(
     handledSignals.map((signal) => [
@@ -300,13 +354,15 @@ async function replayStructureErrors(
         receivedSignal = signal;
         if (activeChild && activeChild.exitCode === null) {
           const childPid = activeChild.pid;
-          void terminateChildWithEscalation(activeChild, signal).catch((error) => {
-            closeClients();
-            process.stderr.write(
-              `Migration child ${childPid ?? "unknown"} did not exit; preserving ${directory}: ${error instanceof Error ? error.message : String(error)}\n`,
-            );
-            process.exit(signalExitCodes[signal]);
-          });
+          void terminateChildWithEscalation(activeChild, signal).catch(
+            (error) => {
+              closeClients();
+              process.stderr.write(
+                `Migration child ${childPid ?? "unknown"} did not exit; preserving ${directory}: ${error instanceof Error ? error.message : String(error)}\n`,
+              );
+              process.exit(signalExitCodes[signal]);
+            },
+          );
           return;
         }
         cleanup();
@@ -333,11 +389,15 @@ async function replayStructureErrors(
       tables: Record<string, SnapshotTable>;
     };
     const errors: string[] = [];
-    const actualByName = new Map(actual.tables.map((table) => [table.name, table]));
+    const actualByName = new Map(
+      actual.tables.map((table) => [table.name, table]),
+    );
     const expectedNames = Object.keys(snapshot.tables).sort();
     const actualNames = actual.tables.map(({ name }) => name).sort();
     if (JSON.stringify(actualNames) !== JSON.stringify(expectedNames)) {
-      errors.push("Migration replay table inventory differs from latest snapshot");
+      errors.push(
+        "Migration replay table inventory differs from latest snapshot",
+      );
     }
     for (const [name, expected] of Object.entries(snapshot.tables)) {
       const table = actualByName.get(name);
@@ -359,13 +419,20 @@ async function replayStructureErrors(
         errors.push(`Migration replay columns differ for ${name}`);
       }
       errors.push(...findSnapshotTableErrors(table, expected));
-      const expectedForeignKeys = Object.values(expected.foreignKeys).map((key) =>
-        `${key.columnsFrom.join(",")}->${key.tableTo}.${key.columnsTo.join(",")}:${key.onUpdate ?? "no action"}:${key.onDelete ?? "no action"}`.toLowerCase(),
-      ).sort();
-      const actualForeignKeys = table.foreignKeys.map((key) =>
-        `${key.from}->${key.table}.${key.to}:${key.onUpdate}:${key.onDelete}`.toLowerCase(),
-      ).sort();
-      if (JSON.stringify(actualForeignKeys) !== JSON.stringify(expectedForeignKeys)) {
+      const expectedForeignKeys = Object.values(expected.foreignKeys)
+        .map((key) =>
+          `${key.columnsFrom.join(",")}->${key.tableTo}.${key.columnsTo.join(",")}:${key.onUpdate ?? "no action"}:${key.onDelete ?? "no action"}`.toLowerCase(),
+        )
+        .sort();
+      const actualForeignKeys = table.foreignKeys
+        .map((key) =>
+          `${key.from}->${key.table}.${key.to}:${key.onUpdate}:${key.onDelete}`.toLowerCase(),
+        )
+        .sort();
+      if (
+        JSON.stringify(actualForeignKeys) !==
+        JSON.stringify(expectedForeignKeys)
+      ) {
         errors.push(`Migration replay foreign keys differ for ${name}`);
       }
     }
@@ -384,7 +451,7 @@ async function replayStructureErrors(
           "--dialect",
           "sqlite",
           "--schema",
-          "./src/packages/infrastructure/db/schema/index.ts",
+          "./src/lib/db/schema/index.ts",
           "--url",
           currentSchemaUrl,
           "--force",
@@ -457,7 +524,10 @@ async function main(): Promise<void> {
 
   const latestSnapshot = [...snapshotFiles].sort().at(-1);
   if (!latestSnapshot) throw new Error("No migration snapshot exists");
-  const replayErrors = await replayStructureErrors(migrationFiles, latestSnapshot);
+  const replayErrors = await replayStructureErrors(
+    migrationFiles,
+    latestSnapshot,
+  );
   if (replayErrors.length > 0) {
     throw new Error(`Migration replay failed:\n- ${replayErrors.join("\n- ")}`);
   }

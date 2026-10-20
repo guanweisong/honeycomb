@@ -3,14 +3,15 @@ import {
   I18nSchema as DomainI18n,
   PartialLocalizedTextSchema,
   NullableLocalizedInputSchema,
-} from "@/packages/domain/localization/i18n";
-import { I18nSchema as InputI18n } from "@/packages/application/validation";
-import { MediaRecordSchema, TagRecordSchema } from "@/features/contracts";
-import { PostWithRelationsSchema } from "@/features/post/application/post-read-model";
-import { decodeCachedPostList } from "@/features/post/infrastructure/post-cache-dto";
+} from "@/lib/i18n/i18n";
+import { I18nSchema as InputI18n } from "@/lib/validation/validation";
+import { MediaRecordSchema } from "@/features/media/types";
+import { TagRecordSchema } from "@/features/tag/types";
+import { PostWithRelationsSchema } from "@/features/post/post-read-model";
+import { PostListResultSchema } from "@/features/post/post-read-model";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { DeleteBatchSchema } from "@/packages/trpc/api/schemas/delete.batch.schema";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
+import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 const OptionalI18nSchema = NullableLocalizedInputSchema.optional();
 
@@ -109,7 +110,7 @@ describe("共享契约的真实消费者", () => {
       galleryStyles: [tag],
     });
     const original = { list: [post], total: 1 };
-    expect(decodeCachedPostList(JSON.parse(JSON.stringify(original)))).toEqual(
+    expect(PostListResultSchema.parse(JSON.parse(JSON.stringify(original)))).toEqual(
       original,
     );
   });

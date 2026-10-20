@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { TagType } from "@/packages/domain/content/tag";
+import { TagType } from "@/features/tag/tag-kind";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -33,11 +33,11 @@ let updateState: {
   mutateAsync: (input: unknown) => Promise<unknown>;
 };
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     post: {
       updateTags: { useMutation: () => updateState },
@@ -54,18 +54,18 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/packages/infrastructure/observability/client", () => ({
+vi.mock("@/lib/observability/client", () => ({
   clientLogger: {
     error: (...args: unknown[]) => loggedErrors.push(args),
   },
 }));
 
-vi.mock("@/packages/ui/components/badge", () => ({
+vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children }: { children: React.ReactNode }) =>
     React.createElement("span", { "data-testid": "tag-badge" }, children),
 }));
 
-vi.mock("@/packages/ui/components/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     size: _size,
@@ -81,7 +81,7 @@ vi.mock("@/packages/ui/components/button", () => ({
   },
 }));
 
-vi.mock("@/packages/ui/components/popover", () => ({
+vi.mock("@/components/ui/popover", () => ({
   Popover: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", null, children),
   PopoverContent: ({ children }: { children: React.ReactNode }) =>
@@ -89,7 +89,7 @@ vi.mock("@/packages/ui/components/popover", () => ({
   PopoverTrigger: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("@/packages/ui/components/command", () => ({
+vi.mock("@/components/ui/command", () => ({
   Command: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", null, children),
   CommandEmpty: ({ children }: { children: React.ReactNode }) =>

@@ -1,8 +1,8 @@
+import type { CommentNotificationRepository } from "../server/comment-notification-repository";
 import "server-only";
 import { sendCommentEmail } from "./comment-email";
-import { LogEvent } from "@/packages/infrastructure/observability/core/names";
-import { getLogger } from "@/packages/infrastructure/observability/server";
-import type { CommentNotificationRepository } from "../application/repository";
+import { LogEvent } from "@/lib/observability/core/names";
+import { getLogger } from "@/lib/observability/server";
 
 function errorType(error: unknown) {
   return error instanceof Error ? error.name : "UnknownError";

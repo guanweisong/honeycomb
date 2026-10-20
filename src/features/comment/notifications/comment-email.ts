@@ -2,11 +2,11 @@ import "server-only";
 
 import { Resend } from "resend";
 import { getResendEnv } from "@/env/server";
-import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { LogEvent } from "@/lib/observability/core/names";
 import {
   getLogger,
   observeExternalServiceOperation,
-} from "@/packages/infrastructure/observability/server";
+} from "@/lib/observability/server";
 import AdminCommentEmailMessage from "./templates/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "./templates/ReplyCommentEmailMessage";
 import type {

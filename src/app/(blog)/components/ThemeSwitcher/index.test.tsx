@@ -67,7 +67,7 @@ vi.mock("next/link", () => ({
     ),
 }));
 
-vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
+vi.mock("@/lib/i18n/blog-navigation", () => ({
   Link: ({
     children,
     href,
@@ -90,19 +90,24 @@ vi.mock("@/packages/ui/navigation/blog-navigation", () => ({
       },
       children,
     ),
-  getPathname: ({ href, locale: targetLocale }: { href: string; locale: string }) =>
-    `/${targetLocale}${href}`,
+  getPathname: ({
+    href,
+    locale: targetLocale,
+  }: {
+    href: string;
+    locale: string;
+  }) => `/${targetLocale}${href}`,
   usePathname: () => pathname,
 }));
 
-vi.mock("@/packages/ui/hooks/use-scroll-position", () => ({
+vi.mock("@/lib/hooks/use-scroll-position", () => ({
   useScrollPosition: () => ({ left: 0, top: scrollTop ?? 0 }),
 }));
 
 import { ThemeSwitcher } from "./index";
 import LanguageSwitcher from "../LanguageSwitcher";
 import BackToTop from "../BackToTop";
-import Tags from "../Tags";
+import Tags from "../../../../features/post/public/Tags";
 
 describe("blog appearance controls", () => {
   let container: HTMLDivElement;
@@ -180,11 +185,7 @@ describe("blog appearance controls", () => {
       expect(themeChanges).toEqual(["dark"]);
     } finally {
       if (originalAnimate) {
-        Object.defineProperty(
-          SVGElement.prototype,
-          "animate",
-          originalAnimate,
-        );
+        Object.defineProperty(SVGElement.prototype, "animate", originalAnimate);
       } else {
         Reflect.deleteProperty(SVGElement.prototype, "animate");
       }
@@ -263,7 +264,9 @@ describe("blog appearance controls", () => {
       await act(async () => root.render(React.createElement(LanguageSwitcher)));
 
       const link = container.querySelector("a");
-      expect(link?.getAttribute("href")).toBe(`/${targetLocale}/archives/post-1`);
+      expect(link?.getAttribute("href")).toBe(
+        `/${targetLocale}/archives/post-1`,
+      );
       expect(link?.getAttribute("hrefLang")).toBe(targetLocale);
       expect(link?.getAttribute("data-prefetch")).toBe("true");
       expect(link?.getAttribute("aria-label")).toBe(label);

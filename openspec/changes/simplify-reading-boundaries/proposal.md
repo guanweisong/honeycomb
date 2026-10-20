@@ -1,5 +1,7 @@
 ## Why
 
+> 后续架构说明：本变更记录先前阅读路径整理。其 packages、application/domain/infrastructure、中央 contracts 及共享 UI 所有权约定已由 simplify-feature-architecture 取代；既有行为与安全约束继续保留。此处的旧验证结果不是新迁移的验证证据，未完成发布任务也不构成本轮发布授权。
+
 目前部分路径通过空转发和同义类型别名增加了阅读跳转，展示标签位于领域层，当前用户运行时组件位于契约目录。目标是降低理解一次业务操作所需的文件跳转，同时保持既有业务、安全和持久化行为。
 
 ## What Changes

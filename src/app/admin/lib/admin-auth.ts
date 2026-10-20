@@ -6,8 +6,8 @@ import {
   getAdminUser as getApplicationAdminUser,
   type AdminUser,
 } from "@/features/user/admin-user";
-import { createUserRepository } from "@/features/user/infrastructure/user-repository";
-import { getDb } from "@/packages/infrastructure/db/db";
+import { createUserRepository } from "@/features/user/server/user-repository";
+import { getDb } from "@/lib/db/db";
 
 export type { AdminUser } from "@/features/user/admin-user";
 

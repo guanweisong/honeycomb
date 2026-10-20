@@ -1,1 +1,1 @@
-export { default } from "@/features/user/admin/page";
+export { UserPageShell as default } from "@/features/user/admin/components/UserPageShell";

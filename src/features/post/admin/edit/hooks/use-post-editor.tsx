@@ -5,28 +5,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { PhotoPickerItemProps } from "../components/PhotoPickerItem";
-import {
-  PostInsertSchema,
-  PostUpdateSchema,
-} from "@/features/post/application/write-schema";
-import { trpc } from "@/packages/trpc/client/trpc";
-import type { PostDetailResult as PostDetailEntity } from "@/features/post/application/repository";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PostType } from "@/packages/domain/content/post";
+import type { PhotoPickerItemProps } from "../../../../media/components/PhotoPickerItem";
+import { PostInsertSchema, PostUpdateSchema } from "@/features/post/schema";
+import { trpc } from "@/lib/trpc/client/trpc";
+import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
+import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/post-type";
 import { normalizePostForm } from "../utils/normalize-post-form";
-import { clientLogger } from "@/packages/infrastructure/observability/client";
-import { LogEvent } from "@/packages/infrastructure/observability/core/names";
+import { clientLogger } from "@/lib/observability/client";
+import { LogEvent } from "@/lib/observability/core/names";
 import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
-import type { CategoryViewModel as CategoryEntity } from "@/features/category/public";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
 import {
   notifyPublicSyncWarning,
   type AdminDialogState,
-} from "@/packages/ui/admin/action-state";
+} from "@/components/admin/action-state";
 
-import { useLocalDraft } from "@/packages/ui/admin/local-draft";
-import { useCurrentUser } from "@/packages/ui/admin/use-current-user";
-import { can, Permission } from "@/packages/identity/auth/permissions";
+import { useLocalDraft } from "@/components/admin/local-draft";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { can, Permission } from "@/lib/auth/permissions";
 import { parsePostDraft } from "../utils/post-draft";
 
 export type PostSubmitAction = "create" | "update";

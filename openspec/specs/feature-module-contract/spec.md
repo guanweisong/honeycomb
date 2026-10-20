@@ -1,33 +1,38 @@
 ## Purpose
 
-定义 feature 模块的单一职责、依赖方向及跨模块交互边界，使领域、应用、基础设施、传输和展示代码保持清晰分工，并由自动化规则阻止反向依赖。
+明确 feature 拥有的业务契约、纯规则、服务端操作和 UI，以及 app、components、lib 的组合与运行时边界，防止为了分层引入无职责跳转。
 
 ## Requirements
 
 ### Requirement: Feature 模块必须具有单一职责边界
 
-每个业务 feature MUST 明确区分领域规则、应用用例、外部适配、传输适配和展示代码；不需要某层时不得创建空目录或无消费者 barrel。feature 之间以及 App 组合层消费 feature 公共 UI 时 MUST 通过最小公开契约或 Application 边界交互，公开出口不得额外暴露只供 feature 内部使用的 hook 或基础设施实现。
+每个业务 feature MUST 在自己的目录中拥有 router、schema、type、纯规则、server 操作和业务 UI；文件与目录按需建立，不得创建空目录、无消费者 barrel 或人工 application/domain/infrastructure 层。
 
 #### Scenario: 业务模块访问其他模块
 
-- **WHEN** 一个 feature 需要使用另一个 feature 的能力
-- **THEN** 它 MUST 通过对方的公开契约或稳定查询接口访问，且不得导入对方的 admin、infrastructure 或内部 router 文件
+- **WHEN** 一个 feature 需要另一个 feature 的业务概念或公共能力
+- **THEN** 它 MAY 直接复用对方拥有的纯契约、具名 UI 或 server 操作入口，但 MUST NOT 耦合对方 router、反向导入 app，或违反纯模块与浏览器/服务端边界；不要求 public barrel
 
 #### Scenario: 简单 CRUD 模块
 
-- **WHEN** 一个 feature 不包含复杂聚合规则或某个目录出口没有消费者
-- **THEN** 它 MUST 使用轻量用例和 repository 结构，不得为了模板完整性创建空领域层或无职责再导出文件
+- **WHEN** 一个 feature 只需要简单查询或写入
+- **THEN** 它 SHALL 使用直接数据库访问的 server 函数，不要求 Repository 接口、factory、Use Case 或聚合
 
-#### Scenario: App 组合层使用公共评论或文章 UI
+#### Scenario: App 组合层使用业务入口
 
-- **WHEN** 博客路由组合 Comment 或 Post 的公共组件
-- **THEN** 它 MUST 从对应 feature 的 `public` 出口具名导入，不得绕过出口深层导入组件或查询 hook
+- **WHEN** app 路由、布局或根 router 组合 feature
+- **THEN** app SHALL 使用对应 feature 的明确 router/server/admin/public 或其他有意复用的具体入口；不要求新增只转发的 public barrel
 
 ### Requirement: 模块依赖方向必须可自动验证
 
-模块依赖 MUST 从路由和展示层指向传输/应用层，再指向领域和基础设施端口；领域层 MUST NOT 依赖框架、数据库或传输层。
+app MUST 承担框架组合，feature MUST NOT 反向依赖 app；纯 schema/type/catalog/rules MUST NOT 加载数据库、UI、服务端认证或框架实现，server 函数 MAY 直接依赖 Drizzle 和 lib 技术能力。
 
-#### Scenario: 引入反向依赖
+#### Scenario: 纯规则引入运行时依赖
 
-- **WHEN** domain 或 application 代码导入 Drizzle、Next.js 或 tRPC server
-- **THEN** 架构测试 MUST 失败并指出违规文件和允许的替代边界
+- **WHEN** 纯规则或纯契约通过直接或间接导入加载数据库、UI 或框架 server
+- **THEN** 架构测试 MUST 失败并指出违规路径
+
+#### Scenario: 服务端操作直接查询数据库
+
+- **WHEN** feature server 函数直接使用 lib/db 和 Drizzle 执行业务操作
+- **THEN** 架构门禁 SHALL 允许该调用，不要求通过仅转发参数的中间层

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PostInsertSchema } from "@/features/post/application/write-schema";
+import { PostInsertSchema } from "@/features/post/schema";
 
 // Drafts are incomplete input, not persisted records. Strip IDs, status and relations.
 const PostDraftSchema = PostInsertSchema.omit({ status: true })

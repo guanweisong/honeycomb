@@ -19,7 +19,9 @@ describe("persistence invariant preflight", () => {
   beforeEach(async () => {
     directory = mkdtempSync(join(tmpdir(), "honeycomb-audit-"));
     client = createClient({ url: `file:${join(directory, "audit.db")}` });
-    for (const name of readdirSync("drizzle").filter((file) => /^000[0-2]_.+\.sql$/.test(file)).sort()) {
+    for (const name of readdirSync("drizzle")
+      .filter((file) => /^000[0-2]_.+\.sql$/.test(file))
+      .sort()) {
       await client.executeMultiple(readFileSync(join("drizzle", name), "utf8"));
     }
   });
@@ -50,7 +52,9 @@ describe("persistence invariant preflight", () => {
 
   it("allows an empty valid database and migration entry invokes migrate", async () => {
     const applyMigrations = vi.fn().mockResolvedValue(undefined);
-    await expect(migrateDatabase(client, applyMigrations)).resolves.toBeUndefined();
+    await expect(
+      migrateDatabase(client, applyMigrations),
+    ).resolves.toBeUndefined();
     expect(applyMigrations).toHaveBeenCalledOnce();
   });
 

@@ -14,7 +14,9 @@ async function expectSameHorizontalBounds(input: Locator, result: Locator) {
       return {
         left: parseFloat(style.paddingLeft),
         right: parseFloat(style.paddingRight),
-        expected: parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.75,
+        expected:
+          parseFloat(getComputedStyle(document.documentElement).fontSize) *
+          0.75,
       };
     });
     expect(spacing.left).toBeCloseTo(spacing.expected, 2);

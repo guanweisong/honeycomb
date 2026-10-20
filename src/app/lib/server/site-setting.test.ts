@@ -4,7 +4,7 @@ const { createServerClient } = vi.hoisted(() => ({
   createServerClient: vi.fn(),
 }));
 
-vi.mock("@/packages/trpc/api", () => ({ createServerClient }));
+vi.mock("@/app/_trpc/server", () => ({ createServerClient }));
 
 import { getSiteSetting } from "./site-setting";
 

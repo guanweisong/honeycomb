@@ -16,7 +16,7 @@ const expectedExclusions = [
   "**/*.test.{ts,tsx}",
   "**/*.spec.{ts,tsx}",
   "src/app/sw.ts",
-  "src/packages/ui/components/**",
+  "src/components/ui/**",
   "tests/**",
 ];
 
@@ -24,16 +24,22 @@ const protectedProductionPatterns = [
   "src/app/**/page.tsx",
   "src/**/hooks/**/*.{ts,tsx}",
   "src/**/*service.ts",
-  "src/packages/identity/auth/**/*.ts",
+  "src/features/**/server.ts",
+  "src/features/**/server/**/*.ts",
+  "src/features/**/schema.ts",
+  "src/features/**/rules.ts",
+  "src/features/**/admin/**/*.{ts,tsx}",
+  "src/features/**/public/**/*.{ts,tsx}",
+  "src/lib/auth/**/*.ts",
   "src/env/**/*.ts",
-  "src/packages/infrastructure/observability/**/*.ts",
+  "src/lib/observability/**/*.ts",
   "src/app/sitemap*.ts",
   "src/app/sitemap*/**/*.ts",
-  "src/packages/infrastructure/cache/upstash-cache.ts",
+  "src/lib/cache/upstash-cache.ts",
 ];
 
 const criticalCoverageFiles = [
-  "src/packages/identity/auth/permissions.ts",
+  "src/lib/auth/permissions.ts",
   "src/env/client-schema.ts",
   "src/env/client.ts",
   "src/env/schema.ts",
@@ -42,21 +48,21 @@ const criticalCoverageFiles = [
   "src/app/sitemap-data.ts",
   "src/app/sitemap.xml/route.ts",
   "src/app/sitemaps/[id]/route.ts",
-  "src/packages/infrastructure/cache/upstash-cache.ts",
-  "src/packages/infrastructure/observability/client.ts",
-  "src/packages/infrastructure/observability/adapters/console.ts",
-  "src/packages/infrastructure/observability/adapters/console-metrics.ts",
-  "src/packages/infrastructure/observability/core/contracts.ts",
-  "src/packages/infrastructure/observability/core/metric-label-values.ts",
-  "src/packages/infrastructure/observability/core/names.ts",
-  "src/packages/infrastructure/observability/core/safe-adapters.ts",
-  "src/packages/infrastructure/observability/core/sanitize.ts",
-  "src/packages/infrastructure/observability/server/database-operation.ts",
-  "src/packages/infrastructure/observability/server/external-service-operation.ts",
-  "src/packages/infrastructure/observability/server/index.ts",
-  "src/packages/infrastructure/observability/server/node-request-context.ts",
-  "src/packages/infrastructure/observability/server/registry.ts",
-  "src/packages/infrastructure/observability/server/request-context.ts",
+  "src/lib/cache/upstash-cache.ts",
+  "src/lib/observability/client.ts",
+  "src/lib/observability/adapters/console.ts",
+  "src/lib/observability/adapters/console-metrics.ts",
+  "src/lib/observability/core/contracts.ts",
+  "src/lib/observability/core/metric-label-values.ts",
+  "src/lib/observability/core/names.ts",
+  "src/lib/observability/core/safe-adapters.ts",
+  "src/lib/observability/core/sanitize.ts",
+  "src/lib/observability/server/database-operation.ts",
+  "src/lib/observability/server/external-service-operation.ts",
+  "src/lib/observability/server/index.ts",
+  "src/lib/observability/server/node-request-context.ts",
+  "src/lib/observability/server/registry.ts",
+  "src/lib/observability/server/request-context.ts",
 ];
 
 describe("coverage governance", () => {
@@ -74,7 +80,7 @@ describe("coverage governance", () => {
     ]);
   });
 
-  it("keeps business pages, hooks, services, and security cores in coverage", async () => {
+  it("keeps feature operations, rules, schemas, UI and security cores in coverage", async () => {
     const requiredFiles = await glob(protectedProductionPatterns, {
       ignore: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.d.ts"],
     });
@@ -96,7 +102,7 @@ describe("coverage governance", () => {
     expect(pwaE2e).toContain("navigator.serviceWorker.ready");
     expect(pwaE2e).toContain("context.setOffline(true)");
     expect(pwaE2e).toContain("page.goto(offlineTarget");
-    expect(pwaE2e).toContain("getByRole('alert')");
+    expect(pwaE2e).toMatch(/\.getByRole\s*\(\s*(["'])alert\1\s*\)/);
     expect(pwaE2e).toContain("You're offline");
     expect(pwaE2e).toMatch(/finally\s*{[\s\S]*context\.setOffline\(false\)/);
   });
@@ -149,7 +155,7 @@ describe("coverage governance", () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain(
-      'does not meet "src/packages/identity/auth/permissions.ts" threshold (101%)',
+      'does not meet "src/lib/auth/permissions.ts" threshold (101%)',
     );
   }, 60_000);
 });

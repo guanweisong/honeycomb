@@ -14,7 +14,7 @@ import nextConfig from "../next.config";
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
-import { isCapability } from "@/packages/identity/auth/capability-registry";
+import { isCapability } from "@/lib/auth/capability-registry";
 
 const adminRoot = join(process.cwd(), "src/app/admin");
 const publicAdminPages = [

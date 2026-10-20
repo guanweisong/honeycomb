@@ -25,7 +25,7 @@ describe("console lint boundary", () => {
     "src/instrumentation.ts",
     "src/env/server.ts",
     "src/app/api/trpc/[trpc]/route.ts",
-    "src/packages/trpc/api/context.ts",
+    "src/lib/trpc/context.ts",
   ])(
     "forbids console usage in %s",
     async (filePath) => {
@@ -35,9 +35,13 @@ describe("console lint boundary", () => {
   );
 
   it.each([
-    "src/packages/infrastructure/observability/adapters/console.ts",
-    "src/packages/infrastructure/observability/adapters/console-metrics.ts",
-  ])("allows console usage in %s", async (filePath) => {
-    await expect(lintConsoleAt(filePath)).resolves.toHaveLength(0);
-  }, 30_000);
+    "src/lib/observability/adapters/console.ts",
+    "src/lib/observability/adapters/console-metrics.ts",
+  ])(
+    "allows console usage in %s",
+    async (filePath) => {
+      await expect(lintConsoleAt(filePath)).resolves.toHaveLength(0);
+    },
+    30_000,
+  );
 });

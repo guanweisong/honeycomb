@@ -1,10 +1,10 @@
 import { ViewTransition } from "react";
 import Menu from "@/app/(blog)/components/Menu";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
+import { Link } from "@/lib/i18n/blog-navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
-import { PostSearch } from "@/features/post/public";
+import PostSearch from "@/features/post/public/components/PostSearch";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import {
   getPublicMenu,
@@ -12,10 +12,10 @@ import {
 } from "@/app/lib/server/public-queries";
 import { getLocale } from "next-intl/server";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import type { MenuViewModel as MenuEntity } from "@/features/contracts";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import type { MenuItem as MenuEntity } from "@/features/menu/types";
 
 function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
   const nodes = new Map<string, MenuEntityTree>(

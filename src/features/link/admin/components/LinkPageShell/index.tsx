@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
-import { useCan } from "@/packages/ui/admin/use-current-user";
-import { Permission } from "@/packages/identity/auth/permissions";
-import { LinkListQuerySchema } from "@/features/link/schemas/link.list.query.schema";
-import type { LinkRecord as LinkEntity } from "@/features/link/application/repository";
-import { Button } from "@/packages/ui/components/button";
-import { DataTable } from "@/packages/ui/extended/DataTable";
-import { Dialog } from "@/packages/ui/extended/Dialog";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
+import { useCan } from "@/features/user/admin/use-current-user";
+import { Permission } from "@/lib/auth/permissions";
+import { LinkListQuerySchema } from "@/features/link/schema";
+import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/DataTable";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
 import { LinkFormDialog } from "../LinkFormDialog";
-import { useLinkActions } from "../../actions/link-actions";
-import { linkTableColumns } from "../../columns/link-columns";
-import { useLinkQuery } from "../../queries/link-query";
+import { useLinkActions } from "../../link-actions";
+import { linkTableColumns } from "../../link-columns";
+import { useLinkQuery } from "../../link-query";
 
 export function LinkPageShell() {
   const canCreateLink = useCan(Permission.linkCreate);

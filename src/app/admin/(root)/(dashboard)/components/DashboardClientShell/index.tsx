@@ -3,9 +3,9 @@
 import { getMenuForCapabilities } from "@/app/admin/constants/menu-data";
 import { authClient } from "@/auth-client";
 import type { AdminUser } from "@/app/admin/lib/admin-auth";
-import { trpc } from "@/packages/trpc/client/trpc";
-import { AdminLayout } from "@/packages/ui/extended/AdminLayout";
-import { useSiteSetting } from "@/features/setting/admin/hooks-use-site-setting";
+import { trpc } from "@/lib/trpc/client/trpc";
+import { AdminLayout } from "@/app/admin/components/AdminLayout";
+import { useSiteSetting } from "@/features/setting/admin/use-site-setting";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -14,7 +14,7 @@ import {
   clearHoneycombRuntimeCaches,
   navigateToAdminLogin,
 } from "./logout-browser-state";
-import { findMenuTitle } from "@/packages/ui/extended/AdminLayout/menu-title";
+import { findMenuTitle } from "@/app/admin/components/AdminLayout/menu-title";
 
 export function DashboardClientShell({
   children,

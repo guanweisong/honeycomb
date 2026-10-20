@@ -6,7 +6,7 @@ import {
 } from "@/app/admin/constants/route-capabilities";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import LoadingState from "@/packages/ui/extended/LoadingState";
+import LoadingState from "@/components/LoadingState";
 import { getAdminRouteAccessDecision } from "./admin-route-access";
 
 export default function AdminRouteTemplate({

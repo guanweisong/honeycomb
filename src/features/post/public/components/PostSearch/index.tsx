@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import Image from "next/image";
-import { trpcClient } from "@/packages/trpc/client/trpc";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
+import { trpcClient } from "@/lib/trpc/client/trpc";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import { Link } from "@/lib/i18n/blog-navigation";
 import {
   Dialog,
   DialogClose,
@@ -15,10 +15,10 @@ import {
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from "@/packages/ui/components/dialog";
-import { Input } from "@/packages/ui/components/input";
-import { Button } from "@/packages/ui/components/button";
-import { useMounted } from "@/packages/ui/hooks/use-mounted";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 /** Mount only while open, so closing discards the query and cancels pending work. */
 function SearchContent({ onNavigate }: { onNavigate: () => void }) {

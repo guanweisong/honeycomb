@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { settingRouter } from "@/features/setting/setting.router";
+import { settingRouter } from "@/features/setting/router";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -10,11 +10,11 @@ import {
 } from "@tests/helpers/test-utils";
 
 // 模拟数据库及相关模块。
-vi.mock("@/packages/infrastructure/db/db", () => ({
+vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/packages/infrastructure/refresh-path", () => ({
+vi.mock("@/lib/cache/refresh-path", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -43,8 +43,22 @@ describe("Setting Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([mockSetting]);
       mockDb.where.mockResolvedValueOnce([
-        { settingId: TEST_IDS.ID_1, locale: "en", siteName: "Site Name", siteSubName: "Sub Name", siteSignature: "Signature", siteCopyright: "Copyright" },
-        { settingId: TEST_IDS.ID_1, locale: "zh", siteName: "网站名称", siteSubName: "副标题", siteSignature: "签名", siteCopyright: "版权" },
+        {
+          settingId: TEST_IDS.ID_1,
+          locale: "en",
+          siteName: "Site Name",
+          siteSubName: "Sub Name",
+          siteSignature: "Signature",
+          siteCopyright: "Copyright",
+        },
+        {
+          settingId: TEST_IDS.ID_1,
+          locale: "zh",
+          siteName: "网站名称",
+          siteSubName: "副标题",
+          siteSignature: "签名",
+          siteCopyright: "版权",
+        },
       ]);
 
       const caller = settingRouter.createCaller(
@@ -71,8 +85,22 @@ describe("Setting Router", () => {
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       mockDb.where.mockResolvedValueOnce([
-        { settingId: TEST_IDS.ID_1, locale: "en", siteName: "Old", siteSubName: "Old", siteSignature: "Old", siteCopyright: "Old" },
-        { settingId: TEST_IDS.ID_1, locale: "zh", siteName: "旧", siteSubName: "旧", siteSignature: "旧", siteCopyright: "旧" },
+        {
+          settingId: TEST_IDS.ID_1,
+          locale: "en",
+          siteName: "Old",
+          siteSubName: "Old",
+          siteSignature: "Old",
+          siteCopyright: "Old",
+        },
+        {
+          settingId: TEST_IDS.ID_1,
+          locale: "zh",
+          siteName: "旧",
+          siteSubName: "旧",
+          siteSignature: "旧",
+          siteCopyright: "旧",
+        },
       ]);
 
       const caller = settingRouter.createCaller(

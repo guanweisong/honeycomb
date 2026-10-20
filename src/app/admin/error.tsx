@@ -3,7 +3,7 @@
 import { captureException } from "@sentry/nextjs";
 import { useEffect } from "react";
 
-import { PageState } from "@/packages/ui/extended/PageState";
+import { PageState } from "@/components/PageState";
 
 export default function Error({
   error,

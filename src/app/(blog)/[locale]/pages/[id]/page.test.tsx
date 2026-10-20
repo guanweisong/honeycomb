@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import { PageTemplate } from "@/packages/domain/content/page-template";
+import { PostStatus } from "@/features/post/post-status";
+import { PageTemplate } from "@/features/page/page-template";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -27,7 +27,7 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} views`,
 }));
-vi.mock("@/packages/trpc/api", () => ({
+vi.mock("@/app/_trpc/server", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
     link: { index: mockLinks },
@@ -44,7 +44,7 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
   getPublicLinks: (...args: unknown[]) => mockLinks(...args),
 }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
       incrementViews: {
@@ -54,17 +54,17 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     post: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },
   },
 }));
-vi.mock("@/app/(blog)/components/PostInfo", () => ({
+vi.mock("@/features/post/public/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
   PostCommentCount: () => null,
 }));
-vi.mock("@/features/comment/public", () => ({
-  Comment: () => null,
+vi.mock("@/features/comment/public/components", () => ({
+  default: () => null,
 }));
 vi.mock("@/app/(blog)/components/PageTitle", () => ({
   default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,
 }));
-vi.mock("@/app/(blog)/components/RichText", () => ({
+vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
 

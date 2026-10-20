@@ -3,9 +3,9 @@ import {
   getPublicMenu,
   getPublicTag,
 } from "@/app/lib/server/public-queries";
-import type { MultiLangEnum } from "@/packages/domain/localization/i18n";
-import { PostStatus } from "@/packages/domain/content/post-status";
-import type { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
+import type { MultiLangEnum } from "@/lib/i18n/i18n";
+import { PostStatus } from "@/features/post/post-status";
+import type { PostListQueryInput } from "@/features/post/schema";
 
 const PAGE_SIZE = 10;
 

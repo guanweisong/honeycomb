@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLocalizedAlternates } from "./metadata";
-import { MultiLangEnum } from "@/packages/domain/localization/multi-lang";
+import { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
 describe("createLocalizedAlternates", () => {
   it("builds canonical and language alternates from a normalized path", () => {

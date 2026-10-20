@@ -1,1 +1,1 @@
-export { default } from "@/features/link/admin/page";
+export { LinkPageShell as default } from "@/features/link/admin/components/LinkPageShell";

@@ -2,9 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MediaGrid } from ".";
-import type { MediaViewModel } from "../media-view-model";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("next/image", () => ({

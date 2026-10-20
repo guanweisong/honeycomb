@@ -1,4 +1,4 @@
-import type { Permission } from "@/packages/identity/auth/permissions";
+import type { Permission } from "@/lib/auth/permissions";
 
 export type GuardPolarity = "positive" | "negative";
 

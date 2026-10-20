@@ -3,7 +3,7 @@ import { resolve } from "path";
 import { processHeavyTests } from "./vitest-test-groups.mts";
 
 const criticalCoverageFiles = [
-  "src/packages/identity/auth/permissions.ts",
+  "src/lib/auth/permissions.ts",
   "src/env/client-schema.ts",
   "src/env/client.ts",
   "src/env/schema.ts",
@@ -12,21 +12,21 @@ const criticalCoverageFiles = [
   "src/app/sitemap-data.ts",
   "src/app/sitemap.xml/route.ts",
   "src/app/sitemaps/[id]/route.ts",
-  "src/packages/infrastructure/cache/upstash-cache.ts",
-  "src/packages/infrastructure/observability/client.ts",
-  "src/packages/infrastructure/observability/adapters/console.ts",
-  "src/packages/infrastructure/observability/adapters/console-metrics.ts",
-  "src/packages/infrastructure/observability/core/contracts.ts",
-  "src/packages/infrastructure/observability/core/metric-label-values.ts",
-  "src/packages/infrastructure/observability/core/names.ts",
-  "src/packages/infrastructure/observability/core/safe-adapters.ts",
-  "src/packages/infrastructure/observability/core/sanitize.ts",
-  "src/packages/infrastructure/observability/server/database-operation.ts",
-  "src/packages/infrastructure/observability/server/external-service-operation.ts",
-  "src/packages/infrastructure/observability/server/index.ts",
-  "src/packages/infrastructure/observability/server/node-request-context.ts",
-  "src/packages/infrastructure/observability/server/registry.ts",
-  "src/packages/infrastructure/observability/server/request-context.ts",
+  "src/lib/cache/upstash-cache.ts",
+  "src/lib/observability/client.ts",
+  "src/lib/observability/adapters/console.ts",
+  "src/lib/observability/adapters/console-metrics.ts",
+  "src/lib/observability/core/contracts.ts",
+  "src/lib/observability/core/metric-label-values.ts",
+  "src/lib/observability/core/names.ts",
+  "src/lib/observability/core/safe-adapters.ts",
+  "src/lib/observability/core/sanitize.ts",
+  "src/lib/observability/server/database-operation.ts",
+  "src/lib/observability/server/external-service-operation.ts",
+  "src/lib/observability/server/index.ts",
+  "src/lib/observability/server/node-request-context.ts",
+  "src/lib/observability/server/registry.ts",
+  "src/lib/observability/server/request-context.ts",
 ] as const;
 
 const criticalCoverageThresholds = Object.fromEntries(
@@ -72,7 +72,7 @@ export default defineConfig({
         // This thin service-worker entry is exercised only by the real offline E2E.
         "src/app/sw.ts",
         // These files are unmodified shadcn primitives; extended/business UI stays covered.
-        "src/packages/ui/components/**",
+        "src/components/ui/**",
         // Cross-module tests and fixtures are never production sources.
         "tests/**",
       ],

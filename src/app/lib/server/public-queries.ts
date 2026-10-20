@@ -3,17 +3,17 @@ import "server-only";
 import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
-import { createServerClient } from "@/packages/trpc/api";
-import type { MenuType } from "@/packages/domain/navigation/menu";
-import { EnableStatus } from "@/packages/domain/shared/enable-status";
-import { MAX_PAGE_SIZE } from "@/packages/application/resource-limits";
-import type { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
+import { createServerClient } from "@/app/_trpc/server";
+import type { MenuType } from "@/features/menu/menu-types";
+import { EnableStatus } from "@/lib/validation/enable-status";
+import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
+import type { PostListQueryInput } from "@/features/post/schema";
 import {
   getPageDetailCacheTag,
   getPostDetailCacheTag,
   POST_INDEX_CACHE_TAG,
   PUBLIC_LAYOUT_CACHE_TAG,
-} from "@/packages/infrastructure/cache/public-cache-keys";
+} from "@/lib/cache/public-cache-keys";
 
 const cachedClientOptions = {
   requestContext: { requestId: "next-public-cache-fill" },

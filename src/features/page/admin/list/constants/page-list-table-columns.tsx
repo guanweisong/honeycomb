@@ -1,15 +1,15 @@
 import { ColumnDef } from "@tanstack/react-table";
-import MultiLangText from "@/packages/ui/admin/MultiLangText";
-import { Badge } from "@/packages/ui/components/badge";
+import MultiLangText from "@/components/admin/MultiLangText";
+import { Badge } from "@/components/ui/badge";
 import {
   pageStatusOptions,
   pageTemplateOptions,
-} from "@/packages/ui/admin/page-options";
-import type { PageWithRelations as PageEntity } from "@/features/page/application/repository";
-import { StatusBadge } from "@/packages/ui/extended/StatusBadge";
-import { getStatusBadgeTone } from "@/packages/ui/extended/StatusBadge/status-tone";
-import { formatAdminDateTime } from "@/packages/ui/admin/date-time";
-import { publicationStatusToneMap } from "@/packages/ui/admin/publication-status-tone";
+} from "@/features/page/admin/options";
+import type { PageWithRelations as PageEntity } from "@/features/page/types";
+import { StatusBadge } from "@/components/StatusBadge";
+import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
+import { formatAdminDateTime } from "@/components/admin/date-time";
+import { publicationStatusToneMap } from "@/components/admin/publication-status-tone";
 
 /**
  * 页面列表的表格列定义。

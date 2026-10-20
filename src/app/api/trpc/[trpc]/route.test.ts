@@ -5,25 +5,27 @@ const state = vi.hoisted(() => ({
   scopeRequestId: undefined as string | undefined,
 }));
 
-vi.mock("@/packages/trpc/api/app-router", () => ({ appRouter: {} }));
+vi.mock("@/app/_trpc/router", () => ({ appRouter: {} }));
 
-vi.mock("@/packages/trpc/api", async () => {
-  const { getRequestContext } = await import(
-    "@/packages/infrastructure/observability/server/node-request-context"
-  );
+vi.mock("@/lib/trpc/context", async () => {
+  const { getRequestContext } =
+    await import("@/lib/observability/server/node-request-context");
 
   return {
-    createTrpcContext: async () => ({ requestId: getRequestContext()?.requestId }),
+    createContext: async () => ({ requestId: getRequestContext()?.requestId }),
   };
 });
 
 vi.mock("@trpc/server/adapters/fetch", async () => {
-  const { getRequestContext } = await import(
-    "@/packages/infrastructure/observability/server/node-request-context"
-  );
+  const { getRequestContext } =
+    await import("@/lib/observability/server/node-request-context");
 
   return {
-    fetchRequestHandler: async ({ createContext }: { createContext: () => Promise<{ requestId?: string }> }) => {
+    fetchRequestHandler: async ({
+      createContext,
+    }: {
+      createContext: () => Promise<{ requestId?: string }>;
+    }) => {
       state.scopeRequestId = getRequestContext()?.requestId;
       state.contextRequestId = (await createContext()).requestId;
       return new Response(null, { status: 204 });

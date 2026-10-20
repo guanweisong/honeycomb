@@ -4,21 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import {
-  PageInsertSchema,
-  type PageInsert,
-} from "@/features/page/application/write-schema";
-import { PageStatus } from "@/packages/domain/content/page";
-import { PageTemplate } from "@/packages/domain/content/page-template";
+import { PageInsertSchema, type PageInsert } from "@/features/page/schema";
+import { PageStatus } from "@/features/page/page-status";
+import { PageTemplate } from "@/features/page/page-template";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
-} from "@/packages/ui/extended/AdminLayout";
-import { EditorLoadError } from "@/packages/ui/admin/editor-load-error";
+} from "@/components/admin/layout-context";
+import { EditorLoadError } from "@/components/admin/editor-load-error";
 import { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { PageEditorForm } from "../PageEditorForm";
-import { usePageEditorActions } from "../../actions/page-editor-actions";
-import { usePageEditorQuery } from "../../queries/page-editor-query";
+import { usePageEditorActions } from "../../page-editor-actions";
+import { usePageEditorQuery } from "../../page-editor-query";
 import {
   getPageEditorId,
   toPageEditorFormValues,
@@ -27,9 +24,9 @@ import {
 import {
   useLocalDraft,
   LocalDraftPrompt,
-} from "@/packages/ui/admin/local-draft";
-import { useCurrentUser } from "@/packages/ui/admin/use-current-user";
-import { can, Permission } from "@/packages/identity/auth/permissions";
+} from "@/components/admin/local-draft";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { can, Permission } from "@/lib/auth/permissions";
 import { parsePageDraft } from "../../transforms/page-draft";
 
 export function PageEditorPage() {

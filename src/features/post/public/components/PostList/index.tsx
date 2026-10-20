@@ -3,21 +3,21 @@
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/hooks/rq/post/use.infinite.query.post.list";
 import React, { JSX, useEffect, ViewTransition } from "react";
-import { Link } from "@/packages/ui/navigation/blog-navigation";
-import Signature from "@/packages/ui/blog/Signature";
-import { utcFormat } from "@/packages/ui/blog/utc-format";
+import { Link } from "@/lib/i18n/blog-navigation";
+import Signature from "@/components/blog/Signature";
+import { utcFormat } from "@/components/blog/utc-format";
 import { useLocale, useTranslations } from "next-intl";
-import { normalizeMultiLangLocale } from "@/packages/domain/localization/multi-lang";
-import { cn } from "@/packages/ui/lib/utils";
-import LoadingState from "@/packages/ui/extended/LoadingState";
-import { Button } from "@/packages/ui/components/button";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/application/repository";
-import { PostType } from "@/packages/domain/content/post";
-import { PostTypeName } from "@/packages/ui/admin/post-options";
-import { PostListQueryInput } from "@/features/post/schemas/post.list.query.schema";
+import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import { cn } from "@/lib/ui/utils";
+import LoadingState from "@/components/LoadingState";
+import { Button } from "@/components/ui/button";
+import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import { PostType } from "@/features/post/post-type";
+import { PostTypeName } from "@/features/post/admin/options";
+import { PostListQueryInput } from "@/features/post/schema";
 import { PostTypeBgColor } from "@/features/post/public/types-post-type-bg-color";
-import { useScrollPosition } from "@/packages/ui/hooks/use-scroll-position";
-import type { PostListResult } from "@/features/post/application/repository";
+import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
+import type { PostListResult } from "@/features/post/types";
 
 /**
  * 文章列表组件的属性接口。

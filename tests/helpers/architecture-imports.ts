@@ -1,0 +1,139 @@
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import ts from "typescript";
+
+export interface ModuleDependency {
+  specifier: string;
+  typeOnly: boolean;
+}
+
+/** Include re-exports, dynamic imports and require, not only static imports. */
+export function moduleDependencies(
+  source: string,
+  path = "module.ts",
+): ModuleDependency[] {
+  const result: ModuleDependency[] = [];
+  const file = ts.createSourceFile(
+    path,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+  function visit(node: ts.Node) {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      const clause = node.importClause;
+      const bindings = clause?.namedBindings;
+      result.push({
+        specifier: node.moduleSpecifier.text,
+        typeOnly: Boolean(
+          clause?.isTypeOnly ||
+          (!clause?.name &&
+            bindings &&
+            ts.isNamedImports(bindings) &&
+            bindings.elements.length > 0 &&
+            bindings.elements.every((element) => element.isTypeOnly)),
+        ),
+      });
+    } else if (
+      ts.isExportDeclaration(node) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      result.push({
+        specifier: node.moduleSpecifier.text,
+        typeOnly:
+          node.isTypeOnly ||
+          Boolean(
+            node.exportClause &&
+            ts.isNamedExports(node.exportClause) &&
+            node.exportClause.elements.length > 0 &&
+            node.exportClause.elements.every((element) => element.isTypeOnly),
+          ),
+      });
+    } else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference) &&
+      node.moduleReference.expression &&
+      ts.isStringLiteralLike(node.moduleReference.expression)
+    ) {
+      result.push({
+        specifier: node.moduleReference.expression.text,
+        typeOnly: node.isTypeOnly,
+      });
+    } else if (
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      ts.isStringLiteral(node.argument.literal)
+    ) {
+      result.push({ specifier: node.argument.literal.text, typeOnly: true });
+    } else if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) &&
+          node.expression.text === "require"))
+    ) {
+      const argument = node.arguments[0];
+      if (argument && ts.isStringLiteralLike(argument))
+        result.push({ specifier: argument.text, typeOnly: false });
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return result;
+}
+
+export function localModulePath(
+  importer: string,
+  specifier: string,
+): string | undefined {
+  const path = specifier.startsWith("@/")
+    ? join("src", specifier.slice(2))
+    : specifier.startsWith(".")
+      ? relative(process.cwd(), resolve(dirname(importer), specifier))
+      : undefined;
+  return path?.replaceAll("\\", "/");
+}
+
+export function resolveSourceModule(
+  importer: string,
+  specifier: string,
+): string | undefined {
+  const base = localModulePath(importer, specifier);
+  if (!base) return undefined;
+  return [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    join(base, "index.ts"),
+    join(base, "index.tsx"),
+  ].find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
+}
+
+/** Follow runtime edges only: type imports must not contaminate browser bundles. */
+export function runtimeDependencyViolations(
+  entry: string,
+  forbidden: (path: string, source: string) => boolean,
+): string[] {
+  const visited = new Set<string>();
+  const violations = new Set<string>();
+  function visit(path: string) {
+    if (visited.has(path)) return;
+    visited.add(path);
+    const source = readFileSync(path, "utf8");
+    if (path !== entry && forbidden(path, source)) {
+      violations.add(`${entry} -> ${path}`);
+      return;
+    }
+    for (const dependency of moduleDependencies(source, path)) {
+      if (dependency.typeOnly) continue;
+      const target = resolveSourceModule(path, dependency.specifier);
+      if (target) visit(target);
+    }
+  }
+  visit(entry);
+  return [...violations].sort();
+}

@@ -1,6 +1,7 @@
+import { getPage, listPages } from "@/features/page/server/page-queries";
+import { getPost } from "@/features/post/server/post-queries";
 import { describe, expect, it } from "vitest";
-import { createPostQueryRepository } from "@/features/post/infrastructure/post-query-repository";
-import { createPageQueryRepository } from "@/features/page/infrastructure/page-query-repository";
+
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
@@ -43,21 +44,38 @@ describe("localized media relations", () => {
     const db = createMockDb();
     const post = createPostFixture({ content });
     db.limit.mockResolvedValue([post]);
-    db.query.post.findMany.mockResolvedValue([{
-      ...post,
-      translations: [
-        { postId: post.id, locale: "en", title: null, content: content.en, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
-        { postId: post.id, locale: "zh", title: null, content: content.zh, excerpt: null, galleryLocation: null, quoteAuthor: null, quoteContent: null },
-      ],
-      postTags: [],
-    }]);
+    db.query.post.findMany.mockResolvedValue([
+      {
+        ...post,
+        translations: [
+          {
+            postId: post.id,
+            locale: "en",
+            title: null,
+            content: content.en,
+            excerpt: null,
+            galleryLocation: null,
+            quoteAuthor: null,
+            quoteContent: null,
+          },
+          {
+            postId: post.id,
+            locale: "zh",
+            title: null,
+            content: content.zh,
+            excerpt: null,
+            galleryLocation: null,
+            quoteAuthor: null,
+            quoteContent: null,
+          },
+        ],
+        postTags: [],
+      },
+    ]);
     db.where
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce([...images, ...images]);
-    const result = await createPostQueryRepository(asMockDatabase(db)).detail(
-      "post-1",
-      "ALL",
-    );
+    const result = await getPost(asMockDatabase(db), "post-1", "ALL");
     const query = new SQLiteSyncDialect().sqlToQuery(
       db.where.mock.calls[1]?.[0],
     );
@@ -69,12 +87,12 @@ describe("localized media relations", () => {
   });
   it("page detail loads unique images from all supported locales", async () => {
     const db = createMockDb();
-    db.query.page.findFirst.mockResolvedValue({ ...page, translations: pageTranslations });
+    db.query.page.findFirst.mockResolvedValue({
+      ...page,
+      translations: pageTranslations,
+    });
     db.where.mockResolvedValue([...images, ...images]);
-    const result = await createPageQueryRepository(asMockDatabase(db)).detail(
-      "page-1",
-      "ALL",
-    );
+    const result = await getPage(asMockDatabase(db), "page-1", "ALL");
     expect(
       new SQLiteSyncDialect().sqlToQuery(db.where.mock.calls[0]?.[0]).params,
     ).toEqual([zhUrl, enUrl]);
@@ -86,15 +104,14 @@ describe("localized media relations", () => {
   it("page lists map deduplicated images from all locales", async () => {
     const db = createMockDb();
     db.offset.mockResolvedValue([page]);
-    db.query.page.findMany.mockResolvedValue([{ ...page, translations: pageTranslations }]);
+    db.query.page.findMany.mockResolvedValue([
+      { ...page, translations: pageTranslations },
+    ]);
     db.where
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce([{ count: 1 }])
       .mockResolvedValueOnce(images);
-    const result = await createPageQueryRepository(asMockDatabase(db)).list(
-      {},
-      "ALL",
-    );
+    const result = await listPages(asMockDatabase(db), {}, "ALL");
     expect(result.list[0]?.imagesInContent.map(({ url }) => url)).toEqual([
       zhUrl,
       enUrl,

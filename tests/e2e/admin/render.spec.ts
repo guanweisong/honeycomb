@@ -164,7 +164,9 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     await expect(
       page.getByRole("button", { name: "点击上传文件" }),
     ).toBeVisible();
-    await expect(page.getByRole("img", { name: "Search cover fixture", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "Search cover fixture", exact: true }),
+    ).toBeVisible();
   });
 
   test("menu", async ({ page }) => {

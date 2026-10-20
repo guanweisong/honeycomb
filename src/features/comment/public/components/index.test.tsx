@@ -13,7 +13,7 @@ vi.mock("./CommentClient", () => ({
 }));
 
 import Comment from ".";
-import { MenuType } from "@/packages/domain/navigation/menu";
+import { MenuType } from "@/features/menu/menu-types";
 
 describe("Comment", () => {
   it("forwards the shared query promise to CommentClient", () => {

@@ -1,20 +1,17 @@
-import { ModalType, ModalTypeName } from "@/packages/ui/admin/modal-type";
-import { DynamicForm } from "@/packages/ui/extended/DynamicForm";
-import {
-  TagInsertSchema,
-  TagUpdateSchema,
-} from "@/features/tag/application/write-schema";
-import { Dialog } from "@/packages/ui/extended/Dialog";
+import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
+import { DynamicForm } from "@/components/DynamicForm";
+import { TagInsertSchema, TagUpdateSchema } from "@/features/tag/schema";
+import { Dialog } from "@/components/Dialog";
 import { toast } from "sonner";
-import { trpc } from "@/packages/trpc/client/trpc";
-import type { TagRecord as TagEntity } from "@/features/tag/application/repository";
+import { trpc } from "@/lib/trpc/client/trpc";
+import type { TagRecord as TagEntity } from "@/features/tag/types";
 import { z } from "zod";
-import type { FieldConfig } from "@/packages/ui/extended/DynamicForm/types";
+import type { FieldConfig } from "@/components/DynamicForm/types";
 import {
   runAdminMutation,
   withAdminRecordId,
   type AdminDialogState,
-} from "@/packages/ui/admin/action-state";
+} from "@/components/admin/action-state";
 
 const tagFields: FieldConfig[] = [
   {

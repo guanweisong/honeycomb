@@ -1,4 +1,4 @@
-@import "../../packages/ui/styles/globals.css";
+@import "../styles/globals.css";
 @import "photoswipe/style.css";
 
 @custom-variant dark (&:where(.dark, .dark *));

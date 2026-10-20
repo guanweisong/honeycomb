@@ -1,17 +1,26 @@
+const invalidator = {
+  invalidate: async () => ({ state: "completed" as const }),
+};
+import { destroyTags } from "@/features/tag/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/packages/infrastructure/observability/server", () => ({
-  observeDbOperation: vi.fn(async (_name: string, _kind: string, operation: () => unknown) => operation()),
+vi.mock("@/lib/observability/server", () => ({
+  observeDbOperation: vi.fn(
+    async (_name: string, _kind: string, operation: () => unknown) =>
+      operation(),
+  ),
 }));
-vi.mock("@/env/client", () => ({ clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" } }));
-vi.mock("@/packages/infrastructure/db/query/tools", () => ({
+vi.mock("@/env/client", () => ({
+  clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" },
+}));
+vi.mock("@/lib/db/query/tools", () => ({
   buildDrizzleWhere: vi.fn(() => undefined),
   buildDrizzleOrderBy: vi.fn(() => undefined),
 }));
 
-import { createMediaRepository } from "@/features/media/infrastructure/media-repository";
-import { createTagRepository } from "@/features/tag/infrastructure/tag-repository";
-import { createUserRepository } from "@/features/user/infrastructure/user-repository";
+import { createMediaRepository } from "@/features/media/server/media-repository";
+
+import { createUserRepository } from "@/features/user/server/user-repository";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 
 function fakeDb() {
@@ -29,11 +38,18 @@ describe("Drizzle repository adapter 行为", () => {
 
   it("media create 生成资产 URL", async () => {
     const db = fakeDb();
-    const returning = vi.fn().mockResolvedValue([{ id: "media-1", url: "https://assets.test/a.png" }]);
-    db.insert.mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) });
+    const returning = vi
+      .fn()
+      .mockResolvedValue([{ id: "media-1", url: "https://assets.test/a.png" }]);
+    db.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({ returning }),
+    });
 
     const result = await createMediaRepository(asMockDatabase(db)).create({
-      name: "a.png", size: 10, type: "image/png", key: "a.png",
+      name: "a.png",
+      size: 10,
+      type: "image/png",
+      key: "a.png",
     });
 
     expect(result).toEqual({ id: "media-1", url: "https://assets.test/a.png" });
@@ -51,8 +67,12 @@ describe("Drizzle repository adapter 行为", () => {
     db.delete.mockReturnValue({ where: deleteWhere });
     const repository = createMediaRepository(asMockDatabase(db));
 
-    await expect(repository.findDeleteTargets(["media-1"])).resolves.toEqual(targets);
-    await expect(repository.deleteRecords(["media-1"])).resolves.toEqual({ success: true });
+    await expect(repository.findDeleteTargets(["media-1"])).resolves.toEqual(
+      targets,
+    );
+    await expect(repository.deleteRecords(["media-1"])).resolves.toEqual({
+      success: true,
+    });
 
     expect(selectWhere).toHaveBeenCalledOnce();
     expect(deleteWhere).toHaveBeenCalledOnce();
@@ -63,7 +83,9 @@ describe("Drizzle repository adapter 行为", () => {
     const where = vi.fn().mockResolvedValue(undefined);
     db.delete.mockReturnValue({ where });
 
-    await expect(createTagRepository(asMockDatabase(db)).destroy(["tag-1", "tag-2"])).resolves.toEqual({ success: true });
+    await expect(
+      destroyTags(asMockDatabase(db), ["tag-1", "tag-2"], invalidator),
+    ).resolves.toEqual({ success: true, publicSync: "completed" });
     expect(where).toHaveBeenCalled();
   });
 
@@ -73,6 +95,8 @@ describe("Drizzle repository adapter 行为", () => {
     const where = vi.fn().mockReturnValue({ limit });
     db.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where }) });
 
-    await expect(createUserRepository(asMockDatabase(db)).detail("user-1")).resolves.toEqual({ id: "user-1", name: "管理员" });
+    await expect(
+      createUserRepository(asMockDatabase(db)).detail("user-1"),
+    ).resolves.toEqual({ id: "user-1", name: "管理员" });
   });
 });

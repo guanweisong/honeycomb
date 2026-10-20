@@ -1,0 +1,3 @@
+interface:
+  display_name: "Feature Architecture"
+  short_description: "Review simple Honeycomb feature ownership and runtime boundaries"

@@ -12,8 +12,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("sonner", () => ({ toast: mocks }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock("@/packages/ui/admin/use-current-user", () => ({ useCan: () => true }));
-vi.mock("@/packages/trpc/client/trpc", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
+  useCan: () => true,
+}));
+vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: {
       adminIndex: {
@@ -26,7 +28,7 @@ vi.mock("@/packages/trpc/client/trpc", () => ({
     },
   },
 }));
-vi.mock("@/packages/ui/extended/DataTable", () => ({
+vi.mock("@/components/DataTable", () => ({
   DataTable: ({
     data,
     rowActions,
@@ -41,7 +43,7 @@ vi.mock("@/packages/ui/extended/DataTable", () => ({
     </div>
   ),
 }));
-vi.mock("@/packages/ui/extended/Dialog", () => ({
+vi.mock("@/components/Dialog", () => ({
   Dialog: ({ onOK }: { onOK: () => Promise<void> }) => (
     <button onClick={() => void onOK()}>delete</button>
   ),

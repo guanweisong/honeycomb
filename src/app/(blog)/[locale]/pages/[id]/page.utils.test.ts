@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { PostStatus } from "@/packages/domain/content/post-status";
+import { PostStatus } from "@/features/post/post-status";
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");

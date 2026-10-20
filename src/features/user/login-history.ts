@@ -1,9 +1,15 @@
 import "server-only";
+import type { Database } from "@/lib/db/db";
+import { listUserLoginHistory } from "./account-security/server/login-history.repository";
 
-import type { LoginHistoryPort } from "./application/repository";
-
-/** 查询并转换当前用户的登录历史。 */
-export async function getLoginHistory(repository: LoginHistoryPort, userId: string) {
-  const history = await repository.loginHistory(userId);
-  return history.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }));
+/** Read only this user's history and return JSON-safe timestamps. */
+export async function getLoginHistory(
+  db: Pick<Database, "select">,
+  userId: string,
+) {
+  const history = await listUserLoginHistory(db, userId);
+  return history.map((item) => ({
+    ...item,
+    createdAt: item.createdAt.toISOString(),
+  }));
 }

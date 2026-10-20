@@ -4,22 +4,16 @@ import { useLocale } from "next-intl";
 import { ViewTransition } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
-import {
-  getPathname,
-  usePathname,
-} from "@/packages/ui/navigation/blog-navigation";
+import { getPathname, usePathname } from "@/lib/i18n/blog-navigation";
 import { useTheme } from "next-themes";
 import zhIcon from "./img/zh.svg";
 import enIcon from "./img/en.svg";
 import zhIconLight from "./img/zh.light.svg";
 import enIconLight from "./img/en.light.svg";
-import { parseStaticImage } from "@/packages/ui/lib/static-image";
+import { parseStaticImage } from "@/lib/ui/static-image";
 import { Theme } from "@/app/(blog)/types/Theme";
-import {
-  MultiLangEnum,
-  normalizeMultiLangLocale,
-} from "@/packages/domain/localization/multi-lang";
-import { useMounted } from "@/packages/ui/hooks/use-mounted";
+import { MultiLangEnum, normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 /**
  * 语言切换组件。

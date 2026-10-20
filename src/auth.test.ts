@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BetterAuthOptions } from "better-auth";
 import { captcha } from "better-auth/plugins";
-import { getConfiguredProviderIds } from "@/packages/identity/auth/providers";
+import { getConfiguredProviderIds } from "@/lib/auth/providers";
 
 const captured = vi.hoisted(() => ({
   options: undefined as BetterAuthOptions | undefined,
@@ -29,12 +29,12 @@ vi.mock("better-auth/plugins", () => ({
 vi.mock("@/env/server", () => ({
   getAuthEnv: () => captured.env,
 }));
-vi.mock("@/packages/infrastructure/db/db", () => ({ getDb: vi.fn() }));
-vi.mock("@/packages/infrastructure/db/schema", () => ({}));
-vi.mock("@/packages/identity/auth/passkey-config", () => ({
+vi.mock("@/lib/db/db", () => ({ getDb: vi.fn() }));
+vi.mock("@/lib/db/schema", () => ({}));
+vi.mock("@/lib/auth/passkey-config", () => ({
   getPasskeyConfig: () => ({}),
 }));
-vi.mock("@/packages/identity/auth/server/auth-hooks", () => ({
+vi.mock("@/app/_auth/auth-hooks", () => ({
   createAuthDatabaseHooks: () => ({}),
 }));
 

@@ -8,11 +8,11 @@ import { createRoot, type Root } from "react-dom/client";
 
 const grantedPermissions = new Set<string>();
 
-vi.mock("@/packages/ui/admin/use-current-user", () => ({
+vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: (permission: string) => grantedPermissions.has(permission),
 }));
 
-vi.mock("@/packages/ui/components/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     variant: _variant,
@@ -23,7 +23,7 @@ vi.mock("@/packages/ui/components/button", () => ({
   ),
 }));
 
-vi.mock("@/packages/ui/extended/Dialog", () => ({
+vi.mock("@/components/Dialog", () => ({
   Dialog: ({ onOK, trigger }: { onOK: () => void; trigger: React.ReactNode }) =>
     React.createElement(
       React.Fragment,

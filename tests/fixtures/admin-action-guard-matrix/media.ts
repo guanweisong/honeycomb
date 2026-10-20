@@ -1,9 +1,10 @@
-import { Permission } from "@/packages/identity/auth/permissions";
+import { Permission } from "@/lib/auth/permissions";
 import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(root)/(dashboard)/media/components/MediaPageShell/index.tsx",
+    relativePath:
+      "(root)/(dashboard)/media/components/MediaPageShell/index.tsx",
     actions: [
       {
         id: "media.upload",

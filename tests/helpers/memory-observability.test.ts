@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  LogEvent,
-  MetricName,
-} from "@/packages/infrastructure/observability/core/names";
+import { LogEvent, MetricName } from "@/lib/observability/core/names";
 import { createMemoryObservability } from "./memory-observability";
 
 describe("createMemoryObservability", () => {

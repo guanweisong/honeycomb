@@ -4,9 +4,9 @@
 
 ## Requirements
 
-### Requirement: 内容命令使用真实 Application DTO
+### Requirement: 内容命令使用真实 Feature DTO
 
-Post 和 Page 的 Application 命令契约 MUST 使用明确字段类型、可空性和领域枚举，不得使用 `unknown`、开放式记录或裸字符串掩盖已经验证的业务数据。
+Post 和 Page 的 Feature 命令契约 MUST 使用明确字段类型、可空性和领域枚举，不得使用 `unknown`、开放式记录或裸字符串掩盖已经验证的业务数据。
 
 #### Scenario: 创建文章命令
 
@@ -20,7 +20,7 @@ Post 和 Page 的 Application 命令契约 MUST 使用明确字段类型、可�
 
 ### Requirement: 持久化映射显式且受编译器验证
 
-Post 和 Page 的 Infrastructure mapper MUST 逐字段构造 Drizzle 写入值，并使用真实类型检查代替整体 ORM 模型断言。
+Post 和 Page 的 server 持久化 mapper MUST 逐字段构造 Drizzle 写入值，并使用真实类型检查代替整体 ORM 模型断言。
 
 #### Scenario: 映射文章内容
 
@@ -34,7 +34,7 @@ Post 和 Page 的 Infrastructure mapper MUST 逐字段构造 Drizzle 写入值�
 
 ### Requirement: 类型治理阻止契约回退
 
-项目 MUST 自动检查内容 Application Command DTO 和 mapper，阻止重新引入开放式未知字段或整体 Drizzle 写入断言。
+项目 MUST 自动检查内容 Feature 命令 DTO 和 mapper，阻止重新引入开放式未知字段或整体 Drizzle 写入断言。
 
 #### Scenario: 引入未知命令字段
 

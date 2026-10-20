@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { offlinePrecacheUrl } from "@/packages/infrastructure/pwa/precache-config";
+import { offlinePrecacheUrl } from "@/lib/pwa/precache-config";
 
 describe("web app manifest", () => {
   it("loads public settings at request time", async () => {
@@ -15,7 +15,7 @@ describe("web app manifest", () => {
 
     expect(source).toContain("await connection()");
     expect(source).toContain("await getPublicSetting()");
-    expect(source).not.toContain("@/packages/trpc/api");
+    expect(source).not.toContain("@/app/_trpc/server");
     expect(source).not.toContain("createServerClient");
   });
 });
@@ -41,12 +41,18 @@ describe("PWA 离线可靠性", () => {
       `const offlineFallbackUrl = "${offlinePrecacheUrl}"`,
     );
     expect(workerSource).toContain("serwist.matchPrecache(offlineFallbackUrl)");
-    expect(providerSource).toContain('register("/serwist/sw.js", { scope: "/" })');
+    expect(providerSource).toContain(
+      'register("/serwist/sw.js", { scope: "/" })',
+    );
   });
 
   it("public 不得保留旧 Service Worker 与 Workbox 资产", async () => {
-    const legacyAssets = (await readdir(join(process.cwd(), "public")))
-      .filter((entry) => entry === "sw.js" || entry === "sw.js.map" || entry.startsWith("workbox-"));
+    const legacyAssets = (await readdir(join(process.cwd(), "public"))).filter(
+      (entry) =>
+        entry === "sw.js" ||
+        entry === "sw.js.map" ||
+        entry.startsWith("workbox-"),
+    );
 
     expect(legacyAssets).toEqual([]);
   });
