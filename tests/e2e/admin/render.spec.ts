@@ -170,7 +170,12 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     await expect(page.getByPlaceholder("在此输入文章标题")).toHaveValue(
       "可靠浏览器门禁",
     );
-    await page.getByRole("button", { name: "选择图片", exact: true }).click();
+    // The toolbar has an icon-only image action; exercise the visible cover control.
+    const coverPickerButton = page
+      .getByRole("button", { name: "选择图片", exact: true })
+      .filter({ hasText: /^选择图片$/ });
+    await expect(coverPickerButton).toHaveCount(1);
+    await coverPickerButton.click();
     const picker = page.getByRole("dialog", { name: "选择图片", exact: true });
     await expect(picker).toBeInViewport({ ratio: 1 });
     const media = picker.getByRole("button", {
@@ -186,9 +191,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     await picker.getByRole("button", { name: "取消", exact: true }).click();
     await expect(picker).toHaveCount(0);
     // Cancel the local selection; do not submit or mutate the seeded post.
-    await expect(
-      page.getByRole("button", { name: "选择图片", exact: true }),
-    ).toBeVisible();
+    await expect(coverPickerButton).toBeVisible();
   });
 
   test("media (seeded cover renders)", async ({ page }) => {

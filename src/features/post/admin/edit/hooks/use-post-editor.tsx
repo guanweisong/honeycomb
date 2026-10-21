@@ -374,10 +374,7 @@ export function usePostEditor(id: string | null) {
               // Keep the confirmed save and draft cleanup even if refreshing throws.
             }
             if (recordGeneration.current !== submittedGeneration) return;
-            if (
-              recordGeneration.current === submittedGeneration &&
-              previousRecord.current?.id === detail.id
-            ) {
+            if (previousRecord.current?.id === detail.id) {
               draft.clearSaved(submittedDraft);
               const currentValues = form.getValues();
               setConfirmedBaseline({

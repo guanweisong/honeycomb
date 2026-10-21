@@ -58,10 +58,10 @@ describe("UserDropdown", () => {
           ?.dispatchEvent(
             new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
           );
-        await new Promise((resolve) => setTimeout(resolve, 0));
       });
       expect(trigger?.getAttribute("aria-expanded")).toBe("false");
-      expect(document.activeElement).toBe(trigger);
+      // Radix restores focus asynchronously after the menu's unmount commits.
+      await vi.waitFor(() => expect(document.activeElement).toBe(trigger));
     },
   );
 

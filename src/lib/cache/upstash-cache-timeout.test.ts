@@ -236,7 +236,7 @@ describe("Upstash cache request deadlines", () => {
         .fill([
           ["/zh/archives/507f1f77bcf86cd799439011"],
           ["/en/archives/507f1f77bcf86cd799439011"],
-          ["/[locale]", "layout"],
+          ["/(blog)/[locale]", "layout"],
         ])
         .flat(),
     );
