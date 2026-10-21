@@ -17,7 +17,7 @@ import {
   PostListQuerySchema,
 } from "@/features/post/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import type { AdminPostListItem as PostListItemEntity } from "@/features/post/types";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 

@@ -233,15 +233,17 @@ describe("administrator-managed login names", () => {
   });
 
   it.each([
-    { username: null, displayUsername: null },
-    { username: "LegacyLogin", displayUsername: "LegacyDisplay" },
-  ])(
-    "leaves legacy identifiers unchanged on unrelated writes: %j",
-    async (identifiers) => {
+    [{ username: null, displayUsername: null }, "Legacy"],
+    [{ username: "LegacyLogin", displayUsername: "LegacyDisplay" }, "Legacy"],
+    [{ username: null, displayUsername: null }, " Legacy "],
+    [{ username: "LegacyLogin", displayUsername: "LegacyDisplay" }, " Legacy "],
+  ] as const)(
+    "leaves legacy identifiers unchanged on unrelated writes: %j / %s",
+    async (identifiers, storedName) => {
       const id = "000000000000000000000001";
       await db.insert(schema.user).values({
         id,
-        name: "Legacy",
+        name: storedName,
         email: "legacy@example.test",
         ...identifiers,
       });
@@ -249,7 +251,7 @@ describe("administrator-managed login names", () => {
 
       await updateUser(
         createUserRepository(db),
-        { id, name: undefined, email: "updated@example.test" },
+        { id, name: "Legacy", email: "updated@example.test" },
         UserLevel.ADMIN,
         invalidator,
       );
@@ -261,6 +263,36 @@ describe("administrator-managed login names", () => {
       ]);
     },
   );
+
+  it("never exposes stored credentials or login internals through list/current DTOs", async () => {
+    const user = await create("Private", "private@example.test");
+    expect(await db.select().from(schema.account)).toEqual([
+      expect.objectContaining({
+        userId: user.id,
+        password: expect.any(String),
+      }),
+    ]);
+    const repository = createUserRepository(db);
+    const result = await repository.list({ page: 1, limit: 10 });
+    expect(result.list).toHaveLength(1);
+    expect(Object.keys(result.list[0]!).sort()).toEqual([
+      "createdAt",
+      "email",
+      "id",
+      "level",
+      "name",
+      "status",
+      "updatedAt",
+    ]);
+    expect(Object.keys(await repository.current(user.id)).sort()).toEqual([
+      "email",
+      "id",
+      "level",
+      "name",
+      "status",
+    ]);
+    expect(result.list[0]?.email).toBe("private@example.test");
+  });
 
   it("authenticates the accepted one-character and 32-character login boundaries", async () => {
     await create("a", "short@example.test");

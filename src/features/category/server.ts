@@ -42,15 +42,20 @@ async function withTranslations<T extends typeof schema.category.$inferSelect>(
   rows: T[],
 ) {
   if (!rows.length) return [];
-  const translations = await db
-    .select()
-    .from(schema.categoryTranslation)
-    .where(
-      inArray(
-        schema.categoryTranslation.categoryId,
-        rows.map(({ id }) => id),
-      ),
+  const translations: (typeof schema.categoryTranslation.$inferSelect)[] = [];
+  for (let offset = 0; offset < rows.length; offset += SQL_ID_CHUNK_SIZE) {
+    translations.push(
+      ...(await db
+        .select()
+        .from(schema.categoryTranslation)
+        .where(
+          inArray(
+            schema.categoryTranslation.categoryId,
+            rows.slice(offset, offset + SQL_ID_CHUNK_SIZE).map(({ id }) => id),
+          ),
+        )),
     );
+  }
   const byId = groupCategoryTranslations(translations);
   return rows.map((row) => ({
     ...row,

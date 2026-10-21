@@ -22,7 +22,10 @@ import {
   assembleLocalizedField,
   assembleRequiredLocalizedField,
 } from "@/lib/db/translation-values";
-import { PublicPostListItemSchema } from "../post-read-model";
+import {
+  AdminPostListItemSchema,
+  PublicPostListItemSchema,
+} from "../post-read-model";
 type PostRecord = typeof schema.post.$inferSelect;
 type PostTranslations =
   ReturnType<typeof groupPostTranslations> extends Map<string, infer Value>
@@ -265,6 +268,81 @@ export async function loadPublicPostListItems(
           (translation) => translation.quoteAuthor,
         ),
         cover: row.cover ?? undefined,
+      }),
+    ];
+  });
+}
+
+/** 管理列表的元数据、标题、引用和展示关系来自同一次权限受限快照。 */
+export async function loadAdminPostListItems(
+  db: Database,
+  posts: Pick<PostRecord, "id">[],
+  visibility: PostVisibility,
+) {
+  const ids = [...new Set(posts.map((post) => post.id))];
+  if (!ids.length) return [];
+  const rows = await observeDbOperation(
+    "post.service.relations",
+    "select",
+    () =>
+      db.query.post.findMany({
+        columns: {
+          id: true,
+          version: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          views: true,
+        },
+        where: and(
+          inArray(schema.post.id, ids),
+          visibility === "PUBLISHED_ONLY"
+            ? eq(schema.post.status, PostStatus.PUBLISHED)
+            : undefined,
+        ),
+        with: {
+          translations: {
+            columns: { locale: true, title: true, quoteContent: true },
+          },
+          category: {
+            columns: { id: true },
+            with: { translations: { columns: { locale: true, title: true } } },
+          },
+          author: { columns: { name: true } },
+        },
+      }),
+  );
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return posts.flatMap(({ id }) => {
+    const row = byId.get(id);
+    if (!row) return [];
+    return [
+      AdminPostListItemSchema.parse({
+        id: row.id,
+        version: row.version,
+        type: row.type,
+        status: row.status,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        views: row.views,
+        title: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.title,
+        ),
+        quoteContent: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.quoteContent,
+        ),
+        category: row.category
+          ? {
+              title: assembleRequiredLocalizedField(
+                row.category.translations,
+                (translation) => translation.title,
+              ),
+            }
+          : undefined,
+        author: row.author ? { name: row.author.name } : undefined,
       }),
     ];
   });

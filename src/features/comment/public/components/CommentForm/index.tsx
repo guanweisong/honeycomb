@@ -13,6 +13,7 @@ interface CommentFormProps {
   formRef: RefObject<HTMLFormElement | null>;
   isPending: boolean;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  onDraftChange: () => void;
   onCancelReply: () => void;
   onClearIdentity: () => void;
 }
@@ -23,6 +24,7 @@ export function CommentForm({
   formRef,
   isPending,
   onSubmit,
+  onDraftChange,
   onCancelReply,
   onClearIdentity,
 }: CommentFormProps) {
@@ -45,7 +47,7 @@ export function CommentForm({
           </button>
         </div>
       )}
-      <form onSubmit={onSubmit} ref={formRef}>
+      <form onSubmit={onSubmit} onInput={onDraftChange} ref={formRef}>
         {identity ? (
           <div className="my-2 flex justify-between">
             <span>

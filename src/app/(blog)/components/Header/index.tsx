@@ -13,7 +13,6 @@ import {
 import { getLocale } from "next-intl/server";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
 import { MenuType } from "@/features/menu/menu-types";
-import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuItem as MenuEntity } from "@/features/menu/types";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
@@ -29,21 +28,6 @@ const toNavigationItem = ({
   path,
   title,
 });
-
-function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
-  const nodes = new Map<string, MenuEntityTree>(
-    items.map((item) => [item.id, { ...item, children: [] }]),
-  );
-  const roots: MenuEntityTree[] = [];
-  for (const item of items) {
-    const node = nodes.get(item.id);
-    if (!node) continue;
-    const parent = item.parent ? nodes.get(item.parent) : undefined;
-    if (parent) parent.children?.push(node);
-    else roots.push(node);
-  }
-  return roots;
-}
 
 /**
  * 网站头部组件。
@@ -61,75 +45,37 @@ export default async function Header() {
   /**
    * 包含所有菜单项的数组。
    */
-  const allMenu: MenuEntity[] = [
-    {
-      title: { zh: "首页", en: "Home" },
-      id: "home",
-      parent: null,
-      power: 0,
-      type: MenuType.CUSTOM,
-      path: "/",
-      createdAt: null,
-      updatedAt: null,
-    },
-    ...menu?.list,
-  ];
-
-  /**
-   * 将扁平化的菜单数据转换为树形结构。
-   */
-  const menuTree = buildMenuTree(allMenu);
-
-  /**
-   * 计算菜单的 Link。
-   * 将处理后的菜单数据格式化为 `MenuItem` 数组，用于 `Menu` 组件。
-   * @returns {MenuLocalEntity[]} 格式化后的菜单数据。
-   */
-  const getMenuData = () => {
-    const result: MenuLocalEntity[] = [];
-    const getItem = (data: MenuEntityTree) => {
-      /**
-       * 递归处理单个菜单项，生成 `MenuItem` 格式。
-       * @param {MenuEntityTree} data - 原始菜单实体数据。
-       * @returns 格式化后的菜单项。
-       */
-      const item: MenuLocalEntity = {
-        label: data.title?.[language] ?? "",
-        link: "",
-        children: [],
-      };
-      if (data.id === "home") {
-        item.link = "/list/category";
-      } else if (data.id === "links") {
-        item.link = data.path ?? "";
-      }
-      switch (data.type) {
-        case MenuType.PAGE:
-          item.link = `/pages/${data.id}`;
-          break;
-        case MenuType.CATEGORY:
-          item.link = `/list/category/${getCurrentPathOfMenu({
-            id: data.id,
-            familyProp: "path",
-            menu: menu?.list,
-          }).join("/")}`;
-          break;
-      }
-      if (data.children?.length) {
-        item.children = data.children.map((m) => getItem(m));
-      }
-      return item;
-    };
-    menuTree.forEach((item) => {
-      result.push(getItem(item));
-    });
-    return result;
+  const home: MenuEntity = {
+    title: { zh: "首页", en: "Home" },
+    id: "home",
+    parent: null,
+    power: 0,
+    type: MenuType.CUSTOM,
+    path: "/",
+    createdAt: null,
+    updatedAt: null,
   };
+  const allMenu = [home, ...menu.list];
 
-  /**
-   * 格式化后的菜单数据，用于渲染导航菜单。
-   */
-  const menuDataFormat = getMenuData();
+  const navigation = menu.list.map(toNavigationItem);
+  const breadcrumbNavigation = [toNavigationItem(home), ...navigation];
+  const menuIds = new Set(allMenu.map((item) => item.id));
+  // Only roots are displayed; keep all navigation records for ancestor matching.
+  const menuDataFormat: MenuLocalEntity[] = allMenu
+    .filter((item) => !item.parent || !menuIds.has(item.parent))
+    .map((data) => {
+      let link =
+        data.id === "home"
+          ? "/list/category"
+          : data.id === "links"
+            ? (data.path ?? "")
+            : "";
+      if (data.type === MenuType.PAGE) link = `/pages/${data.id}`;
+      if (data.type === MenuType.CATEGORY) {
+        link = `/list/category/${getCurrentPathOfMenu({ id: data.id, familyProp: "path", menu: menu.list }).join("/")}`;
+      }
+      return { label: data.title?.[language] ?? "", link };
+    });
 
   return (
     <>
@@ -148,10 +94,7 @@ export default async function Header() {
             </span>
           </div>
           <div className="flex items-center">
-            <Menu
-              data={menuDataFormat}
-              flatMenuData={menu.list.map(toNavigationItem)}
-            />
+            <Menu data={menuDataFormat} flatMenuData={navigation} />
           </div>
           <div className="flex items-center gap-3 mr-2 shrink-0">
             <div data-testid="theme-switcher">
@@ -163,7 +106,7 @@ export default async function Header() {
         </div>
       </header>
       <ViewTransition name="siteBreadcrumb">
-        <Breadcrumb menu={allMenu.map(toNavigationItem)} />
+        <Breadcrumb menu={breadcrumbNavigation} />
       </ViewTransition>
     </>
   );

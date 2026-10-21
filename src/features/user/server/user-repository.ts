@@ -183,18 +183,24 @@ export function createUserRepository(db: Database) {
       const update = async (
         store: CredentialStore & Pick<Database, "delete">,
       ) => {
-        if (protectsLevel && rest.level) {
+        let rename = rest.name !== undefined;
+        if (protectsLevel || rename) {
           // The write transaction serializes this guard with competing promotions.
           const [current] = await observeDbOperation(
             "user.update",
             "select",
             () =>
               store
-                .select({ level: schema.user.level })
+                .select({ level: schema.user.level, name: schema.user.name })
                 .from(schema.user)
                 .where(eq(schema.user.id, id)),
           );
           if (current) {
+            rename =
+              rest.name !== undefined &&
+              rest.name.trim() !== current.name?.trim();
+          }
+          if (current && protectsLevel && rest.level) {
             assertUserLevelChange(
               id,
               parseEnumValue(
@@ -211,9 +217,9 @@ export function createUserRepository(db: Database) {
             .update(schema.user)
             .set({
               ...rest,
-              ...(rest.name === undefined
-                ? {}
-                : { username: rest.name, displayUsername: rest.name }),
+              ...(rename
+                ? { username: rest.name, displayUsername: rest.name }
+                : {}),
               updatedAt: new Date().toISOString(),
             })
             .where(eq(schema.user.id, id))
@@ -228,7 +234,9 @@ export function createUserRepository(db: Database) {
         }
         return validateUserState(user);
       };
-      return password || protectsLevel ? db.transaction(update) : update(db);
+      return password || protectsLevel || rest.name !== undefined
+        ? db.transaction(update)
+        : update(db);
     },
   };
 }

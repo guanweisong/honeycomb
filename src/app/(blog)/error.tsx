@@ -1,10 +1,15 @@
 "use client";
 
 import { captureException } from "@sentry/nextjs";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import { PageState } from "@/components/PageState";
+
+const subscribeToLanguage = () => () => {};
+const getLanguage = () => document.documentElement.lang || "zh";
+// Match the server snapshot during hydration; no provider is required to recover.
+const getServerLanguage = () => "zh";
 
 export default function Error({
   error,
@@ -19,9 +24,11 @@ export default function Error({
 
   const isOffline =
     typeof navigator !== "undefined" && navigator.onLine === false;
-  const isChinese =
-    typeof document !== "undefined" &&
-    document.documentElement.lang.startsWith("zh");
+  const isChinese = useSyncExternalStore(
+    subscribeToLanguage,
+    getLanguage,
+    getServerLanguage,
+  ).startsWith("zh");
 
   if (isOffline) {
     return (
@@ -43,11 +50,15 @@ export default function Error({
 
   return (
     <PageState
-      title="页面遇到了一点问题"
-      description="内容暂时无法加载，请稍后重试。"
+      title={isChinese ? "页面遇到了一点问题" : "Something went wrong!"}
+      description={
+        isChinese
+          ? "内容暂时无法加载，请稍后重试。"
+          : "An error occurred while loading this page. Please try again later."
+      }
       actions={
         <Button type="button" onClick={reset}>
-          重试
+          {isChinese ? "重试" : "Try again"}
         </Button>
       }
     />

@@ -40,7 +40,7 @@ const t = initTRPC.context<Context>().create({
 
 const requestObservabilityMiddleware = t.middleware(
   async ({ ctx, next, path, type }) => {
-    if (ctx.requestObservabilityEnabled === false) return next();
+    const observabilityEnabled = ctx.requestObservabilityEnabled !== false;
 
     const startedAt = Date.now();
     const baseContext = {
@@ -49,7 +49,8 @@ const requestObservabilityMiddleware = t.middleware(
       method: type,
     };
 
-    getLogger().info(LogEvent.requestStarted, baseContext);
+    if (observabilityEnabled)
+      getLogger().info(LogEvent.requestStarted, baseContext);
 
     const response = await next();
     const applicationError =
@@ -67,6 +68,8 @@ const requestObservabilityMiddleware = t.middleware(
             }),
           }
         : response;
+    if (!observabilityEnabled) return result;
+
     const durationMs = Date.now() - startedAt;
     const outcome = result.ok ? "success" : result.error.code;
     const labels = { procedure: path, method: type, outcome };

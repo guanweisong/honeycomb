@@ -265,7 +265,7 @@ describe("Page Router", () => {
   });
 
   describe("detail procedure", () => {
-    it("should return page details with author info", async () => {
+    it("returns author information without querying media for image-free content", async () => {
       const mockAuthor = { id: TEST_IDS.ID_1, name: "Test Author" };
       const mockPage = {
         id: TEST_IDS.ID_1,
@@ -276,16 +276,6 @@ describe("Page Router", () => {
         authorId: TEST_IDS.ID_1,
         createdAt: new Date(),
       };
-      const mockImages = [
-        { id: "img1", url: "https://example.com/img1.jpg" },
-        { id: "img2", url: "https://example.com/img2.jpg" },
-      ];
-
-      // 设置页面详情查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockPage]);
-
       mockDb.query.page.findFirst.mockResolvedValueOnce({
         ...mockPage,
         translations: [
@@ -305,20 +295,11 @@ describe("Page Router", () => {
         author: mockAuthor,
       });
 
-      // 设置作者查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([mockAuthor]);
-
-      // 设置图片查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockImages);
-
       const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.detail({ id: TEST_IDS.ID_1 });
 
+      expect(mockDb.select).not.toHaveBeenCalled();
       expect(result).toEqual({
         ...mockPage,
         author: mockAuthor,

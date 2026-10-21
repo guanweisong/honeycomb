@@ -26,6 +26,12 @@ const router = createTRPCRouter({
   application: publicProcedure.query(() => {
     throw new ApplicationError("FORBIDDEN", "业务操作不允许");
   }),
+  missing: publicProcedure.query(() => {
+    throw new ApplicationError("NOT_FOUND", "Item missing");
+  }),
+  conflict: publicProcedure.query(() => {
+    throw new ApplicationError("CONFLICT", "Item conflict");
+  }),
   domain: publicProcedure.query(() =>
     mapApplicationError(new DomainError("文章不存在", "POST_NOT_FOUND")),
   ),
@@ -88,6 +94,40 @@ describe("tRPC HTTP error boundary", () => {
       expect(text).not.toContain(syntheticSecret);
       expect(text).not.toContain("update account");
       expect(text).not.toContain("stack");
+    },
+  );
+
+  describe.each([true, false])(
+    "application mapping with observability %s",
+    (observability) => {
+      it.each([
+        ["application", 403, "FORBIDDEN"],
+        ["missing", 404, "NOT_FOUND"],
+        ["conflict", 409, "CONFLICT"],
+      ] as const)(
+        "preserves %s over HTTP and server callers",
+        async (path, status, code) => {
+          const memory = createMemoryObservability();
+          configureObservability(memory);
+          const response = await request(path, { observability });
+          expect(response.status).toBe(status);
+          expect(await response.json()).toMatchObject({
+            error: { data: { code, httpStatus: status } },
+          });
+          await expect(
+            router
+              .createCaller({
+                ...createMockContext(),
+                requestObservabilityEnabled: observability,
+              })
+              [path](),
+          ).rejects.toMatchObject({ code });
+          if (!observability) {
+            expect(memory.logEvents).toEqual([]);
+            expect(memory.metricEvents).toEqual([]);
+          }
+        },
+      );
     },
   );
 

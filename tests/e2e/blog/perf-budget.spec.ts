@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { metricValue } from "../../helpers/performance-metrics";
+import { availableParallelism, totalmem } from "node:os";
+import {
+  metricValue,
+  taskDurationDelta,
+} from "../../helpers/performance-metrics";
 import { openBlogHome } from "./helpers";
 
 function getThreshold(name: string, fallback: number): number {
@@ -38,17 +42,33 @@ test.describe("blog performance budget", () => {
     await page.evaluate(() => {
       window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
     });
-    await page.waitForTimeout(600);
+    await page.waitForFunction(
+      () =>
+        Math.abs(
+          window.scrollY -
+            Math.max(
+              0,
+              document.documentElement.scrollHeight - window.innerHeight,
+            ),
+        ) <= 1,
+    );
     await page.evaluate(() => {
       window.scrollTo({ top: 0, behavior: "instant" });
     });
+
+    await page.waitForFunction(() => window.scrollY === 0);
 
     const firstPost = page.locator('a[href*="/en/archives/"]').first();
     await expect(firstPost).toBeVisible();
     await firstPost.click();
     await expect(page).toHaveURL(/\/en\/archives\//);
-    await page.goBack({ waitUntil: "networkidle" });
+    await expect(page.locator("main")).toBeVisible();
+    await expect(
+      page.locator("main").getByRole("heading").first(),
+    ).toBeVisible();
+    await page.goBack({ waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/en\/list\/category/);
+    await expect(firstPost).toBeVisible();
 
     const wallSec = Math.max((Date.now() - wallStart) / 1000, 0.001);
     const finalPerf = await cdp.send("Performance.getMetrics");
@@ -63,11 +83,44 @@ test.describe("blog performance budget", () => {
     });
 
     expect(finalTaskDuration).toBeGreaterThanOrEqual(baselineTaskDuration);
-    const cpuPercent =
-      ((finalTaskDuration - baselineTaskDuration) / wallSec) * 100;
+    const taskSeconds = taskDurationDelta(
+      baselineTaskDuration,
+      finalTaskDuration,
+    );
+    const cpuPercent = (taskSeconds / wallSec) * 100;
     const heapUsedMB = finalHeapUsed / (1024 * 1024);
     const heapDeltaMB = (finalHeapUsed - baselineHeapUsed) / (1024 * 1024);
 
+    const measurement = {
+      phase: "scroll-detail-back",
+      taskSeconds,
+      wallSec,
+      cpuPercent,
+      heapUsedMB,
+      heapDeltaMB,
+      domNodes,
+      browser: await page.evaluate(() => navigator.userAgent),
+      buildMode:
+        process.env.PLAYWRIGHT_USE_DEV_SERVER === "1"
+          ? "development"
+          : "production",
+      machine: {
+        platform: process.platform,
+        architecture: process.arch,
+        node: process.versions.node,
+        parallelism: availableParallelism(),
+        memoryBytes: totalmem(),
+      },
+    };
+    // CI deletes the owned test directory, including attachments. Keep this
+    // fixed, non-sensitive measurement in job logs for later baseline work.
+    console.info(`interaction-resource-smoke ${JSON.stringify(measurement)}`);
+    await test.info().attach("interaction-resource-smoke.json", {
+      contentType: "application/json",
+      body: JSON.stringify(measurement, null, 2),
+    });
+    // Record absolute work now; establish any new blocking budget from
+    // repeated samples on the same CI machine and build mode, not a guess.
     expect(cpuPercent).toBeLessThan(maxCpuPercent);
     expect(heapUsedMB).toBeLessThan(maxHeapUsedMB);
     expect(heapDeltaMB).toBeLessThan(maxHeapDeltaMB);

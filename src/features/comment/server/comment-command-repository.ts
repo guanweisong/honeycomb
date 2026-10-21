@@ -31,7 +31,7 @@ export function createCommentCommandRepository(db: Database) {
       );
       return comment ? parseCommentStatus(comment.status) : null;
     },
-    async update(input: CommentUpdate) {
+    async update(input: CommentUpdate, expectedStatus?: CommentStatus) {
       const { id, ...changes } = input;
       const [updated] = await observeDbOperation(
         "comment.service.update",
@@ -40,9 +40,17 @@ export function createCommentCommandRepository(db: Database) {
           db
             .update(schema.comment)
             .set(changes)
-            .where(eq(schema.comment.id, id))
+            .where(
+              and(
+                eq(schema.comment.id, id),
+                expectedStatus === undefined
+                  ? undefined
+                  : eq(schema.comment.status, expectedStatus),
+              ),
+            )
             .returning(),
       );
+      if (!updated && expectedStatus !== undefined) return null;
       return toCommentRecord(requireWriteResult(updated, "update", "comment"));
     },
     async destroy(ids: string[]) {

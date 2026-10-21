@@ -5,7 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const trpcMocks = vi.hoisted(() => ({
   calls: [] as Array<[string, unknown]>,
   refetch: vi.fn(),
-  remainingPages: [] as Array<{ data: { list: string[] }; isLoading: boolean }>,
+  remainingPages: [] as Array<{
+    data?: { list: string[] };
+    isLoading: boolean;
+    isError?: boolean;
+    isFetching?: boolean;
+    refetch?: ReturnType<typeof vi.fn>;
+  }>,
+  pageError: false,
+  categoryError: false,
+  retryPage: vi.fn(),
+  retryCategory: vi.fn(),
   pageTotal: undefined as number | undefined,
   menuError: false,
   menuFetching: false,
@@ -16,13 +26,13 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     useQueries: (
       build: (query: {
         page: {
-          adminIndex: (input: { page: number; limit: number }) => unknown;
+          menuOptions: (input: { page: number; limit: number }) => unknown;
         };
       }) => unknown[],
     ) => {
       const requests = build({
         page: {
-          adminIndex: (input) => {
+          menuOptions: (input) => {
             trpcMocks.calls.push(["remaining-page", input]);
             return input;
           },
@@ -31,16 +41,20 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
       return requests.map((_, index) => trpcMocks.remainingPages[index]);
     },
     page: {
-      adminIndex: {
+      menuOptions: {
         useQuery: (input: unknown) => {
           trpcMocks.calls.push(["page", input]);
           return {
-            data: {
-              list: ["page"],
-              ...(trpcMocks.pageTotal === undefined
-                ? {}
-                : { total: trpcMocks.pageTotal }),
-            },
+            isError: trpcMocks.pageError,
+            refetch: trpcMocks.retryPage,
+            data: trpcMocks.pageError
+              ? undefined
+              : {
+                  list: ["page"],
+                  ...(trpcMocks.pageTotal === undefined
+                    ? {}
+                    : { total: trpcMocks.pageTotal }),
+                },
           };
         },
       },
@@ -49,7 +63,11 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
       adminTree: {
         useQuery: (input: unknown) => {
           trpcMocks.calls.push(["category", input]);
-          return { data: { list: ["category"] } };
+          return {
+            data: { list: ["category"] },
+            isError: trpcMocks.categoryError,
+            refetch: trpcMocks.retryCategory,
+          };
         },
       },
     },
@@ -90,6 +108,10 @@ describe("menu query inputs", () => {
 
     beforeEach(() => {
       trpcMocks.calls.length = 0;
+      trpcMocks.pageError = false;
+      trpcMocks.categoryError = false;
+      trpcMocks.retryPage.mockReset();
+      trpcMocks.retryCategory.mockReset();
       trpcMocks.remainingPages = [];
       trpcMocks.pageTotal = undefined;
       trpcMocks.menuError = false;
@@ -118,7 +140,7 @@ describe("menu query inputs", () => {
         ["category", undefined],
         ["menu", undefined],
       ]);
-      expect(query).toEqual({
+      expect(query).toMatchObject({
         pageList: { list: ["page"] },
         categoryList: { list: ["category"] },
         checkedData: { list: ["menu"] },
@@ -138,6 +160,53 @@ describe("menu query inputs", () => {
       }
       await act(async () => root.render(React.createElement(Harness)));
       expect(query).toMatchObject({ menuError: true, menuFetching: true });
+    });
+
+    it("retains successful options and retries only failed option requests", async () => {
+      const retryMissingPage = vi.fn();
+      trpcMocks.pageTotal = 201;
+      trpcMocks.remainingPages = [
+        { isLoading: false, isError: true, refetch: retryMissingPage },
+        { data: { list: ["last"] }, isLoading: false },
+      ];
+      trpcMocks.categoryError = true;
+      let query: ReturnType<typeof useMenuQuery> | undefined;
+      function Harness() {
+        query = useMenuQuery();
+        return null;
+      }
+      await act(async () => root.render(React.createElement(Harness)));
+      expect(query?.pageList?.list).toEqual(["page", "last"]);
+      expect(query?.pageError).toBe(true);
+      expect(query?.categoryError).toBe(true);
+      await act(async () => {
+        await query?.retryPages();
+        await query?.retryCategory();
+      });
+      expect(retryMissingPage).toHaveBeenCalledOnce();
+      expect(trpcMocks.retryCategory).toHaveBeenCalledOnce();
+      expect(trpcMocks.retryPage).not.toHaveBeenCalled();
+      expect(trpcMocks.refetch).not.toHaveBeenCalled();
+      trpcMocks.remainingPages[0] = {
+        data: { list: ["middle"] },
+        isLoading: false,
+      };
+      await act(async () => root.render(React.createElement(Harness)));
+      expect(query?.pageError).toBe(false);
+      expect(query?.pageList?.list).toEqual(["page", "middle", "last"]);
+    });
+    it("exposes first page failure separately from the editable menu baseline", async () => {
+      trpcMocks.pageError = true;
+      let query: ReturnType<typeof useMenuQuery> | undefined;
+      function Harness() {
+        query = useMenuQuery();
+        return null;
+      }
+      await act(async () => root.render(React.createElement(Harness)));
+      expect(query?.pageError).toBe(true);
+      await act(async () => query?.retryPages());
+      expect(trpcMocks.retryPage).toHaveBeenCalledOnce();
+      expect(query?.checkedData).toEqual({ list: ["menu"] });
     });
 
     it("includes page choices beyond the first bounded request", async () => {

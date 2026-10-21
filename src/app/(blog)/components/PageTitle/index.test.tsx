@@ -14,13 +14,13 @@ describe("PageTitle", () => {
     container?.remove();
   });
 
-  it("renders children as a styled h2 heading", () => {
+  it("renders children as a styled h1 heading", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
     act(() => root.render(<PageTitle>文章归档</PageTitle>));
 
-    expect(container.querySelector("h2")?.textContent).toBe("文章归档");
-    expect(container.querySelector("h2")?.className).toContain("text-center");
+    expect(container.querySelector("h1")?.textContent).toBe("文章归档");
+    expect(container.querySelector("h1")?.className).toContain("text-center");
   });
 });

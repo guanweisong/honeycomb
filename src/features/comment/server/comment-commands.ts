@@ -8,6 +8,7 @@ import {
   assertPublicTarget,
   toCommentTargetReference,
 } from "./comment-target-policy";
+import type { CommentStatus } from "../comment-status";
 import { assertCommentTransition } from "../rules";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
@@ -33,14 +34,22 @@ export async function updateComment(
   input: CommentUpdate,
   invalidator: PublicContentInvalidator,
 ) {
+  let expectedStatus: CommentStatus | undefined;
   if (input.status !== undefined) {
     const currentStatus = await repository.findStatus(input.id);
     if (!currentStatus) throw new ApplicationError("NOT_FOUND", "评论不存在");
+    expectedStatus = currentStatus;
     if (currentStatus !== input.status) {
       assertCommentTransition(input.id, currentStatus, input.status);
     }
   }
-  const result = await repository.update(input);
+  const result = await repository.update(input, expectedStatus);
+  if (!result) {
+    // 条件写入失败后只重读以区分删除与并发审核，不重放过期的更新。
+    const status = await repository.findStatus(input.id);
+    if (!status) throw new ApplicationError("NOT_FOUND", "评论不存在");
+    throw new ApplicationError("CONFLICT", "评论状态已变更，请刷新后重新审核");
+  }
   const publicSync = await invalidator.invalidate({ refreshLayout: true });
   return { ...result, publicSync: publicSync.state };
 }

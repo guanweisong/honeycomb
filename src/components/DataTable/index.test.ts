@@ -14,19 +14,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock("../MultiSelect", async () => {
-  const { createElement } = await import("react");
+  const { cloneElement } = await import("react");
 
   return {
-    MultiSelect: ({ onChange }: { onChange?: (values: string[]) => void }) =>
-      createElement(
-        "button",
-        {
-          type: "button",
-          "data-testid": "role-filter",
-          onClick: () => onChange?.(["admin"]),
-        },
-        "筛选角色",
-      ),
+    MultiSelect: ({
+      onChange,
+      trigger,
+    }: {
+      onChange?: (values: string[]) => void;
+      trigger: React.ReactElement<
+        React.ButtonHTMLAttributes<HTMLButtonElement> & {
+          "data-testid"?: string;
+        }
+      >;
+    }) =>
+      cloneElement(trigger, {
+        "data-testid": "role-filter",
+        onClick: () => onChange?.(["admin"]),
+      }),
   };
 });
 
@@ -156,9 +161,10 @@ describe("DataTable", () => {
       (header) => header.textContent?.includes("姓名"),
     );
     await act(async () => {
-      nameHeader?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      nameHeader?.querySelector("button")?.click();
     });
 
+    expect(nameHeader?.getAttribute("aria-sort")).toBe("ascending");
     expect(onChange).toHaveBeenLastCalledWith({
       page: 1,
       limit: 20,
@@ -181,6 +187,50 @@ describe("DataTable", () => {
       role: ["admin"],
     });
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("names selection and filter controls and disables request buttons while fetching", async () => {
+    const onChange = vi.fn();
+    const props = {
+      columns,
+      getRowId: (row: Person) => row.id,
+      getRowLabel: (row: Person) => row.name,
+      data: { list: people, total: 2 },
+      selectableRows: true,
+      pagination: false,
+      onChange,
+    };
+    await act(async () =>
+      root.render(React.createElement(DataTable<Person>, props)),
+    );
+    expect(
+      container.querySelector(
+        '[role="checkbox"][aria-label="选择当前页全部可选行"]',
+      ),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('[role="checkbox"][aria-label="选择记录 Bob"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="筛选角色"]'),
+    ).not.toBeNull();
+    const sort = findButton(container, "姓名");
+    sort?.focus();
+    expect(document.activeElement).toBe(sort);
+    await act(async () =>
+      root.render(
+        React.createElement(DataTable<Person>, { ...props, isFetching: true }),
+      ),
+    );
+    onChange.mockClear();
+    await act(async () => {
+      sort?.click();
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="筛选角色"]')
+        ?.click();
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(sort?.disabled).toBe(true);
   });
 
   it("selects and clears only selectable rows on the current page", async () => {

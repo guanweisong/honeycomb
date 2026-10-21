@@ -17,12 +17,14 @@ interface TiptapProps extends Pick<
   HTMLAttributes<HTMLDivElement>,
   "id" | "aria-describedby" | "aria-invalid" | "aria-labelledby"
 > {
+  disabled?: boolean;
   value?: string;
   onChange?: (value: string) => void;
 }
 
 export default function Tiptap({
   value,
+  disabled = false,
   onChange,
   id,
   "aria-describedby": describedBy,
@@ -57,6 +59,7 @@ export default function Tiptap({
       Color,
       Highlight,
     ],
+    editable: !disabled,
     content: value || "<p></p>",
     immediatelyRender: false,
     editorProps: {
@@ -80,11 +83,20 @@ export default function Tiptap({
     }
   }, [value, editor]);
 
+  useEffect(() => {
+    editor?.setEditable(!disabled, false);
+  }, [editor, disabled]);
+
   if (!editor) return null;
 
   return (
     <div className="rounded-md border">
-      <EditorToolbar editor={editor} />
+      {/* Remount controls to close portalled menus/pickers when editability changes. */}
+      <EditorToolbar
+        key={String(disabled)}
+        editor={editor}
+        disabled={disabled}
+      />
 
       {/* Editor */}
       <EditorContent editor={editor} className="prose-editor" />
@@ -93,7 +105,13 @@ export default function Tiptap({
 }
 
 /** 选择与事务变化只刷新工具栏，不重渲染编辑器内容。 */
-function EditorToolbar({ editor }: { editor: Editor }) {
+function EditorToolbar({
+  editor,
+  disabled,
+}: {
+  editor: Editor;
+  disabled: boolean;
+}) {
   const [, setUpdateCount] = useState(0);
 
   useEffect(() => {
@@ -107,7 +125,11 @@ function EditorToolbar({ editor }: { editor: Editor }) {
   }, [editor]);
 
   return (
-    <div className="sticky -top-3 left-0 right-0 z-20 flex flex-wrap items-center gap-1 border-b bg-white p-1">
+    <fieldset
+      disabled={disabled}
+      inert={disabled}
+      className="sticky -top-3 left-0 right-0 z-20 flex flex-wrap items-center gap-1 border-b bg-white p-1"
+    >
       {toolbarItems.map((group, index) => (
         <div key={index} className="flex flex-nowrap items-center gap-1">
           {group.map((item, itemIndex) => {
@@ -120,7 +142,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
                 />
               );
             }
-            if (item.render && editor) {
+            if (item.render) {
               return <div key={item.label}>{item.render(editor)}</div>;
             }
             return (
@@ -128,13 +150,13 @@ function EditorToolbar({ editor }: { editor: Editor }) {
                 key={item.label}
                 icon={item.icon}
                 label={item.label}
-                active={editor && item.isActive?.(editor)}
-                onClick={() => editor && item.onClick?.(editor)}
+                active={item.isActive?.(editor)}
+                onClick={() => item.onClick?.(editor)}
               />
             );
           })}
         </div>
       ))}
-    </div>
+    </fieldset>
   );
 }

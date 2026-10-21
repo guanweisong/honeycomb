@@ -65,6 +65,7 @@ const CommentClient = ({
 
   const handleReply = (item: CommentTreeEntity) => {
     window.scrollTo(0, 99999);
+    submission.onDraftChange();
     setReplyTo(item);
   };
 
@@ -83,8 +84,15 @@ const CommentClient = ({
           formRef={formRef}
           isPending={submission.isPending}
           onSubmit={submission.handleSubmit}
-          onCancelReply={() => setReplyTo(null)}
-          onClearIdentity={clearIdentity}
+          onDraftChange={submission.onDraftChange}
+          onCancelReply={() => {
+            submission.onDraftChange();
+            setReplyTo(null);
+          }}
+          onClearIdentity={() => {
+            submission.onDraftChange();
+            clearIdentity();
+          }}
         />
       </Card>
       {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (

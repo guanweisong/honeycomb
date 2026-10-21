@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import {
   mkdtempSync,
   mkdirSync,
@@ -17,7 +17,7 @@ afterEach(() => {
   if (fixture) rmSync(fixture, { recursive: true, force: true });
 });
 
-it("quality:spec forwards strict flags and blocks validator failures and whitespace errors", () => {
+it("quality:spec forwards strict flags and blocks validator failures and whitespace errors", async () => {
   const manifest = JSON.parse(readFileSync("package.json", "utf8"));
   expect(manifest.scripts["quality:spec"]).toBeDefined();
   fixture = mkdtempSync(join(tmpdir(), "honeycomb-quality-spec-"));
@@ -43,10 +43,10 @@ it("quality:spec forwards strict flags and blocks validator failures and whitesp
     '#!/bin/sh\n[ "$*" = "validate --all --strict" ] || exit 64\nexit "${TEST_SPEC_STATUS:-0}"\n',
     { mode: 0o755 },
   );
-  const run = (command: string, args: string[], status = "0") =>
-    spawnSync(command, args, {
+  const run = async (command: string, args: string[], status = "0") => {
+    const result = await runTestProcess(command, args, {
       cwd: fixture,
-      encoding: "utf8",
+      timeout: 5_000,
       env: {
         ...process.env,
         CI: "false",
@@ -55,47 +55,53 @@ it("quality:spec forwards strict flags and blocks validator failures and whitesp
         TEST_SPEC_STATUS: status,
       },
     });
-  expect(run("git", ["init", "-q"]).status).toBe(0);
+    return result;
+  };
+  expect((await run("git", ["init", "-q"])).status).toBe(0);
   mkdirSync(join(fixture, "openspec/specs/example"), { recursive: true });
   const specPath = join(fixture, "openspec/specs/example/spec.md");
   const valid =
     "# Example\n\n## Purpose\n\nProvide a controlled fixture that demonstrates strict specification checks.\n\n## Requirements\n\n### Requirement: Example validation\nThe system SHALL validate the example.\n\n#### Scenario: Valid input\n- **WHEN** input is valid\n- **THEN** validation succeeds\n";
   writeFileSync(specPath, valid);
-  expect(run("git", ["add", "package.json", "openspec"]).status).toBe(0);
-  const clean = run("bun", ["run", "quality:spec"]);
+  expect((await run("git", ["add", "package.json", "openspec"])).status).toBe(
+    0,
+  );
+  const clean = await run("bun", ["run", "quality:spec"]);
   expect(clean.status, clean.stdout + clean.stderr).toBe(0);
   writeFileSync(specPath, "# Invalid specification\n");
-  expect(run("bun", ["run", "quality:spec"], "1").status).not.toBe(0);
+  expect((await run("bun", ["run", "quality:spec"], "1")).status).not.toBe(0);
   writeFileSync(specPath, valid + "\nTrailing whitespace   \n");
-  const whitespace = run("bun", ["run", "quality:spec"]);
+  const whitespace = await run("bun", ["run", "quality:spec"]);
   expect(whitespace.status).not.toBe(0);
   expect(whitespace.stdout + whitespace.stderr).toContain(
     "trailing whitespace",
   );
 
   writeFileSync(specPath, valid);
-  const commit = () => {
-    expect(run("git", ["add", "--all"]).status).toBe(0);
+  const commit = async () => {
+    expect((await run("git", ["add", "--all"])).status).toBe(0);
     expect(
-      run("git", [
-        "-c",
-        "user.name=Fixture",
-        "-c",
-        "user.email=fixture@example.test",
-        "commit",
-        "-qm",
-        "fixture",
-      ]).status,
+      (
+        await run("git", [
+          "-c",
+          "user.name=Fixture",
+          "-c",
+          "user.email=fixture@example.test",
+          "commit",
+          "-qm",
+          "fixture",
+        ])
+      ).status,
     ).toBe(0);
-    return run("git", ["rev-parse", "HEAD"]).stdout.trim();
+    return (await run("git", ["rev-parse", "HEAD"])).stdout.trim();
   };
-  const base = commit();
+  const base = await commit();
   writeFileSync(specPath, valid + "\nClean committed change\n");
-  commit();
-  const checkRange = (baseSha: string) =>
-    spawnSync("bun", ["run", "quality:spec"], {
+  await commit();
+  const checkRange = async (baseSha: string) => {
+    const result = await runTestProcess("bun", ["run", "quality:spec"], {
       cwd: fixture,
-      encoding: "utf8",
+      timeout: 5_000,
       env: {
         ...process.env,
         CI: "true",
@@ -104,23 +110,25 @@ it("quality:spec forwards strict flags and blocks validator failures and whitesp
         TEST_SPEC_STATUS: "0",
       },
     });
-  expect(checkRange(base).status).toBe(0);
+    return result;
+  };
+  expect((await checkRange(base)).status).toBe(0);
   for (const fallbackBase of [
     "0".repeat(40),
     "invalid; touch SHOULD_NOT_EXIST",
     "f".repeat(40),
   ]) {
-    expect(checkRange(fallbackBase).status).toBe(0);
+    expect((await checkRange(fallbackBase)).status).toBe(0);
   }
   writeFileSync(specPath, valid + "\nCommitted trailing whitespace   \n");
-  commit();
-  expect(checkRange(base).status).not.toBe(0);
+  await commit();
+  expect((await checkRange(base)).status).not.toBe(0);
   for (const invalidBase of [
     "0".repeat(40),
     "invalid; touch SHOULD_NOT_EXIST",
     "f".repeat(40),
   ]) {
-    expect(checkRange(invalidBase).status).not.toBe(0);
+    expect((await checkRange(invalidBase)).status).not.toBe(0);
   }
   expect(existsSync(join(fixture, "SHOULD_NOT_EXIST"))).toBe(false);
 }, 30_000);

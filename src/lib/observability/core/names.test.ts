@@ -7,6 +7,7 @@ import { LogEvent, MetricName } from "./names";
 describe("observability names", () => {
   it("exposes stable event and metric names", () => {
     expect(LogEvent).toMatchObject({
+      serviceWorkerRegistrationFailed: "service-worker.registration.failed",
       requestStarted: "request.started",
       requestCompleted: "request.completed",
       requestFailed: "request.failed",

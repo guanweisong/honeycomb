@@ -9,6 +9,36 @@ const validUser = {
 };
 
 describe("admin user write schemas", () => {
+  it("isolates invalid update fields from valid identifier validation", () => {
+    for (const [field, value] of [
+      ["email", "not-an-email"],
+      ["password", "12345"],
+      ["password", "a".repeat(129)],
+    ] as const) {
+      const result = UserUpdateSchema.safeParse({
+        id: "000000000000000000000001",
+        [field]: value,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success)
+        expect(result.error.issues.map((issue) => issue.path)).toEqual([
+          [field],
+        ]);
+    }
+  });
+
+  it("accepts valid update values with the same identifier and password boundaries", () => {
+    for (const password of ["a".repeat(6), "a".repeat(128)]) {
+      expect(
+        UserUpdateSchema.safeParse({
+          id: "000000000000000000000001",
+          email: validUser.email,
+          password,
+        }).success,
+      ).toBe(true);
+    }
+  });
+
   it("accepts passwords at the shared boundaries", () => {
     expect(UserInsertSchema.safeParse(validUser).success).toBe(true);
     expect(
@@ -23,8 +53,10 @@ describe("admin user write schemas", () => {
         .success,
     ).toBe(false);
     expect(
-      UserUpdateSchema.safeParse({ id: "user-id", email: "not-an-email" })
-        .success,
+      UserUpdateSchema.safeParse({
+        id: "000000000000000000000001",
+        email: "not-an-email",
+      }).success,
     ).toBe(false);
   });
 
@@ -34,7 +66,8 @@ describe("admin user write schemas", () => {
         UserInsertSchema.safeParse({ ...validUser, password }).success,
       ).toBe(false);
       expect(
-        UserUpdateSchema.safeParse({ id: "user-id", password }).success,
+        UserUpdateSchema.safeParse({ id: "000000000000000000000001", password })
+          .success,
       ).toBe(false);
     }
   });

@@ -27,6 +27,8 @@ export interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
   /** 稳定业务标识，用于行渲染及刷新后的选择对齐。 */
   getRowId: (row: TData) => string;
+  /** 用于行选择控件的可读名称；未提供时使用稳定业务 ID。 */
+  getRowLabel?: (row: TData) => string;
   data: DataTableDataSource<TData>;
   isFetching?: boolean;
   error?: boolean;

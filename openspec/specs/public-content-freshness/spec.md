@@ -86,10 +86,10 @@
 - **WHEN** 同一次计划同时影响文章索引、sitemap 数据缓存和公开路由缓存
 - **THEN** 缓存技术适配器 MUST 先提升文章索引版本，再过期 sitemap tag，最后失效详情与布局路由，避免路由在内层旧缓存仍可见时重新生成
 
-#### Scenario: 媒体删除重试修复缓存
+#### Scenario: 普通媒体删除后的缓存降级
 
-- **WHEN** 媒体已完成 DELETED 墓碑标记但上一次同步缓存失效失败，调用方再次明确确认未知引用风险并使用相同非空 ID 集合核对
-- **THEN** Media server 操作 MUST 跳过已完成的 DELETED 对象删除、保留墓碑，并再次执行幂等公开缓存失效
+- **WHEN** 普通媒体记录删除已提交，但公开缓存同步仍失败
+- **THEN** Media server 操作 MUST 返回已提交成功及 `publicSync: degraded`，客户端 MUST 保留降级反馈，不得为刷新缓存重做已提交删除；不得创建 DELETED 墓碑或恢复旧生命周期协议
 
 #### Scenario: 空失效计划
 

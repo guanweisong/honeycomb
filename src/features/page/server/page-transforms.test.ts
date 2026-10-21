@@ -29,7 +29,7 @@ describe("page command transforms", () => {
     );
   });
 
-  it("keeps and sanitizes explicitly provided empty content", () => {
+  it("omits translated content from parent update values", () => {
     expect(toPageUpdateValues({ content: { en: "", zh: "" } })).toEqual({});
   });
 });

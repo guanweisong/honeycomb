@@ -98,6 +98,11 @@ export function useMediaQuery() {
     total,
   ]);
 
+  // Retry the current failed page, not the first page or the next page.
+  const retry = useCallback(() => {
+    if (!query.isFetching) void refetch({ cancelRefetch: false });
+  }, [query.isFetching, refetch]);
+
   const reset = useCallback(() => {
     requestedPage.current = undefined;
     requestedFromSignature.current = undefined;
@@ -132,6 +137,8 @@ export function useMediaQuery() {
     isFetchingMore:
       page > 1 && (query.isFetching || (!currentPageLoaded && !query.error)),
     loadMore,
+    retry,
+    isRetrying: query.isFetching,
     refetch: reset,
     reset,
   };

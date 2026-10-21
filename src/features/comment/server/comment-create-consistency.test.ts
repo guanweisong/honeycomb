@@ -11,7 +11,8 @@ import { PostStatus } from "@/features/post/post-status";
 import { PageStatus } from "@/features/page/page-status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { createComment } from "./comment-commands";
+import { createComment, updateComment } from "./comment-commands";
+import { CommentStatus } from "../comment-status";
 import type { PublicCommentInput } from "../types";
 import { createCommentCommandRepository } from "./comment-command-repository";
 import { createCommentTargetRepository } from "./comment-target-repository";
@@ -279,4 +280,119 @@ describe("public comment insertion consistency with real libSQL", () => {
       expect(invalidations).toBe(expectedInvalidations);
     },
   );
+
+  it("rejects the second moderation write when both administrators read the old status", async () => {
+    await db
+      .update(schema.comment)
+      .set({ status: CommentStatus.TO_AUDIT })
+      .where(eq(schema.comment.id, "parent"));
+    let releaseReaders = () => {};
+    const bothRead = new Promise<void>((resolve) => {
+      releaseReaders = resolve;
+    });
+    let releaseSecondWrite = () => {};
+    const firstWrite = new Promise<void>((resolve) => {
+      releaseSecondWrite = resolve;
+    });
+    let readers = 0;
+    function racingRepository(database: typeof db) {
+      const repository = createCommentCommandRepository(database);
+      return {
+        findStatus: async (id: string) => {
+          const status = await repository.findStatus(id);
+          readers += 1;
+          if (readers === 2) releaseReaders();
+          await bothRead;
+          return status;
+        },
+        update: async (...args: Parameters<typeof repository.update>) => {
+          if (args[0].status === CommentStatus.RUBBISH) await firstWrite;
+          try {
+            return await repository.update(...args);
+          } finally {
+            if (args[0].status === CommentStatus.BAN) releaseSecondWrite();
+          }
+        },
+      };
+    }
+    const invalidator = dependencies().invalidator;
+    const results = await Promise.allSettled([
+      updateComment(
+        racingRepository(db),
+        { id: "parent", status: CommentStatus.BAN },
+        invalidator,
+      ),
+      updateComment(
+        racingRepository(competingDb),
+        { id: "parent", status: CommentStatus.RUBBISH, content: "stale edit" },
+        invalidator,
+      ),
+    ]);
+    expect(results[0].status).toBe("fulfilled");
+    expect(results[1]).toMatchObject({
+      status: "rejected",
+      reason: { code: "CONFLICT" },
+    });
+    const [stored] = await db
+      .select()
+      .from(schema.comment)
+      .where(eq(schema.comment.id, "parent"));
+    expect(stored).toMatchObject({
+      status: CommentStatus.BAN,
+      content: "parent comment",
+    });
+    expect(invalidations).toBe(1);
+  });
+
+  it("reports a comment deleted after the moderation read as not found", async () => {
+    const repository = createCommentCommandRepository(db);
+    const interleavedRepository = {
+      ...repository,
+      findStatus: async (id: string) => {
+        const status = await repository.findStatus(id);
+        await competingDb
+          .delete(schema.comment)
+          .where(eq(schema.comment.id, id));
+        return status;
+      },
+    };
+    await expect(
+      updateComment(
+        interleavedRepository,
+        { id: "parent", status: CommentStatus.BAN },
+        dependencies().invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(invalidations).toBe(0);
+  });
+
+  it("preserves same-status, legal serial transitions and content-only writes", async () => {
+    const repository = createCommentCommandRepository(db);
+    const invalidator = dependencies().invalidator;
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.PUBLISH },
+      invalidator,
+    );
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.BAN },
+      invalidator,
+    );
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.PUBLISH },
+      invalidator,
+    );
+    const result = await updateComment(
+      repository,
+      { id: "parent", content: "edited" },
+      invalidator,
+    );
+    expect(result).toMatchObject({
+      status: CommentStatus.PUBLISH,
+      content: "edited",
+    });
+    expect(invalidations).toBe(4);
+  });
 });

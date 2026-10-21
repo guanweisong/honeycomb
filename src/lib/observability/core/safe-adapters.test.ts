@@ -7,6 +7,20 @@ import { LogEvent, MetricName } from "./names";
 import { createSafeLogger, createSafeMetrics } from "./safe-adapters";
 
 describe("safe observability adapters", () => {
+  it("retains the bounded menu-options procedure label", () => {
+    const seen: unknown[] = [];
+    const metrics: Metrics = {
+      increment: (_name, labels) => {
+        seen.push(labels);
+      },
+      recordDuration: () => undefined,
+    };
+    createSafeMetrics(metrics).increment(MetricName.apiRequestsTotal, {
+      procedure: "page.menuOptions",
+    });
+    expect(seen).toEqual([{ procedure: "page.menuOptions" }]);
+  });
+
   it("swallows logger adapter failures", () => {
     const failingLogger: Logger = {
       info: () => {

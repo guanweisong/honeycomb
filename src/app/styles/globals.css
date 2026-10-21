@@ -199,7 +199,7 @@
 
 .prose-editor input[type="checkbox"] {
   @apply cursor-pointer;
-  accent-color: hsl(var(--primary));
+  accent-color: var(--primary);
 }
 
 /* ================================
@@ -207,7 +207,8 @@
    ================================ */
 
 .prose-editor ul[data-type="taskList"] li[data-checked="true"] > div {
-  @apply text-muted-foreground line-through;
+  color: var(--muted-foreground);
+  text-decoration: line-through;
 }
 
 /* ================================
@@ -220,11 +221,6 @@
 
 .prose-editor ul[data-type="taskList"] li:has(input:focus-visible) {
   @apply outline-2 outline-ring outline-offset-2;
-}
-
-.prose-editor ul[data-type="taskList"] li[data-checked="true"] > div {
-  color: hsl(var(--muted-foreground));
-  text-decoration: line-through;
 }
 
 .prose-editor blockquote {

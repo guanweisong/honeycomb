@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import * as schema from "@/lib/db/schema";
 import { getStatistics } from "./server";
 import { observeDbOperation } from "@/lib/observability/server";
 
@@ -23,6 +24,27 @@ describe("dashboard statistics", () => {
             { id: "no-posts", name: "No posts" },
           ]),
         };
+      }
+      if (selection?.item) {
+        const rows =
+          selection.item === schema.post.type
+            ? [
+                { item: "MOVIE", count: 3 },
+                { item: "ARTICLE", count: "2" },
+                { item: "QUOTE", count: "invalid" },
+              ]
+            : selection.item === schema.user.level
+              ? [
+                  { item: "EDITOR", count: "4" },
+                  { item: "ADMIN", count: 1 },
+                ]
+              : [
+                  { item: "BAN", count: 5 },
+                  { item: "RUBBISH", count: "6" },
+                  { item: "PUBLISH", count: 7 },
+                  { item: "TO_AUDIT", count: 8 },
+                ];
+        return { from: () => ({ groupBy: async () => rows }) };
       }
       return db;
     });
@@ -62,23 +84,15 @@ describe("dashboard statistics", () => {
         { item: "No posts", count: 0 },
       ],
     });
+    expect(db.select).toHaveBeenCalledTimes(5);
     expect(
       vi
         .mocked(observeDbOperation)
         .mock.calls.map(([name, kind]) => [name, kind]),
     ).toEqual([
-      ...Array.from({ length: 4 }, () => [
-        "statistics.posts-by-type",
-        "select",
-      ]),
-      ...Array.from({ length: 3 }, () => [
-        "statistics.users-by-level",
-        "select",
-      ]),
-      ...Array.from({ length: 4 }, () => [
-        "statistics.comments-by-status",
-        "select",
-      ]),
+      ["statistics.posts-by-type", "select"],
+      ["statistics.users-by-level", "select"],
+      ["statistics.comments-by-status", "select"],
       ["statistics.user-list", "select"],
       ["statistics.posts-by-author", "select"],
     ]);

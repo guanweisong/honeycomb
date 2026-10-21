@@ -129,6 +129,38 @@ describe("PostEditorActions", () => {
     ]);
   });
 
+  it("offers save and existing-authority publish for a post awaiting audit, without withdrawal", async () => {
+    grantedPermissions.add("post:update");
+    await renderActions({ id: "post-1", status: "TO_AUDIT" });
+    expect(button("保存待审核")).toBeDefined();
+    expect(button("发布")).toBeDefined();
+    expect(button("撤回为草稿")).toBeUndefined();
+    await click("保存待审核");
+    await click("发布");
+    expect(submitted).toEqual([
+      ["TO_AUDIT", "update"],
+      ["PUBLISHED", "update"],
+    ]);
+  });
+
+  it("keeps awaiting-audit actions disabled while pending", async () => {
+    grantedPermissions.add("post:update");
+    await renderActions({ id: "post-1", status: "TO_AUDIT", loading: true });
+    expect(button("保存待审核")?.disabled).toBe(true);
+    expect(button("发布")?.disabled).toBe(true);
+    await click("发布");
+    expect(submitted).toEqual([]);
+  });
+
+  it.each(["TO_AUDIT", "UNKNOWN"])(
+    "does not grant update authority to creators for %s",
+    async (status) => {
+      grantedPermissions.add("post:create");
+      await renderActions({ id: "post-1", status });
+      expect(container.querySelectorAll("button")).toHaveLength(0);
+    },
+  );
+
   it("disables published-post actions while a mutation is pending", async () => {
     grantedPermissions.add("post:update");
     await renderActions({ id: "post-1", loading: true, status: "PUBLISHED" });

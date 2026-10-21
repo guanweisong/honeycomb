@@ -79,19 +79,19 @@ describe("User Router", () => {
           id: TEST_IDS.ID_1,
           name: "User 1",
           email: "user1@example.com",
-          password: "pass1",
           level: UserLevel.EDITOR,
           status: UserStatus.ENABLE,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
         {
           id: TEST_IDS.ID_2,
           name: "User 2",
           email: "user2@example.com",
-          password: "pass2",
           level: UserLevel.ADMIN,
           status: UserStatus.ENABLE,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
       ];
       const mockCount = [{ count: "2" }];
@@ -116,6 +116,19 @@ describe("User Router", () => {
 
       const result = await caller.index({ page: 1, limit: 10 });
 
+      for (const user of result.list)
+        expect(user).not.toHaveProperty("password");
+      expect(
+        Object.keys(mockDb.select.mock.calls[0]?.[0] ?? {}).sort(),
+      ).toEqual([
+        "createdAt",
+        "email",
+        "id",
+        "level",
+        "name",
+        "status",
+        "updatedAt",
+      ]);
       expect(result).toEqual({
         list: mockUsers,
         total: 2,

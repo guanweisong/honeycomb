@@ -51,7 +51,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
   return (
     <div>
       <div className="mb-2">
-        <span className="font-medium">{title}</span> {`（尺寸：${size}）`}
+        <span className="font-medium">{title}</span> {`（建议尺寸：${size}）`}
       </div>
       <FormField
         control={control}
@@ -83,7 +83,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
                     onClick={() => openPhotoPicker()}
                   >
                     <Upload />
-                    重新上传
+                    更换图片
                   </Button>
                   <Button
                     type={"button"}
@@ -102,7 +102,7 @@ const PhotoPickerItem = (props: PhotoPickerItemProps) => {
                 onClick={() => openPhotoPicker()}
               >
                 <Upload />
-                点击上传
+                选择图片
               </Button>
             )}
             <FormMessage />

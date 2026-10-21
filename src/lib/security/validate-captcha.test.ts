@@ -19,6 +19,8 @@ describe("validate-captcha", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     configureObservability();
     vi.unstubAllGlobals();
     process.env.TURNSTILE_SECRET_KEY = originalSecret;
@@ -87,6 +89,66 @@ describe("validate-captcha", () => {
     ).toBe(true);
     expect(JSON.stringify(memory.metricEvents)).not.toContain("token");
   });
+
+  it.each(["headers", "body"] as const)(
+    "aborts a stalled %s within the application deadline",
+    async (stage) => {
+      vi.useFakeTimers();
+      vi.spyOn(AbortSignal, "timeout").mockImplementation((delay) => {
+        const controller = new AbortController();
+        setTimeout(
+          () =>
+            controller.abort(
+              new DOMException("Request timed out", "TimeoutError"),
+            ),
+          delay,
+        );
+        return controller.signal;
+      });
+      const memory = createMemoryObservability();
+      configureObservability(memory);
+      let requestSignal: AbortSignal | null | undefined;
+      fetchMock.mockImplementation((_url: string, init?: RequestInit) => {
+        requestSignal = init?.signal;
+        const pending = () =>
+          new Promise<never>((_resolve, reject) => {
+            requestSignal?.addEventListener(
+              "abort",
+              () => reject(requestSignal?.reason),
+              { once: true },
+            );
+          });
+        return stage === "headers"
+          ? pending()
+          : Promise.resolve({ ok: true, json: pending });
+      });
+      const nextBusinessStep = vi.fn();
+      let caught: unknown;
+      const operation = validateCaptcha("synthetic-captcha-token").then(
+        nextBusinessStep,
+        (error: unknown) => {
+          caught = error;
+        },
+      );
+      await vi.advanceTimersByTimeAsync(9999);
+      expect(caught).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(requestSignal?.aborted).toBe(true);
+      await operation;
+      expect(caught).toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "验证码服务出现问题。",
+      });
+      expect(nextBusinessStep).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(
+        JSON.stringify([caught, memory.logEvents, memory.metricEvents]),
+      ).not.toContain("synthetic-captcha-token");
+      expect(
+        JSON.stringify([caught, memory.logEvents, memory.metricEvents]),
+      ).not.toContain('"secret"');
+    },
+  );
 
   it("resolves when the verification succeeds", async () => {
     const memory = createMemoryObservability();

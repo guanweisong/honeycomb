@@ -107,11 +107,6 @@ vi.mock("@/features/comment/public/components", () => ({
     React.createElement("div", { "data-testid": "comment" }, id),
 }));
 
-vi.mock("@/app/(blog)/components/PageTitle", () => ({
-  default: ({ children }: { children: React.ReactNode }) =>
-    React.createElement("h1", null, children),
-}));
-
 vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) =>
     React.createElement("article", { "data-testid": "rich-text" }, html),

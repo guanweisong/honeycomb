@@ -169,6 +169,13 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "database",
   ],
   [
+    "page.menuOptions",
+    Permission.pageReadAll,
+    ALL_ROLES,
+    LIST_INPUT,
+    "database",
+  ],
+  [
     "page.adminDetail",
     Permission.pageReadAll,
     ALL_ROLES,

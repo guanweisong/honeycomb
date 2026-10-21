@@ -15,10 +15,13 @@ const grantedPermissions = new Set<string>();
 const queryInputs: Array<{ name?: string }> = [];
 const createInputs: unknown[] = [];
 const loggedErrors: unknown[] = [];
+const retrySearch = vi.fn();
 
 let queryState: {
   data?: { list: Array<{ id: string; name: { en: string; zh: string } }> };
   isFetching: boolean;
+  isError?: boolean;
+  isPlaceholderData?: boolean;
 };
 let createState: {
   isPending: boolean;
@@ -40,7 +43,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
       index: {
         useQuery: (input: { name?: string }) => {
           queryInputs.push(input);
-          return queryState;
+          return { ...queryState, refetch: retrySearch };
         },
       },
     },
@@ -133,6 +136,7 @@ describe("MultiTag", () => {
     queryInputs.length = 0;
     createInputs.length = 0;
     loggedErrors.length = 0;
+    retrySearch.mockReset();
     queryState = { isFetching: false };
     createState = {
       isPending: false,
@@ -202,11 +206,12 @@ describe("MultiTag", () => {
       ],
     });
 
-    const removeButton = container
-      .querySelectorAll('[data-testid="tag-badge"] button')
-      .item(1);
+    const removeButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="移除标签 移除"]',
+    );
+    expect(removeButton).not.toBeNull();
     await act(async () => {
-      removeButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      removeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
     });
 
@@ -231,6 +236,8 @@ describe("MultiTag", () => {
     queryState = { data: { list: [first, second] }, isFetching: false };
     const onChange = vi.fn();
     await renderMultiTag({ value: [], onChange });
+    await setSearch("tag");
+    await act(async () => vi.advanceTimersByTime(300));
     const options = container.querySelectorAll<HTMLButtonElement>(
       '[data-testid="command-item"]',
     );
@@ -314,6 +321,7 @@ describe("MultiTag", () => {
     const onChange = vi.fn();
     await renderMultiTag({ value: [], onChange });
     await setSearch("New");
+    await act(async () => vi.advanceTimersByTime(300));
     await act(async () =>
       container
         .querySelector<HTMLButtonElement>('[data-testid="command-item"]')
@@ -336,6 +344,8 @@ describe("MultiTag", () => {
     const changes: unknown[] = [];
     await renderMultiTag({ onChange: (tags) => changes.push(tags) });
 
+    await setSearch("Existing");
+    await act(async () => vi.advanceTimersByTime(300));
     const option = container.querySelector('[data-testid="command-item"]');
     await act(async () => {
       option?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -359,6 +369,8 @@ describe("MultiTag", () => {
       postId: "",
       value: [],
     });
+    await setSearch("New");
+    await act(async () => vi.advanceTimersByTime(300));
 
     await act(async () => {
       container
@@ -370,6 +382,62 @@ describe("MultiTag", () => {
     expect(changes).toEqual([
       [{ id: "new-tag", name: { en: "New", zh: "新标签" } }],
     ]);
+  });
+
+  it("does not display the previous search as a failed current search and can retry", async () => {
+    grantedPermissions.add("post:manage-tags");
+    const old = { id: "a", name: { en: "Alpha", zh: "旧结果" } };
+    queryState = { data: { list: [old] }, isFetching: false };
+    const props = await renderMultiTag({ value: [] });
+    await setSearch("Alpha");
+    await act(async () => vi.advanceTimersByTime(300));
+    expect(container.textContent).toContain("旧结果");
+
+    await setSearch("Beta");
+    expect(container.querySelector('[data-testid="command-item"]')).toBeNull();
+    queryState = {
+      data: { list: [old] },
+      isFetching: true,
+      isPlaceholderData: true,
+    };
+    await act(async () => vi.advanceTimersByTime(300));
+    await renderMultiTag(props);
+    expect(container.querySelector('[data-testid="command-item"]')).toBeNull();
+    queryState = { data: undefined, isFetching: false, isError: true };
+    await renderMultiTag(props);
+    expect(container.querySelector('[data-testid="command-item"]')).toBeNull();
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "搜索失败",
+    );
+    await act(async () => findButton("重试")?.click());
+    expect(retrySearch).toHaveBeenCalledOnce();
+
+    queryState = {
+      data: { list: [{ id: "b", name: { en: "Beta", zh: "新结果" } }] },
+      isFetching: false,
+    };
+    await renderMultiTag(props);
+    expect(container.textContent).toContain("新结果");
+    expect(container.textContent).not.toContain("旧结果");
+    await setSearch("");
+    expect(container.querySelector('[data-testid="command-item"]')).toBeNull();
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("names removal controls using an available name or stable tag ID", async () => {
+    grantedPermissions.add("post:manage-tags");
+    await renderMultiTag({
+      value: [
+        { id: "english", name: { en: "React", zh: "" } },
+        { id: "unnamed", name: null },
+      ],
+    });
+    expect(
+      container.querySelector('button[aria-label="移除标签 React"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="移除标签 unnamed"]'),
+    ).not.toBeNull();
   });
 
   it("debounces searches and clears stale options for an empty input", async () => {

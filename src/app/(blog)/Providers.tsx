@@ -2,6 +2,8 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LogEvent } from "@/lib/observability/core/names";
+import { clientLogger } from "@/lib/observability/client";
 import { trpc, trpcClient } from "@/lib/trpc/client/trpc";
 
 /**
@@ -15,7 +17,12 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    void navigator.serviceWorker.register("/serwist/sw.js", { scope: "/" });
+    void navigator.serviceWorker
+      .register("/serwist/sw.js", { scope: "/" })
+      .catch(() => {
+        // This optional enhancement must not interrupt online content. The logger is non-throwing.
+        clientLogger.warn(LogEvent.serviceWorkerRegistrationFailed);
+      });
   }, []);
 
   return (

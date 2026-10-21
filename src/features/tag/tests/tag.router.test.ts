@@ -165,7 +165,7 @@ describe("Tag Router", () => {
       expect(mockDb.delete).toHaveBeenCalledWith(schema.tag);
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = tagRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
@@ -207,7 +207,7 @@ describe("Tag Router", () => {
       });
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = tagRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );

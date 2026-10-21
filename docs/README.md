@@ -6,7 +6,8 @@
 - [架构与依赖边界](architecture-dependency-report.md)：当前职责、运行时边界和不可变行为。
 - [简单 Feature 迁移说明](ddd-migration-guide.md)：旧文件名保留链接兼容，正文是当前迁移方法。
 - [权限矩阵](permission-matrix.md)：capability 与角色规则。
-- [减法版实施与验收](reduced-architecture-results.md)：当前实现范围、验证证据与上线限制。
+- [减法版历史实施与验收](reduced-architecture-results.md)：当时范围和验证证据；顶部标明后续媒体方案与冻结提交 CI。
+- [全仓审查实施账本](full-audit-implementation-ledger.json)与[实施计划](superpowers/plans/2026-10-21-full-audit-implementation.md)：74项结论的逐项处理状态。
 - [测试指南](../tests/README.md)：architecture、tooling、integration 分组、相邻业务测试和 E2E 命令。
 - [OpenSpec 规范](../openspec/specs/)与[当前目录归属变更](../openspec/changes/refine-directory-ownership/proposal.md)：现行行为规范及本轮范围、设计和任务。
 

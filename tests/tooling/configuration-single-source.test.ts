@@ -2,7 +2,53 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import * as providers from "@/lib/auth/providers";
 import * as validation from "@/lib/db/value-validation";
-import { sourceFile } from "@tests/helpers/source-files";
+import { sourceFile, sourceFiles } from "@tests/helpers/source-files";
+
+function inspectEnumDefaults(source: ts.SourceFile) {
+  const enumColumns = new Set<string>();
+  const defaults: string[] = [];
+  const violations: string[] = [];
+  function findColumns(node: ts.Node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "enumCheck"
+    ) {
+      const column = node.arguments[1];
+      if (column && ts.isPropertyAccessExpression(column))
+        enumColumns.add(column.name.text);
+    }
+    ts.forEachChild(node, findColumns);
+  }
+  findColumns(source);
+  function visit(node: ts.Node) {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "default"
+    ) {
+      let parent: ts.Node | undefined = node.parent;
+      while (parent && !ts.isPropertyAssignment(parent)) parent = parent.parent;
+      if (
+        parent &&
+        ts.isPropertyAssignment(parent) &&
+        enumColumns.has(parent.name.getText(source))
+      ) {
+        defaults.push(node.getText(source));
+        const value = node.arguments[0];
+        if (
+          value &&
+          (ts.isStringLiteral(value) ||
+            ts.isNoSubstitutionTemplateLiteral(value))
+        )
+          violations.push(node.getText(source));
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  return { defaults, violations };
+}
 
 describe("配置与契约所有权", () => {
   it("数据库枚举元组完整派生并拒绝空目录", () => {
@@ -17,20 +63,40 @@ describe("配置与契约所有权", () => {
     }
   });
   it("内容表枚举默认值引用领域成员，不复制字符串", () => {
-    const violations: string[] = [];
-    function visit(node: ts.Node) {
-      if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.name.text === "default" &&
-        node.arguments[0] &&
-        ts.isStringLiteral(node.arguments[0])
-      )
-        violations.push(node.getText());
-      ts.forEachChild(node, visit);
-    }
-    visit(sourceFile("src/lib/db/schema/content.ts"));
-    expect(violations).toEqual([]);
+    const definitions = sourceFiles("src/lib/db/schema").filter((path) =>
+      /\/content-[^/]+\.ts$/.test(path),
+    );
+    expect(definitions.length).toBeGreaterThan(0);
+    const results = definitions.map((path) =>
+      inspectEnumDefaults(sourceFile(path)),
+    );
+    expect(results.flatMap(({ defaults }) => defaults).length).toBeGreaterThan(
+      0,
+    );
+    expect(results.flatMap(({ violations }) => violations)).toEqual([]);
+  });
+
+  it.each([
+    ["Status.ENABLED", 0],
+    ['"enabled"', 1],
+    ["`enabled`", 1],
+  ])("enum-default scanner checks actual enum fields: %s", (value, count) => {
+    const source = ts.createSourceFile(
+      "content-fixture.ts",
+      `
+      const example = sqliteTable("example", {
+        status: text("status").default(${value}).notNull(),
+        ordinary: text("ordinary").default("a legitimate string"),
+      }, (table) => ({ statusCheck: enumCheck("status", table.status, Object.values(Status)) }));
+    `,
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const result = inspectEnumDefaults(source);
+    expect(result.defaults).toHaveLength(1);
+    expect(result.violations).toHaveLength(count);
+    if (count)
+      expect(result.violations[0]).toBe(`text("status").default(${value})`);
   });
 
   it("路由语言集合派生自公共语言目录", () => {

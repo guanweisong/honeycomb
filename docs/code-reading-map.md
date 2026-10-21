@@ -23,11 +23,11 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 菜单后台读取 `menu.adminIndex` 的 `{ version, list, total }` 快照，`menu.saveAll` 提交 `{ expectedVersion, items }`；公开 `menu.index` 仍是公开菜单列表。设置从 `setting.index` 读取版本，`setting.update` 提交完整后台快照及 `expectedVersion`。实现入口为各 feature 的 `router.ts`、`schema.ts` 和 `server.ts`；上线顺序见[迁移手册](database-migration-runbook.md)。
 
-### 媒体上传与人工恢复
+### 普通媒体上传与人工核对
 
-`src/features/media/router.ts` 提供 `beginUpload` → 浏览器临时 PUT → `confirmUpload`，结果按 `ready` / `pending` / `rejected` 分支处理。`status` 与 `reconcile` 用于原上传行核对，不是另一次上传；旧 `getPresignedUrl` / `upload` tRPC 入口已移除（存储适配器内部仍有签名方法）。当前管理列表默认 READY，可按状态查看有权访问的恢复记录。
+`src/features/media/router.ts` 提供 `prepareUpload` → 浏览器临时 PUT → `registerUpload`。准备阶段不建行；注册时验证意图和完整图片字节，单次写入新的最终对象，再登记普通记录。没有 READY/status/reconcile 或持久化生命周期状态；未知结果不自动重试或清理。
 
-最终字节校验在 `server/image-validation.ts`，事务授权及引用保护在 `server/media-repository.ts` / `server/media-references.ts`。生命周期、删除确认和运行时限制只在[媒体运行手册](media-storage-runbook.md)集中说明。
+最终字节校验在 `server/image-validation.ts`，事务授权及引用保护在 `server/media-repository.ts` / `server/media-references.ts`。普通记录删除、未知引用确认、缓存同步降级和运行时限制见[媒体运行手册](media-storage-runbook.md)。
 
 ### 读取公开内容
 
@@ -38,7 +38,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
 
-文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体公共读取模型与管理恢复模型分别在 `src/features/media/types.ts`，不把临时 key、尝试信息等恢复字段透传给公开消费者。
+文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
 评论公开 DTO 必须真正挑选允许字段，不能用类型别名代替脱敏。评论组件接收数据，不反向导入 app 查询实现。GUEST 后台读取同样受服务端数据范围限制。
 

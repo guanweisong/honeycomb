@@ -48,6 +48,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
   const postInfoT = await getTranslations("PostInfo");
+  const linkT = await getTranslations("Link");
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
       ? await getPublicLinks()
@@ -113,7 +114,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
               </a>
             ))
           ) : (
-            <div className="text-auto-front-gray/60">暂无友情链接</div>
+            <div className="text-auto-front-gray/60">{linkT("emptyTip")}</div>
           )}
         </div>
       ) : null}

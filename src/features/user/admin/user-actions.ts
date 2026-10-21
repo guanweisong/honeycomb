@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalType } from "@/components/admin/modal-type";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   UserInsertSchema,
@@ -47,8 +47,15 @@ export async function submitUserUpdate({
     return "missing-target";
   }
 
+  const { name, ...remainingValues } = values;
+  // The form resolver trims names; legacy stored display names may not be trimmed.
+  const patch =
+    name === undefined || name.trim() === record.name?.trim()
+      ? remainingValues
+      : values;
+
   return runAdminMutation({
-    input: withAdminRecordId(record, values),
+    input: withAdminRecordId(record, patch),
     mutate: update,
     refetch,
     notifySuccess,
@@ -67,6 +74,7 @@ export function useUserActions({
   const [dialogState, setDialogState] = useState<UserDialogState>(
     createInitialAdminDialogState,
   );
+  const dialogGeneration = useRef(0);
   const createUser = trpc.user.create.useMutation();
   const updateUser = trpc.user.update.useMutation();
   const destroyUser = trpc.user.destroy.useMutation();
@@ -92,6 +100,7 @@ export function useUserActions({
     });
 
   const handleModalOk = async (values: UserInsert | UserUpdate) => {
+    const generation = dialogGeneration.current;
     const state =
       dialogState.type === ModalType.ADD
         ? await runAdminMutation({
@@ -114,19 +123,28 @@ export function useUserActions({
             notifyError: toast.error,
           });
 
-    if (state === "success") setDialogState(closeAdminDialog());
+    if (state === "success" && generation === dialogGeneration.current) {
+      setDialogState(closeAdminDialog());
+    }
   };
 
   return {
     dialogState,
-    handleAddNew: () => setDialogState(openAddAdminDialog()),
-    handleEditItem: (record: UserEntity) =>
-      setDialogState(openEditAdminDialog(record)),
+    handleAddNew: () => {
+      dialogGeneration.current += 1;
+      setDialogState(openAddAdminDialog());
+    },
+    handleEditItem: (record: UserEntity) => {
+      dialogGeneration.current += 1;
+      setDialogState(openEditAdminDialog(record));
+    },
     handleDeleteItem,
     handleDeleteBatch,
     handleModalOk,
-    handleDialogOpenChange: (open: boolean) =>
-      setDialogState((state) => ({ ...state, open })),
+    handleDialogOpenChange: (open: boolean) => {
+      dialogGeneration.current += 1;
+      setDialogState((state) => ({ ...state, open }));
+    },
   };
 }
 /**

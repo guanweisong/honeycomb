@@ -10,6 +10,7 @@ const tiptapMocks = vi.hoisted(() => ({
   contentRender: vi.fn(),
   active: vi.fn(() => true),
   editor: {
+    setEditable: vi.fn(),
     getHTML: () => "<p>当前内容</p>",
     on: vi.fn(),
     off: vi.fn(),

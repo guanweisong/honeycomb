@@ -86,6 +86,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 
 const clientProps = vi.hoisted(() => ({
   menu: [] as unknown[],
+  display: [] as unknown[],
   breadcrumb: [] as unknown[],
 }));
 
@@ -95,6 +96,7 @@ vi.mock("@/app/(blog)/components/Menu", async (importOriginal) => {
   return {
     default: (props: import("@/app/(blog)/components/Menu").MenuProps) => {
       clientProps.menu = props.flatMenuData;
+      clientProps.display = props.data;
       return React.createElement(original.default, props);
     },
   };
@@ -138,6 +140,17 @@ describe("blog Header", () => {
 
   it("sends only navigation fields to client menu and breadcrumb components", async () => {
     await act(async () => root.render(await Header()));
+    expect(
+      clientProps.display.every(
+        (item) =>
+          item !== null &&
+          typeof item === "object" &&
+          !Object.hasOwn(item, "children"),
+      ),
+    ).toBe(true);
+    clientProps.menu.forEach((item, index) => {
+      expect(clientProps.breadcrumb[index + 1]).toBe(item);
+    });
     for (const items of [clientProps.menu, clientProps.breadcrumb]) {
       expect(items.length).toBeGreaterThan(0);
       for (const item of items) {

@@ -72,6 +72,8 @@ describe("media query input", () => {
         data: { list: ["media-1"], total: 2 },
         hasMore: true,
         isFetchingMore: false,
+        isRetrying: false,
+        retry: expect.any(Function),
         loadMore: expect.any(Function),
         refetch: expect.any(Function),
         reset: expect.any(Function),

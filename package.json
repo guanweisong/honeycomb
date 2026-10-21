@@ -28,7 +28,7 @@
     "db:migrate": "bun scripts/migrate-database.ts",
     "db:invariants:audit": "bun scripts/audit-persistence-invariants.ts",
     "db:e2e:seed": "bun scripts/seed-e2e.ts",
-    "db:schema:audit": "bun scripts/audit-production-schema.ts --output docs/production-schema-baseline-report.md",
+    "db:schema:audit": "bun scripts/audit-production-schema.ts",
     "db:migrations:check": "bun scripts/check-migrations.ts",
     "audit:production": "bun scripts/audit-production-dependencies.ts"
   },

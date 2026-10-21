@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
@@ -12,13 +12,14 @@ import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { observeDbOperation } from "@/lib/observability/server";
 import {
   loadPostRelations,
+  loadAdminPostListItems,
   loadPublicPostListItems,
   toMediaRecord,
 } from "./post-relations";
 import type {
   PostListInput,
   PostVisibility,
-  PostListResult,
+  AdminPostListResult,
   PostDetailResult,
   PublicPostListResult,
 } from "../types";
@@ -78,18 +79,11 @@ async function listPostIds(
     where = where ? and(where, clause) : clause;
   }
   if (tagId) {
-    const postIds = await observeDbOperation(
-      "post.service.ids-by-tag",
-      "select",
-      () =>
-        db
-          .select({ postId: schema.postTag.postId })
-          .from(schema.postTag)
-          .where(eq(schema.postTag.tagId, tagId)),
-    );
-    const ids = postIds.map((post) => post.postId);
-    if (!ids.length) return { list: [], total: 0 };
-    const clause = inArray(schema.post.id, ids);
+    const clause = sql`exists (
+      select 1 from ${schema.postTag}
+      where ${schema.postTag.postId} = ${schema.post.id}
+        and ${schema.postTag.tagId} = ${tagId}
+    )`;
     where = where ? and(where, clause) : clause;
   }
   if (authorId) {
@@ -108,7 +102,7 @@ async function listPostIds(
         .select({ id: schema.post.id })
         .from(schema.post)
         .where(where)
-        .orderBy(order)
+        .orderBy(order, ...(sortField === "id" ? [] : [asc(schema.post.id)]))
         .limit(limit)
         .offset((page - 1) * limit),
     ),
@@ -129,11 +123,11 @@ export async function listPosts(
   db: Database,
   input: PostListInput,
   visibility: PostVisibility,
-): Promise<PostListResult> {
+): Promise<AdminPostListResult> {
   const result = await listPostIds(db, input, visibility);
   return {
     ...result,
-    list: await loadPostRelations(db, result.list, visibility),
+    list: await loadAdminPostListItems(db, result.list, visibility),
   };
 }
 

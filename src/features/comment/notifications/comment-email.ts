@@ -13,6 +13,7 @@ import {
 } from "@/lib/observability/server";
 import AdminCommentEmailMessage from "./templates/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "./templates/ReplyCommentEmailMessage";
+import { CUSTOM_COMMENT_NOTIFICATION_TITLE } from "./comment-notification";
 import type {
   CommentNotification,
   CommentNotificationSetting,
@@ -63,7 +64,7 @@ export async function sendCommentEmail(
         const result = await sendWithDeadline(resend, {
           from: resendEnv.fromEmail,
           to: resendEnv.adminEmail,
-          subject: `[${siteNameZh}]有一条新的评论`,
+          subject: `[${siteNameZh}]${currentComment.customId ? CUSTOM_COMMENT_NOTIFICATION_TITLE : "有一条新的评论"}`,
           react: AdminCommentEmailMessage({ currentComment, setting }),
         });
         if (result.error) throw new Error("Email delivery failed");
@@ -77,7 +78,9 @@ export async function sendCommentEmail(
         const result = await sendWithDeadline(resend, {
           from: resendEnv.fromEmail,
           to: parentComment.email,
-          subject: `您在[${siteNameZh}]的评论有新的回复`,
+          subject: parentComment.customId
+            ? `[${siteNameZh}]${CUSTOM_COMMENT_NOTIFICATION_TITLE}`
+            : `您在[${siteNameZh}]的评论有新的回复`,
           react: ReplyCommentEmailMessage({
             currentComment,
             setting,

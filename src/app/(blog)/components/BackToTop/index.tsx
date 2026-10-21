@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ChevronUp } from "lucide-react";
-import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
+import { useScrolledPast } from "@/lib/hooks/use-scrolled-past";
 
 /**
  * 返回顶部组件。
@@ -10,8 +10,7 @@ import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
  * @returns {JSX.Element} 返回顶部按钮。
  */
 const BackToTop = () => {
-  const scroll = useScrollPosition();
-  const show = scroll.top > 300;
+  const show = useScrolledPast(300);
 
   /**
    * 滚动到页面顶部。

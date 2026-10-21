@@ -1,3 +1,6 @@
+import { createTranslator } from "next-intl";
+import enMessages from "@/app/(blog)/messages/en.json";
+import zhMessages from "@/app/(blog)/messages/zh.json";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -14,16 +17,25 @@ const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
+let testLocale = "zh";
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => Promise.resolve("zh"),
-  getTranslations: () => Promise.resolve((key: string) => key),
+  getTranslations: (namespace: "Link" | "PostInfo") =>
+    Promise.resolve(
+      createTranslator({
+        locale: testLocale,
+        messages: testLocale === "en" ? enMessages : zhMessages,
+        namespace,
+      }),
+    ),
 }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,
 }));
-vi.mock("next-intl", () => ({
+vi.mock("next-intl", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next-intl")>()),
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} views`,
 }));
@@ -61,9 +73,6 @@ vi.mock("@/features/post/public/PostInfo", () => ({
 vi.mock("@/features/comment/public/components", () => ({
   default: () => null,
 }));
-vi.mock("@/app/(blog)/components/PageTitle", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,
-}));
 vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
@@ -78,6 +87,8 @@ describe("pages detail page", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
+    testLocale = "zh";
+    mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
     mockPageDetail.mockReset().mockResolvedValue({
       id: "page-1",
@@ -108,6 +119,8 @@ describe("pages detail page", () => {
     await act(async () => root.render(element));
 
     expect(container.textContent).toContain("页面正文");
+    expect(container.querySelector("h1")?.textContent).toBe("页面标题");
+    expect(mockLinks).not.toHaveBeenCalled();
     expect(mockServerIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
     expect(mockClientIncrementViews).toHaveBeenCalledWith(
@@ -115,6 +128,32 @@ describe("pages detail page", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
+
+  it.each(["zh", "en"])(
+    "localizes the friendly-link empty state in %s",
+    async (locale) => {
+      testLocale = locale;
+      mockPageDetail.mockResolvedValue({
+        id: "page-1",
+        title: { zh: "友链", en: "Links" },
+        status: PostStatus.PUBLISHED,
+        template: PageTemplate.FRIENDLY_LINKS,
+        imagesInContent: [],
+        views: 0,
+      });
+      await act(async () =>
+        root.render(
+          Pages({
+            params: Promise.resolve({ id: "page-1", locale }),
+            searchParams: Promise.resolve({}),
+          }),
+        ),
+      );
+      expect(container.textContent).toContain(
+        locale === "en" ? enMessages.Link.emptyTip : zhMessages.Link.emptyTip,
+      );
+    },
+  );
 
   it("generates localized page indexing relationships", async () => {
     const metadata = await generateMetadata({

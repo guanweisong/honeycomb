@@ -47,7 +47,6 @@ const Tag = () => {
 
   /**
    * 存储标签列表的查询参数。
-   * 使用 `useGetState` 钩子，可以在异步操作中获取最新的 `searchParams`。
    */
   const [searchParams, setSearchParams] = useState<TagListQueryInput>({});
 
@@ -177,6 +176,7 @@ const Tag = () => {
             <div className="flex gap-1">
               {canUpdateTag && (
                 <Button
+                  aria-label="编辑标签"
                   size="sm"
                   variant="secondary"
                   onClick={() => handleEditItem(row)}
@@ -187,7 +187,7 @@ const Tag = () => {
               {canDeleteTag && (
                 <Dialog
                   trigger={
-                    <Button variant="secondary" size="sm">
+                    <Button variant="secondary" size="sm" aria-label="删除标签">
                       <Trash />
                     </Button>
                   }

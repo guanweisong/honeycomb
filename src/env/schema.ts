@@ -36,7 +36,7 @@ const authEnvSchema = coreServerEnvSchema.pick({
 function validateProductionAuthSecret(environment: Environment) {
   if (environment.NODE_ENV !== "production") return;
 
-  const secret = environment.AUTH_SECRET ?? "";
+  const secret = environment.AUTH_SECRET?.trim() ?? "";
   const characterClasses = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(
     (pattern) => pattern.test(secret),
   ).length;

@@ -37,21 +37,27 @@ export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
 }
 
 async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  const [setting, menu] = await Promise.all([
-    getPublicSetting(),
-    getPublicMenu(),
-  ]);
-  const params = await props.params;
+  const settingPromise = getPublicSetting();
+  const translationsPromise = getTranslations("PostList");
+  const contextPromise = props.params.then(async (params) =>
+    resolveListContext({
+      locale: normalizeMultiLangLocale(params.locale),
+      menu: params.slug?.[0] === "category" ? await getPublicMenu() : undefined,
+      slug: params.slug,
+    }),
+  );
+  const postPromise = contextPromise.then(({ queryParams }) =>
+    getPublicPostList(queryParams),
+  );
+  const [setting, t, { queryParams, type, typeName }, post, params] =
+    await Promise.all([
+      settingPromise,
+      translationsPromise,
+      contextPromise,
+      postPromise,
+      props.params,
+    ]);
   const locale = normalizeMultiLangLocale(params.locale);
-  const t = await getTranslations("PostList");
-
-  const { queryParams, type, typeName } = await resolveListContext({
-    locale,
-    menu,
-    slug: params.slug,
-  });
-
-  const post = await getPublicPostList(queryParams);
   const title = resolveListTitle({
     type,
     typeName,
@@ -83,19 +89,23 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
-  const params = await props.params;
-  const locale = normalizeMultiLangLocale(params.locale);
-  const [setting, menu] = await Promise.all([
-    getPublicSetting(),
-    getPublicMenu(),
+  const settingPromise = getPublicSetting();
+  const translationsPromise = getTranslations("PostList");
+  const contextPromise = props.params.then(async (params) =>
+    resolveListContext({
+      locale: normalizeMultiLangLocale(params.locale),
+      menu: params.slug?.[0] === "category" ? await getPublicMenu() : undefined,
+      slug: params.slug,
+    }),
+  );
+  const [params, setting, t, { type, typeName }] = await Promise.all([
+    props.params,
+    settingPromise,
+    translationsPromise,
+    contextPromise,
   ]);
-  const t = await getTranslations("PostList");
+  const locale = normalizeMultiLangLocale(params.locale);
   const slug = params.slug ?? [];
-  const { type, typeName } = await resolveListContext({
-    locale,
-    menu,
-    slug,
-  });
   const title = resolveListTitle({
     type,
     typeName,

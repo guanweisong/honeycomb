@@ -13,7 +13,6 @@ import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
 import type { PublicPostListItem as PostListItemEntity } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { PostTypeName } from "@/features/post/admin/options";
 import { PostListQueryInput } from "@/features/post/schema";
 import type { PublicPostListResult } from "@/features/post/types";
 
@@ -59,6 +58,7 @@ export default function PostList(props: PostListProps): JSX.Element {
   } = useInfiniteQueryPostList(queryParams, initData);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
+  const typeTranslations = useTranslations("Search.types");
   const errorTranslations = useTranslations("Error");
 
   const postList = data?.pages.flatMap((page) => page?.list ?? []) ?? [];
@@ -95,6 +95,7 @@ export default function PostList(props: PostListProps): JSX.Element {
    */
   const renderCard = (item: PostListItemEntity, index: number): JSX.Element => {
     const isFirstItem = index === 0;
+    const movieYear = item.movieTime ? utcFormat(item.movieTime, "YYYY") : "";
     const postType = Object.values(PostType).find((type) => type === item.type);
     return (
       <div className="bg-auto-back-gray/60" key={item.id}>
@@ -119,7 +120,7 @@ export default function PostList(props: PostListProps): JSX.Element {
                     [PostTypeBgColor[postType]],
                   )}
                 >
-                  {PostTypeName[postType]}
+                  {typeTranslations(postType)}
                 </span>
               </ViewTransition>
             </Link>
@@ -133,9 +134,7 @@ export default function PostList(props: PostListProps): JSX.Element {
               {item.type === PostType.MOVIE && (
                 <>
                   {item.title?.[locale]}
-                  {item.movieTime
-                    ? ` (${utcFormat(item.movieTime, "YYYY")})`
-                    : ""}
+                  {movieYear ? ` (${movieYear})` : ""}
                 </>
               )}
               {(item.type === PostType.ARTICLE ||

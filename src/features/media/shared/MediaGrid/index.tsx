@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Copy, File, Trash } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -30,13 +31,14 @@ export function MediaGrid({
   onSelect,
   unavailableIds = [],
 }: MediaGridProps) {
+  const [manualCopyId, setManualCopyId] = useState<string>();
   const canDeleteMedia = useCan(Permission.mediaDelete);
 
   return (
     <div className="flex flex-wrap">
       {error && <p role="alert">{error}</p>}
       {isLoading && !media?.length && (
-        <LoadingState variant="region" label="正在加载媒体..." />
+        <LoadingState variant="region" label="正在加载媒体…" />
       )}
       {media?.length ? (
         media.map((item) => (
@@ -76,9 +78,17 @@ export function MediaGrid({
                 aria-label={`复制 ${item.name} 的链接`}
                 disabled={unavailableIds.includes(item.id)}
                 variant="secondary"
-                onClick={() => {
-                  navigator.clipboard.writeText(item.url);
-                  toast.success("已复制至剪切板");
+                onClick={async () => {
+                  try {
+                    if (!navigator.clipboard)
+                      throw new Error("Clipboard unavailable");
+                    await navigator.clipboard.writeText(item.url);
+                    setManualCopyId(undefined);
+                    toast.success("链接已复制");
+                  } catch {
+                    setManualCopyId(item.id);
+                    toast.error("复制失败，请手动复制链接");
+                  }
                 }}
               >
                 <Copy />
@@ -101,6 +111,15 @@ export function MediaGrid({
                 />
               )}
             </div>
+            {manualCopyId === item.id && (
+              <input
+                className="absolute inset-x-0 top-0 w-full bg-white text-black"
+                aria-label={`手动复制 ${item.name} 的链接`}
+                value={item.url}
+                readOnly
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            )}
           </div>
         ))
       ) : !isLoading && !error ? (

@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import type { AdminPostListItem as PostListItemEntity } from "@/features/post/types";
 import {
   postStatusOptions,
   postTypeOptions,

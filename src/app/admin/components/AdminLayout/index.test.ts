@@ -218,11 +218,60 @@ describe("AdminLayout", () => {
       button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(setItem).toHaveBeenCalledWith("admin-sidebar-collapsed", "false");
+    expect(setItem).toHaveBeenLastCalledWith("admin-sidebar-collapsed", "true");
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="展开侧边栏"]')
+        ?.click(),
+    );
+    expect(setItem).toHaveBeenLastCalledWith(
+      "admin-sidebar-collapsed",
+      "false",
+    );
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="收起侧边栏"]')
+        ?.click(),
+    );
     expect(
       container.querySelector('button[aria-label="展开侧边栏"]'),
     ).not.toBeNull();
   });
+
+  it.each(["getItem", "setItem"] as const)(
+    "keeps layout usable when storage %s throws",
+    async (method) => {
+      const addEventListener = vi.fn();
+      const removeEventListener = vi.fn();
+      vi.stubGlobal("matchMedia", () => ({
+        matches: false,
+        addEventListener,
+        removeEventListener,
+      }));
+      vi.mocked(window.localStorage[method]).mockImplementation(() => {
+        throw new DOMException("Blocked", "SecurityError");
+      });
+      await renderLayout();
+      expect(addEventListener).toHaveBeenCalledWith(
+        "change",
+        expect.any(Function),
+      );
+      await act(async () =>
+        container
+          .querySelector<HTMLButtonElement>('button[aria-label="收起侧边栏"]')
+          ?.click(),
+      );
+      expect(
+        container.querySelector('button[aria-label="展开侧边栏"]'),
+      ).not.toBeNull();
+      await act(async () => root.unmount());
+      expect(removeEventListener).toHaveBeenCalledWith(
+        "change",
+        addEventListener.mock.calls[0]?.[1],
+      );
+      root = createRoot(container);
+    },
+  );
 
   it("restores a persisted collapsed sidebar preference", async () => {
     storage["admin-sidebar-collapsed"] = "true";

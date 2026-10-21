@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { CommentStatus } from "@/features/comment/comment-status";
@@ -12,20 +12,23 @@ export async function getStatistics(db: Database) {
   const countByValues = async <T extends string>(
     values: readonly T[],
     table: typeof schema.post | typeof schema.user | typeof schema.comment,
-    column: Parameters<typeof eq>[0],
+    column:
+      | typeof schema.post.type
+      | typeof schema.user.level
+      | typeof schema.comment.status,
     operation: Parameters<typeof observeDbOperation>[0],
-  ) =>
-    Promise.all(
-      values.map(async (item) => {
-        const [row] = await observeDbOperation(operation, "select", () =>
-          db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(table)
-            .where(eq(column, item)),
-        );
-        return { item, count: Number(row?.count) || 0 };
-      }),
+  ) => {
+    const rows = await observeDbOperation(operation, "select", () =>
+      db
+        .select({ item: column, count: sql<number>`count(*)`.as("count") })
+        .from(table)
+        .groupBy(column),
     );
+    const counts = new Map(
+      rows.map((row) => [row.item, Number(row.count) || 0]),
+    );
+    return values.map((item) => ({ item, count: counts.get(item) ?? 0 }));
+  };
   const [postType, userType, commentStatus, userList, postCounts] =
     await Promise.all([
       countByValues(

@@ -3,6 +3,8 @@ import type { z } from "zod";
 import type { MediaRecord } from "@/features/media/types";
 import type {
   PostWithRelationsSchema,
+  AdminPostListItemSchema,
+  AdminPostListResultSchema,
   PostCategoryRecordSchema,
   PostAuthorRecordSchema,
   PostListResultSchema,
@@ -23,6 +25,8 @@ export type PostListInput = PaginationInput & {
 export type PostCategoryRecord = z.infer<typeof PostCategoryRecordSchema>;
 export type PostAuthorRecord = z.infer<typeof PostAuthorRecordSchema>;
 export type PostWithRelations = z.infer<typeof PostWithRelationsSchema>;
+export type AdminPostListItem = z.infer<typeof AdminPostListItemSchema>;
+export type AdminPostListResult = z.infer<typeof AdminPostListResultSchema>;
 export type PostListResult = z.infer<typeof PostListResultSchema>;
 export type PublicPostListItem = z.infer<typeof PublicPostListItemSchema>;
 export type PublicPostListResult = z.infer<typeof PublicPostListResultSchema>;

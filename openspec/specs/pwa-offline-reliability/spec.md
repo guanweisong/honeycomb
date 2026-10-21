@@ -1,7 +1,7 @@
 # pwa-offline-reliability Specification
 
 ## Purpose
-TBD - created by archiving change close-engineering-production-loops. Update Purpose after archive.
+确保文档离线回退被显式预缓存并可在真实断网下使用，统一 Service Worker 实现与语言化 manifest 的请求时行为。
 ## Requirements
 ### Requirement: 离线文档必须进入预缓存
 系统 MUST 将配置为文档导航 fallback 的 `/en/offline` 显式加入生成 Service Worker 的 precache 清单，不得依赖运行时首次访问或构建器的偶然发现。

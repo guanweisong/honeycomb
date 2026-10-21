@@ -61,10 +61,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
       return;
     }
 
-    window.localStorage.setItem(
-      SIDEBAR_COLLAPSED_STORAGE_KEY,
-      String(collapsed),
-    );
+    try {
+      window.localStorage.setItem(
+        SIDEBAR_COLLAPSED_STORAGE_KEY,
+        String(collapsed),
+      );
+    } catch {
+      // A blocked optional preference must not prevent layout interaction.
+    }
   }, [collapsed, layoutHydrated]);
 
   useEffect(() => {
@@ -77,7 +81,12 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     };
 
     setIsMobile(media.matches);
-    const saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    } catch {
+      // Keep the responsive default and still install the media listener.
+    }
     setCollapsed(saved !== null ? saved === "true" : media.matches);
     setLayoutHydrated(true);
     media.addEventListener?.("change", handleChange);

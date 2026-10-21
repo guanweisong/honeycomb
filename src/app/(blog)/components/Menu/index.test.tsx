@@ -79,8 +79,8 @@ const flatMenu: MenuViewModel[] = [
 ];
 
 const menuData: MenuLocalEntity[] = [
-  { label: "父分类", link: "/list/category/parent", children: [] },
-  { label: "关于", link: "/pages/about", children: [] },
+  { label: "父分类", link: "/list/category/parent" },
+  { label: "关于", link: "/pages/about" },
 ];
 
 describe("blog menu navigation", () => {
@@ -112,7 +112,7 @@ describe("blog menu navigation", () => {
     });
   }
 
-  it("renders only root links in order without submenu controls for nested input", async () => {
+  it("renders only root links in order without submenu controls while nested navigation stays flat", async () => {
     await act(async () =>
       root.render(
         React.createElement(Menu, {
@@ -121,21 +121,8 @@ describe("blog menu navigation", () => {
             {
               label: "父分类",
               link: "/list/category/parent",
-              children: [
-                {
-                  label: "子分类",
-                  link: "/list/category/parent/child",
-                  children: [
-                    {
-                      label: "孙分类",
-                      link: "/list/category/parent/child/grandchild",
-                      children: [],
-                    },
-                  ],
-                },
-              ],
             },
-            { label: "关于", link: "/pages/about", children: [] },
+            { label: "关于", link: "/pages/about" },
           ],
         }),
       ),

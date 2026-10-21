@@ -200,19 +200,48 @@ describe("public post list payload", () => {
     },
   );
 
-  it("keeps complete list and detail records available to admin and detail readers", async () => {
+  it("returns only admin table fields while keeping detail records complete", async () => {
     const db = setupDb(PostType.QUOTE);
     const caller = postRouter.createCaller(
       createMockContext(createAdminUser(TEST_IDS.ID_2), db),
     );
     const result = await caller.adminIndex({ page: 1, limit: 5 });
-    expect(result.list[0]).toMatchObject({
-      content,
+    expect(result.list[0]).toEqual({
+      id: TEST_IDS.ID_1,
+      version: 0,
+      title,
       quoteContent,
-      quoteAuthor,
-      authorId: "author-1",
-      movieActors: [],
+      category: undefined,
+      author: { name: "Author" },
+      type: PostType.QUOTE,
+      status: PostStatus.PUBLISHED,
+      createdAt: null,
+      updatedAt: null,
+      views: 0,
     });
+    expect(db.query.post.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columns: {
+          id: true,
+          version: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          views: true,
+        },
+        with: {
+          translations: {
+            columns: { locale: true, title: true, quoteContent: true },
+          },
+          category: {
+            columns: { id: true },
+            with: { translations: { columns: { locale: true, title: true } } },
+          },
+          author: { columns: { name: true } },
+        },
+      }),
+    );
 
     for (const detail of [caller.detail, caller.adminDetail]) {
       db.where.mockReturnValue(db);

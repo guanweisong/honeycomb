@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { parse } from "yaml";
 import { z } from "zod";
 
@@ -94,6 +95,42 @@ describe("quality workflow", () => {
     expect(workflow).not.toMatch(/playwright test\s+tests\/e2e\//);
   });
 
+  it("retains the complete dependency audit report even on a failing gate", () => {
+    expect(workflow).toContain(
+      "bun run audit:production --output dependency-audit-report.json",
+    );
+    const parsed = z
+      .object({
+        jobs: z.object({
+          unit_checks: z.object({
+            steps: z.array(
+              z.object({
+                uses: z.string().optional(),
+                if: z.string().optional(),
+                with: z
+                  .object({
+                    name: z.string().optional(),
+                    path: z.string().optional(),
+                  })
+                  .optional(),
+              }),
+            ),
+          }),
+        }),
+      })
+      .parse(parse(workflow));
+    expect(parsed.jobs.unit_checks.steps).toContainEqual(
+      expect.objectContaining({
+        uses: "actions/upload-artifact@v4",
+        if: "always()",
+        with: expect.objectContaining({
+          name: "production-dependency-audit",
+          path: "dependency-audit-report.json",
+        }),
+      }),
+    );
+  });
+
   it("runs the full unit inventory once with coverage and retains process tests", () => {
     const commands = Object.values(ci.jobs).flatMap(commandsFor);
 
@@ -153,7 +190,7 @@ describe("quality workflow", () => {
         "bun run db:invariants:audit",
         "bun run test:unit:coverage",
         "bun run test:unit:process",
-        "bun run audit:production",
+        "bun run audit:production --output dependency-audit-report.json",
       ]),
     );
     expect(commandsFor(jobSchema.parse(ci.jobs.build_e2e))).toEqual(
@@ -200,17 +237,20 @@ describe("quality workflow", () => {
                 BUILD_E2E_RESULT: build,
               },
               encoding: "utf8",
+              timeout: 1_000,
+              killSignal: "SIGKILL",
             },
           );
+          if (result.error) throw result.error;
           expect(result.status === 0, `${specs}/${unit}/${build}`).toBe(
             specs === "success" && unit === "success" && build === "success",
           );
         }
       }
     }
-  });
+  }, 30_000);
 
-  it("CI selections are disjoint and together execute the complete Playwright inventory", () => {
+  it("CI selections are disjoint and together execute the complete Playwright inventory", async () => {
     const suite = z.object({
       suites: z.array(z.unknown()).default([]),
       specs: z
@@ -231,16 +271,18 @@ describe("quality workflow", () => {
         ...current.suites.flatMap(collect),
       ];
     };
-    const inventory = (script: string, env: Record<string, string> = {}) => {
+    const inventory = async (
+      script: string,
+      env: Record<string, string> = {},
+    ) => {
       expect(packageJson.scripts[script]).toBeDefined();
-      const result = spawnSync(
+      const result = await runTestProcess(
         "bun",
         ["run", script, "--list", "--reporter=json"],
         {
           cwd: process.cwd(),
           env: { ...process.env, ...env },
-          encoding: "utf8",
-          timeout: 30_000,
+          timeout: 15_000,
         },
       );
       expect(result.status, result.stdout + result.stderr).toBe(0);
@@ -256,12 +298,12 @@ describe("quality workflow", () => {
     expect(commands.join("\n")).not.toContain(
       "PLAYWRIGHT_REUSE_EXISTING_SERVER=1",
     );
-    const full = inventory("test:e2e");
-    const dev = inventory("test:e2e:development", {
+    const full = await inventory("test:e2e");
+    const dev = await inventory("test:e2e:development", {
       PLAYWRIGHT_USE_DEV_SERVER: "1",
       PLAYWRIGHT_PORT: "3100",
     });
-    const production = inventory("test:e2e:production", {
+    const production = await inventory("test:e2e:production", {
       PLAYWRIGHT_USE_DEV_SERVER: "0",
       PLAYWRIGHT_PORT: "3101",
     });

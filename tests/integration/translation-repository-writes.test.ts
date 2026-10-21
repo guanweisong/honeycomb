@@ -3,7 +3,7 @@ import { incrementPageViews } from "@/features/page/server";
 const invalidator = {
   invalidate: async () => ({ state: "completed" as const }),
 };
-import { listPosts } from "@/features/post/server/post-queries";
+import { getPost, listPosts } from "@/features/post/server/post-queries";
 import { listPages } from "@/features/page/server/page-queries";
 import { updateSetting, getSetting } from "@/features/setting/server";
 import { createPost, updatePost } from "@/features/post/server/post-commands";
@@ -684,18 +684,21 @@ describe("translation repository writes", () => {
         },
       ],
     });
-    await expect(
-      listPosts(db, { title: "文章" }, "ALL"),
-    ).resolves.toMatchObject({
+    const posts = await listPosts(db, { title: "文章" }, "ALL");
+    expect(posts).toMatchObject({
       total: 1,
       list: [
         {
           title: { en: "Post", zh: "文章" },
-          content: { en: "Content", zh: "正文" },
           category: { title: { en: "Shared category", zh: "Shared category" } },
-          movieActors: [{ name: { en: "Tag", zh: "标签" } }],
         },
       ],
+    });
+    const [listedPost] = posts.list;
+    if (!listedPost) throw new Error("Expected the translated admin post");
+    await expect(getPost(db, listedPost.id, "ALL")).resolves.toMatchObject({
+      content: { en: "Content", zh: "正文" },
+      movieActors: [{ name: { en: "Tag", zh: "标签" } }],
     });
   });
 });

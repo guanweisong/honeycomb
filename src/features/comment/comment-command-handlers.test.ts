@@ -386,10 +386,13 @@ describe("Comment command handlers", () => {
       status: CommentStatus.PUBLISH,
       publicSync: "completed",
     });
-    expect(update).toHaveBeenCalledWith({
-      id: "comment-1",
-      status: CommentStatus.PUBLISH,
-    });
+    expect(update).toHaveBeenCalledWith(
+      {
+        id: "comment-1",
+        status: CommentStatus.PUBLISH,
+      },
+      CommentStatus.TO_AUDIT,
+    );
   });
 
   it("更新评论状态时必须先校验审核规则", async () => {
@@ -407,10 +410,13 @@ describe("Comment command handlers", () => {
     );
 
     expect(findStatus).toHaveBeenCalledWith("comment-1");
-    expect(update).toHaveBeenCalledWith({
-      id: "comment-1",
-      status: CommentStatus.PUBLISH,
-    });
+    expect(update).toHaveBeenCalledWith(
+      {
+        id: "comment-1",
+        status: CommentStatus.PUBLISH,
+      },
+      CommentStatus.TO_AUDIT,
+    );
   });
 
   it("拒绝评论聚合不支持的状态流转", async () => {
@@ -481,7 +487,10 @@ describe("Comment command handlers", () => {
     await expect(
       updateComment(repository, input, invalidator),
     ).resolves.toEqual({ ...saved, publicSync: "completed" });
-    expect(repository.update).toHaveBeenCalledExactlyOnceWith(input);
+    expect(repository.update).toHaveBeenCalledExactlyOnceWith(
+      input,
+      CommentStatus.PUBLISH,
+    );
     expect(order).toEqual(["read", "write", "invalidate"]);
   });
 

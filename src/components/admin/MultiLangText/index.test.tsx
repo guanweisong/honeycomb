@@ -5,13 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import MultiLangText from ".";
 
 vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <span
-      role="img"
-      aria-label={props.alt}
-      title={props.title}
-      onClick={props.onClick}
-    />
+  default: ({ alt, title }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <span role="img" aria-label={alt} title={title} />
   ),
 }));
 
@@ -42,7 +37,9 @@ describe("MultiLangText", () => {
 
     expect(container.textContent).toContain("你好");
 
-    const languageIcon = container.querySelector('[role="img"]');
+    const languageIcon = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="切换到英文"]',
+    );
     expect(languageIcon).not.toBeNull();
 
     act(() =>
@@ -50,5 +47,12 @@ describe("MultiLangText", () => {
     );
 
     expect(container.textContent).toContain("Hello");
+    const back = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="切换到中文"]',
+    );
+    back?.focus();
+    expect(document.activeElement).toBe(back);
+    act(() => back?.click());
+    expect(container.textContent).toContain("你好");
   });
 });

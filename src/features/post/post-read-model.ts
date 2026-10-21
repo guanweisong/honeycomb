@@ -81,3 +81,22 @@ export const PublicPostListItemSchema = PostWithRelationsSchema.pick({
 export const PublicPostListResultSchema = PostListResultSchema.extend({
   list: z.array(PublicPostListItemSchema),
 });
+
+/** 管理表格只接收展示字段和删除所需的 CAS 版本，不传输正文及媒体/标签关系。 */
+export const AdminPostListItemSchema = PostWithRelationsSchema.pick({
+  id: true,
+  version: true,
+  title: true,
+  quoteContent: true,
+  type: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  views: true,
+}).extend({
+  category: PostCategoryRecordSchema.pick({ title: true }).nullish(),
+  author: PostAuthorRecordSchema.pick({ name: true }).nullish(),
+});
+export const AdminPostListResultSchema = PostListResultSchema.extend({
+  list: z.array(AdminPostListItemSchema),
+});

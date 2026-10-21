@@ -13,7 +13,7 @@ export function getMenuQueryInputs() {
 
 export function useMenuQuery() {
   const input = getMenuQueryInputs();
-  const pageQuery = trpc.page.adminIndex.useQuery(input.page);
+  const pageQuery = trpc.page.menuOptions.useQuery(input.page);
   const remainingPages = trpc.useQueries((query) =>
     Array.from(
       {
@@ -23,7 +23,7 @@ export function useMenuQuery() {
         ),
       },
       (_, index) =>
-        query.page.adminIndex({ page: index + 2, limit: MAX_PAGE_SIZE }),
+        query.page.menuOptions({ page: index + 2, limit: MAX_PAGE_SIZE }),
     ),
   );
   const categoryQuery = trpc.category.adminTree.useQuery(input.category);
@@ -43,6 +43,18 @@ export function useMenuQuery() {
     checkedData: menuQuery.data,
     pageLoading:
       pageQuery.isLoading || remainingPages.some((page) => page.isLoading),
+    pageError: pageQuery.isError || remainingPages.some((page) => page.isError),
+    pageFetching:
+      pageQuery.isFetching || remainingPages.some((page) => page.isFetching),
+    retryPages: () =>
+      Promise.all(
+        [pageQuery, ...remainingPages]
+          .filter((page) => page.isError)
+          .map((page) => page.refetch({ cancelRefetch: false })),
+      ),
+    categoryError: categoryQuery.isError,
+    categoryFetching: categoryQuery.isFetching,
+    retryCategory: () => categoryQuery.refetch({ cancelRefetch: false }),
     categoryLoading: categoryQuery.isLoading,
     menuLoading: menuQuery.isLoading,
     menuError: menuQuery.isError,

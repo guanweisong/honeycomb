@@ -155,7 +155,13 @@ export function createApiRatelimit(
     };
   }
 
-  const redis = new Redis(upstash);
+  const redis = new Redis({
+    ...upstash,
+    // Each HTTP operation owns a fresh deadline; the outer race still bounds
+    // non-transport failures and preserves the existing environment policy.
+    signal: () => AbortSignal.timeout(API_RATE_LIMIT_TIMEOUT_MS),
+    retry: { retries: 0 },
+  });
   return new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(limit, "1 m"),

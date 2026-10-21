@@ -44,6 +44,8 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
     null,
   );
   const form = useRef<DynamicFormRef<LoginValues>>(null);
+  const interactiveLoginInFlight = useRef(false);
+  const [interactiveLoginPending, setInteractiveLoginPending] = useState(false);
 
   const callbackUrl = normalizeAdminCallback(targetUrl);
 
@@ -99,29 +101,70 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
    * @param {string} providerId - Provider 在 Better Auth 中的唯一标识。
    */
   const handleOAuthLogin = async (providerId: string) => {
-    await authClient.signIn.social({
-      provider: providerId,
-      callbackURL: callbackUrl,
-    });
+    if (interactiveLoginInFlight.current) return;
+    interactiveLoginInFlight.current = true;
+    setInteractiveLoginPending(true);
+    try {
+      const result = await authClient.signIn.social({
+        provider: providerId,
+        callbackURL: callbackUrl,
+      });
+      if (result.error) toast.error(result.error.message || "第三方登录失败");
+    } catch {
+      toast.error("无法完成第三方登录，请稍后重试");
+    } finally {
+      interactiveLoginInFlight.current = false;
+      setInteractiveLoginPending(false);
+    }
   };
 
   const handlePasskeyLogin = async () => {
-    const result = await authClient.signIn.passkey();
-    if (result.error) {
-      toast.error(result.error.message || "Passkey 登录失败");
-      return;
+    if (interactiveLoginInFlight.current) return;
+    interactiveLoginInFlight.current = true;
+    setInteractiveLoginPending(true);
+    try {
+      const result = await authClient.signIn.passkey();
+      if (result.error) {
+        if (
+          "code" in result.error &&
+          (result.error.code === "AUTH_CANCELLED" ||
+            result.error.code === "ERROR_CEREMONY_ABORTED" ||
+            result.error.code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY")
+        ) {
+          toast.info("Passkey 登录未完成，可重试");
+        } else {
+          toast.error(result.error.message || "Passkey 登录失败");
+        }
+        return;
+      }
+      toast.success("登录成功");
+      window.location.href = callbackUrl;
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error.name === "AbortError" || error.name === "NotAllowedError")
+      ) {
+        toast.info("Passkey 登录未完成，可重试");
+      } else {
+        toast.error("无法完成 Passkey 登录，请稍后重试");
+      }
+    } finally {
+      interactiveLoginInFlight.current = false;
+      setInteractiveLoginPending(false);
     }
-    toast.success("登录成功");
-    window.location.href = callbackUrl;
   };
 
   return (
     <>
-      <Script
-        id={DEFAULT_SCRIPT_ID}
-        src={SCRIPT_URL}
-        strategy="afterInteractive"
-      />
+      {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+        <Script
+          id={DEFAULT_SCRIPT_ID}
+          src={SCRIPT_URL}
+          strategy="afterInteractive"
+        />
+      ) : null}
       <div className="min-h-screen box-border pt-48 text-center bg-green-700">
         <video
           src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
@@ -163,6 +206,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
                   variant="secondary"
                   size="lg"
                   className="w-full bg-white/80 text-black hover:bg-white"
+                  disabled={interactiveLoginPending}
                   onClick={handlePasskeyLogin}
                 >
                   使用 Passkey 登录
@@ -181,6 +225,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
                 variant="secondary"
                 size="lg"
                 className="w-full justify-center bg-black/80 px-4 text-white hover:bg-black"
+                disabled={interactiveLoginPending}
                 onClick={() => handleOAuthLogin(provider.id)}
               >
                 <span className="inline-flex items-center gap-2">

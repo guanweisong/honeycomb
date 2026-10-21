@@ -1,7 +1,7 @@
 # public-web-experience Specification
 
 ## Purpose
-TBD - created by archiving change optimize-nextjs-runtime. Update Purpose after archive.
+保证公开内容具备稳定的首屏、语义导航、响应式交互与可访问的渐进增强，并保持多语言、动态浏览量与静态正文的缓存边界一致，使键盘、移动设备和失败恢复路径均可用。
 ## Requirements
 ### Requirement: 浏览量展示必须从动态计数结果更新
 公开文章和页面 SHALL 在客户端尽力上报浏览量，并 MUST 使用 mutation 返回值或轻量查询更新显示计数；浏览量写入不得触发 Full Route Cache 失效。

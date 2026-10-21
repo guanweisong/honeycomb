@@ -411,10 +411,10 @@ describe("capability procedure matrix", () => {
     }
   });
 
-  it("covers all 35 permissions with 41 procedure gates, three data scopes and one conditional command gate", () => {
-    expect(capabilityProcedureMatrix).toHaveLength(41);
+  it("covers all 35 permissions with 42 procedure gates, three data scopes and one conditional command gate", () => {
+    expect(capabilityProcedureMatrix).toHaveLength(42);
     expect(new Set(capabilityProcedureMatrix.map(([path]) => path)).size).toBe(
-      41,
+      42,
     );
     const procedurePermissions = new Set(
       capabilityProcedureMatrix.map(([, permission]) => permission),

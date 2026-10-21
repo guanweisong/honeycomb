@@ -9,3 +9,16 @@ export function metricValue(
   }
   return value;
 }
+
+/** Absolute browser main-thread work; pure wall-clock waiting cannot dilute it. */
+export function taskDurationDelta(before: number, after: number): number {
+  if (
+    !Number.isFinite(before) ||
+    !Number.isFinite(after) ||
+    before < 0 ||
+    after < before
+  ) {
+    throw new Error("Invalid or reset TaskDuration counter");
+  }
+  return after - before;
+}

@@ -110,7 +110,8 @@ export async function submitMediaUpload({
     : { state: "error", failed, message };
 }
 export type MediaDeleteActionResult =
-  { state: "success" } | { state: "error"; message: string };
+  | { state: "success"; publicSync?: MediaDeleteResult["publicSync"] }
+  | { state: "error"; message: string };
 export async function submitMediaDelete({
   id,
   destroy,
@@ -122,8 +123,11 @@ export async function submitMediaDelete({
   }) => Promise<MediaDeleteResult>;
 }): Promise<MediaDeleteActionResult> {
   try {
-    await destroy({ ids: [id], acknowledgeUnknownReferences: true });
-    return { state: "success" };
+    const result = await destroy({
+      ids: [id],
+      acknowledgeUnknownReferences: true,
+    });
+    return { state: "success", publicSync: result.publicSync };
   } catch (error) {
     return {
       state: "error",
@@ -236,7 +240,9 @@ export function useMediaActions({
       if (!active.current || scope.current !== startedScope) return false;
       if (result.state === "success") {
         onDeleteComplete(id);
-        toast.success("删除成功");
+        if (result.publicSync === "degraded")
+          toast.warning("已删除，公开内容同步未完成，请稍后检查公开页面");
+        else toast.success("删除成功");
       } else {
         toast.error(result.message);
         setUnavailableIds((current) => current.filter((value) => value !== id));

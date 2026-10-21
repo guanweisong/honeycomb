@@ -168,6 +168,55 @@ describe("FieldControl lazy controls", () => {
     );
   });
 
+  it("closes an open media picker on disable and preserves the editor for re-enabling", async () => {
+    const { Editor } = await import("@tiptap/core");
+    const render = (disabled: boolean) => (
+      <TiptapMediaPickerProvider
+        renderer={({ open }) =>
+          open ? <span data-testid="open-picker">Open picker</span> : null
+        }
+      >
+        <TestField
+          type="richText"
+          initialValue="<p>Draft</p>"
+          disabled={disabled}
+        />
+      </TiptapMediaPickerProvider>
+    );
+    await act(async () => {
+      root.render(render(false));
+      await import("../editor");
+    });
+    const editorElement =
+      container.querySelector<HTMLElement>('[role="textbox"]');
+    if (
+      !editorElement ||
+      !("editor" in editorElement) ||
+      !(editorElement.editor instanceof Editor)
+    )
+      throw new Error("Expected real editor");
+    const editor = editorElement.editor;
+    await act(async () => container.querySelector("button")?.click());
+    expect(
+      container.querySelector('[data-testid="open-picker"]'),
+    ).not.toBeNull();
+    await act(async () => root.render(render(true)));
+    expect(container.querySelector('[data-testid="open-picker"]')).toBeNull();
+    expect(editor.isEditable).toBe(false);
+    expect(container.querySelector("button")?.matches(":disabled")).toBe(true);
+    await act(async () => container.querySelector("button")?.click());
+    expect(container.querySelector('[data-testid="open-picker"]')).toBeNull();
+    await act(async () => root.render(render(false)));
+    expect(editor.isEditable).toBe(true);
+    expect(editorElement.editor).toBe(editor);
+    await act(async () => editor.commands.insertContent("Updated"));
+    expect(editorElement.textContent).toContain("Updated");
+    await act(async () => container.querySelector("button")?.click());
+    expect(
+      container.querySelector('[data-testid="open-picker"]'),
+    ).not.toBeNull();
+  });
+
   it("keeps the calendar input and ref immediately available, then loads single-date selection on open", async () => {
     const currentDate = new Date();
     const selectedDate = new Date(

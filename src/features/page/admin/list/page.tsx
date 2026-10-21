@@ -15,7 +15,7 @@ import {
 } from "@/features/page/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
-import type { PageWithRelations as PageEntity } from "@/features/page/types";
+import type { PageListItem as PageEntity } from "@/features/page/types";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { runAdminMutation } from "@/components/admin/action-state";
@@ -149,7 +149,7 @@ const Page = () => {
                   {
                     name: "title",
                     type: "text",
-                    placeholder: "请输入文章名称进行搜索",
+                    placeholder: "搜索页面名称",
                   },
                 ]}
                 onSubmit={({ title }) =>
@@ -168,6 +168,7 @@ const Page = () => {
           <div className="flex gap-1">
             {canUpdatePage && (
               <Button
+                aria-label="编辑页面"
                 variant="secondary"
                 size="sm"
                 onClick={() => router.push(`/admin/page/edit?id=${row.id}`)}
@@ -178,7 +179,7 @@ const Page = () => {
             {canDeletePage && (
               <Dialog
                 trigger={
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" aria-label="删除页面">
                     <Trash />
                   </Button>
                 }

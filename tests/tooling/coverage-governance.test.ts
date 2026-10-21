@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -143,8 +143,8 @@ describe("coverage governance", () => {
     }
   });
 
-  it("fails the real Vitest command when a critical file threshold is mutated", () => {
-    const result = spawnSync(
+  it("fails the real Vitest command when a critical file threshold is mutated", async () => {
+    const result = await runTestProcess(
       process.execPath,
       [
         resolve("node_modules/vitest/vitest.mjs"),
@@ -153,7 +153,11 @@ describe("coverage governance", () => {
         "--config",
         "tests/fixtures/coverage-threshold-mutation.config.ts",
       ],
-      { cwd: process.cwd(), encoding: "utf8", env: process.env },
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        timeout: 45_000,
+      },
     );
     const output = `${result.stdout}\n${result.stderr}`;
 

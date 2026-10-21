@@ -140,6 +140,52 @@ describe("media reconciliation with React and TanStack Query", () => {
     expect(query.error).toBe("refresh failed");
   });
 
+  it("retries the failed page explicitly without discarding or skipping earlier pages", async () => {
+    let failed = true;
+    transport.request.mockImplementation(async ({ page }: MediaIndexInput) => {
+      if (page === 2 && failed) throw new Error("second page failed");
+      return { list: [media(`page-${page}`)], total: 3 };
+    });
+    await render();
+    await waitForCount(1);
+    await act(async () => query.loadMore());
+    await waitForFetch();
+    expect(query.error).toBe("second page failed");
+    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    await act(async () => query.loadMore());
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2,
+    ]);
+    failed = false;
+    await act(async () => query.retry());
+    await waitForCount(2);
+    expect(query.error).toBeUndefined();
+    await act(async () => query.loadMore());
+    await waitForCount(3);
+    expect(query.data.list.map(({ id }) => id)).toEqual([
+      "page-1",
+      "page-2",
+      "page-3",
+    ]);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 2, 3,
+    ]);
+  });
+
+  it("retries an initially failed page without advancing pagination", async () => {
+    transport.request
+      .mockRejectedValueOnce(new Error("first page failed"))
+      .mockResolvedValue({ list: [media("one")], total: 1 });
+    await render();
+    await waitForFetch();
+    expect(query.error).toBe("first page failed");
+    await act(async () => query.retry());
+    await waitForCount(1);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 1,
+    ]);
+  });
+
   it("resets later pages and explicitly refetches the already fresh first page", async () => {
     const firstPage = Array.from({ length: 50 }, (_, index) =>
       media(`media-${index}`),

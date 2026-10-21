@@ -27,6 +27,7 @@ export function useMultiTag({
   const selectedTags = useRef(value);
   const { user } = useCurrentUser();
   const generation = useRef(0);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     selectedTags.current = value;
   }, [value]);
@@ -37,18 +38,23 @@ export function useMultiTag({
     };
   }, [postId, type, user?.id]);
   const [input, setInput] = useState("");
-  const [options, setOptions] = useState<TagEntity[]>([]);
   const [open, setOpen] = useState(false);
-  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchParams, setSearchParams] = useState<{ name?: string }>({});
-  const { data: searchResult, isFetching: isSearching } =
-    trpc.tag.index.useQuery(searchParams, { enabled: !!searchParams.name });
+  const {
+    data: searchResult,
+    isFetching: isSearching,
+    isError,
+    isPlaceholderData,
+    refetch: retrySearch,
+  } = trpc.tag.index.useQuery(searchParams, { enabled: !!searchParams.name });
+  const isCurrentSearch = Boolean(input) && input === searchParams.name;
+  const searchFailed = isCurrentSearch && isError;
+  const options =
+    isCurrentSearch && !isError && !isPlaceholderData
+      ? (searchResult?.list ?? [])
+      : [];
   const { mutateAsync: createTag, isPending: isCreating } =
     trpc.tag.create.useMutation();
-
-  useEffect(() => {
-    if (searchResult) setOptions(searchResult.list ?? []);
-  }, [searchResult]);
 
   const stageTags = (tags: PostTagOption[]) => {
     selectedTags.current = tags;
@@ -86,11 +92,7 @@ export function useMultiTag({
     setInput(value);
     if (timeout.current) clearTimeout(timeout.current);
     timeout.current = setTimeout(() => {
-      if (value) setSearchParams({ name: value });
-      else {
-        setOptions([]);
-        setSearchParams({});
-      }
+      setSearchParams(value ? { name: value } : {});
     }, 300);
   };
 
@@ -104,6 +106,8 @@ export function useMultiTag({
     options,
     open,
     removeTag,
+    retrySearch,
+    searchFailed,
     setOpen,
   };
 }

@@ -1,6 +1,9 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
+import enMessages from "@/app/(blog)/messages/en.json";
+import zhMessages from "@/app/(blog)/messages/zh.json";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -59,14 +62,11 @@ vi.mock("@/features/post/public/use-post-list", () => ({
 }));
 
 vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
-    React.createElement("a", { href }, children),
-}));
-
-vi.mock("next-intl", () => ({
-  useLocale: () => "zh",
-  useTranslations: () => (key: string) =>
-    key === "listEnd" ? "已经到底了" : key,
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
+    React.createElement("a", props, children),
 }));
 
 import PostList from "./index";
@@ -168,16 +168,50 @@ describe("PostList", () => {
     vi.unstubAllGlobals();
   });
 
-  async function renderList() {
+  async function renderList(locale: "zh" | "en" = "zh") {
     await act(async () => {
       root.render(
-        React.createElement(PostList, {
-          initData: { list: posts, total: posts.length },
-          queryParams: { limit: 10 },
-        }),
+        <NextIntlClientProvider
+          locale={locale}
+          messages={locale === "en" ? enMessages : zhMessages}
+          timeZone="UTC"
+        >
+          <PostList
+            initData={{ list: posts, total: posts.length }}
+            queryParams={{ limit: 10 }}
+          />
+        </NextIntlClientProvider>,
       );
     });
   }
+
+  it.each([
+    ["en", ["Article", "Movie", "Gallery"]],
+    ["zh", ["文章", "电影", "画廊"]],
+  ] as const)("localizes cover badges for %s", async (locale, labels) => {
+    await renderList(locale);
+    const badges = Array.from(
+      container.querySelectorAll("a.relative span"),
+    ).map((element) => element.textContent);
+    expect(badges).toEqual(labels);
+    expect(container.querySelectorAll("a.relative")).toHaveLength(3);
+  });
+
+  it.each([
+    ["1895-12-28", " (1895)"],
+    ["2020-05-06T00:00:00.000Z", " (2020)"],
+    ["2200-01-01", " (2200)"],
+    [null, ""],
+    [undefined, ""],
+    ["not-a-date", ""],
+    ["   ", ""],
+  ])("omits empty movie year decorations for %s", async (movieTime, suffix) => {
+    listState.data = { pages: [{ list: [{ ...posts[1], movieTime }] }] };
+    await renderList();
+    expect(container.querySelector("a.block.text-lg")?.textContent).toBe(
+      `电影标题${suffix}`,
+    );
+  });
 
   it("renders article, movie, photograph and quote cards", async () => {
     await renderList();
@@ -194,7 +228,7 @@ describe("PostList", () => {
     expect(
       container.querySelectorAll('a[href="/archives/article"]'),
     ).toHaveLength(3);
-    expect(container.textContent).toContain("已经到底了");
+    expect(container.textContent).toContain(zhMessages.PostList.listEnd);
   });
 
   it("omits unsafe media promotion and date formatting for incomplete data", async () => {
@@ -233,7 +267,7 @@ describe("PostList", () => {
     await act(async () => intersect());
     expect(fetches).toEqual(["next"]);
     expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
   });
 
   it.each([
@@ -279,7 +313,7 @@ describe("PostList", () => {
     expect(container.textContent).toContain("文章标题");
     expect(container.textContent).toContain("照片标题");
     expect(container.querySelector('[role="alert"]')?.textContent).toBeTruthy();
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
   });
 
   it("retries a failed next page only when its accessible button is clicked", async () => {
@@ -289,7 +323,7 @@ describe("PostList", () => {
     await renderList();
 
     const retry = container.querySelector("button");
-    expect(retry?.textContent).toBe("tryAgain");
+    expect(retry?.textContent).toBe(zhMessages.Error.tryAgain);
     expect(retry?.type).toBe("button");
     expect(retry?.disabled).toBe(false);
     await act(async () => retry?.click());
@@ -310,7 +344,7 @@ describe("PostList", () => {
     listState.isError = true;
     await renderList();
 
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
     await act(async () => container.querySelector("button")?.click());
 
@@ -322,7 +356,7 @@ describe("PostList", () => {
     listState.isFetching = true;
     await renderList();
 
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
     expect(fetches).toEqual([]);
   });
 
@@ -367,6 +401,6 @@ describe("PostList", () => {
     await renderList();
 
     expect(container.querySelectorAll('a[href^="/archives/"]')).toHaveLength(0);
-    expect(container.textContent).toContain("已经到底了");
+    expect(container.textContent).toContain(zhMessages.PostList.listEnd);
   });
 });

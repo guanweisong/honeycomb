@@ -115,6 +115,62 @@ describe("environment schemas", () => {
     ).toThrow(/AUTH_SECRET/);
   });
 
+  describe.each([
+    ["auth", parseAuthEnv],
+    ["server", parseServerEnv],
+  ] as const)("%s production secret normalization", (_name, parse) => {
+    it.each([" ", "\t\n", "\u00a0\u2003"])(
+      "rejects a short secret padded with %j",
+      (whitespace) => {
+        const secret = `${whitespace}aA1${whitespace.repeat(32)}`;
+        expect(() =>
+          parse({
+            ...validCoreEnv,
+            NODE_ENV: "production",
+            AUTH_SECRET: secret,
+          }),
+        ).toThrow(/AUTH_SECRET/);
+        try {
+          parse({
+            ...validCoreEnv,
+            NODE_ENV: "production",
+            AUTH_SECRET: secret,
+          });
+        } catch (error) {
+          expect(String(error)).not.toContain(secret);
+        }
+      },
+    );
+
+    it("does not count surrounding whitespace as a character class", () => {
+      expect(() =>
+        parse({
+          ...validCoreEnv,
+          NODE_ENV: "production",
+          AUTH_SECRET: ` ${"aA".repeat(16)} `,
+        }),
+      ).toThrow(/AUTH_SECRET/);
+    });
+
+    it("returns the normalized strong secret", () => {
+      const secret = "uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E";
+      expect(
+        parse({
+          ...validCoreEnv,
+          NODE_ENV: "production",
+          AUTH_SECRET: ` \t\u00a0${secret}\u2003\n`,
+        }).AUTH_SECRET,
+      ).toBe(secret);
+    });
+  });
+
+  it("keeps build-only auth parsing permissive in production", () => {
+    expect(
+      parseBuildAuthEnv({ NODE_ENV: "production", AUTH_SECRET: "short" })
+        .AUTH_SECRET,
+    ).toBe("short");
+  });
+
   it("marks an entirely absent optional integration as disabled", () => {
     const environment = parseServerEnv(validCoreEnv);
 

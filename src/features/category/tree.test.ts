@@ -85,3 +85,34 @@ it("preserves depth-first sibling order and mutates the original node references
   expect(result[2]).toBe(child);
   expect(input.map(({ deepPath }) => deepPath)).toEqual([1, 0, 0, 99]);
 });
+
+it("indexes parent links once for a wide tree while preserving identity and detached nodes", () => {
+  let reads = 0;
+  const root = {
+    id: "root",
+    get parent() {
+      reads++;
+      return null;
+    },
+  };
+  const children = Array.from({ length: 200 }, (_, index) => ({
+    id: `child-${index}`,
+    get parent() {
+      reads++;
+      return "root";
+    },
+  }));
+  const detached = {
+    id: "detached",
+    get parent() {
+      reads++;
+      return "missing";
+    },
+  };
+  const input = [root, ...children, detached];
+  expect(sonsTree(input)).toEqual([root, ...children]);
+  expect(reads).toBeLessThanOrEqual(input.length * 2);
+  expect(
+    sonsTree(input, "root").map(({ id, deepPath }) => ({ id, deepPath })),
+  ).toEqual(children.map(({ id }) => ({ id, deepPath: 0 })));
+});

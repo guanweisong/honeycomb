@@ -35,6 +35,12 @@ function MenuEditor() {
     checkedData,
     pageLoading,
     categoryLoading,
+    categoryError,
+    categoryFetching,
+    retryCategory,
+    pageError,
+    pageFetching,
+    retryPages,
     menuLoading,
     menuError,
     menuFetching,
@@ -76,7 +82,18 @@ function MenuEditor() {
               value: "1",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {categoryLoading ? (
+                  {categoryError && (
+                    <div role="alert">
+                      分类加载失败。
+                      <Button
+                        disabled={categoryFetching}
+                        onClick={() => void retryCategory()}
+                      >
+                        重试加载分类
+                      </Button>
+                    </div>
+                  )}
+                  {categoryLoading && !categoryList?.list?.length ? (
                     <LoadingState variant="region" />
                   ) : (
                     categoryList?.list?.map((item) => (
@@ -110,7 +127,20 @@ function MenuEditor() {
               value: "2",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {pageLoading ? (
+                  {pageError && (
+                    <div role="alert">
+                      {pageList?.list?.length
+                        ? "部分页面未加载。"
+                        : "页面加载失败。"}
+                      <Button
+                        disabled={pageFetching}
+                        onClick={() => void retryPages()}
+                      >
+                        重试加载页面
+                      </Button>
+                    </div>
+                  )}
+                  {pageLoading && !pageList?.list?.length ? (
                     <LoadingState variant="region" />
                   ) : (
                     pageList?.list?.map((item) => (

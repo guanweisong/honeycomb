@@ -196,6 +196,7 @@ export function FieldControl({
     case "richText":
       return (
         <Tiptap
+          disabled={isDisabled}
           onChange={controllerField.onChange}
           value={stringValue}
           {...controlAttributes}

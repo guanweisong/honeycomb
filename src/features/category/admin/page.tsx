@@ -142,6 +142,7 @@ const Category = () => {
           <div className="flex gap-1">
             {canUpdateCategory && (
               <Button
+                aria-label="编辑分类"
                 size="sm"
                 variant="secondary"
                 onClick={() => handleEditItem(row)}
@@ -152,7 +153,7 @@ const Category = () => {
             {canDeleteCategory && (
               <Dialog
                 trigger={
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" aria-label="删除分类">
                     <Trash />
                   </Button>
                 }

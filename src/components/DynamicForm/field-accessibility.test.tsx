@@ -13,10 +13,12 @@ function TestForm({
   type,
   invalid = true,
   multiLang = false,
+  disabled = false,
 }: {
   type: FieldConfig["type"];
   invalid?: boolean;
   multiLang?: boolean;
+  disabled?: boolean;
 }) {
   const value =
     type === "switch"
@@ -44,6 +46,7 @@ function TestForm({
         name="value"
         label={<span>Field label</span>}
         type={type}
+        disabled={() => disabled}
         multiLang={multiLang}
         options={[{ value: "draft", label: "Draft" }]}
       />
@@ -118,6 +121,23 @@ describe("DynamicField accessibility", () => {
       expect(container.querySelector("[data-slot=form-message]")).toBeNull();
     },
   );
+
+  it("keeps a real rich-text editor read-only until a dynamic disabled field is cleared", async () => {
+    await act(async () => {
+      root.render(<TestForm type="richText" disabled />);
+      await import("../editor");
+    });
+    const editor = container.querySelector<HTMLElement>(".tiptap");
+    expect(editor?.getAttribute("contenteditable")).toBe("false");
+    expect(editor?.textContent).toBe("Draft");
+    expect(container.querySelector("fieldset")?.disabled).toBe(true);
+    await act(async () =>
+      root.render(<TestForm type="richText" disabled={false} />),
+    );
+    expect(editor?.getAttribute("contenteditable")).toBe("true");
+    expect(editor?.textContent).toBe("Draft");
+    expect(container.querySelector("fieldset")?.disabled).toBe(false);
+  });
 
   it("names the active multilingual control using the shared visible label", async () => {
     await act(async () => root.render(<TestForm type="text" multiLang />));
