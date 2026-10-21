@@ -54,12 +54,6 @@ describe("login history repository", () => {
 
   it.each([
     [
-      "email",
-      "READER@EXAMPLE.TEST",
-      '"user"."email" = ?',
-      "reader@example.test",
-    ],
-    [
       "username",
       "reader@example.test",
       '"user"."username" = ?',
@@ -115,3 +109,46 @@ describe("login history repository", () => {
     expect(where).toHaveBeenCalledOnce();
   });
 });
+
+it.each([
+  [
+    [{ id: "legacy", email: "Reader@Example.Test" }],
+    "READER@EXAMPLE.TEST",
+    "legacy",
+  ],
+  [
+    [
+      { id: "legacy", email: "Reader@Example.Test" },
+      { id: "other", email: "reader@example.test" },
+    ],
+    "reader@example.test",
+    null,
+  ],
+  [
+    [{ id: "unicode", email: "Üser@EXAMPLE.TEST" }],
+    "üser@example.test",
+    "unicode",
+  ],
+  [
+    [
+      { id: "null", email: null },
+      { id: "other", email: "elsewhere@example.test" },
+    ],
+    "reader@example.test",
+    null,
+  ],
+] as const)(
+  "resolves email candidates only when normalization is unambiguous",
+  async (rows, identifier, expected) => {
+    const limit = vi.fn().mockResolvedValue([]);
+    const db = {
+      select: () => ({
+        from: () =>
+          Object.assign(Promise.resolve(rows), { where: () => ({ limit }) }),
+      }),
+    };
+    await expect(
+      findUserIdByIdentifier(asMockDatabase(db), identifier, "email"),
+    ).resolves.toBe(expected);
+  },
+);

@@ -3,6 +3,7 @@ import {
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
 import { MenuType } from "@/features/menu/menu-types";
+import type { MenuInput } from "../schema";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
 
 enum MenuTypeName {
@@ -38,11 +39,8 @@ export type MenuSelectableItem = {
   updatedAt: string | null;
 };
 
-export type MenuSaveItem = {
-  id: string;
-  type: MenuType;
-  power: number;
-  parent?: string;
+export type MenuSaveItem = Omit<MenuInput[number], "parent"> & {
+  parent?: Exclude<MenuInput[number]["parent"], null>;
 };
 
 export type CheckedMenuData = {

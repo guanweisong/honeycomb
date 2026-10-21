@@ -18,27 +18,40 @@ describe("getAuthErrorCode", () => {
 
   it("disables auth retries and keeps bounded retries for ordinary errors", () => {
     const client = createAdminQueryClient();
-    const retry = client.getDefaultOptions().queries?.retry as (
-      failureCount: number,
-      error: unknown,
-    ) => boolean;
+    const retry = client.getDefaultOptions().queries?.retry;
+    if (typeof retry !== "function") throw new Error("Expected retry policy");
 
-    expect(retry(0, { data: { code: "UNAUTHORIZED" } })).toBe(false);
+    expect(
+      retry(
+        0,
+        Object.assign(new Error("Unauthorized"), {
+          data: { code: "UNAUTHORIZED" },
+        }),
+      ),
+    ).toBe(false);
     expect(retry(0, new Error("temporary"))).toBe(true);
     expect(retry(2, new Error("temporary"))).toBe(true);
     expect(retry(3, new Error("temporary"))).toBe(false);
     expect(client.getDefaultOptions().mutations?.retry).toBe(false);
   });
 
-  it("delegates forbidden handling to the provided callback", () => {
+  it("delegates a failed forbidden query to the provided callback without retry", async () => {
     const onForbidden = vi.fn();
     const client = createAdminQueryClient({ onForbidden });
-    const cache = client.getQueryCache();
-
-    cache.config.onError?.(
-      { data: { code: "FORBIDDEN" } } as never,
-      {} as never,
-    );
-    expect(onForbidden).toHaveBeenCalledOnce();
+    const error = Object.assign(new Error("Forbidden"), {
+      data: { code: "FORBIDDEN" },
+    });
+    const queryFn = vi.fn(async () => {
+      throw error;
+    });
+    try {
+      await expect(
+        client.fetchQuery({ queryKey: ["forbidden"], queryFn }),
+      ).rejects.toBe(error);
+      expect(onForbidden).toHaveBeenCalledOnce();
+      expect(queryFn).toHaveBeenCalledOnce();
+    } finally {
+      client.clear();
+    }
   });
 });

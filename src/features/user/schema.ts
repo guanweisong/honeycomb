@@ -1,3 +1,4 @@
+import { normalizeEmail } from "@/lib/auth/email-policy";
 import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 import {
   QueryStringArraySchema,
@@ -11,12 +12,14 @@ import { LoginUsernameSchema } from "@/lib/auth/username-policy";
 import { type CleanZod, requiredString } from "@/lib/validation/validation";
 import { z } from "zod";
 
+const UserEmailSchema = requiredString("用户邮箱不能为空")
+  .email("用户邮箱格式不正确")
+  .max(254, "用户邮箱不能超过 254 个字符");
+
 /** 后台账号写入契约，不依赖数据库表结构。 */
 export const UserInsertSchema = z.object({
   name: LoginUsernameSchema,
-  email: requiredString("用户邮箱不能为空")
-    .email("用户邮箱格式不正确")
-    .max(254, "用户邮箱不能超过 254 个字符"),
+  email: UserEmailSchema.transform(normalizeEmail),
   status: z.nativeEnum(UserStatus).optional(),
   level: z.nativeEnum(UserLevel).optional(),
   password: CredentialPasswordSchema,
@@ -27,6 +30,8 @@ export type UserInsert = CleanZod<typeof UserInsertSchema>;
 export const UserUpdateSchema = UserInsertSchema.partial()
   .extend({
     id: IdSchema,
+    // Preserve spelling until the transaction distinguishes an edit from a full-form echo.
+    email: UserEmailSchema.optional(),
   })
   .refine(hasUpdateFields, "至少修改一个字段");
 

@@ -98,10 +98,15 @@ describe("capability authorization static gate", () => {
     ],
     [
       "imported and exported UserLevel aliases",
-      `import { UserLevel as Role } from "./user.level";
+      `import { UserLevel as Role } from "@/features/user/user";
        const administrator = Role.ADMIN;
        export { administrator as privilegedRole };
-       if (account.level === administrator) return next();`,
+       if (current === administrator) return next();`,
+    ],
+    [
+      "current authority enum alias without role-named operands",
+      `import { UserLevel as Tier } from "@/features/user/user";
+       if (current === Tier.ADMIN) return next();`,
     ],
     [
       "non-identity UserLevel comparison",
@@ -116,6 +121,27 @@ describe("capability authorization static gate", () => {
     expect(() => assertNoLegacyAuthorization("fixture.ts", source)).toThrow(
       /authorization|authorizes/i,
     );
+  });
+
+  it.each(["../user", "@/features/user/user"])(
+    "resolves the UserLevel authority from %s",
+    (specifier) => {
+      expect(() =>
+        assertNoLegacyAuthorization(
+          "src/features/user/server/example.ts",
+          `import { UserLevel as Tier } from "${specifier}"; if (current === Tier.ADMIN) return next();`,
+        ),
+      ).toThrow(/authorization/i);
+    },
+  );
+
+  it("does not mistake an unrelated same-basename module for the UserLevel authority", () => {
+    expect(() =>
+      assertNoLegacyAuthorization(
+        "src/features/other/example.ts",
+        `import { UserLevel as Tier } from "./user"; if (current === Tier.ADMIN) return next();`,
+      ),
+    ).not.toThrow();
   });
 
   it("allows only the imported protected-account invariant at the repository write boundary", () => {

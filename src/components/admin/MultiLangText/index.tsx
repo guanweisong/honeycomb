@@ -32,8 +32,10 @@ const MultiLangText = (props: MultiLangTextProps) => {
    * 在中文和英文之间切换 `active` 状态。
    */
   const handleSwitch = () => {
-    setActive((previous) =>
-      previous === MultiLangEnum.Zh ? MultiLangEnum.En : MultiLangEnum.Zh,
+    setActive(
+      displayLanguage === MultiLangEnum.Zh
+        ? MultiLangEnum.En
+        : MultiLangEnum.Zh,
     );
   };
 
@@ -41,20 +43,30 @@ const MultiLangText = (props: MultiLangTextProps) => {
     return "-";
   }
 
+  const displayLanguage = text[active]
+    ? active
+    : active === MultiLangEnum.Zh
+      ? MultiLangEnum.En
+      : MultiLangEnum.Zh;
+
   return (
     <span className="flex items-center">
-      {text[active]}
+      {text[displayLanguage]}
       <button
         type="button"
-        aria-label={active === MultiLangEnum.Zh ? "切换到英文" : "切换到中文"}
+        aria-label={
+          displayLanguage === MultiLangEnum.Zh ? "切换到英文" : "切换到中文"
+        }
         onClick={handleSwitch}
       >
         <Image
-          src={parseStaticImage(active === MultiLangEnum.Zh ? zhIcon : enIcon)}
+          src={parseStaticImage(
+            displayLanguage === MultiLangEnum.Zh ? zhIcon : enIcon,
+          )}
           alt=""
           className="cursor-pointer ml-1"
           title={
-            active === MultiLangEnum.Zh
+            displayLanguage === MultiLangEnum.Zh
               ? text[MultiLangEnum.En]
               : text[MultiLangEnum.Zh]
           }

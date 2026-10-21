@@ -99,7 +99,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     localStorage.clear();
     mocks.userId = "draft-user";
     mocks.detail = undefined;
@@ -375,6 +375,145 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       requireDefined(resolveUpdate)({ id: postId, version: 1 });
       await saving;
     });
+  });
+
+  it.each(["load", "retry"])(
+    "silences stale %s failures after the account changes",
+    async (operation) => {
+      if (operation === "load") mocks.detail = originalDetail;
+      await renderEditor(operation === "load" ? postId : null);
+      if (operation === "retry") {
+        mocks.create.mockRejectedValueOnce(new Error("Unknown create"));
+        await act(async () => {
+          await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+        });
+      }
+      let reject: ((error: Error) => void) | undefined;
+      const pending = new Promise((_, fail) => {
+        reject = fail;
+      });
+      if (operation === "load") mocks.refetch.mockReturnValueOnce(pending);
+      else mocks.creationResult.mockReturnValueOnce(pending);
+      let request: Promise<void> | undefined;
+      await act(async () => {
+        request =
+          operation === "load"
+            ? requireDefined(editor).loadLatest()
+            : requireDefined(editor).retryCreation();
+      });
+      mocks.userId = "other-user";
+      mocks.detail = originalDetail;
+      await rerenderEditor(postId);
+      mocks.error.mockClear();
+      let finish:
+        ((value: { id: string; version: number }) => void) | undefined;
+      mocks.update.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      let saving: Promise<boolean> | undefined;
+      await act(async () => {
+        saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      });
+      await act(async () => {
+        reject?.(new Error("Late failure"));
+        await request;
+      });
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(requireDefined(editor).loading).toBe(true);
+      await act(async () => {
+        finish?.({ id: postId, version: 1 });
+        await saving;
+      });
+    },
+  );
+
+  it.each(["record", "return", "account", "unmount"])(
+    "isolates a pending update after changing %s",
+    async (change) => {
+      mocks.detail = originalDetail;
+      await renderEditor(postId);
+      let finish:
+        ((value: { id: string; version: number }) => void) | undefined;
+      mocks.update.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      let saving: Promise<boolean> | undefined;
+      await act(async () => {
+        saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      });
+      if (change === "unmount") await act(async () => root.render(null));
+      else if (change === "account") {
+        mocks.userId = "other-user";
+        await rerenderEditor(postId);
+      } else {
+        const nextId = "234567890123456789012345";
+        mocks.detail = { ...originalDetail, id: nextId };
+        await rerenderEditor(nextId);
+        if (change === "return") {
+          mocks.detail = originalDetail;
+          await rerenderEditor(postId);
+        }
+      }
+      if (change !== "unmount")
+        expect(requireDefined(editor).loading).toBe(false);
+      await act(async () => {
+        finish?.({ id: postId, version: 1 });
+        await saving;
+      });
+      expect(mocks.refetch).not.toHaveBeenCalled();
+      expect(mocks.success).not.toHaveBeenCalled();
+      expect(mocks.warning).not.toHaveBeenCalled();
+    },
+  );
+
+  it("allows a new record to save while old refresh hangs and does not release its busy state", async () => {
+    mocks.detail = originalDetail;
+    await renderEditor(postId);
+    let finishRefresh: ((value: unknown) => void) | undefined;
+    mocks.refetch.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = resolve;
+        }),
+    );
+    let oldSave: Promise<boolean> | undefined;
+    await act(async () => {
+      oldSave = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+    });
+    const nextId = "234567890123456789012345";
+    mocks.detail = { ...originalDetail, id: nextId };
+    await rerenderEditor(nextId);
+    let finishUpdate:
+      ((value: { id: string; version: number }) => void) | undefined;
+    mocks.update.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishUpdate = resolve;
+        }),
+    );
+    let newSave: Promise<boolean> | undefined;
+    await act(async () => {
+      newSave = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+    });
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      finishRefresh?.({});
+      await oldSave;
+    });
+    expect(requireDefined(editor).loading).toBe(true);
+    expect(mocks.success).not.toHaveBeenCalled();
+    await act(async () => {
+      finishUpdate?.({ id: nextId, version: 1 });
+      await newSave;
+    });
+    expect(requireDefined(editor).loading).toBe(false);
+    expect(mocks.success).toHaveBeenCalledTimes(1);
   });
 
   it("does not reset another record when the previous update finishes", async () => {

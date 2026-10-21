@@ -93,6 +93,80 @@ describe("CategoryFormDialog", () => {
     );
   }
 
+  it.each(
+    ["write", "refresh"].flatMap((phase) =>
+      ["reopen", "switch", "unmount"].map((change) => ({ phase, change })),
+    ),
+  )(
+    "does not close a new session after old $phase completes ($change)",
+    async ({ phase, change }) => {
+      let finish: (() => void) | undefined;
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      if (phase === "write") mocks.create.mockReturnValueOnce(pending);
+      else mocks.categoryQuery.refetch.mockReturnValueOnce(pending);
+      const modalProps = { type: ModalType.ADD, open: true };
+      render(modalProps);
+      let saving: Promise<void> | undefined;
+      await act(async () => {
+        saving = mocks.formSubmit?.({
+          title: { zh: "旧分类", en: "Old" },
+          description: { zh: "描述", en: "Description" },
+          path: "old",
+          status: EnableStatus.ENABLE,
+        });
+      });
+      if (change === "unmount") act(() => root.render(null));
+      else if (change === "switch")
+        act(() =>
+          root.render(
+            <CategoryFormDialog
+              modalProps={{
+                open: true,
+                type: ModalType.EDIT,
+                record: {
+                  id: "new-category",
+                  title: { zh: "新分类", en: "New" },
+                  description: null,
+                  path: "new",
+                  parent: null,
+                  status: EnableStatus.ENABLE,
+                  createdAt: null,
+                  updatedAt: null,
+                  deepPath: 0,
+                },
+              }}
+              setModalProps={mocks.setModalProps}
+            />,
+          ),
+        );
+      else {
+        act(() =>
+          root.render(
+            <CategoryFormDialog
+              modalProps={{ ...modalProps, open: false }}
+              setModalProps={mocks.setModalProps}
+            />,
+          ),
+        );
+        act(() =>
+          root.render(
+            <CategoryFormDialog
+              modalProps={modalProps}
+              setModalProps={mocks.setModalProps}
+            />,
+          ),
+        );
+      }
+      await act(async () => {
+        finish?.();
+        await saving;
+      });
+      expect(mocks.setModalProps).not.toHaveBeenCalled();
+    },
+  );
+
   it("does not retain stale parent choices when query data becomes unavailable", () => {
     mocks.categoryQuery.data = {
       list: [

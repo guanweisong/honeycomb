@@ -15,6 +15,9 @@ import { createComment, updateComment } from "./comment-commands";
 import { CommentStatus } from "../comment-status";
 import type { PublicCommentInput } from "../types";
 import { createCommentCommandRepository } from "./comment-command-repository";
+import { MenuType } from "@/features/menu/menu-types";
+import { createCommentQueryRepository } from "./comment-query-repository";
+import { listPublicCommentsByRef } from "./comment-public-queries";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
 describe("public comment insertion consistency with real libSQL", () => {
@@ -152,6 +155,88 @@ describe("public comment insertion consistency with real libSQL", () => {
       },
     };
   }
+
+  it.each([MenuType.CATEGORY, MenuType.CUSTOM, MenuType.PAGE])(
+    "retains visible comment bodies for %s",
+    async (type) => {
+      const id =
+        type === MenuType.PAGE
+          ? "page"
+          : type === MenuType.CUSTOM
+            ? "custom-post"
+            : "post";
+      await db.insert(schema.comment).values({
+        ...comment,
+        id: "visible-comment",
+        status: CommentStatus.PUBLISH,
+        postId: type === MenuType.CATEGORY ? id : null,
+        pageId: type === MenuType.PAGE ? id : null,
+        customId: type === MenuType.CUSTOM ? id : null,
+      });
+      const result = await listPublicCommentsByRef(
+        createCommentQueryRepository(db),
+        createCommentTargetRepository(db),
+        { id, type },
+      );
+      expect(result.list.some((item) => item.content === comment.content)).toBe(
+        true,
+      );
+    },
+  );
+
+  it.each([
+    { name: "withdrawn post", type: MenuType.CATEGORY, disable: false },
+    { name: "disabled post comments", type: MenuType.CATEGORY, disable: true },
+    { name: "withdrawn custom post", type: MenuType.CUSTOM, disable: false },
+    { name: "withdrawn page", type: MenuType.PAGE, disable: false },
+  ])(
+    "does not return text created after the $name gate snapshot",
+    async ({ type, disable }) => {
+      const isPage = type === MenuType.PAGE;
+      const isCustom = type === MenuType.CUSTOM;
+      const id = isPage ? "page" : isCustom ? "custom-post" : "post";
+      await db.insert(schema.comment).values({
+        ...comment,
+        id: "snapshot-comment",
+        status: CommentStatus.PUBLISH,
+        postId: !isPage && !isCustom ? id : null,
+        pageId: isPage ? id : null,
+        customId: isCustom ? id : null,
+      });
+      const targetRepository = createCommentTargetRepository(db);
+      const result = await listPublicCommentsByRef(
+        createCommentQueryRepository(db),
+        {
+          ...targetRepository,
+          findTarget: async (target) => {
+            const beforeWithdrawal = await targetRepository.findTarget(target);
+            if (isPage) {
+              await competingDb
+                .update(schema.page)
+                .set({ status: PageStatus.DRAFT })
+                .where(eq(schema.page.id, id));
+            } else {
+              await competingDb
+                .update(schema.post)
+                .set(
+                  disable
+                    ? { commentStatus: EnableStatus.DISABLE }
+                    : { status: PostStatus.DRAFT },
+                )
+                .where(eq(schema.post.id, id));
+            }
+            await competingDb
+              .update(schema.comment)
+              .set({ content: "never-public text" })
+              .where(eq(schema.comment.id, "snapshot-comment"));
+            return beforeWithdrawal;
+          },
+        },
+        { id, type },
+      );
+      expect(result).toEqual({ list: [], total: 0 });
+    },
+  );
 
   const races = [
     {

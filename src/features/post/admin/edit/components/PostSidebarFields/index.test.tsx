@@ -1,3 +1,5 @@
+import { createPostFixture } from "@tests/helpers/post-fixtures";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -80,22 +82,30 @@ describe("post editor type-specific fields", () => {
   });
 
   async function renderSidebar(type: PostType) {
-    const editor = {
+    const editor: React.ComponentProps<typeof PostSidebarFields>["editor"] = {
       category: {
         list: [
           {
             deepPath: 2,
             id: "category-1",
-            title: { zh: "子分类" },
+            title: { zh: "子分类", en: "Child" },
+            description: null,
+            parent: null,
+            path: "child",
+            status: EnableStatus.ENABLE,
+            createdAt: null,
+            updatedAt: null,
           },
         ],
+        total: 1,
       },
-      detail: { id: "post-1" },
+      detail: { ...createPostFixture(), imagesInContent: [] },
       galleryStyles: [],
       movieActors: [],
       movieDirectors: [],
       movieStyles: [],
       photoPickerProps: {
+        cover: undefined,
         handlePhotoClear: vi.fn(),
         openPhotoPicker: vi.fn(),
         size: "1920*1080",
@@ -109,7 +119,7 @@ describe("post editor type-specific fields", () => {
       type,
     };
     await act(async () => {
-      root.render(React.createElement(PostSidebarFields, { editor } as never));
+      root.render(React.createElement(PostSidebarFields, { editor }));
     });
   }
 

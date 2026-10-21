@@ -7,10 +7,6 @@ import { trpc } from "@/lib/trpc/client/trpc";
 
 const MEDIA_PAGE_SIZE = 50;
 
-function getPageSignature(page: MediaViewModel[]) {
-  return page.map((item) => item?.id ?? String(item)).join("|");
-}
-
 export function getMediaQueryInput(page = 1): MediaIndexInput {
   return { page, limit: MEDIA_PAGE_SIZE };
 }
@@ -22,7 +18,6 @@ export function useMediaQuery() {
   );
   const [total, setTotal] = useState(0);
   const requestedPage = useRef<number | undefined>(undefined);
-  const requestedFromSignature = useRef<string | undefined>(undefined);
   const refreshFirstPage = useRef(false);
   const searchParams = getMediaQueryInput(page);
   const query = trpc.media.index.useQuery(searchParams);
@@ -36,22 +31,12 @@ export function useMediaQuery() {
   }, [page, refetch]);
 
   useEffect(() => {
-    if (!query.data) return;
-
-    if (
-      requestedPage.current === page &&
-      requestedFromSignature.current === getPageSignature(query.data.list)
-    ) {
-      return;
-    }
+    if (!query.data || query.isPlaceholderData) return;
 
     setPages((currentPages) => {
       const currentPage = currentPages[page];
       const nextPage = query.data.list;
-      if (
-        currentPage?.length === nextPage.length &&
-        JSON.stringify(currentPage) === JSON.stringify(nextPage)
-      ) {
+      if (currentPage === nextPage) {
         return currentPages;
       }
       return { ...currentPages, [page]: query.data.list };
@@ -59,18 +44,21 @@ export function useMediaQuery() {
     setTotal(query.data.total);
     if (requestedPage.current === page) {
       requestedPage.current = undefined;
-      requestedFromSignature.current = undefined;
     }
-  }, [page, query.data]);
+  }, [page, query.data, query.isPlaceholderData]);
 
-  const list = useMemo(
-    () =>
-      Object.keys(pages)
-        .map(Number)
-        .sort((left, right) => left - right)
-        .flatMap((pageNumber) => pages[pageNumber] ?? []),
-    [pages],
-  );
+  const list = useMemo(() => {
+    const seen = new Set<string>();
+    return Object.keys(pages)
+      .map(Number)
+      .sort((left, right) => left - right)
+      .flatMap((pageNumber) => pages[pageNumber] ?? [])
+      .filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+  }, [pages]);
   const currentPageLoaded = pages[page] !== undefined;
 
   const loadMore = useCallback(() => {
@@ -87,7 +75,6 @@ export function useMediaQuery() {
 
     const nextPage = page + 1;
     requestedPage.current = nextPage;
-    requestedFromSignature.current = getPageSignature(query.data.list);
     setPage(nextPage);
   }, [
     currentPageLoaded,
@@ -105,7 +92,6 @@ export function useMediaQuery() {
 
   const reset = useCallback(() => {
     requestedPage.current = undefined;
-    requestedFromSignature.current = undefined;
     if (page === 1) {
       // 保留已有页：结构共享可能让成功 refetch 的 data 引用不变。
       void refetch();

@@ -1,3 +1,4 @@
+import { normalizeEmail } from "@/lib/auth/email-policy";
 import "server-only";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
@@ -24,6 +25,33 @@ import type {
 } from "../types";
 
 export type UserRepository = ReturnType<typeof createUserRepository>;
+
+/** Compare in JS, like Better Auth; SQLite lower() only folds ASCII. */
+async function resolveEmailWrite(
+  store: Pick<Database, "select">,
+  email: string,
+  exceptId?: string,
+) {
+  const users = await store
+    .select({ id: schema.user.id, email: schema.user.email })
+    .from(schema.user);
+  if (
+    exceptId !== undefined &&
+    users.some((user) => user.id === exceptId && user.email === email)
+  )
+    return email;
+  const normalized = normalizeEmail(email);
+  if (
+    users.some(
+      (user) =>
+        user.id !== exceptId &&
+        user.email !== null &&
+        normalizeEmail(user.email) === normalized,
+    )
+  )
+    throw new ApplicationError("CONFLICT", "用户邮箱已被其他账号使用");
+  return normalized;
+}
 
 const safeUserColumns = {
   id: schema.user.id,
@@ -141,6 +169,7 @@ export function createUserRepository(db: Database) {
     async create(input: UserCommandInput) {
       const { password, ...values } = input;
       return db.transaction(async (tx) => {
+        values.email = await resolveEmailWrite(tx, values.email);
         const [row] = await observeDbOperation("user.create", "insert", () =>
           tx
             .insert(schema.user)
@@ -183,6 +212,8 @@ export function createUserRepository(db: Database) {
       const update = async (
         store: CredentialStore & Pick<Database, "delete">,
       ) => {
+        if (rest.email !== undefined)
+          rest.email = await resolveEmailWrite(store, rest.email, id);
         let rename = rest.name !== undefined;
         if (protectsLevel || rename) {
           // The write transaction serializes this guard with competing promotions.
@@ -234,7 +265,10 @@ export function createUserRepository(db: Database) {
         }
         return validateUserState(user);
       };
-      return password || protectsLevel || rest.name !== undefined
+      return password ||
+        protectsLevel ||
+        rest.name !== undefined ||
+        rest.email !== undefined
         ? db.transaction(update)
         : update(db);
     },

@@ -17,6 +17,7 @@ const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
+const mockCommentRender = vi.fn();
 let testLocale = "zh";
 
 vi.mock("next-intl/server", () => ({
@@ -29,6 +30,11 @@ vi.mock("next-intl/server", () => ({
         namespace,
       }),
     ),
+}));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
@@ -71,7 +77,10 @@ vi.mock("@/features/post/public/PostInfo", () => ({
   PostCommentCount: () => null,
 }));
 vi.mock("@/features/comment/public/components/CommentClient", () => ({
-  default: () => null,
+  default: (props: unknown) => {
+    mockCommentRender(props);
+    return null;
+  },
 }));
 vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
@@ -88,6 +97,7 @@ describe("pages detail page", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     testLocale = "zh";
+    mockCommentRender.mockReset();
     mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
     mockPageDetail.mockReset().mockResolvedValue({
@@ -109,6 +119,83 @@ describe("pages detail page", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("does not start comments until the page has passed publication validation", async () => {
+    let resolveDetail!: (value: null) => void;
+    mockPageDetail.mockReturnValue(
+      new Promise<null>((resolve) => {
+        resolveDetail = resolve;
+      }),
+    );
+    const errors: unknown[] = [];
+    class Boundary extends React.Component<
+      { children: React.ReactNode },
+      { failed: boolean }
+    > {
+      state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      componentDidCatch(error: unknown) {
+        errors.push(error);
+      }
+      render() {
+        return this.state.failed ? <span>not found</span> : this.props.children;
+      }
+    }
+    await act(async () =>
+      root.render(
+        <Boundary>
+          {Pages({
+            params: Promise.resolve({ id: "missing", locale: "zh" }),
+            searchParams: Promise.resolve({}),
+          })}
+        </Boundary>,
+      ),
+    );
+    expect(mockComments).not.toHaveBeenCalled();
+    await act(async () => resolveDetail(null));
+    expect(mockComments).not.toHaveBeenCalled();
+    expect(errors).toHaveLength(1);
+  });
+
+  it("owns comment rejection immediately while other page data is pending", async () => {
+    let rejectComments!: (error: Error) => void;
+    const comments = new Promise<{ total: number }>((_resolve, reject) => {
+      rejectComments = reject;
+    });
+    const catchSpy = vi.spyOn(comments, "catch");
+    let resolveLinks!: (links: { list: []; total: number }) => void;
+    mockLinks.mockReturnValue(
+      new Promise((resolve) => {
+        resolveLinks = resolve;
+      }),
+    );
+    mockPageDetail.mockResolvedValue({
+      id: "page-1",
+      status: PostStatus.PUBLISHED,
+      template: PageTemplate.FRIENDLY_LINKS,
+      imagesInContent: [],
+    });
+    mockComments.mockReturnValue(comments);
+    await act(async () =>
+      root.render(
+        Pages({
+          params: Promise.resolve({ id: "page-1", locale: "zh" }),
+          searchParams: Promise.resolve({}),
+        }),
+      ),
+    );
+    expect(catchSpy).toHaveBeenCalled();
+    expect(mockCommentRender).not.toHaveBeenCalled();
+    const failure = new Error("comments unavailable");
+    rejectComments(failure);
+    await expect(comments).rejects.toBe(failure);
+    await act(async () => resolveLinks({ list: [], total: 0 }));
+    expect(mockCommentRender).toHaveBeenCalledWith(
+      expect.objectContaining({ queryCommentPromise: comments }),
+    );
   });
 
   it("keeps server rendering read-only and reports the view after mounting", async () => {

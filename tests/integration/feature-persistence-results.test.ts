@@ -72,7 +72,7 @@ function authorize(db: ReturnType<typeof createMockDb>) {
       actor.limit.mockResolvedValue([
         { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
       ]);
-      return actor;
+      return Object.assign(Promise.resolve([]), actor);
     }
     if (
       table === schema.postTranslation ||

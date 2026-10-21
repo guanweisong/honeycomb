@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavigationItem } from "./NavigationItem";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { clsx } from "clsx";
 
 export interface AdminNavigationItem {
@@ -22,6 +22,7 @@ export interface AdminNavigationProps {
 
 export const AdminNavigation = (props: AdminNavigationProps) => {
   const pathname = usePathname();
+  const reducedMotion = useReducedMotion();
   const { data = [], collapsed = false, pendingPath, onNavigateStart } = props;
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
@@ -61,17 +62,21 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
       return (
         <div key={item.path}>
           <motion.div
-            initial={{ opacity: 0, x: -16 }}
+            initial={reducedMotion ? false : { opacity: 0, x: -16 }}
             animate={{
               opacity: 1,
               x: 0,
-              transition: { duration: 0.25, delay },
             }}
             exit={{
               opacity: 0,
               x: -16,
-              transition: { duration: 0.25, delay: exitDelay },
+              transition: reducedMotion
+                ? { duration: 0 }
+                : { duration: 0.25, delay: exitDelay },
             }}
+            transition={
+              reducedMotion ? { duration: 0 } : { duration: 0.25, delay }
+            }
           >
             <NavigationItem
               item={item}
@@ -92,10 +97,10 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
           </motion.div>
           {item.children && isOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
+              initial={reducedMotion ? false : { height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: reducedMotion ? 0 : 0.25 }}
               style={{ overflow: "hidden" }}
             >
               {renderMenu(item.children, depth + 1)}

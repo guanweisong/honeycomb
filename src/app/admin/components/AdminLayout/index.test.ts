@@ -41,18 +41,22 @@ describe("AdminLayout", () => {
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     vi.stubGlobal(
       "matchMedia",
-      vi.fn(() => ({ matches: matchMediaMatches })) as never,
+      vi.fn(
+        () =>
+          Object.assign(new EventTarget(), {
+            matches: matchMediaMatches,
+          }) satisfies Pick<
+            MediaQueryList,
+            "matches" | "addEventListener" | "removeEventListener"
+          >,
+      ),
     );
     vi.stubGlobal("localStorage", {
       getItem: vi.fn((key: string) => storage[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
         storage[key] = value;
       }),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      key: vi.fn(),
-      length: 0,
-    } as never);
+    } satisfies Pick<Storage, "getItem" | "setItem">);
   });
 
   afterEach(async () => {
@@ -83,17 +87,16 @@ describe("AdminLayout", () => {
         ),
       };
 
-      root.render(
-        React.createElement(
-          AdminLayout as React.JSXElementConstructor<
-            React.ComponentProps<typeof AdminLayout>
-          >,
-          layoutProps,
-        ),
-      );
+      root.render(React.createElement(AdminLayout, layoutProps));
     });
   };
 
+  it("limits sidebar transitions and disables them for reduced motion", async () => {
+    await renderLayout();
+    const sidebar = container.querySelector('[data-testid="admin-sidebar"]');
+    expect(sidebar?.className).toContain("motion-reduce:transition-none");
+    expect(sidebar?.className).not.toContain("transition-all");
+  });
   it("defaults to expanded mode on wide screens", async () => {
     matchMediaMatches = false;
     await renderLayout();
@@ -203,11 +206,7 @@ describe("AdminLayout", () => {
     vi.stubGlobal("localStorage", {
       getItem,
       setItem,
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      key: vi.fn(),
-      length: 0,
-    } as never);
+    } satisfies Pick<Storage, "getItem" | "setItem">);
 
     await renderLayout();
 
@@ -243,11 +242,18 @@ describe("AdminLayout", () => {
     async (method) => {
       const addEventListener = vi.fn();
       const removeEventListener = vi.fn();
-      vi.stubGlobal("matchMedia", () => ({
-        matches: false,
-        addEventListener,
-        removeEventListener,
-      }));
+      vi.stubGlobal(
+        "matchMedia",
+        () =>
+          ({
+            matches: false,
+            addEventListener,
+            removeEventListener,
+          }) satisfies Pick<
+            MediaQueryList,
+            "matches" | "addEventListener" | "removeEventListener"
+          >,
+      );
       vi.mocked(window.localStorage[method]).mockImplementation(() => {
         throw new DOMException("Blocked", "SecurityError");
       });

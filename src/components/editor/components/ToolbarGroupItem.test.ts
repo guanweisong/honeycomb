@@ -1,3 +1,5 @@
+import { Editor } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -38,19 +40,21 @@ import { ToolbarGroupItem } from "./ToolbarGroupItem";
 describe("ToolbarGroupItem", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let editor: Editor;
   beforeEach(() => {
+    editor = new Editor({ extensions: [StarterKit], content: "<p>Text</p>" });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
   afterEach(async () => {
     await act(async () => root.unmount());
+    editor.destroy();
     container.remove();
   });
 
   it("renders the active item and invokes a selected command", async () => {
     const onClick = vi.fn();
-    const editor = { isActive: vi.fn(() => true) };
     const group = {
       icon: React.createElement("span", null, "group"),
       label: "格式",
@@ -67,7 +71,7 @@ describe("ToolbarGroupItem", () => {
     await act(async () =>
       root.render(
         React.createElement(ToolbarGroupItem, {
-          editor: editor as never,
+          editor,
           group,
         }),
       ),

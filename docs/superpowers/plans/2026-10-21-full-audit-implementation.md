@@ -1,5 +1,7 @@
 # 全仓审查实施计划
 
+> 历史范围：本文保留 52daeb59 基线的 74 项实施计划、当时任务状态与验证，不是当前提交清单。后续复审处置与精确提交验收见[本轮实施记录](../../skill-reaudit-implementation.md)；文中的取消 100 项删除上限仅指分类，其他资源仍有各自批量合同。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task.
 
 **Goal:** 逐项处理74项审查结论，修复确认缺陷，验证优化并保留所有行为护栏。

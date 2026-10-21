@@ -35,3 +35,5 @@
 日志与初始化另读 [Sentry 接入说明](../../../../docs/sentry-logging.md) 的隐私边界、浏览器/服务端配置和 public DSN 回退；运行时错误捕获规范不能替代这些独有约束。
 
 当前审计边界修复的增量验收见[修复设计](../../../../openspec/changes/fix-audit-state-boundaries/design.md)及同目录 specs：文章已确认发布状态、页面嵌套媒体投影、表格查询与选择、分类/标签提交前结果组装。主规格与活动增量共同检查；实施、测试和发布状态以该变更 tasks 的实际证据为准，不因存在规格推断已上线。
+
+本轮复审实现的现行约束另见[邮箱写入与审计](../../../../openspec/specs/better-authentication/spec.md)、[媒体分页协调](../../../../openspec/specs/admin-media-infinite-scroll/spec.md)、[响应式与可访问交互](../../../../openspec/specs/public-web-experience/spec.md)、[仅分类取消删除数量上限](../../../../openspec/specs/category-bulk-deletion/spec.md)和[公开单层导航](../../../../openspec/specs/flat-blog-navigation/spec.md)。文章会话归属、评论读取快照、布局失效及 R2 截止时间已同步到上表对应主规格；实现与验证证据仍见 [remediate-skill-reaudit](../../../../openspec/changes/remediate-skill-reaudit/tasks.md)，不据此推断精确提交 CI 或生产验证完成。

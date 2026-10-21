@@ -1,3 +1,5 @@
+import type { AdminUser } from "@/app/admin/lib/admin-auth";
+import { UserLevel, UserStatus } from "@/features/user/user";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -88,11 +90,11 @@ import { AdminClientShell } from ".";
 
 const user = {
   id: "user-1",
-  level: "ADMIN",
+  level: UserLevel.ADMIN,
   email: "admin@example.test",
-  status: "ENABLE",
+  status: UserStatus.ENABLE,
   name: "Admin",
-} as never;
+} satisfies AdminUser;
 
 describe("AdminClientShell", () => {
   let container: HTMLDivElement;

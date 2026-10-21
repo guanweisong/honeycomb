@@ -4,7 +4,7 @@
 
 - Adapted to current `origin/master` at `ebefd590204a5dfbadecdbbf2b46bcd68d7a7b7e`, re-fetched on 2026-10-21 with no additional drift.
 - Earlier work remains separately preserved at `33432b9405ef3708ae32f0f3c05e4b8c333f4698`. Its test/build results are not validation of this adaptation.
-- Retained current feature/server architecture, versioned editing, publication checks, media behavior, unrestricted batch-delete contract, blog menus and hover controls. No migrations or data backfill.
+- Retained current feature/server architecture, versioned editing, publication checks, media behavior, unrestricted category batch-delete contract (other resource batch limits are unchanged), blog menus and hover controls. No migrations or data backfill.
 - All four implementation slices received independent source review. No actionable findings remained. `git diff --check` passed.
 
 ## Targeted regression checks

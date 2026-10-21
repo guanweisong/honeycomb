@@ -14,7 +14,7 @@ const link = {
   status: EnableStatus.ENABLE,
   createdAt: "2026-01-02T03:04:05.000Z",
   updatedAt: null,
-} as LinkEntity;
+} satisfies LinkEntity;
 
 describe("link action state", () => {
   it("reports update failures without refreshing", async () => {

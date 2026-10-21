@@ -1,6 +1,6 @@
-import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { sqliteTable, text, check, primaryKey } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import { enumCheck } from "../constraint-helpers";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
+import { sqliteTable, text, primaryKey } from "drizzle-orm/sqlite-core";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 
@@ -24,9 +24,10 @@ export const tagTranslation = sqliteTable(
   },
   (table) => ({
     tagLocalePk: primaryKey({ columns: [table.tagId, table.locale] }),
-    tagLocaleCheck: check(
+    tagLocaleCheck: enumCheck(
       "tag_translation_locale_check",
-      sql`${table.locale} in ('zh', 'en')`,
+      table.locale,
+      supportedLanguages,
     ),
   }),
 );

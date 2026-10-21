@@ -64,6 +64,56 @@ describe("TagFormDialog", () => {
     act(() => root.render(<TagFormDialog {...props} />));
   }
 
+  it.each(
+    ["write", "refresh"].flatMap((phase) =>
+      ["reopen", "switch", "unmount"].map((change) => ({ phase, change })),
+    ),
+  )(
+    "does not close a new session after old $phase completes ($change)",
+    async ({ phase, change }) => {
+      let finish: (() => void) | undefined;
+      const pending = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      const onClose = vi.fn();
+      const onSuccess = vi.fn(() =>
+        phase === "refresh" ? pending : undefined,
+      );
+      if (phase === "write") mocks.create.mockReturnValueOnce(pending);
+      const props = { type: ModalType.ADD, open: true, onClose, onSuccess };
+      render(props);
+      let saving: Promise<void> | undefined;
+      await act(async () => {
+        saving = mocks.formSubmit?.({ name: { zh: "旧标签", en: "Old" } });
+      });
+      if (change === "unmount") act(() => root.render(null));
+      else if (change === "switch")
+        act(() =>
+          root.render(
+            <TagFormDialog
+              {...props}
+              type={ModalType.EDIT}
+              record={{
+                id: "507f1f77bcf86cd799439012",
+                name: { zh: "新标签", en: "New" },
+                createdAt: null,
+                updatedAt: null,
+              }}
+            />,
+          ),
+        );
+      else {
+        act(() => root.render(<TagFormDialog {...props} open={false} />));
+        act(() => root.render(<TagFormDialog {...props} />));
+      }
+      await act(async () => {
+        finish?.();
+        await saving;
+      });
+      expect(onClose).not.toHaveBeenCalled();
+    },
+  );
+
   describe.each([ModalType.ADD, ModalType.EDIT])(
     "public-sync feedback for %s",
     (type) => {

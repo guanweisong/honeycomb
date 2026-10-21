@@ -37,30 +37,6 @@ function getAttributeExpression(
     : undefined;
 }
 
-function collectGuardPolarities(
-  node: ts.Node,
-  guardName: string,
-  negated = false,
-  result = new Set<GuardPolarity>(),
-): Set<GuardPolarity> {
-  if (
-    ts.isPrefixUnaryExpression(node) &&
-    node.operator === ts.SyntaxKind.ExclamationToken
-  ) {
-    return collectGuardPolarities(node.operand, guardName, !negated, result);
-  }
-
-  if (ts.isIdentifier(node) && node.text === guardName) {
-    result.add(negated ? "negative" : "positive");
-    return result;
-  }
-
-  ts.forEachChild(node, (child) => {
-    collectGuardPolarities(child, guardName, negated, result);
-  });
-  return result;
-}
-
 interface ActionBranchFact {
   name: string;
   value: boolean;
@@ -72,68 +48,14 @@ function hasGuardPolarity(
   polarity: GuardPolarity,
   actionBranch?: ActionBranchFact,
 ): boolean {
-  const polarities = collectGuardPolarities(node, guardName);
-  if (polarities.size === 1 && polarities.has(polarity)) return true;
-  if (polarity !== "positive") return false;
-
-  // A derived const guard is valid only when its truth requires the permission.
-  // In particular, `permission || other` must never prove authorization.
-  function cannotBeTrue(expression: ts.Node): boolean {
-    if (ts.isParenthesizedExpression(expression))
-      return cannotBeTrue(expression.expression);
-    if (expression.kind === ts.SyntaxKind.FalseKeyword) return true;
-    if (!actionBranch) return false;
-    if (ts.isIdentifier(expression))
-      return expression.text === actionBranch.name && !actionBranch.value;
-    if (
-      ts.isPrefixUnaryExpression(expression) &&
-      expression.operator === ts.SyntaxKind.ExclamationToken &&
-      ts.isIdentifier(expression.operand)
-    )
-      return (
-        expression.operand.text === actionBranch.name && actionBranch.value
-      );
-    if (!ts.isBinaryExpression(expression)) return false;
-    if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
-      return cannotBeTrue(expression.left) || cannotBeTrue(expression.right);
-    if (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
-      return cannotBeTrue(expression.left) && cannotBeTrue(expression.right);
-    return false;
-  }
-  function requiresPermission(
-    expression: ts.Node,
-    requiredName = guardName,
-    useActionBranch = false,
-  ): boolean {
-    if (ts.isParenthesizedExpression(expression))
-      return requiresPermission(
-        expression.expression,
-        requiredName,
-        useActionBranch,
-      );
-    if (ts.isIdentifier(expression)) return expression.text === requiredName;
-    if (!ts.isBinaryExpression(expression)) return false;
-    const requires = (branch: ts.Node) =>
-      requiresPermission(branch, requiredName, useActionBranch);
-    if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
-      return requires(expression.left) || requires(expression.right);
-    if (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
-      return (
-        (requires(expression.left) ||
-          (useActionBranch && cannotBeTrue(expression.left))) &&
-        (requires(expression.right) ||
-          (useActionBranch && cannotBeTrue(expression.right)))
-      );
-    return false;
-  }
   function enclosingFunction(target: ts.Node): ts.Node | undefined {
     for (let ancestor = target.parent; ancestor; ancestor = ancestor.parent) {
       if (ts.isFunctionLike(ancestor)) return ancestor;
     }
     return undefined;
   }
-  const aliases = new Set<string>();
   const scope = enclosingFunction(node);
+  const aliases = new Map<string, ts.Expression>();
   function findAliases(target: ts.Node): void {
     if (
       ts.isVariableDeclaration(target) &&
@@ -144,14 +66,70 @@ function hasGuardPolarity(
       enclosingFunction(target) === scope &&
       ts.isVariableStatement(target.parent.parent) &&
       containsNode(target.parent.parent.parent, node) &&
-      target.end < node.pos &&
-      requiresPermission(target.initializer)
+      target.end < node.pos
     )
-      aliases.add(target.name.text);
+      aliases.set(target.name.text, target.initializer);
     ts.forEachChild(target, findAliases);
   }
   if (scope) findAliases(scope);
-  return [...aliases].some((alias) => requiresPermission(node, alias, true));
+
+  // Prove that the action-enabling value is impossible when permission is false.
+  // Unknown expressions stay unknown; merely mentioning a guard is not proof.
+  function cannotHaveValue(
+    expression: ts.Node,
+    value: boolean,
+    seen = new Set<string>(),
+  ): boolean {
+    const cannot = (branch: ts.Node, desired = value) =>
+      cannotHaveValue(branch, desired, seen);
+    if (ts.isParenthesizedExpression(expression))
+      return cannot(expression.expression);
+    if (ts.isIdentifier(expression)) {
+      if (expression.text === guardName) return value;
+      if (expression.text === "undefined") return value;
+      if (actionBranch && expression.text === actionBranch.name)
+        return actionBranch.value !== value;
+      const initializer = aliases.get(expression.text);
+      if (!initializer || seen.has(expression.text)) return false;
+      return cannotHaveValue(
+        initializer,
+        value,
+        new Set([...seen, expression.text]),
+      );
+    }
+    if (
+      expression.kind === ts.SyntaxKind.TrueKeyword ||
+      ts.isArrowFunction(expression) ||
+      ts.isFunctionExpression(expression)
+    )
+      return !value;
+    if (
+      expression.kind === ts.SyntaxKind.FalseKeyword ||
+      expression.kind === ts.SyntaxKind.NullKeyword
+    )
+      return value;
+    if (
+      ts.isPrefixUnaryExpression(expression) &&
+      expression.operator === ts.SyntaxKind.ExclamationToken
+    )
+      return cannot(expression.operand, !value);
+    if (ts.isConditionalExpression(expression))
+      return (
+        (cannot(expression.condition, true) || cannot(expression.whenTrue)) &&
+        (cannot(expression.condition, false) || cannot(expression.whenFalse))
+      );
+    if (!ts.isBinaryExpression(expression)) return false;
+    if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+      return value
+        ? cannot(expression.left) || cannot(expression.right)
+        : cannot(expression.left) && cannot(expression.right);
+    if (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      return value
+        ? cannot(expression.left) && cannot(expression.right)
+        : cannot(expression.left) || cannot(expression.right);
+    return false;
+  }
+  return cannotHaveValue(node, polarity === "positive");
 }
 
 function containsNode(container: ts.Node, target: ts.Node): boolean {
@@ -376,7 +354,8 @@ function findUnboundActionIds(
               control,
               guardName,
               action.guard.polarity,
-              getActionBranchFact(control, action.control, sourceFile),
+              getActionBranchFact(control, action.control, sourceFile) ??
+                action.when,
             );
           }
 
@@ -405,6 +384,38 @@ function getActions(sourcePath: string): readonly ActionGuardContract[] {
 describe("admin action capability guards", () => {
   const postListPath =
     "src/features/post/admin/list/components/PostListClient/index.tsx";
+
+  it.each([
+    ["canDelete || true", "positive", false],
+    ["!canDelete && false", "negative", false],
+    ["canDelete || busy", "positive", false],
+    ["!canDelete && busy", "negative", false],
+    ["canDelete && !busy", "positive", true],
+    ["!canDelete || busy", "negative", true],
+    ["!(canDelete && !busy)", "negative", true],
+    ["canDelete || !canDelete", "positive", false],
+    ["canDelete ? true : true", "positive", false],
+    ["canDelete ? false : false", "negative", false],
+    ["canDelete ? true : false", "positive", true],
+    ["canDelete ? false : true", "negative", true],
+  ] as const)(
+    "checks logical permission implication for %s",
+    (expression, polarity, expected) => {
+      const source = ts.createSourceFile(
+        "guard.ts",
+        `const value = ${expression};`,
+        ts.ScriptTarget.Latest,
+        true,
+      );
+      const statement = source.statements[0];
+      if (!statement || !ts.isVariableStatement(statement))
+        throw new Error("Expected declaration");
+      const node = requireDefined(
+        statement.declarationList.declarations[0]?.initializer,
+      );
+      expect(hasGuardPolarity(node, "canDelete", polarity)).toBe(expected);
+    },
+  );
 
   it("rejects an unused permission declaration beside unconditional delete controls", () => {
     expect(
@@ -522,6 +533,27 @@ describe("admin action capability guards", () => {
       }),
     ).toContain("post-editor.update");
   });
+
+  it.each([
+    [
+      "canUpdatePage && isEdit && isDraft",
+      "isEdit && isDraft",
+      "page-editor.update-publish",
+    ],
+    ["canCreatePage && !isEdit", "!isEdit", "page-editor.create-publish"],
+  ])(
+    "rejects a shared publish button bypass in its declared mode: %s",
+    (before, after, action) => {
+      const path =
+        "src/features/page/admin/edit/components/PageEditorActionButtons/index.tsx";
+      expect(
+        findUnboundActionIds(path, getActions(path), (source) => {
+          expect(source).toContain(before);
+          return source.replaceAll(before, after);
+        }),
+      ).toContain(action);
+    },
+  );
 
   it("rejects an unguarded batch delete while row delete stays guarded", () => {
     const linkPath =

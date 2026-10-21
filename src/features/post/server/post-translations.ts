@@ -1,3 +1,4 @@
+import type { PostFields } from "../schema";
 import type { NullableLocalizedInput } from "@/lib/i18n/i18n";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import {
@@ -14,14 +15,15 @@ export type PostTranslationFields = Omit<
   "postId" | "locale"
 >;
 
-export type PostTranslationInput = {
-  title?: NullableLocalizedInput;
-  content?: NullableLocalizedInput;
-  excerpt?: NullableLocalizedInput;
-  galleryLocation?: NullableLocalizedInput;
-  quoteAuthor?: NullableLocalizedInput;
-  quoteContent?: NullableLocalizedInput;
-};
+export type PostTranslationInput = Pick<
+  PostFields,
+  | "title"
+  | "content"
+  | "excerpt"
+  | "galleryLocation"
+  | "quoteAuthor"
+  | "quoteContent"
+>;
 
 function sanitizeLocalizedContent(
   value: NullableLocalizedInput | undefined,

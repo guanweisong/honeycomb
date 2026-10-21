@@ -15,6 +15,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章页头操作使用已确认提交的状态与版本，不直接使用可能过期的详情缓存或未保存表单状态。本地草稿的 CAS 来源版本独立保留，普通详情水合和显式加载均不得用旧版本回退已确认状态。
 
+分类/标签弹窗的提交回调归属当前打开世代；文章编辑还区分账户、记录和访问世代。关闭重开或 A→B→A 后，旧结果不能关闭新弹窗、清空新草稿、刷新新会话或释放新请求的 busy。富文本外部值同步使用 `emitUpdate: false`，不把水合/reset 当作用户编辑。
+
 ### 版本化编辑与创建恢复
 
 文章、页面的 `create` 输入必须包含 `creationToken`；`update` 必须包含 `expectedVersion`，`destroy` 使用 `{ items: [{ id, expectedVersion }] }`，不再接受只有 ID 的删除批次。具体字段以各 feature 的 `schema.ts` 为准，不把表单类型当作持久化输入。
@@ -40,6 +42,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
+页面详情先确认公开状态再启动评论读取，并立即接管评论 Promise 的拒绝，保留原错误供消费者处理，不用空列表吞错。`comment-query-repository.ts` 在读取评论的同一条 SQL 中再次约束目标发布状态，以及文章/自定义目标的评论启用状态，不能仅依赖较早的预读；这不等于撤回已发送或已缓存的内容。
+
 评论公开 DTO 必须真正挑选允许字段，不能用类型别名代替脱敏。评论组件接收数据，不反向导入 app 查询实现。GUEST 后台读取同样受服务端数据范围限制。
 
 ### 后台当前用户与权限
@@ -48,6 +52,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
 3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。
 4. 权限规则：`src/lib/auth/permissions.ts` 与 `authorize.ts`；服务端 API 仍是最终授权边界。
+
+后台邮箱规范化与碰撞检查位于 `src/features/user/schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
 
 认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
 
@@ -63,6 +69,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 具名纯工具与直接入口
 
+- 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
 - 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。

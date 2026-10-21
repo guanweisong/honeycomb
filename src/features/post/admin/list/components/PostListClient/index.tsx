@@ -114,6 +114,7 @@ export default function PostListClient() {
               fields={[
                 {
                   name: "title",
+                  label: "搜索文章",
                   type: "text",
                   placeholder: "请输入文章名称进行搜索",
                 },

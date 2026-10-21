@@ -44,9 +44,12 @@ export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
+  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
+  // Own early rejection while translations/links suspend. Keep the original
+  // promise rejected so the comment consumers still surface their error.
+  void queryCommentPromise.catch(() => undefined);
   const postInfoT = await getTranslations("PostInfo");
   const linkT = await getTranslations("Link");
   const links =

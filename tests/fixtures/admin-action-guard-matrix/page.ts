@@ -19,6 +19,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.create-publish",
+        when: { name: "isEdit", value: false },
         permission: Permission.pageCreate,
         control: {
           tag: "Button",
@@ -69,6 +70,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update-publish",
+        when: { name: "isEdit", value: true },
         permission: Permission.pageUpdate,
         control: {
           tag: "Button",

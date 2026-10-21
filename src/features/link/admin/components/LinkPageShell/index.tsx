@@ -80,7 +80,7 @@ export function LinkPageShell() {
                       variant="outline"
                       disabled={selectedRows.length === 0}
                     >
-                      <Trash />
+                      <Trash aria-hidden="true" />
                       批量删除
                     </Button>
                   }
@@ -97,6 +97,7 @@ export function LinkPageShell() {
                   {
                     name: "name",
                     type: "text",
+                    label: "搜索链接",
                     placeholder: "请输入链接名称进行搜索",
                   },
                 ]}
@@ -117,16 +118,21 @@ export function LinkPageShell() {
                     <Button
                       variant="secondary"
                       size="sm"
+                      aria-label="编辑链接"
                       onClick={() => handleEditItem(row)}
                     >
-                      <Pencil />
+                      <Pencil aria-hidden="true" />
                     </Button>
                   )}
                   {canDeleteLink && (
                     <Dialog
                       trigger={
-                        <Button variant="secondary" size="sm">
-                          <Trash />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          aria-label="删除链接"
+                        >
+                          <Trash aria-hidden="true" />
                         </Button>
                       }
                       type="danger"

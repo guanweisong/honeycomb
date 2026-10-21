@@ -2,6 +2,7 @@ import type { CommentListInput, CommentRefInput } from "../types";
 import "server-only";
 import { CommentStatus } from "@/features/comment/comment-status";
 import { PostStatus } from "@/features/post/post-status";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { PageStatus } from "@/features/page/page-status";
 import { MenuType } from "@/features/menu/menu-types";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
@@ -165,11 +166,45 @@ export function createCommentQueryRepository(db: Database) {
         CommentStatus.PUBLISH,
         CommentStatus.BAN,
       ]);
-      if (input.type === MenuType.CATEGORY)
-        where = and(where, eq(schema.comment.postId, input.id));
-      else if (input.type === MenuType.PAGE)
-        where = and(where, eq(schema.comment.pageId, input.id));
-      else where = and(where, eq(schema.comment.customId, input.id));
+      // Recheck visibility in the same SQL snapshot as the comment bodies.
+      // The earlier policy gate supplies the stable NOT_FOUND/FORBIDDEN errors,
+      // but cannot authorize text edited after a concurrent withdrawal.
+      if (input.type === MenuType.PAGE) {
+        const visibleTarget = db
+          .select({ id: schema.page.id })
+          .from(schema.page)
+          .where(
+            and(
+              eq(schema.page.id, input.id),
+              eq(schema.page.status, PageStatus.PUBLISHED),
+            ),
+          );
+        where = and(
+          where,
+          eq(schema.comment.pageId, input.id),
+          inArray(schema.comment.pageId, visibleTarget),
+        );
+      } else {
+        const visibleTarget = db
+          .select({ id: schema.post.id })
+          .from(schema.post)
+          .where(
+            and(
+              eq(schema.post.id, input.id),
+              eq(schema.post.status, PostStatus.PUBLISHED),
+              eq(schema.post.commentStatus, EnableStatus.ENABLE),
+            ),
+          );
+        const targetColumn =
+          input.type === MenuType.CATEGORY
+            ? schema.comment.postId
+            : schema.comment.customId;
+        where = and(
+          where,
+          eq(targetColumn, input.id),
+          inArray(targetColumn, visibleTarget),
+        );
+      }
       const result = await observeDbOperation(
         "comment.service.public-list",
         "select",

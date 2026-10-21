@@ -67,10 +67,10 @@ export async function assertMediaReferencesExist(
     .select()
     .from(schema.media)
     .where(inArray(schema.media.key, keys));
+  const existingKeys = new Set(rows.map((row) => row.key));
   for (const key of keys) {
-    const matching = rows.filter((row) => row.key === key);
     // Unknown historical URLs may remain unchanged, but cannot be newly introduced.
-    if (!matching.length && !previous.has(key))
+    if (!existingKeys.has(key) && !previous.has(key))
       throw new ApplicationError(
         "CONFLICT",
         "正文中的受管媒体不可用，请核对后重试",
@@ -85,6 +85,7 @@ export async function findKnownMediaReferences(
 ) {
   if (!targets.length) return false;
   const ids = targets.map((row) => row.id);
+  const targetIds = new Set(ids);
   const keys = new Set(targets.map((row) => row.key));
   const urls = new Set(targets.map((row) => row.url));
   const [cover] = await tx
@@ -102,7 +103,7 @@ export async function findKnownMediaReferences(
         inArray(schema.media.url, [...urls]),
       ),
     );
-  if (duplicate.some((row) => !ids.includes(row.id))) return true;
+  if (duplicate.some((row) => !targetIds.has(row.id))) return true;
   const contents = [
     ...(await tx
       .select({ content: schema.postTranslation.content })

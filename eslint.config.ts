@@ -49,6 +49,11 @@ export default defineConfig([
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
+    // Accumulate key-scoped external query pages; do not drop prior pages on a new response.
+    files: ["src/features/media/shared/media-query.ts"],
+    rules: { "react-hooks/set-state-in-effect": "off" },
+  },
+  {
     // Adopt a newer server snapshot only while the editor is pristine.
     files: ["src/features/menu/admin/use-menu-tree-editor.ts"],
     rules: { "react-hooks/set-state-in-effect": "off" },

@@ -121,6 +121,29 @@ describe("UserPageShell", () => {
     },
   );
 
+  it("names row actions and associates the search label", async () => {
+    canManageUsers = true;
+    await act(async () => root.render(<UserPageShell />));
+    for (const name of ["编辑用户", "删除用户"]) {
+      const button = container.querySelector(
+        `tbody button[aria-label="${name}"]`,
+      );
+      expect(button).not.toBeNull();
+      expect(button?.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+        "true",
+      );
+    }
+    const input = container.querySelector<HTMLInputElement>(
+      'input[placeholder="请输入用户名进行搜索"]',
+    );
+    const label = document.getElementById(
+      input?.getAttribute("aria-labelledby") ?? "",
+    );
+    expect(label?.textContent).toBe("搜索用户");
+    if (input) input.value = "test";
+    expect(label?.textContent).toBe("搜索用户");
+  });
+
   it("keeps search copy while hiding user management controls", async () => {
     await act(async () => root.render(React.createElement(UserPageShell)));
 

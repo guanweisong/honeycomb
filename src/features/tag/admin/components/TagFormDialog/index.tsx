@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
 import { DynamicForm } from "@/components/DynamicForm";
 import { TagInsertSchema, TagUpdateSchema } from "@/features/tag/schema";
@@ -48,6 +49,17 @@ export type TagFormDialogProps = AdminDialogState<TagEntity> & {
  */
 export default function TagFormDialog(props: TagFormDialogProps) {
   const { type = ModalType.ADD, open, record, onClose, onSuccess } = props;
+  const session = useRef(0);
+  useEffect(
+    () => () => {
+      session.current += 1;
+    },
+    [open, type, record?.id],
+  );
+  const close = () => {
+    session.current += 1;
+    onClose?.();
+  };
   /**
    * 创建标签的 tRPC mutation。
    */
@@ -61,6 +73,7 @@ export default function TagFormDialog(props: TagFormDialogProps) {
    * 新增、编辑弹窗表单保存事件
    */
   const handleModalOk = async (values: TagInsertValues | TagUpdateValues) => {
+    const submittedSession = session.current;
     switch (type) {
       case ModalType.ADD:
         if (
@@ -73,9 +86,10 @@ export default function TagFormDialog(props: TagFormDialogProps) {
             notifyError: toast.error,
             successMessage: "添加成功",
             errorMessage: "添加失败",
-          })) === "success"
+          })) === "success" &&
+          session.current === submittedSession
         )
-          onClose?.();
+          close();
         break;
       case ModalType.EDIT:
         if (!record) {
@@ -92,9 +106,10 @@ export default function TagFormDialog(props: TagFormDialogProps) {
             notifyError: toast.error,
             successMessage: "更新成功",
             errorMessage: "更新失败",
-          })) === "success"
+          })) === "success" &&
+          session.current === submittedSession
         )
-          onClose?.();
+          close();
         break;
     }
   };
@@ -103,7 +118,7 @@ export default function TagFormDialog(props: TagFormDialogProps) {
     <Dialog
       title={`${type === ModalType.EDIT ? ModalTypeName.EDIT : ModalTypeName.ADD}标签`}
       open={open}
-      onOpenChange={() => onClose?.()}
+      onOpenChange={close}
     >
       {type === ModalType.EDIT ? (
         <DynamicForm

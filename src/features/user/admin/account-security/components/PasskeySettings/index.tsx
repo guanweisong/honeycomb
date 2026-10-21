@@ -130,6 +130,7 @@ const PasskeySettingsPanel = () => {
       <div className="flex gap-2">
         <input
           data-testid="passkey-name-input"
+          aria-label="Passkey 名称（可选）"
           ref={nameInput}
           placeholder="Passkey 名称（可选）"
           className="h-10 flex-1 rounded-md border px-3 text-sm"
@@ -208,6 +209,7 @@ const PasskeySettingsPanel = () => {
         <input
           key={renameTarget?.id ?? "rename-passkey"}
           data-testid="passkey-rename-input"
+          aria-label="Passkey 名称"
           value={renameName}
           onChange={(event) => setRenameName(event.target.value)}
           placeholder="请输入 Passkey 名称"

@@ -72,3 +72,31 @@ describe("admin user write schemas", () => {
     }
   });
 });
+
+it("normalizes new emails but preserves update spelling for transactional comparison", () => {
+  expect(
+    UserInsertSchema.parse({
+      ...validUser,
+      name: "Admin",
+      email: " Reader@EXAMPLE.TEST ",
+    }),
+  ).toMatchObject({ name: "Admin", email: "reader@example.test" });
+  expect(
+    UserUpdateSchema.parse({
+      id: "000000000000000000000001",
+      email: "Reader@EXAMPLE.TEST",
+    }).email,
+  ).toBe("Reader@EXAMPLE.TEST");
+  expect(
+    UserUpdateSchema.parse({ id: "000000000000000000000001", name: "Admin" }),
+  ).not.toHaveProperty("email");
+});
+
+it.each(["Üser@example.test", "user@例子.test"])(
+  "does not broaden existing email validation for %s",
+  (email) => {
+    expect(UserInsertSchema.safeParse({ ...validUser, email }).success).toBe(
+      false,
+    );
+  },
+);

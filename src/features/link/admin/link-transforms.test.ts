@@ -1,3 +1,4 @@
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { describe, expect, it } from "vitest";
 
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
@@ -10,10 +11,10 @@ const link = {
   url: "https://openai.com",
   logo: "https://openai.com/logo.png",
   description: null,
-  status: "ENABLE",
+  status: EnableStatus.ENABLE,
   createdAt: "2026-01-02T03:04:05.000Z",
   updatedAt: null,
-} as LinkEntity;
+} satisfies LinkEntity;
 
 describe("link transforms", () => {
   it("maps nullable list DTO fields to edit defaults without inventing values", () => {

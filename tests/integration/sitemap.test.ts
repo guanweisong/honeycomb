@@ -87,7 +87,15 @@ describe("runtime sitemap", () => {
 
     createServerClientMock.mockResolvedValue(client);
     menuIndexMock.mockResolvedValue(
-      list([{ type: "CATEGORY", path: "technology" }]),
+      list([
+        {
+          id: "category",
+          parent: null,
+          title: {},
+          type: "CATEGORY",
+          path: "technology",
+        },
+      ]),
     );
     postIndexMock.mockResolvedValue(list([]));
     pageIndexMock.mockResolvedValue(list([]));
@@ -188,11 +196,29 @@ describe("runtime sitemap", () => {
   it("only emits category menu entries with non-empty paths and escapes XML URLs", async () => {
     menuIndexMock.mockResolvedValue(
       list([
-        { type: "CATEGORY", path: "research&development" },
-        { type: "CATEGORY", path: "" },
-        { type: "CATEGORY", path: null },
-        { type: "PAGE", path: "page-path" },
-        { type: "CUSTOM", path: "custom-path" },
+        {
+          id: "category",
+          parent: null,
+          title: {},
+          type: "CATEGORY",
+          path: "research&development",
+        },
+        { id: "empty", parent: null, title: {}, type: "CATEGORY", path: "" },
+        { id: "null", parent: null, title: {}, type: "CATEGORY", path: null },
+        {
+          id: "page",
+          parent: null,
+          title: {},
+          type: "PAGE",
+          path: "page-path",
+        },
+        {
+          id: "custom",
+          parent: null,
+          title: {},
+          type: "CUSTOM",
+          path: "custom-path",
+        },
       ]),
     );
 
@@ -337,6 +363,41 @@ describe("runtime sitemap", () => {
     expect(xml).toContain("https://example.com/en/pages/page-101");
   });
 
+  it("uses the same parent-chain category paths as blog navigation", async () => {
+    menuIndexMock.mockResolvedValue(
+      list([
+        { id: "root", type: "CATEGORY", path: "root", parent: null, title: {} },
+        {
+          id: "child",
+          type: "CATEGORY",
+          path: "child",
+          parent: "root",
+          title: {},
+        },
+        {
+          id: "leaf",
+          type: "CATEGORY",
+          path: "leaf",
+          parent: "child",
+          title: {},
+        },
+      ]),
+    );
+    const response = await sitemapShardRoute.GET(
+      new Request("https://example.com/sitemaps/0.xml"),
+      { params: Promise.resolve({ id: "0.xml" }) },
+    );
+    const xml = await response.text();
+    for (const locale of ["zh", "en"]) {
+      expect(xml).toContain(
+        `https://example.com/${locale}/list/category/root/child/leaf`,
+      );
+      expect(xml).not.toContain(
+        `https://example.com/${locale}/list/category/leaf<`,
+      );
+    }
+  });
+
   it("enumerates every dynamic URL through the real bounded list schemas", async () => {
     const posts = Array.from({ length: 205 }, (_, index) => ({
       id: `post-${index + 1}`,
@@ -355,7 +416,15 @@ describe("runtime sitemap", () => {
       return list(pages.slice((page - 1) * limit, page * limit), pages.length);
     });
     menuIndexMock.mockResolvedValue(
-      list([{ type: "CATEGORY", path: "root/child/grandchild" }]),
+      list([
+        {
+          id: "category",
+          parent: null,
+          title: {},
+          type: "CATEGORY",
+          path: "root/child/grandchild",
+        },
+      ]),
     );
 
     const firstResponse = await sitemapShardRoute.GET(

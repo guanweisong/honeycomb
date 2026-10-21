@@ -54,13 +54,6 @@ export function usePostEditor(id: string | null) {
   const [loading, setLoading] = useState(false);
   const submitting = useRef(false);
   const recordGeneration = useRef(0);
-  useEffect(
-    () => () => {
-      // A completed request must not affect another visit, even to the same ID.
-      recordGeneration.current += 1;
-    },
-    [id],
-  );
   const [isNavigating, startNavigation] = useTransition();
   const [coverPreview, setCoverPreview] = useState<PostDetailEntity["cover"]>();
   // Confirmed publication state never comes from editable/recovered form values.
@@ -120,6 +113,14 @@ export function usePostEditor(id: string | null) {
   const { isDirty } = form.formState;
   const { user } = useCurrentUser();
   const userId = user?.id;
+  useEffect(() => {
+    submitting.current = false;
+    setLoading(false);
+    return () => {
+      // Invalidate the owning visit, including account changes and unmounts.
+      recordGeneration.current += 1;
+    };
+  }, [id, userId]);
   const draftValues =
     parsePostDraft({
       ...useWatch({ control: form.control }),
@@ -192,7 +193,6 @@ export function usePostEditor(id: string | null) {
   useEffect(() => {
     if (previousAccount.current !== user?.id) {
       previousAccount.current = user?.id;
-      recordGeneration.current += 1;
       resetEditor(id && detail?.id === id ? detail : undefined);
     }
   }, [user?.id, id, detail, resetEditor]);
@@ -273,6 +273,7 @@ export function usePostEditor(id: string | null) {
     try {
       await form.handleSubmit(
         async (values) => {
+          if (recordGeneration.current !== submittedGeneration) return;
           const normalized = normalizePostForm(values, status);
           if (!normalized.ok) {
             toast.error("请上传封面");
@@ -363,6 +364,8 @@ export function usePostEditor(id: string | null) {
             }),
           );
           if (result) {
+            saved = true;
+            if (recordGeneration.current !== submittedGeneration) return;
             // Persistence has succeeded; a failed read must not invite retrying the write.
             let refreshed: Awaited<ReturnType<typeof refetch>> | undefined;
             try {
@@ -370,6 +373,7 @@ export function usePostEditor(id: string | null) {
             } catch {
               // Keep the confirmed save and draft cleanup even if refreshing throws.
             }
+            if (recordGeneration.current !== submittedGeneration) return;
             if (
               recordGeneration.current === submittedGeneration &&
               previousRecord.current?.id === detail.id
@@ -406,7 +410,6 @@ export function usePostEditor(id: string | null) {
                 );
               }
             }
-            saved = true;
             if (!notifyPublicSyncWarning(result, toast.warning))
               toast.success("更新成功");
           }
@@ -446,8 +449,10 @@ export function usePostEditor(id: string | null) {
       }
       return false;
     } finally {
-      submitting.current = false;
-      setLoading(false);
+      if (recordGeneration.current === submittedGeneration) {
+        submitting.current = false;
+        setLoading(false);
+      }
     }
   };
 
@@ -467,6 +472,7 @@ export function usePostEditor(id: string | null) {
     try {
       latest = await refetch();
     } catch {
+      if (generation !== recordGeneration.current) return;
       toast.error("加载最新版本失败，本地内容已保留");
       return;
     }
@@ -520,10 +526,13 @@ export function usePostEditor(id: string | null) {
       if (!notifyPublicSyncWarning(result, toast.warning))
         toast.success("已找到或保存上次创建");
     } catch {
+      if (generation !== recordGeneration.current) return;
       toast.error("上次创建结果仍无法确认，原始内容和凭据已保留");
     } finally {
-      submitting.current = false;
-      setLoading(false);
+      if (generation === recordGeneration.current) {
+        submitting.current = false;
+        setLoading(false);
+      }
     }
   };
 

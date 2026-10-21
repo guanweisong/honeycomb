@@ -3,6 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ToolbarLinkItem } from "./ToolbarLinkItem";
 import { ToolbarButton } from "./ToolbarButton";
 import { ToolbarGroupItem } from "./ToolbarGroupItem";
 
@@ -45,6 +46,19 @@ describe("real toolbar control semantics", () => {
       );
     },
   );
+  it("names the real link URL input when the popover opens", async () => {
+    await act(async () => root.render(<ToolbarLinkItem editor={editor} />));
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('button[aria-label="超链接"]')
+        ?.click(),
+    );
+    const input = document.body.querySelector('input[aria-label="链接地址"]');
+    expect(input).not.toBeNull();
+    expect(input?.getAttribute("type")).toBe("url");
+    expect(input?.getAttribute("spellcheck")).toBe("false");
+  });
+
   it("names a group trigger without overriding Radix expansion state", async () => {
     await act(async () =>
       root.render(

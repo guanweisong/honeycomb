@@ -91,8 +91,8 @@ export function CommentPageShell() {
       <Dialog
         key="delete"
         trigger={
-          <Button variant="secondary" size="sm">
-            <Trash />
+          <Button variant="secondary" size="sm" aria-label="删除评论">
+            <Trash aria-hidden="true" />
           </Button>
         }
         type="danger"
@@ -151,6 +151,7 @@ export function CommentPageShell() {
                 {
                   name: "content",
                   type: "text",
+                  label: "搜索评论",
                   placeholder: "请输入评论内容进行搜索",
                 },
               ]}

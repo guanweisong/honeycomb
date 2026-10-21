@@ -9,11 +9,33 @@ import {
   type PutObjectCommandInput,
   type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
-import { Readable } from "node:stream";
+import { Readable, addAbortSignal } from "node:stream";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { clientEnv } from "@/env/client";
 import { getR2Env } from "@/env/server";
 import { observeExternalServiceOperation } from "@/lib/observability/server";
+
+const R2_OPERATION_TIMEOUT_MS = 30_000;
+
+/** One deadline covers SDK retries, response headers and the entire body. */
+async function withR2Deadline<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error("Object storage operation timed out");
+      controller.abort(error);
+      reject(error);
+    }, R2_OPERATION_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([operation(controller.signal), deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 interface DeleteMultipleObjectParams {
   Objects: NonNullable<DeleteObjectsCommandInput["Delete"]>["Objects"];
@@ -53,13 +75,16 @@ class R2Storage {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
     await observeExternalServiceOperation("object-storage", "put", () =>
-      R2Storage.createClient().send(
-        new PutObjectCommand({
-          Bucket: r2.bucketName,
-          ContentType,
-          Key,
-          Body,
-        }),
+      withR2Deadline((abortSignal) =>
+        R2Storage.createClient().send(
+          new PutObjectCommand({
+            Bucket: r2.bucketName,
+            ContentType,
+            Key,
+            Body,
+          }),
+          { abortSignal },
+        ),
       ),
     );
     return R2Storage.getPublicAssetUrl(Key);
@@ -100,14 +125,17 @@ class R2Storage {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
     await observeExternalServiceOperation("object-storage", "put", () =>
-      R2Storage.createClient(1).send(
-        new PutObjectCommand({
-          Bucket: r2.bucketName,
-          Key: key,
-          Body: bytes,
-          ContentLength: bytes.byteLength,
-          ContentType: type,
-        }),
+      withR2Deadline((abortSignal) =>
+        R2Storage.createClient(1).send(
+          new PutObjectCommand({
+            Bucket: r2.bucketName,
+            Key: key,
+            Body: bytes,
+            ContentLength: bytes.byteLength,
+            ContentType: type,
+          }),
+          { abortSignal },
+        ),
       ),
     );
   };
@@ -116,8 +144,11 @@ class R2Storage {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
     try {
-      const result = await R2Storage.createClient().send(
-        new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }),
+      const result = await withR2Deadline((abortSignal) =>
+        R2Storage.createClient().send(
+          new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }),
+          { abortSignal },
+        ),
       );
       return { size: result.ContentLength, type: result.ContentType };
     } catch (error) {
@@ -142,25 +173,29 @@ class R2Storage {
   ): Promise<Uint8Array> => {
     const r2 = getR2Env();
     if (!r2) throw new Error("R2 integration is not configured");
-    const result = await R2Storage.createClient().send(
-      new GetObjectCommand({ Bucket: r2.bucketName, Key: key }),
-    );
-    if (!(result.Body instanceof Readable))
-      throw new Error("Unsupported object stream");
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    try {
-      for await (const chunk of result.Body) {
-        if (!(chunk instanceof Uint8Array))
-          throw new Error("Invalid object stream");
-        size += chunk.byteLength;
-        if (size > maxBytes) throw new Error("Object exceeds byte limit");
-        chunks.push(chunk);
+    return withR2Deadline(async (abortSignal) => {
+      const result = await R2Storage.createClient().send(
+        new GetObjectCommand({ Bucket: r2.bucketName, Key: key }),
+        { abortSignal },
+      );
+      if (!(result.Body instanceof Readable))
+        throw new Error("Unsupported object stream");
+      addAbortSignal(abortSignal, result.Body);
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        for await (const chunk of result.Body) {
+          if (!(chunk instanceof Uint8Array))
+            throw new Error("Invalid object stream");
+          size += chunk.byteLength;
+          if (size > maxBytes) throw new Error("Object exceeds byte limit");
+          chunks.push(chunk);
+        }
+        return Buffer.concat(chunks, size);
+      } finally {
+        result.Body.destroy();
       }
-      return Buffer.concat(chunks, size);
-    } finally {
-      result.Body.destroy();
-    }
+    });
   };
 
   /**
@@ -175,11 +210,14 @@ class R2Storage {
       "object-storage",
       "delete",
       async () => {
-        const result = await R2Storage.createClient(1).send(
-          new DeleteObjectsCommand({
-            Bucket: r2.bucketName,
-            Delete: { Objects },
-          }),
+        const result = await withR2Deadline((abortSignal) =>
+          R2Storage.createClient(1).send(
+            new DeleteObjectsCommand({
+              Bucket: r2.bucketName,
+              Delete: { Objects },
+            }),
+            { abortSignal },
+          ),
         );
         if (result.Errors?.length) {
           throw new Error("Object storage delete failed");
@@ -189,7 +227,7 @@ class R2Storage {
     );
   };
 
-  /** 删除一组对象。S3/R2 对不存在的 key 也按成功处理，因此可安全重试。 */
+  /** 删除一组对象；缺失 key 按成功处理，但这不保证整批业务可重放或跨存储回滚。 */
   static deleteObjects = async (keys: readonly string[]): Promise<void> => {
     if (keys.length === 0) return;
     await R2Storage.deleteMultipleObject({

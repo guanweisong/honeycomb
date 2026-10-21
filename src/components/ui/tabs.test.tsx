@@ -15,6 +15,22 @@ describe("Tabs orientation contract", () => {
     await act(async () => root.unmount());
     container.remove();
   });
+  it("keeps a visible focus indicator on the keyboard-focusable panel", async () => {
+    await act(async () =>
+      root.render(
+        <Tabs defaultValue="one">
+          <TabsList>
+            <TabsTrigger value="one">One</TabsTrigger>
+          </TabsList>
+          <TabsContent value="one">First</TabsContent>
+        </Tabs>,
+      ),
+    );
+    const panel = container.querySelector<HTMLElement>('[role="tabpanel"]');
+    await act(async () => panel?.focus());
+    expect(document.activeElement).toBe(panel);
+    expect(panel?.className).toContain("focus-visible:ring-2");
+  });
   it.each(["vertical", "horizontal"] as const)(
     "uses %s arrow keys and skips disabled tabs",
     async (orientation) => {

@@ -62,7 +62,7 @@ async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
   }
   if (plan.refreshLayout) {
     await attempt(() => revalidateTag(PUBLIC_LAYOUT_CACHE_TAG, { expire: 0 }));
-    await attempt(() => revalidatePath("/[locale]", "layout"));
+    await attempt(() => revalidatePath("/(blog)/[locale]", "layout"));
   }
   if (failed) throw new Error("Public cache invalidation failed");
 }

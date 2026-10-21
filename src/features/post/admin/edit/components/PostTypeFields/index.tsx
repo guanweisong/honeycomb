@@ -9,12 +9,14 @@ export function PostTypeFields({ type }: { type: PostType }) {
       <>
         <DynamicField
           name="quoteContent"
+          label="引用正文"
           type="textarea"
           placeholder="请输入话语"
           multiLang
         />
         <DynamicField
           name="quoteAuthor"
+          label="引用作者"
           type="text"
           placeholder="请输入作者"
           multiLang

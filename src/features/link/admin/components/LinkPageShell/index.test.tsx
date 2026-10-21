@@ -89,6 +89,32 @@ describe("LinkPageShell", () => {
     container.remove();
   });
 
+  it("names row actions and associates the search label", async () => {
+    allowedPermissions = new Set([
+      Permission.linkUpdate,
+      Permission.linkDelete,
+    ]);
+    await act(async () => root.render(<LinkPageShell />));
+    for (const name of ["编辑链接", "删除链接"]) {
+      const button = container.querySelector(
+        `tbody button[aria-label="${name}"]`,
+      );
+      expect(button).not.toBeNull();
+      expect(button?.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+        "true",
+      );
+    }
+    const input = container.querySelector<HTMLInputElement>(
+      'input[placeholder="请输入链接名称进行搜索"]',
+    );
+    const label = document.getElementById(
+      input?.getAttribute("aria-labelledby") ?? "",
+    );
+    expect(label?.textContent).toBe("搜索链接");
+    if (input) input.value = "test";
+    expect(label?.textContent).toBe("搜索链接");
+  });
+
   it("keeps search copy while hiding link management controls", async () => {
     await act(async () => root.render(React.createElement(LinkPageShell)));
 

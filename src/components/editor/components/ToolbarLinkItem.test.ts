@@ -1,3 +1,5 @@
+import { Editor } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -46,30 +48,23 @@ import { ToolbarLinkItem } from "./ToolbarLinkItem";
 describe("ToolbarLinkItem", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let editor: Editor;
   beforeEach(() => {
+    editor = new Editor({ extensions: [StarterKit], content: "<p>Text</p>" });
+    editor.commands.selectAll();
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
   });
   afterEach(async () => {
     await act(async () => root.unmount());
+    editor.destroy();
     container.remove();
   });
 
   it("applies a new link URL", async () => {
-    const run = vi.fn();
-    const setLink = vi.fn(() => ({ run }));
-    const editor = {
-      getAttributes: vi.fn(() => ({})),
-      isActive: vi.fn(() => false),
-      chain: vi.fn(() => ({
-        focus: () => ({ extendMarkRange: () => ({ setLink }) }),
-      })),
-    };
     await act(async () =>
-      root.render(
-        React.createElement(ToolbarLinkItem, { editor: editor as never }),
-      ),
+      root.render(React.createElement(ToolbarLinkItem, { editor })),
     );
     await act(async () => container.querySelector("button")?.click());
     await act(async () => {
@@ -81,7 +76,6 @@ describe("ToolbarLinkItem", () => {
       );
       apply?.click();
     });
-    expect(setLink).toHaveBeenCalledWith({ href: "https://example.com" });
-    expect(run).toHaveBeenCalledOnce();
+    expect(editor.getAttributes("link").href).toBe("https://example.com");
   });
 });

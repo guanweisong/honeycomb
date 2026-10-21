@@ -30,6 +30,19 @@ describe("PasswordSettings", () => {
     vi.clearAllMocks();
   });
 
+  it("names password inputs and identifies their autocomplete purpose", async () => {
+    await act(async () => root.render(<PasswordSettings />));
+    for (const [name, label, purpose] of [
+      ["currentPassword", "当前密码", "current-password"],
+      ["newPassword", "新密码", "new-password"],
+      ["confirmPassword", "确认新密码", "new-password"],
+    ]) {
+      const input = container.querySelector(`input[name="${name}"]`);
+      expect(input?.getAttribute("aria-label")).toBe(label);
+      expect(input?.getAttribute("autocomplete")).toBe(purpose);
+    }
+  });
+
   it("changes the password and revokes other sessions", async () => {
     await act(async () => root.render(React.createElement(PasswordSettings)));
 

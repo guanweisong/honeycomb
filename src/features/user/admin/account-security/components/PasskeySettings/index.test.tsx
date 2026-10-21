@@ -59,6 +59,25 @@ describe("PasskeySettings", () => {
     vi.clearAllMocks();
   });
 
+  it("names registration and rename inputs independently of their dialog", async () => {
+    await act(async () => root.render(<PasskeySettings />));
+    expect(
+      container.querySelector('input[aria-label="Passkey 名称（可选）"]'),
+    ).not.toBeNull();
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>(
+          '[data-testid="passkey-rename-button"]',
+        )
+        ?.click(),
+    );
+    expect(
+      document.body.querySelector(
+        '[role="dialog"] input[aria-label="Passkey 名称"]',
+      ),
+    ).not.toBeNull();
+  });
+
   it("lists passkeys and registers a named passkey", async () => {
     await act(async () => root.render(React.createElement(PasskeySettings)));
 

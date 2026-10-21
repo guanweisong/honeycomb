@@ -1646,5 +1646,6 @@
       "docs/superpowers/plans/2026-10-21-full-audit-implementation.md",
       "src/features/media/server/media-create-rejection.test.ts（移除未用测试导入）"
     ]
-  }
+  },
+  "historical_scope_note": "本账本保留 52daeb59 基线 74 项实施过程及当时 CI 结果，路径、计数、pending/failed 不代表当前提交。后续 3d668455 复审的 51 项处置及精确提交验证见 docs/skill-reaudit-implementation.md 和对应账本；不改写历史验证。"
 }

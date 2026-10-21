@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
 
 import { enableStatusOptions } from "@/components/admin/enable-status-options";
@@ -47,6 +48,13 @@ export interface CategoryFormDialogProps {
  */
 const CategoryFormDialog = (props: CategoryFormDialogProps) => {
   const { modalProps, setModalProps } = props;
+  const session = useRef(0);
+  useEffect(
+    () => () => {
+      session.current += 1;
+    },
+    [modalProps?.open, modalProps?.type, modalProps?.record?.id],
+  );
   const defaultValues = modalProps?.record
     ? {
         ...modalProps.record,
@@ -78,6 +86,7 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
    * 关闭弹窗
    */
   const handleModalCancel = () => {
+    session.current += 1;
     setModalProps({
       open: false,
     });
@@ -87,6 +96,7 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
    * 确认按钮事件
    */
   const handleModalOk = async (values: Record<string, unknown>) => {
+    const submittedSession = session.current;
     const modalType = modalProps?.type;
     if (modalType === undefined) {
       return;
@@ -125,7 +135,8 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
         });
         break;
     }
-    if (state === "success") handleModalCancel();
+    if (state === "success" && session.current === submittedSession)
+      handleModalCancel();
   };
 
   const fields: FieldConfig[] = [
@@ -178,7 +189,10 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
           : "分类"
       }
       open={modalProps?.open}
-      onOpenChange={(open) => setModalProps({ ...modalProps, open })}
+      onOpenChange={(open) => {
+        if (!open) session.current += 1;
+        setModalProps({ ...modalProps, open });
+      }}
     >
       {modalProps?.type === ModalType.EDIT ? (
         <DynamicForm

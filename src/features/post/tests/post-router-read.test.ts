@@ -59,7 +59,7 @@ describe("Post Router", () => {
   });
 
   describe("detail procedure", () => {
-    it("allows guest callers to read adminDetail", async () => {
+    it("allows guest callers to read only published adminDetail", async () => {
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -68,7 +68,7 @@ describe("Post Router", () => {
           id: TEST_IDS.ID_1,
           title: { en: "Post 1", zh: "文章1" },
           content: { en: "Content 1", zh: "内容1" },
-          status: PostStatus.DRAFT,
+          status: PostStatus.PUBLISHED,
           type: PostType.ARTICLE,
           authorId: TEST_IDS.ID_2,
           categoryId: TEST_IDS.ID_1,
@@ -83,6 +83,16 @@ describe("Post Router", () => {
       const result = await caller.adminDetail({ id: TEST_IDS.ID_1 });
 
       expect(result.id).toBe(TEST_IDS.ID_1);
+      expect(result.status).toBe(PostStatus.PUBLISHED);
+      const dialect = new SQLiteSyncDialect();
+      expect(
+        dialect.sqlToQuery(mockDb.where.mock.calls[0]?.[0]).params,
+      ).toContain(PostStatus.PUBLISHED);
+      const relationQuery = mockDb.query.post.findMany.mock.calls[0]?.[0];
+      expect(relationQuery?.where).toBeDefined();
+      expect(dialect.sqlToQuery(relationQuery.where).params).toContain(
+        PostStatus.PUBLISHED,
+      );
     });
   });
 

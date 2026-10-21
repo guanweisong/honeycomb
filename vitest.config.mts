@@ -71,7 +71,7 @@ export default defineConfig({
         "**/*.spec.{ts,tsx}",
         // This thin service-worker entry is exercised only by the real offline E2E.
         "src/app/sw.ts",
-        // These files are unmodified shadcn primitives; extended/business UI stays covered.
+        // Retain the existing UI primitive path exclusion; modified primitives have focused tests.
         "src/components/ui/**",
         // Cross-module tests and fixtures are never production sources.
         "tests/**",

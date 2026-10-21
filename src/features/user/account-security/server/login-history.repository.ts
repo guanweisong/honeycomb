@@ -1,3 +1,4 @@
+import { normalizeEmail } from "@/lib/auth/email-policy";
 import "server-only";
 
 import type { Database } from "@/lib/db/db";
@@ -35,15 +36,24 @@ export async function findUserIdByIdentifier(
   identifier: string,
   field: LoginIdentifierField,
 ) {
-  // Match Better Auth: email is lowercased, configured usernames are unchanged.
-  const normalizedIdentifier =
-    field === "email" ? identifier.toLowerCase() : identifier;
-  if (!normalizedIdentifier.trim()) return null;
+  if (!identifier.trim()) return null;
+  if (field === "email") {
+    const normalized = normalizeEmail(identifier);
+    const users = await db
+      .select({ id: schema.user.id, email: schema.user.email })
+      .from(schema.user);
+    const matches = users.filter(
+      (user) =>
+        user.email !== null && normalizeEmail(user.email) === normalized,
+    );
+    // Historical case collisions cannot safely be attributed to one account.
+    return matches.length === 1 ? (matches[0]?.id ?? null) : null;
+  }
 
   const [user] = await db
     .select({ id: schema.user.id })
     .from(schema.user)
-    .where(eq(schema.user[field], normalizedIdentifier))
+    .where(eq(schema.user.username, identifier))
     .limit(1);
 
   return user?.id ?? null;

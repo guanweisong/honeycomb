@@ -137,6 +137,7 @@ describe("Tiptap", () => {
 
     expect(tiptapMocks.editor.commands.setContent).toHaveBeenCalledWith(
       "<p>外部内容</p>",
+      { emitUpdate: false },
     );
   });
 

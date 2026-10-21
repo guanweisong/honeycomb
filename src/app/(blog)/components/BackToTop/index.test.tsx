@@ -30,6 +30,15 @@ describe("BackToTop", () => {
     act(() => root.render(<BackToTop />));
   };
 
+  it("anchors the focusable control inside the viewport without an unbounded translation", () => {
+    scrollTop = 301;
+    render();
+    const button = container.querySelector("button");
+    button?.focus();
+    expect(document.activeElement).toBe(button);
+    expect(button?.className).toContain("right-4");
+    expect(button?.className).not.toContain("translate-x-96");
+  });
   it("derives visibility immediately without waiting for a state-sync effect", () => {
     scrollTop = 301;
     expect(renderToStaticMarkup(<BackToTop />)).toContain(
@@ -82,6 +91,4 @@ describe("BackToTop", () => {
     });
     expect(scrollCalls).toEqual([[0, 0]]);
   });
-
-
 });

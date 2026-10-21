@@ -79,6 +79,7 @@ export function FieldControl({
       return (
         <Input
           type={field.type}
+          autoComplete={field.autoComplete}
           value={textValue}
           placeholder={field.placeholder}
           {...commonProps}

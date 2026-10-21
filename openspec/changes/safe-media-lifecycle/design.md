@@ -21,3 +21,5 @@
 ## Migration Plan
 
 0007 在同一迁移事务内重建 media 为精确 Drizzle 结构；保存全部已知入站 post.cover_id 到专用辅助表，复制全部历史字段并设 READY，替换后恢复封面再移除辅助表，未来默认 UPLOADING。通过实际 Drizzle migrator（foreign_keys=ON）验证全链、历史字段/封面/文章版本与时间戳保留和恢复失败时完整回滚；另运行真实迁移治理比较列顺序及当前 schema 结构，不依赖只检查索引/CHECK 的子集测试。不得直接回退旧写代码；没有生产应用迁移。
+
+> 后续协议说明（2026-10-21）：本文保留当时的四态方案与验收记录，不是当前实现指引。当前普通媒体协议已由 `simplify-media-registration` 取代，以 [媒体主规格](../../specs/media-lifecycle/spec.md)为准；不得按本文恢复生命周期、墓碑或 COPY/HEAD 恢复流程。历史任务勾选和测试记录不代表当前提交的验证。

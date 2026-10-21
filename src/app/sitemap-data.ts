@@ -1,3 +1,4 @@
+import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { unstable_cache } from "next/cache";
 
 import { getServerEnv } from "@/env/server";
@@ -60,8 +61,14 @@ export const getCachedSitemapShard = unstable_cache(
     ]);
     const categoryMenus =
       menu?.list.flatMap((item) => {
-        const path = item.path?.trim();
-        return item.type === MenuType.CATEGORY && path
+        const path = getCurrentPathOfMenu({
+          id: item.id,
+          familyProp: "path",
+          menu: menu.list,
+        })
+          .join("/")
+          .trim();
+        return item.type === MenuType.CATEGORY && item.path?.trim() && path
           ? [{ ...item, path }]
           : [];
       }) ?? [];

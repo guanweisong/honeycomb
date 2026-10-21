@@ -358,6 +358,68 @@ describe("admin login page", () => {
     expect(toast.info).toHaveBeenCalledWith("Passkey 登录未完成，可重试");
   });
 
+  it("uses a bounded, scrollable login card instead of offscreen fixed positioning", async () => {
+    await act(async () =>
+      root.render(<LoginClient setting={undefined} providers={[]} />),
+    );
+    const card = container.querySelector("h1")?.parentElement;
+    expect(card?.className).toContain("w-full");
+    expect(card?.className).toContain("max-w-96");
+    expect(card?.className).not.toContain("fixed");
+    expect(card?.parentElement?.className).toContain("min-h-dvh");
+  });
+
+  it("starts no video for reduced motion and supports preference changes and a keyboard pause control", async () => {
+    const query = Object.assign(new EventTarget(), { matches: false });
+    const matchMedia = vi.fn(() => query);
+    vi.stubGlobal("matchMedia", matchMedia);
+    await act(async () =>
+      root.render(<LoginClient setting={undefined} providers={[]} />),
+    );
+    expect(matchMedia).toHaveBeenCalledWith(
+      "(prefers-reduced-motion: no-preference)",
+    );
+    expect(container.querySelector("video")).toBeNull();
+    await act(async () => {
+      query.matches = true;
+      query.dispatchEvent(new Event("change"));
+    });
+    expect(container.querySelector("video")?.autoplay).toBe(true);
+    const pause = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "暂停背景动画",
+    );
+    expect(pause).toBeDefined();
+    await act(async () => {
+      pause?.focus();
+      pause?.click();
+    });
+    expect(document.activeElement).toBe(pause);
+    expect(container.querySelector("video")).toBeNull();
+    await act(async () => pause?.click());
+    expect(container.querySelector("video")).not.toBeNull();
+    await act(async () => {
+      query.matches = false;
+      query.dispatchEvent(new Event("change"));
+    });
+    expect(container.querySelector("video")).toBeNull();
+  });
+  it("associates login labels and autocomplete with the real inputs", async () => {
+    await act(async () =>
+      root.render(<LoginClient setting={undefined} providers={[]} />),
+    );
+    for (const [name, label, purpose] of [
+      ["name", "用户名", "username"],
+      ["password", "密码", "current-password"],
+    ]) {
+      const input = container.querySelector(`input[name="${name}"]`);
+      expect(
+        document.getElementById(input?.getAttribute("aria-labelledby") ?? "")
+          ?.textContent,
+      ).toBe(label);
+      expect(input?.getAttribute("autocomplete")).toBe(purpose);
+    }
+  });
+
   it("navigates successful passkey login only to the safe callback", async () => {
     vi.stubGlobal("PublicKeyCredential", class {});
     mocks.passkey.mockResolvedValue({ error: null });

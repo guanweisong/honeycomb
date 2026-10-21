@@ -1,3 +1,4 @@
+import { posix } from "node:path";
 import * as ts from "typescript";
 export { loadProductionSources } from "./capability-authorization-sources";
 
@@ -261,7 +262,11 @@ function assertNoRoleBasedAuthorization(
     if (
       ts.isImportDeclaration(statement) &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text.endsWith("user.level")
+      (statement.moduleSpecifier.text.startsWith("@/")
+        ? `src/${statement.moduleSpecifier.text.slice(2)}`
+        : posix.normalize(
+            posix.join(posix.dirname(fileName), statement.moduleSpecifier.text),
+          )) === "src/features/user/user"
     ) {
       const bindings = statement.importClause?.namedBindings;
       if (bindings && ts.isNamedImports(bindings)) {

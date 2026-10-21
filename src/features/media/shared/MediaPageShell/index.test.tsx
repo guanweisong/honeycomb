@@ -52,6 +52,11 @@ const nextMedia: MediaViewModel = {
   createdAt: null,
   updatedAt: null,
 };
+// TanStack Query retains data references while the server result is unchanged.
+const mediaPages = {
+  first: { list: [existingMedia], total: 2 },
+  second: { list: [nextMedia], total: 2 },
+};
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
   prepareUpload: vi.fn(),
@@ -78,10 +83,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
         useQuery: (input: { page?: number; limit?: number }) => {
           trpcMocks.input = input;
           return {
-            data: {
-              list: input.page === 2 ? [nextMedia] : [existingMedia],
-              total: 2,
-            },
+            data: input.page === 2 ? mediaPages.second : mediaPages.first,
             isFetching: false,
             refetch: trpcMocks.refetch,
           };
@@ -204,7 +206,9 @@ describe("MediaPageShell", () => {
     trpcMocks.prepareUpload.mockReturnValue(pending.promise);
     await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
     await changeFile(
-      container.querySelector<HTMLInputElement>('input[type="file"]')!,
+      requireDefined(
+        container.querySelector<HTMLInputElement>('input[type="file"]'),
+      ),
       new File(["x"], "x.png", { type: "image/png" }),
     );
     accountId = "user-2";
@@ -229,8 +233,9 @@ describe("MediaPageShell", () => {
       vi.fn(() => pending.promise),
     );
     await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
-    const input =
-      container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const input = requireDefined(
+      container.querySelector<HTMLInputElement>('input[type="file"]'),
+    );
     const file = new File(["x"], "x.png", { type: "image/png" });
     await changeFile(input, file);
     await changeFile(input, file);
@@ -358,7 +363,7 @@ describe("MediaPageShell", () => {
       container.querySelector<HTMLInputElement>('input[type="file"]');
     const file = new File(["movie"], "image.png", { type: "image/png" });
     expect(input).not.toBeNull();
-    await changeFile(input!, file);
+    await changeFile(requireDefined(input), file);
 
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
     expect(container.textContent).toContain("正在上传…");
@@ -399,7 +404,7 @@ describe("MediaPageShell", () => {
     const input =
       container.querySelector<HTMLInputElement>('input[type="file"]');
     await changeFile(
-      input!,
+      requireDefined(input),
       new File(["movie"], "image.png", { type: "image/png" }),
     );
     expect(container.textContent).toContain("正在上传…");
@@ -670,7 +675,9 @@ describe("MediaPageShell", () => {
     vi.stubGlobal("fetch", fetchMock);
     await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
     await changeFile(
-      container.querySelector<HTMLInputElement>('input[type="file"]')!,
+      requireDefined(
+        container.querySelector<HTMLInputElement>('input[type="file"]'),
+      ),
       [
         new File(["a"], "image.png", { type: "image/png" }),
         new File(["b"], "bad.png", { type: "image/png" }),

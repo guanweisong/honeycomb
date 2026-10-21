@@ -5,26 +5,45 @@ import { PageTemplate } from "@/features/page/page-template";
 import { PostDeleteSchema, PostInsertSchema } from "./schema";
 
 describe("content command enum schemas", () => {
-  it("rejects unknown post enum values", () => {
-    const result = PostInsertSchema.safeParse({
-      categoryId: "category-1",
-      status: "PUBLISH",
-      type: "ESSAY",
-      commentStatus: "YES",
-    });
+  const post = {
+    categoryId: "category-1",
+    creationToken: "1d40d08b-55cc-4c2c-9dc0-6b151b9866f4",
+    status: "PUBLISHED",
+    type: "ARTICLE",
+    commentStatus: "ENABLE",
+  };
+  const page = {
+    title: { en: "About", zh: "关于" },
+    content: { en: "Content", zh: "内容" },
+    creationToken: "1d40d08b-55cc-4c2c-9dc0-6b151b9866f4",
+    status: "PUBLISHED",
+    template: PageTemplate.DEFAULT,
+  };
 
-    expect(result.success).toBe(false);
+  it("accepts the otherwise-valid post and page baselines", () => {
+    expect(PostInsertSchema.safeParse(post).success).toBe(true);
+    expect(PageInsertSchema.safeParse(page).success).toBe(true);
   });
 
-  it("rejects unknown page status values", () => {
-    const result = PageInsertSchema.safeParse({
-      title: { en: "About", zh: "关于" },
-      content: { en: "Content", zh: "内容" },
-      status: "VISIBLE",
-      template: PageTemplate.DEFAULT,
-    });
-
+  it.each([
+    ["status", "PUBLISH"],
+    ["type", "ESSAY"],
+    ["commentStatus", "YES"],
+  ])("rejects only the invalid post %s", (field, value) => {
+    const result = PostInsertSchema.safeParse({ ...post, [field]: value });
     expect(result.success).toBe(false);
+    if (result.success) throw new Error("Expected enum rejection");
+    expect(result.error.issues.map((issue) => issue.path)).toEqual([[field]]);
+  });
+
+  it.each([
+    ["status", "VISIBLE"],
+    ["template", "UNKNOWN"],
+  ])("rejects only the invalid page %s", (field, value) => {
+    const result = PageInsertSchema.safeParse({ ...page, [field]: value });
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error("Expected enum rejection");
+    expect(result.error.issues.map((issue) => issue.path)).toEqual([[field]]);
   });
 });
 

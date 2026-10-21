@@ -160,7 +160,8 @@ R2、Turnstile、Resend、OAuth Provider 与 Upstash 是可选集成：完全不
 - 支持已绑定用户使用 Passkey 登录；Passkey 可在后台“账号安全”页面注册和管理
 - OAuth Provider 只有在对应环境变量存在时才会启用并展示按钮
 - OAuth 回调地址为 `/api/auth/callback/google`、`/api/auth/callback/github` 和 `/api/auth/callback/apple`
-- 用户名密码登录在配置 Turnstile 时会校验验证码，并使用 `bcrypt` 哈希比对密码
+- 用户名密码登录在配置 Turnstile 时会校验验证码，并使用 Better Auth 的凭据哈希与验证流程
+- 后台新建账号或明确修改邮箱时统一小写，并在写事务内拒绝与其他账号仅大小写不同的邮箱。原样回传的历史邮箱不自动改写；失败登录审计遇到多个大小写候选时不归属任何账号。此规则不迁移旧数据、不改变用户名登录，也不保证拦截绕过后台的直接写入。
 - 六位密码下限为兼容现有账号而保留，属于已接受风险；未来提升长度必须单独评估已有凭据和用户迁移。
 - 登录后的会话由 Better Auth 维护，权限判定以数据库中的用户状态和角色为准
 - 从 NextAuth 切换后旧 Cookie 不再兼容，首次发布后所有用户需要重新登录
@@ -404,7 +405,7 @@ configureObservability({ logger, metrics });
 
 ## Sitemap 运行时策略
 
-`/sitemap.xml` 在请求时生成 sitemap 索引，内容按每片 1000 条分页，并缓存 5 分钟。数据库不可用时，索引和首片会降级到站点首页及中英文分类入口，不影响应用构建；动态内容恢复后会在缓存刷新时重新出现。
+`/sitemap.xml` 在请求时生成 sitemap 索引，文章与页面各按 `MAX_PAGE_SIZE`（当前 100 条）分页读取，每条生成中英文 URL；首片另含静态入口及按真实祖先链生成的分类 URL，缓存 5 分钟。数据库不可用时，索引和首片会降级到站点首页及中英文分类入口，不影响应用构建；动态内容恢复后会在缓存刷新时重新出现。
 
 ## 部署
 

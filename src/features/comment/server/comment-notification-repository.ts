@@ -76,7 +76,12 @@ export function createCommentNotificationRepository(db: Database) {
       const [setting] = await observeDbOperation(
         "comment.notification.setting",
         "select",
-        () => db.select().from(schema.setting),
+        () =>
+          db
+            .select()
+            .from(schema.setting)
+            .where(eq(schema.setting.singletonKey, 1))
+            .limit(1),
       );
       if (!setting) return undefined;
       const translations = await db

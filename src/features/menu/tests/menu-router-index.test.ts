@@ -1,3 +1,4 @@
+import type { menu } from "@/lib/db/schema";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/router";
@@ -33,25 +34,27 @@ describe("Menu Router", () => {
       const mockMenus = [
         {
           id: TEST_IDS.ID_1,
+          parent: null,
           type: MenuType.CATEGORY,
           categoryId: TEST_IDS.ID_1,
           pageId: null,
           customId: null,
           power: 1,
-          createdAt: new Date(),
-          updatedAt: undefined,
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
         {
           id: TEST_IDS.ID_2,
+          parent: null,
           type: MenuType.PAGE,
           categoryId: null,
           pageId: TEST_IDS.ID_2,
           customId: null,
           power: 2,
-          createdAt: new Date(),
-          updatedAt: undefined,
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
       const mockCategories = [
         {
           id: TEST_IDS.ID_1,
@@ -106,7 +109,7 @@ describe("Menu Router", () => {
             power: 1,
             type: MenuType.CATEGORY,
             createdAt: requireDefined(mockMenus[0]).createdAt,
-            updatedAt: undefined,
+            updatedAt: null,
             title: { en: "Category 1", zh: "分类1" },
             path: requireDefined(mockCategories[0]).path,
           },
@@ -116,7 +119,7 @@ describe("Menu Router", () => {
             power: 2,
             type: MenuType.PAGE,
             createdAt: requireDefined(mockMenus[1]).createdAt,
-            updatedAt: undefined,
+            updatedAt: null,
             title: { en: "Page 1", zh: "页面1" },
             path: null,
           },
@@ -161,8 +164,8 @@ describe("Menu Router", () => {
           pageId: TEST_IDS.ID_1,
           customId: null,
           power: 1,
-          createdAt: new Date(),
-          updatedAt: undefined,
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
         {
           id: TEST_IDS.ID_2,
@@ -172,10 +175,10 @@ describe("Menu Router", () => {
           pageId: null,
           customId: TEST_IDS.ID_2,
           power: 2,
-          createdAt: new Date(),
-          updatedAt: undefined,
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
       mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);

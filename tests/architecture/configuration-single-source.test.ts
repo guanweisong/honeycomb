@@ -172,3 +172,23 @@ describe("配置与契约所有权", () => {
     },
   );
 });
+
+it.each(["category", "post", "page", "tag", "setting"])(
+  "%s locale CHECK derives from supportedLanguages",
+  (name) => {
+    const file = sourceFile(`src/lib/db/schema/content-${name}.ts`);
+    const calls: ts.CallExpression[] = [];
+    function visit(node: ts.Node) {
+      if (
+        ts.isCallExpression(node) &&
+        node.arguments[0]?.getText() === `"${name}_translation_locale_check"`
+      )
+        calls.push(node);
+      ts.forEachChild(node, visit);
+    }
+    visit(file);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.expression.getText()).toBe("enumCheck");
+    expect(calls[0]?.arguments[2]?.getText()).toBe("supportedLanguages");
+  },
+);

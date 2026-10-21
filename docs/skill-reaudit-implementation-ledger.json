@@ -1,0 +1,990 @@
+{
+  "baseline": "3d668455a746dd6bfc9c69cec7cf0f9d5fb539de",
+  "scope": "20 recommendation groups, 51 details; no production access/migration/deployment",
+  "verification_state": "Local tsc, full ESLint, strict OpenSpec and diff checks passed. Final focused run: 114 passed, 3 auth-build initialization timeouts. Exact-head GitHub CI and new real-browser regressions pending publication; PR #17 carries the final immutable-head result.",
+  "items": [
+    {
+      "id": "FE-CURRENT-001",
+      "group": "R09",
+      "title": "返回顶部按钮在移动视口被固定平移到屏幕外",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE-CURRENT-001",
+          "status": "implemented_focused_tests_pass",
+          "change": "Replaced unbounded horizontal translation with right-4; scroll threshold, focus and scrollTo preserved.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx",
+            "red_log": "ui-controls-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE-CURRENT-002",
+      "group": "R03",
+      "title": "页面详情提前启动的评论 Promise 在失败/404 路径失去拒绝处理",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "integration",
+          "status": "implemented",
+          "change": "Comments begin only after publication gate; immediate rejection handler retains original rejected promise for consumers.",
+          "evidence": "page-red.log; page-rejection-green.log: 7 tests passed"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE-CURRENT-003",
+      "group": "R17",
+      "title": "sitemap 分类 URL 未按真实菜单祖先拼接",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "integration",
+          "status": "implemented",
+          "change": "Sitemap category paths reuse actual navigation parent-chain resolution, preserving flat menu UI.",
+          "evidence": "sitemap-red.log; public-green.log: 17 tests passed"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT1-001",
+      "group": "R16",
+      "title": "Notification settings read still takes an unordered first row instead of the stable singleton key",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R16",
+          "id": "RT1-001",
+          "status": "Implemented",
+          "change": "Notification setting read uses singletonKey=1 and limit(1), retaining missing-setting return.",
+          "evidence": "Predicate regression failed (where called zero times), then passed with compiled SQL and missing-row assertions.",
+          "test": "src/features/comment/server/comment-notification-repository.test.ts"
+        }
+      ],
+      "reviewed_paths": [
+        "src/features/comment/server/comment-notification-repository.ts"
+      ]
+    },
+    {
+      "id": "RT1-002",
+      "group": "R13",
+      "title": "Auth build tests repeat unexplained inline double assertions outside a named adapter",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        },
+        {
+          "source": "integration",
+          "status": "runtime_verification_pending_ci",
+          "evidence": "Final single-worker focused batch retains 3 auth-build 5000ms initialization timeouts. Public auth.options typechecks; no timeout or gate weakened."
+        }
+      ],
+      "reviewed_paths": [
+        "src/auth-build.test.ts"
+      ]
+    },
+    {
+      "id": "RT1-C01",
+      "group": "candidate_or_measurement",
+      "title": "Public comment reads combine an earlier publication gate with a later comment snapshot",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "integration",
+          "status": "implemented",
+          "change": "Candidate reproduced in real libSQL across withdrawal/disable plus subsequent text edit; fixed with same-query target visibility subquery.",
+          "evidence": "comment-red.log: 4 intended failures; comment-full-green.log: 19 passed; exclusive local temporary directory cleanup verified"
+        }
+      ],
+      "reviewed_paths": [
+        "src/features/comment/server/comment-public-queries.ts",
+        "src/features/comment/server/comment-query-repository.ts"
+      ]
+    },
+    {
+      "id": "FE-B2-001",
+      "group": "R13",
+      "title": "后台壳与布局测试仍用 as never 绕过真实契约",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE-B2-001",
+          "status": "implemented_focused_tests_pass",
+          "change": "AdminLayout browser doubles constrained to explicit Pick contracts and redundant component cast removed. AdminClientShell now uses UserLevel.ADMIN/UserStatus.ENABLE and satisfies AdminUser; no DTO assertion escape remains.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/media/components/PhotoPicker/index.test.tsx",
+            "red_log": "ui-fixtures-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run --maxWorkers=1 --reporter=verbose src/features/media/components/PhotoPicker/index.test.tsx src/features/media/shared/MediaPageShell/index.test.tsx src/app/admin/components/AdminLayout/index.test.ts",
+            "green_log": "ui-fixtures-green.log",
+            "green_result": "3 files, 37 tests passed"
+          },
+          "additional_evidence": {
+            "green": "node node_modules/vitest/vitest.mjs run 'src/app/admin/(dashboard)/components/AdminClientShell/index.test.tsx'",
+            "green_log": "ui-shell-green.log",
+            "green_result": "1 file, 6 tests passed",
+            "red_note": "Test-only expressible contract cleanup; satisfies enforces compile-time fixture shape, no production behavior changed."
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE-B2-002",
+      "group": "R11",
+      "title": "表格多选筛选器渲染没有名称的独立 Checkbox",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE-B2-002",
+          "status": "implemented_focused_tests_pass",
+          "change": "Real Radix checkboxes have option names, disabled parity and one toggle; stopPropagation prevents cmdk click doubling.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx",
+            "red_log": "ui-controls-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE-B2-003",
+      "group": "R12",
+      "title": "后台导航与侧栏没有减少动态效果分支",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE-B2-003",
+          "status": "implemented_focused_tests_pass",
+          "change": "Reduced-motion navigation disables entrance/size animation; sidebar transitions name their actual properties and use motion-reduce:transition-none.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/user/login/components/LoginClient/index.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "red_log": "ui-motion-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          },
+          "additional_evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/app/admin/components/AdminLayout/index.test.ts",
+            "red_log": "ui-sidebar-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/app/admin/components/AdminLayout/index.test.ts",
+            "green_log": "ui-sidebar-green.log",
+            "green_result": "1 file, 10 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE3-01",
+      "group": "R05",
+      "title": "External rich-text synchronization is reported as a user edit",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE3-02",
+      "group": "R12",
+      "title": "Link URL entry has no explicit accessible label",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE3-02",
+          "status": "implemented_focused_tests_pass",
+          "change": "Real link popover URL input named, type=url/autocomplete=url/spellcheck=false.",
+          "evidence": {
+            "red": "PATH=/tmp/honeycomb-react-toolchain/node_modules/.bin:$PATH bun --no-env-file node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx",
+            "red_log": "ui-labels-red.log",
+            "red_note": "Three intended security/editor label assertions failed; four other suites errored under Bun and were rerun with Node, not counted as red evidence.",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE3-03",
+      "group": "R13",
+      "title": "Editor test doubles still bypass the explicit type-safety contract",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE3-04",
+      "group": "R10",
+      "title": "Valid English-only localized values initially appear blank in admin tables",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-01",
+      "group": "R02",
+      "title": "Older category save closes a newer edit dialog",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-02",
+      "group": "R11",
+      "title": "Comment and link row icon buttons have no accessible names",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE4-02",
+          "status": "implemented_focused_tests_pass",
+          "change": "Comment/link row actions explicitly named; decorative icons hidden.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-03",
+      "group": "R12",
+      "title": "Admin comment and link search inputs lack associated labels",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE4-03",
+          "status": "implemented_focused_tests_pass",
+          "change": "Comment and link searches have associated persistent visible labels.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-04",
+      "group": "R09",
+      "title": "Media picker sheet has a desktop-only minimum width",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE4-04",
+          "status": "implemented_focused_tests_pass",
+          "change": "Right-side media sheet uses matching data-side width/max-width variants, so primitive width rules are overridden correctly.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx",
+            "red_log": "ui-controls-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-05",
+      "group": "R12",
+      "title": "Focusable tab panels remove all visible focus styling",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE4-05",
+          "status": "implemented_focused_tests_pass",
+          "change": "Focusable Radix tab panel now has focus-visible ring and offset.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx",
+            "red_log": "ui-controls-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE4-06",
+      "group": "R13",
+      "title": "Media picker test fixtures bypass the full media contract",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE4-06",
+          "status": "implemented_focused_tests_pass",
+          "change": "All picker tests reuse one complete satisfies MediaRecord fixture; actual exactly-once callback payload is validated with production schema.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/media/components/PhotoPicker/index.test.tsx",
+            "red_log": "ui-fixtures-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run --maxWorkers=1 --reporter=verbose src/features/media/components/PhotoPicker/index.test.tsx src/features/media/shared/MediaPageShell/index.test.tsx src/app/admin/components/AdminLayout/index.test.ts",
+            "green_log": "ui-fixtures-green.log",
+            "green_result": "3 files, 37 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE5-01",
+      "group": "R13",
+      "title": "文章侧栏测试用 as never 掩盖不完整业务夹具",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE5-02",
+      "group": "R12",
+      "title": "引用正文与作者输入没有关联标签",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE5-02",
+          "status": "implemented_focused_tests_pass",
+          "change": "QUOTE labels attached to real bilingual fields; both language values verified unchanged.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE6-01",
+      "group": "R20",
+      "title": "文章更新的旧请求仍刷新并反馈，且占用新记录提交状态",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE6-02",
+      "group": "R02",
+      "title": "标签旧保存会关闭新打开的编辑弹窗",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE6-03",
+      "group": "R12",
+      "title": "文章搜索、密码与 Passkey 表单仅依赖占位文字",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE6-03",
+          "status": "implemented_focused_tests_pass",
+          "change": "Password and Passkey fields named; password autocomplete added; real post search label verified in labels batch.",
+          "evidence": {
+            "red": "PATH=/tmp/honeycomb-react-toolchain/node_modules/.bin:$PATH bun --no-env-file node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx",
+            "red_log": "ui-labels-red.log",
+            "red_note": "Three intended security/editor label assertions failed; four other suites errored under Bun and were rerun with Node, not counted as red evidence.",
+            "green": "node node_modules/vitest/vitest.mjs run src/components/MultiSelect/accessibility.test.tsx src/components/ui/tabs.test.tsx 'src/app/(blog)/components/BackToTop/index.test.tsx' src/features/media/components/PhotoPicker/accessibility.test.tsx src/components/editor/components/toolbar-accessibility.test.tsx src/features/user/admin/account-security/components/PasswordSettings/index.test.tsx src/features/user/admin/account-security/components/PasskeySettings/index.test.tsx",
+            "green_log": "ui-controls-green.log",
+            "green_result": "7 files, 26 tests passed"
+          },
+          "additional_evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE7-01",
+      "group": "R11",
+      "title": "用户管理行操作图标没有可访问名称",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE7-01",
+          "status": "implemented_focused_tests_pass",
+          "change": "User edit/delete row actions explicitly named, decorative icons hidden.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE7-02",
+      "group": "R12",
+      "title": "登录与用户搜索输入缺少关联标签",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE7-02",
+          "status": "implemented_focused_tests_pass",
+          "change": "Login and user search labels associated; DynamicForm forwards a typed optional autocomplete prop for login.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx",
+            "red_log": "ui-labels-node-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE7-03",
+      "group": "R09",
+      "title": "登录面板固定宽度与定位使小屏或短视口内容不可达",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE7-03",
+          "status": "implemented_focused_tests_pass",
+          "change": "Login card moved into normal flow, viewport padding and max-w-96; long content can scroll with the document.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/user/login/components/LoginClient/index.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "red_log": "ui-motion-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "FE7-04",
+      "group": "R12",
+      "title": "登录背景视频无限自动播放且不响应减弱动态偏好",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "ui-results.json",
+          "id": "FE7-04",
+          "status": "implemented_focused_tests_pass",
+          "change": "No video on initial/SSR render or reduced-motion preference; live preference subscription plus keyboard-focusable pause/resume control. Login/auth flows unchanged.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/user/login/components/LoginClient/index.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "red_log": "ui-motion-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run src/features/comment/admin/components/CommentPageShell/index.test.tsx src/features/link/admin/components/LinkPageShell/index.test.tsx src/features/user/admin/components/UserPageShell/index.test.tsx src/features/user/login/components/LoginClient/index.test.tsx src/features/post/admin/edit/components/PostTypeFields/accessibility.test.tsx src/features/post/admin/list/components/PostListClient/accessibility.test.tsx src/app/admin/components/AdminNavigation/index.test.ts",
+            "green_log": "ui-labels-motion-green.log",
+            "green_result": "7 files, 64 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "GOV7-001",
+      "group": "R19",
+      "title": "验证摘要把仅分类的无数量上限写成通用批量删除合同",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "integration",
+          "status": "implemented",
+          "change": "Historical wording now explicitly limits unlimited batch-delete contract to categories.",
+          "evidence": "Diff of reconcile-react-correctness-fixes/verification.md"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "TEST-AUTH-001",
+      "group": "R15",
+      "title": "UserLevel 重命名后，授权静态门禁漏掉别名角色比较",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "gates-results.json",
+          "id": "TEST-AUTH-001",
+          "status": "fixed",
+          "changes": "Resolve @/ and relative import module paths to the current src/features/user/user authority; test aliased imported values without role/level-named operands and an unrelated same-basename module.",
+          "red": "gates-red.log: 2 current-authority alias assertions failed as expected.",
+          "green": "All focused alias regression assertions pass; whole-production-source scan passed the first corrected run, later parallel/serial runs exceeded unchanged 15s timeout. Exact-head CI must confirm gate."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB2-001",
+      "group": "R18",
+      "title": "Test cleanup can skip the competing client close; interruption handling is an execution concern",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R18",
+          "id": "RB2-001",
+          "status": "Implemented",
+          "change": "Nested try/finally guarantees competing client close when deletion promise rejects. No per-fixture signal plumbing.",
+          "evidence": "Static AST teardown guard red then green. Did not execute DB fixture or simulate rejection in a live DB run.",
+          "test": "tests/tooling/media-test-cleanup.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB2-002",
+      "group": "R13",
+      "title": "Link tests still accept impossible persistence fixtures and bypass expressible checks",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R13",
+          "id": "RB2-002",
+          "status": "Implemented Link subset",
+          "change": "Three Link test files now use satisfies and complete real persistence rows with string/null timestamps; router independently asserts full result. MediaPageShell DOM subset owned by UI worker.",
+          "evidence": "Full record assertion red (Date/missing fields), then 9 Link tests green in five-file 22-test run.",
+          "test": "src/features/link/tests/link.router.test.ts"
+        },
+        {
+          "source": "ui-results.json",
+          "id": "RB2-002",
+          "status": "implemented_owned_scope_focused_tests_pass",
+          "change": "MediaPageShell file inputs narrowed through existing requireDefined instead of non-null assertions. Link portions belong to backend worker. Its tRPC mock now retains stable per-page result references, matching TanStack Query structural sharing; fresh arrays caused an infinite effect loop after the parallel media-query fix.",
+          "evidence": {
+            "red": "node node_modules/vitest/vitest.mjs run src/features/media/components/PhotoPicker/index.test.tsx",
+            "red_log": "ui-fixtures-red.log",
+            "green": "node node_modules/vitest/vitest.mjs run --maxWorkers=1 --reporter=verbose src/features/media/components/PhotoPicker/index.test.tsx src/features/media/shared/MediaPageShell/index.test.tsx src/app/admin/components/AdminLayout/index.test.ts",
+            "green_log": "ui-fixtures-green.log",
+            "green_result": "3 files, 37 tests passed"
+          }
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB2-003",
+      "group": "R16",
+      "title": "Link list filters still have parallel schema and server field inventories",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R16",
+          "id": "RB2-003",
+          "status": "Implemented",
+          "change": "LinkListInput derives all non-pagination filters from LinkListQueryInput, preserving server pagination/default semantics.",
+          "evidence": "Authority gate failed before change, passed in 99-test focused run.",
+          "test": "tests/architecture/single-source-contracts.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB2-004",
+      "group": "candidate_or_measurement",
+      "title": "Media reference checks repeat linear scans inside serialized writes",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R18",
+          "id": "RB2-004",
+          "status": "Implemented narrowly",
+          "change": "Use Set for media key and target-ID membership in same transaction. No delete cap or lifecycle changes.",
+          "evidence": "Synthetic 32-key getter counter observed 1024 accesses before vs 32 after. This measures operation count only, NOT latency or throughput. Existing reference tests green.",
+          "test": "src/features/media/server/media-references.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB3-001",
+      "group": "R04",
+      "title": "Legitimate equal-ID adjacent media page is never reconciled",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "async-editor-disposition.md",
+          "status": "implemented",
+          "evidence": "Focused real-consumer and session lifecycle regressions passed; media query reference simplification subsequently validated."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB3-002",
+      "group": "R13",
+      "title": "Media/menu tests bypass actual read and persistence shapes",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB3-003",
+      "group": "R16",
+      "title": "Menu save transform maintains a parallel write field inventory",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R16",
+          "id": "RB3-003",
+          "status": "Implemented",
+          "change": "MenuSaveItem derives from MenuInput[number] with explicit non-null parent narrowing; root omission unchanged.",
+          "evidence": "Authority gate red then green; menu transform/actions behavioral checks pass.",
+          "test": "src/features/menu/admin/menu-transforms.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB4-001",
+      "group": "R13",
+      "title": "Tag rendering tests bypass the real props contract with as never",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB4-002",
+      "group": "R14",
+      "title": "Enum rejection tests pass for an unrelated missing creation token",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "gates-results.json",
+          "id": "RB4-002",
+          "status": "fixed_test_quality",
+          "changes": "Valid creationToken baselines for both schemas; mutate one enum at a time and require exactly that issue path; cover page template as well as status.",
+          "red": "No production defect claimed or production change made. Previous test vacuity verified from missing creationToken and multi-field mutations.",
+          "green": "Baseline validity and all isolated enum rejection assertions pass."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT5-TYPE-001",
+      "group": "R16",
+      "title": "PostTranslationInput repeats the authoritative PostFields translation field contract",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R16",
+          "id": "RT5-TYPE-001",
+          "status": "Implemented",
+          "change": "PostTranslationInput is Pick<PostFields, existing translated keys>; no runtime translation protocol change.",
+          "evidence": "Authority gate red then green; post schema focused checks pass. Atomic DB post commands suite intentionally not completed.",
+          "test": "tests/architecture/single-source-contracts.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT5-TEST-002",
+      "group": "R14",
+      "title": "Guest adminDetail unit test encodes a successful DRAFT response contrary to the actual visibility contract",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "gates-results.json",
+          "id": "RT5-TEST-002",
+          "status": "fixed_test_quality",
+          "changes": "Guest successful fixture now PUBLISHED; assert returned status plus independently compiled selection and relation hydration SQL both contain the PUBLISHED predicate.",
+          "red": "No production defect claimed or production change made. Existing real-database denial tests are unchanged.",
+          "green": "Focused post-router read tests pass using typed technical DB mock, no database access."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB6-001",
+      "group": "R08",
+      "title": "Login validation rejects credentials that account writes accept",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R08",
+          "id": "RB6-001",
+          "status": "Implemented",
+          "change": "Login password validation is non-transforming and nonempty; write policy unchanged.",
+          "evidence": "3 red regressions for spaces, tabs and surrounding spaces; all 6 login schema tests green.",
+          "test": "src/features/user/login/login.schema.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB6-002",
+      "group": "R07",
+      "title": "Mixed-case administrator email cannot be resolved by failed-login audit",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R07",
+          "id": "RB6-002",
+          "status": "Implemented after policy approval",
+          "change": "Investigated installed Better Auth lowercased exact-email lookup, case-sensitive DB uniqueness and usernameNormalization:false. Shared JS normalizeEmail; create/changed-email update checks existing id/email within write transaction. Full-form unchanged legacy email is preserved. Ambiguous audit candidates return null. No migration.",
+          "evidence": "Initial schema/repository/audit regression: 6 failed. Full-form legacy echo additionally failed with CONFLICT, then corrected. Final --maxWorkers=1 run: 3 files, 24 tests passed, exit 0 (schema, email repository, audit).",
+          "test": "src/features/user/server/user-email-policy.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT7-TYPE-001",
+      "group": "R16",
+      "title": "五个翻译表的语言 CHECK 仍平行维护 zh/en 成员",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R16",
+          "id": "RT7-TYPE-001",
+          "status": "Implemented",
+          "change": "Five locale CHECKs use existing enumCheck and supportedLanguages; current SQL, names, schema and migrations unchanged.",
+          "evidence": "Five authority regressions failed before change. SQL checks assert exact independently written zh/en SQL and zero params; schema suite green.",
+          "test": "src/lib/db/schema.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT7-TEST-002",
+      "group": "R13",
+      "title": "用户路由成功 mock 与真实返回记录及目标 ID 不一致",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RT7-TYPE-003",
+      "group": "R13",
+      "title": "测试适配边界仍存在分散双重断言、无类型 SDK mock 和非空逃逸",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "fixture-disposition.md",
+          "status": "implemented",
+          "evidence": "Typed real fixtures; per-file runtime results in report. Final auth and SDK instrumentation checks pending integration."
+        },
+        {
+          "source": "integration",
+          "status": "validated",
+          "change": "Sentry 11.8.0 restored from unchanged lockfile; instrumentation mocks derive exact SDK signatures. Full tsc and focused instrumentation tests pass."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB8-001",
+      "group": "R06",
+      "title": "R2 流读取缺少截止时间，可持续占用全部媒体验证名额",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R06",
+          "id": "RB8-001",
+          "status": "Implemented",
+          "change": "One 30-second deadline wraps SDK requests and entire body consumption; abort signal reaches SDK and Readable. Final validated PUT/delete remain maxAttempts=1; no recovery/retry/cleanup added.",
+          "evidence": "Silent-body regression failed (outcome undefined); full headers/body, late body, request, timer cleanup and real registration slot release now pass.",
+          "test": "src/lib/storage/r2-storage.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB8-002",
+      "group": "R18",
+      "title": "R2 immutable 测试先创建客户端后配置环境，依赖此前测试遗留变量",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R18",
+          "id": "RB8-002",
+          "status": "Implemented",
+          "change": "File-wide vi.stubEnv before createClient plus unstubAllEnvs afterEach removes cross-describe environment leakage.",
+          "evidence": "Clean-env immutable group failed twice before fix; clean-env complete R2 suite passed.",
+          "test": "src/lib/storage/r2-storage.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "RB8-003",
+      "group": "R13",
+      "title": "QueryCache 回调测试用 as never 伪造 Error 与 Query",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "backend-results.json",
+          "row": "R18",
+          "id": "RB8-003",
+          "status": "Implemented",
+          "change": "Actual QueryClient.fetchQuery drives forbidden callback; Error is real and retry callable is narrowed, no as never fixture.",
+          "evidence": "Real failure path passes, invokes callback/queryFn once; no production logic changed.",
+          "test": "src/lib/trpc/client/admin-query-client.test.ts"
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "TEST-GUARD-002",
+      "group": "R15",
+      "title": "管理按钮权限门禁将直接布尔绕过误判为有效保护",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "gates-results.json",
+          "id": "TEST-GUARD-002",
+          "status": "fixed",
+          "changes": "Replace occurrence/polarity shortcut with conservative boolean implication under denied permission, handling negation, conjunction/disjunction, ternaries and scoped preceding const bindings. Explicit create/edit state scenarios qualify the page shared publish button.",
+          "red": "gates-red.log: 4 direct guard bypass regressions failed.",
+          "green": "All 42 guard tests pass, including existing current-source matrix, direct/aliased bypass negatives, conditional controls and page shared-button mode mutations."
+        }
+      ],
+      "reviewed_paths": []
+    },
+    {
+      "id": "CACHE-001",
+      "group": "R01",
+      "title": "公开布局失效路径漏掉 route group，页面作者快照不能按既定计划刷新",
+      "status": "implemented",
+      "disposition": [
+        {
+          "source": "integration",
+          "status": "implemented",
+          "change": "Full grouped file-route invalidation matches installed Next implicit layout tags.",
+          "evidence": "cache-red.log; public-green.log: 9 tests passed"
+        }
+      ],
+      "reviewed_paths": [
+        "src/lib/cache/next-public-content-invalidator.ts",
+        "src/app/lib/server/public-queries.ts",
+        "src/features/user/server/user-commands.ts",
+        "src/lib/cache/next-public-content-invalidator.test.ts"
+      ]
+    }
+  ],
+  "additional_measurement": {
+    "id": "INFRA-011",
+    "status": "not_measured",
+    "reason": "No active-scroll baseline measurement available; browser process launch blocked in this environment. Existing steady/active separation retained; no performance improvement claim."
+  },
+  "documentation_review": {
+    "full_text_paths": 607,
+    "project_documents": 38,
+    "specifications_and_skills": 569,
+    "source_comment_files": 43,
+    "missing": 0,
+    "duplicates": 0,
+    "documentation_tests_passed": 6,
+    "strict_specifications_passed": 68
+  }
+}

@@ -1,3 +1,4 @@
+import type { menu } from "@/lib/db/schema";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/router";
 import * as schema from "@/lib/db/schema";
@@ -35,23 +36,27 @@ describe("Menu Router", () => {
       const menuItems = [
         {
           id: TEST_IDS.ID_1,
+          parent: null,
           type: MenuType.CATEGORY,
           categoryId: TEST_IDS.ID_1,
           pageId: null,
           customId: null,
           power: 1,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
         {
           id: TEST_IDS.ID_2,
+          parent: null,
           type: MenuType.PAGE,
           categoryId: null,
           pageId: TEST_IDS.ID_2,
           customId: null,
           power: 2,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
 
       mockDb.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
       mockDb.where
@@ -105,14 +110,16 @@ describe("Menu Router", () => {
       const menuItems = [
         {
           id: TEST_IDS.ID_1,
+          parent: null,
           type: MenuType.CATEGORY,
           categoryId: TEST_IDS.ID_1,
           pageId: null,
           customId: null,
           power: 1,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
 
       tx.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
       tx.where
@@ -147,18 +154,20 @@ describe("Menu Router", () => {
       expect(mockDb.insert).not.toHaveBeenCalled();
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const menuItems = [
         {
           id: TEST_IDS.ID_1,
+          parent: null,
           type: MenuType.CATEGORY,
           categoryId: TEST_IDS.ID_1,
           pageId: null,
           customId: null,
           power: 1,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
 
       const caller = menuRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
@@ -176,14 +185,16 @@ describe("Menu Router", () => {
       const menuItems = [
         {
           id: TEST_IDS.ID_1,
+          parent: null,
           type: MenuType.CATEGORY,
           categoryId: TEST_IDS.ID_1,
           pageId: null,
           customId: null,
           power: 1,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof menu.$inferSelect)[];
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 

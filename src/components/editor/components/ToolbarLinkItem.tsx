@@ -42,6 +42,10 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
     >
       <div className="space-y-2">
         <Input
+          aria-label="链接地址"
+          type="url"
+          autoComplete="url"
+          spellCheck={false}
           placeholder="https://example.com"
           value={url}
           onChange={(e) => setUrl(e.target.value)}

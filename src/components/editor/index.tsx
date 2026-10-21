@@ -79,7 +79,7 @@ export default function Tiptap({
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value || "<p></p>");
+      editor.commands.setContent(value || "<p></p>", { emitUpdate: false });
     }
   }, [value, editor]);
 

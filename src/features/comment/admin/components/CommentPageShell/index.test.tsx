@@ -228,6 +228,29 @@ describe("CommentPageShell", () => {
     },
   );
 
+  it("names row actions and associates the search label", async () => {
+    allowedPermissions = new Set([Permission.commentModerate]);
+    await act(async () => root.render(<CommentPageShell />));
+    for (const name of ["删除评论"]) {
+      const button = container.querySelector(
+        `tbody button[aria-label="${name}"]`,
+      );
+      expect(button).not.toBeNull();
+      expect(button?.querySelector("svg")?.getAttribute("aria-hidden")).toBe(
+        "true",
+      );
+    }
+    const input = container.querySelector<HTMLInputElement>(
+      'input[placeholder="请输入评论内容进行搜索"]',
+    );
+    const label = document.getElementById(
+      input?.getAttribute("aria-labelledby") ?? "",
+    );
+    expect(label?.textContent).toBe("搜索评论");
+    if (input) input.value = "test";
+    expect(label?.textContent).toBe("搜索评论");
+  });
+
   it("keeps comment search available while hiding moderation controls", async () => {
     await act(async () => root.render(React.createElement(CommentPageShell)));
 

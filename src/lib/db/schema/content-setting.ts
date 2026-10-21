@@ -1,4 +1,5 @@
-import { MultiLangEnum } from "@/lib/i18n/i18n";
+import { enumCheck } from "../constraint-helpers";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,
   text,
@@ -54,9 +55,10 @@ export const settingTranslation = sqliteTable(
   },
   (table) => ({
     settingLocalePk: primaryKey({ columns: [table.settingId, table.locale] }),
-    settingLocaleCheck: check(
+    settingLocaleCheck: enumCheck(
       "setting_translation_locale_check",
-      sql`${table.locale} in ('zh', 'en')`,
+      table.locale,
+      supportedLanguages,
     ),
   }),
 );

@@ -1,3 +1,4 @@
+import { requireDefined } from "@tests/helpers/require-defined";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockRevalidatePath = vi.fn();
@@ -20,6 +21,9 @@ vi.mock("@/lib/observability/server", () => ({
 
 import { publicContentInvalidator } from "./next-public-content-invalidator";
 
+import { getImplicitTags } from "next/dist/server/lib/implicit-tags";
+import { NEXT_CACHE_IMPLICIT_TAG_ID } from "next/dist/lib/constants";
+
 const SITEMAP_CACHE_TAG = "public.sitemap";
 
 describe("publicContentInvalidator", () => {
@@ -29,6 +33,19 @@ describe("publicContentInvalidator", () => {
     mockBumpCacheVersion.mockReset().mockResolvedValue(1);
     mockLoggerError.mockReset();
     mockMetricIncrement.mockReset();
+  });
+
+  it("invalidates the layout tag actually inherited by grouped blog pages", async () => {
+    await publicContentInvalidator.invalidate({ refreshLayout: true });
+    const [path, type] = requireDefined(mockRevalidatePath.mock.calls[0]);
+    const inherited = await getImplicitTags(
+      "/(blog)/[locale]/pages/[id]/page",
+      "/en/pages/example",
+      null,
+    );
+    expect(inherited.tags).toContain(
+      `${NEXT_CACHE_IMPLICIT_TAG_ID}${path}/${type}`,
+    );
   });
 
   it("deduplicates details and invalidates each requested cache layer once", async () => {
@@ -48,7 +65,7 @@ describe("publicContentInvalidator", () => {
       ["/en/archives/507f1f77bcf86cd799439011"],
       ["/zh/pages/507f1f77bcf86cd799439012"],
       ["/en/pages/507f1f77bcf86cd799439012"],
-      ["/[locale]", "layout"],
+      ["/(blog)/[locale]", "layout"],
     ]);
     expect(mockBumpCacheVersion).toHaveBeenCalledOnce();
     expect(mockBumpCacheVersion).toHaveBeenCalledWith(
@@ -67,7 +84,9 @@ describe("publicContentInvalidator", () => {
   it("does not execute omitted cache scopes", async () => {
     await publicContentInvalidator.invalidate({ refreshLayout: true });
 
-    expect(mockRevalidatePath.mock.calls).toEqual([["/[locale]", "layout"]]);
+    expect(mockRevalidatePath.mock.calls).toEqual([
+      ["/(blog)/[locale]", "layout"],
+    ]);
     expect(mockBumpCacheVersion).not.toHaveBeenCalled();
     expect(mockRevalidateTag).toHaveBeenCalledWith("public.layout", {
       expire: 0,
@@ -76,7 +95,7 @@ describe("publicContentInvalidator", () => {
 
   it("rejects arbitrary paths and invalid identifiers before side effects", async () => {
     await expect(
-      publicContentInvalidator.invalidate({ contents: ["/admin"] } as never),
+      publicContentInvalidator.invalidate({ contents: ["/admin"] }),
     ).rejects.toThrow();
     await expect(
       publicContentInvalidator.invalidate({
@@ -151,10 +170,10 @@ describe("publicContentInvalidator", () => {
     expect(mockRevalidatePath.mock.calls).toEqual([
       ["/zh/archives/507f1f77bcf86cd799439011"],
       ["/en/archives/507f1f77bcf86cd799439011"],
-      ["/[locale]", "layout"],
+      ["/(blog)/[locale]", "layout"],
       ["/zh/archives/507f1f77bcf86cd799439011"],
       ["/en/archives/507f1f77bcf86cd799439011"],
-      ["/[locale]", "layout"],
+      ["/(blog)/[locale]", "layout"],
     ]);
   });
 
@@ -194,7 +213,10 @@ describe("publicContentInvalidator", () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith(
       "/zh/pages/507f1f77bcf86cd799439012",
     );
-    expect(mockRevalidatePath).toHaveBeenCalledWith("/[locale]", "layout");
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/(blog)/[locale]",
+      "layout",
+    );
   });
 
   it("invalidates inner data caches before route caches can regenerate", async () => {
