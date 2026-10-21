@@ -11,6 +11,7 @@ import { getDb } from "@/lib/db/db";
 import {
   findUserIdByIdentifier,
   recordLoginHistory,
+  type LoginIdentifierField,
 } from "@/features/user/account-security/server/login-history.repository";
 import { getLogger } from "@/lib/observability/server";
 import { LogEvent } from "@/lib/observability/core/names";
@@ -20,7 +21,10 @@ type Session = { user?: { id: string } } | null;
 type AuthRequestAuditDependencies = {
   handle: (request: Request) => Promise<Response>;
   getSession: (headers: Headers) => Promise<Session>;
-  findUserIdByIdentifier: (identifier: string) => Promise<string | null>;
+  findUserIdByIdentifier: (
+    identifier: string,
+    field: LoginIdentifierField,
+  ) => Promise<string | null>;
   recordHistory: (input: LoginHistoryRecordInput) => Promise<void>;
   reportError?: (message: string, error: unknown) => void;
 };
@@ -83,11 +87,17 @@ export function createAuthRequestAuditHandler({
         request,
       });
     } else if (isAuthenticationPath(path) && !response.ok) {
-      const identifier = body?.username ?? body?.email;
+      const identifierField =
+        path === "/sign-in/username"
+          ? "username"
+          : path === "/sign-in/email"
+            ? "email"
+            : undefined;
+      const identifier = identifierField ? body?.[identifierField] : undefined;
       let userId: string | null = null;
-      if (path === "/sign-in/username" && typeof identifier === "string") {
+      if (identifierField && typeof identifier === "string") {
         try {
-          userId = await findUserIdByIdentifier(identifier);
+          userId = await findUserIdByIdentifier(identifier, identifierField);
         } catch (error) {
           reportError("Failed to resolve login history user", error);
         }
@@ -118,8 +128,8 @@ export function createAppAuthRequestHandler(
   return createAuthRequestAuditHandler({
     handle,
     getSession: (headers) => auth.api.getSession({ headers }),
-    findUserIdByIdentifier: (identifier) =>
-      findUserIdByIdentifier(getDb(), identifier),
+    findUserIdByIdentifier: (identifier, field) =>
+      findUserIdByIdentifier(getDb(), identifier, field),
     recordHistory: (input) => recordLoginHistory(getDb(), input),
     reportError: (message, error) =>
       getLogger().error(LogEvent.serverError, {

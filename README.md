@@ -239,6 +239,7 @@ E2E 必须使用本次独占的本地临时数据库，不读取开发或生产�
 - 浏览器只能访问匹配的本地回环 host/port；服务使用固定测试 R2、邮件和认证值，移除 OAuth、Upstash、Sentry 与 GA 集成变量。它不验证真实外部集成。
 - 实际服务启动拒绝存在 `.env`、`.env.local` 或开发/生产/测试 dotenv 文件的工作副本，以免 Bun/Next 重新加载真实凭据。请使用不含这些文件的干净 checkout，不要移动或删除既有凭据文件。`playwright test --list` 仍可只读列出用例，无需数据库初始化。
 - CI 的完整初始化与清理流程见 `.github/workflows/quality.yml`；完成后验证本次服务已退出、临时目录已删除。
+- 六个 `test:e2e*` 包命令通过轻量参数预检后仍交给 Playwright；预检不创建、迁移、seed 或清理数据库。保留普通筛选、worker、debug、UI、list/help 参数；多个 project 请重复 `--project`。拒绝替代 config/tsconfig、output/last-failed-file、源码/快照更新、自动生成代码及自定义 reporter 参数。显式 reporter 仅接受内置 stdout 类型，默认 HTML 报告仍在运行目录；报告路径环境变量也不能覆盖。`--list` / `--help` 不启动服务且不能与 UI 混用，验证不会自动补写缺失快照。
 
 ## API 限流
 

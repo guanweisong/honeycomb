@@ -107,6 +107,7 @@ export default function AddTagDialog(props: AddTagDialogProps) {
     >
       {type === ModalType.EDIT ? (
         <DynamicForm
+          key={`edit:${record?.id}:${open}`}
           defaultValues={
             record
               ? {
@@ -121,6 +122,7 @@ export default function AddTagDialog(props: AddTagDialogProps) {
         />
       ) : (
         <DynamicForm
+          key={`add:${open}`}
           defaultValues={
             record ? { name: record.name ?? undefined } : undefined
           }

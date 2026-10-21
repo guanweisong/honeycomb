@@ -1,5 +1,5 @@
 import "server-only";
-import { PostListResultSchema } from "../post-read-model";
+import { PublicPostListResultSchema } from "../post-read-model";
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
@@ -12,7 +12,7 @@ import {
   setCacheJSON,
 } from "@/lib/cache/upstash-cache";
 import type { PostListInput } from "../types";
-import { listPosts } from "./post-queries";
+import { listPublicPosts } from "./post-queries";
 import {
   POST_CACHE_NAMESPACE as namespace,
   POST_CACHE_VERSION_KEY as versionKey,
@@ -27,14 +27,14 @@ export async function getCachedPostList(db: Database, input: PostListInput) {
     const version = await getCacheVersion(namespace, versionKey);
     key = `post:index:v${version}:${JSON.stringify(input)}`;
     const cached = await getCacheJSON(namespace, key, (value) =>
-      PostListResultSchema.parse(value),
+      PublicPostListResultSchema.parse(value),
     );
     if (cached) return cached;
   } catch {
     // Cache failures are observed by the adapter; public reads still use DB.
     key = undefined;
   }
-  const result = await listPosts(db, input, "PUBLISHED_ONLY");
+  const result = await listPublicPosts(db, input);
   if (key !== undefined) {
     try {
       await setCacheJSON(namespace, key, result, 60 * 60);

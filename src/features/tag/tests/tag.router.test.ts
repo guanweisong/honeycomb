@@ -185,7 +185,7 @@ describe("Tag Router", () => {
         name: { en: "Updated Tag", zh: "更新的标签" },
       };
 
-      mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
+      mockDb.returning.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       mockDb.where.mockReturnValueOnce(mockDb).mockResolvedValueOnce([
         { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
         { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },
@@ -201,7 +201,10 @@ describe("Tag Router", () => {
       });
 
       expect(result).toEqual({ ...updatedTag, publicSync: "completed" });
-      expect(mockDb.update).not.toHaveBeenCalledWith(schema.tag);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.tag);
+      expect(mockDb.set).toHaveBeenCalledWith({
+        updatedAt: expect.any(String),
+      });
     });
 
     it("should throw UNAUTHORIZED error for non-admin users", async () => {

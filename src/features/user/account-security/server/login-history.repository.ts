@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { desc, eq, lt, or } from "drizzle-orm";
+import { desc, eq, lt } from "drizzle-orm";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryRecordInput,
@@ -12,6 +12,7 @@ const LOGIN_HISTORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const LOGIN_HISTORY_LIMIT = 50;
 
 type LoginHistoryStore = Pick<Database, "select" | "insert" | "delete">;
+export type LoginIdentifierField = "username" | "email";
 
 export async function recordLoginHistory(
   db: Pick<LoginHistoryStore, "insert" | "delete">,
@@ -32,19 +33,17 @@ export async function recordLoginHistory(
 export async function findUserIdByIdentifier(
   db: Pick<LoginHistoryStore, "select">,
   identifier: string,
+  field: LoginIdentifierField,
 ) {
-  const normalizedIdentifier = identifier.trim();
-  if (!normalizedIdentifier) return null;
+  // Match Better Auth: email is lowercased, configured usernames are unchanged.
+  const normalizedIdentifier =
+    field === "email" ? identifier.toLowerCase() : identifier;
+  if (!normalizedIdentifier.trim()) return null;
 
   const [user] = await db
     .select({ id: schema.user.id })
     .from(schema.user)
-    .where(
-      or(
-        eq(schema.user.username, normalizedIdentifier),
-        eq(schema.user.email, normalizedIdentifier),
-      ),
-    )
+    .where(eq(schema.user[field], normalizedIdentifier))
     .limit(1);
 
   return user?.id ?? null;

@@ -7,7 +7,7 @@ import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { cn } from "@/lib/ui/utils";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 /**
  * 菜单组件的属性接口。
@@ -20,7 +20,7 @@ export interface MenuProps {
   /**
    * 扁平化的菜单数据。
    */
-  flatMenuData: MenuEntity[];
+  flatMenuData: MenuNavigationItem[];
 }
 
 const getActiveCategories = ({
@@ -30,7 +30,7 @@ const getActiveCategories = ({
 }: {
   segments: string[];
   postCategoryId?: string;
-  flatMenuData: MenuEntity[];
+  flatMenuData: MenuNavigationItem[];
 }) => {
   const allCategoryPath = `/${segments.join("/")}`;
 

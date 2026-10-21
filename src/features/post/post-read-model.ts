@@ -60,3 +60,24 @@ export const PostListResultSchema = z.object({
   list: z.array(PostWithRelationsSchema),
   total: z.number(),
 });
+
+/** 公开卡片及 sitemap 只需要这些字段，不传输正文和完整关联。 */
+export const PublicPostListItemSchema = PostWithRelationsSchema.pick({
+  id: true,
+  type: true,
+  title: true,
+  excerpt: true,
+  movieTime: true,
+  quoteContent: true,
+  quoteAuthor: true,
+  updatedAt: true,
+}).extend({
+  cover: MediaRecordSchema.pick({
+    url: true,
+    width: true,
+    height: true,
+  }).nullish(),
+});
+export const PublicPostListResultSchema = PostListResultSchema.extend({
+  list: z.array(PublicPostListItemSchema),
+});

@@ -206,6 +206,12 @@ export async function updateCategory(
   await assertPath(db, input.path, input.id);
 
   const { id, title, description, ...changes } = input;
+  const parentChanges = {
+    ...changes,
+    ...(title !== undefined || description !== undefined
+      ? { updatedAt: new Date().toISOString() }
+      : {}),
+  };
   // The recursive guard and write share one SQLite statement, so two
   // concurrent reparentings cannot both pass a stale ancestor check.
   const parentGuard =
@@ -220,10 +226,10 @@ export async function updateCategory(
       )`;
   const value = await observeDbOperation("category.update", "transaction", () =>
     db.transaction(async (tx) => {
-      const [updated] = Object.keys(changes).length
+      const [updated] = Object.keys(parentChanges).length
         ? await tx
             .update(schema.category)
-            .set(changes)
+            .set(parentChanges)
             .where(and(eq(schema.category.id, id), parentGuard))
             .returning()
         : await tx

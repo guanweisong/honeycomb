@@ -36,9 +36,12 @@ function MenuEditor() {
     pageLoading,
     categoryLoading,
     menuLoading,
+    menuError,
+    menuFetching,
     refetchMenu,
   } = useMenuQuery();
   const editor = useMenuTreeEditor(checkedData);
+  const hasBaseline = editor.baseVersion !== undefined;
   const { submit, loading, blocked, clearBlocked } = useMenuActions(
     editor.checkedList,
     editor.baseVersion,
@@ -157,6 +160,14 @@ function MenuEditor() {
             <Save /> 保存
           </Button>
         )}
+        {!hasBaseline && menuError && (
+          <div role="alert">
+            菜单读取失败，请重试后再编辑。
+            <Button disabled={menuFetching} onClick={() => void refetchMenu()}>
+              重试加载菜单
+            </Button>
+          </div>
+        )}
         {blocked && (
           <div role="alert">
             保存发生冲突或结果未知，请先核对服务器。
@@ -200,6 +211,7 @@ function MenuEditor() {
               aria-label="菜单结构"
               className="menu-tree"
               treeData={editor.menuTree}
+              canDrag={hasBaseline}
               onChange={editor.onDragEnd}
               generateNodeProps={({ node }) => ({
                 buttons:
@@ -209,6 +221,7 @@ function MenuEditor() {
                           key="remove"
                           size="sm"
                           variant="outline"
+                          disabled={!hasBaseline}
                           aria-label={`移除此菜单及子项：${node.title}`}
                           onClick={() => {
                             if (typeof node.id === "string")

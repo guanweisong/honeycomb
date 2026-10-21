@@ -19,7 +19,7 @@ const categoryMenu = {
   updatedAt: null,
   power: 0,
   type: MenuType.CATEGORY,
-} as MenuEntityTree;
+} satisfies MenuEntityTree;
 
 describe("use-menu-tree-editor", () => {
   let container: HTMLDivElement;
@@ -40,6 +40,30 @@ describe("use-menu-tree-editor", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("ignores edits before a versioned baseline and adopts the first server snapshot", async () => {
+    await act(async () => root.render(React.createElement(Probe)));
+    expect(editor.getDisabledStatus(categoryMenu)).toBe(true);
+    await act(async () => {
+      editor.onCheck(categoryMenu, true, MenuType.CATEGORY);
+      editor.onDragEnd([
+        { ...categoryMenu, title: "Early", subtitle: "", expanded: true },
+      ]);
+      editor.removeBranch("missing");
+    });
+    expect(editor.checkedList).toEqual([]);
+    expect(editor.dirty).toBe(false);
+    await act(async () =>
+      root.render(
+        React.createElement(Probe, {
+          checkedData: { list: [categoryMenu], version: 0 },
+        }),
+      ),
+    );
+    expect(editor.baseVersion).toBe(0);
+    expect(editor.checkedList).toEqual([categoryMenu]);
+    expect(editor.dirty).toBe(false);
   });
 
   it("does not adopt a background snapshot when pending input returns to the old baseline", async () => {
@@ -130,7 +154,9 @@ describe("use-menu-tree-editor", () => {
 
     await act(async () =>
       root.render(
-        React.createElement(Probe, { checkedData: { list: [categoryMenu] } }),
+        React.createElement(Probe, {
+          checkedData: { list: [categoryMenu], version: 0 },
+        }),
       ),
     );
     expect(editor.checkedList).toEqual([categoryMenu]);

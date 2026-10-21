@@ -45,6 +45,8 @@ export function useMenuQuery() {
       pageQuery.isLoading || remainingPages.some((page) => page.isLoading),
     categoryLoading: categoryQuery.isLoading,
     menuLoading: menuQuery.isLoading,
+    menuError: menuQuery.isError,
+    menuFetching: menuQuery.isFetching,
     refetchMenu: menuQuery.refetch,
   };
 }

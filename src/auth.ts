@@ -13,6 +13,10 @@ import {
   CREDENTIAL_PASSWORD_MAX_LENGTH,
   CREDENTIAL_PASSWORD_MIN_LENGTH,
 } from "@/lib/auth/password-policy";
+import {
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from "@/lib/auth/username-policy";
 
 const authEnv = getAuthEnv();
 const authBaseURL = authEnv.AUTH_URL;
@@ -34,8 +38,8 @@ function buildSocialProviders() {
 function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
   const plugins: NonNullable<BetterAuthOptions["plugins"]> = [
     username({
-      minUsernameLength: 1,
-      maxUsernameLength: 32,
+      minUsernameLength: USERNAME_MIN_LENGTH,
+      maxUsernameLength: USERNAME_MAX_LENGTH,
       usernameNormalization: false,
       usernameValidator: (value) => value.trim().length > 0,
     }),

@@ -33,13 +33,19 @@ export function createCommentNotificationRepository(db: Database) {
       const [postTranslations, pageTranslations] = await Promise.all([
         comment.post
           ? db
-              .select()
+              .select({
+                locale: schema.postTranslation.locale,
+                title: schema.postTranslation.title,
+              })
               .from(schema.postTranslation)
               .where(eq(schema.postTranslation.postId, comment.post.id))
           : Promise.resolve([]),
         comment.page
           ? db
-              .select()
+              .select({
+                locale: schema.pageTranslation.locale,
+                title: schema.pageTranslation.title,
+              })
               .from(schema.pageTranslation)
               .where(eq(schema.pageTranslation.pageId, comment.page.id))
           : Promise.resolve([]),

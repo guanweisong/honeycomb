@@ -76,6 +76,7 @@ export function UserFormDialog({
     >
       {isEdit ? (
         <DynamicForm
+          key={`edit:${state.record?.id}:${state.open}`}
           defaultValues={toUserFormDefaults(state.record)}
           schema={UserUpdateSchema}
           fields={fields}
@@ -83,6 +84,7 @@ export function UserFormDialog({
         />
       ) : (
         <DynamicForm
+          key={`add:${state.open}`}
           defaultValues={{
             status: UserStatus.ENABLE,
             level: UserLevel.GUEST,

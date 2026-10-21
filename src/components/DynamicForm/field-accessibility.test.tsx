@@ -82,6 +82,11 @@ describe("DynamicField accessibility", () => {
     "connects the $type control to its label and current validation message",
     async ({ type, selector }) => {
       await act(async () => root.render(<TestForm type={type} />));
+      if (type === "richText") {
+        await act(async () => {
+          await import("../editor");
+        });
+      }
 
       const control = container.querySelector<HTMLElement>(selector);
       const label = container.querySelector<HTMLLabelElement>(

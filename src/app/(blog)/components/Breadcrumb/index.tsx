@@ -5,7 +5,7 @@ import React from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 /**
  * 面包屑组件的属性接口。
@@ -14,7 +14,7 @@ export interface BreadCrumbProps {
   /**
    * 菜单数据，用于构建面包屑路径。
    */
-  menu: MenuEntity[];
+  menu: MenuNavigationItem[];
 }
 
 /**

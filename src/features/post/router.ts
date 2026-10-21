@@ -24,7 +24,11 @@ import {
   getPostCreationResult,
   incrementPostViews,
 } from "@/features/post/server/post-commands";
-import { listPosts, getPost } from "@/features/post/server/post-queries";
+import {
+  listPosts,
+  listPublicPosts,
+  getPost,
+} from "@/features/post/server/post-queries";
 import {
   getCachedPostList,
   getRandomPostsByCategory,
@@ -45,7 +49,7 @@ export const postRouter = createTRPCRouter({
     .query(({ input, ctx }) =>
       ctx.hasRequest
         ? getCachedPostList(ctx.db, input)
-        : listPosts(ctx.db, input, "PUBLISHED_ONLY"),
+        : listPublicPosts(ctx.db, input),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)

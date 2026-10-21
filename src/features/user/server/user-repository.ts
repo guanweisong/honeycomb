@@ -142,7 +142,14 @@ export function createUserRepository(db: Database) {
       const { password, ...values } = input;
       return db.transaction(async (tx) => {
         const [row] = await observeDbOperation("user.create", "insert", () =>
-          tx.insert(schema.user).values(values).returning(safeUserColumns),
+          tx
+            .insert(schema.user)
+            .values({
+              ...values,
+              username: values.name,
+              displayUsername: values.name,
+            })
+            .returning(safeUserColumns),
         );
         const user = requireWriteResult(row, "create", "user");
         await setCredentialPassword(tx, user.id, password);
@@ -202,7 +209,13 @@ export function createUserRepository(db: Database) {
         const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
-            .set({ ...rest, updatedAt: new Date().toISOString() })
+            .set({
+              ...rest,
+              ...(rest.name === undefined
+                ? {}
+                : { username: rest.name, displayUsername: rest.name }),
+              updatedAt: new Date().toISOString(),
+            })
             .where(eq(schema.user.id, id))
             .returning(safeUserColumns),
         );

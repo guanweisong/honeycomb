@@ -7,6 +7,8 @@ const trpcMocks = vi.hoisted(() => ({
   refetch: vi.fn(),
   remainingPages: [] as Array<{ data: { list: string[] }; isLoading: boolean }>,
   pageTotal: undefined as number | undefined,
+  menuError: false,
+  menuFetching: false,
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
@@ -55,7 +57,12 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
       adminIndex: {
         useQuery: (input: unknown) => {
           trpcMocks.calls.push(["menu", input]);
-          return { data: { list: ["menu"] }, refetch: trpcMocks.refetch };
+          return {
+            data: { list: ["menu"] },
+            refetch: trpcMocks.refetch,
+            isError: trpcMocks.menuError,
+            isFetching: trpcMocks.menuFetching,
+          };
         },
       },
     },
@@ -85,6 +92,8 @@ describe("menu query inputs", () => {
       trpcMocks.calls.length = 0;
       trpcMocks.remainingPages = [];
       trpcMocks.pageTotal = undefined;
+      trpcMocks.menuError = false;
+      trpcMocks.menuFetching = false;
       container = document.createElement("div");
       document.body.appendChild(container);
       root = createRoot(container);
@@ -114,9 +123,23 @@ describe("menu query inputs", () => {
         categoryList: { list: ["category"] },
         checkedData: { list: ["menu"] },
         pageLoading: false,
+        menuError: false,
+        menuFetching: false,
         refetchMenu: trpcMocks.refetch,
       });
     });
+    it("exposes a failed initial menu read and pending retry", async () => {
+      trpcMocks.menuError = true;
+      trpcMocks.menuFetching = true;
+      let query: ReturnType<typeof useMenuQuery> | undefined;
+      function Harness() {
+        query = useMenuQuery();
+        return null;
+      }
+      await act(async () => root.render(React.createElement(Harness)));
+      expect(query).toMatchObject({ menuError: true, menuFetching: true });
+    });
+
     it("includes page choices beyond the first bounded request", async () => {
       trpcMocks.remainingPages = [
         { data: { list: ["last-page"] }, isLoading: false },

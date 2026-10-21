@@ -7,7 +7,17 @@ import { createRoot, type Root } from "react-dom/client";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const fetches: string[] = [];
-let scrollState: { top?: number } | undefined;
+const fetchOptions: Array<{ cancelRefetch: boolean } | undefined> = [];
+const observers: Array<{
+  callback: (entries: Array<{ isIntersecting: boolean }>) => void;
+  observe: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
+  options?: IntersectionObserverInit;
+}> = [];
+
+function intersect(isIntersecting = true) {
+  observers.at(-1)?.callback([{ isIntersecting }]);
+}
 let listState: {
   data?: { pages: Array<{ list?: unknown[] }> };
   hasNextPage: boolean;
@@ -36,14 +46,14 @@ vi.mock("next/image", () => ({
     }),
 }));
 
-vi.mock("@/lib/hooks/use-scroll-position", () => ({
-  useScrollPosition: () => ({ left: 0, top: scrollState?.top ?? 0 }),
-}));
-
 vi.mock("@/features/post/public/use-post-list", () => ({
   default: () => ({
     ...listState,
-    fetchNextPage: () => fetches.push("next"),
+    fetchNextPage: (options?: { cancelRefetch: boolean }) => {
+      fetches.push("next");
+      fetchOptions.push(options);
+      return Promise.resolve();
+    },
     refetch: () => fetches.push("refetch"),
   }),
 }));
@@ -60,52 +70,23 @@ vi.mock("next-intl", () => ({
 }));
 
 import PostList from "./index";
-import type { PostWithRelations as PostListViewModel } from "@/features/post/types";
-import { PostStatus } from "@/features/post/post-status";
+import type { PublicPostListItem as PostListViewModel } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { EnableStatus } from "@/lib/validation/enable-status";
 
 const makePost = (
   overrides: Partial<PostListViewModel> &
     Pick<PostListViewModel, "id" | "type">,
 ): PostListViewModel => ({
-  version: 0,
-  authorId: "author-1",
-  categoryId: "category-1",
-  commentStatus: EnableStatus.ENABLE,
-  content: null,
-  coverId: null,
-  createdAt: null,
   excerpt: null,
-  galleryLocation: null,
-  galleryStyles: [],
-  galleryTime: null,
-  movieActors: [],
-  movieDirectors: [],
-  movieStyles: [],
   movieTime: null,
   quoteAuthor: null,
   quoteContent: null,
-  status: PostStatus.PUBLISHED,
   title: null,
   updatedAt: null,
-  views: 0,
   ...overrides,
 });
 
-const makeCover = (url: string) => ({
-  color: null,
-  createdAt: null,
-  height: 600,
-  id: `media-${url}`,
-  key: url,
-  name: url,
-  size: 1024,
-  type: "image/jpeg",
-  updatedAt: null,
-  url,
-  width: 800,
-});
+const makeCover = (url: string) => ({ url, height: 600, width: 800 });
 
 const posts = [
   makePost({
@@ -145,7 +126,24 @@ describe("PostList", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     fetches.length = 0;
-    scrollState = { top: 0 };
+    fetchOptions.length = 0;
+    observers.length = 0;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      function (
+        callback: (entries: Array<{ isIntersecting: boolean }>) => void,
+        options?: IntersectionObserverInit,
+      ) {
+        const observer = {
+          callback,
+          options,
+          observe: vi.fn(),
+          disconnect: vi.fn(),
+        };
+        observers.push(observer);
+        return observer;
+      },
+    );
     listState = {
       data: { pages: [{ list: posts }] },
       hasNextPage: false,
@@ -156,7 +154,7 @@ describe("PostList", () => {
     };
     Object.defineProperty(document.body, "scrollHeight", {
       configurable: true,
-      value: 1000,
+      value: 10000,
     });
     Object.defineProperty(window, "innerHeight", {
       configurable: true,
@@ -167,6 +165,7 @@ describe("PostList", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+    vi.unstubAllGlobals();
   });
 
   async function renderList() {
@@ -222,31 +221,46 @@ describe("PostList", () => {
     expect(container.textContent).not.toContain("Invalid Date");
   });
 
-  it("loads the next page when scrolling within 300px of the bottom", async () => {
+  it("observes a 300px sentinel and loads only when it intersects", async () => {
     listState.hasNextPage = true;
     await renderList();
 
+    expect(fetches).toEqual([]);
+    expect(observers.at(-1)?.options).toEqual({ rootMargin: "300px" });
+    expect(observers.at(-1)?.observe).toHaveBeenCalledWith(
+      container.querySelector('[data-testid="post-list-sentinel"]'),
+    );
+    await act(async () => intersect());
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
     expect(container.textContent).not.toContain("已经到底了");
   });
 
   it.each([
-    ["the next request is already pending", { top: 0 }, true, true],
-    ["the viewport is far from the bottom", { top: -500 }, true, false],
-    ["there is no next page", { top: 0 }, false, false],
+    ["the next request is already pending", true, true, true],
+    ["the sentinel is outside the viewport", false, true, false],
+    ["there is no next page", true, false, false],
   ])(
     "does not load when %s",
-    async (_label, scroll, hasNextPage, isFetchingNextPage) => {
-      scrollState = scroll;
+    async (_label, visible, hasNextPage, isFetchingNextPage) => {
       listState.hasNextPage = hasNextPage;
       listState.isFetchingNextPage = isFetchingNextPage;
       listState.isFetching = isFetchingNextPage;
 
       await renderList();
+      await act(async () => intersect(visible));
 
       expect(fetches).toEqual([]);
     },
   );
+
+  it("does not overlap an in-flight background refresh", async () => {
+    listState.hasNextPage = true;
+    listState.isFetching = true;
+    await renderList();
+    await act(async () => intersect());
+    expect(fetches).toEqual([]);
+  });
 
   it("keeps loaded posts and stops automatic requests after a next-page error", async () => {
     listState.hasNextPage = true;
@@ -259,8 +273,7 @@ describe("PostList", () => {
     listState.isError = true;
     listState.isFetchNextPageError = true;
     await renderList();
-    scrollState = { top: 100 };
-    await renderList();
+    await act(async () => intersect());
 
     expect(fetches).toEqual([]);
     expect(container.textContent).toContain("文章标题");
@@ -282,12 +295,14 @@ describe("PostList", () => {
     await act(async () => retry?.click());
 
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
     listState.isFetchingNextPage = true;
     listState.isFetching = true;
     await renderList();
     expect(container.querySelector("button")?.disabled).toBe(true);
     await act(async () => container.querySelector("button")?.click());
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
   });
 
   it("retries an initial error instead of claiming the feed has ended", async () => {
@@ -321,10 +336,21 @@ describe("PostList", () => {
     listState.isError = false;
     listState.isFetchNextPageError = false;
     await renderList();
+    await act(async () => intersect());
 
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
     expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(container.querySelector("button")).toBeNull();
+  });
+
+  it("disconnects the sentinel when unmounted", async () => {
+    listState.hasNextPage = true;
+    await renderList();
+    const observer = observers.at(-1);
+    expect(observer).toBeDefined();
+    await act(async () => root.render(null));
+    expect(observer?.disconnect).toHaveBeenCalledOnce();
   });
 
   it("shows a loading indicator while fetching the next page", async () => {

@@ -9,6 +9,7 @@ const MAX_CONTEXT_DEPTH = 8;
 const sensitiveKey =
   /password|token|cookie|authorization|secret|email|ip(?:address)?$/i;
 const restrictedContainerKey = /body|input|params?|parameters?|sql/i;
+const databaseQueryMessage = /Failed query:[\s\S]*\nparams:/;
 
 export type SanitizedContext = Record<string, unknown>;
 
@@ -58,10 +59,16 @@ function classifyErrorChain(
     if (seen.has(current)) return undefined;
     seen.add(current);
     if (
-      "query" in current &&
-      typeof current.query === "string" &&
-      "params" in current &&
-      Array.isArray(current.params)
+      ("query" in current &&
+        typeof current.query === "string" &&
+        "params" in current &&
+        Array.isArray(current.params)) ||
+      ("message" in current &&
+        typeof current.message === "string" &&
+        databaseQueryMessage.test(current.message)) ||
+      ("stack" in current &&
+        typeof current.stack === "string" &&
+        databaseQueryMessage.test(current.stack))
     ) {
       return "database";
     }
@@ -109,7 +116,9 @@ function sanitizeValue(
   if (typeof value === "symbol" || typeof value === "function") {
     return `[Unsupported: ${typeof value}]`;
   }
-  if (value instanceof Error) return serializeError(value);
+  // Error-shaped objects also arrive after logging adapters copy/serialize them.
+  if (value instanceof Error || classifyErrorChain(value))
+    return serializeError(value);
   if (depth >= MAX_CONTEXT_DEPTH) return TRUNCATED;
   if (typeof value !== "object") return String(value);
   if (seen.has(value)) return CIRCULAR;

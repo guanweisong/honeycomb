@@ -94,7 +94,10 @@ describe("Category server operations", () => {
       description: null,
       publicSync: "completed",
     });
-    expect(db.set).toHaveBeenCalledWith({ path: "a" });
+    expect(db.set).toHaveBeenCalledWith({
+      path: "a",
+      updatedAt: expect.any(String),
+    });
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
       refreshPostIndex: true,

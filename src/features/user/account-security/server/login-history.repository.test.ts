@@ -4,6 +4,8 @@ import {
   listUserLoginHistory,
   recordLoginHistory,
 } from "./login-history.repository";
+import type { SQL } from "drizzle-orm";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 
 describe("login history repository", () => {
@@ -44,10 +46,55 @@ describe("login history repository", () => {
       select: () => ({ from: () => ({ where: () => ({ limit }) }) }),
     };
 
-    expect(await findUserIdByIdentifier(asMockDatabase(db), " admin ")).toBe(
-      "user-1",
-    );
+    expect(
+      await findUserIdByIdentifier(asMockDatabase(db), "admin", "username"),
+    ).toBe("user-1");
     expect(limit).toHaveBeenCalledWith(1);
+  });
+
+  it.each([
+    [
+      "email",
+      "READER@EXAMPLE.TEST",
+      '"user"."email" = ?',
+      "reader@example.test",
+    ],
+    [
+      "username",
+      "reader@example.test",
+      '"user"."username" = ?',
+      "reader@example.test",
+    ],
+    ["username", " Admin ", '"user"."username" = ?', " Admin "],
+  ] as const)(
+    "matches only the %s login column without cross-account identifier collisions",
+    async (field, identifier, sql, value) => {
+      const dialect = new SQLiteSyncDialect();
+      let query: ReturnType<SQLiteSyncDialect["sqlToQuery"]> | undefined;
+      const db = {
+        select: () => ({
+          from: () => ({
+            where: (predicate: SQL) => {
+              query = dialect.sqlToQuery(predicate);
+              return { limit: vi.fn().mockResolvedValue([]) };
+            },
+          }),
+        }),
+      };
+      expect(
+        await findUserIdByIdentifier(asMockDatabase(db), identifier, field),
+      ).toBeNull();
+      // A username equal to somebody else's email must not match the email route, or vice versa.
+      expect(query).toMatchObject({ sql, params: [value] });
+    },
+  );
+
+  it("does not query an empty login identifier", async () => {
+    const select = vi.fn();
+    expect(
+      await findUserIdByIdentifier(asMockDatabase({ select }), "  ", "email"),
+    ).toBeNull();
+    expect(select).not.toHaveBeenCalled();
   });
 
   it("writes history and applies retention cleanup", async () => {

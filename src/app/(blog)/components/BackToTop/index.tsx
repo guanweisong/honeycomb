@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ChevronUp } from "lucide-react";
 import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
 
@@ -11,18 +11,7 @@ import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
  */
 const BackToTop = () => {
   const scroll = useScrollPosition();
-  /**
-   * 控制返回顶部按钮的显示与隐藏。
-   */
-  const [show, setShow] = useState(false);
-
-  /**
-   * 副作用钩子，用于根据页面滚动位置控制按钮的显示。
-   * 当页面滚动距离超过 300px 时，显示返回顶部按钮。
-   */
-  useEffect(() => {
-    setShow(scroll.top > 300);
-  }, [scroll.top]);
+  const show = scroll.top > 300;
 
   /**
    * 滚动到页面顶部。

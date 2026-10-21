@@ -16,6 +16,19 @@ import { MenuType } from "@/features/menu/menu-types";
 import { MenuEntityTree } from "@/app/(blog)/types/menu.entity.tree";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
+
+const toNavigationItem = ({
+  id,
+  parent,
+  path,
+  title,
+}: MenuEntity): MenuNavigationItem => ({
+  id,
+  parent,
+  path,
+  title,
+});
 
 function buildMenuTree(items: MenuEntity[]): MenuEntityTree[] {
   const nodes = new Map<string, MenuEntityTree>(
@@ -135,7 +148,10 @@ export default async function Header() {
             </span>
           </div>
           <div className="flex items-center">
-            <Menu data={menuDataFormat} flatMenuData={menu?.list} />
+            <Menu
+              data={menuDataFormat}
+              flatMenuData={menu.list.map(toNavigationItem)}
+            />
           </div>
           <div className="flex items-center gap-3 mr-2 shrink-0">
             <div data-testid="theme-switcher">
@@ -147,7 +163,7 @@ export default async function Header() {
         </div>
       </header>
       <ViewTransition name="siteBreadcrumb">
-        <Breadcrumb menu={allMenu} />
+        <Breadcrumb menu={allMenu.map(toNavigationItem)} />
       </ViewTransition>
     </>
   );

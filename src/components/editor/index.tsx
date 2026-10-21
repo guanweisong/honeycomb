@@ -1,4 +1,4 @@
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -29,7 +29,6 @@ export default function Tiptap({
   "aria-invalid": invalid,
   "aria-labelledby": labelledBy,
 }: TiptapProps = {}) {
-  const [, setUpdateCount] = useState(0);
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
@@ -76,17 +75,6 @@ export default function Tiptap({
   });
 
   useEffect(() => {
-    if (!editor) return;
-    const update = () => setUpdateCount((prev) => prev + 1);
-    editor.on("selectionUpdate", update);
-    editor.on("transaction", update);
-    return () => {
-      editor.off("selectionUpdate", update);
-      editor.off("transaction", update);
-    };
-  }, [editor]);
-
-  useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value || "<p></p>");
     }
@@ -96,38 +84,57 @@ export default function Tiptap({
 
   return (
     <div className="rounded-md border">
-      <div className="sticky -top-3 left-0 right-0 z-20 flex flex-wrap items-center gap-1 border-b bg-white p-1">
-        {toolbarItems.map((group, index) => (
-          <div key={index} className="flex flex-nowrap items-center gap-1">
-            {group.map((item, itemIndex) => {
-              if ("items" in item) {
-                return (
-                  <ToolbarGroupItem
-                    key={itemIndex}
-                    editor={editor}
-                    group={item}
-                  />
-                );
-              }
-              if (item.render && editor) {
-                return <div key={item.label}>{item.render(editor)}</div>;
-              }
-              return (
-                <ToolbarButton
-                  key={item.label}
-                  icon={item.icon}
-                  label={item.label}
-                  active={editor && item.isActive?.(editor)}
-                  onClick={() => editor && item.onClick?.(editor)}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
+      <EditorToolbar editor={editor} />
 
       {/* Editor */}
       <EditorContent editor={editor} className="prose-editor" />
+    </div>
+  );
+}
+
+/** 选择与事务变化只刷新工具栏，不重渲染编辑器内容。 */
+function EditorToolbar({ editor }: { editor: Editor }) {
+  const [, setUpdateCount] = useState(0);
+
+  useEffect(() => {
+    const update = () => setUpdateCount((prev) => prev + 1);
+    editor.on("selectionUpdate", update);
+    editor.on("transaction", update);
+    return () => {
+      editor.off("selectionUpdate", update);
+      editor.off("transaction", update);
+    };
+  }, [editor]);
+
+  return (
+    <div className="sticky -top-3 left-0 right-0 z-20 flex flex-wrap items-center gap-1 border-b bg-white p-1">
+      {toolbarItems.map((group, index) => (
+        <div key={index} className="flex flex-nowrap items-center gap-1">
+          {group.map((item, itemIndex) => {
+            if ("items" in item) {
+              return (
+                <ToolbarGroupItem
+                  key={itemIndex}
+                  editor={editor}
+                  group={item}
+                />
+              );
+            }
+            if (item.render && editor) {
+              return <div key={item.label}>{item.render(editor)}</div>;
+            }
+            return (
+              <ToolbarButton
+                key={item.label}
+                icon={item.icon}
+                label={item.label}
+                active={editor && item.isActive?.(editor)}
+                onClick={() => editor && item.onClick?.(editor)}
+              />
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }

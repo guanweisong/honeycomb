@@ -67,7 +67,8 @@ export function useMenuTreeEditor(
     baseVersion: baseline.version,
     dirty,
     setProtected,
-    removeBranch: (id) =>
+    removeBranch: (id) => {
+      if (baseline.version === undefined) return;
       setCheckedList((current) => {
         const removed = new Set([id]);
         let changed = true;
@@ -84,7 +85,8 @@ export function useMenuTreeEditor(
             }
         }
         return current.filter((item) => !removed.has(item.id));
-      }),
+      });
+    },
     acknowledge: (submitted, version) =>
       setBaseline({ rows: submitted, version }),
     acceptLatest: (snapshot, keepLocal) => {
@@ -92,12 +94,19 @@ export function useMenuTreeEditor(
       setBaseline({ rows, version: snapshot.version });
       if (!keepLocal) setCheckedList(rows);
     },
-    onCheck: (item, checked, type) =>
+    onCheck: (item, checked, type) => {
+      if (baseline.version === undefined) return;
       setCheckedList((current) =>
         toggleMenuSelection(current, item, checked, type),
-      ),
-    onDragEnd: (treeData) => setCheckedList(flattenMenuTree(treeData)),
+      );
+    },
+    onDragEnd: (treeData) => {
+      if (baseline.version === undefined) return;
+      setCheckedList(flattenMenuTree(treeData));
+    },
     getCheckedStatus: (item) => isMenuSelected(checkedList, item),
-    getDisabledStatus: (item) => isMenuSelectionDisabled(checkedList, item),
+    getDisabledStatus: (item) =>
+      baseline.version === undefined ||
+      isMenuSelectionDisabled(checkedList, item),
   };
 }

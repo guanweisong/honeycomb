@@ -2,6 +2,8 @@ import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { FieldConfig } from "@/components/DynamicForm/types";
+import type { CategoryListItem } from "@/features/category/types";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   formSubmit: undefined as
     ((values: Record<string, unknown>) => Promise<void>) | undefined,
   categoryQuery: {
-    data: { list: [] as Array<Record<string, unknown>> },
+    data: { list: [] } as { list: CategoryListItem[] } | undefined,
     refetch: vi.fn().mockResolvedValue(undefined),
   },
 }));
@@ -38,9 +40,21 @@ vi.mock("@/components/Dialog", () => ({
 vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: {
     onSubmit: (values: Record<string, unknown>) => Promise<void>;
+    fields: FieldConfig[];
   }) => {
     mocks.formSubmit = props.onSubmit;
-    return <div>dynamic-form</div>;
+    const options = props.fields.find(
+      (field) => field.name === "parent",
+    )?.options;
+    return (
+      <div>
+        dynamic-form
+        {Array.isArray(options) &&
+          options.map((option) => (
+            <span key={option.value}>{option.label}</span>
+          ))}
+      </div>
+    );
   },
 }));
 
@@ -62,6 +76,7 @@ describe("AddCategoryModal", () => {
     mocks.success.mockClear();
     mocks.setModalProps.mockClear();
     mocks.formSubmit = undefined;
+    mocks.categoryQuery.data = { list: [] };
   });
 
   function render(modalProps: ModalProps) {
@@ -77,6 +92,37 @@ describe("AddCategoryModal", () => {
       ),
     );
   }
+
+  it("does not retain stale parent choices when query data becomes unavailable", () => {
+    mocks.categoryQuery.data = {
+      list: [
+        {
+          id: "category-1",
+          title: { zh: "旧父级", en: "Old parent" },
+          description: null,
+          path: "old-parent",
+          parent: null,
+          status: EnableStatus.ENABLE,
+          createdAt: null,
+          updatedAt: null,
+          deepPath: 0,
+        },
+      ],
+    };
+    render({ type: ModalType.ADD, open: true });
+    expect(container.textContent).toContain("旧父级");
+    mocks.categoryQuery.data = undefined;
+    act(() =>
+      root.render(
+        <AddCategoryModal
+          modalProps={{ type: ModalType.ADD, open: true }}
+          setModalProps={mocks.setModalProps}
+        />,
+      ),
+    );
+    expect(container.textContent).not.toContain("旧父级");
+    expect(container.textContent).toContain("根分类");
+  });
 
   it("creates a category, removes the root parent sentinel, and closes", async () => {
     render({ type: ModalType.ADD, open: true });

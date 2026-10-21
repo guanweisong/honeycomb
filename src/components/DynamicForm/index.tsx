@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useImperativeHandle, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
   useForm,
   FieldValues,
@@ -27,6 +27,7 @@ export type DynamicFormRef<T extends FieldValues = FieldValues> = {
 interface DynamicFormProps<TShape extends ZodRawShape> {
   schema: ZodObject<TShape>;
   fields: FieldConfig[];
+  /** 会话初值；切换记录使用 key，保存后需要替换输入时显式调用 reset。 */
   defaultValues?: DefaultValues<z.input<ZodObject<TShape>>>;
   onSubmit: (values: z.output<ZodObject<TShape>>) => void | Promise<void>;
   ref?: React.Ref<DynamicFormRef<z.input<ZodObject<TShape>>>>;
@@ -46,6 +47,7 @@ export function DynamicForm<TShape extends ZodRawShape>({
   ref,
 }: DynamicFormProps<TShape>) {
   const [loading, setLoading] = useState(false);
+  const initializedDefaults = useRef(defaultValues !== undefined);
 
   const form = useForm<
     z.input<ZodObject<TShape>>,
@@ -58,7 +60,10 @@ export function DynamicForm<TShape extends ZodRawShape>({
   });
 
   useEffect(() => {
-    if (defaultValues) form.reset(defaultValues);
+    if (!initializedDefaults.current && defaultValues !== undefined) {
+      form.reset(defaultValues);
+      initializedDefaults.current = true;
+    }
   }, [defaultValues, form]);
 
   useImperativeHandle(ref, () => ({

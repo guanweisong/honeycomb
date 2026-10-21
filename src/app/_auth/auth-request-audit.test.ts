@@ -55,7 +55,10 @@ describe("createAuthRequestAuditHandler", () => {
     expect(await response.json()).toMatchObject({
       code: "INVALID_USERNAME_OR_PASSWORD",
     });
-    expect(findUserIdByIdentifier).toHaveBeenCalledWith("missing_fixture_user");
+    expect(findUserIdByIdentifier).toHaveBeenCalledWith(
+      "missing_fixture_user",
+      "username",
+    );
     expect(recordHistory).toHaveBeenCalledWith(
       expect.objectContaining({ event: "LOGIN_FAILURE", provider: "password" }),
     );
@@ -130,5 +133,95 @@ describe("createAuthRequestAuditHandler", () => {
     );
 
     expect(result).toBe(response);
+  });
+  it("associates failed email login with the email, ignoring an unrelated username", async () => {
+    const response = Response.json(
+      { code: "INVALID_EMAIL_OR_PASSWORD" },
+      { status: 401 },
+    );
+    const recordHistory = vi.fn();
+    const findUserIdByIdentifier = vi.fn().mockResolvedValue("email-user");
+    const handler = createAuthRequestAuditHandler({
+      handle: vi.fn().mockResolvedValue(response),
+      getSession: vi.fn(),
+      findUserIdByIdentifier,
+      recordHistory,
+    });
+    const result = await handler(
+      new Request("https://example.test/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "reader@example.test",
+          username: "other-user",
+          password: "synthetic-password",
+        }),
+      }),
+    );
+    expect(result).toBe(response);
+    expect(findUserIdByIdentifier).toHaveBeenCalledExactlyOnceWith(
+      "reader@example.test",
+      "email",
+    );
+    expect(recordHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "LOGIN_FAILURE",
+        provider: "password",
+        userId: "email-user",
+      }),
+    );
+    expect(JSON.stringify(recordHistory.mock.calls)).not.toContain(
+      "synthetic-password",
+    );
+  });
+
+  it.each(["/sign-in/social", "/passkey/verify-authentication"])(
+    "does not infer a user from password identifiers on %s",
+    async (path) => {
+      const findUserIdByIdentifier = vi.fn();
+      const recordHistory = vi.fn();
+      const handler = createAuthRequestAuditHandler({
+        handle: vi.fn().mockResolvedValue(Response.json({}, { status: 401 })),
+        getSession: vi.fn(),
+        findUserIdByIdentifier,
+        recordHistory,
+      });
+      await handler(
+        new Request(`https://example.test/api/auth${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            username: "other-user",
+            email: "other@example.test",
+          }),
+        }),
+      );
+      expect(findUserIdByIdentifier).not.toHaveBeenCalled();
+      expect(recordHistory).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: null }),
+      );
+    },
+  );
+
+  it("does not fall back to an email supplied to the username route", async () => {
+    const findUserIdByIdentifier = vi.fn();
+    const recordHistory = vi.fn();
+    const handler = createAuthRequestAuditHandler({
+      handle: vi.fn().mockResolvedValue(Response.json({}, { status: 401 })),
+      getSession: vi.fn(),
+      findUserIdByIdentifier,
+      recordHistory,
+    });
+    await handler(
+      new Request("https://example.test/api/auth/sign-in/username", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "other@example.test" }),
+      }),
+    );
+    expect(findUserIdByIdentifier).not.toHaveBeenCalled();
+    expect(recordHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null }),
+    );
   });
 });

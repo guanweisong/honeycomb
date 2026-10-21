@@ -84,9 +84,27 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: { post: { getCategoryId: { useQuery: () => ({ data: undefined }) } } },
 }));
 
+const clientProps = vi.hoisted(() => ({
+  menu: [] as unknown[],
+  breadcrumb: [] as unknown[],
+}));
+
+vi.mock("@/app/(blog)/components/Menu", async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import("@/app/(blog)/components/Menu")>();
+  return {
+    default: (props: import("@/app/(blog)/components/Menu").MenuProps) => {
+      clientProps.menu = props.flatMenuData;
+      return React.createElement(original.default, props);
+    },
+  };
+});
+
 vi.mock("@/app/(blog)/components/Breadcrumb", () => ({
-  default: ({ menu }: { menu: unknown[] }) =>
-    React.createElement("div", { "data-breadcrumb-count": menu.length }),
+  default: ({ menu }: { menu: unknown[] }) => {
+    clientProps.breadcrumb = menu;
+    return React.createElement("div", { "data-breadcrumb-count": menu.length });
+  },
 }));
 
 vi.mock("@/app/(blog)/components/ThemeSwitcher", () => ({
@@ -116,6 +134,23 @@ describe("blog Header", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("sends only navigation fields to client menu and breadcrumb components", async () => {
+    await act(async () => root.render(await Header()));
+    for (const items of [clientProps.menu, clientProps.breadcrumb]) {
+      expect(items.length).toBeGreaterThan(0);
+      for (const item of items) {
+        if (!item || typeof item !== "object")
+          throw new Error("Expected a navigation item");
+        expect(Object.keys(item).sort()).toEqual([
+          "id",
+          "parent",
+          "path",
+          "title",
+        ]);
+      }
+    }
   });
 
   it("renders root menu destinations while retaining all categories for breadcrumbs", async () => {

@@ -201,7 +201,11 @@ export async function listMenus(
   const [categoryTranslations, pageTranslations] = await Promise.all([
     categories.length
       ? db
-          .select()
+          .select({
+            categoryId: schema.categoryTranslation.categoryId,
+            locale: schema.categoryTranslation.locale,
+            title: schema.categoryTranslation.title,
+          })
           .from(schema.categoryTranslation)
           .where(
             inArray(
@@ -212,7 +216,11 @@ export async function listMenus(
       : Promise.resolve([]),
     pages.length
       ? db
-          .select()
+          .select({
+            pageId: schema.pageTranslation.pageId,
+            locale: schema.pageTranslation.locale,
+            title: schema.pageTranslation.title,
+          })
           .from(schema.pageTranslation)
           .where(
             inArray(

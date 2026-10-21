@@ -1,6 +1,7 @@
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 let scrollTop: number | undefined;
@@ -28,6 +29,15 @@ describe("BackToTop", () => {
     root = createRoot(container);
     act(() => root.render(<BackToTop />));
   };
+
+  it("derives visibility immediately without waiting for a state-sync effect", () => {
+    scrollTop = 301;
+    expect(renderToStaticMarkup(<BackToTop />)).toContain(
+      'aria-label="Back to top"',
+    );
+    scrollTop = 300;
+    expect(renderToStaticMarkup(<BackToTop />)).not.toContain("button");
+  });
 
   it("stays hidden before the scroll threshold", () => {
     scrollTop = 300;

@@ -5,7 +5,6 @@ import { enableStatusOptions } from "@/components/admin/enable-status-options";
 import { Dialog } from "@/components/Dialog";
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
 import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 import { DynamicForm } from "@/components/DynamicForm";
@@ -47,11 +46,6 @@ export interface AddCategoryModalProps {
  * @returns {JSX.Element} 添加/编辑分类的模态框。
  */
 const AddCategoryModal = (props: AddCategoryModalProps) => {
-  /**
-   * 存储分类列表数据。
-   * 用于在父级分类选择器中展示。
-   */
-  const [list, setList] = useState<CategoryEntity[]>([]);
   const { modalProps, setModalProps } = props;
   const defaultValues = modalProps?.record
     ? {
@@ -70,6 +64,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
    * 用于填充父级分类选择器。
    */
   const categoryQuery = trpc.category.adminTree.useQuery();
+  const list = categoryQuery.data?.list ?? [];
   /**
    * 创建分类的 tRPC mutation。
    */
@@ -78,10 +73,6 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
    * 更新分类的 tRPC mutation。
    */
   const updateCategory = trpc.category.update.useMutation();
-
-  useEffect(() => {
-    if (categoryQuery.data) setList(categoryQuery.data.list ?? []);
-  }, [modalProps?.open, categoryQuery.data]);
 
   /**
    * 关闭弹窗
@@ -191,6 +182,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
     >
       {modalProps?.type === ModalType.EDIT ? (
         <DynamicForm
+          key={`edit:${modalProps.record?.id}:${modalProps.open}`}
           defaultValues={defaultValues}
           schema={CategoryUpdateSchema}
           fields={fields}
@@ -198,6 +190,7 @@ const AddCategoryModal = (props: AddCategoryModalProps) => {
         />
       ) : (
         <DynamicForm
+          key={`add:${modalProps?.open}`}
           defaultValues={defaultValues}
           schema={CategoryInsertSchema}
           fields={fields}

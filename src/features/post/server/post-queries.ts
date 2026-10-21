@@ -10,12 +10,17 @@ import {
 } from "@/lib/db/query/query-builders";
 import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { observeDbOperation } from "@/lib/observability/server";
-import { loadPostRelations, toMediaRecord } from "./post-relations";
+import {
+  loadPostRelations,
+  loadPublicPostListItems,
+  toMediaRecord,
+} from "./post-relations";
 import type {
   PostListInput,
   PostVisibility,
   PostListResult,
   PostDetailResult,
+  PublicPostListResult,
 } from "../types";
 
 async function getPostCategoryIds(db: Database, categoryId: string) {
@@ -32,11 +37,11 @@ async function getPostCategoryIds(db: Database, categoryId: string) {
   return subCategories.map((category) => category.id);
 }
 
-export async function listPosts(
+async function listPostIds(
   db: Database,
   input: PostListInput,
   visibility: PostVisibility,
-): Promise<PostListResult> {
+) {
   const {
     page = repositoryPaginationDefaults.page,
     limit = repositoryPaginationDefaults.limit,
@@ -115,9 +120,29 @@ export async function listPosts(
     ),
   ]);
   return {
-    list: await loadPostRelations(db, list, visibility),
+    list,
     total: Number(countRows[0]?.count) || 0,
   };
+}
+
+export async function listPosts(
+  db: Database,
+  input: PostListInput,
+  visibility: PostVisibility,
+): Promise<PostListResult> {
+  const result = await listPostIds(db, input, visibility);
+  return {
+    ...result,
+    list: await loadPostRelations(db, result.list, visibility),
+  };
+}
+
+export async function listPublicPosts(
+  db: Database,
+  input: PostListInput,
+): Promise<PublicPostListResult> {
+  const result = await listPostIds(db, input, "PUBLISHED_ONLY");
+  return { ...result, list: await loadPublicPostListItems(db, result.list) };
 }
 
 export async function getPost(

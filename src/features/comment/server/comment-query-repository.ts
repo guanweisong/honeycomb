@@ -100,8 +100,18 @@ export function createCommentQueryRepository(db: Database) {
                   ? and(inArray(schema.comment.id, ids), where)
                   : inArray(schema.comment.id, ids),
               with: {
-                post: { with: { translations: true } },
-                page: { with: { translations: true } },
+                post: {
+                  columns: { id: true },
+                  with: {
+                    translations: { columns: { locale: true, title: true } },
+                  },
+                },
+                page: {
+                  columns: { id: true },
+                  with: {
+                    translations: { columns: { locale: true, title: true } },
+                  },
+                },
               },
             }),
           )
@@ -123,6 +133,7 @@ export function createCommentQueryRepository(db: Database) {
             "select",
             () =>
               db.query.post.findMany({
+                columns: { id: true },
                 where:
                   visibility === "PUBLISHED_ONLY"
                     ? and(
@@ -130,7 +141,9 @@ export function createCommentQueryRepository(db: Database) {
                         eq(schema.post.status, PostStatus.PUBLISHED),
                       )
                     : inArray(schema.post.id, customIds),
-                with: { translations: true },
+                with: {
+                  translations: { columns: { locale: true, title: true } },
+                },
               }),
           )
         : [];
@@ -179,16 +192,8 @@ export function createCommentQueryRepository(db: Database) {
       const list = buildPublicCommentTree(
         result.map(toPublicCommentSource).map(toPublicComment),
       );
-      const [countResult] = await observeDbOperation(
-        "comment.service.public-count",
-        "select",
-        () =>
-          db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(schema.comment)
-            .where(where),
-      );
-      return { list, total: Number(countResult?.count) || 0 };
+      // 此查询不分页；计数保留建树前的屏蔽评论与孤儿回复。
+      return { list, total: result.length };
     },
   };
 }

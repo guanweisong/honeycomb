@@ -64,12 +64,16 @@ export async function updateTag(
   invalidator: PublicContentInvalidator,
 ) {
   const { id, name, ...changes } = input;
+  const parentChanges = {
+    ...changes,
+    ...(name !== undefined ? { updatedAt: new Date().toISOString() } : {}),
+  };
   const value = await observeDbOperation("tag.update", "transaction", () =>
     db.transaction(async (tx) => {
-      const [updated] = Object.keys(changes).length
+      const [updated] = Object.keys(parentChanges).length
         ? await tx
             .update(schema.tag)
-            .set(changes)
+            .set(parentChanges)
             .where(eq(schema.tag.id, id))
             .returning()
         : await tx
@@ -147,7 +151,7 @@ export async function listTags(db: Database, input: TagListInput) {
     name,
     ...rest
   } = input;
-  let where = buildDrizzleWhere(schema.tag, rest, ["status"]);
+  let where = buildDrizzleWhere(schema.tag, rest, ["id"]);
   if (name) {
     const nameMatch = sql`exists (
           select 1 from ${schema.tagTranslation}
