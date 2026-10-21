@@ -798,7 +798,8 @@
         "src/lib/ui/utc-format.test.ts"
       ],
       "validation": [
-        "Historical-year, DST-gap and skipped-date failures reproduced RED. Final UTC Date extension: 8/8 GREEN including isolated UTC/New_York/Apia subprocesses and named month/weekday compatibility."
+        "Historical-year, DST-gap and skipped-date failures reproduced RED. Final UTC Date extension: 8/8 GREEN including isolated UTC/New_York/Apia subprocesses and named month/weekday compatibility.",
+        "Node 22.14 CI does not enable TS stripping by default. Explicit --experimental-strip-types preserves actual timezone subprocess coverage; externally disabled default reproduced RED, explicit flag yielded 8/8 GREEN on installed Node."
       ],
       "notes": "Replaced local shadow date with a UTC accessor/setter Date extension preserved by date-fns; retained existing formatter tokens and protected literal content. Limitations: Final implementation preserves named month/weekday formats instead of narrowing the existing API.",
       "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
@@ -833,12 +834,14 @@
       "files": [
         "tests/e2e/blog/perf-budget.spec.ts",
         "tests/helpers/performance-metrics.ts",
-        "tests/helpers/performance-metrics.test.ts"
+        "tests/helpers/performance-metrics.test.ts",
+        "docs/performance-smoke-measurements.md"
       ],
       "validation": [
-        "2 RED helper failures; helper4/4 GREEN, plus process guards5/5. Demonstrated absolute duration is unaffected by wall waiting and rejects reset/nonfinite counters. Retention correction source-reviewed only; no new tests or global processes run while coordinator lint was active."
+        "2 RED helper failures; helper4/4 GREEN, plus process guards5/5. Demonstrated absolute duration is unaffected by wall waiting and rejects reset/nonfinite counters. Retention correction source-reviewed only; no new tests or global processes run while coordinator lint was active.",
+        "CI v1 exposed cross-document counters and invalid historical ratio comparability; v2 helper 12/12 passed. Exact-head browser re-verification pending; active baseline remains pending."
       ],
-      "notes": "Removed fixed 600ms sleep/networkidle, tied completion to scroll/navigation/UI conditions, reports absolute TaskDuration plus browser/build/machine metadata while keeping existing smoke ceilings. The same fixed measurement object is emitted as one structured console.info line before attachment and budget assertions, retaining baseline data in Playwright job logs after owned-directory cleanup. Limitations: CI deletes HONEYCOMB_TEST_DIR and uploads only bundle-analysis, so browser JSON attachments alone were not retained. Structured job-log output now preserves the same safe primitive measurement fields; real CI/browser emission is not executed in this environment. No arbitrary new absolute CPU ceiling. Establish one from repeated comparable CI samples. No real browser baseline or claimed optimization benefit.",
+      "notes": "Measurement version 2 uses CDP NavigationStart/Timestamp/TaskDuration samples and separate scroll/detail/back segments. Only same-document counters are subtracted; cross-document segments retain raw counters and null deltas. A separately labeled one-second post-interaction sustained main-thread sample retains the 70-percent ceiling without adding waiting to active denominators. Heap and DOM ceilings unchanged. Fixed safe measurements still emit to job logs and attachment. Limitations: The 70-percent ceiling is now explicitly a separate steady-state gate, not a comparable historical active-ratio baseline or a newly measured SLO. Active cross-document CPU coverage is intentionally incomplete and deltas are null, not clamped to zero or guessed. No new absolute active CPU threshold or optimization claim. Real-browser v2 rerun remains coordinator-owned. CI cleanup still removes local browser attachments; fixed measurement JSON persists in job logs.",
       "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
     },
     {
@@ -1564,7 +1567,8 @@
         "ESLint config policy 1 passed, MultiTag 19 passed",
         "targeted MultiTag ESLint passed",
         "Actual ESLint lintText fixtures diagnose effect-setState and prop mutation; 2 tests passed. MultiTag exception removed after derived-query rewrite.",
-        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。"
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。",
+        "ESLint contract fixtures run in the required serial process lane. Measured CI cold initialization took 32–36s and local initialization about50s; two fixtures now explicitly initialize the TypeScript project in a bounded60s beforeAll. This is a setup timeout change, not a global/per-assertion timeout increase. Negative violation fixtures still execute under their unchanged30s deadlines."
       ],
       "notes": "Restore both React rules globally; retain 13 exact-path set-state exceptions with reasons, no immutability suppression. Declare MultiTag timer ref before effects to make compiler ownership explicit. Baseline 17 effect diagnostics/1 immutability diagnostic; actual ESLint configuration regression test and MultiTag 19 tests pass; targeted hook lint clean.",
       "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
@@ -1634,9 +1638,9 @@
       "test-strengthened-production-kept": 1,
       "test-strengthened-browser-unverified": 1
     },
-    "integration": "Local serial regression: 8 files / 55 tests passed. Final typecheck reports only 14 missing-Sentry module/downstream inference diagnostics in unchanged integration files; all introduced type errors resolved. Full lint inspected 963 files: 52 missing-Sentry inference errors, plus two JSX fixture keys subsequently corrected. No dependency installation, type assertions or disabled gates added. Full build/browser/coverage require exact-head GitHub CI. Final tooling/media/email regression: 6 files / 34 tests passed. OpenSpec strict: 64 passed. git diff --check passed.",
-    "review": "分区复核完成；规范化姓名、关联 SQL 别名、列表依赖、SDK 中断返回码、子进程树超时清理均已补修并验证。",
-    "ci": "见 PR #17 当前精确 head 的 quality checks；旧 52daeb59 成功运行不作为本轮代码验收。",
+    "integration": "Local serial regression: 8 files / 55 tests passed. Final typecheck reports only 14 missing-Sentry module/downstream inference diagnostics in unchanged integration files; all introduced type errors resolved. Full lint inspected 963 files: 52 missing-Sentry inference errors, plus two JSX fixture keys subsequently corrected. No dependency installation, type assertions or disabled gates added. Full build/browser/coverage require exact-head GitHub CI. Final tooling/media/email regression: 6 files / 34 tests passed. OpenSpec strict: 64 passed. git diff --check passed. CI fixture corrections: 3 files / 33 tests passed; permission AST contracts 28/28 passed including missing permission, OR-alias initializer/use-site, and swapped-action negative mutations. The first serial lint verification exceeded its original assertion deadline during cold initialization; a separate bounded60s beforeAll now owns setup, and its subsequent verification passed: 2 files / 8 ESLint contract tests, exit0, with real negative fixtures evaluated.",
+    "review": "分区复核完成；规范化姓名、关联 SQL 别名、列表依赖、SDK 中断返回码、子进程树超时清理均已补修并验证。 CI补丁独立复核补强派生权限 guard 的条件推理与负向回归；性能 v2 明确跨文档测量边界。",
+    "ci": "Implementation head 3c603634 CI run 39586834677 failed: 2870 unit tests passed / 9 failed, 61 dev browser passed / 2 failed. Test compatibility and performance measurement corrections require a new exact-head run; no previous green run is claimed as acceptance.",
     "supporting_files": [
       "docs/full-audit-implementation-ledger.json",
       "docs/superpowers/plans/2026-10-21-full-audit-implementation.md",

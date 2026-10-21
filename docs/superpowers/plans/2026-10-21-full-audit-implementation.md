@@ -78,3 +78,12 @@
 - [x] 全部 74 项已逐项对账，无遗漏/重复：69 项实施，4 项测试加强，1 项测量改进但真实浏览器基线待验证。
 - [x] 串行类型、Lint、定向测试、规格与 diff 检查已执行；新增类型错误修正，剩余 Sentry 缺依赖诊断已明示，完整验收交由精确提交 CI。
 - [ ] 审查后的相容提交更新现有PR17，验证远端SHA和对应CI终态，不合并。
+
+## First exact-head CI correction
+
+- Run 39586834677 at 3c603634 failed after types, lint and build passed: 9 unit and 2 development-browser failures. It is not an accepted final result.
+- Align stale menu endpoint, post query/sort and scroll-hook fixtures with the implemented interfaces; retain assertions and permission mutation coverage.
+- Enable Node 22.14 TypeScript stripping explicitly for real timezone subprocesses.
+- Move TypeScript-project ESLint contracts into the existing required serial process lane, without changing assertions or their 30s deadlines. Two fixtures now give cold TypeScript-project initialization a distinct 60s beforeAll setup deadline (an explicit setup timeout change, based on observed 32–50s starts). Negative fixtures are still evaluated after initialization. Production coverage scope and thresholds remain unchanged.
+- Use documented version-2 performance measurements rather than subtract counters across documents or dilute active work with an artificial wait. See [measurement definitions](../../performance-smoke-measurements.md). Active-performance baselines remain pending.
+- Re-publish a reviewed correction and require its own complete GitHub quality run.

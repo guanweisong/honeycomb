@@ -151,10 +151,13 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when tagId has no posts", async () => {
-      // 模拟 postTag 查询不返回文章 ID，再执行总数查询。
+      // EXISTS 标签筛选直接用于文章列表和总数，不再预查文章 ID。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockReturnValueOnce(mockDb);
+      mockDb.offset.mockResolvedValueOnce([]);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);

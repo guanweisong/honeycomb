@@ -2,12 +2,20 @@
 
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
-import { expect, it } from "vitest";
+import { beforeAll, expect, it } from "vitest";
+
+const eslint = new ESLint({
+  overrideConfigFile: resolve("eslint-config-next.ts"),
+});
+
+// Separate bounded TypeScript-project initialization from the rule contract.
+beforeAll(async () => {
+  await eslint.lintText("export {};", {
+    filePath: resolve("src/lib/errors/application-error.ts"),
+  });
+}, 60_000);
 
 it("类型感知Lint拒绝隐式any跨越赋值、调用、属性和返回边界", async () => {
-  const eslint = new ESLint({
-    overrideConfigFile: resolve("eslint-config-next.ts"),
-  });
   const results = await eslint.lintText(
     `
     declare const external: any;

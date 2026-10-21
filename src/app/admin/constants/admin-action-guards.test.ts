@@ -61,13 +61,97 @@ function collectGuardPolarities(
   return result;
 }
 
+interface ActionBranchFact {
+  name: string;
+  value: boolean;
+}
+
 function hasGuardPolarity(
   node: ts.Node,
   guardName: string,
   polarity: GuardPolarity,
+  actionBranch?: ActionBranchFact,
 ): boolean {
   const polarities = collectGuardPolarities(node, guardName);
-  return polarities.size === 1 && polarities.has(polarity);
+  if (polarities.size === 1 && polarities.has(polarity)) return true;
+  if (polarity !== "positive") return false;
+
+  // A derived const guard is valid only when its truth requires the permission.
+  // In particular, `permission || other` must never prove authorization.
+  function cannotBeTrue(expression: ts.Node): boolean {
+    if (ts.isParenthesizedExpression(expression))
+      return cannotBeTrue(expression.expression);
+    if (expression.kind === ts.SyntaxKind.FalseKeyword) return true;
+    if (!actionBranch) return false;
+    if (ts.isIdentifier(expression))
+      return expression.text === actionBranch.name && !actionBranch.value;
+    if (
+      ts.isPrefixUnaryExpression(expression) &&
+      expression.operator === ts.SyntaxKind.ExclamationToken &&
+      ts.isIdentifier(expression.operand)
+    )
+      return (
+        expression.operand.text === actionBranch.name && actionBranch.value
+      );
+    if (!ts.isBinaryExpression(expression)) return false;
+    if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+      return cannotBeTrue(expression.left) || cannotBeTrue(expression.right);
+    if (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      return cannotBeTrue(expression.left) && cannotBeTrue(expression.right);
+    return false;
+  }
+  function requiresPermission(
+    expression: ts.Node,
+    requiredName = guardName,
+    useActionBranch = false,
+  ): boolean {
+    if (ts.isParenthesizedExpression(expression))
+      return requiresPermission(
+        expression.expression,
+        requiredName,
+        useActionBranch,
+      );
+    if (ts.isIdentifier(expression)) return expression.text === requiredName;
+    if (!ts.isBinaryExpression(expression)) return false;
+    const requires = (branch: ts.Node) =>
+      requiresPermission(branch, requiredName, useActionBranch);
+    if (expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+      return requires(expression.left) || requires(expression.right);
+    if (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      return (
+        (requires(expression.left) ||
+          (useActionBranch && cannotBeTrue(expression.left))) &&
+        (requires(expression.right) ||
+          (useActionBranch && cannotBeTrue(expression.right)))
+      );
+    return false;
+  }
+  function enclosingFunction(target: ts.Node): ts.Node | undefined {
+    for (let ancestor = target.parent; ancestor; ancestor = ancestor.parent) {
+      if (ts.isFunctionLike(ancestor)) return ancestor;
+    }
+    return undefined;
+  }
+  const aliases = new Set<string>();
+  const scope = enclosingFunction(node);
+  function findAliases(target: ts.Node): void {
+    if (
+      ts.isVariableDeclaration(target) &&
+      ts.isIdentifier(target.name) &&
+      target.initializer &&
+      ts.isVariableDeclarationList(target.parent) &&
+      (target.parent.flags & ts.NodeFlags.Const) !== 0 &&
+      enclosingFunction(target) === scope &&
+      ts.isVariableStatement(target.parent.parent) &&
+      containsNode(target.parent.parent.parent, node) &&
+      target.end < node.pos &&
+      requiresPermission(target.initializer)
+    )
+      aliases.add(target.name.text);
+    ts.forEachChild(target, findAliases);
+  }
+  if (scope) findAliases(scope);
+  return [...aliases].some((alias) => requiresPermission(node, alias, true));
 }
 
 function containsNode(container: ts.Node, target: ts.Node): boolean {
@@ -78,13 +162,14 @@ function isGuardedByAncestor(
   target: ts.Node,
   guardName: string,
   polarity: GuardPolarity,
+  actionBranch?: ActionBranchFact,
 ): boolean {
   for (let ancestor = target.parent; ancestor; ancestor = ancestor.parent) {
     if (
       ts.isBinaryExpression(ancestor) &&
       ancestor.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
       containsNode(ancestor.right, target) &&
-      hasGuardPolarity(ancestor.left, guardName, polarity)
+      hasGuardPolarity(ancestor.left, guardName, polarity, actionBranch)
     ) {
       return true;
     }
@@ -99,7 +184,12 @@ function isGuardedByAncestor(
         : polarity;
       if (
         (inTrueBranch || inFalseBranch) &&
-        hasGuardPolarity(ancestor.condition, guardName, branchPolarity)
+        hasGuardPolarity(
+          ancestor.condition,
+          guardName,
+          branchPolarity,
+          actionBranch,
+        )
       ) {
         return true;
       }
@@ -224,6 +314,39 @@ function collectPermissionGuards(
   return guardByPermission;
 }
 
+/** Only a direct, parameterless action callback can supply a branch fact. */
+function getActionBranchFact(
+  control: ts.JsxElement | ts.JsxSelfClosingElement,
+  identity: ActionControlIdentity,
+  sourceFile: ts.SourceFile,
+): ActionBranchFact | undefined {
+  if (!identity.call?.argument) return undefined;
+  const element = ts.isJsxElement(control) ? control.openingElement : control;
+  const callback = getAttributeExpression(element, identity.attribute);
+  if (
+    !callback ||
+    !ts.isArrowFunction(callback) ||
+    callback.parameters.length !== 0 ||
+    !ts.isCallExpression(callback.body) ||
+    callback.body.expression.getText(sourceFile) !== identity.call.callee
+  )
+    return undefined;
+  for (const argument of callback.body.arguments) {
+    if (
+      !ts.isConditionalExpression(argument) ||
+      !ts.isIdentifier(argument.condition)
+    )
+      continue;
+    const whenTrue =
+      argument.whenTrue.getText(sourceFile) === identity.call.argument;
+    const whenFalse =
+      argument.whenFalse.getText(sourceFile) === identity.call.argument;
+    if (whenTrue !== whenFalse)
+      return { name: argument.condition.text, value: whenTrue };
+  }
+  return undefined;
+}
+
 function findUnboundActionIds(
   relativePath: string,
   actions: readonly ActionGuardContract[],
@@ -275,6 +398,7 @@ function findUnboundActionIds(
               control,
               guardName,
               action.guard.polarity,
+              getActionBranchFact(control, action.control, sourceFile),
             );
           }
 
@@ -376,6 +500,48 @@ describe("admin action capability guards", () => {
           "{true && isEdit && isPublished && (",
         ),
       ),
+    ).toContain("post-editor.update");
+  });
+
+  it.each([
+    "true && isEdit && (isDraft || isAwaitingAudit)",
+    "canUpdatePost || (isEdit && (isDraft || isAwaitingAudit))",
+  ])(
+    "rejects a derived save guard that does not require update permission: %s",
+    (replacement) => {
+      const editorPath =
+        "(dashboard)/post/edit/components/PostEditorActions/index.tsx";
+      expect(
+        findUnboundActionIds(editorPath, getActions(editorPath), (source) =>
+          source.replace(
+            "canUpdatePost && isEdit && (isDraft || isAwaitingAudit)",
+            replacement,
+          ),
+        ),
+      ).toContain("post-editor.update");
+    },
+  );
+
+  it.each([
+    ["save", "{canSaveUnpublished && (", "{(canSaveUnpublished || true) && ("],
+    [
+      "publish",
+      "{(canSaveUnpublished || (canCreatePost && !isEdit)) && (",
+      "{(canSaveUnpublished || true) && (",
+    ],
+    [
+      "swapped publish action",
+      'isEdit ? "update" : "create"',
+      'isEdit ? "create" : "update"',
+    ],
+  ])("rejects an alias bypass at the %s use site", (_label, before, after) => {
+    const editorPath =
+      "(dashboard)/post/edit/components/PostEditorActions/index.tsx";
+    expect(
+      findUnboundActionIds(editorPath, getActions(editorPath), (source) => {
+        expect(source).toContain(before);
+        return source.replace(before, after);
+      }),
     ).toContain("post-editor.update");
   });
 

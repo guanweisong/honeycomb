@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { TestUserConfig } from "vitest/config";
 
 import vitestConfig from "../../vitest.config.mts";
+import processConfig from "../../vitest.process.config.mts";
 
 const config = vitestConfig.test as TestUserConfig;
 const coverage = config.coverage;
@@ -127,6 +128,21 @@ describe("coverage governance", () => {
     expect(config.exclude).toContain(
       "tests/architecture/server-only-boundaries.test.ts",
     );
+  });
+
+  it("keeps type-aware ESLint contracts in the required serial tooling lane", () => {
+    const processTests = processConfig.test as TestUserConfig;
+    expect(processTests.fileParallelism).toBe(false);
+    expect(processTests.maxWorkers).toBe(1);
+    for (const path of [
+      "tests/tooling/eslint-console-boundaries.test.ts",
+      "tests/tooling/type-aware-lint.test.ts",
+      "tests/tooling/react-lint-policy.test.ts",
+    ]) {
+      expect(config.exclude).toContain(path);
+      expect(processTests.include).toContain(path);
+      expect(processTests.exclude).not.toContain(path);
+    }
   });
 
   it("gives every critical module its own effective 90/80 file threshold", async () => {

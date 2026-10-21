@@ -167,7 +167,7 @@ it("keeps title search, filters and sorting together while resetting the display
   await nextPage();
   expect(lastQuery()).toMatchObject({
     page: 3,
-    sortField: "createdAt",
+    sortField: "updatedAt",
     sortOrder: "desc",
     status: ["PUBLISHED"],
   });
@@ -179,7 +179,7 @@ it("keeps title search, filters and sorting together while resetting the display
     limit: 20,
     title: "honeycomb",
     status: ["PUBLISHED"],
-    sortField: "createdAt",
+    sortField: "updatedAt",
     sortOrder: "desc",
   });
   expect(container.textContent).toContain("第 1 / 4 页");
@@ -197,7 +197,7 @@ it("keeps title search, filters and sorting together while resetting the display
     page: 1,
     limit: 20,
     status: ["PUBLISHED"],
-    sortField: "createdAt",
+    sortField: "updatedAt",
     sortOrder: "desc",
   });
   expect(container.textContent).toContain("第 1 / 4 页");

@@ -172,7 +172,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
   test("menu", async ({ page }) => {
     await visit(page, "/admin/menu", [
       "category.adminTree",
-      "page.adminIndex",
+      "page.menuOptions",
       "menu.adminIndex",
     ]);
     await expect(page.getByText("可选菜单项", { exact: true })).toBeVisible();

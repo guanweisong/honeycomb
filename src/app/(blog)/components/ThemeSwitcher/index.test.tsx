@@ -100,8 +100,8 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
   usePathname: () => pathname,
 }));
 
-vi.mock("@/lib/hooks/use-scroll-position", () => ({
-  useScrollPosition: () => ({ left: 0, top: scrollTop ?? 0 }),
+vi.mock("@/lib/hooks/use-scrolled-past", () => ({
+  useScrolledPast: (threshold: number) => (scrollTop ?? 0) > threshold,
 }));
 
 import { ThemeSwitcher } from "./index";
@@ -282,10 +282,10 @@ describe("blog appearance controls", () => {
 
     scrollTop = 301;
     await act(async () => root.render(React.createElement(BackToTop)));
+    const button = container.querySelector('[aria-label="Back to top"]');
+    expect(button).not.toBeNull();
     await act(async () => {
-      container
-        .querySelector('[aria-label="Back to top"]')
-        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      button!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(scrollCalls).toEqual([[0, 0]]);
   });
