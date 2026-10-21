@@ -33,3 +33,15 @@ A one-time `HUSKY=0` publication commit was approved to avoid repeating locally 
 - `bun run lint`: exited 1 with 52 errors confined to unchanged Sentry integration files whose dependency was unavailable; three pre-existing unused-variable warnings in unchanged media tests. No lint errors were reported in changed files.
 - `bun run quality:spec`: passed all 64 items and the diff policy check.
 - `bun run db:migrations:check`: passed all nine migration files; no migrations changed.
+
+## First published CI result
+
+PR #17 published API commit `933e6da05857caf1434ecfde05d29ebfded26849` with tree `36b8a00ed6ad8f29b11cedc9f63cc2ac878fc8c2`, identical to the local reviewed commit. Workflow run `39572581444` completed in approximately 6 minutes 42 seconds.
+
+- Fresh frozen install, typecheck, lint, migration/invariant checks, production build and bundle analysis passed.
+- Browser tests passed: 63 development tests and one production test.
+- Unit coverage run: 393 files passed, one failed; 2,636 tests passed and three failed out of 2,639. All three failures were stale `listPosts` mocks in `upstash-cache-timeout.test.ts`, while the public read now calls `listPublicPosts(db, input)`. They were assertion failures, not timeouts. Later process/advisory commands did not run after that failure.
+- The follow-up changes only that test's mock and expected query signature; production behavior, request deadlines, fake transport and fallback assertions remain unchanged.
+- Development Next.js instant-validation warnings were also present in the baseline master run `39444663350`, whose same browser inventory passed. They were not silently treated as new failures or fixed outside scope.
+- Exact follow-up commit CI remains required; this first run is not reported as fully green.
+- Follow-up single-file RED reproduced three failures/eight passes; GREEN passed all 11 tests after the mock-signature correction.
