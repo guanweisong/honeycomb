@@ -5,24 +5,23 @@
  * @param id - 起始的父节点 ID。如果为 `undefined`，则从根节点（`parent` 为 `null`）开始。
  * @returns 返回一个根据父子关系排序后的新数组，并为每个节点添加了 `deepPath` 属性表示其深度。
  */
-export function sonsTree<T extends { id: string; parent: string | null }>(
-  arr: T[],
-  id?: string,
-): (Omit<T, "deepPath"> & { deepPath: number })[] {
+export function flattenCategoryHierarchy<
+  T extends { id: string; parent: string | null },
+>(arr: T[], id?: string): (Omit<T, "deepPath"> & { deepPath: number })[] {
   const temp: (Omit<T, "deepPath"> & { deepPath: number })[] = [];
-  const lev = 0;
-  const forFn = (arr: T[], id: string | undefined, lev: number): void => {
-    for (const value of arr) {
-      if (
-        (value.parent === null && id === undefined) ||
-        value.parent?.toString() === id
-      ) {
-        const nodeWithValue = Object.assign(value, { deepPath: lev });
-        temp.push(nodeWithValue);
-        forFn(arr, value.id, lev + 1);
-      }
+  const childrenByParent = new Map<string | undefined, T[]>();
+  for (const value of arr) {
+    const parent = value.parent?.toString();
+    const children = childrenByParent.get(parent);
+    if (children) children.push(value);
+    else childrenByParent.set(parent, [value]);
+  }
+  const visit = (parent: string | undefined, depth: number): void => {
+    for (const value of childrenByParent.get(parent) ?? []) {
+      temp.push(Object.assign(value, { deepPath: depth }));
+      visit(value.id, depth + 1);
     }
   };
-  forFn(arr, id, lev);
+  visit(id, 0);
   return temp;
 }

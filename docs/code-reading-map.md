@@ -15,6 +15,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章页头操作使用已确认提交的状态与版本，不直接使用可能过期的详情缓存或未保存表单状态。本地草稿的 CAS 来源版本独立保留，普通详情水合和显式加载均不得用旧版本回退已确认状态。
 
+分类/标签弹窗的提交回调归属当前打开世代；文章编辑还区分账户、记录和访问世代。关闭重开或 A→B→A 后，旧结果不能关闭新弹窗、清空新草稿、刷新新会话或释放新请求的 busy。富文本外部值同步使用 `emitUpdate: false`，不把水合/reset 当作用户编辑。
+
 ### 版本化编辑与创建恢复
 
 文章、页面的 `create` 输入必须包含 `creationToken`；`update` 必须包含 `expectedVersion`，`destroy` 使用 `{ items: [{ id, expectedVersion }] }`，不再接受只有 ID 的删除批次。具体字段以各 feature 的 `schema.ts` 为准，不把表单类型当作持久化输入。
@@ -23,11 +25,11 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 菜单后台读取 `menu.adminIndex` 的 `{ version, list, total }` 快照，`menu.saveAll` 提交 `{ expectedVersion, items }`；公开 `menu.index` 仍是公开菜单列表。设置从 `setting.index` 读取版本，`setting.update` 提交完整后台快照及 `expectedVersion`。实现入口为各 feature 的 `router.ts`、`schema.ts` 和 `server.ts`；上线顺序见[迁移手册](database-migration-runbook.md)。
 
-### 媒体上传与人工恢复
+### 普通媒体上传与人工核对
 
-`src/features/media/router.ts` 提供 `beginUpload` → 浏览器临时 PUT → `confirmUpload`，结果按 `ready` / `pending` / `rejected` 分支处理。`status` 与 `reconcile` 用于原上传行核对，不是另一次上传；旧 `getPresignedUrl` / `upload` tRPC 入口已移除（存储适配器内部仍有签名方法）。当前管理列表默认 READY，可按状态查看有权访问的恢复记录。
+`src/features/media/router.ts` 提供 `prepareUpload` → 浏览器临时 PUT → `registerUpload`。准备阶段不建行；注册时验证意图和完整图片字节，单次写入新的最终对象，再登记普通记录。没有 READY/status/reconcile 或持久化生命周期状态；未知结果不自动重试或清理。
 
-最终字节校验在 `server/image-validation.ts`，事务授权及引用保护在 `server/media-repository.ts` / `server/media-references.ts`。生命周期、删除确认和运行时限制只在[媒体运行手册](media-storage-runbook.md)集中说明。
+最终字节校验在 `server/image-validation.ts`，事务授权及引用保护在 `server/media-repository.ts` / `server/media-references.ts`。普通记录删除、未知引用确认、缓存同步降级和运行时限制见[媒体运行手册](media-storage-runbook.md)。
 
 ### 读取公开内容
 
@@ -38,7 +40,9 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
 
-文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体公共读取模型与管理恢复模型分别在 `src/features/media/types.ts`，不把临时 key、尝试信息等恢复字段透传给公开消费者。
+文章查询与缓存解码共用 `src/features/post/post-read-model.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
+
+页面详情先确认公开状态再启动评论读取，并立即接管评论 Promise 的拒绝，保留原错误供消费者处理，不用空列表吞错。`comment-query-repository.ts` 在读取评论的同一条 SQL 中再次约束目标发布状态，以及文章/自定义目标的评论启用状态，不能仅依赖较早的预读；这不等于撤回已发送或已缓存的内容。
 
 评论公开 DTO 必须真正挑选允许字段，不能用类型别名代替脱敏。评论组件接收数据，不反向导入 app 查询实现。GUEST 后台读取同样受服务端数据范围限制。
 
@@ -48,6 +52,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
 3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。
 4. 权限规则：`src/lib/auth/permissions.ts` 与 `authorize.ts`；服务端 API 仍是最终授权边界。
+
+后台邮箱规范化与碰撞检查位于 `src/features/user/schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
 
 认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
 
@@ -63,9 +69,10 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 具名纯工具与直接入口
 
+- 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/components/Menu/MenuTitle.tsx`。
+- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 

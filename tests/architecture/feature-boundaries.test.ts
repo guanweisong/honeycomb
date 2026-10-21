@@ -324,7 +324,7 @@ describe("feature-owned business boundaries", () => {
         /\b(?:ctx\.)?db\s*\.\s*(?:insert|update|delete|transaction)\s*\(/.test(
           source,
         ) ||
-        /S3\.(?:deleteObjects|getPresignedUrl)|sendCommentEmail\s*\(/.test(
+        /R2Storage\.(?:deleteObjects|getPresignedUrl)|sendCommentEmail\s*\(/.test(
           source,
         )
       );

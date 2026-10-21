@@ -19,11 +19,28 @@ import type { Context } from "./context";
  * 这意味着无法自动序列化 Date、Map、Set 等特殊类型。
  * 如需传输这些类型，请在应用层手动转换为 JSON 兼容格式。
  */
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  errorFormatter({ error, shape }) {
+    // Unknown causes can include SQL bindings. Format at the HTTP boundary,
+    // including context failures and calls with request observability disabled.
+    const inheritedUnknownMessage =
+      error.code === "INTERNAL_SERVER_ERROR" &&
+      error.cause !== undefined &&
+      !(error.cause instanceof ApplicationError) &&
+      !(error.cause instanceof DomainError) &&
+      error.message === error.cause.message;
+    if (!inheritedUnknownMessage) return shape;
+    return {
+      ...shape,
+      message: "Internal server error",
+      data: { ...shape.data, stack: undefined },
+    };
+  },
+});
 
 const requestObservabilityMiddleware = t.middleware(
   async ({ ctx, next, path, type }) => {
-    if (ctx.requestObservabilityEnabled === false) return next();
+    const observabilityEnabled = ctx.requestObservabilityEnabled !== false;
 
     const startedAt = Date.now();
     const baseContext = {
@@ -32,7 +49,8 @@ const requestObservabilityMiddleware = t.middleware(
       method: type,
     };
 
-    getLogger().info(LogEvent.requestStarted, baseContext);
+    if (observabilityEnabled)
+      getLogger().info(LogEvent.requestStarted, baseContext);
 
     const response = await next();
     const applicationError =
@@ -50,6 +68,8 @@ const requestObservabilityMiddleware = t.middleware(
             }),
           }
         : response;
+    if (!observabilityEnabled) return result;
+
     const durationMs = Date.now() - startedAt;
     const outcome = result.ok ? "success" : result.error.code;
     const labels = { procedure: path, method: type, outcome };

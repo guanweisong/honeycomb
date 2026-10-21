@@ -102,14 +102,9 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
     React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/features/comment/public/components", () => ({
+vi.mock("@/features/comment/public/components/CommentClient", () => ({
   default: ({ id }: { id: string }) =>
     React.createElement("div", { "data-testid": "comment" }, id),
-}));
-
-vi.mock("@/app/(blog)/components/PageTitle", () => ({
-  default: ({ children }: { children: React.ReactNode }) =>
-    React.createElement("h1", null, children),
 }));
 
 vi.mock("@/features/media/public/RichText", () => ({

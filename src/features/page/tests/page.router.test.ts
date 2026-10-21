@@ -15,7 +15,7 @@ import {
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
@@ -90,7 +90,7 @@ describe("Page Router", () => {
       expect(mockDb.insert).toHaveBeenCalledWith(schema.page);
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = pageRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
@@ -141,7 +141,7 @@ describe("Page Router", () => {
       expect(mockDb.delete).toHaveBeenCalledWith(schema.page);
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = pageRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
@@ -205,7 +205,7 @@ describe("Page Router", () => {
       });
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = pageRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );

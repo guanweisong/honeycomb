@@ -2,6 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
   notifyManager,
+  keepPreviousData,
   QueryClient,
   QueryClientProvider,
   useQuery,
@@ -21,6 +22,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
             queryFn: (): Promise<{ list: MediaViewModel[]; total: number }> =>
               transport.request(input),
             staleTime: Infinity,
+            placeholderData: keepPreviousData,
             retry: false,
           }),
       },
@@ -138,6 +140,98 @@ describe("media reconciliation with React and TanStack Query", () => {
     await waitForFetch();
     expect(query.data.list).toEqual([media("one")]);
     expect(query.error).toBe("refresh failed");
+  });
+
+  it("retries the failed page explicitly without discarding or skipping earlier pages", async () => {
+    let failed = true;
+    transport.request.mockImplementation(async ({ page }: MediaIndexInput) => {
+      if (page === 2 && failed) throw new Error("second page failed");
+      return { list: [media(`page-${page}`)], total: 3 };
+    });
+    await render();
+    await waitForCount(1);
+    await act(async () => query.loadMore());
+    await waitForFetch();
+    expect(query.error).toBe("second page failed");
+    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    await act(async () => query.loadMore());
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2,
+    ]);
+    failed = false;
+    await act(async () => query.retry());
+    await waitForCount(2);
+    expect(query.error).toBeUndefined();
+    await act(async () => query.loadMore());
+    await waitForCount(3);
+    expect(query.data.list.map(({ id }) => id)).toEqual([
+      "page-1",
+      "page-2",
+      "page-3",
+    ]);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 2, 3,
+    ]);
+  });
+
+  it("retries an initially failed page without advancing pagination", async () => {
+    transport.request
+      .mockRejectedValueOnce(new Error("first page failed"))
+      .mockResolvedValue({ list: [media("one")], total: 1 });
+    await render();
+    await waitForFetch();
+    expect(query.error).toBe("first page failed");
+    await act(async () => query.retry());
+    await waitForCount(1);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 1,
+    ]);
+  });
+
+  it("does not reconcile previous-page placeholder data while the next page is pending", async () => {
+    let finish:
+      ((value: { list: MediaViewModel[]; total: number }) => void) | undefined;
+    transport.request.mockImplementation(({ page }: MediaIndexInput) =>
+      page === 1
+        ? Promise.resolve({ list: [media("first")], total: 2 })
+        : new Promise((resolve) => {
+            finish = resolve;
+          }),
+    );
+    await render();
+    await waitForCount(1);
+    await act(async () => query.loadMore());
+    expect(query.hasMore).toBe(false);
+    expect(query.isFetchingMore).toBe(true);
+    await act(async () => {
+      query.loadMore();
+      query.loadMore();
+    });
+    expect(transport.request).toHaveBeenCalledTimes(2);
+    await act(async () => finish?.({ list: [media("second")], total: 2 }));
+    await waitForCount(2);
+    expect(query.isFetchingMore).toBe(false);
+  });
+
+  it("accepts equal-ID adjacent pages without duplicate rows or a stuck request", async () => {
+    const firstPage = Array.from({ length: 50 }, (_, i) =>
+      media(`overlap-${i}`),
+    );
+    transport.request.mockImplementation(async ({ page }: MediaIndexInput) => ({
+      list: page === 3 ? [media("last")] : firstPage,
+      total: 101,
+    }));
+    await render();
+    await waitForCount(50);
+    await act(async () => query.loadMore());
+    await waitForFetch();
+    expect(query.isFetchingMore).toBe(false);
+    expect(query.data.list).toHaveLength(50);
+    await act(async () => query.loadMore());
+    await waitForCount(51);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 3,
+    ]);
   });
 
   it("resets later pages and explicitly refetches the already fresh first page", async () => {

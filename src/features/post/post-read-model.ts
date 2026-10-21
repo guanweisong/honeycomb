@@ -60,3 +60,43 @@ export const PostListResultSchema = z.object({
   list: z.array(PostWithRelationsSchema),
   total: z.number(),
 });
+
+/** 公开卡片及 sitemap 只需要这些字段，不传输正文和完整关联。 */
+export const PublicPostListItemSchema = PostWithRelationsSchema.pick({
+  id: true,
+  type: true,
+  title: true,
+  excerpt: true,
+  movieTime: true,
+  quoteContent: true,
+  quoteAuthor: true,
+  updatedAt: true,
+}).extend({
+  cover: MediaRecordSchema.pick({
+    url: true,
+    width: true,
+    height: true,
+  }).nullish(),
+});
+export const PublicPostListResultSchema = PostListResultSchema.extend({
+  list: z.array(PublicPostListItemSchema),
+});
+
+/** 管理表格只接收展示字段和删除所需的 CAS 版本，不传输正文及媒体/标签关系。 */
+export const AdminPostListItemSchema = PostWithRelationsSchema.pick({
+  id: true,
+  version: true,
+  title: true,
+  quoteContent: true,
+  type: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  views: true,
+}).extend({
+  category: PostCategoryRecordSchema.pick({ title: true }).nullish(),
+  author: PostAuthorRecordSchema.pick({ name: true }).nullish(),
+});
+export const AdminPostListResultSchema = PostListResultSchema.extend({
+  list: z.array(AdminPostListItemSchema),
+});

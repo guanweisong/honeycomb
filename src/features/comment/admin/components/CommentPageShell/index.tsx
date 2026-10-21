@@ -6,7 +6,7 @@ import { Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
-import type { AdminCommentViewModel as CommentEntity } from "../../../presentation/comment-view-model";
+import type { AdminCommentViewModel } from "../../../presentation/comment-view-model";
 import { CommentStatus } from "@/features/comment/comment-status";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
@@ -54,7 +54,7 @@ export function CommentPageShell() {
             ? { ...column, enableSorting: false }
             : column,
         );
-  const [selectedRows, setSelectedRows] = useState<CommentEntity[]>([]);
+  const [selectedRows, setSelectedRows] = useState<AdminCommentViewModel[]>([]);
   const [searchParams, setSearchParams] = useState<
     z.input<typeof CommentListQuerySchema>
   >({});
@@ -69,7 +69,7 @@ export function CommentPageShell() {
       refetch: query.refetch,
     });
 
-  const renderOpt = (record: CommentEntity): React.ReactNode => {
+  const renderOpt = (record: AdminCommentViewModel): React.ReactNode => {
     const actionsByStatus = (
       record.status === null ? [] : moderationActions[record.status]
     ).map((action) => (
@@ -91,8 +91,8 @@ export function CommentPageShell() {
       <Dialog
         key="delete"
         trigger={
-          <Button variant="secondary" size="sm">
-            <Trash />
+          <Button variant="secondary" size="sm" aria-label="删除评论">
+            <Trash aria-hidden="true" />
           </Button>
         }
         type="danger"
@@ -106,7 +106,7 @@ export function CommentPageShell() {
   };
 
   return (
-    <DataTable<CommentEntity>
+    <DataTable<AdminCommentViewModel>
       getRowId={(row) => row.id}
       columns={columns}
       data={{
@@ -151,6 +151,7 @@ export function CommentPageShell() {
                 {
                   name: "content",
                   type: "text",
+                  label: "搜索评论",
                   placeholder: "请输入评论内容进行搜索",
                 },
               ]}

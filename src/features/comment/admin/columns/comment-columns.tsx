@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
 import { formatAdminDateTime } from "@/components/admin/date-time";
-import type { AdminCommentViewModel as CommentEntity } from "../../presentation/comment-view-model";
+import type { AdminCommentViewModel } from "../../presentation/comment-view-model";
 import { commentStatusOptions } from "@/features/comment/admin/options";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
@@ -22,7 +22,7 @@ export function getCommentStatusPresentation(status?: string | null) {
     }));
 }
 
-export const commentTableColumns: ColumnDef<CommentEntity>[] = [
+export const commentTableColumns: ColumnDef<AdminCommentViewModel>[] = [
   {
     accessorKey: "content",
     header: "评论内容",

@@ -28,7 +28,11 @@ export const UserDropdown = (props: UserDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center hover:bg-gray-200 cursor-pointer transition px-3 py-2 rounded-sm">
+        <button
+          type="button"
+          aria-label={`账户菜单：${user.name || "用户"}`}
+          className="flex w-full items-center text-left hover:bg-gray-200 cursor-pointer transition px-3 py-2 rounded-sm"
+        >
           <Avatar url="/logo.jpg" fallback={user.name} />
           {!collapsed && (
             <div className="flex-1 mx-3 min-w-0">
@@ -43,7 +47,7 @@ export const UserDropdown = (props: UserDropdownProps) => {
             strokeWidth={1.5}
             className={collapsed ? "ml-2" : ""}
           />
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>账户</DropdownMenuLabel>

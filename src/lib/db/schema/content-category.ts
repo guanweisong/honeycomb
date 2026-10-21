@@ -1,15 +1,13 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { MultiLangEnum } from "@/lib/i18n/i18n";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,
   text,
   index,
   uniqueIndex,
   foreignKey,
-  check,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 import { enumCheck } from "../constraint-helpers";
@@ -51,9 +49,10 @@ export const categoryTranslation = sqliteTable(
   },
   (table) => ({
     categoryLocalePk: primaryKey({ columns: [table.categoryId, table.locale] }),
-    categoryLocaleCheck: check(
+    categoryLocaleCheck: enumCheck(
       "category_translation_locale_check",
-      sql`${table.locale} in ('zh', 'en')`,
+      table.locale,
+      supportedLanguages,
     ),
   }),
 );

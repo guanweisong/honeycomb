@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
-import Comment from "@/features/comment/public/components";
+import Comment from "@/features/comment/public/components/CommentClient";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/menu-types";
@@ -44,10 +44,14 @@ export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const { id, locale: rawLocale } = await props.params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
+  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
+  // Own early rejection while translations/links suspend. Keep the original
+  // promise rejected so the comment consumers still surface their error.
+  void queryCommentPromise.catch(() => undefined);
   const postInfoT = await getTranslations("PostInfo");
+  const linkT = await getTranslations("Link");
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
       ? await getPublicLinks()
@@ -113,7 +117,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
               </a>
             ))
           ) : (
-            <div className="text-auto-front-gray/60">暂无友情链接</div>
+            <div className="text-auto-front-gray/60">{linkT("emptyTip")}</div>
           )}
         </div>
       ) : null}

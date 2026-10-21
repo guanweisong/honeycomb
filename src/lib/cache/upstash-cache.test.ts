@@ -196,7 +196,8 @@ describe("upstash cache", () => {
     redisInstance.get.mockResolvedValueOnce(null);
 
     await expect(
-      cache.getCacheJSON("user-123" as never, "cache:secret-resource"),
+      // @ts-expect-error Deliberately reject an untrusted namespace at runtime.
+      cache.getCacheJSON("user-123", "cache:secret-resource"),
     ).resolves.toBeNull();
 
     expect(observed.metricEvents).toEqual([]);

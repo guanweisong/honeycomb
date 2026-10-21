@@ -2,6 +2,7 @@ import type { CommentListInput, CommentRefInput } from "../types";
 import "server-only";
 import { CommentStatus } from "@/features/comment/comment-status";
 import { PostStatus } from "@/features/post/post-status";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { PageStatus } from "@/features/page/page-status";
 import { MenuType } from "@/features/menu/menu-types";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
@@ -100,8 +101,18 @@ export function createCommentQueryRepository(db: Database) {
                   ? and(inArray(schema.comment.id, ids), where)
                   : inArray(schema.comment.id, ids),
               with: {
-                post: { with: { translations: true } },
-                page: { with: { translations: true } },
+                post: {
+                  columns: { id: true },
+                  with: {
+                    translations: { columns: { locale: true, title: true } },
+                  },
+                },
+                page: {
+                  columns: { id: true },
+                  with: {
+                    translations: { columns: { locale: true, title: true } },
+                  },
+                },
               },
             }),
           )
@@ -123,6 +134,7 @@ export function createCommentQueryRepository(db: Database) {
             "select",
             () =>
               db.query.post.findMany({
+                columns: { id: true },
                 where:
                   visibility === "PUBLISHED_ONLY"
                     ? and(
@@ -130,7 +142,9 @@ export function createCommentQueryRepository(db: Database) {
                         eq(schema.post.status, PostStatus.PUBLISHED),
                       )
                     : inArray(schema.post.id, customIds),
-                with: { translations: true },
+                with: {
+                  translations: { columns: { locale: true, title: true } },
+                },
               }),
           )
         : [];
@@ -152,11 +166,45 @@ export function createCommentQueryRepository(db: Database) {
         CommentStatus.PUBLISH,
         CommentStatus.BAN,
       ]);
-      if (input.type === MenuType.CATEGORY)
-        where = and(where, eq(schema.comment.postId, input.id));
-      else if (input.type === MenuType.PAGE)
-        where = and(where, eq(schema.comment.pageId, input.id));
-      else where = and(where, eq(schema.comment.customId, input.id));
+      // Recheck visibility in the same SQL snapshot as the comment bodies.
+      // The earlier policy gate supplies the stable NOT_FOUND/FORBIDDEN errors,
+      // but cannot authorize text edited after a concurrent withdrawal.
+      if (input.type === MenuType.PAGE) {
+        const visibleTarget = db
+          .select({ id: schema.page.id })
+          .from(schema.page)
+          .where(
+            and(
+              eq(schema.page.id, input.id),
+              eq(schema.page.status, PageStatus.PUBLISHED),
+            ),
+          );
+        where = and(
+          where,
+          eq(schema.comment.pageId, input.id),
+          inArray(schema.comment.pageId, visibleTarget),
+        );
+      } else {
+        const visibleTarget = db
+          .select({ id: schema.post.id })
+          .from(schema.post)
+          .where(
+            and(
+              eq(schema.post.id, input.id),
+              eq(schema.post.status, PostStatus.PUBLISHED),
+              eq(schema.post.commentStatus, EnableStatus.ENABLE),
+            ),
+          );
+        const targetColumn =
+          input.type === MenuType.CATEGORY
+            ? schema.comment.postId
+            : schema.comment.customId;
+        where = and(
+          where,
+          eq(targetColumn, input.id),
+          inArray(targetColumn, visibleTarget),
+        );
+      }
       const result = await observeDbOperation(
         "comment.service.public-list",
         "select",
@@ -179,16 +227,8 @@ export function createCommentQueryRepository(db: Database) {
       const list = buildPublicCommentTree(
         result.map(toPublicCommentSource).map(toPublicComment),
       );
-      const [countResult] = await observeDbOperation(
-        "comment.service.public-count",
-        "select",
-        () =>
-          db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(schema.comment)
-            .where(where),
-      );
-      return { list, total: Number(countResult?.count) || 0 };
+      // 此查询不分页；计数保留建树前的屏蔽评论与孤儿回复。
+      return { list, total: result.length };
     },
   };
 }

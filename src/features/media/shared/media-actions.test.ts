@@ -62,6 +62,17 @@ describe("media registration actions", () => {
       acknowledgeUnknownReferences: true,
     });
   });
+  it.each(["completed", "degraded"] as const)(
+    "preserves committed public synchronization outcome: %s",
+    async (publicSync) => {
+      const destroy = vi.fn().mockResolvedValue({ success: true, publicSync });
+      expect(await submitMediaDelete({ id: "ready", destroy })).toEqual({
+        state: "success",
+        publicSync,
+      });
+      expect(destroy).toHaveBeenCalledOnce();
+    },
+  );
   it("preserves deletion errors with manual verification guidance", async () => {
     expect(
       await submitMediaDelete({

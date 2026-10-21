@@ -69,6 +69,7 @@ export function LinkFormDialog({
     >
       {isEdit ? (
         <DynamicForm
+          key={`edit:${state.record?.id}:${state.open}`}
           defaultValues={toLinkFormDefaults(state.record)}
           schema={LinkUpdateSchema}
           fields={fields}
@@ -76,6 +77,7 @@ export function LinkFormDialog({
         />
       ) : (
         <DynamicForm
+          key={`add:${state.open}`}
           defaultValues={{ status: EnableStatus.ENABLE }}
           schema={LinkInsertSchema}
           fields={fields}

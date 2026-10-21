@@ -4,18 +4,29 @@ export type {
   NotificationSetting as CommentNotificationSetting,
 } from "../types";
 import type { NotificationComment } from "../types";
-/** 根据评论关联内容生成邮件展示目标。 */
+export const CUSTOM_COMMENT_NOTIFICATION_TITLE = "自定义内容收到评论";
+
+/** 根据已知目标生成邮件链接；自定义目标未定义路由，只提供通用标题。 */
 export function getCommentTarget(comment: NotificationComment) {
-  const frontDomain = new URL(clientEnv.NEXT_PUBLIC_SITE_URL ?? "").host;
+  if (comment.customId)
+    return { postTitle: CUSTOM_COMMENT_NOTIFICATION_TITLE, postLink: null };
+  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL ?? "";
+  const baseUrl = `${siteUrl.replace(/\/+$/, "")}/`;
   if (comment.postId)
     return {
       postTitle: comment.post?.title?.zh ?? "",
-      postLink: `https://${frontDomain}/archives/${comment.postId}`,
+      postLink: new URL(
+        `archives/${encodeURIComponent(comment.postId)}`,
+        baseUrl,
+      ).toString(),
     };
   if (comment.pageId)
     return {
       postTitle: comment.page?.title?.zh ?? "",
-      postLink: `https://${frontDomain}/pages/${comment.pageId}`,
+      postLink: new URL(
+        `pages/${encodeURIComponent(comment.pageId)}`,
+        baseUrl,
+      ).toString(),
     };
-  return { postTitle: "", postLink: "" };
+  return { postTitle: "", postLink: null };
 }

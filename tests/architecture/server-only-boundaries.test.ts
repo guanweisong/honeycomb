@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 
 import { describe, expect, it } from "vitest";
 
@@ -28,7 +28,7 @@ const serverOnlyEntrypoints = [
   "src/features/user/router.ts",
   "src/features/user/account-security.router.ts",
   "src/features/category/router.ts",
-  "src/lib/storage/S3.ts",
+  "src/lib/storage/r2-storage.ts",
   "src/lib/rate-limit/rate-limit.ts",
   "src/features/comment/notifications/comment-email.ts",
   "src/features/comment/notifications/comment-delivery.ts",
@@ -103,25 +103,32 @@ describe("server-only module boundaries", () => {
     expect(source).not.toMatch(/\bimport\s+["']server-only["']/);
   });
 
-  it("makes Next.js reject a Client Component importing observability/server", () => {
+  it("makes Next.js reject a Client Component importing observability/server", async () => {
     const fixture = resolve(
       process.cwd(),
       "tests/fixtures/server-only-client-import",
     );
-    const result = spawnSync("bun", ["next", "build", fixture], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        NEXT_TELEMETRY_DISABLED: "1",
-      },
-    });
-    const output = `${result.stdout}\n${result.stderr}`;
-    rmSync(resolve(fixture, ".next"), { recursive: true, force: true });
-
-    expect(result.status).not.toBe(0);
-    expect(output).toMatch(
-      /cannot be imported from a Client Component module.*Server Component/is,
-    );
+    try {
+      const result = await runTestProcess(
+        process.execPath,
+        [resolve("node_modules/next/dist/bin/next"), "build", fixture],
+        {
+          cwd: process.cwd(),
+          // Preserve the original 60-second outer budget, leaving cleanup time.
+          timeout: 55_000,
+          env: {
+            ...process.env,
+            NEXT_TELEMETRY_DISABLED: "1",
+          },
+        },
+      );
+      const output = `${result.stdout}\n${result.stderr}`;
+      expect(result.status).not.toBe(0);
+      expect(output).toMatch(
+        /cannot be imported from a Client Component module.*Server Component/is,
+      );
+    } finally {
+      rmSync(resolve(fixture, ".next"), { recursive: true, force: true });
+    }
   }, 60_000);
 });

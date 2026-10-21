@@ -11,9 +11,13 @@ import { PostStatus } from "@/features/post/post-status";
 import { PageStatus } from "@/features/page/page-status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { createComment } from "./comment-commands";
+import { createComment, updateComment } from "./comment-commands";
+import { CommentStatus } from "../comment-status";
 import type { PublicCommentInput } from "../types";
 import { createCommentCommandRepository } from "./comment-command-repository";
+import { MenuType } from "@/features/menu/menu-types";
+import { createCommentQueryRepository } from "./comment-query-repository";
+import { listPublicCommentsByRef } from "./comment-public-queries";
 import { createCommentTargetRepository } from "./comment-target-repository";
 
 describe("public comment insertion consistency with real libSQL", () => {
@@ -152,6 +156,88 @@ describe("public comment insertion consistency with real libSQL", () => {
     };
   }
 
+  it.each([MenuType.CATEGORY, MenuType.CUSTOM, MenuType.PAGE])(
+    "retains visible comment bodies for %s",
+    async (type) => {
+      const id =
+        type === MenuType.PAGE
+          ? "page"
+          : type === MenuType.CUSTOM
+            ? "custom-post"
+            : "post";
+      await db.insert(schema.comment).values({
+        ...comment,
+        id: "visible-comment",
+        status: CommentStatus.PUBLISH,
+        postId: type === MenuType.CATEGORY ? id : null,
+        pageId: type === MenuType.PAGE ? id : null,
+        customId: type === MenuType.CUSTOM ? id : null,
+      });
+      const result = await listPublicCommentsByRef(
+        createCommentQueryRepository(db),
+        createCommentTargetRepository(db),
+        { id, type },
+      );
+      expect(result.list.some((item) => item.content === comment.content)).toBe(
+        true,
+      );
+    },
+  );
+
+  it.each([
+    { name: "withdrawn post", type: MenuType.CATEGORY, disable: false },
+    { name: "disabled post comments", type: MenuType.CATEGORY, disable: true },
+    { name: "withdrawn custom post", type: MenuType.CUSTOM, disable: false },
+    { name: "withdrawn page", type: MenuType.PAGE, disable: false },
+  ])(
+    "does not return text created after the $name gate snapshot",
+    async ({ type, disable }) => {
+      const isPage = type === MenuType.PAGE;
+      const isCustom = type === MenuType.CUSTOM;
+      const id = isPage ? "page" : isCustom ? "custom-post" : "post";
+      await db.insert(schema.comment).values({
+        ...comment,
+        id: "snapshot-comment",
+        status: CommentStatus.PUBLISH,
+        postId: !isPage && !isCustom ? id : null,
+        pageId: isPage ? id : null,
+        customId: isCustom ? id : null,
+      });
+      const targetRepository = createCommentTargetRepository(db);
+      const result = await listPublicCommentsByRef(
+        createCommentQueryRepository(db),
+        {
+          ...targetRepository,
+          findTarget: async (target) => {
+            const beforeWithdrawal = await targetRepository.findTarget(target);
+            if (isPage) {
+              await competingDb
+                .update(schema.page)
+                .set({ status: PageStatus.DRAFT })
+                .where(eq(schema.page.id, id));
+            } else {
+              await competingDb
+                .update(schema.post)
+                .set(
+                  disable
+                    ? { commentStatus: EnableStatus.DISABLE }
+                    : { status: PostStatus.DRAFT },
+                )
+                .where(eq(schema.post.id, id));
+            }
+            await competingDb
+              .update(schema.comment)
+              .set({ content: "never-public text" })
+              .where(eq(schema.comment.id, "snapshot-comment"));
+            return beforeWithdrawal;
+          },
+        },
+        { id, type },
+      );
+      expect(result).toEqual({ list: [], total: 0 });
+    },
+  );
+
   const races = [
     {
       name: "post becomes unpublished",
@@ -279,4 +365,119 @@ describe("public comment insertion consistency with real libSQL", () => {
       expect(invalidations).toBe(expectedInvalidations);
     },
   );
+
+  it("rejects the second moderation write when both administrators read the old status", async () => {
+    await db
+      .update(schema.comment)
+      .set({ status: CommentStatus.TO_AUDIT })
+      .where(eq(schema.comment.id, "parent"));
+    let releaseReaders = () => {};
+    const bothRead = new Promise<void>((resolve) => {
+      releaseReaders = resolve;
+    });
+    let releaseSecondWrite = () => {};
+    const firstWrite = new Promise<void>((resolve) => {
+      releaseSecondWrite = resolve;
+    });
+    let readers = 0;
+    function racingRepository(database: typeof db) {
+      const repository = createCommentCommandRepository(database);
+      return {
+        findStatus: async (id: string) => {
+          const status = await repository.findStatus(id);
+          readers += 1;
+          if (readers === 2) releaseReaders();
+          await bothRead;
+          return status;
+        },
+        update: async (...args: Parameters<typeof repository.update>) => {
+          if (args[0].status === CommentStatus.RUBBISH) await firstWrite;
+          try {
+            return await repository.update(...args);
+          } finally {
+            if (args[0].status === CommentStatus.BAN) releaseSecondWrite();
+          }
+        },
+      };
+    }
+    const invalidator = dependencies().invalidator;
+    const results = await Promise.allSettled([
+      updateComment(
+        racingRepository(db),
+        { id: "parent", status: CommentStatus.BAN },
+        invalidator,
+      ),
+      updateComment(
+        racingRepository(competingDb),
+        { id: "parent", status: CommentStatus.RUBBISH, content: "stale edit" },
+        invalidator,
+      ),
+    ]);
+    expect(results[0].status).toBe("fulfilled");
+    expect(results[1]).toMatchObject({
+      status: "rejected",
+      reason: { code: "CONFLICT" },
+    });
+    const [stored] = await db
+      .select()
+      .from(schema.comment)
+      .where(eq(schema.comment.id, "parent"));
+    expect(stored).toMatchObject({
+      status: CommentStatus.BAN,
+      content: "parent comment",
+    });
+    expect(invalidations).toBe(1);
+  });
+
+  it("reports a comment deleted after the moderation read as not found", async () => {
+    const repository = createCommentCommandRepository(db);
+    const interleavedRepository = {
+      ...repository,
+      findStatus: async (id: string) => {
+        const status = await repository.findStatus(id);
+        await competingDb
+          .delete(schema.comment)
+          .where(eq(schema.comment.id, id));
+        return status;
+      },
+    };
+    await expect(
+      updateComment(
+        interleavedRepository,
+        { id: "parent", status: CommentStatus.BAN },
+        dependencies().invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(invalidations).toBe(0);
+  });
+
+  it("preserves same-status, legal serial transitions and content-only writes", async () => {
+    const repository = createCommentCommandRepository(db);
+    const invalidator = dependencies().invalidator;
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.PUBLISH },
+      invalidator,
+    );
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.BAN },
+      invalidator,
+    );
+    await updateComment(
+      repository,
+      { id: "parent", status: CommentStatus.PUBLISH },
+      invalidator,
+    );
+    const result = await updateComment(
+      repository,
+      { id: "parent", content: "edited" },
+      invalidator,
+    );
+    expect(result).toMatchObject({
+      status: CommentStatus.PUBLISH,
+      content: "edited",
+    });
+    expect(invalidations).toBe(4);
+  });
 });

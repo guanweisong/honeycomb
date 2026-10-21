@@ -85,7 +85,7 @@ const PhotoPickerSession = (props: PhotoPickerModalProps) => {
       open={showPhotoPicker}
       onConfirm={onOk}
       title="选择图片"
-      className="min-w-[1000px]"
+      className="data-[side=right]:w-full data-[side=right]:sm:max-w-[1000px]"
       onOpenChange={() => handlePhotoPickerCancel()}
       showFooter={true}
     >

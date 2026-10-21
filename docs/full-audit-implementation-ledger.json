@@ -1,0 +1,1651 @@
+{
+  "baseline": "52daeb59ef9426e0e084b7b3cfbc347045ab127f",
+  "scope": "74审查事项，不等同于74个缺陷；仅在证据和权限范围内实施",
+  "items": [
+    {
+      "id": "FEAT-001",
+      "title": "未改姓名的全表单编辑仍会改变 legacy 登录名",
+      "priority": "P1",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/admin/user-actions.ts",
+        "src/features/user/admin/user-actions.test.ts",
+        "src/features/user/server/user-repository.ts",
+        "src/features/user/server/user-login-name.test.ts",
+        "src/features/user/admin/components/UserFormDialog/legacy-submit.test.tsx"
+      ],
+      "validation": [
+        "RED: Full-payload unchanged-name regression failed; both null/different legacy identifiers were incorrectly overwritten.",
+        "GREEN: Passed including actual SQLite/auth rename, collision rollback, legacy preservation, command tests and dialog lifecycle.",
+        "Review followup red: 真实表单提交因name意外保留失败；真实SQLite两种legacy/null登录标识被改写失败。",
+        "Review followup green: 3 files, 6 passed, 20 skipped（仅legacy/normalization/selected target过滤）；真实表单+数据库边界通过。",
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。"
+      ],
+      "notes": "未改姓名时客户端发送真正patch；仓储在写事务内核对原姓名，仅明确改名同步username/displayUsername，保留密码/session与管理员守卫。 独立复核后追加首尾空白legacy姓名：客户端和仓储以同等trim规范化比较，不把resolver规范化当显式改名。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-002",
+      "title": "User/Link 的旧保存结果会关闭重开的新会话",
+      "priority": "P1",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/admin/user-actions.ts",
+        "src/features/link/admin/link-actions.ts",
+        "src/features/user/admin/dialog-session.test.tsx"
+      ],
+      "validation": [
+        "RED: Four expected failures: user/link reopened same-record dialogs closed after stale mutation/refetch.",
+        "GREEN: Passed. Additional different-record cases added to final targeted batch; current success and rejected writes covered."
+      ],
+      "notes": "User/Link每次open/close增加generation，旧mutation或refetch成功只结束原会话，不关闭新草稿。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-004",
+      "title": "评论旧请求成功会擦掉用户刚输入的新草稿/回复目标",
+      "priority": "P1",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/public/components/hooks/use-comment-submission.ts",
+        "src/features/comment/public/components/CommentClient/index.tsx",
+        "src/features/comment/public/components/CommentClient/submission-lifecycle.test.tsx",
+        "src/features/comment/public/components/CommentForm/index.tsx",
+        "src/features/comment/public/components/CommentForm/index.test.tsx",
+        "src/features/comment/public/components/CommentClient/index.test.tsx"
+      ],
+      "validation": [
+        "RED: 3 expected failures: lost newer content, lost reply target, restored an identity the user had quit.",
+        "GREEN: 13 tests passed across CommentClient and CommentForm. Lifecycle tests subsequently moved into submission-lifecycle.test.tsx."
+      ],
+      "notes": "提交时捕获草稿 generation 和 form；输入、换回复、取消回复或退出身份增加 generation，仅未改变草稿在成功时清空。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-007",
+      "title": "审核状态转换的预读与写入不原子",
+      "priority": "P1",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/server/comment-command-repository.ts",
+        "src/features/comment/server/comment-commands.ts",
+        "src/features/comment/server/comment-create-consistency.test.ts",
+        "src/features/comment/comment-command-handlers.test.ts"
+      ],
+      "validation": [
+        "RED: Real-libSQL barrier race showed stale RUBBISH write incorrectly fulfilled after BAN.",
+        "GREEN: 49 tests passed: atomic race, deletion, legal serial and same-state transitions, content-only update and rules."
+      ],
+      "notes": "审核更新以 id+expectedStatus 条件写入；失败后只区分 NOT_FOUND/CONFLICT，不重放过期写入；仅成功后失效缓存。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-001",
+      "title": "生产 AUTH_SECRET 检查的值与实际使用值不同",
+      "priority": "P1",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/env/schema.ts",
+        "src/env/schema.test.ts"
+      ],
+      "validation": [
+        "8 expected RED failures; 26/26 GREEN. Synthetic strings only."
+      ],
+      "notes": "Validate production AUTH_SECRET using the same trimmed value that the parsers return. Build-only permissive parser preserved. Limitations: No real credentials read, changed, or rotated.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-004",
+      "title": "媒体删除已返回 publicSync，客户端却丢弃并一律提示成功",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/shared/media-actions.ts",
+        "src/features/media/shared/media-actions.test.ts",
+        "src/features/media/shared/MediaPageShell/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/shared/media-actions.test.ts",
+            "src/features/media/shared/MediaPageShell/index.test.tsx"
+          ],
+          "checks": [
+            "Completed/degraded result passthrough; degraded with successful or failed refresh closes dialog and clears selection.",
+            "Late degraded outcomes after account-scope change or unmount do not toast, refetch, or clear the new scope."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Preserve committed deletion publicSync and warn on degraded synchronization, without treating it as failed deletion or replaying writes. Existing ordinary-media lifecycle semantics retained; no restoration state machine added.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-005",
+      "title": "复制链接未等 Promise 完成就宣告成功",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/shared/MediaGrid/index.tsx",
+        "src/features/media/shared/MediaGrid/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/shared/MediaGrid/index.test.tsx"
+          ],
+          "checks": [
+            "Deferred success produces no early toast; correct URL passed; rejected/missing clipboard creates read-only selectable URL input and error feedback without false success."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Await clipboard success, catch rejection/missing APIs and expose a real selectable URL for manual copying.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-007",
+      "title": "媒体后续页请求失败后，没有显式重试入口",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/shared/media-query.ts",
+        "src/features/media/shared/media-query.test.ts",
+        "src/features/media/shared/media-query.integration.test.tsx",
+        "src/features/media/shared/MediaPageShell/index.tsx",
+        "src/features/media/shared/MediaPageShell/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/shared/media-query.test.ts",
+            "src/features/media/shared/media-query.integration.test.tsx",
+            "src/features/media/shared/MediaPageShell/index.test.tsx"
+          ],
+          "checks": [
+            "Real QueryClient first-page failure/retry and page 1 success → page 2 failure → same-page retry → page 3.",
+            "Existing items remain visible; no skipped/duplicate pages; reset, stale-scope and pagination-lock tests retained."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-second-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Expose an explicit retry of the current failed media page, preserving assembled pages and pagination locks until success.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-009",
+      "title": "分类、页面、标签行内图标按钮没有可访问名称",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/category/admin/page.tsx",
+        "src/features/category/admin/page.test.tsx",
+        "src/features/page/admin/list/page.tsx",
+        "src/features/page/admin/list/page.test.tsx",
+        "src/features/tag/admin/page.tsx",
+        "src/features/tag/admin/page.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/category/admin/page.test.tsx",
+            "src/features/page/admin/list/page.test.tsx",
+            "src/features/tag/admin/page.test.tsx"
+          ],
+          "checks": [
+            "Real category table exposes named edit/delete controls for 105 records and hides controls without permission.",
+            "Page/tag rendered trigger markup is asserted by role/name in their existing table test harnesses."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-second-red.log",
+            "content-009-category-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Add action-specific accessible names at category/page/tag edit and delete trigger sites, preserving permission hiding. Stable action names used instead of adding optional record-title labels, so no new multilingual/empty-title naming policy is introduced.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-010",
+      "title": "菜单可选页面/分类加载失败被当成空集合或完整部分集合",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/menu/admin/menu-query.ts",
+        "src/features/menu/admin/menu-query.test.ts",
+        "src/features/menu/admin/components/MenuPageShell/index.tsx",
+        "src/features/menu/admin/components/MenuPageShell/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/menu/admin/menu-query.test.ts",
+            "src/features/menu/admin/components/MenuPageShell/index.test.tsx"
+          ],
+          "checks": [
+            "201-page partial failure retains successful pages, retries only failed queries, then fills missing options without duplicates.",
+            "First-page/category errors are separately actionable; dirty local menu edits survive option errors and retries; baseline refetch is not invoked."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-second-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Expose independent category/page option errors and retries without resetting successful options or the editable menu baseline.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-014",
+      "title": "菜单选项和后台页面列表共用完整正文/媒体读取模型",
+      "priority": "P2",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/page/types.ts",
+        "src/features/page/router.ts",
+        "src/features/page/server/page-queries.ts",
+        "src/features/page/server/page-list-queries.test.ts",
+        "src/features/page/server/page-read-models.integration.test.ts",
+        "src/features/page/tests/page-menu-options.test.ts",
+        "src/features/menu/admin/menu-query.ts",
+        "src/features/menu/admin/menu-query.test.ts",
+        "src/features/page/admin/list/page.tsx",
+        "src/features/page/admin/list/constants/page-list-table-columns.tsx",
+        "tests/helpers/capability-procedure-matrix-data.ts",
+        "src/lib/trpc/capability-procedure-matrix.test.ts",
+        "tests/integration/guest-read-boundaries.test.ts"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/page/server/page-list-queries.test.ts",
+            "src/features/page/server/page-read-models.integration.test.ts",
+            "src/features/page/tests/page-menu-options.test.ts",
+            "src/features/menu/admin/menu-query.test.ts",
+            "src/lib/trpc/capability-procedure-matrix.test.ts",
+            "tests/integration/guest-read-boundaries.test.ts"
+          ],
+          "checks": [
+            "Exact runtime whitelist, SQL excludes body/media; menu also excludes author SQL.",
+            "New page.menuOptions shares pageReadAll and pageReadUnpublished visibility; anonymous, GUEST, EDITOR, ADMIN tested.",
+            "Capability matrix really exercises denied-before-boundary and allowed-reaches-boundary for the added endpoint, plus inventory/metric catalog equality.",
+            "Actual SQLite title+content search verifies full/summaries/menu result and count agreement; schema-derived inner SQL identifiers prevent relational alias rewriting.",
+            "101-page bilingual large-body disposable fixture measures SQL count/serialized bytes, all-page aggregation and guest publication filtering.",
+            "Existing guest withdrawal tests updated only for narrowed adminIndex contract; public full-content paths remain unchanged."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-014-red.log",
+            "content-014-search-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Add purpose-specific page summaries and menu options with explicit SQL/output projections, unchanged permissions/visibility and all-page aggregation. API contract change: adminIndex items retain author, createdAt, id, status, template, title, updatedAt, version, views; omit authorId/content/imagesInContent and private creation fields. New menuOptions items expose only createdAt/id/title/updatedAt. Metric catalog line is implemented by infra owner.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-POST-001",
+      "title": "标签搜索失败后旧搜索结果仍被当作当前结果显示",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/admin/edit/components/MultiTag/use-multi-tag.ts",
+        "src/features/post/admin/edit/components/MultiTag/index.tsx",
+        "src/features/post/admin/edit/components/MultiTag/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "A成功→B输入/pending/error时不再显示A；重试恢复B；清空输入；原快速合并与post/account/type迟到结果隔离。"
+          ],
+          "red_evidence": "Observed RED in tool output: old A option remained after typing B; 21-test file GREEN after fix.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "从当前输入与query派生标签选项，拒绝旧输入/placeholder/error结果；失败显示可重试状态，保留300ms防抖、取消定时器、staged ref和scope generation。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-POST-003",
+      "title": "移除标签的图标按钮缺少可访问名称",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/admin/edit/components/MultiTag/index.tsx",
+        "src/features/post/admin/edit/components/MultiTag/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "按按钮accessible name定位正确移除项；英文/空名称兜底；外层form不submit；无权限隐藏。"
+          ],
+          "red_evidence": "Observed RED in tool output: named removal buttons were null; 21-test file GREEN after fix.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "每个移除按钮使用带标签名的aria-label，中文名缺失时用英文名，再以稳定ID兜底；保留type=button和权限隐藏。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-POST-004",
+      "title": "待审核状态缺少编辑动作（需确认产品流程）",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/admin/edit/components/PostEditorActions/index.test.tsx",
+        "src/features/post/admin/edit/components/PostEditorActions/index.tsx",
+        "src/features/post/admin/options.ts",
+        "src/features/post/post-status.ts"
+      ],
+      "validation": [
+        "2 new tests failed on baseline as expected",
+        "PostEditorActions: 10 tests passed",
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。"
+      ],
+      "notes": "User-approved TO_AUDIT save/publish using existing post:update authority; no return-to-draft action; pending/no-authority/unknown-state guards retained.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-001",
+      "title": "Header 只传实际消费的根菜单，并复用导航对象投影",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/components/Header/index.tsx",
+        "src/app/(blog)/components/Header/index.test.tsx",
+        "src/app/(blog)/components/Menu/index.test.tsx",
+        "src/app/(blog)/types/menu.local.entity.ts"
+      ],
+      "validation": [
+        "41/41 initial navigation/list tests passed. Final expanded navigation regression pending."
+      ],
+      "notes": "Implemented roots-only menu display and shared navigation projection; flattened contract preserves all ancestor navigation. Removed nested children from tests and display type.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-002",
+      "title": "分类面包屑遗漏第三层之后节点，并出现多个当前页",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/components/Breadcrumb/index.tsx",
+        "src/app/(blog)/components/Breadcrumb/index.test.tsx"
+      ],
+      "validation": [
+        "Nested zh/en, duplicate paths, unknown and non-category branches covered; 41/41 group passed."
+      ],
+      "notes": "Implemented full parent-scoped category ancestor resolution, links for ancestors, one current page, and null for unresolved/non-category paths.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-003",
+      "title": "列表页把独立准备工作提前启动，避免标题请求阻塞列表",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/[locale]/list/[...slug]/page.tsx",
+        "src/app/(blog)/[locale]/list/[...slug]/page.test.ts",
+        "src/app/(blog)/[locale]/list/[...slug]/page.utils.ts"
+      ],
+      "validation": [
+        "Follow-up review reproduced 4 failures for tag/author content+metadata lookup blocked by unresolved menu. After category-only dependency fix, all 36 list/metadata tests pass with maxWorkers 1. Category waiting and different matched lookup IDs explicitly preserved. All started promises remain awaited through context and outer Promise.all; unused menu promises are never created."
+      ],
+      "notes": "Starts settings/translations independently. Route context waits for params, requests menu only for category, and skips menu entirely for tag/author/other routes. Posts begin immediately after their actual context dependency. Preserves matchedTag/matchedAuthor IDs without speculative exact-ID simplification.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-004",
+      "title": "可选侧栏偏好存储异常会中断布局，持久化测试又只命中初始写入",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/admin/components/AdminLayout/index.tsx",
+        "src/app/admin/components/AdminLayout/index.test.ts"
+      ],
+      "validation": [
+        "9 AdminLayout tests passed within 41-test group; real drawer/focus cases retained."
+      ],
+      "notes": "Independently catches optional localStorage read/write errors, preserving media listener/cleanup and responsive defaults; persistence assertion now checks latest true/false after actual toggles.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-009",
+      "title": "DataTable 排序只能鼠标点击，选择与筛选控件缺名称",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/DataTable/Header.tsx",
+        "src/components/DataTable/Body.tsx",
+        "src/components/DataTable/types.ts",
+        "src/components/DataTable/index.tsx",
+        "src/components/DataTable/index.test.ts"
+      ],
+      "validation": [
+        "8 DataTable tests passed in initial targeted run. Later expanded run hit pre-existing selection test timeouts under resource contention; final rerun required. No new required caller prop; native browser Enter/Space activation not exercised in jsdom."
+      ],
+      "notes": "Uses native sorting buttons with aria-sort, named current-page/record selection and filter controls, fetching-disabled sort/filter actions; optional getRowLabel defaults to stable business ID.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-010",
+      "title": "MultiLangText 的可点击图片没有键盘入口",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/admin/MultiLangText/index.tsx",
+        "src/components/admin/MultiLangText/index.test.tsx"
+      ],
+      "validation": [
+        "Placeholder, zh/en/back switch and focus/button semantics passed. Full browser Tab/Enter/Space not run."
+      ],
+      "notes": "Wraps language image in named native button; uses functional toggle and decorative image while preserving title and existing content fallback.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-011",
+      "title": "工具栏 label 未成为真实按钮名称，mock 却补上了语义",
+      "priority": "P2",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/editor/components/ToolbarButton.tsx",
+        "src/components/editor/components/ToolbarGroupItem.tsx",
+        "src/components/editor/components/toolbar-accessibility.test.tsx"
+      ],
+      "validation": [
+        "4 real toolbar tests pass including Enter-expanded group and command selection. Initial green group hit absent jsdom ResizeObserver, corrected with narrow browser API stub."
+      ],
+      "notes": "Actual ToolbarButton now has accessible label and conditional aria-pressed; group has name while Radix retains expansion semantics. Added tests of real primitives instead of relying on editor mocks.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-003",
+      "title": "localStorage 读取有容错，写入和退出没有",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/public/components/hooks/use-comment-identity.ts",
+        "src/features/comment/public/components/hooks/comment-identity-safety.test.tsx",
+        "src/features/comment/public/components/CommentClient/submission-lifecycle.test.tsx"
+      ],
+      "validation": [
+        "RED: 3 expected failures: setItem/removeItem throw, successful comment fails to remember session identity.",
+        "GREEN: 14 tests passed across identity safety and client lifecycle."
+      ],
+      "notes": "浏览器身份存储写入/删除异常不再中断内存身份或成功评论；兼容 user key。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-005",
+      "title": "评论失败仅写日志，transition 未等待请求",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/public/components/hooks/use-comment-submission.ts",
+        "src/features/comment/public/components/CommentClient/submission-lifecycle.test.tsx",
+        "src/app/(blog)/messages/en.json",
+        "src/app/(blog)/messages/zh.json"
+      ],
+      "validation": [
+        "RED: 4 expected failures: transition not pending; no feedback for BAD_REQUEST, network error, INTERNAL_SERVER_ERROR.",
+        "GREEN: 13 client tests passed, including rejection/unknown feedback, preserved inputs, verification reset and pending lifetime."
+      ],
+      "notes": "await mutation 全生命周期；确定拒绝与未知结果分别使用中英文提示，保留草稿，finally 重置验证码，不引导盲目重发。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-006",
+      "title": "评论通知的两项初始读取可直接并行",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/notifications/comment-delivery.ts",
+        "src/features/comment/notifications/comment-delivery.test.ts"
+      ],
+      "validation": [
+        "RED: Expected deferred-read failure: setting read did not start until comment read resolved.",
+        "GREEN: All 9 comment-delivery tests passed; same combined run intentionally had FEAT-016 RED tests."
+      ],
+      "notes": "评论与设置的独立初始读取使用 Promise.all；保留管理员/回复邮件等待、失败隔离及父评论查询失败语义。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-010",
+      "title": "看板首次加载失败表现成空统计",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/dashboard/admin/components/DashboardPageClient/index.tsx",
+        "src/features/dashboard/admin/components/DashboardPageClient/index.test.tsx"
+      ],
+      "validation": [
+        "RED: Three expected failures: no initial error, no cached-data warning, no retry pending button.",
+        "GREEN: Passed actual React query-state fixtures for pending, successful empty, first failure, cached refresh error, retry."
+      ],
+      "notes": "首次统计错误显示明确提示/重试；有缓存数据时保留图表，仅提示刷新失败，fetching禁用重试。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-011",
+      "title": "OAuth/Passkey 登录缺少完整错误与并发反馈",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/login/components/LoginClient/index.tsx",
+        "src/features/user/login/components/LoginClient/index.test.tsx"
+      ],
+      "validation": [
+        "RED: Expected missing OAuth error feedback, duplicate social/passkey attempts, cancellation-as-error failures. Later rejection tests exposed DOMException instanceof mismatch and fixed narrow name handling.",
+        "GREEN: Passed rejected requests, returned errors, duplicate clicks, AUTH_CANCELLED/AbortError/NotAllowedError, successful safe navigation and existing credential captcha pending."
+      ],
+      "notes": "OAuth/Passkey共享同步in-flight防重与按钮pending，处理SDK错误/rejection；AUTH_CANCELLED、ERROR_CEREMONY_ABORTED、ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY及直接Abort/NotAllowed使用不推断主动取消的中性提示；真实domain/RPID/general错误保留错误反馈；保留callback白名单与成功跳转。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。",
+      "review_fix": {
+        "finding": "Installed BetterAuth catches WebAuthnError and resolves cancellation-shaped codes, rather than rejecting. Prior implementation only recognized AUTH_CANCELLED.",
+        "files": [
+          "src/features/user/login/components/LoginClient/index.tsx",
+          "src/features/user/login/components/LoginClient/index.test.tsx"
+        ],
+        "red": {
+          "logs": [
+            "feat011-sdk-review-red.log",
+            "feat011-sdk-boundary-red.log"
+          ],
+          "result": "Six expected UI regressions; two additional actual installed passkeyClient + SimpleWebAuthn boundary tests reproduced returned codes and failed neutral-feedback assertions."
+        },
+        "green": {
+          "log": "feat011-sdk-review-green.log",
+          "command": "vitest run src/features/user/login/components/LoginClient/index.test.tsx --maxWorkers=1",
+          "files": 1,
+          "tests": 27,
+          "status": "passed"
+        },
+        "sdk_boundary": "Real passkeyClient().getActions with real createFetch/customFetchImpl and navigator.credentials.get throwing DOMException. No real network/authenticator interaction. Both returned SDK codes/status verified before UI assertions.",
+        "retained_errors": [
+          "ERROR_INVALID_DOMAIN",
+          "ERROR_INVALID_RP_ID",
+          "ERROR_AUTHENTICATOR_GENERAL_ERROR"
+        ],
+        "verification": "Diff check passed. No full lint/tsc/build launched per coordinator instruction."
+      }
+    },
+    {
+      "id": "FEAT-012",
+      "title": "未启用 Turnstile 仍下载第三方脚本",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/login/components/LoginClient/index.tsx",
+        "src/features/user/login/components/LoginClient/index.test.tsx"
+      ],
+      "validation": [
+        "RED: Expected no-key script count failure: one instead of zero.",
+        "GREEN: Passed disabled zero/enabled one script and existing captcha lifecycle."
+      ],
+      "notes": "验证码Script和widget使用同一site-key谓词；禁用时不注入，启用保留固定id、afterInteractive和injectScript=false。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-013",
+      "title": "Schema 更新负例由错误 ID 提前失败，字段回归可能漏检",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/schema.test.ts"
+      ],
+      "validation": [
+        "RED: Test-model regression: invalid user-id caused extra id issue, reproducing masked email/password validation.",
+        "GREEN: Passed valid-ID success and email/password5/6/128/129 boundaries. No production schema weakened."
+      ],
+      "notes": "更新schema负例使用合法24位ID，断言issue.path只命中目标字段，先验证同ID合法输入及6/128密码边界。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-014",
+      "title": "用户读取 mock 反而认可密码字段输出",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/tests/user-router-read.test.ts",
+        "src/features/user/server/user-login-name.test.ts"
+      ],
+      "validation": [
+        "RED: Test-model regression: existing mock response contained pass1; new password-absence assertion failed.",
+        "GREEN: Passed DTO fixture/projection checks, guest rejection, real credential storage and actual list/current permitted columns."
+      ],
+      "notes": "用户读取fixture改为安全DTO并断言选择列；真实SQLite中凭据仍存在，但list/current只输出明确允许列。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-015",
+      "title": "用户菜单 trigger 不是可 Tab 聚焦的原生按钮",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/user/admin/UserDropdown/index.tsx",
+        "src/features/user/admin/UserDropdown/index.test.ts"
+      ],
+      "validation": [
+        "RED: Both collapsed/expanded cases failed because trigger was DIV rather than BUTTON.",
+        "GREEN: Passed real Radix Enter/Space, Escape/focus return, tabIndex=0/native focus, name, logout; no trigger mocks."
+      ],
+      "notes": "账户菜单trigger改原生button type=button并有折叠/展开一致可访问名称，保留Radix交互。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-016",
+      "title": "custom 评论通知的目标元数据不完整（待确认产品链接规则）",
+      "priority": "P2",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/comment/notifications/comment-notification.ts",
+        "src/features/comment/notifications/comment-notification.test.tsx",
+        "src/features/comment/notifications/comment-email.ts",
+        "src/features/comment/notifications/comment-email.test.ts",
+        "src/features/comment/notifications/templates/AdminCommentEmailMessage/index.tsx",
+        "src/features/comment/notifications/templates/ReplyCommentEmailMessage/index.tsx"
+      ],
+      "validation": [
+        "RED: 7 expected target/template failures; feat016-subject-red.log separately records 2 custom-subject failures.",
+        "GREEN: 25 notification tests passed including rendered admin/reply HTML and custom subjects."
+      ],
+      "notes": "按用户明确确认的方案，自定义评论邮件使用通用标题，自定义目标不生成链接，保留评论/回复正文；post/page 保留已配置 scheme 和 base path。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。",
+      "product_decision": {
+        "source_user_message_id": "Sentinel_fb5b94b6d97081919205c98a7064449b",
+        "choice": "自定义内容收到评论通用标题；保留评论正文；不附无法验证的目标链接。"
+      }
+    },
+    {
+      "id": "INFRA-002",
+      "title": "只需显示阈值却订阅完整 scroll 坐标",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/lib/hooks/use-scrolled-past.ts",
+        "src/app/(blog)/components/BackToTop/index.tsx",
+        "src/app/(blog)/components/BackToTop/index.test.tsx",
+        "src/app/(blog)/components/BackToTop/scroll-integration.test.tsx"
+      ],
+      "validation": [
+        "RED: 4 same-side scrolls caused 4 extra Profiler commits. GREEN: 6/6 tests."
+      ],
+      "notes": "Added boolean threshold subscription and migrated BackToTop; preserved generic coordinate hook, passive listener, restoration, SSR false and cleanup. Limitations: Profiler evidence concerns commits only, not frame rate or duration.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-004",
+      "title": "SQL builder 用例多为对象存在性断言",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "test-strengthened",
+      "files": [
+        "src/lib/db/query/query-builders.test.ts"
+      ],
+      "validation": [
+        "19/19 GREEN; temporary LIKE wildcard and direction mutations caused 10 expected failures; production source restored."
+      ],
+      "notes": "Replaced SQL-object existence checks with exact SQLite dialect SQL/parameters, skips, IN/LIKE/AND, sorting/default/error behavior. Limitations: No database access. Production source was restored in finally after mutation testing; final aggregate rerun belongs to coordinator.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-005",
+      "title": "验证码验证没有应用层 deadline",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/lib/security/validate-captcha.ts",
+        "src/lib/security/validate-captcha.test.ts"
+      ],
+      "validation": [
+        "2 expected deadline RED failures; 11/11 GREEN including headers/body stalls and downstream call prevention."
+      ],
+      "notes": "Added a 10-second abort signal covering Siteverify fetch and response-body consumption, preserving security error mapping with no retry. Limitations: 10-second application request budget, not an asserted provider SLA; monitor timeout rate operationally.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-006",
+      "title": "限流750ms返回不等于取消 Redis 请求",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/lib/rate-limit/rate-limit.ts",
+        "src/lib/rate-limit/rate-limit-transport.test.ts"
+      ],
+      "validation": [
+        "4 expected real-SDK RED failures; 16/16 GREEN across original and new tests."
+      ],
+      "notes": "Redis transport gets fresh per-request 750ms signals and zero SDK transport retries. Outer wrapper and environment policy retained. Limitations: No load or cost claims; fetch is controlled while SDK is real.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-007",
+      "title": "业务错误码转换与遥测开关耦合",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/lib/trpc/core.ts",
+        "src/lib/trpc/core-error-boundary.test.ts",
+        "src/lib/observability/core/metric-label-values.ts",
+        "src/lib/observability/core/safe-adapters.test.ts"
+      ],
+      "validation": [
+        "3 RED HTTP status mismatches; 14/14 GREEN including 403/404/409 HTTP and server callers, silent disabled telemetry, existing safe errors."
+      ],
+      "notes": "ApplicationError normalization runs regardless of request observability flag, without re-enabling logs. Limitations: No authorization-policy changes.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-008",
+      "title": "UTC shadow Date 受宿主时区归一化影响",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "src/lib/ui/utc-format.ts",
+        "src/lib/ui/utc-format.test.ts"
+      ],
+      "validation": [
+        "Historical-year, DST-gap and skipped-date failures reproduced RED. Final UTC Date extension: 8/8 GREEN including isolated UTC/New_York/Apia subprocesses and named month/weekday compatibility.",
+        "Node 22.14 CI does not enable TS stripping by default. Explicit --experimental-strip-types preserves actual timezone subprocess coverage; externally disabled default reproduced RED, explicit flag yielded 8/8 GREEN on installed Node."
+      ],
+      "notes": "Replaced local shadow date with a UTC accessor/setter Date extension preserved by date-fns; retained existing formatter tokens and protected literal content. Limitations: Final implementation preserves named month/weekday formats instead of narrowing the existing API.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-009",
+      "title": "同步子进程只有测试timeout，没有进程timeout",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "implemented",
+      "files": [
+        "tests/architecture/server-only-boundaries.test.ts",
+        "tests/tooling/coverage-governance.test.ts",
+        "tests/tooling/quality-spec.test.ts",
+        "tests/tooling/quality-workflow.test.ts",
+        "tests/tooling/process-deadlines.test.ts",
+        "tests/helpers/run-test-process.ts",
+        "tests/helpers/run-test-process.test.ts"
+      ],
+      "validation": [
+        "Reviewer issue independently reproduced RED:3 descendant-survival failures for Node launcher, real Bun run, and real Bun binary dispatch. Final synthetic run:2 files/11 tests GREEN, including actual descendant readiness/completion handshake, output bound, launch/nonzero errors, and structural caller deadlines. No heavy Next/build/coverage command rerun after the tree fix."
+      ],
+      "notes": "Use a bounded async test-only process-tree runner, with a new owned POSIX session/group and group SIGKILL. Direct Node Next CLI avoids Bun dispatch; Bun package scripts and real Vitest subprocesses retain their contract under the owned group. Timeout/output/launch failures reject with diagnostics; successful nonzero CLI statuses remain inspectable; output capped at1MiB and timers/listeners cleaned. Limitations: Earlier pre-review process suite48/49 included a Next timeout at45s; that run did not prove descendant cleanup. Final Next budget55s within original60s outer budget, reserving5s cleanup. Heavy integration is coordinator-owned. POSIX tree termination verified onLinux; Windows taskkill branch is explicit but not exercised; deliberately session-detaching descendants are outside this helper contract.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-011",
+      "title": "现有CPU预算不能独立证明React优化收益",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "measurement-improved-baseline-pending",
+      "files": [
+        "tests/e2e/blog/perf-budget.spec.ts",
+        "tests/helpers/performance-metrics.ts",
+        "tests/helpers/performance-metrics.test.ts",
+        "docs/performance-smoke-measurements.md"
+      ],
+      "validation": [
+        "2 RED helper failures; helper4/4 GREEN, plus process guards5/5. Demonstrated absolute duration is unaffected by wall waiting and rejects reset/nonfinite counters. Retention correction source-reviewed only; no new tests or global processes run while coordinator lint was active.",
+        "CI v1 exposed cross-document counters and invalid historical ratio comparability; v2 helper 12/12 passed. Exact-head browser re-verification pending; active baseline remains pending."
+      ],
+      "notes": "Measurement version 2 uses CDP NavigationStart/Timestamp/TaskDuration samples and separate scroll/detail/back segments. Only same-document counters are subtracted; cross-document segments retain raw counters and null deltas. A separately labeled one-second post-interaction sustained main-thread sample retains the 70-percent ceiling without adding waiting to active denominators. Heap and DOM ceilings unchanged. Fixed safe measurements still emit to job logs and attachment. Limitations: The 70-percent ceiling is now explicitly a separate steady-state gate, not a comparable historical active-ratio baseline or a newly measured SLO. Active cross-document CPU coverage is intentionally incomplete and deltas are null, not clamped to zero or guessed. No new absolute active CPU threshold or optimization claim. Real-browser v2 rerun remains coordinator-owned. CI cleanup still removes local browser attachments; fixed measurement JSON persists in job logs.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-012",
+      "title": "schema枚举默认值门禁已在barrel上空转",
+      "priority": "P2",
+      "owner": "infra",
+      "status": "test-strengthened",
+      "files": [
+        "tests/tooling/configuration-single-source.test.ts"
+      ],
+      "validation": [
+        "RED exposed empty barrel scan; 16/16 GREEN."
+      ],
+      "notes": "Scans all content-*.ts definitions, derives enum fields from enumCheck, requires nonempty defaults and validates enum/string/template fixtures while allowing ordinary strings. Limitations: No schema/migration/database changes.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "POST-B-001",
+      "title": "英文公开列表仍显示中文文章类型角标",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/public/components/PostList/index.tsx",
+        "src/features/post/public/components/PostList/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "真实NextIntlClientProvider分别渲染en/zh三类角标；quote/no-media/incomplete dimensions与首图priority、链接原回归保留。"
+          ],
+          "red_evidence": "Observed RED in tool output: en badges were 文章/电影/画廊 instead of Article/Movie/Gallery.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "公开封面类型角标复用Search.types中英文翻译，删除对admin/options显示文案依赖。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "POST-B-002",
+      "title": "管理列表仍读取并传输完整正文及全部关系",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/post-read-model.ts",
+        "src/features/post/types.ts",
+        "src/features/post/server/post-queries.ts",
+        "src/features/post/server/post-relations.ts",
+        "src/features/post/admin/list/components/PostListClient/index.tsx",
+        "src/features/post/admin/list/constants/post-list-table-columns.tsx",
+        "src/features/post/tests/post-public-list.test.ts",
+        "src/features/post/tests/post-queries.test.ts",
+        "src/features/post/tests/post-queries.integration.test.ts",
+        "tests/integration/translation-repository-writes.test.ts"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "adminIndex严格字段集合与SQL columns/with；双语title/quote/category/author；权限范围；真实SQLite返回version可用于CAS删除；getPost/adminDetail/public detail完整正文/媒体/标签关系保持。",
+            "10/100条双语每语言5000字符正文的真实SQLite夹具，窄/宽序列化字节比较通过；未保留输出的精确字节及时间数字不作声明。"
+          ],
+          "red_evidence": "Observed RED in tool output: adminIndex returned full 26-field record instead of 11-field table DTO; post-admin-green.log then 8/8.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "新增AdminPostListItem运行时schema及窄关系SQL投影，只返回11个表格/CAS字段；迁移两个admin消费者类型；详情保留完整DTO。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "POST-B-003",
+      "title": "标签筛选在分页前把全部关联ID搬到应用内存",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/server/post-queries.ts",
+        "src/features/post/tests/post-queries.test.ts",
+        "src/features/post/tests/post-queries.integration.test.ts"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "真实SQLite：空标签、同post同tag多role count=1、category后代/tag/author/published及title/content相交；151 post/301关联下参数数量保持常量；执行真实SQL和EXPLAIN。"
+          ],
+          "red_evidence": "post-db-red.log: matching population growth changed ID-query parameters from 3 to 303 before fix.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "将标签筛选推入ID分页/count查询的参数化EXISTS，去除应用端无界postId数组与前置关联查询；不改分类后代或事务。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "POST-B-004",
+      "title": "分页排序缺少唯一的次排序键",
+      "priority": "P2",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/server/post-queries.ts",
+        "src/features/post/tests/post-queries.integration.test.ts"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "真实SQLite两页同createdAt/updatedAt/views的asc/desc，唯一次序无重复遗漏；null主字段、显式id desc、两入口默认排序。"
+          ],
+          "red_evidence": "post-db-red.log: equal-sort pages returned insertion order post-z/post-y/post-b/post-a rather than id ascending.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "原主排序之后增加id ASC次排序；显式以id为主排序时不重复；保留repository createdAt与API updatedAt默认差异。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "ROOT-001",
+      "title": "schema 审计脚本的默认 --output 抢占用户输出路径",
+      "priority": "P2",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "docs/database-migration-runbook.md",
+        "package.json",
+        "scripts/audit-production-schema.ts",
+        "scripts/cli.ts",
+        "tests/tooling/script-utils.test.ts"
+      ],
+      "validation": [
+        "3 new assertions failed on baseline as expected",
+        "backup/script utilities: 2 files 6 tests passed",
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。"
+      ],
+      "notes": "Remove shadowing package --output default; callers retain explicit destination and stdout-only fallback.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "ROOT-002",
+      "title": "备份目录在拒绝符号链接前已执行 chmod",
+      "priority": "P2",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "scripts/backup-remote-database.ts",
+        "tests/tooling/backup-remote-database.test.ts"
+      ],
+      "validation": [
+        "3 new assertions failed on baseline as expected",
+        "backup/script utilities: 2 files 6 tests passed",
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。"
+      ],
+      "notes": "Validate target type/symlink/ownership and resolved ancestor path before mkdir/chmod. No database opened by tests; same-owner concurrent path replacement remains an explicit CLI assumption.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "SPEC-01",
+      "title": "现行缓存规格仍要求已被取消的媒体删除墓碑",
+      "priority": "P2",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "README.md",
+        "docs/README.md",
+        "docs/code-reading-map.md",
+        "docs/reduced-architecture-results.md",
+        "openspec/changes/fix-audit-state-boundaries/specs/public-content-freshness/spec.md",
+        "openspec/specs/public-content-freshness/spec.md"
+      ],
+      "validation": [
+        "OpenSpec strict: 64 passed, 0 failed",
+        "git diff --check passed"
+      ],
+      "notes": "Correct current media docs/specs, add superseded notice and exact-SHA CI update to historical report without rewriting historical body.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "SPEC-02",
+      "title": "全局 API 限流的现行验收与代码、测试及 README 相反",
+      "priority": "P2",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "openspec/changes/simplify-feature-architecture/specs/api-security-boundaries/spec.md",
+        "openspec/specs/api-security-boundaries/spec.md"
+      ],
+      "validation": [
+        "OpenSpec strict: 64 passed, 0 failed",
+        "git diff --check passed"
+      ],
+      "notes": "Document existing bounded fail-open outage policy while preserving 429 for actual denial and downstream authentication.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "SPEC-03",
+      "title": "package-boundaries 的两处验收仍指向旧入口和不支持的视频功能",
+      "priority": "P2",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "openspec/changes/simplify-feature-architecture/specs/package-boundaries/spec.md",
+        "openspec/specs/package-boundaries/spec.md"
+      ],
+      "validation": [
+        "OpenSpec strict: 64 passed, 0 failed",
+        "git diff --check passed"
+      ],
+      "notes": "Document accountSecurity.loginHistory tRPC and image-only picker, not obsolete Route Handler/video.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-001",
+      "title": "分类树遍历逐节点重扫完整数组",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/category/tree.ts",
+        "src/features/category/tree.test.ts"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/category/tree.test.ts"
+          ],
+          "checks": [
+            "Existing identity/order/depth tests and new 200-child getter-count test, unreachable node/subtree equivalence."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Build one parent-to-children index, preserving node identity, mutation, root conventions, subtree depth and input sibling order.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-003",
+      "title": "富文本每张图线性查找媒体记录",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/public/RichText/index.tsx",
+        "src/features/media/public/RichText/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/public/RichText/index.test.tsx"
+          ],
+          "checks": [
+            "Duplicate-first semantics, 80-image access-count bound, existing empty/XSS/known/unknown/missing-dimension cases."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Index media by URL once per render; first duplicate wins and sanitized native-image fallback remains intact.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-006",
+      "title": "媒体加载状态的省略号与冗余用词",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/shared/MediaGrid/index.tsx",
+        "src/features/media/shared/MediaGrid/index.test.tsx",
+        "src/features/media/shared/MediaPageShell/index.tsx",
+        "src/features/media/shared/MediaPageShell/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/shared/MediaGrid/index.test.tsx",
+            "src/features/media/shared/MediaPageShell/index.test.tsx"
+          ],
+          "checks": [
+            "Exact loading copy assertions and existing status/selection behavior."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Use the requested Chinese ellipsis and concise media loading/upload/more labels only.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-008",
+      "title": "图片选择按钮写成上传，尺寸建议写成实际尺寸",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/media/components/PhotoPickerItem/index.tsx",
+        "src/features/media/components/PhotoPickerItem/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/media/components/PhotoPickerItem/index.test.tsx"
+          ],
+          "checks": [
+            "Selection/replacement invoke openPhotoPicker; missing-preview, coverId recovery and dimension fallback tests retained."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-first-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Describe selecting/replacing an image and suggested dimensions without changing picker behavior.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-011",
+      "title": "菜单翻译装配已建 Map，内部仍逐目标 filter 全量译文",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/menu/server.ts",
+        "src/features/menu/server.test.ts"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/menu/server.test.ts"
+          ],
+          "checks": [
+            "80-page getter-count test; original translation ordering and menu visibility/parent behavior retained."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-second-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Group category/page translations once by target ID before menu assembly instead of filtering all translations per target.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-012",
+      "title": "页面名词、创建时间标签和少量注释与实际行为不一致",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/page/admin/list/constants/page-list-table-columns.tsx",
+        "src/features/page/admin/list/constants/page-list-table-columns.test.tsx",
+        "src/features/page/admin/list/page.tsx",
+        "src/features/page/admin/options.ts",
+        "src/features/tag/admin/page.tsx"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/page/admin/list/constants/page-list-table-columns.test.tsx"
+          ],
+          "checks": [
+            "Exact column headers and createdAt accessor/sort preservation; the page search label change is also recorded in the diff."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-second-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Correct page-name, creation-time and search labels plus inaccurate comments without changing stored dates or sorting.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-013",
+      "title": "少量测试标题与旧 mock 使覆盖范围显得比实际更大",
+      "priority": "P3",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/page/server/page-transforms.test.ts",
+        "src/features/page/tests/page-router-read.test.ts",
+        "src/features/page/tests/page.router.test.ts",
+        "src/features/tag/tests/tag.router.test.ts"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/page/server/page-transforms.test.ts",
+            "src/features/page/tests/page-router-read.test.ts",
+            "src/features/page/tests/page.router.test.ts",
+            "src/features/tag/tests/tag.router.test.ts"
+          ],
+          "checks": [
+            "Translated content is omitted from parent updates, not claimed to be sanitized there.",
+            "No-image detail asserts no select call; actual media serialization test stays present.",
+            "Logged-out UNAUTHORIZED versus insufficient-permission FORBIDDEN assertions retained."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": []
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Make test titles match actual authorization/transformation behavior and remove unused no-image detail query mocks. Test-description/mock cleanup, not a runtime behavior change. Also removed an unused vi import in media/server/media-create-rejection.test.ts and marked intentionally unused mock parameters to satisfy lint.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-POST-002",
+      "title": "可选媒体库静态进入文章编辑首屏依赖",
+      "priority": "P3",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/admin/edit/page.tsx",
+        "src/features/post/admin/edit/page.test.tsx"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "编辑页初次导入不执行媒体模块；打开时加载；取消不保存；重开不继承上次选择；选择确认仍设置coverId及preview；原表单/inert/header/草稿测试。"
+          ],
+          "red_evidence": "post-media-red.log: editor-only import had mediaModuleLoads=1 instead of 0.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "仅对可选MediaPageShell设置next/dynamic边界与区域loading；保留PhotoPicker已存在的条件挂载、选择和账号session逻辑，不添加ssr:false。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-005",
+      "title": "英文复数分支把0写成单数、1写成复数",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/messages/en.json",
+        "src/app/(blog)/messages/en.test.ts"
+      ],
+      "validation": [
+        "Actual next-intl formatter tests pass for 0, 1, 2."
+      ],
+      "notes": "Replaces incorrect English =0 singular ICU branches with one/other for views, messages, and comment summary; no Chinese rule or count changes.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-006",
+      "title": "英文公开页面仍有中文普通错误和友链空态",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/error.tsx",
+        "src/app/(blog)/error.test.tsx",
+        "src/app/(blog)/[locale]/pages/[id]/page.tsx",
+        "src/app/(blog)/[locale]/pages/[id]/page.test.tsx"
+      ],
+      "validation": [
+        "Bilingual ordinary error/reset and links-empty tests pass. Existing Sentry test mock required external resolver alias due missing installed package; production Sentry not verified."
+      ],
+      "notes": "Adds provider-independent zh/en ordinary error copy with hydration-stable language snapshot; friendly-link empty text uses existing localized Link.emptyTip.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-007",
+      "title": "详情页主标题的真实语义与测试替身不一致",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/components/PageTitle/index.tsx",
+        "src/app/(blog)/components/PageTitle/index.test.tsx",
+        "src/app/(blog)/[locale]/pages/[id]/page.test.tsx",
+        "src/app/(blog)/[locale]/archives/[id]/page.test.ts"
+      ],
+      "validation": [
+        "Actual component integration and existing quote/title regressions passed."
+      ],
+      "notes": "Verified only two PageTitle consumers are page/archives primary headings; actual component now emits h1 with unchanged styles. Removed misleading h1 test substitutes.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-008",
+      "title": "CSS 把完整 oklch token 再套 hsl，产生无效颜色",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/styles/globals.css",
+        "src/app/styles/globals.test.ts"
+      ],
+      "validation": [
+        "PostCSS rule/value regression passed; real browser computed style and light/dark visual checks not run."
+      ],
+      "notes": "Uses complete CSS color variables directly, consolidates checked-task selector, retains line-through.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-012",
+      "title": "非空 Editor 子组件内重复判空可删除，但外层生命周期 guard 不能删",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/editor/index.tsx",
+        "src/components/editor/toolbar-contract.test.ts"
+      ],
+      "validation": [
+        "Structural contract and existing editor state/subscription tests passed; maintainability only, no performance claim."
+      ],
+      "notes": "Removes impossible editor null checks only inside non-null EditorToolbar; outer lifecycle guard and event subscription cleanup preserved.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-013",
+      "title": "可选 service worker 注册失败缺少拒绝处理",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/app/(blog)/Providers.tsx",
+        "src/app/(blog)/Providers.test.tsx",
+        "src/lib/observability/core/names.ts",
+        "src/lib/observability/core/names.test.ts"
+      ],
+      "validation": [
+        "Supported, unsupported, rejected registration paths passed; warning event observed and online children preserved."
+      ],
+      "notes": "Handles optional service-worker rejection using closed LogEvent.serviceWorkerRegistrationFailed catalog entry (service-worker.registration.failed) and non-throwing client logger. No raw error or credential context; no retry or content state.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-014",
+      "title": "richText 字段声明允许 disabled，但编辑器分支未实现",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/DynamicForm/FieldControl.tsx",
+        "src/components/DynamicForm/field-accessibility.test.tsx",
+        "src/components/DynamicForm/lazy-controls.test.tsx",
+        "src/components/editor/index.tsx",
+        "src/components/editor/index.test.ts"
+      ],
+      "validation": [
+        "Actual lazy-loaded editor disabled/enabled contract passes. Actual open-media-picker close, disabled cannot reopen, same editor instance/value, re-enabled editing/picker tested. Existing media/no-provider/sanitization cases retained."
+      ],
+      "notes": "Confirmed FieldConfig exposes disabled to all kinds, but current two production richText consumers do not set it. Implemented compatible optional disabled prop, real editor setEditable, disabled/inert toolbar, and control remount to close open portalled pickers.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FE-015",
+      "title": "Tabs orientation 被解构但未转交 Radix",
+      "priority": "P3",
+      "owner": "frontend",
+      "status": "implemented",
+      "files": [
+        "src/components/ui/tabs.tsx",
+        "src/components/ui/tabs.test.tsx"
+      ],
+      "validation": [
+        "Real primitive vertical ArrowDown and default horizontal ArrowRight, disabled-tab skip and onValueChange passed."
+      ],
+      "notes": "Confirmed Radix Root orientation was stripped and only simulated in data attribute; no current vertical production callers found. Forwards orientation and relies on primitive's own data attribute.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "FEAT-008",
+      "title": "看板已经并发，但可减少 13 次数据库往返",
+      "priority": "P3",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/dashboard/server.ts",
+        "src/features/dashboard/server.test.ts",
+        "src/features/dashboard/server.integration.test.ts"
+      ],
+      "validation": [
+        "RED: Expected exact query-count failure: 13 instead of 5, while output equality already passed.",
+        "GREEN: Passed including actual migrated temporary SQLite result and five actual SQL queries."
+      ],
+      "notes": "三组枚举count聚合为GROUP BY，结果按原目录顺序补零，保留作者Map和观测标签；实际SQL13→5。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。",
+      "measurement": {
+        "scope": "Disposable local libSQL; no remote latency inference",
+        "fixture": {
+          "posts": 1000,
+          "comments": 1000,
+          "users": 1
+        },
+        "equivalent": true,
+        "measurements": {
+          "original": {
+            "runs": 50,
+            "medianMs": 1.7308530000000246,
+            "p95Ms": 3.3493409999999812,
+            "dimensionQueries": 11,
+            "totalQueriesIncludingUnchangedAuthors": 13
+          },
+          "grouped": {
+            "runs": 50,
+            "medianMs": 1.4229609999999866,
+            "p95Ms": 4.067030999999929,
+            "dimensionQueries": 3,
+            "totalQueriesIncludingUnchangedAuthors": 5
+          }
+        }
+      }
+    },
+    {
+      "id": "FEAT-009",
+      "title": "图例每一项重复求所有数据之和",
+      "priority": "P3",
+      "owner": "features",
+      "status": "implemented",
+      "files": [
+        "src/features/dashboard/admin/components/CustomPie/index.tsx",
+        "src/features/dashboard/admin/components/CustomPie/index.test.tsx"
+      ],
+      "validation": [
+        "RED: Expected repeated reduce and loading count-access failures.",
+        "GREEN: Passed including percentage, zero total, immutable ordering and loading no computation."
+      ],
+      "notes": "图例共享单次total计算，loading在排序/计数前返回，不修改输入数组。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-003",
+      "title": "浏览量测试没有验证声称的失败及切换边界，当前旧回调 race 不成立",
+      "priority": "P3",
+      "owner": "infra",
+      "status": "test-strengthened-production-kept",
+      "files": [
+        "tests/integration/public-view-tracking.test.tsx"
+      ],
+      "validation": [
+        "4/4 GREEN. Existing production hook retained."
+      ],
+      "notes": "Replaced saved mock callbacks with real QueryClient/MutationObserver tests, synthetic network success/rejection, StrictMode and A-to-B late success/failure. Limitations: Disproved stale-callback race was not implemented as a production fix.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "INFRA-010",
+      "title": "skip-link 测试未检查最终键盘焦点",
+      "priority": "P3",
+      "owner": "infra",
+      "status": "test-strengthened-browser-unverified",
+      "files": [
+        "tests/e2e/blog/a11y.spec.ts"
+      ],
+      "validation": [
+        "Source updated; browser execution not run. Installed Playwright chromium executable existence check returned false."
+      ],
+      "notes": "Skip-link E2E now asserts the next Tab focuses an element inside main, not merely hash/visibility. No speculative tabindex production change. Limitations: Full-app keyboard workflow remains unverified; no browser installed or app bootstrapped by this task.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "POST-B-005",
+      "title": "非空无效上映日期会被渲染成空括号",
+      "priority": "P3",
+      "owner": "post",
+      "status": "implemented",
+      "files": [
+        "src/features/post/public/components/PostList/index.tsx",
+        "src/features/post/public/components/PostList/index.test.tsx"
+      ],
+      "validation": [
+        {
+          "checks": [
+            "1895/2020 ISO/2200、null、undefined、not-a-date、空白：有效年份保持，非法非空不再出现空括号。"
+          ],
+          "red_evidence": "Observed RED in tool output: invalid/blank movieTime rendered 电影标题 () instead of 电影标题.",
+          "green_log": "post-final-targeted.log"
+        },
+        "文章分区：14 files / 153 tests passed；17 changed paths lint passed。严格索引类型保护后 3 selected cases passed。"
+      ],
+      "notes": "先派生安全格式化movieYear，只在非空年份时添加括号；不收紧写入schema或更改日期范围/清空语义。",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "ROOT-004",
+      "title": "通过的依赖审计只输出数量，非阻断项无明细工件",
+      "priority": "P3",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        ".github/workflows/quality.yml",
+        "scripts/audit-production-dependencies.ts",
+        "tests/tooling/quality-workflow.test.ts"
+      ],
+      "validation": [
+        "See per-ID RED/GREEN logs in implementation results"
+      ],
+      "notes": "CI writes and always retains complete dependency-audit-report.json without weakening high/critical gate. Targeted artifact check passed; full workflow file had shell-gate 5s timeout under local load (10/11 pass), being strengthened under INFRA009.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "ROOT-005",
+      "title": "React 两项正确性相关 lint 在整个工程关闭",
+      "priority": "P3",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "eslint-config-next.ts",
+        "tests/tooling/react-lint-policy.test.ts"
+      ],
+      "validation": [
+        "configuration enforcement failed 0 vs 2 before fix",
+        "ESLint config policy 1 passed, MultiTag 19 passed",
+        "targeted MultiTag ESLint passed",
+        "Actual ESLint lintText fixtures diagnose effect-setState and prop mutation; 2 tests passed. MultiTag exception removed after derived-query rewrite.",
+        "串行回归：8 files / 55 tests passed（真实登录、legacy 表单、DataTable、日历和工具策略）。",
+        "ESLint contract fixtures run in the required serial process lane. Measured CI cold initialization took 32–36s and local initialization about50s; two fixtures now explicitly initialize the TypeScript project in a bounded60s beforeAll. This is a setup timeout change, not a global/per-assertion timeout increase. Negative violation fixtures still execute under their unchanged30s deadlines."
+      ],
+      "notes": "Restore both React rules globally; retain 13 exact-path set-state exceptions with reasons, no immutability suppression. Declare MultiTag timer ref before effects to make compiler ownership explicit. Baseline 17 effect diagnostics/1 immutability diagnostic; actual ESLint configuration regression test and MultiTag 19 tests pass; targeted hook lint clean.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "SPEC-04",
+      "title": "两份现行主规格的 Purpose 仍是归档模板占位",
+      "priority": "P3",
+      "owner": "tooling-docs",
+      "status": "implemented",
+      "files": [
+        "openspec/specs/public-web-experience/spec.md",
+        "openspec/specs/pwa-offline-reliability/spec.md"
+      ],
+      "validation": [
+        "OpenSpec strict: 64 passed, 0 failed",
+        "git diff --check passed"
+      ],
+      "notes": "Replace current specification Purpose placeholders with actual intent.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    },
+    {
+      "id": "CONTENT-002",
+      "title": "全量关系读取及菜单写入未统一处理参数预算",
+      "priority": "待验证",
+      "owner": "content",
+      "status": "implemented",
+      "files": [
+        "src/features/category/server.ts",
+        "src/features/menu/server.ts",
+        "src/features/menu/parameter-budget.test.ts",
+        "src/features/page/server/page-queries.ts",
+        "src/features/page/server/page-query-budget.test.ts"
+      ],
+      "validation": [
+        {
+          "files": [
+            "src/features/menu/parameter-budget.test.ts",
+            "src/features/page/server/page-query-budget.test.ts"
+          ],
+          "checks": [
+            "Local SQLite 3.45.1 reports MAX_VARIABLE_NUMBER=32766; 32766 accepted and 32767 rejected.",
+            "4000-item menu reproduces the pre-fix parameter overflow, then succeeds after chunking; parent forward references and original power values preserved.",
+            "Later-chunk injected failure rolls back both inserted rows and version; public invalidator not called.",
+            "1101 category/menu relation IDs and page image URLs use bounded chunks; final image SQL parameter counts are [500,500,101].",
+            "Insert chunks bind at most 500 values, including generated timestamps."
+          ],
+          "green_log": "content-all-targeted-final.log",
+          "red_logs": [
+            "content-002-red.log",
+            "content-002-page-red-valid.log",
+            "content-002-insert-budget-red.log"
+          ]
+        },
+        "内容分区：27 files / 273 tests passed；47 changed paths lint passed。RichText 后续增加 undefined src 类型保护，待最终 CI。"
+      ],
+      "notes": "Confirm local parameter failure before chunking. Chunk category/menu relation reads and page image URLs; menu inserts use a binding budget divided by all schema columns and stay in the original CAS transaction with parent-first order. No production/Turso budget measurement or 100-item business limit is claimed or introduced. Small collections remain one query; empty media collections make no SQL query.",
+      "review": "分区独立复核及修正完成；精确提交的 GitHub CI 是最终集成依据。"
+    }
+  ],
+  "summary": {
+    "total": 74,
+    "disposition_counts": {
+      "implemented": 69,
+      "test-strengthened": 2,
+      "measurement-improved-baseline-pending": 1,
+      "test-strengthened-production-kept": 1,
+      "test-strengthened-browser-unverified": 1
+    },
+    "integration": "Local serial regression: 8 files / 55 tests passed. Final typecheck reports only 14 missing-Sentry module/downstream inference diagnostics in unchanged integration files; all introduced type errors resolved. Full lint inspected 963 files: 52 missing-Sentry inference errors, plus two JSX fixture keys subsequently corrected. No dependency installation, type assertions or disabled gates added. Full build/browser/coverage require exact-head GitHub CI. Final tooling/media/email regression: 6 files / 34 tests passed. OpenSpec strict: 64 passed. git diff --check passed. CI fixture corrections: 3 files / 33 tests passed; permission AST contracts 28/28 passed including missing permission, OR-alias initializer/use-site, and swapped-action negative mutations. The first serial lint verification exceeded its original assertion deadline during cold initialization; a separate bounded60s beforeAll now owns setup, and its subsequent verification passed: 2 files / 8 ESLint contract tests, exit0, with real negative fixtures evaluated.",
+    "review": "分区复核完成；规范化姓名、关联 SQL 别名、列表依赖、SDK 中断返回码、子进程树超时清理均已补修并验证。 CI补丁独立复核补强派生权限 guard 的条件推理与负向回归；性能 v2 明确跨文档测量边界。",
+    "ci": "Implementation head 3c603634 CI run 39586834677 failed: 2870 unit tests passed / 9 failed, 61 dev browser passed / 2 failed. Test compatibility and performance measurement corrections require a new exact-head run; no previous green run is claimed as acceptance.",
+    "supporting_files": [
+      "docs/full-audit-implementation-ledger.json",
+      "docs/superpowers/plans/2026-10-21-full-audit-implementation.md",
+      "src/features/media/server/media-create-rejection.test.ts（移除未用测试导入）"
+    ]
+  },
+  "historical_scope_note": "本账本保留 52daeb59 基线 74 项实施过程及当时 CI 结果，路径、计数、pending/failed 不代表当前提交。后续 3d668455 复审的 51 项处置及精确提交验证见 docs/skill-reaudit-implementation.md 和对应账本；不改写历史验证。"
+}

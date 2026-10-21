@@ -298,9 +298,14 @@ describe("admin read boundaries with real role permissions and SQLite", () => {
       const pages = await pageRouter
         .createCaller(context(level))
         .adminIndex({});
-      expect(
-        pages.list.find((page) => page.id === id("page-PUBLISHED"))?.content,
-      ).toMatchObject({ en: "Private page content" });
+      const updatedPage = pages.list.find(
+        (page) => page.id === id("page-PUBLISHED"),
+      );
+      expect(updatedPage).toMatchObject({
+        title: { en: "Private page" },
+        status: PageStatus.DRAFT,
+      });
+      expect(updatedPage).not.toHaveProperty("content");
     },
   );
 

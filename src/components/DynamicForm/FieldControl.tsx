@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import type { ControllerRenderProps } from "react-hook-form";
 import { z } from "zod";
@@ -12,10 +13,18 @@ import { Select } from "../Select";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
-import { Calendar } from "../ui/calendar";
 import { cn } from "../../lib/ui/utils";
-import Tiptap from "../editor";
+import LoadingState from "../LoadingState";
 import type { FieldConfig } from "./types";
+
+const Tiptap = dynamic(() => import("../editor"), {
+  ssr: false,
+  loading: () => <LoadingState variant="inline" label="正在加载编辑器…" />,
+});
+const Calendar = dynamic(
+  () => import("../ui/calendar").then((module) => module.Calendar),
+  { loading: () => <LoadingState variant="inline" label="正在加载日历…" /> },
+);
 
 type FieldControlProps = Pick<
   React.ComponentProps<"input">,
@@ -70,6 +79,7 @@ export function FieldControl({
       return (
         <Input
           type={field.type}
+          autoComplete={field.autoComplete}
           value={textValue}
           placeholder={field.placeholder}
           {...commonProps}
@@ -187,6 +197,7 @@ export function FieldControl({
     case "richText":
       return (
         <Tiptap
+          disabled={isDisabled}
           onChange={controllerField.onChange}
           value={stringValue}
           {...controlAttributes}

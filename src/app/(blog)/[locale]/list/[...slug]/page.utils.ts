@@ -13,7 +13,7 @@ const PAGE_SIZE = 10;
 
 type ListContextInput = {
   locale: MultiLangEnum;
-  menu: Awaited<ReturnType<typeof getPublicMenu>>;
+  menu?: Awaited<ReturnType<typeof getPublicMenu>>;
   slug?: string[];
 };
 

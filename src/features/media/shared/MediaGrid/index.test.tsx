@@ -1,6 +1,8 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 import { MediaGrid } from ".";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types";
 
@@ -32,6 +34,7 @@ const media = {
 let container: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
+  vi.clearAllMocks();
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
@@ -73,9 +76,7 @@ it("keeps each preview in a 128px square card", () => {
       <MediaGrid media={[media]} onSelect={vi.fn()} onDelete={vi.fn()} />,
     ),
   );
-  const select = container.querySelector(
-    'button[aria-label="选择 cover.png"]',
-  );
+  const select = container.querySelector('button[aria-label="选择 cover.png"]');
   expect(select?.parentElement?.className.split(" ")).toEqual(
     expect.arrayContaining(["group", "relative", "w-32", "h-32"]),
   );
@@ -83,9 +84,9 @@ it("keeps each preview in a 128px square card", () => {
     expect.arrayContaining(["absolute", "inset-0"]),
   );
   expect(
-    container.querySelector('img[alt="cover.png"]')?.classList.contains(
-      "object-contain",
-    ),
+    container
+      .querySelector('img[alt="cover.png"]')
+      ?.classList.contains("object-contain"),
   ).toBe(true);
 });
 it("overlays actions with mobile visibility and desktop hover or focus reveal", () => {
@@ -171,3 +172,62 @@ it("disables links while their deletion request is pending", () => {
     )?.disabled,
   ).toBe(true);
 });
+
+it("waits for clipboard completion before reporting success", async () => {
+  let finish: (() => void) | undefined;
+  const writeText = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  act(() =>
+    root.render(
+      <MediaGrid media={[media]} onSelect={vi.fn()} onDelete={vi.fn()} />,
+    ),
+  );
+  await act(async () =>
+    container
+      .querySelector<HTMLButtonElement>('[aria-label="复制 cover.png 的链接"]')
+      ?.click(),
+  );
+  expect(writeText).toHaveBeenCalledWith(media.url);
+  expect(toast.success).not.toHaveBeenCalled();
+  await act(async () => finish?.());
+  expect(toast.success).toHaveBeenCalledWith("链接已复制");
+});
+it.each(["missing", "rejected"])(
+  "provides a selectable manual URL when clipboard is %s",
+  async (outcome) => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value:
+        outcome === "missing"
+          ? undefined
+          : { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    act(() =>
+      root.render(
+        <MediaGrid media={[media]} onSelect={vi.fn()} onDelete={vi.fn()} />,
+      ),
+    );
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>(
+          '[aria-label="复制 cover.png 的链接"]',
+        )
+        ?.click(),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("复制失败，请手动复制链接");
+    expect(
+      container.querySelector<HTMLInputElement>(
+        '[aria-label="手动复制 cover.png 的链接"]',
+      )?.value,
+    ).toBe(media.url);
+  },
+);

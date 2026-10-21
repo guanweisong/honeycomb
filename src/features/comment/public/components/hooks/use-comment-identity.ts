@@ -32,12 +32,20 @@ export function useCommentIdentity() {
   }, []);
 
   const persistIdentity = (value: CommentIdentity) => {
-    localStorage.setItem(COMMENT_IDENTITY_KEY, JSON.stringify(value));
+    try {
+      localStorage.setItem(COMMENT_IDENTITY_KEY, JSON.stringify(value));
+    } catch {
+      // 本地偏好保存失败不能改变评论提交结果，当前会话仍保留身份。
+    }
     setIdentity(value);
   };
 
   const clearIdentity = () => {
-    localStorage.removeItem(COMMENT_IDENTITY_KEY);
+    try {
+      localStorage.removeItem(COMMENT_IDENTITY_KEY);
+    } catch {
+      // 存储不可访问时仍允许本次会话切换身份。
+    }
     setIdentity(undefined);
   };
 

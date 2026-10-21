@@ -1,7 +1,8 @@
 import "server-only";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
+import { assembleLocalizedField } from "@/lib/db/translation-values";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { PostStatus } from "../post-status";
 import {
@@ -10,12 +11,18 @@ import {
 } from "@/lib/db/query/query-builders";
 import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { observeDbOperation } from "@/lib/observability/server";
-import { loadPostRelations, toMediaRecord } from "./post-relations";
+import {
+  loadPostRelations,
+  loadAdminPostListItems,
+  loadPublicPostListItems,
+  toMediaRecord,
+} from "./post-relations";
 import type {
   PostListInput,
   PostVisibility,
-  PostListResult,
+  AdminPostListResult,
   PostDetailResult,
+  PublicPostListResult,
 } from "../types";
 
 async function getPostCategoryIds(db: Database, categoryId: string) {
@@ -32,11 +39,11 @@ async function getPostCategoryIds(db: Database, categoryId: string) {
   return subCategories.map((category) => category.id);
 }
 
-export async function listPosts(
+async function listPostIds(
   db: Database,
   input: PostListInput,
   visibility: PostVisibility,
-): Promise<PostListResult> {
+) {
   const {
     page = repositoryPaginationDefaults.page,
     limit = repositoryPaginationDefaults.limit,
@@ -73,18 +80,11 @@ export async function listPosts(
     where = where ? and(where, clause) : clause;
   }
   if (tagId) {
-    const postIds = await observeDbOperation(
-      "post.service.ids-by-tag",
-      "select",
-      () =>
-        db
-          .select({ postId: schema.postTag.postId })
-          .from(schema.postTag)
-          .where(eq(schema.postTag.tagId, tagId)),
-    );
-    const ids = postIds.map((post) => post.postId);
-    if (!ids.length) return { list: [], total: 0 };
-    const clause = inArray(schema.post.id, ids);
+    const clause = sql`exists (
+      select 1 from ${schema.postTag}
+      where ${schema.postTag.postId} = ${schema.post.id}
+        and ${schema.postTag.tagId} = ${tagId}
+    )`;
     where = where ? and(where, clause) : clause;
   }
   if (authorId) {
@@ -103,7 +103,7 @@ export async function listPosts(
         .select({ id: schema.post.id })
         .from(schema.post)
         .where(where)
-        .orderBy(order)
+        .orderBy(order, ...(sortField === "id" ? [] : [asc(schema.post.id)]))
         .limit(limit)
         .offset((page - 1) * limit),
     ),
@@ -115,9 +115,29 @@ export async function listPosts(
     ),
   ]);
   return {
-    list: await loadPostRelations(db, list, visibility),
+    list,
     total: Number(countRows[0]?.count) || 0,
   };
+}
+
+export async function listPosts(
+  db: Database,
+  input: PostListInput,
+  visibility: PostVisibility,
+): Promise<AdminPostListResult> {
+  const result = await listPostIds(db, input, visibility);
+  return {
+    ...result,
+    list: await loadAdminPostListItems(db, result.list, visibility),
+  };
+}
+
+export async function listPublicPosts(
+  db: Database,
+  input: PostListInput,
+): Promise<PublicPostListResult> {
+  const result = await listPostIds(db, input, "PUBLISHED_ONLY");
+  return { ...result, list: await loadPublicPostListItems(db, result.list) };
 }
 
 export async function getPost(
@@ -153,4 +173,76 @@ export async function getPost(
     ...result,
     imagesInContent: [...uniqueImages.values()].map(toMediaRecord),
   };
+}
+
+export async function getRandomPostsByCategory(
+  db: Database,
+  categoryId: string,
+) {
+  // Limit parent rows first, then read their public translations in one snapshot.
+  const selected = db
+    .select({ id: schema.post.id })
+    .from(schema.post)
+    .where(
+      and(
+        eq(schema.post.categoryId, categoryId),
+        eq(schema.post.status, PostStatus.PUBLISHED),
+      ),
+    )
+    .orderBy(sql`abs(random())`)
+    .limit(10)
+    .as("random_posts");
+  const rows = await observeDbOperation(
+    "post.random-by-category",
+    "select",
+    () =>
+      db
+        .select({
+          id: selected.id,
+          locale: schema.postTranslation.locale,
+          title: schema.postTranslation.title,
+          quoteContent: schema.postTranslation.quoteContent,
+        })
+        .from(selected)
+        .leftJoin(
+          schema.postTranslation,
+          eq(schema.postTranslation.postId, selected.id),
+        ),
+  );
+  return [...new Set(rows.map((row) => row.id))].map((id) => {
+    const translations = rows.flatMap((row) =>
+      row.id === id && row.locale !== null
+        ? [
+            {
+              locale: row.locale,
+              title: row.title,
+              quoteContent: row.quoteContent,
+            },
+          ]
+        : [],
+    );
+    return {
+      id,
+      title: assembleLocalizedField(translations, (row) => row.title),
+      quoteContent: assembleLocalizedField(
+        translations,
+        (row) => row.quoteContent,
+      ),
+    };
+  });
+}
+
+export async function getPublishedPostCategoryId(db: Database, id: string) {
+  const [result] = await observeDbOperation("post.category-id", "select", () =>
+    db
+      .select({ categoryId: schema.post.categoryId })
+      .from(schema.post)
+      .where(
+        and(
+          eq(schema.post.id, id),
+          eq(schema.post.status, PostStatus.PUBLISHED),
+        ),
+      ),
+  );
+  return result ? { categoryId: result.categoryId ?? undefined } : result;
 }

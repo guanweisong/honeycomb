@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
-import { DashboardClientShell } from "./components/DashboardClientShell";
+import { AdminClientShell } from "./components/AdminClientShell";
 import { AdminProviders } from "@/app/admin/AdminProviders";
 import LoadingState from "@/components/LoadingState";
 
@@ -30,7 +30,7 @@ async function AuthenticatedDashboard({
 
   return (
     <AdminProviders initialUser={user}>
-      <DashboardClientShell user={user}>{children}</DashboardClientShell>
+      <AdminClientShell user={user}>{children}</AdminClientShell>
     </AdminProviders>
   );
 }

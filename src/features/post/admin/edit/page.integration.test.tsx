@@ -81,7 +81,7 @@ vi.mock("@/features/media/components/PhotoPicker/index", () => ({
 vi.mock("@/features/media/shared/MediaPageShell", () => ({
   MediaPageShell: () => null,
 }));
-vi.mock("../../../category/admin/components/AddCategoryModal", () => ({
+vi.mock("../../../category/admin/components/CategoryFormDialog", () => ({
   default: () => null,
 }));
 

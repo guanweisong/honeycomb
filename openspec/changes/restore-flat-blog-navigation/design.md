@@ -1,3 +1,5 @@
+> 后续命名整理（2026-10-21）：下文 `MenuLocalEntity` 在当前实现中改名为 `BlogNavigationLink`，仍是仅含 label/link 的平铺投影，字段和导航行为不变。
+
 ## 背景
 
 Header 已把菜单领域数据转换为 MenuLocalEntity 树；公开 Menu 当前递归渲染子项。树结构仍服务分类路径、面包屑与后台编辑，不应通过删除数据解决展示问题。

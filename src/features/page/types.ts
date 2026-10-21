@@ -26,3 +26,14 @@ export interface PageWithRelations extends PageRecord {
   author: { id: string; name: string | null } | null;
   imagesInContent: MediaRecord[];
 }
+
+/** 后台表格行，保留条件删除使用的版本，不携带正文和媒体。 */
+export type PageListItem = Omit<
+  PageWithRelations,
+  "content" | "imagesInContent" | "authorId"
+>;
+/** 菜单选项只需要标题、标识和原始时间。 */
+export type PageMenuOption = Pick<
+  PageRecord,
+  "id" | "title" | "createdAt" | "updatedAt"
+>;

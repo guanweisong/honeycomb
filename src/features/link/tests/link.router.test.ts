@@ -1,3 +1,4 @@
+import type * as schema from "@/lib/db/schema";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { linkRouter } from "@/features/link/router";
 import { EnableStatus } from "@/lib/validation/enable-status";
@@ -14,7 +15,7 @@ vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -49,7 +50,9 @@ describe("Link Router", () => {
           url: "https://example1.com",
           logo: "https://example1.com/logo.png",
           status: EnableStatus.ENABLE,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          description: null,
+          updatedAt: null,
         },
         {
           id: TEST_IDS.ID_2,
@@ -57,9 +60,11 @@ describe("Link Router", () => {
           url: "https://example2.com",
           logo: "https://example2.com/logo.png",
           status: EnableStatus.ENABLE,
-          createdAt: new Date(),
+          createdAt: "2026-01-02T03:04:05.000Z",
+          description: null,
+          updatedAt: null,
         },
-      ];
+      ] satisfies (typeof schema.link.$inferSelect)[];
       const mockCount = [{ count: "2" }];
 
       mockDb.select.mockReturnValueOnce(mockDb);
@@ -81,6 +86,16 @@ describe("Link Router", () => {
         list: mockLinks,
         total: 2,
       });
+      expect(result.list[0]).toEqual({
+        id: TEST_IDS.ID_1,
+        name: "Link 1",
+        url: "https://example1.com",
+        logo: "https://example1.com/logo.png",
+        status: EnableStatus.ENABLE,
+        description: null,
+        createdAt: "2026-01-02T03:04:05.000Z",
+        updatedAt: null,
+      });
     });
   });
 
@@ -90,8 +105,12 @@ describe("Link Router", () => {
         id: TEST_IDS.ID_3,
         name: "New Link",
         url: "https://example3.com",
+        logo: "https://example3.com/logo.png",
+        description: null,
+        createdAt: "2026-01-02T03:04:05.000Z",
+        updatedAt: null,
         status: EnableStatus.ENABLE,
-      };
+      } satisfies typeof schema.link.$inferSelect;
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
@@ -135,8 +154,12 @@ describe("Link Router", () => {
         id: TEST_IDS.ID_1,
         name: "Updated Link",
         url: "https://example-updated.com",
+        logo: "https://example-updated.com/logo.png",
+        description: null,
+        createdAt: "2026-01-02T03:04:05.000Z",
+        updatedAt: null,
         status: EnableStatus.ENABLE,
-      };
+      } satisfies typeof schema.link.$inferSelect;
 
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);

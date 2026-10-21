@@ -18,7 +18,7 @@ import {
   updateUser,
 } from "@/features/user/server/user-commands";
 import { createUserRepository } from "@/features/user/server/user-repository";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 用户 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const userRouter = createTRPCRouter({

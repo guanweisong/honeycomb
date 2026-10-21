@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { DynamicForm } from "./index";
+import { DynamicForm, type DynamicFormRef } from "./index";
 
 if (typeof ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
@@ -93,6 +93,31 @@ describe("DynamicForm", () => {
     expect(container.querySelector<HTMLInputElement>("input")?.value).toBe(
       "异步加载的标题",
     );
+  });
+
+  it("preserves a draft after failed submission and same-session defaults refresh", async () => {
+    const schema = z.object({ title: z.string() });
+    const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
+    const onSubmit = vi.fn().mockRejectedValue(new Error("write failed"));
+    const render = (title: string) =>
+      root.render(
+        React.createElement(DynamicForm<typeof schema.shape>, {
+          schema,
+          ref: formRef,
+          fields: [{ name: "title", type: "text" }],
+          defaultValues: { title },
+          onSubmit,
+        }),
+      );
+    await act(async () => render("Initial"));
+    await act(async () => formRef.current?.setValue("title", "Draft"));
+    await act(async () => {
+      await expect(formRef.current?.submit()).rejects.toThrow("write failed");
+    });
+    await act(async () => render("Refetched"));
+    expect(container.querySelector("input")?.value).toBe("Draft");
+    await act(async () => formRef.current?.reset({ title: "Explicit reset" }));
+    expect(container.querySelector("input")?.value).toBe("Explicit reset");
   });
 
   it("shows validation feedback and does not submit invalid values", async () => {

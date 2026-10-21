@@ -8,7 +8,7 @@ export enum PageStatusName {
   TO_AUDIT = "待审核",
 }
 
-/** 用于在 UI 中显示文章状态的选项数组。 */
+/** 用于在 UI 中显示页面状态的选项数组。 */
 export const pageStatusOptions = [
   {
     label: PageStatusName.PUBLISHED,

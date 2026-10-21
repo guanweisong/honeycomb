@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { getCachedPostList } from "./post-special";
+import { getCachedPostList } from "./post-list-cache";
 import type { PostWithRelations } from "../types";
 import { PostType } from "@/features/post/post-type";
 import { PostStatus } from "@/features/post/post-status";
@@ -43,13 +43,27 @@ const post: PostWithRelations = {
   movieStyles: [],
   galleryStyles: [],
 };
-const fresh = { list: [post], total: 1 };
-const listPosts = vi.hoisted(() => vi.fn());
-vi.mock("./post-queries", () => ({ listPosts }));
+const fresh = {
+  list: [
+    {
+      id: "post",
+      type: PostType.ARTICLE,
+      title: null,
+      excerpt: null,
+      movieTime: null,
+      quoteAuthor: null,
+      quoteContent: null,
+      updatedAt: null,
+    },
+  ],
+  total: 1,
+};
+const listPublicPosts = vi.hoisted(() => vi.fn());
+vi.mock("./post-queries", () => ({ listPublicPosts }));
 
 describe("post list cache validation", () => {
   beforeEach(() => {
-    listPosts.mockReset().mockResolvedValue(fresh);
+    listPublicPosts.mockReset().mockResolvedValue(fresh);
     cache.value = undefined;
     cache.getVersion.mockReset().mockResolvedValue(1);
     cache.setJSON.mockReset().mockResolvedValue(undefined);
@@ -74,11 +88,11 @@ describe("post list cache validation", () => {
     "returns fresh public data when cache %s fails",
     async (operation) => {
       cache[operation].mockRejectedValue(new Error("Redis unavailable"));
-      const list = listPosts.mockResolvedValue(fresh);
+      const list = listPublicPosts.mockResolvedValue(fresh);
       const db = asMockDatabase(createMockDb());
 
       await expect(getCachedPostList(db, {})).resolves.toEqual(fresh);
-      expect(list).toHaveBeenCalledExactlyOnceWith(db, {}, "PUBLISHED_ONLY");
+      expect(list).toHaveBeenCalledExactlyOnceWith(db, {});
       if (operation === "getVersion") {
         expect(cache.getJSON).not.toHaveBeenCalled();
         expect(cache.setJSON).not.toHaveBeenCalled();
@@ -92,7 +106,7 @@ describe("post list cache validation", () => {
       if (cacheFails)
         cache.getVersion.mockRejectedValue(new Error("Redis unavailable"));
       const failure = new Error("database unavailable");
-      const list = listPosts.mockRejectedValue(failure);
+      const list = listPublicPosts.mockRejectedValue(failure);
       const db = asMockDatabase(createMockDb());
 
       await expect(getCachedPostList(db, {})).rejects.toBe(failure);
@@ -102,28 +116,14 @@ describe("post list cache validation", () => {
   );
 
   it.each([
-    { list: [{ ...post, version: undefined }], total: 1 },
-    { list: [{ ...post, status: "UNKNOWN" }], total: 1 },
+    { list: [{ ...post, id: undefined }], total: 1 },
+    { list: [{ ...post, type: "UNKNOWN" }], total: 1 },
+    { list: [{ ...post, title: { en: 123 } }], total: 1 },
     {
-      list: [
-        {
-          ...post,
-          category: {
-            id: "category",
-            title: null,
-            description: null,
-            parent: null,
-            status: "UNKNOWN",
-            path: "category",
-            createdAt: null,
-            updatedAt: null,
-          },
-        },
-      ],
+      list: [{ ...post, cover: { url: 123, width: 800, height: 600 } }],
       total: 1,
     },
-    { list: [{ ...post, movieActors: [{}] }], total: 1 },
-    { list: [{ ...post, views: "many" }], total: 1 },
+    { list: [{ ...post, updatedAt: 123 }], total: 1 },
     { list: [], total: "1" },
     { total: 1 },
   ])("ignores invalid cached DTO data (%#)", async (value) => {
@@ -131,15 +131,17 @@ describe("post list cache validation", () => {
     await expect(
       getCachedPostList(asMockDatabase(createMockDb()), {}),
     ).resolves.toEqual(fresh);
+    expect(listPublicPosts).toHaveBeenCalledOnce();
   });
   it("returns a validated cached list without replacing it with a fresh query", async () => {
     cache.value = { list: [{ ...post, id: "cached" }], total: 1 };
     await expect(
       getCachedPostList(asMockDatabase(createMockDb()), {}),
     ).resolves.toMatchObject({ list: [{ id: "cached" }], total: 1 });
+    expect(listPublicPosts).not.toHaveBeenCalled();
   });
 
-  it("strips private account fields from cached public post authors", async () => {
+  it("strips bodies and unused relations from legacy cached public lists", async () => {
     cache.value = {
       list: [
         {
@@ -160,9 +162,14 @@ describe("post list cache validation", () => {
 
     const result = await getCachedPostList(asMockDatabase(createMockDb()), {});
 
-    expect(result.list[0]?.author).toEqual({
-      id: "author",
-      name: "Public name",
+    expect(result.list[0]).not.toHaveProperty("author");
+    expect(result.list[0]).not.toHaveProperty("content");
+    expect(result.list[0]).not.toHaveProperty("category");
+    expect(result.list[0]).not.toHaveProperty("movieActors");
+    expect(result.list[0]).toMatchObject({
+      id: "post",
+      type: PostType.ARTICLE,
+      updatedAt: null,
     });
   });
 });

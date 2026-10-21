@@ -1,17 +1,17 @@
 import React from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import type { PostWithRelations } from "@/features/post/types";
 import type { TagRecord as TagEntity } from "@/features/tag/types";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 
 /**
  * 标签组件。
  * 用于显示文章相关的标签，如导演、演员、风格等，并提供跳转到对应标签列表页面的链接。
- * @param {PostListItemEntity} props - 包含文章详情的属性。
+ * @param {PostWithRelations} props - 包含文章详情的属性。
  * @returns {JSX.Element} 标签列表。
  */
-const Tag = (props: PostListItemEntity) => {
+const Tag = (props: PostWithRelations) => {
   const t = useTranslations("Tag");
   const locale = normalizeMultiLangLocale(useLocale());
 

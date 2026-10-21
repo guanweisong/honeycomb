@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { CheckedMenuData } from "../../menu-transforms";
 import { Save } from "lucide-react";
-import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { MenuType } from "@/features/menu/menu-types";
@@ -35,10 +35,19 @@ function MenuEditor() {
     checkedData,
     pageLoading,
     categoryLoading,
+    categoryError,
+    categoryFetching,
+    retryCategory,
+    pageError,
+    pageFetching,
+    retryPages,
     menuLoading,
+    menuError,
+    menuFetching,
     refetchMenu,
   } = useMenuQuery();
   const editor = useMenuTreeEditor(checkedData);
+  const hasBaseline = editor.baseVersion !== undefined;
   const { submit, loading, blocked, clearBlocked } = useMenuActions(
     editor.checkedList,
     editor.baseVersion,
@@ -73,7 +82,18 @@ function MenuEditor() {
               value: "1",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {categoryLoading ? (
+                  {categoryError && (
+                    <div role="alert">
+                      分类加载失败。
+                      <Button
+                        disabled={categoryFetching}
+                        onClick={() => void retryCategory()}
+                      >
+                        重试加载分类
+                      </Button>
+                    </div>
+                  )}
+                  {categoryLoading && !categoryList?.list?.length ? (
                     <LoadingState variant="region" />
                   ) : (
                     categoryList?.list?.map((item) => (
@@ -91,7 +111,7 @@ function MenuEditor() {
                           }
                           checked={editor.getCheckedStatus(item)}
                           disabled={editor.getDisabledStatus(item)}
-                          label={creatCategoryTitleByDepth(
+                          label={renderCategoryTitleByDepth(
                             item.title?.zh,
                             item,
                           )}
@@ -107,7 +127,20 @@ function MenuEditor() {
               value: "2",
               content: (
                 <div className="overflow-y-auto bg-gray-50 py-2">
-                  {pageLoading ? (
+                  {pageError && (
+                    <div role="alert">
+                      {pageList?.list?.length
+                        ? "部分页面未加载。"
+                        : "页面加载失败。"}
+                      <Button
+                        disabled={pageFetching}
+                        onClick={() => void retryPages()}
+                      >
+                        重试加载页面
+                      </Button>
+                    </div>
+                  )}
+                  {pageLoading && !pageList?.list?.length ? (
                     <LoadingState variant="region" />
                   ) : (
                     pageList?.list?.map((item) => (
@@ -157,6 +190,14 @@ function MenuEditor() {
             <Save /> 保存
           </Button>
         )}
+        {!hasBaseline && menuError && (
+          <div role="alert">
+            菜单读取失败，请重试后再编辑。
+            <Button disabled={menuFetching} onClick={() => void refetchMenu()}>
+              重试加载菜单
+            </Button>
+          </div>
+        )}
         {blocked && (
           <div role="alert">
             保存发生冲突或结果未知，请先核对服务器。
@@ -200,6 +241,7 @@ function MenuEditor() {
               aria-label="菜单结构"
               className="menu-tree"
               treeData={editor.menuTree}
+              canDrag={hasBaseline}
               onChange={editor.onDragEnd}
               generateNodeProps={({ node }) => ({
                 buttons:
@@ -209,6 +251,7 @@ function MenuEditor() {
                           key="remove"
                           size="sm"
                           variant="outline"
+                          disabled={!hasBaseline}
                           aria-label={`移除此菜单及子项：${node.title}`}
                           onClick={() => {
                             if (typeof node.id === "string")

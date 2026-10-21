@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { TestUserConfig } from "vitest/config";
 
 import vitestConfig from "../../vitest.config.mts";
+import processConfig from "../../vitest.process.config.mts";
 
 const config = vitestConfig.test as TestUserConfig;
 const coverage = config.coverage;
@@ -129,6 +130,21 @@ describe("coverage governance", () => {
     );
   });
 
+  it("keeps type-aware ESLint contracts in the required serial tooling lane", () => {
+    const processTests = processConfig.test as TestUserConfig;
+    expect(processTests.fileParallelism).toBe(false);
+    expect(processTests.maxWorkers).toBe(1);
+    for (const path of [
+      "tests/tooling/eslint-console-boundaries.test.ts",
+      "tests/tooling/type-aware-lint.test.ts",
+      "tests/tooling/react-lint-policy.test.ts",
+    ]) {
+      expect(config.exclude).toContain(path);
+      expect(processTests.include).toContain(path);
+      expect(processTests.exclude).not.toContain(path);
+    }
+  });
+
   it("gives every critical module its own effective 90/80 file threshold", async () => {
     const thresholds = coverage?.thresholds as
       Record<string, unknown> | undefined;
@@ -143,8 +159,8 @@ describe("coverage governance", () => {
     }
   });
 
-  it("fails the real Vitest command when a critical file threshold is mutated", () => {
-    const result = spawnSync(
+  it("fails the real Vitest command when a critical file threshold is mutated", async () => {
+    const result = await runTestProcess(
       process.execPath,
       [
         resolve("node_modules/vitest/vitest.mjs"),
@@ -153,7 +169,11 @@ describe("coverage governance", () => {
         "--config",
         "tests/fixtures/coverage-threshold-mutation.config.ts",
       ],
-      { cwd: process.cwd(), encoding: "utf8", env: process.env },
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        timeout: 45_000,
+      },
     );
     const output = `${result.stdout}\n${result.stderr}`;
 

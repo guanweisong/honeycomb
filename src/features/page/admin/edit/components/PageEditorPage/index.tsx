@@ -43,7 +43,7 @@ import {
   writePageCreationAttempt,
   clearPageCreationAttempt,
   preservePageDraft,
-} from "../../transforms/page-draft";
+} from "../../page-draft";
 
 export function PageEditorPage() {
   const id = getPageEditorId(useSearchParams());

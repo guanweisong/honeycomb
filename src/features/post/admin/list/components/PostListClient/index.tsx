@@ -17,7 +17,7 @@ import {
   PostListQuerySchema,
 } from "@/features/post/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import type { AdminPostListItem } from "@/features/post/types";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 
@@ -28,7 +28,7 @@ export default function PostListClient() {
   const canCreatePost = useCan(Permission.postCreate);
   const canUpdatePost = useCan(Permission.postUpdate);
   const canDeletePost = useCan(Permission.postDelete);
-  const [selectedRows, setSelectedRows] = useState<PostListItemEntity[]>([]);
+  const [selectedRows, setSelectedRows] = useState<AdminPostListItem[]>([]);
   const [deleteItems, setDeleteItems] = useState<PostDelete["items"] | null>(
     null,
   );
@@ -63,7 +63,7 @@ export default function PostListClient() {
 
   return (
     <>
-      <DataTable<PostListItemEntity>
+      <DataTable<AdminPostListItem>
         getRowId={(row) => row.id}
         data={{
           list: data?.list ?? [],
@@ -114,6 +114,7 @@ export default function PostListClient() {
               fields={[
                 {
                   name: "title",
+                  label: "搜索文章",
                   type: "text",
                   placeholder: "请输入文章名称进行搜索",
                 },

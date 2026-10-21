@@ -3,7 +3,10 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { MediaRecord as MediaEntity } from "@/features/media/types";
+import {
+  MediaRecordSchema,
+  type MediaRecord as MediaEntity,
+} from "@/features/media/types";
 
 const { toastInfo, selectMediaRef } = vi.hoisted(() => ({
   toastInfo: vi.fn(),
@@ -46,6 +49,20 @@ vi.mock("@/features/media/shared/MediaPageShell", () => ({
 }));
 
 import PhotoPickerModal from ".";
+
+const mediaFixture = {
+  id: "media-1",
+  url: "https://example.test/image.jpg",
+  key: "image.jpg",
+  name: "image.jpg",
+  type: "image/jpeg",
+  size: 1,
+  color: null,
+  width: null,
+  height: null,
+  createdAt: null,
+  updatedAt: null,
+} satisfies MediaEntity;
 
 describe("PhotoPickerModal", () => {
   let container: HTMLDivElement;
@@ -90,19 +107,7 @@ describe("PhotoPickerModal", () => {
   });
 
   it("returns the selected media on confirmation", () => {
-    const media = {
-      id: "media-1",
-      url: "https://example.test/image.jpg",
-      key: "image.jpg",
-      name: "image.jpg",
-      type: "image/jpeg",
-      size: 1,
-      color: null,
-      width: null,
-      height: null,
-      createdAt: null,
-      updatedAt: null,
-    } satisfies MediaEntity;
+    const media = mediaFixture;
     const { handlePhotoPickerOk } = render();
 
     act(() => selectMediaRef.current?.(media));
@@ -114,19 +119,7 @@ describe("PhotoPickerModal", () => {
   it("does not reuse a previous selection when the mounted picker is reopened", () => {
     const confirm = vi.fn();
     render(confirm);
-    const media: MediaEntity = {
-      id: "media-1",
-      key: "image.jpg",
-      name: "image.jpg",
-      url: "https://example.test/image.jpg",
-      type: "image/jpeg",
-      size: 1,
-      color: null,
-      width: null,
-      height: null,
-      createdAt: null,
-      updatedAt: null,
-    };
+    const media = mediaFixture;
     act(() => selectMediaRef.current?.(media));
     const picker = (open: boolean) => (
       <PhotoPickerModal
@@ -148,17 +141,16 @@ describe("PhotoPickerModal", () => {
 
   it("confirms a selection at most once per open picker", () => {
     const { handlePhotoPickerOk } = render();
-    act(() =>
-      selectMediaRef.current?.({
-        id: "m",
-        url: "https://test/a.png",
-      } as MediaEntity),
-    );
+    act(() => selectMediaRef.current?.(mediaFixture));
     act(() => {
       container.querySelector<HTMLButtonElement>("button")?.click();
       container.querySelector<HTMLButtonElement>("button")?.click();
     });
     expect(handlePhotoPickerOk).toHaveBeenCalledTimes(1);
+    expect(
+      MediaRecordSchema.safeParse(handlePhotoPickerOk.mock.calls[0]?.[0])
+        .success,
+    ).toBe(true);
   });
   it("ignores a late selection callback from a closed picker", () => {
     const confirm = vi.fn();
@@ -177,9 +169,7 @@ describe("PhotoPickerModal", () => {
     );
     act(() => root.render(picker(false)));
     act(() => root.render(picker(true)));
-    act(() =>
-      staleSelect?.({ id: "m", url: "https://test/a.png" } as MediaEntity),
-    );
+    act(() => staleSelect?.(mediaFixture));
     act(() => container.querySelector<HTMLButtonElement>("button")?.click());
     expect(confirm).not.toHaveBeenCalled();
   });

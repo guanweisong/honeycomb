@@ -1,13 +1,26 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { NextIntlClientProvider } from "next-intl";
+import enMessages from "@/app/(blog)/messages/en.json";
+import zhMessages from "@/app/(blog)/messages/zh.json";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const fetches: string[] = [];
-let scrollState: { top?: number } | undefined;
+const fetchOptions: Array<{ cancelRefetch: boolean } | undefined> = [];
+const observers: Array<{
+  callback: (entries: Array<{ isIntersecting: boolean }>) => void;
+  observe: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
+  options?: IntersectionObserverInit;
+}> = [];
+
+function intersect(isIntersecting = true) {
+  observers.at(-1)?.callback([{ isIntersecting }]);
+}
 let listState: {
   data?: { pages: Array<{ list?: unknown[] }> };
   hasNextPage: boolean;
@@ -36,76 +49,44 @@ vi.mock("next/image", () => ({
     }),
 }));
 
-vi.mock("@/lib/hooks/use-scroll-position", () => ({
-  useScrollPosition: () => ({ left: 0, top: scrollState?.top ?? 0 }),
-}));
-
 vi.mock("@/features/post/public/use-post-list", () => ({
   default: () => ({
     ...listState,
-    fetchNextPage: () => fetches.push("next"),
+    fetchNextPage: (options?: { cancelRefetch: boolean }) => {
+      fetches.push("next");
+      fetchOptions.push(options);
+      return Promise.resolve();
+    },
     refetch: () => fetches.push("refetch"),
   }),
 }));
 
 vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
-    React.createElement("a", { href }, children),
-}));
-
-vi.mock("next-intl", () => ({
-  useLocale: () => "zh",
-  useTranslations: () => (key: string) =>
-    key === "listEnd" ? "已经到底了" : key,
+  Link: ({
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
+    React.createElement("a", props, children),
 }));
 
 import PostList from "./index";
-import type { PostWithRelations as PostListViewModel } from "@/features/post/types";
-import { PostStatus } from "@/features/post/post-status";
+import type { PublicPostListItem as PostListViewModel } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { EnableStatus } from "@/lib/validation/enable-status";
 
 const makePost = (
   overrides: Partial<PostListViewModel> &
     Pick<PostListViewModel, "id" | "type">,
 ): PostListViewModel => ({
-  version: 0,
-  authorId: "author-1",
-  categoryId: "category-1",
-  commentStatus: EnableStatus.ENABLE,
-  content: null,
-  coverId: null,
-  createdAt: null,
   excerpt: null,
-  galleryLocation: null,
-  galleryStyles: [],
-  galleryTime: null,
-  movieActors: [],
-  movieDirectors: [],
-  movieStyles: [],
   movieTime: null,
   quoteAuthor: null,
   quoteContent: null,
-  status: PostStatus.PUBLISHED,
   title: null,
   updatedAt: null,
-  views: 0,
   ...overrides,
 });
 
-const makeCover = (url: string) => ({
-  color: null,
-  createdAt: null,
-  height: 600,
-  id: `media-${url}`,
-  key: url,
-  name: url,
-  size: 1024,
-  type: "image/jpeg",
-  updatedAt: null,
-  url,
-  width: 800,
-});
+const makeCover = (url: string) => ({ url, height: 600, width: 800 });
 
 const posts = [
   makePost({
@@ -145,7 +126,24 @@ describe("PostList", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     fetches.length = 0;
-    scrollState = { top: 0 };
+    fetchOptions.length = 0;
+    observers.length = 0;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      function (
+        callback: (entries: Array<{ isIntersecting: boolean }>) => void,
+        options?: IntersectionObserverInit,
+      ) {
+        const observer = {
+          callback,
+          options,
+          observe: vi.fn(),
+          disconnect: vi.fn(),
+        };
+        observers.push(observer);
+        return observer;
+      },
+    );
     listState = {
       data: { pages: [{ list: posts }] },
       hasNextPage: false,
@@ -156,7 +154,7 @@ describe("PostList", () => {
     };
     Object.defineProperty(document.body, "scrollHeight", {
       configurable: true,
-      value: 1000,
+      value: 10000,
     });
     Object.defineProperty(window, "innerHeight", {
       configurable: true,
@@ -167,18 +165,53 @@ describe("PostList", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+    vi.unstubAllGlobals();
   });
 
-  async function renderList() {
+  async function renderList(locale: "zh" | "en" = "zh") {
     await act(async () => {
       root.render(
-        React.createElement(PostList, {
-          initData: { list: posts, total: posts.length },
-          queryParams: { limit: 10 },
-        }),
+        <NextIntlClientProvider
+          locale={locale}
+          messages={locale === "en" ? enMessages : zhMessages}
+          timeZone="UTC"
+        >
+          <PostList
+            initData={{ list: posts, total: posts.length }}
+            queryParams={{ limit: 10 }}
+          />
+        </NextIntlClientProvider>,
       );
     });
   }
+
+  it.each([
+    ["en", ["Article", "Movie", "Gallery"]],
+    ["zh", ["文章", "电影", "画廊"]],
+  ] as const)("localizes cover badges for %s", async (locale, labels) => {
+    await renderList(locale);
+    const badges = Array.from(
+      container.querySelectorAll("a.relative span"),
+    ).map((element) => element.textContent);
+    expect(badges).toEqual(labels);
+    expect(container.querySelectorAll("a.relative")).toHaveLength(3);
+  });
+
+  it.each([
+    ["1895-12-28", " (1895)"],
+    ["2020-05-06T00:00:00.000Z", " (2020)"],
+    ["2200-01-01", " (2200)"],
+    [null, ""],
+    [undefined, ""],
+    ["not-a-date", ""],
+    ["   ", ""],
+  ])("omits empty movie year decorations for %s", async (movieTime, suffix) => {
+    listState.data = { pages: [{ list: [{ ...posts[1], movieTime }] }] };
+    await renderList();
+    expect(container.querySelector("a.block.text-lg")?.textContent).toBe(
+      `电影标题${suffix}`,
+    );
+  });
 
   it("renders article, movie, photograph and quote cards", async () => {
     await renderList();
@@ -195,7 +228,7 @@ describe("PostList", () => {
     expect(
       container.querySelectorAll('a[href="/archives/article"]'),
     ).toHaveLength(3);
-    expect(container.textContent).toContain("已经到底了");
+    expect(container.textContent).toContain(zhMessages.PostList.listEnd);
   });
 
   it("omits unsafe media promotion and date formatting for incomplete data", async () => {
@@ -222,31 +255,46 @@ describe("PostList", () => {
     expect(container.textContent).not.toContain("Invalid Date");
   });
 
-  it("loads the next page when scrolling within 300px of the bottom", async () => {
+  it("observes a 300px sentinel and loads only when it intersects", async () => {
     listState.hasNextPage = true;
     await renderList();
 
+    expect(fetches).toEqual([]);
+    expect(observers.at(-1)?.options).toEqual({ rootMargin: "300px" });
+    expect(observers.at(-1)?.observe).toHaveBeenCalledWith(
+      container.querySelector('[data-testid="post-list-sentinel"]'),
+    );
+    await act(async () => intersect());
     expect(fetches).toEqual(["next"]);
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
   });
 
   it.each([
-    ["the next request is already pending", { top: 0 }, true, true],
-    ["the viewport is far from the bottom", { top: -500 }, true, false],
-    ["there is no next page", { top: 0 }, false, false],
+    ["the next request is already pending", true, true, true],
+    ["the sentinel is outside the viewport", false, true, false],
+    ["there is no next page", true, false, false],
   ])(
     "does not load when %s",
-    async (_label, scroll, hasNextPage, isFetchingNextPage) => {
-      scrollState = scroll;
+    async (_label, visible, hasNextPage, isFetchingNextPage) => {
       listState.hasNextPage = hasNextPage;
       listState.isFetchingNextPage = isFetchingNextPage;
       listState.isFetching = isFetchingNextPage;
 
       await renderList();
+      await act(async () => intersect(visible));
 
       expect(fetches).toEqual([]);
     },
   );
+
+  it("does not overlap an in-flight background refresh", async () => {
+    listState.hasNextPage = true;
+    listState.isFetching = true;
+    await renderList();
+    await act(async () => intersect());
+    expect(fetches).toEqual([]);
+  });
 
   it("keeps loaded posts and stops automatic requests after a next-page error", async () => {
     listState.hasNextPage = true;
@@ -259,14 +307,13 @@ describe("PostList", () => {
     listState.isError = true;
     listState.isFetchNextPageError = true;
     await renderList();
-    scrollState = { top: 100 };
-    await renderList();
+    await act(async () => intersect());
 
     expect(fetches).toEqual([]);
     expect(container.textContent).toContain("文章标题");
     expect(container.textContent).toContain("照片标题");
     expect(container.querySelector('[role="alert"]')?.textContent).toBeTruthy();
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
   });
 
   it("retries a failed next page only when its accessible button is clicked", async () => {
@@ -276,18 +323,20 @@ describe("PostList", () => {
     await renderList();
 
     const retry = container.querySelector("button");
-    expect(retry?.textContent).toBe("tryAgain");
+    expect(retry?.textContent).toBe(zhMessages.Error.tryAgain);
     expect(retry?.type).toBe("button");
     expect(retry?.disabled).toBe(false);
     await act(async () => retry?.click());
 
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
     listState.isFetchingNextPage = true;
     listState.isFetching = true;
     await renderList();
     expect(container.querySelector("button")?.disabled).toBe(true);
     await act(async () => container.querySelector("button")?.click());
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
   });
 
   it("retries an initial error instead of claiming the feed has ended", async () => {
@@ -295,7 +344,7 @@ describe("PostList", () => {
     listState.isError = true;
     await renderList();
 
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
     await act(async () => container.querySelector("button")?.click());
 
@@ -307,7 +356,7 @@ describe("PostList", () => {
     listState.isFetching = true;
     await renderList();
 
-    expect(container.textContent).not.toContain("已经到底了");
+    expect(container.textContent).not.toContain(zhMessages.PostList.listEnd);
     expect(fetches).toEqual([]);
   });
 
@@ -321,10 +370,21 @@ describe("PostList", () => {
     listState.isError = false;
     listState.isFetchNextPageError = false;
     await renderList();
+    await act(async () => intersect());
 
     expect(fetches).toEqual(["next"]);
+    expect(fetchOptions).toEqual([{ cancelRefetch: false }]);
     expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(container.querySelector("button")).toBeNull();
+  });
+
+  it("disconnects the sentinel when unmounted", async () => {
+    listState.hasNextPage = true;
+    await renderList();
+    const observer = observers.at(-1);
+    expect(observer).toBeDefined();
+    await act(async () => root.render(null));
+    expect(observer?.disconnect).toHaveBeenCalledOnce();
   });
 
   it("shows a loading indicator while fetching the next page", async () => {
@@ -341,6 +401,6 @@ describe("PostList", () => {
     await renderList();
 
     expect(container.querySelectorAll('a[href^="/archives/"]')).toHaveLength(0);
-    expect(container.textContent).toContain("已经到底了");
+    expect(container.textContent).toContain(zhMessages.PostList.listEnd);
   });
 });

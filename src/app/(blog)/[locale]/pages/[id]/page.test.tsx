@@ -1,3 +1,6 @@
+import { createTranslator } from "next-intl";
+import enMessages from "@/app/(blog)/messages/en.json";
+import zhMessages from "@/app/(blog)/messages/zh.json";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -14,16 +17,31 @@ const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
+const mockCommentRender = vi.fn();
+let testLocale = "zh";
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => Promise.resolve("zh"),
-  getTranslations: () => Promise.resolve((key: string) => key),
+  getTranslations: (namespace: "Link" | "PostInfo") =>
+    Promise.resolve(
+      createTranslator({
+        locale: testLocale,
+        messages: testLocale === "en" ? enMessages : zhMessages,
+        namespace,
+      }),
+    ),
+}));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,
 }));
-vi.mock("next-intl", () => ({
+vi.mock("next-intl", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next-intl")>()),
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} views`,
 }));
@@ -58,11 +76,11 @@ vi.mock("@/features/post/public/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
   PostCommentCount: () => null,
 }));
-vi.mock("@/features/comment/public/components", () => ({
-  default: () => null,
-}));
-vi.mock("@/app/(blog)/components/PageTitle", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <h1>{children}</h1>,
+vi.mock("@/features/comment/public/components/CommentClient", () => ({
+  default: (props: unknown) => {
+    mockCommentRender(props);
+    return null;
+  },
 }));
 vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
@@ -78,6 +96,9 @@ describe("pages detail page", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
+    testLocale = "zh";
+    mockCommentRender.mockReset();
+    mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
     mockPageDetail.mockReset().mockResolvedValue({
       id: "page-1",
@@ -100,6 +121,83 @@ describe("pages detail page", () => {
     container.remove();
   });
 
+  it("does not start comments until the page has passed publication validation", async () => {
+    let resolveDetail!: (value: null) => void;
+    mockPageDetail.mockReturnValue(
+      new Promise<null>((resolve) => {
+        resolveDetail = resolve;
+      }),
+    );
+    const errors: unknown[] = [];
+    class Boundary extends React.Component<
+      { children: React.ReactNode },
+      { failed: boolean }
+    > {
+      state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      componentDidCatch(error: unknown) {
+        errors.push(error);
+      }
+      render() {
+        return this.state.failed ? <span>not found</span> : this.props.children;
+      }
+    }
+    await act(async () =>
+      root.render(
+        <Boundary>
+          {Pages({
+            params: Promise.resolve({ id: "missing", locale: "zh" }),
+            searchParams: Promise.resolve({}),
+          })}
+        </Boundary>,
+      ),
+    );
+    expect(mockComments).not.toHaveBeenCalled();
+    await act(async () => resolveDetail(null));
+    expect(mockComments).not.toHaveBeenCalled();
+    expect(errors).toHaveLength(1);
+  });
+
+  it("owns comment rejection immediately while other page data is pending", async () => {
+    let rejectComments!: (error: Error) => void;
+    const comments = new Promise<{ total: number }>((_resolve, reject) => {
+      rejectComments = reject;
+    });
+    const catchSpy = vi.spyOn(comments, "catch");
+    let resolveLinks!: (links: { list: []; total: number }) => void;
+    mockLinks.mockReturnValue(
+      new Promise((resolve) => {
+        resolveLinks = resolve;
+      }),
+    );
+    mockPageDetail.mockResolvedValue({
+      id: "page-1",
+      status: PostStatus.PUBLISHED,
+      template: PageTemplate.FRIENDLY_LINKS,
+      imagesInContent: [],
+    });
+    mockComments.mockReturnValue(comments);
+    await act(async () =>
+      root.render(
+        Pages({
+          params: Promise.resolve({ id: "page-1", locale: "zh" }),
+          searchParams: Promise.resolve({}),
+        }),
+      ),
+    );
+    expect(catchSpy).toHaveBeenCalled();
+    expect(mockCommentRender).not.toHaveBeenCalled();
+    const failure = new Error("comments unavailable");
+    rejectComments(failure);
+    await expect(comments).rejects.toBe(failure);
+    await act(async () => resolveLinks({ list: [], total: 0 }));
+    expect(mockCommentRender).toHaveBeenCalledWith(
+      expect.objectContaining({ queryCommentPromise: comments }),
+    );
+  });
+
   it("keeps server rendering read-only and reports the view after mounting", async () => {
     const element = await Pages({
       params: Promise.resolve({ id: "page-1", locale: "zh" }),
@@ -108,6 +206,8 @@ describe("pages detail page", () => {
     await act(async () => root.render(element));
 
     expect(container.textContent).toContain("页面正文");
+    expect(container.querySelector("h1")?.textContent).toBe("页面标题");
+    expect(mockLinks).not.toHaveBeenCalled();
     expect(mockServerIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
     expect(mockClientIncrementViews).toHaveBeenCalledWith(
@@ -115,6 +215,32 @@ describe("pages detail page", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
+
+  it.each(["zh", "en"])(
+    "localizes the friendly-link empty state in %s",
+    async (locale) => {
+      testLocale = locale;
+      mockPageDetail.mockResolvedValue({
+        id: "page-1",
+        title: { zh: "友链", en: "Links" },
+        status: PostStatus.PUBLISHED,
+        template: PageTemplate.FRIENDLY_LINKS,
+        imagesInContent: [],
+        views: 0,
+      });
+      await act(async () =>
+        root.render(
+          Pages({
+            params: Promise.resolve({ id: "page-1", locale }),
+            searchParams: Promise.resolve({}),
+          }),
+        ),
+      );
+      expect(container.textContent).toContain(
+        locale === "en" ? enMessages.Link.emptyTip : zhMessages.Link.emptyTip,
+      );
+    },
+  );
 
   it("generates localized page indexing relationships", async () => {
     const metadata = await generateMetadata({

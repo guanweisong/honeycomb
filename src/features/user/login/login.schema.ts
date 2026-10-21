@@ -7,7 +7,9 @@ import { requiredString } from "@/lib/validation/validation";
  */
 export const LoginSchema = z.object({
   name: requiredString("用户名不能为空"),
-  password: requiredString("登录密码不能为空"),
+  password: z
+    .string({ message: "登录密码不能为空" })
+    .min(1, "登录密码不能为空"),
 });
 
 export type LoginValues = z.infer<typeof LoginSchema>;

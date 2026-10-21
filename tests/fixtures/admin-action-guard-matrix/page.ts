@@ -3,8 +3,8 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath:
-      "(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx",
+    sourcePath:
+      "src/features/page/admin/edit/components/PageEditorActionButtons/index.tsx",
     actions: [
       {
         id: "page-editor.create",
@@ -19,6 +19,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.create-publish",
+        when: { name: "isEdit", value: false },
         permission: Permission.pageCreate,
         control: {
           tag: "Button",
@@ -69,6 +70,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
       },
       {
         id: "page-editor.update-publish",
+        when: { name: "isEdit", value: true },
         permission: Permission.pageUpdate,
         control: {
           tag: "Button",
@@ -84,7 +86,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(dashboard)/page/list/page.tsx",
+    sourcePath: "src/features/page/admin/list/page.tsx",
     actions: [
       {
         id: "page-list.create",

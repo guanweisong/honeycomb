@@ -7,6 +7,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({
   categories: [] as CategoryViewModel[],
+  allowActions: true,
   destroy: vi.fn(),
   refetch: vi.fn(),
   success: vi.fn(),
@@ -14,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 vi.mock("@/features/user/admin/use-current-user", () => ({
-  useCan: () => true,
+  useCan: () => mocks.allowActions,
 }));
 vi.mock("sonner", () => ({
   toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
@@ -44,6 +45,7 @@ describe("category bulk deletion from the complete tree", () => {
   let root: Root;
 
   beforeEach(() => {
+    mocks.allowActions = true;
     mocks.categories = Array.from({ length: 105 }, (_, index) => ({
       id: (index + 1).toString(16).padStart(24, "0"),
       title: null,
@@ -93,6 +95,19 @@ describe("category bulk deletion from the complete tree", () => {
   async function selectAll() {
     await act(async () => checkbox('thead [role="checkbox"]').click());
   }
+
+  it("names row actions and keeps them hidden without mutation permission", async () => {
+    expect(
+      container.querySelectorAll('button[aria-label="编辑分类"]'),
+    ).toHaveLength(105);
+    expect(
+      container.querySelectorAll('button[aria-label="删除分类"]'),
+    ).toHaveLength(105);
+    mocks.allowActions = false;
+    act(() => root.render(<Category />));
+    expect(container.querySelector('button[aria-label="编辑分类"]')).toBeNull();
+    expect(container.querySelector('button[aria-label="删除分类"]')).toBeNull();
+  });
 
   it("selects and deletes the complete tree in one request without cap copy", async () => {
     expect(container.textContent).not.toContain("已选择");

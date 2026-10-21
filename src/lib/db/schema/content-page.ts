@@ -1,6 +1,6 @@
 import { PageStatus } from "@/features/page/page-status";
 import { PageTemplate } from "@/features/page/page-template";
-import { MultiLangEnum } from "@/lib/i18n/i18n";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,
   text,
@@ -55,7 +55,9 @@ export const page = sqliteTable(
       table.template,
       Object.values(PageTemplate),
     ),
-    pageAuthorCreationTokenUnique: uniqueIndex("page_author_creation_token_unique").on(table.authorId, table.creationToken),
+    pageAuthorCreationTokenUnique: uniqueIndex(
+      "page_author_creation_token_unique",
+    ).on(table.authorId, table.creationToken),
     pageVersionCheck: check("page_version_check", sql`${table.version} >= 0`),
     pageViewsCheck: check("page_views_check", sql`${table.views} >= 0`),
   }),
@@ -73,9 +75,10 @@ export const pageTranslation = sqliteTable(
   },
   (table) => ({
     pageLocalePk: primaryKey({ columns: [table.pageId, table.locale] }),
-    pageLocaleCheck: check(
+    pageLocaleCheck: enumCheck(
       "page_translation_locale_check",
-      sql`${table.locale} in ('zh', 'en')`,
+      table.locale,
+      supportedLanguages,
     ),
   }),
 );

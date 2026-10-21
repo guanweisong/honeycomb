@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-const { listPosts } = vi.hoisted(() => ({ listPosts: vi.fn() }));
-vi.mock("@/features/post/server/post-queries", () => ({ listPosts }));
+const { listPublicPosts } = vi.hoisted(() => ({ listPublicPosts: vi.fn() }));
+vi.mock("@/features/post/server/post-queries", () => ({ listPublicPosts }));
 
 const { revalidatePath, revalidateTag } = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
@@ -177,9 +177,9 @@ describe("Upstash cache request deadlines", () => {
     async (stage) => {
       await loadCache();
       const { getCachedPostList } =
-        await import("@/features/post/server/post-special");
+        await import("@/features/post/server/post-list-cache");
       const fresh = { list: [], total: 0 };
-      listPosts.mockReset().mockResolvedValue(fresh);
+      listPublicPosts.mockReset().mockResolvedValue(fresh);
       if (stage !== "version")
         fetchMock.mockResolvedValueOnce(redisResponse(2));
       if (stage === "fill")
@@ -191,11 +191,7 @@ describe("Upstash cache request deadlines", () => {
 
       expect(state.status).toBe("fulfilled");
       expect(state.value).toBe(fresh);
-      expect(listPosts).toHaveBeenCalledExactlyOnceWith(
-        database,
-        {},
-        "PUBLISHED_ONLY",
-      );
+      expect(listPublicPosts).toHaveBeenCalledExactlyOnceWith(database, {});
       expect(fetchMock).toHaveBeenCalledTimes(
         stage === "version" ? 1 : stage === "payload" ? 2 : 3,
       );
@@ -204,7 +200,8 @@ describe("Upstash cache request deadlines", () => {
 
   it("continues every invalidation target and reports degraded after bounded retries", async () => {
     const { observed } = await loadCache();
-    const { publicContentInvalidator } = await import("./refresh-path");
+    const { publicContentInvalidator } =
+      await import("./next-public-content-invalidator");
     const state = track(
       publicContentInvalidator.invalidate({
         refreshPostIndex: true,
@@ -239,7 +236,7 @@ describe("Upstash cache request deadlines", () => {
         .fill([
           ["/zh/archives/507f1f77bcf86cd799439011"],
           ["/en/archives/507f1f77bcf86cd799439011"],
-          ["/[locale]", "layout"],
+          ["/(blog)/[locale]", "layout"],
         ])
         .flat(),
     );

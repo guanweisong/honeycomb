@@ -1,8 +1,9 @@
+import { normalizeEmail } from "@/lib/auth/email-policy";
 import "server-only";
 
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { desc, eq, lt, or } from "drizzle-orm";
+import { desc, eq, lt } from "drizzle-orm";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryRecordInput,
@@ -12,6 +13,7 @@ const LOGIN_HISTORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const LOGIN_HISTORY_LIMIT = 50;
 
 type LoginHistoryStore = Pick<Database, "select" | "insert" | "delete">;
+export type LoginIdentifierField = "username" | "email";
 
 export async function recordLoginHistory(
   db: Pick<LoginHistoryStore, "insert" | "delete">,
@@ -32,19 +34,26 @@ export async function recordLoginHistory(
 export async function findUserIdByIdentifier(
   db: Pick<LoginHistoryStore, "select">,
   identifier: string,
+  field: LoginIdentifierField,
 ) {
-  const normalizedIdentifier = identifier.trim();
-  if (!normalizedIdentifier) return null;
+  if (!identifier.trim()) return null;
+  if (field === "email") {
+    const normalized = normalizeEmail(identifier);
+    const users = await db
+      .select({ id: schema.user.id, email: schema.user.email })
+      .from(schema.user);
+    const matches = users.filter(
+      (user) =>
+        user.email !== null && normalizeEmail(user.email) === normalized,
+    );
+    // Historical case collisions cannot safely be attributed to one account.
+    return matches.length === 1 ? (matches[0]?.id ?? null) : null;
+  }
 
   const [user] = await db
     .select({ id: schema.user.id })
     .from(schema.user)
-    .where(
-      or(
-        eq(schema.user.username, normalizedIdentifier),
-        eq(schema.user.email, normalizedIdentifier),
-      ),
-    )
+    .where(eq(schema.user.username, identifier))
     .limit(1);
 
   return user?.id ?? null;

@@ -1,7 +1,11 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { getTableConfig, type SQLiteTable } from "drizzle-orm/sqlite-core";
+import {
+  SQLiteSyncDialect,
+  getTableConfig,
+  type SQLiteTable,
+} from "drizzle-orm/sqlite-core";
 import * as schema from "./schema";
 
 type ColumnView = {
@@ -122,6 +126,15 @@ describe("db schema helpers", () => {
       expect(config.foreignKeys).toHaveLength(1);
       expect(config.foreignKeys[0]?.onDelete).toBe("cascade");
       expect(config.checks).toHaveLength(1);
+      const localeCheck = config.checks[0];
+      expect(localeCheck?.name).toBe(`${tableName}_locale_check`);
+      if (!localeCheck) throw new Error("Missing locale check");
+      expect(
+        new SQLiteSyncDialect().sqlToQuery(localeCheck.value),
+      ).toMatchObject({
+        sql: `"${tableName}"."locale" in ('zh', 'en')`,
+        params: [],
+      });
     },
   );
 

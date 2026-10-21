@@ -23,7 +23,7 @@ const categoryMenu = {
   updatedAt: null,
   power: 0,
   type: MenuType.CATEGORY,
-} as MenuEntityTree;
+} satisfies MenuEntityTree;
 
 const pageMenu = {
   id: "page-1",
@@ -34,7 +34,7 @@ const pageMenu = {
   updatedAt: null,
   power: 1,
   type: MenuType.PAGE,
-} as MenuEntityTree;
+} satisfies MenuEntityTree;
 
 describe("menu transforms", () => {
   it("preserves all menu type labels in rendered tree subtitles", () => {
@@ -140,7 +140,7 @@ describe("menu transforms", () => {
   it("disables removing a selected item that still owns a child", () => {
     const category = {
       id: categoryMenu.id,
-      title: categoryMenu.title as { en: string; zh: string },
+      title: categoryMenu.title,
       path: categoryMenu.path,
       createdAt,
       updatedAt: null,

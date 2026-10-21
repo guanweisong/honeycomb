@@ -1,7 +1,7 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
-import { MultiLangEnum } from "@/lib/i18n/i18n";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,
   text,
@@ -108,9 +108,10 @@ export const postTranslation = sqliteTable(
   },
   (table) => ({
     postLocalePk: primaryKey({ columns: [table.postId, table.locale] }),
-    postLocaleCheck: check(
+    postLocaleCheck: enumCheck(
       "post_translation_locale_check",
-      sql`${table.locale} in ('zh', 'en')`,
+      table.locale,
+      supportedLanguages,
     ),
   }),
 );

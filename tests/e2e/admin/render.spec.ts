@@ -159,6 +159,41 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     }
   }
 
+  test("@regression mobile media picker fits and keeps selection controls reachable", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 640 });
+    await visit(page, `/admin/post/edit?id=${postId}`, [
+      "category.adminTree",
+      "post.adminDetail",
+    ]);
+    await expect(page.getByPlaceholder("在此输入文章标题")).toHaveValue(
+      "可靠浏览器门禁",
+    );
+    // The toolbar has an icon-only image action; exercise the visible cover control.
+    const coverPickerButton = page
+      .getByRole("button", { name: "选择图片", exact: true })
+      .filter({ hasText: /^选择图片$/ });
+    await expect(coverPickerButton).toHaveCount(1);
+    await coverPickerButton.click();
+    const picker = page.getByRole("dialog", { name: "选择图片", exact: true });
+    await expect(picker).toBeInViewport({ ratio: 1 });
+    const media = picker.getByRole("button", {
+      name: "选择 Search cover fixture",
+      exact: true,
+    });
+    await expect(media).toBeVisible();
+    await media.focus();
+    await expect(media).toBeFocused();
+    await expect(media).toBeInViewport({ ratio: 1 });
+    await media.press("Enter");
+    await expect(media).toHaveAttribute("aria-pressed", "true");
+    await picker.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(picker).toHaveCount(0);
+    // Cancel the local selection; do not submit or mutate the seeded post.
+    await expect(coverPickerButton).toBeVisible();
+  });
+
   test("media (seeded cover renders)", async ({ page }) => {
     await visit(page, "/admin/media", ["media.index"]);
     await expect(
@@ -172,7 +207,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
   test("menu", async ({ page }) => {
     await visit(page, "/admin/menu", [
       "category.adminTree",
-      "page.adminIndex",
+      "page.menuOptions",
       "menu.adminIndex",
     ]);
     await expect(page.getByText("可选菜单项", { exact: true })).toBeVisible();
@@ -277,6 +312,46 @@ test.describe("@smoke admin public pages", () => {
       page.getByRole("button", { name: "登录", exact: true }),
     ).toBeVisible();
   });
+  test("@regression narrow and short login viewports remain reachable with reduced motion", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await visit(page, "/admin/login");
+    // Wait for the real preference subscription, without waiting for external
+    // background media or submitting the CAPTCHA-protected login form.
+    await expect(
+      page.getByRole("button", { name: "暂停背景动画", exact: true }),
+    ).toBeVisible();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(page.locator("video")).toHaveCount(0);
+
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 320 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              document.documentElement.scrollWidth <=
+              document.documentElement.clientWidth + 1,
+          ),
+        )
+        .toBe(true);
+      for (const name of ["用户名", "密码"]) {
+        const field = page.getByLabel(name, { exact: true });
+        await field.focus();
+        await expect(field).toBeFocused();
+        await expect(field).toBeInViewport({ ratio: 1 });
+      }
+      const login = page.getByRole("button", { name: "登录", exact: true });
+      await login.scrollIntoViewIfNeeded();
+      await expect(login).toBeInViewport({ ratio: 1 });
+    }
+  });
+
   test("forbidden", async ({ page }) => {
     await visit(page, "/admin/forbidden");
     await expect(page.getByRole("heading", { name: "无权访问" })).toBeVisible();

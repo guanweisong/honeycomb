@@ -42,7 +42,13 @@ export function MultiSelect(props: MultiSelectProps) {
                 onSelect={() => handleChange(option.value)}
                 className="flex items-center gap-2"
               >
-                <Checkbox checked={value.includes(option.value)} />
+                <Checkbox
+                  aria-label={option.label}
+                  checked={value.includes(option.value)}
+                  disabled={option.disabled}
+                  onCheckedChange={() => handleChange(option.value)}
+                  onClick={(event) => event.stopPropagation()}
+                />
                 {option.label}
               </CommandItem>
             ))}

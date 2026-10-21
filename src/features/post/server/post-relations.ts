@@ -18,7 +18,14 @@ import type {
   PostVisibility,
 } from "../types";
 import { groupPostTranslations } from "./post-translations";
-import { assembleRequiredLocalizedField } from "@/lib/db/translation-values";
+import {
+  assembleLocalizedField,
+  assembleRequiredLocalizedField,
+} from "@/lib/db/translation-values";
+import {
+  AdminPostListItemSchema,
+  PublicPostListItemSchema,
+} from "../post-read-model";
 type PostRecord = typeof schema.post.$inferSelect;
 type PostTranslations =
   ReturnType<typeof groupPostTranslations> extends Map<string, infer Value>
@@ -199,5 +206,144 @@ export async function loadPostRelations(
       movieStyles: mapTags(TagType.MOVIE_STYLE).map(mapTag),
       galleryStyles: mapTags(TagType.GALLERY_STYLE).map(mapTag),
     });
+  });
+}
+
+/** 在同一次已发布快照中读取卡片元数据、全部语言和封面。 */
+export async function loadPublicPostListItems(
+  db: Database,
+  posts: Pick<PostRecord, "id">[],
+) {
+  const ids = [...new Set(posts.map((post) => post.id))];
+  if (!ids.length) return [];
+  const rows = await observeDbOperation(
+    "post.service.relations",
+    "select",
+    () =>
+      db.query.post.findMany({
+        columns: { id: true, type: true, movieTime: true, updatedAt: true },
+        where: and(
+          inArray(schema.post.id, ids),
+          eq(schema.post.status, PostStatus.PUBLISHED),
+        ),
+        with: {
+          translations: {
+            columns: {
+              locale: true,
+              title: true,
+              excerpt: true,
+              quoteContent: true,
+              quoteAuthor: true,
+            },
+          },
+          cover: { columns: { url: true, width: true, height: true } },
+        },
+      }),
+  );
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return posts.flatMap(({ id }) => {
+    const row = byId.get(id);
+    // A row withdrawn or deleted since ID selection must not become a stale card.
+    if (!row) return [];
+    return [
+      PublicPostListItemSchema.parse({
+        id: row.id,
+        type: row.type,
+        movieTime: row.movieTime,
+        updatedAt: row.updatedAt,
+        title: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.title,
+        ),
+        excerpt: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.excerpt,
+        ),
+        quoteContent: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.quoteContent,
+        ),
+        quoteAuthor: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.quoteAuthor,
+        ),
+        cover: row.cover ?? undefined,
+      }),
+    ];
+  });
+}
+
+/** 管理列表的元数据、标题、引用和展示关系来自同一次权限受限快照。 */
+export async function loadAdminPostListItems(
+  db: Database,
+  posts: Pick<PostRecord, "id">[],
+  visibility: PostVisibility,
+) {
+  const ids = [...new Set(posts.map((post) => post.id))];
+  if (!ids.length) return [];
+  const rows = await observeDbOperation(
+    "post.service.relations",
+    "select",
+    () =>
+      db.query.post.findMany({
+        columns: {
+          id: true,
+          version: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          views: true,
+        },
+        where: and(
+          inArray(schema.post.id, ids),
+          visibility === "PUBLISHED_ONLY"
+            ? eq(schema.post.status, PostStatus.PUBLISHED)
+            : undefined,
+        ),
+        with: {
+          translations: {
+            columns: { locale: true, title: true, quoteContent: true },
+          },
+          category: {
+            columns: { id: true },
+            with: { translations: { columns: { locale: true, title: true } } },
+          },
+          author: { columns: { name: true } },
+        },
+      }),
+  );
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return posts.flatMap(({ id }) => {
+    const row = byId.get(id);
+    if (!row) return [];
+    return [
+      AdminPostListItemSchema.parse({
+        id: row.id,
+        version: row.version,
+        type: row.type,
+        status: row.status,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        views: row.views,
+        title: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.title,
+        ),
+        quoteContent: assembleLocalizedField(
+          row.translations,
+          (translation) => translation.quoteContent,
+        ),
+        category: row.category
+          ? {
+              title: assembleRequiredLocalizedField(
+                row.category.translations,
+                (translation) => translation.title,
+              ),
+            }
+          : undefined,
+        author: row.author ? { name: row.author.name } : undefined,
+      }),
+    ];
   });
 }

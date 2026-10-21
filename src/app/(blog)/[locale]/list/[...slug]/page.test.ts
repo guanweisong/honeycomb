@@ -167,6 +167,119 @@ describe("blog list page", () => {
     });
   });
 
+  it.each(["content", "metadata"])(
+    "starts independent %s work before settings resolve",
+    async (entryPoint) => {
+      let releaseSetting!: (value: object) => void;
+      mockSettingIndex.mockReturnValue(
+        new Promise((resolve) => {
+          releaseSetting = resolve;
+        }),
+      );
+      const props = {
+        params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
+        searchParams: Promise.resolve({}),
+      };
+      const content = List(props).props.children[1].props.children;
+      const pending =
+        entryPoint === "metadata"
+          ? generateMetadata(props)
+          : content.type(content.props);
+      for (let index = 0; index < 8; index++) await Promise.resolve();
+      try {
+        expect(mockGetTranslations).toHaveBeenCalled();
+        if (entryPoint === "content")
+          expect(mockPublicPostList).toHaveBeenCalledWith(
+            expect.objectContaining({ categoryId: "category-1" }),
+          );
+      } finally {
+        releaseSetting({ siteName: { zh: "蜂巢" } });
+        await pending;
+      }
+    },
+  );
+
+  describe.each(["content", "metadata"])(
+    "%s route-specific dependencies",
+    (entryPoint) => {
+      it.each(["tags", "authors"])(
+        "starts %s lookup without awaiting unrelated menu data",
+        async (type) => {
+          const menuDeferred = Promise.withResolvers<object>();
+          mockMenuIndex.mockReturnValue(menuDeferred.promise);
+          const requestedId = "aaaaaaaaaaaaaaaaaaaaaaaa";
+          const matchedId = "bbbbbbbbbbbbbbbbbbbbbbbb";
+          if (type === "tags")
+            mockPublicTag.mockResolvedValue({
+              id: matchedId,
+              name: { zh: "标签名称" },
+            });
+          else
+            mockPublicAuthor.mockResolvedValue({
+              id: matchedId,
+              name: "作者名称",
+            });
+          const props = {
+            params: Promise.resolve({
+              locale: "zh",
+              slug: [type, requestedId],
+            }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children[1].props.children;
+          const pending =
+            entryPoint === "metadata"
+              ? generateMetadata(props)
+              : content.type(content.props);
+          for (let index = 0; index < 12; index++) await Promise.resolve();
+          try {
+            expect(
+              type === "tags" ? mockPublicTag : mockPublicAuthor,
+            ).toHaveBeenCalledWith(requestedId);
+            expect(mockMenuIndex).not.toHaveBeenCalled();
+            if (entryPoint === "content")
+              expect(mockPublicPostList).toHaveBeenCalledWith(
+                expect.objectContaining(
+                  type === "tags"
+                    ? { tagId: matchedId }
+                    : { authorId: matchedId },
+                ),
+              );
+          } finally {
+            menuDeferred.resolve({ list: [], total: 0 });
+            await pending;
+          }
+        },
+      );
+
+      it("waits for category menu resolution before starting the category post query", async () => {
+        const menuDeferred = Promise.withResolvers<object>();
+        mockMenuIndex.mockReturnValue(menuDeferred.promise);
+        const props = {
+          params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
+          searchParams: Promise.resolve({}),
+        };
+        const content = List(props).props.children[1].props.children;
+        const pending =
+          entryPoint === "metadata"
+            ? generateMetadata(props)
+            : content.type(content.props);
+        for (let index = 0; index < 12; index++) await Promise.resolve();
+        expect(mockMenuIndex).toHaveBeenCalledOnce();
+        expect(mockPublicPostList).not.toHaveBeenCalled();
+        menuDeferred.resolve({
+          list: [{ id: "category-1", path: "tech", title: { zh: "技术" } }],
+          total: 1,
+        });
+        await pending;
+        if (entryPoint === "content")
+          expect(mockPublicPostList).toHaveBeenCalledWith(
+            expect.objectContaining({ categoryId: "category-1" }),
+          );
+      });
+    },
+  );
+
   it("keeps the category root as the published-post index", async () => {
     await renderList(["category"]);
     expect(renderedQuery()).toEqual({

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import AddCategoryModal from "./components/AddCategoryModal";
+import CategoryFormDialog from "./components/CategoryFormDialog";
 import categoryListTableColumns from "./category-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
@@ -142,6 +142,7 @@ const Category = () => {
           <div className="flex gap-1">
             {canUpdateCategory && (
               <Button
+                aria-label="编辑分类"
                 size="sm"
                 variant="secondary"
                 onClick={() => handleEditItem(row)}
@@ -152,7 +153,7 @@ const Category = () => {
             {canDeleteCategory && (
               <Dialog
                 trigger={
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" aria-label="删除分类">
                     <Trash />
                   </Button>
                 }
@@ -164,7 +165,10 @@ const Category = () => {
           </div>
         )}
       />
-      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+      <CategoryFormDialog
+        modalProps={modalProps}
+        setModalProps={setModalProps}
+      />
     </>
   );
 };

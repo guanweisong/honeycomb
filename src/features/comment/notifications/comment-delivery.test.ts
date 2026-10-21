@@ -201,4 +201,73 @@ describe("comment notification delivery logs", () => {
     expect(JSON.stringify(memory.logEvents)).not.toContain("203.0.113.10");
     expect(JSON.stringify(memory.logEvents)).not.toContain("private comment");
   });
+
+  it("starts both independent initial reads before either result is available", async () => {
+    const commentRead = deferred<typeof currentComment>();
+    const settingRead = deferred<{ siteName: null }>();
+    const started: string[] = [];
+    const repository = {
+      getComment: () => {
+        started.push("comment");
+        return commentRead.promise;
+      },
+      getSetting: () => {
+        started.push("setting");
+        return settingRead.promise;
+      },
+    } satisfies CommentNotificationRepository;
+    const delivery = notifyCommentCreated(repository, "comment-1");
+    try {
+      expect(started).toEqual(["comment", "setting"]);
+      expect(sendCommentEmail).not.toHaveBeenCalled();
+      commentRead.resolve(currentComment);
+      await Promise.resolve();
+      expect(sendCommentEmail).not.toHaveBeenCalled();
+    } finally {
+      commentRead.resolve(currentComment);
+      settingRead.resolve({ siteName: null });
+      await delivery;
+    }
+    expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith("ADMIN_NOTICE", {
+      setting: { siteName: null },
+      currentComment,
+    });
+  });
+
+  it.each(["comment", "setting"])(
+    "does not send email when the initial %s read fails",
+    async (failedRead) => {
+      const failure = new Error("lookup failed");
+      const repository = {
+        getComment: async () => {
+          if (failedRead === "comment") throw failure;
+          return currentComment;
+        },
+        getSetting: async () => {
+          if (failedRead === "setting") throw failure;
+          return { siteName: null };
+        },
+      } satisfies CommentNotificationRepository;
+      await expect(notifyCommentCreated(repository, "comment-1")).rejects.toBe(
+        failure,
+      );
+      expect(sendCommentEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["comment", "setting"])(
+    "does not send email when the initial %s is missing",
+    async (missingRead) => {
+      const repository = {
+        getComment: async () =>
+          missingRead === "comment" ? undefined : currentComment,
+        getSetting: async () =>
+          missingRead === "setting" ? undefined : { siteName: null },
+      } satisfies CommentNotificationRepository;
+      await expect(
+        notifyCommentCreated(repository, "comment-1"),
+      ).rejects.toThrow("Comment or setting not found");
+      expect(sendCommentEmail).not.toHaveBeenCalled();
+    },
+  );
 });

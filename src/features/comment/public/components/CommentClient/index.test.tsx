@@ -56,10 +56,19 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 }));
 
 vi.mock("@marsidev/react-turnstile", () => ({
-  Turnstile: () => React.createElement("div", { "data-testid": "turnstile" }),
+  Turnstile: ({ onSuccess }: { onSuccess: (token: string) => void }) =>
+    React.createElement(
+      "button",
+      {
+        type: "button",
+        "data-testid": "turnstile",
+        onClick: () => onSuccess("test-captcha-token"),
+      },
+      "captcha",
+    ),
 }));
 
-vi.mock("../Card", () => ({
+vi.mock("@/components/blog/Card", () => ({
   default: ({
     title,
     children,
@@ -108,6 +117,7 @@ describe("CommentClient", () => {
   });
 
   afterEach(async () => {
+    expect(container.querySelector('[data-testid="card"]')).not.toBeNull();
     await act(async () => {
       root.unmount();
     });

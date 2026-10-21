@@ -122,6 +122,7 @@ const procedureNames = [
   "page.detail",
   "page.incrementViews",
   "page.index",
+  "page.menuOptions",
   "page.update",
   "post.adminDetail",
   "post.adminIndex",

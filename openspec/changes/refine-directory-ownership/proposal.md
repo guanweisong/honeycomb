@@ -1,3 +1,5 @@
+> 后续归属整理（2026-10-21）：下文涉及的 `src/components/Menu` 当前迁至 `src/app/admin/components/AdminNavigation`，因为消费者全部属于后台；正文保留当时范围与授权边界，当前命名工作见 [clarify-names-and-ownership](../clarify-names-and-ownership/proposal.md)。
+
 ## 为什么
 
 上一轮简单 Feature 架构已通过 PR #13 合并，但统计业务仍寄居 setting，媒体组件反向借用文章类型，路由与少数纯工具还存在职责错位。原阶段在保持行为不变的前提下收敛目录归属。2026-10-20 全文件审查后，用户明确批准修补已确认的运行缺陷和关键测试盲点；本变更因此不再只是目录移动，而是保留预期 API、角色与安全策略的有限纠错。

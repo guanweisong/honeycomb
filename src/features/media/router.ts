@@ -17,8 +17,8 @@ import {
   destroyMedia,
 } from "./server";
 import { createMediaRepository } from "./server/media-repository";
-import S3 from "@/lib/storage/S3";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import R2Storage from "@/lib/storage/r2-storage";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 export const mediaRouter = createTRPCRouter({
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
@@ -30,7 +30,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(({ input, ctx }) =>
       prepareMediaUpload(
         createMediaRepository(ctx.db),
-        S3,
+        R2Storage,
         input,
         ctx.user.id,
       ).catch(mapApplicationError),
@@ -40,7 +40,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(({ input, ctx }) =>
       registerMediaUpload(
         createMediaRepository(ctx.db),
-        S3,
+        R2Storage,
         input.intent,
         ctx.user.id,
       ).catch(mapApplicationError),
@@ -50,7 +50,7 @@ export const mediaRouter = createTRPCRouter({
     .mutation(({ input, ctx }) =>
       destroyMedia(
         createMediaRepository(ctx.db),
-        S3,
+        R2Storage,
         input.ids,
         publicContentInvalidator,
         ctx.user.id,

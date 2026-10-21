@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { CredentialPasswordSchema } from "@/lib/auth/password-policy";
+
 import { LoginSchema } from "./login.schema.ts";
 
 describe("后台登录输入校验", () => {
@@ -9,6 +11,16 @@ describe("后台登录输入校验", () => {
       password: "123456",
     });
   });
+
+  it.each(["      ", "  password  ", "\t\t\t\t\t\t"])(
+    "preserves accepted credential characters: %j",
+    (password) => {
+      const accepted = CredentialPasswordSchema.parse(password);
+      expect(
+        LoginSchema.parse({ name: "admin", password: accepted }).password,
+      ).toBe(password);
+    },
+  );
 
   it.each([
     [{ name: "", password: "123456" }, "用户名不能为空"],

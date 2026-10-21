@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
-import { MenuItem } from "../../../../components/Menu";
+import type { AdminNavigationItem } from "../AdminNavigation";
 import type { CurrentUser } from "@/features/user/user";
 import { Button } from "../../../../components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
@@ -26,7 +26,7 @@ export interface AdminLayoutProps {
   pageTitle?: ReactNode;
   actions?: ReactNode;
   footer?: ReactNode;
-  menu?: MenuItem[];
+  menu?: AdminNavigationItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
   pendingPath?: string | null;
@@ -61,10 +61,14 @@ export const AdminLayout = (props: AdminLayoutProps) => {
       return;
     }
 
-    window.localStorage.setItem(
-      SIDEBAR_COLLAPSED_STORAGE_KEY,
-      String(collapsed),
-    );
+    try {
+      window.localStorage.setItem(
+        SIDEBAR_COLLAPSED_STORAGE_KEY,
+        String(collapsed),
+      );
+    } catch {
+      // A blocked optional preference must not prevent layout interaction.
+    }
   }, [collapsed, layoutHydrated]);
 
   useEffect(() => {
@@ -77,7 +81,12 @@ export const AdminLayout = (props: AdminLayoutProps) => {
     };
 
     setIsMobile(media.matches);
-    const saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+    } catch {
+      // Keep the responsive default and still install the media listener.
+    }
     setCollapsed(saved !== null ? saved === "true" : media.matches);
     setLayoutHydrated(true);
     media.addEventListener?.("change", handleChange);
@@ -142,7 +151,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
                 inert={collapsed}
                 aria-hidden={collapsed}
                 className={cn(
-                  "shrink-0 box-border flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
+                  "shrink-0 box-border flex flex-col overflow-hidden transition-[width,opacity,translate,margin] duration-300 ease-in-out motion-reduce:transition-none",
                   collapsed
                     ? "w-0 opacity-0 translate-x-[-8px] ml-0 my-3 pointer-events-none"
                     : "w-[200px] opacity-100 translate-x-0 m-3",
@@ -160,7 +169,7 @@ export const AdminLayout = (props: AdminLayoutProps) => {
             )}
             <div
               className={cn(
-                "my-3 mr-3 flex min-w-0 flex-1 flex-col rounded-lg bg-white shadow transition-all duration-300 ease-in-out",
+                "my-3 mr-3 flex min-w-0 flex-1 flex-col rounded-lg bg-white shadow transition-[margin] duration-300 ease-in-out motion-reduce:transition-none",
                 !isMobile && collapsed && "ml-3",
                 isMobile && "m-3",
               )}

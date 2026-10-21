@@ -75,6 +75,8 @@ const MultiTag = ({
     options,
     open,
     removeTag,
+    retrySearch,
+    searchFailed,
     setOpen,
   } = useMultiTag({ postId, type, value: selectedTags, onChange });
 
@@ -88,6 +90,7 @@ const MultiTag = ({
             {canManagePostTags && (
               <Button
                 type="button"
+                aria-label={`移除标签 ${tag.name?.zh || tag.name?.en || tag.id}`}
                 onClick={() => removeTag(tag.id)}
                 variant="ghost"
                 size="icon"
@@ -127,6 +130,18 @@ const MultiTag = ({
                       label="正在搜索标签..."
                       visuallyHiddenLabel
                     />
+                  </div>
+                ) : searchFailed ? (
+                  <div className="px-2 py-2 text-sm">
+                    <p role="alert">标签搜索失败，请重试</p>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={() => void retrySearch()}
+                    >
+                      重试
+                    </Button>
                   </div>
                 ) : (
                   <>

@@ -26,7 +26,10 @@ export type { FieldConfig } from "./types";
 export function DynamicField(field: FieldConfig) {
   const labelId = React.useId();
   const form = useFormContext<Record<string, unknown>>();
-  const formValues = useWatch({ control: form.control });
+  useWatch({
+    control: form.control,
+    disabled: !field.disabled && typeof field.options !== "function",
+  });
 
   const renderField = (
     name: string,
@@ -38,7 +41,7 @@ export function DynamicField(field: FieldConfig) {
           field={field}
           name={name}
           controllerField={controllerField}
-          formValues={formValues}
+          formValues={form.getValues()}
           aria-labelledby={field.label ? labelId : undefined}
         />
       </FormControl>

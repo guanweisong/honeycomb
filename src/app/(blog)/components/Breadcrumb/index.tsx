@@ -5,7 +5,7 @@ import React from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 /**
  * 面包屑组件的属性接口。
@@ -14,7 +14,7 @@ export interface BreadCrumbProps {
   /**
    * 菜单数据，用于构建面包屑路径。
    */
-  menu: MenuEntity[];
+  menu: MenuNavigationItem[];
 }
 
 /**
@@ -59,29 +59,32 @@ const Breadcrumb = (props: BreadCrumbProps) => {
     },
   ];
 
-  switch (segmentType) {
-    case "list":
-      if (segmentTypePath[1]) {
-        const firstLevelItem = menu.find(
-          (item) => item.path === segmentTypePath[1],
-        );
-        if (firstLevelItem) {
-          breadData.push({
-            label: firstLevelItem.title?.[locale],
-          });
-        }
-      }
-      if (segmentTypePath[2]) {
-        const secondLevelItem = menu.find(
-          (item) => item.path === segmentTypePath[2],
-        );
-        if (secondLevelItem) {
-          breadData.push({
-            label: secondLevelItem.title?.[locale],
-          });
-        }
-      }
-      break;
+  if (segmentType === "list" && segmentTypePath[0] === "category") {
+    const paths = segmentTypePath.slice(1);
+    const ids = new Set(menu.map((item) => item.id));
+    let parent: MenuNavigationItem | undefined;
+    for (const [index, path] of paths.entries()) {
+      const item = menu.find(
+        (item) =>
+          item.path === path &&
+          (parent
+            ? item.parent === parent.id
+            : !item.parent || !ids.has(item.parent)),
+      );
+      // Do not invent a current page for a partially resolved route.
+      if (!item) return null;
+      breadData.push({
+        label: item.title?.[locale],
+        link:
+          index < paths.length - 1
+            ? `/list/category/${paths
+                .slice(0, index + 1)
+                .map(encodeURIComponent)
+                .join("/")}`
+            : undefined,
+      });
+      parent = item;
+    }
   }
 
   if (breadData.length === 1) {

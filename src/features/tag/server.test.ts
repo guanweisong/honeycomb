@@ -55,4 +55,18 @@ describe("Tag server operations", () => {
     ).rejects.toBe(error);
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
+
+  it("tag destroy 使用批量删除并返回成功", async () => {
+    const invalidator = {
+      invalidate: async () => ({ state: "completed" as const }),
+    };
+    const db = createMockDb();
+    const where = vi.fn().mockResolvedValue(undefined);
+    db.delete.mockReturnValue({ where });
+
+    await expect(
+      destroyTags(asMockDatabase(db), ["tag-1", "tag-2"], invalidator),
+    ).resolves.toEqual({ success: true, publicSync: "completed" });
+    expect(where).toHaveBeenCalled();
+  });
 });

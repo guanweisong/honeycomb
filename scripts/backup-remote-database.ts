@@ -6,10 +6,11 @@ import {
   lstatSync,
   mkdirSync,
   readdirSync,
+  realpathSync,
   writeFileSync,
 } from "node:fs";
 import { createHash } from "node:crypto";
-import { isAbsolute, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { requiredEnvironmentVariable } from "./cli";
 import { quoteSqliteIdentifier } from "./sqlite";
 
@@ -28,17 +29,36 @@ if (directory === repository || directory.startsWith(`${repository}/`)) {
   throw new Error("Backup directory must be outside the repository");
 }
 
-mkdirSync(directory, { recursive: true, mode: 0o700 });
-chmodSync(directory, 0o700);
-const directoryStat = lstatSync(directory);
-if (directoryStat.isSymbolicLink())
-  throw new Error("Backup directory must not be a symlink");
-if (
-  typeof process.getuid === "function" &&
-  directoryStat.uid !== process.getuid()
-) {
-  throw new Error("Backup directory must be owned by the current user");
+// Validate existing destinations before any permission change or file creation.
+function validateDirectory(path: string): void {
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink())
+    throw new Error("Backup directory must not be a symlink");
+  if (!stat.isDirectory())
+    throw new Error("Backup destination must be a directory");
+  if (typeof process.getuid === "function" && stat.uid !== process.getuid()) {
+    throw new Error("Backup directory must be owned by the current user");
+  }
 }
+
+if (existsSync(directory)) validateDirectory(directory);
+const realRepository = realpathSync(repository);
+let existingParent = directory;
+while (!existsSync(existingParent)) existingParent = dirname(existingParent);
+const resolvedDestination = resolve(
+  realpathSync(existingParent),
+  relative(existingParent, directory),
+);
+if (
+  resolvedDestination === realRepository ||
+  resolvedDestination.startsWith(`${realRepository}/`)
+) {
+  throw new Error("Backup directory must be outside the repository");
+}
+mkdirSync(directory, { recursive: true, mode: 0o700 });
+validateDirectory(directory);
+// This CLI assumes no concurrent hostile directory replacement by the owner.
+chmodSync(directory, 0o700);
 
 const remoteUrl = requiredEnvironmentVariable("TURSO_URL");
 const databasePath = join(directory, "honeycomb.db");

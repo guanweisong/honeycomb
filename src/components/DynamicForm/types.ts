@@ -19,6 +19,7 @@ export type FieldConfig = {
         formValues: Record<string, unknown>,
       ) => { label: React.ReactNode; value: string }[]);
   placeholder?: string;
+  autoComplete?: React.ComponentProps<"input">["autoComplete"];
   disabled?: (formValues: Record<string, unknown>) => boolean;
   multiLang?: boolean;
 };

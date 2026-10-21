@@ -24,8 +24,13 @@ import {
   updatePage,
   getPageCreationResult,
 } from "@/features/page/server";
-import { listPages, getPage } from "@/features/page/server/page-queries";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import {
+  listPages,
+  listPageSummaries,
+  listPageMenuOptions,
+  getPage,
+} from "@/features/page/server/page-queries";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({
@@ -35,7 +40,18 @@ export const pageRouter = createTRPCRouter({
   adminIndex: permissionProcedure(Permission.pageReadAll)
     .input(PageListQuerySchema)
     .query(({ input, ctx }) =>
-      listPages(
+      listPageSummaries(
+        ctx.db,
+        input,
+        can(ctx.user.level, Permission.pageReadUnpublished)
+          ? "ALL"
+          : "PUBLISHED_ONLY",
+      ),
+    ),
+  menuOptions: permissionProcedure(Permission.pageReadAll)
+    .input(PageListQuerySchema)
+    .query(({ input, ctx }) =>
+      listPageMenuOptions(
         ctx.db,
         input,
         can(ctx.user.level, Permission.pageReadUnpublished)

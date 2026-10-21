@@ -37,6 +37,8 @@ export function ToolbarButton({
   const button = (
     <Button
       type="button"
+      aria-label={label}
+      aria-pressed={active}
       size="icon"
       className={cn(active ? "!text-purple-600" : "", className)}
       variant={"ghost"}

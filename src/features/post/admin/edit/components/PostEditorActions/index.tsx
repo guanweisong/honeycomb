@@ -25,6 +25,9 @@ export function PostEditorActions({
   const isEdit = !!id;
   const isDraft = status === PostStatus.DRAFT;
   const isPublished = status === PostStatus.PUBLISHED;
+  const isAwaitingAudit = status === PostStatus.TO_AUDIT;
+  const canSaveUnpublished =
+    canUpdatePost && isEdit && (isDraft || isAwaitingAudit);
 
   return (
     <>
@@ -50,16 +53,21 @@ export function PostEditorActions({
           onOK={() => submit(PostStatus.DRAFT, "update")}
         />
       )}
-      {canUpdatePost && isEdit && isDraft && (
+      {canSaveUnpublished && (
         <Button
           type="button"
           disabled={loading}
-          onClick={() => submit(PostStatus.DRAFT, "update")}
+          onClick={() =>
+            submit(
+              isAwaitingAudit ? PostStatus.TO_AUDIT : PostStatus.DRAFT,
+              "update",
+            )
+          }
         >
-          保存
+          {isAwaitingAudit ? "保存待审核" : "保存"}
         </Button>
       )}
-      {((canUpdatePost && isEdit && isDraft) || (canCreatePost && !isEdit)) && (
+      {(canSaveUnpublished || (canCreatePost && !isEdit)) && (
         <Button
           type="button"
           disabled={loading}

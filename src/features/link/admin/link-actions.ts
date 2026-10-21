@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ModalType } from "@/components/admin/modal-type";
 import {
@@ -67,6 +67,7 @@ export function useLinkActions({
   const [dialogState, setDialogState] = useState<LinkDialogState>(
     createInitialAdminDialogState,
   );
+  const dialogGeneration = useRef(0);
   const createLink = trpc.link.create.useMutation();
   const updateLink = trpc.link.update.useMutation();
   const destroyLink = trpc.link.destroy.useMutation();
@@ -92,6 +93,7 @@ export function useLinkActions({
     });
 
   const handleModalOk = async (values: LinkInsert | LinkUpdate) => {
+    const generation = dialogGeneration.current;
     const state =
       dialogState.type === ModalType.ADD
         ? await runAdminMutation({
@@ -114,19 +116,28 @@ export function useLinkActions({
             notifyError: toast.error,
           });
 
-    if (state === "success") setDialogState(closeAdminDialog());
+    if (state === "success" && generation === dialogGeneration.current) {
+      setDialogState(closeAdminDialog());
+    }
   };
 
   return {
     dialogState,
-    handleAddNew: () => setDialogState(openAddAdminDialog()),
-    handleEditItem: (record: LinkEntity) =>
-      setDialogState(openEditAdminDialog(record)),
+    handleAddNew: () => {
+      dialogGeneration.current += 1;
+      setDialogState(openAddAdminDialog());
+    },
+    handleEditItem: (record: LinkEntity) => {
+      dialogGeneration.current += 1;
+      setDialogState(openEditAdminDialog(record));
+    },
     handleDeleteItem,
     handleDeleteBatch,
     handleModalOk,
-    handleDialogOpenChange: (open: boolean) =>
-      setDialogState((state) => ({ ...state, open })),
+    handleDialogOpenChange: (open: boolean) => {
+      dialogGeneration.current += 1;
+      setDialogState((state) => ({ ...state, open }));
+    },
   };
 }
 /**

@@ -17,6 +17,32 @@ const editor = {
 } as UserEntity;
 
 describe("user action state", () => {
+  it("omits an unchanged name from full edit values", async () => {
+    const update = vi.fn().mockResolvedValue(editor);
+    await submitUserUpdate({
+      record: editor,
+      values: {
+        id: editor.id,
+        name: editor.name ?? undefined,
+        email: "new@example.test",
+        level: editor.level,
+        status: UserStatus.DISABLE,
+        password: "new-password",
+      },
+      update,
+      refetch: vi.fn(),
+      notifySuccess: vi.fn(),
+      notifyError: vi.fn(),
+    });
+    expect(update.mock.calls[0]?.[0]).toEqual({
+      id: editor.id,
+      email: "new@example.test",
+      level: editor.level,
+      status: UserStatus.DISABLE,
+      password: "new-password",
+    });
+  });
+
   it("reports success only after updating the selected target and refetching", async () => {
     const update = vi.fn().mockResolvedValue(editor);
     const refetch = vi.fn();

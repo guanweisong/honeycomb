@@ -6,7 +6,7 @@ import {
 } from "@/lib/db/transaction-begin-retry";
 import { parseEnumValue } from "@/lib/db/value-validation";
 
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
@@ -24,7 +24,26 @@ import { UserStatus } from "@/features/user/user";
 
 import { ApplicationError } from "@/lib/errors/application-error";
 
+// Insert budgets count every bound column, including generated timestamps.
+const menuInsertChunkSize = Math.max(
+  1,
+  Math.floor(
+    SQL_ID_CHUNK_SIZE / Object.keys(getTableColumns(schema.menu)).length,
+  ),
+);
+
 const busyMessage = "保存暂时繁忙，请核对最新版本后重试";
+
+async function readMenuChunks<Row>(
+  ids: string[],
+  read: (ids: string[]) => PromiseLike<Row[]>,
+): Promise<Row[]> {
+  const rows: Row[] = [];
+  for (let offset = 0; offset < ids.length; offset += SQL_ID_CHUNK_SIZE) {
+    rows.push(...(await read(ids.slice(offset, offset + SQL_ID_CHUNK_SIZE))));
+  }
+  return rows;
+}
 
 function validateMenuTree(input: MenuInput): void {
   const ids = new Set<string>();
@@ -105,10 +124,12 @@ export async function saveAllMenus(
           if (!ids.length) continue;
           const target =
             type === MenuType.CATEGORY ? schema.category : schema.page;
-          const targets = await tx
-            .select({ id: target.id })
-            .from(target)
-            .where(inArray(target.id, ids));
+          const targets = await readMenuChunks(ids, (chunk) =>
+            tx
+              .select({ id: target.id })
+              .from(target)
+              .where(inArray(target.id, chunk)),
+          );
           if (targets.length !== ids.length)
             throw new ApplicationError(
               "BAD_REQUEST",
@@ -119,24 +140,41 @@ export async function saveAllMenus(
         const rowIdByBusinessId = new Map(
           input.map((item) => [item.id, crypto.randomUUID()]),
         );
-        const rows = await tx
-          .insert(schema.menu)
-          .values(
-            input.map(({ id, type, parent, power }) => {
-              const rowId = rowIdByBusinessId.get(id);
-              if (!rowId) throw new Error(`菜单 ${id} 缺少持久化标识`);
-              return {
-                id: rowId,
-                parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
-                power,
-                type,
-                categoryId: type === MenuType.CATEGORY ? id : null,
-                pageId: type === MenuType.PAGE ? id : null,
-                customId: type === MenuType.CUSTOM ? id : null,
-              };
-            }),
-          )
-          .returning();
+        const rows = input.map(({ id, type, parent, power }) => {
+          const rowId = rowIdByBusinessId.get(id);
+          if (!rowId) throw new Error(`菜单 ${id} 缺少持久化标识`);
+          return {
+            id: rowId,
+            parent: parent ? (rowIdByBusinessId.get(parent) ?? null) : null,
+            power,
+            type,
+            categoryId: type === MenuType.CATEGORY ? id : null,
+            pageId: type === MenuType.PAGE ? id : null,
+            customId: type === MenuType.CUSTOM ? id : null,
+          };
+        });
+        // Parent rows must precede children when one atomic insert becomes chunks.
+        const byParent = new Map<string | null, typeof rows>();
+        for (const row of rows) {
+          const siblings = byParent.get(row.parent);
+          if (siblings) siblings.push(row);
+          else byParent.set(row.parent, [row]);
+        }
+        const ordered = [...(byParent.get(null) ?? [])];
+        for (let index = 0; index < ordered.length; index++) {
+          const row = ordered[index];
+          if (row) ordered.push(...(byParent.get(row.id) ?? []));
+        }
+        for (
+          let offset = 0;
+          offset < ordered.length;
+          offset += menuInsertChunkSize
+        ) {
+          await tx
+            .insert(schema.menu)
+            .values(ordered.slice(offset, offset + menuInsertChunkSize))
+            .returning({ id: schema.menu.id });
+        }
         return { count: rows.length, version: revision.version };
       }),
   );
@@ -169,77 +207,96 @@ export async function listMenus(
   const [categories, pages] = await Promise.all([
     categoryIds.length
       ? observeDbOperation("menu.service.categories", "select", () =>
-          db
-            .select({ id: schema.category.id, path: schema.category.path })
-            .from(schema.category)
-            .where(
-              visibility === "ALL"
-                ? inArray(schema.category.id, categoryIds)
-                : and(
-                    inArray(schema.category.id, categoryIds),
-                    eq(schema.category.status, EnableStatus.ENABLE),
-                  ),
-            ),
+          readMenuChunks(categoryIds, (chunk) =>
+            db
+              .select({ id: schema.category.id, path: schema.category.path })
+              .from(schema.category)
+              .where(
+                visibility === "ALL"
+                  ? inArray(schema.category.id, chunk)
+                  : and(
+                      inArray(schema.category.id, chunk),
+                      eq(schema.category.status, EnableStatus.ENABLE),
+                    ),
+              ),
+          ),
         )
       : Promise.resolve([]),
     pageIds.length
       ? observeDbOperation("menu.service.pages", "select", () =>
-          db
-            .select({ id: schema.page.id })
-            .from(schema.page)
-            .where(
-              visibility === "ALL"
-                ? inArray(schema.page.id, pageIds)
-                : and(
-                    inArray(schema.page.id, pageIds),
-                    eq(schema.page.status, PageStatus.PUBLISHED),
-                  ),
-            ),
+          readMenuChunks(pageIds, (chunk) =>
+            db
+              .select({ id: schema.page.id })
+              .from(schema.page)
+              .where(
+                visibility === "ALL"
+                  ? inArray(schema.page.id, chunk)
+                  : and(
+                      inArray(schema.page.id, chunk),
+                      eq(schema.page.status, PageStatus.PUBLISHED),
+                    ),
+              ),
+          ),
         )
       : Promise.resolve([]),
   ]);
   const [categoryTranslations, pageTranslations] = await Promise.all([
     categories.length
-      ? db
-          .select()
-          .from(schema.categoryTranslation)
-          .where(
-            inArray(
-              schema.categoryTranslation.categoryId,
-              categories.map(({ id }) => id),
-            ),
-          )
+      ? readMenuChunks(
+          categories.map(({ id }) => id),
+          (chunk) =>
+            db
+              .select({
+                categoryId: schema.categoryTranslation.categoryId,
+                locale: schema.categoryTranslation.locale,
+                title: schema.categoryTranslation.title,
+              })
+              .from(schema.categoryTranslation)
+              .where(inArray(schema.categoryTranslation.categoryId, chunk)),
+        )
       : Promise.resolve([]),
     pages.length
-      ? db
-          .select()
-          .from(schema.pageTranslation)
-          .where(
-            inArray(
-              schema.pageTranslation.pageId,
-              pages.map(({ id }) => id),
-            ),
-          )
+      ? readMenuChunks(
+          pages.map(({ id }) => id),
+          (chunk) =>
+            db
+              .select({
+                pageId: schema.pageTranslation.pageId,
+                locale: schema.pageTranslation.locale,
+                title: schema.pageTranslation.title,
+              })
+              .from(schema.pageTranslation)
+              .where(inArray(schema.pageTranslation.pageId, chunk)),
+        )
       : Promise.resolve([]),
   ]);
+  const categoryTranslationsById = new Map<
+    string,
+    typeof categoryTranslations
+  >();
+  for (const row of categoryTranslations) {
+    const id = row.categoryId;
+    const translations = categoryTranslationsById.get(id);
+    if (translations) translations.push(row);
+    else categoryTranslationsById.set(id, [row]);
+  }
+  const pageTranslationsById = new Map<string, typeof pageTranslations>();
+  for (const row of pageTranslations) {
+    const id = row.pageId;
+    const translations = pageTranslationsById.get(id);
+    if (translations) translations.push(row);
+    else pageTranslationsById.set(id, [row]);
+  }
   const categoryMap = new Map(
     categories.map((item) => [
       item.id,
-      {
-        ...item,
-        translations: categoryTranslations.filter(
-          (row) => row.categoryId === item.id,
-        ),
-      },
+      { ...item, translations: categoryTranslationsById.get(item.id) ?? [] },
     ]),
   );
   const pageMap = new Map(
     pages.map((item) => [
       item.id,
-      {
-        ...item,
-        translations: pageTranslations.filter((row) => row.pageId === item.id),
-      },
+      { ...item, translations: pageTranslationsById.get(item.id) ?? [] },
     ]),
   );
   const visibleRowIds = new Set(

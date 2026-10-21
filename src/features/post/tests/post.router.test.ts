@@ -1,5 +1,4 @@
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { PostWithRelationsSchema } from "../post-read-model";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
 import * as schema from "@/lib/db/schema";
@@ -17,7 +16,7 @@ import {
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },
@@ -110,14 +109,15 @@ describe("Post Router", () => {
 
       expect(result).toEqual({
         list: mockPosts.map((post) => ({
-          ...PostWithRelationsSchema.parse(post),
-          author: undefined,
-          category: undefined,
+          id: post.id,
+          type: post.type,
+          title: post.title,
+          excerpt: null,
+          movieTime: null,
+          quoteContent: null,
+          quoteAuthor: null,
+          updatedAt: post.updatedAt,
           cover: undefined,
-          movieActors: [],
-          movieDirectors: [],
-          movieStyles: [],
-          galleryStyles: [],
         })),
         total: 2,
       });
@@ -151,10 +151,13 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when tagId has no posts", async () => {
-      // 模拟 postTag 查询不返回文章 ID，再执行总数查询。
+      // EXISTS 标签筛选直接用于文章列表和总数，不再预查文章 ID。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.orderBy.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockReturnValueOnce(mockDb);
+      mockDb.offset.mockResolvedValueOnce([]);
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);

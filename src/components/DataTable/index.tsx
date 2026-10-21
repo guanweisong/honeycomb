@@ -20,6 +20,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
   const {
     columns,
     getRowId,
+    getRowLabel,
     data,
     isFetching,
     error,
@@ -131,6 +132,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             hasRowActions={Boolean(rowActions)}
           />
           <DataTableBody
+            getRowLabel={getRowLabel}
             table={table}
             columnCount={columns.length}
             error={error}

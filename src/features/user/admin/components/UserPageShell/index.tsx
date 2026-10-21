@@ -78,7 +78,7 @@ export function UserPageShell() {
                       variant="outline"
                       disabled={selectedRows.length === 0}
                     >
-                      <Trash />
+                      <Trash aria-hidden="true" />
                       批量删除
                     </Button>
                   }
@@ -95,6 +95,7 @@ export function UserPageShell() {
                   {
                     name: "name",
                     type: "text",
+                    label: "搜索用户",
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}
@@ -114,15 +115,20 @@ export function UserPageShell() {
                   <Button
                     variant="secondary"
                     size="sm"
+                    aria-label="编辑用户"
                     onClick={() => handleEditItem(row)}
                   >
-                    <Pencil />
+                    <Pencil aria-hidden="true" />
                   </Button>
                   {canDeleteUserResource(row) && (
                     <Dialog
                       trigger={
-                        <Button variant="secondary" size="sm">
-                          <Trash />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          aria-label="删除用户"
+                        >
+                          <Trash aria-hidden="true" />
                         </Button>
                       }
                       type="danger"

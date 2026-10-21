@@ -6,14 +6,25 @@ const tiptapMocks = vi.hoisted(() => ({
   config: undefined as
     | { onUpdate?: (event: { editor: { getHTML: () => string } }) => void }
     | undefined,
+  useEditorRender: vi.fn(),
+  contentRender: vi.fn(),
+  active: vi.fn(() => true),
   editor: {
+    setEditable: vi.fn(),
     getHTML: () => "<p>当前内容</p>",
     on: vi.fn(),
     off: vi.fn(),
     commands: { setContent: vi.fn() },
   },
   toolbarItems: [
-    [{ label: "加粗", icon: null, onClick: vi.fn(), isActive: () => true }],
+    [
+      {
+        label: "加粗",
+        icon: null,
+        onClick: vi.fn(),
+        isActive: () => tiptapMocks.active(),
+      },
+    ],
     [
       {
         label: "更多",
@@ -33,10 +44,14 @@ const tiptapMocks = vi.hoisted(() => ({
 
 vi.mock("@tiptap/react", () => ({
   useEditor: (config: typeof tiptapMocks.config) => {
+    tiptapMocks.useEditorRender();
     tiptapMocks.config = config;
     return tiptapMocks.editor;
   },
-  EditorContent: () => React.createElement("div", { "data-testid": "editor" }),
+  EditorContent: () => {
+    tiptapMocks.contentRender();
+    return React.createElement("div", { "data-testid": "editor" });
+  },
 }));
 
 vi.mock("./config/toolbar-items", () => ({
@@ -47,10 +62,17 @@ vi.mock("./components/ToolbarButton", () => ({
   ToolbarButton: ({
     label,
     onClick,
+    active,
   }: {
     label: string;
     onClick?: () => void;
-  }) => React.createElement("button", { type: "button", onClick }, label),
+    active?: boolean;
+  }) =>
+    React.createElement(
+      "button",
+      { type: "button", onClick, "aria-pressed": active },
+      label,
+    ),
 }));
 
 vi.mock("./components/ToolbarGroupItem", () => ({
@@ -75,6 +97,9 @@ describe("Tiptap", () => {
 
   beforeEach(() => {
     tiptapMocks.config = undefined;
+    tiptapMocks.useEditorRender.mockClear();
+    tiptapMocks.contentRender.mockClear();
+    tiptapMocks.active.mockReturnValue(true);
     tiptapMocks.editor.on.mockReset();
     tiptapMocks.editor.off.mockReset();
     tiptapMocks.editor.commands.setContent.mockReset();
@@ -112,7 +137,43 @@ describe("Tiptap", () => {
 
     expect(tiptapMocks.editor.commands.setContent).toHaveBeenCalledWith(
       "<p>外部内容</p>",
+      { emitUpdate: false },
     );
+  });
+
+  it.each(["selectionUpdate", "transaction"])(
+    "updates only the toolbar on %s",
+    async (event) => {
+      await act(async () => root.render(React.createElement(TiptapForTest)));
+      const listener = tiptapMocks.editor.on.mock.calls.find(
+        ([name]) => name === event,
+      )?.[1];
+      expect(listener).toBeTypeOf("function");
+      tiptapMocks.useEditorRender.mockClear();
+      tiptapMocks.contentRender.mockClear();
+      tiptapMocks.active.mockReturnValue(false);
+
+      await act(async () => listener());
+
+      expect(
+        container.querySelector("button")?.getAttribute("aria-pressed"),
+      ).toBe("false");
+      expect(tiptapMocks.useEditorRender).not.toHaveBeenCalled();
+      expect(tiptapMocks.contentRender).not.toHaveBeenCalled();
+    },
+  );
+
+  it("removes the exact toolbar event listeners when editor unmounts", async () => {
+    await act(async () => root.render(React.createElement(TiptapForTest)));
+    const listeners = [...tiptapMocks.editor.on.mock.calls];
+    await act(async () => root.render(null));
+    expect(listeners.map(([name]) => name)).toEqual([
+      "selectionUpdate",
+      "transaction",
+    ]);
+    for (const [name, listener] of listeners) {
+      expect(tiptapMocks.editor.off).toHaveBeenCalledWith(name, listener);
+    }
   });
 
   it("renders toolbar buttons, groups, and custom items", async () => {

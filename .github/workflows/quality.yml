@@ -86,7 +86,14 @@ jobs:
           bun run db:e2e:seed
           bun run test:unit:coverage
           bun run test:unit:process
-          bun run audit:production
+          bun run audit:production --output dependency-audit-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-dependency-audit
+          path: dependency-audit-report.json
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:

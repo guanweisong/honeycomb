@@ -17,7 +17,10 @@ import { settingActionGuardMatrix } from "@tests/fixtures/admin-action-guard-mat
 import { tagActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/tag";
 import { userActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/user";
 
+import { categoryActionGuardMatrix } from "@tests/fixtures/admin-action-guard-matrix/category";
+
 export const actionGuardMatrix: readonly ActionGuardFile[] = [
+  ...categoryActionGuardMatrix,
   ...commentActionGuardMatrix,
   ...linkActionGuardMatrix,
   ...mediaActionGuardMatrix,

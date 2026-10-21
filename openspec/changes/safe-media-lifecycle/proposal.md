@@ -1,3 +1,5 @@
+> 后续说明（2026-10-21）：本提案保留生命周期方案的历史身份，不再作为当前普通媒体协议的同步来源。当前协议以 [simplify-media-registration](../simplify-media-registration/proposal.md) 和[媒体主规格](../../specs/media-lifecycle/spec.md)为准；条款名称映射见 [clarify-names-and-ownership](../clarify-names-and-ownership/specs/media-lifecycle/spec.md)。下文不改写当时设计。
+
 ## Why
 
 现有上传可将客户端任意对象 key/元数据登记为可用媒体，且公开最终 key 的预签名 PUT/DELETE 仍可修改已发布字节。删除先操作对象后删除数据库记录，丢失恢复依据。

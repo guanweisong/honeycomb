@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { ChevronUp } from "lucide-react";
-import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
+import { useScrolledPast } from "@/lib/hooks/use-scrolled-past";
 
 /**
  * 返回顶部组件。
@@ -10,19 +10,7 @@ import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
  * @returns {JSX.Element} 返回顶部按钮。
  */
 const BackToTop = () => {
-  const scroll = useScrollPosition();
-  /**
-   * 控制返回顶部按钮的显示与隐藏。
-   */
-  const [show, setShow] = useState(false);
-
-  /**
-   * 副作用钩子，用于根据页面滚动位置控制按钮的显示。
-   * 当页面滚动距离超过 300px 时，显示返回顶部按钮。
-   */
-  useEffect(() => {
-    setShow(scroll.top > 300);
-  }, [scroll.top]);
+  const show = useScrolledPast(300);
 
   /**
    * 滚动到页面顶部。
@@ -33,7 +21,7 @@ const BackToTop = () => {
 
   return show ? (
     <button
-      className="fixed text-3xl translate-x-96 transition-all bottom-10 right-1/3 bg-auto-back-gray w-16 h-16 rounded-full flex items-center justify-center shadow-2xl hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+      className="fixed text-3xl transition-shadow bottom-10 right-4 bg-auto-back-gray w-16 h-16 rounded-full flex items-center justify-center shadow-2xl hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
       onClick={goTop}
       aria-label="Back to top"
     >

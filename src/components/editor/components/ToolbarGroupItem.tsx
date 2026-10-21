@@ -37,6 +37,7 @@ export function ToolbarGroupItem({ editor, group }: ToolbarGroupItemProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
+                aria-label={triggerLabel}
                 size="icon"
                 variant="ghost"
                 className={cn(

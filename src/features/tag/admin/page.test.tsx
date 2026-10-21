@@ -48,13 +48,16 @@ vi.mock("@/components/DataTable", () => ({
 vi.mock("@/components/Dialog", () => ({
   Dialog: ({
     children,
+    trigger,
     onOK,
   }: {
     children?: ReactNode;
+    trigger?: ReactNode;
     onOK?: () => Promise<void>;
   }) => (
     <>
       {children}
+      {trigger}
       {onOK && (
         <button data-delete onClick={() => void onOK()}>
           delete
@@ -99,6 +102,15 @@ describe("Tag page public-sync feedback", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("names the tag row actions", () => {
+    expect(
+      container.querySelector('button[aria-label="编辑标签"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="删除标签"]'),
+    ).not.toBeNull();
   });
 
   it("waits for the page refresh callback after creating a tag", async () => {

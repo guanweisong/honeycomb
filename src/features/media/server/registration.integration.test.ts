@@ -486,8 +486,11 @@ it("serializes deletion against a competing content write without creating a bro
       ).toEqual([]);
     } finally {
       release();
-      await deletion;
-      competingClient.close();
+      try {
+        await deletion;
+      } finally {
+        competingClient.close();
+      }
     }
   }));
 it("a late unknown PUT cannot overwrite the fresh key used by a manual retry", () =>

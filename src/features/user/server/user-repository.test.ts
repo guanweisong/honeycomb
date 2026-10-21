@@ -10,6 +10,7 @@ import * as schema from "@/lib/db/schema";
 import { UserLevel } from "@/features/user/user";
 import { updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -229,5 +230,22 @@ describe("administrator credential resets", () => {
       .where(eq(schema.user.id, "target"));
     expect(user?.name).toBe("target");
     expect(await db.select().from(schema.session)).toHaveLength(3);
+  });
+});
+
+describe("user repository public detail", () => {
+  it("user detail 返回安全的 id 和 name", async () => {
+    const db = createMockDb();
+    const limit = vi.fn().mockResolvedValue([{ id: "user-1", name: "管理员" }]);
+    const where = vi.fn().mockReturnValue({ limit });
+    db.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where }) });
+
+    await expect(
+      createUserRepository(asMockDatabase(db)).detail("user-1"),
+    ).resolves.toEqual({ id: "user-1", name: "管理员" });
+    expect(db.select).toHaveBeenCalledExactlyOnceWith({
+      id: schema.user.id,
+      name: schema.user.name,
+    });
   });
 });

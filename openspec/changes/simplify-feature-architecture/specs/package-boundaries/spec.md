@@ -36,7 +36,7 @@
 #### Scenario: 查询登录历史
 
 - **WHEN** 已登录用户请求登录历史
-- **THEN** Route Handler 调用仅查询当前用户的服务并返回原有安全 DTO
+- **THEN** `accountSecurity.loginHistory` tRPC procedure SHALL 委托所属 Feature 服务，仅查询当前用户并返回安全 DTO，不通过旧登录历史 Route Handler 暴露数据
 
 ### Requirement: 通用 UI 不依赖具体 App feature
 
@@ -44,8 +44,8 @@
 
 #### Scenario: 富文本选择媒体
 
-- **WHEN** Page 或 Post 编辑器点击图片或视频选择按钮
-- **THEN** 后台 feature 注入的媒体选择器打开并将所选 URL 返回给 Tiptap
+- **WHEN** Page 或 Post 编辑器点击图片选择按钮
+- **THEN** 后台 feature 注入的图片选择器打开并将所选 URL 返回给 Tiptap；当前不提供视频上传或视频选择入口
 
 #### Scenario: 独立加载通用组件
 

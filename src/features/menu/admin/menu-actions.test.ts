@@ -15,7 +15,7 @@ const checkedList = [
     power: 7,
     type: MenuType.CATEGORY,
   },
-] as MenuEntityTree[];
+] satisfies MenuEntityTree[];
 
 describe("menu actions", () => {
   it("reports success after saving the normalized payload and refetching", async () => {

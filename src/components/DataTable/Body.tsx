@@ -7,6 +7,7 @@ import { TableBody, TableCell, TableRow } from "../ui/table";
 
 interface DataTableBodyProps<TData> {
   table: TanStackTable<TData>;
+  getRowLabel?: (row: TData) => string;
   columnCount: number;
   error?: boolean;
   isFetching?: boolean;
@@ -21,6 +22,7 @@ interface DataTableBodyProps<TData> {
 export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
   const {
     table,
+    getRowLabel,
     columnCount,
     error,
     isFetching,
@@ -66,6 +68,7 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
             {selectableRows && (
               <TableCell>
                 <Checkbox
+                  aria-label={`选择记录 ${getRowLabel?.(row.original) ?? row.id}`}
                   checked={isRowSelected(row.original)}
                   onCheckedChange={(checked) =>
                     onSelectRow(row.original, checked)

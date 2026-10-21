@@ -58,9 +58,6 @@ const CustomPie = ({
   loading = false,
   colors = COLORS,
 }: PieProps) => {
-  // 按照 count 从大到小排序
-  const sortedData = [...(data || [])].sort((a, b) => b.count - a.count);
-
   if (loading) {
     return (
       <div
@@ -88,6 +85,10 @@ const CustomPie = ({
       </div>
     );
   }
+
+  // Preserve the query cache array while sharing one total across legend entries.
+  const sortedData = [...(data || [])].sort((a, b) => b.count - a.count);
+  const total = data?.reduce((sum, item) => sum + item.count, 0) || 1;
 
   return (
     <div className="w-[380px] p-4 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -128,8 +129,6 @@ const CustomPie = ({
               wrapperStyle={{ paddingLeft: "10px" }}
               formatter={(value, _entry, index) => {
                 const payload = sortedData[index];
-                const total =
-                  data?.reduce((sum, item) => sum + item.count, 0) || 1;
                 const percent = (((payload?.count ?? 0) / total) * 100).toFixed(
                   0,
                 );

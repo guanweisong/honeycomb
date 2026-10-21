@@ -32,6 +32,12 @@ describe("Playwright web server configuration", () => {
     vi.unstubAllEnvs();
   });
 
+  it("does not write missing snapshots during verification", async () => {
+    vi.resetModules();
+    const config = (await import("../../playwright.config")).default;
+    expect(config.updateSnapshots).toBe("none");
+  });
+
   it.each([
     { PLAYWRIGHT_HOST: "evil.example" },
     { PLAYWRIGHT_BASE_URL: "https://evil.example" },

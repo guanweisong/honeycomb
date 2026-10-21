@@ -13,6 +13,11 @@ test.describe("blog a11y", () => {
     await page.keyboard.press("Enter");
 
     await expect(page).toHaveURL(/#main-content$/);
-    await expect(page.locator("#main-content")).toBeVisible();
+    const main = page.locator("#main-content");
+    await expect(main).toBeVisible();
+    // A fragment may establish the sequential focus starting point without
+    // making <main> activeElement. Verify the user's next keyboard action.
+    await page.keyboard.press("Tab");
+    await expect(main.locator(":focus")).toBeVisible();
   });
 });

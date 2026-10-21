@@ -45,6 +45,22 @@ describe("唯一事实源架构门禁", () => {
     }
   });
 
+  it.each([
+    ["src/features/link/types.ts", "LinkListInput", "LinkListQueryInput"],
+    ["src/features/menu/admin/menu-transforms.ts", "MenuSaveItem", "MenuInput"],
+    [
+      "src/features/post/server/post-translations.ts",
+      "PostTranslationInput",
+      "PostFields",
+    ],
+  ])("%s 的 %s 引用已有权威输入", (path, name, authority) => {
+    const declaration = sourceFile(path).statements.find(
+      (node) => ts.isTypeAliasDeclaration(node) && node.name.text === name,
+    );
+    expect(declaration).toBeDefined();
+    expect(declaration?.getText()).toContain(authority);
+  });
+
   it("Setting 与 Menu 写入类型由 Feature schema 推导", () => {
     for (const path of [
       "src/features/setting/types.ts",
@@ -257,7 +273,7 @@ describe("唯一事实源架构门禁", () => {
       .map((node) => node.moduleSpecifier)
       .filter(ts.isStringLiteral)
       .map((node) => node.text)
-      .filter((specifier) => specifier.endsWith("/AddCategoryModal"));
+      .filter((specifier) => specifier.endsWith("/CategoryFormDialog"));
     expect(modalPropImports).toEqual([]);
   });
 

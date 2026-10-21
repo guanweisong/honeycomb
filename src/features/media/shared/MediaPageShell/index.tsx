@@ -106,7 +106,7 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
           >
             <UploadCloud />
             {loading ? (
-              <LoadingState variant="inline" label="正在上传中..." />
+              <LoadingState variant="inline" label="正在上传…" />
             ) : (
               "点击上传文件"
             )}
@@ -131,6 +131,11 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
         onDelete={handleDelete}
         onSelect={setCurrentItem}
       />
+      {query.error && (
+        <Button onClick={query.retry} disabled={query.isRetrying}>
+          {query.data.list.length ? "加载更多失败，重试" : "加载失败，重试"}
+        </Button>
+      )}
       <div
         ref={loadMoreRef}
         data-testid="media-load-more-sentinel"
@@ -140,7 +145,7 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
         {query.isFetchingMore ? (
           <LoadingState
             variant="inline"
-            label="正在加载更多..."
+            label="正在加载更多…"
             visuallyHiddenLabel
           />
         ) : !query.error && !query.hasMore && query.data?.list.length ? (

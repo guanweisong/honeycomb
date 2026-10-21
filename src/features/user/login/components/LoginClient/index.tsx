@@ -44,6 +44,20 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
     null,
   );
   const form = useRef<DynamicFormRef<LoginValues>>(null);
+  const interactiveLoginInFlight = useRef(false);
+  const [interactiveLoginPending, setInteractiveLoginPending] = useState(false);
+
+  const [backgroundMotionAllowed, setBackgroundMotionAllowed] = useState(false);
+  const [backgroundPaused, setBackgroundPaused] = useState(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: no-preference)");
+    const update = () => setBackgroundMotionAllowed(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   const callbackUrl = normalizeAdminCallback(targetUrl);
 
@@ -56,7 +70,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
 
   /**
    * 表单提交处理器。
-   * 当用户点击登录按钮时，如果验证码已就绪，则调用 Credentials Provider 完成登录。
+   * 当用户点击登录按钮时，如果验证码已就绪，则调用 Better Auth 的用户名登录接口完成登录。
    */
   const onSubmit = () => {
     if (clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
@@ -99,38 +113,94 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
    * @param {string} providerId - Provider 在 Better Auth 中的唯一标识。
    */
   const handleOAuthLogin = async (providerId: string) => {
-    await authClient.signIn.social({
-      provider: providerId,
-      callbackURL: callbackUrl,
-    });
+    if (interactiveLoginInFlight.current) return;
+    interactiveLoginInFlight.current = true;
+    setInteractiveLoginPending(true);
+    try {
+      const result = await authClient.signIn.social({
+        provider: providerId,
+        callbackURL: callbackUrl,
+      });
+      if (result.error) toast.error(result.error.message || "第三方登录失败");
+    } catch {
+      toast.error("无法完成第三方登录，请稍后重试");
+    } finally {
+      interactiveLoginInFlight.current = false;
+      setInteractiveLoginPending(false);
+    }
   };
 
   const handlePasskeyLogin = async () => {
-    const result = await authClient.signIn.passkey();
-    if (result.error) {
-      toast.error(result.error.message || "Passkey 登录失败");
-      return;
+    if (interactiveLoginInFlight.current) return;
+    interactiveLoginInFlight.current = true;
+    setInteractiveLoginPending(true);
+    try {
+      const result = await authClient.signIn.passkey();
+      if (result.error) {
+        if (
+          "code" in result.error &&
+          (result.error.code === "AUTH_CANCELLED" ||
+            result.error.code === "ERROR_CEREMONY_ABORTED" ||
+            result.error.code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY")
+        ) {
+          toast.info("Passkey 登录未完成，可重试");
+        } else {
+          toast.error(result.error.message || "Passkey 登录失败");
+        }
+        return;
+      }
+      toast.success("登录成功");
+      window.location.href = callbackUrl;
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error.name === "AbortError" || error.name === "NotAllowedError")
+      ) {
+        toast.info("Passkey 登录未完成，可重试");
+      } else {
+        toast.error("无法完成 Passkey 登录，请稍后重试");
+      }
+    } finally {
+      interactiveLoginInFlight.current = false;
+      setInteractiveLoginPending(false);
     }
-    toast.success("登录成功");
-    window.location.href = callbackUrl;
   };
 
   return (
     <>
-      <Script
-        id={DEFAULT_SCRIPT_ID}
-        src={SCRIPT_URL}
-        strategy="afterInteractive"
-      />
-      <div className="min-h-screen box-border pt-48 text-center bg-green-700">
-        <video
-          src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
-          className="fixed inset-0 w-full h-full object-cover"
-          autoPlay={true}
-          muted={true}
-          loop={true}
+      {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+        <Script
+          id={DEFAULT_SCRIPT_ID}
+          src={SCRIPT_URL}
+          strategy="afterInteractive"
         />
-        <div className="fixed z-10 w-96 mx-auto left-0 right-0 top-[30%] text-white p-6 bg-white/20 backdrop-blur rounded overflow-hidden">
+      ) : null}
+      <div className="min-h-dvh box-border flex items-center justify-center px-4 py-8 text-center bg-green-700">
+        {backgroundMotionAllowed && !backgroundPaused && (
+          <video
+            src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
+            className="fixed inset-0 w-full h-full object-cover"
+            autoPlay={true}
+            muted={true}
+            loop={true}
+            playsInline
+            aria-hidden="true"
+          />
+        )}
+        <div className="relative z-10 w-full max-w-96 my-auto text-white p-6 bg-white/20 backdrop-blur rounded">
+          {backgroundMotionAllowed && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="mb-4"
+              onClick={() => setBackgroundPaused((paused) => !paused)}
+            >
+              {backgroundPaused ? "播放背景动画" : "暂停背景动画"}
+            </Button>
+          )}
           <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
           <div className="opacity-80 mb-6">游客账号：guest 123456</div>
           <div className="space-y-4 [&_[data-slot=form-item]]:gap-1.5 [&_input[data-slot=input]]:h-10 [&_input[data-slot=input]]:rounded-md [&_input[data-slot=input]]:border-white/20 [&_input[data-slot=input]]:bg-white/80 [&_input[data-slot=input]]:px-4 [&_input[data-slot=input]]:text-black [&_input[data-slot=input]]:shadow-none [&_input[data-slot=input]]:placeholder:text-black/45 [&_input[data-slot=input]]:focus-visible:border-white [&_input[data-slot=input]]:focus-visible:ring-white/30 [&_[data-slot=form-message]]:text-left [&_[data-slot=form-message]]:text-red-200">
@@ -138,8 +208,20 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
               ref={form}
               schema={LoginSchema}
               fields={[
-                { name: "name", type: "text", placeholder: "用户名" },
-                { name: "password", type: "password", placeholder: "密码" },
+                {
+                  name: "name",
+                  type: "text",
+                  label: "用户名",
+                  placeholder: "用户名",
+                  autoComplete: "username",
+                },
+                {
+                  name: "password",
+                  type: "password",
+                  label: "密码",
+                  placeholder: "密码",
+                  autoComplete: "current-password",
+                },
               ]}
               submitProps={{
                 children: "登录",
@@ -163,6 +245,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
                   variant="secondary"
                   size="lg"
                   className="w-full bg-white/80 text-black hover:bg-white"
+                  disabled={interactiveLoginPending}
                   onClick={handlePasskeyLogin}
                 >
                   使用 Passkey 登录
@@ -181,6 +264,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
                 variant="secondary"
                 size="lg"
                 className="w-full justify-center bg-black/80 px-4 text-white hover:bg-black"
+                disabled={interactiveLoginPending}
                 onClick={() => handleOAuthLogin(provider.id)}
               >
                 <span className="inline-flex items-center gap-2">

@@ -6,12 +6,14 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PostListResult } from "@/features/post/types";
-import { PostStatus } from "@/features/post/post-status";
+import type { PublicPostListResult } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { EnableStatus } from "@/lib/validation/enable-status";
 
 const transport = vi.hoisted(() => ({ request: vi.fn() }));
+let notifyIntersection:
+  ((entries: Array<{ isIntersecting: boolean }>) => void) | undefined;
+const intersect = () => notifyIntersection?.([{ isIntersecting: true }]);
+let notificationsOnObserve = 1;
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { post: { index: { query: transport.request } } },
 }));
@@ -30,34 +32,19 @@ vi.mock("next-intl", () => ({
 
 import PostList from "./index";
 
-function page(id: string, total = 3): PostListResult {
+function page(id: string, total = 3): PublicPostListResult {
   return {
     total,
     list: [
       {
         id,
-        version: 0,
-        authorId: "author",
-        categoryId: "category",
-        commentStatus: EnableStatus.ENABLE,
-        content: null,
-        coverId: null,
-        createdAt: null,
         excerpt: null,
-        galleryLocation: null,
-        galleryStyles: [],
-        galleryTime: null,
-        movieActors: [],
-        movieDirectors: [],
-        movieStyles: [],
         movieTime: null,
         quoteAuthor: null,
         quoteContent: null,
-        status: PostStatus.PUBLISHED,
         title: { en: id },
         type: PostType.ARTICLE,
         updatedAt: null,
-        views: 0,
       },
     ],
   };
@@ -71,6 +58,24 @@ describe("PostList query recovery", () => {
   beforeEach(() => {
     notifyManager.setScheduler(queueMicrotask);
     transport.request.mockReset();
+    notificationsOnObserve = 1;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      function (
+        callback: (entries: Array<{ isIntersecting: boolean }>) => void,
+      ) {
+        return {
+          observe: () => {
+            notifyIntersection = callback;
+            for (let index = 0; index < notificationsOnObserve; index++)
+              callback([{ isIntersecting: true }]);
+          },
+          disconnect: () => {
+            if (notifyIntersection === callback) notifyIntersection = undefined;
+          },
+        };
+      },
+    );
     client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -79,7 +84,7 @@ describe("PostList query recovery", () => {
     root = createRoot(container);
     Object.defineProperty(document.body, "scrollHeight", {
       configurable: true,
-      value: 1000,
+      value: 10000,
     });
     Object.defineProperty(window, "innerHeight", {
       configurable: true,
@@ -92,6 +97,7 @@ describe("PostList query recovery", () => {
     client.clear();
     notifyManager.setScheduler((callback) => setTimeout(callback, 0));
     container.remove();
+    vi.unstubAllGlobals();
   });
 
   async function render(categoryId = "original") {
@@ -108,12 +114,12 @@ describe("PostList query recovery", () => {
   }
 
   it("preserves pages through failure and resumes pagination after explicit retry succeeds", async () => {
-    let finishRetry: ((result: PostListResult) => void) | undefined;
+    let finishRetry: ((result: PublicPostListResult) => void) | undefined;
     transport.request
       .mockRejectedValueOnce(new Error("network failure"))
       .mockImplementationOnce(
         () =>
-          new Promise<PostListResult>((resolve) => {
+          new Promise<PublicPostListResult>((resolve) => {
             finishRetry = resolve;
           }),
       )
@@ -140,6 +146,27 @@ describe("PostList query recovery", () => {
     expect(container.textContent).toContain("third");
     expect(container.textContent).toContain("listEnd");
     expect(container.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("coalesces repeated observer notifications while the next page is pending", async () => {
+    notificationsOnObserve = 3;
+    let finish: ((result: PublicPostListResult) => void) | undefined;
+    transport.request.mockImplementationOnce(
+      () =>
+        new Promise<PublicPostListResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await render();
+    await act(async () => {
+      intersect();
+      intersect();
+    });
+    expect(transport.request).toHaveBeenCalledTimes(1);
+    await act(async () => finish?.(page("second", 2)));
+    expect(container.textContent).toContain("original-first");
+    expect(container.textContent).toContain("second");
+    expect(container.textContent).toContain("listEnd");
   });
 
   it("does not carry a failed query's pause into new filters", async () => {

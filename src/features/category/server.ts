@@ -12,7 +12,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/lib/db/query/query-builders";
-import { sonsTree } from "./tree";
+import { flattenCategoryHierarchy } from "./tree";
 import { observeDbOperation } from "@/lib/observability/server";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { supportedLanguages } from "@/lib/i18n/i18n";
@@ -42,15 +42,20 @@ async function withTranslations<T extends typeof schema.category.$inferSelect>(
   rows: T[],
 ) {
   if (!rows.length) return [];
-  const translations = await db
-    .select()
-    .from(schema.categoryTranslation)
-    .where(
-      inArray(
-        schema.categoryTranslation.categoryId,
-        rows.map(({ id }) => id),
-      ),
+  const translations: (typeof schema.categoryTranslation.$inferSelect)[] = [];
+  for (let offset = 0; offset < rows.length; offset += SQL_ID_CHUNK_SIZE) {
+    translations.push(
+      ...(await db
+        .select()
+        .from(schema.categoryTranslation)
+        .where(
+          inArray(
+            schema.categoryTranslation.categoryId,
+            rows.slice(offset, offset + SQL_ID_CHUNK_SIZE).map(({ id }) => id),
+          ),
+        )),
     );
+  }
   const byId = groupCategoryTranslations(translations);
   return rows.map((row) => ({
     ...row,
@@ -206,6 +211,12 @@ export async function updateCategory(
   await assertPath(db, input.path, input.id);
 
   const { id, title, description, ...changes } = input;
+  const parentChanges = {
+    ...changes,
+    ...(title !== undefined || description !== undefined
+      ? { updatedAt: new Date().toISOString() }
+      : {}),
+  };
   // The recursive guard and write share one SQLite statement, so two
   // concurrent reparentings cannot both pass a stale ancestor check.
   const parentGuard =
@@ -220,10 +231,10 @@ export async function updateCategory(
       )`;
   const value = await observeDbOperation("category.update", "transaction", () =>
     db.transaction(async (tx) => {
-      const [updated] = Object.keys(changes).length
+      const [updated] = Object.keys(parentChanges).length
         ? await tx
             .update(schema.category)
-            .set(changes)
+            .set(parentChanges)
             .where(and(eq(schema.category.id, id), parentGuard))
             .returning()
         : await tx
@@ -394,7 +405,7 @@ export async function getCategoryTree(
   // Assemble before visibility filtering so hidden parents also hide their subtree.
   const visible = new Map<string, boolean>();
   const localizedRows = await withTranslations(db, rows);
-  const list = sonsTree(localizedRows).filter((item) => {
+  const list = flattenCategoryHierarchy(localizedRows).filter((item) => {
     const enabled =
       visibility === "ALL" ||
       (item.status === EnableStatus.ENABLE &&

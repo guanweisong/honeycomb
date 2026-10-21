@@ -1,6 +1,6 @@
 # Admin render smoke tests
 
-`render.spec.ts` adds 25 independent, read-only browser cases:
+`render.spec.ts` contains independent browser cases that do not submit content writes:
 
 - Dashboard; post/page lists and both new/seeded edit forms; categories,
   comments, tags, users, links, media, menu, and site settings.
@@ -37,8 +37,9 @@ content is independently covered by the corresponding page case.
 This is render coverage, not CRUD, production data, real CAPTCHA challenges,
 email delivery, external OAuth, Passkey registration, or storage integration
 coverage. Login UI rendering and real password API sign-in are covered, not
-an interactive CAPTCHA/login submission flow. The media/link fixtures may
-legitimately be empty. Modal dialogs and every post type/locale are not separate
+an interactive CAPTCHA/login submission flow. Media assertions require the seeded cover; links may legitimately be empty.
+Narrow/short login viewports, reduced-motion behavior, and a narrow media picker
+with keyboard selection and cancellation have explicit regressions. Modal dialogs and every post type/locale are not separate
 routes and are not exhaustively exercised here.
 
 ## Local draft recovery regression

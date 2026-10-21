@@ -1,6 +1,10 @@
 import "server-only";
 
-import { Resend } from "resend";
+import {
+  Resend,
+  type CreateEmailOptions,
+  type CreateEmailRequestOptions,
+} from "resend";
 import { getResendEnv } from "@/env/server";
 import { LogEvent } from "@/lib/observability/core/names";
 import {
@@ -9,6 +13,7 @@ import {
 } from "@/lib/observability/server";
 import AdminCommentEmailMessage from "./templates/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "./templates/ReplyCommentEmailMessage";
+import { CUSTOM_COMMENT_NOTIFICATION_TITLE } from "./comment-notification";
 import type {
   CommentNotification,
   CommentNotificationSetting,
@@ -27,6 +32,21 @@ interface CommentEmailPayload {
   parentComment?: CommentNotification;
 }
 
+async function sendWithDeadline(resend: Resend, payload: CreateEmailOptions) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5_000);
+  // Resend forwards request options to fetch but omits signal from its public
+  // type. Keep this adaptation local and cover it with the real-SDK transport.
+  const options: CreateEmailRequestOptions & Pick<RequestInit, "signal"> = {
+    signal: controller.signal,
+  };
+  try {
+    return await resend.emails.send(payload, options);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function sendCommentEmail(
   type: CommentEmailType,
   payload: CommentEmailPayload,
@@ -41,10 +61,10 @@ export async function sendCommentEmail(
   try {
     if (type === "ADMIN_NOTICE") {
       await observeExternalServiceOperation("email", "send", async () => {
-        const result = await resend.emails.send({
+        const result = await sendWithDeadline(resend, {
           from: resendEnv.fromEmail,
           to: resendEnv.adminEmail,
-          subject: `[${siteNameZh}]有一条新的评论`,
+          subject: `[${siteNameZh}]${currentComment.customId ? CUSTOM_COMMENT_NOTIFICATION_TITLE : "有一条新的评论"}`,
           react: AdminCommentEmailMessage({ currentComment, setting }),
         });
         if (result.error) throw new Error("Email delivery failed");
@@ -55,10 +75,12 @@ export async function sendCommentEmail(
 
     if (parentComment?.email) {
       await observeExternalServiceOperation("email", "send", async () => {
-        const result = await resend.emails.send({
+        const result = await sendWithDeadline(resend, {
           from: resendEnv.fromEmail,
           to: parentComment.email,
-          subject: `您在[${siteNameZh}]的评论有新的回复`,
+          subject: parentComment.customId
+            ? `[${siteNameZh}]${CUSTOM_COMMENT_NOTIFICATION_TITLE}`
+            : `您在[${siteNameZh}]的评论有新的回复`,
           react: ReplyCommentEmailMessage({
             currentComment,
             setting,

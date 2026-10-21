@@ -43,6 +43,7 @@ describe("CommentForm", () => {
           formRef={formRef}
           isPending={false}
           onSubmit={onSubmit}
+          onDraftChange={vi.fn()}
           onCancelReply={vi.fn()}
           onClearIdentity={vi.fn()}
           {...props}
@@ -62,6 +63,7 @@ describe("CommentForm", () => {
         formRef={{ current: null }}
         isPending={false}
         onSubmit={onSubmit}
+        onDraftChange={vi.fn()}
         onCancelReply={vi.fn()}
         onClearIdentity={vi.fn()}
       />

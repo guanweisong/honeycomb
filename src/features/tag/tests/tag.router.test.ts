@@ -15,7 +15,7 @@ vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -165,7 +165,7 @@ describe("Tag Router", () => {
       expect(mockDb.delete).toHaveBeenCalledWith(schema.tag);
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = tagRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
@@ -185,7 +185,7 @@ describe("Tag Router", () => {
         name: { en: "Updated Tag", zh: "更新的标签" },
       };
 
-      mockDb.limit.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
+      mockDb.returning.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
       mockDb.where.mockReturnValueOnce(mockDb).mockResolvedValueOnce([
         { tagId: TEST_IDS.ID_1, locale: "en", name: "Updated Tag" },
         { tagId: TEST_IDS.ID_1, locale: "zh", name: "更新的标签" },
@@ -201,10 +201,13 @@ describe("Tag Router", () => {
       });
 
       expect(result).toEqual({ ...updatedTag, publicSync: "completed" });
-      expect(mockDb.update).not.toHaveBeenCalledWith(schema.tag);
+      expect(mockDb.update).toHaveBeenCalledWith(schema.tag);
+      expect(mockDb.set).toHaveBeenCalledWith({
+        updatedAt: expect.any(String),
+      });
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = tagRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );

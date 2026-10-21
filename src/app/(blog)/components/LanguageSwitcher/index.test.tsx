@@ -103,6 +103,7 @@ describe("LanguageSwitcher", () => {
 
     expect(container.querySelector("a")).not.toBeNull();
     expect(mocks.linkKind).toBe("next");
+    expect(container.querySelector("img")?.alt).toBe("Current language: English");
     expect(mocks.linkProps).toMatchObject({
       href: "/zh/archives/1",
       hrefLang: "zh",
@@ -131,12 +132,14 @@ describe("LanguageSwitcher", () => {
 
   it("keeps the switcher usable in dark theme", () => {
     mocks.resolvedTheme = "dark";
+    mocks.pathname = "/archives/post-1";
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
 
     act(() => root.render(<LanguageSwitcher />));
 
+    expect(mocks.linkProps).toMatchObject({ href: "/zh/archives/post-1", hrefLang: "zh", prefetch: true, "aria-label": "Switch to 中文" });
     const image = container.querySelector("img");
     expect(image?.alt).toBe("Current language: English");
     expect(image?.className).toContain("w-5");

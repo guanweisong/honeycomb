@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { argumentValue, requiredEnvironmentVariable } from "../../scripts/cli";
 import { quoteSqliteIdentifier } from "../../scripts/sqlite";
@@ -13,6 +14,11 @@ describe("script utilities", () => {
       ]),
     ).toBe("report.json");
     expect(argumentValue("--missing", ["bun", "script.ts"])).toBeUndefined();
+  });
+
+  it("lets the schema audit caller choose an output without a shadowing package default", () => {
+    const manifest = JSON.parse(readFileSync("package.json", "utf8"));
+    expect(manifest.scripts["db:schema:audit"]).not.toContain("--output");
   });
 
   it("requires a non-empty environment value", () => {

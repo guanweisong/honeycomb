@@ -3,6 +3,42 @@ import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { openBlogHome } from "./helpers";
 
 test.describe("blog home", () => {
+  test("@regression back-to-top stays inside narrow and wide viewports", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 500 });
+    await openBlogHome(page);
+    await expect(
+      page.locator('main a[href^="/en/archives/"]').first(),
+    ).toBeVisible();
+
+    // The existing 12-post seed makes the first page genuinely scrollable.
+    // Do not inject height or mock scroll state: exercise the real subscription.
+    for (const width of [375, 768, 1280]) {
+      await page.setViewportSize({ width, height: 500 });
+      await expect
+        .poll(() =>
+          page.evaluate(() => document.body.scrollHeight - window.innerHeight),
+        )
+        .toBeGreaterThan(300);
+      await page.evaluate(() =>
+        window.scrollTo({ top: 350, behavior: "instant" }),
+      );
+      await expect
+        .poll(() => page.evaluate(() => window.scrollY))
+        .toBeGreaterThan(300);
+      const backToTop = page.getByRole("button", {
+        name: "Back to top",
+        exact: true,
+      });
+      await expect(backToTop).toBeInViewport({ ratio: 1 });
+      await backToTop.focus();
+      await expect(backToTop).toBeFocused();
+      await backToTop.press("Enter");
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    }
+  });
+
   test("@smoke infinite scroll fetches page two and appends distinct posts", async ({
     page,
   }) => {

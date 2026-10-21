@@ -111,4 +111,20 @@ describe("comment email observability", () => {
     expect(JSON.stringify(memory.logEvents)).not.toContain("example.com");
     expect(JSON.stringify(memory.logEvents)).not.toContain("rejected");
   });
+
+  it.each(["ADMIN_NOTICE", "REPLY_NOTICE"] as const)(
+    "uses the approved generic subject for custom %s",
+    async (type) => {
+      sendMock.mockResolvedValue({ data: { id: "message-1" } });
+      const customComment = { ...payload.currentComment, customId: "custom-1" };
+      await sendCommentEmail(type, {
+        ...payload,
+        currentComment: customComment,
+        parentComment: customComment,
+      });
+      expect(sendMock.mock.calls[0]?.[0]).toMatchObject({
+        subject: "[站点]自定义内容收到评论",
+      });
+    },
+  );
 });

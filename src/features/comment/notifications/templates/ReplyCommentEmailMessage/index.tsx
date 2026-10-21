@@ -15,9 +15,10 @@ type ReplyMessageEmailProps = {
 
 const ReplyCommentEmailMessage = (props: ReplyMessageEmailProps) => {
   const { currentComment, parentComment, setting } = props;
-  const previewText = `您在${setting.siteName?.zh}的评论有新的回复`;
-
   const { postTitle, postLink } = getCommentTarget(parentComment);
+  const previewText = parentComment.customId
+    ? postTitle
+    : `您在${setting.siteName?.zh}的评论有新的回复`;
 
   return (
     <EmailContainer
@@ -25,15 +26,21 @@ const ReplyCommentEmailMessage = (props: ReplyMessageEmailProps) => {
       previewText={previewText}
       header={<Text>{parentComment.author}，您好</Text>}
       footer={
-        <Text>
-          您可以点击 <Link href={postLink}>查看完整的回复内容</Link>
-        </Text>
+        postLink ? (
+          <Text>
+            您可以点击 <Link href={postLink}>查看完整的回复内容</Link>
+          </Text>
+        ) : undefined
       }
     >
       <>
-        <Text>
-          您曾在[{setting.siteName?.zh}]的文章[{postTitle}]上发表评论:
-        </Text>
+        {parentComment.customId ? (
+          <Text>{postTitle}。您曾发表评论:</Text>
+        ) : (
+          <Text>
+            您曾在[{setting.siteName?.zh}]的文章[{postTitle}]上发表评论:
+          </Text>
+        )}
         <Text className="border-2 border-dashed border-gray-300 bg-gray-100 p-2 whitespace-pre-wrap">
           {parentComment.content}
         </Text>

@@ -9,6 +9,7 @@ export const LogEvent = {
   cacheInvalidationDegraded: "cache.invalidation.degraded",
   externalServiceOperation: "external-service.operation",
   clientError: "client.error",
+  serviceWorkerRegistrationFailed: "service-worker.registration.failed",
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

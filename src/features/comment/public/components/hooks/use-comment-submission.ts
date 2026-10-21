@@ -1,13 +1,17 @@
 "use client";
 
-import { type FormEvent, type RefObject, useTransition } from "react";
+import { type FormEvent, type RefObject, useRef, useTransition } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/blog-navigation";
 import { MenuType } from "@/features/menu/menu-types";
-import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 import { trpc } from "@/lib/trpc/client/trpc";
+import {
+  isDeterminateRejectionCode,
+  readTrpcErrorCode,
+} from "@/lib/trpc/client/mutation-error";
 import { clientEnv } from "@/env/client";
 import type { CommentIdentity } from "./use-comment-identity";
 import { buildCommentInput } from "../utils/comment-input";
@@ -19,7 +23,7 @@ interface UseCommentSubmissionOptions {
   id: string;
   type: MenuType;
   identity?: CommentIdentity;
-  replyTo: CommentTreeEntity | null;
+  replyTo: CommentTreeViewModel | null;
   formRef: RefObject<HTMLFormElement | null>;
   turnstileRef: RefObject<TurnstileInstance | null>;
   persistIdentity: (identity: CommentIdentity) => void;
@@ -42,6 +46,10 @@ export function useCommentSubmission({
     reset: resetCaptcha,
   } = useTurnstileToken(turnstileRef);
   const [isPending, startTransition] = useTransition();
+  const draftVersion = useRef(0);
+  const onDraftChange = () => {
+    draftVersion.current += 1;
+  };
   const mutation = trpc.comment.create.useMutation();
   const t = useTranslations("Comment");
   const router = useRouter();
@@ -54,6 +62,7 @@ export function useCommentSubmission({
     }
 
     const form = event.currentTarget;
+    const submittedVersion = draftVersion.current;
     const formData = new FormData(form);
     const readText = (name: string) => {
       const value = formData.get(name);
@@ -79,28 +88,41 @@ export function useCommentSubmission({
     });
 
     startTransition(async () => {
-      mutation
-        .mutateAsync(data)
-        .then(async (result) => {
-          if (result?.id) {
-            router.refresh();
+      try {
+        const result = await mutation.mutateAsync(data);
+        if (result?.id) {
+          router.refresh();
+          // 旧请求不能清空等待期间的新输入、身份选择或回复目标。
+          if (
+            formRef.current === form &&
+            draftVersion.current === submittedVersion
+          ) {
             clearReply();
-            formRef.current?.reset();
+            form.reset();
             persistIdentity(submittedIdentity);
           }
-        })
-        .catch(() => {
-          clientLogger.error(LogEvent.clientError, {
-            operation: "comment.submit",
-            outcome: "error",
-          });
-        })
-        .finally(resetCaptcha);
+        }
+      } catch (error) {
+        toast.error(
+          t(
+            isDeterminateRejectionCode(readTrpcErrorCode(error))
+              ? "submitRejected"
+              : "submitUnknown",
+          ),
+        );
+        clientLogger.error(LogEvent.clientError, {
+          operation: "comment.submit",
+          outcome: "error",
+        });
+      } finally {
+        resetCaptcha();
+      }
     });
   };
 
   return {
     handleSubmit,
+    onDraftChange,
     onCaptchaSuccess,
     resetCaptcha,
     isPending: isPending || mutation.isPending,

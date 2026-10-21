@@ -1,3 +1,7 @@
+import type { UserRecord } from "@/features/user/types";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
+import { SQL } from "drizzle-orm";
+import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { userRouter } from "@/features/user/router";
 import * as schema from "@/lib/db/schema";
@@ -18,7 +22,7 @@ vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },
@@ -45,12 +49,16 @@ describe("User Router", () => {
         name: "New User",
         level: UserLevel.EDITOR,
         status: UserStatus.ENABLE,
-      };
+        email: "newuser@example.com",
+        createdAt: null,
+        updatedAt: null,
+      } satisfies UserRecord;
 
       mockDb.insert.mockReturnValueOnce(mockDb);
       mockDb.values.mockReturnValueOnce(mockDb);
       mockDb.returning.mockResolvedValueOnce([newUser]);
       mockDb.select.mockReturnValueOnce(mockDb);
+      mockDb.from.mockResolvedValueOnce([]);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
       mockDb.limit.mockResolvedValueOnce([]);
@@ -76,7 +84,7 @@ describe("User Router", () => {
       );
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
@@ -89,7 +97,7 @@ describe("User Router", () => {
           level: UserLevel.EDITOR,
           status: UserStatus.ENABLE,
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
       expect(mockDb.insert).not.toHaveBeenCalled();
     });
 
@@ -162,14 +170,14 @@ describe("User Router", () => {
       expect(mockDb.delete).toHaveBeenCalledWith(schema.user);
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
         caller.destroy({ ids: [TEST_IDS.ID_1, TEST_IDS.ID_2] }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
       expect(mockDb.delete).not.toHaveBeenCalled();
     });
   });
@@ -194,17 +202,22 @@ describe("User Router", () => {
 
     it("should update user with admin permissions", async () => {
       const updatedUser = {
-        id: TEST_IDS.ID_2,
+        id: TEST_IDS.ID_1,
         name: "Updated User",
         level: UserLevel.EDITOR,
         status: UserStatus.ENABLE,
-      };
+        email: "updated@example.com",
+        createdAt: null,
+        updatedAt: null,
+      } satisfies UserRecord;
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce([
         { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
       ]);
+      // The email scan is awaited directly, before the privilege recheck.
+      mockDb.from.mockResolvedValueOnce([]);
       // The repository rechecks the persisted level inside its write transaction.
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -228,6 +241,13 @@ describe("User Router", () => {
 
       expect(result).toEqual({ ...updatedUser, publicSync: "completed" });
       expect(mockDb.update).toHaveBeenCalledWith(schema.user);
+      const [predicate] = requireDefined(mockDb.where.mock.calls.at(-1));
+      if (!(predicate instanceof SQL))
+        throw new Error("Expected the update WHERE SQL");
+      expect(new SQLiteSyncDialect().sqlToQuery(predicate)).toMatchObject({
+        sql: '"user"."id" = ?',
+        params: [TEST_IDS.ID_1],
+      });
       expect(mockDb.returning).toHaveBeenCalledWith(
         expect.not.objectContaining({ password: expect.anything() }),
       );
@@ -239,7 +259,10 @@ describe("User Router", () => {
         name: "Updated User",
         level: UserLevel.EDITOR,
         status: UserStatus.ENABLE,
-      };
+        email: "updated@example.com",
+        createdAt: null,
+        updatedAt: null,
+      } satisfies UserRecord;
 
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
@@ -275,7 +298,10 @@ describe("User Router", () => {
         name: "Admin 2",
         level: UserLevel.ADMIN,
         status: UserStatus.DISABLE,
-      };
+        email: "updated@example.com",
+        createdAt: null,
+        updatedAt: null,
+      } satisfies UserRecord;
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -299,14 +325,14 @@ describe("User Router", () => {
       ).resolves.toEqual({ ...updatedUser, publicSync: "completed" });
     });
 
-    it("should throw UNAUTHORIZED error for non-admin users", async () => {
+    it("should throw FORBIDDEN error for non-admin users", async () => {
       const caller = userRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
 
       await expect(
         caller.update({ id: TEST_IDS.ID_2, name: "Updated User" }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
       expect(mockDb.update).not.toHaveBeenCalled();
     });
   });

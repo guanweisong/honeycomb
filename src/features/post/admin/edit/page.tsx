@@ -4,19 +4,27 @@ import { LocalDraftPrompt } from "@/components/admin/local-draft";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PhotoPickerModal from "@/features/media/components/PhotoPicker/index";
-import { MediaPageShell } from "@/features/media/shared/MediaPageShell";
+import dynamic from "next/dynamic";
 import { Form } from "@/components/ui/form";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
 } from "@/components/admin/layout-context";
-import AddCategoryModal from "../../../category/admin/components/AddCategoryModal";
+import CategoryFormDialog from "../../../category/admin/components/CategoryFormDialog";
 import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
 import { usePostEditor } from "./hooks/use-post-editor";
 import { EditorLoadError } from "@/components/admin/editor-load-error";
 import LoadingState from "@/components/LoadingState";
+
+const MediaPageShell = dynamic(
+  () =>
+    import("@/features/media/shared/MediaPageShell").then(
+      (module) => module.MediaPageShell,
+    ),
+  { loading: () => <LoadingState variant="region" label="正在加载媒体库…" /> },
+);
 
 function PostDetailContent() {
   const id = useSearchParams().get("id");
@@ -167,7 +175,10 @@ function PostDetailContent() {
         }}
         handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
       />
-      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+      <CategoryFormDialog
+        modalProps={modalProps}
+        setModalProps={setModalProps}
+      />
     </div>
   );
 }

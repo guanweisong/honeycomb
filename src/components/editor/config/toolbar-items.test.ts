@@ -1,7 +1,14 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import type { Editor } from "@tiptap/core";
+import { Editor } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -21,11 +28,6 @@ import {
   type ToolbarItemOrGroup,
 } from "./toolbar-items";
 
-type RecordedCall = {
-  args: unknown[];
-  method: string;
-};
-
 const actionableItems = toolbarItems
   .flat()
   .flatMap((item: ToolbarItemOrGroup) =>
@@ -38,39 +40,25 @@ function getItem(label: string): ToolbarItem {
   return item;
 }
 
-function createEditor(active = true) {
-  const calls: RecordedCall[] = [];
-  const chain: Record<string, (...args: unknown[]) => unknown> = new Proxy(
-    {},
-    {
-      get:
-        (_target, property) =>
-        (...args: unknown[]) => {
-          calls.push({ method: String(property), args });
-          return chain;
-        },
-    },
-  );
-
-  const editor = {
-    chain: () => {
-      calls.push({ method: "chain", args: [] });
-      return chain;
-    },
-    isActive: (...args: unknown[]) => {
-      calls.push({ method: "isActive", args });
-      return active;
-    },
-  } as unknown as Editor;
-
-  return { calls, editor };
-}
-
 describe("toolbar-items", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let editor: Editor;
 
   beforeEach(() => {
+    editor = new Editor({
+      extensions: [
+        StarterKit,
+        TaskList,
+        TaskItem,
+        Highlight,
+        TextStyle,
+        Color,
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
+      ],
+      content: "<p>Text</p>",
+    });
+    editor.commands.setTextSelection({ from: 1, to: 5 });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -78,6 +66,7 @@ describe("toolbar-items", () => {
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    editor.destroy();
     container.remove();
   });
 
@@ -88,41 +77,36 @@ describe("toolbar-items", () => {
   });
 
   it.each([
-    ["一级标题", ["heading", { level: 1 }], "toggleHeading", [{ level: 1 }]],
-    ["二级标题", ["heading", { level: 2 }], "toggleHeading", [{ level: 2 }]],
-    ["三级标题", ["heading", { level: 3 }], "toggleHeading", [{ level: 3 }]],
-    ["无序列表", ["bulletList"], "toggleBulletList", []],
-    ["有序列表", ["orderedList"], "toggleOrderedList", []],
-    ["任务列表", ["taskList"], "toggleTaskList", []],
-    ["块级引用", ["blockquote"], "toggleBlockquote", []],
-    ["块级代码", ["codeBlock"], "toggleCodeBlock", []],
-    ["加粗", ["bold"], "toggleBold", []],
-    ["斜体", ["italic"], "toggleItalic", []],
-    ["中划线", ["strike"], "toggleStrike", []],
-    ["下划线", ["underline"], "toggleUnderline", []],
-    ["代码", ["code"], "toggleCode", []],
-    ["高亮", ["highlight"], "toggleHighlight", []],
-    ["左对齐", [{ textAlign: "left" }], "setTextAlign", ["left"]],
-    ["居中对齐", [{ textAlign: "center" }], "setTextAlign", ["center"]],
-    ["右对齐", [{ textAlign: "right" }], "setTextAlign", ["right"]],
-    ["两端对齐", [{ textAlign: "justify" }], "setTextAlign", ["justify"]],
+    ["一级标题", ["heading", { level: 1 }]],
+    ["二级标题", ["heading", { level: 2 }]],
+    ["三级标题", ["heading", { level: 3 }]],
+    ["无序列表", ["bulletList"]],
+    ["有序列表", ["orderedList"]],
+    ["任务列表", ["taskList"]],
+    ["块级引用", ["blockquote"]],
+    ["块级代码", ["codeBlock"]],
+    ["加粗", ["bold"]],
+    ["斜体", ["italic"]],
+    ["中划线", ["strike"]],
+    ["下划线", ["underline"]],
+    ["代码", ["code"]],
+    ["高亮", ["highlight"]],
+    ["左对齐", [{ textAlign: "left" }]],
+    ["居中对齐", [{ textAlign: "center" }]],
+    ["右对齐", [{ textAlign: "right" }]],
+    ["两端对齐", [{ textAlign: "justify" }]],
   ] as const)(
     "%s checks the matching active state and editor command",
-    (label, activeArgs, command, commandArgs) => {
+    (label, activeArgs) => {
       const item = getItem(label);
-      const { calls, editor } = createEditor(true);
-
-      expect(item.isActive?.(editor)).toBe(true);
-      expect(calls).toEqual([{ method: "isActive", args: [...activeArgs] }]);
-
-      calls.length = 0;
       item.onClick?.(editor);
-      expect(calls).toEqual([
-        { method: "chain", args: [] },
-        { method: "focus", args: [] },
-        { method: command, args: [...commandArgs] },
-        { method: "run", args: [] },
-      ]);
+      expect(item.isActive?.(editor)).toBe(true);
+      const [name, attributes] = activeArgs;
+      expect(
+        typeof name === "string"
+          ? editor.isActive(name, attributes)
+          : editor.isActive(name),
+      ).toBe(true);
     },
   );
 
@@ -136,49 +120,20 @@ describe("toolbar-items", () => {
     ["紫", "purple"],
   ] as const)("%s toggles its literal text color", (label, color) => {
     const item = getItem(label);
-    const inactive = createEditor(false);
-
-    expect(item.isActive?.(inactive.editor)).toBe(false);
-    expect(inactive.calls).toEqual([
-      { method: "isActive", args: ["textStyle", { color }] },
-    ]);
-
-    inactive.calls.length = 0;
-    item.onClick?.(inactive.editor);
-    expect(inactive.calls).toEqual([
-      { method: "isActive", args: ["textStyle", { color }] },
-      { method: "chain", args: [] },
-      { method: "focus", args: [] },
-      { method: "setColor", args: [color] },
-      { method: "run", args: [] },
-    ]);
-
-    const active = createEditor(true);
-    item.onClick?.(active.editor);
-    expect(active.calls).toEqual([
-      { method: "isActive", args: ["textStyle", { color }] },
-      { method: "chain", args: [] },
-      { method: "focus", args: [] },
-      { method: "unsetColor", args: [] },
-      { method: "run", args: [] },
-    ]);
+    expect(item.isActive?.(editor)).toBe(false);
+    item.onClick?.(editor);
+    expect(editor.getAttributes("textStyle").color).toBe(color);
+    expect(item.isActive?.(editor)).toBe(true);
+    item.onClick?.(editor);
+    expect(editor.getAttributes("textStyle").color).toBeUndefined();
   });
 
-  it.each([
-    ["撤销", "undo"],
-    ["重做", "redo"],
-  ] as const)("%s invokes the matching history command", (label, command) => {
-    const item = getItem(label);
-    const { calls, editor } = createEditor();
-
-    item.onClick?.(editor);
-
-    expect(calls).toEqual([
-      { method: "chain", args: [] },
-      { method: "focus", args: [] },
-      { method: command, args: [] },
-      { method: "run", args: [] },
-    ]);
+  it("undoes and redoes an actual edit", () => {
+    editor.commands.insertContent("Changed");
+    getItem("撤销").onClick?.(editor);
+    expect(editor.getText()).toBe("Text");
+    getItem("重做").onClick?.(editor);
+    expect(editor.getText()).toBe("Changed");
   });
 
   it.each([
@@ -186,7 +141,6 @@ describe("toolbar-items", () => {
     ["上传图片", "image-control"],
   ] as const)("%s renders its interactive control", async (label, text) => {
     const item = getItem(label);
-    const { editor } = createEditor();
 
     await act(async () => {
       root.render(item.render?.(editor));

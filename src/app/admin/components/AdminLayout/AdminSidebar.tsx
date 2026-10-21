@@ -2,13 +2,16 @@
 
 import type { ReactNode } from "react";
 import Avatar from "../../../../components/Avatar";
-import { Menu, MenuItem } from "../../../../components/Menu";
+import {
+  AdminNavigation,
+  type AdminNavigationItem,
+} from "../AdminNavigation";
 import { UserDropdown } from "../../../../features/user/admin/UserDropdown";
 import type { CurrentUser } from "@/features/user/user";
 
 interface AdminSidebarProps {
   title?: ReactNode;
-  menu: MenuItem[];
+  menu: AdminNavigationItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
   pendingPath?: string | null;
@@ -33,7 +36,7 @@ export function AdminSidebar({
         </span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto px-2">
-        <Menu
+        <AdminNavigation
           data={menu}
           pendingPath={pendingPath}
           onNavigateStart={onNavigateStart}

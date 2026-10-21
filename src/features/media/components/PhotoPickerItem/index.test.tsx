@@ -85,12 +85,12 @@ describe("PhotoPickerItem", () => {
     });
   }
 
-  it("offers upload when no cover is selected", async () => {
+  it("offers image selection when no cover is selected", async () => {
     await renderPicker();
 
-    expect(container.textContent).toContain("封面 （尺寸：1920*1080）");
+    expect(container.textContent).toContain("封面 （建议尺寸：1920*1080）");
     expect(container.querySelector("img")).toBeNull();
-    await click("点击上传");
+    await click("选择图片");
     expect(actions).toEqual(["open"]);
   });
 
@@ -125,7 +125,7 @@ describe("PhotoPickerItem", () => {
     expect(image?.getAttribute("alt")).toBe("封面预览");
     expect(image?.getAttribute("width")).toBe("960");
     expect(image?.getAttribute("height")).toBe("540");
-    await click("重新上传");
+    await click("更换图片");
     await click("清除图片");
     expect(actions).toEqual(["open", "clear"]);
   });

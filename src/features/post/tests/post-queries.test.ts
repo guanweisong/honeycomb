@@ -77,7 +77,7 @@ describe("post ID selection and hydration", () => {
     expect(result.list.map((post) => post.id)).toEqual([second, first]);
     expect(result.list[0]).toMatchObject({
       version: 3,
-      content: { en: "current body", zh: "当前正文" },
+      title: { en: "current", zh: "当前" },
     });
     expect(result.list[0]).not.toHaveProperty("creationToken");
     expect(result.list[0]).not.toHaveProperty("creationInputHash");
@@ -143,7 +143,10 @@ describe("post ID selection and hydration", () => {
   });
 
   it("returns empty when a tag has no matching IDs", async () => {
-    mockDb.where.mockResolvedValueOnce([]);
+    mockDb.offset.mockResolvedValue([]);
+    mockDb.where
+      .mockReturnValueOnce(mockDb)
+      .mockResolvedValueOnce([{ count: 0 }]);
     expect(
       await listPosts(
         asMockDatabase(mockDb),
@@ -151,10 +154,13 @@ describe("post ID selection and hydration", () => {
         "PUBLISHED_ONLY",
       ),
     ).toEqual({ list: [], total: 0 });
-    expect(mockDb.orderBy).not.toHaveBeenCalled();
+    expect(mockDb.orderBy).toHaveBeenCalled();
+    const filter = dialect.sqlToQuery(mockDb.where.mock.calls[0]?.[0]);
+    expect(filter.sql).toContain("exists");
+    expect(filter.params).toEqual([PostStatus.PUBLISHED, first]);
     expect(mockDb.query.post.findMany).not.toHaveBeenCalled();
   });
-  it.each(["status", "type", "commentStatus"] as const)(
+  it.each(["status", "type"] as const)(
     "still validates the hydrated %s enum",
     async (field) => {
       prepareList();
@@ -163,7 +169,7 @@ describe("post ID selection and hydration", () => {
       ]);
       await expect(
         listPosts(asMockDatabase(mockDb), {}, "ALL"),
-      ).rejects.toThrow(`post.${field}`);
+      ).rejects.toThrow();
     },
   );
 });

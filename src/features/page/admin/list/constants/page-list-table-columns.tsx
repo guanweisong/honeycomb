@@ -5,7 +5,7 @@ import {
   pageStatusOptions,
   pageTemplateOptions,
 } from "@/features/page/admin/options";
-import type { PageWithRelations as PageEntity } from "@/features/page/types";
+import type { PageListItem as PageEntity } from "@/features/page/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
 import { formatAdminDateTime } from "@/components/admin/date-time";
@@ -18,10 +18,10 @@ import { publicationStatusToneMap } from "@/components/admin/publication-status-
 export const pageListTableColumns: ColumnDef<PageEntity>[] = [
   {
     accessorKey: "title",
-    header: "文章名称",
+    header: "页面名称",
     cell: ({ row }) => {
       /**
-       * 渲染文章标题的单元格。
+       * 渲染页面标题的单元格。
        * 显示多语言标题。
        */
       const title = row.original.title;
@@ -77,11 +77,11 @@ export const pageListTableColumns: ColumnDef<PageEntity>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: "发表时间",
+    header: "创建时间",
     enableSorting: true,
     cell: ({ row }) => {
       /**
-       * 渲染发表时间的单元格。
+       * 渲染创建时间的单元格。
        * 格式化日期为 "YYYY-MM-DD HH:mm:ss"。
        */
       const value = row.original.createdAt;

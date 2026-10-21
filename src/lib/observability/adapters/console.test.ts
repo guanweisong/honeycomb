@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { requireDefined } from "@tests/helpers/require-defined";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -25,7 +26,7 @@ describe("createConsoleLogger", () => {
 
     expect(output).toHaveLength(1);
     expect(output[0]).not.toContain("\n");
-    expect(JSON.parse(output[0]!)).toMatchObject({
+    expect(JSON.parse(requireDefined(output[0]))).toMatchObject({
       timestamp: expect.any(String),
       level: "warn",
       event: "request.failed",

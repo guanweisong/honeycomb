@@ -12,7 +12,7 @@ interface DeepPathRecord {
  * @param {DeepPathRecord} record - 包含分类信息的记录对象，预期包含 `deepPath` 属性，表示分类的深度。
  * @returns {JSX.Element} 带有层级前缀的分类名称的 JSX 元素。
  */
-export function creatCategoryTitleByDepth(
+export function renderCategoryTitleByDepth(
   text: React.ReactNode,
   record: DeepPathRecord,
 ): React.ReactNode {

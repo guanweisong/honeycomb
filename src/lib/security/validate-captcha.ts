@@ -9,6 +9,9 @@ import {
 } from "@/lib/observability/server";
 import { LogEvent } from "@/lib/observability/core/names";
 
+// Bound the complete verification request, including response-body consumption.
+const CAPTCHA_TIMEOUT_MS = 10_000;
+
 const TurnstileVerifyResponseSchema = z.object({
   success: z.boolean(),
   "error-codes": z.array(z.string()).optional(),
@@ -37,7 +40,11 @@ export const validateCaptcha = async (
     await observeExternalServiceOperation("captcha", "validate", async () => {
       const res = await fetch(
         "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        { method: "POST", body },
+        {
+          method: "POST",
+          body,
+          signal: AbortSignal.timeout(CAPTCHA_TIMEOUT_MS),
+        },
       );
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

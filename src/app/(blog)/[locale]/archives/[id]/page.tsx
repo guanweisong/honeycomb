@@ -3,7 +3,7 @@ import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
 import Tags from "@/features/post/public/Tags";
 import Card from "@/components/blog/Card";
 import { Link } from "@/lib/i18n/blog-navigation";
-import Comment from "@/features/comment/public/components";
+import Comment from "@/features/comment/public/components/CommentClient";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { getTranslations } from "next-intl/server";

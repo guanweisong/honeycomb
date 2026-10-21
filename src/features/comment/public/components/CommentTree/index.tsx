@@ -4,19 +4,19 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { CommentStatus } from "@/features/comment/comment-status";
-import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 
 interface CommentTreeProps {
-  comments: CommentTreeEntity[];
-  onReply: (comment: CommentTreeEntity) => void;
+  comments: CommentTreeViewModel[];
+  onReply: (comment: CommentTreeViewModel) => void;
 }
 
 function CommentItem({
   comment,
   onReply,
 }: {
-  comment: CommentTreeEntity;
-  onReply: (comment: CommentTreeEntity) => void;
+  comment: CommentTreeViewModel;
+  onReply: (comment: CommentTreeViewModel) => void;
 }) {
   const t = useTranslations("Comment");
   const avatar =

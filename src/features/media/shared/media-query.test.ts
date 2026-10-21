@@ -1,25 +1,43 @@
+import type { MediaRecord } from "@/features/media/types";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const trpcMocks = vi.hoisted(() => ({
-  data: { list: ["media-1"], total: 2 } as {
-    list: string[];
-    total: number;
-  },
-  isFetching: false,
-  input: undefined as unknown,
-  refetch: vi.fn(),
-}));
+function media(id: string): MediaRecord {
+  return {
+    id,
+    key: `${id}.png`,
+    name: `${id}.png`,
+    size: 1,
+    type: "image/png",
+    url: `/${id}.png`,
+    color: null,
+    height: null,
+    width: null,
+    createdAt: null,
+    updatedAt: null,
+  };
+}
+
+const trpcMocks = vi.hoisted(() => {
+  const data: { list: MediaRecord[]; total: number } = { list: [], total: 0 };
+  return {
+    data,
+    isFetching: false,
+    page: 1,
+    input: undefined as unknown,
+    refetch: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     media: {
       index: {
-        useQuery: (input: unknown) => {
+        useQuery: (input: { page: number }) => {
           trpcMocks.input = input;
           return {
-            data: trpcMocks.data,
+            data: input.page === trpcMocks.page ? trpcMocks.data : undefined,
             isFetching: trpcMocks.isFetching,
             refetch: trpcMocks.refetch,
           };
@@ -45,8 +63,9 @@ describe("media query input", () => {
     let root: Root;
 
     beforeEach(() => {
-      trpcMocks.data = { list: ["media-1"], total: 2 };
+      trpcMocks.data = { list: [media("media-1")], total: 2 };
       trpcMocks.isFetching = false;
+      trpcMocks.page = 1;
       trpcMocks.input = undefined;
       trpcMocks.refetch.mockReset();
       container = document.createElement("div");
@@ -69,9 +88,11 @@ describe("media query input", () => {
       await act(async () => root.render(React.createElement(Harness)));
       expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
       expect(query).toEqual({
-        data: { list: ["media-1"], total: 2 },
+        data: { list: [media("media-1")], total: 2 },
         hasMore: true,
         isFetchingMore: false,
+        isRetrying: false,
+        retry: expect.any(Function),
         loadMore: expect.any(Function),
         refetch: expect.any(Function),
         reset: expect.any(Function),
@@ -89,12 +110,13 @@ describe("media query input", () => {
       await act(async () => query?.loadMore());
       expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });
 
-      trpcMocks.data = { list: ["media-2"], total: 2 };
+      trpcMocks.data = { list: [media("media-2")], total: 2 };
+      trpcMocks.page = 2;
       await act(async () => root.render(React.createElement(Harness)));
 
       await vi.waitFor(() =>
         expect(query?.data).toEqual({
-          list: ["media-1", "media-2"],
+          list: [media("media-1"), media("media-2")],
           total: 2,
         }),
       );
@@ -115,7 +137,8 @@ describe("media query input", () => {
       });
       expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });
 
-      trpcMocks.data = { list: ["media-2"], total: 2 };
+      trpcMocks.data = { list: [media("media-2")], total: 2 };
+      trpcMocks.page = 2;
       await act(async () => root.render(React.createElement(Harness)));
       await act(async () => query?.loadMore());
       expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });

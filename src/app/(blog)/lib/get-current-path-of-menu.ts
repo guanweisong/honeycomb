@@ -1,4 +1,4 @@
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 /**
  * 获取菜单当前路径属性的属性接口。
@@ -11,11 +11,11 @@ export interface GetCurrentPathProps {
   /**
    * 要获取的家族属性名称（例如 "path"）。
    */
-  familyProp: keyof MenuEntity;
+  familyProp: keyof MenuNavigationItem;
   /**
    * 菜单数据数组。
    */
-  menu: MenuEntity[];
+  menu: MenuNavigationItem[];
 }
 
 /**

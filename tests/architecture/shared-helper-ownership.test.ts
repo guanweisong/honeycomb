@@ -29,7 +29,7 @@ describe("shared helper ownership", () => {
     ],
     [
       "src/components/Menu/components/MenuTitle/index.tsx",
-      "src/components/Menu/MenuTitle.tsx",
+      "src/app/admin/components/AdminNavigation/NavigationItem.tsx",
     ],
   ])("replaces %s with its direct owned path", (previous, current) => {
     expect(existsSync(previous)).toBe(false);
@@ -49,13 +49,15 @@ describe("shared helper ownership", () => {
     expect(isDatabaseRuntime(path, read(path))).toBe(false);
     expect(runtimeDependencyViolations(path, isDatabaseRuntime)).toEqual([]);
     expect(read("src/lib/db/query/query-builders.ts")).not.toContain(
-      "sonsTree",
+      "flattenCategoryHierarchy",
     );
   });
 
   it("uses only a type import for the MenuItem contract", () => {
-    expect(existsSync("src/components/Menu/MenuTitle.tsx")).toBe(true);
-    const path = "src/components/Menu/MenuTitle.tsx";
+    expect(
+      existsSync("src/app/admin/components/AdminNavigation/NavigationItem.tsx"),
+    ).toBe(true);
+    const path = "src/app/admin/components/AdminNavigation/NavigationItem.tsx";
     expect(moduleDependencies(read(path), path)).toContainEqual({
       specifier: "./index",
       typeOnly: true,

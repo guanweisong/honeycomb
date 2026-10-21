@@ -6,21 +6,21 @@ import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { cn } from "@/lib/ui/utils";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 /**
  * 菜单组件的属性接口。
  */
 export interface MenuProps {
   /**
-   * 树形结构的菜单数据。
+   * 根级、本地化导航链接结构的菜单数据。
    */
-  data: MenuLocalEntity[];
+  data: BlogNavigationLink[];
   /**
    * 扁平化的菜单数据。
    */
-  flatMenuData: MenuEntity[];
+  flatMenuData: MenuNavigationItem[];
 }
 
 const getActiveCategories = ({
@@ -30,7 +30,7 @@ const getActiveCategories = ({
 }: {
   segments: string[];
   postCategoryId?: string;
-  flatMenuData: MenuEntity[];
+  flatMenuData: MenuNavigationItem[];
 }) => {
   const allCategoryPath = `/${segments.join("/")}`;
 
@@ -110,10 +110,10 @@ const Menu = (props: MenuProps) => {
 
   /**
    * 渲染根级菜单项；分类层级仅用于路径与高亮，不展示为子菜单。
-   * @param {MenuLocalEntity[]} data - 菜单项数据数组。
+   * @param {BlogNavigationLink[]} data - 菜单项数据数组。
    * @returns {JSX.Element} 渲染后的菜单列表。
    */
-  const renderItem = (data: MenuLocalEntity[]) => {
+  const renderItem = (data: BlogNavigationLink[]) => {
     return (
       <ul
         id="mobile-menu"

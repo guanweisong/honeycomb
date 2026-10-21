@@ -1,3 +1,5 @@
+import { createPostFixture } from "@tests/helpers/post-fixtures";
+import type { TagRecord } from "@/features/tag/types";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -20,15 +22,16 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
 
 import Tags from ".";
 
-const post = {
-  movieDirectors: [{ id: "director-1", name: { zh: "导演甲" } }],
-  movieActors: [
-    { id: "actor-1", name: { zh: "演员甲" } },
-    { id: "actor-2", name: { zh: "演员乙" } },
-  ],
-  movieStyles: [{ id: "style-1", name: { zh: "剧情" } }],
+function tag(id: string, zh: string): TagRecord {
+  return { id, name: { zh, en: zh }, createdAt: null, updatedAt: null };
+}
+
+const post = createPostFixture({
+  movieDirectors: [tag("director-1", "导演甲")],
+  movieActors: [tag("actor-1", "演员甲"), tag("actor-2", "演员乙")],
+  movieStyles: [tag("style-1", "剧情")],
   galleryStyles: [],
-};
+});
 
 describe("Tags", () => {
   let container: HTMLDivElement;
@@ -39,11 +42,11 @@ describe("Tags", () => {
     container?.remove();
   });
 
-  const render = (props: Record<string, unknown>) => {
+  const render = (props: React.ComponentProps<typeof Tags>) => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => root.render(React.createElement(Tags, props as never)));
+    act(() => root.render(React.createElement(Tags, props)));
   };
 
   it("renders localized tag groups and links each tag by id", () => {
@@ -61,14 +64,36 @@ describe("Tags", () => {
   });
 
   it("omits empty tag groups", () => {
-    render({
-      movieDirectors: [],
-      movieActors: [],
-      movieStyles: [],
-      galleryStyles: [],
-    });
+    render(
+      createPostFixture({
+        movieDirectors: [],
+        movieActors: [],
+        movieStyles: [],
+        galleryStyles: [],
+      }),
+    );
 
     expect(container.querySelectorAll("li")).toHaveLength(0);
     expect(container.textContent).toBe("");
+  });
+  it("renders localized tag groups, separators and destination links", async () => {
+    render(
+      createPostFixture({
+        galleryStyles: [tag("gallery", "人像")],
+        movieActors: [],
+        movieDirectors: [
+          tag("director-1", "导演甲"),
+          tag("director-2", "导演乙"),
+        ],
+        movieStyles: [],
+      }),
+    );
+
+    expect(container.textContent).toContain("导演：导演甲、导演乙");
+    expect(container.textContent).toContain("风格：人像");
+    expect(
+      container.querySelector('a[href="/list/tags/director-2"]'),
+    ).not.toBeNull();
+    expect(container.querySelectorAll("li")).toHaveLength(2);
   });
 });

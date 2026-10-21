@@ -44,8 +44,17 @@ vi.mock("@/components/DataTable", () => ({
   ),
 }));
 vi.mock("@/components/Dialog", () => ({
-  Dialog: ({ onOK }: { onOK: () => Promise<void> }) => (
-    <button onClick={() => void onOK()}>delete</button>
+  Dialog: ({
+    onOK,
+    trigger,
+  }: {
+    onOK: () => Promise<void>;
+    trigger: React.ReactNode;
+  }) => (
+    <>
+      {trigger}
+      <button onClick={() => void onOK()}>delete</button>
+    </>
   ),
 }));
 
@@ -75,6 +84,15 @@ describe("page deletion public sync feedback", () => {
     if (!button) throw new Error("Missing deletion action");
     await act(async () => button.click());
   }
+
+  it("names the page row actions", () => {
+    expect(
+      container.querySelector('button[aria-label="编辑页面"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label="删除页面"]'),
+    ).not.toBeNull();
+  });
 
   it.each(["completed", "degraded"])(
     "reports committed %s deletion even if refreshing fails",

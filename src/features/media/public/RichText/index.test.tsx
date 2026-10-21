@@ -93,6 +93,32 @@ describe("RichText", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toBe(image.url);
   });
 
+  it("indexes media once and preserves the first duplicate URL", () => {
+    let reads = 0;
+    const images = Array.from({ length: 80 }, (_, index) => ({
+      ...image,
+      id: `media-${index}`,
+      key: `image-${index}`,
+      get url() {
+        reads++;
+        return `https://cdn.example.test/${index}.jpg`;
+      },
+    }));
+    render({
+      html: Array.from(
+        { length: 80 },
+        (_, index) => `<img src="https://cdn.example.test/${index}.jpg" />`,
+      ).join(""),
+      images: [
+        ...images,
+        { ...image, url: "https://cdn.example.test/0.jpg", name: "duplicate" },
+      ],
+    });
+    expect(container.querySelectorAll("a[data-pswp-width]")).toHaveLength(80);
+    expect(container.querySelector("img")?.alt).toBe("封面图");
+    expect(reads).toBeLessThanOrEqual(80 * 4);
+  });
+
   it("renders nothing when html is empty", () => {
     render({ html: "" });
 

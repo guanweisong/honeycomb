@@ -44,8 +44,10 @@ export async function notifyCommentCreated(
   commentId: string,
   parentId?: string | null,
 ) {
-  const currentComment = await repository.getComment(commentId);
-  const setting = await repository.getSetting();
+  const [currentComment, setting] = await Promise.all([
+    repository.getComment(commentId),
+    repository.getSetting(),
+  ]);
   if (!currentComment || !setting)
     throw new Error("Comment or setting not found");
 

@@ -3,8 +3,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ErrorBoundary from "./error";
-import AdminError from "../admin/error";
-import GlobalError from "../global-error";
 const sentry = vi.hoisted(() => ({ captureException: vi.fn() }));
 vi.mock("@sentry/nextjs", () => sentry);
 
@@ -25,6 +23,28 @@ describe("Blog error boundary", () => {
     sentry.captureException.mockClear();
   });
 
+  it.each(["zh", "en"])(
+    "localizes ordinary errors in %s without an intl provider",
+    async (language) => {
+      document.documentElement.lang = language;
+      vi.stubGlobal("navigator", { onLine: true });
+      const reset = vi.fn();
+      await act(async () =>
+        root.render(
+          <ErrorBoundary error={new Error("Failed")} reset={reset} />,
+        ),
+      );
+      expect(container.textContent).toContain(
+        language === "zh" ? "页面遇到了一点问题" : "Something went wrong!",
+      );
+      expect(container.querySelector("button")?.textContent).toBe(
+        language === "zh" ? "重试" : "Try again",
+      );
+      await act(async () => container.querySelector("button")?.click());
+      expect(reset).toHaveBeenCalledOnce();
+    },
+  );
+
   it("离线水合失败时保留英文离线提示与重试操作", async () => {
     vi.stubGlobal("navigator", { onLine: false });
     document.documentElement.lang = "en";
@@ -41,26 +61,4 @@ describe("Blog error boundary", () => {
     );
     expect(container.querySelector("button")?.textContent).toBe("Retry");
   });
-});
-
-describe("error boundary reporting", () => {
-  it.each([ErrorBoundary, AdminError, GlobalError])(
-    "captures a boundary error once per error change",
-    async (Boundary) => {
-      const container = document.createElement("div");
-      const root = createRoot(container);
-      const error = new Error("synthetic boundary error");
-      const reset = vi.fn();
-      await act(async () =>
-        root.render(<Boundary error={error} reset={reset} />),
-      );
-      expect(sentry.captureException).toHaveBeenCalledWith(error);
-      sentry.captureException.mockClear();
-      await act(async () =>
-        root.render(<Boundary error={error} reset={reset} />),
-      );
-      expect(sentry.captureException).not.toHaveBeenCalled();
-      await act(async () => root.unmount());
-    },
-  );
 });

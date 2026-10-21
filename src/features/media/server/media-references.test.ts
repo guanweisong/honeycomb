@@ -74,3 +74,27 @@ it("counts other ordinary rows sharing a storage key as a known reference", asyn
     ),
   ).resolves.toBe(true);
 });
+
+it("indexes returned keys once when validating multiple content references", async () => {
+  const mock = createMockDb();
+  let keyReads = 0;
+  const keys = Array.from({ length: 32 }, (_, index) => `${index}.png`);
+  mock.where.mockResolvedValue(
+    keys.map((key) => ({
+      get key() {
+        keyReads += 1;
+        return key;
+      },
+    })),
+  );
+  await asMockDatabase(mock).transaction((tx) =>
+    assertMediaReferencesExist(tx, {
+      content: {
+        zh: keys
+          .map((key) => `<img src="https://assets.example.test/files/${key}">`)
+          .join(""),
+      },
+    }),
+  );
+  expect(keyReads).toBe(32);
+});

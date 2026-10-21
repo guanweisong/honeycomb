@@ -2,21 +2,19 @@
 
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/use-post-list";
-import React, { JSX, useEffect, ViewTransition } from "react";
+import React, { JSX, useEffect, useRef, ViewTransition } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
-import Signature from "@/components/blog/Signature";
+import TextDivider from "@/components/blog/TextDivider";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "@/lib/ui/utils";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
-import type { PostWithRelations as PostListItemEntity } from "@/features/post/types";
+import type { PublicPostListItem } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { PostTypeName } from "@/features/post/admin/options";
 import { PostListQueryInput } from "@/features/post/schema";
-import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
-import type { PostListResult } from "@/features/post/types";
+import type { PublicPostListResult } from "@/features/post/types";
 
 const PostTypeBgColor = Object.freeze({
   [PostType.ARTICLE]: "bg-green-600",
@@ -36,7 +34,7 @@ export interface PostListProps {
   /**
    * 初始文章列表数据。
    */
-  initData?: PostListResult;
+  initData?: PublicPostListResult;
 }
 
 /**
@@ -47,7 +45,7 @@ export interface PostListProps {
  */
 export default function PostList(props: PostListProps): JSX.Element {
   const { queryParams, initData } = props;
-  const { top: scrollTop } = useScrollPosition();
+  const sentinel = useRef<HTMLDivElement>(null);
   const {
     data,
     fetchNextPage,
@@ -60,6 +58,7 @@ export default function PostList(props: PostListProps): JSX.Element {
   } = useInfiniteQueryPostList(queryParams, initData);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
+  const typeTranslations = useTranslations("Search.types");
   const errorTranslations = useTranslations("Error");
 
   const postList = data?.pages.flatMap((page) => page?.list ?? []) ?? [];
@@ -72,35 +71,31 @@ export default function PostList(props: PostListProps): JSX.Element {
    */
   const isLoadingMore = isFetchingNextPage;
 
-  /**
-   * 副作用钩子，用于实现无限滚动加载。
-   * 当用户滚动到页面底部附近时，自动加载下一页文章。
-   */
+  // 只观察列表末尾，避免每个滚动事件都触发列表渲染或读取文档布局。
   useEffect(() => {
-    if (
-      typeof document !== "undefined" &&
-      !isFetching &&
-      !isError &&
-      hasNextPage
-    ) {
-      const documentHeight = document.body.scrollHeight;
-      const viewportBottom = scrollTop + window.innerHeight;
-      const difference = documentHeight - viewportBottom;
-      if (difference < 300) {
-        fetchNextPage();
-      }
-    }
-  }, [scrollTop, isFetching, isError, hasNextPage, fetchNextPage]);
+    if (!sentinel.current || isFetching || isError || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void fetchNextPage({ cancelRefetch: false });
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(sentinel.current);
+    return () => observer.disconnect();
+  }, [isFetching, isError, hasNextPage, fetchNextPage]);
 
   /**
    * 渲染文章列表中的单个卡片。
    * 根据文章类型显示不同的布局和内容。
-   * @param {PostListItemEntity} item - 文章实体。
+   * @param {PublicPostListItem} item - 文章实体。
    * @param {number} index - 文章在列表中的索引。
    * @returns {JSX.Element} 文章卡片。
    */
-  const renderCard = (item: PostListItemEntity, index: number): JSX.Element => {
+  const renderCard = (item: PublicPostListItem, index: number): JSX.Element => {
     const isFirstItem = index === 0;
+    const movieYear = item.movieTime ? utcFormat(item.movieTime, "YYYY") : "";
     const postType = Object.values(PostType).find((type) => type === item.type);
     return (
       <div className="bg-auto-back-gray/60" key={item.id}>
@@ -125,7 +120,7 @@ export default function PostList(props: PostListProps): JSX.Element {
                     [PostTypeBgColor[postType]],
                   )}
                 >
-                  {PostTypeName[postType]}
+                  {typeTranslations(postType)}
                 </span>
               </ViewTransition>
             </Link>
@@ -139,9 +134,7 @@ export default function PostList(props: PostListProps): JSX.Element {
               {item.type === PostType.MOVIE && (
                 <>
                   {item.title?.[locale]}
-                  {item.movieTime
-                    ? ` (${utcFormat(item.movieTime, "YYYY")})`
-                    : ""}
+                  {movieYear ? ` (${movieYear})` : ""}
                 </>
               )}
               {(item.type === PostType.ARTICLE ||
@@ -175,6 +168,7 @@ export default function PostList(props: PostListProps): JSX.Element {
       <div className="flex flex-col gap-4">
         {postList.map((item, index) => renderCard(item, index))}
       </div>
+      <div ref={sentinel} data-testid="post-list-sentinel" aria-hidden="true" />
       {isError && (
         <div className="mt-4 flex flex-col items-center gap-2">
           <p role="alert">{errorTranslations("title")}</p>
@@ -184,7 +178,7 @@ export default function PostList(props: PostListProps): JSX.Element {
             disabled={isFetching}
             onClick={() => {
               if (isFetchNextPageError) {
-                void fetchNextPage();
+                void fetchNextPage({ cancelRefetch: false });
               } else {
                 void refetch();
               }
@@ -194,7 +188,7 @@ export default function PostList(props: PostListProps): JSX.Element {
           </Button>
         </div>
       )}
-      {isEnd && <Signature text={t("listEnd")} />}
+      {isEnd && <TextDivider text={t("listEnd")} />}
       {isLoadingMore && (
         <div className="mt-4 flex justify-center">
           <LoadingState

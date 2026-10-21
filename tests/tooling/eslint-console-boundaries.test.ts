@@ -2,11 +2,11 @@
 
 import { requireDefined } from "@tests/helpers/require-defined";
 import { ESLint } from "eslint";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const eslint = new ESLint({
   cwd: process.cwd(),
-  overrideConfigFile: "eslint-config-next.ts",
+  overrideConfigFile: "eslint.config.ts",
 });
 
 async function lintConsoleAt(filePath: string) {
@@ -18,6 +18,13 @@ async function lintConsoleAt(filePath: string) {
   expect(messages.filter((message) => message.fatal)).toEqual([]);
   return messages.filter((message) => message.ruleId === "no-console");
 }
+
+// Building the typed project is setup, not a console-policy assertion.
+// CI observed 32–36s cold starts; keep a bounded 60s setup budget while each
+// actual rule assertion retains its existing 30s deadline.
+beforeAll(async () => {
+  await eslint.lintText("export {};", { filePath: "src/auth.ts" });
+}, 60_000);
 
 describe("console lint boundary", () => {
   it.each([

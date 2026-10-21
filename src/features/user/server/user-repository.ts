@@ -1,3 +1,4 @@
+import { normalizeEmail } from "@/lib/auth/email-policy";
 import "server-only";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
@@ -24,6 +25,33 @@ import type {
 } from "../types";
 
 export type UserRepository = ReturnType<typeof createUserRepository>;
+
+/** Compare in JS, like Better Auth; SQLite lower() only folds ASCII. */
+async function resolveEmailWrite(
+  store: Pick<Database, "select">,
+  email: string,
+  exceptId?: string,
+) {
+  const users = await store
+    .select({ id: schema.user.id, email: schema.user.email })
+    .from(schema.user);
+  if (
+    exceptId !== undefined &&
+    users.some((user) => user.id === exceptId && user.email === email)
+  )
+    return email;
+  const normalized = normalizeEmail(email);
+  if (
+    users.some(
+      (user) =>
+        user.id !== exceptId &&
+        user.email !== null &&
+        normalizeEmail(user.email) === normalized,
+    )
+  )
+    throw new ApplicationError("CONFLICT", "用户邮箱已被其他账号使用");
+  return normalized;
+}
 
 const safeUserColumns = {
   id: schema.user.id,
@@ -141,8 +169,16 @@ export function createUserRepository(db: Database) {
     async create(input: UserCommandInput) {
       const { password, ...values } = input;
       return db.transaction(async (tx) => {
+        values.email = await resolveEmailWrite(tx, values.email);
         const [row] = await observeDbOperation("user.create", "insert", () =>
-          tx.insert(schema.user).values(values).returning(safeUserColumns),
+          tx
+            .insert(schema.user)
+            .values({
+              ...values,
+              username: values.name,
+              displayUsername: values.name,
+            })
+            .returning(safeUserColumns),
         );
         const user = requireWriteResult(row, "create", "user");
         await setCredentialPassword(tx, user.id, password);
@@ -176,18 +212,26 @@ export function createUserRepository(db: Database) {
       const update = async (
         store: CredentialStore & Pick<Database, "delete">,
       ) => {
-        if (protectsLevel && rest.level) {
+        if (rest.email !== undefined)
+          rest.email = await resolveEmailWrite(store, rest.email, id);
+        let rename = rest.name !== undefined;
+        if (protectsLevel || rename) {
           // The write transaction serializes this guard with competing promotions.
           const [current] = await observeDbOperation(
             "user.update",
             "select",
             () =>
               store
-                .select({ level: schema.user.level })
+                .select({ level: schema.user.level, name: schema.user.name })
                 .from(schema.user)
                 .where(eq(schema.user.id, id)),
           );
           if (current) {
+            rename =
+              rest.name !== undefined &&
+              rest.name.trim() !== current.name?.trim();
+          }
+          if (current && protectsLevel && rest.level) {
             assertUserLevelChange(
               id,
               parseEnumValue(
@@ -202,7 +246,13 @@ export function createUserRepository(db: Database) {
         const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
-            .set({ ...rest, updatedAt: new Date().toISOString() })
+            .set({
+              ...rest,
+              ...(rename
+                ? { username: rest.name, displayUsername: rest.name }
+                : {}),
+              updatedAt: new Date().toISOString(),
+            })
             .where(eq(schema.user.id, id))
             .returning(safeUserColumns),
         );
@@ -215,7 +265,12 @@ export function createUserRepository(db: Database) {
         }
         return validateUserState(user);
       };
-      return password || protectsLevel ? db.transaction(update) : update(db);
+      return password ||
+        protectsLevel ||
+        rest.name !== undefined ||
+        rest.email !== undefined
+        ? db.transaction(update)
+        : update(db);
     },
   };
 }

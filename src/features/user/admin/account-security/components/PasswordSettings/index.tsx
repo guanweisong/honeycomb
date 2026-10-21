@@ -52,6 +52,8 @@ const PasswordSettingsPanel = () => {
         <input
           data-testid="current-password-input"
           name="currentPassword"
+          aria-label="当前密码"
+          autoComplete="current-password"
           type="password"
           required
           placeholder="当前密码"
@@ -60,6 +62,8 @@ const PasswordSettingsPanel = () => {
         <input
           data-testid="new-password-input"
           name="newPassword"
+          aria-label="新密码"
+          autoComplete="new-password"
           type="password"
           required
           minLength={6}
@@ -69,6 +73,8 @@ const PasswordSettingsPanel = () => {
         <input
           data-testid="confirm-password-input"
           name="confirmPassword"
+          aria-label="确认新密码"
+          autoComplete="new-password"
           type="password"
           required
           minLength={6}

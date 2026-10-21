@@ -30,9 +30,11 @@ export interface ActionGuardContract {
   control: ActionControlIdentity;
   guard: GuardMode;
   expectedCount?: number;
+  /** Explicit component-state scenario for controls shared by create/edit modes. */
+  when?: { name: string; value: boolean };
 }
 
 export interface ActionGuardFile {
-  relativePath: string;
+  sourcePath: string;
   actions: readonly ActionGuardContract[];
 }
