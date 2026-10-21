@@ -177,7 +177,7 @@ describe("Upstash cache request deadlines", () => {
     async (stage) => {
       await loadCache();
       const { getCachedPostList } =
-        await import("@/features/post/server/post-special");
+        await import("@/features/post/server/post-list-cache");
       const fresh = { list: [], total: 0 };
       listPublicPosts.mockReset().mockResolvedValue(fresh);
       if (stage !== "version")
@@ -200,7 +200,8 @@ describe("Upstash cache request deadlines", () => {
 
   it("continues every invalidation target and reports degraded after bounded retries", async () => {
     const { observed } = await loadCache();
-    const { publicContentInvalidator } = await import("./refresh-path");
+    const { publicContentInvalidator } =
+      await import("./next-public-content-invalidator");
     const state = track(
       publicContentInvalidator.invalidate({
         refreshPostIndex: true,

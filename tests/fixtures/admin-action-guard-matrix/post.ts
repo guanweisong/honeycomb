@@ -3,66 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(dashboard)/post/category/page.tsx",
-    actions: [
-      {
-        id: "category.create",
-        permission: Permission.categoryCreate,
-        control: {
-          tag: "Button",
-          attribute: "onClick",
-          reference: "handleAddNew",
-        },
-        guard: { kind: "ancestor", polarity: "positive" },
-      },
-      {
-        id: "category.update",
-        permission: Permission.categoryUpdate,
-        control: {
-          tag: "Button",
-          attribute: "onClick",
-          call: { callee: "handleEditItem" },
-        },
-        guard: { kind: "ancestor", polarity: "positive" },
-      },
-      {
-        id: "category.delete",
-        permission: Permission.categoryDelete,
-        control: {
-          tag: "Dialog",
-          attribute: "onOK",
-          call: { callee: "handleDeleteItem" },
-        },
-        guard: { kind: "ancestor", polarity: "positive" },
-      },
-      {
-        id: "category.delete-batch",
-        permission: Permission.categoryDelete,
-        control: {
-          tag: "Dialog",
-          attribute: "onOK",
-          reference: "handleDeleteBatch",
-        },
-        guard: { kind: "ancestor", polarity: "positive" },
-      },
-      {
-        id: "category.selection",
-        permission: Permission.categoryDelete,
-        control: {
-          tag: "DataTable",
-          attribute: "onSelectionChange",
-          reference: "setSelectedRows",
-        },
-        guard: {
-          kind: "attribute",
-          attribute: "selectableRows",
-          polarity: "positive",
-        },
-      },
-    ],
-  },
-  {
-    relativePath: "(dashboard)/post/edit/components/MultiTag/index.tsx",
+    sourcePath: "src/features/post/admin/edit/components/MultiTag/index.tsx",
     actions: [
       {
         id: "post-tags.manage",
@@ -97,8 +38,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath:
-      "(dashboard)/post/edit/components/PostEditorActions/index.tsx",
+    sourcePath:
+      "src/features/post/admin/edit/components/PostEditorActions/index.tsx",
     actions: [
       {
         id: "post-editor.create",
@@ -135,8 +76,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath:
-      "(dashboard)/post/edit/components/PostSidebarFields/index.tsx",
+    sourcePath:
+      "src/features/post/admin/edit/components/PostSidebarFields/index.tsx",
     actions: [
       {
         id: "post-sidebar.create-category",
@@ -151,7 +92,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    relativePath: "(dashboard)/post/list/components/PostListClient/index.tsx",
+    sourcePath:
+      "src/features/post/admin/list/components/PostListClient/index.tsx",
     actions: [
       {
         id: "post-list.create",

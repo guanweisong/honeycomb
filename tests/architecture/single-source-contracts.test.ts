@@ -257,7 +257,7 @@ describe("唯一事实源架构门禁", () => {
       .map((node) => node.moduleSpecifier)
       .filter(ts.isStringLiteral)
       .map((node) => node.text)
-      .filter((specifier) => specifier.endsWith("/AddCategoryModal"));
+      .filter((specifier) => specifier.endsWith("/CategoryFormDialog"));
     expect(modalPropImports).toEqual([]);
   });
 

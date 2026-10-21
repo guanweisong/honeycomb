@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
-import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
@@ -21,7 +21,7 @@ const categoryListTableColumns: ColumnDef<CategoryEntity>[] = [
        */
       const title = row.original.title;
       const record = row.original;
-      return creatCategoryTitleByDepth(<MultiLangText text={title} />, record);
+      return renderCategoryTitleByDepth(<MultiLangText text={title} />, record);
     },
   },
   {

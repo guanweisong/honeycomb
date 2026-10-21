@@ -15,7 +15,7 @@ import {
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: (...args: unknown[]) => mockInvalidatePublicContent(...args),
   },

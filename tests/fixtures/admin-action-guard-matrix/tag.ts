@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const tagActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    relativePath: "(dashboard)/tag/page.tsx",
+    sourcePath: "src/features/tag/admin/page.tsx",
     actions: [
       {
         id: "tag.create",

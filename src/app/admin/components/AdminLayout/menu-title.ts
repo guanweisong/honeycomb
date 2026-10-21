@@ -1,8 +1,8 @@
-import type { MenuItem } from "../../../../components/Menu";
+import type { AdminNavigationItem } from "../AdminNavigation";
 
 /** 解析当前管理路由最具体的菜单标题。 */
 export function findMenuTitle(
-  items: readonly MenuItem[],
+  items: readonly AdminNavigationItem[],
   pathname: string,
 ): string | undefined {
   for (const item of items) {

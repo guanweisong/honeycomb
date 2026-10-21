@@ -39,3 +39,65 @@ test.describe("blog comment", () => {
     expect(createCalls).toBe(0);
   });
 });
+
+const postId = "000000000000000000000005";
+
+test("@regression public comments redact moderated content on the wire and retain replies", async ({
+  request,
+  page,
+}) => {
+  const response = await request.get("/api/trpc/comment.listByRef", {
+    params: { input: JSON.stringify({ id: postId, type: "CATEGORY" }) },
+  });
+  await expect(response).toBeOK();
+  const body = await response.text();
+  expect(body).toContain('"content":""');
+  expect(body).toContain("Visible reply beneath moderated parent");
+  for (const secret of [
+    "PRIVATE_BANNED_COMMENT_SENTINEL",
+    "private-comment@honeycomb.test",
+    "192.0.2.10",
+    "PRIVATE_AGENT_SENTINEL",
+  ]) {
+    expect(body).not.toContain(secret);
+  }
+  const document = await page.goto(`/en/archives/${postId}`);
+  expect(await document?.text()).not.toContain(
+    "PRIVATE_BANNED_COMMENT_SENTINEL",
+  );
+  await expect(
+    page.getByText("Visible reply beneath moderated parent", { exact: true }),
+  ).toBeVisible();
+});
+
+test("@regression comment reply and cancel controls work from the keyboard", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        author: "Keyboard visitor",
+        email: "keyboard@honeycomb.test",
+      }),
+    );
+  });
+  await page.goto(`/en/archives/${postId}`);
+  // The saved identity appears after the comment component's mount effect;
+  // this waits for hydration without arbitrary sleeps or internal React APIs.
+  await expect(page.getByText(/Welcome back.*Keyboard visitor/)).toBeVisible();
+  const reply = page
+    .getByRole("button", { name: "Reply", exact: true })
+    .first();
+  await reply.focus();
+  await expect(reply).toBeFocused();
+  await reply.press("Enter");
+  await expect(page.getByText("Reply to:", { exact: true })).toBeVisible();
+  const cancel = page.getByRole("button", { name: /Cancel/i });
+  await cancel.focus();
+  await cancel.press("Space");
+  await expect(page.getByText("Reply to:", { exact: true })).toHaveCount(0);
+  const quit = page.getByRole("button", { name: /Quit/i });
+  await quit.press("Enter");
+  await expect(page.getByLabel(/Please enter email/)).toBeVisible();
+});

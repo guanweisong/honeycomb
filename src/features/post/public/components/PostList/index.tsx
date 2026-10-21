@@ -4,14 +4,14 @@ import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/use-post-list";
 import React, { JSX, useEffect, useRef, ViewTransition } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
-import Signature from "@/components/blog/Signature";
+import TextDivider from "@/components/blog/TextDivider";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "@/lib/ui/utils";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
-import type { PublicPostListItem as PostListItemEntity } from "@/features/post/types";
+import type { PublicPostListItem } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
 import { PostListQueryInput } from "@/features/post/schema";
 import type { PublicPostListResult } from "@/features/post/types";
@@ -89,11 +89,11 @@ export default function PostList(props: PostListProps): JSX.Element {
   /**
    * 渲染文章列表中的单个卡片。
    * 根据文章类型显示不同的布局和内容。
-   * @param {PostListItemEntity} item - 文章实体。
+   * @param {PublicPostListItem} item - 文章实体。
    * @param {number} index - 文章在列表中的索引。
    * @returns {JSX.Element} 文章卡片。
    */
-  const renderCard = (item: PostListItemEntity, index: number): JSX.Element => {
+  const renderCard = (item: PublicPostListItem, index: number): JSX.Element => {
     const isFirstItem = index === 0;
     const movieYear = item.movieTime ? utcFormat(item.movieTime, "YYYY") : "";
     const postType = Object.values(PostType).find((type) => type === item.type);
@@ -188,7 +188,7 @@ export default function PostList(props: PostListProps): JSX.Element {
           </Button>
         </div>
       )}
-      {isEnd && <Signature text={t("listEnd")} />}
+      {isEnd && <TextDivider text={t("listEnd")} />}
       {isLoadingMore && (
         <div className="mt-4 flex justify-center">
           <LoadingState

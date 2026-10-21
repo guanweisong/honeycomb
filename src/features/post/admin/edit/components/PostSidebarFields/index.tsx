@@ -3,7 +3,7 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DynamicField } from "@/components/DynamicForm/DynamicField";
-import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { ModalType } from "@/components/admin/modal-type";
 import { PostType } from "@/features/post/post-type";
 import { postTypeOptions } from "@/features/post/admin/options";
@@ -67,7 +67,7 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
         type="select"
         placeholder="请选择"
         options={category?.list?.map((item) => ({
-          label: creatCategoryTitleByDepth(item.title?.zh, item),
+          label: renderCategoryTitleByDepth(item.title?.zh, item),
           value: item.id ?? "0",
         }))}
       />

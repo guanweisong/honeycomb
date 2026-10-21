@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
+import { assembleLocalizedField } from "@/lib/db/translation-values";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { PostStatus } from "../post-status";
 import {
@@ -172,4 +173,76 @@ export async function getPost(
     ...result,
     imagesInContent: [...uniqueImages.values()].map(toMediaRecord),
   };
+}
+
+export async function getRandomPostsByCategory(
+  db: Database,
+  categoryId: string,
+) {
+  // Limit parent rows first, then read their public translations in one snapshot.
+  const selected = db
+    .select({ id: schema.post.id })
+    .from(schema.post)
+    .where(
+      and(
+        eq(schema.post.categoryId, categoryId),
+        eq(schema.post.status, PostStatus.PUBLISHED),
+      ),
+    )
+    .orderBy(sql`abs(random())`)
+    .limit(10)
+    .as("random_posts");
+  const rows = await observeDbOperation(
+    "post.random-by-category",
+    "select",
+    () =>
+      db
+        .select({
+          id: selected.id,
+          locale: schema.postTranslation.locale,
+          title: schema.postTranslation.title,
+          quoteContent: schema.postTranslation.quoteContent,
+        })
+        .from(selected)
+        .leftJoin(
+          schema.postTranslation,
+          eq(schema.postTranslation.postId, selected.id),
+        ),
+  );
+  return [...new Set(rows.map((row) => row.id))].map((id) => {
+    const translations = rows.flatMap((row) =>
+      row.id === id && row.locale !== null
+        ? [
+            {
+              locale: row.locale,
+              title: row.title,
+              quoteContent: row.quoteContent,
+            },
+          ]
+        : [],
+    );
+    return {
+      id,
+      title: assembleLocalizedField(translations, (row) => row.title),
+      quoteContent: assembleLocalizedField(
+        translations,
+        (row) => row.quoteContent,
+      ),
+    };
+  });
+}
+
+export async function getPublishedPostCategoryId(db: Database, id: string) {
+  const [result] = await observeDbOperation("post.category-id", "select", () =>
+    db
+      .select({ categoryId: schema.post.categoryId })
+      .from(schema.post)
+      .where(
+        and(
+          eq(schema.post.id, id),
+          eq(schema.post.status, PostStatus.PUBLISHED),
+        ),
+      ),
+  );
+  return result ? { categoryId: result.categoryId ?? undefined } : result;
 }

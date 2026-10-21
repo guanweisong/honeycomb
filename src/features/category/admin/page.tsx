@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import AddCategoryModal from "./components/AddCategoryModal";
+import CategoryFormDialog from "./components/CategoryFormDialog";
 import categoryListTableColumns from "./category-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
@@ -165,7 +165,10 @@ const Category = () => {
           </div>
         )}
       />
-      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+      <CategoryFormDialog
+        modalProps={modalProps}
+        setModalProps={setModalProps}
+      />
     </>
   );
 };

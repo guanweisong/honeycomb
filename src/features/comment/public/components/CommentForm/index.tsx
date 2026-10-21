@@ -4,12 +4,12 @@ import { useId, type FormEventHandler, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 
 interface CommentFormProps {
   identity?: CommentIdentity;
-  replyTo: CommentTreeEntity | null;
+  replyTo: CommentTreeViewModel | null;
   formRef: RefObject<HTMLFormElement | null>;
   isPending: boolean;
   onSubmit: FormEventHandler<HTMLFormElement>;

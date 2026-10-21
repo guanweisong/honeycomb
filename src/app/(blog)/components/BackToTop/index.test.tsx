@@ -67,4 +67,21 @@ describe("BackToTop", () => {
 
     expect(scrollTo).toHaveBeenCalledWith(0, 0);
   });
+  it("shows back-to-top only after scrolling and returns to the origin", async () => {
+    const scrollCalls: unknown[][] = [];
+    vi.stubGlobal("scrollTo", (...args: unknown[]) => scrollCalls.push(args));
+    render();
+    expect(container.querySelector('[aria-label="Back to top"]')).toBeNull();
+
+    scrollTop = 301;
+    await act(async () => root.render(React.createElement(BackToTop)));
+    const button = container.querySelector('[aria-label="Back to top"]');
+    expect(button).not.toBeNull();
+    await act(async () => {
+      button!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(scrollCalls).toEqual([[0, 0]]);
+  });
+
+
 });

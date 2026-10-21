@@ -1,5 +1,5 @@
 import React from "react";
-import { MenuItem } from "@/components/Menu";
+import type { AdminNavigationItem } from "@/app/admin/components/AdminNavigation";
 import {
   Permission,
   type Permission as PermissionValue,
@@ -24,7 +24,7 @@ import {
  * 后台管理系统的菜单数据。
  * 定义了侧边栏导航的结构和每个菜单项的属性，包括名称、路径、图标和子菜单。
  */
-export interface AdminMenuItem extends MenuItem {
+export interface AdminMenuItem extends AdminNavigationItem {
   permission: PermissionValue;
   children?: AdminMenuItem[];
 }

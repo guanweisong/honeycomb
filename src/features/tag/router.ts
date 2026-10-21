@@ -22,7 +22,7 @@ import {
   TagUpdateSchema,
 } from "@/features/tag/schema";
 
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 标签 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const tagRouter = createTRPCRouter({

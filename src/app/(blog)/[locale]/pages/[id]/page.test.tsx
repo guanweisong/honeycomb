@@ -70,7 +70,7 @@ vi.mock("@/features/post/public/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
   PostCommentCount: () => null,
 }));
-vi.mock("@/features/comment/public/components", () => ({
+vi.mock("@/features/comment/public/components/CommentClient", () => ({
   default: () => null,
 }));
 vi.mock("@/features/media/public/RichText", () => ({

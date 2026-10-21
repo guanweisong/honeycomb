@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
-import { MenuItem } from "../../../../components/Menu";
+import type { AdminNavigationItem } from "../AdminNavigation";
 import type { CurrentUser } from "@/features/user/user";
 import { Button } from "../../../../components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
@@ -26,7 +26,7 @@ export interface AdminLayoutProps {
   pageTitle?: ReactNode;
   actions?: ReactNode;
   footer?: ReactNode;
-  menu?: MenuItem[];
+  menu?: AdminNavigationItem[];
   user?: CurrentUser | null;
   onLogout: () => void;
   pendingPath?: string | null;

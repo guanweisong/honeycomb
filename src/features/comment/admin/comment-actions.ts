@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import type { CommentUpdate } from "@/features/comment/schema";
-import type { AdminCommentViewModel as CommentEntity } from "@/features/comment/presentation/comment-view-model";
+import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
 import type { CommentStatus } from "@/features/comment/comment-status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
@@ -69,7 +69,7 @@ export function useCommentActions({
   selectedRows,
   onSelectionChange,
   refetch,
-}: AdminListActionOptions<CommentEntity>) {
+}: AdminListActionOptions<AdminCommentViewModel>) {
   const updateComment = trpc.comment.update.useMutation();
   const destroyComment = trpc.comment.destroy.useMutation();
 

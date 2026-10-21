@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { getCachedPostList } from "./post-special";
+import { getCachedPostList } from "./post-list-cache";
 import type { PostWithRelations } from "../types";
 import { PostType } from "@/features/post/post-type";
 import { PostStatus } from "@/features/post/post-status";

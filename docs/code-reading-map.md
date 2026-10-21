@@ -65,7 +65,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/components/Menu/MenuTitle.tsx`。
+- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 

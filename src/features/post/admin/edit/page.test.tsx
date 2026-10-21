@@ -97,7 +97,7 @@ vi.mock("@/features/media/shared/MediaPageShell", () => {
     ),
   };
 });
-vi.mock("../../../category/admin/components/AddCategoryModal", () => ({
+vi.mock("../../../category/admin/components/CategoryFormDialog", () => ({
   default: () => null,
 }));
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));

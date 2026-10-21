@@ -3,11 +3,7 @@
 import { useEffect, useRef, PropsWithChildren } from "react";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 
-export function PhotoSwipeClient({
-  children,
-}: PropsWithChildren<{
-  galleryId?: string;
-}>) {
+export function PhotoSwipeClient({ children }: PropsWithChildren) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const lightboxRef = useRef<PhotoSwipeLightbox | null>(null);
 

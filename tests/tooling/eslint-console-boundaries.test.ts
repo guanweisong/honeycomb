@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 const eslint = new ESLint({
   cwd: process.cwd(),
-  overrideConfigFile: "eslint-config-next.ts",
+  overrideConfigFile: "eslint.config.ts",
 });
 
 async function lintConsoleAt(filePath: string) {

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 describe("React lint policy", () => {
   it("enforces effect and mutation checks outside documented file exceptions", async () => {
-    const eslint = new ESLint({ overrideConfigFile: "eslint-config-next.ts" });
+    const eslint = new ESLint();
     const config = await eslint.calculateConfigForFile(
       "src/components/Button/index.tsx",
     );
@@ -13,7 +13,7 @@ describe("React lint policy", () => {
   }, 30_000);
 
   it("reports illegal effect state updates and prop mutation in real lint fixtures", async () => {
-    const eslint = new ESLint({ overrideConfigFile: "eslint-config-next.ts" });
+    const eslint = new ESLint();
     const [result] = await eslint.lintText(
       `
       import { useEffect, useState } from "react";

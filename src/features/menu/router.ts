@@ -16,7 +16,7 @@ import { Permission } from "@/lib/auth/permissions";
 
 import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schema";
 
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const menuRouter = createTRPCRouter({

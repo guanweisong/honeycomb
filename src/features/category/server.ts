@@ -12,7 +12,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/lib/db/query/query-builders";
-import { sonsTree } from "./tree";
+import { flattenCategoryHierarchy } from "./tree";
 import { observeDbOperation } from "@/lib/observability/server";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { supportedLanguages } from "@/lib/i18n/i18n";
@@ -405,7 +405,7 @@ export async function getCategoryTree(
   // Assemble before visibility filtering so hidden parents also hide their subtree.
   const visible = new Map<string, boolean>();
   const localizedRows = await withTranslations(db, rows);
-  const list = sonsTree(localizedRows).filter((item) => {
+  const list = flattenCategoryHierarchy(localizedRows).filter((item) => {
     const enabled =
       visibility === "ALL" ||
       (item.status === EnableStatus.ENABLE &&

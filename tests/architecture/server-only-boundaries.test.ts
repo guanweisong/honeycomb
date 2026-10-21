@@ -28,7 +28,7 @@ const serverOnlyEntrypoints = [
   "src/features/user/router.ts",
   "src/features/user/account-security.router.ts",
   "src/features/category/router.ts",
-  "src/lib/storage/S3.ts",
+  "src/lib/storage/r2-storage.ts",
   "src/lib/rate-limit/rate-limit.ts",
   "src/features/comment/notifications/comment-email.ts",
   "src/features/comment/notifications/comment-delivery.ts",

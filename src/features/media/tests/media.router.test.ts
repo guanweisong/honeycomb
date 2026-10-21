@@ -18,8 +18,8 @@ vi.mock("../server", () => ({
   registerMediaUpload: service.confirm,
   destroyMedia: service.destroy,
 }));
-vi.mock("@/lib/storage/S3", () => ({ default: {} }));
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/storage/r2-storage", () => ({ default: {} }));
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: { invalidate: vi.fn() },
 }));
 beforeEach(() => vi.clearAllMocks());

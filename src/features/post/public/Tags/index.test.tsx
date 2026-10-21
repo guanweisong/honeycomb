@@ -71,4 +71,22 @@ describe("Tags", () => {
     expect(container.querySelectorAll("li")).toHaveLength(0);
     expect(container.textContent).toBe("");
   });
+  it("renders localized tag groups, separators and destination links", async () => {
+    render({
+      galleryStyles: [{ id: "gallery", name: { zh: "人像" } }],
+      movieActors: [],
+      movieDirectors: [
+        { id: "director-1", name: { zh: "导演甲" } },
+        { id: "director-2", name: { zh: "导演乙" } },
+      ],
+      movieStyles: undefined,
+    });
+
+    expect(container.textContent).toContain("导演：导演甲、导演乙");
+    expect(container.textContent).toContain("风格：人像");
+    expect(
+      container.querySelector('a[href="/list/tags/director-2"]'),
+    ).not.toBeNull();
+    expect(container.querySelectorAll("li")).toHaveLength(2);
+  });
 });

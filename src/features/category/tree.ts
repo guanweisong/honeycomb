@@ -5,10 +5,9 @@
  * @param id - 起始的父节点 ID。如果为 `undefined`，则从根节点（`parent` 为 `null`）开始。
  * @returns 返回一个根据父子关系排序后的新数组，并为每个节点添加了 `deepPath` 属性表示其深度。
  */
-export function sonsTree<T extends { id: string; parent: string | null }>(
-  arr: T[],
-  id?: string,
-): (Omit<T, "deepPath"> & { deepPath: number })[] {
+export function flattenCategoryHierarchy<
+  T extends { id: string; parent: string | null },
+>(arr: T[], id?: string): (Omit<T, "deepPath"> & { deepPath: number })[] {
   const temp: (Omit<T, "deepPath"> & { deepPath: number })[] = [];
   const childrenByParent = new Map<string | undefined, T[]>();
   for (const value of arr) {

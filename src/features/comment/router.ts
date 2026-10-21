@@ -31,7 +31,7 @@ import { createCommentCommandRepository } from "@/features/comment/server/commen
 import { createCommentTargetRepository } from "@/features/comment/server/comment-target-repository";
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 import { validateCaptcha } from "@/lib/security/validate-captcha";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 import { commentCreateRatelimit } from "@/lib/rate-limit/rate-limit";
 import { createRateLimitedPublicProcedure } from "@/lib/trpc/rate-limited-procedure";
 import { getClientIp } from "@/lib/http/client-ip";

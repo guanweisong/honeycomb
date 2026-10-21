@@ -3,12 +3,12 @@
 import { describe, it, expect } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { sonsTree } from "./tree";
+import { flattenCategoryHierarchy } from "./tree";
 
 describe("Tools", () => {
-  describe("sonsTree", () => {
+  describe("flattenCategoryHierarchy", () => {
     it("should return empty array for empty input", () => {
-      const result = sonsTree([]);
+      const result = flattenCategoryHierarchy([]);
       expect(result).toEqual([]);
     });
 
@@ -18,7 +18,7 @@ describe("Tools", () => {
         { id: TEST_IDS.ID_2, parent: TEST_IDS.ID_1 },
         { id: TEST_IDS.ID_3, parent: null },
       ];
-      const result = sonsTree(input);
+      const result = flattenCategoryHierarchy(input);
       expect(result).toHaveLength(3);
       expect(requireDefined(result[0]).deepPath).toBe(0);
       expect(requireDefined(result[1]).deepPath).toBe(1);
@@ -32,7 +32,7 @@ describe("Tools", () => {
         { id: TEST_IDS.ID_3, parent: TEST_IDS.ID_1 },
         { id: TEST_IDS.ID_4, parent: TEST_IDS.ID_2 },
       ];
-      const result = sonsTree(input, TEST_IDS.ID_1);
+      const result = flattenCategoryHierarchy(input, TEST_IDS.ID_1);
       expect(result).toHaveLength(3);
       expect(requireDefined(result[0]).deepPath).toBe(0);
       expect(requireDefined(result[1]).deepPath).toBe(1);
@@ -46,7 +46,7 @@ describe("Tools", () => {
         { id: TEST_IDS.ID_3, parent: TEST_IDS.ID_2 },
         { id: TEST_IDS.ID_4, parent: TEST_IDS.ID_3 },
       ];
-      const result = sonsTree(input);
+      const result = flattenCategoryHierarchy(input);
       expect(result).toHaveLength(4);
       expect(requireDefined(result[0]).deepPath).toBe(0);
       expect(requireDefined(result[1]).deepPath).toBe(1);
@@ -59,7 +59,7 @@ describe("Tools", () => {
         { id: TEST_IDS.ID_1, parent: null },
         { id: TEST_IDS.ID_2, parent: TEST_IDS.ID_1 },
       ];
-      const result = sonsTree(input);
+      const result = flattenCategoryHierarchy(input);
       expect(result[0]).toHaveProperty("deepPath");
       expect(result[1]).toHaveProperty("deepPath");
     });
@@ -73,7 +73,7 @@ it("preserves depth-first sibling order and mutates the original node references
   const detached = { id: "detached", parent: "absent", deepPath: 99 };
   const input = [child, sibling, root, detached];
 
-  const result = sonsTree(input);
+  const result = flattenCategoryHierarchy(input);
 
   expect(result.map(({ id, deepPath }) => ({ id, deepPath }))).toEqual([
     { id: "sibling", deepPath: 0 },
@@ -110,9 +110,12 @@ it("indexes parent links once for a wide tree while preserving identity and deta
     },
   };
   const input = [root, ...children, detached];
-  expect(sonsTree(input)).toEqual([root, ...children]);
+  expect(flattenCategoryHierarchy(input)).toEqual([root, ...children]);
   expect(reads).toBeLessThanOrEqual(input.length * 2);
   expect(
-    sonsTree(input, "root").map(({ id, deepPath }) => ({ id, deepPath })),
+    flattenCategoryHierarchy(input, "root").map(({ id, deepPath }) => ({
+      id,
+      deepPath,
+    })),
   ).toEqual(children.map(({ id }) => ({ id, deepPath: 0 })));
 });

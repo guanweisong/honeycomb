@@ -28,15 +28,13 @@ import {
   listPosts,
   listPublicPosts,
   getPost,
-} from "@/features/post/server/post-queries";
-import {
-  getCachedPostList,
   getRandomPostsByCategory,
   getPublishedPostCategoryId,
-} from "@/features/post/server/post-special";
+} from "@/features/post/server/post-queries";
+import { getCachedPostList } from "@/features/post/server/post-list-cache";
 import { PostSearchInputSchema } from "@/features/post/post-search";
 import { searchPublishedPosts } from "@/features/post/server/post-search";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 文章 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const postRouter = createTRPCRouter({

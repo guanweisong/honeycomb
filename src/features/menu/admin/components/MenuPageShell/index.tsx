@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { CheckedMenuData } from "../../menu-transforms";
 import { Save } from "lucide-react";
-import { creatCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { MenuType } from "@/features/menu/menu-types";
@@ -111,7 +111,7 @@ function MenuEditor() {
                           }
                           checked={editor.getCheckedStatus(item)}
                           disabled={editor.getDisabledStatus(item)}
-                          label={creatCategoryTitleByDepth(
+                          label={renderCategoryTitleByDepth(
                             item.title?.zh,
                             item,
                           )}

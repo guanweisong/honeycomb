@@ -7,26 +7,29 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
 import Card from "@/components/blog/Card";
 import LoadingState from "@/components/LoadingState";
-import type { CommentProps } from "../index";
+import type { MenuType } from "@/features/menu/menu-types";
 import type {
-  CommentTreeViewModel as CommentTreeEntity,
-  CommentTreeViewResponse as CommentTreeResponse,
+  CommentTreeViewModel,
+  CommentTreeViewResponse,
 } from "../../../presentation/comment-view-model";
 import { CommentForm } from "../CommentForm";
 import { CommentTree } from "../CommentTree";
 import { useCommentIdentity } from "../hooks/use-comment-identity";
 import { useCommentSubmission } from "../hooks/use-comment-submission";
 
-export interface CommentClientProps extends CommentProps {
-  queryCommentPromise: Promise<CommentTreeResponse>;
+/** 评论交互入口，消费详情页与计数共用的请求级查询。 */
+export interface CommentClientProps {
+  id: string;
+  type: MenuType;
+  queryCommentPromise: Promise<CommentTreeViewResponse>;
 }
 
 function CommentListContent({
   queryCommentPromise,
   onReply,
 }: {
-  queryCommentPromise: Promise<CommentTreeResponse>;
-  onReply: (comment: CommentTreeEntity) => void;
+  queryCommentPromise: Promise<CommentTreeViewResponse>;
+  onReply: (comment: CommentTreeViewModel) => void;
 }) {
   const comment = use(queryCommentPromise);
   const t = useTranslations("Comment");
@@ -47,7 +50,7 @@ const CommentClient = ({
   type,
   queryCommentPromise,
 }: CommentClientProps) => {
-  const [replyTo, setReplyTo] = useState<CommentTreeEntity | null>(null);
+  const [replyTo, setReplyTo] = useState<CommentTreeViewModel | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const t = useTranslations("Comment");
@@ -63,7 +66,7 @@ const CommentClient = ({
     clearReply: () => setReplyTo(null),
   });
 
-  const handleReply = (item: CommentTreeEntity) => {
+  const handleReply = (item: CommentTreeViewModel) => {
     window.scrollTo(0, 99999);
     submission.onDraftChange();
     setReplyTo(item);

@@ -14,8 +14,8 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import { UserLevel, UserStatus } from "@/features/user/user";
 import { LinkFormDialog } from "@/features/link/admin/components/LinkFormDialog";
 import { UserFormDialog } from "@/features/user/admin/components/UserFormDialog";
-import AddTagDialog from "@/features/tag/admin/components/AddTagDialog";
-import AddCategoryModal from "@/features/category/admin/components/AddCategoryModal";
+import TagFormDialog from "@/features/tag/admin/components/TagFormDialog";
+import CategoryFormDialog from "@/features/category/admin/components/CategoryFormDialog";
 
 const mocks = vi.hoisted(() => ({
   categoryQuery: { data: { list: [] }, refetch: vi.fn() },
@@ -122,7 +122,7 @@ const dialogs: Array<{
     name: "tag",
     inputName: "name.zh",
     renderEdit: (id, title, open = true) => (
-      <AddTagDialog
+      <TagFormDialog
         type={ModalType.EDIT}
         open={open}
         record={{
@@ -133,13 +133,13 @@ const dialogs: Array<{
         }}
       />
     ),
-    renderCreate: () => <AddTagDialog type={ModalType.ADD} open />,
+    renderCreate: () => <TagFormDialog type={ModalType.ADD} open />,
   },
   {
     name: "category",
     inputName: "title.zh",
     renderEdit: (id, title, open = true) => (
-      <AddCategoryModal
+      <CategoryFormDialog
         modalProps={{
           type: ModalType.EDIT,
           open,
@@ -159,7 +159,7 @@ const dialogs: Array<{
       />
     ),
     renderCreate: () => (
-      <AddCategoryModal
+      <CategoryFormDialog
         modalProps={{ type: ModalType.ADD, open: true }}
         setModalProps={vi.fn()}
       />

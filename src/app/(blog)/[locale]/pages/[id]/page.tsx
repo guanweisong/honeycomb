@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
-import Comment from "@/features/comment/public/components";
+import Comment from "@/features/comment/public/components/CommentClient";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/menu-types";

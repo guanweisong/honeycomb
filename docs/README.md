@@ -23,4 +23,5 @@
 
 - [简单 Feature 迁移结果](simple-feature-architecture-results.md)与[2026-10-20 实施计划](superpowers/plans/2026-10-20-simple-feature-architecture.md)：顶部补记 PR #13 合并与后续 CI，正文历史不重写。
 - [复杂度审计](architecture-complexity-audit.md)、[复杂度基线](architecture-complexity-baseline.md)、[生产 schema 基线](production-schema-baseline-report.md)。
+- [2026-09-11 评论边界验证](superpowers/reports/2026-09-11-comment-boundary-verification.md)：原 task-2 报告，保留当时验证证据。
 - [历史实施计划](superpowers/plans/)与[历史设计](superpowers/specs/)：理解决策背景；当前改动回到上面的架构入口及 OpenSpec。

@@ -5,11 +5,11 @@ import {
   type ReactNode,
 } from "react";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { SettingViewModel as SettingEntity } from "@/features/setting/types";
+import type { SettingViewModel } from "@/features/setting/types";
 
 const SiteSettingContext = createContext<{
-  setting?: SettingEntity;
-  refreshSetting: () => Promise<SettingEntity>;
+  setting?: SettingViewModel;
+  refreshSetting: () => Promise<SettingViewModel>;
 } | null>(null);
 
 export function SiteSettingProvider({
@@ -17,7 +17,7 @@ export function SiteSettingProvider({
   setting,
 }: {
   children?: ReactNode;
-  setting?: SettingEntity;
+  setting?: SettingViewModel;
 }) {
   const { data: fetchedSetting } = trpc.setting.index.useQuery(undefined, {
     initialData: setting,
@@ -32,8 +32,8 @@ export function SiteSettingProvider({
 
 function createContextProvider(
   children: ReactNode,
-  setting: SettingEntity | undefined,
-  refreshSetting: () => Promise<SettingEntity>,
+  setting: SettingViewModel | undefined,
+  refreshSetting: () => Promise<SettingViewModel>,
 ) {
   return createElement(
     SiteSettingContext.Provider,

@@ -33,6 +33,6 @@ export interface ActionGuardContract {
 }
 
 export interface ActionGuardFile {
-  relativePath: string;
+  sourcePath: string;
   actions: readonly ActionGuardContract[];
 }

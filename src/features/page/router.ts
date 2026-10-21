@@ -30,7 +30,7 @@ import {
   listPageMenuOptions,
   getPage,
 } from "@/features/page/server/page-queries";
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 独立页面 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const pageRouter = createTRPCRouter({

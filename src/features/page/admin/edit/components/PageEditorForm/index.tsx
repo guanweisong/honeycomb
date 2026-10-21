@@ -1,7 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { DynamicField } from "@/components/DynamicForm/DynamicField";
-import type { PageEditorValues } from "../../transforms/page-draft";
+import type { PageEditorValues } from "../../page-draft";
 import { pageTemplateOptions } from "@/features/page/admin/options";
 
 type PageEditorFormProps = { form: UseFormReturn<PageEditorValues> };

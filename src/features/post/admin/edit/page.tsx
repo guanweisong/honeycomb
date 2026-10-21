@@ -10,7 +10,7 @@ import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
 } from "@/components/admin/layout-context";
-import AddCategoryModal from "../../../category/admin/components/AddCategoryModal";
+import CategoryFormDialog from "../../../category/admin/components/CategoryFormDialog";
 import { PostEditorActions } from "./components/PostEditorActions";
 import { PostSidebarFields } from "./components/PostSidebarFields";
 import { PostTypeFields } from "./components/PostTypeFields";
@@ -175,7 +175,10 @@ function PostDetailContent() {
         }}
         handlePhotoPickerCancel={() => setShowPhotoPicker(false)}
       />
-      <AddCategoryModal modalProps={modalProps} setModalProps={setModalProps} />
+      <CategoryFormDialog
+        modalProps={modalProps}
+        setModalProps={setModalProps}
+      />
     </div>
   );
 }

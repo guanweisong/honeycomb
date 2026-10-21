@@ -16,7 +16,7 @@ vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
 }));
 
-vi.mock("@/lib/cache/refresh-path", () => ({
+vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: {
     invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
   },

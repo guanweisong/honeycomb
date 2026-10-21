@@ -5,7 +5,7 @@ import { ESLint } from "eslint";
 import { beforeAll, expect, it } from "vitest";
 
 const eslint = new ESLint({
-  overrideConfigFile: resolve("eslint-config-next.ts"),
+  overrideConfigFile: resolve("eslint.config.ts"),
 });
 
 // Separate bounded TypeScript-project initialization from the rule contract.

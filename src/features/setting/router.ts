@@ -12,7 +12,7 @@ import { Permission } from "@/lib/auth/permissions";
 
 import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
 
-import { publicContentInvalidator } from "@/lib/cache/refresh-path";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 /** 网站设置 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const settingRouter = createTRPCRouter({

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/blog-navigation";
 import { MenuType } from "@/features/menu/menu-types";
-import type { CommentTreeViewModel as CommentTreeEntity } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   isDeterminateRejectionCode,
@@ -23,7 +23,7 @@ interface UseCommentSubmissionOptions {
   id: string;
   type: MenuType;
   identity?: CommentIdentity;
-  replyTo: CommentTreeEntity | null;
+  replyTo: CommentTreeViewModel | null;
   formRef: RefObject<HTMLFormElement | null>;
   turnstileRef: RefObject<TurnstileInstance | null>;
   persistIdentity: (identity: CommentIdentity) => void;

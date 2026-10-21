@@ -10,7 +10,7 @@ import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { TagListQueryInput, TagListQuerySchema } from "@/features/tag/schema";
-import AddTagDialog from "./components/AddTagDialog";
+import TagFormDialog from "./components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
 import { Permission } from "@/lib/auth/permissions";
@@ -203,7 +203,7 @@ const Tag = () => {
         />
       </div>
 
-      <AddTagDialog
+      <TagFormDialog
         {...modalProps}
         onClose={() => setModalProps(closeAdminDialog())}
         onSuccess={() => refetch()}

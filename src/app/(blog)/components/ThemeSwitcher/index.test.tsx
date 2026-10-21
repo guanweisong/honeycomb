@@ -7,9 +7,6 @@ import { createRoot, type Root } from "react-dom/client";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 let resolvedTheme = "light";
-let locale = "zh";
-let pathname = "/archives/post-1";
-let scrollTop: number | undefined;
 const themeChanges: string[] = [];
 
 vi.mock("react", async (importOriginal) => {
@@ -27,89 +24,9 @@ vi.mock("next-themes", () => ({
   }),
 }));
 
-vi.mock("next-intl", () => ({
-  useLocale: () => locale,
-  useTranslations: () => (key: string) => {
-    const values: Record<string, string> = {
-      actors: "演员",
-      directors: "导演",
-      styles: "风格",
-    };
-    return values[key] ?? key;
-  },
-}));
-
-vi.mock("next/image", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) =>
-    React.createElement("img", props),
-}));
-
-vi.mock("next/link", () => ({
-  default: ({
-    children,
-    href,
-    hrefLang,
-    prefetch,
-    "aria-label": ariaLabel,
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    hrefLang?: string;
-    prefetch?: boolean | "auto" | null;
-  }) =>
-    React.createElement(
-      "a",
-      {
-        href,
-        hrefLang,
-        "aria-label": ariaLabel,
-        "data-prefetch": prefetch,
-      },
-      children,
-    ),
-}));
-
-vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({
-    children,
-    href,
-    locale: targetLocale,
-    replace,
-    ...props
-  }: {
-    children: React.ReactNode;
-    href: string;
-    locale?: string;
-    replace?: boolean;
-  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
-    React.createElement(
-      "a",
-      {
-        ...props,
-        "data-locale": targetLocale,
-        "data-replace": String(!!replace),
-        href,
-      },
-      children,
-    ),
-  getPathname: ({
-    href,
-    locale: targetLocale,
-  }: {
-    href: string;
-    locale: string;
-  }) => `/${targetLocale}${href}`,
-  usePathname: () => pathname,
-}));
-
-vi.mock("@/lib/hooks/use-scrolled-past", () => ({
-  useScrolledPast: (threshold: number) => (scrollTop ?? 0) > threshold,
-}));
-
 import { ThemeSwitcher } from "./index";
-import LanguageSwitcher from "../LanguageSwitcher";
-import BackToTop from "../BackToTop";
-import Tags from "../../../../features/post/public/Tags";
 
-describe("blog appearance controls", () => {
+describe("ThemeSwitcher", () => {
   let container: HTMLDivElement;
   let root: Root;
 
@@ -121,9 +38,6 @@ describe("blog appearance controls", () => {
       .querySelectorAll('meta[name="theme-color"]')
       .forEach((meta) => meta.remove());
     resolvedTheme = "light";
-    locale = "zh";
-    pathname = "/archives/post-1";
-    scrollTop = undefined;
     themeChanges.length = 0;
     Object.defineProperty(document, "startViewTransition", {
       configurable: true,
@@ -251,65 +165,5 @@ describe("blog appearance controls", () => {
     expect(themeChanges).toEqual(["dark"]);
     expect(startViewTransition).not.toHaveBeenCalled();
     expect(animate).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["zh", "light", "en", "Current language: 中文", "Switch to English"],
-    ["en", "dark", "zh", "Current language: English", "Switch to 中文"],
-  ])(
-    "links %s readers to the other locale",
-    async (currentLocale, theme, targetLocale, alt, label) => {
-      locale = currentLocale;
-      resolvedTheme = theme;
-      await act(async () => root.render(React.createElement(LanguageSwitcher)));
-
-      const link = container.querySelector("a");
-      expect(link?.getAttribute("href")).toBe(
-        `/${targetLocale}/archives/post-1`,
-      );
-      expect(link?.getAttribute("hrefLang")).toBe(targetLocale);
-      expect(link?.getAttribute("data-prefetch")).toBe("true");
-      expect(link?.getAttribute("aria-label")).toBe(label);
-      expect(container.querySelector("img")?.getAttribute("alt")).toBe(alt);
-    },
-  );
-
-  it("shows back-to-top only after scrolling and returns to the origin", async () => {
-    const scrollCalls: unknown[][] = [];
-    vi.stubGlobal("scrollTo", (...args: unknown[]) => scrollCalls.push(args));
-    await act(async () => root.render(React.createElement(BackToTop)));
-    expect(container.querySelector('[aria-label="Back to top"]')).toBeNull();
-
-    scrollTop = 301;
-    await act(async () => root.render(React.createElement(BackToTop)));
-    const button = container.querySelector('[aria-label="Back to top"]');
-    expect(button).not.toBeNull();
-    await act(async () => {
-      button!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    expect(scrollCalls).toEqual([[0, 0]]);
-  });
-
-  it("renders localized tag groups, separators and destination links", async () => {
-    await act(async () => {
-      root.render(
-        React.createElement(Tags, {
-          galleryStyles: [{ id: "gallery", name: { zh: "人像" } }],
-          movieActors: [],
-          movieDirectors: [
-            { id: "director-1", name: { zh: "导演甲" } },
-            { id: "director-2", name: { zh: "导演乙" } },
-          ],
-          movieStyles: undefined,
-        } as never),
-      );
-    });
-
-    expect(container.textContent).toContain("导演：导演甲、导演乙");
-    expect(container.textContent).toContain("风格：人像");
-    expect(
-      container.querySelector('a[href="/list/tags/director-2"]'),
-    ).not.toBeNull();
-    expect(container.querySelectorAll("li")).toHaveLength(2);
   });
 });

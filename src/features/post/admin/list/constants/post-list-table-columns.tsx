@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
-import type { AdminPostListItem as PostListItemEntity } from "@/features/post/types";
+import type { AdminPostListItem } from "@/features/post/types";
 import {
   postStatusOptions,
   postTypeOptions,
@@ -14,7 +14,7 @@ import { publicationStatusToneMap } from "@/components/admin/publication-status-
  * 文章列表的表格列定义。
  * 定义了文章管理页面中 `DataTable` 组件的每一列的显示方式和数据源。
  */
-export const postListTableColumns: ColumnDef<PostListItemEntity>[] = [
+export const postListTableColumns: ColumnDef<AdminPostListItem>[] = [
   {
     accessorKey: "title",
     header: "文章名称",

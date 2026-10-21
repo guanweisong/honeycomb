@@ -11,7 +11,7 @@ import {
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
 import { getLocale } from "next-intl/server";
-import { MenuLocalEntity } from "@/app/(blog)/types/menu.local.entity";
+import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
 import { MenuType } from "@/features/menu/menu-types";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuItem as MenuEntity } from "@/features/menu/types";
@@ -61,7 +61,7 @@ export default async function Header() {
   const breadcrumbNavigation = [toNavigationItem(home), ...navigation];
   const menuIds = new Set(allMenu.map((item) => item.id));
   // Only roots are displayed; keep all navigation records for ancestor matching.
-  const menuDataFormat: MenuLocalEntity[] = allMenu
+  const navigationLinks: BlogNavigationLink[] = allMenu
     .filter((item) => !item.parent || !menuIds.has(item.parent))
     .map((data) => {
       let link =
@@ -94,7 +94,7 @@ export default async function Header() {
             </span>
           </div>
           <div className="flex items-center">
-            <Menu data={menuDataFormat} flatMenuData={navigation} />
+            <Menu data={navigationLinks} flatMenuData={navigation} />
           </div>
           <div className="flex items-center gap-3 mr-2 shrink-0">
             <div data-testid="theme-switcher">

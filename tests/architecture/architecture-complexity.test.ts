@@ -24,6 +24,21 @@ function imports(source: string): string[] {
 describe("架构复杂度治理", () => {
   it("不保留无消费者 barrel、测试专用源码与 schema 转发文件", () => {
     const obsoleteFiles = [
+      "src/app/(blog)/i18n/middleware.ts",
+      "src/app/api/trpc/[trpc]/config.ts",
+      "src/features/post/post-filters.ts",
+      "src/lib/auth/migration.ts",
+      "src/lib/content/parser/get-relation-tags.ts",
+      "src/lib/db/array-field.ts",
+      "src/lib/observability/adapters/memory.ts",
+      "src/lib/observability/adapters/noop.ts",
+      "src/lib/trpc/capability-authorization-sources.ts",
+      "src/lib/trpc/capability-authorization-static.ts",
+      "src/lib/trpc/capability-procedure-matrix-data.ts",
+      "src/lib/trpc/capability-procedure-matrix-fixtures.ts",
+      "src/lib/trpc/capability-procedure-matrix-test-helpers.ts",
+      "src/components/ui/card.tsx",
+      "src/app/admin/constants/admin-action-guard-matrix.ts",
       "src/features/comment/domain/index.ts",
       "src/features/page/domain/index.ts",
       "src/features/post/domain/index.ts",

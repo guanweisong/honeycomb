@@ -68,7 +68,7 @@ vi.mock("@marsidev/react-turnstile", () => ({
     ),
 }));
 
-vi.mock("../Card", () => ({
+vi.mock("@/components/blog/Card", () => ({
   default: ({
     title,
     children,
@@ -141,6 +141,7 @@ describe("comment draft preservation during submission", () => {
   });
 
   afterEach(async () => {
+    expect(container.querySelector('[data-testid="card"]')).not.toBeNull();
     await act(async () => root.unmount());
     container.remove();
     vi.restoreAllMocks();
