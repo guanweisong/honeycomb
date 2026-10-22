@@ -67,6 +67,11 @@ const criticalCoverageFiles = [
 ];
 
 describe("coverage governance", () => {
+  it("preserves explicit mock history ownership across both test lanes", () => {
+    expect(config.clearMocks).toBe(false);
+    expect(processConfig.test?.clearMocks).toBe(false);
+  });
+
   it("includes every production TypeScript source and only the approved exclusions", () => {
     expect(coverage?.include).toEqual(["src/**/*.{ts,tsx}"]);
     expect(coverage?.exclude).toEqual(expectedExclusions);

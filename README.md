@@ -4,8 +4,8 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.4.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19.3.0-blue?style=flat-square&logo=react)](https://react.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.3.1-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
@@ -84,8 +84,8 @@
 
 ### 环境要求
 
-- Node.js 22.x（与 `package.json` engines 一致）
-- Bun >= 1.4.2
+- Node.js 24.15.0 或更高的 24.x（推荐 CI 使用的 24.22.1；与 `package.json` engines 一致）
+- Bun 1.4.3（与 `packageManager` 和 CI 一致）
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
 - Resend 账号（可选，用于邮件服务）

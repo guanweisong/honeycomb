@@ -45,7 +45,7 @@ describe("UTC format host-timezone independence", () => {
       const result = spawnSync(
         process.execPath,
         [
-          // Node 22.14 (CI) supports stripping but does not enable it by default.
+          // Explicitly enable stripping for this TypeScript-only Node subprocess.
           "--experimental-strip-types",
           "--input-type=module",
           "-e",

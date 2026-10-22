@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.3
       - run: bun add --global @fission-ai/openspec@1.4.1
       - run: bun run quality:spec
         env:
@@ -43,10 +43,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.14.0
+          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.3
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -116,10 +116,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.14.0
+          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.3
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache

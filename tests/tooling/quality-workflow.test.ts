@@ -54,8 +54,8 @@ const commandsFor = (job: z.infer<typeof jobSchema>) =>
 
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
-    expect(packageJson.packageManager).toBe("bun@1.4.2");
-    expect(workflow).toContain("bun-version: 1.4.2");
+    expect(packageJson.packageManager).toBe("bun@1.4.3");
+    expect(workflow).toContain("bun-version: 1.4.3");
     expect(workflow).toContain("bun install --frozen-lockfile");
   });
 
@@ -64,8 +64,9 @@ describe("quality workflow", () => {
     expect(vercelJson).not.toHaveProperty("bunVersion");
   });
 
-  it("pins Vercel to the supported Node major", () => {
-    expect(packageJson.engines.node).toBe("22.x");
+  it("pins the supported Node major and development minimum", () => {
+    expect(packageJson.engines.node).toBe(">=24.15.0 <25");
+    expect(workflow.match(/node-version: 24\.22\.1/g)).toHaveLength(2);
   });
 
   it("keeps Turbopack analysis finite and writes static diagnostics", () => {

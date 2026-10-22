@@ -86,7 +86,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 
 业务页面、hooks、Feature server/schema/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
-全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。Vitest 4.1 的顶层 `perFile` 会同时把全局门槛应用到每个文件，因此关键门槛使用“一文件一个精确 glob”；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
+全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。启用顶层 `perFile: true` 会把全局阈值改为逐文件检查，因此本工程保留全局汇总门槛，并用“一文件一个精确 glob”设置关键门槛；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
 
 这套口径必须与 `vitest.config.mts` 同步维护：`include` 固定覆盖 `src/**/*.{ts,tsx}`；`exclude` 只允许上表中的声明、测试、E2E-only 薄入口、上述既有 shadcn 基础组件目录和非生产测试资产。不得通过排除业务页面、feature hooks、server/schema/rules、权限或其他安全/基础设施核心来满足门槛。新增排除项必须同时给出可审查理由并更新 coverage governance 测试。
 

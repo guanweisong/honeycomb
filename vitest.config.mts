@@ -46,6 +46,8 @@ const unitTestInclude = [
 export default defineConfig({
   test: {
     globals: true,
+    // 保留原有 mock 历史清理由各测试负责的语义，不随 Vitest 5 默认值改变。
+    clearMocks: false,
     environment: "jsdom",
     setupFiles: ["./tests/setup/vitest.setup.ts"],
     include: unitTestInclude,
@@ -81,7 +83,7 @@ export default defineConfig({
         lines: 70,
         functions: 65,
         branches: 60,
-        // Vitest 4.1 applies top-level `perFile` to global thresholds too.
+        // Top-level boolean `perFile` applies global thresholds to each file.
         // Exact single-file patterns provide critical per-file gates without
         // incorrectly imposing the global aggregate thresholds on every file.
         ...criticalCoverageThresholds,
