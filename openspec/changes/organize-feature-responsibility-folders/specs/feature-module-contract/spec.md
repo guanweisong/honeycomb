@@ -18,3 +18,8 @@ Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责
 
 - **WHEN** dashboard 等模块的返回值可由真实操作与 transport 推导
 - **THEN** 系统 MUST NOT 为目录对称添加空 types/schemas 或无用途模型
+
+#### Scenario: 服务端测试按被测职责就近组织
+
+- **WHEN** 整理 Feature 根 server.test.ts 或 server.integration.test.ts
+- **THEN** 测试 MUST 迁入所属 server/ 并跟随实际实现具名；单职责文件 SHALL 整体迁移，混合职责 MAY 拆分，跨操作完整事务/并发场景 MUST 保留在具名 integration 测试中；MUST NOT 保留笼统根入口、删减断言或重复昂贵 fixture，E2E SHALL 继续位于 tests/e2e

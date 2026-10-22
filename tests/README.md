@@ -6,7 +6,9 @@
 
 ### 📁 业务相关测试
 
-测试文件直接放在对应的业务模块旁边，便于维护和理解：
+测试文件直接放在对应的业务模块旁边，便于维护和理解。服务端测试放在所属 server/ 中，跟随真实实现命名，如 tag-commands.test.ts、menu-queries.test.ts；跨操作的完整事务、并发或持久化场景使用具名 *.integration.test.ts，不为目录整齐拆断场景。禁止保留根 server.test.ts / server.integration.test.ts；单职责只搬迁，只有混合职责才拆分。E2E 继续位于 tests/e2e/。
+
+本次迁移的逐用例映射及断言、钩子、fixture 基线见[服务端测试迁移记录](../docs/server-test-migration.md)。
 
 ```
 src/features/

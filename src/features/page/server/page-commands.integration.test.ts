@@ -15,8 +15,7 @@ import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
 import * as commands from "@/features/page/server/page-commands";
 import * as htmlSanitizer from "@/lib/security/sanitize-html";
-import { getPage, listPages } from "./server/page-queries";
-import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { getPage, listPages } from "./page-queries";
 vi.mock("@/env/client", () => ({
   clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" },
 }));
@@ -497,35 +496,5 @@ describe("atomic versioned page writes", () => {
       expect(projection).not.toHaveProperty("creationToken");
       expect(projection).not.toHaveProperty("creationInputHash");
     }
-  });
-});
-describe("page transaction retries", () => {
-  it("bounds retries to contention before the business callback starts", async () => {
-    const fake = createMockDb();
-    fake.transaction.mockRejectedValue(
-      Object.assign(new Error("busy"), { code: "SQLITE_BUSY" }),
-    );
-    await expect(
-      commands.createPage(asMockDatabase(fake), input, "author", cache()),
-    ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(fake.transaction).toHaveBeenCalledTimes(4);
-    expect(fake.insert).not.toHaveBeenCalled();
-  });
-  it("does not retry a callback or unknown commit failure", async () => {
-    const fake = createMockDb();
-    fake.limit.mockResolvedValue([
-      { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
-    ]);
-    fake.transaction.mockImplementation(async (callback) => {
-      await callback(fake);
-      throw Object.assign(new Error("unknown commit"), { code: "SQLITE_BUSY" });
-    });
-    fake.returning.mockResolvedValue([{ id: "page", version: 0 }]);
-    const invalidator = cache();
-    await expect(
-      commands.createPage(asMockDatabase(fake), input, "author", invalidator),
-    ).rejects.toThrow("unknown commit");
-    expect(fake.transaction).toHaveBeenCalledOnce();
-    expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
 });

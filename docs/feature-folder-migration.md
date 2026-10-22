@@ -175,3 +175,7 @@
 ## schemas/ 命名补充
 
 按确认后的命名约定，10 个实际 feature 契约目录统一采用 schemas/（39 个实现与 2 个就近测试）；server/ 表达执行边界，不改为 services/。types/、枚举内容、.schema.ts 后缀、lib/db/schema 与其他数据库路径保持不变。旧单数目录也纳入禁止回归检查。此轮对照命名调整前的 770020b 基线，543 个生产源码文件（含 scripts）的 AST 等价，18 个 feature 枚举文件内容不变；数据库 schema、迁移及历史报告未改动。类型、Lint、21 个架构文件的 260 个测试、完整非 E2E 的 447 个文件 / 3227 个测试、生产构建与 69 项严格规格检查全部通过。覆盖率保持 statements 93.24%、branches 88.44%、functions 93.04%、lines 94.38%。测试仅使用本轮独占临时 SQLite，已验证清理。E2E 清单为开发 66 项、生产 1 项；当前无 Playwright 浏览器可执行文件，未执行真实浏览器用例，既有下载阻塞不通过其他入口绕过。
+
+## 服务端测试位置补充
+
+根 server.test.ts / server.integration.test.ts 已按被测职责迁入 server/ 具名测试。只有 menu/page 的混合职责拆分，事务与并发场景不拆断；完整用例映射、断言和 fixture 基线见[服务端测试迁移记录](server-test-migration.md)。
