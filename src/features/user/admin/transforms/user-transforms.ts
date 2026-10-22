@@ -1,6 +1,6 @@
-import type { UserUpdate } from "@/features/user/types";
-import type { UserRecord as UserEntity } from "@/features/user/types";
-import { UserStatus } from "@/features/user/user";
+import type { UserUpdate } from "@/features/user/types/user.update";
+import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
+import { UserStatus } from "@/features/user/types/user.status";
 import { isProtectedUser } from "../../rules";
 
 export function toUserFormDefaults(

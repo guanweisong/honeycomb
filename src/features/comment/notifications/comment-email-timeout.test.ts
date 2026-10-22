@@ -3,8 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PostStatus } from "@/features/post/post-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { createComment } from "../server/comment-commands";
 import { notifyCommentCreated } from "./comment-delivery";

@@ -10,13 +10,13 @@ import {
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
+import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
 import {
-  PostListQuerySchema,
   PostInsertSchema,
-  PostUpdateSchema,
-  PostDeleteSchema,
   PostCreationResultInputSchema,
-} from "@/features/post/schema";
+} from "@/features/post/schema/post.insert.schema";
+import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import { PostDeleteSchema } from "@/features/post/schema/post.delete.schema";
 import {
   createPost,
   destroyPosts,
@@ -32,7 +32,7 @@ import {
   getPublishedPostCategoryId,
 } from "@/features/post/server/post-queries";
 import { getCachedPostList } from "@/features/post/server/post-list-cache";
-import { PostSearchInputSchema } from "@/features/post/post-search";
+import { PostSearchInputSchema } from "@/features/post/schema/post.search.schema";
 import { searchPublishedPosts } from "@/features/post/server/post-search";
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

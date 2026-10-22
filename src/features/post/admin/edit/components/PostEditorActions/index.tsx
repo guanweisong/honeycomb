@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
-import { PostStatus } from "@/features/post/post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import type { PostSubmitAction } from "../../hooks/use-post-editor";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";

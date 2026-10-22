@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { enableStatusOptions } from "@/components/admin/enable-status-options";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { formatAdminDateTime } from "@/components/admin/date-time";

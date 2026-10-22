@@ -1,4 +1,4 @@
-import { CommentStatus } from "./comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { assertNonBlankId } from "@/lib/validation/nonblank-id";
 import { InvalidStateTransitionError } from "@/lib/errors/domain-error";
 

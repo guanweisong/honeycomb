@@ -11,7 +11,7 @@ import { Save } from "lucide-react";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/Checkbox";
 import { Tabs } from "@/components/Tabs";

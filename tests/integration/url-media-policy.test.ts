@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CommentSiteSchema } from "@/features/comment/schema";
-import { LinkInsertSchema } from "@/features/link/schema";
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
-import { MediaUploadFileSchema } from "@/features/media/upload-policy";
+import { CommentSiteSchema } from "@/features/comment/schema/comment.fields.schema";
+import { LinkInsertSchema } from "@/features/link/schema/link.insert.schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema/setting.admin-update.schema";
+import { MediaUploadFileSchema } from "@/features/media/schema/media.upload.schema";
 
 describe("safe persisted links", () => {
   it.each(["javascript:alert(1)", "data:text/html,hi", "ftp://example.test/a"])(

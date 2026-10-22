@@ -1,10 +1,10 @@
 import "server-only";
+import { listTags } from "@/features/tag/server/tag-queries";
 import {
-  listTags,
   createTag,
   destroyTags,
   updateTag,
-} from "@/features/tag/server";
+} from "@/features/tag/server/tag-commands";
 
 import {
   createTRPCRouter,
@@ -16,11 +16,9 @@ import { Permission } from "@/lib/auth/permissions";
 
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 
-import {
-  TagListQuerySchema,
-  TagInsertSchema,
-  TagUpdateSchema,
-} from "@/features/tag/schema";
+import { TagListQuerySchema } from "@/features/tag/schema/tag.list.schema";
+import { TagInsertSchema } from "@/features/tag/schema/tag.insert.schema";
+import { TagUpdateSchema } from "@/features/tag/schema/tag.update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

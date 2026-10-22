@@ -7,18 +7,20 @@ import { existsSync, lstatSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import {
   getMenuSnapshot,
   listMenus,
-  saveAllMenus,
-} from "@/features/menu/server";
-import { getSetting, updateSetting } from "@/features/setting/server";
-import { destroyCategories } from "@/features/category/server";
-import { destroyPages } from "@/features/page/server";
+} from "@/features/menu/server/menu-queries";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { getSetting } from "@/features/setting/server/setting-queries";
+import { updateSetting } from "@/features/setting/server/setting-update";
+import { destroyCategories } from "@/features/category/server/category-commands";
+import { destroyPages } from "@/features/page/server/page-commands";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (_name: string, _kind: string, op: () => unknown) => op(),
 }));

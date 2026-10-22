@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CategoryListItem as CategoryViewModel } from "@/features/category/types";
+import type { CategoryListItem as CategoryViewModel } from "@/features/category/types/category.record";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({

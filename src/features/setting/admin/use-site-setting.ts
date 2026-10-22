@@ -5,7 +5,7 @@ import {
   type ReactNode,
 } from "react";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { SettingViewModel } from "@/features/setting/types";
+import type { SettingViewModel } from "@/features/setting/types/setting.record";
 
 const SiteSettingContext = createContext<{
   setting?: SettingViewModel;

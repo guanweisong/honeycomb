@@ -10,9 +10,10 @@ import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import * as permissions from "@/lib/auth/permissions";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { PostStatus } from "../post-status";
-import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { PostStatus } from "@/features/post/types/post.status";
+import { TagType } from "@/features/tag/types/tag.type";
 import {
   createPost,
   updatePost,

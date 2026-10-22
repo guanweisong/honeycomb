@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";

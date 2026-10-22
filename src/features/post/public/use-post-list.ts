@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@/lib/trpc/client/trpc";
-import type { PostListQueryInput } from "@/features/post/types";
-import type { PublicPostListResult } from "@/features/post/types";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 
 /**
  * 获取文章列表的异步函数。

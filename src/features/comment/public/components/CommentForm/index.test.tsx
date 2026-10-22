@@ -15,7 +15,7 @@ vi.mock("@/components/ui/button", () => ({
 }));
 
 import { CommentForm } from ".";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 
 describe("CommentForm", () => {
   let container: HTMLDivElement;

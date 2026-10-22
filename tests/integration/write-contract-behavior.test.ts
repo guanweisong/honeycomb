@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { PostInsertSchema } from "@/features/post/schema";
-import { PageInsertSchema } from "@/features/page/schema";
-import { MediaUploadFileSchema } from "@/features/media/upload-policy";
-import { LinkInsertSchema } from "@/features/link/schema";
-import { CategoryInsertSchema } from "@/features/category/schema";
+import { PostInsertSchema } from "@/features/post/schema/post.insert.schema";
+import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
+import { MediaUploadFileSchema } from "@/features/media/schema/media.upload.schema";
+import { LinkInsertSchema } from "@/features/link/schema/link.insert.schema";
+import { CategoryInsertSchema } from "@/features/category/schema/category.insert.schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { routing } from "@/lib/i18n/routing";
 import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";

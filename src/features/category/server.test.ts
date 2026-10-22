@@ -8,7 +8,11 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { createCategory, destroyCategories, updateCategory } from "./server";
+import {
+  createCategory,
+  destroyCategories,
+  updateCategory,
+} from "@/features/category/server/category-commands";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const base = {

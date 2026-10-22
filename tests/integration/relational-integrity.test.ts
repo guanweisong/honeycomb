@@ -2,9 +2,11 @@ import { updatePost } from "@/features/post/server/post-commands";
 import {
   listCategories,
   getCategoryTree,
+} from "@/features/category/server/category-queries";
+import {
   createCategory,
   updateCategory,
-} from "@/features/category/server";
+} from "@/features/category/server/category-commands";
 import { listPosts } from "@/features/post/server/post-queries";
 import {
   existsSync,
@@ -25,8 +27,9 @@ import * as schema from "@/lib/db/schema";
 import { createUserRepository } from "@/features/user/server/user-repository";
 
 import { destroyUsers } from "@/features/user/server/user-commands";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { TagType } from "@/features/tag/tag-kind";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { TagType } from "@/features/tag/types/tag.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
 const categoryValues = (id: string, parent?: string) => ({
@@ -203,20 +206,16 @@ describe("relational integrity with real libSQL", () => {
       level: UserLevel.ADMIN,
       status: UserStatus.ENABLE,
     });
-    await db
-      .insert(schema.post)
-      .values({
-        id: "507f1f77bcf86cd799439011",
-        categoryId: "root",
-        authorId: "author",
-      });
-    await db
-      .insert(schema.tag)
-      .values(
-        ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"].map((id) => ({
-          id,
-        })),
-      );
+    await db.insert(schema.post).values({
+      id: "507f1f77bcf86cd799439011",
+      categoryId: "root",
+      authorId: "author",
+    });
+    await db.insert(schema.tag).values(
+      ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"].map((id) => ({
+        id,
+      })),
+    );
     await updatePost(
       db,
       {
@@ -235,13 +234,11 @@ describe("relational integrity with real libSQL", () => {
       (await db.select().from(schema.postTag)).map(({ tagId }) => tagId),
     ).toEqual(["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]);
     await expect(
-      db
-        .insert(schema.postTag)
-        .values({
-          postId: "507f1f77bcf86cd799439011",
-          tagId: "507f1f77bcf86cd799439012",
-          type: TagType.ACTOR,
-        }),
+      db.insert(schema.postTag).values({
+        postId: "507f1f77bcf86cd799439011",
+        tagId: "507f1f77bcf86cd799439012",
+        type: TagType.ACTOR,
+      }),
     ).rejects.toThrow();
   });
   it("migration fails with actionable duplicate path diagnostics without renaming paths", async () => {

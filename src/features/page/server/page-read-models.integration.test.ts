@@ -13,7 +13,7 @@ import {
   listPageSummaries,
   listPageMenuOptions,
 } from "./page-queries";
-import { PageStatus } from "../page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
     _name: string,

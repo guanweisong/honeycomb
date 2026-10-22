@@ -1,8 +1,8 @@
 import ts from "typescript";
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PublicCommentBaseSchema } from "@/features/comment/schema";
-import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
+import { PublicCommentBaseSchema } from "@/features/comment/schema/comment.public.schema";
+import { CommentInsertBaseSchema } from "@/features/comment/schema/comment.insert.schema";
 import { sourceFile } from "@tests/helpers/source-files";
 
 describe("唯一事实源架构门禁", () => {
@@ -18,20 +18,20 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it.each([
-    ["src/features/post/types.ts", "PostInsert"],
-    ["src/features/page/types.ts", "PageInsert"],
-    ["src/features/media/upload-policy.ts", "MediaUploadFile"],
-    ["src/features/link/types.ts", "LinkInsert"],
-    ["src/features/media/types.ts", "MediaRecord"],
-    ["src/features/tag/types.ts", "TagRecord"],
-    ["src/features/post/types.ts", "PostWithRelations"],
+    ["src/features/post/types/post.insert.ts", "PostInsert"],
+    ["src/features/page/types/page.insert.ts", "PageInsert"],
+    ["src/features/media/types/media.upload.ts", "MediaUploadFile"],
+    ["src/features/link/types/link.insert.ts", "LinkInsert"],
+    ["src/features/media/types/media.record.ts", "MediaRecord"],
+    ["src/features/tag/types/tag.record.ts", "TagRecord"],
+    ["src/features/post/types/post.read-model.ts", "PostWithRelations"],
     ["src/lib/trpc/context.ts", "User"],
     ["src/lib/i18n/i18n.ts", "I18n"],
-    ["src/features/category/types.ts", "CategoryInsert"],
-    ["src/features/category/types.ts", "CategoryUpdate"],
-    ["src/features/tag/types.ts", "TagInsert"],
-    ["src/features/tag/types.ts", "TagUpdate"],
-    ["src/features/comment/types.ts", "PublicCommentInput"],
+    ["src/features/category/types/category.insert.ts", "CategoryInsert"],
+    ["src/features/category/types/category.update.ts", "CategoryUpdate"],
+    ["src/features/tag/types/tag.insert.ts", "TagInsert"],
+    ["src/features/tag/types/tag.update.ts", "TagUpdate"],
+    ["src/features/comment/types/comment.insert.ts", "PublicCommentInput"],
   ])("%s 的 %s 必须引用或推导，不重写字段", (path, name) => {
     const declaration = sourceFile(path).statements.find(
       (node) =>
@@ -46,7 +46,11 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it.each([
-    ["src/features/link/types.ts", "LinkListInput", "LinkListQueryInput"],
+    [
+      "src/features/link/types/link.list.ts",
+      "LinkListInput",
+      "LinkListQueryInput",
+    ],
     ["src/features/menu/admin/menu-transforms.ts", "MenuSaveItem", "MenuInput"],
     [
       "src/features/post/server/post-translations.ts",
@@ -63,8 +67,8 @@ describe("唯一事实源架构门禁", () => {
 
   it("Setting 与 Menu 写入类型由 Feature schema 推导", () => {
     for (const path of [
-      "src/features/setting/types.ts",
-      "src/features/menu/types.ts",
+      "src/features/setting/types/setting.patch.ts",
+      "src/features/menu/types/menu.write.ts",
     ]) {
       const handwrittenWriteTypes = sourceFile(path).statements.filter(
         (node) =>
@@ -83,7 +87,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("MenuItem 不允许任意字符串索引扩张读模型", () => {
     const declaration = sourceFile(
-      "src/features/menu/types.ts",
+      "src/features/menu/types/menu.list.ts",
     ).statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) && node.name.text === "MenuItem",
@@ -289,7 +293,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("媒体上传 schema 导出语义明确的 MediaUploadFile 类型", () => {
     const aliases = sourceFile(
-      "src/features/media/upload-policy.ts",
+      "src/features/media/types/media.upload.ts",
     ).statements.filter(ts.isTypeAliasDeclaration);
     expect(aliases.map((node) => node.name.text)).toContain("MediaUploadFile");
     expect(aliases.map((node) => node.name.text)).not.toContain("MediaEntity");

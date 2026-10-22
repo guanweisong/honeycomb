@@ -1,10 +1,11 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import type { UserRecord } from "@/features/user/types";
-import type { LinkRecord } from "@/features/link/types";
+import type { UserRecord } from "@/features/user/types/user.record";
+import type { LinkRecord } from "@/features/link/types/link.record";
 
 const mocks = vi.hoisted(() => ({ mutate: vi.fn(), refetch: vi.fn() }));
 vi.mock("sonner", () => ({

@@ -3,7 +3,7 @@ import { submitMediaUpload } from "./media-actions";
 import { File as NodeFile } from "node:buffer";
 import { webcrypto } from "node:crypto";
 import { beforeEach } from "vitest";
-import type { MediaRecord } from "../types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 beforeEach(() => {
   vi.stubGlobal("crypto", webcrypto);
   vi.stubGlobal("File", NodeFile);

@@ -1,12 +1,12 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LinkRecord } from "@/features/link/types";
-import type { PageWithRelations } from "@/features/page/types";
-import type { LinkListQueryInput } from "@/features/link/types";
-import type { PageListQueryInput } from "@/features/page/types";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import type { LinkRecord } from "@/features/link/types/link.record";
+import type { PageWithRelations } from "@/features/page/types/page.read-model";
+import type { LinkListQueryInput } from "@/features/link/types/link.list";
+import type { PageListQueryInput } from "@/features/page/types/page.list-query";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { requireDefined } from "@tests/helpers/require-defined";
 
 const mocks = vi.hoisted(() => {

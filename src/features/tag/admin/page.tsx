@@ -1,6 +1,6 @@
 "use client";
 
-import type { TagRecord as TagEntity } from "@/features/tag/types";
+import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { useState } from "react";
 import { tagTableColumns } from "./tag-table-columns";
 import { DataTable } from "@/components/DataTable";
@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import type { TagListQueryInput } from "@/features/tag/types";
-import { TagListQuerySchema } from "@/features/tag/schema";
+import type { TagListQueryInput } from "@/features/tag/types/tag.list";
+import { TagListQuerySchema } from "@/features/tag/schema/tag.list.schema";
 import TagFormDialog from "./components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";

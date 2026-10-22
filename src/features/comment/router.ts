@@ -12,11 +12,11 @@ import {
 import { can, Permission } from "@/lib/auth/permissions";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { IdSchema } from "@/lib/validation/id.schema";
-import type { CommentPreviewListItem } from "@/features/comment/types";
-import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
-import { CommentUpdateSchema } from "@/features/comment/schema";
-import { CommentQuerySchema } from "@/features/comment/schemas/comment.query.schema";
-import { CommentInsertSchema } from "@/features/comment/schemas/comment.insert.schema";
+import type { CommentPreviewListItem } from "@/features/comment/types/comment.read-model";
+import { CommentListQuerySchema } from "@/features/comment/schema/comment.list-query.schema";
+import { CommentUpdateSchema } from "@/features/comment/schema/comment.update.schema";
+import { CommentQuerySchema } from "@/features/comment/schema/comment.query.schema";
+import { CommentInsertSchema } from "@/features/comment/schema/comment.insert.schema";
 import {
   destroyComments,
   updateComment,

@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   getAdminUser: vi.fn(),
 }));
 
-vi.mock("@/features/user/admin-user", () => ({
+vi.mock("@/features/user/server/admin-user", () => ({
   getAdminUser: mocks.getAdminUser,
 }));
 vi.mock("@/lib/db/db", () => ({
@@ -26,7 +26,7 @@ describe("getAdminUser", () => {
     );
 
     expect(source).not.toContain("drizzle-orm");
-    expect(source).toContain("features/user/admin-user");
+    expect(source).toContain("features/user/server/admin-user");
   });
 
   it("returns the enabled user from the current request session", async () => {

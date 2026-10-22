@@ -1,6 +1,6 @@
 import type { InferInsertModel } from "drizzle-orm";
-import * as schema from "@/lib/db/schema";
-import type { PostFields } from "../types";
+import type * as schema from "@/lib/db/schema";
+import type { PostFields } from "@/features/post/types/post.insert";
 type PostInsertValues = InferInsertModel<typeof schema.post>;
 /** 将文章输入转换为可持久化结构。 */
 export function toPostInsertValues(

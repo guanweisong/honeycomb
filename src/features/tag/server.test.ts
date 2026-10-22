@@ -8,7 +8,11 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { createTag, destroyTags, updateTag } from "./server";
+import {
+  createTag,
+  destroyTags,
+  updateTag,
+} from "@/features/tag/server/tag-commands";
 
 const row = { id: "tag-1", createdAt: null, updatedAt: null };
 const name = { en: "Tag", zh: "标签" };

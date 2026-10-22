@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PageStatus } from "@/features/page/page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 
 type PageDetailLike =
   | {

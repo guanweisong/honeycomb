@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { CommentStatus } from "./comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { InvalidStateTransitionError } from "@/lib/errors/domain-error";
 import { assertCommentTransition } from "./rules";
 

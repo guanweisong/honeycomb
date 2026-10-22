@@ -1,5 +1,6 @@
 import React, { act } from "react";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
-import type { AdminPostListItem } from "@/features/post/types";
+import type { AdminPostListItem } from "@/features/post/types/post.read-model";
 import {
   postStatusOptions,
   postTypeOptions,

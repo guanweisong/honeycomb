@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UserLevel } from "@/features/user/user";
-import { UserStatus } from "@/features/user/user";
-import type { UserRecord as UserEntity } from "@/features/user/types";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 
 import { submitUserUpdate } from "@/features/user/admin/user-actions";
 

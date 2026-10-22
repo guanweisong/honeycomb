@@ -1,5 +1,5 @@
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import type { TagRecord } from "@/features/tag/types";
+import type { TagRecord } from "@/features/tag/types/tag.record";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

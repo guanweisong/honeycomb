@@ -3,7 +3,7 @@
 import { Sheet } from "@/components/Sheet";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { MediaRecord as MediaEntity } from "@/features/media/types";
+import type { MediaRecord as MediaEntity } from "@/features/media/types/media.record";
 
 /**
  * 图片选择器模态框的属性接口。

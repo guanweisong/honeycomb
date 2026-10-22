@@ -10,7 +10,7 @@ import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 import {

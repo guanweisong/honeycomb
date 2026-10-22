@@ -1,5 +1,5 @@
-import type { CommentListItem } from "@/features/comment/types";
-import { CommentStatus } from "@/features/comment/comment-status";
+import type { CommentListItem } from "@/features/comment/types/comment.read-model";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import {

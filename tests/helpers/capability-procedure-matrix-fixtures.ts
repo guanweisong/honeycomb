@@ -1,4 +1,4 @@
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 /** 权限矩阵测试共享的稳定输入数据。 */
 export const ALL_ROLES = [

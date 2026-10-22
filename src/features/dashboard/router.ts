@@ -1,5 +1,5 @@
 import "server-only";
-import { getStatistics } from "@/features/dashboard/server";
+import { getStatistics } from "@/features/dashboard/server/dashboard-queries";
 
 import { Permission } from "@/lib/auth/permissions";
 import { permissionProcedure, createTRPCRouter } from "@/lib/trpc/core";

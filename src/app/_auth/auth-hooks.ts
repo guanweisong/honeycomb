@@ -8,7 +8,7 @@ import { getAuthenticationProvider } from "../../lib/auth/authentication-events"
 import { recordLoginHistory } from "@/features/user/account-security/server/login-history.repository";
 import { getLogger } from "@/lib/observability/server";
 import { LogEvent } from "@/lib/observability/core/names";
-import { isUserEnabled } from "@/features/user/user";
+import { isUserEnabled } from "@/features/user/rules";
 
 export function createAuthDatabaseHooks(): NonNullable<
   BetterAuthOptions["databaseHooks"]

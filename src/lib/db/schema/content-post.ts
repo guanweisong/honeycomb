@@ -1,6 +1,6 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,

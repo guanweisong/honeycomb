@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { notFound } from "next/navigation";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { utcFormat } from "@/lib/ui/utc-format";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
 

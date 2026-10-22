@@ -6,7 +6,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import LoadingState from "@/components/LoadingState";

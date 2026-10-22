@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 import { MediaGrid } from ".";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,

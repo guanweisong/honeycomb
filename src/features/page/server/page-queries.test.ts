@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { listPages } from "./page-queries";
-import { PageTemplate } from "../page-template";
+import { PageTemplate } from "@/features/page/types/page.template";
 import * as schema from "@/lib/db/schema";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
-import { PageStatus } from "../page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 const row = {
   id: "507f1f77bcf86cd799439011",
   authorId: "author",

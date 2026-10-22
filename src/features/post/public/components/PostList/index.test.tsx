@@ -70,8 +70,8 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
 }));
 
 import PostList from "./index";
-import type { PublicPostListItem as PostListViewModel } from "@/features/post/types";
-import { PostType } from "@/features/post/post-type";
+import type { PublicPostListItem as PostListViewModel } from "@/features/post/types/post.read-model";
+import { PostType } from "@/features/post/types/post.type";
 
 const makePost = (
   overrides: Partial<PostListViewModel> &

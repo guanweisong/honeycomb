@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { UserRecord as UserEntity } from "@/features/user/types";
+import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
+import { UserLevelName } from "@/features/user/types/user.level-name";
 import {
-  UserLevelName,
   userLevelOptions,
   userStatusOptions,
 } from "@/features/user/admin/options";

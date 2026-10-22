@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { getStatistics } from "./server";
+import { getStatistics } from "@/features/dashboard/server/dashboard-queries";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
     _name: string,

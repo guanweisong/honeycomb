@@ -1,4 +1,4 @@
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import {
   sqliteTable,
   text,

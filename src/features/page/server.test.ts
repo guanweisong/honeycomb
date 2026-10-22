@@ -9,10 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { PageStatus } from "./page-status";
-import { PageTemplate } from "./page-template";
-import * as commands from "./server";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import * as commands from "@/features/page/server/page-commands";
 import * as htmlSanitizer from "@/lib/security/sanitize-html";
 import { getPage, listPages } from "./server/page-queries";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
@@ -413,16 +414,14 @@ describe("atomic versioned page writes", () => {
   });
   it("accepts ordinary managed media in the page save transaction", async () => {
     const a = await create();
-    await db
-      .insert(schema.media)
-      .values({
-        id: "media",
-        key: "ordinary.png",
-        name: "ordinary",
-        size: 1,
-        type: "image/png",
-        url: "https://assets.test/ordinary.png",
-      });
+    await db.insert(schema.media).values({
+      id: "media",
+      key: "ordinary.png",
+      name: "ordinary",
+      size: 1,
+      type: "image/png",
+      url: "https://assets.test/ordinary.png",
+    });
     await commands.updatePage(
       db,
       {

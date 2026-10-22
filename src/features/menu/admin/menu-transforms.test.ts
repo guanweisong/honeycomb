@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import {
   buildMenuSaveInput,
   flattenMenuTree,

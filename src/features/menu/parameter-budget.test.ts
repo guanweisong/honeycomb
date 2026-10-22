@@ -8,9 +8,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { saveAllMenus, listMenus } from "./server";
-import { MenuType } from "./menu-types";
-import { getCategoryTree } from "../category/server";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { listMenus } from "@/features/menu/server/menu-queries";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { getCategoryTree } from "@/features/category/server/category-queries";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
     _name: string,

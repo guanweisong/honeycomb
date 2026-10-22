@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { z } from "zod";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SettingRecord } from "../../../types";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
 const initial: SettingRecord = {
   id: "111111111111111111111111",
   version: 0,

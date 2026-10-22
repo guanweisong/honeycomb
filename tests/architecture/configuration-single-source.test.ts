@@ -167,7 +167,8 @@ describe("配置与契约所有权", () => {
         }
         ts.forEachChild(node, visit);
       }
-      visit(sourceFile(`src/features/${feature}/types.ts`));
+      for (const path of sourceFiles(`src/features/${feature}/types`))
+        visit(sourceFile(path));
       expect(violations).toEqual([]);
     },
   );

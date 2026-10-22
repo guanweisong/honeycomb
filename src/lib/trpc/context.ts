@@ -4,8 +4,9 @@ import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { isUserEnabled, UserLevel } from "@/features/user/user";
-import type { CurrentUser } from "@/features/user/user";
+import { isUserEnabled } from "@/features/user/rules";
+import { UserLevel } from "@/features/user/types/user.level";
+import type { CurrentUser } from "@/features/user/types/user.current";
 import {
   createRequestContext,
   type RequestContext,

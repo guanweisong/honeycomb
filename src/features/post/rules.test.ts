@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { PostStatus } from "./post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { getPostPublishStatus, getPostWithdrawStatus } from "./rules";
 
 describe("post publication rules", () => {

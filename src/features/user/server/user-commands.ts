@@ -1,18 +1,20 @@
 import "server-only";
 
-import type { UserCommandInput, UserUpdateCommandInput } from "../types";
+import type { UserCommandInput } from "@/features/user/types/user.insert";
+import type { UserUpdateCommandInput } from "@/features/user/types/user.update";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import {
   assertUserDeletable,
   assertUserLevelChange,
   assertUserStatusChange,
 } from "../rules";
 import type { UserRepository } from "./user-repository";
-import { UserInsertSchema, UserUpdateSchema } from "../schema";
-
-export type { UserCommandInput } from "../types";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+} from "@/features/user/schema/user.write.schema";
 
 /** 创建用户及凭据。 */
 export function createUser(

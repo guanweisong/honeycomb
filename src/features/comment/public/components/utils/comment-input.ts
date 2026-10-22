@@ -1,5 +1,5 @@
-import { MenuType } from "@/features/menu/menu-types";
-import type { CommentInsertInput } from "@/features/comment/types";
+import { MenuType } from "@/features/menu/types/menu.type";
+import type { CommentInsertInput } from "@/features/comment/types/comment.insert";
 import type { CommentIdentity } from "../hooks/use-comment-identity";
 
 interface BuildCommentInputOptions {

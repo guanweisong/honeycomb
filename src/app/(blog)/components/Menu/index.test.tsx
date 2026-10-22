@@ -1,4 +1,4 @@
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -41,7 +41,7 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
 
 import Menu from "./index";
 import Breadcrumb from "../Breadcrumb";
-import type { MenuItem as MenuViewModel } from "@/features/menu/types";
+import type { MenuItem as MenuViewModel } from "@/features/menu/types/menu.list";
 import type { BlogNavigationLink } from "../../types/blog-navigation-link";
 
 const flatMenu: MenuViewModel[] = [

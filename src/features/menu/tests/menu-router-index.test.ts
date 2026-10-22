@@ -2,7 +2,7 @@ import type { menu } from "@/lib/db/schema";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/router";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createMockContext,

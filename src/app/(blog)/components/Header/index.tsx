@@ -12,9 +12,9 @@ import {
 } from "@/app/lib/server/public-queries";
 import { getLocale } from "next-intl/server";
 import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import type { MenuItem as MenuEntity } from "@/features/menu/types";
+import type { MenuItem as MenuEntity } from "@/features/menu/types/menu.list";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
 const toNavigationItem = ({

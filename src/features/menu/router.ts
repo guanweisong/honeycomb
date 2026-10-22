@@ -1,9 +1,9 @@
 import "server-only";
 import {
   listMenus,
-  saveAllMenus,
   getMenuSnapshot,
-} from "@/features/menu/server";
+} from "@/features/menu/server/menu-queries";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
 
 import {
   createTRPCRouter,
@@ -14,7 +14,7 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schema";
+import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schema/menu.save-snapshot.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

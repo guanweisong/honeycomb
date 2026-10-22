@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { PostStatus } from "../post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (_name: string, _kind: string, run: () => unknown) =>

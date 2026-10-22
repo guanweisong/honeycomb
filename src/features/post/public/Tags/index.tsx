@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { PostWithRelations } from "@/features/post/types";
-import type { TagRecord as TagEntity } from "@/features/tag/types";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
+import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 
 /**

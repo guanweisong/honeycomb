@@ -2,14 +2,12 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { MediaRecord } from "../types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import { trpc } from "@/lib/trpc/client/trpc";
-import {
-  MEDIA_MAX_BATCH_FILES,
-  MediaUploadFileSchema,
-  type MediaUploadIntentInput,
-} from "../upload-policy";
-import type { MediaDeleteResult } from "../delete-result";
+import { MEDIA_MAX_BATCH_FILES } from "@/features/media/types/media.upload-policy";
+import { MediaUploadFileSchema } from "@/features/media/schema/media.upload.schema";
+import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
+import type { MediaDeleteResult } from "@/features/media/types/media.delete";
 
 type SubmitMediaUploadOptions = {
   files: readonly File[];

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import type { UserRecord } from "../types";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import type { UserRecord } from "@/features/user/types/user.record";
 import { createUser, destroyUsers, updateUser } from "./user-commands";
 
 const validUserId = "000000000000000000000001";

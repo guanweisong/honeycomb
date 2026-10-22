@@ -17,7 +17,7 @@ import {
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server/registry";
 import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 import { appRouter } from "@/app/_trpc/router";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";

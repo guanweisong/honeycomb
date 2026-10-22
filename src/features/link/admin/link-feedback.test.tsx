@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import type { LinkRecord } from "@/features/link/types";
+import type { LinkRecord } from "@/features/link/types/link.record";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({

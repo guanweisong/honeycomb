@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { getCachedPostList } from "./post-list-cache";
-import type { PostWithRelations } from "../types";
-import { PostType } from "@/features/post/post-type";
-import { PostStatus } from "@/features/post/post-status";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
+import { PostType } from "@/features/post/types/post.type";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const cache = vi.hoisted(() => ({

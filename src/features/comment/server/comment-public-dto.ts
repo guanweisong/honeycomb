@@ -1,6 +1,9 @@
 import md5 from "md5";
-import { CommentStatus } from "@/features/comment/comment-status";
-import type { CommentRecord, PublicCommentNode } from "../types";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import type {
+  CommentRecord,
+  PublicCommentNode,
+} from "@/features/comment/types/comment.read-model";
 
 export type PublicCommentSource = Pick<
   CommentRecord,

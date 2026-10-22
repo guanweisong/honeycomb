@@ -3,9 +3,9 @@ import { z } from "zod";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
-import type { PostDetailResult as PostDetailViewModel } from "@/features/post/types";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
+import type { PostDetailResult as PostDetailViewModel } from "@/features/post/types/post.read-model";
 
 import type { trpc } from "@/lib/trpc/client/trpc";
 

@@ -2,7 +2,7 @@ import type { menu } from "@/lib/db/schema";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { menuRouter } from "@/features/menu/router";
 import * as schema from "@/lib/db/schema";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,

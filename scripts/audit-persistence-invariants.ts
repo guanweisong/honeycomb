@@ -1,13 +1,14 @@
 import { createClient, type Client } from "@libsql/client";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
-import { PostType } from "@/features/post/post-type";
-import { PostStatus } from "@/features/post/post-status";
-import { TagType } from "@/features/tag/tag-kind";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { PostType } from "@/features/post/types/post.type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { TagType } from "@/features/tag/types/tag.type";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { loginHistoryEvents } from "@/features/user/account-security/login-history-events";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 export type PersistenceInvariantViolation = {

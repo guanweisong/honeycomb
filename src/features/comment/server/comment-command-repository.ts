@@ -6,15 +6,15 @@ import { and, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { observeDbOperation } from "@/lib/observability/server";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { objectId } from "@/lib/db/object-id";
 
 import type {
   CommentRequestMetadata,
-  CommentUpdate,
-  CommentTargetState,
   PublicCommentInput,
-} from "../types";
+} from "@/features/comment/types/comment.insert";
+import type { CommentUpdate } from "@/features/comment/types/comment.update";
+import type { CommentTargetState } from "@/features/comment/types/comment.target";
 
 export function createCommentCommandRepository(db: Database) {
   return {

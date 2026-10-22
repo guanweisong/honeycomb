@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FieldConfig } from "@/components/DynamicForm/types";
-import type { CategoryListItem } from "@/features/category/types";
+import type { CategoryListItem } from "@/features/category/types/category.record";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({

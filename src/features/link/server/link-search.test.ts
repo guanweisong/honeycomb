@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
-import { listLinks } from "../server";
+import { listLinks } from "@/features/link/server/link-operations";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { EnableStatus } from "@/lib/validation/enable-status";
 

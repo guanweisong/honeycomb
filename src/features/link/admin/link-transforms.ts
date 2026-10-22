@@ -1,5 +1,5 @@
-import type { LinkUpdate } from "@/features/link/types";
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import type { LinkUpdate } from "@/features/link/types/link.update";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 
 export function toLinkFormDefaults(
   record?: LinkEntity,

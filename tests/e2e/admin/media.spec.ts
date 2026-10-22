@@ -1,15 +1,11 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import {
-  MediaUploadIntentInputSchema,
-  type MediaUploadIntentInput,
-} from "@/features/media/upload-policy";
-import {
-  MediaRegisterUploadSchema,
-  MediaDeleteSchema,
-} from "@/features/media/schema";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
+import { MediaUploadIntentInputSchema } from "@/features/media/schema/media.upload.schema";
+import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
+import { MediaRegisterUploadSchema } from "@/features/media/schema/media.upload.schema";
+import { MediaDeleteSchema } from "@/features/media/schema/media.delete.schema";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
 

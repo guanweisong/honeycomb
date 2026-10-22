@@ -2,9 +2,10 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { ModalType } from "@/components/admin/modal-type";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import type { UserRecord } from "@/features/user/types";
-import { UserUpdateSchema } from "@/features/user/schema";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import type { UserRecord } from "@/features/user/types/user.record";
+import { UserUpdateSchema } from "@/features/user/schema/user.write.schema";
 import { submitUserUpdate } from "../../user-actions";
 import { UserFormDialog } from ".";
 

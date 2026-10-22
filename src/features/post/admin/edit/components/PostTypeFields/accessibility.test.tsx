@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { useForm } from "react-hook-form";
 import { expect, it } from "vitest";
 import { Form } from "@/components/ui/form";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { PostTypeFields } from "./index";
 
 function QuoteForm() {

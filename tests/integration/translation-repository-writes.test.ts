@@ -1,19 +1,21 @@
 import { incrementPostViews } from "@/features/post/server/post-commands";
-import { incrementPageViews } from "@/features/page/server";
+import { incrementPageViews } from "@/features/page/server/page-commands";
 const invalidator = {
   invalidate: async () => ({ state: "completed" as const }),
 };
 import { getPost, listPosts } from "@/features/post/server/post-queries";
 import { listPages } from "@/features/page/server/page-queries";
-import { updateSetting, getSetting } from "@/features/setting/server";
+import { updateSetting } from "@/features/setting/server/setting-update";
+import { getSetting } from "@/features/setting/server/setting-queries";
 import { createPost, updatePost } from "@/features/post/server/post-commands";
-import { createPage, updatePage } from "@/features/page/server";
-import { createTag, updateTag, listTags } from "@/features/tag/server";
+import { createPage, updatePage } from "@/features/page/server/page-commands";
+import { createTag, updateTag } from "@/features/tag/server/tag-commands";
+import { listTags } from "@/features/tag/server/tag-queries";
 import {
   createCategory,
   updateCategory,
-  listCategories,
-} from "@/features/category/server";
+} from "@/features/category/server/category-commands";
+import { listCategories } from "@/features/category/server/category-queries";
 import { createClient, type Client } from "@libsql/client/node";
 import { drizzle } from "drizzle-orm/libsql";
 import {
@@ -30,13 +32,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 
-import { PageTemplate } from "@/features/page/page-template";
-import { PageUpdateSchema } from "@/features/page/schema";
-import { PageStatus } from "@/features/page/page-status";
-import { PostStatus } from "@/features/post/post-status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { randomUUID } from "node:crypto";
-import { PostUpdateSchema } from "@/features/post/schema";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
 
 vi.mock("@/lib/observability/server", () => ({

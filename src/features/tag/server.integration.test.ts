@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { updateTag } from "./server";
+import { updateTag } from "@/features/tag/server/tag-commands";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

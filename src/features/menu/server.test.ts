@@ -8,8 +8,9 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { MenuType } from "./menu-types";
-import { listMenus, saveAllMenus } from "./server";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { listMenus } from "@/features/menu/server/menu-queries";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
 
 const item = (id: string, parent?: string | null) => ({
   id: id.padEnd(24, "0"),

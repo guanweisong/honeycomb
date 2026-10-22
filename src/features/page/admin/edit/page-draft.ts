@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { PageFieldsSchema, PageInsertSchema } from "@/features/page/schema";
-import type { PageInsert } from "@/features/page/types";
+import { PageFieldsSchema } from "@/features/page/schema/page.fields.schema";
+import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
 
 const localizedDraft = z.object({
   zh: z.string().optional(),

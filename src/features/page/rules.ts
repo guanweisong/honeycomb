@@ -1,4 +1,4 @@
-import { PageStatus } from "./page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 import {
   DomainError,
   InvalidStateTransitionError,

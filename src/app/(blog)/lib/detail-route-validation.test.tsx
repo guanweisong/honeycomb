@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 

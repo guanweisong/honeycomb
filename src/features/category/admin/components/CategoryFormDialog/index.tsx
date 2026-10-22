@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 
 import { enableStatusOptions } from "@/components/admin/enable-status-options";
 import { Dialog } from "@/components/Dialog";
@@ -9,10 +9,8 @@ import { renderCategoryTitleByDepth } from "@/features/category/admin/category-t
 import { toast } from "sonner";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 import { DynamicForm } from "@/components/DynamicForm";
-import {
-  CategoryInsertSchema,
-  CategoryUpdateSchema,
-} from "@/features/category/schema";
+import { CategoryInsertSchema } from "@/features/category/schema/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schema/category.update.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   runAdminMutation,

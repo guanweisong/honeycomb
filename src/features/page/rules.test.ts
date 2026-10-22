@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { PageStatus } from "./page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { getPagePublishStatus, getPageWithdrawStatus } from "./rules";
 
 describe("page publication rules", () => {

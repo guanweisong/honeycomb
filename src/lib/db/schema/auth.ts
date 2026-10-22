@@ -2,7 +2,8 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { objectId } from "../object-id";
 import { withTimestamps } from "../timestamps";
 import { loginHistoryEvents } from "@/features/user/account-security/login-history-events";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { stringEnumValues } from "../value-validation";
 import { enumCheck } from "../constraint-helpers";
 

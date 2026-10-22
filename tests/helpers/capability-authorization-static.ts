@@ -188,7 +188,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   // User use case 只编排账号等级领域不变量，不决定入口授权。
   "src/features/user/server/user-commands.ts",
   "src/lib/db/schema/index.ts",
-  "src/features/user/user.ts",
+  "src/features/user/types/user.level.ts",
   "src/features/user/rules.ts",
 ]);
 
@@ -266,7 +266,7 @@ function assertNoRoleBasedAuthorization(
         ? `src/${statement.moduleSpecifier.text.slice(2)}`
         : posix.normalize(
             posix.join(posix.dirname(fileName), statement.moduleSpecifier.text),
-          )) === "src/features/user/user"
+          )) === "src/features/user/types/user.level"
     ) {
       const bindings = statement.importClause?.namedBindings;
       if (bindings && ts.isNamedImports(bindings)) {

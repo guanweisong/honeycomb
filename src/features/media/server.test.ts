@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { destroyMedia } from "./server";
+import { destroyMedia } from "@/features/media/server/media-delete";
 import {
   mediaRow,
   mediaRepositoryFixture,

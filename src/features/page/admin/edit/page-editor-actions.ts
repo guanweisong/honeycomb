@@ -3,9 +3,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { PageInsertSchema, PageUpdateSchema } from "@/features/page/schema";
-import type { PageInsert, PageUpdate } from "@/features/page/types";
-import { PageStatus } from "@/features/page/page-status";
+import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
+import type { PageUpdate } from "@/features/page/types/page.update";
+import { PageStatus } from "@/features/page/types/page.status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   isDeterminateRejectionCode,

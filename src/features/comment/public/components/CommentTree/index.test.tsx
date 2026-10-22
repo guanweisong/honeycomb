@@ -23,7 +23,7 @@ vi.mock("@/lib/ui/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { CommentTree } from ".";
 import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 

@@ -1,11 +1,11 @@
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { PostWithRelationsSchema } from "../post-read-model";
+import { PostWithRelationsSchema } from "@/features/post/schema/post.read-model.schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
 import * as schema from "@/lib/db/schema";
-import { PostStatus } from "@/features/post/post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createGuestUser,

@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { ModalType } from "@/components/admin/modal-type";
-import type { CategoryListItem } from "@/features/category/types";
+import type { CategoryListItem } from "@/features/category/types/category.record";
 import { requireDefined } from "@tests/helpers/require-defined";
 
 const mocks = vi.hoisted(() => ({

@@ -6,18 +6,19 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { PhotoPickerItemProps } from "../../../../media/components/PhotoPickerItem";
-import { PostInsertSchema, PostUpdateSchema } from "@/features/post/schema";
-import type { PostInsert } from "@/features/post/types";
+import { PostInsertSchema } from "@/features/post/schema/post.insert.schema";
+import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import type { PostInsert } from "@/features/post/types/post.insert";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { isDeterminateRejectionCode } from "@/lib/trpc/client/mutation-error";
-import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import type { PostDetailResult as PostDetailEntity } from "@/features/post/types/post.read-model";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import { normalizePostForm } from "../utils/normalize-post-form";
 import { clientLogger } from "@/lib/observability/client";
 import { LogEvent } from "@/lib/observability/core/names";
 import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import {
   notifyPublicSyncWarning,
   type AdminDialogState,

@@ -1,17 +1,17 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { CommentStatus } from "../../src/features/comment/comment-status";
-import { PageTemplate } from "../../src/features/page/page-template";
-import { PageStatus } from "../../src/features/page/page-status";
-import { PostStatus } from "../../src/features/post/post-status";
-import { PostType } from "../../src/features/post/post-type";
-import { TagType } from "../../src/features/tag/tag-kind";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
+import { TagType } from "@/features/tag/types/tag.type";
 import {
   MultiLangEnum,
   normalizeMultiLangLocale,
 } from "../../src/lib/i18n/multi-lang";
-import { MenuType } from "../../src/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { EnableStatus } from "../../src/lib/validation/enable-status";
 
 describe("domain contracts", () => {

@@ -1,5 +1,5 @@
 import { expect, expectTypeOf, it } from "vitest";
-import { PostStatus } from "@/features/post/post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { normalizePostForm } from "./normalize-post-form";
 
 it("replaces the input status in both the result type and submitted value", () => {

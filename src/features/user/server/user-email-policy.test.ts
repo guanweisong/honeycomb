@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { UserUpdateSchema } from "../schema";
+import { UserUpdateSchema } from "@/features/user/schema/user.write.schema";
 import { createUserRepository } from "./user-repository";
-import { UserLevel, UserStatus } from "../user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 vi.mock("@/lib/auth/credentials", () => ({ setCredentialPassword: vi.fn() }));
 

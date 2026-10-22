@@ -1,6 +1,7 @@
-import type { SettingViewModel } from "@/features/setting/types";
-import type { UserRecord as UserViewModel } from "@/features/user/types";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import type { SettingViewModel } from "@/features/setting/types/setting.record";
+import type { UserRecord as UserViewModel } from "@/features/user/types/user.record";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 export const mockedAdminUser = {
   id: "admin-1",

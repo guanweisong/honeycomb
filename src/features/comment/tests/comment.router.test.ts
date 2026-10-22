@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { commentRouter } from "@/features/comment/router";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,
@@ -9,7 +9,7 @@ import {
   createMockDb,
   resetMockDb,
 } from "@tests/helpers/test-utils";
-import { PostStatus } from "@/features/post/post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";

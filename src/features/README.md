@@ -5,10 +5,12 @@
 按实际职责选择入口，不要求补齐全部文件：
 
 - router.ts：tRPC 输入、会话、capability、限流和错误协议。
-- schema.ts / types.ts：权威业务输入和稳定模型；其他差异化输入可按需拆分。
+- schema/ / types/：按职责命名的权威业务输入和稳定模型，如 tag.insert.schema.ts / tag.insert.ts；每个 enum 独立一个文件，纯 DTO 仍只能 type-only 依赖。
 - rules.ts 或具名纯文件：可独立测试的不变量、状态和类型目录，不依赖数据库或框架。
-- server.ts 或 server/：直接使用 Drizzle 的查询、事务、业务写入与副作用顺序。
+- server/：直接使用 Drizzle 的查询、事务、业务写入与副作用顺序。
 - admin / public：所属业务的后台 UI 与明确公开能力。
+
+展示名称和组件枚举也归所属 types/，但不是业务 catalog，schema/、rules、DB 不得依赖它们；options 数组仍归 UI。不保留根 types.ts/schema.ts/server.ts 或兼容 barrel，也不为 dashboard 等无契约需要的模块补空目录。
 
 默认调用是 UI → router → server 函数 → db。不要添加仅转发的 Repository 接口、factory、Use Case 或 handler；不建立 application/domain/infrastructure 层、src/packages 或中央 features/contracts。
 

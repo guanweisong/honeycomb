@@ -353,7 +353,7 @@ describe("feature-owned business boundaries", () => {
     expect(contracts.filter(isAuthoritativeContract).length).toBeGreaterThan(0);
     const violations = contracts.flatMap((path) => {
       return [
-        ...(/\/(?:schema|types|rules)\.ts$/.test(path) &&
+        ...(/\/(?:schema|types)\/[^/]+\.ts$|\/rules\.ts$/.test(path) &&
         /\b(?:Headers|Request|Response|FormData|TRPCError)\b/.test(
           readFileSync(path, "utf8"),
         )

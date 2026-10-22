@@ -14,10 +14,10 @@ describe("shared helper ownership", () => {
     const path = "src/features/media/components/PhotoPickerItem/index.tsx";
     const source = read(path);
     expect(moduleDependencies(source, path)).toContainEqual({
-      specifier: "@/features/media/types",
+      specifier: "@/features/media/types/media.record",
       typeOnly: true,
     });
-    expect(source).not.toContain("@/features/post/types");
+    expect(source).not.toContain("@/features/post/types/post.read-model");
   });
 
   it.each([

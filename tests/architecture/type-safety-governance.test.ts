@@ -12,16 +12,18 @@ const explicitUnsafeType =
 
 function featureContractFiles(): string[] {
   return sourceFiles(featuresRoot).filter((path) =>
-    /\/(?:types|schema|rules)\.ts$/.test(path),
+    /\/(?:types|schema)\/[^/]+\.ts$|\/rules\.ts$/.test(path),
   );
 }
 
 describe("类型安全治理", () => {
   it("Post/Page command DTO 使用封闭且明确的字段类型", () => {
-    const commandContracts = [
-      "src/features/post/schema.ts",
-      "src/features/page/schema.ts",
-    ];
+    const commandContracts = ["post", "page"].flatMap((feature) =>
+      sourceFiles(`src/features/${feature}/schema`).filter((path) =>
+        /\.(?:fields|insert|update|delete)\.schema\.ts$/.test(path),
+      ),
+    );
+    expect(commandContracts.length).toBeGreaterThan(0);
     const violations = commandContracts.flatMap((path) => {
       const source = readFileSync(path, "utf8");
       return /\bunknown\b|\[key:\s*string\]|Record<string|z\.(?:any|unknown|record)\s*\(/.test(

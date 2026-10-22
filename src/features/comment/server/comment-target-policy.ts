@@ -1,15 +1,15 @@
 import type { CommentTargetRepository } from "./comment-target-repository";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { PageStatus } from "@/features/page/page-status";
-import { PostStatus } from "@/features/post/post-status";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
+import type { CommentRefInput } from "@/features/comment/types/comment.query";
 import type {
-  CommentRefInput,
   CommentTarget,
   CommentTargetReference,
   CommentTargetState,
-} from "../types";
+} from "@/features/comment/types/comment.target";
 
 export function toCommentTargetReference(
   target: CommentTarget,

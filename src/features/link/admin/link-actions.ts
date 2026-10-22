@@ -3,9 +3,11 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ModalType } from "@/components/admin/modal-type";
-import { LinkInsertSchema, LinkUpdateSchema } from "@/features/link/schema";
-import type { LinkInsert, LinkUpdate } from "@/features/link/types";
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import { LinkInsertSchema } from "@/features/link/schema/link.insert.schema";
+import { LinkUpdateSchema } from "@/features/link/schema/link.update.schema";
+import type { LinkInsert } from "@/features/link/types/link.insert";
+import type { LinkUpdate } from "@/features/link/types/link.update";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   closeAdminDialog,

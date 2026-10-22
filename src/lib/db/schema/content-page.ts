@@ -1,5 +1,5 @@
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,

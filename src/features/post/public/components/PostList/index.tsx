@@ -11,10 +11,10 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "@/lib/ui/utils";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
-import type { PublicPostListItem } from "@/features/post/types";
-import { PostType } from "@/features/post/post-type";
-import type { PostListQueryInput } from "@/features/post/types";
-import type { PublicPostListResult } from "@/features/post/types";
+import type { PublicPostListItem } from "@/features/post/types/post.read-model";
+import { PostType } from "@/features/post/types/post.type";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 
 const PostTypeBgColor = Object.freeze({
   [PostType.ARTICLE]: "bg-green-600",

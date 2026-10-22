@@ -2,7 +2,7 @@ import React, { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import type { TagRecord } from "@/features/tag/types";
+import type { TagRecord } from "@/features/tag/types/tag.record";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),

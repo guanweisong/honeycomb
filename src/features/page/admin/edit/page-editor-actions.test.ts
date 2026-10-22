@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { submitPageEditor } from "./page-editor-actions";
 
 type SubmitOptions = Parameters<typeof submitPageEditor>[0];

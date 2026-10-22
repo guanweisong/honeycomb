@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { PageStatus } from "@/features/page/page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 
 type PageEditorActionButtonsProps = {
   isEdit: boolean;

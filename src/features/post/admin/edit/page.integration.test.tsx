@@ -3,11 +3,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { useFormContext } from "react-hook-form";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import type { PostDetailResult } from "@/features/post/types";
-import type { PostUpdate } from "@/features/post/types";
+import type { PostDetailResult } from "@/features/post/types/post.read-model";
+import type { PostUpdate } from "@/features/post/types/post.update";
 import type { PostEditorValues } from "./utils/post-draft";
 
 const state = vi.hoisted(() => ({

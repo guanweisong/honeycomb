@@ -14,39 +14,52 @@ import {
   createCategory,
   destroyCategories,
   updateCategory,
-} from "@/features/category/server";
+} from "@/features/category/server/category-commands";
 import {
   destroyComments,
   updateComment,
 } from "@/features/comment/server/comment-commands";
-import { createLink, destroyLinks, updateLink } from "@/features/link/server";
-import { saveAllMenus } from "@/features/menu/server";
-import { createPage, destroyPages, updatePage } from "@/features/page/server";
+import {
+  createLink,
+  destroyLinks,
+  updateLink,
+} from "@/features/link/server/link-operations";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import {
+  createPage,
+  destroyPages,
+  updatePage,
+} from "@/features/page/server/page-commands";
 import {
   createPost,
   destroyPosts,
   updatePost,
 } from "@/features/post/server/post-commands";
-import { updateSetting } from "@/features/setting/server";
-import { createTag, destroyTags, updateTag } from "@/features/tag/server";
+import { updateSetting } from "@/features/setting/server/setting-update";
+import {
+  createTag,
+  destroyTags,
+  updateTag,
+} from "@/features/tag/server/tag-commands";
 import {
   createUser,
   destroyUsers,
   updateUser,
 } from "@/features/user/server/user-commands";
-import type { CategoryRecord } from "@/features/category/types";
-import type { CommentRecord } from "@/features/comment/types";
-import type { LinkRecord } from "@/features/link/types";
-import type { SettingRecord } from "@/features/setting/types";
-import type { TagRecord } from "@/features/tag/types";
-import type { UserRecord } from "@/features/user/types";
+import type { CategoryRecord } from "@/features/category/types/category.record";
+import type { CommentRecord } from "@/features/comment/types/comment.read-model";
+import type { LinkRecord } from "@/features/link/types/link.record";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
+import type { TagRecord } from "@/features/tag/types/tag.record";
+import type { UserRecord } from "@/features/user/types/user.record";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
-import { PostStatus } from "@/features/post/post-status";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { MenuType } from "@/features/menu/menu-types";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { PostStatus } from "@/features/post/types/post.status";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const id = "507f1f77bcf86cd799439011";

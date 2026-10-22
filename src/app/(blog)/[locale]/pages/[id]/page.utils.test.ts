@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { PageStatus } from "@/features/page/page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 
 const mockNotFound = vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
@@ -18,8 +18,8 @@ describe("assertPublishedPage", () => {
       "src/app/(blog)/[locale]/pages/[id]/page.utils.ts",
       "utf8",
     );
-    expect(source).not.toContain("@/features/post/post-status");
-    expect(source).toContain("@/features/page/page-status");
+    expect(source).not.toContain("@/features/post/types/post.status");
+    expect(source).toContain("@/features/page/types/page.status");
   });
 
   beforeEach(() => {

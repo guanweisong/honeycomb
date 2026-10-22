@@ -8,16 +8,17 @@ import {
   assertPublicTarget,
   toCommentTargetReference,
 } from "./comment-target-policy";
-import type { CommentStatus } from "../comment-status";
+import type { CommentStatus } from "@/features/comment/types/comment.status";
 import { assertCommentTransition } from "../rules";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import type {
   CommentRequestMetadata,
-  CommentUpdate,
   PublicCommentInput,
-} from "../types";
-export type { CommentUpdate, PublicCommentInput } from "../types";
+} from "@/features/comment/types/comment.insert";
+import type { CommentUpdate } from "@/features/comment/types/comment.update";
+export type { CommentUpdate } from "@/features/comment/types/comment.update";
+export type { PublicCommentInput } from "@/features/comment/types/comment.insert";
 
 export interface CreateCommentDependencies {
   repository: Pick<CommentCommandRepository, "createIfTargetMatches">;

@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
 import ts from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
+import { isDisplayContract } from "@tests/helpers/feature-inventory";
 import {
   isContractForbidden,
   localModulePath,
@@ -33,7 +34,9 @@ function libraryImportViolations(path: string, source: string) {
       /\/(?:server|admin|public|components|notifications|presentation)(?:\/|$)|(?:\/|\.)router$/.test(
         target,
       );
-    return dataConsumer && !implementation ? [] : [`${path} -> ${specifier}`];
+    return dataConsumer && !implementation && !isDisplayContract(target)
+      ? []
+      : [`${path} -> ${specifier}`];
   });
 }
 
@@ -117,7 +120,7 @@ describe("technical library and browser dependency boundaries", () => {
       moduleDependencies(
         [
           'import type { Router } from "@/app/_trpc/router";',
-          'import { type User } from "@/features/user/types";',
+          'import { type User } from "@/features/user/types/user.current";',
           'import { type User, save } from "./mixed";',
           'export type { Input } from "./types";',
           'export { execute } from "./server";',
@@ -129,7 +132,7 @@ describe("technical library and browser dependency boundaries", () => {
       ),
     ).toEqual([
       { specifier: "@/app/_trpc/router", typeOnly: true },
-      { specifier: "@/features/user/types", typeOnly: true },
+      { specifier: "@/features/user/types/user.current", typeOnly: true },
       { specifier: "./mixed", typeOnly: false },
       { specifier: "./types", typeOnly: true },
       { specifier: "./server", typeOnly: false },
@@ -178,9 +181,29 @@ describe("technical library and browser dependency boundaries", () => {
     expect(
       libraryImportViolations(
         "src/lib/db/schema/auth.ts",
-        'import { UserStatus } from "@/features/user/user";',
+        'import { UserStatus } from "@/features/user/types/user.status";',
       ),
     ).toEqual([]);
+  });
+
+  it("rejects display enums in persistence and identity bindings", () => {
+    for (const path of [
+      "src/lib/db/schema/content-post.ts",
+      "src/lib/auth/hooks.ts",
+      "src/lib/trpc/context.ts",
+    ])
+      expect(
+        libraryImportViolations(
+          path,
+          'import { PostStatusName } from "@/features/post/types/post.status-name";',
+        ),
+      ).toHaveLength(1);
+    expect(
+      libraryImportViolations(
+        "src/lib/db/schema/content-post.ts",
+        'export { Align } from "../../../features/post/types/post-info.align";',
+      ),
+    ).toHaveLength(1);
   });
 
   it.each(["fs", "path", "drizzle-orm"])(

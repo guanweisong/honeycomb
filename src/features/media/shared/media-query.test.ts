@@ -1,4 +1,4 @@
-import type { MediaRecord } from "@/features/media/types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

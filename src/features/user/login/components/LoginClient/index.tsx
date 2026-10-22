@@ -17,7 +17,7 @@ import { authClient } from "@/auth-client";
 import Script from "next/script";
 import { providerIcons } from "../../provider-icons";
 import { LoginSchema } from "../../login.schema.ts";
-import type { LoginValues } from "@/features/user/types";
+import type { LoginValues } from "@/features/user/types/user.login";
 import { normalizeAdminCallback } from "../../safe-admin-callback";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
 import { useTurnstileToken } from "@/lib/hooks/use-turnstile-token";

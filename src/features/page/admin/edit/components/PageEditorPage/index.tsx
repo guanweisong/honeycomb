@@ -12,10 +12,10 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
-import { PageInsertSchema } from "@/features/page/schema";
-import type { PageInsert } from "@/features/page/types";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,

@@ -5,7 +5,7 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/blog-navigation";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {

@@ -9,7 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { destroyCategories, updateCategory } from "./server";
+import {
+  destroyCategories,
+  updateCategory,
+} from "@/features/category/server/category-commands";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -119,14 +122,12 @@ describe("Category update transaction result boundary", () => {
     await db
       .insert(schema.category)
       .values({ id: "unselected-child", path: "child", parent: ids[0] });
-    await db
-      .insert(schema.categoryTranslation)
-      .values({
-        categoryId: ids.at(0) ?? "missing",
-        locale: MultiLangEnum.En,
-        title: "Selected",
-        description: "",
-      });
+    await db.insert(schema.categoryTranslation).values({
+      categoryId: ids.at(0) ?? "missing",
+      locale: MultiLangEnum.En,
+      title: "Selected",
+      description: "",
+    });
     await db.insert(schema.menu).values([
       { id: "menu-late", categoryId: ids[700], power: 0, type: "CATEGORY" },
       { id: "menu-last", categoryId: ids[1100], power: 1, type: "CATEGORY" },
@@ -163,21 +164,17 @@ describe("Category update transaction result boundary", () => {
 
   it("rolls back earlier delete chunks and menu revision when a later category has a post", async () => {
     const ids = await seedDeleteBatch();
-    await db
-      .insert(schema.user)
-      .values({
-        id: "author",
-        name: "Author",
-        email: "author@example.test",
-        emailVerified: false,
-      });
-    await db
-      .insert(schema.post)
-      .values({
-        id: "post",
-        authorId: "author",
-        categoryId: ids.at(1100) ?? "missing",
-      });
+    await db.insert(schema.user).values({
+      id: "author",
+      name: "Author",
+      email: "author@example.test",
+      emailVerified: false,
+    });
+    await db.insert(schema.post).values({
+      id: "post",
+      authorId: "author",
+      categoryId: ids.at(1100) ?? "missing",
+    });
     const invalidator = cache();
     await expect(destroyCategories(db, ids, invalidator)).rejects.toThrow();
     expect(committed).toBe(false);

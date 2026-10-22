@@ -5,7 +5,7 @@ import {
   patchLocalizedValue,
 } from "@/lib/db/translation-values";
 import type * as schema from "@/lib/db/schema";
-import type { SettingUpdate } from "../types";
+import type { SettingUpdate } from "../types/setting.patch";
 
 export type SettingTranslationRow =
   typeof schema.settingTranslation.$inferSelect;
@@ -58,5 +58,20 @@ export function assembleSettingTranslations(
     siteSubName: assembleLocalizedField(rows, (row) => row.siteSubName),
     siteSignature: assembleLocalizedField(rows, (row) => row.siteSignature),
     siteCopyright: assembleLocalizedField(rows, (row) => row.siteCopyright),
+  };
+}
+
+export function toSettingRecord(
+  setting: typeof schema.setting.$inferSelect,
+  translations: readonly (typeof schema.settingTranslation.$inferSelect)[],
+) {
+  return {
+    id: setting.id,
+    version: setting.version,
+    siteRecordNo: setting.siteRecordNo,
+    siteRecordUrl: setting.siteRecordUrl,
+    createdAt: setting.createdAt,
+    updatedAt: setting.updatedAt,
+    ...assembleSettingTranslations(translations),
   };
 }

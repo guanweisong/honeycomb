@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
 import type { AdminNavigationItem } from "../AdminNavigation";
-import type { CurrentUser } from "@/features/user/user";
+import type { CurrentUser } from "@/features/user/types/user.current";
 import { Button } from "../../../../components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "../../../../lib/ui/utils";

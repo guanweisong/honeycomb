@@ -18,5 +18,10 @@ export function isFeatureRouter(path: string) {
 }
 
 export function isAuthoritativeContract(path: string) {
-  return /\/(?:types|schema)\.ts$/.test(path);
+  return /^src\/features\/[^/]+\/(?:types|schema)\/[^/]+\.ts$/.test(path);
+}
+
+/** Display-only enum files remain pure but cannot become business dependencies. */
+export function isDisplayContract(path: string) {
+  return /\/types\/(?:[^/]+-name|post-info\.align)(?:\.tsx?)?$/.test(path);
 }

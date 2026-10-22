@@ -12,16 +12,17 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { updateCategory } from "@/features/category/server";
+import { updateCategory } from "@/features/category/server/category-commands";
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
-import { listMenus } from "@/features/menu/server";
-import { listTags, updateTag } from "@/features/tag/server";
+import { listMenus } from "@/features/menu/server/menu-queries";
+import { listTags } from "@/features/tag/server/tag-queries";
+import { updateTag } from "@/features/tag/server/tag-commands";
 import { listPublicPosts } from "@/features/post/server/post-queries";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
-import { PageStatus } from "@/features/page/page-status";
-import { MenuType } from "@/features/menu/menu-types";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
+import { PageStatus } from "@/features/page/types/page.status";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import * as schema from "@/lib/db/schema";
 

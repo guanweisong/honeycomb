@@ -1,6 +1,6 @@
 import { requireDefined } from "@tests/helpers/require-defined";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

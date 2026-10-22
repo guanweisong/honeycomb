@@ -2,13 +2,16 @@ import "server-only";
 
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { Parser } from "htmlparser2";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import type { Database } from "@/lib/db/db";
 import { media, post, postTranslation } from "@/lib/db/schema";
 import { parseEnumValue } from "@/lib/db/value-validation";
 import { observeDbOperation } from "@/lib/observability/server";
-import type { PostSearchInput, PostSearchResult } from "../post-search";
+import type {
+  PostSearchInput,
+  PostSearchResult,
+} from "@/features/post/types/post.search";
 
 const textBoundary = new Set([
   "p",

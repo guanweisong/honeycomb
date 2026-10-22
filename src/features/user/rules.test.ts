@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { UserLevel } from "./user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { DomainError } from "@/lib/errors/domain-error";
 import {
   assertUserDeletable,

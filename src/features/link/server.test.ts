@@ -8,7 +8,11 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { createLink, destroyLinks, updateLink } from "./server";
+import {
+  createLink,
+  destroyLinks,
+  updateLink,
+} from "@/features/link/server/link-operations";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const link = {

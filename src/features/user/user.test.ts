@@ -2,7 +2,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isUserEnabled, UserStatus } from "./user";
+import { isUserEnabled } from "@/features/user/rules";
+import { UserStatus } from "@/features/user/types/user.status";
 
 describe("isUserEnabled", () => {
   it("keeps the enabled-status rule in one domain predicate", () => {

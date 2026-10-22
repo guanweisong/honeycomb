@@ -2,9 +2,10 @@ import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
 import * as schema from "@/lib/db/schema";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,

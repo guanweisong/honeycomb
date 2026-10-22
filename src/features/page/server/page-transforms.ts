@@ -1,7 +1,7 @@
 import type { InferInsertModel } from "drizzle-orm";
 
-import type { PageFields } from "../types";
-import * as schema from "@/lib/db/schema";
+import type { PageFields } from "@/features/page/types/page.insert";
+import type * as schema from "@/lib/db/schema";
 
 type PageInsertValues = InferInsertModel<typeof schema.page>;
 

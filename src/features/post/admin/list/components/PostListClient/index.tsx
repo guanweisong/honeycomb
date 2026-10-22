@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
-import type { PostDelete, PostListQueryInput } from "@/features/post/types";
-import { PostListQuerySchema } from "@/features/post/schema";
+import type { PostDelete } from "@/features/post/types/post.delete";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { AdminPostListItem } from "@/features/post/types";
+import type { AdminPostListItem } from "@/features/post/types/post.read-model";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 

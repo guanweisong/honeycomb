@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import type { MediaIndexInput } from "@/features/media/types";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
+import type { MediaIndexInput } from "@/features/media/types/media.list";
 import { trpc } from "@/lib/trpc/client/trpc";
 
 const MEDIA_PAGE_SIZE = 50;

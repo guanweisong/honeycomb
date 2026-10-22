@@ -5,7 +5,7 @@ import { Trash, Upload } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import React from "react";
-import type { MediaRecord } from "@/features/media/types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import Image from "next/image";
 
 /**

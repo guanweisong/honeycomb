@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { prepareMediaUpload } from "@/features/media/server";
+import { prepareMediaUpload } from "@/features/media/server/media-upload";
 import {
   mediaRepositoryFixture,
   mediaStorageFixture,

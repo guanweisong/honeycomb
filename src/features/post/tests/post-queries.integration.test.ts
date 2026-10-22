@@ -13,11 +13,11 @@ import {
   loadAdminPostListItems,
   loadPostRelations,
 } from "../server/post-relations";
-import { PostListQuerySchema } from "../schema";
+import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
 import { destroyPosts } from "../server/post-commands";
-import { PostStatus } from "../post-status";
-import { TagType } from "@/features/tag/tag-kind";
-import { UserLevel } from "@/features/user/user";
+import { PostStatus } from "@/features/post/types/post.status";
+import { TagType } from "@/features/tag/types/tag.type";
+import { UserLevel } from "@/features/user/types/user.level";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
 vi.mock("@/lib/observability/server", () => ({

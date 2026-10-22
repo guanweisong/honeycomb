@@ -1,4 +1,9 @@
-import { readFileSync, readdirSync, rmSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
+import { sourceFiles } from "@tests/helpers/source-files";
+import {
+  moduleDependencies,
+  resolveSourceModule,
+} from "@tests/helpers/architecture-imports";
 import { resolve } from "node:path";
 import { runTestProcess } from "@tests/helpers/run-test-process";
 
@@ -36,26 +41,52 @@ const serverOnlyEntrypoints = [
   "src/lib/security/validate-captcha.ts",
 ] as const;
 
-function findBackendModules(directory: string): string[] {
-  return readdirSync(resolve(process.cwd(), directory), {
-    recursive: true,
-    withFileTypes: true,
-  })
-    .filter(
-      (entry) =>
-        entry.isFile() &&
-        (entry.name === "router.ts" ||
-          entry.name === "server.ts" ||
-          entry.name.endsWith(".router.ts") ||
-          entry.name.endsWith(".service.ts")),
+function requiresServerBoundary(path: string, source: string): boolean {
+  if (/(?:^|\/|\.)router\.ts$/.test(path)) return true;
+  if (!/\/server\//.test(path)) return false;
+  return moduleDependencies(source, path).some(({ specifier, typeOnly }) => {
+    if (typeOnly) return false;
+    if (
+      specifier === "server-only" ||
+      /^drizzle-|^@\/lib\/(?:db\/(?:db|schema)|storage|auth)/.test(specifier)
     )
-    .map((entry) => {
-      const parent = entry.parentPath.replace(`${process.cwd()}/`, "");
-      return `${parent}/${entry.name}`;
-    });
+      return true;
+    const target = resolveSourceModule(path, specifier);
+    return (
+      !!target &&
+      /^import\s+["']server-only["'];?/m.test(readFileSync(target, "utf8"))
+    );
+  });
+}
+
+function findBackendModules(directory: string): string[] {
+  return sourceFiles(directory).filter((path) =>
+    requiresServerBoundary(path, readFileSync(path, "utf8")),
+  );
 }
 
 describe("server-only module boundaries", () => {
+  it("discovers named server operations and ignores type-only persistence helpers", () => {
+    expect(
+      requiresServerBoundary(
+        "src/features/future/server/future-queries.ts",
+        'import { eq } from "drizzle-orm";',
+      ),
+    ).toBe(true);
+    expect(
+      requiresServerBoundary(
+        "src/features/future/server/future-translations.ts",
+        'import type { Database } from "@/lib/db/db";',
+      ),
+    ).toBe(false);
+    expect(
+      requiresServerBoundary(
+        "src/features/future/types/future.record.ts",
+        "export type Record = string;",
+      ),
+    ).toBe(false);
+  });
+
   const protectedModules = [
     ...new Set([
       ...serverOnlyEntrypoints,
@@ -71,7 +102,7 @@ describe("server-only module boundaries", () => {
 
   it("keeps shared contracts free of the server-only boundary", () => {
     const sharedContracts = [
-      "src/features/user/user.ts",
+      "src/features/user/types/user.status.ts",
       "src/lib/validation/validation.ts",
       "src/lib/validation/pagination.ts",
     ];

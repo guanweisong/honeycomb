@@ -5,7 +5,7 @@ import {
   pageStatusOptions,
   pageTemplateOptions,
 } from "@/features/page/admin/options";
-import type { PageListItem as PageEntity } from "@/features/page/types";
+import type { PageListItem as PageEntity } from "@/features/page/types/page.read-model";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
 import { formatAdminDateTime } from "@/components/admin/date-time";

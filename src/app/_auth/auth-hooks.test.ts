@@ -25,8 +25,8 @@ vi.mock("@/lib/observability/server", () => ({
 vi.mock("../../lib/auth/authentication-events", () => ({
   getAuthenticationProvider: () => "credentials",
 }));
-vi.mock("@/features/user/user", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/user/user")>()),
+vi.mock("@/features/user/rules", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/user/rules")>()),
   isUserEnabled: mocks.isUserEnabled,
 }));
 

@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { TagType } from "@/features/tag/tag-kind";
+import { TagType } from "@/features/tag/types/tag.type";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

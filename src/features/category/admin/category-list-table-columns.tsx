@@ -1,7 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/admin/MultiLangText";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
 import { formatAdminDateTime } from "@/components/admin/date-time";

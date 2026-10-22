@@ -98,14 +98,14 @@ describe("capability authorization static gate", () => {
     ],
     [
       "imported and exported UserLevel aliases",
-      `import { UserLevel as Role } from "@/features/user/user";
+      `import { UserLevel as Role } from "@/features/user/types/user.level";
        const administrator = Role.ADMIN;
        export { administrator as privilegedRole };
        if (current === administrator) return next();`,
     ],
     [
       "current authority enum alias without role-named operands",
-      `import { UserLevel as Tier } from "@/features/user/user";
+      `import { UserLevel as Tier } from "@/features/user/types/user.level";
        if (current === Tier.ADMIN) return next();`,
     ],
     [
@@ -123,7 +123,7 @@ describe("capability authorization static gate", () => {
     );
   });
 
-  it.each(["../user", "@/features/user/user"])(
+  it.each(["../types/user.level", "@/features/user/types/user.level"])(
     "resolves the UserLevel authority from %s",
     (specifier) => {
       expect(() =>

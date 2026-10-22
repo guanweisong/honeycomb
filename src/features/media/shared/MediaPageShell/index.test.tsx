@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
 import { Permission } from "@/lib/auth/permissions";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

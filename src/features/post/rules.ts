@@ -1,4 +1,4 @@
-import { PostStatus } from "./post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import {
   DomainError,
   InvalidStateTransitionError,

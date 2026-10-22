@@ -1,6 +1,6 @@
 import MultiLangText from "@/components/admin/MultiLangText";
 import { ColumnDef } from "@tanstack/react-table";
-import type { TagRecord as TagEntity } from "@/features/tag/types";
+import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { formatAdminDateTime } from "@/components/admin/date-time";
 
 /**

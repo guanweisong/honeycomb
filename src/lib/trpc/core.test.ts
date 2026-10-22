@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
 import { configureObservability } from "@/lib/observability/server/registry";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { Permission } from "@/lib/auth/permissions";
 
 import {

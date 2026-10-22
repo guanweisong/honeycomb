@@ -1,9 +1,9 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PostStatus } from "@/features/post/post-status";
-import { UserLevel } from "@/features/user/user";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PostStatus } from "@/features/post/types/post.status";
+import { UserLevel } from "@/features/user/types/user.level";
 import { assertCommentTransition } from "@/features/comment/rules";
 import {
   getPostPublishStatus,

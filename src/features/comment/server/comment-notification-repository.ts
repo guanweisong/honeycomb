@@ -1,4 +1,7 @@
-import type { NotificationComment, NotificationSetting } from "../types";
+import type {
+  NotificationComment,
+  NotificationSetting,
+} from "@/features/comment/types/comment.notification";
 import "server-only";
 import { toCommentRecord } from "./comment-dto";
 

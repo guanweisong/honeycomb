@@ -1,5 +1,5 @@
 import type { DataTableProps } from "@/components/DataTable";
-import type { LinkListQueryInput } from "@/features/link/types";
+import type { LinkListQueryInput } from "@/features/link/types/link.list";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

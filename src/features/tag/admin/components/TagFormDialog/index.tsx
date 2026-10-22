@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
 import { DynamicForm } from "@/components/DynamicForm";
-import { TagInsertSchema, TagUpdateSchema } from "@/features/tag/schema";
+import { TagInsertSchema } from "@/features/tag/schema/tag.insert.schema";
+import { TagUpdateSchema } from "@/features/tag/schema/tag.update.schema";
 import { Dialog } from "@/components/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { TagRecord as TagEntity } from "@/features/tag/types";
+import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { z } from "zod";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 import {

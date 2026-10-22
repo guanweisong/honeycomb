@@ -3,7 +3,7 @@ import {
   Permission,
   type Permission as PermissionValue,
 } from "@/lib/auth/permissions";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import {
   ADMIN_EDITOR,
   ADMIN_ONLY,

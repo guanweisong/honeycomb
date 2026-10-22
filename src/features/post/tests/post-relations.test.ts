@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { TagType } from "@/features/tag/tag-kind";
+import { TagType } from "@/features/tag/types/tag.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { loadPostRelations } from "../server/post-relations";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import type { PostWithRelations } from "../types";
-import { PostWithRelationsSchema } from "../post-read-model";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
+import { PostWithRelationsSchema } from "@/features/post/schema/post.read-model.schema";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: vi.fn((_name, _operation, callback) => callback()),

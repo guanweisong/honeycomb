@@ -7,7 +7,7 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
 import Card from "@/components/blog/Card";
 import LoadingState from "@/components/LoadingState";
-import type { MenuType } from "@/features/menu/menu-types";
+import type { MenuType } from "@/features/menu/types/menu.type";
 import type {
   CommentTreeViewModel,
   CommentTreeViewResponse,

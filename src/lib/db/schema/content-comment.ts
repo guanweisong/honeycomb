@@ -1,4 +1,4 @@
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import {
   sqliteTable,
   text,

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { statisticRouter } from "@/features/dashboard/router";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
 

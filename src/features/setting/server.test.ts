@@ -8,7 +8,7 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { updateSetting } from "./server";
+import { updateSetting } from "@/features/setting/server/setting-update";
 
 describe("Setting server operations", () => {
   it("更新已提交后缓存降级仍返回持久化结果", async () => {

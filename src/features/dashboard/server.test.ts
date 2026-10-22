@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import * as schema from "@/lib/db/schema";
-import { getStatistics } from "./server";
+import { getStatistics } from "@/features/dashboard/server/dashboard-queries";
 import { observeDbOperation } from "@/lib/observability/server";
 
 vi.mock("@/lib/observability/server", () => ({

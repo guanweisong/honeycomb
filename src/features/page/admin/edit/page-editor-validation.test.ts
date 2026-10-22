@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { PageStatus } from "@/features/page/page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { submitPageEditor } from "./page-editor-actions";
 
 it("does not submit incomplete create input to the mutation", async () => {

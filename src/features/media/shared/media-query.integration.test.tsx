@@ -8,8 +8,8 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import type { MediaIndexInput } from "@/features/media/types";
+import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
+import type { MediaIndexInput } from "@/features/media/types/media.list";
 
 const transport = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/lib/trpc/client/trpc", () => ({

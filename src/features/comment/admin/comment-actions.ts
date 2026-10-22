@@ -1,9 +1,9 @@
 "use client";
 
 import { toast } from "sonner";
-import type { CommentUpdate } from "@/features/comment/types";
+import type { CommentUpdate } from "@/features/comment/types/comment.update";
 import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
-import type { CommentStatus } from "@/features/comment/comment-status";
+import type { CommentStatus } from "@/features/comment/types/comment.status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   runAdminMutation,

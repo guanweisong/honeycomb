@@ -1,7 +1,7 @@
 "use client";
 
 import { DynamicField } from "@/components/DynamicForm/DynamicField";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 
 export function PostTypeFields({ type }: { type: PostType }) {
   if (type === PostType.QUOTE) {

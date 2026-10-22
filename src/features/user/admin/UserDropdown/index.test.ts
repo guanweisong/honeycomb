@@ -8,7 +8,7 @@ vi.mock("../../../../components/Avatar", () => ({
 }));
 
 import { UserDropdown } from "./index";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 describe("UserDropdown", () => {
   let container: HTMLDivElement;

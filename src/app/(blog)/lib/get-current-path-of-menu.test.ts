@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MenuType } from "@/features/menu/menu-types";
-import type { MenuItem as MenuViewModel } from "@/features/menu/types";
+import { MenuType } from "@/features/menu/types/menu.type";
+import type { MenuItem as MenuViewModel } from "@/features/menu/types/menu.list";
 import getCurrentPathOfMenu from "./get-current-path-of-menu";
 
 const flatMenu: MenuViewModel[] = [

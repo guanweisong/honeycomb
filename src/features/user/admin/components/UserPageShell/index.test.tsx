@@ -1,6 +1,7 @@
 import { requireDefined } from "@tests/helpers/require-defined";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import type { UserRecord } from "@/features/user/types";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import type { UserRecord } from "@/features/user/types/user.record";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";

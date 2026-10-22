@@ -1,5 +1,6 @@
 import "server-only";
-import { getSetting, updateSetting } from "@/features/setting/server";
+import { getSetting } from "@/features/setting/server/setting-queries";
+import { updateSetting } from "@/features/setting/server/setting-update";
 
 import {
   createTRPCRouter,
@@ -10,7 +11,7 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema/setting.admin-update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

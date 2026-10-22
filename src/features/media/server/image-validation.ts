@@ -1,6 +1,6 @@
 import "server-only";
 import sharp from "sharp";
-import { MEDIA_MAX_BYTES } from "../upload-policy";
+import { MEDIA_MAX_BYTES } from "@/features/media/types/media.upload-policy";
 
 const MAX_PIXELS = 40_000_000;
 const MAX_FRAMES = 100;
