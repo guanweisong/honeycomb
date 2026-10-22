@@ -30,7 +30,7 @@ const protectedProductionPatterns = [
   "src/features/**/server/**/*.ts",
   "src/features/**/schemas/**/*.ts",
   "src/features/**/types/**/*.ts",
-  "src/features/**/rules.ts",
+  "src/features/**/rules/**/*.ts",
   "src/features/**/admin/**/*.{ts,tsx}",
   "src/features/**/public/**/*.{ts,tsx}",
   "src/lib/auth/**/*.ts",

@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from "vitest";
 import { PostStatus } from "@/features/post/types/post.status";
-import { getPostPublishStatus, getPostWithdrawStatus } from "./rules";
+import {
+  getPostPublishStatus,
+  getPostWithdrawStatus,
+} from "./post-publication";
 
 describe("post publication rules", () => {
   it.each([PostStatus.DRAFT, PostStatus.TO_AUDIT])("publishes %s", (status) => {

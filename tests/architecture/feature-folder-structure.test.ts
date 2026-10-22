@@ -39,14 +39,20 @@ describe("feature responsibility folders", () => {
         "schema",
         "server.test.ts",
         "server.integration.test.ts",
+        "rules.ts",
+        "rules.test.ts",
+        "schema.test.ts",
       ])
         expect(existsSync(`src/features/${name}/${entry}`)).toBe(false);
     const contracts = files.filter((path) =>
-      /\/(?:types|schemas)\/[^/]+\.ts$/.test(path),
+      /\/(?:types|schemas|rules)\/[^/]+\.ts$/.test(path),
     );
     expect(contracts.length).toBeGreaterThan(0);
     expect(
       contracts.filter((path) => path.includes("/schemas/")).length,
+    ).toBeGreaterThan(0);
+    expect(
+      contracts.filter((path) => path.includes("/rules/")).length,
     ).toBeGreaterThan(0);
     expect(contracts.filter((path) => path.endsWith("/index.ts"))).toEqual([]);
     expect(

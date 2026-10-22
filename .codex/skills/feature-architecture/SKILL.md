@@ -14,7 +14,7 @@ description: 当在 Honeycomb 中新增、精简或审查业务逻辑、数据�
 3. 在所属 feature 的实际 server 操作中实现需求；按实质职责决定是否抽取纯规则、持久化 helper 或外部适配。用真实函数签名构造 typed fixture/mock，而不是先为测试设计生产接口。
 4. 逐一验证数据库提交前后的失败路径，尤其是缓存、通知和媒体删除；按索引中的业务规范选择回归场景，不把不同副作用统一为同一种错误处理。
 5. 目录迁移先列“旧模块＋导出符号 → 新具名文件”映射；枚举每个独立放所属 types/，DTO 与 runtime enum/catalog 分开检查，保留事务和副作用的真实边界。同步全部消费者、mock 和边界测试后删除旧出口。目录迁移使用[迁移说明](../../../docs/ddd-migration-guide.md)，不要顺便修改算法或外部契约。
-6. 整理服务端测试时，按被测实现放到 server/ 具名测试；先保存展开用例、断言和钩子基线，只拆混合职责。真实事务及并发场景保持完整，不能重复昂贵 fixture；迁移后逐项比对测试库存和初始化次数。测试结构见[测试指南](../../../tests/README.md)。
+6. 整理测试时，按被测实现就近放到 server/、schemas/ 或 rules/ 具名测试；纯规则按实际职能拆分，不为每个函数强拆文件。先保存展开用例、断言、参数矩阵、钩子和 fixture 基线，只拆混合职责。跨规则/跨 schema 的完整对照以及真实事务、并发场景保持完整，不能重复昂贵 fixture；迁移后逐项比对测试库存、声明 AST 和初始化次数。测试结构见[测试指南](../../../tests/README.md)。
 7. 按[质量门禁](../frontend-structure/references/quality.md)验证并报告实际结果。
 
 属于 OpenSpec 变更时，**REQUIRED SUB-SKILL:** Use [openspec-apply-change](../openspec-apply-change/SKILL.md)。需要数据库验证时，**REQUIRED SUB-SKILL:** Use [test-database-safety](../test-database-safety/SKILL.md)。

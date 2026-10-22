@@ -31,3 +31,7 @@
 以 47d7e55b（与远端 cc065091 tree 相同）为本次测试整理基线。8 个根 server.test.ts 和 3 个根 server.integration.test.ts 迁入所属 server/，命名跟随真实实现；9 个单职责文件整体移动，menu 按 commands/queries 拆分，page 按纯 mock 重试与完整命令事务集成拆分，最终 13 个文件。逐用例映射见 docs/server-test-migration.md。
 
 保留原 65 个声明、76 个展开用例、226 处静态 expect 调用及 7 个钩子。真实 SQLite 初始化仍为 34 次，不把 page 的写后查询观察器拆离事务场景，不缩减分类 1101 条批量数据或媒体分块并发场景。只复制必要轻量 input/cache 与 mock 声明，不引入共享 fixture 框架，不修改生产实现、测试环境、覆盖率分母、worker 或 CI 分组。
+
+## 纯规则与 schema 测试职责补充
+
+以本地 8ffb0cc6、远端 10dcd986 的共同 tree 28a8a9ae 为基线。4 个根 rules 实现迁为 5 个具名文件，user 按保护不变量与启用状态拆分，其余完整保持发布或审核职责；不导出私有 helper。8 个相关根测试文件迁为 12 个就近或跨 Feature 具名测试，保留 38 个测试声明、76 个展开用例、66 处静态 expect，0 钩子及数据库 fixture。跨 post/page 的合法输入对照保持单个用例，user.write 的 insert/update 对照保持整体；只复制轻量字面量，不新增 fixture 抽象。具体映射见 docs/rules-schema-test-migration.md。本轮先本地验证，发布另待明确授权。

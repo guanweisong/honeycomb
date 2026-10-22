@@ -12,7 +12,7 @@ const explicitUnsafeType =
 
 function featureContractFiles(): string[] {
   return sourceFiles(featuresRoot).filter((path) =>
-    /\/(?:types|schemas)\/[^/]+\.ts$|\/rules\.ts$/.test(path),
+    /\/(?:types|schemas|rules)\/[^/]+\.ts$/.test(path),
   );
 }
 

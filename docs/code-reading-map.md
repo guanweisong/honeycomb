@@ -8,7 +8,7 @@
 
 1. 编辑交互：`src/features/post/admin/edit/hooks/use-post-editor.tsx`。
 2. API 输入、权限和协议适配：`src/features/post/router.ts`。
-3. 写入、事务与缓存失效：`src/features/post/server/` 内的实际操作函数；发布不变量在 `src/features/post/rules.ts`。
+3. 写入、事务与缓存失效：`src/features/post/server/` 内的实际操作函数；发布不变量在 `src/features/post/rules/post-publication.ts`。
 4. 数据库连接与表：`src/lib/db`；输入与输出模型由 post feature 自己拥有。
 
 server 函数直接访问数据库，不额外创建只转发参数的工厂或用例。成功写入后的缓存降级通过 `publicSync` 表达，不能误报成写入失败。 分类与标签更新的完整翻译返回值在同一事务内组装；提交后不再补读数据库来决定成功与否。
@@ -82,7 +82,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 | ---------------------------------- | ---------------------------------------------- |
 | 输入校验与稳定业务类型             | 所属 feature 的 `schemas/` / `types/` 具名文件 |
 | 查询、事务、写入和副作用顺序       | 所属 feature 的 `server/` 具名实现             |
-| 可独立测试的状态不变量             | 所属 feature 的 `rules.ts` 或具名纯规则        |
+| 可独立测试的状态不变量             | 所属 feature 的 `rules/` 具名纯规则            |
 | 业务枚举、显示选项、专用组件       | 所属 feature 的纯目录、`admin` / `public`      |
 | 通用 UI 与编辑器                   | `src/components`                               |
 | 数据库、认证、缓存、存储、可观测性 | `src/lib` 对应技术目录                         |

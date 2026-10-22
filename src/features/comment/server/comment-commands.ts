@@ -9,7 +9,7 @@ import {
   toCommentTargetReference,
 } from "./comment-target-policy";
 import type { CommentStatus } from "@/features/comment/types/comment.status";
-import { assertCommentTransition } from "../rules";
+import { assertCommentTransition } from "../rules/comment-moderation";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import type {

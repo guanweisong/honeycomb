@@ -7,7 +7,7 @@ import {
   assertUserDeletable,
   assertUserLevelChange,
   assertUserStatusChange,
-} from "./rules";
+} from "./user-protection";
 
 describe("protected account rules", () => {
   it("allows ordinary account deletion, level changes, and status changes", () => {

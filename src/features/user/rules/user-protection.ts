@@ -1,5 +1,4 @@
-import { UserLevel } from "./types/user.level";
-import { UserStatus } from "./types/user.status";
+import { UserLevel } from "../types/user.level";
 import { assertNonBlankId } from "@/lib/validation/nonblank-id";
 import { DomainError } from "@/lib/errors/domain-error";
 
@@ -35,8 +34,4 @@ export function assertUserStatusChange(
   if (isProtectedUser(currentLevel) && actorLevel !== UserLevel.ADMIN) {
     throw new DomainError("非管理员不能修改管理员账号", "PROTECTED_USER");
   }
-}
-
-export function isUserEnabled(status: UserStatus): boolean {
-  return status === UserStatus.ENABLE;
 }

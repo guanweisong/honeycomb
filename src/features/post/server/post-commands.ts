@@ -32,7 +32,10 @@ import type { PostUpdate } from "@/features/post/types/post.update";
 import type { PostDelete } from "@/features/post/types/post.delete";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
-import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
+import {
+  getPostPublishStatus,
+  getPostWithdrawStatus,
+} from "../rules/post-publication";
 import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";

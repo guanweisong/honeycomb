@@ -43,7 +43,7 @@ const featureCatalogs = () =>
   sourceFiles("src/features").filter(
     (path) =>
       (isAuthoritativeContract(path) && !isDisplayContract(path)) ||
-      /\/rules\.ts$/.test(path),
+      /\/rules\/[^/]+\.ts$/.test(path),
   );
 
 function presentationImports(path: string, source: string) {
@@ -81,6 +81,9 @@ describe("feature catalog and display boundaries", () => {
   it("keeps display options out of reusable business catalogs and rules", () => {
     const files = featureCatalogs();
     expect(files.length).toBeGreaterThan(10);
+    expect(
+      files.filter((path) => path.includes("/rules/")).length,
+    ).toBeGreaterThan(0);
     expect(
       files.flatMap((path) =>
         displayExports(sourceFile(path)).map((name) => `${path}: ${name}`),

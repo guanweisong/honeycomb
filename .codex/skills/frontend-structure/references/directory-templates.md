@@ -10,7 +10,7 @@ src/
     router.ts              # 输入、入口权限、协议适配
     schemas/               # 如 tag.insert.schema.ts，具体运行时契约
     types/                 # 如 tag.insert.ts；每个枚举独立文件
-    rules.ts               # 按需抽取的纯不变量
+    rules/                 # 如 post-publication.ts，纯不变量与就近测试
     server/                # 如 tag-commands.ts、tag-queries.ts，实际操作
     admin/                 # 业务后台 UI、选项与交互
     public/                # 公开站点 UI（按需），不是跨 feature 的强制出口

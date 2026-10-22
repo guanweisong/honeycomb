@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { isUserEnabled } from "@/features/user/rules";
+import { isUserEnabled } from "@/features/user/rules/user-status";
 import { UserLevel } from "@/features/user/types/user.level";
 import type { CurrentUser } from "@/features/user/types/user.current";
 import {

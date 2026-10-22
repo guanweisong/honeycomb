@@ -2,7 +2,7 @@
 
 ### Requirement: Feature 职责使用具体目录入口
 
-Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责命名的 types/、schemas/、server/；MUST NOT 保留旧平铺入口、兼容 barrel 或为无实际需求的模块创建空目录。已有职责清晰的子目录文件 SHALL 保持其所有权，不为目录对称拆散事务。
+Feature MUST 将已有根 types.ts、schema.ts、server.ts、rules.ts 迁入按真实职责命名的 types/、schemas/、server/、rules/；MUST NOT 保留旧平铺入口、兼容 barrel 或为无实际需求的模块创建空目录。已有职责清晰的子目录文件 SHALL 保持其所有权，不为目录对称拆散事务。
 
 #### Scenario: 枚举按所属模块单独定义
 
@@ -23,3 +23,8 @@ Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责
 
 - **WHEN** 整理 Feature 根 server.test.ts 或 server.integration.test.ts
 - **THEN** 测试 MUST 迁入所属 server/ 并跟随实际实现具名；单职责文件 SHALL 整体迁移，混合职责 MAY 拆分，跨操作完整事务/并发场景 MUST 保留在具名 integration 测试中；MUST NOT 保留笼统根入口、删减断言或重复昂贵 fixture，E2E SHALL 继续位于 tests/e2e
+
+#### Scenario: 纯规则与 schema 测试按真实职责就近组织
+
+- **WHEN** 整理 Feature 根 rules.ts、rules.test.ts 或 schema.test.ts
+- **THEN** 规则 MUST 按单一职能迁入 rules/ 具名实现，其测试 MUST 就近；schema 测试 MUST 按被测契约迁入 schemas/，跨 Feature 完整对照 MAY 位于 tests/integration/；MUST NOT 保留旧根入口、拆断完整场景、删改断言或参数矩阵、重复昂贵 fixture，原函数和 schema 语义 MUST 保持不变

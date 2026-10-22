@@ -146,7 +146,7 @@ describe("capability authorization static gate", () => {
 
   it("allows only the imported protected-account invariant at the repository write boundary", () => {
     const fileName = "src/features/user/server/user-repository.ts";
-    const invariant = `import { assertUserLevelChange } from "../rules";
+    const invariant = `import { assertUserLevelChange } from "../rules/user-protection";
       assertUserLevelChange(id, current.level, next.level);`;
     expect(() =>
       assertNoLegacyAuthorization(fileName, invariant),

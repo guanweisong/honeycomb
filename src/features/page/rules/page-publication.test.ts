@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from "vitest";
 import { PageStatus } from "@/features/page/types/page.status";
-import { getPagePublishStatus, getPageWithdrawStatus } from "./rules";
+import {
+  getPagePublishStatus,
+  getPageWithdrawStatus,
+} from "./page-publication";
 
 describe("page publication rules", () => {
   it.each([PageStatus.DRAFT, PageStatus.TO_AUDIT])("publishes %s", (status) => {

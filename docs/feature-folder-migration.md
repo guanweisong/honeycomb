@@ -128,20 +128,20 @@
 | `schema.ts`               | `schemas/user.write.schema.ts`：`UserInsertSchema`、`UserUpdateSchema`<br>`schemas/user.list.schema.ts`：`UserListQuerySchema`                                                                                                                                                                                            |
 | `server/user-commands.ts` | `types/user.insert.ts`：`UserCommandInput`                                                                                                                                                                                                                                                                                |
 | `types.ts`                | `types/user.record.ts`：`UserRecord`<br>`types/user.current.ts`：`CurrentUserRecord`<br>`types/user.insert.ts`：`UserInsert`、`UserCommandInput`<br>`types/user.update.ts`：`UserUpdate`、`UserUpdateCommandInput`<br>`types/user.list.ts`：`UserListInput`、`UserListQueryInput`<br>`types/user.login.ts`：`LoginValues` |
-| `user.ts`                 | `types/user.level.ts`：`UserLevel`<br>`types/user.status.ts`：`UserStatus`<br>`types/user.current.ts`：`CurrentUser`<br>`rules.ts`：`isUserEnabled`                                                                                                                                                                       |
+| `user.ts`                 | `types/user.level.ts`：`UserLevel`<br>`types/user.status.ts`：`UserStatus`<br>`types/user.current.ts`：`CurrentUser`<br>`rules/user-status.ts`：`isUserEnabled`                                                                                                                                                           |
 
 ## 额外共享实现整理
 
 - category/server.ts 的 withTranslations 移入既有 server/category-translations.ts；tag/server.ts 的同名 loader 移入既有 server/tag-translations.ts，保留原函数体及服务端边界。
 - setting/server.ts 的 toSettingRecord 移入既有 server/setting-translations.ts；menu 跨模块修订函数集中 server/menu-revisions.ts，分类与页面命令依赖这一明确入口。
-- user 的 isUserEnabled 原函数体移入既有 rules.ts；getAdminUser 迁入 server/admin-user.ts，AdminUser 在 types/user.current.ts 等价引用 CurrentUserRecord。
+- user 的 isUserEnabled 原函数体现位于 rules/user-status.ts；getAdminUser 迁入 server/admin-user.ts，AdminUser 在 types/user.current.ts 等价引用 CurrentUserRecord。
 - comment-dto、page-transforms、post-transforms 对 DB schema 的 typeof-only 导入显式改成 import type，不改变转换函数体。
 
 ## 消费方与门禁
 
 生产页面、管理 UI、router、server、DB schema、认证、tRPC、脚本、测试和 mock 统一指向具体入口，不依赖新 barrel。独立静态复核 257 组旧/新源码中的 1959 个仍使用的 import binding，来源均保持。
 
-架构测试动态发现 types/schemas/server 目录，覆盖一枚举一文件、禁止旧根入口与 contract barrel、schema 推导方向、展示枚举的 DB/server 逆向依赖，以及 runtime server-only 与 type-only 纯转换边界。既有覆盖率阈值、测试分组及 CI 分片策略不降级。工程 feature-architecture、type-safety-governance、目录模板与阅读地图同步。
+架构测试动态发现 types/schemas/server/rules 目录，覆盖一枚举一文件、禁止旧根入口与 contract barrel、schema 推导方向、展示枚举的 DB/server 逆向依赖，以及 runtime server-only 与 type-only 纯转换边界。既有覆盖率阈值、测试分组及 CI 分片策略不降级。工程 feature-architecture、type-safety-governance、目录模板与阅读地图同步。
 
 ## 等价核验
 
@@ -179,3 +179,7 @@
 ## 服务端测试位置补充
 
 根 server.test.ts / server.integration.test.ts 已按被测职责迁入 server/ 具名测试。只有 menu/page 的混合职责拆分，事务与并发场景不拆断；完整用例映射、断言和 fixture 基线见[服务端测试迁移记录](server-test-migration.md)。
+
+## 纯规则与 schema 测试职责补充
+
+根 rules.ts 已迁入具名 rules/，根 schema.test.ts 按被测 schema 就近拆分；完整跨契约场景保留。符号与逐用例分组、等价检查见[规则与 schema 测试迁移记录](rules-schema-test-migration.md)。

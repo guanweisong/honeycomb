@@ -9,7 +9,7 @@ import {
   assertUserDeletable,
   assertUserLevelChange,
   assertUserStatusChange,
-} from "../rules";
+} from "../rules/user-protection";
 import type { UserRepository } from "./user-repository";
 import {
   UserInsertSchema,

@@ -189,7 +189,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   "src/features/user/server/user-commands.ts",
   "src/lib/db/schema/index.ts",
   "src/features/user/types/user.level.ts",
-  "src/features/user/rules.ts",
+  "src/features/user/rules/user-protection.ts",
 ]);
 
 function assertNoRoleBasedAuthorization(
@@ -206,7 +206,7 @@ function assertNoRoleBasedAuthorization(
       if (
         ts.isImportDeclaration(statement) &&
         ts.isStringLiteral(statement.moduleSpecifier) &&
-        statement.moduleSpecifier.text === "../rules" &&
+        statement.moduleSpecifier.text === "../rules/user-protection" &&
         !statement.importClause?.isTypeOnly
       ) {
         const bindings = statement.importClause?.namedBindings;

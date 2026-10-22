@@ -178,7 +178,7 @@ function mutationBoundaryViolations(path: string, source: string) {
 function isPureContract(path: string) {
   return (
     isAuthoritativeContract(path) ||
-    /\/rules\.ts$/.test(path) ||
+    /\/rules\/[^/]+\.ts$/.test(path) ||
     /^src\/features\/[^/]+\/(?:types|schema|rules|[^/]+-status|[^/]+-type|[^/]+-types|[^/]+-kind|[^/]+-template|user)\.ts$/.test(
       path,
     )
@@ -351,9 +351,12 @@ describe("feature-owned business boundaries", () => {
   it("keeps business schemas, types, rules and catalogs independent of runtime/UI/persistence modules", () => {
     const contracts = featureFiles.filter(isPureContract);
     expect(contracts.filter(isAuthoritativeContract).length).toBeGreaterThan(0);
+    expect(
+      contracts.filter((path) => path.includes("/rules/")).length,
+    ).toBeGreaterThan(0);
     const violations = contracts.flatMap((path) => {
       return [
-        ...(/\/(?:schemas|types)\/[^/]+\.ts$|\/rules\.ts$/.test(path) &&
+        ...(/\/(?:schemas|types|rules)\/[^/]+\.ts$/.test(path) &&
         /\b(?:Headers|Request|Response|FormData|TRPCError)\b/.test(
           readFileSync(path, "utf8"),
         )
@@ -424,9 +427,20 @@ describe("feature-owned business boundaries", () => {
     (specifier) => {
       const root = mkdtempSync(join(tmpdir(), "contract-boundary-"));
       try {
-        const entry = join(root, "rules.ts");
+        expect(
+          isPureContract("src/features/example/rules/example-rule.ts"),
+        ).toBe(true);
+        expect(
+          isContractForbidden(
+            "src/features/example/rules/example-rule.ts",
+            `import "${specifier}";`,
+          ),
+        ).toBe(true);
+        const rules = join(root, "rules");
+        mkdirSync(rules);
+        const entry = join(rules, "example-rule.ts");
         const helper = join(root, "helper.ts");
-        writeFileSync(entry, 'export { value } from "./helper";');
+        writeFileSync(entry, 'export { value } from "../helper";');
         writeFileSync(helper, `import "${specifier}"; export const value = 1;`);
         expect(
           runtimeDependencyViolations(entry, isContractForbidden),
@@ -449,7 +463,7 @@ describe("feature-owned business boundaries", () => {
           helper,
           `import "${specifier}"; export type Value = number;`,
         );
-        writeFileSync(entry, 'export type { Value } from "./helper";');
+        writeFileSync(entry, 'export type { Value } from "../helper";');
         expect(runtimeDependencyViolations(entry, isContractForbidden)).toEqual(
           [],
         );

@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { PostStatus } from "@/features/post/types/post.status";
 import { UserLevel } from "@/features/user/types/user.level";
-import { assertCommentTransition } from "@/features/comment/rules";
+import { assertCommentTransition } from "@/features/comment/rules/comment-moderation";
 import {
   getPostPublishStatus,
   getPostWithdrawStatus,
-} from "@/features/post/rules";
-import { assertUserStatusChange } from "@/features/user/rules";
+} from "@/features/post/rules/post-publication";
+import { assertUserStatusChange } from "@/features/user/rules/user-protection";
 
 describe("pure feature business rules", () => {
   it("moderates a comment without a database", () => {

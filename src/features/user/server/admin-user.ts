@@ -1,6 +1,6 @@
 import "server-only";
 import { auth } from "@/auth";
-import { isUserEnabled } from "../rules";
+import { isUserEnabled } from "../rules/user-status";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { UserRepository } from "./user-repository";
 import type { AdminUser } from "../types/user.current";

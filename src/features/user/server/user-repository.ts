@@ -18,7 +18,10 @@ import {
   type CredentialStore,
 } from "@/lib/auth/credentials";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { assertUserLevelChange, isProtectedUser } from "../rules";
+import {
+  assertUserLevelChange,
+  isProtectedUser,
+} from "../rules/user-protection";
 import type { UserCommandInput } from "@/features/user/types/user.insert";
 import type { UserUpdateCommandInput } from "@/features/user/types/user.update";
 import type { UserListInput } from "@/features/user/types/user.list";

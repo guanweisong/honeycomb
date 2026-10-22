@@ -30,7 +30,10 @@ import { DomainError } from "@/lib/errors/domain-error";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { UserStatus } from "@/features/user/types/user.status";
 import { can, Permission } from "@/lib/auth/permissions";
-import { getPagePublishStatus, getPageWithdrawStatus } from "../rules";
+import {
+  getPagePublishStatus,
+  getPageWithdrawStatus,
+} from "../rules/page-publication";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";
 

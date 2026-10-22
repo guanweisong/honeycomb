@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isUserEnabled } from "@/features/user/rules";
+import { isUserEnabled } from "./user-status";
 import { UserStatus } from "@/features/user/types/user.status";
 
 describe("isUserEnabled", () => {
