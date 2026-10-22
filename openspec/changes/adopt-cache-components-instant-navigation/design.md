@@ -1,5 +1,7 @@
 ## 背景
 
+本节记录该变更提出时的迁移前背景，不是当前版本或实现清单。当前依赖以 [package.json](../../../package.json) 和 [README](../../../README.md) 为准，现行缓存链路见[公开缓存验收说明](../../../docs/public-cache-verification.md)。
+
 Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src/app/(blog)/[locale]/layout.tsx`。文章、页面和列表路由目前导出空的 `generateStaticParams()` 函数。公开查询使用 React `cache()` 在单次渲染内去重，文章列表结果还使用现有的版本化 Upstash 缓存。写入已经通过 `publicContentInvalidator` 生成结构化失效计划。后台布局和模板会读取 `headers()` 来认证和授权。Serwist 目前通过 `@serwist/turbopack` 路由处理器提供生成文件；其已安装实现明确不支持 Cache Components。
 
 ## 目标与非目标
