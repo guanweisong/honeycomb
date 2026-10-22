@@ -1,10 +1,13 @@
-import type { CommentListInput, CommentRefInput } from "../types";
+import type {
+  CommentListInput,
+  CommentRefInput,
+} from "@/features/comment/types/comment.query";
 import "server-only";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PostStatus } from "@/features/post/post-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { PageStatus } from "@/features/page/page-status";
-import { MenuType } from "@/features/menu/menu-types";
+import { PageStatus } from "@/features/page/types/page.status";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { toCommentRecord, toPublicCommentSource } from "./comment-dto";
 import { buildPublicCommentTree, toPublicComment } from "./comment-public-dto";
@@ -20,7 +23,10 @@ import {
 import { assembleLocalizedField } from "@/lib/db/translation-values";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 
-import type { CommentListItem, CommentRelatedRecord } from "../types";
+import type {
+  CommentListItem,
+  CommentRelatedRecord,
+} from "@/features/comment/types/comment.read-model";
 
 function toRelatedRecord(
   record: {

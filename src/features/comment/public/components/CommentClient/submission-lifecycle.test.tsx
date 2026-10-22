@@ -1,8 +1,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { MenuType } from "@/features/menu/menu-types";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 
 const {
   mockToastError,
@@ -68,7 +68,7 @@ vi.mock("@marsidev/react-turnstile", () => ({
     ),
 }));
 
-vi.mock("@/components/blog/Card", () => ({
+vi.mock("@/components/SectionCard", () => ({
   default: ({
     title,
     children,

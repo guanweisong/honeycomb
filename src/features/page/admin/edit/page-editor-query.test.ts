@@ -42,8 +42,10 @@ vi.mock("@/components/admin/layout-context", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: null }),
 }));
-vi.mock("@/components/admin/local-draft", () => ({
+vi.mock("@/components/admin/draft/use-local-draft", () => ({
   useLocalDraft: () => ({}),
+}));
+vi.mock("@/components/admin/draft/LocalDraftPrompt", () => ({
   LocalDraftPrompt: () => null,
 }));
 vi.mock("./components/PageEditorForm", () => ({ PageEditorForm: () => null }));

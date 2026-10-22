@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import { MenuType } from "../menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { useMenuActions } from "./menu-actions";
 import { useMenuTreeEditor } from "./use-menu-tree-editor";
 import type { CheckedMenuData } from "./menu-transforms";

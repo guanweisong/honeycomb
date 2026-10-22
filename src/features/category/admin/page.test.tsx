@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CategoryListItem as CategoryViewModel } from "@/features/category/types";
+import type { CategoryListItem as CategoryViewModel } from "@/features/category/types/category.record";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 const mocks = vi.hoisted(() => ({
@@ -44,9 +44,8 @@ describe("category bulk deletion from the complete tree", () => {
   let container: HTMLDivElement;
   let root: Root;
 
-  beforeEach(() => {
-    mocks.allowActions = true;
-    mocks.categories = Array.from({ length: 105 }, (_, index) => ({
+  function categories(count: number) {
+    return Array.from({ length: count }, (_, index) => ({
       id: (index + 1).toString(16).padStart(24, "0"),
       title: null,
       description: null,
@@ -57,6 +56,11 @@ describe("category bulk deletion from the complete tree", () => {
       updatedAt: null,
       deepPath: 0,
     }));
+  }
+
+  beforeEach(() => {
+    mocks.allowActions = true;
+    mocks.categories = categories(3);
     mocks.destroy.mockReset().mockImplementation(async () => {
       return { success: true };
     });
@@ -99,10 +103,10 @@ describe("category bulk deletion from the complete tree", () => {
   it("names row actions and keeps them hidden without mutation permission", async () => {
     expect(
       container.querySelectorAll('button[aria-label="编辑分类"]'),
-    ).toHaveLength(105);
+    ).toHaveLength(3);
     expect(
       container.querySelectorAll('button[aria-label="删除分类"]'),
-    ).toHaveLength(105);
+    ).toHaveLength(3);
     mocks.allowActions = false;
     act(() => root.render(<Category />));
     expect(container.querySelector('button[aria-label="编辑分类"]')).toBeNull();
@@ -110,6 +114,8 @@ describe("category bulk deletion from the complete tree", () => {
   });
 
   it("selects and deletes the complete tree in one request without cap copy", async () => {
+    mocks.categories = categories(105);
+    act(() => root.render(<Category />));
     expect(container.textContent).not.toContain("已选择");
     expect(container.textContent).not.toContain("最多");
     expect(container.textContent).not.toContain("全选将");
@@ -144,7 +150,7 @@ describe("category bulk deletion from the complete tree", () => {
     await act(async () => button("批量删除", container).click());
     await act(async () => button("确定").click());
 
-    expect(checkedRows()).toHaveLength(105);
+    expect(checkedRows()).toHaveLength(3);
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
     expect(mocks.error).toHaveBeenCalledWith("删除失败");
     expect(mocks.refetch).not.toHaveBeenCalled();

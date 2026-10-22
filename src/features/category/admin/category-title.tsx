@@ -1,8 +1,7 @@
 import React from "react";
+import type { CategoryListItem } from "@/features/category/types/category.record";
 
-interface DeepPathRecord {
-  deepPath: number;
-}
+type DeepPathRecord = Pick<CategoryListItem, "deepPath">;
 
 /**
  * 根据层级深度为分类名称生成前缀。

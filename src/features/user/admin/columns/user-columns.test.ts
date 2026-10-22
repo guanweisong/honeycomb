@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { UserStatus } from "@/features/user/user";
+import { UserStatus } from "@/features/user/types/user.status";
 import { StatusBadgeTone } from "@/components/StatusBadge";
 
 import { getUserStatusPresentation, userTableColumns } from "./user-columns";

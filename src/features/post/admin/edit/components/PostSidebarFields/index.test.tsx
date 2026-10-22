@@ -3,7 +3,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -55,7 +55,7 @@ vi.mock("../MultiTag", () => ({
     React.createElement("div", { "data-testid": "multi-tag" }, title),
 }));
 
-vi.mock("../../../../../media/components/PhotoPickerItem", () => ({
+vi.mock("../../../../../media/admin/components/PhotoPickerItem", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "photo-picker" }, title),
 }));

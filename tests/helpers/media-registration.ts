@@ -1,7 +1,7 @@
 import { vi } from "vitest";
-import type { MediaRecord } from "@/features/media/types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import type { MediaPersistence } from "@/features/media/server/media-repository";
-import type { MediaStorage } from "@/features/media/server";
+import type { MediaStorage } from "@/features/media/types/media.storage";
 export function mediaRow(overrides: Partial<MediaRecord> = {}): MediaRecord {
   return {
     id: "111111111111111111111111",

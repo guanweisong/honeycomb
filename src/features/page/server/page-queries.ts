@@ -2,8 +2,8 @@ import "server-only";
 import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue } from "@/lib/db/value-validation";
-import { PageTemplate } from "@/features/page/page-template";
-import { MediaRecordSchema } from "@/features/media/types";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 
 import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
@@ -13,11 +13,18 @@ import {
   buildDrizzleWhere,
 } from "@/lib/db/query/query-builders";
 import { getLocalizedImageLinks } from "@/lib/content/image-links";
-import { PageStatus } from "@/features/page/page-status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { observeDbOperation } from "@/lib/observability/server";
-import type { PageWithRelations, PageInput, PageVisibility } from "../types";
+import type { PageWithRelations } from "@/features/page/types/page.read-model";
+import type {
+  PageInput,
+  PageVisibility,
+} from "@/features/page/types/page.list-query";
 import { assembleRequiredLocalizedField } from "@/lib/db/translation-values";
-import type { PageListItem, PageMenuOption } from "../types";
+import type {
+  PageListItem,
+  PageMenuOption,
+} from "@/features/page/types/page.read-model";
 import { groupPageTranslations } from "./page-translations";
 
 type PageRow = typeof schema.page.$inferSelect;

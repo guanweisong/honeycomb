@@ -7,9 +7,9 @@ import React, {
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
-import type { PageWithRelations as PageViewModel } from "@/features/page/types";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import type { PageWithRelations as PageViewModel } from "@/features/page/types/page.read-model";
 import type { PageEditorForm } from "../PageEditorForm";
 import type { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { AdminLayoutActionsContext } from "@/components/admin/layout-context";

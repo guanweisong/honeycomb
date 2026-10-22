@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { MenuType } from "@/features/menu/menu-types";
-import { saveAllMenus } from "@/features/menu/server";
-import { updateSetting } from "@/features/setting/server";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { updateSetting } from "@/features/setting/server/setting-update";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (_name: string, _kind: string, op: () => unknown) => op(),
 }));

@@ -1,6 +1,6 @@
 import type { DataTableProps } from "@/components/DataTable";
 import type { z } from "zod";
-import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
+import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list-query.schema";
 type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -58,7 +58,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 import { CommentPageShell } from "./components/CommentPageShell";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("comment query parameters", () => {
   let container: HTMLDivElement;

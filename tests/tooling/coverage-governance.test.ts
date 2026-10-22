@@ -8,6 +8,7 @@ import type { TestUserConfig } from "vitest/config";
 
 import vitestConfig from "../../vitest.config.mts";
 import processConfig from "../../vitest.process.config.mts";
+import shardConfig from "../../vitest.shard.config.mts";
 
 const config = vitestConfig.test as TestUserConfig;
 const coverage = config.coverage;
@@ -27,8 +28,9 @@ const protectedProductionPatterns = [
   "src/**/*service.ts",
   "src/features/**/server.ts",
   "src/features/**/server/**/*.ts",
-  "src/features/**/schema.ts",
-  "src/features/**/rules.ts",
+  "src/features/**/schemas/**/*.ts",
+  "src/features/**/types/**/*.ts",
+  "src/features/**/rules/**/*.ts",
   "src/features/**/admin/**/*.{ts,tsx}",
   "src/features/**/public/**/*.{ts,tsx}",
   "src/lib/auth/**/*.ts",
@@ -67,6 +69,23 @@ const criticalCoverageFiles = [
 ];
 
 describe("coverage governance", () => {
+  it("defers only incomplete shard thresholds while preserving coverage scope and isolation", () => {
+    expect(shardConfig.test).toEqual({
+      ...vitestConfig.test,
+      coverage: {
+        ...coverage,
+        thresholds: undefined,
+        reporter: [],
+      },
+    });
+    // The default/merge command still reads the original required thresholds.
+    expect(coverage?.thresholds).toMatchObject({
+      statements: 70,
+      lines: 70,
+      functions: 65,
+      branches: 60,
+    });
+  });
   it("preserves explicit mock history ownership across both test lanes", () => {
     expect(config.clearMocks).toBe(false);
     expect(processConfig.test?.clearMocks).toBe(false);

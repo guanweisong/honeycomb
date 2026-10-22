@@ -16,9 +16,9 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { createPage } from "@/features/page/server";
+import { createPage } from "@/features/page/server/page-commands";
 import { createPost } from "@/features/post/server/post-commands";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageTemplate } from "@/features/page/types/page.template";
 import * as schema from "@/lib/db/schema";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
@@ -27,10 +27,10 @@ import { assertMediaReferencesExist } from "@/features/media/server/media-refere
 import {
   prepareMediaUpload,
   registerMediaUpload,
-  destroyMedia,
-  type MediaStorage,
-} from "@/features/media/server";
-import type { MediaUploadIntentInput } from "@/features/media/upload-policy";
+} from "@/features/media/server/media-upload";
+import { destroyMedia } from "@/features/media/server/media-delete";
+import { type MediaStorage } from "@/features/media/types/media.storage";
+import type { MediaUploadIntentInput } from "@/features/media/types/media.upload";
 import { createUploadIntent } from "@/features/media/server/upload-intent";
 
 vi.mock("@/lib/observability/server", () => ({

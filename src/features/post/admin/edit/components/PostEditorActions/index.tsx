@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
-import { PostStatus } from "@/features/post/post-status";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
+import { PostStatus } from "@/features/post/types/post.status";
 import type { PostSubmitAction } from "../../hooks/use-post-editor";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
@@ -10,7 +11,7 @@ import { useCan } from "@/features/user/admin/use-current-user";
 interface PostEditorActionsProps {
   id?: string;
   loading: boolean;
-  status?: string;
+  status?: `${PostWithRelations["status"]}`;
   submit: (status: PostStatus, action: PostSubmitAction) => Promise<boolean>;
 }
 

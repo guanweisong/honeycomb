@@ -5,9 +5,9 @@ import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list.query.schema";
+import { CommentListQuerySchema } from "@/features/comment/schemas/comment.list-query.schema";
 import type { AdminCommentViewModel } from "../../../presentation/comment-view-model";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import { Dialog } from "@/components/Dialog";
@@ -15,7 +15,7 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { useCommentActions } from "@/features/comment/admin/comment-actions";
 import { commentTableColumns } from "../../columns/comment-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 const moderationActions = {
   [CommentStatus.TO_AUDIT]: [

@@ -23,7 +23,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { LinkFormDialog } from ".";
 import type { LinkDialogState } from "../../link-actions";

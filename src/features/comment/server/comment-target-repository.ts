@@ -1,11 +1,11 @@
-import type { CommentTargetReference } from "../types";
+import type { CommentTargetReference } from "@/features/comment/types/comment.target";
 import "server-only";
 
 import { eq } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { PostStatus } from "@/features/post/post-status";
-import { PageStatus } from "@/features/page/page-status";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { observeDbOperation } from "@/lib/observability/server";
 import { parseEnumValue } from "@/lib/db/value-validation";

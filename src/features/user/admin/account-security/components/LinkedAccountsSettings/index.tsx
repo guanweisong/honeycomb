@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { useAccountMutation } from "../use-account-mutation";
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog } from "@/components/Dialog";
@@ -16,11 +16,15 @@ import {
 
 const providerLabels = SOCIAL_PROVIDER_LABELS;
 
-type AccountItem = {
-  id: string;
-  providerId: string;
-  accountId: string;
-};
+// 与无 fetchOptions 的实际调用一致，避免泛型 ReturnType 丢失响应字段类型。
+type AccountItem = Pick<
+  NonNullable<
+    Awaited<
+      ReturnType<typeof authClient.listAccounts<Record<never, never>>>
+    >["data"]
+  >[number],
+  "id" | "providerId" | "accountId"
+>;
 
 type Props = {
   providers: SocialProviderId[];

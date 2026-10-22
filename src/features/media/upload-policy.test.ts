@@ -3,8 +3,9 @@ import { expect, it } from "vitest";
 import {
   MediaUploadFileSchema,
   MediaUploadIntentInputSchema,
-} from "./upload-policy";
-import { MediaRegisterUploadSchema, MediaListQuerySchema } from "./schema";
+} from "@/features/media/schemas/media.upload.schema";
+import { MediaRegisterUploadSchema } from "@/features/media/schemas/media.upload.schema";
+import { MediaListQuerySchema } from "@/features/media/schemas/media.list.schema";
 it.each(["file.html", "file.svg", "file.jpg", "file"])(
   "rejects filename/MIME mismatch %s",
   (name) => {

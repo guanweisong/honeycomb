@@ -1,5 +1,5 @@
 import sanitizeHtml from "sanitize-html";
-import type { I18n } from "@/lib/i18n/i18n";
+import type { I18n, NullableLocalizedInput } from "@/lib/i18n/i18n";
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   transformTags: {
@@ -148,8 +148,16 @@ export const sanitizeRichText = (value: string | null | undefined) => {
   return sanitizeHtml(value, SANITIZE_OPTIONS);
 };
 
+// 与既有边界一致：语言键可缺省，但 exactOptionalPropertyTypes 下不能显式为 undefined。
 type OptionalI18nInput =
-  Partial<Record<keyof I18n, string | null>> | null | undefined;
+  | {
+      [Language in keyof NonNullable<NullableLocalizedInput>]?: Exclude<
+        NonNullable<NullableLocalizedInput>[Language],
+        undefined
+      >;
+    }
+  | null
+  | undefined;
 
 /** 分别清洗可选的中英文富文本字段。 */
 export function sanitizeOptionalI18nHtml(

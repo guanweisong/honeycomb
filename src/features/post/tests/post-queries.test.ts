@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import * as tools from "@/lib/db/query/query-builders";
 import { getPost, listPosts } from "../server/post-queries";
-import { PostStatus } from "../post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import {
   asMockDatabase,

@@ -1,13 +1,13 @@
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { parseEnumValue } from "@/lib/db/value-validation";
-import * as schema from "@/lib/db/schema";
+import type * as schema from "@/lib/db/schema";
 import type { PublicCommentSource } from "./comment-public-dto";
 export function parseCommentStatus(status: unknown): CommentStatus | null {
   return status === null
     ? null
     : parseEnumValue(status, Object.values(CommentStatus), "comment.status");
 }
-import type { CommentRecord } from "../types";
+import type { CommentRecord } from "@/features/comment/types/comment.read-model";
 
 export function toCommentRecord(
   comment: typeof schema.comment.$inferSelect,

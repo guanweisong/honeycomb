@@ -8,6 +8,7 @@ import { getAuthEnv } from "@/env/server";
 import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { getPasskeyConfig } from "@/lib/auth/passkey-config";
+import type { AuthProviderConfig } from "@/lib/auth/providers";
 import { createAuthDatabaseHooks } from "@/app/_auth/auth-hooks";
 import {
   CREDENTIAL_PASSWORD_MAX_LENGTH,
@@ -25,8 +26,7 @@ if (!authBaseURL && process.env.NODE_ENV === "production") {
 }
 
 function buildSocialProviders() {
-  const providers: Record<string, { clientId: string; clientSecret: string }> =
-    {};
+  const providers: Record<string, AuthProviderConfig> = {};
 
   if (authEnv.google) providers.google = authEnv.google;
   if (authEnv.github) providers.github = authEnv.github;

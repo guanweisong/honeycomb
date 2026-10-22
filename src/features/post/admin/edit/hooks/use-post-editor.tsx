@@ -5,28 +5,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { PhotoPickerItemProps } from "../../../../media/components/PhotoPickerItem";
-import {
-  PostInsertSchema,
-  PostUpdateSchema,
-  type PostInsert,
-} from "@/features/post/schema";
+import type { PhotoPickerItemProps } from "../../../../media/admin/components/PhotoPickerItem";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
+import type { PostInsert } from "@/features/post/types/post.insert";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { isDeterminateRejectionCode } from "@/lib/trpc/client/mutation-error";
-import type { PostDetailResult as PostDetailEntity } from "@/features/post/types";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import type { PostDetailResult as PostDetailEntity } from "@/features/post/types/post.read-model";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import { normalizePostForm } from "../utils/normalize-post-form";
 import { clientLogger } from "@/lib/observability/client";
 import { LogEvent } from "@/lib/observability/core/names";
 import type { PostTagOption } from "../components/MultiTag/use-multi-tag";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import {
   notifyPublicSyncWarning,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
-import { useLocalDraft } from "@/components/admin/local-draft";
+import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { can, Permission } from "@/lib/auth/permissions";
 import {
@@ -224,7 +222,7 @@ export function usePostEditor(id: string | null) {
   });
 
   const finishCreation = (
-    result: { id: string; version: number },
+    result: Pick<PostDetailEntity, "id" | "version">,
     attempt: PostInsert,
     submitted?: { json: string; draft: PostDraft },
   ) => {

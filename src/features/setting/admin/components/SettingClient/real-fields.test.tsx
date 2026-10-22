@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import type { SettingRecord } from "../../../types";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
 const mocks = vi.hoisted(() => ({
   setting: undefined as SettingRecord | undefined,
 }));

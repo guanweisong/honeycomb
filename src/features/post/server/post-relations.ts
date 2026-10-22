@@ -1,22 +1,18 @@
-import type { MediaRecord } from "@/features/media/types";
-import type { TagRecord } from "@/features/tag/types";
+import type { MediaRecord } from "@/features/media/types/media.record";
+import type { TagRecord } from "@/features/tag/types/tag.record";
 import "server-only";
 import { parseEnumValue } from "@/lib/db/value-validation";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { TagType } from "@/features/tag/tag-kind";
-import { PostStatus } from "@/features/post/post-status";
+import { TagType } from "@/features/tag/types/tag.type";
+import { PostStatus } from "@/features/post/types/post.status";
 import { observeDbOperation } from "@/lib/observability/server";
-import type {
-  PostWithRelations,
-  PostAuthorRecord,
-  PostCategoryRecord,
-  PostVisibility,
-} from "../types";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
+import type { PostVisibility } from "@/features/post/types/post.list-query";
 import { groupPostTranslations } from "./post-translations";
 import {
   assembleLocalizedField,
@@ -25,7 +21,7 @@ import {
 import {
   AdminPostListItemSchema,
   PublicPostListItemSchema,
-} from "../post-read-model";
+} from "@/features/post/schemas/post.read-model.schema";
 type PostRecord = typeof schema.post.$inferSelect;
 type PostTranslations =
   ReturnType<typeof groupPostTranslations> extends Map<string, infer Value>
@@ -54,14 +50,18 @@ function toPostViewModel(
   post: PostRecord,
   translations: PostTranslations | undefined,
   relations: {
-    category?: PostCategoryRecord | null;
-    author?: PostAuthorRecord | null;
-    cover?: typeof schema.media.$inferSelect | null;
-    movieActors: TagRecord[];
-    movieDirectors: TagRecord[];
-    movieStyles: TagRecord[];
-    galleryStyles: TagRecord[];
-  },
+    [
+      Key in keyof Pick<
+        PostWithRelations,
+        | "category"
+        | "author"
+        | "movieActors"
+        | "movieDirectors"
+        | "movieStyles"
+        | "galleryStyles"
+      >
+    ]: Exclude<PostWithRelations[Key], undefined>;
+  } & { cover?: typeof schema.media.$inferSelect | null },
 ): PostWithRelations {
   return {
     id: post.id,

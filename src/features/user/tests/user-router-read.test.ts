@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { userRouter } from "@/features/user/router";
-import { UserLevel } from "@/features/user/user";
-import { UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {

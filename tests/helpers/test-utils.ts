@@ -1,7 +1,7 @@
 import { vi, type Mock } from "vitest";
 import type { User } from "@/lib/trpc/context";
 import type { Context } from "@/lib/trpc/context";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import type { Database } from "@/lib/db/db";
 
 type MockQueryModel = {

@@ -1,10 +1,10 @@
 import type { DataTableProps } from "@/components/DataTable";
-import type { UserListQueryInput } from "@/features/user/schema";
+import type { UserListQueryInput } from "@/features/user/types/user.list";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],
@@ -57,7 +57,7 @@ vi.mock("@/components/DynamicForm", () => ({
 }));
 vi.mock("./components/UserFormDialog", () => ({ UserFormDialog: () => null }));
 import { UserPageShell } from "./components/UserPageShell";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("user query state", () => {
   let container: HTMLDivElement;

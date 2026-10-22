@@ -28,9 +28,9 @@ describe("buildDrizzleWhere", () => {
     expect(buildDrizzleWhere(table, query, [])).toBeUndefined(),
   );
 
-  it.each([undefined, "", []])(
+  it.each([{ name: undefined }, { name: "" }, { name: [] }])(
     "skips empty values without losing a valid column: %j",
-    (name) => {
+    ({ name }) => {
       expect(
         compile(
           buildDrizzleWhere(

@@ -1,12 +1,7 @@
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
-
-/** 文章状态对应的中文名称。 */
-export enum PostStatusName {
-  PUBLISHED = "已发布",
-  DRAFT = "草稿",
-  TO_AUDIT = "待审核",
-}
+import { PostStatusName } from "../types/post.status-name";
+import { PostTypeName } from "../types/post.type-name";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 
 /** 用于在 UI 中显示文章状态的选项数组。 */
 export const postStatusOptions = [
@@ -23,13 +18,6 @@ export const postStatusOptions = [
     value: PostStatus.TO_AUDIT,
   },
 ];
-
-export enum PostTypeName {
-  ARTICLE = "文章",
-  MOVIE = "电影",
-  PHOTOGRAPH = "画廊",
-  QUOTE = "引用",
-}
 
 /** 用于在 UI 中显示文章类型的选项数组。 */
 export const postTypeOptions = [

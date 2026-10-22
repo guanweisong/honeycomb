@@ -3,24 +3,23 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import {
-  PageInsertSchema,
-  PageUpdateSchema,
-  type PageInsert,
-  type PageUpdate,
-} from "@/features/page/schema";
-import { PageStatus } from "@/features/page/page-status";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
+import type { PageRecord } from "@/features/page/types/page.read-model";
+import type { PageUpdate } from "@/features/page/types/page.update";
+import { PageStatus } from "@/features/page/types/page.status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   isDeterminateRejectionCode,
   readTrpcErrorCode,
 } from "@/lib/trpc/client/mutation-error";
-import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { notifyPublicSyncWarning } from "@/components/admin/lib/action-state";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
 
 type PageEditorValues = Partial<PageInsert>;
 type PageSyncFeedback = { publicSync?: PublicCacheInvalidationResult["state"] };
-type SavedPage = { id: string; version: number } & PageSyncFeedback;
+type SavedPage = Pick<PageRecord, "id" | "version"> & PageSyncFeedback;
 type SubmitPageEditorOptions = {
   pageId?: string;
   expectedVersion?: number;

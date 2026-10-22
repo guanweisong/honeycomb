@@ -2,10 +2,12 @@ import "server-only";
 import {
   getCategoryTree,
   listCategories,
+} from "@/features/category/server/category-queries";
+import {
   createCategory,
   destroyCategories,
   updateCategory,
-} from "@/features/category/server";
+} from "@/features/category/server/category-commands";
 
 import {
   createTRPCRouter,
@@ -16,12 +18,10 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import {
-  CategoryDeleteSchema,
-  CategoryListQuerySchema,
-  CategoryInsertSchema,
-  CategoryUpdateSchema,
-} from "@/features/category/schema";
+import { CategoryDeleteSchema } from "@/features/category/schemas/category.delete.schema";
+import { CategoryListQuerySchema } from "@/features/category/schemas/category.list.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

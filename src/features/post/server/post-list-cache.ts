@@ -1,12 +1,12 @@
 import "server-only";
-import { PublicPostListResultSchema } from "../post-read-model";
+import { PublicPostListResultSchema } from "@/features/post/schemas/post.read-model.schema";
 import type { Database } from "@/lib/db/db";
 import {
   getCacheJSON,
   getCacheVersion,
   setCacheJSON,
 } from "@/lib/cache/upstash-cache";
-import type { PostListInput } from "../types";
+import type { PostListInput } from "@/features/post/types/post.list-query";
 import { listPublicPosts } from "./post-queries";
 import {
   POST_CACHE_NAMESPACE as namespace,

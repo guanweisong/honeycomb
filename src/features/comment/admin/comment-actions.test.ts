@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import {
   submitCommentDelete,
   submitCommentStatusUpdate,

@@ -4,10 +4,10 @@ import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { createServerClient } from "@/app/_trpc/server";
-import type { MenuType } from "@/features/menu/menu-types";
+import type { MenuType } from "@/features/menu/types/menu.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
-import type { PostListQueryInput } from "@/features/post/schema";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
 import {
   getPageDetailCacheTag,
   getPostDetailCacheTag,

@@ -1,8 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { notFound } from "next/navigation";
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { utcFormat } from "@/lib/ui/utc-format";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
+import type { NullableLocalizedInput } from "@/lib/i18n/i18n";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
 
 export function assertPostDetail<T>(postDetail: T | null | undefined): T {
   if (!postDetail) {
@@ -31,13 +33,23 @@ export function handlePostDetailError(error: unknown): never {
 }
 
 type PostPresentation = {
-  type: PostType | string;
-  title?: Partial<Record<keyof MultiLang, string | null>> | null;
-  quoteContent?: Partial<Record<keyof MultiLang, string | null>> | null;
-  movieTime?: string | null;
-  cover?: { url: string } | null;
-  excerpt?: Partial<Record<keyof MultiLang, string | null>> | null;
-};
+  // 展示兼容边界仍接受未知文章类型，不把外部字符串收紧成枚举。
+  type: PostWithRelations["type"] | string;
+  movieTime?: PostWithRelations["movieTime"];
+  cover?: Pick<NonNullable<PostWithRelations["cover"]>, "url"> | null;
+} & Partial<
+  Record<
+    "title" | "quoteContent" | "excerpt",
+    // 可缺少语言键，但保留 exactOptionalPropertyTypes 下不接受显式 undefined。
+    | {
+        [Language in keyof NonNullable<NullableLocalizedInput>]?: Exclude<
+          NonNullable<NullableLocalizedInput>[Language],
+          undefined
+        >;
+      }
+    | null
+  >
+>;
 
 /** 生成文章在页面标题和元数据中使用的本地化标题。 */
 export function getPostTitle(

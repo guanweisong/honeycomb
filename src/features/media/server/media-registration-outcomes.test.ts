@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { expect, it } from "vitest";
 import sharp from "sharp";
-import { registerMediaUpload } from "@/features/media/server";
+import { registerMediaUpload } from "@/features/media/server/media-upload";
 import { createUploadIntent } from "@/features/media/server/upload-intent";
 import {
   mediaRepositoryFixture,

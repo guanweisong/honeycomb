@@ -56,7 +56,9 @@ describe("PageEditorActionButtons", () => {
   async function renderActions(props: {
     isEdit: boolean;
     loading?: boolean;
-    status?: string;
+    status?: NonNullable<
+      React.ComponentProps<typeof PageEditorActionButtons>["status"]
+    >;
   }) {
     await act(async () => {
       root.render(

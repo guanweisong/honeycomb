@@ -1,5 +1,5 @@
 import React from "react";
-import type { AdminNavigationItem } from "@/app/admin/components/AdminNavigation";
+import type { AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
 import {
   Permission,
   type Permission as PermissionValue,

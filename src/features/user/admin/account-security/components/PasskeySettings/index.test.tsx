@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn(),
 }));
 
-vi.mock("@/auth-client", () => ({
+vi.mock("@/lib/auth/client", () => ({
   authClient: {
     useListPasskeys: () => mocks.listPasskeys(),
     passkey: { addPasskey: mocks.addPasskey },

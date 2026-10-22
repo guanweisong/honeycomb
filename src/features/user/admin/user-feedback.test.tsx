@@ -2,8 +2,9 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import type { UserRecord } from "@/features/user/types";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import type { UserRecord } from "@/features/user/types/user.record";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),

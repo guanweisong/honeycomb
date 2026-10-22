@@ -9,7 +9,7 @@ const appFiles = sourceFiles(appRoot);
 
 function componentDirectories(): string[] {
   return appFiles
-    .filter((path) => /\/components\/[^/]+\/index\.tsx$/.test(path))
+    .filter((path) => /\/_components\/[^/]+\/index\.tsx$/.test(path))
     .map((path) => path.slice(0, -"/index.tsx".length));
 }
 
@@ -73,6 +73,7 @@ describe("App Router composition boundaries", () => {
   });
 
   it("keeps app shell entrypoints covered without prescribing TSX test syntax", () => {
+    expect(componentDirectories().length).toBeGreaterThan(0);
     const missingTests = componentDirectories()
       .filter(
         (directory) =>
@@ -100,7 +101,7 @@ describe("App Router composition boundaries", () => {
     expect(invalidDirectories).toEqual([]);
     expect(
       existsSync(
-        join(appRoot, "admin/components/AdminLayout/AdminSidebar.tsx"),
+        join(appRoot, "admin/_components/AdminLayout/AdminSidebar.tsx"),
       ),
     ).toBe(true);
   });

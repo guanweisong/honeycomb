@@ -1,23 +1,10 @@
+import { Align } from "../../types/post-info.align";
 import { Link } from "@/lib/i18n/blog-navigation";
 import React, { ViewTransition } from "react";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/ui/utils";
 import { getTranslations } from "next-intl/server";
-
-/**
- * 对齐方式枚举。
- */
-export enum Align {
-  /**
-   * 左对齐。
-   */
-  Left = "left",
-  /**
-   * 居中对齐。
-   */
-  Center = "center",
-}
 
 /**
  * 文章信息组件的属性接口。

@@ -4,8 +4,8 @@ import zhMessages from "@/app/(blog)/messages/zh.json";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PostStatus } from "@/features/post/post-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

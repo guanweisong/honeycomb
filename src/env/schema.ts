@@ -56,6 +56,8 @@ const oauthProviderSchema = z.object({
   clientSecret: requiredString,
 });
 
+export type OAuthProviderConfig = z.output<typeof oauthProviderSchema>;
+
 const r2Schema = z.object({
   accountId: r2AccountId,
   accessKeyId: requiredString,

@@ -1,6 +1,6 @@
 import parse, { HTMLReactParserOptions } from "html-react-parser";
 import Image from "next/image";
-import type { MediaRecord as MediaEntity } from "@/features/media/types";
+import type { MediaRecord as MediaEntity } from "@/features/media/types/media.record";
 import { PhotoSwipeClient } from "@/components/PhotoSwipe";
 import { sanitizeRichText } from "@/lib/security/sanitize-html";
 

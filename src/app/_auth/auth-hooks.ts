@@ -4,11 +4,11 @@ import type { BetterAuthOptions } from "better-auth";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { getAuthenticationProvider } from "../../lib/auth/authentication-events";
+import { getAuthenticationProvider } from "./authentication-events";
 import { recordLoginHistory } from "@/features/user/account-security/server/login-history.repository";
 import { getLogger } from "@/lib/observability/server";
 import { LogEvent } from "@/lib/observability/core/names";
-import { isUserEnabled } from "@/features/user/user";
+import { isUserEnabled } from "@/features/user/rules/user-status";
 
 export function createAuthDatabaseHooks(): NonNullable<
   BetterAuthOptions["databaseHooks"]

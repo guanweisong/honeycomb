@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "@/features/page/router";
 import * as schema from "@/lib/db/schema";
-import { UserLevel } from "@/features/user/user";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { UserLevel } from "@/features/user/types/user.level";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import type { MediaRecord } from "@/features/media/types";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createGuestUser,

@@ -24,8 +24,9 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { ModalType } from "@/components/admin/modal-type";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { UserFormDialog } from ".";
 import type { UserDialogState } from "@/features/user/admin/user-actions";
 

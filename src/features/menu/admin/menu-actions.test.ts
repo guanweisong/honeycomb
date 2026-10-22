@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import type { MenuEntityTree } from "./menu-transforms";
 import { submitMenuChanges } from "./menu-actions";
 

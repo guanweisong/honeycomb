@@ -16,7 +16,7 @@ import {
   CommandEmpty,
 } from "@/components/ui/command";
 import { X, Plus } from "lucide-react";
-import { TagType } from "@/features/tag/tag-kind";
+import { TagType } from "@/features/tag/types/tag.type";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 import LoadingState from "@/components/LoadingState";

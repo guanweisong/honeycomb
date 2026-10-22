@@ -1,12 +1,9 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import {
-  PageTemplateName,
-  pageTemplateOptions,
-  PageStatusName,
-  pageStatusOptions,
-} from "./options";
+import { PageTemplateName } from "@/features/page/types/page.template-name";
+import { pageTemplateOptions, pageStatusOptions } from "./options";
+import { PageStatusName } from "@/features/page/types/page.status-name";
 
 describe("page display options", () => {
   it("preserves page status labels and option order", () => {

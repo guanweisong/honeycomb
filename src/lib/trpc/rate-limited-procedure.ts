@@ -5,21 +5,23 @@ import { getClientIp } from "@/lib/http/client-ip";
 import {
   limitWithTimeout,
   type ApiRatelimit,
+  type LimitWithTimeoutOptions,
 } from "@/lib/rate-limit/rate-limit";
 import { publicProcedure } from "./core";
 
-export interface RateLimitedPublicProcedureOptions {
+export type RateLimitedPublicProcedureOptions = Pick<
+  LimitWithTimeoutOptions,
+  "fallbackLimit" | "timeoutMs"
+> & {
   limiter: ApiRatelimit;
   namespace: string;
-  fallbackLimit?: number;
-  timeoutMs?: number;
-}
+};
 
 /** 在公共 handler 前组合独立限流，不复制业务或鉴权规则。 */
 export function createRateLimitedPublicProcedure({
   limiter,
   namespace,
-  fallbackLimit = 5,
+  fallbackLimit,
   timeoutMs,
 }: RateLimitedPublicProcedureOptions) {
   return publicProcedure.use(async ({ ctx, next }) => {

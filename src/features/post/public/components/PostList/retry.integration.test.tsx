@@ -6,8 +6,8 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicPostListResult } from "@/features/post/types";
-import { PostType } from "@/features/post/post-type";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
+import { PostType } from "@/features/post/types/post.type";
 
 const transport = vi.hoisted(() => ({ request: vi.fn() }));
 let notifyIntersection:

@@ -12,14 +12,14 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import sharp from "sharp";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { createMediaRepository } from "./media-repository";
 import {
   prepareMediaUpload,
   registerMediaUpload,
-  destroyMedia,
-  type MediaStorage,
-} from "../server";
+} from "@/features/media/server/media-upload";
+import { destroyMedia } from "@/features/media/server/media-delete";
+import { type MediaStorage } from "@/features/media/types/media.storage";
 import { verifyUploadIntent } from "./upload-intent";
 vi.mock("@/env/client", () => ({
   clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test" },

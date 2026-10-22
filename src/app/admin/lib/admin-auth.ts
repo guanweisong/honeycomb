@@ -2,14 +2,12 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 
-import {
-  getAdminUser as getApplicationAdminUser,
-  type AdminUser,
-} from "@/features/user/admin-user";
+import { getAdminUser as getApplicationAdminUser } from "@/features/user/server/admin-user";
+import { type AdminUser } from "@/features/user/types/user.current";
 import { createUserRepository } from "@/features/user/server/user-repository";
 import { getDb } from "@/lib/db/db";
 
-export type { AdminUser } from "@/features/user/admin-user";
+export type { AdminUser } from "@/features/user/types/user.current";
 
 export async function getAdminUser(
   headers: Headers,

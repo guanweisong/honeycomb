@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 
 /**
  * 从数据库枚举 `MenuType` 创建的 Zod 枚举 schema。

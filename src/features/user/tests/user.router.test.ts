@@ -1,12 +1,12 @@
-import type { UserRecord } from "@/features/user/types";
+import type { UserRecord } from "@/features/user/types/user.record";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { SQL } from "drizzle-orm";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { userRouter } from "@/features/user/router";
 import * as schema from "@/lib/db/schema";
-import { UserLevel } from "@/features/user/user";
-import { UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { TRPCError } from "@trpc/server";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {

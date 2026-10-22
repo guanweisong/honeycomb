@@ -1,4 +1,4 @@
-import type { LinkRecord } from "@/features/link/types";
+import type { LinkRecord } from "@/features/link/types/link.record";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";

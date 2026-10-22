@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
-import { PageStatus } from "../page-status";
-import { PageTemplate } from "../page-template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import * as queries from "./page-queries";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

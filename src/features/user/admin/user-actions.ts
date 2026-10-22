@@ -1,15 +1,15 @@
 "use client";
 
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-  type UserInsert,
-  type UserUpdate,
-} from "@/features/user/schema";
-import type { UserRecord as UserEntity } from "@/features/user/types";
+} from "@/features/user/schemas/user.write.schema";
+import type { UserInsert } from "@/features/user/types/user.insert";
+import type { UserUpdate } from "@/features/user/types/user.update";
+import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   closeAdminDialog,
@@ -23,7 +23,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminTargetMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 export type UserDialogState = AdminDialogState<UserEntity>;
 

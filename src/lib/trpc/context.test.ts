@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { runWithRequestContext } from "../observability/server/node-request-context";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 const database = {
   select: vi.fn(),

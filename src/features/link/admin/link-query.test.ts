@@ -1,5 +1,5 @@
 import type { DataTableProps } from "@/components/DataTable";
-import type { LinkListQueryInput } from "@/features/link/schema";
+import type { LinkListQueryInput } from "@/features/link/types/link.list";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -56,7 +56,7 @@ vi.mock("@/components/DynamicForm", () => ({
 }));
 vi.mock("./components/LinkFormDialog", () => ({ LinkFormDialog: () => null }));
 import { LinkPageShell } from "./components/LinkPageShell";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("link query state", () => {
   let container: HTMLDivElement;

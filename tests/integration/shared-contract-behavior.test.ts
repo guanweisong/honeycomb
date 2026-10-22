@@ -5,10 +5,10 @@ import {
   NullableLocalizedInputSchema,
 } from "@/lib/i18n/i18n";
 import { I18nSchema as InputI18n } from "@/lib/validation/validation";
-import { MediaRecordSchema } from "@/features/media/types";
-import { TagRecordSchema } from "@/features/tag/types";
-import { PostWithRelationsSchema } from "@/features/post/post-read-model";
-import { PostListResultSchema } from "@/features/post/post-read-model";
+import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
+import { TagRecordSchema } from "@/features/tag/schemas/tag.record.schema";
+import { PostWithRelationsSchema } from "@/features/post/schemas/post.read-model.schema";
+import { PostListResultSchema } from "@/features/post/schemas/post.read-model.schema";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { EnableStatus } from "@/lib/validation/enable-status";

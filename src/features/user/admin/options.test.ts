@@ -1,12 +1,9 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import {
-  UserLevelName,
-  userLevelOptions,
-  UserStatusName,
-  userStatusOptions,
-} from "./options";
+import { UserLevelName } from "@/features/user/types/user.level-name";
+import { userLevelOptions, userStatusOptions } from "./options";
+import { UserStatusName } from "@/features/user/types/user.status-name";
 
 describe("user display options", () => {
   it("preserves user level labels and option order", () => {

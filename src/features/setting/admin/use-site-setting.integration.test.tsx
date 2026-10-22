@@ -10,7 +10,7 @@ import { observable } from "@trpc/server/observable";
 import { TRPCClientError } from "@trpc/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { SettingRecord } from "../types";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
 import { SiteSettingProvider, useSiteSetting } from "./use-site-setting";
 
 const initial: SettingRecord = {

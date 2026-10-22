@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 
 import { submitLinkUpdate } from "./link-actions";
 

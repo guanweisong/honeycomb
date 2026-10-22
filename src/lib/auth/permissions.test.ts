@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 import {
   ALL_PERMISSIONS,

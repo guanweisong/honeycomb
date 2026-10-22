@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { PageStatus } from "@/features/page/page-status";
+import type { PageRecord } from "@/features/page/types/page.read-model";
+import { PageStatus } from "@/features/page/types/page.status";
 
 type PageEditorActionButtonsProps = {
   isEdit: boolean;
   loading: boolean;
-  status?: PageStatus | string;
+  status?: `${PageRecord["status"]}`;
   onSubmit: (status: PageStatus) => Promise<boolean>;
 };
 

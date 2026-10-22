@@ -4,11 +4,9 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import {
-  LinkListQuerySchema,
-  type LinkListQueryInput,
-} from "@/features/link/schema";
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
+import type { LinkListQueryInput } from "@/features/link/types/link.list";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import { Dialog } from "@/components/Dialog";
@@ -17,7 +15,7 @@ import { LinkFormDialog } from "../LinkFormDialog";
 import { useLinkActions } from "../../link-actions";
 import { linkTableColumns } from "../../link-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 export function LinkPageShell() {
   const canCreateLink = useCan(Permission.linkCreate);

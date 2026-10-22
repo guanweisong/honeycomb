@@ -1,10 +1,10 @@
 import { ColumnDef } from "@tanstack/react-table";
-import MultiLangText from "@/components/admin/MultiLangText";
+import MultiLangText from "@/components/MultiLangText";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import type { CategoryListItem as CategoryEntity } from "@/features/category/types";
+import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
-import { formatAdminDateTime } from "@/components/admin/date-time";
+import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
 
 /**
  * 分类列表的表格列定义。

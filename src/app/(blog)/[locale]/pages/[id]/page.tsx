@@ -1,9 +1,10 @@
 import React, { Suspense } from "react";
-import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
+import PostInfo from "@/features/post/public/PostInfo";
+import { PostCommentCount } from "@/features/post/public/PostInfo";
 import Comment from "@/features/comment/public/components/CommentClient";
-import PageTitle from "@/app/(blog)/components/PageTitle";
+import PageTitle from "@/app/(blog)/_components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import {
   getPublicComments,
   getPublicPageDetail,
@@ -12,7 +13,7 @@ import {
 } from "@/app/lib/server/public-queries";
 import { RichText } from "@/features/media/public/RichText";
 import { PageViewTracker } from "@/features/page/public/PageViewTracker";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { cn } from "@/lib/ui/utils";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";

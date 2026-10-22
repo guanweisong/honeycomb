@@ -1,11 +1,15 @@
 import "server-only";
 
+import type {
+  externalServices,
+  externalServiceOperations,
+} from "../core/metric-label-values";
 import { MetricName } from "../core/names";
 import { getMetrics } from "./registry";
 
-export type ExternalService = "captcha" | "email" | "object-storage";
+export type ExternalService = (typeof externalServices)[number];
 export type ExternalServiceOperation =
-  "validate" | "send" | "put" | "presign" | "delete";
+  (typeof externalServiceOperations)[number];
 
 export async function observeExternalServiceOperation<T>(
   service: ExternalService,

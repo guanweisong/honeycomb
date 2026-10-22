@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
 const mocks = vi.hoisted(() => ({
   listPageMenuOptions: vi.fn(),

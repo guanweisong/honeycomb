@@ -48,7 +48,7 @@ const commandsFor = (job: z.infer<typeof jobSchema>) =>
       ? step.run
           .trim()
           .split("\n")
-          .map((line) => line.trim())
+          .map((line) => line.trim().replace(/^phase "[^"]+" (?:env )?/, ""))
       : [],
   );
 
@@ -66,7 +66,7 @@ describe("quality workflow", () => {
 
   it("pins the supported Node major and development minimum", () => {
     expect(packageJson.engines.node).toBe(">=24.15.0 <25");
-    expect(workflow.match(/node-version: 24\.22\.1/g)).toHaveLength(2);
+    expect(workflow.match(/node-version: 24\.22\.1/g)).toHaveLength(5);
   });
 
   it("keeps Turbopack analysis finite and writes static diagnostics", () => {
@@ -142,7 +142,9 @@ describe("quality workflow", () => {
       "vitest run --config vitest.process.config.mts",
     );
     expect(
-      commands.filter((command) => command === "bun run test:unit:coverage"),
+      commands.filter((command) =>
+        command.startsWith("bun run test:unit:coverage --shard="),
+      ),
     ).toHaveLength(1);
     expect(
       commands.filter((command) => command === "bun run test:unit:process"),
@@ -151,7 +153,12 @@ describe("quality workflow", () => {
   });
 
   it("runs unit checks and build/E2E independently with fresh databases", () => {
-    for (const name of ["unit_checks", "build_e2e"]) {
+    for (const name of [
+      "unit_checks",
+      "unit_coverage",
+      "build_e2e",
+      "development_e2e",
+    ]) {
       const job = jobSchema.parse(ci.jobs[name]);
       expect(job, name).toBeDefined();
       expect(job["runs-on"]).toBe("ubuntu-latest");
@@ -189,7 +196,6 @@ describe("quality workflow", () => {
         "bun run lint",
         "bun run db:migrations:check",
         "bun run db:invariants:audit",
-        "bun run test:unit:coverage",
         "bun run test:unit:process",
         "bun run audit:production --output dependency-audit-report.json",
       ]),
@@ -198,18 +204,89 @@ describe("quality workflow", () => {
       expect.arrayContaining([
         "bun run build",
         "timeout 10m bun run analyze",
-        "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
         "PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
       ]),
     );
+  });
+
+  it("shards coverage without dropping tests or weakening the merged gate", () => {
+    const raw = parse(workflow) as {
+      jobs: Record<string, { strategy?: unknown; steps: unknown[] }>;
+    };
+    expect(raw.jobs.unit_coverage?.strategy).toEqual({
+      "fail-fast": false,
+      matrix: { shard: [1, 2] },
+    });
+    const shard = commandsFor(jobSchema.parse(ci.jobs.unit_coverage)).join(
+      "\n",
+    );
+    expect(shard).toContain(
+      "bun run test:unit:coverage --shard=${{ matrix.shard }}/2 --reporter=default --reporter=blob",
+    );
+    expect(shard).not.toMatch(
+      /thresholds|coverage\.exclude|no-coverage|passWithNoTests/,
+    );
+    const merge = jobSchema.parse(ci.jobs.coverage_gate);
+    expect(merge.needs).toEqual(["unit_coverage"]);
+    expect(merge["continue-on-error"]).toBeUndefined();
+    const commands = commandsFor(merge).join("\n");
+    expect(commands).toContain("test -s .vitest/blob/blob-1-2.json");
+    expect(commands).toContain("test -s .vitest/blob/blob-2-2.json");
+    expect(commands).toContain(
+      "bun run test:unit:coverage --merge-reports=.vitest/blob",
+    );
+    expect(commands).not.toMatch(/thresholds|no-coverage/);
+    expect(workflow).toContain("include-hidden-files: true");
+    expect(workflow).toContain("if-no-files-found: error");
+  });
+
+  it("starts development E2E without waiting for production builds or analysis", () => {
+    const commands = commandsFor(jobSchema.parse(ci.jobs.development_e2e));
+    expect(commands).toContain(
+      "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
+    );
+    expect(commands.join("\n")).not.toMatch(/bun run (?:build|analyze)/);
+    expect(workflow).toContain("path: .next/cache/turbopack");
+  });
+
+  it("times individual phases without swallowing failures", () => {
+    const script = jobSchema
+      .parse(ci.jobs.unit_checks)
+      .steps.find((step) => step.run?.includes("trap cleanup EXIT"))?.run;
+    const timer = script?.match(/phase\(\) \{[\s\S]*?\n\}/)?.[0];
+    expect(timer).toBeDefined();
+    const result = spawnSync(
+      "bash",
+      [
+        "-e",
+        "-o",
+        "pipefail",
+        "-c",
+        `${timer}\nphase "Expected failure" bash -c 'exit 7'\nprintf SHOULD_NOT_RUN`,
+      ],
+      {
+        env: { ...process.env, GITHUB_STEP_SUMMARY: "" },
+        encoding: "utf8",
+        timeout: 5_000,
+        killSignal: "SIGKILL",
+      },
+    );
+    expect(result.status).toBe(7);
+    expect(result.stdout).toContain("Expected failure");
+    expect(result.stdout).toContain("exit=7");
+    expect(result.stdout).not.toContain("SHOULD_NOT_RUN");
+    expect(script).toContain("Fixture cleanup:");
   });
 
   it("keeps verify fail-closed for failed, skipped, and cancelled dependencies", () => {
     const gate = jobSchema.parse(ci.jobs.verify);
     expect(gate.needs?.slice().sort()).toEqual([
       "build_e2e",
+      "coverage_gate",
+      "development_e2e",
       "specs",
       "unit_checks",
+      "unit_coverage",
     ]);
     expect(gate.if).toBe("${{ always() }}");
     expect(gate["continue-on-error"]).toBeUndefined();
@@ -222,32 +299,39 @@ describe("quality workflow", () => {
       SPECS_RESULT: "${{ needs.specs.result }}",
       UNIT_CHECKS_RESULT: "${{ needs.unit_checks.result }}",
       BUILD_E2E_RESULT: "${{ needs.build_e2e.result }}",
+      UNIT_COVERAGE_RESULT: "${{ needs.unit_coverage.result }}",
+      COVERAGE_GATE_RESULT: "${{ needs.coverage_gate.result }}",
+      DEVELOPMENT_E2E_RESULT: "${{ needs.development_e2e.result }}",
     });
-    const results = ["success", "failure", "skipped", "cancelled"];
-    for (const specs of results) {
-      for (const unit of results) {
-        for (const build of results) {
-          const result = spawnSync(
-            "bash",
-            ["-e", "-c", z.string().parse(step.run)],
-            {
-              env: {
-                ...process.env,
-                SPECS_RESULT: specs,
-                UNIT_CHECKS_RESULT: unit,
-                BUILD_E2E_RESULT: build,
-              },
-              encoding: "utf8",
-              timeout: 1_000,
-              killSignal: "SIGKILL",
-            },
-          );
-          if (result.error) throw result.error;
-          expect(result.status === 0, `${specs}/${unit}/${build}`).toBe(
-            specs === "success" && unit === "success" && build === "success",
-          );
-        }
-      }
+    const names = Object.keys(step.env ?? {});
+    const allSuccess = Object.fromEntries(
+      names.map((name) => [name, "success"]),
+    );
+    const scenarios = [
+      allSuccess,
+      ...names.flatMap((name) =>
+        ["failure", "skipped", "cancelled"].map((status) => ({
+          ...allSuccess,
+          [name]: status,
+        })),
+      ),
+      Object.fromEntries(names.map((name) => [name, "failure"])),
+    ];
+    for (const scenario of scenarios) {
+      const result = spawnSync(
+        "bash",
+        ["-e", "-c", z.string().parse(step.run)],
+        {
+          env: { ...process.env, ...scenario },
+          encoding: "utf8",
+          timeout: 1_000,
+          killSignal: "SIGKILL",
+        },
+      );
+      if (result.error) throw result.error;
+      expect(result.status === 0, JSON.stringify(scenario)).toBe(
+        Object.values(scenario).every((status) => status === "success"),
+      );
     }
   }, 30_000);
 
@@ -289,7 +373,10 @@ describe("quality workflow", () => {
       expect(result.status, result.stdout + result.stderr).toBe(0);
       return collect(JSON.parse(result.stdout));
     };
-    const commands = commandsFor(jobSchema.parse(ci.jobs.build_e2e));
+    const commands = [
+      ...commandsFor(jobSchema.parse(ci.jobs.build_e2e)),
+      ...commandsFor(jobSchema.parse(ci.jobs.development_e2e)),
+    ];
     expect(commands).toContain(
       "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
     );

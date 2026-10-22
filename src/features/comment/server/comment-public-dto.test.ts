@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { buildPublicCommentTree, toPublicComment } from "./comment-public-dto";
-import type { CommentRecord } from "../types";
+import type { CommentRecord } from "@/features/comment/types/comment.read-model";
 
 function comment(id: string, parentId: string | null): CommentRecord {
   return {

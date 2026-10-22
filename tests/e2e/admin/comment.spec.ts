@@ -3,7 +3,7 @@ import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
 import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 
 test.describe("admin comment moderation", () => {
   test("@regression moderates and batch deletes comments through the browser contract", async ({

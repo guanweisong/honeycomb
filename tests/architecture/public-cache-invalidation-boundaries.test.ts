@@ -46,6 +46,11 @@ describe("public cache invalidation boundaries", () => {
     expect(commentRouter).not.toContain("sendCommentEmail");
     expect(commentRouter).toContain("commentCreateRatelimit");
     expect(commentCommands).not.toContain("commentCreateRatelimit");
+    expect(
+      readFileSync("src/lib/rate-limit/rate-limit.ts", "utf8"),
+    ).not.toMatch(
+      /commentCreateRatelimit|ratelimit:comment-create|getClientIp/,
+    );
     expect(mediaRouter).not.toMatch(
       /R2Storage\.(?:deleteObjects|getPresignedUrl)/,
     );

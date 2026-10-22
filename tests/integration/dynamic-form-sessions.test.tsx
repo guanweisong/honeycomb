@@ -9,9 +9,10 @@ import {
   it,
   vi,
 } from "vitest";
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { LinkFormDialog } from "@/features/link/admin/components/LinkFormDialog";
 import { UserFormDialog } from "@/features/user/admin/components/UserFormDialog";
 import TagFormDialog from "@/features/tag/admin/components/TagFormDialog";

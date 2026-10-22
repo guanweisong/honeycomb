@@ -1,4 +1,4 @@
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 
 export const Permission = {
   categoryReadAll: "category:read-all",

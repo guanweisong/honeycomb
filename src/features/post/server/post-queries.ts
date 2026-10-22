@@ -4,7 +4,7 @@ import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { assembleLocalizedField } from "@/lib/db/translation-values";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
-import { PostStatus } from "../post-status";
+import { PostStatus } from "@/features/post/types/post.status";
 import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
@@ -20,10 +20,12 @@ import {
 import type {
   PostListInput,
   PostVisibility,
+} from "@/features/post/types/post.list-query";
+import type {
   AdminPostListResult,
   PostDetailResult,
   PublicPostListResult,
-} from "../types";
+} from "@/features/post/types/post.read-model";
 
 async function getPostCategoryIds(db: Database, categoryId: string) {
   const subCategories = await observeDbOperation(

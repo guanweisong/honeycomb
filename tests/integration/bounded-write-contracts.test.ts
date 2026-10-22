@@ -3,17 +3,17 @@ import { describe, expect, it } from "vitest";
 import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 import { queryString } from "@/lib/validation/query.string.schema";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
-import { CategoryUpdateSchema } from "@/features/category/schema";
-import { TagUpdateSchema } from "@/features/tag/schema";
-import { PostUpdateSchema } from "@/features/post/schema";
-import { PageUpdateSchema } from "@/features/page/schema";
-import { LinkUpdateSchema } from "@/features/link/schema";
-import { UserUpdateSchema } from "@/features/user/schema";
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema";
-import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/schema";
-import { saveAllMenus } from "@/features/menu/server";
-import { PostListQuerySchema } from "@/features/post/schema";
-import { TagListQuerySchema } from "@/features/tag/schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
+import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.write.schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schemas/setting.admin-update.schema";
+import { MenuWriteSchema as MenuUpdateSchema } from "@/features/menu/schemas/menu.write.schema";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
+import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 
 describe("bounded write contracts", () => {
   it("bounds page sizes, search text and destructive batches", () => {

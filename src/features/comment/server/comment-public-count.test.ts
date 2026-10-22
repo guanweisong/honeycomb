@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createCommentQueryRepository } from "./comment-query-repository";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 describe("public comment count", () => {

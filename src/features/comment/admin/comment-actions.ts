@@ -1,9 +1,9 @@
 "use client";
 
 import { toast } from "sonner";
-import type { CommentUpdate } from "@/features/comment/schema";
+import type { CommentUpdate } from "@/features/comment/types/comment.update";
 import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
-import type { CommentStatus } from "@/features/comment/comment-status";
+import type { CommentStatus } from "@/features/comment/types/comment.status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   runAdminMutation,
@@ -11,7 +11,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 type SubmitCommentStatusUpdateOptions = AdminMutationFeedback & {
   id: string;

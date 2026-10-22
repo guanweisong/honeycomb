@@ -1,11 +1,11 @@
 "use client";
 
-import { CommentStatusName } from "@/features/comment/admin/options";
+import { CommentStatusName } from "@/features/comment/types/comment.status-name";
 import CustomPie from "../CustomPie";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { PostTypeName } from "@/features/post/admin/options";
-import { UserLevelName } from "@/features/user/admin/options";
+import { PostTypeName } from "@/features/post/types/post.type-name";
+import { UserLevelName } from "@/features/user/types/user.level-name";
 
 /**
  * 后台主看板客户端内容，负责查询统计数据并渲染图表。

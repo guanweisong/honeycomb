@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
 import ts from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
+import { isDisplayContract } from "@tests/helpers/feature-inventory";
 import {
   isContractForbidden,
   localModulePath,
@@ -33,7 +34,9 @@ function libraryImportViolations(path: string, source: string) {
       /\/(?:server|admin|public|components|notifications|presentation)(?:\/|$)|(?:\/|\.)router$/.test(
         target,
       );
-    return dataConsumer && !implementation ? [] : [`${path} -> ${specifier}`];
+    return dataConsumer && !implementation && !isDisplayContract(target)
+      ? []
+      : [`${path} -> ${specifier}`];
   });
 }
 
@@ -117,7 +120,7 @@ describe("technical library and browser dependency boundaries", () => {
       moduleDependencies(
         [
           'import type { Router } from "@/app/_trpc/router";',
-          'import { type User } from "@/features/user/types";',
+          'import { type User } from "@/features/user/types/user.current";',
           'import { type User, save } from "./mixed";',
           'export type { Input } from "./types";',
           'export { execute } from "./server";',
@@ -129,7 +132,7 @@ describe("technical library and browser dependency boundaries", () => {
       ),
     ).toEqual([
       { specifier: "@/app/_trpc/router", typeOnly: true },
-      { specifier: "@/features/user/types", typeOnly: true },
+      { specifier: "@/features/user/types/user.current", typeOnly: true },
       { specifier: "./mixed", typeOnly: false },
       { specifier: "./types", typeOnly: true },
       { specifier: "./server", typeOnly: false },
@@ -178,9 +181,29 @@ describe("technical library and browser dependency boundaries", () => {
     expect(
       libraryImportViolations(
         "src/lib/db/schema/auth.ts",
-        'import { UserStatus } from "@/features/user/user";',
+        'import { UserStatus } from "@/features/user/types/user.status";',
       ),
     ).toEqual([]);
+  });
+
+  it("rejects display enums in persistence and identity bindings", () => {
+    for (const path of [
+      "src/lib/db/schema/content-post.ts",
+      "src/lib/auth/hooks.ts",
+      "src/lib/trpc/context.ts",
+    ])
+      expect(
+        libraryImportViolations(
+          path,
+          'import { PostStatusName } from "@/features/post/types/post.status-name";',
+        ),
+      ).toHaveLength(1);
+    expect(
+      libraryImportViolations(
+        "src/lib/db/schema/content-post.ts",
+        'export { Align } from "../../../features/post/types/post-info.align";',
+      ),
+    ).toHaveLength(1);
   });
 
   it.each(["fs", "path", "drizzle-orm"])(
@@ -261,9 +284,11 @@ describe("technical library and browser dependency boundaries", () => {
     );
     expect(violations).toEqual([]);
     expect(existsSync("src/features/category/admin")).toBe(true);
-    expect(existsSync("src/features/media/components/PhotoPicker")).toBe(true);
+    expect(existsSync("src/features/media/admin/components/PhotoPicker")).toBe(
+      true,
+    );
     expect(
-      existsSync("src/features/media/components/EditorMediaProvider"),
+      existsSync("src/features/media/admin/components/EditorMediaProvider"),
     ).toBe(true);
   });
 
@@ -273,6 +298,7 @@ describe("technical library and browser dependency boundaries", () => {
     );
     expect(clients.length).toBeGreaterThan(50);
     expect(clients).toContain("src/instrumentation-client.ts");
+    expect(clients).toContain("src/lib/auth/client.ts");
     const violations = clients.flatMap((path) => {
       const source = readFileSync(path, "utf8");
       return [
@@ -285,6 +311,49 @@ describe("technical library and browser dependency boundaries", () => {
     // coverage run takes ~5.6s with concurrent workers, so allow instrumentation
     // overhead without excluding modules or weakening the dependency assertions.
   }, 15_000);
+
+  it("keeps the browser auth singleton in lib without a legacy root outlet", () => {
+    expect(existsSync("src/lib/auth/client.ts")).toBe(true);
+    expect(existsSync("src/auth-client.ts")).toBe(false);
+    expect(isClientEntry(readFileSync("src/lib/auth/client.ts", "utf8"))).toBe(
+      true,
+    );
+  });
+
+  it("keeps shared admin tools, configuration, drafts and individual UI enums colocated", () => {
+    for (const path of [
+      "lib/action-state.ts",
+      "config/query-options.ts",
+      "config/enable-status-options.ts",
+      "draft/use-local-draft.ts",
+      "draft/LocalDraftPrompt.tsx",
+      "types/modal-type.ts",
+      "types/modal-type-name.ts",
+      "types/enable-status-name.ts",
+    ])
+      expect(existsSync(`src/components/admin/${path}`)).toBe(true);
+    for (const path of [
+      "action-state.ts",
+      "query-options.ts",
+      "enable-status-options.ts",
+      "modal-type.ts",
+      "local-draft.tsx",
+    ])
+      expect(existsSync(`src/components/admin/${path}`)).toBe(false);
+    for (const path of sourceFiles("src/components/admin")) {
+      const file = ts.createSourceFile(
+        path,
+        readFileSync(path, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+      );
+      const enums = file.statements.filter(ts.isEnumDeclaration);
+      if (enums.length) {
+        expect(path.startsWith("src/components/admin/types/")).toBe(true);
+        expect(enums).toHaveLength(1);
+      }
+    }
+  });
 
   it("keeps the shared observability request context transitively Edge-safe", () => {
     const path = "src/lib/observability/server/request-context.ts";

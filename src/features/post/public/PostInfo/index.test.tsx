@@ -31,7 +31,9 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
   ),
 }));
 
-import PostInfo, { Align, type PostInfoProps } from ".";
+import PostInfo from ".";
+import { Align } from "@/features/post/types/post-info.align";
+import { type PostInfoProps } from ".";
 
 describe("PostInfo", () => {
   let container: HTMLDivElement;

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { findCategory } from "../server";
+import { findCategory } from "@/features/category/server/category-queries";
 
 it("rejects an unknown persisted category status at the read boundary", async () => {
   const db = createMockDb();

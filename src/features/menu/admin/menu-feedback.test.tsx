@@ -20,7 +20,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { MenuType } from "../menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { useMenuActions } from "./menu-actions";
 
 let actions: ReturnType<typeof useMenuActions> | undefined;

@@ -1,4 +1,4 @@
-import { TagType } from "@/features/tag/tag-kind";
+import { TagType } from "@/features/tag/types/tag.type";
 import { sqliteTable, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { post } from "./content-post";
 import { tag } from "./content-tag";

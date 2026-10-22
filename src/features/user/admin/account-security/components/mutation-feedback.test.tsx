@@ -50,7 +50,7 @@ vi.mock("@/components/Dialog", () => ({
       </div>
     ) : null,
 }));
-vi.mock("@/auth-client", () => ({
+vi.mock("@/lib/auth/client", () => ({
   authClient: {
     $fetch: mocks.fetch,
     $store: { atoms: { listPasskeys: { get: mocks.passkeyState } } },

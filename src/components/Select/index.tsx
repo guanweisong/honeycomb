@@ -15,6 +15,7 @@ interface SelectProps
     Omit<BaseSelectProps, "onValueChange" | "value">,
     Pick<
       React.ComponentProps<typeof BaseSelect.SelectTrigger>,
+      | "size"
       | "ref"
       | "onBlur"
       | "id"
@@ -27,7 +28,6 @@ interface SelectProps
   options?: Option[];
   placeholder?: string;
   disabled?: boolean;
-  size?: "default" | "sm";
   className?: string;
 }
 

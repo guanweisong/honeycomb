@@ -1,7 +1,7 @@
 import { render } from "@react-email/components";
 import { describe, expect, it, vi } from "vitest";
-import { CommentStatus } from "../comment-status";
-import type { NotificationComment } from "../types";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import type { NotificationComment } from "@/features/comment/types/comment.notification";
 import { getCommentTarget } from "./comment-notification";
 import AdminCommentEmailMessage from "./templates/AdminCommentEmailMessage";
 import ReplyCommentEmailMessage from "./templates/ReplyCommentEmailMessage";

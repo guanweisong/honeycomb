@@ -12,9 +12,11 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
-import { PageInsertSchema, type PageInsert } from "@/features/page/schema";
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
+import type { PageRecord } from "@/features/page/types/page.read-model";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
@@ -28,10 +30,8 @@ import {
   getPageEditorId,
   toPageEditorFormValues,
 } from "../../transforms/page-editor-transforms";
-import {
-  useLocalDraft,
-  LocalDraftPrompt,
-} from "@/components/admin/local-draft";
+import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
+import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { can, Permission } from "@/lib/auth/permissions";
 import {
@@ -52,7 +52,7 @@ export function PageEditorPage() {
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   const [baseVersion, setBaseVersion] = useState<number>();
-  const [baseStatus, setBaseStatus] = useState<string>();
+  const [baseStatus, setBaseStatus] = useState<PageRecord["status"]>();
   const [problem, setProblem] = useState<"conflict" | "unknown" | null>(null);
   const [attempt, setAttempt] = useState<PageInsert | null>(null);
   const [preserved, setPreserved] = useState<PageDraft | null>(null);
@@ -159,7 +159,7 @@ export function PageEditorPage() {
     },
   });
   const finishCreation = (
-    result: { id: string; version: number },
+    result: Pick<PageRecord, "id" | "version">,
     input: PageInsert,
     submitted?: string,
   ) => {

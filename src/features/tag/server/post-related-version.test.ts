@@ -14,9 +14,10 @@ import { drizzle } from "drizzle-orm/libsql";
 import { describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { TagType } from "@/features/tag/tag-kind";
-import { destroyTags } from "../server";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { TagType } from "@/features/tag/types/tag.type";
+import { destroyTags } from "@/features/tag/server/tag-commands";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

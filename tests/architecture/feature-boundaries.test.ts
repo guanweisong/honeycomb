@@ -14,6 +14,7 @@ import ts from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
 import {
   isContractForbidden,
+  isReviewedLinkTableTypeDependency,
   localModulePath,
   moduleDependencies,
   runtimeDependencyViolations,
@@ -39,7 +40,7 @@ function featureUiDependencyViolations(path: string, source: string) {
       ({ specifier }) =>
         /^drizzle-/.test(specifier) ||
         /^src\/lib\/db(?:\/|$)/.test(localModulePath(path, specifier) ?? "") ||
-        (/^src\/features\/media\/shared\//.test(path) &&
+        (/^src\/features\/media\/admin\//.test(path) &&
           specifier.includes("lib/trpc/outputs")),
     )
     .map(({ specifier }) => `${path} -> ${specifier}`);
@@ -178,7 +179,7 @@ function mutationBoundaryViolations(path: string, source: string) {
 function isPureContract(path: string) {
   return (
     isAuthoritativeContract(path) ||
-    /\/rules\.ts$/.test(path) ||
+    /\/rules\/[^/]+\.ts$/.test(path) ||
     /^src\/features\/[^/]+\/(?:types|schema|rules|[^/]+-status|[^/]+-type|[^/]+-types|[^/]+-kind|[^/]+-template|user)\.ts$/.test(
       path,
     )
@@ -351,9 +352,12 @@ describe("feature-owned business boundaries", () => {
   it("keeps business schemas, types, rules and catalogs independent of runtime/UI/persistence modules", () => {
     const contracts = featureFiles.filter(isPureContract);
     expect(contracts.filter(isAuthoritativeContract).length).toBeGreaterThan(0);
+    expect(
+      contracts.filter((path) => path.includes("/rules/")).length,
+    ).toBeGreaterThan(0);
     const violations = contracts.flatMap((path) => {
       return [
-        ...(/\/(?:schema|types|rules)\.ts$/.test(path) &&
+        ...(/\/(?:schemas|types|rules)\/[^/]+\.ts$/.test(path) &&
         /\b(?:Headers|Request|Response|FormData|TRPCError)\b/.test(
           readFileSync(path, "utf8"),
         )
@@ -374,7 +378,7 @@ describe("feature-owned business boundaries", () => {
       'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
       'export { getCurrentUser } from "./server/user-queries";',
       'export * from "@/features/user/server";',
-      'export { MediaRecordSchema } from "@/features/media/types";',
+      'export { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";',
       'export type { CurrentUserRecord } from "./types";',
     ].join("\n");
     expect(
@@ -409,6 +413,94 @@ describe("feature-owned business boundaries", () => {
     },
   );
 
+  it("allows only the reviewed LinkRecord type-only table dependency", () => {
+    for (const specifier of [
+      "@/lib/db/schema/content-link",
+      "../../../lib/db/schema/content-link",
+    ]) {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import type { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(false);
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(true);
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.insert.ts",
+          `import type { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(true);
+    }
+    for (const target of [
+      "@/lib/db/schema",
+      "@/lib/db/db",
+      "@/features/link/server/link-operations",
+      "../../../lib/db/schema",
+    ]) {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import type { Value } from "${target}";`,
+          true,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it.each([
+    'export type { link } from "@/lib/db/schema/content-link";',
+    'import type { link } from "@/lib/db/schema/content-link"; export type { link };',
+    'import type { link } from "@/lib/db/schema/content-link"; export { type link as table };',
+    'export type * from "@/lib/db/schema/content-link";',
+    'import type * as tables from "@/lib/db/schema/content-link";',
+    'type Table = typeof import("@/lib/db/schema/content-link").link;',
+    'import type { link } from "@/lib/db/schema/content-link"; export type { link } from "@/lib/db/schema/content-link";',
+  ])(
+    "rejects table type outlets outside the reviewed named import: %s",
+    (source) => {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          source,
+          true,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("keeps the reviewed link table closure free of reverse feature dependencies", () => {
+    const pending = ["src/lib/db/schema/content-link.ts"];
+    const visited = new Set<string>();
+    const violations: string[] = [];
+    while (pending.length) {
+      const path = pending.pop();
+      if (!path || visited.has(path)) continue;
+      visited.add(path);
+      // Include type-only edges: runtime-only traversal cannot detect type cycles.
+      for (const dependency of moduleDependencies(
+        readFileSync(path, "utf8"),
+        path,
+      )) {
+        const target = resolveSourceModule(path, dependency.specifier);
+        if (!target) continue;
+        if (target.startsWith("src/features/"))
+          violations.push(`${path} -> ${target}`);
+        else pending.push(target);
+      }
+    }
+    expect(visited.size).toBeGreaterThan(1);
+    expect(violations).toEqual([]);
+  });
+
   it("rejects forbidden types on public contracts without contaminating helper runtime edges", () => {
     const source = 'import type { SQL } from "drizzle-orm";';
     expect(
@@ -424,9 +516,20 @@ describe("feature-owned business boundaries", () => {
     (specifier) => {
       const root = mkdtempSync(join(tmpdir(), "contract-boundary-"));
       try {
-        const entry = join(root, "rules.ts");
+        expect(
+          isPureContract("src/features/example/rules/example-rule.ts"),
+        ).toBe(true);
+        expect(
+          isContractForbidden(
+            "src/features/example/rules/example-rule.ts",
+            `import "${specifier}";`,
+          ),
+        ).toBe(true);
+        const rules = join(root, "rules");
+        mkdirSync(rules);
+        const entry = join(rules, "example-rule.ts");
         const helper = join(root, "helper.ts");
-        writeFileSync(entry, 'export { value } from "./helper";');
+        writeFileSync(entry, 'export { value } from "../helper";');
         writeFileSync(helper, `import "${specifier}"; export const value = 1;`);
         expect(
           runtimeDependencyViolations(entry, isContractForbidden),
@@ -449,7 +552,7 @@ describe("feature-owned business boundaries", () => {
           helper,
           `import "${specifier}"; export type Value = number;`,
         );
-        writeFileSync(entry, 'export type { Value } from "./helper";');
+        writeFileSync(entry, 'export type { Value } from "../helper";');
         expect(runtimeDependencyViolations(entry, isContractForbidden)).toEqual(
           [],
         );
@@ -465,8 +568,14 @@ describe("feature-owned business boundaries", () => {
         .filter((path) => !/\/server(?:\/|\.ts$)/.test(path))
         .flatMap((path) =>
           moduleDependencies(readFileSync(path, "utf8"), path)
-            .filter(({ specifier }) =>
-              /lib\/db\/schema|drizzle-zod/.test(specifier),
+            .filter(
+              (dependency) =>
+                /lib\/db\/schema|drizzle-zod/.test(dependency.specifier) &&
+                !isReviewedLinkTableTypeDependency(
+                  path,
+                  dependency,
+                  readFileSync(path, "utf8"),
+                ),
             )
             .map(({ specifier }) => `${path} -> ${specifier}`),
         ),
@@ -483,6 +592,17 @@ describe("feature-owned business boundaries", () => {
     ["src/features/post/shared/server.ts", "../../../lib/db/schema/post", true],
     ["src/features/post/admin/server.ts", "@/lib/db/schema/post", true],
     ["src/features/post/admin/server.ts", "drizzle-orm", true],
+    ["src/features/media/admin/media-query.ts", "@/lib/trpc/outputs", true],
+    [
+      "src/features/media/admin/components/MediaGrid/index.tsx",
+      "@/lib/trpc/outputs",
+      true,
+    ],
+    [
+      "src/features/media/admin/media-query.ts",
+      "@/features/media/types/media.record",
+      false,
+    ],
     ["src/features/post/admin/server.ts", "../types", false],
     ["src/features/post/public/server/query.ts", "../../types", false],
     [
@@ -504,6 +624,11 @@ describe("feature-owned business boundaries", () => {
   );
 
   it("keeps feature UI independent of ORM/database contracts", () => {
+    expect(
+      featureFiles.filter((path) =>
+        path.startsWith("src/features/media/admin/"),
+      ).length,
+    ).toBeGreaterThan(0);
     const violations = featureFiles.flatMap((path) =>
       featureUiDependencyViolations(path, readFileSync(path, "utf8")),
     );

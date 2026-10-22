@@ -12,7 +12,7 @@ vi.mock("@/components/DynamicForm/DynamicField", () => ({
   },
 }));
 
-import { PostType } from "@/features/post/post-type";
+import { PostType } from "@/features/post/types/post.type";
 import { PostTypeFields } from ".";
 
 describe("PostTypeFields", () => {

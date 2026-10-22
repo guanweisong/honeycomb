@@ -1,4 +1,4 @@
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import type { Context } from "@/lib/trpc/context";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

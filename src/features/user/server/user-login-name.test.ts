@@ -15,8 +15,11 @@ import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { UserLevel } from "@/features/user/user";
-import { UserInsertSchema, UserUpdateSchema } from "../schema";
+import { UserLevel } from "@/features/user/types/user.level";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+} from "@/features/user/schemas/user.write.schema";
 import { createUser, updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
 

@@ -2,7 +2,8 @@ import { normalizeEmail } from "@/lib/auth/email-policy";
 import "server-only";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
@@ -17,12 +18,13 @@ import {
   type CredentialStore,
 } from "@/lib/auth/credentials";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { assertUserLevelChange, isProtectedUser } from "../rules";
-import type {
-  UserCommandInput,
-  UserUpdateCommandInput,
-  UserListInput,
-} from "../types";
+import {
+  assertUserLevelChange,
+  isProtectedUser,
+} from "../rules/user-protection";
+import type { UserCommandInput } from "@/features/user/types/user.insert";
+import type { UserUpdateCommandInput } from "@/features/user/types/user.update";
+import type { UserListInput } from "@/features/user/types/user.list";
 
 export type UserRepository = ReturnType<typeof createUserRepository>;
 

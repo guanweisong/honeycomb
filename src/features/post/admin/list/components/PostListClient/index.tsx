@@ -2,22 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { runAdminMutation } from "@/components/admin/action-state";
+import { runAdminMutation } from "@/components/admin/lib/action-state";
 import { postListTableColumns } from "../../constants/post-list-table-columns";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
-import {
-  type PostDelete,
-  PostListQueryInput,
-  PostListQuerySchema,
-} from "@/features/post/schema";
+import type { PostDelete } from "@/features/post/types/post.delete";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import type { AdminPostListItem } from "@/features/post/types";
+import type { AdminPostListItem } from "@/features/post/types/post.read-model";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 

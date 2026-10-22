@@ -4,17 +4,17 @@ import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/use-post-list";
 import React, { JSX, useEffect, useRef, ViewTransition } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
-import TextDivider from "@/components/blog/TextDivider";
+import TextDivider from "@/features/post/public/components/PostList/TextDivider";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "@/lib/ui/utils";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
-import type { PublicPostListItem } from "@/features/post/types";
-import { PostType } from "@/features/post/post-type";
-import { PostListQueryInput } from "@/features/post/schema";
-import type { PublicPostListResult } from "@/features/post/types";
+import type { PublicPostListItem } from "@/features/post/types/post.read-model";
+import { PostType } from "@/features/post/types/post.type";
+import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 
 const PostTypeBgColor = Object.freeze({
   [PostType.ARTICLE]: "bg-green-600",

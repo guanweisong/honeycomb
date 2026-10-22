@@ -10,20 +10,20 @@ import {
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import {
-  PageListQuerySchema,
   PageInsertSchema,
-  PageUpdateSchema,
-  PageDeleteSchema,
   PageCreationResultInputSchema,
-} from "@/features/page/schema";
+} from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import { PageDeleteSchema } from "@/features/page/schemas/page.delete.schema";
 import {
   createPage,
   destroyPages,
   incrementPageViews,
   updatePage,
   getPageCreationResult,
-} from "@/features/page/server";
+} from "@/features/page/server/page-commands";
 import {
   listPages,
   listPageSummaries,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PostStatus } from "@/features/post/post-status";
-import { PostType } from "@/features/post/post-type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 import { normalizePostForm } from "./normalize-post-form";
 
 describe("normalize-post-form", () => {

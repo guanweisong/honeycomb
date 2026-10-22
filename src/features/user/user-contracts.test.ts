@@ -1,7 +1,9 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { type CurrentUser, UserLevel, UserStatus } from "./user";
+import { type CurrentUser } from "@/features/user/types/user.current";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 describe("user domain contract", () => {
   it("provides the minimal current-user contract required by shared UI", () => {

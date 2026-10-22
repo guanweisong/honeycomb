@@ -56,7 +56,9 @@ describe("PostEditorActions", () => {
   async function renderActions(props: {
     id?: string;
     loading?: boolean;
-    status?: string;
+    status?: NonNullable<
+      React.ComponentProps<typeof PostEditorActions>["status"]
+    >;
   }) {
     await act(async () => {
       root.render(
@@ -156,6 +158,7 @@ describe("PostEditorActions", () => {
     "does not grant update authority to creators for %s",
     async (status) => {
       grantedPermissions.add("post:create");
+      // @ts-expect-error UNKNOWN deliberately exercises the runtime authority guard.
       await renderActions({ id: "post-1", status });
       expect(container.querySelectorAll("button")).toHaveLength(0);
     },

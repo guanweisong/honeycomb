@@ -52,7 +52,7 @@ vi.mock("@/features/post/public/components/PostList", () => ({
     ),
 }));
 
-vi.mock("@/app/(blog)/components/NoData", () => ({
+vi.mock("@/app/(blog)/[locale]/list/[...slug]/_components/NoData", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));
@@ -60,8 +60,8 @@ vi.mock("@/app/(blog)/components/NoData", () => ({
 import List, { generateMetadata } from "./page";
 import { resolveListContext } from "./page.utils";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { TagListQuerySchema } from "@/features/tag/schema";
-import { MenuType } from "@/features/menu/menu-types";
+import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
 vi.mock("next/navigation", async (importOriginal) => ({

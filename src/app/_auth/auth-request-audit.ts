@@ -5,7 +5,7 @@ import {
   getAuthenticationProvider,
   getAuditableSessionEvent,
   isAuthenticationPath,
-} from "../../lib/auth/authentication-events";
+} from "./authentication-events";
 import type { LoginHistoryRecordInput } from "@/features/user/account-security/login-history";
 import { getDb } from "@/lib/db/db";
 import {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { PostType } from "@/features/post/post-type";
-import { PostStatus } from "@/features/post/post-status";
+import { PostType } from "@/features/post/types/post.type";
+import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
 

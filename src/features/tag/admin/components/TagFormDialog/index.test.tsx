@@ -39,7 +39,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import TagFormDialog, { type TagFormDialogProps } from ".";
 
 describe("TagFormDialog", () => {

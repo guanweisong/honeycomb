@@ -2,14 +2,12 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ModalType } from "@/components/admin/modal-type";
-import {
-  LinkInsertSchema,
-  LinkUpdateSchema,
-  type LinkInsert,
-  type LinkUpdate,
-} from "@/features/link/schema";
-import type { LinkRecord as LinkEntity } from "@/features/link/types";
+import { ModalType } from "@/components/admin/types/modal-type";
+import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
+import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
+import type { LinkInsert } from "@/features/link/types/link.insert";
+import type { LinkUpdate } from "@/features/link/types/link.update";
+import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   closeAdminDialog,
@@ -23,7 +21,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminTargetMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 export type LinkDialogState = AdminDialogState<LinkEntity>;
 

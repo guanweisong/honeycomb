@@ -9,9 +9,9 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { observeDbOperation } from "@/lib/observability/server";
-import { PostStatus } from "@/features/post/post-status";
-import { TagType } from "@/features/tag/tag-kind";
-import { UserStatus } from "@/features/user/user";
+import { PostStatus } from "@/features/post/types/post.status";
+import { TagType } from "@/features/tag/types/tag.type";
+import { UserStatus } from "@/features/user/types/user.status";
 import { can, Permission } from "@/lib/auth/permissions";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
@@ -21,20 +21,21 @@ import {
   sanitizePostTranslationInput,
   toPostTranslationRows,
 } from "./post-translations";
-import {
-  PostDeleteSchema,
-  PostInsertSchema,
-  PostUpdateSchema,
-} from "../schema";
+import { PostDeleteSchema } from "@/features/post/schemas/post.delete.schema";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 import type {
   PostInsert,
-  PostUpdate,
-  PostDelete,
   PostRelationPatch,
-} from "../schema";
+} from "@/features/post/types/post.insert";
+import type { PostUpdate } from "@/features/post/types/post.update";
+import type { PostDelete } from "@/features/post/types/post.delete";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
-import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";
+import {
+  getPostPublishStatus,
+  getPostWithdrawStatus,
+} from "../rules/post-publication";
 import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";

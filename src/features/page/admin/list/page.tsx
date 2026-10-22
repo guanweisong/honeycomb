@@ -9,16 +9,14 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import {
-  PageListQueryInput,
-  PageListQuerySchema,
-} from "@/features/page/schema";
+import type { PageListQueryInput } from "@/features/page/types/page.list-query";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
-import type { PageListItem as PageEntity } from "@/features/page/types";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
+import type { PageListItem as PageEntity } from "@/features/page/types/page.read-model";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
-import { runAdminMutation } from "@/components/admin/action-state";
+import { runAdminMutation } from "@/components/admin/lib/action-state";
 
 /**
  * 页面列表管理页面。

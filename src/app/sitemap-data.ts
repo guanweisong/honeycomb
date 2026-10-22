@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 
 import { getServerEnv } from "@/env/server";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { LogEvent } from "@/lib/observability/core/names";
 import { getLogger } from "@/lib/observability/server";
 import { SITEMAP_CACHE_TAG } from "@/lib/cache/public-cache-keys";

@@ -1,5 +1,6 @@
 export const processHeavyTests = [
   "tests/tooling/coverage-governance.test.ts",
+  "tests/tooling/coverage-sharding.test.ts",
   "tests/architecture/server-only-boundaries.test.ts",
   // ESLint creates a full TypeScript project: isolate these tooling contracts
   // from parallel coverage workers; each assertion keeps its own deadline.

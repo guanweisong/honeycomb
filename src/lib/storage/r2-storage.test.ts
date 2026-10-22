@@ -8,7 +8,7 @@ import { createSecurityHeaderOptions } from "@/lib/security/security-headers";
 import R2Storage from "./r2-storage";
 import { Readable } from "node:stream";
 import { tryAcquireMediaValidation } from "@/features/media/server/image-validation";
-import { registerMediaUpload } from "@/features/media/server";
+import { registerMediaUpload } from "@/features/media/server/media-upload";
 import { createUploadIntent } from "@/features/media/server/upload-intent";
 import {
   mediaRepositoryFixture,

@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { isValidElement, Suspense, type ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SettingViewModel } from "@/features/setting/types";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import type { SettingViewModel } from "@/features/setting/types/setting.record";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn<typeof import("next/headers").headers>(),

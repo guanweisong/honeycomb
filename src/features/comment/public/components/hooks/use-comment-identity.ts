@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CommentInsertInput } from "@/features/comment/schemas/comment.insert.schema";
+import type { CommentInsertInput } from "@/features/comment/types/comment.insert";
 import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 
 export type CommentIdentity = Pick<

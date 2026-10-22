@@ -1,10 +1,8 @@
 import { z } from "zod";
-import {
-  PostFieldsSchema,
-  PostInsertSchema,
-  type PostInsert,
-} from "@/features/post/schema";
-import { TagRecordSchema } from "@/features/tag/types";
+import { PostFieldsSchema } from "@/features/post/schemas/post.fields.schema";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
+import type { PostInsert } from "@/features/post/types/post.insert";
+import { TagRecordSchema } from "@/features/tag/schemas/tag.record.schema";
 
 const tagOptions = z.array(TagRecordSchema.pick({ id: true, name: true }));
 export const PostEditorSchema = PostFieldsSchema.partial().extend({

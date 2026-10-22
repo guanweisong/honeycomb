@@ -14,10 +14,11 @@ import { drizzle } from "drizzle-orm/libsql";
 import { describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { TagType } from "@/features/tag/tag-kind";
+import { TagType } from "@/features/tag/types/tag.type";
 import { createMediaRepository } from "@/features/media/server/media-repository";
-import { destroyMedia } from "@/features/media/server";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { destroyMedia } from "@/features/media/server/media-delete";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

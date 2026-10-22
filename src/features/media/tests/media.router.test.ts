@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { MediaDeleteSchema } from "../schema";
+import { MediaDeleteSchema } from "@/features/media/schemas/media.delete.schema";
 import { mediaRouter } from "../router";
 import {
   createAdminUser,
@@ -13,11 +13,11 @@ const service = vi.hoisted(() => ({
   confirm: vi.fn(),
   destroy: vi.fn(),
 }));
-vi.mock("../server", () => ({
+vi.mock("../server/media-upload", () => ({
   prepareMediaUpload: service.begin,
   registerMediaUpload: service.confirm,
-  destroyMedia: service.destroy,
 }));
+vi.mock("../server/media-delete", () => ({ destroyMedia: service.destroy }));
 vi.mock("@/lib/storage/r2-storage", () => ({ default: {} }));
 vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
   publicContentInvalidator: { invalidate: vi.fn() },

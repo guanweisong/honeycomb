@@ -2,7 +2,7 @@ import type {
   CommentListItem,
   CommentPreviewListItem,
   PublicCommentNode,
-} from "../types";
+} from "@/features/comment/types/comment.read-model";
 
 /** 管理端评论展示模型。 */
 export type AdminCommentViewModel = CommentListItem | CommentPreviewListItem;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { MenuType } from "@/features/menu/menu-types";
+import type { MenuType } from "@/features/menu/types/menu.type";
 import {
   buildMenuSaveInput,
   flattenMenuTree,

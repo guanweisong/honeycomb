@@ -12,13 +12,15 @@ import {
 import { Button } from "../ui/button";
 import LoadingState from "@/components/LoadingState";
 
-interface SheetProps {
+interface SheetProps extends Pick<
+  React.ComponentProps<typeof SheetContent>,
+  "side"
+> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: React.ReactNode;
   description?: React.ReactNode;
   children?: React.ReactNode;
-  side?: "top" | "right" | "bottom" | "left";
   showFooter?: boolean;
   confirmText?: string;
   cancelText?: string;

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { CommentStatus } from "@/features/comment/comment-status";
-import { PostStatus } from "@/features/post/post-status";
-import { PageStatus } from "@/features/page/page-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import {
   createComment,

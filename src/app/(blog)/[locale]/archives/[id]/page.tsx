@@ -1,10 +1,11 @@
 import React, { Suspense, ViewTransition } from "react";
-import PostInfo, { PostCommentCount } from "@/features/post/public/PostInfo";
+import PostInfo from "@/features/post/public/PostInfo";
+import { PostCommentCount } from "@/features/post/public/PostInfo";
 import Tags from "@/features/post/public/Tags";
-import Card from "@/components/blog/Card";
+import Card from "@/components/SectionCard";
 import { Link } from "@/lib/i18n/blog-navigation";
 import Comment from "@/features/comment/public/components/CommentClient";
-import PageTitle from "@/app/(blog)/components/PageTitle";
+import PageTitle from "@/app/(blog)/_components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
@@ -16,8 +17,8 @@ import {
   getPublicRandomPosts,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
-import { MenuType } from "@/features/menu/menu-types";
-import { PostType } from "@/features/post/post-type";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/features/media/public/RichText";
 import { PostViewTracker } from "@/features/post/public/PostViewTracker";
 import { serializeJsonLd } from "@/lib/security/serialize-json-ld";

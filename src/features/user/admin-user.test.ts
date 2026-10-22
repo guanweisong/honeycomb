@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { UserLevel, UserStatus } from "./user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 
 const mocks = vi.hoisted(() => ({ getSession: vi.fn() }));
 vi.mock("@/auth", () => ({ auth: { api: { getSession: mocks.getSession } } }));
-import { getAdminUser } from "./admin-user";
+import { getAdminUser } from "@/features/user/server/admin-user";
 
 const user = {
   id: "user-1",

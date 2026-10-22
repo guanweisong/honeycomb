@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { pageRouter } from "@/features/page/router";
 import * as schema from "@/lib/db/schema";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { PageTemplate } from "@/features/page/page-template";
-import { PageStatus } from "@/features/page/page-status";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import { PageStatus } from "@/features/page/types/page.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
   createAdminUser,

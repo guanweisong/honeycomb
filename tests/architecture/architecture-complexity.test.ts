@@ -22,7 +22,7 @@ function imports(source: string): string[] {
 }
 
 describe("架构复杂度治理", () => {
-  it("不保留无消费者 barrel、测试专用源码与 schema 转发文件", () => {
+  it("不保留无消费者 barrel 和测试专用源码", () => {
     const obsoleteFiles = [
       "src/app/(blog)/i18n/middleware.ts",
       "src/app/api/trpc/[trpc]/config.ts",
@@ -44,6 +44,9 @@ describe("架构复杂度治理", () => {
       "src/features/post/domain/index.ts",
       "src/features/user/domain/index.ts",
       "src/lib/db/index.ts",
+      "src/lib/db/query/select-all-columns.ts",
+      "src/lib/trpc/client/admin-query-client.ts",
+      "src/lib/auth/authentication-events.ts",
       "src/packages/trpc/typings.d.ts",
       ...[
         "comment",
@@ -61,30 +64,11 @@ describe("架构复杂度治理", () => {
       ),
       "src/lib/auth/admin-action-guard-types.ts",
       "src/lib/validation/i18n.schema.ts",
-      ...[
-        ["page", "insert"],
-        ["page", "update"],
-        ["post", "insert"],
-        ["post", "update"],
-        ["category", "insert"],
-        ["category", "update"],
-        ["comment", "update"],
-        ["user", "insert"],
-        ["user", "update"],
-        ["link", "insert"],
-        ["link", "update"],
-        ["menu", "update"],
-        ["setting", "update"],
-        ["tag", "insert"],
-        ["tag", "update"],
-        ["media", "insert"],
-      ].map(
-        ([feature, operation]) =>
-          `src/features/${feature}/schemas/${feature}.${operation}.schema.ts`,
-      ),
     ].filter((path) => existsSync(join(process.cwd(), path)));
 
     expect(obsoleteFiles).toEqual([]);
+    // schemas/ now owns real definitions. The feature-folder-structure gate
+    // rejects forwarding exports structurally instead of blacklisting these paths.
   });
 
   it("依赖清单只声明真实直接消费者并显式列出测试工具", () => {

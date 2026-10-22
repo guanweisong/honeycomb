@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { PageStatus } from "@/features/page/page-status";
-import { PageTemplate } from "@/features/page/page-template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { toPageInsertValues, toPageUpdateValues } from "./page-transforms";
 
 describe("page command transforms", () => {

@@ -1,12 +1,9 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import {
-  PostStatusName,
-  postStatusOptions,
-  PostTypeName,
-  postTypeOptions,
-} from "./options";
+import { PostStatusName } from "@/features/post/types/post.status-name";
+import { postStatusOptions, postTypeOptions } from "./options";
+import { PostTypeName } from "@/features/post/types/post.type-name";
 
 describe("post display options", () => {
   it("preserves post status labels and option order", () => {

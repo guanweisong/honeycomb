@@ -12,10 +12,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UserLevel, UserStatus } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { getSetting, updateSetting } from "@/features/setting/server";
+import { getSetting } from "@/features/setting/server/setting-queries";
+import { updateSetting } from "@/features/setting/server/setting-update";
 import type { Database } from "@/lib/db/db";
 
 vi.mock("@/lib/observability/server", () => ({

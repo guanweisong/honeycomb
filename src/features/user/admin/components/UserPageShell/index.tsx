@@ -4,11 +4,9 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import {
-  UserListQuerySchema,
-  type UserListQueryInput,
-} from "@/features/user/schema";
-import type { UserRecord as UserEntity } from "@/features/user/types";
+import { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
+import type { UserListQueryInput } from "@/features/user/types/user.list";
+import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import { Dialog } from "@/components/Dialog";
@@ -17,7 +15,7 @@ import { UserFormDialog } from "../UserFormDialog";
 import { useUserActions } from "@/features/user/admin/user-actions";
 import { userTableColumns } from "../../columns/user-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import {
   canDeleteUserResource,
   isUserResourceProtected,

@@ -4,14 +4,12 @@ import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { clientEnv } from "@/env/client";
 import { can, Permission } from "@/lib/auth/permissions";
-import { UserStatus } from "@/features/user/user";
+import { UserStatus } from "@/features/user/types/user.status";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
-import {
-  MediaRecordSchema,
-  type MediaRecord,
-  type MediaListInput,
-} from "../types";
+import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
+import type { MediaRecord } from "@/features/media/types/media.record";
+import type { MediaListInput } from "@/features/media/types/media.list";
 import type { UploadIntent } from "./upload-intent";
 import type { validateMediaImage } from "./image-validation";
 import { assertOrdinaryMediaSchema } from "./media-schema-readiness";

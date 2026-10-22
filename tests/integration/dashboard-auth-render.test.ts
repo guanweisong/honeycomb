@@ -56,7 +56,7 @@ it("shares one admin lookup between layout and template only within a server ren
             builder.onResolve(
               {
                 filter:
-                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/AdminClientShell|@\/components\/LoadingState)$/,
+                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/server\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/_components\/AdminClientShell|@\/components\/LoadingState)$/,
               },
               (args) => ({ path: args.path, namespace: "fixture" }),
             );
@@ -69,14 +69,14 @@ it("shares one admin lookup between layout and template only within a server ren
                   'export async function headers() { return new Headers({ "x-honeycomb-admin-pathname": "/admin/tag" }); }',
                 "next/navigation":
                   'export function redirect(path) { throw new Error("redirect:" + path); }',
-                "@/features/user/admin-user":
+                "@/features/user/server/admin-user":
                   'import { state } from "auth-fixture"; export async function getAdminUser() { state.calls++; return state.user; }',
                 "@/features/user/server/user-repository":
                   "export function createUserRepository() { return {}; }",
                 "@/lib/db/db": "export function getDb() { return {}; }",
                 "@/app/admin/AdminProviders":
                   "export function AdminProviders({ children }) { return children; }",
-                "./components/AdminClientShell":
+                "./_components/AdminClientShell":
                   "export function AdminClientShell({ user, children }) { return [user.id, children]; }",
                 "@/components/LoadingState":
                   "export default function LoadingState() { return null; }",

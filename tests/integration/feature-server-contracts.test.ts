@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { MenuType } from "@/features/menu/menu-types";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import * as schema from "@/lib/db/schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
@@ -12,15 +12,27 @@ vi.mock("@/lib/observability/server", () => ({
   ) => operation(),
 }));
 
-import { prepareMediaUpload, destroyMedia } from "@/features/media/server";
-import { createTag, destroyTags, updateTag } from "@/features/tag/server";
-import { createCategory, destroyCategories } from "@/features/category/server";
-import { createLink, destroyLinks } from "@/features/link/server";
-import { saveAllMenus } from "@/features/menu/server";
-import { createPage, destroyPages } from "@/features/page/server";
-import { updateSetting } from "@/features/setting/server";
-import { UserLevel, UserStatus } from "@/features/user/user";
-import { PageTemplate } from "@/features/page/page-template";
+import { prepareMediaUpload } from "@/features/media/server/media-upload";
+import { destroyMedia } from "@/features/media/server/media-delete";
+import {
+  createTag,
+  destroyTags,
+  updateTag,
+} from "@/features/tag/server/tag-commands";
+import {
+  createCategory,
+  destroyCategories,
+} from "@/features/category/server/category-commands";
+import {
+  createLink,
+  destroyLinks,
+} from "@/features/link/server/link-operations";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { createPage, destroyPages } from "@/features/page/server/page-commands";
+import { updateSetting } from "@/features/setting/server/setting-update";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 
 describe("feature persistence contracts", () => {
   const invalidator = () => ({

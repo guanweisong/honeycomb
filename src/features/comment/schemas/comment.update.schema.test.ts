@@ -1,7 +1,9 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
-import { CommentStatus } from "@/features/comment/comment-status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { CommentUpdateSchema } from "../schema";
+import { CommentUpdateSchema } from "@/features/comment/schemas/comment.update.schema";
 
 describe("CommentUpdateSchema", () => {
   it("拒绝没有任何可编辑字段的更新", () => {

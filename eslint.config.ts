@@ -13,22 +13,22 @@ export default defineConfig([
   },
   {
     // Reset pending navigation after the route commits.
-    files: ["src/app/(blog)/components/Menu/index.tsx"],
+    files: ["src/app/(blog)/_components/Menu/index.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
     // Hydrate browser-owned dashboard preferences after SSR.
-    files: ["src/app/admin/(dashboard)/components/AdminClientShell/index.tsx"],
+    files: ["src/app/admin/(dashboard)/_components/AdminClientShell/index.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
     // Hydrate and reconcile stored layout preferences without changing SSR markup.
-    files: ["src/app/admin/components/AdminLayout/index.tsx"],
+    files: ["src/app/admin/_components/AdminLayout/index.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
     // Synchronize controlled menu selection with a committed route.
-    files: ["src/app/admin/components/AdminNavigation/index.tsx"],
+    files: ["src/app/admin/_components/AdminNavigation/index.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
@@ -45,12 +45,12 @@ export default defineConfig([
   },
   {
     // Clear picker selection when an externally controlled session closes.
-    files: ["src/features/media/components/PhotoPicker/index.tsx"],
+    files: ["src/features/media/admin/components/PhotoPicker/index.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {
     // Accumulate key-scoped external query pages; do not drop prior pages on a new response.
-    files: ["src/features/media/shared/media-query.ts"],
+    files: ["src/features/media/admin/media-query.ts"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   {

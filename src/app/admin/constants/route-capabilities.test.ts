@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { sourceFiles } from "@tests/helpers/source-files";
-import { UserLevel } from "@/features/user/user";
+import { UserLevel } from "@/features/user/types/user.level";
 import {
   adminRouteCapabilities,
   canAccessAdminRoute,
