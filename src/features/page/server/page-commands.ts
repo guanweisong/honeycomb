@@ -19,9 +19,9 @@ import {
   groupPageTranslations,
   toPageTranslationRows,
 } from "./page-translations";
-import { PageInsertSchema } from "../schema/page.insert.schema";
-import { PageUpdateSchema } from "../schema/page.update.schema";
-import { PageDeleteSchema } from "../schema/page.delete.schema";
+import { PageInsertSchema } from "../schemas/page.insert.schema";
+import { PageUpdateSchema } from "../schemas/page.update.schema";
+import { PageDeleteSchema } from "../schemas/page.delete.schema";
 import type { PageInsert } from "../types/page.insert";
 import type { PageUpdate } from "../types/page.update";
 import type { PageDelete } from "../types/page.delete";

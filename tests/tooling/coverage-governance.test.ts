@@ -28,7 +28,7 @@ const protectedProductionPatterns = [
   "src/**/*service.ts",
   "src/features/**/server.ts",
   "src/features/**/server/**/*.ts",
-  "src/features/**/schema/**/*.ts",
+  "src/features/**/schemas/**/*.ts",
   "src/features/**/types/**/*.ts",
   "src/features/**/rules.ts",
   "src/features/**/admin/**/*.{ts,tsx}",

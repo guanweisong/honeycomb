@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { LinkListQuerySchema } from "@/features/link/schema/link.list.schema";
+import { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
 import type { LinkListQueryInput } from "@/features/link/types/link.list";
 import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { Button } from "@/components/ui/button";

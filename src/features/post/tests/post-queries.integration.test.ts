@@ -13,7 +13,7 @@ import {
   loadAdminPostListItems,
   loadPostRelations,
 } from "../server/post-relations";
-import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import { destroyPosts } from "../server/post-commands";
 import { PostStatus } from "@/features/post/types/post.status";
 import { TagType } from "@/features/tag/types/tag.type";

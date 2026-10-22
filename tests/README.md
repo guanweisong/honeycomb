@@ -90,11 +90,11 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 | `src/app/sw.ts`                            | E2E-only service worker 薄入口；`/en/offline` 由 Serwist route 显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
 | `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                                     |
 
-业务页面、hooks、Feature server/schema/types/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
+业务页面、hooks、Feature server/schemas/types/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
 全局门槛为 statements/lines 70%、functions 65%、branches 60%。权限、环境变量、脱敏、sitemap、缓存和观测核心采用逐文件 statements/lines 90%、branches 80% 门槛。启用顶层 `perFile: true` 会把全局阈值改为逐文件检查，因此本工程保留全局汇总门槛，并用“一文件一个精确 glob”设置关键门槛；mutation 测试把一个真实关键文件门槛提高到 101%，验证 Vitest 会以失败状态退出。
 
-这套口径必须与 `vitest.config.mts` 同步维护：`include` 固定覆盖 `src/**/*.{ts,tsx}`；`exclude` 只允许上表中的声明、测试、E2E-only 薄入口、上述既有 shadcn 基础组件目录和非生产测试资产。不得通过排除业务页面、feature hooks、server/schema/rules、权限或其他安全/基础设施核心来满足门槛。新增排除项必须同时给出可审查理由并更新 coverage governance 测试。
+这套口径必须与 `vitest.config.mts` 同步维护：`include` 固定覆盖 `src/**/*.{ts,tsx}`；`exclude` 只允许上表中的声明、测试、E2E-only 薄入口、上述既有 shadcn 基础组件目录和非生产测试资产。不得通过排除业务页面、feature hooks、server/schemas/rules、权限或其他安全/基础设施核心来满足门槛。新增排除项必须同时给出可审查理由并更新 coverage governance 测试。
 
 ### 历史覆盖率快照（2026-09-13）
 
@@ -157,4 +157,4 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 - 架构扫描仅复用按路径和完整源码内容匹配的依赖元数据，限制缓存容量并复制返回值；不缓存可变 AST、目录列表或模块解析结果。改写、删除 fixture 后仍须重新读取真实文件系统。
 - 参数表用对象或显式元组包裹数组参数，避免空数组被 Vitest 当作“零参数的一行”；规则测试直接检查真实规则结果，不用测试自身调用的 mock 作为业务覆盖证据。
 
-Feature schema/types 职责由 `tests/architecture/schema-type-ownership.test.ts` 动态检查：schema 不导出业务类型，types/ 内 DTO 文件只含类型声明及显式 type-only 依赖，schema 可依赖中立枚举/catalog但不得反向依赖派生 DTO。feature-folder-structure 门禁递归检查每个枚举独立文件与旧平铺入口禁用，domain-display 门禁继续隔离展示枚举。`tests/types/schema-output-contracts.ts` 随 `check-types` 编译，覆盖原 CleanZod 八个输出契约、真实 transform/default/partial 语义，以及 Category/Tag 原始输入与内部可选 id、评论 captcha 和登录契约的区别；它不是 Vitest 运行用例。
+Feature schemas/types 职责由 `tests/architecture/schema-type-ownership.test.ts` 动态检查：schema 不导出业务类型，types/ 内 DTO 文件只含类型声明及显式 type-only 依赖，schema 可依赖中立枚举/catalog但不得反向依赖派生 DTO。feature-folder-structure 门禁递归检查每个枚举独立文件与旧平铺入口禁用，domain-display 门禁继续隔离展示枚举。`tests/types/schema-output-contracts.ts` 随 `check-types` 编译，覆盖原 CleanZod 八个输出契约、真实 transform/default/partial 语义，以及 Category/Tag 原始输入与内部可选 id、评论 captcha 和登录契约的区别；它不是 Vitest 运行用例。

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
+} from "@/features/user/schemas/user.write.schema";
 
 const validUser = {
   name: "administrator",

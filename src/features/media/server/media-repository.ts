@@ -7,7 +7,7 @@ import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/types/user.status";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
-import { MediaRecordSchema } from "@/features/media/schema/media.record.schema";
+import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 import type { MediaRecord } from "@/features/media/types/media.record";
 import type { MediaListInput } from "@/features/media/types/media.list";
 import type { UploadIntent } from "./upload-intent";

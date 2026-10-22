@@ -17,3 +17,8 @@
 - [x] 3.4 检查规格与 diff，交付实际变更和验证报告。
 
 浏览器 E2E 未执行：当前 Playwright 可执行文件缺失，既有下载限制未绕过。development 66 项、production 1 项仅完成可发现性核验；不是通过结论。详细验证与完整导出映射见 docs/feature-folder-migration.md。
+
+## 4. 统一运行时契约目录命名
+
+- [x] 4.1 将 10 个现有 feature/schema/ 目录的 41 个文件迁为 schemas/，仅同步路径消费者、mock、门禁与当前文档，保留 types/、server/、lib/db/schema 和 .schema.ts。
+- [x] 4.2 核验源码与枚举等价，重跑类型、Lint、架构、完整非 E2E、覆盖率、进程门禁、构建与规格检查，披露 E2E 阻塞。

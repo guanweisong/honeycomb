@@ -5,7 +5,7 @@ Feature 根目录中的 types.ts、schema.ts、server.ts 混合了多个职责�
 ## 变更内容
 
 - 迁移现有类型到所属 feature 的 types/，按职责命名；所有 TypeScript 枚举一枚举一文件，包括展示枚举。
-- 迁移根 schema/server 到具名目录文件，保留已经合理拆分的实现，不建立 barrel、空目录或重复字段定义。
+- 迁移根 schemas/server 到具名目录文件，保留已经合理拆分的实现，不建立 barrel、空目录或重复字段定义。
 - 同步真实消费者、mock、架构门禁和工程说明，保留全部现有导出符号及运行时语义。
 
 ## 能力
@@ -22,4 +22,4 @@ Feature 根目录中的 types.ts、schema.ts、server.ts 混合了多个职责�
 
 ## 影响
 
-涉及全部 11 个 feature 及 app、lib、scripts、测试中的实际消费者。不改 URL、tRPC procedure、权限、数据库结构、输入输出、事务、缓存和副作用失败语义；不提交、推送、创建 PR 或部署。dashboard 不新增无用途的 types/schema。
+涉及全部 11 个 feature 及 app、lib、scripts、测试中的实际消费者。不改 URL、tRPC procedure、权限、数据库结构、输入输出、事务、缓存和副作用失败语义；验证后仅按授权推送现有分支，不创建 PR、合并或部署。dashboard 不新增无用途的 types/schemas。

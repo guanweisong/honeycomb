@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { MediaDeleteSchema } from "@/features/media/schema/media.delete.schema";
+import { MediaDeleteSchema } from "@/features/media/schemas/media.delete.schema";
 import { mediaRouter } from "../router";
 import {
   createAdminUser,

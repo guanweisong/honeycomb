@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
-import { PageListQuerySchema } from "@/features/page/schema/page.list-query.schema";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 
 const {
   cacheRegistrations,

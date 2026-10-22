@@ -12,7 +12,7 @@ import {
   notifyPublicSyncWarning,
   type AdminMutationFeedback,
 } from "@/components/admin/action-state";
-import { MenuSaveSnapshotSchema } from "@/features/menu/schema/menu.save-snapshot.schema";
+import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
 import { buildMenuSaveInput, type MenuEntityTree } from "./menu-transforms";
 

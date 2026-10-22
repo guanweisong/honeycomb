@@ -10,11 +10,11 @@ import {
 } from "@/lib/trpc/core";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { UserListQuerySchema } from "@/features/user/schema/user.list.schema";
+import { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
+} from "@/features/user/schemas/user.write.schema";
 import {
   createUser,
   destroyUsers,

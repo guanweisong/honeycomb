@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ModalType } from "@/components/admin/modal-type";
-import { LinkInsertSchema } from "@/features/link/schema/link.insert.schema";
-import { LinkUpdateSchema } from "@/features/link/schema/link.update.schema";
+import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
+import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 import type { LinkInsert } from "@/features/link/types/link.insert";
 import type { LinkUpdate } from "@/features/link/types/link.update";
 import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";

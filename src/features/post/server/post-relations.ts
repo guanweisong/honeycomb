@@ -25,7 +25,7 @@ import {
 import {
   AdminPostListItemSchema,
   PublicPostListItemSchema,
-} from "@/features/post/schema/post.read-model.schema";
+} from "@/features/post/schemas/post.read-model.schema";
 type PostRecord = typeof schema.post.$inferSelect;
 type PostTranslations =
   ReturnType<typeof groupPostTranslations> extends Map<string, infer Value>

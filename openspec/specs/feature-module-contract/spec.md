@@ -25,7 +25,7 @@
 
 ### Requirement: 模块依赖方向必须可自动验证
 
-app MUST 承担框架组合，feature MUST NOT 反向依赖 app；纯 schema/type/catalog/rules MUST NOT 加载数据库、UI、服务端认证或框架实现，server 函数 MAY 直接依赖 Drizzle 和 lib 技术能力。
+app MUST 承担框架组合，feature MUST NOT 反向依赖 app；纯 schemas/type/catalog/rules MUST NOT 加载数据库、UI、服务端认证或框架实现，server 函数 MAY 直接依赖 Drizzle 和 lib 技术能力。
 
 #### Scenario: 纯规则引入运行时依赖
 
@@ -39,7 +39,7 @@ app MUST 承担框架组合，feature MUST NOT 反向依赖 app；纯 schema/typ
 
 ### Requirement: Feature 职责使用具体目录入口
 
-Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责命名的 types/、schema/、server/；MUST NOT 保留旧平铺入口、兼容 barrel 或为无实际需求的模块创建空目录。已有职责清晰的子目录文件 SHALL 保持其所有权，不为目录对称拆散事务。
+Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责命名的 types/、schemas/、server/；MUST NOT 保留旧平铺入口、兼容 barrel 或为无实际需求的模块创建空目录。已有职责清晰的子目录文件 SHALL 保持其所有权，不为目录对称拆散事务。
 
 #### Scenario: 枚举按所属模块单独定义
 
@@ -54,4 +54,4 @@ Feature MUST 将已有根 types.ts、schema.ts、server.ts 迁入按真实职责
 #### Scenario: 无独立契约需求
 
 - **WHEN** dashboard 等模块的返回值可由真实操作与 transport 推导
-- **THEN** 系统 MUST NOT 为目录对称添加空 types/schema 或无用途模型
+- **THEN** 系统 MUST NOT 为目录对称添加空 types/schemas 或无用途模型

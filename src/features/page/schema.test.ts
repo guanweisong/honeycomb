@@ -1,8 +1,8 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
-import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import { PageTemplate } from "@/features/page/types/page.template";
 const fields = {
   title: { zh: "标题", en: "Title" },

@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { MediaRecordSchema } from "@/features/media/schema/media.record.schema";
+import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 import type { MediaRecord as MediaEntity } from "@/features/media/types/media.record";
 
 const { toastInfo, selectMediaRef, confirmRef } = vi.hoisted(() => ({

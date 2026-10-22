@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { UserUpdateSchema } from "@/features/user/schema/user.write.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.write.schema";
 import { createUserRepository } from "./user-repository";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";

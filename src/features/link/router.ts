@@ -16,9 +16,9 @@ import { Permission } from "@/lib/auth/permissions";
 
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 
-import { LinkListQuerySchema } from "@/features/link/schema/link.list.schema";
-import { LinkInsertSchema } from "@/features/link/schema/link.insert.schema";
-import { LinkUpdateSchema } from "@/features/link/schema/link.update.schema";
+import { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
+import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
+import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

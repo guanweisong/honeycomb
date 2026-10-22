@@ -8,7 +8,7 @@ import {
   toSettingRecord,
   patchSettingTranslationRows,
 } from "./setting-translations";
-import { SettingPatchSchema } from "../schema/setting.patch.schema";
+import { SettingPatchSchema } from "../schemas/setting.patch.schema";
 import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/types/user.status";
 import { ApplicationError } from "@/lib/errors/application-error";

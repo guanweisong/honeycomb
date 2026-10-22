@@ -11,7 +11,7 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schema/setting.admin-update.schema";
+import { SettingAdminUpdateSchema as SettingUpdateSchema } from "@/features/setting/schemas/setting.admin-update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

@@ -19,7 +19,7 @@ import { UserLevel } from "@/features/user/types/user.level";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
+} from "@/features/user/schemas/user.write.schema";
 import { createUser, updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
 

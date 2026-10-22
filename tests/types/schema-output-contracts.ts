@@ -1,14 +1,14 @@
 import type { z } from "zod";
-import type { LinkListQuerySchema } from "@/features/link/schema/link.list.schema";
+import type { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
 import type { LinkListQueryInput } from "@/features/link/types/link.list";
-import type { MediaListQuerySchema } from "@/features/media/schema/media.list.schema";
+import type { MediaListQuerySchema } from "@/features/media/schemas/media.list.schema";
 import type { MediaIndexInput } from "@/features/media/types/media.list";
-import type { PageListQuerySchema } from "@/features/page/schema/page.list-query.schema";
+import type { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import type { PageListQueryInput } from "@/features/page/types/page.list-query";
-import type { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
+import type { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
-import type { TagListQuerySchema } from "@/features/tag/schema/tag.list.schema";
-import type { TagInsertSchema } from "@/features/tag/schema/tag.insert.schema";
+import type { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
+import type { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
 import type { TagListQueryInput } from "@/features/tag/types/tag.list";
 import type {
   TagInsertInput,
@@ -17,13 +17,13 @@ import type {
 import type {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
-import type { UserListQuerySchema } from "@/features/user/schema/user.list.schema";
+} from "@/features/user/schemas/user.write.schema";
+import type { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
 import type { UserInsert } from "@/features/user/types/user.insert";
 import type { UserUpdate } from "@/features/user/types/user.update";
 import type { UserListQueryInput } from "@/features/user/types/user.list";
 import type { LoginValues } from "@/features/user/types/user.login";
-import type { CategoryInsertSchema } from "@/features/category/schema/category.insert.schema";
+import type { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
 import type {
   CategoryInsertInput,
   CategoryInsert,

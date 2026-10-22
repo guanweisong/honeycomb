@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { MenuSaveSnapshotSchema } from "@/features/menu/schema/menu.save-snapshot.schema";
-import { SettingAdminUpdateSchema } from "@/features/setting/schema/setting.admin-update.schema";
-import { SettingPatchSchema } from "@/features/setting/schema/setting.patch.schema";
+import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
+import { SettingAdminUpdateSchema } from "@/features/setting/schemas/setting.admin-update.schema";
+import { SettingPatchSchema } from "@/features/setting/schemas/setting.patch.schema";
 
 describe("site snapshot contracts", () => {
   it("requires explicit menu revision and rejects empty replacement", () => {

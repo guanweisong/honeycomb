@@ -10,7 +10,7 @@ import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import type { TagListQueryInput } from "@/features/tag/types/tag.list";
-import { TagListQuerySchema } from "@/features/tag/schema/tag.list.schema";
+import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 import TagFormDialog from "./components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";

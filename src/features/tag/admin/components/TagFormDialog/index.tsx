@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
 import { DynamicForm } from "@/components/DynamicForm";
-import { TagInsertSchema } from "@/features/tag/schema/tag.insert.schema";
-import { TagUpdateSchema } from "@/features/tag/schema/tag.update.schema";
+import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
+import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
 import { Dialog } from "@/components/Dialog";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";

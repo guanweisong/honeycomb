@@ -1,6 +1,6 @@
 import type { DataTableProps } from "@/components/DataTable";
 import type { z } from "zod";
-import type { CommentListQuerySchema } from "@/features/comment/schema/comment.list-query.schema";
+import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list-query.schema";
 type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

@@ -353,7 +353,7 @@ describe("feature-owned business boundaries", () => {
     expect(contracts.filter(isAuthoritativeContract).length).toBeGreaterThan(0);
     const violations = contracts.flatMap((path) => {
       return [
-        ...(/\/(?:schema|types)\/[^/]+\.ts$|\/rules\.ts$/.test(path) &&
+        ...(/\/(?:schemas|types)\/[^/]+\.ts$|\/rules\.ts$/.test(path) &&
         /\b(?:Headers|Request|Response|FormData|TRPCError)\b/.test(
           readFileSync(path, "utf8"),
         )
@@ -374,7 +374,7 @@ describe("feature-owned business boundaries", () => {
       'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
       'export { getCurrentUser } from "./server/user-queries";',
       'export * from "@/features/user/server";',
-      'export { MediaRecordSchema } from "@/features/media/schema";',
+      'export { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";',
       'export type { CurrentUserRecord } from "./types";',
     ].join("\n");
     expect(

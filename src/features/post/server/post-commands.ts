@@ -21,9 +21,9 @@ import {
   sanitizePostTranslationInput,
   toPostTranslationRows,
 } from "./post-translations";
-import { PostDeleteSchema } from "@/features/post/schema/post.delete.schema";
-import { PostInsertSchema } from "@/features/post/schema/post.insert.schema";
-import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import { PostDeleteSchema } from "@/features/post/schemas/post.delete.schema";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 import type {
   PostInsert,
   PostRelationPatch,

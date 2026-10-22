@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { CommentInsertSchema } from "@/features/comment/schema/comment.insert.schema";
+import { CommentInsertSchema } from "@/features/comment/schemas/comment.insert.schema";
 
 describe("CommentInsertSchema", () => {
   const validComment = {

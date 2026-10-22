@@ -9,7 +9,7 @@ import type {
   PostListResultSchema,
   PublicPostListItemSchema,
   PublicPostListResultSchema,
-} from "../schema/post.read-model.schema";
+} from "../schemas/post.read-model.schema";
 
 export type PostCategoryRecord = z.infer<typeof PostCategoryRecordSchema>;
 

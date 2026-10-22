@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { CategoryInsertSchema } from "../schema/category.insert.schema";
+import type { CategoryInsertSchema } from "../schemas/category.insert.schema";
 
 export type CategoryInsertInput = z.output<typeof CategoryInsertSchema>;
 

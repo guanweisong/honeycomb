@@ -1,5 +1,5 @@
 import "server-only";
-import { PublicPostListResultSchema } from "@/features/post/schema/post.read-model.schema";
+import { PublicPostListResultSchema } from "@/features/post/schemas/post.read-model.schema";
 import type { Database } from "@/lib/db/db";
 import {
   getCacheJSON,

@@ -159,6 +159,9 @@ describe("Feature schema/type ownership", () => {
   it("运行时schema不导出静态类型，内部辅助类型不受影响", () => {
     expect(schemaPaths.length).toBeGreaterThan(0);
     expect(
+      schemaPaths.filter((path) => path.includes("/schemas/")).length,
+    ).toBeGreaterThan(0);
+    expect(
       schemaPaths.flatMap((path) =>
         exportedTypes(sourceFile(path)).map(
           (name) => `${relative(featuresRoot, path)}:${name}`,
@@ -189,7 +192,7 @@ describe("Feature schema/type ownership", () => {
   });
 
   it("拒绝跨模块 DTO、展示枚举和显式扩展名依赖", () => {
-    const path = resolve(featuresRoot, "post/schema/post.insert.schema.ts");
+    const path = resolve(featuresRoot, "post/schemas/post.insert.schema.ts");
     expect(
       schemaTypeViolations(
         path,

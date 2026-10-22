@@ -10,13 +10,13 @@ import {
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { PageListQuerySchema } from "@/features/page/schema/page.list-query.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import {
   PageInsertSchema,
   PageCreationResultInputSchema,
-} from "@/features/page/schema/page.insert.schema";
-import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
-import { PageDeleteSchema } from "@/features/page/schema/page.delete.schema";
+} from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import { PageDeleteSchema } from "@/features/page/schemas/page.delete.schema";
 import {
   createPage,
   destroyPages,

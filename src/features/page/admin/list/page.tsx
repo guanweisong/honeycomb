@@ -10,7 +10,7 @@ import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { PageListQueryInput } from "@/features/page/types/page.list-query";
-import { PageListQuerySchema } from "@/features/page/schema/page.list-query.schema";
+import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
 import type { PageListItem as PageEntity } from "@/features/page/types/page.read-model";

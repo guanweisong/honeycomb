@@ -2,10 +2,10 @@
 
 import { describe, expect, it } from "vitest";
 
-import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { PageTemplate } from "@/features/page/types/page.template";
-import { PostDeleteSchema } from "@/features/post/schema/post.delete.schema";
-import { PostInsertSchema } from "@/features/post/schema/post.insert.schema";
+import { PostDeleteSchema } from "@/features/post/schemas/post.delete.schema";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 
 describe("content command enum schemas", () => {
   const post = {
@@ -50,7 +50,7 @@ describe("content command enum schemas", () => {
   });
 });
 
-import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 describe("atomic post input", () => {
   it("requires a durable creation token", () => {
     expect(PostInsertSchema.safeParse({ categoryId: "category" }).success).toBe(

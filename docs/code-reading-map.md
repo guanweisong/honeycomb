@@ -19,11 +19,11 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 版本化编辑与创建恢复
 
-文章、页面的 `create` 输入必须包含 `creationToken`；`update` 必须包含 `expectedVersion`，`destroy` 使用 `{ items: [{ id, expectedVersion }] }`，不再接受只有 ID 的删除批次。具体字段以各 feature 的 `schema/` 具名文件为准，不把表单类型当作持久化输入。
+文章、页面的 `create` 输入必须包含 `creationToken`；`update` 必须包含 `expectedVersion`，`destroy` 使用 `{ items: [{ id, expectedVersion }] }`，不再接受只有 ID 的删除批次。具体字段以各 feature 的 `schemas/` 具名文件为准，不把表单类型当作持久化输入。
 
 `post.creationResult` / `page.creationResult` 在当前账户与创建权限下按 token 查询，返回 `{ id, version }` 或 `null`，不是完整编辑快照或永久幂等回执。确认已有资源后重新读取详情；资源删除后查询不到不能证明请求从未成功，也不能据此自动重放未知结果。
 
-菜单后台读取 `menu.adminIndex` 的 `{ version, list, total }` 快照，`menu.saveAll` 提交 `{ expectedVersion, items }`；公开 `menu.index` 仍是公开菜单列表。设置从 `setting.index` 读取版本，`setting.update` 提交完整后台快照及 `expectedVersion`。实现入口为各 feature 的 `router.ts`、`schema/` 和 `server/` 具名实现；上线顺序见[迁移手册](database-migration-runbook.md)。
+菜单后台读取 `menu.adminIndex` 的 `{ version, list, total }` 快照，`menu.saveAll` 提交 `{ expectedVersion, items }`；公开 `menu.index` 仍是公开菜单列表。设置从 `setting.index` 读取版本，`setting.update` 提交完整后台快照及 `expectedVersion`。实现入口为各 feature 的 `router.ts`、`schemas/` 和 `server/` 具名实现；上线顺序见[迁移手册](database-migration-runbook.md)。
 
 ### 普通媒体上传与人工核对
 
@@ -40,7 +40,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
 
-文章查询与缓存解码共用 `src/features/post/schema/post.read-model.schema.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types/media.record.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
+文章查询与缓存解码共用 `src/features/post/schemas/post.read-model.schema.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types/media.record.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
 页面详情先确认公开状态再启动评论读取，并立即接管评论 Promise 的拒绝，保留原错误供消费者处理，不用空列表吞错。`comment-query-repository.ts` 在读取评论的同一条 SQL 中再次约束目标发布状态，以及文章/自定义目标的评论启用状态，不能仅依赖较早的预读；这不等于撤回已发送或已缓存的内容。
 
@@ -53,7 +53,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。
 4. 权限规则：`src/lib/auth/permissions.ts` 与 `authorize.ts`；服务端 API 仍是最终授权边界。
 
-后台邮箱规范化与碰撞检查位于 `src/features/user/schema/user.write.schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
+后台邮箱规范化与碰撞检查位于 `src/features/user/schemas/user.write.schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
 
 认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
 
@@ -78,15 +78,15 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ## 改动放哪里
 
-| 要改什么                           | 先去哪里                                      |
-| ---------------------------------- | --------------------------------------------- |
-| 输入校验与稳定业务类型             | 所属 feature 的 `schema/` / `types/` 具名文件 |
-| 查询、事务、写入和副作用顺序       | 所属 feature 的 `server/` 具名实现            |
-| 可独立测试的状态不变量             | 所属 feature 的 `rules.ts` 或具名纯规则       |
-| 业务枚举、显示选项、专用组件       | 所属 feature 的纯目录、`admin` / `public`     |
-| 通用 UI 与编辑器                   | `src/components`                              |
-| 数据库、认证、缓存、存储、可观测性 | `src/lib` 对应技术目录                        |
-| 路由、HTTP、根 tRPC 和框架组合     | `src/app`                                     |
+| 要改什么                           | 先去哪里                                       |
+| ---------------------------------- | ---------------------------------------------- |
+| 输入校验与稳定业务类型             | 所属 feature 的 `schemas/` / `types/` 具名文件 |
+| 查询、事务、写入和副作用顺序       | 所属 feature 的 `server/` 具名实现             |
+| 可独立测试的状态不变量             | 所属 feature 的 `rules.ts` 或具名纯规则        |
+| 业务枚举、显示选项、专用组件       | 所属 feature 的纯目录、`admin` / `public`      |
+| 通用 UI 与编辑器                   | `src/components`                               |
+| 数据库、认证、缓存、存储、可观测性 | `src/lib` 对应技术目录                         |
+| 路由、HTTP、根 tRPC 和框架组合     | `src/app`                                      |
 
 ## 如何防止边界退化
 

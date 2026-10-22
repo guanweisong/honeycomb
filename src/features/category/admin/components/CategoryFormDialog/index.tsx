@@ -9,8 +9,8 @@ import { renderCategoryTitleByDepth } from "@/features/category/admin/category-t
 import { toast } from "sonner";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 import { DynamicForm } from "@/components/DynamicForm";
-import { CategoryInsertSchema } from "@/features/category/schema/category.insert.schema";
-import { CategoryUpdateSchema } from "@/features/category/schema/category.update.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   runAdminMutation,

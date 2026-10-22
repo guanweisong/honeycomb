@@ -1,4 +1,4 @@
-import type { LinkListQuerySchema } from "@/features/link/schema/link.list.schema";
+import type { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
 import type { z } from "zod";
 import type { PaginationInput } from "@/lib/validation/pagination";
 

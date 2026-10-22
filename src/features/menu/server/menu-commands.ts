@@ -12,7 +12,7 @@ import { ApplicationError } from "@/lib/errors/application-error";
 import { MenuType } from "../types/menu.type";
 import type { MenuInput } from "../types/menu.write";
 import type { MenuSaveSnapshot } from "../types/menu.save-snapshot";
-import { MenuSaveSnapshotSchema } from "../schema/menu.save-snapshot.schema";
+import { MenuSaveSnapshotSchema } from "../schemas/menu.save-snapshot.schema";
 import { readMenuChunks } from "./menu-queries";
 
 // Insert budgets count every bound column, including generated timestamps.

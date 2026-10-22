@@ -16,9 +16,9 @@ import { Permission } from "@/lib/auth/permissions";
 
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 
-import { TagListQuerySchema } from "@/features/tag/schema/tag.list.schema";
-import { TagInsertSchema } from "@/features/tag/schema/tag.insert.schema";
-import { TagUpdateSchema } from "@/features/tag/schema/tag.update.schema";
+import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
+import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
+import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

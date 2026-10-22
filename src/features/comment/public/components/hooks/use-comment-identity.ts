@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { CommentInsertInput } from "@/features/comment/types/comment.insert";
-import { CommentInsertBaseSchema } from "@/features/comment/schema/comment.insert.schema";
+import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 
 export type CommentIdentity = Pick<
   CommentInsertInput,

@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { PublicCommentSchema } from "../schema/comment.public.schema";
-import type { CommentInsertSchema } from "../schema/comment.insert.schema";
+import type { PublicCommentSchema } from "../schemas/comment.public.schema";
+import type { CommentInsertSchema } from "../schemas/comment.insert.schema";
 
 export type PublicCommentInput = z.output<typeof PublicCommentSchema>;
 

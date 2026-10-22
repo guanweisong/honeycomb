@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import { UserListQuerySchema } from "@/features/user/schema/user.list.schema";
+import { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
 import type { UserListQueryInput } from "@/features/user/types/user.list";
 import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 import { Button } from "@/components/ui/button";

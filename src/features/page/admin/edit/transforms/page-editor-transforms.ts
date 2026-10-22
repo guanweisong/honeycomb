@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { PageFieldsSchema } from "@/features/page/schema/page.fields.schema";
+import { PageFieldsSchema } from "@/features/page/schemas/page.fields.schema";
 import { PageTemplate } from "@/features/page/types/page.template";
 
 type PageEditorFormValues = z.infer<typeof PageFieldsSchema>;

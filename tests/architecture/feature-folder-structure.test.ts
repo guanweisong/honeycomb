@@ -32,12 +32,15 @@ describe("feature responsibility folders", () => {
   it("does not restore flat contract/server entries or compatibility barrels", () => {
     expect(features.length).toBeGreaterThan(0);
     for (const { name } of features)
-      for (const entry of ["types.ts", "schema.ts", "server.ts"])
+      for (const entry of ["types.ts", "schema.ts", "server.ts", "schema"])
         expect(existsSync(`src/features/${name}/${entry}`)).toBe(false);
     const contracts = files.filter((path) =>
-      /\/(?:types|schema)\/[^/]+\.ts$/.test(path),
+      /\/(?:types|schemas)\/[^/]+\.ts$/.test(path),
     );
     expect(contracts.length).toBeGreaterThan(0);
+    expect(
+      contracts.filter((path) => path.includes("/schemas/")).length,
+    ).toBeGreaterThan(0);
     expect(contracts.filter((path) => path.endsWith("/index.ts"))).toEqual([]);
     expect(
       contracts.flatMap((path) =>

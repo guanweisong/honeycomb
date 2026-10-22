@@ -18,10 +18,10 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { CategoryDeleteSchema } from "@/features/category/schema/category.delete.schema";
-import { CategoryListQuerySchema } from "@/features/category/schema/category.list.schema";
-import { CategoryInsertSchema } from "@/features/category/schema/category.insert.schema";
-import { CategoryUpdateSchema } from "@/features/category/schema/category.update.schema";
+import { CategoryDeleteSchema } from "@/features/category/schemas/category.delete.schema";
+import { CategoryListQuerySchema } from "@/features/category/schemas/category.list.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
+import { CategoryUpdateSchema } from "@/features/category/schemas/category.update.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

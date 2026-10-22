@@ -3,8 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { PageInsertSchema } from "@/features/page/schema/page.insert.schema";
-import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import type { PageInsert } from "@/features/page/types/page.insert";
 import type { PageUpdate } from "@/features/page/types/page.update";
 import { PageStatus } from "@/features/page/types/page.status";

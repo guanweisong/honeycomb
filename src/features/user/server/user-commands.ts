@@ -14,7 +14,7 @@ import type { UserRepository } from "./user-repository";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
+} from "@/features/user/schemas/user.write.schema";
 
 /** 创建用户及凭据。 */
 export function createUser(

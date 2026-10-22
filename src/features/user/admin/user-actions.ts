@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   UserInsertSchema,
   UserUpdateSchema,
-} from "@/features/user/schema/user.write.schema";
+} from "@/features/user/schemas/user.write.schema";
 import type { UserInsert } from "@/features/user/types/user.insert";
 import type { UserUpdate } from "@/features/user/types/user.update";
 import type { UserRecord as UserEntity } from "@/features/user/types/user.record";

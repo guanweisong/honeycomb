@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { SettingAdminUpdateSchema } from "@/features/setting/schema/setting.admin-update.schema";
+import { SettingAdminUpdateSchema } from "@/features/setting/schemas/setting.admin-update.schema";
 import type { SettingRecord } from "@/features/setting/types/setting.record";
 
 export type SettingFormValues = z.infer<typeof SettingAdminUpdateSchema>;

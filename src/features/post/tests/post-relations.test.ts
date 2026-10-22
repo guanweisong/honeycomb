@@ -5,7 +5,7 @@ import { loadPostRelations } from "../server/post-relations";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
-import { PostWithRelationsSchema } from "@/features/post/schema/post.read-model.schema";
+import { PostWithRelationsSchema } from "@/features/post/schemas/post.read-model.schema";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: vi.fn((_name, _operation, callback) => callback()),

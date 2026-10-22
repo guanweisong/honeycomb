@@ -5,7 +5,7 @@ import { ModalType } from "@/components/admin/modal-type";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import type { UserRecord } from "@/features/user/types/user.record";
-import { UserUpdateSchema } from "@/features/user/schema/user.write.schema";
+import { UserUpdateSchema } from "@/features/user/schemas/user.write.schema";
 import { submitUserUpdate } from "../../user-actions";
 import { UserFormDialog } from ".";
 

@@ -13,7 +13,7 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
 import type { PostDelete } from "@/features/post/types/post.delete";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
-import { PostListQuerySchema } from "@/features/post/schema/post.list-query.schema";
+import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import type { AdminPostListItem } from "@/features/post/types/post.read-model";
 import { Permission } from "@/lib/auth/permissions";

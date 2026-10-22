@@ -14,7 +14,7 @@ import {
 
 import { Permission } from "@/lib/auth/permissions";
 
-import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schema/menu.save-snapshot.schema";
+import { MenuSaveSnapshotSchema as MenuUpdateSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 

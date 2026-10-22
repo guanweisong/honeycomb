@@ -5,10 +5,10 @@ import {
   createTRPCRouter,
   mapApplicationError,
 } from "@/lib/trpc/core";
-import { MediaListQuerySchema } from "@/features/media/schema/media.list.schema";
-import { MediaDeleteSchema } from "@/features/media/schema/media.delete.schema";
-import { MediaRegisterUploadSchema } from "@/features/media/schema/media.upload.schema";
-import { MediaUploadIntentInputSchema } from "@/features/media/schema/media.upload.schema";
+import { MediaListQuerySchema } from "@/features/media/schemas/media.list.schema";
+import { MediaDeleteSchema } from "@/features/media/schemas/media.delete.schema";
+import { MediaRegisterUploadSchema } from "@/features/media/schemas/media.upload.schema";
+import { MediaUploadIntentInputSchema } from "@/features/media/schemas/media.upload.schema";
 import {
   prepareMediaUpload,
   registerMediaUpload,

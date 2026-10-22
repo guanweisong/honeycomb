@@ -1,8 +1,8 @@
 import ts from "typescript";
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PublicCommentBaseSchema } from "@/features/comment/schema/comment.public.schema";
-import { CommentInsertBaseSchema } from "@/features/comment/schema/comment.insert.schema";
+import { PublicCommentBaseSchema } from "@/features/comment/schemas/comment.public.schema";
+import { CommentInsertBaseSchema } from "@/features/comment/schemas/comment.insert.schema";
 import { sourceFile } from "@tests/helpers/source-files";
 
 describe("唯一事实源架构门禁", () => {

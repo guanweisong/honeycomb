@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CategoryListQuerySchema } from "@/features/category/schema/category.list.schema";
+import { CategoryListQuerySchema } from "@/features/category/schemas/category.list.schema";
 import type { CategoryListInput } from "@/features/category/types/category.list";
 import {
   apiPaginationDefaults,

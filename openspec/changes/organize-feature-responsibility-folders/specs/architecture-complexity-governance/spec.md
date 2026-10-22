@@ -7,7 +7,7 @@ Feature 内部消费者 MUST 直接引用所属 Feature 的权威写入 schema�
 #### Scenario: Feature 消费者使用写入 schema
 
 - **WHEN** Feature 路由、组件或测试需要其写入 schema
-- **THEN** 消费者 MUST 从所属 Feature 的 `schema/` 中具体权威定义文件 导入，且不得依赖纯转发的中间文件
+- **THEN** 消费者 MUST 从所属 Feature 的 `schemas/` 中具体权威定义文件 导入，且不得依赖纯转发的中间文件
 
 #### Scenario: 语义不同的模型同名
 

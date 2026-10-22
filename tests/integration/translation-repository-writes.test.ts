@@ -33,11 +33,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 
 import { PageTemplate } from "@/features/page/types/page.template";
-import { PageUpdateSchema } from "@/features/page/schema/page.update.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PostStatus } from "@/features/post/types/post.status";
 import { randomUUID } from "node:crypto";
-import { PostUpdateSchema } from "@/features/post/schema/post.update.schema";
+import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
 

@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
-import { MediaUploadIntentInputSchema } from "../schema/media.upload.schema";
+import { MediaUploadIntentInputSchema } from "../schemas/media.upload.schema";
 import { MEDIA_MAX_BYTES } from "../types/media.upload-policy";
 import type { MediaUploadIntentInput } from "../types/media.upload";
 import type { MediaPersistence } from "./media-repository";

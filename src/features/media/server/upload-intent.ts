@@ -3,7 +3,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { getAuthEnv } from "@/env/server";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { MediaUploadIntentInputSchema } from "@/features/media/schema/media.upload.schema";
+import { MediaUploadIntentInputSchema } from "@/features/media/schemas/media.upload.schema";
 import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
 
 const DOMAIN = "honeycomb:media-upload-intent:v1\0";

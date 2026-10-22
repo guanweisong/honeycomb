@@ -1,6 +1,6 @@
 import { PostType } from "@/features/post/types/post.type";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
-import { PostWithRelationsSchema } from "@/features/post/schema/post.read-model.schema";
+import { PostWithRelationsSchema } from "@/features/post/schemas/post.read-model.schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { postRouter } from "@/features/post/router";
