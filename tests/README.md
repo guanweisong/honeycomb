@@ -160,3 +160,5 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 - 参数表用对象或显式元组包裹数组参数，避免空数组被 Vitest 当作“零参数的一行”；规则测试直接检查真实规则结果，不用测试自身调用的 mock 作为业务覆盖证据。
 
 Feature schemas/types 职责由 `tests/architecture/schema-type-ownership.test.ts` 动态检查：schema 不导出业务类型，types/ 内 DTO 文件只含类型声明及显式 type-only 依赖，schema 可依赖中立枚举/catalog但不得反向依赖派生 DTO。feature-folder-structure 门禁递归检查每个枚举独立文件与旧平铺入口禁用，domain-display 门禁继续隔离展示枚举。`tests/types/schema-output-contracts.ts` 随 `check-types` 编译，覆盖原 CleanZod 八个输出契约、真实 transform/default/partial 语义，以及 Category/Tag 原始输入与内部可选 id、评论 captcha 和登录契约的区别；它不是 Vitest 运行用例。
+
+组件目录迁移同时核对测试体、参数、hooks、SVG 与 RSC/client 边界；component-ownership 门禁覆盖具体归属，既有 library/feature 边界仍追踪真实依赖，不能用文件存在断言替代行为回归。当前映射见[组件迁移记录](../docs/component-ownership-migration.md)。

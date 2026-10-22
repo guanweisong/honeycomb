@@ -6,7 +6,7 @@ import {
   userStatusOptions,
 } from "@/features/user/admin/options";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
-import { formatAdminDateTime } from "@/components/admin/date-time";
+import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
 
 export function getUserStatusPresentation(status: string) {
   const label =

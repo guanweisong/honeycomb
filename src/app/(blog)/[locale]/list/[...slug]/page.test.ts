@@ -52,7 +52,7 @@ vi.mock("@/features/post/public/components/PostList", () => ({
     ),
 }));
 
-vi.mock("@/app/(blog)/components/NoData", () => ({
+vi.mock("@/app/(blog)/[locale]/list/[...slug]/_components/NoData", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));

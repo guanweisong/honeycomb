@@ -4,7 +4,7 @@ import Image from "next/image";
 import useInfiniteQueryPostList from "@/features/post/public/use-post-list";
 import React, { JSX, useEffect, useRef, ViewTransition } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
-import TextDivider from "@/components/blog/TextDivider";
+import TextDivider from "@/features/post/public/components/PostList/TextDivider";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";

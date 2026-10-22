@@ -4,6 +4,7 @@
 
 ```text
 src/
+  app/<route>/_components/ # 路由私有 UI，不移动 page/layout 等框架入口
   app/_trpc/router.ts       # 根业务 router 组合
   app/_trpc/server.ts       # 服务端 caller
   features/<feature>/

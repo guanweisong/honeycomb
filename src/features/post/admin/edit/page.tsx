@@ -3,7 +3,7 @@
 import { LocalDraftPrompt } from "@/components/admin/local-draft";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import PhotoPickerModal from "@/features/media/components/PhotoPicker/index";
+import PhotoPickerModal from "@/features/media/admin/components/PhotoPicker/index";
 import dynamic from "next/dynamic";
 import { Form } from "@/components/ui/form";
 import {
@@ -20,7 +20,7 @@ import LoadingState from "@/components/LoadingState";
 
 const MediaPageShell = dynamic(
   () =>
-    import("@/features/media/shared/MediaPageShell").then(
+    import("@/features/media/admin/components/MediaPageShell").then(
       (module) => module.MediaPageShell,
     ),
   { loading: () => <LoadingState variant="region" label="正在加载媒体库…" /> },

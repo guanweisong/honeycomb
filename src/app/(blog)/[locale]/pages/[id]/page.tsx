@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import PostInfo from "@/features/post/public/PostInfo";
 import { PostCommentCount } from "@/features/post/public/PostInfo";
 import Comment from "@/features/comment/public/components/CommentClient";
-import PageTitle from "@/app/(blog)/components/PageTitle";
+import PageTitle from "@/app/(blog)/_components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
 import {

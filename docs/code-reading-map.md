@@ -72,7 +72,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 - 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
+- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/_components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 
@@ -91,3 +91,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 ## 如何防止边界退化
 
 不要重新引入 `src/packages`、中央 contracts、人工分层或无职责 wrapper。架构测试应阻止 feature 反向依赖 app、lib 运行时加载业务操作及浏览器/Edge 越界；同时继续覆盖权限、公开输出、持久化校验、缓存失败语义和类型唯一事实源。文档描述职责，最终验证结论以本轮实际命令输出为准。
+
+## 组件归属
+
+路由私有组件位于各路由家族的 _components；业务 UI 留在 feature 的 admin/public，通用 SectionCard、MultiLangText 位于 components。媒体后台选择、动作与查询归 media/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。具体映射和验证见[组件归属迁移记录](component-ownership-migration.md)，两套 Provider 与 PostInfo 保持原位。

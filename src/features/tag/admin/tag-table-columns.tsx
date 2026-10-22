@@ -1,7 +1,7 @@
-import MultiLangText from "@/components/admin/MultiLangText";
+import MultiLangText from "@/components/MultiLangText";
 import { ColumnDef } from "@tanstack/react-table";
 import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
-import { formatAdminDateTime } from "@/components/admin/date-time";
+import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
 
 /**
  * 标签列表的表格列定义。

@@ -55,7 +55,7 @@ vi.mock("../MultiTag", () => ({
     React.createElement("div", { "data-testid": "multi-tag" }, title),
 }));
 
-vi.mock("../../../../../media/components/PhotoPickerItem", () => ({
+vi.mock("../../../../../media/admin/components/PhotoPickerItem", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "photo-picker" }, title),
 }));

@@ -284,9 +284,11 @@ describe("technical library and browser dependency boundaries", () => {
     );
     expect(violations).toEqual([]);
     expect(existsSync("src/features/category/admin")).toBe(true);
-    expect(existsSync("src/features/media/components/PhotoPicker")).toBe(true);
+    expect(existsSync("src/features/media/admin/components/PhotoPicker")).toBe(
+      true,
+    );
     expect(
-      existsSync("src/features/media/components/EditorMediaProvider"),
+      existsSync("src/features/media/admin/components/EditorMediaProvider"),
     ).toBe(true);
   });
 

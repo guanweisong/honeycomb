@@ -87,7 +87,7 @@ vi.mock("@/features/post/public/Tags", () => ({
   default: () => React.createElement("div", { "data-testid": "tags" }),
 }));
 
-vi.mock("@/components/blog/Card", () => ({
+vi.mock("@/components/SectionCard", () => ({
   default: ({
     children,
     title,

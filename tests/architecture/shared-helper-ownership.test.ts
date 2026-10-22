@@ -11,7 +11,8 @@ const read = (path: string) => readFileSync(path, "utf8");
 
 describe("shared helper ownership", () => {
   it("derives the picker cover from media, not post", () => {
-    const path = "src/features/media/components/PhotoPickerItem/index.tsx";
+    const path =
+      "src/features/media/admin/components/PhotoPickerItem/index.tsx";
     const source = read(path);
     expect(moduleDependencies(source, path)).toContainEqual({
       specifier: "@/features/media/types/media.record",
@@ -29,7 +30,7 @@ describe("shared helper ownership", () => {
     ],
     [
       "src/components/Menu/components/MenuTitle/index.tsx",
-      "src/app/admin/components/AdminNavigation/NavigationItem.tsx",
+      "src/app/admin/_components/AdminNavigation/NavigationItem.tsx",
     ],
   ])("replaces %s with its direct owned path", (previous, current) => {
     expect(existsSync(previous)).toBe(false);
@@ -55,9 +56,11 @@ describe("shared helper ownership", () => {
 
   it("uses only a type import for the MenuItem contract", () => {
     expect(
-      existsSync("src/app/admin/components/AdminNavigation/NavigationItem.tsx"),
+      existsSync(
+        "src/app/admin/_components/AdminNavigation/NavigationItem.tsx",
+      ),
     ).toBe(true);
-    const path = "src/app/admin/components/AdminNavigation/NavigationItem.tsx";
+    const path = "src/app/admin/_components/AdminNavigation/NavigationItem.tsx";
     expect(moduleDependencies(read(path), path)).toContainEqual({
       specifier: "./index",
       typeOnly: true,

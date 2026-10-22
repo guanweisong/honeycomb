@@ -68,7 +68,7 @@ vi.mock("@marsidev/react-turnstile", () => ({
     ),
 }));
 
-vi.mock("@/components/blog/Card", () => ({
+vi.mock("@/components/SectionCard", () => ({
   default: ({
     title,
     children,

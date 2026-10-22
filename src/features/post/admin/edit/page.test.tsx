@@ -83,7 +83,7 @@ vi.mock("@/components/Sheet", () => ({
   ),
 }));
 vi.mock("sonner", () => ({ toast: { info: vi.fn() } }));
-vi.mock("@/features/media/shared/MediaPageShell", () => {
+vi.mock("@/features/media/admin/components/MediaPageShell", () => {
   state.mediaModuleLoads += 1;
   return {
     MediaPageShell: ({

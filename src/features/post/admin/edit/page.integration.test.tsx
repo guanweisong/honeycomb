@@ -75,10 +75,10 @@ vi.mock("./components/PostTypeFields", () => ({
 vi.mock("./components/PostSidebarFields", () => ({
   PostSidebarFields: () => null,
 }));
-vi.mock("@/features/media/components/PhotoPicker/index", () => ({
+vi.mock("@/features/media/admin/components/PhotoPicker/index", () => ({
   default: () => null,
 }));
-vi.mock("@/features/media/shared/MediaPageShell", () => ({
+vi.mock("@/features/media/admin/components/MediaPageShell", () => ({
   MediaPageShell: () => null,
 }));
 vi.mock("../../../category/admin/components/CategoryFormDialog", () => ({

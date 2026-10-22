@@ -20,6 +20,10 @@ app、features、components、lib 的区别是框架组合、业务、通用交�
 
 根组合与跨 feature 规则见 [feature-business-boundaries](../openspec/specs/feature-business-boundaries/spec.md)；技术依赖及现有认证会话窄例外见 [package-layer-architecture](../openspec/specs/package-layer-architecture/spec.md) 的“技术依赖不加载业务运行时”。该例外的完整适用条件只在规范维护，不在每份 Skill 重写。
 
+## 组件所有权
+
+路由私有组件、业务 UI 与通用组件不合成一个公共库；按真实消费者决定所有者，目录名称本身不决定 RSC/client 边界。具体迁移约束见[组件归属规范](../openspec/changes/refine-component-ownership/specs/component-ownership/spec.md)，逐文件记录见[迁移说明](component-ownership-migration.md)。
+
 ## 用行为证明精简安全
 
 删掉一层不能证明行为不变。评审应沿实际数据流检查入口授权、数据库提交和后续副作用，尤其区分“写入失败”与“已提交、同步降级”。公开字段必须检查实际序列化结果，类型裁剪不等于数据裁剪。各行为的规范入口见[规则索引](../.codex/skills/frontend-structure/references/architecture.md)，权限解释见[权限矩阵](permission-matrix.md)。

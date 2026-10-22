@@ -5,7 +5,7 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
-import Card from "@/components/blog/Card";
+import Card from "@/components/SectionCard";
 import LoadingState from "@/components/LoadingState";
 import type { MenuType } from "@/features/menu/types/menu.type";
 import type {

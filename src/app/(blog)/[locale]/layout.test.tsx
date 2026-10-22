@@ -2,10 +2,10 @@ import { isValidElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Toaster } from "@/components/ui/sonner";
 
-vi.mock("@/app/(blog)/components/Header", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/components/Footer", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/components/BackToTop", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/components/ThemeProvider", () => ({
+vi.mock("@/app/(blog)/_components/Header", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/_components/Footer", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/_components/BackToTop", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/_components/ThemeProvider", () => ({
   default: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/app/lib/server/public-queries", () => ({

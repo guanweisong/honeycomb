@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import MultiLangText from "@/components/admin/MultiLangText";
+import MultiLangText from "@/components/MultiLangText";
 import { Badge } from "@/components/ui/badge";
 import {
   pageStatusOptions,
@@ -8,8 +8,8 @@ import {
 import type { PageListItem as PageEntity } from "@/features/page/types/page.read-model";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
-import { formatAdminDateTime } from "@/components/admin/date-time";
-import { publicationStatusToneMap } from "@/components/admin/publication-status-tone";
+import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
+import { publicationStatusToneMap } from "@/features/page/admin/publication-status-tone";
 
 /**
  * 页面列表的表格列定义。

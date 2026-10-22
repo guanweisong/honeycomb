@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/features/media/shared/MediaPageShell/index.tsx",
+    sourcePath: "src/features/media/admin/components/MediaPageShell/index.tsx",
     actions: [
       {
         id: "media.upload",
@@ -28,7 +28,7 @@ export const mediaActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    sourcePath: "src/features/media/shared/MediaGrid/index.tsx",
+    sourcePath: "src/features/media/admin/components/MediaGrid/index.tsx",
     actions: [
       {
         id: "media.delete",

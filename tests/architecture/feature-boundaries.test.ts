@@ -39,7 +39,7 @@ function featureUiDependencyViolations(path: string, source: string) {
       ({ specifier }) =>
         /^drizzle-/.test(specifier) ||
         /^src\/lib\/db(?:\/|$)/.test(localModulePath(path, specifier) ?? "") ||
-        (/^src\/features\/media\/shared\//.test(path) &&
+        (/^src\/features\/media\/admin\//.test(path) &&
           specifier.includes("lib/trpc/outputs")),
     )
     .map(({ specifier }) => `${path} -> ${specifier}`);
@@ -497,6 +497,17 @@ describe("feature-owned business boundaries", () => {
     ["src/features/post/shared/server.ts", "../../../lib/db/schema/post", true],
     ["src/features/post/admin/server.ts", "@/lib/db/schema/post", true],
     ["src/features/post/admin/server.ts", "drizzle-orm", true],
+    ["src/features/media/admin/media-query.ts", "@/lib/trpc/outputs", true],
+    [
+      "src/features/media/admin/components/MediaGrid/index.tsx",
+      "@/lib/trpc/outputs",
+      true,
+    ],
+    [
+      "src/features/media/admin/media-query.ts",
+      "@/features/media/types/media.record",
+      false,
+    ],
     ["src/features/post/admin/server.ts", "../types", false],
     ["src/features/post/public/server/query.ts", "../../types", false],
     [
@@ -518,6 +529,11 @@ describe("feature-owned business boundaries", () => {
   );
 
   it("keeps feature UI independent of ORM/database contracts", () => {
+    expect(
+      featureFiles.filter((path) =>
+        path.startsWith("src/features/media/admin/"),
+      ).length,
+    ).toBeGreaterThan(0);
     const violations = featureFiles.flatMap((path) =>
       featureUiDependencyViolations(path, readFileSync(path, "utf8")),
     );

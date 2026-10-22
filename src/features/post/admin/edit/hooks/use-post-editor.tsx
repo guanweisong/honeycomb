@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { PhotoPickerItemProps } from "../../../../media/components/PhotoPickerItem";
+import type { PhotoPickerItemProps } from "../../../../media/admin/components/PhotoPickerItem";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 import type { PostInsert } from "@/features/post/types/post.insert";
