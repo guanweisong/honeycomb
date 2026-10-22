@@ -41,8 +41,8 @@ const SessionPanel = ({ userId }: { userId?: string }) => {
     },
     staleTime: 0,
   });
-  const sessions = sessionsQuery.data ?? [];
-  const isLoading = sessionsQuery.isPending && !sessionsQuery.data;
+  const sessions = sessionsQuery.data;
+  const isLoading = sessionsQuery.isPending;
 
   useEffect(() => {
     if (sessionsQuery.error) toast.error("登录会话加载失败，请稍后重试");
@@ -78,7 +78,7 @@ const SessionPanel = ({ userId }: { userId?: string }) => {
           type="button"
           variant="outline"
           size="sm"
-          disabled={isRevoking || sessions.length < 2}
+          disabled={isRevoking || !sessions || sessions.length < 2}
           onClick={() => setIsRevokeDialogOpen(true)}
         >
           退出其他设备
@@ -90,7 +90,21 @@ const SessionPanel = ({ userId }: { userId?: string }) => {
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : sessions.length === 0 ? (
+      ) : sessionsQuery.error && !sessions ? (
+        <div className="space-y-3">
+          <p role="alert" className="text-sm text-destructive">
+            登录会话加载失败，请稍后重试。
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={sessionsQuery.isFetching}
+            onClick={() => void sessionsQuery.refetch()}
+          >
+            重新加载
+          </Button>
+        </div>
+      ) : !sessions?.length ? (
         <p className="text-sm text-muted-foreground">暂无有效登录会话。</p>
       ) : (
         <ul className="space-y-3">

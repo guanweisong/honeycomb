@@ -122,4 +122,97 @@ describe("SessionSettings", () => {
       container.querySelectorAll('[data-slot="skeleton"]').length,
     ).toBeGreaterThan(0);
   });
+  it("distinguishes first-load failure and retries the read", async () => {
+    mocks.fetch.mockResolvedValue({
+      data: null,
+      error: { message: "offline" },
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(SessionSettings),
+        ),
+      ),
+    );
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState(["account-security", "sessions", "user-1"])
+            ?.status,
+        ).toBe("error"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "登录会话加载失败",
+    );
+    expect(container.textContent).not.toContain("暂无有效登录会话");
+    mocks.fetch.mockResolvedValue({ data: [], error: null });
+    const retry = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "重新加载",
+    );
+    expect(retry).toBeDefined();
+    await act(async () => retry?.click());
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState(["account-security", "sessions", "user-1"])
+            ?.status,
+        ).toBe("success"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.textContent).toContain("暂无有效登录会话");
+    client.clear();
+  });
+
+  it("retains cached data on background refresh failure", async () => {
+    mocks.fetch.mockResolvedValue({
+      data: null,
+      error: { message: "offline" },
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    client.setQueryData(
+      ["account-security", "sessions", "user-1"],
+      [
+        {
+          id: "session-cached",
+          createdAt: new Date("2026-01-01"),
+          expiresAt: new Date("2026-02-01"),
+          userAgent: "Macintosh",
+          ipAddress: "127.0.0.1",
+        },
+      ],
+    );
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(SessionSettings),
+        ),
+      ),
+    );
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState(["account-security", "sessions", "user-1"])
+            ?.status,
+        ).toBe("error"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(container.textContent).toContain("Mac 设备");
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    client.clear();
+  });
 });

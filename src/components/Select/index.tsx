@@ -15,7 +15,12 @@ interface SelectProps
     Omit<BaseSelectProps, "onValueChange" | "value">,
     Pick<
       React.ComponentProps<typeof BaseSelect.SelectTrigger>,
-      "id" | "aria-describedby" | "aria-invalid" | "aria-labelledby"
+      | "ref"
+      | "onBlur"
+      | "id"
+      | "aria-describedby"
+      | "aria-invalid"
+      | "aria-labelledby"
     > {
   value?: string;
   onChange?: (value: string) => void;
@@ -34,15 +39,24 @@ export function Select({
   disabled,
   size = "default",
   className,
+  ref,
+  onBlur,
   id,
   "aria-describedby": describedBy,
   "aria-invalid": invalid,
   "aria-labelledby": labelledBy,
-  ...props
+  ...rootProps
 }: SelectProps) {
   return (
-    <BaseSelect.Select value={value} onValueChange={onChange} {...props}>
+    <BaseSelect.Select
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+      {...rootProps}
+    >
       <BaseSelect.SelectTrigger
+        ref={ref}
+        onBlur={onBlur}
         id={id}
         aria-describedby={describedBy}
         aria-invalid={invalid}

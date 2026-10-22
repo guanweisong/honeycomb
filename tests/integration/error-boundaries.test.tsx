@@ -15,14 +15,14 @@ describe("error boundary reporting", () => {
       const container = document.createElement("div");
       const root = createRoot(container);
       const error = new Error("synthetic boundary error");
-      const reset = vi.fn();
+      const retry = vi.fn();
       await act(async () =>
-        root.render(<Boundary error={error} reset={reset} />),
+        root.render(<Boundary error={error} retry={retry} />),
       );
       expect(sentry.captureException).toHaveBeenCalledWith(error);
       sentry.captureException.mockClear();
       await act(async () =>
-        root.render(<Boundary error={error} reset={reset} />),
+        root.render(<Boundary error={error} retry={retry} />),
       );
       expect(sentry.captureException).not.toHaveBeenCalled();
       await act(async () => root.unmount());

@@ -11,6 +11,8 @@ import {
 } from "@tests/helpers/test-utils";
 import { PostStatus } from "@/features/post/post-status";
 import { EnableStatus } from "@/lib/validation/enable-status";
+import * as schema from "@/lib/db/schema";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
 import * as commandRepositories from "@/features/comment/server/comment-command-repository";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
@@ -33,6 +35,9 @@ vi.mock("@/lib/security/validate-captcha", () => ({
 vi.mock("@/features/comment/notifications/comment-email", () => ({
   sendCommentEmail: vi.fn().mockResolvedValue(undefined),
 }));
+
+import { validateCaptcha } from "@/lib/security/validate-captcha";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 const mockDb = createMockDb();
 
@@ -134,8 +139,12 @@ describe("Comment Router", () => {
         postId: TEST_IDS.ID_1,
         parentId: null,
         status: CommentStatus.PUBLISH,
-        createdAt: new Date(),
-      };
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: null,
+        site: null,
+        pageId: null,
+        customId: null,
+      } satisfies typeof schema.comment.$inferSelect;
 
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -155,13 +164,51 @@ describe("Comment Router", () => {
       // 模拟获取已创建评论及关联数据的第二次查询。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([newComment]);
+      mockDb.where.mockResolvedValueOnce([
+        { ...newComment, post: { id: TEST_IDS.ID_1 }, page: null },
+      ]);
 
       // 模拟站点设置查询。
       mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce([
-        { id: "1", key: "comment_notify", value: "true" },
+      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.where.mockReturnValueOnce(mockDb);
+      mockDb.limit.mockResolvedValueOnce([
+        {
+          id: TEST_IDS.ID_2,
+          singletonKey: 1,
+          version: 0,
+          siteRecordNo: null,
+          siteRecordUrl: null,
+          createdAt: null,
+          updatedAt: null,
+        } satisfies typeof schema.setting.$inferSelect,
       ]);
+      // Comment and setting reads run concurrently; each then loads its translations.
+      mockDb.where.mockResolvedValueOnce([
+        { locale: MultiLangEnum.En, title: "Post" },
+        { locale: MultiLangEnum.Zh, title: "文章" },
+      ] satisfies Pick<
+        typeof schema.postTranslation.$inferSelect,
+        "locale" | "title"
+      >[]);
+      mockDb.where.mockResolvedValueOnce([
+        {
+          settingId: TEST_IDS.ID_2,
+          locale: MultiLangEnum.En,
+          siteName: "Test site",
+          siteSubName: null,
+          siteSignature: null,
+          siteCopyright: null,
+        },
+        {
+          settingId: TEST_IDS.ID_2,
+          locale: MultiLangEnum.Zh,
+          siteName: "测试站点",
+          siteSubName: null,
+          siteSignature: null,
+          siteCopyright: null,
+        },
+      ] satisfies (typeof schema.settingTranslation.$inferSelect)[]);
 
       const context = createMockContext(null, mockDb);
       context.header.set("x-forwarded-for", "203.0.113.10, 10.0.0.1");
@@ -176,6 +223,15 @@ describe("Comment Router", () => {
         postId: TEST_IDS.ID_1,
       });
 
+      expect(validateCaptcha).toHaveBeenCalledWith("valid-captcha");
+      expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith("ADMIN_NOTICE", {
+        setting: { siteName: { en: "Test site", zh: "测试站点" } },
+        currentComment: {
+          ...newComment,
+          post: { id: TEST_IDS.ID_1, title: { en: "Post", zh: "文章" } },
+          page: null,
+        },
+      });
       expect(result).toBeDefined();
       expect(result).not.toHaveProperty("email");
       expect(result).not.toHaveProperty("ip");

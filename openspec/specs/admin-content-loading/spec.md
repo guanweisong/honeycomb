@@ -31,12 +31,14 @@ admin dashboard SHALL 在目标 RSC 尚未返回时保留当前正文，不得�
 
 ### Requirement: Admin 菜单使用自适应路由预取
 
-admin 菜单 SHALL 使用 Link 的 `auto` 预取策略。启用 Partial Prefetching 后，Next.js MUST 为可见链接预取目标 App Shell，并根据路由的静态或动态属性决定完整或部分预取；菜单 MUST NOT 强制完整预取认证后才可见的私有动态数据。身份与权限相关内容 MUST 继续由请求时的服务端边界保护。
+admin 菜单 SHALL 使用 Link 的 `auto` 预取策略。启用 Partial Prefetching 后，Next.js MUST 为可见链接预取目标路由共享的 App Shell，即可预渲染的静态内容及不依赖 URL 的缓存内容；不得沿用未启用该功能时按静态/动态路由区分完整预取与最近 loading 边界的规则。菜单 MUST NOT 强制完整预取认证后才可见的私有动态数据。身份与权限相关内容 MUST 继续由请求时的服务端边界保护。
 
 #### Scenario: 渲染后台菜单
 
 - **WHEN** admin dashboard 渲染用户可访问的菜单项
-- **THEN** Next.js 为可见目标预取共享 App Shell，对静态路由执行完整预取，对动态路由最多预取到最近的 loading 边界；身份与权限相关内容继续由请求时的服务端边界保护
+- **THEN** Next.js 为可见目标预取共享 App Shell，依赖 params/searchParams 的内容在导航后从 Suspense 边界流式补齐；身份与权限相关内容继续由请求时的服务端边界保护
+
+该行为对应项目安装的 Next.js 16.4，参见 [Partial Prefetching 官方说明](https://nextjs.org/docs/app/guides/adopting-partial-prefetching)。预取不等于绕过认证，也不代表所有私有内容都不会进入经授权会话的 App Shell。
 
 ### Requirement: 已访问动态路由复用客户端 RSC
 

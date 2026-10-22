@@ -229,11 +229,20 @@ describe("Page Router", () => {
   });
 
   describe("detail procedure", () => {
-    it("allows guest callers to read adminDetail", async () => {
+    it("allows guest callers to read only published adminDetail", async () => {
       mockDb.query.page.findFirst.mockResolvedValueOnce({
-        id: TEST_IDS.ID_1,
-        status: PageStatus.DRAFT,
-        template: PageTemplate.DEFAULT,
+        ...({
+          id: TEST_IDS.ID_1,
+          authorId: TEST_IDS.ID_2,
+          version: 0,
+          views: 0,
+          createdAt: null,
+          updatedAt: null,
+          creationToken: null,
+          creationInputHash: null,
+          status: PageStatus.PUBLISHED,
+          template: PageTemplate.DEFAULT,
+        } satisfies typeof schema.page.$inferSelect),
         author: null,
         translations: [
           {
@@ -261,6 +270,11 @@ describe("Page Router", () => {
       const result = await caller.adminDetail({ id: TEST_IDS.ID_1 });
 
       expect(result?.id).toBe(TEST_IDS.ID_1);
+      expect(result?.status).toBe(PageStatus.PUBLISHED);
+      const where = mockDb.query.page.findFirst.mock.calls[0]?.[0].where;
+      const query = new SQLiteSyncDialect().sqlToQuery(where);
+      expect(query.sql).toContain('"page"."status" = ?');
+      expect(query.params).toEqual([TEST_IDS.ID_1, PageStatus.PUBLISHED]);
     });
   });
 

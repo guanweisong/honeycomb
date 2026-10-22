@@ -7,6 +7,16 @@ import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
 import type { PostDetailResult as PostDetailViewModel } from "@/features/post/types";
 
+import type { trpc } from "@/lib/trpc/client/trpc";
+
+type CreatePostMutation = ReturnType<
+  typeof trpc.post.create.useMutation
+>["mutateAsync"];
+type UpdatePostMutation = ReturnType<
+  typeof trpc.post.update.useMutation
+>["mutateAsync"];
+type SavedPost = Awaited<ReturnType<UpdatePostMutation>>;
+
 type EditorDetail = Pick<
   PostDetailViewModel,
   "id" | "categoryId" | "coverId" | "type"
@@ -15,8 +25,8 @@ type EditorDetail = Pick<
 
 const mocks = vi.hoisted(() => ({
   userId: "draft-user",
-  create: vi.fn(),
-  update: vi.fn(),
+  create: vi.fn<CreatePostMutation>(),
+  update: vi.fn<UpdatePostMutation>(),
   refetch: vi.fn(),
   creationResult: vi.fn(),
   push: vi.fn(),
@@ -106,8 +116,16 @@ describe("usePostEditor submission outcomes and validation", () => {
     mocks.detail = undefined;
     mocks.queryError = null;
     mocks.creationResult.mockResolvedValue({ isSuccess: true, data: null });
-    mocks.create.mockResolvedValue({ id: postId, version: 1 });
-    mocks.update.mockResolvedValue({ id: postId, version: 1 });
+    mocks.create.mockResolvedValue({
+      id: postId,
+      version: 1,
+      publicSync: "completed",
+    });
+    mocks.update.mockResolvedValue({
+      id: postId,
+      version: 1,
+      publicSync: "completed",
+    });
     mocks.refetch.mockResolvedValue({});
     editor = undefined;
     container = document.createElement("div");
@@ -149,8 +167,7 @@ describe("usePostEditor submission outcomes and validation", () => {
           type: PostType.ARTICLE,
         };
       }
-      let resolveMutation:
-        ((value: { id: string; version: number }) => void) | undefined;
+      let resolveMutation: ((value: SavedPost) => void) | undefined;
       const mutation = action === "create" ? mocks.create : mocks.update;
       mutation.mockImplementation(
         () =>
@@ -180,7 +197,11 @@ describe("usePostEditor submission outcomes and validation", () => {
       await expect(duplicate).resolves.toBe(false);
 
       await act(async () => {
-        requireDefined(resolveMutation)({ id: postId, version: 1 });
+        requireDefined(resolveMutation)({
+          id: postId,
+          version: 1,
+          publicSync: "completed",
+        });
         await first;
       });
       await expect(first).resolves.toBe(true);
@@ -244,7 +265,11 @@ describe("usePostEditor submission outcomes and validation", () => {
     async (action, status) => {
       if (action === "update") mocks.detail = originalDetail;
       const mutation = action === "create" ? mocks.create : mocks.update;
-      mutation.mockResolvedValue({ id: postId, publicSync: "degraded" });
+      mutation.mockResolvedValue({
+        id: postId,
+        version: 1,
+        publicSync: "degraded",
+      });
       await renderEditor(action === "update" ? postId : null);
 
       await act(async () => {
@@ -276,7 +301,7 @@ describe("usePostEditor submission outcomes and validation", () => {
     "does not report a failed save after %s synchronization when admin refetch %s",
     async (publicSync, refreshFailure) => {
       mocks.detail = originalDetail;
-      mocks.update.mockResolvedValue({ id: postId, publicSync });
+      mocks.update.mockResolvedValue({ id: postId, version: 1, publicSync });
       if (refreshFailure === "throws") {
         mocks.refetch.mockImplementation(() => {
           throw new Error("refresh failed");
@@ -304,6 +329,21 @@ describe("usePostEditor submission outcomes and validation", () => {
       if (publicSync === "degraded")
         expect(mocks.warning).toHaveBeenCalledOnce();
       else expect(mocks.success).toHaveBeenCalledWith("更新成功");
+      mocks.update.mockResolvedValue({ id: postId, version: 2, publicSync });
+      await act(async () => {
+        requireDefined(editor).form.setValue(
+          "title",
+          { zh: "再次保存" },
+          { shouldDirty: true },
+        );
+        await expect(
+          requireDefined(editor).submit(PostStatus.DRAFT, "update"),
+        ).resolves.toBe(true);
+      });
+      expect(mocks.update).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ expectedVersion: 1 }),
+      );
     },
   );
 

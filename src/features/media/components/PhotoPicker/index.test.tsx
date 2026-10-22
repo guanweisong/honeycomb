@@ -8,8 +8,9 @@ import {
   type MediaRecord as MediaEntity,
 } from "@/features/media/types";
 
-const { toastInfo, selectMediaRef } = vi.hoisted(() => ({
+const { toastInfo, selectMediaRef, confirmRef } = vi.hoisted(() => ({
   toastInfo: vi.fn(),
+  confirmRef: { current: undefined as (() => void) | undefined },
   selectMediaRef: {
     current: undefined as
       ((media: MediaEntity | undefined) => void) | undefined,
@@ -26,17 +27,20 @@ vi.mock("@/components/Sheet", () => ({
     onConfirm: () => void;
     onOpenChange: (open: boolean) => void;
     children: React.ReactNode;
-  }) => (
-    <div data-open={props.open}>
-      <button type="button" onClick={props.onConfirm}>
-        confirm
-      </button>
-      <button type="button" onClick={() => props.onOpenChange(false)}>
-        cancel
-      </button>
-      {props.children}
-    </div>
-  ),
+  }) => {
+    confirmRef.current = props.onConfirm;
+    return (
+      <div data-open={props.open}>
+        <button type="button" onClick={props.onConfirm}>
+          confirm
+        </button>
+        <button type="button" onClick={() => props.onOpenChange(false)}>
+          cancel
+        </button>
+        {props.children}
+      </div>
+    );
+  },
 }));
 
 vi.mock("@/features/media/shared/MediaPageShell", () => ({
@@ -73,6 +77,7 @@ describe("PhotoPickerModal", () => {
     container?.remove();
     toastInfo.mockReset();
     selectMediaRef.current = undefined;
+    confirmRef.current = undefined;
   });
 
   function render(
@@ -173,6 +178,25 @@ describe("PhotoPickerModal", () => {
     act(() => container.querySelector<HTMLButtonElement>("button")?.click());
     expect(confirm).not.toHaveBeenCalled();
   });
+  it("ignores a retained confirmation callback after its session closes", () => {
+    const confirm = vi.fn();
+    render(confirm);
+    act(() => selectMediaRef.current?.(mediaFixture));
+    const staleConfirm = confirmRef.current;
+    act(() =>
+      root.render(
+        <PhotoPickerModal
+          showPhotoPicker={false}
+          handlePhotoPickerOk={confirm}
+          handlePhotoPickerCancel={vi.fn()}
+          pickerContent={() => null}
+        />,
+      ),
+    );
+    act(() => staleConfirm?.());
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
   it("forwards cancellation from the sheet", () => {
     const { handlePhotoPickerCancel } = render();
 

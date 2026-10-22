@@ -218,17 +218,8 @@ describe("FieldControl lazy controls", () => {
   });
 
   it("keeps the calendar input and ref immediately available, then loads single-date selection on open", async () => {
-    const currentDate = new Date();
-    const selectedDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      10,
-    );
-    const nextDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      12,
-    );
+    const selectedDate = new Date(2001, 1, 10);
+    const nextDate = new Date(2001, 1, 12);
     const inputRef = vi.fn();
     const onChange = vi.fn();
     await act(async () =>
@@ -285,6 +276,22 @@ describe("FieldControl lazy controls", () => {
     await act(async () => dayButton(to).click());
     expect(onChange).toHaveBeenLastCalledWith({ from, to });
     expect(input?.value).toMatch(/-10 ~ \d{4}-\d{2}-12$/);
+  });
+
+  it("opens an existing historical range at its start month", async () => {
+    const from = new Date(2001, 1, 10);
+    const to = new Date(2001, 1, 12);
+    await act(async () =>
+      root.render(
+        <TestField type="calendar-range" initialValue={{ from, to }} />,
+      ),
+    );
+    await act(async () => container.querySelector("input")?.click());
+    await act(async () => {
+      await import("../ui/calendar");
+    });
+    expect(dayButton(from).getAttribute("data-range-start")).toBe("true");
+    expect(dayButton(to).getAttribute("data-range-end")).toBe("true");
   });
 
   it.each(["calendar", "calendar-range"] as const)(
