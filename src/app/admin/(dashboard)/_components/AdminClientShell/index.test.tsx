@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 
 const navigation = vi.hoisted(() => ({ pathname: "/admin/dashboard" }));
 
-vi.mock("@/auth-client", () => ({
+vi.mock("@/lib/auth/client", () => ({
   authClient: { signOut: mocks.signOut },
 }));
 

@@ -298,6 +298,7 @@ describe("technical library and browser dependency boundaries", () => {
     );
     expect(clients.length).toBeGreaterThan(50);
     expect(clients).toContain("src/instrumentation-client.ts");
+    expect(clients).toContain("src/lib/auth/client.ts");
     const violations = clients.flatMap((path) => {
       const source = readFileSync(path, "utf8");
       return [
@@ -310,6 +311,14 @@ describe("technical library and browser dependency boundaries", () => {
     // coverage run takes ~5.6s with concurrent workers, so allow instrumentation
     // overhead without excluding modules or weakening the dependency assertions.
   }, 15_000);
+
+  it("keeps the browser auth singleton in lib without a legacy root outlet", () => {
+    expect(existsSync("src/lib/auth/client.ts")).toBe(true);
+    expect(existsSync("src/auth-client.ts")).toBe(false);
+    expect(isClientEntry(readFileSync("src/lib/auth/client.ts", "utf8"))).toBe(
+      true,
+    );
+  });
 
   it("keeps the shared observability request context transitively Edge-safe", () => {
     const path = "src/lib/observability/server/request-context.ts";

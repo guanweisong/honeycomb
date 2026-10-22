@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   unlinkAccount: vi.fn(),
 }));
 
-vi.mock("@/auth-client", () => ({ authClient: mocks }));
+vi.mock("@/lib/auth/client", () => ({ authClient: mocks }));
 
 import LinkedAccountsSettings from "./index";
 

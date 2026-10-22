@@ -48,6 +48,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台当前用户与权限
 
+浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/_auth`。前者保留 use client，不经根目录兼容转出口。
+
 1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。
 2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
 3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。

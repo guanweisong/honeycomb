@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ http: vi.fn<typeof fetch>() }));
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: "user-1" } }),
 }));
-vi.mock("@/auth-client", async () => {
+vi.mock("@/lib/auth/client", async () => {
   const { createAuthClient } = await import("better-auth/react");
   const { passkeyClient } = await import("@better-auth/passkey/client");
   return {
@@ -20,7 +20,7 @@ vi.mock("@/auth-client", async () => {
   };
 });
 
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import PasskeySettings from "./index";
 
 const passkeys = [

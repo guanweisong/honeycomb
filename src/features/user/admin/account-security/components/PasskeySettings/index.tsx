@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getAuthenticatorName } from "@better-auth/passkey";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { useAccountMutation } from "../use-account-mutation";
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog } from "@/components/Dialog";

@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   captchaOnExpire: undefined as (() => void) | undefined,
 }));
 
-vi.mock("@/auth-client", () => ({
+vi.mock("@/lib/auth/client", () => ({
   authClient: {
     signIn: {
       username: mocks.username,

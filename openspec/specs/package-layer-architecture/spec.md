@@ -37,3 +37,12 @@ lib MUST NOT 承担业务 router 组合或直接加载 feature server 操作。l
 
 - **WHEN** tRPC context 读取 Better Auth 会话
 - **THEN** 它 MAY 延迟加载 src/auth.ts 技术绑定，但业务 hook 与审计组合 MUST 留在 app/_auth，lib/auth MUST 不运行时导入 feature 操作
+
+### Requirement: 浏览器认证绑定归属技术库
+
+共享 Better Auth 浏览器客户端 MUST 位于 src/lib/auth/client.ts，保留 use client 指令、现有插件顺序和单实例。MUST NOT 保留 src/auth-client.ts 兼容转出口，也不得为此次迁移移动 src/auth.ts 或 Next.js 根入口。
+
+#### Scenario: 检查客户端认证入口
+
+- **WHEN** 运行目录和浏览器依赖门禁
+- **THEN** 新文件 MUST 存在、旧文件 MUST 不存在，且新文件 MUST 纳入既有直接及间接客户端依赖检查

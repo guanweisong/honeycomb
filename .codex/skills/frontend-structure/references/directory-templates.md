@@ -18,6 +18,7 @@ src/
   components/              # 通用 UI
     editor/                # 通用编辑器，注入业务媒体选择
   lib/                     # db/auth/trpc/cache/storage/observability/i18n
+    auth/client.ts         # use client 浏览器认证单例；服务端 auth.ts 保留根位置
 ```
 
 类型和 schema 按单一职责拆分，相关输入及基础类型可同文件；枚举一文件一个。types/ 可以拥有中立 enum/catalog，但 DTO 文件仍为 type-only，展示枚举不能成为业务依赖。server/ 保留真实职责明确的具名实现，不为函数数量增加薄 wrapper。dashboard 等没有真实契约需求的模块不创建 types/schemas；此树是按需示例，不是待补齐清单。

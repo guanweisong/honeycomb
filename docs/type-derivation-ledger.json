@@ -3444,7 +3444,7 @@
       "currentLine": 20,
       "disposition": "derived-with-sdk-generic-correction",
       "reason": "Uses Pick<NonNullable<Awaited<ReturnType<typeof authClient.listAccounts<Record<never, never>>>>[\"data\"]>[number], \"id\" | \"providerId\" | \"accountId\">. The audit uninstantiated generic ReturnType resolves all three fields to any, verified with compiler and failed private equality/lint. Empty fetch-options instantiation matches the actual no-options call and retains string fields. Evidence: ../inspect-account-type.cjs and ../type-feature-account-evidence.log. No new public export or runtime SDK change. ",
-      "authority": "src/auth-client.ts: authClient；src/features/user/admin/account-security/components/LinkedAccountsSettings/index.tsx: accountsQuery",
+      "authority": "src/lib/auth/client.ts: authClient；src/features/user/admin/account-security/components/LinkedAccountsSettings/index.tsx: accountsQuery",
       "originalDeclarationUnchanged": false
     },
     {

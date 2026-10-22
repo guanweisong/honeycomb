@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
 
-vi.mock("@/auth-client", () => ({
+vi.mock("@/lib/auth/client", () => ({
   authClient: { $fetch: mocks.fetch },
 }));
 

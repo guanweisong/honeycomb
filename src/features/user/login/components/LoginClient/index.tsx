@@ -13,7 +13,7 @@ import { DynamicForm, DynamicFormRef } from "@/components/DynamicForm";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import Script from "next/script";
 import { providerIcons } from "../../provider-icons";
 import { LoginSchema } from "../../login.schema.ts";

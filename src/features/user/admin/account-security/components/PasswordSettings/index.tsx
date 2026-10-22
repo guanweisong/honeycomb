@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { useAccountMutation } from "../use-account-mutation";
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

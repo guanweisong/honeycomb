@@ -1,7 +1,7 @@
 "use client";
 
 import { getMenuForCapabilities } from "@/app/admin/constants/menu-data";
-import { authClient } from "@/auth-client";
+import { authClient } from "@/lib/auth/client";
 import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { AdminLayout } from "@/app/admin/_components/AdminLayout";
