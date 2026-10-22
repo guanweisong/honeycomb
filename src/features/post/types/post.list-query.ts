@@ -4,14 +4,12 @@ import type { PostListQuerySchema } from "../schemas/post.list-query.schema";
 
 export type PostVisibility = "PUBLISHED_ONLY" | "ALL";
 
+// Repository options omit explicit undefined even with exact optional types.
 export type PostListInput = PaginationInput & {
-  status?: string[];
-  type?: string[];
-  categoryId?: string;
-  tagId?: string;
-  authorId?: string;
-  title?: string;
-  content?: string;
+  [Key in keyof Omit<PostListQueryInput, keyof PaginationInput>]: Exclude<
+    PostListQueryInput[Key],
+    undefined
+  >;
 };
 
 export type PostListQueryInput = z.output<typeof PostListQuerySchema>;

@@ -4,7 +4,9 @@ import { basename } from "node:path";
 import { satisfies } from "semver";
 import { argumentValue } from "./cli";
 
-export type AuditSeverity = "low" | "moderate" | "high" | "critical";
+const auditSeverityValues = ["low", "moderate", "high", "critical"] as const;
+
+export type AuditSeverity = (typeof auditSeverityValues)[number];
 
 export interface AuditFinding {
   advisory: string;
@@ -52,12 +54,7 @@ interface BunLock {
 const blockingSeverities = new Set<AuditSeverity>(["high", "critical"]);
 const advisoryPattern = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const auditSeverities = new Set<AuditSeverity>([
-  "low",
-  "moderate",
-  "high",
-  "critical",
-]);
+const auditSeverities = new Set<AuditSeverity>(auditSeverityValues);
 
 function isBunAdvisory(value: unknown): value is BunAdvisory {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {

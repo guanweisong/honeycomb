@@ -11,11 +11,7 @@ import type { Database } from "@/lib/db/db";
 import { TagType } from "@/features/tag/types/tag.type";
 import { PostStatus } from "@/features/post/types/post.status";
 import { observeDbOperation } from "@/lib/observability/server";
-import type {
-  PostWithRelations,
-  PostAuthorRecord,
-  PostCategoryRecord,
-} from "@/features/post/types/post.read-model";
+import type { PostWithRelations } from "@/features/post/types/post.read-model";
 import type { PostVisibility } from "@/features/post/types/post.list-query";
 import { groupPostTranslations } from "./post-translations";
 import {
@@ -54,14 +50,18 @@ function toPostViewModel(
   post: PostRecord,
   translations: PostTranslations | undefined,
   relations: {
-    category?: PostCategoryRecord | null;
-    author?: PostAuthorRecord | null;
-    cover?: typeof schema.media.$inferSelect | null;
-    movieActors: TagRecord[];
-    movieDirectors: TagRecord[];
-    movieStyles: TagRecord[];
-    galleryStyles: TagRecord[];
-  },
+    [
+      Key in keyof Pick<
+        PostWithRelations,
+        | "category"
+        | "author"
+        | "movieActors"
+        | "movieDirectors"
+        | "movieStyles"
+        | "galleryStyles"
+      >
+    ]: Exclude<PostWithRelations[Key], undefined>;
+  } & { cover?: typeof schema.media.$inferSelect | null },
 ): PostWithRelations {
   return {
     id: post.id,

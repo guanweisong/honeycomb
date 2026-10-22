@@ -10,6 +10,7 @@ vi.mock("@/lib/observability/server", () => ({
 }));
 import {
   createLink,
+  listLinks,
   destroyLinks,
   updateLink,
 } from "@/features/link/server/link-operations";
@@ -91,3 +92,47 @@ describe("Link server operations", () => {
     expect(db.delete).toHaveBeenCalledOnce();
   });
 });
+
+it.each(["create", "update", "list"] as const)(
+  "%s excludes future database columns from the returned link",
+  async (operation) => {
+    const db = createMockDb();
+    const row = { ...link, futurePrivateColumn: "not public" };
+    const invalidator = {
+      invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+    };
+    db.returning.mockResolvedValue([row]);
+    db.offset.mockResolvedValue([row]);
+    if (operation === "list") {
+      db.where.mockReturnValueOnce(db).mockResolvedValueOnce([{ count: 1 }]);
+      await expect(listLinks(asMockDatabase(db), {}, "ALL")).resolves.toEqual({
+        list: [link],
+        total: 1,
+      });
+    } else {
+      const result =
+        operation === "create"
+          ? createLink(asMockDatabase(db), input, invalidator)
+          : updateLink(asMockDatabase(db), { id: link.id }, invalidator);
+      await expect(result).resolves.toEqual({
+        ...link,
+        publicSync: "completed",
+      });
+    }
+  },
+);
+
+it.each(["create", "update"] as const)(
+  "%s still rejects invalid persisted status before invalidation",
+  async (operation) => {
+    const db = createMockDb();
+    db.returning.mockResolvedValue([{ ...link, status: "BROKEN" }]);
+    const invalidator = { invalidate: vi.fn() };
+    const result =
+      operation === "create"
+        ? createLink(asMockDatabase(db), input, invalidator)
+        : updateLink(asMockDatabase(db), { id: link.id }, invalidator);
+    await expect(result).rejects.toThrow("Invalid stored link.status");
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  },
+);

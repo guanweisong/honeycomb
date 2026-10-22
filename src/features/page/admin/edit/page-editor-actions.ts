@@ -6,6 +6,7 @@ import { z } from "zod";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
 import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import type { PageInsert } from "@/features/page/types/page.insert";
+import type { PageRecord } from "@/features/page/types/page.read-model";
 import type { PageUpdate } from "@/features/page/types/page.update";
 import { PageStatus } from "@/features/page/types/page.status";
 import { trpc } from "@/lib/trpc/client/trpc";
@@ -18,7 +19,7 @@ import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-i
 
 type PageEditorValues = Partial<PageInsert>;
 type PageSyncFeedback = { publicSync?: PublicCacheInvalidationResult["state"] };
-type SavedPage = { id: string; version: number } & PageSyncFeedback;
+type SavedPage = Pick<PageRecord, "id" | "version"> & PageSyncFeedback;
 type SubmitPageEditorOptions = {
   pageId?: string;
   expectedVersion?: number;

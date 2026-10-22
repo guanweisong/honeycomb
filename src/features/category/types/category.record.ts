@@ -1,13 +1,6 @@
 import type { I18n } from "@/lib/i18n/i18n";
 import type { EnableStatus } from "@/lib/validation/enable-status";
 
-export type CategoryNode = {
-  id: string;
-  parent: string | null;
-  path: string;
-  status: EnableStatus;
-};
-
 export type CategoryRecord = {
   id: string;
   title: I18n | null;

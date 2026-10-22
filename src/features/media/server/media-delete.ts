@@ -2,7 +2,10 @@ import "server-only";
 import type { MediaPersistence } from "./media-repository";
 import type { MediaStorage } from "../types/media.storage";
 import type { MediaDeleteResult } from "../types/media.delete";
-import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
+import type {
+  PublicCacheInvalidationResult,
+  PublicContentInvalidator,
+} from "@/lib/cache/public-content-invalidator";
 import { ApplicationError } from "@/lib/errors/application-error";
 
 /** Hold the serialized database write transaction through whole-batch reference checks and storage deletion. */
@@ -43,7 +46,7 @@ export async function destroyMedia(
       "删除结果无法确认，可能已部分删除或留下失效记录；请人工核对后手动重试",
     );
   }
-  let publicSync: "completed" | "degraded" = "degraded";
+  let publicSync: PublicCacheInvalidationResult["state"] = "degraded";
   try {
     publicSync = (
       await invalidator.invalidate({

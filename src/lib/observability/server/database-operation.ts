@@ -1,11 +1,11 @@
 import "server-only";
 
 import { databaseQueryNames } from "../core/metric-label-values";
+import type { databaseOperations } from "../core/metric-label-values";
 import { MetricName } from "../core/names";
 import { getMetrics } from "./registry";
 
-export type DatabaseOperation =
-  "select" | "insert" | "update" | "delete" | "transaction";
+export type DatabaseOperation = (typeof databaseOperations)[number];
 
 export type DatabaseQueryName = (typeof databaseQueryNames)[number];
 

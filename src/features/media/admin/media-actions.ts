@@ -6,8 +6,14 @@ import type { MediaRecord } from "@/features/media/types/media.record";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { MEDIA_MAX_BATCH_FILES } from "@/features/media/types/media.upload-policy";
 import { MediaUploadFileSchema } from "@/features/media/schemas/media.upload.schema";
-import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
-import type { MediaDeleteResult } from "@/features/media/types/media.delete";
+import type {
+  MediaUploadIntentInput,
+  MediaRegisterUploadInput,
+} from "@/features/media/types/media.upload";
+import type {
+  MediaDeleteInput,
+  MediaDeleteResult,
+} from "@/features/media/types/media.delete";
 
 type SubmitMediaUploadOptions = {
   files: readonly File[];
@@ -16,7 +22,7 @@ type SubmitMediaUploadOptions = {
     input: MediaUploadIntentInput,
   ) => Promise<{ intent: string; uploadUrl: string; expiresAt: string }>;
   uploadToStorage: (url: string, file: File) => Promise<void>;
-  registerUpload: (input: { intent: string }) => Promise<MediaRecord>;
+  registerUpload: (input: MediaRegisterUploadInput) => Promise<MediaRecord>;
 };
 export type FailedUpload = {
   name: string;
@@ -115,10 +121,7 @@ export async function submitMediaDelete({
   destroy,
 }: {
   id: string;
-  destroy: (input: {
-    ids: string[];
-    acknowledgeUnknownReferences: true;
-  }) => Promise<MediaDeleteResult>;
+  destroy: (input: MediaDeleteInput) => Promise<MediaDeleteResult>;
 }): Promise<MediaDeleteActionResult> {
   try {
     const result = await destroy({

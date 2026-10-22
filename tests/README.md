@@ -162,3 +162,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 Feature schemas/types 职责由 `tests/architecture/schema-type-ownership.test.ts` 动态检查：schema 不导出业务类型，types/ 内 DTO 文件只含类型声明及显式 type-only 依赖，schema 可依赖中立枚举/catalog但不得反向依赖派生 DTO。feature-folder-structure 门禁递归检查每个枚举独立文件与旧平铺入口禁用，domain-display 门禁继续隔离展示枚举。`tests/types/schema-output-contracts.ts` 随 `check-types` 编译，覆盖原 CleanZod 八个输出契约、真实 transform/default/partial 语义，以及 Category/Tag 原始输入与内部可选 id、评论 captcha 和登录契约的区别；它不是 Vitest 运行用例。
 
 组件目录迁移同时核对测试体、参数、hooks、SVG 与 RSC/client 边界；component-ownership 门禁覆盖具体归属，既有 library/feature 边界仍追踪真实依赖，不能用文件存在断言替代行为回归。当前映射见[组件迁移记录](../docs/component-ownership-migration.md)。
+
+### 类型派生回归
+
+`tests/types/*-derived-contracts.ts` 是编译时独立预期，不由被测 schema 重新生成 oracle。默认 `bun run check-types` 收集这些文件；本轮同时在 optional 开关两种模式下验证受影响契约与私有签名，后者不代表全工程已经启用 exactOptionalPropertyTypes。测试和边界记录见[类型派生说明](../docs/type-derivation-refactor.md)。真实 E2E 未运行时必须独立披露，不能以编译或 mock 测试替代。

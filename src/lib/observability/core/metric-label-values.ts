@@ -89,6 +89,23 @@ export const databaseQueryNames = [
   "user.update",
 ] as const;
 
+export const databaseOperations = [
+  "select",
+  "insert",
+  "update",
+  "delete",
+  "transaction",
+] as const;
+
+export const externalServices = ["captcha", "email", "object-storage"] as const;
+export const externalServiceOperations = [
+  "validate",
+  "send",
+  "put",
+  "presign",
+  "delete",
+] as const;
+
 const procedureNames = [
   "category.adminIndex",
   "category.adminTree",
@@ -187,25 +204,21 @@ const metricLabelValues = {
   ],
   queryName: databaseQueryNames,
   operation: [
-    "select",
-    "insert",
-    "update",
-    "delete",
-    "transaction",
-    "read",
-    "hit",
-    "miss",
-    "write",
-    "error",
-    "validate",
-    "send",
-    "put",
-    "presign",
-    "invalidate",
-    "limit",
+    // delete 为数据库与外部服务共用；去重保留原白名单的顺序。
+    ...new Set([
+      ...databaseOperations,
+      "read",
+      "hit",
+      "miss",
+      "write",
+      "error",
+      ...externalServiceOperations,
+      "invalidate",
+      "limit",
+    ]),
   ],
   namespace: cacheNamespaceValues,
-  service: ["captcha", "email", "object-storage", "upstash-rate-limit"],
+  service: [...externalServices, "upstash-rate-limit"],
 } as const satisfies Record<MetricLabelName, readonly string[]>;
 
 export const metricLabelValueCatalog: Readonly<

@@ -1,11 +1,7 @@
-import type { UserLevel } from "./user.level";
 import type { UserRecord } from "./user.record";
 
-export interface CurrentUser {
-  id: string;
-  name?: string | null;
-  level: UserLevel;
-}
+export type CurrentUser = Pick<UserRecord, "id" | "level"> &
+  Partial<Pick<UserRecord, "name">>;
 
 export type CurrentUserRecord = Pick<
   UserRecord,

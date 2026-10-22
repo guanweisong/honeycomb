@@ -1,12 +1,10 @@
+import type { link } from "@/lib/db/schema/content-link";
 import type { EnableStatus } from "@/lib/validation/enable-status";
 
-export type LinkRecord = {
-  id: string;
-  url: string;
-  name: string;
-  logo: string;
-  description: string | null;
+// Fixed public fields: adding a database column must not expand this contract.
+export type LinkRecord = Pick<
+  typeof link.$inferSelect,
+  "id" | "url" | "name" | "logo" | "description" | "createdAt" | "updatedAt"
+> & {
   status: EnableStatus | null;
-  createdAt: string | null;
-  updatedAt: string | null;
 };

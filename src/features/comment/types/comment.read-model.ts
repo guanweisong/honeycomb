@@ -44,14 +44,10 @@ export type CommentPreviewListItem = Pick<
   | "custom"
 >;
 
-export interface PublicCommentNode {
-  id: string;
-  author: string;
-  content: string;
-  site: string | null;
-  parentId: string | null;
-  status: CommentStatus | null;
-  createdAt: string | null;
+export type PublicCommentNode = Pick<
+  CommentRecord,
+  "id" | "author" | "content" | "site" | "parentId" | "status" | "createdAt"
+> & {
   avatar: string;
   children?: PublicCommentNode[];
-}
+};

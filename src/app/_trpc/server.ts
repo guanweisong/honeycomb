@@ -2,12 +2,12 @@ import "server-only";
 
 import { appRouter } from "./router";
 import { createContext } from "../../lib/trpc/context";
-import type { RequestContext } from "@/lib/observability/server/request-context";
+import type { CreateContextOptions } from "../../lib/trpc/context";
 
-export interface ServerClientOptions {
-  requestContext?: RequestContext;
-  skipRequestObservability?: boolean;
-}
+export type ServerClientOptions = Pick<
+  CreateContextOptions,
+  "requestContext" | "skipRequestObservability"
+>;
 
 export const createServerClient = async (
   headers?: Headers,

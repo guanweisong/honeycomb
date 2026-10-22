@@ -28,9 +28,11 @@ description: 当在 Honeycomb 中生成、修改或审查 TypeScript 类型、Zo
 
 领域枚举或数值范围同时属于持久化不变量时，Drizzle CHECK、Feature Zod schema 与服务端持久化读取窄化必须从同一权威目录派生。新增或收紧 CHECK 前先提供只读数据审计，只报告表、字段和数量；发现不兼容数据必须中止迁移，不得自动选择、删除或回显原始值。SQL、Journal、Snapshot 必须一一对应，并通过独占临时数据库重放验证结构。
 
-权威位置由语义和依赖方向决定，不由最早出现的文件决定：Feature 的业务输入及命令校验可由该 Feature 的纯 Zod schema 所有，router/form 直接引用或按不同语义组合；仅服务于界面交互的 schema 留在所属 UI 边界。Drizzle 表定义归 lib/db/schema，ORM 推导类型仅用于服务端持久化实现；feature server 函数可以直接访问数据库。Feature 纯业务 schema 不得导入 UI、router、ORM 或数据库实现。
+权威位置由语义和依赖方向决定，不由最早出现的文件决定：Feature 的业务输入及命令校验可由该 Feature 的纯 Zod schema 所有，router/form 直接引用或按不同语义组合；仅服务于界面交互的 schema 留在所属 UI 边界。Drizzle 表定义归 lib/db/schema，ORM 运行时与查询对象仅用于服务端持久化实现；经过审计的读取字段投影类型例外严格按 [model-boundary-governance](../../../openspec/specs/model-boundary-governance/spec.md) 的精确路径和 type-only 白名单执行，不能扩大为 types/ 或 DB 目录许可；feature server 函数可以直接访问数据库。Feature 纯业务 schema 不得导入 UI、router、ORM 或数据库实现。
 
 新增写入或缓存契约时，不能以「编译通过」「有返回类型注解」「satisfies/extends 检查通过」为由，保留业务 interface 并另写一份覆盖同一模型的 Zod object。兼容性检查只能发现部分漂移，不能让两个字段清单成为唯一事实源。保留原调用签名可以通过类型别名迁移实现，不要求复制定义。若用户明确禁止修改权威来源所需文件，先说明冲突和最小必要调整，不静默新增重复契约。
+
+派生前用旧契约验证可选语义：Zod optional 的 `undefined` 与手写可选属性在 `exactOptionalPropertyTypes=true` 下不一定相同；同时检查开关两种模式的目标契约，不因此宣称整个应用已经支持该严格选项。SDK 的泛型方法 `ReturnType` 可能退化为 `any`，应实例化真实调用选项或使用公开权威响应类型，并增加字段精度负例。枚举字符串兼容、输入/输出与 repository/API 默认策略分别保留；不为派生添加通用泛型或新的运行时 schema。
 
 不同语义不能为去重强行合并：公开/后台响应、完整/部分语言、输入/持久化值、身份用户/关联快照分别明确命名及转换。类型注解或 Omit 不会在运行时删掉敏感字段，公开响应必须实际选择允许公开的字段。仅字段偶然相同、规则和生命周期不同，不提取万能 DTO 或泛型 CRUD 层。
 

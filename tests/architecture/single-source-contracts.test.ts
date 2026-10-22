@@ -65,6 +65,53 @@ describe("唯一事实源架构门禁", () => {
     expect(declaration?.getText()).toContain(authority);
   });
 
+  it("LinkRecord uses a fixed positive field projection without exposing its table", () => {
+    const file = sourceFile("src/features/link/types/link.record.ts");
+    const declarations = file.statements.filter(
+      (node) =>
+        ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node),
+    );
+    expect(declarations.map((node) => node.name.text)).toEqual(["LinkRecord"]);
+    const record = declarations[0];
+    expect(
+      record &&
+        ts.isTypeAliasDeclaration(record) &&
+        ts.isIntersectionTypeNode(record.type),
+    ).toBe(true);
+    if (
+      !record ||
+      !ts.isTypeAliasDeclaration(record) ||
+      !ts.isIntersectionTypeNode(record.type)
+    )
+      return;
+    const projection = record.type.types[0];
+    expect(
+      projection &&
+        ts.isTypeReferenceNode(projection) &&
+        projection.typeName.getText(file),
+    ).toBe("Pick");
+    if (!projection || !ts.isTypeReferenceNode(projection)) return;
+    expect(projection.typeArguments?.[0]?.getText(file)).toBe(
+      "typeof link.$inferSelect",
+    );
+    const keys = projection.typeArguments?.[1];
+    expect(
+      keys &&
+        ts.isUnionTypeNode(keys) &&
+        keys.types.map((key) => key.getText(file)).sort(),
+    ).toEqual(
+      ["id", "url", "name", "logo", "description", "createdAt", "updatedAt"]
+        .map((key) => JSON.stringify(key))
+        .sort(),
+    );
+    const status = record.type.types[1];
+    expect(
+      status &&
+        ts.isTypeLiteralNode(status) &&
+        status.members.map((member) => member.name?.getText(file)),
+    ).toEqual(["status"]);
+  });
+
   it("Setting 与 Menu 写入类型由 Feature schema 推导", () => {
     for (const path of [
       "src/features/setting/types/setting.patch.ts",

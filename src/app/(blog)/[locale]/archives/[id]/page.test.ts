@@ -112,13 +112,23 @@ vi.mock("@/features/media/public/RichText", () => ({
     React.createElement("article", { "data-testid": "rich-text" }, html),
 }));
 
+import type { PostDetailResult } from "@/features/post/types/post.read-model";
 import Archives, { generateMetadata } from "./page";
 import { assertPostCategory, assertPostDetail } from "./page.utils";
 
-type DetailFixture = Record<string, unknown> & {
-  category?: { id: string };
-  id: string;
-  type: "ARTICLE" | "MOVIE" | "PHOTOGRAPH" | "QUOTE";
+// 输入夹具只允许真实详情字段；故障场景仍可显式省略正文和关联。
+type DetailFixture = Pick<PostDetailResult, "id"> & {
+  [
+    Field in keyof Omit<
+      PostDetailResult,
+      "id" | "type" | "category" | "author" | "cover"
+    >
+  ]?: PostDetailResult[Field] | undefined;
+} & {
+  type: `${PostDetailResult["type"]}`;
+  category?: Pick<NonNullable<PostDetailResult["category"]>, "id">;
+  author?: Pick<NonNullable<PostDetailResult["author"]>, "name">;
+  cover?: Pick<NonNullable<PostDetailResult["cover"]>, "url">;
 };
 
 const articleDetail: DetailFixture = {

@@ -21,7 +21,13 @@ import type { PublicContentInvalidator } from "@/lib/cache/public-content-invali
 
 function toLinkRecord(row: typeof schema.link.$inferSelect): LinkRecord {
   return {
-    ...row,
+    id: row.id,
+    url: row.url,
+    name: row.name,
+    logo: row.logo,
+    description: row.description,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     status:
       row.status === null
         ? null

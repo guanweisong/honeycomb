@@ -222,7 +222,7 @@ export function usePostEditor(id: string | null) {
   });
 
   const finishCreation = (
-    result: { id: string; version: number },
+    result: Pick<PostDetailEntity, "id" | "version">,
     attempt: PostInsert,
     submitted?: { json: string; draft: PostDraft },
   ) => {

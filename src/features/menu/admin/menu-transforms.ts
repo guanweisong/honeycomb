@@ -4,19 +4,12 @@ import {
 } from "@nosferatu500/react-sortable-tree";
 import { MenuType } from "@/features/menu/types/menu.type";
 import type { MenuInput } from "@/features/menu/types/menu.write";
-import type { MultiLang } from "@/lib/i18n/multi-lang";
+import type { MenuItem } from "@/features/menu/types/menu.list";
 
 import { MenuTypeName } from "../types/menu.type-name";
 
-export type MenuEntityTree = {
-  id: string;
-  parent: string | null;
-  power: number;
-  type: MenuType;
-  createdAt: string | null;
-  updatedAt: string | null;
-  title?: MultiLang | string | null;
-  path?: string | null;
+export type MenuEntityTree = Omit<MenuItem, "title"> & {
+  title?: Exclude<MenuItem["title"], undefined> | string;
   children?: MenuEntityTree[];
 };
 
@@ -27,13 +20,10 @@ export type SortableMenuNode = Omit<MenuEntityTree, "title" | "children"> & {
   children?: SortableMenuNode[];
 };
 
-export type MenuSelectableItem = {
-  id: string;
-  title?: MultiLang | null;
-  path?: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-};
+export type MenuSelectableItem = Pick<
+  MenuItem,
+  "id" | "title" | "path" | "createdAt" | "updatedAt"
+>;
 
 export type MenuSaveItem = Omit<MenuInput[number], "parent"> & {
   parent?: Exclude<MenuInput[number]["parent"], null>;

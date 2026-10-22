@@ -14,12 +14,13 @@ import {
 } from "@/components/admin/action-state";
 import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
+import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
 import { buildMenuSaveInput, type MenuEntityTree } from "./menu-transforms";
 
 export type MenuSaveResult = {
   count: number;
   version: number;
-  publicSync?: string;
+  publicSync?: PublicCacheInvalidationResult["state"];
 };
 export type MenuSubmitResult =
   | { state: "success"; result: MenuSaveResult; refreshFailed: boolean }

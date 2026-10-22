@@ -1,4 +1,5 @@
 import { EnvironmentValidationError, parseR2Env } from "../../env/schema";
+import type { Environment } from "../../env/validation";
 
 export type SecurityHeader = {
   key: string;
@@ -16,7 +17,7 @@ export type SecurityHeadersOptions = {
   sentryDsn?: string;
 };
 
-export type SecurityHeaderEnvironment = Record<string, string | undefined>;
+export type SecurityHeaderEnvironment = Environment;
 
 export type AssetRemotePattern = {
   protocol: "http" | "https";

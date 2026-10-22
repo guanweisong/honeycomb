@@ -158,6 +158,51 @@ export function runtimeDependencyViolations(
   return [...violations].sort();
 }
 
+/** Exact reviewed type edge, shared by both persistence-boundary checks. */
+export function isReviewedLinkTableTypeDependency(
+  path: string,
+  dependency: ModuleDependency,
+  source: string,
+): boolean {
+  const target = "src/lib/db/schema/content-link";
+  if (
+    path !== "src/features/link/types/link.record.ts" ||
+    !dependency.typeOnly ||
+    localModulePath(path, dependency.specifier) !== target
+  )
+    return false;
+  // A matching import cannot hide a second export/import-type edge to the table.
+  if (
+    moduleDependencies(source, path).filter(
+      (edge) => localModulePath(path, edge.specifier) === target,
+    ).length !== 1
+  )
+    return false;
+  const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+  // Only the LinkRecord declaration is public; exporting its imported table is not.
+  if (file.statements.some(ts.isExportDeclaration)) return false;
+  return file.statements.some((node) => {
+    if (
+      !ts.isImportDeclaration(node) ||
+      !ts.isStringLiteral(node.moduleSpecifier) ||
+      localModulePath(path, node.moduleSpecifier.text) !== target
+    )
+      return false;
+    const clause = node.importClause;
+    const bindings = clause?.namedBindings;
+    if (
+      !clause?.isTypeOnly ||
+      clause.name ||
+      !bindings ||
+      !ts.isNamedImports(bindings) ||
+      bindings.elements.length !== 1
+    )
+      return false;
+    const binding = bindings.elements[0];
+    return !!binding && (binding.propertyName ?? binding.name).text === "link";
+  });
+}
+
 export function isContractForbidden(
   path: string,
   source: string,
@@ -168,19 +213,25 @@ export function isContractForbidden(
       path,
     ) ||
     /^src\/lib\/(?:db|trpc)\//.test(path) ||
-    moduleDependencies(source, path).some(
-      ({ specifier, typeOnly }) =>
+    moduleDependencies(source, path).some(({ specifier, typeOnly }) => {
+      // Reviewed fixed-field projection only; not a types/ or DB allowance.
+      if (
+        isReviewedLinkTableTypeDependency(path, { specifier, typeOnly }, source)
+      )
+        return false;
+      return (
         (includeTypeOnly || !typeOnly) &&
         (/^(?:react|next(?:\/|$)|@trpc\/|drizzle-orm|drizzle-zod|node:|bun:|@libsql\/|@aws-sdk\/|@sentry\/node|resend$|better-auth$|server-only$)/.test(
           specifier,
         ) ||
           builtinModules.includes(specifier) ||
-          /^(?:src\/(?:app|components)\/)|\/(?:server|admin|public|notifications)(?:\/|$)|(?:\/|\.)router$/.test(
+          /^(?:src\/(?:app|components)\/|src\/lib\/(?:db|trpc)\/)|\/(?:server|admin|public|notifications)(?:\/|$)|(?:\/|\.)router$/.test(
             localModulePath(path, specifier) ?? "",
           ) ||
           /(?:\/server(?:\/|$)|\/router$|^@\/lib\/(?:db|trpc)\/|^@\/components\/|\/admin\/|\/public\/)/.test(
             specifier,
-          )),
-    )
+          ))
+      );
+    })
   );
 }

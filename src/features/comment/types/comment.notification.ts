@@ -1,11 +1,6 @@
-import type { CommentRecord, CommentRelatedRecord } from "./comment.read-model";
-import type { MultiLang } from "@/lib/i18n/multi-lang";
+import type { CommentListItem } from "./comment.read-model";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
 
-export type NotificationComment = CommentRecord & {
-  post: CommentRelatedRecord | null;
-  page: CommentRelatedRecord | null;
-};
+export type NotificationComment = Omit<CommentListItem, "custom">;
 
-export type NotificationSetting = {
-  siteName: MultiLang | null;
-};
+export type NotificationSetting = Pick<SettingRecord, "siteName">;

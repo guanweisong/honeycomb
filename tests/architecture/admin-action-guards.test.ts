@@ -37,10 +37,7 @@ function getAttributeExpression(
     : undefined;
 }
 
-interface ActionBranchFact {
-  name: string;
-  value: boolean;
-}
+type ActionBranchFact = NonNullable<ActionGuardContract["when"]>;
 
 function hasGuardPolarity(
   node: ts.Node,

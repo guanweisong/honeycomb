@@ -14,6 +14,7 @@ import ts from "typescript";
 import { sourceFiles } from "@tests/helpers/source-files";
 import {
   isContractForbidden,
+  isReviewedLinkTableTypeDependency,
   localModulePath,
   moduleDependencies,
   runtimeDependencyViolations,
@@ -412,6 +413,94 @@ describe("feature-owned business boundaries", () => {
     },
   );
 
+  it("allows only the reviewed LinkRecord type-only table dependency", () => {
+    for (const specifier of [
+      "@/lib/db/schema/content-link",
+      "../../../lib/db/schema/content-link",
+    ]) {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import type { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(false);
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(true);
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.insert.ts",
+          `import type { link } from "${specifier}";`,
+          true,
+        ),
+      ).toBe(true);
+    }
+    for (const target of [
+      "@/lib/db/schema",
+      "@/lib/db/db",
+      "@/features/link/server/link-operations",
+      "../../../lib/db/schema",
+    ]) {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          `import type { Value } from "${target}";`,
+          true,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it.each([
+    'export type { link } from "@/lib/db/schema/content-link";',
+    'import type { link } from "@/lib/db/schema/content-link"; export type { link };',
+    'import type { link } from "@/lib/db/schema/content-link"; export { type link as table };',
+    'export type * from "@/lib/db/schema/content-link";',
+    'import type * as tables from "@/lib/db/schema/content-link";',
+    'type Table = typeof import("@/lib/db/schema/content-link").link;',
+    'import type { link } from "@/lib/db/schema/content-link"; export type { link } from "@/lib/db/schema/content-link";',
+  ])(
+    "rejects table type outlets outside the reviewed named import: %s",
+    (source) => {
+      expect(
+        isContractForbidden(
+          "src/features/link/types/link.record.ts",
+          source,
+          true,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("keeps the reviewed link table closure free of reverse feature dependencies", () => {
+    const pending = ["src/lib/db/schema/content-link.ts"];
+    const visited = new Set<string>();
+    const violations: string[] = [];
+    while (pending.length) {
+      const path = pending.pop();
+      if (!path || visited.has(path)) continue;
+      visited.add(path);
+      // Include type-only edges: runtime-only traversal cannot detect type cycles.
+      for (const dependency of moduleDependencies(
+        readFileSync(path, "utf8"),
+        path,
+      )) {
+        const target = resolveSourceModule(path, dependency.specifier);
+        if (!target) continue;
+        if (target.startsWith("src/features/"))
+          violations.push(`${path} -> ${target}`);
+        else pending.push(target);
+      }
+    }
+    expect(visited.size).toBeGreaterThan(1);
+    expect(violations).toEqual([]);
+  });
+
   it("rejects forbidden types on public contracts without contaminating helper runtime edges", () => {
     const source = 'import type { SQL } from "drizzle-orm";';
     expect(
@@ -479,8 +568,14 @@ describe("feature-owned business boundaries", () => {
         .filter((path) => !/\/server(?:\/|\.ts$)/.test(path))
         .flatMap((path) =>
           moduleDependencies(readFileSync(path, "utf8"), path)
-            .filter(({ specifier }) =>
-              /lib\/db\/schema|drizzle-zod/.test(specifier),
+            .filter(
+              (dependency) =>
+                /lib\/db\/schema|drizzle-zod/.test(dependency.specifier) &&
+                !isReviewedLinkTableTypeDependency(
+                  path,
+                  dependency,
+                  readFileSync(path, "utf8"),
+                ),
             )
             .map(({ specifier }) => `${path} -> ${specifier}`),
         ),

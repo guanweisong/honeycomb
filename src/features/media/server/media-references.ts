@@ -2,6 +2,7 @@ import "server-only";
 import { eq, inArray, or } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import type { I18n } from "@/lib/i18n/i18n";
 import {
   getLocalizedImageLinks,
@@ -81,7 +82,7 @@ export async function assertMediaReferencesExist(
 /** 只证明已知字段中的引用；无结果不代表历史、外部或未登记用途均不存在。 */
 export async function findKnownMediaReferences(
   tx: Transaction,
-  targets: readonly { id: string; key: string; url: string }[],
+  targets: readonly Pick<MediaRecord, "id" | "key" | "url">[],
 ) {
   if (!targets.length) return false;
   const ids = targets.map((row) => row.id);

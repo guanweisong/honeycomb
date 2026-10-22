@@ -19,13 +19,20 @@ import { providerIcons } from "../../provider-icons";
 import { LoginSchema } from "../../login.schema.ts";
 import type { LoginValues } from "@/features/user/types/user.login";
 import { normalizeAdminCallback } from "../../safe-admin-callback";
-import type { MultiLang } from "@/lib/i18n/multi-lang";
+import type { SettingRecord } from "@/features/setting/types/setting.record";
+import type {
+  SocialProviderId,
+  SOCIAL_PROVIDER_LABELS,
+} from "@/lib/auth/providers";
 import { useTurnstileToken } from "@/lib/hooks/use-turnstile-token";
 
-type AuthProvider = { id: string; name: string };
+type AuthProvider = {
+  id: SocialProviderId;
+  name: (typeof SOCIAL_PROVIDER_LABELS)[SocialProviderId];
+};
 
 type LoginClientProps = {
-  setting: { siteName?: MultiLang | null } | undefined;
+  setting: Partial<Pick<SettingRecord, "siteName">> | undefined;
   providers: AuthProvider[];
   targetUrl?: string;
 };
