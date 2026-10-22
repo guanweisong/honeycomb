@@ -1,11 +1,7 @@
 // @vitest-environment node
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  createApiRatelimit,
-  getClientIp,
-  limitWithTimeout,
-} from "./rate-limit";
+import { createApiRatelimit, limitWithTimeout } from "./rate-limit";
 
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server/registry";
@@ -16,38 +12,11 @@ const originalEnv = {
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 };
 
-describe("getClientIp", () => {
+describe("API rate limiting", () => {
   beforeEach(() => {
     process.env.UPSTASH_REDIS_REST_URL = originalEnv.url;
     process.env.UPSTASH_REDIS_REST_TOKEN = originalEnv.token;
     vi.unstubAllEnvs();
-  });
-
-  it("uses the first x-forwarded-for entry when available", () => {
-    const request = new Request("https://example.com", {
-      headers: {
-        "x-forwarded-for": " 1.2.3.4, 5.6.7.8 ",
-        "x-real-ip": "9.9.9.9",
-      },
-    });
-
-    expect(getClientIp(request)).toBe("1.2.3.4");
-  });
-
-  it("falls back to x-real-ip when x-forwarded-for is missing", () => {
-    const request = new Request("https://example.com", {
-      headers: {
-        "x-real-ip": " 9.9.9.9 ",
-      },
-    });
-
-    expect(getClientIp(request)).toBe("9.9.9.9");
-  });
-
-  it("returns anonymous when no ip header exists", () => {
-    const request = new Request("https://example.com");
-
-    expect(getClientIp(request)).toBe("anonymous");
   });
 
   it("allows requests without constructing Redis when Upstash env is missing", async () => {

@@ -41,3 +41,5 @@
 组件归属的当前增量约束见[组件归属规范](../../../../openspec/changes/refine-component-ownership/specs/component-ownership/spec.md)：路由 _components、共享展示入口、业务发布颜色及 media/admin；迁移不得扩大为 Provider/PostInfo 合并，也不改变 editor 媒体注入方向。
 
 类型事实源的本轮实施记录见[类型派生说明](../../../../docs/type-derivation-refactor.md)。LinkRecord 的单文件 type-only 字段投影例外已同步到 model-boundary-governance，不是所有 feature/types 对数据库的通行证；类型派生不替代运行时白名单。
+
+共享后台与入口策略归属见[模块归属规范](../../../../openspec/changes/refine-owned-module-locations/specs/owned-module-locations/spec.md)：UI 枚举一文件一个，业务限流数值显式留在入口，通用工厂不携带评论策略；迁移不得删除原 HTTP、草稿及失败路径断言。

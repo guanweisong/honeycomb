@@ -1108,11 +1108,11 @@
       "id": "src/components/admin/local-draft.test.tsx:6:Values",
       "name": "Values",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/local-draft.test.tsx",
-      "currentLine": 6,
+      "currentFile": "src/components/admin/draft/local-draft.test.tsx",
+      "currentLine": 7,
       "disposition": "retained-independent",
       "reason": "保留 local-draft 测试自定义 Values，验证任意嵌套结构的序列化。 不是 production I18n 规则测试；其语言形状刻意作为独立测试数据。",
-      "authority": "src/components/admin/local-draft.test.tsx#Values",
+      "authority": "src/components/admin/draft/local-draft.test.tsx#Values",
       "originalDeclarationUnchanged": true
     },
     {
@@ -4342,22 +4342,22 @@
       "id": "src/lib/trpc/client/admin-query-client.ts:3:AuthErrorCode",
       "name": "AuthErrorCode",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/lib/trpc/client/admin-query-client.ts",
+      "currentFile": "src/app/admin/lib/admin-query-client.ts",
       "currentLine": 3,
       "disposition": "retained-independent",
       "reason": "保留后台客户端仅特殊处理的两种认证错误码。 getAuthErrorCode 从 unknown 经真实判断窄化；它不是所有 TRPC_ERROR_CODE_KEY 的副本，扩大联合会改变路由处理语义。",
-      "authority": "src/lib/trpc/client/admin-query-client.ts#AuthErrorCode",
+      "authority": "src/app/admin/lib/admin-query-client.ts#AuthErrorCode",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/lib/trpc/client/admin-query-client.ts:5:AdminQueryClientOptions",
       "name": "AdminQueryClientOptions",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/lib/trpc/client/admin-query-client.ts",
+      "currentFile": "src/app/admin/lib/admin-query-client.ts",
       "currentLine": 5,
       "disposition": "retained-independent",
       "reason": "保留可选 onForbidden 的浏览器导航策略注入。 纯客户端配置，不复制用户权限/服务端响应。",
-      "authority": "src/lib/trpc/client/admin-query-client.ts#AdminQueryClientOptions",
+      "authority": "src/app/admin/lib/admin-query-client.ts#AdminQueryClientOptions",
       "originalDeclarationUnchanged": true
     },
     {

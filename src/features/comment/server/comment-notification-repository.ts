@@ -5,15 +5,14 @@ import type {
 import "server-only";
 import { toCommentRecord } from "./comment-dto";
 
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { selectAllColumns } from "@/lib/db/query/select-all-columns";
 import { observeDbOperation } from "@/lib/observability/server";
 import { assembleLocalizedField } from "@/lib/db/translation-values";
 
 const selection = {
-  ...selectAllColumns(schema.comment),
+  ...getTableColumns(schema.comment),
   post: { id: schema.post.id },
   page: { id: schema.page.id },
 };

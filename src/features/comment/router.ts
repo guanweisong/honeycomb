@@ -32,13 +32,20 @@ import { createCommentTargetRepository } from "@/features/comment/server/comment
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 import { validateCaptcha } from "@/lib/security/validate-captcha";
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
-import { commentCreateRatelimit } from "@/lib/rate-limit/rate-limit";
+import { createApiRatelimit } from "@/lib/rate-limit/rate-limit";
 import { createRateLimitedPublicProcedure } from "@/lib/trpc/rate-limited-procedure";
 import { getClientIp } from "@/lib/http/client-ip";
+
+/** 评论创建的独立高成本入口限流器。 */
+const commentCreateRatelimit = createApiRatelimit({
+  limit: 5,
+  prefix: "ratelimit:comment-create",
+});
 
 const createCommentProcedure = createRateLimitedPublicProcedure({
   limiter: commentCreateRatelimit,
   namespace: "comment.create",
+  fallbackLimit: 5,
 });
 
 export const commentRouter = createTRPCRouter({

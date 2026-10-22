@@ -44,6 +44,9 @@ describe("架构复杂度治理", () => {
       "src/features/post/domain/index.ts",
       "src/features/user/domain/index.ts",
       "src/lib/db/index.ts",
+      "src/lib/db/query/select-all-columns.ts",
+      "src/lib/trpc/client/admin-query-client.ts",
+      "src/lib/auth/authentication-events.ts",
       "src/packages/trpc/typings.d.ts",
       ...[
         "comment",

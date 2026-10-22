@@ -21,7 +21,7 @@ export type RateLimitedPublicProcedureOptions = Pick<
 export function createRateLimitedPublicProcedure({
   limiter,
   namespace,
-  fallbackLimit = 5,
+  fallbackLimit,
   timeoutMs,
 }: RateLimitedPublicProcedureOptions) {
   return publicProcedure.use(async ({ ctx, next }) => {

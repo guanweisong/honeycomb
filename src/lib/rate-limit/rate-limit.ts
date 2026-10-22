@@ -6,8 +6,6 @@ import { getUpstashEnv } from "@/env/server";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
 import { getLogger, getMetrics } from "@/lib/observability/server/registry";
 
-export { getClientIp } from "@/lib/http/client-ip";
-
 const API_RATE_LIMIT = 120;
 const API_RATE_LIMIT_WINDOW_MS = 60_000;
 const API_RATE_LIMIT_TIMEOUT_MS = 750;
@@ -172,9 +170,3 @@ export function createApiRatelimit(
 
 /** API 请求入口使用的共享限流器。 */
 export const apiRatelimit = createApiRatelimit();
-
-/** 评论创建的独立高成本入口限流器。 */
-export const commentCreateRatelimit = createApiRatelimit({
-  limit: 5,
-  prefix: "ratelimit:comment-create",
-});

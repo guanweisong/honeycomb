@@ -22,7 +22,7 @@ vi.mock(
 vi.mock("@/lib/observability/server", () => ({
   getLogger: () => ({ error: vi.fn() }),
 }));
-vi.mock("../../lib/auth/authentication-events", () => ({
+vi.mock("./authentication-events", () => ({
   getAuthenticationProvider: () => "credentials",
 }));
 vi.mock("@/features/user/rules/user-status", async (importOriginal) => ({

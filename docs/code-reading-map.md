@@ -52,6 +52,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/_auth`。前者保留 use client，不经根目录兼容转出口。
 
+后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/_auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns，IP 解析只从 `src/lib/http/client-ip.ts` 导入。
+
 1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。
 2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
 3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。
