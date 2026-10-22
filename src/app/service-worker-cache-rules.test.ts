@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { isPublicRuntimeRequest } from "./service-worker-cache-rules";
 

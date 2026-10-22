@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { UserLevel } from "./user";
 import { DomainError } from "@/lib/errors/domain-error";

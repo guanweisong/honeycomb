@@ -7,7 +7,7 @@ import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import type { PostDetailResult } from "@/features/post/types";
-import type { PostUpdate } from "@/features/post/schema";
+import type { PostUpdate } from "@/features/post/types";
 import type { PostEditorValues } from "./utils/post-draft";
 
 const state = vi.hoisted(() => ({

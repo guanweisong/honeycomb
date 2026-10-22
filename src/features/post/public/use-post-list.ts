@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { trpcClient } from "@/lib/trpc/client/trpc";
-import { PostListQueryInput } from "@/features/post/schema";
+import type { PostListQueryInput } from "@/features/post/types";
 import type { PublicPostListResult } from "@/features/post/types";
 
 /**

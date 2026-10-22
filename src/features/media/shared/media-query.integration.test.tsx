@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types";
-import type { MediaIndexInput } from "@/features/media/schema";
+import type { MediaIndexInput } from "@/features/media/types";
 
 const transport = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/lib/trpc/client/trpc", () => ({

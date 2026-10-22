@@ -3,12 +3,8 @@
 import { ModalType } from "@/components/admin/modal-type";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  UserInsertSchema,
-  UserUpdateSchema,
-  type UserInsert,
-  type UserUpdate,
-} from "@/features/user/schema";
+import { UserInsertSchema, UserUpdateSchema } from "@/features/user/schema";
+import type { UserInsert, UserUpdate } from "@/features/user/types";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {

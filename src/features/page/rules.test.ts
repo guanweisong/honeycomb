@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { PageStatus } from "./page-status";
 import { getPagePublishStatus, getPageWithdrawStatus } from "./rules";

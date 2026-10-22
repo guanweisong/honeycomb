@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
 import type { PageWithRelations as PageViewModel } from "@/features/page/types";
-import type { PageInsert, PageUpdate } from "@/features/page/schema";
+import type { PageInsert, PageUpdate } from "@/features/page/types";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
 import { PageStatus } from "@/features/page/page-status";

@@ -1,3 +1,6 @@
+import type { PublicCommentSchema, CommentUpdateSchema } from "./schema";
+import type { z } from "zod";
+import type { CommentInsertSchema } from "./schemas/comment.insert.schema";
 import type { MenuType } from "@/features/menu/menu-types";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { CommentStatus } from "@/features/comment/comment-status";
@@ -5,8 +8,6 @@ import type { MultiLang } from "@/lib/i18n/multi-lang";
 import type { PostStatus } from "@/features/post/post-status";
 import type { PageStatus } from "@/features/page/page-status";
 import type { EnableStatus } from "@/lib/validation/enable-status";
-import type { PublicCommentInput as PublicCommentWriteInput } from "./schema";
-export type { CommentUpdate } from "./schema";
 export interface CommentRecord {
   id: string;
   author: string;
@@ -57,7 +58,6 @@ export interface PublicCommentNode {
   avatar: string;
   children?: PublicCommentNode[];
 }
-export type PublicCommentInput = PublicCommentWriteInput;
 export interface CommentRequestMetadata {
   ip: string | null;
   userAgent: string | null;
@@ -93,3 +93,7 @@ export type NotificationComment = CommentRecord & {
 export type NotificationSetting = {
   siteName: MultiLang | null;
 };
+
+export type PublicCommentInput = z.output<typeof PublicCommentSchema>;
+export type CommentUpdate = z.output<typeof CommentUpdateSchema>;
+export type CommentInsertInput = z.output<typeof CommentInsertSchema>;

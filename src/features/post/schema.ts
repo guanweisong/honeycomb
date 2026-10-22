@@ -3,7 +3,7 @@ import {
   queryString,
   QueryStringArraySchema,
 } from "@/lib/validation/query.string.schema";
-import { requiredString, type CleanZod } from "@/lib/validation/validation";
+import { requiredString } from "@/lib/validation/validation";
 import { z } from "zod";
 import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
@@ -45,7 +45,6 @@ export const PostFieldsSchema = z.object({
   galleryLocation: OptionalI18nSchema,
 });
 
-export type PostFields = z.output<typeof PostFieldsSchema>;
 const relationIds = z
   .array(IdSchema)
   .max(MAX_BATCH_SIZE)
@@ -56,7 +55,6 @@ export const PostRelationPatchSchema = z.strictObject({
   movieStyleIds: relationIds.optional(),
   galleryStyleIds: relationIds.optional(),
 });
-export type PostRelationPatch = z.output<typeof PostRelationPatchSchema>;
 export const PostInsertSchema = PostFieldsSchema.extend(
   PostRelationPatchSchema.shape,
 )
@@ -64,7 +62,6 @@ export const PostInsertSchema = PostFieldsSchema.extend(
     creationToken: z.uuid(),
   })
   .strict();
-export type PostInsert = z.output<typeof PostInsertSchema>;
 const version = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const PostUpdateSchema = PostFieldsSchema.partial()
   .extend(PostRelationPatchSchema.shape)
@@ -107,7 +104,6 @@ export const PostUpdateSchema = PostFieldsSchema.partial()
       ),
     "至少修改一个字段",
   );
-export type PostUpdate = z.output<typeof PostUpdateSchema>;
 export const PostDeleteSchema = z.strictObject({
   items: z
     .array(z.strictObject({ id: IdSchema, expectedVersion: version }))
@@ -118,7 +114,6 @@ export const PostDeleteSchema = z.strictObject({
       "文章不能重复",
     ),
 });
-export type PostDelete = z.output<typeof PostDeleteSchema>;
 export const PostCreationResultInputSchema = z.object({
   creationToken: z.uuid(),
 });
@@ -135,9 +130,3 @@ export const PostListQuerySchema = PaginationQuerySchema.extend({
   tagId: queryString(),
   authorId: queryString(),
 }).partial();
-
-/**
- * 文章列表查询参数的 TypeScript 类型。
- * 从 `PostListQuerySchema` 推断而来。
- */
-export type PostListQueryInput = CleanZod<typeof PostListQuerySchema>;

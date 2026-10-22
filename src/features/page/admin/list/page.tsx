@@ -9,10 +9,8 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import {
-  PageListQueryInput,
-  PageListQuerySchema,
-} from "@/features/page/schema";
+import type { PageListQueryInput } from "@/features/page/types";
+import { PageListQuerySchema } from "@/features/page/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/query-options";
 import type { PageListItem as PageEntity } from "@/features/page/types";

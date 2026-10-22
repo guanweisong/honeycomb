@@ -1,16 +1,15 @@
+import type {
+  CategoryInsertSchema,
+  CategoryUpdateSchema,
+  CategoryListQuerySchema,
+} from "./schema";
 import type { z } from "zod";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { I18n } from "@/lib/i18n/i18n";
 import type { EnableStatus } from "@/lib/validation/enable-status";
-import type {
-  CategoryInsert as CategoryInsertInput,
-  CategoryUpdate as CategoryUpdateInput,
-  CategoryListQuerySchema,
-} from "./schema";
 
 /** 分类写入契约；与数据库持久化字段分开定义。 */
 export type CategoryInsert = CategoryInsertInput & { id?: string };
-export type CategoryUpdate = CategoryUpdateInput;
 export type CategoryListInput = PaginationInput &
   Pick<
     z.output<typeof CategoryListQuerySchema>,
@@ -36,3 +35,6 @@ export type CategoryRecord = {
 
 /** 分类列表和树节点的稳定读取模型。 */
 export type CategoryListItem = CategoryRecord & { deepPath: number };
+
+export type CategoryInsertInput = z.output<typeof CategoryInsertSchema>;
+export type CategoryUpdate = z.output<typeof CategoryUpdateSchema>;

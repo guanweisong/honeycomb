@@ -1,21 +1,20 @@
-import type { PaginationInput } from "@/lib/validation/pagination";
-import { z } from "zod";
-import { NullableI18nSchema } from "@/lib/i18n/i18n";
 import type {
-  TagInsert as TagInsertInput,
-  TagUpdate as TagUpdateInput,
+  TagInsertSchema,
+  TagUpdateSchema,
+  TagListQuerySchema,
+  TagRecordSchema,
 } from "./schema";
+import type { PaginationInput } from "@/lib/validation/pagination";
+import type { z } from "zod";
 
 export type TagInsert = TagInsertInput & { id?: string };
-export type TagUpdate = TagUpdateInput;
 export type TagListInput = PaginationInput & {
   id?: string[];
   name?: string;
 };
-export const TagRecordSchema = z.object({
-  id: z.string(),
-  name: NullableI18nSchema,
-  createdAt: z.string().nullable(),
-  updatedAt: z.string().nullable(),
-});
-export type TagRecord = z.infer<typeof TagRecordSchema>;
+
+export type TagRecord = z.output<typeof TagRecordSchema>;
+
+export type TagInsertInput = z.output<typeof TagInsertSchema>;
+export type TagUpdate = z.output<typeof TagUpdateSchema>;
+export type TagListQueryInput = z.output<typeof TagListQuerySchema>;

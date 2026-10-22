@@ -1,12 +1,8 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
-import {
-  UserInsertSchema,
-  UserUpdateSchema,
-  type UserInsert,
-  type UserUpdate,
-} from "@/features/user/schema";
+import { UserInsertSchema, UserUpdateSchema } from "@/features/user/schema";
+import type { UserInsert, UserUpdate } from "@/features/user/types";
 import { UserLevel, UserStatus } from "@/features/user/user";
 import {
   userLevelOptions,

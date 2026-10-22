@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { PageInsertSchema, PageUpdateSchema } from "./schema";
 import { PageTemplate } from "./page-template";

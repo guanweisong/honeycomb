@@ -22,14 +22,8 @@ import {
   groupPageTranslations,
   toPageTranslationRows,
 } from "./server/page-translations";
-import {
-  PageInsertSchema,
-  PageUpdateSchema,
-  PageDeleteSchema,
-  type PageInsert,
-  type PageUpdate,
-  type PageDelete,
-} from "./schema";
+import { PageInsertSchema, PageUpdateSchema, PageDeleteSchema } from "./schema";
+import type { PageInsert, PageUpdate, PageDelete } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { ApplicationError } from "@/lib/errors/application-error";

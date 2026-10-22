@@ -5,8 +5,8 @@ import {
   NullableLocalizedInputSchema,
 } from "@/lib/i18n/i18n";
 import { I18nSchema as InputI18n } from "@/lib/validation/validation";
-import { MediaRecordSchema } from "@/features/media/types";
-import { TagRecordSchema } from "@/features/tag/types";
+import { MediaRecordSchema } from "@/features/media/schema";
+import { TagRecordSchema } from "@/features/tag/schema";
 import { PostWithRelationsSchema } from "@/features/post/post-read-model";
 import { PostListResultSchema } from "@/features/post/post-read-model";
 import { createPostFixture } from "@tests/helpers/post-fixtures";

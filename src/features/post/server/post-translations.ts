@@ -1,4 +1,4 @@
-import type { PostFields } from "../schema";
+import type { PostFields } from "../types";
 import type { NullableLocalizedInput } from "@/lib/i18n/i18n";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import {

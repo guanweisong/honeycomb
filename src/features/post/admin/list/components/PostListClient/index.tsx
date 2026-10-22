@@ -11,11 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
-import {
-  type PostDelete,
-  PostListQueryInput,
-  PostListQuerySchema,
-} from "@/features/post/schema";
+import type { PostDelete, PostListQueryInput } from "@/features/post/types";
+import { PostListQuerySchema } from "@/features/post/schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import type { AdminPostListItem } from "@/features/post/types";
 import { Permission } from "@/lib/auth/permissions";

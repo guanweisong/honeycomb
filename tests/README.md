@@ -70,6 +70,12 @@ E2E 的显式临时目录初始化、凭据隔离及清理契约见 [README 的 
 
 CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage` 同时验证断言和覆盖率，不再额外执行重复的 `test:unit:run`。五个进程级门禁文件继续通过 `bun run test:unit:process` 单独运行；测试清单、覆盖率排除项和门槛不因此缩减。本地仍可使用 `test:unit:run` 进行不采集覆盖率的快速验证。
 
+普通覆盖率测试分成两个独立 runner shard，每个文件仍只执行一次。`vitest.shard.config.mts` 继承完整测试清单、覆盖率分母和隔离配置，只将不完整分片的阈值检查延后到合并阶段。`coverage_gate` 必须取得两个指定 blob，使用未改动的默认配置合并并执行全部全局和关键文件阈值；缺片、测试失败或合并失败都不能通过 `verify`。分片不能只采集已导入源码，否则未测试文件会从分母遗漏。新增分片/合并回归测试也进入串行进程组，原五个门禁文件全部保留。
+
+开发模式 E2E 与生产构建/分析/生产模式 E2E 独立运行，各自使用随机独占临时数据库，仍执行完整且不重叠的开发/生产测试清单。每个 Playwright job 保持单 worker，不共享数据库、不复用已有服务。生产构建仅持久化 `.next/cache/turbopack` 编译缓存，不缓存数据库、完整构建产物或测试通过状态。并行化以缩短墙钟为目标，可能增加 runner 总占用；实际收益以相同提交的 GitHub 冷/暖缓存运行对比为准。
+
+独占数据库是整个验证 step 的安全边界，不代表整个 step 都在建库。每条构建/测试/迁移/种子命令分别输出耗时并写入 Actions step summary；清理单独记录耗时。所有阶段仍在同一 EXIT/signal 清理边界内，任何命令失败都保留非零退出码。
+
 默认环境仍为 `jsdom`，需要 DOM、浏览器 API 或 React 客户端渲染的测试保持不变。已核实只使用 Node API、纯领域逻辑或静态契约检查的文件，在文件顶部显式声明 `// @vitest-environment node`，避免不必要的 DOM 初始化。新增声明前应检查测试及其导入依赖，并在 Node 环境下执行验证，不按 `.ts` / `.tsx` 后缀自动分组。保留 Vitest 默认的文件隔离和现有 worker 上限。
 
 ## 覆盖率治理
@@ -82,7 +88,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 | `**/*.test.{ts,tsx}`、`**/*.spec.{ts,tsx}` | 测试是覆盖率证据，不是生产分母                                                                                                          |
 | `tests/**`                                 | 跨模块测试、fixture 和测试配置不是生产源码                                                                                              |
 | `src/app/sw.ts`                            | E2E-only service worker 薄入口；`/en/offline` 由 Serwist route 显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
-| `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                                                                  |
+| `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                                     |
 
 业务页面、hooks、Feature server/schema/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
@@ -141,3 +147,14 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 参考现有的测试文件：
 
 - `src/features/user/tests/user.router.test.ts` - 用户管理测试
+
+## 保持断言的执行成本控制
+
+- 仅在传递依赖不使用 DOM、浏览器存储或组件生命周期时，为纯规则/schema 测试显式选择 Node 环境；不全局更换默认 jsdom。
+- 搜索 debounce 测试推进受控的 timeout 时钟，明确验证 299ms 不请求、300ms 才请求及再次输入重置计时；卸载组件后清除计时器并恢复真实时钟。IME、过期响应、取消、焦点及安全渲染断言仍保留。
+- 分类批量操作使用小型多行夹具验证状态与权限，仅完整树/超过旧 100 项上限的边界场景使用 105 行；不得缩小实际边界场景的数据规模。
+- schema 在数据库访问前拒绝的命令使用会抛错并记录访问的 typed 数据库探针，同时断言 BAD_REQUEST、零数据库访问和零失效通知；权限复核、事务、回滚及并发仍使用真实独占 SQLite。批量合成造数不得改变行数、关联数或查询边界。
+- 架构扫描仅复用按路径和完整源码内容匹配的依赖元数据，限制缓存容量并复制返回值；不缓存可变 AST、目录列表或模块解析结果。改写、删除 fixture 后仍须重新读取真实文件系统。
+- 参数表用对象或显式元组包裹数组参数，避免空数组被 Vitest 当作“零参数的一行”；规则测试直接检查真实规则结果，不用测试自身调用的 mock 作为业务覆盖证据。
+
+Feature schema/types 职责由 `tests/architecture/schema-type-ownership.test.ts` 动态检查：schema 不导出业务类型，既有 feature types 只含类型声明及显式 type-only 依赖，并禁止 schema 反向依赖所属 types。`tests/types/schema-output-contracts.ts` 随 `check-types` 编译，覆盖原 CleanZod 八个输出契约、真实 transform/default/partial 语义，以及 Category/Tag 原始输入与内部可选 id、评论 captcha 和登录契约的区别；它不是 Vitest 运行用例。

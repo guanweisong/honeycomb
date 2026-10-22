@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { CommentStatus } from "@/features/comment/comment-status";
 import { TEST_IDS } from "@tests/helpers/test-constants";

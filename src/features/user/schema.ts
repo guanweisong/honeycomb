@@ -9,7 +9,7 @@ import { IdSchema } from "@/lib/validation/id.schema";
 import { hasUpdateFields } from "@/lib/validation/validation";
 import { CredentialPasswordSchema } from "@/lib/auth/password-policy";
 import { LoginUsernameSchema } from "@/lib/auth/username-policy";
-import { type CleanZod, requiredString } from "@/lib/validation/validation";
+import { requiredString } from "@/lib/validation/validation";
 import { z } from "zod";
 
 const UserEmailSchema = requiredString("用户邮箱不能为空")
@@ -25,8 +25,6 @@ export const UserInsertSchema = z.object({
   password: CredentialPasswordSchema,
 });
 
-export type UserInsert = CleanZod<typeof UserInsertSchema>;
-
 export const UserUpdateSchema = UserInsertSchema.partial()
   .extend({
     id: IdSchema,
@@ -34,8 +32,6 @@ export const UserUpdateSchema = UserInsertSchema.partial()
     email: UserEmailSchema.optional(),
   })
   .refine(hasUpdateFields, "至少修改一个字段");
-
-export type UserUpdate = CleanZod<typeof UserUpdateSchema>;
 
 /**
  * 获取用户列表时的查询参数验证 schema。
@@ -45,9 +41,3 @@ export const UserListQuerySchema = PaginationQuerySchema.extend({
   level: QueryStringArraySchema,
   name: queryString(),
 }).partial();
-
-/**
- * 用户列表查询参数的 TypeScript 类型。
- * 从 `UserListQuerySchema` 推断而来。
- */
-export type UserListQueryInput = CleanZod<typeof UserListQuerySchema>;

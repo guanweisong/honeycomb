@@ -1,4 +1,4 @@
-import type { UserUpdate } from "@/features/user/schema";
+import type { UserUpdate } from "@/features/user/types";
 import type { UserRecord as UserEntity } from "@/features/user/types";
 import { UserStatus } from "@/features/user/user";
 import { isProtectedUser } from "../../rules";

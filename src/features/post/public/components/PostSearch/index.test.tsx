@@ -50,9 +50,9 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
 let root: Root;
 let container: HTMLDivElement;
 let client: QueryClient;
-const pause = async (ms = 350) => {
+const advanceTime = async (ms = 300) => {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, ms));
+    await vi.advanceTimersByTimeAsync(ms);
   });
 };
 function button(label: string) {
@@ -81,10 +81,11 @@ async function type(value: string) {
 }
 async function open() {
   await act(async () => button("搜索").click());
-  await pause(10);
+  await advanceTime(10);
 }
 
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   search.mockReset().mockResolvedValue([]);
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   container = document.createElement("div");
@@ -101,9 +102,14 @@ beforeEach(async () => {
   );
 });
 afterEach(async () => {
-  await act(async () => root.unmount());
-  client.clear();
-  container.remove();
+  try {
+    await act(async () => root.unmount());
+    client.clear();
+    container.remove();
+  } finally {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  }
 });
 
 describe("public blog search", () => {
@@ -126,8 +132,8 @@ describe("public blog search", () => {
     ]);
     await open();
     await type("引用");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(document.body.textContent).not.toContain("不应展示的标题");
     expect(document.body.textContent).not.toContain("无标题");
     const link = document.querySelector('a[href="/zh/archives/quote-titled"]');
@@ -163,7 +169,7 @@ describe("public blog search", () => {
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       ),
     );
-    await pause(10);
+    await advanceTime(10);
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(document.activeElement).toBe(button("搜索"));
   });
@@ -179,12 +185,15 @@ describe("public blog search", () => {
     ]);
     await open();
     await type("h");
-    await type("  hello  ");
+    await advanceTime(299);
     expect(search).not.toHaveBeenCalled();
-    await pause();
-    await pause(10);
+    await type("  hello  ");
+    await advanceTime(299);
+    expect(search).not.toHaveBeenCalled();
+    await advanceTime(1);
     expect(search).toHaveBeenCalledTimes(1);
     expect(search.mock.calls[0]?.[0]).toEqual({ query: "hello", locale: "zh" });
+    await advanceTime(10);
     const link = document.querySelector<HTMLAnchorElement>(
       'a[href="/zh/archives/post-one"]',
     );
@@ -206,20 +215,20 @@ describe("public blog search", () => {
       ),
     );
     await type("中文");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(search).not.toHaveBeenCalled();
     await act(async () =>
       input().dispatchEvent(
         new CompositionEvent("compositionend", { bubbles: true }),
       ),
     );
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(search.mock.calls[0]?.[0]).toEqual({ query: "中文", locale: "zh" });
     await type("   ");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(search).toHaveBeenCalledTimes(1);
   });
 
@@ -233,14 +242,14 @@ describe("public blog search", () => {
     );
     await open();
     await type("missing");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(document.body.textContent).toContain("搜索中");
     await act(async () => reject(new Error("offline")));
-    await pause(10);
+    await advanceTime(10);
     expect(document.body.textContent).toContain("搜索失败");
     await act(async () => button("重试").click());
-    await pause(10);
+    await advanceTime(10);
     expect(search).toHaveBeenCalledTimes(2);
     expect(document.body.textContent).toContain("没有找到相关内容");
   });
@@ -251,8 +260,8 @@ describe("public blog search", () => {
     ]);
     await open();
     await type("old");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(document.body.textContent).toContain("旧结果");
     await type("new");
     expect(document.body.textContent).not.toContain("旧结果");
@@ -270,10 +279,10 @@ describe("public blog search", () => {
     ]);
     await open();
     await type("old");
-    await pause();
+    await advanceTime();
     await type("new");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     expect(document.body.textContent).toContain("无标题");
     expect(document.body.textContent).toContain("新的内容");
     await act(async () =>
@@ -281,14 +290,14 @@ describe("public blog search", () => {
         { id: "old", title: "旧结果", excerpt: "old", type: "ARTICLE" },
       ]),
     );
-    await pause(10);
+    await advanceTime(10);
     expect(document.body.textContent).not.toContain("旧结果");
   });
   it("cancels an in-flight request when closed", async () => {
     search.mockImplementationOnce(() => new Promise(() => {}));
     await open();
     await type("pending");
-    await pause();
+    await advanceTime();
     const options = search.mock.calls[0]?.[1] as { signal: AbortSignal };
     expect(options.signal.aborted).toBe(false);
     await act(async () => button("关闭搜索").click());
@@ -314,8 +323,8 @@ describe("public blog search", () => {
     ]);
     await open();
     await type("正文");
-    await pause();
-    await pause(10);
+    await advanceTime();
+    await advanceTime(10);
     const covered = document.querySelector('a[href="/zh/archives/covered"]');
     const plain = document.querySelector('a[href="/zh/archives/plain"]');
     expect(covered?.querySelector("img")?.getAttribute("src")).toBe(

@@ -1,5 +1,6 @@
+import type { SettingPatchSchema } from "./schema";
+import type { z } from "zod";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
-import type { SettingPatch } from "./schema";
 
 export interface SettingRecord {
   id: string;
@@ -15,3 +16,5 @@ export interface SettingRecord {
 }
 export type SettingUpdate = SettingPatch;
 export type SettingViewModel = SettingRecord | undefined;
+
+export type SettingPatch = z.output<typeof SettingPatchSchema>;

@@ -10,8 +10,6 @@ import { IdSchema } from "@/lib/validation/id.schema";
 
 import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 
-import type { CleanZod } from "@/lib/validation/validation";
-
 import {
   QueryStringArraySchema,
   queryString,
@@ -29,13 +27,9 @@ export const LinkInsertSchema = z.object({
   description: z.string().trim().optional(),
 });
 
-export type LinkInsert = z.output<typeof LinkInsertSchema>;
-
 export const LinkUpdateSchema = LinkInsertSchema.partial()
   .extend({ id: IdSchema })
   .refine(hasUpdateFields, "至少修改一个字段");
-
-export type LinkUpdate = z.output<typeof LinkUpdateSchema>;
 
 /**
  * 获取友情链接列表时的查询参数验证 schema。
@@ -46,9 +40,3 @@ export const LinkListQuerySchema = PaginationQuerySchema.extend({
   description: queryString(),
   status: QueryStringArraySchema.pipe(z.array(z.enum(EnableStatus)).optional()),
 }).partial();
-
-/**
- * 友情链接列表查询参数的 TypeScript 类型。
- * 从 `LinkListQuerySchema` 推断而来。
- */
-export type LinkListQueryInput = CleanZod<typeof LinkListQuerySchema>;

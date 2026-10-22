@@ -8,11 +8,23 @@ export interface ModuleDependency {
   typeOnly: boolean;
 }
 
+// Bound worker-local retention during watch runs and fixture-heavy suites. Cache
+// only derived metadata, never mutable TypeScript ASTs or filesystem snapshots.
+const dependencyCache = new Map<
+  string,
+  { source: string; dependencies: ModuleDependency[] }
+>();
+const maxCachedSources = 1024;
+
 /** Include re-exports, dynamic imports and require, not only static imports. */
 export function moduleDependencies(
   source: string,
   path = "module.ts",
 ): ModuleDependency[] {
+  const cached = dependencyCache.get(path);
+  if (cached?.source === source)
+    return cached.dependencies.map((dependency) => ({ ...dependency }));
+
   const result: ModuleDependency[] = [];
   const file = ts.createSourceFile(
     path,
@@ -84,7 +96,14 @@ export function moduleDependencies(
     ts.forEachChild(node, visit);
   }
   visit(file);
-  return result;
+  dependencyCache.delete(path);
+  dependencyCache.set(path, { source, dependencies: result });
+  if (dependencyCache.size > maxCachedSources) {
+    const oldest = dependencyCache.keys().next().value;
+    if (oldest !== undefined) dependencyCache.delete(oldest);
+  }
+  // Every caller owns its result, including the first caller on a cache miss.
+  return result.map((dependency) => ({ ...dependency }));
 }
 
 export function localModulePath(

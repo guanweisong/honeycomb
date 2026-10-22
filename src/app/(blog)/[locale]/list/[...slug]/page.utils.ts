@@ -6,7 +6,7 @@ import {
 } from "@/app/lib/server/public-queries";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 import { PostStatus } from "@/features/post/post-status";
-import type { PostListQueryInput } from "@/features/post/schema";
+import type { PostListQueryInput } from "@/features/post/types";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { notFound } from "next/navigation";
 

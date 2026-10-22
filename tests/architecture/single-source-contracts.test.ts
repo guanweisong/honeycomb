@@ -18,8 +18,8 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it.each([
-    ["src/features/post/schema.ts", "PostInsert"],
-    ["src/features/page/schema.ts", "PageInsert"],
+    ["src/features/post/types.ts", "PostInsert"],
+    ["src/features/page/types.ts", "PageInsert"],
     ["src/features/media/upload-policy.ts", "MediaUploadFile"],
     ["src/features/link/types.ts", "LinkInsert"],
     ["src/features/media/types.ts", "MediaRecord"],

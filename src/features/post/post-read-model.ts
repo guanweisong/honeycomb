@@ -3,8 +3,8 @@ import { PostStatus } from "@/features/post/post-status";
 import { PostType } from "@/features/post/post-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { PartialLocalizedTextSchema } from "@/lib/i18n/i18n";
-import { MediaRecordSchema } from "@/features/media/types";
-import { TagRecordSchema } from "@/features/tag/types";
+import { MediaRecordSchema } from "@/features/media/schema";
+import { TagRecordSchema } from "@/features/tag/schema";
 
 const localized = PartialLocalizedTextSchema.nullable();
 const timestamps = {

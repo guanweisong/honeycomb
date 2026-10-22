@@ -18,10 +18,7 @@ export const MenuWriteSchema = z
   .array()
   .min(1, "菜单不能为空");
 
-export type MenuInput = z.output<typeof MenuWriteSchema>;
-
 export const MenuSaveSnapshotSchema = z.strictObject({
   expectedVersion: z.number().int().nonnegative(),
   items: MenuWriteSchema,
 });
-export type MenuSaveSnapshot = z.output<typeof MenuSaveSnapshotSchema>;

@@ -286,39 +286,6 @@ describe("atomic post writes", () => {
     expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
-  it("validates direct command inputs before writing or invalidating", async () => {
-    const created = await create();
-    const invalidator = cache();
-    const invalidUpdate = {
-      id: created.id,
-      expectedVersion: 0,
-      movieTime: "bad",
-      authorId: "forged",
-    };
-    await expect(
-      updatePost(db, invalidUpdate, actorId, invalidator),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      updatePost(
-        db,
-        {
-          id: created.id,
-          expectedVersion: 0,
-          title: { en: "bad" },
-          removeLocales: ["en"],
-        },
-        actorId,
-        invalidator,
-      ),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    const invalidCreate = { ...input, views: 10 };
-    await expect(
-      createPost(db, invalidCreate, actorId, invalidator),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect((await row(created.id)).version).toBe(0);
-    expect(await db.select().from(schema.post)).toHaveLength(1);
-    expect(invalidator.invalidate).not.toHaveBeenCalled();
-  });
   it("rejects newly introduced unregistered managed media without a partial save", async () => {
     const invalidator = cache();
     await expect(
@@ -633,29 +600,6 @@ describe("atomic post writes", () => {
       expect(detail).not.toHaveProperty("creationInputHash");
     }
   });
-  it.each(["unknown-root", "unknown-item", "duplicate", "empty"] as const)(
-    "rejects %s direct delete input before any write or invalidation",
-    async (kind) => {
-      const created = await create();
-      const item = { id: created.id, expectedVersion: 0 };
-      const input =
-        kind === "unknown-root"
-          ? { items: [item], force: true }
-          : kind === "unknown-item"
-            ? { items: [{ ...item, authorId: "forged" }] }
-            : kind === "duplicate"
-              ? { items: [item, item] }
-              : { items: [] };
-      const invalidator = cache();
-      await expect(
-        destroyPosts(db, input, actorId, invalidator),
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      expect((await row(created.id)).version).toBe(0);
-      expect(await db.select().from(schema.postTranslation)).toHaveLength(2);
-      expect(await db.select().from(schema.postTag)).toHaveLength(1);
-      expect(invalidator.invalidate).not.toHaveBeenCalled();
-    },
-  );
   it("rolls back an entire batch delete on any stale version", async () => {
     const first = await create();
     const second = await createPost(
@@ -847,4 +791,66 @@ describe("post conditional write result", () => {
     expect(fake.delete).not.toHaveBeenCalled();
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   });
+});
+
+describe("post command input rejection without database access", () => {
+  const access = vi.fn((property: PropertyKey): never => {
+    throw new Error(`Unexpected database access: ${String(property)}`);
+  });
+  const db: Database = new Proxy(asMockDatabase({}), {
+    get: (_target, property) => access(property),
+  });
+  beforeEach(() => {
+    access.mockClear();
+  });
+  afterEach(() => expect(access).not.toHaveBeenCalled());
+  it("validates direct command inputs before writing or invalidating", async () => {
+    const invalidator = cache();
+    const invalidUpdate = {
+      id: "507f1f77bcf86cd799439011",
+      expectedVersion: 0,
+      movieTime: "bad",
+      authorId: "forged",
+    };
+    await expect(
+      updatePost(db, invalidUpdate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      updatePost(
+        db,
+        {
+          id: "507f1f77bcf86cd799439011",
+          expectedVersion: 0,
+          title: { en: "bad" },
+          removeLocales: ["en"],
+        },
+        actorId,
+        invalidator,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const invalidCreate = { ...input, views: 10 };
+    await expect(
+      createPost(db, invalidCreate, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+  it.each(["unknown-root", "unknown-item", "duplicate", "empty"] as const)(
+    "rejects %s direct delete input before any write or invalidation",
+    async (kind) => {
+      const item = { id: "507f1f77bcf86cd799439011", expectedVersion: 0 };
+      const input =
+        kind === "unknown-root"
+          ? { items: [item], force: true }
+          : kind === "unknown-item"
+            ? { items: [{ ...item, authorId: "forged" }] }
+            : kind === "duplicate"
+              ? { items: [item, item] }
+              : { items: [] };
+      const invalidator = cache();
+      await expect(
+        destroyPosts(db, input, actorId, invalidator),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(invalidator.invalidate).not.toHaveBeenCalled();
+    },
+  );
 });

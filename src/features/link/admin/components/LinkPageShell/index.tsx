@@ -4,10 +4,8 @@ import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/features/user/admin/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
-import {
-  LinkListQuerySchema,
-  type LinkListQueryInput,
-} from "@/features/link/schema";
+import { LinkListQuerySchema } from "@/features/link/schema";
+import type { LinkListQueryInput } from "@/features/link/types";
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";

@@ -1,4 +1,4 @@
-import type { LinkUpdate } from "@/features/link/schema";
+import type { LinkUpdate } from "@/features/link/types";
 import type { LinkRecord as LinkEntity } from "@/features/link/types";
 
 export function toLinkFormDefaults(

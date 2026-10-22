@@ -13,7 +13,7 @@ import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
 import type { PublicPostListItem } from "@/features/post/types";
 import { PostType } from "@/features/post/post-type";
-import { PostListQueryInput } from "@/features/post/schema";
+import type { PostListQueryInput } from "@/features/post/types";
 import type { PublicPostListResult } from "@/features/post/types";
 
 const PostTypeBgColor = Object.freeze({

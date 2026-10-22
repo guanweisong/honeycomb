@@ -43,5 +43,3 @@ export const SettingPatchSchema = SettingAdminUpdateSchema.partial()
     const fields = { ...input, expectedVersion: undefined };
     return hasUpdateFields(fields);
   }, "至少修改一个字段");
-
-export type SettingPatch = z.output<typeof SettingPatchSchema>;

@@ -53,12 +53,6 @@ export const PublicCommentSchema = PublicCommentBaseSchema.refine(
 );
 
 /**
- * 新增评论的 TypeScript 输入类型。
- * 从 `PublicCommentSchema` 推断而来，提供了清晰的数据结构定义。
- */
-export type PublicCommentInput = z.infer<typeof PublicCommentSchema>;
-
-/**
  * 更新评论状态的数据验证 schema。
  */
 export const CommentUpdateSchema = z
@@ -80,5 +74,3 @@ export const CommentUpdateSchema = z
       input.status !== undefined,
     "至少修改一个字段",
   );
-
-export type CommentUpdate = z.infer<typeof CommentUpdateSchema>;

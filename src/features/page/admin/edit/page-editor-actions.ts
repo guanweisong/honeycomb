@@ -3,12 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import {
-  PageInsertSchema,
-  PageUpdateSchema,
-  type PageInsert,
-  type PageUpdate,
-} from "@/features/page/schema";
+import { PageInsertSchema, PageUpdateSchema } from "@/features/page/schema";
+import type { PageInsert, PageUpdate } from "@/features/page/types";
 import { PageStatus } from "@/features/page/page-status";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {

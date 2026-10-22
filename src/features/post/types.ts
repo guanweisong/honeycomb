@@ -1,3 +1,11 @@
+import type {
+  PostFieldsSchema,
+  PostRelationPatchSchema,
+  PostInsertSchema,
+  PostUpdateSchema,
+  PostDeleteSchema,
+  PostListQuerySchema,
+} from "./schema";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { z } from "zod";
 import type { MediaRecord } from "@/features/media/types";
@@ -33,3 +41,10 @@ export type PublicPostListResult = z.infer<typeof PublicPostListResultSchema>;
 export type PostDetailResult = PostWithRelations & {
   imagesInContent: MediaRecord[];
 };
+
+export type PostFields = z.output<typeof PostFieldsSchema>;
+export type PostRelationPatch = z.output<typeof PostRelationPatchSchema>;
+export type PostInsert = z.output<typeof PostInsertSchema>;
+export type PostUpdate = z.output<typeof PostUpdateSchema>;
+export type PostDelete = z.output<typeof PostDeleteSchema>;
+export type PostListQueryInput = z.output<typeof PostListQuerySchema>;

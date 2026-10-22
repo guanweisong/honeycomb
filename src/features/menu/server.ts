@@ -18,7 +18,8 @@ import { assembleRequiredLocalizedField } from "@/lib/db/translation-values";
 import type { MenuInput, MenuVisibility } from "./types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
-import { MenuSaveSnapshotSchema, type MenuSaveSnapshot } from "./schema";
+import { MenuSaveSnapshotSchema } from "./schema";
+import type { MenuSaveSnapshot } from "./types";
 import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/user";
 

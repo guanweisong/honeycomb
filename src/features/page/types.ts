@@ -1,3 +1,11 @@
+import type {
+  PageFieldsSchema,
+  PageInsertSchema,
+  PageUpdateSchema,
+  PageDeleteSchema,
+  PageListQuerySchema,
+} from "./schema";
+import type { z } from "zod";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { PageStatus } from "@/features/page/page-status";
 import type { PageTemplate } from "@/features/page/page-template";
@@ -37,3 +45,9 @@ export type PageMenuOption = Pick<
   PageRecord,
   "id" | "title" | "createdAt" | "updatedAt"
 >;
+
+export type PageFields = z.output<typeof PageFieldsSchema>;
+export type PageInsert = z.output<typeof PageInsertSchema>;
+export type PageUpdate = z.output<typeof PageUpdateSchema>;
+export type PageDelete = z.output<typeof PageDeleteSchema>;
+export type PageListQueryInput = z.output<typeof PageListQuerySchema>;

@@ -3,7 +3,7 @@ import {
   getTreeFromFlatData,
 } from "@nosferatu500/react-sortable-tree";
 import { MenuType } from "@/features/menu/menu-types";
-import type { MenuInput } from "../schema";
+import type { MenuInput } from "../types";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
 
 enum MenuTypeName {

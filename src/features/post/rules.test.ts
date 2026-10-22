@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { PostStatus } from "./post-status";
 import { getPostPublishStatus, getPostWithdrawStatus } from "./rules";

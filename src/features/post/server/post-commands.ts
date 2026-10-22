@@ -31,7 +31,7 @@ import type {
   PostUpdate,
   PostDelete,
   PostRelationPatch,
-} from "../schema";
+} from "../types";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { getPostPublishStatus, getPostWithdrawStatus } from "../rules";

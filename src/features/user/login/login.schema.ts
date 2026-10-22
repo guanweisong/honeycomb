@@ -11,5 +11,3 @@ export const LoginSchema = z.object({
     .string({ message: "登录密码不能为空" })
     .min(1, "登录密码不能为空"),
 });
-
-export type LoginValues = z.infer<typeof LoginSchema>;

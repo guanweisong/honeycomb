@@ -12,7 +12,8 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
-import { PageInsertSchema, type PageInsert } from "@/features/page/schema";
+import { PageInsertSchema } from "@/features/page/schema";
+import type { PageInsert } from "@/features/page/types";
 import { PageStatus } from "@/features/page/page-status";
 import { PageTemplate } from "@/features/page/page-template";
 import {

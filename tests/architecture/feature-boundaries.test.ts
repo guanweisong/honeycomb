@@ -374,7 +374,7 @@ describe("feature-owned business boundaries", () => {
       'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
       'export { getCurrentUser } from "./server/user-queries";',
       'export * from "@/features/user/server";',
-      'export { MediaRecordSchema } from "@/features/media/types";',
+      'export { MediaRecordSchema } from "@/features/media/schema";',
       'export type { CurrentUserRecord } from "./types";',
     ].join("\n");
     expect(

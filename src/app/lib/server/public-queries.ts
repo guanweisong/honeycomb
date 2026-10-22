@@ -7,7 +7,7 @@ import { createServerClient } from "@/app/_trpc/server";
 import type { MenuType } from "@/features/menu/menu-types";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
-import type { PostListQueryInput } from "@/features/post/schema";
+import type { PostListQueryInput } from "@/features/post/types";
 import {
   getPageDetailCacheTag,
   getPostDetailCacheTag,

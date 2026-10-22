@@ -7,11 +7,8 @@ import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/user";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
-import {
-  MediaRecordSchema,
-  type MediaRecord,
-  type MediaListInput,
-} from "../types";
+import { MediaRecordSchema } from "../schema";
+import type { MediaRecord, MediaListInput } from "../types";
 import type { UploadIntent } from "./upload-intent";
 import type { validateMediaImage } from "./image-validation";
 import { assertOrdinaryMediaSchema } from "./media-schema-readiness";

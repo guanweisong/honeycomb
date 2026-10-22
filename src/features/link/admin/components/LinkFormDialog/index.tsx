@@ -1,12 +1,8 @@
 "use client";
 
 import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
-import {
-  LinkInsertSchema,
-  LinkUpdateSchema,
-  type LinkInsert,
-  type LinkUpdate,
-} from "@/features/link/schema";
+import { LinkInsertSchema, LinkUpdateSchema } from "@/features/link/schema";
+import type { LinkInsert, LinkUpdate } from "@/features/link/types";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { enableStatusOptions } from "@/components/admin/enable-status-options";
 import { Dialog } from "@/components/Dialog";

@@ -25,12 +25,9 @@ export const CategoryInsertSchema = z.object({
   path: requiredString("path不能为空"),
 });
 
-export type CategoryInsert = z.output<typeof CategoryInsertSchema>;
-
 export const CategoryUpdateSchema = CategoryInsertSchema.partial()
   .extend({ id: IdSchema })
   .refine(hasUpdateFields, "至少修改一个字段");
-export type CategoryUpdate = z.output<typeof CategoryUpdateSchema>;
 
 /**
  * 获取分类列表时的查询参数验证 schema。

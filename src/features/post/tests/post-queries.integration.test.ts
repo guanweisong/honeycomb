@@ -70,11 +70,11 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
-async function insertPost(
+function postValues(
   id: string,
   extra: Partial<typeof schema.post.$inferInsert> = {},
 ) {
-  await db.insert(schema.post).values({
+  return {
     id,
     authorId: "author",
     categoryId: "child",
@@ -83,7 +83,13 @@ async function insertPost(
     updatedAt: "2020-01-01",
     views: 10,
     ...extra,
-  });
+  };
+}
+async function insertPost(
+  id: string,
+  extra: Partial<typeof schema.post.$inferInsert> = {},
+) {
+  await db.insert(schema.post).values(postValues(id, extra));
 }
 async function tagPost(postId: string, type = TagType.ACTOR) {
   await db.insert(schema.postTag).values({ postId, tagId: "tag", type });
@@ -182,12 +188,17 @@ describe("post list SQL with isolated real SQLite", () => {
       sql.startsWith('select "id" from "post"'),
     );
     expect(before).toBeDefined();
-    for (let index = 0; index < 150; index += 1) {
-      const id = `many-${index}`;
-      await insertPost(id);
-      await tagPost(id);
-      await tagPost(id, TagType.DIRECTOR);
-    }
+    const ids = Array.from({ length: 150 }, (_, index) => `many-${index}`);
+    await db.insert(schema.post).values(ids.map((id) => postValues(id)));
+    await db.insert(schema.postTag).values(
+      ids.flatMap((postId) =>
+        [TagType.ACTOR, TagType.DIRECTOR].map((type) => ({
+          postId,
+          tagId: "tag",
+          type,
+        })),
+      ),
+    );
     queries.length = 0;
     const result = await listPublicPosts(db, { tagId: "tag", limit: 10 });
     const after = queries.find(({ sql }) =>

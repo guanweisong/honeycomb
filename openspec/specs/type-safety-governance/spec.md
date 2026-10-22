@@ -170,3 +170,27 @@ server 持久化读取 SHALL 在返回业务枚举前验证持久化值，并对
 
 - **WHEN** 所有清理任务完成
 - **THEN** 类型检查、Lint、全量单元测试、覆盖率门禁和生产构建必须通过
+
+### Requirement: Feature schema 与静态类型职责分离
+
+Feature 的运行时校验 schema MUST 在 schema 模块定义，不在 schema 模块导出派生业务类型；已有 `types.ts` MUST 通过 `import type` 引用权威 schema 并使用 `z.output<typeof Schema>` 推导解析后类型。`types.ts` MUST 仅包含类型声明和显式类型依赖，不定义或转导出运行时 schema。消费者 MUST 从所属 feature 的权威类型入口导入类型，不保留旧 schema 类型转导出链。
+
+#### Scenario: 保持原始输入与解析后输出的区别
+
+- **WHEN** 迁移包含 transform、default 或 partial 的校验契约
+- **THEN** 原有输出类型保持输出语义，既有 `z.input` 原始输入消费者不得机械改成 `z.output`，类型回归必须检查实际输入输出差异
+
+#### Scenario: 保持有意扩展的命令契约
+
+- **WHEN** Category 或 Tag 的内部写入类型在 schema 输出上增加可选 id
+- **THEN** 原始校验输出分别命名为 CategoryInsertInput 或 TagInsertInput，既有 CategoryInsert 或 TagInsert 保留可选 id 的独立语义，不合并成同名不同义类型
+
+#### Scenario: 运行时读取模型与纯类型入口分离
+
+- **WHEN** MediaRecordSchema 或 TagRecordSchema 被其他 feature 复用
+- **THEN** 运行时 schema 由所属 schema 模块提供，MediaRecord 或 TagRecord 在 types 中推导，schema 初始化表达式与字段校验保持不变
+
+#### Scenario: 避免反向类型依赖与无意义文件拆分
+
+- **WHEN** feature 已有 schema 与 types 入口或嵌套表单 schema
+- **THEN** 派生业务类型归入已有 feature types，schema 不反向依赖所属 types；枚举等中立定义和已有独立读取模型模块保持其职责，不为目录对称新增单用途转发文件，schema 内部必要但不导出的辅助类型可以保留
