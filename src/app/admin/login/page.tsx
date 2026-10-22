@@ -26,7 +26,7 @@ async function LoginContent({
   }
 
   const [setting, providers] = await Promise.all([
-    getSiteSetting(requestHeaders),
+    getSiteSetting(),
     getAuthProviders(),
   ]);
   const targetUrl = normalizeAdminCallback((await searchParams).targetUrl);

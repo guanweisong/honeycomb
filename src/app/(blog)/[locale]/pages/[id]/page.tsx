@@ -18,6 +18,7 @@ import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";
 import { assertPublishedPage } from "./page.utils";
+import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 import {
   createLocalizedAlternates,
   defaultSocialImage,
@@ -43,6 +44,7 @@ export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
 
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const { id, locale: rawLocale } = await props.params;
+  assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
@@ -145,13 +147,15 @@ export async function generateMetadata(
   props: PageProps<"/[locale]/pages/[id]">,
 ) {
   const { id, locale: rawLocale } = await props.params;
+  assertDetailId(id);
   const [setting, pageDetail] = await Promise.all([
     getPublicSetting(),
     getPublicPageDetail(id),
   ]);
+  const publishedPage = assertPublishedPage(pageDetail);
   const local = normalizeMultiLangLocale(rawLocale);
 
-  const title = pageDetail?.title?.[local];
+  const title = publishedPage.title?.[local];
 
   const openGraph = {
     title: title,

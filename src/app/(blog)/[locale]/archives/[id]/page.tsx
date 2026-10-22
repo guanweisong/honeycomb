@@ -34,6 +34,7 @@ import {
 } from "@/app/(blog)/lib/metadata";
 import { connection } from "next/server";
 import LoadingState from "@/components/LoadingState";
+import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 
 /**
  * 归档页面组件。
@@ -56,6 +57,7 @@ export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
 
 async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   const { id, locale: rawLocale } = await props.params;
+  assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
   let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
   try {
@@ -221,6 +223,7 @@ export async function generateMetadata(
   props: PageProps<"/[locale]/archives/[id]">,
 ): Promise<Metadata> {
   const { id, locale: rawLocale } = await props.params;
+  assertDetailId(id);
   let setting: Awaited<ReturnType<typeof getPublicSetting>>;
   let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
   try {

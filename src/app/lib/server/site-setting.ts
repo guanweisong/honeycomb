@@ -12,6 +12,6 @@ const getSiteSettingWithHeaders = cache(
   },
 );
 
-/** 公开读取走统一请求缓存；显式请求头仅用于登录页等请求绑定场景。 */
+/** 公开读取默认走共享缓存；显式请求头分支仅提供请求内去重。 */
 export const getSiteSetting = (headers?: Headers): Promise<SettingViewModel> =>
   headers ? getSiteSettingWithHeaders(headers) : getPublicSetting();

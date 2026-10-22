@@ -1,4 +1,5 @@
 import { requireDefined } from "@tests/helpers/require-defined";
+import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 import { MenuType } from "@/features/menu/menu-types";
 import React from "react";
 import { act } from "react";
@@ -71,7 +72,7 @@ describe("Breadcrumb", () => {
     locale = "zh";
   });
 
-  const render = (items = menu) => {
+  const render = (items: MenuNavigationItem[] = menu) => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -141,6 +142,77 @@ describe("Breadcrumb", () => {
       ).not.toBeNull();
     },
   );
+
+  it.each(
+    [MenuType.PAGE, MenuType.CUSTOM].flatMap((type) =>
+      [true, false].flatMap((rootBridge) =>
+        ["zh", "en"].map((language) => ({ type, rootBridge, language })),
+      ),
+    ),
+  )(
+    "skips $type null-path ancestors (root=$rootBridge, locale=$language)",
+    ({ type, rootBridge, language }) => {
+      locale = language;
+      segments = [
+        "list",
+        rootBridge ? "category/child" : "category/parent/child",
+      ];
+      const bridge = {
+        ...requireDefined(menu[1]),
+        id: "bridge",
+        path: null,
+        parent: rootBridge ? null : "parent",
+        type,
+      };
+      render([
+        ...menu.slice(0, 2),
+        bridge,
+        { ...requireDefined(menu[2]), parent: "bridge" },
+      ]);
+
+      expect(container.textContent).toBe(
+        language === "zh"
+          ? rootBridge
+            ? "首页 / 子分类"
+            : "首页 / 父分类 / 子分类"
+          : rootBridge
+            ? "Home / Child"
+            : "Home / Parent / Child",
+      );
+      expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(
+        1,
+      );
+      expect(
+        container.querySelector('[aria-current="page"]')?.textContent,
+      ).toBe(language === "zh" ? "子分类" : "Child");
+      expect(container.querySelectorAll("a")).toHaveLength(rootBridge ? 1 : 2);
+      if (!rootBridge) {
+        expect(
+          container.querySelector('a[href="/list/category/parent"]'),
+        ).not.toBeNull();
+      }
+    },
+  );
+
+  it("keeps null-path ancestor resolution within the complete route branch", () => {
+    render([
+      ...menu.slice(0, 2),
+      {
+        ...requireDefined(menu[1]),
+        id: "other",
+        path: "other",
+      },
+      {
+        ...requireDefined(menu[1]),
+        id: "bridge",
+        path: null,
+        parent: "other",
+      },
+      { ...requireDefined(menu[2]), parent: "bridge" },
+    ]);
+
+    expect(container.querySelector("nav")).toBeNull();
+  });
 
   it.each([
     "category",
