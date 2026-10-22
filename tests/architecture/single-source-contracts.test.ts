@@ -279,7 +279,7 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("后台公共交互参数只维护一份反馈字段", () => {
-    const actionState = sourceFile("src/components/admin/action-state.ts");
+    const actionState = sourceFile("src/components/admin/lib/action-state.ts");
     const runOptions = actionState.statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) &&

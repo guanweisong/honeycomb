@@ -1,9 +1,5 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
-
-export enum EnableStatusName {
-  ENABLE = "启用",
-  DISABLE = "禁用",
-}
+import { EnableStatusName } from "../types/enable-status-name";
 
 export const enableStatusOptions = [
   {

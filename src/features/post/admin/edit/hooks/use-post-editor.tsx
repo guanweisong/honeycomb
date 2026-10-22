@@ -22,9 +22,9 @@ import type { CategoryListItem as CategoryEntity } from "@/features/category/typ
 import {
   notifyPublicSyncWarning,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
-import { useLocalDraft } from "@/components/admin/local-draft";
+import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { can, Permission } from "@/lib/auth/permissions";
 import {

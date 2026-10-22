@@ -15,7 +15,7 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { useCommentActions } from "@/features/comment/admin/comment-actions";
 import { commentTableColumns } from "../../columns/comment-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 const moderationActions = {
   [CommentStatus.TO_AUDIT]: [

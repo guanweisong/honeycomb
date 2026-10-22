@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { notifyPublicSyncWarning } from "@/components/admin/lib/action-state";
 import {
   DynamicField,
   type FieldConfig,

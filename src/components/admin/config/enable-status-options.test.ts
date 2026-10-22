@@ -1,7 +1,8 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { EnableStatusName, enableStatusOptions } from "./enable-status-options";
+import { enableStatusOptions } from "./enable-status-options";
+import { EnableStatusName } from "../types/enable-status-name";
 
 describe("enable display options", () => {
   it("preserves enabled status labels and option order", () => {

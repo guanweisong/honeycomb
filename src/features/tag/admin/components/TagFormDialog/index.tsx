@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
+import { ModalTypeName } from "@/components/admin/types/modal-type-name";
 import { DynamicForm } from "@/components/DynamicForm";
 import { TagInsertSchema } from "@/features/tag/schemas/tag.insert.schema";
 import { TagUpdateSchema } from "@/features/tag/schemas/tag.update.schema";
@@ -13,7 +14,7 @@ import {
   runAdminMutation,
   withAdminRecordId,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 const tagFields: FieldConfig[] = [
   {

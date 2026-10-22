@@ -16,6 +16,7 @@ src/
     admin/                 # 业务后台 UI、选项与交互
     public/                # 公开站点 UI（按需），不是跨 feature 的强制出口
   components/              # 通用 UI
+    admin/                 # 共享后台 UI；lib/config/draft/types 按实际职责就近归组
     editor/                # 通用编辑器，注入业务媒体选择
   lib/                     # db/auth/trpc/cache/storage/observability/i18n
     auth/client.ts         # use client 浏览器认证单例；服务端 auth.ts 保留根位置

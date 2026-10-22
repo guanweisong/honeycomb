@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import type { UserRecord } from "@/features/user/types/user.record";

@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,7 +23,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminTargetMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 export type UserDialogState = AdminDialogState<UserEntity>;
 

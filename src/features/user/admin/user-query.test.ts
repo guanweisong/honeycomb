@@ -57,7 +57,7 @@ vi.mock("@/components/DynamicForm", () => ({
 }));
 vi.mock("./components/UserFormDialog", () => ({ UserFormDialog: () => null }));
 import { UserPageShell } from "./components/UserPageShell";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("user query state", () => {
   let container: HTMLDivElement;

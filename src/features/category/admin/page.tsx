@@ -9,7 +9,7 @@ import { Dialog } from "@/components/Dialog";
 import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
@@ -19,7 +19,7 @@ import {
   openEditAdminDialog,
   runAdminMutation,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 /**
  * 文章分类管理页面。

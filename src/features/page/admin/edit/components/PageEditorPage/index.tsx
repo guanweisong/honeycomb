@@ -30,10 +30,8 @@ import {
   getPageEditorId,
   toPageEditorFormValues,
 } from "../../transforms/page-editor-transforms";
-import {
-  useLocalDraft,
-  LocalDraftPrompt,
-} from "@/components/admin/local-draft";
+import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
+import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { can, Permission } from "@/lib/auth/permissions";
 import {

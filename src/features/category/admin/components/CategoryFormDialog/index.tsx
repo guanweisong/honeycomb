@@ -2,9 +2,10 @@
 import { useEffect, useRef } from "react";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 
-import { enableStatusOptions } from "@/components/admin/enable-status-options";
+import { enableStatusOptions } from "@/components/admin/config/enable-status-options";
 import { Dialog } from "@/components/Dialog";
-import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
+import { ModalTypeName } from "@/components/admin/types/modal-type-name";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { toast } from "sonner";
 import type { FieldConfig } from "@/components/DynamicForm/types";
@@ -16,7 +17,7 @@ import {
   runAdminMutation,
   withAdminRecordId,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 /**
  * 模态框属性接口。

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { notifyPublicSyncWarning } from "@/components/admin/lib/action-state";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { TagType } from "@/features/tag/types/tag.type";
 import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";

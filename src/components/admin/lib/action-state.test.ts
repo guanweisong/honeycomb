@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ModalType } from "./modal-type";
+import { ModalType } from "../types/modal-type";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,

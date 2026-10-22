@@ -1,6 +1,6 @@
 "use client";
 
-import { LocalDraftPrompt } from "@/components/admin/local-draft";
+import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PhotoPickerModal from "@/features/media/admin/components/PhotoPicker/index";

@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DynamicField } from "@/components/DynamicForm/DynamicField";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { PostType } from "@/features/post/types/post.type";
 import { postTypeOptions } from "@/features/post/admin/options";
 import { TagType } from "@/features/tag/types/tag.type";

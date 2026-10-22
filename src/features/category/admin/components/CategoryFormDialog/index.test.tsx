@@ -58,7 +58,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import CategoryFormDialog, { type ModalProps } from ".";
 
 describe("CategoryFormDialog", () => {

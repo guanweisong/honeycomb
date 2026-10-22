@@ -320,6 +320,41 @@ describe("technical library and browser dependency boundaries", () => {
     );
   });
 
+  it("keeps shared admin tools, configuration, drafts and individual UI enums colocated", () => {
+    for (const path of [
+      "lib/action-state.ts",
+      "config/query-options.ts",
+      "config/enable-status-options.ts",
+      "draft/use-local-draft.ts",
+      "draft/LocalDraftPrompt.tsx",
+      "types/modal-type.ts",
+      "types/modal-type-name.ts",
+      "types/enable-status-name.ts",
+    ])
+      expect(existsSync(`src/components/admin/${path}`)).toBe(true);
+    for (const path of [
+      "action-state.ts",
+      "query-options.ts",
+      "enable-status-options.ts",
+      "modal-type.ts",
+      "local-draft.tsx",
+    ])
+      expect(existsSync(`src/components/admin/${path}`)).toBe(false);
+    for (const path of sourceFiles("src/components/admin")) {
+      const file = ts.createSourceFile(
+        path,
+        readFileSync(path, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
+      );
+      const enums = file.statements.filter(ts.isEnumDeclaration);
+      if (enums.length) {
+        expect(path.startsWith("src/components/admin/types/")).toBe(true);
+        expect(enums).toHaveLength(1);
+      }
+    }
+  });
+
   it("keeps the shared observability request context transitively Edge-safe", () => {
     const path = "src/lib/observability/server/request-context.ts";
     const hasNodeDependency = (_path: string, source: string) =>

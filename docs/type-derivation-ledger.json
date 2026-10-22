@@ -1031,77 +1031,77 @@
       "id": "src/components/admin/action-state.ts:3:AdminDialogState",
       "name": "AdminDialogState",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 3,
       "disposition": "retained-independent",
       "reason": "保留泛型编辑弹窗状态；type 使用 ModalType，record 使用调用方泛型。 本地状态含 open/type，与任意业务 Record 的读取/写入生命周期不同。",
-      "authority": "src/components/admin/action-state.ts#AdminDialogState",
+      "authority": "src/components/admin/lib/action-state.ts#AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:29:AdminMutationState",
       "name": "AdminMutationState",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 29,
       "disposition": "retained-independent",
       "reason": "保留本地 mutation 工作流 success/error/noop 状态，非服务端提交结果。 runAdminMutation 将 promise/成功判定/刷新副作用转换为该联合。",
-      "authority": "src/components/admin/action-state.ts#AdminMutationState",
+      "authority": "src/components/admin/lib/action-state.ts#AdminMutationState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:30:AdminTargetMutationState",
       "name": "AdminTargetMutationState",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 30,
       "disposition": "retained-derived",
       "reason": "保留 AdminMutationState | \"missing-target\"。 仅静态派生；不新增运行时依赖或改变数据形状。",
-      "authority": "src/components/admin/action-state.ts#AdminMutationState",
+      "authority": "src/components/admin/lib/action-state.ts#AdminMutationState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:32:AdminMutationFeedback",
       "name": "AdminMutationFeedback",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 32,
       "disposition": "retained-independent",
       "reason": "保留 UI 通知与刷新效果接口。 真实跨组件依赖端口，和服务端结果数据不是相同模型。",
-      "authority": "src/components/admin/action-state.ts#AdminMutationFeedback",
+      "authority": "src/components/admin/lib/action-state.ts#AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:39:AdminListActionOptions",
       "name": "AdminListActionOptions",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 39,
       "disposition": "retained-independent",
       "reason": "保留通用批量操作配置，selectedRows 与 onSelectionChange 保持泛型。 只消费选择和刷新行为，不复制业务字段；refetch 与反馈接口共享签名但无须新造抽象。",
-      "authority": "src/components/admin/action-state.ts#AdminListActionOptions",
+      "authority": "src/components/admin/lib/action-state.ts#AdminListActionOptions",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:45:RunAdminMutationOptions",
       "name": "RunAdminMutationOptions",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 45,
       "disposition": "retained-derived",
       "reason": "保留 extends AdminMutationFeedback 与 Input/Result 泛型。 仅静态派生；不新增运行时依赖或改变数据形状。",
-      "authority": "src/components/admin/action-state.ts#AdminMutationFeedback",
+      "authority": "src/components/admin/lib/action-state.ts#AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:107:SubmitAdminBatchDeleteOptions",
       "name": "SubmitAdminBatchDeleteOptions",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/action-state.ts",
+      "currentFile": "src/components/admin/lib/action-state.ts",
       "currentLine": 107,
       "disposition": "retained-independent",
       "reason": "保留批删流程的最小 readonly id 输入与结果回调。 仅抽取 id 后调用 deleteItems，不伪装成完整实体；Selection 泛型用于清空选择。",
-      "authority": "src/components/admin/action-state.ts#SubmitAdminBatchDeleteOptions",
+      "authority": "src/components/admin/lib/action-state.ts#SubmitAdminBatchDeleteOptions",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1119,33 +1119,33 @@
       "id": "src/components/admin/local-draft.tsx:5:Draft",
       "name": "Draft",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/local-draft.tsx",
+      "currentFile": "src/components/admin/draft/use-local-draft.ts",
       "currentLine": 5,
       "disposition": "retained-independent",
       "reason": "保留已验证本地草稿 savedAt/values 包装，T 由调用方解析。 load 从带 version 的 localStorage envelope 实际验证后投影为 Draft<T>，不等同业务草稿。",
-      "authority": "src/components/admin/local-draft.tsx#Draft",
+      "authority": "src/components/admin/draft/use-local-draft.ts#Draft",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.tsx:6:Options",
       "name": "Options",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/local-draft.tsx",
+      "currentFile": "src/components/admin/draft/use-local-draft.ts",
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留本地草稿 hook 的 storageKey、会话状态和 parse/onRestore 协议。 不绑定业务 schema；调用者提供解析器才能把 unknown 变成 T。",
-      "authority": "src/components/admin/local-draft.tsx#Options",
+      "authority": "src/components/admin/draft/use-local-draft.ts#Options",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.tsx:14:Session",
       "name": "Session",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/local-draft.tsx",
+      "currentFile": "src/components/admin/draft/use-local-draft.ts",
       "currentLine": 14,
       "disposition": "retained-independent",
       "reason": "保留本地恢复会话的 raw/json/dirty/suppressed/timer 状态机；pending 已引用 Draft<T>。 运行时过程状态而非存储 envelope；timer 已从 setTimeout 派生。",
-      "authority": "src/components/admin/local-draft.tsx#Session",
+      "authority": "src/components/admin/draft/use-local-draft.ts#Session",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1321,7 +1321,7 @@
       "currentLine": 25,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<CategoryEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/category/types/category.record.ts: CategoryListItem（本地别名 CategoryEntity）；src/components/admin/action-state.ts: AdminDialogState",
+      "authority": "src/features/category/types/category.record.ts: CategoryListItem（本地别名 CategoryEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1332,7 +1332,7 @@
       "currentLine": 30,
       "disposition": "retained-independent",
       "reason": "保留组件开关/回调 props；modalProps 已使用 AdminDialogState<CategoryListItem>，不是分类记录的字段副本。 React 交互契约只组合纯类型，不从数据库或 router 反推组件 API。",
-      "authority": "src/features/category/admin/components/CategoryFormDialog/index.tsx: CategoryFormDialog；src/components/admin/action-state.ts: AdminDialogState",
+      "authority": "src/features/category/admin/components/CategoryFormDialog/index.tsx: CategoryFormDialog；src/components/admin/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1904,7 +1904,7 @@
       "currentLine": 26,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<LinkEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/link/types/link.record.ts: LinkRecord（本地别名 LinkEntity）；src/components/admin/action-state.ts: AdminDialogState",
+      "authority": "src/features/link/types/link.record.ts: LinkRecord（本地别名 LinkEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1915,7 +1915,7 @@
       "currentLine": 28,
       "disposition": "retained-independent",
       "reason": "保留反馈回调加记录/更新输入的操作依赖；LinkRecord、LinkUpdate 均已直接引用，不复制业务字段。 客户端 orchestration，不以 Promise<unknown> 隐藏实际会被消费的返回字段，当前仅交给通用反馈处理。",
-      "authority": "src/features/link/admin/link-actions.ts: submitLinkUpdate；src/components/admin/action-state.ts: AdminMutationFeedback",
+      "authority": "src/features/link/admin/link-actions.ts: submitLinkUpdate；src/components/admin/lib/action-state.ts: AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3279,7 +3279,7 @@
       "currentLine": 34,
       "disposition": "retained-independent",
       "reason": "保留 AdminDialogState<TagRecord> 扩展 onClose/onSuccess 的 UI 协议，业务记录已经派生。 可选回调不是标签字段，不应与 Link/User 对话框强制合并泛型。",
-      "authority": "src/features/tag/admin/components/TagFormDialog/index.tsx: TagFormDialog；src/components/admin/action-state.ts: AdminDialogState；src/features/tag/types/tag.record.ts",
+      "authority": "src/features/tag/admin/components/TagFormDialog/index.tsx: TagFormDialog；src/components/admin/lib/action-state.ts: AdminDialogState；src/features/tag/types/tag.record.ts",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3477,7 +3477,7 @@
       "currentLine": 28,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<UserEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/user/types/user.record.ts: UserRecord（本地别名 UserEntity）；src/components/admin/action-state.ts: AdminDialogState",
+      "authority": "src/features/user/types/user.record.ts: UserRecord（本地别名 UserEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3488,7 +3488,7 @@
       "currentLine": 30,
       "disposition": "retained-independent",
       "reason": "保留 mutation 反馈依赖，record/values 分别复用 UserRecord/UserUpdate；这是执行参数而非用户字段副本。 UI 回调与持久化用户对象分离；更新密码等运行时安全处理仍由 server 负责。",
-      "authority": "src/features/user/admin/user-actions.ts: submitUserUpdate；src/components/admin/action-state.ts: AdminMutationFeedback",
+      "authority": "src/features/user/admin/user-actions.ts: submitUserUpdate；src/components/admin/lib/action-state.ts: AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {

@@ -14,7 +14,7 @@ import {
   isDeterminateRejectionCode,
   readTrpcErrorCode,
 } from "@/lib/trpc/client/mutation-error";
-import { notifyPublicSyncWarning } from "@/components/admin/action-state";
+import { notifyPublicSyncWarning } from "@/components/admin/lib/action-state";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
 
 type PageEditorValues = Partial<PageInsert>;

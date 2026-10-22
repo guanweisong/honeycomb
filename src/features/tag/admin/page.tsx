@@ -13,7 +13,7 @@ import type { TagListQueryInput } from "@/features/tag/types/tag.list";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 import TagFormDialog from "./components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 import {
@@ -24,7 +24,7 @@ import {
   runAdminMutation,
   submitAdminBatchDelete,
   type AdminDialogState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 /**
  * 标签管理页面。

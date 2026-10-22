@@ -58,7 +58,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 import { CommentPageShell } from "./components/CommentPageShell";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("comment query parameters", () => {
   let container: HTMLDivElement;

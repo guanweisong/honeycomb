@@ -48,6 +48,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台当前用户与权限
 
+跨 feature 的后台状态辅助在 `src/components/admin/lib`，查询/启用选项在 `config`，三个 UI 枚举各自归 `types`；草稿 hook、提示 UI 与完整场景测试同归 `draft`。布局协议和加载错误 UI 保留原内聚文件，不因归组反向依赖 app。
+
 浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/_auth`。前者保留 use client，不经根目录兼容转出口。
 
 1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。

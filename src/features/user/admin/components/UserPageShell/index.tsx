@@ -15,7 +15,7 @@ import { UserFormDialog } from "../UserFormDialog";
 import { useUserActions } from "@/features/user/admin/user-actions";
 import { userTableColumns } from "../../columns/user-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import {
   canDeleteUserResource,
   isUserResourceProtected,

@@ -15,7 +15,7 @@ import { LinkFormDialog } from "../LinkFormDialog";
 import { useLinkActions } from "../../link-actions";
 import { linkTableColumns } from "../../link-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 export function LinkPageShell() {
   const canCreateLink = useCan(Permission.linkCreate);

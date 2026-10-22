@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ModalType } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 import type { LinkInsert } from "@/features/link/types/link.insert";
@@ -21,7 +21,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminTargetMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 export type LinkDialogState = AdminDialogState<LinkEntity>;
 

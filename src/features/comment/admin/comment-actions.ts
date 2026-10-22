@@ -11,7 +11,7 @@ import {
   type AdminListActionOptions,
   type AdminMutationFeedback,
   type AdminMutationState,
-} from "@/components/admin/action-state";
+} from "@/components/admin/lib/action-state";
 
 type SubmitCommentStatusUpdateOptions = AdminMutationFeedback & {
   id: string;

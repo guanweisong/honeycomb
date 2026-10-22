@@ -1,12 +1,13 @@
 "use client";
 
-import { ModalType, ModalTypeName } from "@/components/admin/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
+import { ModalTypeName } from "@/components/admin/types/modal-type-name";
 import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
 import { LinkUpdateSchema } from "@/features/link/schemas/link.update.schema";
 import type { LinkInsert } from "@/features/link/types/link.insert";
 import type { LinkUpdate } from "@/features/link/types/link.update";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { enableStatusOptions } from "@/components/admin/enable-status-options";
+import { enableStatusOptions } from "@/components/admin/config/enable-status-options";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import type { LinkDialogState } from "../../link-actions";

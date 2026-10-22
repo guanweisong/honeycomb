@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminListQueryOptions } from "@/components/admin/query-options";
+import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { runAdminMutation } from "@/components/admin/action-state";
+import { runAdminMutation } from "@/components/admin/lib/action-state";
 import { postListTableColumns } from "../../constants/post-list-table-columns";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
