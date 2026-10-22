@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   useQuery: vi.fn(),
   toastError: vi.fn(),
   fetch: vi.fn(),
+  refetch: vi.fn(),
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
@@ -100,6 +101,37 @@ describe("LoginHistorySettings", () => {
     expect(container.textContent).toContain("暂无登录历史");
   });
 
+  it("retries a first-load failure without pretending the result is empty", async () => {
+    mocks.useQuery.mockReturnValue({
+      data: undefined,
+      error: new Error("offline"),
+      isPending: false,
+      refetch: mocks.refetch,
+    });
+    await act(async () =>
+      root.render(React.createElement(LoginHistorySettings)),
+    );
+    const retry = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "重新加载",
+    );
+    expect(retry).toBeDefined();
+    await act(async () => retry?.click());
+    expect(mocks.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps cached history visible if a background refresh fails", async () => {
+    mocks.useQuery.mockReturnValue({
+      data: history,
+      error: new Error("offline"),
+      isPending: false,
+    });
+    await act(async () =>
+      root.render(React.createElement(LoginHistorySettings)),
+    );
+    expect(container.textContent).toContain("登录成功");
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+  });
+
   it("reports a tRPC query error", async () => {
     mocks.useQuery.mockReturnValue({
       data: undefined,
@@ -111,6 +143,10 @@ describe("LoginHistorySettings", () => {
       root.render(React.createElement(LoginHistorySettings)),
     );
 
+    expect(container.textContent).not.toContain("暂无登录历史");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "登录历史加载失败",
+    );
     expect(mocks.toastError).toHaveBeenCalledWith(
       "登录历史加载失败，请稍后重试",
     );

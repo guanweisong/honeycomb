@@ -5,10 +5,10 @@ import { useEffect } from "react";
 
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
   error: Error;
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     captureException(error);
@@ -19,7 +19,7 @@ export default function GlobalError({
       <body>
         <main role="alert">
           <p>站点暂时不可用。</p>
-          <button type="button" onClick={reset}>
+          <button type="button" onClick={retry}>
             重试
           </button>
           <form action="/">

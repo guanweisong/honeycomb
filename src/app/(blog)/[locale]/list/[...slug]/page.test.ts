@@ -61,6 +61,7 @@ import List, { generateMetadata } from "./page";
 import { resolveListContext } from "./page.utils";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { TagListQuerySchema } from "@/features/tag/schema";
+import { MenuType } from "@/features/menu/menu-types";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -93,9 +94,12 @@ describe("blog list page", () => {
       list: [
         {
           id: "category-1",
+          type: MenuType.CATEGORY,
           path: "tech",
           title: { zh: "技术" },
         },
+        { id: "about", type: MenuType.PAGE, path: null, parent: null },
+        { id: "external", type: MenuType.CUSTOM, path: null, parent: null },
       ],
     });
     mockTagIndex.mockReset().mockResolvedValue({
@@ -348,15 +352,146 @@ describe("blog list page", () => {
     expect(container.textContent).toContain("作者：");
   });
 
-  it("uses the base published-post query when no list type is present", async () => {
-    await renderList([]);
+  describe.each(["content", "metadata"])(
+    "%s route validation",
+    (entryPoint) => {
+      it.each(
+        [
+          [],
+          ["unknown"],
+          ["category", "missing"],
+          ["category", "about"],
+          ["category", "external"],
+          ["category", "wrong-ancestor", "tech"],
+          ["category", "", "tech"],
+          ["tags", "extra", "111111111111111111111111"],
+          ["authors", "extra", "222222222222222222222222"],
+        ].map((slug) => ({ slug })),
+      )(
+        "rejects invalid path $slug before returning content or canonical",
+        async ({ slug }) => {
+          const props = {
+            params: Promise.resolve({ locale: "zh", slug }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children[1].props.children;
+          const pending =
+            entryPoint === "metadata"
+              ? generateMetadata(props)
+              : content.type(content.props);
+          await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+          expect(mockPublicPostList).not.toHaveBeenCalled();
+          expect(mockPublicTag).not.toHaveBeenCalled();
+          expect(mockPublicAuthor).not.toHaveBeenCalled();
+        },
+      );
 
-    expect(renderedQuery()).toEqual({
-      limit: 10,
-      sortField: "createdAt",
-      status: ["PUBLISHED"],
-    });
-  });
+      it.each(
+        [MenuType.PAGE, MenuType.CUSTOM].flatMap((parentType) =>
+          [false, true].map((nested) => ({ parentType, nested })),
+        ),
+      )(
+        "preserves category URLs through null-path $parentType ancestors (nested=$nested)",
+        async ({ parentType, nested }) => {
+          mockPublicPostList.mockClear();
+          mockMenuIndex.mockResolvedValue({
+            list: [
+              ...(nested
+                ? [
+                    {
+                      id: "root",
+                      parent: null,
+                      type: MenuType.CATEGORY,
+                      path: "topics",
+                    },
+                  ]
+                : []),
+              {
+                id: "bridge",
+                parent: nested ? "root" : null,
+                type: parentType,
+                path: null,
+              },
+              {
+                id: "category-1",
+                parent: "bridge",
+                type: MenuType.CATEGORY,
+                path: "tech",
+                title: { zh: "技术" },
+              },
+            ],
+            total: nested ? 3 : 2,
+          });
+          const slug = nested
+            ? ["category", "topics", "tech"]
+            : ["category", "tech"];
+          const props = {
+            params: Promise.resolve({ locale: "zh", slug }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children[1].props.children;
+          const result = await (entryPoint === "metadata"
+            ? generateMetadata(props)
+            : content.type(content.props));
+          if (entryPoint === "metadata")
+            expect(result).toMatchObject({
+              alternates: {
+                canonical: nested
+                  ? "/zh/list/category/topics/tech"
+                  : "/zh/list/category/tech",
+              },
+            });
+          else
+            expect(mockPublicPostList).toHaveBeenCalledWith(
+              expect.objectContaining({ categoryId: "category-1" }),
+            );
+        },
+      );
+
+      it("requires the complete category ancestry and preserves a valid canonical", async () => {
+        mockMenuIndex.mockResolvedValue({
+          list: [
+            {
+              id: "parent",
+              parent: null,
+              path: "topics",
+              title: { zh: "主题" },
+            },
+            {
+              id: "category-1",
+              parent: "parent",
+              path: "tech",
+              title: { zh: "技术" },
+            },
+          ],
+          total: 2,
+        });
+        const props = (slug: string[]) => ({
+          params: Promise.resolve({ locale: "zh", slug }),
+          searchParams: Promise.resolve({}),
+        });
+        const run = (slug: string[]) => {
+          const input = props(slug);
+          const content = List(input).props.children[1].props.children;
+          return entryPoint === "metadata"
+            ? generateMetadata(input)
+            : content.type(content.props);
+        };
+        await expect(run(["category", "tech"])).rejects.toThrow(
+          "NEXT_HTTP_ERROR_FALLBACK;404",
+        );
+        const result = await run(["category", "topics", "tech"]);
+        if (entryPoint === "metadata")
+          expect(result).toMatchObject({
+            alternates: { canonical: "/zh/list/category/topics/tech" },
+          });
+        else
+          expect(mockPublicPostList).toHaveBeenCalledWith(
+            expect.objectContaining({ categoryId: "category-1" }),
+          );
+      });
+    },
+  );
 
   it.each([
     [
@@ -399,7 +534,7 @@ describe("blog list page", () => {
       },
     ],
     [
-      [],
+      ["category"],
       {
         description: "记录值得分享的事",
         openGraph: {

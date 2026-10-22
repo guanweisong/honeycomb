@@ -93,4 +93,108 @@ describe("LinkedAccountsSettings", () => {
     expect(container.textContent).toContain("当前环境未配置");
     expect(container.textContent).not.toContain("GitHub");
   });
+  it("distinguishes first-load failure and retries the read", async () => {
+    mocks.listAccounts.mockResolvedValue({
+      data: null,
+      error: { message: "offline" },
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(LinkedAccountsSettings, {
+            providers: ["github"],
+          }),
+        ),
+      ),
+    );
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState([
+            "account-security",
+            "linked-accounts",
+            "user-1",
+          ])?.status,
+        ).toBe("error"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "关联账号加载失败",
+    );
+    expect(container.textContent).not.toContain("未关联");
+    mocks.listAccounts.mockResolvedValue({ data: [], error: null });
+    const retry = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent === "重新加载",
+    );
+    expect(retry).toBeDefined();
+    await act(async () => retry?.click());
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState([
+            "account-security",
+            "linked-accounts",
+            "user-1",
+          ])?.status,
+        ).toBe("success"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(mocks.listAccounts).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.textContent).toContain("未关联");
+    client.clear();
+  });
+
+  it("retains cached data on background refresh failure", async () => {
+    mocks.listAccounts.mockResolvedValue({
+      data: null,
+      error: { message: "offline" },
+    });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    client.setQueryData(
+      ["account-security", "linked-accounts", "user-1"],
+      [
+        {
+          id: "account-cached",
+          accountId: "github-cached",
+          providerId: "github",
+        },
+      ],
+    );
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(LinkedAccountsSettings, {
+            providers: ["github"],
+          }),
+        ),
+      ),
+    );
+    await act(async () => {
+      await vi.waitFor(() =>
+        expect(
+          client.getQueryState([
+            "account-security",
+            "linked-accounts",
+            "user-1",
+          ])?.status,
+        ).toBe("error"),
+      );
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(container.textContent).toContain("已关联");
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    client.clear();
+  });
 });

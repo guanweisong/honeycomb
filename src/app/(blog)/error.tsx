@@ -13,10 +13,10 @@ const getServerLanguage = () => "zh";
 
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error;
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     captureException(error);
@@ -57,7 +57,7 @@ export default function Error({
           : "An error occurred while loading this page. Please try again later."
       }
       actions={
-        <Button type="button" onClick={reset}>
+        <Button type="button" onClick={retry}>
           {isChinese ? "重试" : "Try again"}
         </Button>
       }

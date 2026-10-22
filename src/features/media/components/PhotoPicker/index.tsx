@@ -53,10 +53,6 @@ const PhotoPickerSession = (props: PhotoPickerModalProps) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!showPhotoPicker) setSelectItem(undefined);
-  }, [showPhotoPicker]);
-
   /**
    * 处理图片选择事件。
    * 当用户在 `PhotoPickerPanel` 中选择一张图片时调用，更新内部状态 `selectItem`。

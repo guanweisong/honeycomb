@@ -7,10 +7,10 @@ import { PageState } from "@/components/PageState";
 
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error;
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     captureException(error);
@@ -21,7 +21,7 @@ export default function Error({
       compact
       description="后台暂时无法加载。"
       actions={
-        <button type="button" onClick={reset}>
+        <button type="button" onClick={retry}>
           重试
         </button>
       }

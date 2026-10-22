@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { toast } from "sonner";
@@ -26,9 +27,11 @@ const providerLabels: Record<string, string> = {
 
 const LoginHistorySettings = () => {
   const {
-    data: history = [],
+    data: history,
     error,
     isPending,
+    isFetching,
+    refetch,
   } = trpc.accountSecurity.loginHistory.useQuery();
 
   useEffect(() => {
@@ -44,7 +47,25 @@ const LoginHistorySettings = () => {
     );
   }
 
-  if (history.length === 0) {
+  if (error && !history) {
+    return (
+      <section className="space-y-3">
+        <p role="alert" className="text-sm text-destructive">
+          登录历史加载失败，请稍后重试。
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isFetching}
+          onClick={() => void refetch()}
+        >
+          重新加载
+        </Button>
+      </section>
+    );
+  }
+
+  if (!history?.length) {
     return <p className="text-sm text-muted-foreground">暂无登录历史。</p>;
   }
 

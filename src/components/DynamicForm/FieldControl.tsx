@@ -152,6 +152,7 @@ export function FieldControl({
               mode="single"
               locale={zhCN}
               selected={date}
+              defaultMonth={date}
               onSelect={(date) => controllerField.onChange(date?.toISOString())}
               disabled={isDisabled}
             />
@@ -187,6 +188,7 @@ export function FieldControl({
               mode="range"
               locale={zhCN}
               selected={range}
+              defaultMonth={range?.from}
               onSelect={controllerField.onChange}
               disabled={isDisabled}
             />

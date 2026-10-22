@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
 import { useAccountMutation } from "../use-account-mutation";
@@ -49,20 +49,12 @@ const LinkedAccountsPanel = ({
     },
     staleTime: 0,
   });
-  const accounts = useMemo(
-    () => accountsQuery.data ?? [],
-    [accountsQuery.data],
-  );
-  const isLoading = accountsQuery.isPending && !accountsQuery.data;
+  const accounts = accountsQuery.data;
+  const isLoading = accountsQuery.isPending;
 
   useEffect(() => {
     if (accountsQuery.error) toast.error("关联账号加载失败，请稍后重试");
   }, [accountsQuery.error]);
-
-  const linkedProviderIds = useMemo(
-    () => new Set(accounts.map((account) => account.providerId)),
-    [accounts],
-  );
 
   const linkAccount = (provider: SocialProviderId) =>
     mutation.run({
@@ -76,7 +68,7 @@ const LinkedAccountsPanel = ({
 
   const unlinkAccount = async () => {
     if (!unlinkTarget) return false;
-    if (accounts.length <= 1) {
+    if (!accounts || accounts.length <= 1) {
       toast.error("至少保留一种登录方式");
       return false;
     }
@@ -102,6 +94,24 @@ const LinkedAccountsPanel = ({
     );
   }
 
+  if (accountsQuery.error && !accounts) {
+    return (
+      <section className="space-y-3">
+        <p role="alert" className="text-sm text-destructive">
+          关联账号加载失败，请稍后重试。
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={accountsQuery.isFetching}
+          onClick={() => void accountsQuery.refetch()}
+        >
+          重新加载
+        </Button>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -110,7 +120,9 @@ const LinkedAccountsPanel = ({
 
       <ul className="space-y-3">
         {providers.map((provider) => {
-          const account = accounts.find((item) => item.providerId === provider);
+          const account = accounts?.find(
+            (item) => item.providerId === provider,
+          );
           return (
             <li
               key={provider}
@@ -137,7 +149,7 @@ const LinkedAccountsPanel = ({
                   type="button"
                   size="sm"
                   onClick={() => void linkAccount(provider)}
-                  disabled={mutation.pending || linkedProviderIds.has(provider)}
+                  disabled={mutation.pending}
                 >
                   关联
                 </Button>

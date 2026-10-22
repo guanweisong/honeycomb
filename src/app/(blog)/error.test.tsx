@@ -28,10 +28,10 @@ describe("Blog error boundary", () => {
     async (language) => {
       document.documentElement.lang = language;
       vi.stubGlobal("navigator", { onLine: true });
-      const reset = vi.fn();
+      const retry = vi.fn();
       await act(async () =>
         root.render(
-          <ErrorBoundary error={new Error("Failed")} reset={reset} />,
+          <ErrorBoundary error={new Error("Failed")} retry={retry} />,
         ),
       );
       expect(container.textContent).toContain(
@@ -41,7 +41,7 @@ describe("Blog error boundary", () => {
         language === "zh" ? "重试" : "Try again",
       );
       await act(async () => container.querySelector("button")?.click());
-      expect(reset).toHaveBeenCalledOnce();
+      expect(retry).toHaveBeenCalledOnce();
     },
   );
 
@@ -51,7 +51,7 @@ describe("Blog error boundary", () => {
 
     await act(async () => {
       root.render(
-        <ErrorBoundary error={new Error("offline")} reset={vi.fn()} />,
+        <ErrorBoundary error={new Error("offline")} retry={vi.fn()} />,
       );
     });
 

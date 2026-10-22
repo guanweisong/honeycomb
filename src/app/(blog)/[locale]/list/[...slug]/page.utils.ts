@@ -1,3 +1,4 @@
+import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import {
   getPublicAuthor,
   getPublicMenu,
@@ -24,10 +25,13 @@ export async function resolveListContext({
   slug = [],
 }: ListContextInput) {
   const type = slug[0];
+  if (type !== "category" && type !== "tags" && type !== "authors") {
+    notFound();
+  }
   const typeValue = slug.at(-1) ?? "";
   if (
     (type === "tags" || type === "authors") &&
-    !IdSchema.safeParse(typeValue).success
+    (slug.length !== 2 || !IdSchema.safeParse(typeValue).success)
   ) {
     notFound();
   }
@@ -40,7 +44,26 @@ export async function resolveListContext({
 
   switch (type) {
     case "category": {
-      const category = menu?.list.find((item) => item.path === typeValue);
+      const items = menu?.list ?? [];
+      const paths = slug.slice(1);
+      const category = paths.length
+        ? items.find((item) => item.path === typeValue)
+        : undefined;
+      if (paths.length) {
+        if (!category || paths.some((path) => !path)) notFound();
+        // Use the same canonical ancestry as Header and sitemap, skipping
+        // PAGE/CUSTOM ancestors whose paths are null.
+        const canonicalPaths = getCurrentPathOfMenu({
+          id: category.id,
+          familyProp: "path",
+          menu: items,
+        });
+        if (
+          canonicalPaths.length !== paths.length ||
+          canonicalPaths.some((path, index) => path !== paths[index])
+        )
+          notFound();
+      }
       if (category) queryParams = { ...queryParams, categoryId: category.id };
       typeName = category?.title?.[locale] ?? "";
       break;
