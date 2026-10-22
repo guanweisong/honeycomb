@@ -129,7 +129,7 @@ const articleDetail: DetailFixture = {
   cover: { url: "/cover.jpg" },
   createdAt: "2024-01-02T03:04:05.000Z",
   excerpt: { zh: "文章摘要" },
-  id: "post-1",
+  id: "111111111111111111111111",
   imagesInContent: [],
   title: { zh: "文章标题" },
   type: "ARTICLE",
@@ -161,8 +161,8 @@ describe("archives page", () => {
     });
     mockPostDetail.mockReset().mockResolvedValue({ ...articleDetail });
     mockRandomPosts.mockReset().mockResolvedValue([
-      { id: "post-1", title: { zh: "当前文章" } },
-      { id: "post-2", title: { zh: "推荐文章" } },
+      { id: "111111111111111111111111", title: { zh: "当前文章" } },
+      { id: "222222222222222222222222", title: { zh: "推荐文章" } },
     ]);
     mockIncrementViews.mockReset().mockResolvedValue(undefined);
     mockClientIncrementViews.mockReset();
@@ -206,14 +206,17 @@ describe("archives page", () => {
       container.querySelector('[data-testid="rich-text"]')?.textContent,
     ).toBe("文章正文");
     expect(
-      container.querySelector('a[href="/archives/post-2"]')?.textContent,
+      container.querySelector('a[href="/archives/222222222222222222222222"]')
+        ?.textContent,
     ).toBe("推荐文章");
-    expect(container.querySelector('a[href="/archives/post-1"]')).toBeNull();
+    expect(
+      container.querySelector('a[href="/archives/111111111111111111111111"]'),
+    ).toBeNull();
     expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
     expect(mockIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
     expect(mockClientIncrementViews).toHaveBeenCalledWith(
-      { id: "post-1" },
+      { id: "111111111111111111111111" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
@@ -247,15 +250,18 @@ describe("archives page", () => {
 
     await act(async () => {
       resolveRecommendations([
-        { id: "post-1", title: { zh: "当前文章" } },
-        { id: "post-2", title: { zh: "稍后推荐" } },
+        { id: "111111111111111111111111", title: { zh: "当前文章" } },
+        { id: "222222222222222222222222", title: { zh: "稍后推荐" } },
       ]);
     });
 
     expect(
-      container.querySelector('a[href="/archives/post-2"]')?.textContent,
+      container.querySelector('a[href="/archives/222222222222222222222222"]')
+        ?.textContent,
     ).toBe("稍后推荐");
-    expect(container.querySelector('a[href="/archives/post-1"]')).toBeNull();
+    expect(
+      container.querySelector('a[href="/archives/111111111111111111111111"]'),
+    ).toBeNull();
     expect(container.querySelector('[role="status"]')).toBeNull();
   });
 
@@ -362,7 +368,7 @@ describe("archives page", () => {
   });
 
   it("omits excerpt and recommendations when neither is available", async () => {
-    mockRandomPosts.mockResolvedValue([{ id: "post-1" }]);
+    mockRandomPosts.mockResolvedValue([{ id: "111111111111111111111111" }]);
 
     await renderArchive({ ...articleDetail, excerpt: undefined });
 
@@ -373,7 +379,7 @@ describe("archives page", () => {
   it("rejects post details without a category relation", async () => {
     expect(() =>
       assertPostCategory({ ...articleDetail, category: undefined }),
-    ).toThrow("Post post-1 is missing category relation");
+    ).toThrow("Post 111111111111111111111111 is missing category relation");
   });
 
   it("maps missing post details to the Next.js not-found boundary", async () => {
@@ -415,7 +421,10 @@ describe("archives page", () => {
 
     await expect(
       generateMetadata({
-        params: Promise.resolve({ id: "post-1", locale: "zh" }),
+        params: Promise.resolve({
+          id: "111111111111111111111111",
+          locale: "zh",
+        }),
         searchParams: Promise.resolve({}),
       }),
     ).resolves.toMatchObject(expected);
@@ -431,7 +440,10 @@ describe("archives page", () => {
 
       await expect(
         generateMetadata({
-          params: Promise.resolve({ id: "post-1", locale: "zh" }),
+          params: Promise.resolve({
+            id: "111111111111111111111111",
+            locale: "zh",
+          }),
           searchParams: Promise.resolve({}),
         }),
       ).resolves.toMatchObject({
@@ -452,17 +464,17 @@ describe("archives page", () => {
     });
 
     const metadata = await generateMetadata({
-      params: Promise.resolve({ id: "post-1", locale: "en" }),
+      params: Promise.resolve({ id: "111111111111111111111111", locale: "en" }),
       searchParams: Promise.resolve({}),
     });
 
     expect(metadata).toMatchObject({
       title: "Article title",
       alternates: {
-        canonical: "/en/archives/post-1",
+        canonical: "/en/archives/111111111111111111111111",
         languages: {
-          en: "/en/archives/post-1",
-          zh: "/zh/archives/post-1",
+          en: "/en/archives/111111111111111111111111",
+          zh: "/zh/archives/111111111111111111111111",
         },
       },
       openGraph: { images: ["/static/images/logo.png"] },

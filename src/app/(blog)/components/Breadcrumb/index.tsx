@@ -6,6 +6,7 @@ import { Link } from "@/lib/i18n/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
+import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 
 /**
  * 面包屑组件的属性接口。
@@ -61,16 +62,20 @@ const Breadcrumb = (props: BreadCrumbProps) => {
 
   if (segmentType === "list" && segmentTypePath[0] === "category") {
     const paths = segmentTypePath.slice(1);
-    const ids = new Set(menu.map((item) => item.id));
-    let parent: MenuNavigationItem | undefined;
     for (const [index, path] of paths.entries()) {
-      const item = menu.find(
-        (item) =>
-          item.path === path &&
-          (parent
-            ? item.parent === parent.id
-            : !item.parent || !ids.has(item.parent)),
-      );
+      const item = menu.find((item) => {
+        if (item.path !== path) return false;
+        // Match the public URL ancestry, which omits null-path bridge nodes.
+        const canonicalPaths = getCurrentPathOfMenu({
+          id: item.id,
+          familyProp: "path",
+          menu,
+        });
+        return (
+          canonicalPaths.length === index + 1 &&
+          canonicalPaths.every((part, ancestor) => part === paths[ancestor])
+        );
+      });
       // Do not invent a current page for a partially resolved route.
       if (!item) return null;
       breadData.push({
@@ -83,7 +88,6 @@ const Breadcrumb = (props: BreadCrumbProps) => {
                 .join("/")}`
             : undefined,
       });
-      parent = item;
     }
   }
 

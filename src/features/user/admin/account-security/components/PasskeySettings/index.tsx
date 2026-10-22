@@ -119,8 +119,34 @@ const PasskeySettingsPanel = () => {
     return <p>当前浏览器不支持 Passkey，请继续使用密码登录。</p>;
   }
 
+  // Better Auth retains valid data on transient failures but clears it on 401.
+  // Use that snapshot directly rather than restoring credentials after expiry.
+  const passkeys = passkeysQuery.data;
+  const readError = passkeysQuery.error ? (
+    <div className="space-y-3">
+      <p role="alert" className="text-sm text-destructive">
+        {passkeys
+          ? "Passkey 刷新失败，当前显示上次加载的列表，请稍后重试。"
+          : "Passkey 加载失败，请稍后重试。"}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        disabled={passkeysQuery.isRefetching}
+        onClick={() => void passkeysQuery.refetch()}
+      >
+        重新加载
+      </Button>
+    </div>
+  ) : null;
+
+  if (passkeysQuery.error && !passkeys) {
+    return <section className="space-y-6 pb-6">{readError}</section>;
+  }
+
   return (
     <section className="space-y-6 pb-6">
+      {readError}
       <div>
         <p className="text-sm text-muted-foreground">
           使用设备指纹、面容、PIN 或安全密钥登录。
@@ -145,8 +171,12 @@ const PasskeySettingsPanel = () => {
         </Button>
       </div>
 
+      {passkeys?.length === 0 && (
+        <p className="text-sm text-muted-foreground">暂无 Passkey。</p>
+      )}
+
       <ul className="space-y-3">
-        {(passkeysQuery.data ?? []).map((passkey) => {
+        {(passkeys ?? []).map((passkey) => {
           const label =
             passkey.name || getAuthenticatorName(passkey.aaguid) || "Passkey";
           return (

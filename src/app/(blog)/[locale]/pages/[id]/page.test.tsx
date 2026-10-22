@@ -101,7 +101,7 @@ describe("pages detail page", () => {
     mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
     mockPageDetail.mockReset().mockResolvedValue({
-      id: "page-1",
+      id: "333333333333333333333333",
       title: { zh: "页面标题" },
       content: { zh: "页面正文" },
       status: PostStatus.PUBLISHED,
@@ -148,7 +148,10 @@ describe("pages detail page", () => {
       root.render(
         <Boundary>
           {Pages({
-            params: Promise.resolve({ id: "missing", locale: "zh" }),
+            params: Promise.resolve({
+              id: "444444444444444444444444",
+              locale: "zh",
+            }),
             searchParams: Promise.resolve({}),
           })}
         </Boundary>,
@@ -173,7 +176,7 @@ describe("pages detail page", () => {
       }),
     );
     mockPageDetail.mockResolvedValue({
-      id: "page-1",
+      id: "333333333333333333333333",
       status: PostStatus.PUBLISHED,
       template: PageTemplate.FRIENDLY_LINKS,
       imagesInContent: [],
@@ -182,7 +185,10 @@ describe("pages detail page", () => {
     await act(async () =>
       root.render(
         Pages({
-          params: Promise.resolve({ id: "page-1", locale: "zh" }),
+          params: Promise.resolve({
+            id: "333333333333333333333333",
+            locale: "zh",
+          }),
           searchParams: Promise.resolve({}),
         }),
       ),
@@ -200,7 +206,7 @@ describe("pages detail page", () => {
 
   it("keeps server rendering read-only and reports the view after mounting", async () => {
     const element = await Pages({
-      params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
@@ -211,7 +217,7 @@ describe("pages detail page", () => {
     expect(mockServerIncrementViews).not.toHaveBeenCalled();
     expect(mockClientIncrementViews).toHaveBeenCalledOnce();
     expect(mockClientIncrementViews).toHaveBeenCalledWith(
-      { id: "page-1" },
+      { id: "333333333333333333333333" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
@@ -221,7 +227,7 @@ describe("pages detail page", () => {
     async (locale) => {
       testLocale = locale;
       mockPageDetail.mockResolvedValue({
-        id: "page-1",
+        id: "333333333333333333333333",
         title: { zh: "友链", en: "Links" },
         status: PostStatus.PUBLISHED,
         template: PageTemplate.FRIENDLY_LINKS,
@@ -231,7 +237,7 @@ describe("pages detail page", () => {
       await act(async () =>
         root.render(
           Pages({
-            params: Promise.resolve({ id: "page-1", locale }),
+            params: Promise.resolve({ id: "333333333333333333333333", locale }),
             searchParams: Promise.resolve({}),
           }),
         ),
@@ -244,17 +250,17 @@ describe("pages detail page", () => {
 
   it("generates localized page indexing relationships", async () => {
     const metadata = await generateMetadata({
-      params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
 
     expect(metadata).toMatchObject({
       title: "页面标题",
       alternates: {
-        canonical: "/zh/pages/page-1",
+        canonical: "/zh/pages/333333333333333333333333",
         languages: {
-          en: "/en/pages/page-1",
-          zh: "/zh/pages/page-1",
+          en: "/en/pages/333333333333333333333333",
+          zh: "/zh/pages/333333333333333333333333",
         },
       },
       openGraph: { images: ["/static/images/logo.png"] },
@@ -262,7 +268,7 @@ describe("pages detail page", () => {
   });
   it("protects the opener for friendly links opened in another tab", async () => {
     mockPageDetail.mockResolvedValue({
-      id: "page-1",
+      id: "333333333333333333333333",
       title: { zh: "友情链接" },
       content: null,
       status: PostStatus.PUBLISHED,
@@ -281,7 +287,7 @@ describe("pages detail page", () => {
       ],
     });
     const element = await Pages({
-      params: Promise.resolve({ id: "page-1", locale: "zh" }),
+      params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));

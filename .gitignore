@@ -7,10 +7,9 @@ node_modules
 
 # Local env files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+!.env.*.example
 
 # Testing
 coverage
@@ -25,6 +24,7 @@ test-results/
 .vercel
 
 # Build Outputs
+next-env.d.ts
 .next/
 out/
 build
