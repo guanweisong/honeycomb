@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it, vi } from "vitest";
 import {
   findUserIdByIdentifier,
@@ -5,6 +7,7 @@ import {
   recordLoginHistory,
 } from "./login-history.repository";
 import type { SQL } from "drizzle-orm";
+import { loginHistory } from "@/lib/db/schema/auth";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { asMockDatabase } from "@tests/helpers/test-utils";
 
@@ -20,16 +23,36 @@ describe("login history repository", () => {
         createdAt: new Date("2026-08-11T00:00:00.000Z"),
       },
     ]);
-    const db = {
-      select: () => ({
-        from: () => ({
-          where: () => ({ orderBy: () => ({ limit }) }),
-        }),
-      }),
-    };
+    const dialect = new SQLiteSyncDialect();
+    const orderBy = vi.fn((order: SQL) => {
+      expect(dialect.sqlToQuery(order)).toMatchObject({
+        sql: '"login_history"."created_at" desc',
+        params: [],
+      });
+      return { limit };
+    });
+    const where = vi.fn((predicate: SQL) => {
+      expect(dialect.sqlToQuery(predicate)).toMatchObject({
+        sql: '"login_history"."user_id" = ?',
+        params: ["user-1"],
+      });
+      return { orderBy };
+    });
+    const select = vi.fn(() => ({ from: () => ({ where }) }));
+    const db = { select };
 
     const result = await listUserLoginHistory(asMockDatabase(db), "user-1");
 
+    expect(where).toHaveBeenCalledOnce();
+    expect(orderBy).toHaveBeenCalledOnce();
+    expect(select).toHaveBeenCalledExactlyOnceWith({
+      id: loginHistory.id,
+      event: loginHistory.event,
+      provider: loginHistory.provider,
+      ipAddress: loginHistory.ipAddress,
+      userAgent: loginHistory.userAgent,
+      createdAt: loginHistory.createdAt,
+    });
     expect(limit).toHaveBeenCalledWith(50);
     expect(result).toEqual([
       expect.not.objectContaining({
@@ -105,8 +128,20 @@ describe("login history repository", () => {
       occurredAt: new Date("2026-08-11T00:00:00.000Z"),
     });
 
-    expect(values).toHaveBeenCalledOnce();
+    expect(values).toHaveBeenCalledExactlyOnceWith({
+      event: "SIGN_OUT",
+      userId: "user-1",
+      provider: null,
+      ipAddress: "anonymous",
+      userAgent: null,
+      createdAt: new Date("2026-08-11T00:00:00.000Z"),
+    });
     expect(where).toHaveBeenCalledOnce();
+    const predicate: SQL = where.mock.calls[0]![0];
+    expect(new SQLiteSyncDialect().sqlToQuery(predicate)).toMatchObject({
+      sql: '"login_history"."created_at" < ?',
+      params: [new Date("2026-05-13T00:00:00.000Z").getTime()],
+    });
   });
 });
 
@@ -152,3 +187,19 @@ it.each([
     ).resolves.toBe(expected);
   },
 );
+
+it("does not prune history when recording the new event fails", async () => {
+  const failure = new Error("insert failed");
+  const values = vi.fn().mockRejectedValue(failure);
+  const remove = vi.fn();
+  await expect(
+    recordLoginHistory(
+      asMockDatabase({
+        insert: () => ({ values }),
+        delete: remove,
+      }),
+      { event: "SIGN_OUT", userId: "user-1" },
+    ),
+  ).rejects.toBe(failure);
+  expect(remove).not.toHaveBeenCalled();
+});
