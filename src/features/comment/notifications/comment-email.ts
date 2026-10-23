@@ -35,9 +35,7 @@ interface CommentEmailPayload {
 async function sendWithDeadline(resend: Resend, payload: CreateEmailOptions) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
-  // Resend forwards request options to fetch but omits signal from its public
-  // type. Keep this adaptation local and cover it with the real-SDK transport.
-  const options: CreateEmailRequestOptions & Pick<RequestInit, "signal"> = {
+  const options: CreateEmailRequestOptions = {
     signal: controller.signal,
   };
   try {

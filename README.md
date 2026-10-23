@@ -85,7 +85,7 @@
 ### 环境要求
 
 - Node.js 24.15.0 或更高的 24.x（推荐 CI 使用的 24.22.1；与 `package.json` engines 一致）
-- Bun 1.4.3（与 `packageManager` 和 CI 一致）
+- Bun 1.4.4（与 `packageManager` 和 CI 一致）
 - Turso 账号
 - Cloudflare 账号（可选，用于 R2 和 Turnstile）
 - Resend 账号（可选，用于邮件服务）

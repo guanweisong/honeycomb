@@ -1,4 +1,10 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+  symlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -35,4 +41,33 @@ describe("sourceFiles", () => {
       rmSync(directory, { recursive: true });
     }
   });
+});
+
+it("preserves hidden paths, test/spec distinction, symbolic entries and missing-root failures", () => {
+  const directory = mkdtempSync(join(tmpdir(), "honeycomb-source-links-"));
+  try {
+    mkdirSync(join(directory, ".hidden"));
+    writeFileSync(join(directory, ".hidden", "a.ts"), "export {};");
+    for (const name of ["b.ts", "b.spec.ts", "b.test.tsx"])
+      writeFileSync(join(directory, name), "export {};");
+    symlinkSync(".hidden", join(directory, "linked-directory"));
+    symlinkSync("b.ts", join(directory, "link.ts"));
+    symlinkSync("missing", join(directory, "dangling.ts"));
+    expect(
+      sourceFiles(directory).map((path) => relative(directory, path)),
+    ).toEqual([".hidden/a.ts", "b.spec.ts", "b.ts", "dangling.ts", "link.ts"]);
+    expect(
+      sourceFiles(directory, { includeTests: true }).map((path) =>
+        relative(directory, path),
+      ),
+    ).toContain("b.test.tsx");
+    expect(
+      sourceFiles(directory, { exclude: (path) => path.endsWith("b.ts") }),
+    ).not.toContain(join(directory, "b.ts"));
+    expect(() => sourceFiles(join(directory, "missing-root"))).toThrow();
+    writeFileSync(join(directory, "new.ts"), "export {};");
+    expect(sourceFiles(directory)).toContain(join(directory, "new.ts"));
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 });

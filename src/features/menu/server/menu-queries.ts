@@ -107,23 +107,14 @@ export async function listMenus(
         )
       : Promise.resolve([]),
   ]);
-  const categoryTranslationsById = new Map<
-    string,
-    typeof categoryTranslations
-  >();
-  for (const row of categoryTranslations) {
-    const id = row.categoryId;
-    const translations = categoryTranslationsById.get(id);
-    if (translations) translations.push(row);
-    else categoryTranslationsById.set(id, [row]);
-  }
-  const pageTranslationsById = new Map<string, typeof pageTranslations>();
-  for (const row of pageTranslations) {
-    const id = row.pageId;
-    const translations = pageTranslationsById.get(id);
-    if (translations) translations.push(row);
-    else pageTranslationsById.set(id, [row]);
-  }
+  const categoryTranslationsById = Map.groupBy(
+    categoryTranslations,
+    (row) => row.categoryId,
+  );
+  const pageTranslationsById = Map.groupBy(
+    pageTranslations,
+    (row) => row.pageId,
+  );
   const categoryMap = new Map(
     categories.map((item) => [
       item.id,

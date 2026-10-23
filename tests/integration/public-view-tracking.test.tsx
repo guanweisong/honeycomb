@@ -35,15 +35,6 @@ vi.mock("next-intl", () => ({
 import { PageViewTracker } from "@/features/page/public/PageViewTracker";
 import { PostViewTracker } from "@/features/post/public/PostViewTracker";
 
-function deferred() {
-  let resolve!: (value: { views?: number | null }) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise<{ views?: number | null }>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("ViewTracker with real QueryClient and MutationObserver", () => {
@@ -74,7 +65,7 @@ describe("ViewTracker with real QueryClient and MutationObserver", () => {
     });
 
   it("reports a post once under StrictMode and renders the actual mutation result", async () => {
-    const pending = deferred();
+    const pending = Promise.withResolvers<{ views?: number | null }>();
     postRequest.mockReturnValue(pending.promise);
     await render(
       <StrictMode>
@@ -108,8 +99,8 @@ describe("ViewTracker with real QueryClient and MutationObserver", () => {
   it.each(["resolve", "reject"] as const)(
     "does not let an old post %s overwrite the newer entity",
     async (settlement) => {
-      const first = deferred();
-      const second = deferred();
+      const first = Promise.withResolvers<{ views?: number | null }>();
+      const second = Promise.withResolvers<{ views?: number | null }>();
       postRequest.mockImplementation(({ id }) =>
         id === "first" ? first.promise : second.promise,
       );

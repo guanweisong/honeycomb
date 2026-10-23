@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   existsSync,
-  readdirSync,
   mkdtempSync,
   mkdirSync,
   writeFileSync,
   rmSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { tmpdir } from "node:os";
+import { filesInDirectory } from "@tests/helpers/source-files";
 import nextConfig from "../../next.config";
 
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
@@ -26,13 +26,9 @@ const publicAdminPages = [
 const pageExtensions = nextConfig.pageExtensions ?? ["tsx", "ts", "jsx", "js"];
 
 function routeFiles(directory: string, extensions = pageExtensions): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) return routeFiles(path, extensions);
-    return extensions.some((extension) => entry.name === `page.${extension}`)
-      ? [path]
-      : [];
-  });
+  return filesInDirectory(directory).filter((path) =>
+    extensions.some((extension) => basename(path) === `page.${extension}`),
+  );
 }
 
 describe("授权入口边界", () => {

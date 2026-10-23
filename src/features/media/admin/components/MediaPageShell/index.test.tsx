@@ -3,6 +3,12 @@ import { webcrypto } from "node:crypto";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import {
+  notifyManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import type { trpcClient } from "@/lib/trpc/client/trpc";
 
 import { Permission } from "@/lib/auth/permissions";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
@@ -59,6 +65,7 @@ const mediaPages = {
 };
 const trpcMocks = vi.hoisted(() => ({
   destroy: vi.fn(),
+  request: vi.fn<typeof trpcClient.media.index.query>(),
   prepareUpload: vi.fn(),
   input: undefined as { page?: number; limit?: number } | undefined,
   refetch: vi.fn(),
@@ -77,18 +84,18 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
-  trpc: {
+  trpcClient: {
     media: {
       index: {
-        useQuery: (input: { page?: number; limit?: number }) => {
+        query: (input: Parameters<typeof trpcClient.media.index.query>[0]) => {
           trpcMocks.input = input;
-          return {
-            data: input.page === 2 ? mediaPages.second : mediaPages.first,
-            isFetching: false,
-            refetch: trpcMocks.refetch,
-          };
+          return trpcMocks.request(input);
         },
       },
+    },
+  },
+  trpc: {
+    media: {
       destroy: { useMutation: () => ({ mutateAsync: trpcMocks.destroy }) },
       prepareUpload: {
         useMutation: () => ({ mutateAsync: trpcMocks.prepareUpload }),
@@ -150,8 +157,15 @@ async function changeFile(input: HTMLInputElement, file: File | File[]) {
 describe("MediaPageShell", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let client: QueryClient;
 
   beforeEach(() => {
+    notifyManager.setScheduler(queueMicrotask);
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    trpcMocks.request.mockReset();
+    trpcMocks.request.mockImplementation(async ({ page }) =>
+      page === 2 ? mediaPages.second : mediaPages.first,
+    );
     vi.stubGlobal("crypto", webcrypto);
     vi.stubGlobal("File", NodeFile);
     accountId = "user-1";
@@ -179,11 +193,20 @@ describe("MediaPageShell", () => {
     toastMocks.warning.mockReset();
     container = document.createElement("div");
     document.body.appendChild(container);
-    root = createRoot(container);
+    const reactRoot = createRoot(container);
+    root = {
+      render: (children) =>
+        reactRoot.render(
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+        ),
+      unmount: () => reactRoot.unmount(),
+    };
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    client.clear();
+    notifyManager.setScheduler((callback) => setTimeout(callback, 0));
     container.remove();
     vi.unstubAllGlobals();
   });
@@ -387,7 +410,7 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.registerUpload).toHaveBeenCalledWith({
       intent: "media-2",
     });
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenCalledWith(uploadedMedia);
     expect(container.textContent).toContain("点击上传文件");
   });
@@ -420,7 +443,7 @@ describe("MediaPageShell", () => {
     );
 
     expect(container.textContent).toContain("点击上传文件");
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
     expect(onSelect).not.toHaveBeenCalled();
   });
 
@@ -501,7 +524,9 @@ describe("MediaPageShell", () => {
         publicSync: "degraded",
       });
       if (refreshFails)
-        trpcMocks.refetch.mockRejectedValue(new Error("refresh failed"));
+        trpcMocks.request
+          .mockResolvedValueOnce(mediaPages.first)
+          .mockRejectedValueOnce(new Error("refresh failed"));
       await act(async () =>
         root.render(<MediaPageShell onSelect={onSelect} />),
       );
@@ -559,7 +584,7 @@ describe("MediaPageShell", () => {
       acknowledgeUnknownReferences: true,
     });
     expect(toastMocks.success).toHaveBeenCalledWith("删除成功");
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenLastCalledWith(undefined);
     expect(
@@ -644,7 +669,7 @@ describe("MediaPageShell", () => {
       ),
     );
 
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenLastCalledWith(existingMedia);
     expect(
@@ -688,7 +713,7 @@ describe("MediaPageShell", () => {
       fetchMock.mock.calls.every((call) => call[1]?.method === "PUT"),
     ).toBe(true);
     expect(onSelect).toHaveBeenCalledWith(uploadedMedia);
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
     expect(toastMocks.error).toHaveBeenCalledWith(
       expect.stringContaining("成功上传 1 个文件，1 个失败"),
     );
@@ -719,6 +744,6 @@ describe("MediaPageShell", () => {
       ),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(trpcMocks.refetch).toHaveBeenCalledOnce();
+    expect(trpcMocks.request).toHaveBeenCalledTimes(2);
   });
 });

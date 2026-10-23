@@ -20,12 +20,7 @@ export function toTagTranslationRows(
 }
 
 export function groupTagTranslations(rows: readonly TagTranslationRow[]) {
-  const grouped = new Map<string, TagTranslationRow[]>();
-  for (const row of rows) {
-    const values = grouped.get(row.tagId) ?? [];
-    values.push(row);
-    grouped.set(row.tagId, values);
-  }
+  const grouped = Map.groupBy(rows, (row) => row.tagId);
   return new Map(
     [...grouped].map(([id, values]) => [
       id,

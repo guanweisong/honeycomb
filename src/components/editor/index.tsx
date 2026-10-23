@@ -1,16 +1,18 @@
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  type Editor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { ToolbarButton } from "./components/ToolbarButton";
-import { useEffect, useRef, useState, type HTMLAttributes } from "react";
+import { useEffect, useRef, type HTMLAttributes } from "react";
 import { toolbarItems } from "@/components/editor/config/toolbar-items";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import { TextStyle } from "@tiptap/extension-text-style";
-import Color from "@tiptap/extension-color";
+import { Color, TextStyle } from "@tiptap/extension-text-style";
 import { ToolbarGroupItem } from "./components/ToolbarGroupItem";
 
 interface TiptapProps extends Pick<
@@ -39,14 +41,15 @@ export default function Tiptap({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        linkOnPaste: true,
-        HTMLAttributes: {
-          rel: "noopener noreferrer nofollow",
-          target: "_blank",
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+          linkOnPaste: true,
+          HTMLAttributes: {
+            rel: "noopener noreferrer nofollow",
+            target: "_blank",
+          },
         },
       }),
       TaskList,
@@ -112,17 +115,10 @@ function EditorToolbar({
   editor: Editor;
   disabled: boolean;
 }) {
-  const [, setUpdateCount] = useState(0);
-
-  useEffect(() => {
-    const update = () => setUpdateCount((prev) => prev + 1);
-    editor.on("selectionUpdate", update);
-    editor.on("transaction", update);
-    return () => {
-      editor.off("selectionUpdate", update);
-      editor.off("transaction", update);
-    };
-  }, [editor]);
+  useEditorState({
+    editor,
+    selector: ({ transactionNumber }) => transactionNumber,
+  });
 
   return (
     <fieldset

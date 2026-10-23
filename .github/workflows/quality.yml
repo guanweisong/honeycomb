@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - run: bun add --global @fission-ai/openspec@1.4.1
       - run: bun run quality:spec
         env:
@@ -46,7 +46,7 @@ jobs:
           node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -135,7 +135,7 @@ jobs:
           node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -209,7 +209,7 @@ jobs:
           node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -254,7 +254,7 @@ jobs:
           node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -264,9 +264,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .next/cache/turbopack
-          key: next-${{ runner.os }}-node24-bun1.4.3-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
+          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
           restore-keys: |
-            next-${{ runner.os }}-node24-bun1.4.3-${{ hashFiles('bun.lock') }}-
+            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
       - name: Build, analyze and production E2E with isolated fixture
@@ -344,7 +344,7 @@ jobs:
           node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache

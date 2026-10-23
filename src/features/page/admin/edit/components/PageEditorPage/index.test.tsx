@@ -133,20 +133,6 @@ const originalDetail = {
   template: PageTemplate.DEFAULT,
 } satisfies EditorDetail;
 
-function deferred<T>() {
-  let resolve: ((value: T) => void) | undefined;
-  let reject: ((reason: Error) => void) | undefined;
-  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
-    resolve = resolvePromise;
-    reject = rejectPromise;
-  });
-  return {
-    promise,
-    resolve: (value: T) => requireDefined(resolve)(value),
-    reject: (reason: Error) => requireDefined(reject)(reason),
-  };
-}
-
 describe("PageEditorPage", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -292,7 +278,7 @@ describe("PageEditorPage", () => {
   });
 
   it("keeps the new-page form editable during creation and preserves it on failure", async () => {
-    const create = deferred<{ id: string }>();
+    const create = Promise.withResolvers<{ id: string }>();
     mocks.create.mockReturnValue(create.promise);
     await render(null);
     await act(async () => {
@@ -316,7 +302,7 @@ describe("PageEditorPage", () => {
 
   it("keeps existing-page forms interactive while an update is pending", async () => {
     mocks.detail = originalDetail;
-    const update = deferred<{ id: string }>();
+    const update = Promise.withResolvers<{ id: string }>();
     mocks.update.mockReturnValue(update.promise);
     await render();
     await save();
@@ -479,7 +465,7 @@ describe("PageEditorPage", () => {
 
   it("keeps edits made while saving and compares them against the saved baseline", async () => {
     mocks.detail = originalDetail;
-    const update = deferred<{ id: string }>();
+    const update = Promise.withResolvers<{ id: string }>();
     mocks.update.mockReturnValue(update.promise);
     await render();
     await editTitle("提交标题");
@@ -528,7 +514,7 @@ describe("PageEditorPage", () => {
 
   it("does not reset the next page when an earlier save finishes", async () => {
     mocks.detail = originalDetail;
-    const update = deferred<{ id: string }>();
+    const update = Promise.withResolvers<{ id: string }>();
     mocks.update.mockReturnValue(update.promise);
     await render();
     await editTitle();
@@ -545,7 +531,7 @@ describe("PageEditorPage", () => {
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
   });
   it("keeps StrictMode A → B → A edits when the first visit finishes saving", async () => {
-    const pending = deferred<{ id: string; version: number }>();
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
     mocks.update.mockReturnValueOnce(pending.promise);
     const renderStrict = async (id: string) => {
       mocks.searchId = id;
@@ -596,7 +582,7 @@ describe("PageEditorPage", () => {
   });
   it("suppresses all old-account effects before refresh", async () => {
     mocks.detail = originalDetail;
-    const pending = deferred<{ id: string; version: number }>();
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
     mocks.update.mockReturnValue(pending.promise);
     await render();
     await save();
@@ -641,7 +627,7 @@ describe("PageEditorPage", () => {
       requireDefined(mocks.form).setValue("title", originalDetail.title);
       requireDefined(mocks.form).setValue("content", originalDetail.content);
     });
-    const pending = deferred<{ id: string; version: number }>();
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
     mocks.create.mockReturnValue(pending.promise);
     await save();
     await editTitle("later creation edit");
@@ -684,7 +670,10 @@ describe("PageEditorPage", () => {
     await render();
     await editTitle("conflicted");
     await save();
-    const pending = deferred<{ isSuccess: boolean; data: EditorDetail }>();
+    const pending = Promise.withResolvers<{
+      isSuccess: boolean;
+      data: EditorDetail;
+    }>();
     mocks.refetch.mockReturnValue(pending.promise);
     const reload = Array.from(container.querySelectorAll("button")).find(
       (button) => button.textContent === "保留本地内容并加载最新版本",
@@ -706,7 +695,7 @@ describe("PageEditorPage", () => {
   });
   it("retains the submitted snapshot when an update result is unknown and typing continued", async () => {
     mocks.detail = originalDetail;
-    const pending = deferred<{ id: string; version: number }>();
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
     mocks.update.mockReturnValue(pending.promise);
     await render();
     await editTitle("submitted snapshot");

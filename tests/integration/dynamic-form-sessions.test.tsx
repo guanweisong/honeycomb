@@ -1,14 +1,10 @@
 import React, { act, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+  cleanup,
+  render as renderView,
+  type RenderResult,
+} from "@testing-library/react";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { ModalType } from "@/components/admin/types/modal-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { UserLevel } from "@/features/user/types/user.level";
@@ -171,26 +167,21 @@ const dialogs: Array<{
 describe.each(dialogs)(
   "$name form sessions",
   ({ inputName, renderEdit, renderCreate }) => {
-    let container: HTMLDivElement;
-    let root: Root;
-    beforeEach(() => {
-      container = document.createElement("div");
-      document.body.appendChild(container);
-      root = createRoot(container);
-    });
-    afterEach(async () => {
-      await act(async () => root.unmount());
-      container.remove();
+    let view: RenderResult | undefined;
+    afterEach(() => {
+      cleanup();
+      view = undefined;
     });
     function input() {
-      const field = container.querySelector<HTMLInputElement>(
+      const field = view?.container.querySelector<HTMLInputElement>(
         `input[name="${inputName}"]`,
       );
       if (!field) throw new Error(`Missing ${inputName} field`);
       return field;
     }
-    async function render(element: ReactNode) {
-      await act(async () => root.render(element));
+    function render(element: ReactNode) {
+      if (view) view.rerender(element);
+      else view = renderView(element);
     }
     async function edit() {
       await act(async () => {
@@ -203,32 +194,32 @@ describe.each(dialogs)(
     }
 
     it("preserves edits when the same record is refetched", async () => {
-      await render(renderEdit("record-1", "Initial"));
+      render(renderEdit("record-1", "Initial"));
       await edit();
-      await render(renderEdit("record-1", "Refetched"));
+      render(renderEdit("record-1", "Refetched"));
       expect(input().value).toBe("Draft");
     });
 
     it("initializes a different record instead of leaking the previous draft", async () => {
-      await render(renderEdit("record-1", "Initial"));
+      render(renderEdit("record-1", "Initial"));
       await edit();
-      await render(renderEdit("record-2", "Another record"));
+      render(renderEdit("record-2", "Another record"));
       expect(input().value).toBe("Another record");
     });
 
     it("starts a clean create session after editing a record", async () => {
-      await render(renderEdit("record-1", "Initial"));
+      render(renderEdit("record-1", "Initial"));
       await edit();
-      await render(renderCreate());
+      render(renderCreate());
       expect(input().value).toBe("");
     });
 
     it("starts fresh when the same record is closed and reopened", async () => {
-      await render(renderEdit("record-1", "Initial"));
+      render(renderEdit("record-1", "Initial"));
       await edit();
-      await render(renderEdit("record-1", "Initial", false));
-      expect(container.querySelector("input")).toBeNull();
-      await render(renderEdit("record-1", "Initial"));
+      render(renderEdit("record-1", "Initial", false));
+      expect(view?.container.querySelector("input")).toBeNull();
+      render(renderEdit("record-1", "Initial"));
       expect(input().value).toBe("Initial");
     });
   },

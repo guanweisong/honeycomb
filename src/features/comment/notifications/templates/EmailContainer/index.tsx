@@ -9,7 +9,7 @@ import {
   Tailwind,
   Text,
   Heading,
-} from "@react-email/components";
+} from "react-email";
 import * as React from "react";
 import { clientEnv } from "@/env/client";
 import type { CommentNotificationSetting } from "../../comment-notification";

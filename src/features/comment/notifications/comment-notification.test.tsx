@@ -1,4 +1,4 @@
-import { render } from "@react-email/components";
+import { render } from "react-email";
 import { describe, expect, it, vi } from "vitest";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import type { NotificationComment } from "@/features/comment/types/comment.notification";
@@ -139,6 +139,68 @@ describe("comment notification targets", () => {
         );
         expect(document.body.textContent).toContain("Current comment body");
       }
+    },
+  );
+
+  it.each(["admin", "reply"] as const)(
+    "renders %s user content as text while retaining multiline email styles",
+    async (type) => {
+      const currentComment: NotificationComment = {
+        ...comment,
+        customId: null,
+        author: '<img src=x onerror="alert(1)"> & Reader',
+        content: '<script>alert("current")</script>\nSecond line & <b>text</b>',
+        postId: "post-1",
+        post: {
+          id: "post-1",
+          title: { zh: '<a href="https://evil.test">Title</a>', en: "Post" },
+        },
+      };
+      const parentComment = {
+        ...currentComment,
+        author: "Parent <svg onload=alert(1)>",
+        content: '<script>alert("parent")</script> & parent body',
+      };
+      const unsafeSetting = {
+        siteName: { zh: "Site <img src=x>", en: "Site" },
+      };
+      const email =
+        type === "admin" ? (
+          <AdminCommentEmailMessage
+            currentComment={currentComment}
+            setting={unsafeSetting}
+          />
+        ) : (
+          <ReplyCommentEmailMessage
+            currentComment={currentComment}
+            parentComment={parentComment}
+            setting={unsafeSetting}
+          />
+        );
+      const document = parsedEmail(await render(email));
+
+      expect(document.body.textContent).toContain(currentComment.author);
+      expect(document.body.textContent).toContain(currentComment.content);
+      expect(document.body.textContent).toContain(
+        currentComment.post?.title?.zh,
+      );
+      expect(document.body.textContent).toContain(unsafeSetting.siteName.zh);
+      if (type === "reply") {
+        expect(document.body.textContent).toContain(parentComment.author);
+        expect(document.body.textContent).toContain(parentComment.content);
+      }
+      expect(
+        document.querySelector("script, img, svg, [onerror], [onload]"),
+      ).toBeNull();
+      expect(document.querySelectorAll("a")).toHaveLength(1);
+      expect(document.querySelector("a")?.getAttribute("href")).toBe(
+        "http://localhost:3000/blog/archives/post-1",
+      );
+      const body = Array.from(document.querySelectorAll("p")).find(
+        (paragraph) => paragraph.textContent === currentComment.content,
+      );
+      expect(body?.style.whiteSpace).toBe("pre-wrap");
+      expect(body?.style.borderStyle).toBe("dashed");
     },
   );
 });

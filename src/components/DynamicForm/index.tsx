@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
 import {
   useForm,
   FieldValues,
@@ -46,7 +46,6 @@ export function DynamicForm<TShape extends ZodRawShape>({
   renderSubmitButton = true,
   ref,
 }: DynamicFormProps<TShape>) {
-  const [loading, setLoading] = useState(false);
   const initializedDefaults = useRef(defaultValues !== undefined);
 
   const form = useForm<
@@ -58,6 +57,9 @@ export function DynamicForm<TShape extends ZodRawShape>({
     mode: "onBlur",
     defaultValues,
   });
+
+  const { isSubmitting } = form.formState;
+  const submitForm = form.handleSubmit((values) => onSubmit(values));
 
   useEffect(() => {
     if (!initializedDefaults.current && defaultValues !== undefined) {
@@ -77,20 +79,13 @@ export function DynamicForm<TShape extends ZodRawShape>({
       );
       void form.trigger();
     },
-    submit: () => form.handleSubmit((values) => onSubmit(values))(),
+    submit: submitForm,
   }));
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(async (values) => {
-          setLoading(true);
-          try {
-            await onSubmit?.(values);
-          } finally {
-            setLoading(false);
-          }
-        })}
+        onSubmit={submitForm}
         className={inline ? "flex gap-2" : "space-y-4"}
       >
         {fields.map((field) => (
@@ -102,10 +97,10 @@ export function DynamicForm<TShape extends ZodRawShape>({
             <Button
               type="submit"
               className={`cursor-pointer ${inline ? "" : "mt-2"}`}
-              disabled={loading}
+              disabled={isSubmitting}
               {...submitProps}
             >
-              {loading ? (
+              {isSubmitting ? (
                 <LoadingState variant="inline" label="处理中..." />
               ) : (
                 (submitProps?.children ?? "提交")

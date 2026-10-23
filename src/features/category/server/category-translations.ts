@@ -28,12 +28,7 @@ export function toCategoryTranslationRows(
 export function groupCategoryTranslations(
   rows: readonly CategoryTranslationRow[],
 ) {
-  const grouped = new Map<string, CategoryTranslationRow[]>();
-  for (const row of rows) {
-    const values = grouped.get(row.categoryId) ?? [];
-    values.push(row);
-    grouped.set(row.categoryId, values);
-  }
+  const grouped = Map.groupBy(rows, (row) => row.categoryId);
   return new Map(
     [...grouped].map(([id, values]) => [
       id,
