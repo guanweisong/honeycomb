@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TRPCError } from "@trpc/server";
 import { MenuType } from "@/features/menu/types/menu.type";
 
 const mocks = vi.hoisted(() => ({
@@ -107,5 +108,24 @@ describe("public server queries", () => {
       requestContext: { requestId: "next-public-cache-fill" },
       skipRequestObservability: true,
     });
+  });
+  it("returns serializable absence before a missing post crosses the remote cache", async () => {
+    mocks.post.mockRejectedValueOnce(new TRPCError({ code: "NOT_FOUND" }));
+    await expect(getPublicPostDetail("missing-post")).resolves.toBeNull();
+    expect(mocks.cacheTag).toHaveBeenCalledWith(
+      "public.post-index",
+      "public.post.missing-post",
+    );
+  });
+
+  it.each([
+    new TRPCError({ code: "INTERNAL_SERVER_ERROR" }),
+    new TRPCError({ code: "FORBIDDEN" }),
+    new Error("NOT_FOUND is not a typed domain error"),
+  ])("does not turn other post failures into absence: %s", async (error) => {
+    mocks.post.mockRejectedValueOnce(error);
+    await expect(getPublicPostDetail(`error-${error.message}`)).rejects.toBe(
+      error,
+    );
   });
 });

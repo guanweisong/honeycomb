@@ -20,9 +20,6 @@ for (const { path, unmatched } of missingRoutes) {
     // streamed their Suspense shell, in which case Next preserves HTTP 200.
     if (unmatched) expect(response!.status()).toBe(404);
     else expect([200, 404]).toContain(response!.status());
-    await expect(
-      page.locator('meta[name="robots"][content*="noindex"]').first(),
-    ).toBeAttached();
     // The shared fallback is currently Chinese in both locales. Do not invent
     // a localized English copy or merely render NotFound outside Next's router.
     // Next also renders an alert-role route announcer after client hydration.
@@ -34,6 +31,9 @@ for (const { path, unmatched } of missingRoutes) {
       fallback.getByRole("heading", { name: "页面未找到", exact: true }),
     ).toBeVisible();
     await expect(fallback).toContainText("404：请求的页面不存在或已被移除。");
+    await expect(
+      page.locator('meta[name="robots"][content*="noindex"]').first(),
+    ).toBeAttached();
     const home = fallback.getByRole("link", { name: "返回首页", exact: true });
     await expect(home).toHaveAttribute("href", BLOG_HOME_PATH);
     await home.click();

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { TRPCError } from "@trpc/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { createServerClient } from "@/app/_trpc/server";
@@ -63,7 +64,14 @@ async function getCachedPublicPostDetail(id: string) {
   cacheLife("max");
   cacheTag(POST_INDEX_CACHE_TAG, getPostDetailCacheTag(id));
   const client = await createCachedPublicClient();
-  return client.post.detail({ id });
+  try {
+    return await client.post.detail({ id });
+  } catch (error) {
+    // Cache transport does not preserve custom error prototypes or properties.
+    // Carry expected absence as data; the route calls notFound outside cache.
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") return null;
+    throw error;
+  }
 }
 
 async function getCachedPublicPageDetail(id: string) {
