@@ -46,16 +46,6 @@ const link: LinkRecord = {
   updatedAt: null,
 };
 
-function deferred() {
-  let resolve!: (value: unknown) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
-
 for (const kind of ["user", "link"] as const) {
   describe(`${kind} dialog session`, () => {
     let container: HTMLDivElement;
@@ -116,7 +106,7 @@ for (const kind of ["user", "link"] as const) {
     ] as const)(
       "keeps a reopened dialog after stale %s success for %s",
       async (stage, recordId) => {
-        const pending = deferred();
+        const pending = Promise.withResolvers<unknown>();
         (stage === "mutation"
           ? mocks.mutate
           : mocks.refetch
@@ -142,7 +132,7 @@ for (const kind of ["user", "link"] as const) {
       expect(actions.dialogState.open).toBe(false);
     });
     it("keeps a reopened session on rejected mutation", async () => {
-      const pending = deferred();
+      const pending = Promise.withResolvers<unknown>();
       mocks.mutate.mockReturnValueOnce(pending.promise);
       let saving!: Promise<void>;
       await act(async () => {

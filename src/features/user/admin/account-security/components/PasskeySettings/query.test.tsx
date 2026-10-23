@@ -44,14 +44,6 @@ function jsonResponse(data: unknown, status = 200) {
   });
 }
 
-function deferredResponse() {
-  let resolve!: (response: Response) => void;
-  const promise = new Promise<Response>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
-}
-
 function getPasskeyAtom() {
   const atom = authClient.$store.atoms.listPasskeys;
   if (!atom) throw new Error("The Passkey query atom must be available");
@@ -140,7 +132,7 @@ describe("PasskeySettings with the Better Auth query lifecycle", () => {
       jsonResponse({ message: "unavailable" }, 503),
     );
     await renderSettled();
-    const response = deferredResponse();
+    const response = Promise.withResolvers<Response>();
     mocks.http.mockReturnValueOnce(response.promise);
 
     await act(async () => retryButton().click());
@@ -188,7 +180,7 @@ describe("PasskeySettings with the Better Auth query lifecycle", () => {
     );
     expect(nameInput.value).toBe("Unsubmitted device name");
 
-    const response = deferredResponse();
+    const response = Promise.withResolvers<Response>();
     mocks.http.mockReturnValueOnce(response.promise);
     await act(async () => retryButton().click());
     expect(atom.get().isRefetching).toBe(true);

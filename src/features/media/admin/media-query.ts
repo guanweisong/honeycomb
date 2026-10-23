@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 import type { MediaIndexInput } from "@/features/media/types/media.list";
-import { trpc } from "@/lib/trpc/client/trpc";
+import { useQuery } from "@tanstack/react-query";
+import { useCurrentUser } from "@/features/user/admin/use-current-user";
+import { trpcClient } from "@/lib/trpc/client/trpc";
 
 const MEDIA_PAGE_SIZE = 50;
 
@@ -12,23 +14,39 @@ export function getMediaQueryInput(page = 1): MediaIndexInput {
 }
 
 export function useMediaQuery() {
+  const { user } = useCurrentUser();
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState<Partial<Record<number, MediaViewModel[]>>>(
     {},
   );
   const [total, setTotal] = useState(0);
-  const requestedPage = useRef<number | undefined>(undefined);
+  const requestedPage = useRef<number | symbol | undefined>(undefined);
   const refreshFirstPage = useRef(false);
   const searchParams = getMediaQueryInput(page);
-  const query = trpc.media.index.useQuery(searchParams);
+  const query = useQuery({
+    queryKey: ["media", user?.id, searchParams],
+    queryFn: ({ signal }) =>
+      trpcClient.media.index.query(searchParams, { signal }),
+  });
   const { refetch } = query;
+  const refetchFirstPage = useCallback(
+    (cancelRefetch = true) => {
+      const token = Symbol();
+      requestedPage.current = token;
+      // 快速响应可能被 React 批处理；旧请求完成也不能释放较新的刷新锁。
+      void refetch({ cancelRefetch }).finally(() => {
+        if (requestedPage.current === token) requestedPage.current = undefined;
+      });
+    },
+    [refetch],
+  );
 
   useEffect(() => {
     if (page === 1 && refreshFirstPage.current) {
       refreshFirstPage.current = false;
-      void refetch();
+      refetchFirstPage(false);
     }
-  }, [page, refetch]);
+  }, [page, refetchFirstPage]);
 
   useEffect(() => {
     if (!query.data || query.isPlaceholderData) return;
@@ -91,18 +109,19 @@ export function useMediaQuery() {
   }, [query.isFetching, refetch]);
 
   const reset = useCallback(() => {
-    requestedPage.current = undefined;
     if (page === 1) {
       // 保留已有页：结构共享可能让成功 refetch 的 data 引用不变。
-      void refetch();
+      refetchFirstPage();
     } else {
+      // 同步占用首屏请求，防止同一轮哨兵回调覆盖即将发生的重置。
+      requestedPage.current = Symbol();
       setPages((currentPages) =>
         currentPages[1] ? { 1: currentPages[1] } : {},
       );
       refreshFirstPage.current = true;
       setPage(1);
     }
-  }, [page, refetch]);
+  }, [page, refetchFirstPage]);
 
   const hasMore =
     currentPageLoaded &&

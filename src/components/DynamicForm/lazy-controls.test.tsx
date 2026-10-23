@@ -1,5 +1,6 @@
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FieldControl } from "./FieldControl";
 import type { FieldConfig } from "./types";
@@ -118,12 +119,11 @@ describe("FieldControl lazy controls", () => {
     );
     expect(container.querySelector('[role="textbox"]')).toBeNull();
 
-    await act(async () => {
-      await import("../editor");
+    const editorElement = await waitFor(() => {
+      const element = container.querySelector<HTMLElement>('[role="textbox"]');
+      expect(element?.textContent).toBe("Draft");
+      return element;
     });
-    const editorElement =
-      container.querySelector<HTMLElement>('[role="textbox"]');
-    expect(editorElement?.textContent).toBe("Draft");
     expect(editorElement?.id).toBe("field-control");
     expect(editorElement?.getAttribute("aria-labelledby")).toBe("field-label");
     expect(editorElement?.getAttribute("aria-describedby")).toBe("field-error");

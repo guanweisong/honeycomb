@@ -205,40 +205,12 @@ export function evaluateAudit(
   return { blocking, accepted };
 }
 
-function stripTrailingCommas(value: string): string {
-  let result = "";
-  let inString = false;
-  let escaped = false;
-
-  for (let index = 0; index < value.length; index += 1) {
-    const character = value[index];
-    if (inString) {
-      result += character;
-      if (escaped) escaped = false;
-      else if (character === "\\") escaped = true;
-      else if (character === '"') inString = false;
-      continue;
-    }
-    if (character === '"') {
-      inString = true;
-      result += character;
-      continue;
-    }
-    if (character === ",") {
-      let lookahead = index + 1;
-      while (/\s/.test(value[lookahead] ?? "")) lookahead += 1;
-      if (value[lookahead] === "}" || value[lookahead] === "]") continue;
-    }
-    result += character;
-  }
-
-  return result;
-}
-
-function parseBunLock(path: string): BunLock {
-  const parsed: unknown = JSON.parse(
-    stripTrailingCommas(readFileSync(path, "utf8")),
-  );
+export function parseBunLock(path: string): BunLock {
+  // Only the Bun CLI calls this parser; importing audit policy under Node is safe.
+  const runtime = globalThis as typeof globalThis & {
+    Bun: { JSONC: { parse(text: string): unknown } };
+  };
+  const parsed = runtime.Bun.JSONC.parse(readFileSync(path, "utf8"));
   if (
     typeof parsed !== "object" ||
     parsed === null ||

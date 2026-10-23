@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { mockAbortSignalTimeout } from "@tests/helpers/abort-signal-timeout";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 const { listPublicPosts } = vi.hoisted(() => ({ listPublicPosts: vi.fn() }));
@@ -71,13 +72,7 @@ describe("Upstash cache request deadlines", () => {
     revalidateTag.mockReset();
     // Node's native timeout uses internal timers. Preserve its abort behavior
     // while letting the test clock advance the real SDK's transport deadline.
-    vi.spyOn(AbortSignal, "timeout").mockImplementation((delay) => {
-      const controller = new AbortController();
-      setTimeout(() => {
-        controller.abort(new DOMException("Request timed out", "TimeoutError"));
-      }, delay);
-      return controller.signal;
-    });
+    mockAbortSignalTimeout("Request timed out");
   });
 
   afterEach(() => {

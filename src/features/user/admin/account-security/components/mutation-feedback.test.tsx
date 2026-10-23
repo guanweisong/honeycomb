@@ -76,14 +76,6 @@ import PasswordSettings from "./PasswordSettings";
 import SessionSettings from "./SessionSettings";
 import LinkedAccountsSettings from "./LinkedAccountsSettings";
 
-function deferred() {
-  let resolve!: (value: { error: null }) => void;
-  const promise = new Promise<{ error: null }>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
-}
-
 describe("account mutation feedback", () => {
   let root: Root;
   let container: HTMLDivElement;
@@ -183,7 +175,7 @@ describe("account mutation feedback", () => {
     expect(mocks.error.mock.calls.flat().join()).not.toContain("重试");
   });
   it("ignores old password completion after account replacement", async () => {
-    const d = deferred();
+    const d = Promise.withResolvers<{ error: null }>();
     mocks.fetch.mockReturnValue(d.promise);
     await render(<PasswordSettings />);
     await passwordSubmit();
@@ -196,7 +188,7 @@ describe("account mutation feedback", () => {
     expect(input.value).toBe("new account input");
   });
   it("does not replay registration on repeated clicks", async () => {
-    const d = deferred();
+    const d = Promise.withResolvers<{ error: null }>();
     mocks.add.mockReturnValue(d.promise);
     await render(<PasskeySettings />);
     await act(async () => {
@@ -210,7 +202,7 @@ describe("account mutation feedback", () => {
     await act(async () => d.resolve({ error: null }));
   });
   it("does not toast or refresh after unmount", async () => {
-    const d = deferred();
+    const d = Promise.withResolvers<{ error: null }>();
     mocks.fetch.mockReturnValue(d.promise);
     await render(<PasskeySettings />);
     await click("删除");
@@ -274,7 +266,7 @@ describe("account mutation feedback", () => {
     expect(container.querySelector('[data-testid="confirm"]')).not.toBeNull();
   });
   it("suppresses completion after a passkey dialog is dismissed", async () => {
-    const d = deferred();
+    const d = Promise.withResolvers<{ error: null }>();
     mocks.fetch.mockReturnValue(d.promise);
     await render(<PasskeySettings />);
     await click("删除");

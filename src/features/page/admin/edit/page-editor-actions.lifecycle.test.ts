@@ -66,14 +66,6 @@ function Harness({ pageId }: { pageId?: string }) {
   );
 }
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((resolvePromise) => {
-    resolve = resolvePromise;
-  });
-  return { promise, resolve };
-}
-
 describe("page editor actions lifecycle", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -117,7 +109,7 @@ describe("page editor actions lifecycle", () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
   it("does not refresh or toast after a different record is selected", async () => {
-    const pending = deferred<{ id: string; version: number }>();
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
     mocks.update.mockReturnValue(pending.promise);
     await act(async () =>
       root.render(
@@ -138,8 +130,8 @@ describe("page editor actions lifecycle", () => {
     expect(mocks.warning).not.toHaveBeenCalled();
   });
   it("keeps StrictMode saves usable and invalidates an A → B → A request", async () => {
-    const first = deferred<{ id: string; version: number }>();
-    const second = deferred<{ id: string; version: number }>();
+    const first = Promise.withResolvers<{ id: string; version: number }>();
+    const second = Promise.withResolvers<{ id: string; version: number }>();
     const pageA = "123456789012345678901234";
     const render = (pageId: string) =>
       act(async () =>
@@ -173,7 +165,7 @@ describe("page editor actions lifecycle", () => {
   });
 
   it("does not toast after unmount during refresh", async () => {
-    const refresh = deferred<unknown>();
+    const refresh = Promise.withResolvers<unknown>();
     mocks.update.mockResolvedValue({
       id: "123456789012345678901234",
       version: 2,

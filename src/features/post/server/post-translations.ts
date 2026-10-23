@@ -115,12 +115,7 @@ export function patchPostTranslationRows(
 }
 
 export function groupPostTranslations(rows: readonly PostTranslationRow[]) {
-  const grouped = new Map<string, PostTranslationRow[]>();
-  for (const row of rows) {
-    const values = grouped.get(row.postId) ?? [];
-    values.push(row);
-    grouped.set(row.postId, values);
-  }
+  const grouped = Map.groupBy(rows, (row) => row.postId);
   return new Map(
     [...grouped].map(([id, values]) => [
       id,

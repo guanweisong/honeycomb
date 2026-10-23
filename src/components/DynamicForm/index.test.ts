@@ -66,6 +66,117 @@ describe("DynamicForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({ title: "更新后的标题" });
   });
 
+  it.each(["button", "imperative"] as const)(
+    "keeps %s submission pending until the returned promise resolves",
+    async (entry) => {
+      const schema = z.object({ title: z.string() });
+      const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
+      const pending = Promise.withResolvers<void>();
+      const onSubmit = vi.fn(() => pending.promise);
+      await act(async () => {
+        root.render(
+          React.createElement(DynamicForm<typeof schema.shape>, {
+            schema,
+            ref: formRef,
+            fields: [{ name: "title", type: "text" }],
+            defaultValues: { title: "Draft" },
+            onSubmit,
+            submitProps: { children: "保存" },
+          }),
+        );
+      });
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+      );
+      if (!button) throw new Error("Submit button missing");
+      let submission: void | Promise<void>;
+      await act(async () => {
+        if (entry === "imperative") submission = formRef.current?.submit();
+        else button.click();
+      });
+
+      expect(onSubmit).toHaveBeenCalledWith({ title: "Draft" });
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toContain("处理中...");
+      await act(async () => {
+        pending.resolve();
+        await submission;
+      });
+      expect(button.disabled).toBe(false);
+      expect(button.textContent).toBe("保存");
+    },
+  );
+
+  it("clears imperative pending after rejection without losing the draft", async () => {
+    const schema = z.object({ title: z.string() });
+    const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
+    const pending = Promise.withResolvers<void>();
+    await act(async () => {
+      root.render(
+        React.createElement(DynamicForm<typeof schema.shape>, {
+          schema,
+          ref: formRef,
+          fields: [{ name: "title", type: "text" }],
+          defaultValues: { title: "Initial" },
+          onSubmit: () => pending.promise,
+        }),
+      );
+    });
+    await act(async () => formRef.current?.setValue("title", "Draft"));
+    let rejection: Promise<unknown> | undefined;
+    await act(async () => {
+      rejection = Promise.resolve(formRef.current?.submit()).catch(
+        (error: unknown) => error,
+      );
+    });
+    const button = container.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    expect(button?.disabled).toBe(true);
+    await act(async () => {
+      pending.reject(new Error("write failed"));
+      expect(await rejection).toEqual(new Error("write failed"));
+    });
+    expect(button?.disabled).toBe(false);
+    expect(button?.textContent).toBe("提交");
+    expect(formRef.current?.getValues()).toEqual({ title: "Draft" });
+  });
+
+  it.each([true, false])(
+    "preserves explicit submitProps.disabled=%s while pending",
+    async (disabled) => {
+      const schema = z.object({ title: z.string() });
+      const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
+      const pending = Promise.withResolvers<void>();
+      await act(async () => {
+        root.render(
+          React.createElement(DynamicForm<typeof schema.shape>, {
+            schema,
+            ref: formRef,
+            fields: [{ name: "title", type: "text" }],
+            defaultValues: { title: "Draft" },
+            onSubmit: () => pending.promise,
+            submitProps: { disabled },
+          }),
+        );
+      });
+      let submission: void | Promise<void>;
+      await act(async () => {
+        submission = formRef.current?.submit();
+      });
+      const button = container.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+      );
+      expect(button?.disabled).toBe(disabled);
+      expect(button?.textContent).toContain("处理中...");
+      await act(async () => {
+        pending.resolve();
+        await submission;
+      });
+      expect(button?.disabled).toBe(disabled);
+    },
+  );
+
   it("resets fields when async default values arrive", async () => {
     const schema = z.object({ title: z.string() });
 
@@ -142,6 +253,10 @@ describe("DynamicForm", () => {
     });
 
     expect(onSubmit).not.toHaveBeenCalled();
+    expect(
+      container.querySelector<HTMLButtonElement>('button[type="submit"]')
+        ?.disabled,
+    ).toBe(false);
     expect(container.textContent).toContain("标题不能为空");
   });
 

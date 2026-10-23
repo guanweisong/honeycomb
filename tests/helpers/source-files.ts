@@ -17,22 +17,25 @@ export function sourceFile(path: string): ts.SourceFile {
   );
 }
 
+/** Stable filesystem enumeration; do not follow directory symlinks. */
+export function filesInDirectory(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = join(directory, entry.name);
+      return entry.isDirectory() ? filesInDirectory(path) : [path];
+    })
+    .sort();
+}
+
 /** Recursively returns TypeScript source files in a stable order. */
 export function sourceFiles(
   directory: string,
   { exclude = () => false, includeTests = false }: SourceFileOptions = {},
 ): string[] {
-  return readdirSync(directory, { withFileTypes: true })
-    .flatMap((entry) => {
-      const path = join(directory, entry.name);
-      if (entry.isDirectory())
-        return sourceFiles(path, { exclude, includeTests });
-      const isTest = /\.test\.(ts|tsx)$/.test(entry.name);
-      return /\.tsx?$/.test(entry.name) &&
-        (includeTests || !isTest) &&
-        !exclude(path)
-        ? [path]
-        : [];
-    })
-    .sort();
+  return filesInDirectory(directory).filter(
+    (path) =>
+      /\.tsx?$/.test(path) &&
+      (includeTests || !/\.test\.(ts|tsx)$/.test(path)) &&
+      !exclude(path),
+  );
 }

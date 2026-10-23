@@ -1,6 +1,13 @@
+// @vitest-environment node
+
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  parseBunLock,
   createProductionFindings,
   evaluateAudit,
   parseBunAuditProcessOutput,
@@ -129,5 +136,48 @@ describe("production dependency audit policy", () => {
         "2026-09-04",
       ),
     ).toThrow(/wildcard/i);
+  });
+});
+
+describe("Bun lock JSONC parsing", () => {
+  it("imports audit policy in Node without requiring the Bun runtime", () => {
+    expect("Bun" in globalThis).toBe(false);
+    expect(parseBunLock).toBeTypeOf("function");
+  });
+  it.each([
+    ['{// comment\n"workspaces":{},"packages":{},}', true],
+    [
+      '{"workspaces":{},/* block */"packages":{},"text":"comma,} escaped\\\" quote"}',
+      true,
+    ],
+    ['{"workspaces":{},"packages":{},"nested":[1,2,],}', true],
+    ['{"workspaces":{},"packages":', false],
+    ['{"unexpected":true}', false],
+  ])("parses JSONC and rejects invalid lock input %#", (input, valid) => {
+    const directory = mkdtempSync(join(tmpdir(), "honeycomb-lock-jsonc-"));
+    try {
+      const path = join(directory, "bun.lock");
+      writeFileSync(path, input);
+      const result = spawnSync(
+        "bun",
+        [
+          "--no-env-file",
+          "-e",
+          `import { parseBunLock } from ${JSON.stringify(resolve("scripts/audit-production-dependencies.ts"))}; console.log(JSON.stringify(parseBunLock(${JSON.stringify(path)})));`,
+        ],
+        { encoding: "utf8", timeout: 10000 },
+      );
+      expect(result.error).toBeUndefined();
+      expect(result.status === 0, result.stderr).toBe(valid);
+      if (valid) {
+        const parsed = JSON.parse(result.stdout);
+        expect(parsed).toMatchObject({ workspaces: {}, packages: {} });
+        if (input.includes('"text"'))
+          expect(parsed.text).toBe('comma,} escaped" quote');
+        if (input.includes('"nested"')) expect(parsed.nested).toEqual([1, 2]);
+      }
+    } finally {
+      rmSync(directory, { recursive: true });
+    }
   });
 });

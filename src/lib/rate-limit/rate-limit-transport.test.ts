@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { mockAbortSignalTimeout } from "@tests/helpers/abort-signal-timeout";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiRatelimit, limitWithTimeout } from "./rate-limit";
 import { configureObservability } from "@/lib/observability/server/registry";
@@ -21,14 +22,7 @@ describe("rate limit transport deadline", () => {
           });
         }),
     );
-    vi.spyOn(AbortSignal, "timeout").mockImplementation((delay) => {
-      const controller = new AbortController();
-      setTimeout(
-        () => controller.abort(new DOMException("Timed out", "TimeoutError")),
-        delay,
-      );
-      return controller.signal;
-    });
+    mockAbortSignalTimeout("Timed out");
   });
   afterEach(() => {
     configureObservability();

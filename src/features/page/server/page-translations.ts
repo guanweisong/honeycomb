@@ -19,12 +19,7 @@ export function toPageTranslationRows(
 }
 
 export function groupPageTranslations(rows: readonly PageTranslationRow[]) {
-  const grouped = new Map<string, PageTranslationRow[]>();
-  for (const row of rows) {
-    const values = grouped.get(row.pageId) ?? [];
-    values.push(row);
-    grouped.set(row.pageId, values);
-  }
+  const grouped = Map.groupBy(rows, (row) => row.pageId);
   return new Map(
     [...grouped].map(([id, values]) => [
       id,

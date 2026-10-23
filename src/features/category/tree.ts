@@ -9,13 +9,9 @@ export function flattenCategoryHierarchy<
   T extends { id: string; parent: string | null },
 >(arr: T[], id?: string): (Omit<T, "deepPath"> & { deepPath: number })[] {
   const temp: (Omit<T, "deepPath"> & { deepPath: number })[] = [];
-  const childrenByParent = new Map<string | undefined, T[]>();
-  for (const value of arr) {
-    const parent = value.parent?.toString();
-    const children = childrenByParent.get(parent);
-    if (children) children.push(value);
-    else childrenByParent.set(parent, [value]);
-  }
+  const childrenByParent = Map.groupBy(arr, (value) =>
+    value.parent?.toString(),
+  );
   const visit = (parent: string | undefined, depth: number): void => {
     for (const value of childrenByParent.get(parent) ?? []) {
       temp.push(Object.assign(value, { deepPath: depth }));

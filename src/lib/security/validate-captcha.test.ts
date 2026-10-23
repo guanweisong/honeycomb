@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { mockAbortSignalTimeout } from "@tests/helpers/abort-signal-timeout";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { validateCaptcha } from "./validate-captcha";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
@@ -94,17 +95,7 @@ describe("validate-captcha", () => {
     "aborts a stalled %s within the application deadline",
     async (stage) => {
       vi.useFakeTimers();
-      vi.spyOn(AbortSignal, "timeout").mockImplementation((delay) => {
-        const controller = new AbortController();
-        setTimeout(
-          () =>
-            controller.abort(
-              new DOMException("Request timed out", "TimeoutError"),
-            ),
-          delay,
-        );
-        return controller.signal;
-      });
+      mockAbortSignalTimeout("Request timed out");
       const memory = createMemoryObservability();
       configureObservability(memory);
       let requestSignal: AbortSignal | null | undefined;

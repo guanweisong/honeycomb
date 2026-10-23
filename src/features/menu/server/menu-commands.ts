@@ -135,12 +135,7 @@ export async function saveAllMenus(
           };
         });
         // Parent rows must precede children when one atomic insert becomes chunks.
-        const byParent = new Map<string | null, typeof rows>();
-        for (const row of rows) {
-          const siblings = byParent.get(row.parent);
-          if (siblings) siblings.push(row);
-          else byParent.set(row.parent, [row]);
-        }
+        const byParent = Map.groupBy(rows, (row) => row.parent);
         const ordered = [...(byParent.get(null) ?? [])];
         for (let index = 0; index < ordered.length; index++) {
           const row = ordered[index];

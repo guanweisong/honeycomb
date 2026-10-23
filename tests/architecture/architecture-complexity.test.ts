@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { requireDefined } from "@tests/helpers/require-defined";
+import { moduleDependencies } from "@tests/helpers/architecture-imports";
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -8,20 +8,34 @@ import { sourceFiles } from "@tests/helpers/source-files";
 
 const sourceRoot = join(process.cwd(), "src");
 
-function imports(source: string): string[] {
+function imports(source: string, path = "module.ts"): string[] {
   return [
     ...new Set(
-      [
-        ...source.matchAll(/from\s+["']([^"']+)["']/g),
-        ...source.matchAll(/import\s+["']([^"']+)["']/g),
-        ...source.matchAll(/import\s*\(\s*["']([^"']+)["']\s*\)/g),
-        ...source.matchAll(/require\s*\(\s*["']([^"']+)["']\s*\)/g),
-      ].map((match) => requireDefined(match[1])),
+      moduleDependencies(source, path).map(({ specifier }) => specifier),
     ),
   ];
 }
 
 describe("架构复杂度治理", () => {
+  it("scans actual module syntax without treating comments or text as dependencies", () => {
+    expect(
+      imports(`
+      // import "@radix-ui/react-fake-comment";
+      const example = 'from "@radix-ui/react-fake-string"';
+      import type { T } from "@radix-ui/react-types";
+      export { A } from "@radix-ui/react-export";
+      import Legacy = require("@radix-ui/react-legacy");
+      const lazy = import("@radix-ui/react-dynamic");
+      require("@radix-ui/react-runtime");
+    `),
+    ).toEqual([
+      "@radix-ui/react-types",
+      "@radix-ui/react-export",
+      "@radix-ui/react-legacy",
+      "@radix-ui/react-dynamic",
+      "@radix-ui/react-runtime",
+    ]);
+  });
   it("不保留无消费者 barrel 和测试专用源码", () => {
     const obsoleteFiles = [
       "src/app/(blog)/i18n/middleware.ts",
@@ -118,7 +132,7 @@ describe("架构复杂度治理", () => {
 
   it("Radix primitives 统一通过 radix-ui 聚合包导入", () => {
     const violations = sourceFiles(sourceRoot).flatMap((path) =>
-      imports(readFileSync(path, "utf8"))
+      imports(readFileSync(path, "utf8"), path)
         .filter((specifier) => /^@radix-ui\/react-/.test(specifier))
         .map((specifier) => `${relative(process.cwd(), path)} -> ${specifier}`),
     );

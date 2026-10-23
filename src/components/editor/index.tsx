@@ -1,8 +1,13 @@
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  type Editor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { ToolbarButton } from "./components/ToolbarButton";
-import { useEffect, useRef, useState, type HTMLAttributes } from "react";
+import { useEffect, useRef, type HTMLAttributes } from "react";
 import { toolbarItems } from "@/components/editor/config/toolbar-items";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
@@ -110,17 +115,10 @@ function EditorToolbar({
   editor: Editor;
   disabled: boolean;
 }) {
-  const [, setUpdateCount] = useState(0);
-
-  useEffect(() => {
-    const update = () => setUpdateCount((prev) => prev + 1);
-    editor.on("selectionUpdate", update);
-    editor.on("transaction", update);
-    return () => {
-      editor.off("selectionUpdate", update);
-      editor.off("transaction", update);
-    };
-  }, [editor]);
+  useEditorState({
+    editor,
+    selector: ({ transactionNumber }) => transactionNumber,
+  });
 
   return (
     <fieldset
