@@ -1,4 +1,4 @@
-import { Link, Text } from "@react-email/components";
+import { Link, Text } from "react-email";
 import * as React from "react";
 import EmailContainer from "../EmailContainer";
 import {

@@ -106,6 +106,12 @@ describe("架构复杂度治理", () => {
     expect(manifest.devDependencies).toMatchObject({
       "@serwist/build": expect.any(String),
       tinyglobby: expect.any(String),
+      "@better-fetch/fetch": expect.any(String),
+      nanostores: expect.any(String),
+      esbuild: expect.any(String),
+    });
+    expect(manifest.dependencies).toMatchObject({
+      "@tiptap/core": expect.any(String),
     });
     expect(manifest.main).toBeUndefined();
   });

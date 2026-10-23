@@ -1,4 +1,4 @@
-import md5 from "md5";
+import { createHash } from "node:crypto";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import type {
   CommentRecord,
@@ -21,6 +21,10 @@ export type PublicCommentSource = Pick<
 export function toPublicComment(
   comment: PublicCommentSource,
 ): PublicCommentNode {
+  // Cravatar 的兼容标识要求 MD5；此摘要不用于密码或安全校验。
+  const avatarHash = createHash("md5")
+    .update(comment.email.trim().toLowerCase(), "utf8")
+    .digest("hex");
   return {
     id: comment.id,
     author: comment.author,
@@ -29,7 +33,7 @@ export function toPublicComment(
     parentId: comment.parentId,
     status: comment.status,
     createdAt: comment.createdAt,
-    avatar: `https://cravatar.cn/avatar/${md5(comment.email.trim().toLowerCase())}?s=48&d=identicon`,
+    avatar: `https://cravatar.cn/avatar/${avatarHash}?s=48&d=identicon`,
   };
 }
 

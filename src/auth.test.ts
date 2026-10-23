@@ -12,7 +12,7 @@ const captured = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("better-auth", () => ({
+vi.mock("better-auth/minimal", () => ({
   betterAuth: (options: BetterAuthOptions) => {
     captured.options = options;
     return { $Infer: {} };

@@ -54,8 +54,8 @@ const commandsFor = (job: z.infer<typeof jobSchema>) =>
 
 describe("quality workflow", () => {
   it("uses the repository Bun version and lockfile installation", () => {
-    expect(packageJson.packageManager).toBe("bun@1.4.3");
-    expect(workflow).toContain("bun-version: 1.4.3");
+    expect(packageJson.packageManager).toBe("bun@1.4.4");
+    expect(workflow.match(/bun-version: 1\.4\.4/g)).toHaveLength(6);
     expect(workflow).toContain("bun install --frozen-lockfile");
   });
 

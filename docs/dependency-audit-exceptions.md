@@ -14,6 +14,12 @@
 - 全部开发依赖图不等于生产可达图，仍有两个已知告警：`braces` 3.0.3 尚无官方修复版；`@tailwindcss/typography` 0.5.20 精确依赖旧 `postcss-selector-parser` 6.0.10，不能通过正常范围解析取得修复。未使用跨版本强制覆盖掩盖上游兼容性问题。
 - 后续复核：[braces 公告](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)、[selector-parser 公告](https://github.com/advisories/GHSA-rj75-hqrm-r3gf)。上述开发依赖记录不是生产审计例外，也不表示整张依赖图已无漏洞。
 
+## 2026-10-23 依赖精简复核
+
+- 使用 Node.js 24.22.1 / Bun 1.4.4，React Email 官方入口迁移及兼容依赖维护后，实时生产可达性审计仍为 0 项发现、0 项例外。
+- 未以跨主版本强制 override 或新增豁免处理上述两个开发链告警；已确认用途的工具、CSS 与 peer 依赖保留。
+- 本轮行为约束见[依赖维护约定](dependency-maintenance.md)；本地补充浏览器与固定 CI 浏览器验证须区分记录。
+
 ## 生效中的例外
 
 当前无生效中的例外。

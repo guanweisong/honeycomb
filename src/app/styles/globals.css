@@ -2,12 +2,20 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 
 @source "../**/*.{ts,tsx}";
 
 @custom-variant dark (&:is(.dark *));
+
+/* 保留旧状态工具的最终 150ms 动画时长，不受 duration-* 过渡时长影响。 */
+@utility animate-in {
+  --tw-animation-duration: 150ms;
+}
+
+@utility animate-out {
+  --tw-animation-duration: 150ms;
+}
 
 :root {
   --card: oklch(1 0 0);

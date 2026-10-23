@@ -1,6 +1,7 @@
 import "server-only";
 
-import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { betterAuth } from "better-auth/minimal";
+import type { BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
 import { captcha, username } from "better-auth/plugins";
