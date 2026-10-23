@@ -99,9 +99,9 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "post-list.create",
         permission: Permission.postCreate,
         control: {
-          tag: "Button",
-          attribute: "onClick",
-          call: { callee: "router.push", argument: '"/admin/post/edit"' },
+          tag: "Link",
+          attribute: "href",
+          expression: '"/admin/post/edit"',
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -109,12 +109,9 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "post-list.update",
         permission: Permission.postUpdate,
         control: {
-          tag: "Button",
-          attribute: "onClick",
-          call: {
-            callee: "router.push",
-            argument: "`/admin/post/edit?id=${row.id}`",
-          },
+          tag: "Link",
+          attribute: "href",
+          expression: "`/admin/post/edit?id=${row.id}`",
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },

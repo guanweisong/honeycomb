@@ -22,6 +22,9 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      post: { adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) } },
+    }),
     post: {
       adminIndex: { useQuery: mocks.query },
       destroy: { useMutation: () => ({ mutateAsync: mocks.destroy }) },
@@ -119,7 +122,7 @@ it("names the icon-only row actions", async () => {
   await act(async () => root.render(<PostListClient />));
 
   expect(
-    container.querySelector('tbody button[aria-label="编辑文章"]'),
+    container.querySelector('tbody a[aria-label="编辑文章"]'),
   ).not.toBeNull();
   expect(
     container.querySelector('tbody button[aria-label="删除文章"]'),

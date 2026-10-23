@@ -30,7 +30,11 @@ const Tag = (props: PostWithRelations) => {
             return (
               <span key={n.id}>
                 {index !== 0 && "、"}
-                <Link href={`/list/tags/${n.id}`} className="link-light">
+                <Link
+                  href={`/list/tags/${n.id}`}
+                  prefetch="auto"
+                  className="link-light"
+                >
                   {n.name?.[locale]}
                 </Link>
               </span>

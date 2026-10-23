@@ -78,6 +78,16 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      post: {
+        adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) },
+        adminIndex: { invalidate: vi.fn().mockResolvedValue(undefined) },
+      },
+      page: {
+        adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) },
+        adminIndex: { invalidate: vi.fn().mockResolvedValue(undefined) },
+      },
+    }),
     page: {
       adminIndex: { useQuery: () => query(page).useQuery() },
       destroy: { useMutation: () => ({ mutateAsync: mocks.destroy }) },

@@ -27,24 +27,30 @@ vi.mock("next/image", () => ({
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { post: { search: { query: search } } },
 }));
-vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({
-    children,
-    href,
-    onClick,
-    ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a
-      {...props}
-      href={`/zh${href}`}
-      onClick={(event) => {
-        event.preventDefault();
-        onClick?.(event);
-      }}
-    >
-      {children}
-    </a>
-  ),
+vi.mock("next-intl/navigation", () => ({
+  createNavigation: () => ({
+    Link: ({
+      children,
+      href,
+      onClick,
+      prefetch,
+      ...props
+    }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+      prefetch?: import("next/link").LinkProps["prefetch"];
+    }) => (
+      <a
+        {...props}
+        href={`/zh${href}`}
+        data-prefetch={String(prefetch)}
+        onClick={(event) => {
+          event.preventDefault();
+          onClick?.(event);
+        }}
+      >
+        {children}
+      </a>
+    ),
+  }),
 }));
 
 let root: Root;
@@ -113,6 +119,34 @@ afterEach(async () => {
 });
 
 describe("public blog search", () => {
+  it("keeps search result destinations on shared-shell prefetch through the blog Link", async () => {
+    search.mockResolvedValue([
+      {
+        id: "result-1",
+        title: "文章",
+        excerpt: "摘要",
+        type: "ARTICLE",
+        cover: null,
+      },
+      {
+        id: "result-2",
+        title: "另一篇",
+        excerpt: "摘要",
+        type: "ARTICLE",
+        cover: null,
+      },
+    ]);
+    await open();
+    await type("文章");
+    await advanceTime();
+    await advanceTime(10);
+
+    for (const id of ["result-1", "result-2"]) {
+      const link = document.querySelector(`a[href="/zh/archives/${id}"]`);
+      expect(link?.getAttribute("data-prefetch")).toBe("auto");
+    }
+  });
+
   it("uses quote body text without a title or untitled fallback and retains comfortable inner result padding", async () => {
     search.mockResolvedValue([
       {

@@ -92,9 +92,9 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "page-list.create",
         permission: Permission.pageCreate,
         control: {
-          tag: "Button",
-          attribute: "onClick",
-          call: { callee: "router.push", argument: '"/admin/page/edit"' },
+          tag: "Link",
+          attribute: "href",
+          expression: '"/admin/page/edit"',
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -102,12 +102,9 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
         id: "page-list.update",
         permission: Permission.pageUpdate,
         control: {
-          tag: "Button",
-          attribute: "onClick",
-          call: {
-            callee: "router.push",
-            argument: "`/admin/page/edit?id=${row.id}`",
-          },
+          tag: "Link",
+          attribute: "href",
+          expression: "`/admin/page/edit?id=${row.id}`",
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },

@@ -6,6 +6,8 @@ export interface ActionControlIdentity {
   tag: string;
   attribute: string;
   reference?: string;
+  /** Exact source expression, including literal/template delimiters. */
+  expression?: string;
   call?: {
     callee: string;
     argument?: string;

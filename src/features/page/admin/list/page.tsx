@@ -8,11 +8,14 @@ import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { PageListQueryInput } from "@/features/page/types/page.list-query";
 import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminListQueryOptions } from "@/components/admin/config/query-options";
+import {
+  adminDetailQueryOptions,
+  adminListQueryOptions,
+} from "@/components/admin/config/query-options";
 import type { PageListItem as PageEntity } from "@/features/page/types/page.read-model";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
@@ -35,8 +38,16 @@ const Page = () => {
    * 存储页面列表的查询参数。
    * 当这些参数变化时，会触发页面列表的重新加载。
    */
-  const [searchParams, setSearchParams] = useState<PageListQueryInput>({});
-  const router = useRouter();
+  const [searchParams, setSearchParams] = useState<PageListQueryInput>(() =>
+    PageListQuerySchema.parse({ page: 1, limit: 20 }),
+  );
+  const utils = trpc.useUtils();
+  const prefetchDetail = (id: string) => {
+    void utils.page.adminDetail.prefetch(
+      { id },
+      { ...adminDetailQueryOptions, retry: false },
+    );
+  };
   /**
    * 获取页面列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
@@ -49,7 +60,13 @@ const Page = () => {
    * 删除页面的 tRPC mutation。
    * 用于执行删除操作。
    */
-  const destroyPage = trpc.page.destroy.useMutation();
+  const destroyPage = trpc.page.destroy.useMutation({
+    // Mark every filter stale; the existing flow refreshes the current list once.
+    onSuccess: () =>
+      utils.page.adminIndex
+        .invalidate(undefined, { refetchType: "none" })
+        .catch(() => {}),
+  });
 
   /**
    * 删除事件
@@ -115,12 +132,11 @@ const Page = () => {
           <div className="flex justify-between">
             <div className="flex gap-1">
               {canCreatePage && (
-                <Button
-                  onClick={() => router.push("/admin/page/edit")}
-                  variant="outline"
-                >
-                  <Plus />
-                  添加新页面
+                <Button asChild variant="outline">
+                  <Link href="/admin/page/edit">
+                    <Plus />
+                    添加新页面
+                  </Link>
                 </Button>
               )}
               {canDeletePage && (
@@ -169,9 +185,15 @@ const Page = () => {
                 aria-label="编辑页面"
                 variant="secondary"
                 size="sm"
-                onClick={() => router.push(`/admin/page/edit?id=${row.id}`)}
+                asChild
               >
-                <Pencil />
+                <Link
+                  href={`/admin/page/edit?id=${row.id}`}
+                  onMouseEnter={() => prefetchDetail(row.id)}
+                  onFocus={() => prefetchDetail(row.id)}
+                >
+                  <Pencil />
+                </Link>
               </Button>
             )}
             {canDeletePage && (

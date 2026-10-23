@@ -1,3 +1,4 @@
+import { createAdminListCache } from "@tests/helpers/admin-list-cache";
 import React, {
   act,
   useState,
@@ -23,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   realActions: false,
   actorId: "draft-user",
   warning: vi.fn(),
+  confirmedCreation: null as { id: string; version: number } | null,
   creationCheck: vi.fn(),
   searchId: null as string | null,
   queryError: null as { data?: { code: string } } | null,
@@ -59,9 +61,14 @@ vi.mock("@/lib/observability/client", () => ({
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => cache.utils,
     page: {
       creationResult: {
-        useQuery: () => ({ data: null, refetch: mocks.creationCheck }),
+        useQuery: () => ({
+          data: mocks.confirmedCreation,
+          isSuccess: Boolean(mocks.confirmedCreation),
+          refetch: mocks.creationCheck,
+        }),
       },
       adminDetail: {
         useQuery: () => ({
@@ -133,13 +140,17 @@ const originalDetail = {
   template: PageTemplate.DEFAULT,
 } satisfies EditorDetail;
 
+let cache: ReturnType<typeof createAdminListCache>;
+
 describe("PageEditorPage", () => {
   let container: HTMLDivElement;
   let root: Root;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    cache = createAdminListCache("page");
     localStorage.clear();
+    mocks.confirmedCreation = null;
     mocks.searchId = null;
     mocks.queryError = null;
     mocks.detail = undefined;
@@ -177,6 +188,61 @@ describe("PageEditorPage", () => {
   async function save() {
     await act(async () => container.querySelector("button")?.click());
   }
+
+  it.each(["create", "update"])(
+    "invalidates every fresh page list after %s",
+    async (action) => {
+      if (action === "update") mocks.detail = originalDetail;
+      await render(action === "update" ? pageId : null);
+      await act(async () => {
+        requireDefined(mocks.form).setValue("title", originalDetail.title);
+        requireDefined(mocks.form).setValue("content", originalDetail.content);
+      });
+      await save();
+      expect(
+        mocks[action === "update" ? "update" : "create"],
+      ).toHaveBeenCalledTimes(1);
+      expect(await cache.readLists()).toEqual([
+        { title: "Saved title" },
+        { title: "Saved title" },
+      ]);
+      expect(cache.reads).toBe(2);
+    },
+  );
+
+  it.each(["create", "update"] as const)(
+    "does not reinterpret a confirmed page %s when list refresh fails",
+    async (action) => {
+      if (action === "update") mocks.detail = originalDetail;
+      await render(action === "update" ? pageId : null);
+      await act(async () => {
+        requireDefined(mocks.form).setValue("title", originalDetail.title);
+        requireDefined(mocks.form).setValue("content", originalDetail.content);
+      });
+      vi.spyOn(cache.queryClient, "invalidateQueries").mockRejectedValueOnce(
+        new Error("refresh unavailable"),
+      );
+      await save();
+      expect(mocks[action]).toHaveBeenCalledTimes(1);
+      expect(mocks.error).not.toHaveBeenCalled();
+      if (action === "create")
+        expect(mocks.push).toHaveBeenCalledWith(
+          `/admin/page/edit?id=${pageId}`,
+        );
+    },
+  );
+
+  it("keeps fresh page lists untouched after a rejected write", async () => {
+    mocks.detail = originalDetail;
+    await render(pageId);
+    mocks.update.mockRejectedValue({ data: { code: "FORBIDDEN" } });
+    await save();
+    expect(await cache.readLists()).toEqual([
+      { title: "Old title" },
+      { title: "Old title" },
+    ]);
+    expect(cache.reads).toBe(0);
+  });
 
   it.each([
     [PageStatus.DRAFT, PageStatus.PUBLISHED, "发布", "更新"],
@@ -741,4 +807,19 @@ describe("PageEditorPage", () => {
       originalDetail.title,
     );
   });
+});
+
+vi.mock("@/features/page/admin/edit/use-page-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    usePageCreationResult: (
+      creationToken: string,
+      _actorId: string | undefined,
+      enabled: boolean,
+    ) =>
+      trpc.page.creationResult.useQuery(
+        { creationToken },
+        { enabled, retry: false },
+      ),
+  };
 });

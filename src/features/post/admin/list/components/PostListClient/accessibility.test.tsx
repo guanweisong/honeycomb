@@ -6,6 +6,9 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      post: { adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) } },
+    }),
     post: {
       adminIndex: {
         useQuery: () => ({

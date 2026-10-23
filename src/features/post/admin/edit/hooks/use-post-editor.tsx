@@ -1,5 +1,6 @@
 "use client";
 
+import { usePostCreationResult } from "./use-post-creation-result";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -9,6 +10,7 @@ import type { PhotoPickerItemProps } from "../../../../media/admin/components/Ph
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PostUpdateSchema } from "@/features/post/schemas/post.update.schema";
 import type { PostInsert } from "@/features/post/types/post.insert";
+import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { isDeterminateRejectionCode } from "@/lib/trpc/client/mutation-error";
 import type { PostDetailResult as PostDetailEntity } from "@/features/post/types/post.read-model";
@@ -46,6 +48,7 @@ export type PostSubmitAction = "create" | "update";
  */
 export function usePostEditor(id: string | null) {
   const router = useRouter();
+  const utils = trpc.useUtils();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const [modalProps, setModalProps] =
     useState<AdminDialogState<CategoryEntity>>();
@@ -59,9 +62,7 @@ export function usePostEditor(id: string | null) {
   const [confirmedBaseline, setConfirmedBaseline] = useState<
     Pick<PostDetailEntity, "id" | "version" | "status"> | undefined
   >(undefined);
-  const [baselineVersion, setBaselineVersion] = useState<number | undefined>(
-    undefined,
-  );
+  const [baselineVersion, setBaselineVersion] = useState<number>();
   const [saveProblem, setSaveProblem] = useState<"conflict" | "unknown" | null>(
     null,
   );
@@ -104,7 +105,7 @@ export function usePostEditor(id: string | null) {
     error: detailError,
   } = trpc.post.adminDetail.useQuery(
     { id: id ?? "" },
-    { enabled: Boolean(id) },
+    { ...adminDetailQueryOptions, enabled: Boolean(id) },
   );
   const createPost = trpc.post.create.useMutation();
   const updatePost = trpc.post.update.useMutation();
@@ -124,9 +125,10 @@ export function usePostEditor(id: string | null) {
       ...useWatch({ control: form.control }),
       baseVersion: baselineVersion,
     }) ?? {};
-  const creationResult = trpc.post.creationResult.useQuery(
-    { creationToken: creationAttempt?.creationToken ?? "" },
-    { enabled: Boolean(user && !id && creationAttempt), retry: false },
+  const creationResult = usePostCreationResult(
+    creationAttempt?.creationToken ?? "",
+    userId,
+    Boolean(user && !id && creationAttempt),
   );
   useEffect(() => {
     setCreationAttempt(!id && userId ? readPostCreationAttempt(userId) : null);
@@ -135,11 +137,7 @@ export function usePostEditor(id: string | null) {
   }, [id, userId]);
   const consumedSaveSnapshot = useRef<typeof detail>(undefined);
   const previousRecord = useRef<
-    | {
-        id: string | null;
-        detail: typeof detail;
-      }
-    | undefined
+    { id: string | null; detail: typeof detail } | undefined
   >(undefined);
 
   const resetEditor = useCallback(
@@ -328,6 +326,8 @@ export function usePostEditor(id: string | null) {
             setCreationAttempt(attempt);
             const result = await createPost.mutateAsync(attempt);
             if (result.id) {
+              // Invalidate even if this editor visit ended while persistence was pending.
+              void utils.post.adminIndex.invalidate().catch(() => {});
               saved = true;
               if (
                 recordGeneration.current !== submittedGeneration ||
@@ -363,8 +363,9 @@ export function usePostEditor(id: string | null) {
           );
           if (result) {
             saved = true;
-            if (recordGeneration.current !== submittedGeneration) return;
             // Persistence has succeeded; a failed read must not invite retrying the write.
+            void utils.post.adminIndex.invalidate().catch(() => {});
+            if (recordGeneration.current !== submittedGeneration) return;
             let refreshed: Awaited<ReturnType<typeof refetch>> | undefined;
             try {
               refreshed = await refetch();
@@ -516,6 +517,7 @@ export function usePostEditor(id: string | null) {
         return;
       }
       const result = await createPost.mutateAsync(creationAttempt);
+      void utils.post.adminIndex.invalidate().catch(() => {});
       if (generation !== recordGeneration.current) return;
       finishCreation(result, creationAttempt);
       if (!notifyPublicSyncWarning(result, toast.warning))

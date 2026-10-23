@@ -76,6 +76,7 @@ export function usePageEditorActions({
   expectedVersion?: number;
   refetch: () => unknown;
 }) {
+  const utils = trpc.useUtils();
   const [loading, setLoading] = useState(false);
   const generation = useRef(0);
   const identity = `${actorId ?? ""}:${pageId ?? "new"}`;
@@ -113,6 +114,10 @@ export function usePageEditorActions({
         create: createPage.mutateAsync,
         update: updatePage.mutateAsync,
       });
+      if (result.state === "updated" || result.state === "created") {
+        // Cache refresh failures must never reinterpret or replay a confirmed write.
+        void utils.page.adminIndex.invalidate().catch(() => {});
+      }
       if (!active()) return { state: "stale" };
       if (result.state === "updated") {
         let refreshFailed = false;

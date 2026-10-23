@@ -51,6 +51,10 @@ vi.mock("@/lib/observability/client", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      post: { adminIndex: { invalidate: async () => {} } },
+      page: { adminIndex: { invalidate: async () => {} } },
+    }),
     category: { adminTree: { useQuery: () => ({ data: [] }) } },
     post: {
       creationResult: {
@@ -400,3 +404,21 @@ describe("usePostEditor submission outcomes and validation", () => {
     expect(container.textContent).toBe("idle");
   });
 });
+
+vi.mock(
+  "@/features/post/admin/edit/hooks/use-post-creation-result",
+  async () => {
+    const { trpc } = await import("@/lib/trpc/client/trpc");
+    return {
+      usePostCreationResult: (
+        creationToken: string,
+        _actorId: string | undefined,
+        enabled: boolean,
+      ) =>
+        trpc.post.creationResult.useQuery(
+          { creationToken },
+          { enabled, retry: false },
+        ),
+    };
+  },
+);

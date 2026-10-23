@@ -11,13 +11,20 @@ vi.mock("next-intl", () => ({
     ({ directors: "导演", actors: "演员", styles: "风格" })[key] ?? key,
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({
-    children,
-    ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a {...props}>{children}</a>
-  ),
+vi.mock("next-intl/navigation", () => ({
+  createNavigation: () => ({
+    Link: ({
+      children,
+      prefetch,
+      ...props
+    }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+      prefetch?: import("next/link").LinkProps["prefetch"];
+    }) => (
+      <a {...props} data-prefetch={String(prefetch)}>
+        {children}
+      </a>
+    ),
+  }),
 }));
 
 import Tags from ".";
@@ -61,6 +68,15 @@ describe("Tags", () => {
     expect(
       container.querySelector('a[href="/list/tags/actor-2"]')?.textContent,
     ).toBe("演员乙");
+  });
+
+  it("keeps dense tag destinations on shared-shell prefetch through the blog Link", () => {
+    render(post);
+
+    const links = container.querySelectorAll('a[href^="/list/tags/"]');
+    expect(links).toHaveLength(4);
+    for (const link of links)
+      expect(link.getAttribute("data-prefetch")).toBe("auto");
   });
 
   it("omits empty tag groups", () => {
