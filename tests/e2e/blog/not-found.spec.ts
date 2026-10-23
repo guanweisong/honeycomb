@@ -25,7 +25,11 @@ for (const { path, unmatched } of missingRoutes) {
     ).toBeAttached();
     // The shared fallback is currently Chinese in both locales. Do not invent
     // a localized English copy or merely render NotFound outside Next's router.
-    const fallback = page.getByRole("alert");
+    // Next also renders an alert-role route announcer after client hydration.
+    const fallback = page.getByRole("alert").filter({
+      has: page.getByRole("heading", { name: "页面未找到", exact: true }),
+    });
+    await expect(fallback).toHaveCount(1);
     await expect(
       fallback.getByRole("heading", { name: "页面未找到", exact: true }),
     ).toBeVisible();
