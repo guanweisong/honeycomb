@@ -5,7 +5,7 @@ import {
   getSiteOrigin,
   reportSitemapError,
   toSitemapIndexXml,
-} from "@/app/sitemap-data";
+} from "@/app/lib/server/sitemap-data";
 
 export async function GET() {
   const siteOrigin = getSiteOrigin();

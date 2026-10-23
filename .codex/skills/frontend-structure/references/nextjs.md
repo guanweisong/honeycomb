@@ -8,3 +8,5 @@
 - tRPC、TanStack Query 和缓存的使用遵循现有运行时与 feature 边界；新增依赖前检查 package、版本和现有能力。
 - 涉及框架与业务组合时，读取[架构规则索引](architecture.md)，不在此重述依赖规则。
 - 本轮路由迁移保留客户端导航/历史替换时序：post/page 根入口仍使用 `useLayoutEffect` / `router.replace`；`app/admin/(dashboard)` 的认证 layout/template 不随无职责 `(root)` 的移除而删除。具体迁移决策见[当前 design](../../../../openspec/changes/refine-directory-ownership/design.md)。
+
+- 非框架发现的 worker 源实现归 `app/_pwa`，由 `scripts/build-serwist.ts` 显式构建；跨 sitemap 路由的服务端实现归 `app/lib/server`。移动源码时同步构建入口、精确覆盖率路径及服务端门禁，公开 URL 不变。

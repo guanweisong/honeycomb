@@ -6,9 +6,9 @@ import {
   type ErrorInfo,
 } from "next/dist/client/components/error-boundary";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import BlogError from "./(blog)/error";
-import AdminError from "./admin/error";
-import GlobalError from "./global-error";
+import BlogError from "@/app/(blog)/error";
+import AdminError from "@/app/admin/error";
+import GlobalError from "@/app/global-error";
 
 vi.mock("@sentry/nextjs", () => ({ captureException: vi.fn() }));
 

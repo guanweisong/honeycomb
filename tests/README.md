@@ -84,13 +84,13 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 
 `bun run test:unit:coverage` 显式统计 `src/**/*.{ts,tsx}`，因此没有被测试导入的生产文件也会以零覆盖进入分母。以下是完整且可审计的排除清单：
 
-| 排除项                                     | 理由                                                                                                                                    |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `**/*.d.ts`                                | TypeScript 声明没有可执行行为                                                                                                           |
-| `**/*.test.{ts,tsx}`、`**/*.spec.{ts,tsx}` | 测试是覆盖率证据，不是生产分母                                                                                                          |
-| `tests/**`                                 | 跨模块测试、fixture 和测试配置不是生产源码                                                                                              |
-| `src/app/sw.ts`                            | E2E-only service worker 薄入口；`/en/offline` 由 Serwist route 显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
-| `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                                     |
+| 排除项                                     | 理由                                                                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `**/*.d.ts`                                | TypeScript 声明没有可执行行为                                                                                                    |
+| `**/*.test.{ts,tsx}`、`**/*.spec.{ts,tsx}` | 测试是覆盖率证据，不是生产分母                                                                                                   |
+| `tests/**`                                 | 跨模块测试、fixture 和测试配置不是生产源码                                                                                       |
+| `src/app/_pwa/sw.ts`                       | E2E-only service worker 薄入口；`/en/offline` 由构建脚本显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
+| `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                              |
 
 业务页面、hooks、Feature server/schemas/types/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
 
@@ -166,3 +166,5 @@ Feature schemas/types 职责由 `tests/architecture/schema-type-ownership.test.t
 ### 类型派生回归
 
 `tests/types/*-derived-contracts.ts` 是编译时独立预期，不由被测 schema 重新生成 oracle。默认 `bun run check-types` 收集这些文件；本轮同时在 optional 开关两种模式下验证受影响契约与私有签名，后者不代表全工程已经启用 exactOptionalPropertyTypes。测试和边界记录见[类型派生说明](../docs/type-derivation-refactor.md)。真实 E2E 未运行时必须独立披露，不能以编译或 mock 测试替代。
+
+跨 blog/admin/global 的真实 Next retry 恢复测试位于 `tests/integration/framework-error-recovery.test.tsx`；PWA 策略测试随实现就近放在 `src/app/_pwa/`，只有 `sw.ts` 薄入口使用上述精确覆盖率排除。

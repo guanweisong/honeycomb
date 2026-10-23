@@ -63,7 +63,7 @@ import {
   getCachedSitemapShard,
   toSitemapIndexXml,
   toSitemapXml,
-} from "../../src/app/sitemap-data";
+} from "@/app/lib/server/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },

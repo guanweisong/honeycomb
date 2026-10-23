@@ -7,7 +7,7 @@ import {
   getStaticSitemapUrls,
   reportSitemapError,
   toSitemapXml,
-} from "@/app/sitemap-data";
+} from "@/app/lib/server/sitemap-data";
 
 export async function GET(
   _request: Request,
