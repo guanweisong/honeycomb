@@ -10,6 +10,10 @@ const trpcMocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      post: { adminIndex: { invalidate: async () => {} } },
+      page: { adminIndex: { invalidate: async () => {} } },
+    }),
     page: {
       creationResult: { useQuery: () => ({ data: null }) },
       adminDetail: {
@@ -81,7 +85,25 @@ describe("page editor query", () => {
     ])("binds id %s with enabled=%s", async (id, enabled) => {
       editorMocks.id = id;
       await act(async () => root.render(React.createElement(PageEditorPage)));
-      expect(trpcMocks.calls.at(-1)).toEqual([{ id: id ?? "" }, { enabled }]);
+      expect(trpcMocks.calls.at(-1)).toEqual([
+        { id: id ?? "" },
+        { enabled, staleTime: 30_000 },
+      ]);
     });
   });
+});
+
+vi.mock("@/features/page/admin/edit/use-page-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    usePageCreationResult: (
+      creationToken: string,
+      _actorId: string | undefined,
+      enabled: boolean,
+    ) =>
+      trpc.page.creationResult.useQuery(
+        { creationToken },
+        { enabled, retry: false },
+      ),
+  };
 });

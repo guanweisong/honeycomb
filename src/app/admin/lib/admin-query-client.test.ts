@@ -55,3 +55,36 @@ describe("getAuthErrorCode", () => {
     }
   });
 });
+
+describe("intent prefetch authentication", () => {
+  it.each(["UNAUTHORIZED", "FORBIDDEN"] as const)(
+    "preserves the existing %s navigation policy even when prefetch swallows errors",
+    async (code) => {
+      const onForbidden = vi.fn();
+      const replace = vi.fn();
+      const previousReplace = window.location.replace;
+      window.location.replace = replace;
+      const client = createAdminQueryClient({ onForbidden });
+      const queryFn = vi.fn(async () => {
+        throw Object.assign(new Error(code), { data: { code } });
+      });
+      try {
+        await expect(
+          client.prefetchQuery({
+            queryKey: ["intent", code],
+            queryFn,
+            retry: false,
+          }),
+        ).resolves.toBeUndefined();
+        expect(queryFn).toHaveBeenCalledOnce();
+        expect(onForbidden).toHaveBeenCalledTimes(code === "FORBIDDEN" ? 1 : 0);
+        if (code === "UNAUTHORIZED")
+          expect(replace).toHaveBeenCalledWith("/admin/login");
+        else expect(replace).not.toHaveBeenCalled();
+      } finally {
+        client.clear();
+        window.location.replace = previousReplace;
+      }
+    },
+  );
+});

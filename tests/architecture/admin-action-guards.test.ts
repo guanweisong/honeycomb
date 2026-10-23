@@ -30,6 +30,7 @@ function getAttributeExpression(
   name: string,
 ): ts.Expression | undefined {
   const initializer = getAttribute(element, name)?.initializer;
+  if (initializer && ts.isStringLiteral(initializer)) return initializer;
   return initializer &&
     ts.isJsxExpression(initializer) &&
     initializer.expression
@@ -178,6 +179,8 @@ function matchesActionExpression(
   identity: ActionControlIdentity,
   sourceFile: ts.SourceFile,
 ): boolean {
+  if (identity.expression !== undefined)
+    return expression.getText(sourceFile) === identity.expression;
   if (identity.reference) {
     return (
       ts.isIdentifier(expression) && expression.text === identity.reference
@@ -411,6 +414,36 @@ describe("admin action capability guards", () => {
         statement.declarationList.declarations[0]?.initializer,
       );
       expect(hasGuardPolarity(node, "canDelete", polarity)).toBe(expected);
+    },
+  );
+
+  it.each([
+    ["post", postListPath, "Post"],
+    ["page", "src/features/page/admin/list/page.tsx", "Page"],
+  ])(
+    "rejects removed or swapped %s navigation guards",
+    (feature, path, suffix) => {
+      const actions = getActions(path);
+      const removed = findUnboundActionIds(path, actions, (source) =>
+        source
+          .replaceAll(`canCreate${suffix} &&`, "true &&")
+          .replaceAll(`canUpdate${suffix} &&`, "true &&"),
+      );
+      const swapped = findUnboundActionIds(path, actions, (source) =>
+        source
+          .replaceAll(`canCreate${suffix} &&`, "swappedGuard &&")
+          .replaceAll(`canUpdate${suffix} &&`, `canCreate${suffix} &&`)
+          .replaceAll("swappedGuard &&", `canUpdate${suffix} &&`),
+      );
+      for (const unbound of [removed, swapped]) {
+        expect(unbound).toContain(`${feature}-list.create`);
+        expect(unbound).toContain(`${feature}-list.update`);
+      }
+      const wrongHref = findUnboundActionIds(path, actions, (source) =>
+        source.replaceAll(`/admin/${feature}/edit`, "/admin/other/edit"),
+      );
+      expect(wrongHref).toContain(`${feature}-list.create`);
+      expect(wrongHref).toContain(`${feature}-list.update`);
     },
   );
 

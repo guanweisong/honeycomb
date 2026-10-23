@@ -1,3 +1,4 @@
+import { createAdminListCache } from "@tests/helpers/admin-list-cache";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   success: vi.fn(),
   warning: vi.fn(),
+  confirmedCreation: null as { id: string; version: number } | null,
   error: vi.fn(),
   warn: vi.fn(),
   detail: undefined as EditorDetail | undefined,
@@ -40,10 +42,15 @@ vi.mock("@/lib/observability/client", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => cache.utils,
     category: { adminTree: { useQuery: () => ({ data: [] }) } },
     post: {
       creationResult: {
-        useQuery: () => ({ data: null, refetch: mocks.creationResult }),
+        useQuery: () => ({
+          data: mocks.confirmedCreation,
+          isSuccess: Boolean(mocks.confirmedCreation),
+          refetch: mocks.creationResult,
+        }),
       },
       adminDetail: {
         useQuery: () => ({
@@ -59,6 +66,8 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 }));
 
 import { usePostEditor } from "./use-post-editor";
+
+let cache: ReturnType<typeof createAdminListCache>;
 
 describe("usePostEditor asynchronous save lifecycle", () => {
   let container: HTMLDivElement;
@@ -100,7 +109,9 @@ describe("usePostEditor asynchronous save lifecycle", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    cache = createAdminListCache("post");
     localStorage.clear();
+    mocks.confirmedCreation = null;
     mocks.userId = "draft-user";
     mocks.detail = undefined;
     mocks.queryError = null;
@@ -135,6 +146,57 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       requireDefined(editor).form.setValue("coverId", "cover-1");
     });
   }
+
+  it.each(["create", "update"] as const)(
+    "invalidates every fresh list after %s",
+    async (action) => {
+      if (action === "update") mocks.detail = originalDetail;
+      await renderEditor(action === "update" ? postId : null);
+      await act(async () => {
+        expect(
+          await requireDefined(editor).submit(PostStatus.DRAFT, action),
+        ).toBe(true);
+      });
+      expect(await cache.readLists()).toEqual([
+        { title: "Saved title" },
+        { title: "Saved title" },
+      ]);
+      expect(cache.reads).toBe(2);
+    },
+  );
+
+  it.each(["create", "update"] as const)(
+    "keeps a confirmed %s successful when list refresh rejects",
+    async (action) => {
+      if (action === "update") mocks.detail = originalDetail;
+      await renderEditor(action === "update" ? postId : null);
+      vi.spyOn(cache.queryClient, "invalidateQueries").mockRejectedValueOnce(
+        new Error("refresh unavailable"),
+      );
+      await act(async () => {
+        expect(
+          await requireDefined(editor).submit(PostStatus.DRAFT, action),
+        ).toBe(true);
+      });
+      expect(requireDefined(editor).saveProblem).toBeNull();
+      expect(mocks[action]).toHaveBeenCalledTimes(1);
+      expect(mocks.error).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not invalidate fresh lists after a rejected write", async () => {
+    mocks.detail = originalDetail;
+    mocks.update.mockRejectedValue({ data: { code: "FORBIDDEN" } });
+    await renderEditor(postId);
+    await act(async () => {
+      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+    });
+    expect(await cache.readLists()).toEqual([
+      { title: "Old title" },
+      { title: "Old title" },
+    ]);
+    expect(cache.reads).toBe(0);
+  });
 
   it.each([true, false])(
     "preserves edits made while an update and refetch are pending (refresh succeeds: %s)",
@@ -469,6 +531,12 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       expect(mocks.refetch).not.toHaveBeenCalled();
       expect(mocks.success).not.toHaveBeenCalled();
       expect(mocks.warning).not.toHaveBeenCalled();
+      if (change !== "account") {
+        expect(await cache.readLists()).toEqual([
+          { title: "Saved title" },
+          { title: "Saved title" },
+        ]);
+      }
     },
   );
 
@@ -549,3 +617,21 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     expect(requireDefined(editor).form.getValues("id")).toBe(nextId);
   });
 });
+
+vi.mock(
+  "@/features/post/admin/edit/hooks/use-post-creation-result",
+  async () => {
+    const { trpc } = await import("@/lib/trpc/client/trpc");
+    return {
+      usePostCreationResult: (
+        creationToken: string,
+        _actorId: string | undefined,
+        enabled: boolean,
+      ) =>
+        trpc.post.creationResult.useQuery(
+          { creationToken },
+          { enabled, retry: false },
+        ),
+    };
+  },
+);

@@ -1,3 +1,4 @@
+import { createAdminListCache } from "@tests/helpers/admin-list-cache";
 import React, { act, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -29,6 +30,7 @@ vi.mock("@/lib/observability/client", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => cache.utils,
     page: {
       create: { useMutation: () => ({ mutateAsync: mocks.create }) },
       update: { useMutation: () => ({ mutateAsync: mocks.update }) },
@@ -66,12 +68,15 @@ function Harness({ pageId }: { pageId?: string }) {
   );
 }
 
+let cache: ReturnType<typeof createAdminListCache>;
+
 describe("page editor actions lifecycle", () => {
   let container: HTMLDivElement;
   let root: Root;
 
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
+    cache = createAdminListCache("page");
     editorActions = undefined;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -128,6 +133,10 @@ describe("page editor actions lifecycle", () => {
     expect(mocks.refetch).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
     expect(mocks.warning).not.toHaveBeenCalled();
+    expect(await cache.readLists()).toEqual([
+      { title: "Saved title" },
+      { title: "Saved title" },
+    ]);
   });
   it("keeps StrictMode saves usable and invalidates an A → B → A request", async () => {
     const first = Promise.withResolvers<{ id: string; version: number }>();

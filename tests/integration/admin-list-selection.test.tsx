@@ -35,6 +35,12 @@ vi.mock("@/features/link/admin/components/LinkFormDialog", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      page: {
+        adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) },
+        adminIndex: { invalidate: vi.fn().mockResolvedValue(undefined) },
+      },
+    }),
     link: {
       adminIndex: {
         useQuery: (input: LinkListQueryInput) => {

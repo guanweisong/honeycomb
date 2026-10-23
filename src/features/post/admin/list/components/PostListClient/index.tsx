@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { adminListQueryOptions } from "@/components/admin/config/query-options";
+import Link from "next/link";
+import {
+  adminDetailQueryOptions,
+  adminListQueryOptions,
+} from "@/components/admin/config/query-options";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { runAdminMutation } from "@/components/admin/lib/action-state";
@@ -30,13 +33,27 @@ export default function PostListClient() {
   const [deleteItems, setDeleteItems] = useState<PostDelete["items"] | null>(
     null,
   );
-  const [searchParams, setSearchParams] = useState<PostListQueryInput>({});
-  const router = useRouter();
+  const [searchParams, setSearchParams] = useState<PostListQueryInput>(() =>
+    PostListQuerySchema.parse({ page: 1, limit: 20 }),
+  );
+  const utils = trpc.useUtils();
+  const prefetchDetail = (id: string) => {
+    void utils.post.adminDetail.prefetch(
+      { id },
+      { ...adminDetailQueryOptions, retry: false },
+    );
+  };
   const { data, isFetching, isError, refetch } = trpc.post.adminIndex.useQuery(
     searchParams,
     adminListQueryOptions,
   );
-  const destroyPost = trpc.post.destroy.useMutation();
+  const destroyPost = trpc.post.destroy.useMutation({
+    // Mark every filter stale; the existing flow refreshes the current list once.
+    onSuccess: () =>
+      utils.post.adminIndex
+        .invalidate(undefined, { refetchType: "none" })
+        .catch(() => {}),
+  });
 
   const handleDeleteItem = async (items: PostDelete["items"]) => {
     return runAdminMutation({
@@ -83,11 +100,10 @@ export default function PostListClient() {
           <div className="flex justify-between">
             <div className="flex gap-1">
               {canCreatePost && (
-                <Button
-                  onClick={() => router.push("/admin/post/edit")}
-                  variant="outline"
-                >
-                  <Plus /> 添加新文章
+                <Button asChild variant="outline">
+                  <Link href="/admin/post/edit">
+                    <Plus /> 添加新文章
+                  </Link>
                 </Button>
               )}
               {canDeletePost && (
@@ -132,9 +148,15 @@ export default function PostListClient() {
                 variant="secondary"
                 size="sm"
                 aria-label="编辑文章"
-                onClick={() => router.push(`/admin/post/edit?id=${row.id}`)}
+                asChild
               >
-                <Pencil />
+                <Link
+                  href={`/admin/post/edit?id=${row.id}`}
+                  onMouseEnter={() => prefetchDetail(row.id)}
+                  onFocus={() => prefetchDetail(row.id)}
+                >
+                  <Pencil />
+                </Link>
               </Button>
             )}
             {canDeletePost && (

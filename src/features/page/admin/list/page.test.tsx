@@ -17,6 +17,9 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => ({
+      page: { adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) } },
+    }),
     page: {
       adminIndex: {
         useQuery: () => ({
@@ -86,9 +89,7 @@ describe("page deletion public sync feedback", () => {
   }
 
   it("names the page row actions", () => {
-    expect(
-      container.querySelector('button[aria-label="编辑页面"]'),
-    ).not.toBeNull();
+    expect(container.querySelector('a[aria-label="编辑页面"]')).not.toBeNull();
     expect(
       container.querySelector('button[aria-label="删除页面"]'),
     ).not.toBeNull();

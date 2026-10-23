@@ -108,6 +108,7 @@ function SearchContent({ onNavigate }: { onNavigate: () => void }) {
               <li key={post.id}>
                 <Link
                   href={`/archives/${post.id}`}
+                  prefetch="auto"
                   onClick={onNavigate}
                   className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-teal-500"
                 >

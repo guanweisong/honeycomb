@@ -1,3 +1,6 @@
+import { createAdminListCache } from "@tests/helpers/admin-list-cache";
+import { writePostCreationAttempt } from "./utils/post-draft";
+import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useFormContext } from "react-hook-form";
@@ -13,6 +16,9 @@ import type { PostEditorValues } from "./utils/post-draft";
 const state = vi.hoisted(() => ({
   id: "123456789012345678901234",
   userId: "editor-a",
+  creationCheck: vi.fn(),
+  push: vi.fn(),
+  create: vi.fn(),
   detail: undefined as PostDetailResult | undefined,
   update:
     vi.fn<(input: PostUpdate) => Promise<{ id: string; version: number }>>(),
@@ -21,7 +27,7 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams({ id: state.id }),
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: state.push }),
 }));
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: state.userId, level: "ADMIN" } }),
@@ -29,13 +35,16 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
+    useUtils: () => cache.utils,
     category: { adminTree: { useQuery: () => ({ data: [] }) } },
     post: {
       adminDetail: {
         useQuery: () => ({ data: state.detail, refetch: state.refetch }),
       },
-      creationResult: { useQuery: () => ({ data: null, refetch: vi.fn() }) },
-      create: { useMutation: () => ({ mutateAsync: vi.fn() }) },
+      creationResult: {
+        useQuery: () => ({ data: null, refetch: state.creationCheck }),
+      },
+      create: { useMutation: () => ({ mutateAsync: state.create }) },
       update: { useMutation: () => ({ mutateAsync: state.update }) },
     },
   },
@@ -124,11 +133,14 @@ function LayoutHarness() {
   );
 }
 
+let cache: ReturnType<typeof createAdminListCache>;
+
 describe("post confirmed state in the real layout header", () => {
   let container: HTMLDivElement;
   let root: Root;
   beforeEach(() => {
     vi.clearAllMocks();
+    cache = createAdminListCache("post");
     localStorage.clear();
     state.id = published.id;
     state.userId = "editor-a";
@@ -166,6 +178,59 @@ describe("post confirmed state in the real layout header", () => {
       expect.objectContaining({ status: PostStatus.DRAFT, expectedVersion: 1 }),
     );
   }
+
+  it.each(["stay", "record", "account"])(
+    "checks through the real confirmation button after %s without opening or replaying",
+    async (change) => {
+      state.id = "";
+      state.detail = undefined;
+      expect(
+        writePostCreationAttempt(
+          state.userId,
+          PostInsertSchema.parse({
+            creationToken: crypto.randomUUID(),
+            type: PostType.QUOTE,
+            categoryId: "category-a",
+            quoteContent: { zh: "Quote" },
+          }),
+        ),
+      ).toBe(true);
+      const pending = Promise.withResolvers<{
+        isSuccess: boolean;
+        data: { id: string; version: number };
+      }>();
+      state.creationCheck.mockReturnValueOnce(pending.promise);
+      await render();
+      const check = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent === "核对上次结果",
+      );
+      expect(check).toBeDefined();
+      await act(async () => check?.click());
+      if (change !== "stay") {
+        if (change === "account") {
+          state.userId = "editor-b";
+          cache = createAdminListCache("post");
+        }
+        state.id = published.id;
+        state.detail = published;
+        await render();
+      }
+      await act(async () =>
+        pending.resolve({
+          isSuccess: true,
+          data: { id: published.id, version: 1 },
+        }),
+      );
+      expect(state.push).not.toHaveBeenCalled();
+      expect(state.create).not.toHaveBeenCalled();
+      if (change === "account")
+        expect(await cache.readLists()).toEqual([
+          { title: "Old title" },
+          { title: "Old title" },
+        ]);
+      expect(state.creationCheck).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it.each([false, true])(
     "keeps withdrawal confirmed after failed refresh and stale detail replacement=%s",
@@ -350,3 +415,21 @@ describe("post confirmed state in the real layout header", () => {
     },
   );
 });
+
+vi.mock(
+  "@/features/post/admin/edit/hooks/use-post-creation-result",
+  async () => {
+    const { trpc } = await import("@/lib/trpc/client/trpc");
+    return {
+      usePostCreationResult: (
+        creationToken: string,
+        _actorId: string | undefined,
+        enabled: boolean,
+      ) =>
+        trpc.post.creationResult.useQuery(
+          { creationToken },
+          { enabled, retry: false },
+        ),
+    };
+  },
+);

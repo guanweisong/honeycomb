@@ -8,8 +8,12 @@ import { routing } from "./routing";
  */
 const navigation = createNavigation(routing);
 
-export function Link(props: ComponentProps<typeof navigation.Link>) {
-  return createElement(navigation.Link, { ...props, prefetch: true });
+/** 默认预取博客正文，允许密集链接按调用点改用页面外壳或禁用预取。 */
+export function Link({
+  prefetch = true,
+  ...props
+}: ComponentProps<typeof navigation.Link>) {
+  return createElement(navigation.Link, { ...props, prefetch });
 }
 
 export const { getPathname, usePathname, useRouter } = navigation;

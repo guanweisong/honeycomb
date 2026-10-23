@@ -25,6 +25,8 @@ import { EditorLoadError } from "@/components/admin/editor-load-error";
 import { PageEditorActionButtons } from "../PageEditorActionButtons";
 import { PageEditorForm } from "../PageEditorForm";
 import { usePageEditorActions } from "../../page-editor-actions";
+import { usePageCreationResult } from "../../use-page-creation-result";
+import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   getPageEditorId,
@@ -73,7 +75,7 @@ export function PageEditorPage() {
   });
   const query = trpc.page.adminDetail.useQuery(
     { id: id ?? "" },
-    { enabled: !!id },
+    { ...adminDetailQueryOptions, enabled: !!id },
   );
   const detail = query.data;
   const actions = usePageEditorActions({
@@ -82,9 +84,10 @@ export function PageEditorPage() {
     expectedVersion: baseVersion,
     refetch: query.refetch,
   });
-  const creationResult = trpc.page.creationResult.useQuery(
-    { creationToken: attempt?.creationToken ?? "" },
-    { enabled: Boolean(actorId && !id && attempt), retry: false },
+  const creationResult = usePageCreationResult(
+    attempt?.creationToken ?? "",
+    actorId,
+    Boolean(actorId && !id && attempt),
   );
   useEffect(() => {
     if (creationResult.data) foundCreation.current = true;

@@ -61,12 +61,20 @@ vi.mock("@/features/post/public/use-post-list", () => ({
   }),
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
-  Link: ({
-    children,
-    ...props
-  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
-    React.createElement("a", props, children),
+vi.mock("next-intl/navigation", () => ({
+  createNavigation: () => ({
+    Link: ({
+      children,
+      prefetch,
+      ...props
+    }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+      prefetch?: import("next/link").LinkProps["prefetch"];
+    }) => (
+      <a {...props} data-prefetch={String(prefetch)}>
+        {children}
+      </a>
+    ),
+  }),
 }));
 
 import PostList from "./index";
@@ -184,6 +192,15 @@ describe("PostList", () => {
       );
     });
   }
+
+  it("retains URL-specific prefetch for article entry links through the blog Link", async () => {
+    await renderList();
+
+    const links = container.querySelectorAll('a[href="/archives/article"]');
+    expect(links).toHaveLength(3);
+    for (const link of links)
+      expect(link.getAttribute("data-prefetch")).toBe("true");
+  });
 
   it.each([
     ["en", ["Article", "Movie", "Gallery"]],
