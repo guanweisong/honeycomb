@@ -34,7 +34,7 @@ Honeycomb 使用 Next.js 16.4.0，采用本地化 App Router，根布局为 `src
 
 5. **使用小范围的局部 Suspense 边界。** 将公开页头、页脚设置、后台页面外壳及其他可复用缓存 UI 留在 App Shell。评论、当前年份、路由专属内容、认证检查和后台路由授权通过局部 fallback 流式处理。任何路由都不使用 `instant = false`；fallback 不包含后台私有数据，也不能绕过授权。后台现有的菜单 pending 行为和已认证页面外壳保持不变。
 
-6. **迁移 Serwist，同时保持公开 worker URL。** 将 `@serwist/turbopack` 路由处理器生成方式替换为 Serwist configurator 模式，并在 `next build` 后构建 worker。保留 `/serwist/sw.js`、`src/app/sw.ts`、现有忽略规则和显式的 `/en/offline` 预缓存条目。移除旧路由处理器后，也就不再需要其 `dynamic`、`dynamicParams`、`revalidate` 和插件生成的 `generateStaticParams` 导出。
+6. **迁移 Serwist，同时保持公开 worker URL。** 将 `@serwist/turbopack` 路由处理器生成方式替换为 Serwist configurator 模式，并在 `next build` 后构建 worker。保留 `/serwist/sw.js`、`src/app/_pwa/sw.ts`（后续根文件归组迁移后的源码位置）、现有忽略规则和显式的 `/en/offline` 预缓存条目。移除旧路由处理器后，也就不再需要其 `dynamic`、`dynamicParams`、`revalidate` 和插件生成的 `generateStaticParams` 导出。
 
 7. **sitemap 读取保持请求时执行并缓存数据。** 从 sitemap 处理器移除 `dynamic = 'force-dynamic'`。保留其 `unstable_cache` 函数和 sitemap 标签的即时失效；Cache Components 下仍支持这些用法。
 

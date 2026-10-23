@@ -1,3 +1,5 @@
+import "server-only";
+
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import { unstable_cache } from "next/cache";
 

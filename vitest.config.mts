@@ -9,7 +9,7 @@ const criticalCoverageFiles = [
   "src/env/schema.ts",
   "src/env/server.ts",
   "src/env/validation.ts",
-  "src/app/sitemap-data.ts",
+  "src/app/lib/server/sitemap-data.ts",
   "src/app/sitemap.xml/route.ts",
   "src/app/sitemaps/[id]/route.ts",
   "src/lib/cache/upstash-cache.ts",
@@ -72,7 +72,7 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
         // This thin service-worker entry is exercised only by the real offline E2E.
-        "src/app/sw.ts",
+        "src/app/_pwa/sw.ts",
         // Retain the existing UI primitive path exclusion; modified primitives have focused tests.
         "src/components/ui/**",
         // Cross-module tests and fixtures are never production sources.
