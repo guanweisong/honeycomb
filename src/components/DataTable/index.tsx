@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Table } from "../ui/table";
-import { cn } from "../../lib/ui/utils";
+import { cn } from "cn";
 import { DataTableBody } from "./Body";
 import { DataTableHeader } from "./Header";
 import { DataTablePagination } from "./Pagination";

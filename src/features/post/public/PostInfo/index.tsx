@@ -3,7 +3,7 @@ import { Link } from "@/lib/i18n/blog-navigation";
 import React, { ViewTransition } from "react";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 import { getTranslations } from "next-intl/server";
 
 /**

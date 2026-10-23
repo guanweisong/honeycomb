@@ -13,7 +13,7 @@ import { Select } from "../Select";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
-import { cn } from "../../lib/ui/utils";
+import { cn } from "cn";
 import LoadingState from "../LoadingState";
 import type { FieldConfig } from "./types";
 

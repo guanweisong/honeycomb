@@ -10,7 +10,7 @@ import type { MediaRecord as MediaViewModel } from "@/features/media/types/media
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import LoadingState from "@/components/LoadingState";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 
 type MediaGridProps = {
   media?: MediaViewModel[];

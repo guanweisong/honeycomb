@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 
 interface TableProps extends React.ComponentProps<"table"> {
   containerClassName?: string;
