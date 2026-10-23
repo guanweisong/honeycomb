@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 
 export interface PageStateProps {
   /** 页面状态标题；省略时只渲染描述。 */

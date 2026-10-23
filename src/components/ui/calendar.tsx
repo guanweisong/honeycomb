@@ -12,7 +12,7 @@ import {
   type Locale,
 } from "@daypicker/react";
 
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   ChevronLeftIcon,

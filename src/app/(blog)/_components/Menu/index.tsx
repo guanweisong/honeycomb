@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/i18n/blog-navigation";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";

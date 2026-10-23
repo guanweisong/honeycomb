@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as BaseAvatar from "../ui/avatar";
-import { cn } from "../../lib/ui/utils";
+import { cn } from "cn";
 
 type AvatarRootProps = React.ComponentProps<typeof BaseAvatar.Avatar>;
 type AvatarImageProps = React.ComponentProps<typeof BaseAvatar.AvatarImage>;

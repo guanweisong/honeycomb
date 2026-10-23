@@ -11,7 +11,7 @@ import {
   DialogFooter,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { cn } from "../../lib/ui/utils";
+import { cn } from "cn";
 import LoadingState from "@/components/LoadingState";
 
 import {

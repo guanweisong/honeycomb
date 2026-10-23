@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 
 export type LoadingStateVariant = "page" | "region" | "inline";
 

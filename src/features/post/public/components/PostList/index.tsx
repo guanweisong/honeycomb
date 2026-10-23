@@ -8,7 +8,7 @@ import TextDivider from "@/features/post/public/components/PostList/TextDivider"
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
 import type { PublicPostListItem } from "@/features/post/types/post.read-model";

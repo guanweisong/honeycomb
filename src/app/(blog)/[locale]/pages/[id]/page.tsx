@@ -14,7 +14,7 @@ import {
 import { RichText } from "@/features/media/public/RichText";
 import { PageViewTracker } from "@/features/page/public/PageViewTracker";
 import { PageTemplate } from "@/features/page/types/page.template";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";

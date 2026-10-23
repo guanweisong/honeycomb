@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ReactNode } from "react";
-import { cn } from "@/lib/ui/utils";
+import { cn } from "cn";
 
 interface ToolbarButtonProps {
   icon: ReactNode;

@@ -5,7 +5,7 @@ import type { AdminNavigationItem } from "../AdminNavigation";
 import type { CurrentUser } from "@/features/user/types/user.current";
 import { Button } from "../../../../components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
-import { cn } from "../../../../lib/ui/utils";
+import { cn } from "cn";
 import { usePathname } from "next/navigation";
 import {
   AdminLayoutActionsContext,

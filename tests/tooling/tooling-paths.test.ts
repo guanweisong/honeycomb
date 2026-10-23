@@ -4,6 +4,13 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 describe("tooling paths after feature ownership migration", () => {
+  it("uses the cn package without a redundant local wrapper or direct legacy dependencies", () => {
+    const manifest = JSON.parse(readFileSync("package.json", "utf8"));
+    expect(existsSync("src/lib/ui/utils.ts")).toBe(false);
+    expect(manifest.dependencies.cn).toBeDefined();
+    expect(manifest.dependencies.clsx).toBeUndefined();
+    expect(manifest.dependencies["tailwind-merge"]).toBeUndefined();
+  });
   it("keeps shadcn aliases on existing shared component and library owners", () => {
     const config = JSON.parse(readFileSync("components.json", "utf8")) as {
       aliases: Record<string, string>;
@@ -13,11 +20,13 @@ describe("tooling paths after feature ownership migration", () => {
       ui: "@/components/ui",
       hooks: "@/lib/hooks",
       lib: "@/lib",
-      utils: "@/lib/ui/utils",
+      utils: "@/lib/utils",
     });
-    for (const target of Object.values(config.aliases)) {
+    for (const [name, target] of Object.entries(config.aliases)) {
       expect(target).not.toContain("src/packages/");
       expect(target).toMatch(/^@\//);
+      // Required by shadcn 4.22.1 only as a legacy generation destination.
+      if (name === "utils") continue;
       const directory = target.replace(/^@\//, "src/");
       expect(
         existsSync(directory) || existsSync(`${directory}.ts`),
@@ -34,10 +43,7 @@ describe("tooling paths after feature ownership migration", () => {
       ts.sys,
       process.cwd(),
     );
-    for (const specifier of [
-      `${config.aliases.ui}/button`,
-      config.aliases.utils,
-    ]) {
+    for (const specifier of [`${config.aliases.ui}/button`, "cn"]) {
       const result = ts.resolveModuleName(
         specifier,
         resolve("src/generated.tsx"),

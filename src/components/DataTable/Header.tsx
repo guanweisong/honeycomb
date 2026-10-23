@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { TableHead, TableHeader, TableRow } from "../ui/table";
-import { cn } from "../../lib/ui/utils";
+import { cn } from "cn";
 import { MultiSelect } from "../MultiSelect";
 import { DataTableColumnMetaSchema } from "./types";
 
