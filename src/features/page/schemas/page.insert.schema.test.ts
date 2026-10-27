@@ -46,4 +46,29 @@ describe("content command enum schemas", () => {
     if (result.success) throw new Error("Expected enum rejection");
     expect(result.error.issues.map((issue) => issue.path)).toEqual([[field]]);
   });
+
+  it("accepts the otherwise-valid page baseline", () => {
+    expect(PageInsertSchema.safeParse(page).success).toBe(true);
+  });
+});
+
+describe("唯一写入契约及边界行为", () => {
+  it("页面完整语言仍必填且拒绝空文本", () => {
+    expect(
+      PageInsertSchema.safeParse({
+        creationToken: "11111111-1111-4111-8111-111111111111",
+        template: "default",
+        title: { en: "About" },
+        content: { en: "Content", zh: "内容" },
+      }).success,
+    ).toBe(false);
+    expect(
+      PageInsertSchema.safeParse({
+        creationToken: "11111111-1111-4111-8111-111111111111",
+        template: "default",
+        title: { en: " ", zh: "关于" },
+        content: { en: "Content", zh: "内容" },
+      }).success,
+    ).toBe(false);
+  });
 });

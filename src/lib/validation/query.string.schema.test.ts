@@ -34,3 +34,10 @@ describe("query string schema", () => {
     expect(result).toBeUndefined();
   });
 });
+
+describe("bounded write contracts", () => {
+  it("bounds and normalizes search text", () => {
+    expect(queryString().safeParse("x".repeat(201)).success).toBe(false);
+    expect(queryString().parse(" x ")).toBe("x");
+  });
+});

@@ -1,5 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { saveAllMenus } from "@/features/menu/server/menu-commands";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import * as schema from "@/lib/db/schema";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -8,8 +13,6 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { MenuType } from "@/features/menu/types/menu.type";
-import { saveAllMenus } from "@/features/menu/server/menu-commands";
 
 const item = (id: string, parent?: string | null) => ({
   id: id.padEnd(24, "0"),
@@ -140,5 +143,97 @@ describe("BEGIN-only transaction retries", () => {
     ).rejects.toBe(failure);
     expect(db.transaction).toHaveBeenCalledOnce();
     expect(cache.invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("feature persistence contracts", () => {
+  const invalidator = () => ({
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  });
+  it("menu writes preserve business identifiers inside one transaction", async () => {
+    const db = createMockDb();
+    const id = "507f1f77bcf86cd799439011";
+    db.returning.mockResolvedValue([{ id: "persisted-menu", version: 1 }]);
+    db.from.mockImplementation((table: object) => {
+      const read = createMockDb();
+      if (table === schema.user)
+        read.limit.mockResolvedValue([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+      else read.where.mockResolvedValue([{ id }]);
+      return read;
+    });
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        {
+          expectedVersion: 0,
+          items: [{ id, type: MenuType.CATEGORY, power: 0 }],
+        },
+        "author",
+        invalidator(),
+      ),
+    ).resolves.toEqual({ count: 1, version: 1, publicSync: "completed" });
+    expect(db.transaction).toHaveBeenCalledOnce();
+    expect(db.values).toHaveBeenCalledWith([
+      expect.objectContaining({
+        categoryId: id,
+        type: "CATEGORY",
+        power: 0,
+      }),
+    ]);
+  });
+});
+
+describe("site snapshot commands", () => {
+  const id = "111111111111111111111111";
+  const items = [{ id, type: MenuType.CUSTOM, power: 0 }];
+  const cache = () => ({
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" }),
+  });
+  it("returns committed menu version if public invalidation unexpectedly throws", async () => {
+    const db = createMockDb();
+    db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+    db.returning
+      .mockResolvedValueOnce([{ version: 1 }])
+      .mockResolvedValueOnce([{ id }]);
+    const invalidator = {
+      invalidate: vi.fn().mockRejectedValue(new Error("cache unavailable")),
+    };
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        { items, expectedVersion: 0 },
+        id,
+        invalidator,
+      ),
+    ).resolves.toMatchObject({ version: 1, publicSync: "degraded" });
+  });
+  it("rejects menu conflicts before replacing rows", async () => {
+    const db = createMockDb();
+    db.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
+    db.returning.mockResolvedValue([]);
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        { items, expectedVersion: 0 },
+        id,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(db.delete).not.toHaveBeenCalled();
+  });
+  it("rejects revoked menu actors before replacing rows", async () => {
+    const db = createMockDb();
+    db.limit.mockResolvedValue([{ level: "GUEST", status: "ENABLE" }]);
+    await expect(
+      saveAllMenus(
+        asMockDatabase(db),
+        { items, expectedVersion: 0 },
+        id,
+        cache(),
+      ),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.delete).not.toHaveBeenCalled();
   });
 });

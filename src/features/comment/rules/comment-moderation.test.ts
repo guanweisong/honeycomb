@@ -35,3 +35,22 @@ describe("comment moderation rules", () => {
     },
   );
 });
+
+describe("pure feature business rules", () => {
+  it("moderates a comment without a database", () => {
+    expect(() =>
+      assertCommentTransition(
+        "comment-1",
+        CommentStatus.TO_AUDIT,
+        CommentStatus.PUBLISH,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertCommentTransition(
+        "comment-1",
+        CommentStatus.PUBLISH,
+        CommentStatus.TO_AUDIT,
+      ),
+    ).toThrow("评论不能从");
+  });
+});

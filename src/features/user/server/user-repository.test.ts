@@ -1,4 +1,7 @@
+import { UserLevel } from "@/features/user/types/user.level";
+import * as schema from "@/lib/db/schema";
 import { createClient, type Client } from "@libsql/client/node";
+import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { verifyPassword } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -6,11 +9,8 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as schema from "@/lib/db/schema";
-import { UserLevel } from "@/features/user/types/user.level";
 import { updateUser } from "./user-commands";
 import { createUserRepository } from "./user-repository";
-import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -248,4 +248,19 @@ describe("user repository public detail", () => {
       name: schema.user.name,
     });
   });
+});
+
+describe("required persistence results", () => {
+  it.each(["status", "level"])(
+    "rejects unknown user %s during state lookup",
+    async (field) => {
+      const db = createMockDb();
+      db.where.mockResolvedValue([
+        { status: "ENABLE", level: "GUEST", [field]: "UNKNOWN" },
+      ]);
+      await expect(
+        createUserRepository(asMockDatabase(db)).getStatus("user"),
+      ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    },
+  );
 });

@@ -59,3 +59,14 @@ it("validates nonblank identity without requiring an aggregate or normalizing it
   expect(assertNonBlankId(" user-1 ")).toBeUndefined();
   expect(() => assertNonBlankId(" \t\n")).toThrow("聚合标识不能为空");
 });
+
+describe("pure feature business rules", () => {
+  it("authorizes user status changes against the actor", () => {
+    expect(() =>
+      assertUserStatusChange("user-1", UserLevel.EDITOR, UserLevel.ADMIN),
+    ).not.toThrow();
+    expect(() =>
+      assertUserStatusChange("admin", UserLevel.ADMIN, UserLevel.EDITOR),
+    ).toThrow("非管理员不能修改管理员账号");
+  });
+});

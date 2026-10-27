@@ -59,11 +59,7 @@ vi.mock("@/env/server", () => ({
 
 import * as sitemapIndexRoute from "../../src/app/sitemap.xml/route";
 import * as sitemapShardRoute from "../../src/app/sitemaps/[id]/route";
-import {
-  getCachedSitemapShard,
-  toSitemapIndexXml,
-  toSitemapXml,
-} from "@/app/lib/server/sitemap-data";
+import { getCachedSitemapShard } from "@/app/lib/server/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },
@@ -498,27 +494,5 @@ describe("runtime sitemap", () => {
     );
 
     expect(response.status).toBe(200);
-  });
-
-  it("escapes every XML entity and omits an absent modification date", () => {
-    const sitemap = toSitemapXml([
-      {
-        url: "https://example.com/<tag>?a=1&b='quoted'\"",
-        changeFrequency: "daily",
-        priority: 0.5,
-      },
-    ]);
-    const index = toSitemapIndexXml(
-      "https://example.com/<root>?a=1&b='x'\"",
-      1,
-    );
-
-    expect(sitemap).toContain(
-      "https://example.com/&lt;tag&gt;?a=1&amp;b=&apos;quoted&apos;&quot;",
-    );
-    expect(sitemap).not.toContain("<lastmod>");
-    expect(index).toContain(
-      "https://example.com/&lt;root&gt;?a=1&amp;b=&apos;x&apos;&quot;/sitemaps/0.xml",
-    );
   });
 });

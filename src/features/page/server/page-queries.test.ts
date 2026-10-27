@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { listPages } from "./page-queries";
+import { getPage, listPages } from "./page-queries";
 import { PageTemplate } from "@/features/page/types/page.template";
 import * as schema from "@/lib/db/schema";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
@@ -100,4 +100,71 @@ describe("page relation read snapshot", () => {
       );
     },
   );
+});
+
+describe("localized media relations", () => {
+  const zhUrl = "https://example.test/zh.png";
+  const enUrl = "https://example.test/en.png";
+  const content = {
+    zh: `<img src="${zhUrl}"><img src="${zhUrl}">`,
+    en: `<img src="${enUrl}"><img src="${zhUrl}">`,
+  };
+  const images = [zhUrl, enUrl].map((url, index) => ({
+    id: `media-${index}`,
+    url,
+    key: url,
+    name: "image.png",
+    type: "image/png",
+    size: 1,
+    width: 1,
+    height: 1,
+    color: null,
+    createdAt: null,
+    updatedAt: null,
+  }));
+  const page = {
+    id: "page-1",
+    status: "PUBLISHED",
+    template: "default",
+    authorId: "user-1",
+    createdAt: null,
+    updatedAt: null,
+    author: null,
+  };
+  const pageTranslations = [
+    { pageId: page.id, locale: "en", title: "Page", content: content.en },
+    { pageId: page.id, locale: "zh", title: "页面", content: content.zh },
+  ];
+  it("page detail loads unique images from all supported locales", async () => {
+    const db = createMockDb();
+    db.query.page.findFirst.mockResolvedValue({
+      ...page,
+      translations: pageTranslations,
+    });
+    db.where.mockResolvedValue([...images, ...images]);
+    const result = await getPage(asMockDatabase(db), "page-1", "ALL");
+    expect(
+      new SQLiteSyncDialect().sqlToQuery(db.where.mock.calls[0]?.[0]).params,
+    ).toEqual([zhUrl, enUrl]);
+    expect(result?.imagesInContent.map(({ url }) => url)).toEqual([
+      zhUrl,
+      enUrl,
+    ]);
+  });
+  it("page lists map deduplicated images from all locales", async () => {
+    const db = createMockDb();
+    db.offset.mockResolvedValue([page]);
+    db.query.page.findMany.mockResolvedValue([
+      { ...page, translations: pageTranslations },
+    ]);
+    db.where
+      .mockReturnValueOnce(db)
+      .mockResolvedValueOnce([{ count: 1 }])
+      .mockResolvedValueOnce(images);
+    const result = await listPages(asMockDatabase(db), {}, "ALL");
+    expect(result.list[0]?.imagesInContent.map(({ url }) => url)).toEqual([
+      zhUrl,
+      enUrl,
+    ]);
+  });
 });

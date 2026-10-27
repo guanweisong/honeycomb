@@ -8,14 +8,16 @@
 
 测试文件直接放在对应的业务模块旁边，便于维护和理解。服务端测试放在所属 server/ 中，跟随真实实现命名，如 tag-commands.test.ts、menu-queries.test.ts；跨操作的完整事务、并发或持久化场景使用具名 *.integration.test.ts，不为目录整齐拆断场景。禁止保留根 server.test.ts / server.integration.test.ts；单职责只搬迁，只有混合职责才拆分。Schema 测试放在 schemas/ 并跟随具体 schema 命名；纯规则与测试放 rules/ 具名文件，禁止根 schema.test.ts / rules.test.ts。单 schema/规则职责整体移动，跨 feature 的完整契约对照可保留在 tests/integration/，不拆断原测试体。E2E 继续位于 tests/e2e/。
 
+单模块 Router 测试与 feature 根 router.ts 同目录；组件查询测试跟随被测 Shell/编辑器组件。tests/integration/ 中的独立单模块用例应下沉到相邻测试；真正复用同一参数矩阵的跨模块契约、完整持久化场景和共享测试工具保留，不按 integration 标签机械拆分。
+
 逐用例映射及断言、钩子、fixture 基线见[服务端测试迁移记录](../docs/server-test-migration.md)及[规则与 schema 测试迁移记录](../docs/rules-schema-test-migration.md)。
 
 ```
 src/features/
 ├── user/
-│   └── tests/user.router.test.ts # 用户管理测试
+│   └── user.router.test.ts # 用户管理测试
 ├── post/
-│   └── tests/post.router.test.ts # 文章管理测试
+│   └── post.router.test.ts # 文章管理测试
 └── ...
 ```
 
@@ -54,7 +56,7 @@ bunx vitest run tests/architecture/feature-boundaries.test.ts tests/architecture
 bun run test:unit
 
 # 运行特定模块测试
-bunx vitest src/features/user/tests/user.router.test.ts
+bunx vitest src/features/user/user.router.test.ts
 
 # 监听模式
 bun run test:unit --watch
@@ -148,7 +150,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 
 参考现有的测试文件：
 
-- `src/features/user/tests/user.router.test.ts` - 用户管理测试
+- `src/features/user/user.router.test.ts` - 用户管理测试
 
 ## 保持断言的执行成本控制
 

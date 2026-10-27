@@ -43,3 +43,17 @@ describe("post publication rules", () => {
     },
   );
 });
+
+describe("pure feature business rules", () => {
+  it("publishes and withdraws a post without a database", () => {
+    const published = getPostPublishStatus("post-1", PostStatus.DRAFT);
+    expect(published).toBe(PostStatus.PUBLISHED);
+    expect(getPostWithdrawStatus("post-1", published)).toBe(PostStatus.DRAFT);
+    expect(() => getPostPublishStatus("post-1", PostStatus.PUBLISHED)).toThrow(
+      "文章已经发布",
+    );
+    expect(() => getPostWithdrawStatus("post-1", PostStatus.DRAFT)).toThrow(
+      "只有已发布文章可以撤回",
+    );
+  });
+});
