@@ -41,8 +41,10 @@ export function runTestProcess(
     let stderr = "";
     let bytes = 0;
     let failure: Error | undefined;
+    let treeStopRequested = false;
     const stopTree = () => {
-      if (!child.pid) return;
+      if (!child.pid || treeStopRequested) return;
+      treeStopRequested = true;
       try {
         if (process.platform === "win32") {
           const stopped = spawnSync(
@@ -57,7 +59,7 @@ export function runTestProcess(
           );
           if (stopped.error || stopped.status !== 0) {
             child.kill("SIGKILL");
-            failure =
+            failure ??=
               stopped.error ??
               new Error(`Unable to stop owned process tree: ${stopped.stderr}`);
           }
@@ -72,7 +74,7 @@ export function runTestProcess(
           "code" in error &&
           error.code === "ESRCH"
         )) {
-          failure = error instanceof Error ? error : new Error(String(error));
+          failure ??= error instanceof Error ? error : new Error(String(error));
         }
       }
     };
