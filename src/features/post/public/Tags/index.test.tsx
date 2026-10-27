@@ -70,13 +70,13 @@ describe("Tags", () => {
     ).toBe("演员乙");
   });
 
-  it("keeps dense tag destinations on shared-shell prefetch through the blog Link", () => {
+  it("uses the shared blog Link default full prefetch for tag destinations", () => {
     render(post);
 
     const links = container.querySelectorAll('a[href^="/list/tags/"]');
     expect(links).toHaveLength(4);
     for (const link of links)
-      expect(link.getAttribute("data-prefetch")).toBe("auto");
+      expect(link.getAttribute("data-prefetch")).toBe("true");
   });
 
   it("omits empty tag groups", () => {

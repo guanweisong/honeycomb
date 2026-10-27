@@ -19,7 +19,7 @@ const mockPublicAuthor = vi.fn();
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
-  getTranslations: () => mockGetTranslations(),
+  getTranslations: (...args: unknown[]) => mockGetTranslations(...args),
 }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
@@ -253,6 +253,53 @@ describe("blog list page", () => {
             menuDeferred.resolve({ list: [], total: 0 });
             await pending;
           }
+        },
+      );
+
+      it("prepares the category root without fetching unrelated menu data", async () => {
+        const menuDeferred = Promise.withResolvers<object>();
+        mockMenuIndex.mockReturnValue(menuDeferred.promise);
+        const props = {
+          params: Promise.resolve({ locale: "zh", slug: ["category"] }),
+          searchParams: Promise.resolve({}),
+        };
+        const content = List(props).props.children[1].props.children;
+        const pending =
+          entryPoint === "metadata"
+            ? generateMetadata(props)
+            : content.type(content.props);
+        for (let index = 0; index < 12; index++) await Promise.resolve();
+        try {
+          expect(mockMenuIndex).not.toHaveBeenCalled();
+          if (entryPoint === "content") {
+            expect(mockPublicPostList).toHaveBeenCalledExactlyOnceWith({
+              status: ["PUBLISHED"],
+              limit: 10,
+              sortField: "createdAt",
+            });
+          }
+        } finally {
+          menuDeferred.resolve({ list: [], total: 0 });
+          await pending;
+        }
+      });
+
+      it.each(["en", "zh"])(
+        "loads translations for explicit route locale %s",
+        async (locale) => {
+          const props = {
+            params: Promise.resolve({ locale, slug: ["category"] }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children[1].props.children;
+          await (entryPoint === "metadata"
+            ? generateMetadata(props)
+            : content.type(content.props));
+          expect(mockGetTranslations).toHaveBeenCalledExactlyOnceWith({
+            locale,
+            namespace: "PostList",
+          });
+          expect(mockGetLocale).not.toHaveBeenCalled();
         },
       );
 

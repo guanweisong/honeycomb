@@ -119,7 +119,7 @@ afterEach(async () => {
 });
 
 describe("public blog search", () => {
-  it("keeps search result destinations on shared-shell prefetch through the blog Link", async () => {
+  it("uses the shared blog Link default full prefetch for search results", async () => {
     search.mockResolvedValue([
       {
         id: "result-1",
@@ -143,7 +143,7 @@ describe("public blog search", () => {
 
     for (const id of ["result-1", "result-2"]) {
       const link = document.querySelector(`a[href="/zh/archives/${id}"]`);
-      expect(link?.getAttribute("data-prefetch")).toBe("auto");
+      expect(link?.getAttribute("data-prefetch")).toBe("true");
     }
   });
 
