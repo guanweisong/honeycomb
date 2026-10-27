@@ -27,17 +27,17 @@
 
 ### Requirement: 博客站内链接完整预取目标内容
 
-博客共享站内链接 MUST 默认使用prefetch=true以预取目标URL缓存内容，同时 MUST 保留调用方显式指定的false、auto或null。密集标签与搜索结果 SHALL 使用auto以复用路由壳；文章主要入口、菜单和语言切换 MUST 保留原策略。后台导航链接 MUST 保留auto；单条已授权详情的意图数据预取不等于强制完整路由预取，MUST NOT 绕过服务器权限。实时评论 MUST 保持独立动态读取。
+博客共享站内链接 MUST 默认使用prefetch=true以预取目标URL缓存内容，同时 MUST 保留调用方显式指定的false、auto或null。标签与搜索结果 SHALL 直接复用共享链接的默认完整预取策略，不增加自定义意图状态或事件处理；该简化允许更多提前请求；文章主要入口、菜单和语言切换 MUST 保留原策略。后台导航链接 MUST 保留auto；单条已授权详情的意图数据预取不等于强制完整路由预取，MUST NOT 绕过服务器权限。实时评论 MUST 保持独立动态读取。
 
 #### Scenario: 默认博客站内链接进入视口
 
 - **WHEN** 生产环境中未覆盖策略的博客站内链接变为可见
 - **THEN** Next.js预取目标URL的缓存内容
 
-#### Scenario: 密集次要链接显式使用auto
+#### Scenario: 标签与搜索结果复用默认完整预取
 
-- **WHEN** 标签或搜索结果渲染带auto的共享链接
-- **THEN** 封装保留auto并由框架预取路由壳，不覆写成true
+- **WHEN** 标签或搜索结果渲染共享链接
+- **THEN** 链接使用默认prefetch=true，由框架调度预取；导航不等待预取完成
 
 #### Scenario: 调用方禁用预取
 

@@ -38,11 +38,19 @@ export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
 
 async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
   const settingPromise = getPublicSetting();
-  const translationsPromise = getTranslations("PostList");
+  const translationsPromise = props.params.then(({ locale }) =>
+    getTranslations({
+      locale: normalizeMultiLangLocale(locale),
+      namespace: "PostList",
+    }),
+  );
   const contextPromise = props.params.then(async (params) =>
     resolveListContext({
       locale: normalizeMultiLangLocale(params.locale),
-      menu: params.slug?.[0] === "category" ? await getPublicMenu() : undefined,
+      menu:
+        params.slug?.[0] === "category" && params.slug.length > 1
+          ? await getPublicMenu()
+          : undefined,
       slug: params.slug,
     }),
   );
@@ -90,11 +98,19 @@ export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
   const settingPromise = getPublicSetting();
-  const translationsPromise = getTranslations("PostList");
+  const translationsPromise = props.params.then(({ locale }) =>
+    getTranslations({
+      locale: normalizeMultiLangLocale(locale),
+      namespace: "PostList",
+    }),
+  );
   const contextPromise = props.params.then(async (params) =>
     resolveListContext({
       locale: normalizeMultiLangLocale(params.locale),
-      menu: params.slug?.[0] === "category" ? await getPublicMenu() : undefined,
+      menu:
+        params.slug?.[0] === "category" && params.slug.length > 1
+          ? await getPublicMenu()
+          : undefined,
       slug: params.slug,
     }),
   );
