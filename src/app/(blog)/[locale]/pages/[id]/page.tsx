@@ -53,8 +53,10 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   // Own early rejection while translations/links suspend. Keep the original
   // promise rejected so the comment consumers still surface their error.
   void queryCommentPromise.catch(() => undefined);
-  const postInfoT = await getTranslations("PostInfo");
-  const linkT = await getTranslations("Link");
+  const [postInfoT, linkT] = await Promise.all([
+    getTranslations({ locale, namespace: "PostInfo" }),
+    getTranslations({ locale, namespace: "Link" }),
+  ]);
   const links =
     publishedPage.template === PageTemplate.FRIENDLY_LINKS
       ? await getPublicLinks()

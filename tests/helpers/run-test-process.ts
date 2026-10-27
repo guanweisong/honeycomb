@@ -24,9 +24,16 @@ export function runTestProcess(
   if (!Number.isFinite(timeout) || timeout <= 0) {
     return Promise.reject(new Error("A positive process timeout is required"));
   }
+  // Git hooks export repository/index paths that override a child's cwd.
+  // Fixture subprocesses must discover their own repository, never the caller's.
+  const env = { ...(options.env ?? process.env) };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("GIT_")) delete env[key];
+  }
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       ...options,
+      env,
       detached: process.platform !== "win32",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -42,6 +49,7 @@ export function runTestProcess(
             "taskkill",
             ["/PID", String(child.pid), "/T", "/F"],
             {
+              env,
               encoding: "utf8",
               timeout: 1000,
               killSignal: "SIGKILL",

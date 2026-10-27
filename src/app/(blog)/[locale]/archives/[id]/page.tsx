@@ -66,8 +66,10 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   } catch (error) {
     handlePostDetailError(error);
   }
-  const t = await getTranslations("Archive");
-  const postInfoT = await getTranslations("PostInfo");
+  const [t, postInfoT] = await Promise.all([
+    getTranslations({ locale, namespace: "Archive" }),
+    getTranslations({ locale, namespace: "PostInfo" }),
+  ]);
 
   const category = assertPostCategory(postDetail);
 

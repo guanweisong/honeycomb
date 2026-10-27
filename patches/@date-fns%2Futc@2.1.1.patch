@@ -1,0 +1,25 @@
+diff --git a/date/mini.cjs b/date/mini.cjs
+index 82f3342657ffa72e4b6a3980397333b5b3e91fd2..e0c80c4ddf18eb3391b2080e8d7e335ddf8f50e5 100644
+--- a/date/mini.cjs
++++ b/date/mini.cjs
+@@ -3,7 +3,7 @@
+ exports.UTCDateMini = void 0;
+ class UTCDateMini extends Date {
+   constructor() {
+-    super();
++    super(0);
+     this.setTime(arguments.length === 0 ?
+     // Enables Sinon's fake timers that override the constructor
+     Date.now() : arguments.length === 1 ? typeof arguments[0] === "string" ? +new Date(arguments[0]) : arguments[0] : Date.UTC(...arguments));
+diff --git a/date/mini.js b/date/mini.js
+index dbaee5aa217b5494738a5e0e766db2f60469f900..e7515154883e03d2110587ccd6bb3ccefc9a3ff8 100644
+--- a/date/mini.js
++++ b/date/mini.js
+@@ -1,6 +1,6 @@
+ export class UTCDateMini extends Date {
+   constructor() {
+-    super();
++    super(0);
+     this.setTime(arguments.length === 0 ?
+     // Enables Sinon's fake timers that override the constructor
+     Date.now() : arguments.length === 1 ? typeof arguments[0] === "string" ? +new Date(arguments[0]) : arguments[0] : Date.UTC(...arguments));

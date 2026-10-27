@@ -35,7 +35,7 @@ vi.mock("next/server", async (importOriginal) => ({
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
-  getTranslations: () => mockGetTranslations(),
+  getTranslations: (...args: unknown[]) => mockGetTranslations(...args),
 }));
 
 vi.mock("next-intl", () => ({
@@ -200,6 +200,38 @@ describe("archives page", () => {
     if (!script) throw new Error("Expected JSON-LD structured data");
     return JSON.parse(script.textContent ?? "") as Record<string, unknown>;
   }
+
+  it.each(["zh", "en"])(
+    "starts both translations together using the %s route locale",
+    async (locale) => {
+      const translation = (key: string) => key;
+      const pending = Promise.withResolvers<typeof translation>();
+      mockGetTranslations.mockReturnValueOnce(pending.promise);
+      const content = Archives({
+        params: Promise.resolve({ id: articleDetail.id, locale }),
+        searchParams: Promise.resolve({}),
+      }).props.children[1].props.children;
+      const rendered = content.type(content.props);
+      try {
+        await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
+        expect(mockGetTranslations).toHaveBeenCalledTimes(2);
+        expect(mockGetTranslations).toHaveBeenCalledWith({
+          locale,
+          namespace: "Archive",
+        });
+        expect(mockGetTranslations).toHaveBeenCalledWith({
+          locale,
+          namespace: "PostInfo",
+        });
+      } finally {
+        pending.resolve(translation);
+        await act(async () => root.render(await rendered));
+      }
+      expect(
+        container.querySelector('[data-testid="rich-text"]'),
+      ).not.toBeNull();
+    },
+  );
 
   it("renders article content, metadata and related posts", async () => {
     await renderArchive({ ...articleDetail });
