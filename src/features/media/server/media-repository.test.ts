@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import * as schema from "@/lib/db/schema";
-import { createMediaRepository } from "./media-repository";
+import { createMediaRepository } from "@/features/media/server/media-repository";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: vi.fn(

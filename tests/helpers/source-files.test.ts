@@ -8,7 +8,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { sourceFile, sourceFiles } from "./source-files";
+import { sourceFile, sourceFiles } from "@tests/helpers/source-files";
 
 describe("sourceFiles", () => {
   it("parses a TypeScript source file from disk", () => {

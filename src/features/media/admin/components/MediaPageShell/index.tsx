@@ -7,9 +7,9 @@ import { Permission } from "@/lib/auth/permissions";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/LoadingState";
-import { MediaGrid } from "../MediaGrid";
-import { useMediaActions } from "../../media-actions";
-import { useMediaQuery } from "../../media-query";
+import { MediaGrid } from "@/features/media/admin/components/MediaGrid";
+import { useMediaActions } from "@/features/media/admin/media-actions";
+import { useMediaQuery } from "@/features/media/admin/media-query";
 import { MEDIA_MIME_TYPES } from "@/features/media/types/media.upload-policy";
 
 export interface MediaProps {

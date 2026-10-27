@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { useCommentIdentity } from "./use-comment-identity";
+import { useCommentIdentity } from "@/features/comment/public/components/hooks/use-comment-identity";
 
 it.each(['{"author":42,"email":"bad"}', "{invalid"])(
   "ignores malformed saved identity %s",

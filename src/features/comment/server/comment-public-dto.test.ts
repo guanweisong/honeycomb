@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { CommentStatus } from "@/features/comment/types/comment.status";
-import { buildPublicCommentTree, toPublicComment } from "./comment-public-dto";
+import { toPublicCommentSource } from "@/features/comment/server/comment-dto";
 import type { CommentRecord } from "@/features/comment/types/comment.read-model";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import * as schema from "@/lib/db/schema";
+import { describe, expect, it } from "vitest";
+import { buildPublicCommentTree, toPublicComment } from "@/features/comment/server/comment-public-dto";
 
 function comment(id: string, parentId: string | null): CommentRecord {
   return {
@@ -64,5 +66,28 @@ describe("public comment DTO", () => {
     expect(tree[0]).not.toHaveProperty("email");
     expect(tree[0]).not.toHaveProperty("ip");
     expect(tree[0]).not.toHaveProperty("userAgent");
+  });
+});
+describe("required persistence results", () => {
+  const commentRow: typeof schema.comment.$inferSelect = {
+    id: "comment",
+    author: "author",
+    content: "text",
+    site: null,
+    email: "a@test.dev",
+    parentId: null,
+    postId: "post",
+    pageId: null,
+    customId: null,
+    status: "UNKNOWN",
+    createdAt: null,
+    updatedAt: null,
+    userAgent: null,
+    ip: null,
+  };
+  it("rejects invalid status in public comment data", () => {
+    expect(() => toPublicComment(toPublicCommentSource(commentRow))).toThrow(
+      expect.objectContaining({ code: "INTERNAL_SERVER_ERROR" }),
+    );
   });
 });

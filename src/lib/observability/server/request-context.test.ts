@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 import {
   createRequestContext,
   getRequestIdFromHeaders,
-} from "./request-context";
+} from "@/lib/observability/server/request-context";
 import {
   getRequestContext,
   runWithRequestContext,
-} from "./node-request-context";
-import * as publicObservability from "./index";
+} from "@/lib/observability/server/node-request-context";
+import * as publicObservability from "@/lib/observability/server/index";
 
 describe("request context", () => {
   it("preserves an incoming request ID", () => {

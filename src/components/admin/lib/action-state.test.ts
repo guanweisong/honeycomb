@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ModalType } from "../types/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 import {
   closeAdminDialog,
   createInitialAdminDialogState,
@@ -9,7 +9,7 @@ import {
   runAdminMutation,
   submitAdminBatchDelete,
   withAdminRecordId,
-} from "./action-state";
+} from "@/components/admin/lib/action-state";
 
 describe("admin action state", () => {
   it("constructs add, edit, and closed dialog states", () => {

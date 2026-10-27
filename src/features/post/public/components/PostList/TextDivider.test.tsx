@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 
-import TextDivider from "./TextDivider";
+import TextDivider from "@/features/post/public/components/PostList/TextDivider";
 
 describe("TextDivider", () => {
   let container: HTMLDivElement;

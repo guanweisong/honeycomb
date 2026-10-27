@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeOptionalI18nHtml, sanitizeRichText } from "./sanitize-html";
+import { sanitizeOptionalI18nHtml, sanitizeRichText } from "@/lib/security/sanitize-html";
 
 describe("sanitizeRichText", () => {
   it("protects new-tab rich-text links while preserving nofollow", () => {

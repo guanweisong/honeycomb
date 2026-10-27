@@ -5,7 +5,7 @@ import {
   findUserIdByIdentifier,
   listUserLoginHistory,
   recordLoginHistory,
-} from "./login-history.repository";
+} from "@/features/user/account-security/server/login-history.repository";
 import type { SQL } from "drizzle-orm";
 import { loginHistory } from "@/lib/db/schema/auth";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";

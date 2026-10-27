@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mockAbortSignalTimeout } from "./abort-signal-timeout";
+import { mockAbortSignalTimeout } from "@tests/helpers/abort-signal-timeout";
 
 afterEach(() => {
   vi.clearAllTimers();

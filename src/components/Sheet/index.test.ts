@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../ui/sheet", () => ({
+vi.mock("@/components/ui/sheet", () => ({
   Sheet: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", null, children),
   SheetContent: ({ children }: { children: React.ReactNode }) =>
@@ -17,12 +17,12 @@ vi.mock("../ui/sheet", () => ({
     React.createElement("h2", null, children),
   SheetClose: ({ children }: { children: React.ReactNode }) => children,
 }));
-vi.mock("../ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({ children, ...props }: { children: React.ReactNode }) =>
     React.createElement("button", props, children),
 }));
 
-import { Sheet } from "./index";
+import { Sheet } from "@/components/Sheet/index";
 
 describe("Sheet", () => {
   let container: HTMLDivElement;

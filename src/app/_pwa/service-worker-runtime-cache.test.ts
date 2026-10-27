@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isRuntimeResponseCacheable,
   runtimeResponseCacheabilityPlugin,
-} from "./service-worker-cache-policy";
-import { runtimeCache } from "./service-worker-runtime-cache";
+} from "@/app/_pwa/service-worker-cache-policy";
+import { runtimeCache } from "@/app/_pwa/service-worker-runtime-cache";
 
 function runtimeRequest(
   pathname: string,

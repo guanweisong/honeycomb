@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { useMounted } from "./use-mounted";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 let container: HTMLDivElement;
 let root: Root;

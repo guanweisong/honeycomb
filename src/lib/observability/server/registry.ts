@@ -1,9 +1,9 @@
 import "server-only";
 
-import { createConsoleLogger } from "../adapters/console";
-import { createConsoleMetrics } from "../adapters/console-metrics";
-import type { Logger, Metrics } from "../core/contracts";
-import { createSafeLogger, createSafeMetrics } from "../core/safe-adapters";
+import { createConsoleLogger } from "@/lib/observability/adapters/console";
+import { createConsoleMetrics } from "@/lib/observability/adapters/console-metrics";
+import type { Logger, Metrics } from "@/lib/observability/core/contracts";
+import { createSafeLogger, createSafeMetrics } from "@/lib/observability/core/safe-adapters";
 
 export interface ObservabilityConfiguration {
   logger?: Logger;

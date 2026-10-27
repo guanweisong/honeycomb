@@ -5,9 +5,9 @@ const sdk = vi.hoisted(() => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("@sentry/nextjs", () => sdk);
-import { configureSentryLogs } from "./sentry";
-import { configureObservability, getLogger, getMetrics } from "./registry";
-import { LogEvent, MetricName } from "../core/names";
+import { configureSentryLogs } from "@/lib/observability/server/sentry";
+import { configureObservability, getLogger, getMetrics } from "@/lib/observability/server/registry";
+import { LogEvent, MetricName } from "@/lib/observability/core/names";
 describe("Sentry setup", () => {
   afterEach(() => {
     configureObservability();

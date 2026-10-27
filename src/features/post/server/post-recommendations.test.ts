@@ -24,7 +24,7 @@ vi.mock("@/lib/cache/upstash-cache", () => ({
   getCacheVersion: vi.fn(),
   setCacheJSON: vi.fn(),
 }));
-import { getRandomPostsByCategory } from "./post-queries";
+import { getRandomPostsByCategory } from "@/features/post/server/post-queries";
 let directory: string | undefined;
 let client: Client;
 let db: Database;

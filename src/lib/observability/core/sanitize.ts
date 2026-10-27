@@ -1,6 +1,6 @@
-import type { MetricLabels } from "./contracts";
-import { metricLabelValueCatalog } from "./metric-label-values";
-import { metricLabelNames, type MetricLabelName } from "./names";
+import type { MetricLabels } from "@/lib/observability/core/contracts";
+import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";
+import { metricLabelNames, type MetricLabelName } from "@/lib/observability/core/names";
 
 const REDACTED = "[REDACTED]";
 const CIRCULAR = "[Circular]";

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { readPageCreationAttempt } from "./page-draft";
+import { readPageCreationAttempt } from "@/features/page/admin/edit/page-draft";
 
 export function usePageCreationResult(
   creationToken: string,

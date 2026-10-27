@@ -5,8 +5,8 @@ vi.mock("@/app/admin/lib/admin-auth", () => ({
   getCurrentAdminUser: vi.fn(),
 }));
 
-import AdminRouteTemplate from "./template";
-import { getAdminRouteAccessDecision } from "./admin-route-access";
+import AdminRouteTemplate from "@/app/admin/(dashboard)/template";
+import { getAdminRouteAccessDecision } from "@/app/admin/(dashboard)/admin-route-access";
 
 describe("AdminRouteTemplate", () => {
   it("holds request-bound route checks behind a generic fallback", () => {

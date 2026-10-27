@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { sourceFiles } from "./source-files";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 /** 读取生产 TypeScript 源码，供授权规则 AST 检查使用。 */
 export function loadProductionSources(): Array<{

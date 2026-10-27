@@ -2,26 +2,26 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./components/PasskeySettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/PasskeySettings", () => ({
   default: () => React.createElement("div", null, "Passkey settings"),
 }));
-vi.mock("./components/PasswordSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/PasswordSettings", () => ({
   default: () => React.createElement("div", null, "Password settings"),
 }));
-vi.mock("./components/SessionSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/SessionSettings", () => ({
   default: () => React.createElement("div", null, "Session settings"),
 }));
-vi.mock("./components/LinkedAccountsSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/LinkedAccountsSettings", () => ({
   default: () => React.createElement("div", null, "Linked accounts settings"),
 }));
-vi.mock("./components/LoginHistorySettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/LoginHistorySettings", () => ({
   default: () => React.createElement("div", null, "Login history settings"),
 }));
 vi.mock("@/lib/auth/providers.server", () => ({
   getEnabledSocialProviders: () => ["google", "github"],
 }));
 
-import AccountSecurityPage from "./page";
+import AccountSecurityPage from "@/features/user/admin/account-security/page";
 
 describe("AccountSecurityPage", () => {
   let container: HTMLDivElement;

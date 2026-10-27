@@ -12,15 +12,15 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "../ui/form";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
-import { Label } from "../ui/label";
-import { FieldControl } from "./FieldControl";
-import type { FieldConfig } from "./types";
+} from "@/components/ui/form";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { FieldControl } from "@/components/DynamicForm/FieldControl";
+import type { FieldConfig } from "@/components/DynamicForm/types";
 
 import { supportedLanguages as supportedLangs } from "@/lib/i18n/i18n";
 
-export type { FieldConfig } from "./types";
+export type { FieldConfig } from "@/components/DynamicForm/types";
 
 /** 动态表单字段容器，负责表单绑定、多语言字段和错误展示。 */
 export function DynamicField(field: FieldConfig) {

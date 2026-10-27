@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { I18nSchema } from "@/lib/validation/validation";
-import { PageStatus } from "../types/page.status";
-import { PageTemplate } from "../types/page.template";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
 
 export const PageVersionSchema = z
   .number()

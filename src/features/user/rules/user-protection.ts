@@ -1,4 +1,4 @@
-import { UserLevel } from "../types/user.level";
+import { UserLevel } from "@/features/user/types/user.level";
 import { assertNonBlankId } from "@/lib/validation/nonblank-id";
 import { DomainError } from "@/lib/errors/domain-error";
 

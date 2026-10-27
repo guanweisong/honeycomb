@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
-import { LinkFormDialog } from "../LinkFormDialog";
-import { useLinkActions } from "../../link-actions";
-import { linkTableColumns } from "../../link-columns";
+import { LinkFormDialog } from "@/features/link/admin/components/LinkFormDialog";
+import { useLinkActions } from "@/features/link/admin/link-actions";
+import { linkTableColumns } from "@/features/link/admin/link-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 

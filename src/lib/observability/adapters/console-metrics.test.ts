@@ -2,8 +2,8 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { MetricName } from "../core/names";
-import { createConsoleMetrics } from "./console-metrics";
+import { MetricName } from "@/lib/observability/core/names";
+import { createConsoleMetrics } from "@/lib/observability/adapters/console-metrics";
 
 describe("console metrics", () => {
   it("输出包含稳定运行时字段的 counter 与 duration JSON", () => {

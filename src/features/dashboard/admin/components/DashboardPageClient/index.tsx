@@ -1,7 +1,7 @@
 "use client";
 
 import { CommentStatusName } from "@/features/comment/types/comment.status-name";
-import CustomPie from "../CustomPie";
+import CustomPie from "@/features/dashboard/admin/components/CustomPie";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { PostTypeName } from "@/features/post/types/post.type-name";

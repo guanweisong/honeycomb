@@ -5,7 +5,7 @@ import {
   PublicCacheInvalidationPlanSchema,
   PublicContentReferenceSchema,
   type PublicContentInvalidator,
-} from "./public-content-invalidator";
+} from "@/lib/cache/public-content-invalidator";
 
 describe("PublicContentInvalidator", () => {
   it("只接受服务端结构化公开内容引用", () => {

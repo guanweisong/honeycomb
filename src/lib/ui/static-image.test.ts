@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseStaticImage } from "./static-image";
+import { parseStaticImage } from "@/lib/ui/static-image";
 
 it("rejects malformed loader output before it reaches Next Image", () => {
   expect(() => parseStaticImage({ src: 42 })).toThrow();

@@ -29,7 +29,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { useLinkActions } from "./link-actions";
+import { useLinkActions } from "@/features/link/admin/link-actions";
 
 const record: LinkRecord = {
   id: "507f1f77bcf86cd799439011",

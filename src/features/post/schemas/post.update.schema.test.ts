@@ -75,3 +75,24 @@ describe("explicit post translation patch", () => {
     ).toBe(false);
   });
 });
+
+describe("bounded write contracts", () => {
+  it("bounds tag replacement before normalization while permitting explicit clearing", () => {
+    const input = { id: "a".repeat(24), expectedVersion: 0 };
+    expect(
+      PostUpdateSchema.safeParse({
+        ...input,
+        movieActorIds: Array(101).fill("b".repeat(24)),
+      }).success,
+    ).toBe(false);
+    expect(
+      PostUpdateSchema.parse({
+        ...input,
+        movieActorIds: ["b".repeat(24), "b".repeat(24)],
+      }).movieActorIds,
+    ).toEqual(["b".repeat(24)]);
+    expect(
+      PostUpdateSchema.safeParse({ ...input, movieActorIds: [] }).success,
+    ).toBe(true);
+  });
+});

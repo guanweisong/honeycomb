@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/auth/client", () => ({ authClient: mocks }));
 
-import LinkedAccountsSettings from "./index";
+import LinkedAccountsSettings from "@/features/user/admin/account-security/components/LinkedAccountsSettings/index";
 
 describe("LinkedAccountsSettings", () => {
   let container: HTMLDivElement;

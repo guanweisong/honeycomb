@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MenuType } from "../types/menu.type";
+import { MenuType } from "@/features/menu/types/menu.type";
 import { IdSchema } from "@/lib/validation/id.schema";
 
 const MenuTypeSchema = z.enum(MenuType).default(MenuType.CATEGORY);

@@ -1,4 +1,4 @@
-import type { PostEditorValues } from "./post-draft";
+import type { PostEditorValues } from "@/features/post/admin/edit/utils/post-draft";
 import { PostStatus } from "@/features/post/types/post.status";
 import { PostType } from "@/features/post/types/post.type";
 

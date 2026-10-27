@@ -1,7 +1,7 @@
 import { File as NodeFile } from "node:buffer";
 import { webcrypto } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { submitMediaDelete, submitMediaUpload } from "./media-actions";
+import { submitMediaDelete, submitMediaUpload } from "@/features/media/admin/media-actions";
 import type { MediaRecord } from "@/features/media/types/media.record";
 beforeEach(() => {
   vi.stubGlobal("crypto", webcrypto);

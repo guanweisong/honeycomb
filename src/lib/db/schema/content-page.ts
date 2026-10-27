@@ -11,10 +11,10 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { user } from "./auth";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { user } from "@/lib/db/schema/auth";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 独立页面表 (page)

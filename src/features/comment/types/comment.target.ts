@@ -1,7 +1,7 @@
 import type { PageStatus } from "@/features/page/types/page.status";
 import type { PostStatus } from "@/features/post/types/post.status";
 import type { EnableStatus } from "@/lib/validation/enable-status";
-import type { CommentRecord } from "./comment.read-model";
+import type { CommentRecord } from "@/features/comment/types/comment.read-model";
 
 export type CommentTarget = Partial<
   Pick<CommentRecord, "postId" | "pageId" | "customId">

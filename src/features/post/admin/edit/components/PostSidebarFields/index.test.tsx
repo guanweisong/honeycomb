@@ -50,18 +50,18 @@ vi.mock("@/components/DynamicForm/DynamicField", () => ({
     ),
 }));
 
-vi.mock("../MultiTag", () => ({
+vi.mock("@/features/post/admin/edit/components/MultiTag", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "multi-tag" }, title),
 }));
 
-vi.mock("../../../../../media/admin/components/PhotoPickerItem", () => ({
+vi.mock("@/features/media/admin/components/PhotoPickerItem", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "photo-picker" }, title),
 }));
 
-import { PostSidebarFields } from "./index";
-import { PostTypeFields } from "../PostTypeFields";
+import { PostSidebarFields } from "@/features/post/admin/edit/components/PostSidebarFields/index";
+import { PostTypeFields } from "@/features/post/admin/edit/components/PostTypeFields";
 
 describe("post editor type-specific fields", () => {
   let container: HTMLDivElement;

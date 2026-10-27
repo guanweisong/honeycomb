@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAdminQueryClient, getAuthErrorCode } from "./admin-query-client";
+import { createAdminQueryClient, getAuthErrorCode } from "@/app/admin/lib/admin-query-client";
 
 describe("getAuthErrorCode", () => {
   it.each(["UNAUTHORIZED", "FORBIDDEN"] as const)(

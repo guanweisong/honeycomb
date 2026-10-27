@@ -7,7 +7,7 @@ import {
   sanitizeContext,
   sanitizeMetricLabels,
   serializeError,
-} from "./sanitize";
+} from "@/lib/observability/core/sanitize";
 
 describe("sanitizeContext", () => {
   it("recursively redacts credentials and personal data", () => {

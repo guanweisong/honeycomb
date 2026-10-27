@@ -18,7 +18,7 @@ vi.mock("next-themes", () => ({
   },
 }));
 
-import ThemeProvider from "./";
+import ThemeProvider from "@/app/(blog)/_components/ThemeProvider";
 
 describe("ThemeProvider", () => {
   let container: HTMLDivElement;

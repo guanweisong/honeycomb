@@ -1,8 +1,8 @@
 import { getRequestConfig } from "next-intl/server";
 import { hasLocale } from "next-intl";
 import { routing } from "@/lib/i18n/routing";
-import enMessages from "../messages/en.json";
-import zhMessages from "../messages/zh.json";
+import enMessages from "@/app/(blog)/messages/en.json";
+import zhMessages from "@/app/(blog)/messages/zh.json";
 
 const messages = { en: enMessages, zh: zhMessages };
 

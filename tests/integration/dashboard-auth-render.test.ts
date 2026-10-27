@@ -17,8 +17,8 @@ it("shares one admin lookup between layout and template only within a server ren
         contents: `
           import React from "react";
           import { renderToReadableStream } from "next/dist/compiled/react-server-dom-webpack/server.node";
-          import Layout from "./src/app/admin/(dashboard)/layout";
-          import Template from "./src/app/admin/(dashboard)/template";
+          import Layout from "@/app/admin/(dashboard)/layout";
+          import Template from "@/app/admin/(dashboard)/template";
           import { state } from "auth-fixture";
           async function render(withTemplate = true) {
             const errors = [];

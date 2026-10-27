@@ -31,7 +31,7 @@ vi.mock("@/components/ui/button", () => ({
     React.createElement("button", props, children),
 }));
 
-import { ToolbarGroupItem } from "./ToolbarGroupItem";
+import { ToolbarGroupItem } from "@/components/editor/components/ToolbarGroupItem";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

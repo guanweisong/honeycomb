@@ -7,22 +7,22 @@ import type { ControllerRenderProps } from "react-hook-form";
 import { z } from "zod";
 import type { DateRange } from "@daypicker/react";
 import { zhCN } from "date-fns/locale";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Select } from "../Select";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Switch } from "../ui/switch";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/Select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "cn";
-import LoadingState from "../LoadingState";
-import type { FieldConfig } from "./types";
+import LoadingState from "@/components/LoadingState";
+import type { FieldConfig } from "@/components/DynamicForm/types";
 
-const Tiptap = dynamic(() => import("../editor"), {
+const Tiptap = dynamic(() => import("@/components/editor"), {
   ssr: false,
   loading: () => <LoadingState variant="inline" label="正在加载编辑器…" />,
 });
 const Calendar = dynamic(
-  () => import("../ui/calendar").then((module) => module.Calendar),
+  () => import("@/components/ui/calendar").then((module) => module.Calendar),
   { loading: () => <LoadingState variant="inline" label="正在加载日历…" /> },
 );
 

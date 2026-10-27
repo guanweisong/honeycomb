@@ -39,8 +39,8 @@ export const {
   setting,
   settingTranslation,
 });
-import { defineRelations } from "../define-relations";
-import { user, account, passkey, session, loginHistory } from "./auth";
+import { defineRelations } from "@/lib/db/define-relations";
+import { user, account, passkey, session, loginHistory } from "@/lib/db/schema/auth";
 import {
   category,
   categoryTranslation,
@@ -56,4 +56,4 @@ import {
   menu,
   setting,
   settingTranslation,
-} from "./content";
+} from "@/lib/db/schema/content";

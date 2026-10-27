@@ -25,7 +25,7 @@ import type {
   PageListItem,
   PageMenuOption,
 } from "@/features/page/types/page.read-model";
-import { groupPageTranslations } from "./page-translations";
+import { groupPageTranslations } from "@/features/page/server/page-translations";
 
 type PageRow = typeof schema.page.$inferSelect;
 type PageTranslations =

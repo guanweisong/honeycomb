@@ -13,7 +13,7 @@ import { PostStatus } from "@/features/post/types/post.status";
 import { observeDbOperation } from "@/lib/observability/server";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
 import type { PostVisibility } from "@/features/post/types/post.list-query";
-import { groupPostTranslations } from "./post-translations";
+import { groupPostTranslations } from "@/features/post/server/post-translations";
 import {
   assembleLocalizedField,
   assembleRequiredLocalizedField,

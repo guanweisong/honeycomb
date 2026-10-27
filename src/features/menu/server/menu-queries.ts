@@ -10,8 +10,8 @@ import { PageStatus } from "@/features/page/types/page.status";
 import { observeDbOperation } from "@/lib/observability/server";
 import { assembleRequiredLocalizedField } from "@/lib/db/translation-values";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { MenuType } from "../types/menu.type";
-import type { MenuVisibility } from "../types/menu.list";
+import { MenuType } from "@/features/menu/types/menu.type";
+import type { MenuVisibility } from "@/features/menu/types/menu.list";
 
 export async function readMenuChunks<Row>(
   ids: string[],

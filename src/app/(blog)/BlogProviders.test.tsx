@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clientLogger } from "@/lib/observability/client";
-import { BlogProviders } from "./BlogProviders";
+import { BlogProviders } from "@/app/(blog)/BlogProviders";
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: { Provider: ({ children }: { children: React.ReactNode }) => children },
   trpcClient: {},

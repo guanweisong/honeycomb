@@ -9,11 +9,11 @@ import type { PublicContentInvalidator } from "@/lib/cache/public-content-invali
 import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/types/user.status";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { MenuType } from "../types/menu.type";
-import type { MenuInput } from "../types/menu.write";
-import type { MenuSaveSnapshot } from "../types/menu.save-snapshot";
-import { MenuSaveSnapshotSchema } from "../schemas/menu.save-snapshot.schema";
-import { readMenuChunks } from "./menu-queries";
+import { MenuType } from "@/features/menu/types/menu.type";
+import type { MenuInput } from "@/features/menu/types/menu.write";
+import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
+import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
+import { readMenuChunks } from "@/features/menu/server/menu-queries";
 
 // Insert budgets count every bound column, including generated timestamps.
 const menuInsertChunkSize = Math.max(

@@ -6,7 +6,7 @@ const { createServerClient } = vi.hoisted(() => ({
 
 vi.mock("@/app/_trpc/server", () => ({ createServerClient }));
 
-import { getSiteSetting } from "./site-setting";
+import { getSiteSetting } from "@/app/lib/server/site-setting";
 
 describe("getSiteSetting", () => {
   it("forwards request headers to the server caller", async () => {

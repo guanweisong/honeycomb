@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/client", () => ({
   authClient: { $fetch: mocks.fetch },
 }));
 
-import PasswordSettings from "./index";
+import PasswordSettings from "@/features/user/admin/account-security/components/PasswordSettings/index";
 
 describe("PasswordSettings", () => {
   let container: HTMLDivElement;

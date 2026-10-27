@@ -1,4 +1,4 @@
-import { Align } from "../../types/post-info.align";
+import { Align } from "@/features/post/types/post-info.align";
 import { Link } from "@/lib/i18n/blog-navigation";
 import React, { ViewTransition } from "react";
 import { utcFormat } from "@/lib/ui/utc-format";

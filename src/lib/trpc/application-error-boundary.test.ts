@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { createMockContext } from "@tests/helpers/test-utils";
-import { createTRPCRouter, publicProcedure } from "./core";
+import { createTRPCRouter, publicProcedure } from "@/lib/trpc/core";
 
 it("将仓储未命中错误转换为统一的NOT_FOUND响应", async () => {
   const router = createTRPCRouter({

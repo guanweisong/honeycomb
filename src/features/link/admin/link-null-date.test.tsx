@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-table";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { linkTableColumns } from "./link-columns";
+import { linkTableColumns } from "@/features/link/admin/link-columns";
 import { EnableStatus } from "@/lib/validation/enable-status";
 
 it("renders missing link creation dates without inventing an epoch date", () => {

@@ -2,7 +2,7 @@
 
 import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { useState } from "react";
-import { tagTableColumns } from "./tag-table-columns";
+import { tagTableColumns } from "@/features/tag/admin/tag-table-columns";
 import { DataTable } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
 import type { TagListQueryInput } from "@/features/tag/types/tag.list";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
-import TagFormDialog from "./components/TagFormDialog";
+import TagFormDialog from "@/features/tag/admin/components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import { Permission } from "@/lib/auth/permissions";

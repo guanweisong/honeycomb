@@ -11,15 +11,15 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
-import { UserFormDialog } from "../UserFormDialog";
+import { UserFormDialog } from "@/features/user/admin/components/UserFormDialog";
 import { useUserActions } from "@/features/user/admin/user-actions";
-import { userTableColumns } from "../../columns/user-columns";
+import { userTableColumns } from "@/features/user/admin/columns/user-columns";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 import {
   canDeleteUserResource,
   isUserResourceProtected,
-} from "../../transforms/user-transforms";
+} from "@/features/user/admin/transforms/user-transforms";
 
 export function UserPageShell() {
   const canManageUsers = useCan(Permission.userManage);

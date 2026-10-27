@@ -2,7 +2,7 @@ import {
   ALL_PERMISSIONS,
   Permission,
   type Permission as PermissionValue,
-} from "./permissions";
+} from "@/lib/auth/permissions";
 
 export type CapabilityConsumer =
   "trpc" | "trpc-data" | "command" | "admin-action" | "admin-route" | "menu";

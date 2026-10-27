@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { capabilityRegistry, isCapability } from "./capability-registry";
-import { ALL_PERMISSIONS, Permission } from "./permissions";
+import { capabilityRegistry, isCapability } from "@/lib/auth/capability-registry";
+import { ALL_PERMISSIONS, Permission } from "@/lib/auth/permissions";
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";

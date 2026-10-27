@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getAuthenticatorName } from "@better-auth/passkey";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
-import { useAccountMutation } from "../use-account-mutation";
+import { useAccountMutation } from "@/features/user/admin/account-security/components/use-account-mutation";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

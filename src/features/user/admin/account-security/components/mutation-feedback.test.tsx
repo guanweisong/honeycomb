@@ -71,10 +71,10 @@ vi.mock("@/lib/auth/client", () => ({
     linkSocial: mocks.link,
   },
 }));
-import PasskeySettings from "./PasskeySettings";
-import PasswordSettings from "./PasswordSettings";
-import SessionSettings from "./SessionSettings";
-import LinkedAccountsSettings from "./LinkedAccountsSettings";
+import PasskeySettings from "@/features/user/admin/account-security/components/PasskeySettings";
+import PasswordSettings from "@/features/user/admin/account-security/components/PasswordSettings";
+import SessionSettings from "@/features/user/admin/account-security/components/SessionSettings";
+import LinkedAccountsSettings from "@/features/user/admin/account-security/components/LinkedAccountsSettings";
 
 describe("account mutation feedback", () => {
   let root: Root;

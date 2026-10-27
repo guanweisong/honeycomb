@@ -1,5 +1,5 @@
-import { cacheNamespaceValues } from "../../cache/cache-namespaces";
-import type { MetricLabelName } from "./names";
+import { cacheNamespaceValues } from "@/lib/cache/cache-namespaces";
+import type { MetricLabelName } from "@/lib/observability/core/names";
 
 export const databaseQueryNames = [
   "auth.context-user",

@@ -10,13 +10,13 @@ import { observeDbOperation } from "@/lib/observability/server";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import type { CategoryInsert } from "../types/category.insert";
-import type { CategoryUpdate } from "../types/category.update";
-import { categoryPathExists, findCategory } from "./category-queries";
+import type { CategoryInsert } from "@/features/category/types/category.insert";
+import type { CategoryUpdate } from "@/features/category/types/category.update";
+import { categoryPathExists, findCategory } from "@/features/category/server/category-queries";
 import {
   toCategoryTranslationRows,
   withTranslations,
-} from "./category-translations";
+} from "@/features/category/server/category-translations";
 
 function mapCategoryConstraint(error: unknown): never {
   if (error instanceof Error) {

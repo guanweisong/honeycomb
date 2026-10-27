@@ -33,7 +33,7 @@ vi.mock("@/features/user/login/components/LoginClient", () => ({
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
 import LoginClient from "@/features/user/login/components/LoginClient";
-import LoginPage from "./page";
+import LoginPage from "@/app/admin/login/page";
 
 type LoginPageProps = Parameters<typeof LoginPage>[0];
 

@@ -38,7 +38,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import Category from "./page";
+import Category from "@/features/category/admin/page";
 
 describe("category bulk deletion from the complete tree", () => {
   let container: HTMLDivElement;

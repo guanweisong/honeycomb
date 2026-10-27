@@ -4,8 +4,8 @@ import { setTimeout as sampleFor } from "node:timers/promises";
 import {
   metricValue,
   taskDurationSegment,
-} from "../../helpers/performance-metrics";
-import { openBlogHome } from "./helpers";
+} from "@tests/helpers/performance-metrics";
+import { openBlogHome } from "@tests/e2e/blog/helpers";
 
 function getThreshold(name: string, fallback: number): number {
   const raw = process.env[name];

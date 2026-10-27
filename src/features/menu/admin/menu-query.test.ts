@@ -87,7 +87,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { getMenuQueryInputs, useMenuQuery } from "./menu-query";
+import { getMenuQueryInputs, useMenuQuery } from "@/features/menu/admin/menu-query";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

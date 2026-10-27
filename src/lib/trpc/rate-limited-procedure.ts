@@ -7,7 +7,7 @@ import {
   type ApiRatelimit,
   type LimitWithTimeoutOptions,
 } from "@/lib/rate-limit/rate-limit";
-import { publicProcedure } from "./core";
+import { publicProcedure } from "@/lib/trpc/core";
 
 export type RateLimitedPublicProcedureOptions = Pick<
   LimitWithTimeoutOptions,

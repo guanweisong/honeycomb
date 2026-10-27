@@ -1,8 +1,8 @@
 import "server-only";
 
-import { appRouter } from "./router";
-import { createContext } from "../../lib/trpc/context";
-import type { CreateContextOptions } from "../../lib/trpc/context";
+import { appRouter } from "@/app/_trpc/router";
+import { createContext } from "@/lib/trpc/context";
+import type { CreateContextOptions } from "@/lib/trpc/context";
 
 export type ServerClientOptions = Pick<
   CreateContextOptions,
@@ -22,4 +22,4 @@ export const createServerClient = async (
     }),
   );
 
-export type { AppRouter } from "./router";
+export type { AppRouter } from "@/app/_trpc/router";

@@ -1,10 +1,10 @@
-import type { Logger } from "../core/contracts";
-import { createSafeLogger } from "../core/safe-adapters";
-import { sanitizeContext } from "../core/sanitize";
+import type { Logger } from "@/lib/observability/core/contracts";
+import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
+import { sanitizeContext } from "@/lib/observability/core/sanitize";
 import {
   getRuntimeEnvironment,
   type ConsoleAdapterOptions,
-} from "./console-options";
+} from "@/lib/observability/adapters/console-options";
 
 export function createConsoleLogger(
   options: ConsoleAdapterOptions = {},

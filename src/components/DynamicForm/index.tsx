@@ -10,11 +10,11 @@ import {
 import { z, ZodObject, ZodRawShape } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Form } from "../ui/form";
-import { Button } from "../ui/button";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/LoadingState";
 
-import { DynamicField, FieldConfig } from "./DynamicField";
+import { DynamicField, FieldConfig } from "@/components/DynamicForm/DynamicField";
 
 export type DynamicFormRef<T extends FieldValues = FieldValues> = {
   setValue: UseFormReturn<T>["setValue"];

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   clearHoneycombRuntimeCaches,
   navigateToAdminLogin,
-} from "./logout-browser-state";
+} from "@/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state";
 
 describe("logout browser state", () => {
   it("deletes every runtime cache while preserving precache assets", async () => {

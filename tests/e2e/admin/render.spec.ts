@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { test, expect } from "./render-fixture";
+import { test, expect } from "@tests/e2e/admin/render-fixture";
 
 const postId = "000000000000000000000005";
 const pageId = "000000000000000000000006";

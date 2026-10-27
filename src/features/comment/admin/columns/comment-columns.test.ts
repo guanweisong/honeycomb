@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { StatusBadgeTone } from "@/components/StatusBadge";
-import { getCommentStatusPresentation } from "./comment-columns";
+import { getCommentStatusPresentation } from "@/features/comment/admin/columns/comment-columns";
 
 describe("comment column presentation", () => {
   it("renders each stored moderation status with its existing Chinese label and tone", () => {

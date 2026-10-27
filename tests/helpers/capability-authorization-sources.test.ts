@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
-import { loadProductionSources } from "./capability-authorization-sources";
+import { loadProductionSources } from "@tests/helpers/capability-authorization-sources";
 
 it("loads current production bodies while excluding both spec and test sources", () => {
   const root = mkdtempSync(join(tmpdir(), "honeycomb-authorization-sources-"));

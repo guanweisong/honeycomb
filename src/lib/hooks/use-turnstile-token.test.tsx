@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useRef } from "react";
-import { useTurnstileToken } from "./use-turnstile-token";
+import { useTurnstileToken } from "@/lib/hooks/use-turnstile-token";
 
 let container: HTMLDivElement;
 let root: Root;

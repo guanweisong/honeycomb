@@ -3,11 +3,11 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../Popover", () => ({
+vi.mock("@/components/Popover", () => ({
   Popover: ({ content }: { content: React.ReactNode }) =>
     React.createElement("div", null, content),
 }));
-vi.mock("../ui/command", () => ({
+vi.mock("@/components/ui/command", () => ({
   Command: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", null, children),
   CommandInput: (props: Record<string, unknown>) =>
@@ -25,12 +25,12 @@ vi.mock("../ui/command", () => ({
   }) =>
     React.createElement("button", { onClick: onSelect, disabled }, children),
 }));
-vi.mock("../ui/checkbox", () => ({
+vi.mock("@/components/ui/checkbox", () => ({
   Checkbox: ({ checked }: { checked?: boolean }) =>
     React.createElement("input", { type: "checkbox", checked, readOnly: true }),
 }));
 
-import { MultiSelect } from "./index";
+import { MultiSelect } from "@/components/MultiSelect/index";
 
 describe("MultiSelect", () => {
   let container: HTMLDivElement;

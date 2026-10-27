@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { sanitizeBrowserError } from "./lib/observability/browser/sentry";
+import { sanitizeBrowserError } from "@/lib/observability/browser/sentry";
 
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   try {

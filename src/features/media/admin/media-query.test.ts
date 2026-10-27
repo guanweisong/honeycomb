@@ -15,7 +15,7 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: "account-a" } }),
 }));
 
-import { getMediaQueryInput, useMediaQuery } from "./media-query";
+import { getMediaQueryInput, useMediaQuery } from "@/features/media/admin/media-query";
 
 function media(id: string): MediaRecord {
   return {

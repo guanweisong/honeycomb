@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBlogHome } from "./helpers";
+import { openBlogHome } from "@tests/e2e/blog/helpers";
 
 test.describe("blog breadcrumb", () => {
   test("@regression hidden on home list and visible on category detail list", async ({

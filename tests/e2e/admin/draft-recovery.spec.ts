@@ -1,4 +1,4 @@
-import { test, expect } from "./render-fixture";
+import { test, expect } from "@tests/e2e/admin/render-fixture";
 
 test.describe("@regression local editor draft recovery", () => {
   test.describe.configure({ mode: "default" });

@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { utcFormat } from "./utc-format";
+import { utcFormat } from "@/lib/ui/utc-format";
 
 describe("utcFormat", () => {
   it("formats the UTC day rather than the input timezone's calendar day", () => {

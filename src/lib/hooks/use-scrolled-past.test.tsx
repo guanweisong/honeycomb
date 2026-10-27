@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { useScrolledPast } from "./use-scrolled-past";
+import { useScrolledPast } from "@/lib/hooks/use-scrolled-past";
 
 let container: HTMLDivElement;
 let root: Root | undefined;

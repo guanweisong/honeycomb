@@ -4,7 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
 import type { Metadata, Viewport } from "next";
-import "../app.scss";
+import "@/app/(blog)/app.scss";
 import BackToTop from "@/app/(blog)/_components/BackToTop";
 import Header from "@/app/(blog)/_components/Header";
 import Footer from "@/app/(blog)/_components/Footer";

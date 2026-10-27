@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { createCommentQueryRepository } from "./comment-query-repository";
+import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
 import { MenuType } from "@/features/menu/types/menu.type";

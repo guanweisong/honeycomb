@@ -1,7 +1,7 @@
 import "server-only";
-import type { MediaPersistence } from "./media-repository";
-import type { MediaStorage } from "../types/media.storage";
-import type { MediaDeleteResult } from "../types/media.delete";
+import type { MediaPersistence } from "@/features/media/server/media-repository";
+import type { MediaStorage } from "@/features/media/types/media.storage";
+import type { MediaDeleteResult } from "@/features/media/types/media.delete";
 import type {
   PublicCacheInvalidationResult,
   PublicContentInvalidator,

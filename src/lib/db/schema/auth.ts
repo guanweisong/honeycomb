@@ -1,11 +1,11 @@
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
 import { loginHistoryEvents } from "@/features/user/account-security/login-history-events";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
-import { stringEnumValues } from "../value-validation";
-import { enumCheck } from "../constraint-helpers";
+import { stringEnumValues } from "@/lib/db/value-validation";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 const userLevels = stringEnumValues(UserLevel);
 const userStatuses = stringEnumValues(UserStatus);

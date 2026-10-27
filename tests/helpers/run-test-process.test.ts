@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { expect, it, vi } from "vitest";
-import { runTestProcess } from "./run-test-process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 
 it.each(["node", "bun-script", "bun-binary"] as const)(
   "terminates the complete %s descendant tree on timeout",

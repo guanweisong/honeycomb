@@ -34,9 +34,9 @@ vi.mock("@sentry/nextjs", async () => {
 });
 
 import * as Sentry from "@sentry/nextjs";
-import { LogEvent } from "../core/names";
-import { configureObservability, getLogger } from "./registry";
-import { configureSentryLogs } from "./sentry";
+import { LogEvent } from "@/lib/observability/core/names";
+import { configureObservability, getLogger } from "@/lib/observability/server/registry";
+import { configureSentryLogs } from "@/lib/observability/server/sentry";
 
 // Vitest isolates this file from the mocked SDK unit tests. Closing the actual
 // client also removes its beforeExit listeners and client-report timer.

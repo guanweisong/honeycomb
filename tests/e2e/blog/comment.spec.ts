@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { decodeTrpcBatchRequest } from "../../helpers/trpc-batch";
-import { openFirstPostDetail } from "./helpers";
+import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
+import { openFirstPostDetail } from "@tests/e2e/blog/helpers";
 
 test.describe("blog comment", () => {
   test("@regression submit should be blocked without captcha and never call create API", async ({

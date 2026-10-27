@@ -1,6 +1,6 @@
 import { createNavigation } from "next-intl/navigation";
 import { createElement, type ComponentProps } from "react";
-import { routing } from "./routing";
+import { routing } from "@/lib/i18n/routing";
 
 /**
  * `next-intl` 提供的轻量级导航 API 包装器。

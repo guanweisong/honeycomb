@@ -9,7 +9,7 @@ import {
   canDeleteUserResource,
   isUserResourceProtected,
   toUserFormDefaults,
-} from "./user-transforms";
+} from "@/features/user/admin/transforms/user-transforms";
 
 const admin = {
   id: "admin-1",

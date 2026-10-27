@@ -9,8 +9,8 @@ import {
   assertUserDeletable,
   assertUserLevelChange,
   assertUserStatusChange,
-} from "../rules/user-protection";
-import type { UserRepository } from "./user-repository";
+} from "@/features/user/rules/user-protection";
+import type { UserRepository } from "@/features/user/server/user-repository";
 import {
   UserInsertSchema,
   UserUpdateSchema,

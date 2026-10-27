@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { PageTemplateName } from "@/features/page/types/page.template-name";
-import { pageTemplateOptions, pageStatusOptions } from "./options";
+import { pageTemplateOptions, pageStatusOptions } from "@/features/page/admin/options";
 import { PageStatusName } from "@/features/page/types/page.status-name";
 
 describe("page display options", () => {

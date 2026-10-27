@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBlogHome } from "./helpers";
+import { openBlogHome } from "@tests/e2e/blog/helpers";
 
 test.describe("blog theme", () => {
   test("@smoke toggle should update html class and persist after reload", async ({

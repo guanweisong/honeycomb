@@ -5,7 +5,7 @@ import {
   patchLocalizedValue,
 } from "@/lib/db/translation-values";
 import type * as schema from "@/lib/db/schema";
-import type { SettingUpdate } from "../types/setting.patch";
+import type { SettingUpdate } from "@/features/setting/types/setting.patch";
 
 export type SettingTranslationRow =
   typeof schema.settingTranslation.$inferSelect;

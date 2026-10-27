@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Controller, useForm } from "react-hook-form";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { FieldControl } from "./FieldControl";
+import { FieldControl } from "@/components/DynamicForm/FieldControl";
 
 function TestForm() {
   const form = useForm<Record<string, unknown>>({

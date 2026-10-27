@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { UserLevelName } from "@/features/user/types/user.level-name";
-import { userLevelOptions, userStatusOptions } from "./options";
+import { userLevelOptions, userStatusOptions } from "@/features/user/admin/options";
 import { UserStatusName } from "@/features/user/types/user.status-name";
 
 describe("user display options", () => {

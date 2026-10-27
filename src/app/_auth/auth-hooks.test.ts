@@ -22,7 +22,7 @@ vi.mock(
 vi.mock("@/lib/observability/server", () => ({
   getLogger: () => ({ error: vi.fn() }),
 }));
-vi.mock("./authentication-events", () => ({
+vi.mock("@/app/_auth/authentication-events", () => ({
   getAuthenticationProvider: () => "credentials",
 }));
 vi.mock("@/features/user/rules/user-status", async (importOriginal) => ({
@@ -32,7 +32,7 @@ vi.mock("@/features/user/rules/user-status", async (importOriginal) => ({
   isUserEnabled: mocks.isUserEnabled,
 }));
 
-import { createAuthDatabaseHooks } from "./auth-hooks";
+import { createAuthDatabaseHooks } from "@/app/_auth/auth-hooks";
 
 const session = {
   id: "session-1",

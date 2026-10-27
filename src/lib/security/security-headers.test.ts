@@ -6,7 +6,7 @@ import {
   createAssetRemotePattern,
   createSecurityHeaderOptions,
   createSecurityHeaders,
-} from "./security-headers";
+} from "@/lib/security/security-headers";
 import { getDirectiveSources } from "@tests/helpers/content-security-policy";
 
 function asRecord(headers: ReturnType<typeof createSecurityHeaders>) {

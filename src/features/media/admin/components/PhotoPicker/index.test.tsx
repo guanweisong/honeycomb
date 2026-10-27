@@ -50,7 +50,7 @@ vi.mock("@/features/media/admin/components/MediaPageShell", () => ({
   },
 }));
 
-import PhotoPickerModal from "./";
+import PhotoPickerModal from "@/features/media/admin/components/PhotoPicker";
 
 const mediaFixture = {
   id: "media-1",

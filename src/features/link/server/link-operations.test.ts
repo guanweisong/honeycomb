@@ -1,5 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import {
+  createLink,
+  destroyLinks,
+  listLinks,
+  updateLink,
+} from "@/features/link/server/link-operations";
+import * as schema from "@/lib/db/schema";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -8,13 +16,6 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import {
-  createLink,
-  listLinks,
-  destroyLinks,
-  updateLink,
-} from "@/features/link/server/link-operations";
-import { EnableStatus } from "@/lib/validation/enable-status";
 
 const link = {
   id: "507f1f77bcf86cd799439031",
@@ -136,3 +137,27 @@ it.each(["create", "update"] as const)(
     expect(invalidator.invalidate).not.toHaveBeenCalled();
   },
 );
+
+describe("feature persistence contracts", () => {
+  const invalidator = () => ({
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  });
+  it("link commands write and delete through the database", async () => {
+    const db = createMockDb();
+    const input = {
+      name: "Link",
+      url: "https://example.test",
+      logo: "https://example.test/logo.png",
+    };
+    const row = { id: "link-1", ...input, status: null };
+    db.returning.mockResolvedValue([row]);
+    await expect(
+      createLink(asMockDatabase(db), input, invalidator()),
+    ).resolves.toMatchObject(row);
+    await expect(
+      destroyLinks(asMockDatabase(db), [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.values).toHaveBeenCalledWith(input);
+    expect(db.delete).toHaveBeenCalledWith(schema.link);
+  });
+});

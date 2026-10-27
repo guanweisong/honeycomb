@@ -1,5 +1,5 @@
-import { Button } from "../ui/button";
-import type { DataTablePaginationState } from "./types";
+import { Button } from "@/components/ui/button";
+import type { DataTablePaginationState } from "@/components/DataTable/types";
 
 interface DataTablePaginationProps {
   total: number;

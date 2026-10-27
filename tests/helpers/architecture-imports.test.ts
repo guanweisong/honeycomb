@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
-import { requireDefined } from "./require-defined";
+import { requireDefined } from "@tests/helpers/require-defined";
 import {
   moduleDependencies,
   runtimeDependencyViolations,
-} from "./architecture-imports";
+} from "@tests/helpers/architecture-imports";
 
 vi.mock("typescript", async (importOriginal) => {
   const actual = await importOriginal<typeof import("typescript")>();

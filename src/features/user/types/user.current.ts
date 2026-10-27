@@ -1,4 +1,4 @@
-import type { UserRecord } from "./user.record";
+import type { UserRecord } from "@/features/user/types/user.record";
 
 export type CurrentUser = Pick<UserRecord, "id" | "level"> &
   Partial<Pick<UserRecord, "name">>;

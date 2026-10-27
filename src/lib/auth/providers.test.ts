@@ -6,7 +6,7 @@ import {
   SOCIAL_PROVIDER_IDS,
   SOCIAL_PROVIDER_LABELS,
   type SocialProviderId,
-} from "./providers";
+} from "@/lib/auth/providers";
 
 describe("social provider contract", () => {
   it("is client-safe and keeps provider labels stable", () => {

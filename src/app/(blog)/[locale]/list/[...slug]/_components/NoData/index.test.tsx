@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 
-import NoData from "./";
+import NoData from "@/app/(blog)/[locale]/list/[...slug]/_components/NoData";
 
 describe("NoData", () => {
   let container: HTMLDivElement;

@@ -15,7 +15,7 @@ import {
 import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
-import { buildMenuSaveInput, type MenuEntityTree } from "./menu-transforms";
+import { buildMenuSaveInput, type MenuEntityTree } from "@/features/menu/admin/menu-transforms";
 
 export type MenuSaveResult = {
   count: number;

@@ -1,5 +1,5 @@
 import { IdSchema } from "@/lib/validation/id.schema";
-import { PageFieldsSchema, PageVersionSchema } from "./page.fields.schema";
+import { PageFieldsSchema, PageVersionSchema } from "@/features/page/schemas/page.fields.schema";
 
 export const PageUpdateSchema = PageFieldsSchema.partial()
   .extend({ id: IdSchema, expectedVersion: PageVersionSchema })

@@ -30,7 +30,7 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-import PostList from "./index";
+import PostList from "@/features/post/public/components/PostList/index";
 
 function page(id: string, total = 3): PublicPostListResult {
   return {

@@ -5,7 +5,7 @@ import { PageTemplate } from "@/features/page/types/page.template";
 import {
   getPageEditorId,
   toPageEditorFormValues,
-} from "./page-editor-transforms";
+} from "@/features/page/admin/edit/transforms/page-editor-transforms";
 
 describe("page editor transforms", () => {
   it("preserves the id query parameter used by the existing edit route", () => {

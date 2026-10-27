@@ -5,10 +5,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "../../../../components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import React from "react";
-import Avatar from "../../../../components/Avatar";
+import Avatar from "@/components/Avatar";
 import { UserLevelName } from "@/features/user/types/user.level-name";
 import { type CurrentUser } from "@/features/user/types/user.current";
 

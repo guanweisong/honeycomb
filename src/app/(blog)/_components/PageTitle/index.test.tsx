@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 
-import PageTitle from "./";
+import PageTitle from "@/app/(blog)/_components/PageTitle";
 
 describe("PageTitle", () => {
   let container: HTMLDivElement;

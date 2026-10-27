@@ -121,7 +121,7 @@ vi.mock("@/features/post/public/components/PostSearch", () => ({
   default: () => React.createElement("button", null, "搜索"),
 }));
 
-import Header from "./index";
+import Header from "@/app/(blog)/_components/Header/index";
 
 describe("blog Header", () => {
   let container: HTMLDivElement;

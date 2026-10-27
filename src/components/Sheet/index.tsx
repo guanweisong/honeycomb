@@ -7,9 +7,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetClose,
-} from "../ui/sheet";
+} from "@/components/ui/sheet";
 
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/LoadingState";
 
 interface SheetProps extends Pick<

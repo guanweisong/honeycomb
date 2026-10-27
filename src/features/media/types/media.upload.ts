@@ -2,7 +2,7 @@ import type {
   MediaRegisterUploadSchema,
   MediaUploadFileSchema,
   MediaUploadIntentInputSchema,
-} from "../schemas/media.upload.schema";
+} from "@/features/media/schemas/media.upload.schema";
 import type { z } from "zod";
 
 export type MediaUploadFile = z.output<typeof MediaUploadFileSchema>;

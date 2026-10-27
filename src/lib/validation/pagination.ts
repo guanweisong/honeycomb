@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { PaginationQuerySchema } from "./pagination.query.schema";
+import type { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 
 /** 列表查询共用契约；Feature 只扩展自己的过滤字段。 */
 export enum SortOrder {

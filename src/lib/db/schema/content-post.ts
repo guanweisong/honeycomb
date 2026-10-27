@@ -12,12 +12,12 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { user } from "./auth";
-import { category } from "./content-category";
-import { media } from "./content-media";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { user } from "@/lib/db/schema/auth";
+import { category } from "@/lib/db/schema/content-category";
+import { media } from "@/lib/db/schema/content-media";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 文章表 (post)

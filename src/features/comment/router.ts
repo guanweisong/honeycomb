@@ -1,4 +1,4 @@
-import { listPublicCommentsByRef } from "./server/comment-public-queries";
+import { listPublicCommentsByRef } from "@/features/comment/server/comment-public-queries";
 import "server-only";
 
 import { z } from "zod";

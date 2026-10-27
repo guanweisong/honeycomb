@@ -5,14 +5,14 @@ const mocks = vi.hoisted(() => ({
   createContext: vi.fn(async () => ({})),
 }));
 
-vi.mock("./router", () => ({
+vi.mock("@/app/_trpc/router", () => ({
   appRouter: { createCaller: mocks.createCaller },
 }));
-vi.mock("../../lib/trpc/context", () => ({
+vi.mock("@/lib/trpc/context", () => ({
   createContext: mocks.createContext,
 }));
 
-import { createServerClient } from "./server";
+import { createServerClient } from "@/app/_trpc/server";
 
 describe("createServerClient", () => {
   it("passes current request headers into server context", async () => {

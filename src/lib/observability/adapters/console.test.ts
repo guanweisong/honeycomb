@@ -3,8 +3,8 @@ import { requireDefined } from "@tests/helpers/require-defined";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { LogEvent } from "../core/names";
-import { createConsoleLogger } from "./console";
+import { LogEvent } from "@/lib/observability/core/names";
+import { createConsoleLogger } from "@/lib/observability/adapters/console";
 
 describe("createConsoleLogger", () => {
   afterEach(() => {

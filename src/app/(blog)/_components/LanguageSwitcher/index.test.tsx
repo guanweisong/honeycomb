@@ -78,7 +78,7 @@ vi.mock("react", async () => {
   };
 });
 
-import LanguageSwitcher from "./";
+import LanguageSwitcher from "@/app/(blog)/_components/LanguageSwitcher";
 
 describe("LanguageSwitcher", () => {
   let container: HTMLDivElement;

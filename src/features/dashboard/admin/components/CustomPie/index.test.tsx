@@ -49,7 +49,7 @@ vi.mock("recharts", () => ({
   Cell: () => null,
 }));
 
-import CustomPie from "./index";
+import CustomPie from "@/features/dashboard/admin/components/CustomPie/index";
 
 describe("CustomPie", () => {
   let container: HTMLDivElement;

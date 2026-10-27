@@ -13,7 +13,7 @@ import {
   createLocalizedAlternates,
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
-import { resolveListContext, resolveListTitle } from "./page.utils";
+import { resolveListContext, resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { connection } from "next/server";
 import LoadingState from "@/components/LoadingState";
 

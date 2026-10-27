@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import PhotoPicker from "./index";
+import PhotoPicker from "@/features/media/admin/components/PhotoPicker/index";
 it("uses a viewport-bounded real sheet with reachable selection and cancel controls", async () => {
   const container = document.createElement("div");
   document.body.append(container);

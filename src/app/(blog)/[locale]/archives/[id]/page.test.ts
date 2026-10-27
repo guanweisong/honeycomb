@@ -113,8 +113,8 @@ vi.mock("@/features/media/public/RichText", () => ({
 }));
 
 import type { PostDetailResult } from "@/features/post/types/post.read-model";
-import Archives, { generateMetadata } from "./page";
-import { assertPostCategory, assertPostDetail } from "./page.utils";
+import Archives, { generateMetadata } from "@/app/(blog)/[locale]/archives/[id]/page";
+import { assertPostCategory, assertPostDetail } from "@/app/(blog)/[locale]/archives/[id]/page.utils";
 
 // 输入夹具只允许真实详情字段；故障场景仍可显式省略正文和关联。
 type DetailFixture = Pick<PostDetailResult, "id"> & {

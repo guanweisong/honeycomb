@@ -1,5 +1,5 @@
 import "server-only";
-import { parseCommentStatus, toCommentRecord } from "./comment-dto";
+import { parseCommentStatus, toCommentRecord } from "@/features/comment/server/comment-dto";
 import { requireWriteResult } from "@/lib/db/value-validation";
 
 import { and, eq, exists, inArray, sql } from "drizzle-orm";

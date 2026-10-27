@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { transactionWithBeginRetry } from "./transaction-begin-retry";
+import { transactionWithBeginRetry } from "@/lib/db/transaction-begin-retry";
 
 const busy = () => Object.assign(new Error("busy"), { code: "SQLITE_BUSY" });
 const message = "caller-owned conflict";

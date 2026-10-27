@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hashCanonicalInput } from "./canonical-input-hash";
+import { hashCanonicalInput } from "@/lib/canonical-input-hash";
 
 describe("creation intent canonical hash compatibility", () => {
   it("keeps recursive key sorting, locale ordering, undefined omission and Unicode bytes", () => {

@@ -4,7 +4,7 @@
  */
 
 import type { z } from "zod";
-import { MultiLangEnum, type PartialLocalizedTextSchema } from "./i18n";
+import { MultiLangEnum, type PartialLocalizedTextSchema } from "@/lib/i18n/i18n";
 
 export type MultiLang = z.infer<typeof PartialLocalizedTextSchema>;
 
@@ -12,7 +12,7 @@ export type MultiLang = z.infer<typeof PartialLocalizedTextSchema>;
  * 多语言枚举。
  * 定义了支持的语言类型。
  */
-export { MultiLangEnum } from "./i18n";
+export { MultiLangEnum } from "@/lib/i18n/i18n";
 
 /** 将外部 locale 字符串收敛到应用支持的语言键。 */
 export function normalizeMultiLangLocale(locale: string): MultiLangEnum {

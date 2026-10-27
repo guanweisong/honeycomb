@@ -25,7 +25,7 @@ vi.mock("@/lib/ui/utc-format", () => ({
 
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { CommentTree } from ".";
-import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "@/features/comment/presentation/comment-view-model";
 
 const comments: CommentTreeViewModel[] = [
   {

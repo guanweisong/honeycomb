@@ -1,7 +1,7 @@
 import type { UserUpdate } from "@/features/user/types/user.update";
 import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 import { UserStatus } from "@/features/user/types/user.status";
-import { isProtectedUser } from "../../rules/user-protection";
+import { isProtectedUser } from "@/features/user/rules/user-protection";
 
 export function toUserFormDefaults(
   record?: UserEntity,

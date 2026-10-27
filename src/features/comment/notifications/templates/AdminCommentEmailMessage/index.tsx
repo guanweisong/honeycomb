@@ -1,11 +1,11 @@
 import { Link, Text } from "react-email";
 import * as React from "react";
-import EmailContainer from "../EmailContainer";
+import EmailContainer from "@/features/comment/notifications/templates/EmailContainer";
 import {
   getCommentTarget,
   type CommentNotification,
   type CommentNotificationSetting,
-} from "../../comment-notification";
+} from "@/features/comment/notifications/comment-notification";
 
 type AdminMessageEmailProps = {
   currentComment: CommentNotification;

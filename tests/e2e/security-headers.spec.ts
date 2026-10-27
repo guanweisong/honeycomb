@@ -4,7 +4,7 @@ import {
   createR2PresignedUploadUrl,
   resolveAssetOrigin,
   resolveR2UploadOrigin,
-} from "./security-headers-config";
+} from "@tests/e2e/security-headers-config";
 import { getDirectiveSources } from "@tests/helpers/content-security-policy";
 
 const VERCEL_SCRIPT_ORIGIN = "https://va.vercel-scripts.com";

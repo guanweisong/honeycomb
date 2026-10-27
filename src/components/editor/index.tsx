@@ -6,14 +6,14 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
-import { ToolbarButton } from "./components/ToolbarButton";
+import { ToolbarButton } from "@/components/editor/components/ToolbarButton";
 import { useEffect, useRef, type HTMLAttributes } from "react";
 import { toolbarItems } from "@/components/editor/config/toolbar-items";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import { Color, TextStyle } from "@tiptap/extension-text-style";
-import { ToolbarGroupItem } from "./components/ToolbarGroupItem";
+import { ToolbarGroupItem } from "@/components/editor/components/ToolbarGroupItem";
 
 interface TiptapProps extends Pick<
   HTMLAttributes<HTMLDivElement>,

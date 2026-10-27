@@ -13,7 +13,7 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
 
-    const authModule = await import("./auth");
+    const authModule = await import("@/auth");
 
     expect(authModule.auth.api).toBeDefined();
   });
@@ -25,7 +25,7 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
 
-    const authModule = await import("./auth");
+    const authModule = await import("@/auth");
     const options = authModule.auth.options;
 
     expect(options.emailAndPassword?.minPasswordLength).toBe(6);
@@ -38,7 +38,7 @@ describe("auth production build configuration", () => {
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
 
-    const authModule = await import("./auth");
+    const authModule = await import("@/auth");
     const options = authModule.auth.options;
 
     expect(options.account?.accountLinking?.disableImplicitLinking).toBe(true);

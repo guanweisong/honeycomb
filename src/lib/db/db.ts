@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql/web";
-import * as schema from "./schema";
+import * as schema from "@/lib/db/schema";
 import { LibSQLDatabase } from "drizzle-orm/libsql";
 import { getDatabaseEnv } from "@/env/server";
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 
-import { toLinkFormDefaults } from "./link-transforms";
+import { toLinkFormDefaults } from "@/features/link/admin/link-transforms";
 
 const link = {
   id: "link-1",

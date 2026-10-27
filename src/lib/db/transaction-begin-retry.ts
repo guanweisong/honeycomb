@@ -1,5 +1,5 @@
 import "server-only";
-import type { Database } from "./db";
+import type { Database } from "@/lib/db/db";
 import { ApplicationError } from "@/lib/errors/application-error";
 
 export type DatabaseTransaction = Parameters<

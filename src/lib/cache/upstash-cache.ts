@@ -5,8 +5,8 @@ import { getUpstashEnv } from "@/env/server";
 import { MetricName } from "@/lib/observability/core/names";
 import { getMetrics } from "@/lib/observability/server/registry";
 
-import { cacheNamespaceValues, type CacheNamespace } from "./cache-namespaces";
-export type { CacheNamespace } from "./cache-namespaces";
+import { cacheNamespaceValues, type CacheNamespace } from "@/lib/cache/cache-namespaces";
+export type { CacheNamespace } from "@/lib/cache/cache-namespaces";
 const cacheNamespaces = new Set<CacheNamespace>(cacheNamespaceValues);
 const implicitCacheVersion = 1;
 const redisRequestTimeoutMs = 1000;

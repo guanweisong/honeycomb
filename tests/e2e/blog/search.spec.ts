@@ -1,6 +1,6 @@
 import { test, expect, type Locator } from "@playwright/test";
-import { openBlogHome } from "./helpers";
-import { observeSearch } from "../../helpers/search-diagnostics";
+import { openBlogHome } from "@tests/e2e/blog/helpers";
+import { observeSearch } from "@tests/helpers/search-diagnostics";
 
 async function expectSameHorizontalBounds(input: Locator, result: Locator) {
   await expect(async () => {

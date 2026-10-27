@@ -13,9 +13,9 @@ import { observeDbOperation } from "@/lib/observability/server";
 import type {
   CategoryListInput,
   CategoryVisibility,
-} from "../types/category.list";
-import { flattenCategoryHierarchy } from "../tree";
-import { withTranslations } from "./category-translations";
+} from "@/features/category/types/category.list";
+import { flattenCategoryHierarchy } from "@/features/category/tree";
+import { withTranslations } from "@/features/category/server/category-translations";
 
 export async function findCategory(db: Database, id: string) {
   const [value] = await observeDbOperation("category.update", "select", () =>

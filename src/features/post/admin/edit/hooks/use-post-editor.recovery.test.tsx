@@ -62,7 +62,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { usePostEditor } from "./use-post-editor";
+import { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
 
 describe("usePostEditor draft recovery and version conflicts", () => {
   let container: HTMLDivElement;

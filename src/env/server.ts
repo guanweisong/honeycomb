@@ -9,7 +9,7 @@ import {
   parseServerEnv,
   parseTurnstileEnv,
   parseUpstashEnv,
-} from "./schema";
+} from "@/env/schema";
 
 export function getServerEnv() {
   return parseServerEnv(process.env);

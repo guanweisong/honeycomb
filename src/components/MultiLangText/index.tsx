@@ -3,9 +3,9 @@
 import { MultiLang, MultiLangEnum } from "@/lib/i18n/multi-lang";
 import Image from "next/image";
 import { useState } from "react";
-import enIcon from "./img/en.svg";
-import zhIcon from "./img/zh.svg";
-import { parseStaticImage } from "../../lib/ui/static-image";
+import enIcon from "@/components/MultiLangText/img/en.svg";
+import zhIcon from "@/components/MultiLangText/img/zh.svg";
+import { parseStaticImage } from "@/lib/ui/static-image";
 
 /**
  * 多语言文本组件的属性接口。

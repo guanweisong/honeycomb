@@ -2,7 +2,7 @@
 
 import { mockAbortSignalTimeout } from "@tests/helpers/abort-signal-timeout";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { validateCaptcha } from "./validate-captcha";
+import { validateCaptcha } from "@/lib/security/validate-captcha";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "@/lib/observability/core/names";
 import { configureObservability } from "@/lib/observability/server";

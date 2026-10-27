@@ -7,7 +7,7 @@ import { desc, eq, lt } from "drizzle-orm";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryRecordInput,
-} from "../login-history";
+} from "@/features/user/account-security/login-history";
 
 const LOGIN_HISTORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const LOGIN_HISTORY_LIMIT = 50;

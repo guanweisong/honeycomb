@@ -46,7 +46,7 @@ import {
   getPublicPostDetail,
   getPublicSetting,
   getPublicLinks,
-} from "./public-queries";
+} from "@/app/lib/server/public-queries";
 
 describe("public server queries", () => {
   beforeEach(() => {

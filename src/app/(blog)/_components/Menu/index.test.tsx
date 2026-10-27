@@ -39,10 +39,10 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
     React.createElement("a", { ...props, href }, children),
 }));
 
-import Menu from "./index";
-import Breadcrumb from "../Breadcrumb";
+import Menu from "@/app/(blog)/_components/Menu/index";
+import Breadcrumb from "@/app/(blog)/_components/Breadcrumb";
 import type { MenuItem as MenuViewModel } from "@/features/menu/types/menu.list";
-import type { BlogNavigationLink } from "../../types/blog-navigation-link";
+import type { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
 
 const flatMenu: MenuViewModel[] = [
   {

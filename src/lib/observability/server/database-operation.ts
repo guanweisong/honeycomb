@@ -1,9 +1,9 @@
 import "server-only";
 
-import { databaseQueryNames } from "../core/metric-label-values";
-import type { databaseOperations } from "../core/metric-label-values";
-import { MetricName } from "../core/names";
-import { getMetrics } from "./registry";
+import { databaseQueryNames } from "@/lib/observability/core/metric-label-values";
+import type { databaseOperations } from "@/lib/observability/core/metric-label-values";
+import { MetricName } from "@/lib/observability/core/names";
+import { getMetrics } from "@/lib/observability/server/registry";
 
 export type DatabaseOperation = (typeof databaseOperations)[number];
 

@@ -6,7 +6,7 @@ import {
   adminRouteCapabilities,
   canAccessAdminRoute,
   getAdminRoutePermission,
-} from "./route-capabilities";
+} from "@/app/admin/constants/route-capabilities";
 
 describe("Admin route capability registry", () => {
   it("登记所有受保护后台页面", () => {

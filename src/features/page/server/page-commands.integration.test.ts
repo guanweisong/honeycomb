@@ -15,7 +15,7 @@ import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
 import * as commands from "@/features/page/server/page-commands";
 import * as htmlSanitizer from "@/lib/security/sanitize-html";
-import { getPage, listPages } from "./page-queries";
+import { getPage, listPages } from "@/features/page/server/page-queries";
 vi.mock("@/env/client", () => ({
   clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.test" },
 }));

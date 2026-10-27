@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Avatar from "../../../../components/Avatar";
-import { AdminNavigation, type AdminNavigationItem } from "../AdminNavigation";
-import { UserDropdown } from "../../../../features/user/admin/UserDropdown";
+import Avatar from "@/components/Avatar";
+import { AdminNavigation, type AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
+import { UserDropdown } from "@/features/user/admin/UserDropdown";
 import type { CurrentUser } from "@/features/user/types/user.current";
 
 interface AdminSidebarProps {

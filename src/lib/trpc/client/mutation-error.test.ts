@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isDeterminateRejectionCode,
   readTrpcErrorCode,
-} from "./mutation-error";
+} from "@/lib/trpc/client/mutation-error";
 
 describe("mutation error code", () => {
   it.each(["BAD_REQUEST", "FORBIDDEN", "UNAUTHORIZED", "NOT_FOUND"])(

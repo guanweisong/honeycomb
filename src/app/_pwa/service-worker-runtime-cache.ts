@@ -6,8 +6,8 @@ import {
   RangeRequestsPlugin,
   StaleWhileRevalidate,
 } from "serwist";
-import { runtimeResponseCacheabilityPlugin } from "./service-worker-cache-policy";
-import { isPublicRuntimeRequest } from "./service-worker-cache-rules";
+import { runtimeResponseCacheabilityPlugin } from "@/app/_pwa/service-worker-cache-policy";
+import { isPublicRuntimeRequest } from "@/app/_pwa/service-worker-cache-rules";
 
 const withExpiration = (maxEntries: number, maxAgeSeconds: number) => [
   runtimeResponseCacheabilityPlugin,

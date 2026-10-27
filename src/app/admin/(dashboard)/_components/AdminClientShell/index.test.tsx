@@ -59,7 +59,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ clear: mocks.clear }),
 }));
 
-vi.mock("./logout-browser-state", () => ({
+vi.mock("@/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state", () => ({
   clearHoneycombRuntimeCaches: mocks.clearRuntimeCaches,
   navigateToAdminLogin: mocks.navigateToLogin,
 }));
@@ -87,7 +87,7 @@ vi.mock("@/app/admin/_components/AdminLayout", () => ({
   },
 }));
 
-import { AdminClientShell } from "./";
+import { AdminClientShell } from "@/app/admin/(dashboard)/_components/AdminClientShell";
 
 const user = {
   id: "user-1",

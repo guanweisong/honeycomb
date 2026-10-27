@@ -25,12 +25,12 @@ describe("browser error instrumentation", () => {
   it("does not initialize without the public DSN, even if the server fallback exists", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "");
     vi.stubEnv("SENTRY_DSN", "https://legacy@example.invalid/1");
-    await import("./instrumentation-client");
+    await import("@/instrumentation-client");
     expect(sdk.init).not.toHaveBeenCalled();
   });
   it("initializes only error handlers and drops logs/metrics", async () => {
     vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.invalid/1");
-    await import("./instrumentation-client");
+    await import("@/instrumentation-client");
     expect(sdk.init).toHaveBeenCalledWith(
       expect.objectContaining({
         dsn: "https://public@example.invalid/1",

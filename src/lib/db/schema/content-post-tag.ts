@@ -1,8 +1,8 @@
 import { TagType } from "@/features/tag/types/tag.type";
 import { sqliteTable, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { post } from "./content-post";
-import { tag } from "./content-tag";
-import { enumCheck } from "../constraint-helpers";
+import { post } from "@/lib/db/schema/content-post";
+import { tag } from "@/lib/db/schema/content-tag";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 文章-标签中间表 (post_tag)

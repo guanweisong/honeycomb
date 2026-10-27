@@ -10,14 +10,14 @@ vi.mock("resend", () => ({
     emails = { send: sendMock };
   },
 }));
-vi.mock("./templates/AdminCommentEmailMessage", () => ({
+vi.mock("@/features/comment/notifications/templates/AdminCommentEmailMessage", () => ({
   default: () => null,
 }));
-vi.mock("./templates/ReplyCommentEmailMessage", () => ({
+vi.mock("@/features/comment/notifications/templates/ReplyCommentEmailMessage", () => ({
   default: () => null,
 }));
 
-import { sendCommentEmail } from "./comment-email";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 const payload = {
   setting: { siteName: { zh: "站点", en: "Site" } },

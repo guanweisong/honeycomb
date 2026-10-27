@@ -18,7 +18,7 @@ import { cn } from "cn";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";
-import { assertPublishedPage } from "./page.utils";
+import { assertPublishedPage } from "@/app/(blog)/[locale]/pages/[id]/page.utils";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 import {
   createLocalizedAlternates,

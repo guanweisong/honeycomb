@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   PostFieldsSchema,
   PostRelationPatchSchema,
-} from "./post.fields.schema";
+} from "@/features/post/schemas/post.fields.schema";
 
 export const PostInsertSchema = PostFieldsSchema.extend(
   PostRelationPatchSchema.shape,

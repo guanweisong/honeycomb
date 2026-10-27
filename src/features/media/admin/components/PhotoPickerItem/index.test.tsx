@@ -43,7 +43,7 @@ vi.mock("next/image", () => ({
   ),
 }));
 
-import PhotoPickerItem, { type PhotoPickerItemProps } from "./index";
+import PhotoPickerItem, { type PhotoPickerItemProps } from "@/features/media/admin/components/PhotoPickerItem/index";
 
 describe("PhotoPickerItem", () => {
   let container: HTMLDivElement;

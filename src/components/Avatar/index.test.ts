@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../ui/avatar", () => ({
+vi.mock("@/components/ui/avatar", () => ({
   Avatar: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", null, children),
   AvatarImage: (props: Record<string, unknown>) =>
@@ -17,7 +17,7 @@ vi.mock("../ui/avatar", () => ({
     React.createElement("span", null, children),
 }));
 
-import Avatar from "./index";
+import Avatar from "@/components/Avatar/index";
 
 describe("Avatar", () => {
   let container: HTMLDivElement;

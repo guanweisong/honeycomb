@@ -2,9 +2,9 @@ import { act, createRef, Profiler, useImperativeHandle, type Ref } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Form } from "../ui/form";
-import { DynamicField } from "./DynamicField";
-import type { FieldConfig } from "./types";
+import { Form } from "@/components/ui/form";
+import { DynamicField } from "@/components/DynamicForm/DynamicField";
+import type { FieldConfig } from "@/components/DynamicForm/types";
 
 type FormValues = Record<string, unknown>;
 

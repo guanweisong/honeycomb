@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import type { LoginHistoryEvent } from "@/features/user/account-security/login-history-events";
 import { SOCIAL_PROVIDER_LABELS } from "@/lib/auth/providers";
-import { formatAccountSecurityDate } from "../account-security-date";
+import { formatAccountSecurityDate } from "@/features/user/admin/account-security/components/account-security-date";
 
 const eventLabels: Record<LoginHistoryEvent, string> = {
   LOGIN_SUCCESS: "登录成功",

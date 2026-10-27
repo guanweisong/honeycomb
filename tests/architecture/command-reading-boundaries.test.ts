@@ -30,6 +30,9 @@ describe("命令阅读路径", () => {
       expect(dependencies(`${directory}/${feature}-commands.ts`)).not.toContain(
         `./${feature}-command-handlers`,
       );
+      expect(dependencies(`${directory}/${feature}-commands.ts`)).not.toContain(
+        `@/features/${feature}/server/${feature}-command-handlers`,
+      );
     },
   );
 });

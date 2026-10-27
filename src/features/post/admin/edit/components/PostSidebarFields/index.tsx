@@ -8,9 +8,9 @@ import { ModalType } from "@/components/admin/types/modal-type";
 import { PostType } from "@/features/post/types/post.type";
 import { postTypeOptions } from "@/features/post/admin/options";
 import { TagType } from "@/features/tag/types/tag.type";
-import MultiTag from "../MultiTag";
-import PhotoPickerItem from "../../../../../media/admin/components/PhotoPickerItem";
-import type { usePostEditor } from "../../hooks/use-post-editor";
+import MultiTag from "@/features/post/admin/edit/components/MultiTag";
+import PhotoPickerItem from "@/features/media/admin/components/PhotoPickerItem";
+import type { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 

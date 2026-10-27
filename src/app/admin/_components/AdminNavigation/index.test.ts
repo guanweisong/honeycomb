@@ -21,7 +21,7 @@ vi.mock("motion/react", () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-import { AdminNavigation } from "./index";
+import { AdminNavigation } from "@/app/admin/_components/AdminNavigation/index";
 import { menu } from "@/app/admin/constants/menu-data";
 
 describe("AdminNavigation", () => {

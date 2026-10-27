@@ -1,5 +1,5 @@
-import { PostStatusName } from "../types/post.status-name";
-import { PostTypeName } from "../types/post.type-name";
+import { PostStatusName } from "@/features/post/types/post.status-name";
+import { PostTypeName } from "@/features/post/types/post.type-name";
 import { PostStatus } from "@/features/post/types/post.status";
 import { PostType } from "@/features/post/types/post.type";
 

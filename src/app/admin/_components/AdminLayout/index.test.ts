@@ -5,12 +5,12 @@ import { createRoot, type Root } from "react-dom/client";
 const mockUserDropdown = vi.fn();
 const mockUsePathname = vi.fn();
 
-vi.mock("../../../../components/Avatar", () => ({
+vi.mock("@/components/Avatar", () => ({
   default: ({ fallback }: { fallback?: React.ReactNode }) =>
     React.createElement("div", { "data-testid": "avatar" }, fallback),
 }));
 
-vi.mock("../../../../features/user/admin/UserDropdown", () => ({
+vi.mock("@/features/user/admin/UserDropdown", () => ({
   UserDropdown: () => {
     mockUserDropdown({});
     return React.createElement("div", { "data-testid": "user-dropdown" });
@@ -21,7 +21,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
 }));
 
-import { AdminLayout } from "./index";
+import { AdminLayout } from "@/app/admin/_components/AdminLayout/index";
 
 describe("AdminLayout", () => {
   let container: HTMLDivElement;

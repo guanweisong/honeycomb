@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import {
+  createTag,
+  destroyTags,
+  updateTag,
+} from "@/features/tag/server/tag-commands";
+import * as schema from "@/lib/db/schema";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -8,11 +14,6 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import {
-  createTag,
-  destroyTags,
-  updateTag,
-} from "@/features/tag/server/tag-commands";
 
 const row = { id: "tag-1", createdAt: null, updatedAt: null };
 const name = { en: "Tag", zh: "标签" };
@@ -72,5 +73,38 @@ describe("Tag server operations", () => {
       destroyTags(asMockDatabase(db), ["tag-1", "tag-2"], invalidator),
     ).resolves.toEqual({ success: true, publicSync: "completed" });
     expect(where).toHaveBeenCalled();
+  });
+});
+
+describe("feature persistence contracts", () => {
+  const invalidator = () => ({
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  });
+  it("tag commands write and delete through the database", async () => {
+    const db = createMockDb();
+    const row = { id: "tag-1", createdAt: null, updatedAt: null };
+    db.returning.mockResolvedValue([row]);
+    db.limit.mockResolvedValue([row]);
+    db.where
+      .mockReturnValueOnce(db)
+      .mockResolvedValueOnce([
+        { tagId: row.id, locale: "en", name: "tag" },
+        { tagId: row.id, locale: "zh", name: "标签" },
+      ])
+      .mockReturnValue(db);
+    const database = asMockDatabase(db);
+    const name = { en: "tag", zh: "标签" };
+    await expect(
+      createTag(database, { name }, invalidator()),
+    ).resolves.toMatchObject({ ...row, name });
+    await expect(
+      updateTag(database, { id: row.id }, invalidator()),
+    ).resolves.toMatchObject({ ...row, name });
+    await expect(
+      destroyTags(database, [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.insert).toHaveBeenCalledWith(schema.tag);
+    expect(db.insert).toHaveBeenCalledWith(schema.tagTranslation);
+    expect(db.delete).toHaveBeenCalledWith(schema.tag);
   });
 });

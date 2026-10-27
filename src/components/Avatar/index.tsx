@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as BaseAvatar from "../ui/avatar";
+import * as BaseAvatar from "@/components/ui/avatar";
 import { cn } from "cn";
 
 type AvatarRootProps = React.ComponentProps<typeof BaseAvatar.Avatar>;

@@ -28,7 +28,7 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: vi.fn(async () => mocks.setting),
 }));
 
-import Footer from "./";
+import Footer from "@/app/(blog)/_components/Footer";
 
 describe("Footer", () => {
   let container: HTMLDivElement;

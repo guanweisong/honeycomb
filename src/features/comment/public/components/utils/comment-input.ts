@@ -1,6 +1,6 @@
 import { MenuType } from "@/features/menu/types/menu.type";
 import type { CommentInsertInput } from "@/features/comment/types/comment.insert";
-import type { CommentIdentity } from "../hooks/use-comment-identity";
+import type { CommentIdentity } from "@/features/comment/public/components/hooks/use-comment-identity";
 
 interface BuildCommentInputOptions {
   id: string;

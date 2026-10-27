@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
-import { MediaGrid } from "./";
+import { MediaGrid } from "@/features/media/admin/components/MediaGrid";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 
 vi.mock("@/features/user/admin/use-current-user", () => ({

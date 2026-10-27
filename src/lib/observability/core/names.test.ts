@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { LogEvent, MetricName } from "./names";
+import { LogEvent, MetricName } from "@/lib/observability/core/names";
 
 describe("observability names", () => {
   it("exposes stable event and metric names", () => {

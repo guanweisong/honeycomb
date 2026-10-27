@@ -10,8 +10,8 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import { enableStatusOptions } from "@/components/admin/config/enable-status-options";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
-import type { LinkDialogState } from "../../link-actions";
-import { toLinkFormDefaults } from "../../link-transforms";
+import type { LinkDialogState } from "@/features/link/admin/link-actions";
+import { toLinkFormDefaults } from "@/features/link/admin/link-transforms";
 
 type LinkFormDialogProps = {
   state: LinkDialogState;

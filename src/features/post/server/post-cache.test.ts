@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { getCachedPostList } from "./post-list-cache";
+import { getCachedPostList } from "@/features/post/server/post-list-cache";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
 import { PostType } from "@/features/post/types/post.type";
 import { PostStatus } from "@/features/post/types/post.status";
@@ -59,7 +59,7 @@ const fresh = {
   total: 1,
 };
 const listPublicPosts = vi.hoisted(() => vi.fn());
-vi.mock("./post-queries", () => ({ listPublicPosts }));
+vi.mock("@/features/post/server/post-queries", () => ({ listPublicPosts }));
 
 describe("post list cache validation", () => {
   beforeEach(() => {

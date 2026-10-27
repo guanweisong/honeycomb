@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { InvalidStateTransitionError } from "@/lib/errors/domain-error";
-import { assertCommentTransition } from "./comment-moderation";
+import { assertCommentTransition } from "@/features/comment/rules/comment-moderation";
 
 const allowed = new Set([
   "TO_AUDIT:PUBLISH",
@@ -34,4 +34,23 @@ describe("comment moderation rules", () => {
       ).toThrow("聚合标识不能为空");
     },
   );
+});
+
+describe("pure feature business rules", () => {
+  it("moderates a comment without a database", () => {
+    expect(() =>
+      assertCommentTransition(
+        "comment-1",
+        CommentStatus.TO_AUDIT,
+        CommentStatus.PUBLISH,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertCommentTransition(
+        "comment-1",
+        CommentStatus.PUBLISH,
+        CommentStatus.TO_AUDIT,
+      ),
+    ).toThrow("评论不能从");
+  });
 });

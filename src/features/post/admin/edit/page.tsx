@@ -10,11 +10,11 @@ import {
   useAdminLayoutActions,
   useAdminLayoutPageTitle,
 } from "@/components/admin/layout-context";
-import CategoryFormDialog from "../../../category/admin/components/CategoryFormDialog";
-import { PostEditorActions } from "./components/PostEditorActions";
-import { PostSidebarFields } from "./components/PostSidebarFields";
-import { PostTypeFields } from "./components/PostTypeFields";
-import { usePostEditor } from "./hooks/use-post-editor";
+import CategoryFormDialog from "@/features/category/admin/components/CategoryFormDialog";
+import { PostEditorActions } from "@/features/post/admin/edit/components/PostEditorActions";
+import { PostSidebarFields } from "@/features/post/admin/edit/components/PostSidebarFields";
+import { PostTypeFields } from "@/features/post/admin/edit/components/PostTypeFields";
+import { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
 import { EditorLoadError } from "@/components/admin/editor-load-error";
 import LoadingState from "@/components/LoadingState";
 

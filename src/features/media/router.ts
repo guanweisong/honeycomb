@@ -14,7 +14,7 @@ import {
   registerMediaUpload,
 } from "@/features/media/server/media-upload";
 import { destroyMedia } from "@/features/media/server/media-delete";
-import { createMediaRepository } from "./server/media-repository";
+import { createMediaRepository } from "@/features/media/server/media-repository";
 import R2Storage from "@/lib/storage/r2-storage";
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 export const mediaRouter = createTRPCRouter({

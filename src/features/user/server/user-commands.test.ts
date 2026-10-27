@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import type { UserRecord } from "@/features/user/types/user.record";
-import { createUser, destroyUsers, updateUser } from "./user-commands";
+import { createUser, destroyUsers, updateUser } from "@/features/user/server/user-commands";
 
 const validUserId = "000000000000000000000001";
 const invalidator = () => ({

@@ -33,7 +33,7 @@ vi.mock("next/link", () => ({
     ),
 }));
 
-import { NavigationItem } from "./NavigationItem";
+import { NavigationItem } from "@/app/admin/_components/AdminNavigation/NavigationItem";
 
 describe("NavigationItem", () => {
   let container: HTMLDivElement;

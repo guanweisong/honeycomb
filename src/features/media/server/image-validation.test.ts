@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
 import sharp from "sharp";
-import { validateMediaImage } from "./image-validation";
+import { validateMediaImage } from "@/features/media/server/image-validation";
 it("decodes candidate bytes and derives actual dimensions", async () => {
   const bytes = await sharp({
     create: { width: 2, height: 3, channels: 3, background: "red" },
@@ -64,7 +64,7 @@ it("rejects truncated image data even if the declared byte count matches", async
   ).rejects.toThrow();
 });
 it("admits at most two buffered validation attempts and releases slots", async () => {
-  const { tryAcquireMediaValidation } = await import("./image-validation");
+  const { tryAcquireMediaValidation } = await import("@/features/media/server/image-validation");
   const first = tryAcquireMediaValidation();
   const second = tryAcquireMediaValidation();
   expect(first).not.toBeNull();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAdminDateTime } from "./admin-date-time";
+import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
 
 describe("formatAdminDateTime", () => {
   it("formats supported date values for admin tables", () => {

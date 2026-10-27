@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PageFieldsSchema } from "./page.fields.schema";
+import { PageFieldsSchema } from "@/features/page/schemas/page.fields.schema";
 
 export const PageInsertSchema = PageFieldsSchema.extend({
   creationToken: z.uuid(),

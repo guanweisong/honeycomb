@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { buildCommentInput } from "./comment-input";
+import { buildCommentInput } from "@/features/comment/public/components/utils/comment-input";
 
 const identity = {
   author: "Alice",

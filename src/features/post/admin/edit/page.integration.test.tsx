@@ -1,5 +1,5 @@
 import { createAdminListCache } from "@tests/helpers/admin-list-cache";
-import { writePostCreationAttempt } from "./utils/post-draft";
+import { writePostCreationAttempt } from "@/features/post/admin/edit/utils/post-draft";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -11,7 +11,7 @@ import { PostType } from "@/features/post/types/post.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import type { PostDetailResult } from "@/features/post/types/post.read-model";
 import type { PostUpdate } from "@/features/post/types/post.update";
-import type { PostEditorValues } from "./utils/post-draft";
+import type { PostEditorValues } from "@/features/post/admin/edit/utils/post-draft";
 
 const state = vi.hoisted(() => ({
   id: "123456789012345678901234",
@@ -52,7 +52,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
-vi.mock("./components/PostTypeFields", () => ({
+vi.mock("@/features/post/admin/edit/components/PostTypeFields", () => ({
   PostTypeFields: () => {
     const form = useFormContext<PostEditorValues>();
     return (
@@ -81,7 +81,7 @@ vi.mock("./components/PostTypeFields", () => ({
     );
   },
 }));
-vi.mock("./components/PostSidebarFields", () => ({
+vi.mock("@/features/post/admin/edit/components/PostSidebarFields", () => ({
   PostSidebarFields: () => null,
 }));
 vi.mock("@/features/media/admin/components/PhotoPicker/index", () => ({
@@ -90,11 +90,11 @@ vi.mock("@/features/media/admin/components/PhotoPicker/index", () => ({
 vi.mock("@/features/media/admin/components/MediaPageShell", () => ({
   MediaPageShell: () => null,
 }));
-vi.mock("../../../category/admin/components/CategoryFormDialog", () => ({
+vi.mock("@/features/category/admin/components/CategoryFormDialog", () => ({
   default: () => null,
 }));
 
-import PostDetail from "./page";
+import PostDetail from "@/features/post/admin/edit/page";
 import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
 
 const published: PostDetailResult = {

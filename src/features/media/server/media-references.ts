@@ -10,7 +10,7 @@ import {
 } from "@/lib/content/image-links";
 import { clientEnv } from "@/env/client";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { assertOrdinaryMediaSchema } from "./media-schema-readiness";
+import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export function managedMediaKey(value: string): string | null {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { NavigationItem } from "./NavigationItem";
+import { NavigationItem } from "@/app/admin/_components/AdminNavigation/NavigationItem";
 import { motion, useReducedMotion } from "motion/react";
 import { clsx } from "cn";
 

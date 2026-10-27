@@ -11,18 +11,18 @@ import {
   getLogger,
   observeExternalServiceOperation,
 } from "@/lib/observability/server";
-import AdminCommentEmailMessage from "./templates/AdminCommentEmailMessage";
-import ReplyCommentEmailMessage from "./templates/ReplyCommentEmailMessage";
-import { CUSTOM_COMMENT_NOTIFICATION_TITLE } from "./comment-notification";
+import AdminCommentEmailMessage from "@/features/comment/notifications/templates/AdminCommentEmailMessage";
+import ReplyCommentEmailMessage from "@/features/comment/notifications/templates/ReplyCommentEmailMessage";
+import { CUSTOM_COMMENT_NOTIFICATION_TITLE } from "@/features/comment/notifications/comment-notification";
 import type {
   CommentNotification,
   CommentNotificationSetting,
-} from "./comment-notification";
+} from "@/features/comment/notifications/comment-notification";
 
 export type {
   CommentNotification,
   CommentNotificationSetting,
-} from "./comment-notification";
+} from "@/features/comment/notifications/comment-notification";
 
 type CommentEmailType = "ADMIN_NOTICE" | "REPLY_NOTICE";
 

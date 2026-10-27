@@ -9,8 +9,8 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import { PageStatus } from "@/features/page/types/page.status";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
-import { toCommentRecord, toPublicCommentSource } from "./comment-dto";
-import { buildPublicCommentTree, toPublicComment } from "./comment-public-dto";
+import { toCommentRecord, toPublicCommentSource } from "@/features/comment/server/comment-dto";
+import { buildPublicCommentTree, toPublicComment } from "@/features/comment/server/comment-public-dto";
 
 import { and, asc, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";

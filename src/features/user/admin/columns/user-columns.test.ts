@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { UserStatus } from "@/features/user/types/user.status";
 import { StatusBadgeTone } from "@/components/StatusBadge";
 
-import { getUserStatusPresentation, userTableColumns } from "./user-columns";
+import { getUserStatusPresentation, userTableColumns } from "@/features/user/admin/columns/user-columns";
 
 describe("user columns", () => {
   it("keeps the visible column order, labels, and sortable timestamps", () => {

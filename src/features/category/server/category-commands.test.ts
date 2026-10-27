@@ -1,5 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import {
+  createCategory,
+  destroyCategories,
+  updateCategory,
+} from "@/features/category/server/category-commands";
+import * as schema from "@/lib/db/schema";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -8,12 +15,6 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import {
-  createCategory,
-  destroyCategories,
-  updateCategory,
-} from "@/features/category/server/category-commands";
-import { EnableStatus } from "@/lib/validation/enable-status";
 
 const base = {
   title: { en: "A", zh: "甲" },
@@ -139,5 +140,35 @@ describe("Category server operations", () => {
       createCategory(asMockDatabase(db), base, cache),
     ).rejects.toThrow("database failed");
     expect(cache.invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("feature persistence contracts", () => {
+  const invalidator = () => ({
+    invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
+  });
+  it("category commands preserve localized writes and deletion", async () => {
+    const db = createMockDb();
+    const row = { id: "category-1", status: EnableStatus.ENABLE };
+    db.limit.mockResolvedValue([]);
+    db.returning.mockResolvedValue([row]);
+    const input = {
+      title: { en: "Category", zh: "分类" },
+      description: { en: "Description", zh: "描述" },
+      path: "category",
+    };
+    await expect(
+      createCategory(asMockDatabase(db), input, invalidator()),
+    ).resolves.toMatchObject({
+      ...row,
+      title: input.title,
+      description: input.description,
+    });
+    await expect(
+      destroyCategories(asMockDatabase(db), [row.id], invalidator()),
+    ).resolves.toMatchObject({ success: true });
+    expect(db.insert).toHaveBeenCalledWith(schema.category);
+    expect(db.insert).toHaveBeenCalledWith(schema.categoryTranslation);
+    expect(db.delete).toHaveBeenCalledWith(schema.category);
   });
 });

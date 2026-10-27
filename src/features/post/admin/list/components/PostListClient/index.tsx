@@ -9,7 +9,7 @@ import {
 import { Pencil, Plus, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { runAdminMutation } from "@/components/admin/lib/action-state";
-import { postListTableColumns } from "../../constants/post-list-table-columns";
+import { postListTableColumns } from "@/features/post/admin/list/constants/post-list-table-columns";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";

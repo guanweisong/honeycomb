@@ -1,7 +1,7 @@
 import { getClientIp } from "@/lib/http/client-ip";
 
-import type { LoginHistoryEvent } from "./login-history-events";
-export type { LoginHistoryEvent } from "./login-history-events";
+import type { LoginHistoryEvent } from "@/features/user/account-security/login-history-events";
+export type { LoginHistoryEvent } from "@/features/user/account-security/login-history-events";
 
 export type LoginHistoryRecordInput = {
   event: LoginHistoryEvent;

@@ -6,8 +6,8 @@ import {
   check,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
 
 /**
  * 媒体文件表 (media)

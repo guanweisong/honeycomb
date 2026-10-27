@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
-import { PageEditorActionButtons } from "./index";
+import { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons/index";
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import type * as schema from "./schema";
+import type * as schema from "@/lib/db/schema";
 
 type RelationTables = Pick<
   typeof schema,

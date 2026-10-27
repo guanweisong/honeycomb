@@ -9,7 +9,7 @@ vi.mock("next/server", () => ({ connection }));
 vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: setting,
 }));
-import { GET } from "./route";
+import { GET } from "@/app/(blog)/[locale]/manifest.webmanifest/route";
 
 const getManifest = (locale: string) =>
   GET(new Request(`http://localhost/${locale}/manifest.webmanifest`), {

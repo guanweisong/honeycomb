@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { Page } from "@playwright/test";
 import { expect, it } from "vitest";
-import { observeSearch } from "./search-diagnostics";
+import { observeSearch } from "@tests/helpers/search-diagnostics";
 
 const query = "确定性浏览器测试内容";
 function request(procedure = "post.search", locale = "zh", keyword = query) {

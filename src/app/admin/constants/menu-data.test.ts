@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Permission, can } from "@/lib/auth/permissions";
 import { UserLevel } from "@/features/user/types/user.level";
 
-import { getMenuForCapabilities, menu } from "./menu-data";
+import { getMenuForCapabilities, menu } from "@/app/admin/constants/menu-data";
 
 function paths(items: ReturnType<typeof getMenuForCapabilities>): string[] {
   return items.flatMap((item) => [item.path, ...paths(item.children ?? [])]);

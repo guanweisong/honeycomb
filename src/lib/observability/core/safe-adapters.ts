@@ -1,5 +1,5 @@
-import type { Logger, Metrics } from "./contracts";
-import { sanitizeContext, sanitizeMetricLabels } from "./sanitize";
+import type { Logger, Metrics } from "@/lib/observability/core/contracts";
+import { sanitizeContext, sanitizeMetricLabels } from "@/lib/observability/core/sanitize";
 
 export function createSafeLogger(logger: Logger): Logger {
   return {

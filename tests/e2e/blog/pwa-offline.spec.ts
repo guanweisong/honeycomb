@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { BLOG_HOME_PATH, FAKE_ID, openBlogHome } from "./helpers";
+import { BLOG_HOME_PATH, FAKE_ID, openBlogHome } from "@tests/e2e/blog/helpers";
 
 test.describe("blog pwa", () => {
   test("@regression manifest link exists", async ({ page }) => {

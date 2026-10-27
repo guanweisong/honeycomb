@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { TEST_IDS } from "@tests/helpers/test-constants";
-import { flattenCategoryHierarchy } from "./tree";
+import { flattenCategoryHierarchy } from "@/features/category/tree";
 
 describe("Tools", () => {
   describe("flattenCategoryHierarchy", () => {

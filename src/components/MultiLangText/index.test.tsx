@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import MultiLangText from "./";
+import MultiLangText from "@/components/MultiLangText";
 
 vi.mock("next/image", () => ({
   default: ({ alt, title }: React.ImgHTMLAttributes<HTMLImageElement>) => (

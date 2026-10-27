@@ -1,5 +1,10 @@
-import { expect, it, vi } from "vitest";
+import { listMenus } from "@/features/menu/server/menu-queries";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import * as schema from "@/lib/db/schema";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -8,8 +13,6 @@ vi.mock("@/lib/observability/server", () => ({
     operation: () => unknown,
   ) => operation(),
 }));
-import { MenuType } from "@/features/menu/types/menu.type";
-import { listMenus } from "@/features/menu/server/menu-queries";
 
 it("groups each translation once while preserving title and branch semantics", async () => {
   const db = createMockDb();
@@ -54,4 +57,48 @@ it("groups each translation once while preserving title and branch semantics", a
   expect(result.list[0]?.title).toEqual({ en: "Page 0", zh: "页面 0" });
   expect(result.list[79]?.title).toEqual({ en: "Page 79", zh: "页面 79" });
   expect(reads).toBeLessThanOrEqual(160 * 2);
+});
+
+describe("required persistence results", () => {
+  function authorize(db: ReturnType<typeof createMockDb>) {
+    db.from.mockImplementation((table: object) => {
+      if (table === schema.user) {
+        const actor = createMockDb();
+        actor.limit.mockResolvedValue([
+          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
+        ]);
+        return Object.assign(Promise.resolve([]), actor);
+      }
+      if (
+        table === schema.postTranslation ||
+        table === schema.settingTranslation ||
+        table === schema.pageTranslation
+      ) {
+        const read = createMockDb();
+        read.where.mockResolvedValue([]);
+        return read;
+      }
+      return db;
+    });
+  }
+  it("rejects an unknown menu type before constructing navigation", async () => {
+    const db = createMockDb();
+    authorize(db);
+    db.query.menu.findMany.mockResolvedValue([
+      {
+        id: "menu",
+        parent: null,
+        power: 0,
+        type: "UNKNOWN",
+        categoryId: null,
+        pageId: null,
+        customId: null,
+        createdAt: null,
+        updatedAt: null,
+      },
+    ]);
+    await expect(listMenus(asMockDatabase(db), "ALL")).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+    });
+  });
 });

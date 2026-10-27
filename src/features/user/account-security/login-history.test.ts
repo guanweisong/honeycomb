@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryEvent,
-} from "./login-history";
+} from "@/features/user/account-security/login-history";
 
 describe("login history", () => {
   it("builds a redacted history record from request metadata", () => {

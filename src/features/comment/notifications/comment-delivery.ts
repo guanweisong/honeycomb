@@ -1,6 +1,6 @@
-import type { CommentNotificationRepository } from "../server/comment-notification-repository";
+import type { CommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 import "server-only";
-import { sendCommentEmail } from "./comment-email";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 import { LogEvent } from "@/lib/observability/core/names";
 import { getLogger } from "@/lib/observability/server";
 

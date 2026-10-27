@@ -2,7 +2,7 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useRowSelection } from "./useRowSelection";
+import { useRowSelection } from "@/components/DataTable/useRowSelection";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

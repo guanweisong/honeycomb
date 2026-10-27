@@ -1,11 +1,11 @@
-import type { MetricLabels, Metrics } from "../core/contracts";
-import type { MetricName } from "../core/names";
-import { createSafeMetrics } from "../core/safe-adapters";
-import { sanitizeMetricLabels } from "../core/sanitize";
+import type { MetricLabels, Metrics } from "@/lib/observability/core/contracts";
+import type { MetricName } from "@/lib/observability/core/names";
+import { createSafeMetrics } from "@/lib/observability/core/safe-adapters";
+import { sanitizeMetricLabels } from "@/lib/observability/core/sanitize";
 import {
   getRuntimeEnvironment,
   type ConsoleAdapterOptions,
-} from "./console-options";
+} from "@/lib/observability/adapters/console-options";
 
 export function createConsoleMetrics(
   options: ConsoleAdapterOptions = {},

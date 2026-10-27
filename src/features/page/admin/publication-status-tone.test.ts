@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { StatusBadgeTone } from "@/components/StatusBadge";
 import { PageStatus } from "@/features/page/types/page.status";
-import { publicationStatusToneMap } from "./publication-status-tone";
+import { publicationStatusToneMap } from "@/features/page/admin/publication-status-tone";
 
 it("maps the page publication lifecycle to badge tones", () => {
   expect(publicationStatusToneMap).toEqual({

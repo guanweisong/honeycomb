@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { PageStatus } from "@/features/page/types/page.status";
-import { submitPageEditor } from "./page-editor-actions";
+import { submitPageEditor } from "@/features/page/admin/edit/page-editor-actions";
 
 it("does not submit incomplete create input to the mutation", async () => {
   const create = vi.fn().mockResolvedValue({ id: "unexpected" });

@@ -6,15 +6,15 @@ import { configureObservability } from "@/lib/observability/server";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { createComment } from "../server/comment-commands";
-import { notifyCommentCreated } from "./comment-delivery";
-import { sendCommentEmail } from "./comment-email";
+import { createComment } from "@/features/comment/server/comment-commands";
+import { notifyCommentCreated } from "@/features/comment/notifications/comment-delivery";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 // Keep the real Resend SDK and its HTTP transport; templates are unrelated to deadlines.
-vi.mock("./templates/AdminCommentEmailMessage", () => ({
+vi.mock("@/features/comment/notifications/templates/AdminCommentEmailMessage", () => ({
   default: () => null,
 }));
-vi.mock("./templates/ReplyCommentEmailMessage", () => ({
+vi.mock("@/features/comment/notifications/templates/ReplyCommentEmailMessage", () => ({
   default: () => null,
 }));
 

@@ -2,7 +2,7 @@ import { act, createRef } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { z } from "zod";
-import { DynamicForm, type DynamicFormRef } from "./index";
+import { DynamicForm, type DynamicFormRef } from "@/components/DynamicForm/index";
 
 it("保留输入类型，提交经过转换的输出并支持局部设置", async () => {
   const schema = z.object({

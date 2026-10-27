@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
-import { PostVersionSchema } from "./post.fields.schema";
+import { PostVersionSchema } from "@/features/post/schemas/post.fields.schema";
 
 export const PostDeleteSchema = z.strictObject({
   items: z
