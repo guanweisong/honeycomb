@@ -139,5 +139,8 @@
     "@esbuild-kit/core-utils": {
       "esbuild": "0.28.2"
     }
+  },
+  "patchedDependencies": {
+    "@date-fns/utc@2.1.1": "patches/@date-fns%2Futc@2.1.1.patch"
   }
 }

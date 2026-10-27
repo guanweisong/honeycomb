@@ -18,18 +18,12 @@ const mockClientIncrementViews = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
 const mockCommentRender = vi.fn();
+const mockGetTranslations = vi.fn();
 let testLocale = "zh";
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => Promise.resolve("zh"),
-  getTranslations: (namespace: "Link" | "PostInfo") =>
-    Promise.resolve(
-      createTranslator({
-        locale: testLocale,
-        messages: testLocale === "en" ? enMessages : zhMessages,
-        namespace,
-      }),
-    ),
+  getTranslations: (...args: unknown[]) => mockGetTranslations(...args),
 }));
 vi.mock("next/navigation", () => ({
   notFound: () => {
@@ -97,6 +91,28 @@ describe("pages detail page", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     testLocale = "zh";
+    mockGetTranslations
+      .mockReset()
+      .mockImplementation(
+        (
+          options:
+            | "Link"
+            | "PostInfo"
+            | { locale: string; namespace: "Link" | "PostInfo" },
+        ) => {
+          const locale =
+            typeof options === "string" ? testLocale : options.locale;
+          const namespace =
+            typeof options === "string" ? options : options.namespace;
+          return Promise.resolve(
+            createTranslator({
+              locale,
+              messages: locale === "en" ? enMessages : zhMessages,
+              namespace,
+            }),
+          );
+        },
+      );
     mockCommentRender.mockReset();
     mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
@@ -120,6 +136,36 @@ describe("pages detail page", () => {
     await act(async () => root.unmount());
     container.remove();
   });
+
+  it.each(["zh", "en"])(
+    "starts both translations together using the %s route locale",
+    async (locale) => {
+      const translation = (key: string) => key;
+      const pending = Promise.withResolvers<typeof translation>();
+      mockGetTranslations.mockReturnValueOnce(pending.promise);
+      const content = Pages({
+        params: Promise.resolve({ id: "333333333333333333333333", locale }),
+        searchParams: Promise.resolve({}),
+      }).props.children[1].props.children;
+      const rendered = content.type(content.props);
+      try {
+        await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
+        expect(mockGetTranslations).toHaveBeenCalledTimes(2);
+        expect(mockGetTranslations).toHaveBeenCalledWith({
+          locale,
+          namespace: "PostInfo",
+        });
+        expect(mockGetTranslations).toHaveBeenCalledWith({
+          locale,
+          namespace: "Link",
+        });
+      } finally {
+        pending.resolve(translation);
+        await act(async () => root.render(await rendered));
+      }
+      expect(container.querySelector("article")).not.toBeNull();
+    },
+  );
 
   it("does not start comments until the page has passed publication validation", async () => {
     let resolveDetail!: (value: null) => void;
