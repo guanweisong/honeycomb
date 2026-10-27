@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
   notFound: () => mockNotFound(),
 }));
 
-import { assertPublishedPage } from "./page.utils";
+import { assertPublishedPage } from "@/app/(blog)/[locale]/pages/[id]/page.utils";
 
 describe("assertPublishedPage", () => {
   it("uses the page status owner rather than post status", () => {

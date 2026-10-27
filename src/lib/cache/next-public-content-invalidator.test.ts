@@ -19,7 +19,7 @@ vi.mock("@/lib/observability/server", () => ({
   getMetrics: () => ({ increment: mockMetricIncrement }),
 }));
 
-import { publicContentInvalidator } from "./next-public-content-invalidator";
+import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 
 import { getImplicitTags } from "next/dist/server/lib/implicit-tags";
 import { NEXT_CACHE_IMPLICIT_TAG_ID } from "next/dist/lib/constants";

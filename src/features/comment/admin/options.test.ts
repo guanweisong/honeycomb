@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { CommentStatusName } from "@/features/comment/types/comment.status-name";
-import { commentStatusOptions } from "./options";
+import { commentStatusOptions } from "@/features/comment/admin/options";
 
 describe("comment display options", () => {
   it("preserves comment labels and option order, including the blocked label", () => {

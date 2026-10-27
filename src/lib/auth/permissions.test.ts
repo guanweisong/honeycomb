@@ -9,7 +9,7 @@ import {
   Permission,
   ROLE_PERMISSIONS,
   can,
-} from "./permissions";
+} from "@/lib/auth/permissions";
 
 const expectedPermissions = [
   "category:read-all",

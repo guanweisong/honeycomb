@@ -2,9 +2,9 @@
 
 import { describe, expect, it } from "vitest";
 import { DrizzleQueryError } from "drizzle-orm/errors";
-import { serializeError } from "./sanitize";
-import { createSafeLogger } from "./safe-adapters";
-import { LogEvent } from "./names";
+import { serializeError } from "@/lib/observability/core/sanitize";
+import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
+import { LogEvent } from "@/lib/observability/core/names";
 
 const privateBinding = "synthetic-private-draft\nwith another line";
 const databaseError = () =>

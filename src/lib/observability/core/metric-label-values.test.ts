@@ -5,7 +5,7 @@ import {
   externalServices,
   externalServiceOperations,
   metricLabelValueCatalog,
-} from "./metric-label-values";
+} from "@/lib/observability/core/metric-label-values";
 
 describe("metric operation catalogs", () => {
   it("retains the complete operation allowlist and its insertion order", () => {

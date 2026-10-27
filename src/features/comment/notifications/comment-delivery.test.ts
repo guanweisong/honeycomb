@@ -1,16 +1,16 @@
-import type { CommentNotificationRepository } from "../server/comment-notification-repository";
+import type { CommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server";
 import { CommentStatus } from "@/features/comment/types/comment.status";
-import { sendCommentEmail } from "./comment-email";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 import {
   logCommentNotificationFailure,
   notifyCommentCreated,
-} from "./comment-delivery";
+} from "@/features/comment/notifications/comment-delivery";
 
-vi.mock("./comment-email", () => ({
+vi.mock("@/features/comment/notifications/comment-email", () => ({
   sendCommentEmail: vi.fn(),
 }));
 

@@ -79,7 +79,7 @@ vi.mock("@/components/SectionCard", () => ({
     React.createElement("section", { "data-testid": "card" }, title, children),
 }));
 
-import CommentClient from "./index";
+import CommentClient from "@/features/comment/public/components/CommentClient/index";
 
 const commentPromise = Promise.resolve({ total: 0, list: [] });
 

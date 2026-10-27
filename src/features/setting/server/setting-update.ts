@@ -7,12 +7,12 @@ import { observeDbOperation } from "@/lib/observability/server";
 import {
   toSettingRecord,
   patchSettingTranslationRows,
-} from "./setting-translations";
-import { SettingPatchSchema } from "../schemas/setting.patch.schema";
+} from "@/features/setting/server/setting-translations";
+import { SettingPatchSchema } from "@/features/setting/schemas/setting.patch.schema";
 import { can, Permission } from "@/lib/auth/permissions";
 import { UserStatus } from "@/features/user/types/user.status";
 import { ApplicationError } from "@/lib/errors/application-error";
-import type { SettingUpdate } from "../types/setting.patch";
+import type { SettingUpdate } from "@/features/setting/types/setting.patch";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 
 const busyMessage = "保存暂时繁忙，请核对最新版本后重试";

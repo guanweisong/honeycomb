@@ -11,11 +11,11 @@ import type { MenuType } from "@/features/menu/types/menu.type";
 import type {
   CommentTreeViewModel,
   CommentTreeViewResponse,
-} from "../../../presentation/comment-view-model";
-import { CommentForm } from "../CommentForm";
-import { CommentTree } from "../CommentTree";
-import { useCommentIdentity } from "../hooks/use-comment-identity";
-import { useCommentSubmission } from "../hooks/use-comment-submission";
+} from "@/features/comment/presentation/comment-view-model";
+import { CommentForm } from "@/features/comment/public/components/CommentForm";
+import { CommentTree } from "@/features/comment/public/components/CommentTree";
+import { useCommentIdentity } from "@/features/comment/public/components/hooks/use-comment-identity";
+import { useCommentSubmission } from "@/features/comment/public/components/hooks/use-comment-submission";
 
 /** 评论交互入口，消费详情页与计数共用的请求级查询。 */
 export interface CommentClientProps {

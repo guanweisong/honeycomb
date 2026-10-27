@@ -20,7 +20,7 @@ vi.mock("@/components/DynamicForm/DynamicField", () => ({
 
 import { PageEditorForm } from ".";
 import { useForm } from "react-hook-form";
-import type { PageEditorValues } from "../../page-draft";
+import type { PageEditorValues } from "@/features/page/admin/edit/page-draft";
 function Harness() {
   return <PageEditorForm form={useForm<PageEditorValues>()} />;
 }

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { createSentryLogger } from "./sentry";
-import { LogEvent } from "../core/names";
+import { createSentryLogger } from "@/lib/observability/adapters/sentry";
+import { LogEvent } from "@/lib/observability/core/names";
 const sink = () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() });
 describe("Sentry logger", () => {
   it.each(["info", "warn", "error"] as const)(

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { I18nSchema, NullableI18nSchema } from "./i18n";
+import { I18nSchema, NullableI18nSchema } from "@/lib/i18n/i18n";
 import {
   PartialLocalizedTextSchema,
   NullableLocalizedInputSchema,

@@ -2,7 +2,7 @@ import "server-only";
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import type { RequestContext } from "./request-context";
+import type { RequestContext } from "@/lib/observability/server/request-context";
 
 const requestContextStorage = new AsyncLocalStorage<RequestContext>();
 

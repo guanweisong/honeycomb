@@ -3,7 +3,7 @@ import type { CommentRecord } from "@/features/comment/types/comment.read-model"
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
 import { describe, expect, it } from "vitest";
-import { buildPublicCommentTree, toPublicComment } from "./comment-public-dto";
+import { buildPublicCommentTree, toPublicComment } from "@/features/comment/server/comment-public-dto";
 
 function comment(id: string, parentId: string | null): CommentRecord {
   return {

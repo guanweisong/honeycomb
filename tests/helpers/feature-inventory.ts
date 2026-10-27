@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { sourceFiles } from "./source-files";
+import { sourceFiles } from "@tests/helpers/source-files";
 
 /** Discover responsibilities that exist; a feature need not implement every role. */
 export function featureInventory(root: string) {

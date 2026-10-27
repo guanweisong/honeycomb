@@ -3,9 +3,9 @@ import "server-only";
 import type {
   externalServices,
   externalServiceOperations,
-} from "../core/metric-label-values";
-import { MetricName } from "../core/names";
-import { getMetrics } from "./registry";
+} from "@/lib/observability/core/metric-label-values";
+import { MetricName } from "@/lib/observability/core/names";
+import { getMetrics } from "@/lib/observability/server/registry";
 
 export type ExternalService = (typeof externalServices)[number];
 export type ExternalServiceOperation =

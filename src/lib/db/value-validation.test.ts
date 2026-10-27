@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { parseEnumValue, requireWriteResult } from "./value-validation";
+import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
 
 describe("持久化返回契约", () => {
   it("保留合法枚举并拒绝未知值和空值", () => {

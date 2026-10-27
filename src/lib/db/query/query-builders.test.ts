@@ -3,7 +3,7 @@
 import type { SQL } from "drizzle-orm";
 import { sqliteTable, SQLiteSyncDialect, text } from "drizzle-orm/sqlite-core";
 import { describe, it, expect } from "vitest";
-import { buildDrizzleWhere, buildDrizzleOrderBy } from "./query-builders";
+import { buildDrizzleWhere, buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
 
 const table = sqliteTable("fixtures", {
   name: text("name"),

@@ -8,9 +8,9 @@ import {
   foreignKey,
   primaryKey,
 } from "drizzle-orm/sqlite-core";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 export const category = sqliteTable(
   "category",

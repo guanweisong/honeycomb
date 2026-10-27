@@ -62,7 +62,7 @@ describe("shared helper ownership", () => {
     ).toBe(true);
     const path = "src/app/admin/_components/AdminNavigation/NavigationItem.tsx";
     expect(moduleDependencies(read(path), path)).toContainEqual({
-      specifier: "./index",
+      specifier: "@/app/admin/_components/AdminNavigation/index",
       typeOnly: true,
     });
   });

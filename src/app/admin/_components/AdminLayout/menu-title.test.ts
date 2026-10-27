@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findMenuTitle } from "./menu-title";
+import { findMenuTitle } from "@/app/admin/_components/AdminLayout/menu-title";
 
 const menu = [
   {

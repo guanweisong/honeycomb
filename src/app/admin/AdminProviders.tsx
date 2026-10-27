@@ -1,10 +1,10 @@
 "use client";
 
 import { trpc, trpcClient } from "@/lib/trpc/client/trpc";
-import { createAdminQueryClient } from "./lib/admin-query-client";
+import { createAdminQueryClient } from "@/app/admin/lib/admin-query-client";
 import { CurrentUserProvider } from "@/features/user/admin/use-current-user";
 import { SiteSettingProvider } from "@/features/setting/admin/use-site-setting";
-import type { AdminUser } from "./lib/admin-auth";
+import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React from "react";

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { FAKE_ID } from "./helpers";
+import { FAKE_ID } from "@tests/e2e/blog/helpers";
 
 test.describe("blog empty state", () => {
   test("@regression fake tag/author pages should render no data page", async ({

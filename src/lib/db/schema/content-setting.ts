@@ -1,4 +1,4 @@
-import { enumCheck } from "../constraint-helpers";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 import {
   sqliteTable,
@@ -9,8 +9,8 @@ import {
   primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
 
 /**
  * 网站设置表 (setting)

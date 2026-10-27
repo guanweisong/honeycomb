@@ -6,7 +6,7 @@ import { MenuType } from "@/features/menu/types/menu.type";
 import type { MenuInput } from "@/features/menu/types/menu.write";
 import type { MenuItem } from "@/features/menu/types/menu.list";
 
-import { MenuTypeName } from "../types/menu.type-name";
+import { MenuTypeName } from "@/features/menu/types/menu.type-name";
 
 export type MenuEntityTree = Omit<MenuItem, "title"> & {
   title?: Exclude<MenuItem["title"], undefined> | string;

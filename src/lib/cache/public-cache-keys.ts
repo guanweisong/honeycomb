@@ -1,4 +1,4 @@
-import { CacheNamespace } from "./cache-namespaces";
+import { CacheNamespace } from "@/lib/cache/cache-namespaces";
 
 export const POST_CACHE_NAMESPACE = CacheNamespace.postIndex;
 export const POST_CACHE_VERSION_KEY = "cache:post:index:version";

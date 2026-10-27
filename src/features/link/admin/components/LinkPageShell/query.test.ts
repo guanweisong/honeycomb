@@ -54,8 +54,8 @@ vi.mock("@/components/DynamicForm", () => ({
     return null;
   },
 }));
-vi.mock("../LinkFormDialog", () => ({ LinkFormDialog: () => null }));
-import { LinkPageShell } from "./index";
+vi.mock("@/features/link/admin/components/LinkFormDialog", () => ({ LinkFormDialog: () => null }));
+import { LinkPageShell } from "@/features/link/admin/components/LinkPageShell/index";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("link query state", () => {

@@ -7,7 +7,7 @@ import {
   managedMediaKey,
   assertMediaReferencesExist,
   findKnownMediaReferences,
-} from "./media-references";
+} from "@/features/media/server/media-references";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import * as schema from "@/lib/db/schema";
 it("recognizes only exact managed origin and path and ignores query/fragment", () => {

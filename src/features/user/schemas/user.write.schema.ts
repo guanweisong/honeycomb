@@ -1,6 +1,6 @@
 import { normalizeEmail } from "@/lib/auth/email-policy";
-import { UserLevel } from "../types/user.level";
-import { UserStatus } from "../types/user.status";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { hasUpdateFields, requiredString } from "@/lib/validation/validation";
 import { CredentialPasswordSchema } from "@/lib/auth/password-policy";

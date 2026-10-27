@@ -1,4 +1,4 @@
-import type { CommentStatus } from "./comment.status";
+import type { CommentStatus } from "@/features/comment/types/comment.status";
 import type { MultiLang } from "@/lib/i18n/multi-lang";
 
 export interface CommentRecord {

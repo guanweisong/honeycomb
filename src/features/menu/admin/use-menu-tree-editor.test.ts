@@ -2,12 +2,12 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { useMenuTreeEditor, type MenuTreeEditor } from "./use-menu-tree-editor";
+import { useMenuTreeEditor, type MenuTreeEditor } from "@/features/menu/admin/use-menu-tree-editor";
 import type {
   CheckedMenuData,
   MenuEntityTree,
   MenuSelectableItem,
-} from "./menu-transforms";
+} from "@/features/menu/admin/menu-transforms";
 
 const createdAt = "2026-01-02T03:04:05.000Z";
 const categoryMenu = {

@@ -1,24 +1,24 @@
 "use client";
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
-import type { AdminNavigationItem } from "../AdminNavigation";
+import type { AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
 import type { CurrentUser } from "@/features/user/types/user.current";
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "cn";
 import { usePathname } from "next/navigation";
 import {
   AdminLayoutActionsContext,
   AdminLayoutPageTitleContext,
-} from "../../../../components/admin/layout-context";
-import { AdminSidebar } from "./AdminSidebar";
+} from "@/components/admin/layout-context";
+import { AdminSidebar } from "@/app/admin/_components/AdminLayout/AdminSidebar";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
-import { findMenuTitle } from "./menu-title";
+import { findMenuTitle } from "@/app/admin/_components/AdminLayout/menu-title";
 
 export interface AdminLayoutProps {
   children: ReactNode;

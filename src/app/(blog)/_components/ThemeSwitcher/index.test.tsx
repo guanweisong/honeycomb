@@ -24,7 +24,7 @@ vi.mock("next-themes", () => ({
   }),
 }));
 
-import { ThemeSwitcher } from "./index";
+import { ThemeSwitcher } from "@/app/(blog)/_components/ThemeSwitcher/index";
 
 describe("ThemeSwitcher", () => {
   let container: HTMLDivElement;

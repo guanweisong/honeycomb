@@ -5,7 +5,7 @@ import type {
 } from "serwist";
 import { Serwist, Strategy } from "serwist";
 import { createStaticOfflineDocument } from "@/lib/pwa/offline-document";
-import { runtimeCache } from "./service-worker-runtime-cache";
+import { runtimeCache } from "@/app/_pwa/service-worker-runtime-cache";
 
 declare const self: WorkerGlobalScope;
 

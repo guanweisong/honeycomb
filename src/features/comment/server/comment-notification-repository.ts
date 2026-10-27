@@ -3,7 +3,7 @@ import type {
   NotificationSetting,
 } from "@/features/comment/types/comment.notification";
 import "server-only";
-import { toCommentRecord } from "./comment-dto";
+import { toCommentRecord } from "@/features/comment/server/comment-dto";
 
 import { eq, getTableColumns } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";

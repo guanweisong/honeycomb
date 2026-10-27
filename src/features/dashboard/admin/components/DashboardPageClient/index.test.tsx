@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({ query: vi.fn(), refetch: vi.fn() }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: { statistic: { index: { useQuery: mocks.query } } },
 }));
-vi.mock("../CustomPie", () => ({
+vi.mock("@/features/dashboard/admin/components/CustomPie", () => ({
   default: ({
     title,
     loading,
@@ -38,7 +38,7 @@ vi.mock("../CustomPie", () => ({
       JSON.stringify(data),
     ),
 }));
-import DashboardPageClient from "./index";
+import DashboardPageClient from "@/features/dashboard/admin/components/DashboardPageClient/index";
 
 describe("DashboardPageClient query feedback", () => {
   let container: HTMLDivElement;

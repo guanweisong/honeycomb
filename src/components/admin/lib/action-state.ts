@@ -1,4 +1,4 @@
-import { ModalType } from "../types/modal-type";
+import { ModalType } from "@/components/admin/types/modal-type";
 
 export type AdminDialogState<Record> = {
   type?: ModalType;

@@ -57,8 +57,8 @@ vi.mock("@/app/(blog)/[locale]/list/[...slug]/_components/NoData", () => ({
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));
 
-import List, { generateMetadata } from "./page";
-import { resolveListContext } from "./page.utils";
+import List, { generateMetadata } from "@/app/(blog)/[locale]/list/[...slug]/page";
+import { resolveListContext } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 import { MenuType } from "@/features/menu/types/menu.type";

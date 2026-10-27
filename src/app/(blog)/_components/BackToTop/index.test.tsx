@@ -10,7 +10,7 @@ vi.mock("@/lib/hooks/use-scrolled-past", () => ({
   useScrolledPast: (threshold: number) => (scrollTop ?? 0) > threshold,
 }));
 
-import BackToTop from "./";
+import BackToTop from "@/app/(blog)/_components/BackToTop";
 
 describe("BackToTop", () => {
   let container: HTMLDivElement;

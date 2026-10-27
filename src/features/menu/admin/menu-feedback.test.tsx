@@ -21,7 +21,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 }));
 
 import { MenuType } from "@/features/menu/types/menu.type";
-import { useMenuActions } from "./menu-actions";
+import { useMenuActions } from "@/features/menu/admin/menu-actions";
 
 let actions: ReturnType<typeof useMenuActions> | undefined;
 function Harness() {

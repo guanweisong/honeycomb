@@ -1,7 +1,7 @@
 import type { MenuType } from "@/features/menu/types/menu.type";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { z } from "zod";
-import type { CommentListQuerySchema } from "../schemas/comment.list-query.schema";
+import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list-query.schema";
 
 type CommentListFilters = Omit<
   z.output<typeof CommentListQuerySchema>,

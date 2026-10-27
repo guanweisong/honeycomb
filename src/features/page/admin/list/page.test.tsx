@@ -61,7 +61,7 @@ vi.mock("@/components/Dialog", () => ({
   ),
 }));
 
-import Page from "./page";
+import Page from "@/features/page/admin/list/page";
 
 describe("page deletion public sync feedback", () => {
   let container: HTMLDivElement;

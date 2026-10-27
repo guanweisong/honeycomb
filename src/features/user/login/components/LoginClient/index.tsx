@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth/client";
 import Script from "next/script";
-import { providerIcons } from "../../provider-icons";
-import { LoginSchema } from "../../login.schema.ts";
+import { providerIcons } from "@/features/user/login/provider-icons";
+import { LoginSchema } from "@/features/user/login/login.schema.ts";
 import type { LoginValues } from "@/features/user/types/user.login";
-import { normalizeAdminCallback } from "../../safe-admin-callback";
+import { normalizeAdminCallback } from "@/features/user/login/safe-admin-callback";
 import type { SettingRecord } from "@/features/setting/types/setting.record";
 import type {
   SocialProviderId,

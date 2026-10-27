@@ -12,7 +12,7 @@ import {
   I18N_INPUT,
   LIST_INPUT,
   TEST_ID,
-} from "./capability-procedure-matrix-fixtures";
+} from "@tests/helpers/capability-procedure-matrix-fixtures";
 
 type CapabilityMatrixEntry = readonly [
   path: string,

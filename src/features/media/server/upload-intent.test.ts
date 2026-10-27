@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from "vitest";
-import * as intents from "./upload-intent";
+import * as intents from "@/features/media/server/upload-intent";
 const file = {
   name: "a.png",
   type: "image/png" as const,

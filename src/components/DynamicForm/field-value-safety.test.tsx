@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { FieldControl } from "./FieldControl";
+import { FieldControl } from "@/components/DynamicForm/FieldControl";
 
 it("does not display an object as a text field value", () => {
   const html = renderToStaticMarkup(

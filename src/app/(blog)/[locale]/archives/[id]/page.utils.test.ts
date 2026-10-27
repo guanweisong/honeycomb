@@ -15,7 +15,7 @@ import {
   createPostJsonLd,
   getPostTitle,
   handlePostDetailError,
-} from "./page.utils";
+} from "@/app/(blog)/[locale]/archives/[id]/page.utils";
 
 describe("archives page utils", () => {
   beforeEach(() => {

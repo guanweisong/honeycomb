@@ -22,16 +22,16 @@ import {
   useAdminLayoutPageTitle,
 } from "@/components/admin/layout-context";
 import { EditorLoadError } from "@/components/admin/editor-load-error";
-import { PageEditorActionButtons } from "../PageEditorActionButtons";
-import { PageEditorForm } from "../PageEditorForm";
-import { usePageEditorActions } from "../../page-editor-actions";
-import { usePageCreationResult } from "../../use-page-creation-result";
+import { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons";
+import { PageEditorForm } from "@/features/page/admin/edit/components/PageEditorForm";
+import { usePageEditorActions } from "@/features/page/admin/edit/page-editor-actions";
+import { usePageCreationResult } from "@/features/page/admin/edit/use-page-creation-result";
 import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   getPageEditorId,
   toPageEditorFormValues,
-} from "../../transforms/page-editor-transforms";
+} from "@/features/page/admin/edit/transforms/page-editor-transforms";
 import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
 import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
@@ -45,7 +45,7 @@ import {
   writePageCreationAttempt,
   clearPageCreationAttempt,
   preservePageDraft,
-} from "../../page-draft";
+} from "@/features/page/admin/edit/page-draft";
 
 export function PageEditorPage() {
   const id = getPageEditorId(useSearchParams());

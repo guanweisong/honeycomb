@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { isPublicRuntimeRequest } from "./service-worker-cache-rules";
+import { isPublicRuntimeRequest } from "@/app/_pwa/service-worker-cache-rules";
 
 function request(pathname: string, sameOrigin = true) {
   return {

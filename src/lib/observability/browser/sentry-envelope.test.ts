@@ -42,7 +42,7 @@ afterEach(async () => {
 it("sends only redacted browser exceptions for global errors, rejections and manual boundary captures", async () => {
   vi.stubEnv("NODE_ENV", "production");
   vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "https://public@example.invalid/1");
-  await import("../../../instrumentation-client");
+  await import("@/instrumentation-client");
   expect(
     Sentry.getClient()
       ?.getOptions()

@@ -6,7 +6,7 @@ import {
   getTableConfig,
   type SQLiteTable,
 } from "drizzle-orm/sqlite-core";
-import * as schema from "./index";
+import * as schema from "@/lib/db/schema/index";
 
 type ColumnView = {
   config: {

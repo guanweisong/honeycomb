@@ -3,7 +3,7 @@ import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
-import { createCommentNotificationRepository } from "./comment-notification-repository";
+import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

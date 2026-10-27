@@ -7,11 +7,11 @@ import {
   check,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { post } from "./content-post";
-import { page } from "./content-page";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { post } from "@/lib/db/schema/content-post";
+import { page } from "@/lib/db/schema/content-page";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 评论表 (comment)

@@ -18,7 +18,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 vi.mock("@/components/editor", () => ({ default: () => null }));
-import SettingClient from "./index";
+import SettingClient from "@/features/setting/admin/components/SettingClient/index";
 const initial: SettingRecord = {
   id: "111111111111111111111111",
   version: 0,

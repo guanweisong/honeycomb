@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import NotFound from "./not-found";
+import NotFound from "@/app/not-found";
 
 describe("global not-found", () => {
   let root: Root;

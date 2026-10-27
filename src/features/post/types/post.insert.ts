@@ -2,8 +2,8 @@ import type { z } from "zod";
 import type {
   PostFieldsSchema,
   PostRelationPatchSchema,
-} from "../schemas/post.fields.schema";
-import type { PostInsertSchema } from "../schemas/post.insert.schema";
+} from "@/features/post/schemas/post.fields.schema";
+import type { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 
 export type PostFields = z.output<typeof PostFieldsSchema>;
 

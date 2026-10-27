@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import type { SettingViewModel } from "@/features/setting/types/setting.record";
 import { createServerClient } from "@/app/_trpc/server";
-import { getPublicSetting } from "./public-queries";
+import { getPublicSetting } from "@/app/lib/server/public-queries";
 
 const getSiteSettingWithHeaders = cache(
   async (headers?: Headers): Promise<SettingViewModel> => {

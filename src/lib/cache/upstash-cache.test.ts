@@ -28,7 +28,7 @@ const originalEnv = {
 async function loadModule() {
   vi.resetModules();
   const [cache, registry, memory] = await Promise.all([
-    import("./upstash-cache"),
+    import("@/lib/cache/upstash-cache"),
     import("@/lib/observability/server/registry"),
     import("@tests/helpers/memory-observability"),
   ]);

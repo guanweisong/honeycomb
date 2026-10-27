@@ -14,7 +14,7 @@ import {
   type CheckedMenuData,
   type MenuEntityTree,
   type SortableMenuNode,
-} from "./menu-transforms";
+} from "@/features/menu/admin/menu-transforms";
 
 const fingerprint = (rows: MenuEntityTree[]) =>
   JSON.stringify(buildMenuSaveInput(rows));

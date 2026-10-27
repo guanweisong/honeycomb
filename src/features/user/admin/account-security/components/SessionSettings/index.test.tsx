@@ -12,8 +12,8 @@ vi.mock("@/lib/auth/client", () => ({
   authClient: { $fetch: mocks.fetch },
 }));
 
-import SessionSettings from "./index";
-import { formatAccountSecurityDate } from "../account-security-date";
+import SessionSettings from "@/features/user/admin/account-security/components/SessionSettings/index";
+import { formatAccountSecurityDate } from "@/features/user/admin/account-security/components/account-security-date";
 
 describe("SessionSettings", () => {
   let container: HTMLDivElement;

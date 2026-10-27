@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
 
-import PostRedirect from "./(dashboard)/post/page";
-import PageRedirect from "./(dashboard)/page/page";
+import PostRedirect from "@/app/admin/(dashboard)/post/page";
+import PageRedirect from "@/app/admin/(dashboard)/page/page";
 
 beforeEach(() => vi.clearAllMocks());
 

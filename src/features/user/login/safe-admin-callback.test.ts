@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeAdminCallback } from "./safe-admin-callback";
+import { normalizeAdminCallback } from "@/features/user/login/safe-admin-callback";
 
 describe("normalizeAdminCallback", () => {
   it("preserves an absolute admin callback with its query string", () => {

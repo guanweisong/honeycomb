@@ -9,8 +9,8 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { updateUser } from "./user-commands";
-import { createUserRepository } from "./user-repository";
+import { updateUser } from "@/features/user/server/user-commands";
+import { createUserRepository } from "@/features/user/server/user-repository";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

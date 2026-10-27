@@ -55,8 +55,8 @@ vi.mock("@/components/DynamicForm", () => ({
     return null;
   },
 }));
-vi.mock("../UserFormDialog", () => ({ UserFormDialog: () => null }));
-import { UserPageShell } from "./index";
+vi.mock("@/features/user/admin/components/UserFormDialog", () => ({ UserFormDialog: () => null }));
+import { UserPageShell } from "@/features/user/admin/components/UserPageShell/index";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("user query state", () => {

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { expect, it } from "vitest";
 import { Form } from "@/components/ui/form";
 import { PostType } from "@/features/post/types/post.type";
-import { PostTypeFields } from "./index";
+import { PostTypeFields } from "@/features/post/admin/edit/components/PostTypeFields/index";
 
 function QuoteForm() {
   const form = useForm({

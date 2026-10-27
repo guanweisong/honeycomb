@@ -2,7 +2,7 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 describe("Tabs orientation contract", () => {
   let container: HTMLDivElement;
   let root: Root;

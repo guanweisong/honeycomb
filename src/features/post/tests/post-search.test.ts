@@ -12,7 +12,7 @@ import { PostStatus } from "@/features/post/types/post.status";
 import { PostType } from "@/features/post/types/post.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import { createAdminUser, createMockContext } from "@tests/helpers/test-utils";
-import { postRouter } from "../router";
+import { postRouter } from "@/features/post/router";
 
 describe("public post search with real libSQL", () => {
   let directory: string;

@@ -1,8 +1,8 @@
 import React, { act, useLayoutEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { useLocalDraft } from "./use-local-draft";
-import { LocalDraftPrompt } from "./LocalDraftPrompt";
+import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
+import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 
 type Values = { title: { zh: string; en: string }; content: string };
 const initial: Values = { title: { zh: "标题", en: "Title" }, content: "" };

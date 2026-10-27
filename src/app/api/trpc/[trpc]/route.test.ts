@@ -33,7 +33,7 @@ vi.mock("@trpc/server/adapters/fetch", async () => {
   };
 });
 
-import { GET } from "./route";
+import { GET } from "@/app/api/trpc/[trpc]/route";
 
 describe("tRPC route handler", () => {
   beforeEach(() => {

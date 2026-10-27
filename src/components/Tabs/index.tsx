@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "../ui/tabs"; // 请根据实际路径导入
+} from "@/components/ui/tabs"; // 请根据实际路径导入
 
 export interface TabsProps {
   tabs: {

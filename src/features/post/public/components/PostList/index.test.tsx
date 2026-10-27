@@ -77,7 +77,7 @@ vi.mock("next-intl/navigation", () => ({
   }),
 }));
 
-import PostList from "./index";
+import PostList from "@/features/post/public/components/PostList/index";
 import type { PublicPostListItem as PostListViewModel } from "@/features/post/types/post.read-model";
 import { PostType } from "@/features/post/types/post.type";
 

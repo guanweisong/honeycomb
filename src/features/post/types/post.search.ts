@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { PostType } from "./post.type";
-import type { PostSearchInputSchema } from "../schemas/post.search.schema";
+import type { PostType } from "@/features/post/types/post.type";
+import type { PostSearchInputSchema } from "@/features/post/schemas/post.search.schema";
 
 export type PostSearchInput = z.infer<typeof PostSearchInputSchema>;
 

@@ -11,8 +11,8 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
 import type { PageWithRelations as PageViewModel } from "@/features/page/types/page.read-model";
-import type { PageEditorForm } from "../PageEditorForm";
-import type { PageEditorActionButtons } from "../PageEditorActionButtons";
+import type { PageEditorForm } from "@/features/page/admin/edit/components/PageEditorForm";
+import type { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons";
 import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
 
 type EditorDetail = Pick<
@@ -90,17 +90,17 @@ vi.mock("@/components/admin/layout-context", async () => {
   return { ...actual, useAdminLayoutPageTitle: mocks.pageTitle };
 });
 
-vi.mock("../PageEditorForm", () => ({
+vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
   PageEditorForm: ({ form }: ComponentProps<typeof PageEditorForm>) => {
     mocks.form = form;
     return <output>{form.formState.isDirty ? "dirty" : "pristine"}</output>;
   },
 }));
 
-vi.mock("../PageEditorActionButtons", async () => {
+vi.mock("@/features/page/admin/edit/components/PageEditorActionButtons", async () => {
   const actual = await vi.importActual<
-    typeof import("../PageEditorActionButtons")
-  >("../PageEditorActionButtons");
+    typeof import("@/features/page/admin/edit/components/PageEditorActionButtons")
+  >("@/features/page/admin/edit/components/PageEditorActionButtons");
   return {
     PageEditorActionButtons: (
       props: ComponentProps<typeof PageEditorActionButtons>,

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAsDashboardTestUser } from "./admin/auth";
+import { signInAsDashboardTestUser } from "@tests/e2e/admin/auth";
 
 test("@regression private requests stay out of Cache Storage and logout survives back navigation", async ({
   page,

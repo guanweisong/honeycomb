@@ -51,7 +51,7 @@ function track<T>(promise: Promise<T>) {
 
 async function loadCache() {
   const [cache, registry, memory] = await Promise.all([
-    import("./upstash-cache"),
+    import("@/lib/cache/upstash-cache"),
     import("@/lib/observability/server/registry"),
     import("@tests/helpers/memory-observability"),
   ]);
@@ -196,7 +196,7 @@ describe("Upstash cache request deadlines", () => {
   it("continues every invalidation target and reports degraded after bounded retries", async () => {
     const { observed } = await loadCache();
     const { publicContentInvalidator } =
-      await import("./next-public-content-invalidator");
+      await import("@/lib/cache/next-public-content-invalidator");
     const state = track(
       publicContentInvalidator.invalidate({
         refreshPostIndex: true,

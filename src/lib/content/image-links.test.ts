@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, it, expect } from "vitest";
-import { getAllImageLinkFromHtml, getLocalizedImageLinks } from "./image-links";
+import { getAllImageLinkFromHtml, getLocalizedImageLinks } from "@/lib/content/image-links";
 
 describe("image-links", () => {
   it("should return empty array for undefined html", () => {

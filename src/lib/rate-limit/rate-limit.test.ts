@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createApiRatelimit, limitWithTimeout } from "./rate-limit";
+import { createApiRatelimit, limitWithTimeout } from "@/lib/rate-limit/rate-limit";
 
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server/registry";

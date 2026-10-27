@@ -1,8 +1,8 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { Permission } from "./permissions";
-import { authorize } from "./authorize";
+import { Permission } from "@/lib/auth/permissions";
+import { authorize } from "@/lib/auth/authorize";
 
 describe("统一授权服务", () => {
   it("根据 capability 所需权限判断角色", () => {

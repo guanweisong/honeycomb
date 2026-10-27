@@ -16,7 +16,7 @@ vi.mock("@/features/user/server/user-repository", () => ({
   createUserRepository: vi.fn(() => ({})),
 }));
 
-import { getAdminUser } from "./admin-auth";
+import { getAdminUser } from "@/app/admin/lib/admin-auth";
 
 describe("getAdminUser", () => {
   it("keeps database access behind the user feature boundary", () => {

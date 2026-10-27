@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createTRPCRouter } from "../../lib/trpc/core";
+import { createTRPCRouter } from "@/lib/trpc/core";
 import { linkRouter } from "@/features/link/router";
 import { userRouter } from "@/features/user/router";
 import { categoryRouter } from "@/features/category/router";

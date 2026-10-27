@@ -24,7 +24,7 @@ describe("database initialization", () => {
   });
 
   it("lazily creates and reuses one database instance", async () => {
-    const { getDb } = await import("./db");
+    const { getDb } = await import("@/lib/db/db");
 
     const first = getDb();
     const second = getDb();

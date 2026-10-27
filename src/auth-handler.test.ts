@@ -29,7 +29,7 @@ describe("auth handler security boundary", () => {
   });
 
   it("returns 404 for Better Auth's disabled generic user update route", async () => {
-    const { auth } = await import("./auth");
+    const { auth } = await import("@/auth");
     const response = await auth.handler(
       new Request("http://localhost:3000/api/auth/update-user", {
         method: "POST",
@@ -47,7 +47,7 @@ describe("auth handler security boundary", () => {
   ])(
     "rejects %s password sign-in without CAPTCHA at the real handler",
     async (path, body) => {
-      const { auth } = await import("./auth");
+      const { auth } = await import("@/auth");
       const response = await auth.handler(
         new Request(`http://localhost:3000/api/auth/sign-in/${path}`, {
           method: "POST",

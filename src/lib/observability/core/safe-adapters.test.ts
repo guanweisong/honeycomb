@@ -2,9 +2,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { Logger, Metrics } from "./contracts";
-import { LogEvent, MetricName } from "./names";
-import { createSafeLogger, createSafeMetrics } from "./safe-adapters";
+import type { Logger, Metrics } from "@/lib/observability/core/contracts";
+import { LogEvent, MetricName } from "@/lib/observability/core/names";
+import { createSafeLogger, createSafeMetrics } from "@/lib/observability/core/safe-adapters";
 
 describe("safe observability adapters", () => {
   it("retains the bounded menu-options procedure label", () => {

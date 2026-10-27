@@ -8,7 +8,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { loadPostRelations } from "./post-relations";
+import { loadPostRelations } from "@/features/post/server/post-relations";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: vi.fn((_name, _operation, callback) => callback()),

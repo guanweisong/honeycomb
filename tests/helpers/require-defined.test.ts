@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { requireDefined } from "./require-defined";
+import { requireDefined } from "@tests/helpers/require-defined";
 
 describe("requireDefined", () => {
   it("preserves present values, including falsy ones", () => {

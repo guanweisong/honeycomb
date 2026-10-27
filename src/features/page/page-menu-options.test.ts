@@ -10,7 +10,7 @@ vi.mock("@/features/page/server/page-queries", () => ({
   listPages: vi.fn(),
   getPage: vi.fn(),
 }));
-import { pageRouter } from "./router";
+import { pageRouter } from "@/features/page/router";
 const db = createMockDb();
 beforeEach(() => vi.clearAllMocks());
 it.each(["menuOptions", "adminIndex"] as const)(

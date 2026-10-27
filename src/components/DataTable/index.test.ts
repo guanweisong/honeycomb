@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-vi.mock("../MultiSelect", async () => {
+vi.mock("@/components/MultiSelect", async () => {
   const { cloneElement } = await import("react");
 
   return {
@@ -35,7 +35,7 @@ vi.mock("../MultiSelect", async () => {
   };
 });
 
-import { DataTable } from "./index";
+import { DataTable } from "@/components/DataTable/index";
 
 type Person = {
   id: string;

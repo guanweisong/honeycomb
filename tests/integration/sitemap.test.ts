@@ -57,8 +57,8 @@ vi.mock("@/env/server", () => ({
   getServerEnv: getServerEnvMock,
 }));
 
-import * as sitemapIndexRoute from "../../src/app/sitemap.xml/route";
-import * as sitemapShardRoute from "../../src/app/sitemaps/[id]/route";
+import * as sitemapIndexRoute from "@/app/sitemap.xml/route";
+import * as sitemapShardRoute from "@/app/sitemaps/[id]/route";
 import { getCachedSitemapShard } from "@/app/lib/server/sitemap-data";
 
 const client = {
@@ -114,8 +114,8 @@ describe("runtime sitemap", () => {
     vi.resetModules();
     process.env.NEXT_PHASE = "phase-production-build";
 
-    const index = await import("../../src/app/sitemap.xml/route");
-    const shard = await import("../../src/app/sitemaps/[id]/route");
+    const index = await import("@/app/sitemap.xml/route");
+    const shard = await import("@/app/sitemaps/[id]/route");
     expect(index).not.toHaveProperty("dynamic");
     expect(shard).not.toHaveProperty("dynamic");
     expect(getServerEnvMock).not.toHaveBeenCalled();

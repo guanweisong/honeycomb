@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { pageListTableColumns } from "./constants/page-list-table-columns";
+import { pageListTableColumns } from "@/features/page/admin/list/constants/page-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";

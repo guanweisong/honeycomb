@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { getPage, listPages } from "./page-queries";
+import { getPage, listPages } from "@/features/page/server/page-queries";
 import { PageTemplate } from "@/features/page/types/page.template";
 import * as schema from "@/lib/db/schema";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";

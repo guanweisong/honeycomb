@@ -1,11 +1,11 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import PasskeySettings from "../PasskeySettings";
-import PasswordSettings from "../PasswordSettings";
-import SessionSettings from "../SessionSettings";
-import LinkedAccountsSettings from "../LinkedAccountsSettings";
-import LoginHistorySettings from "../LoginHistorySettings";
+import PasskeySettings from "@/features/user/admin/account-security/components/PasskeySettings";
+import PasswordSettings from "@/features/user/admin/account-security/components/PasswordSettings";
+import SessionSettings from "@/features/user/admin/account-security/components/SessionSettings";
+import LinkedAccountsSettings from "@/features/user/admin/account-security/components/LinkedAccountsSettings";
+import LoginHistorySettings from "@/features/user/admin/account-security/components/LoginHistorySettings";
 import type { SocialProviderId } from "@/lib/auth/providers";
 import { Tabs } from "@/components/Tabs";
 

@@ -1,12 +1,12 @@
 import { flexRender, type Table as TanStackTable } from "@tanstack/react-table";
 import type { CheckedState } from "radix-ui/checkbox";
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
-import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
-import { TableHead, TableHeader, TableRow } from "../ui/table";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "cn";
-import { MultiSelect } from "../MultiSelect";
-import { DataTableColumnMetaSchema } from "./types";
+import { MultiSelect } from "@/components/MultiSelect";
+import { DataTableColumnMetaSchema } from "@/components/DataTable/types";
 
 interface DataTableHeaderProps<TData> {
   table: TanStackTable<TData>;

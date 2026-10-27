@@ -7,7 +7,7 @@ import type {
   DataTableQueryParams,
   UseDataTableStateOptions,
   UseDataTableStateResult,
-} from "./types";
+} from "@/components/DataTable/types";
 
 export function normalizeFilters(
   filters: ColumnFiltersState,

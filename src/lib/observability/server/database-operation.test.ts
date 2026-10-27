@@ -2,9 +2,9 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
-import { MetricName } from "../core/names";
-import { configureObservability } from "./registry";
-import { observeDbOperation } from "./database-operation";
+import { MetricName } from "@/lib/observability/core/names";
+import { configureObservability } from "@/lib/observability/server/registry";
+import { observeDbOperation } from "@/lib/observability/server/database-operation";
 
 describe("observeDbOperation", () => {
   afterEach(() => configureObservability());

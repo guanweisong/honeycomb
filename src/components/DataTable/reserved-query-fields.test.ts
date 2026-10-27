@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { normalizeDataTableParams } from "./useDataTableState";
+import { normalizeDataTableParams } from "@/components/DataTable/useDataTableState";
 
 it("过滤器不能伪造分页或排序字段的类型", () => {
   const result = normalizeDataTableParams({

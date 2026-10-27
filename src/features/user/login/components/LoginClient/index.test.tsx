@@ -69,13 +69,13 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("../../provider-icons", () => ({
+vi.mock("@/features/user/login/provider-icons", () => ({
   providerIcons: {
     github: React.createElement("span", null, "github"),
   },
 }));
 
-import LoginClient from "./index";
+import LoginClient from "@/features/user/login/components/LoginClient/index";
 import { toast } from "sonner";
 
 describe("admin login page", () => {

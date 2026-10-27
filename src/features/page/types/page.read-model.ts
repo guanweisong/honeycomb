@@ -1,5 +1,5 @@
-import type { PageStatus } from "./page.status";
-import type { PageTemplate } from "./page.template";
+import type { PageStatus } from "@/features/page/types/page.status";
+import type { PageTemplate } from "@/features/page/types/page.template";
 import type { I18n } from "@/lib/i18n/i18n";
 import type { MediaRecord } from "@/features/media/types/media.record";
 

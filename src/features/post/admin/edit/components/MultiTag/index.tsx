@@ -20,7 +20,7 @@ import { TagType } from "@/features/tag/types/tag.type";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 import LoadingState from "@/components/LoadingState";
-import { PostTagOption, useMultiTag } from "./use-multi-tag";
+import { PostTagOption, useMultiTag } from "@/features/post/admin/edit/components/MultiTag/use-multi-tag";
 
 /**
  * 多标签选择组件的属性接口。

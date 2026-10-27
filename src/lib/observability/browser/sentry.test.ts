@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeBrowserError } from "./sentry";
+import { sanitizeBrowserError } from "@/lib/observability/browser/sentry";
 
 describe("browser error privacy", () => {
   it("retains error locations but no arbitrary user, request, message or scope data", () => {

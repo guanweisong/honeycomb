@@ -1,5 +1,5 @@
-import type { UserLevel } from "./user.level";
-import type { UserStatus } from "./user.status";
+import type { UserLevel } from "@/features/user/types/user.level";
+import type { UserStatus } from "@/features/user/types/user.status";
 
 export interface UserRecord {
   id: string;

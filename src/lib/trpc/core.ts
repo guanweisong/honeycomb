@@ -10,7 +10,7 @@ import { authorize } from "@/lib/auth/authorize";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { DomainError } from "@/lib/errors/domain-error";
 
-import type { Context } from "./context";
+import type { Context } from "@/lib/trpc/context";
 
 /**
  * 初始化 tRPC 实例。

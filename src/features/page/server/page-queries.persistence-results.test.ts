@@ -3,7 +3,7 @@ import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
-import { getPage } from "./page-queries";
+import { getPage } from "@/features/page/server/page-queries";
 
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

@@ -37,7 +37,7 @@ vi.mock("next/server", async () => {
   };
 });
 
-import { createAdminRequestHeaders, proxy } from "./proxy";
+import { createAdminRequestHeaders, proxy } from "@/proxy";
 
 type ProxyRequestShape = Pick<NextRequest, "headers" | "nextUrl">;
 

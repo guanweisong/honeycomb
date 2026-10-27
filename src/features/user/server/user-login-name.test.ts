@@ -20,8 +20,8 @@ import {
   UserInsertSchema,
   UserUpdateSchema,
 } from "@/features/user/schemas/user.write.schema";
-import { createUser, updateUser } from "./user-commands";
-import { createUserRepository } from "./user-repository";
+import { createUser, updateUser } from "@/features/user/server/user-commands";
+import { createUserRepository } from "@/features/user/server/user-repository";
 
 const authDatabase = vi.hoisted(() => ({ getDb: vi.fn<() => Database>() }));
 vi.mock("@/lib/db/db", () => ({ getDb: authDatabase.getDb }));

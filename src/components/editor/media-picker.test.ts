@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   TiptapMediaPickerProvider,
   type MediaPickerRenderer,
-} from "./media-picker";
-import { ToolbarImageItem } from "./components/ToolbarImageItem";
+} from "@/components/editor/media-picker";
+import { ToolbarImageItem } from "@/components/editor/components/ToolbarImageItem";
 
 describe("Tiptap media picker", () => {
   let container: HTMLDivElement;

@@ -36,7 +36,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () =>
     new URLSearchParams(editorMocks.id ? `id=${editorMocks.id}` : ""),
 }));
-vi.mock("../../page-editor-actions", () => ({
+vi.mock("@/features/page/admin/edit/page-editor-actions", () => ({
   usePageEditorActions: () => ({ loading: false }),
 }));
 vi.mock("@/components/admin/layout-context", () => ({
@@ -52,11 +52,11 @@ vi.mock("@/components/admin/draft/use-local-draft", () => ({
 vi.mock("@/components/admin/draft/LocalDraftPrompt", () => ({
   LocalDraftPrompt: () => null,
 }));
-vi.mock("../PageEditorForm", () => ({ PageEditorForm: () => null }));
-vi.mock("../PageEditorActionButtons", () => ({
+vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({ PageEditorForm: () => null }));
+vi.mock("@/features/page/admin/edit/components/PageEditorActionButtons", () => ({
   PageEditorActionButtons: () => null,
 }));
-import { PageEditorPage } from "./index";
+import { PageEditorPage } from "@/features/page/admin/edit/components/PageEditorPage/index";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

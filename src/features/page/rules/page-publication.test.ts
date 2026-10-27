@@ -5,7 +5,7 @@ import { PageStatus } from "@/features/page/types/page.status";
 import {
   getPagePublishStatus,
   getPageWithdrawStatus,
-} from "./page-publication";
+} from "@/features/page/rules/page-publication";
 
 describe("page publication rules", () => {
   it.each([PageStatus.DRAFT, PageStatus.TO_AUDIT])("publishes %s", (status) => {

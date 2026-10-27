@@ -2,12 +2,12 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../../components/Avatar", () => ({
+vi.mock("@/components/Avatar", () => ({
   default: ({ fallback }: { fallback?: string | null }) =>
     React.createElement("span", { "data-testid": "avatar" }, fallback),
 }));
 
-import { UserDropdown } from "./index";
+import { UserDropdown } from "@/features/user/admin/UserDropdown/index";
 import { UserLevel } from "@/features/user/types/user.level";
 
 describe("UserDropdown", () => {

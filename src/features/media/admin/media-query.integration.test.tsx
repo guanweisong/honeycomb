@@ -24,7 +24,7 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: transport.accountId } }),
 }));
 
-import { useMediaQuery } from "./media-query";
+import { useMediaQuery } from "@/features/media/admin/media-query";
 
 function media(id: string): MediaViewModel {
   return {

@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
-import { useAccountMutation } from "../use-account-mutation";
+import { useAccountMutation } from "@/features/user/admin/account-security/components/use-account-mutation";
 import { authClient } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog } from "@/components/Dialog";
 import { toast } from "sonner";
-import { parseSessionList } from "./session-contract";
-import { formatAccountSecurityDate } from "../account-security-date";
+import { parseSessionList } from "@/features/user/admin/account-security/components/SessionSettings/session-contract";
+import { formatAccountSecurityDate } from "@/features/user/admin/account-security/components/account-security-date";
 
 function getDeviceName(userAgent: string | null | undefined) {
   if (!userAgent) return "未知设备";

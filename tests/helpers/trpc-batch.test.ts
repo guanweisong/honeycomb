@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeTrpcBatchRequest } from "./trpc-batch";
+import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 
 describe("decodeTrpcBatchRequest", () => {
   it("decodes procedure names and transformer json inputs from GET requests", () => {

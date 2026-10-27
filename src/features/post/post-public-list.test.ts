@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { PostType } from "@/features/post/types/post.type";
 import { PostStatus } from "@/features/post/types/post.status";
-import { postRouter } from "./router";
+import { postRouter } from "@/features/post/router";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
 import {
   createAdminUser,

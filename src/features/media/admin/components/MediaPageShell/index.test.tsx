@@ -128,9 +128,9 @@ vi.mock("@/components/Sheet", () => ({
     </div>
   ),
 }));
-import PhotoPickerModal from "../PhotoPicker";
-import { MediaPageShell } from "./index";
-import { useMediaActions } from "../../media-actions";
+import PhotoPickerModal from "@/features/media/admin/components/PhotoPicker";
+import { MediaPageShell } from "@/features/media/admin/components/MediaPageShell/index";
+import { useMediaActions } from "@/features/media/admin/media-actions";
 import { requireDefined } from "@tests/helpers/require-defined";
 
 function createDeferred<T>() {

@@ -6,7 +6,7 @@ import {
 } from "@nosferatu500/react-sortable-tree";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { CheckedMenuData } from "../../menu-transforms";
+import type { CheckedMenuData } from "@/features/menu/admin/menu-transforms";
 import { Save } from "lucide-react";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
 import { useCan, useCurrentUser } from "@/features/user/admin/use-current-user";
@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/Checkbox";
 import { Tabs } from "@/components/Tabs";
 import LoadingState from "@/components/LoadingState";
-import { useMenuActions } from "../../menu-actions";
-import { useMenuQuery } from "../../menu-query";
-import { useMenuTreeEditor } from "../../use-menu-tree-editor";
+import { useMenuActions } from "@/features/menu/admin/menu-actions";
+import { useMenuQuery } from "@/features/menu/admin/menu-query";
+import { useMenuTreeEditor } from "@/features/menu/admin/use-menu-tree-editor";
 
 const MENU_TREE_ROW_HEIGHT = 50;
 

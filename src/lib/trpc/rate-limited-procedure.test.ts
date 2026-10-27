@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
-import { createTRPCRouter } from "./core";
-import { createRateLimitedPublicProcedure } from "./rate-limited-procedure";
+import { createTRPCRouter } from "@/lib/trpc/core";
+import { createRateLimitedPublicProcedure } from "@/lib/trpc/rate-limited-procedure";
 
 describe("createRateLimitedPublicProcedure", () => {
   it("rejects before the handler when the independent limit is exhausted", async () => {

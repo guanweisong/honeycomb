@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { readPostCreationAttempt } from "../utils/post-draft";
+import { readPostCreationAttempt } from "@/features/post/admin/edit/utils/post-draft";
 
 export function usePostCreationResult(
   creationToken: string,

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { BLOG_HOME_PATH, FAKE_ID } from "./helpers";
+import { BLOG_HOME_PATH, FAKE_ID } from "@tests/e2e/blog/helpers";
 
 const missingRoutes = [
   { path: "/en/route-that-does-not-exist", unmatched: true },

@@ -1,4 +1,4 @@
-import { CommentStatusName } from "../types/comment.status-name";
+import { CommentStatusName } from "@/features/comment/types/comment.status-name";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 
 /**

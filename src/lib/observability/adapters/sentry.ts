@@ -1,7 +1,7 @@
-import type { Logger, LogContext } from "../core/contracts";
-import { createSafeLogger } from "../core/safe-adapters";
-import { sanitizeContext } from "../core/sanitize";
-import { createConsoleLogger } from "./console";
+import type { Logger, LogContext } from "@/lib/observability/core/contracts";
+import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
+import { sanitizeContext } from "@/lib/observability/core/sanitize";
+import { createConsoleLogger } from "@/lib/observability/adapters/console";
 
 type LogAttributes = Record<string, string | number | boolean>;
 interface SentryLogSink {

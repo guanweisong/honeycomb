@@ -7,7 +7,7 @@ import {
   assembleRequiredLocalizedField,
   hasTranslationValues,
   patchLocalizedValue,
-} from "./translation-values";
+} from "@/lib/db/translation-values";
 
 describe("translation value mapping", () => {
   it("assembles only persisted language values", () => {

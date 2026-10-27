@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
-import { toPageInsertValues, toPageUpdateValues } from "./page-transforms";
+import { toPageInsertValues, toPageUpdateValues } from "@/features/page/server/page-transforms";
 
 describe("page command transforms", () => {
   it("keeps translated fields out of parent insert values", () => {

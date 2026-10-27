@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { CheckedState } from "radix-ui/checkbox";
-import type { UseRowSelectionOptions, UseRowSelectionResult } from "./types";
+import type { UseRowSelectionOptions, UseRowSelectionResult } from "@/components/DataTable/types";
 
 export function useRowSelection<TData>(
   options: UseRowSelectionOptions<TData>,

@@ -5,7 +5,7 @@ import {
   getAuditableSessionEvent,
   getAuthenticationProvider,
   isAuthenticationPath,
-} from "./authentication-events";
+} from "@/app/_auth/authentication-events";
 
 describe("authentication event classification", () => {
   it("classifies authentication routes without retaining credentials", () => {

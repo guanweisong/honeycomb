@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { MultiSelect } from "./index";
+import { MultiSelect } from "@/components/MultiSelect/index";
 it("names real filter checkboxes, disables unavailable values, and toggles once per click", async () => {
   vi.stubGlobal(
     "ResizeObserver",

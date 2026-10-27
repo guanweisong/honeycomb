@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { createPage, destroyPages } from "./page-commands";
-import { PageTemplate } from "../types/page.template";
+import { createPage, destroyPages } from "@/features/page/server/page-commands";
+import { PageTemplate } from "@/features/page/types/page.template";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";

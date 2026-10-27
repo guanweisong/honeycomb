@@ -4,7 +4,7 @@ vi.mock("next/cache", () => ({
   unstable_cache: (loader: unknown) => loader,
 }));
 
-import { toSitemapIndexXml, toSitemapXml } from "./sitemap-data";
+import { toSitemapIndexXml, toSitemapXml } from "@/app/lib/server/sitemap-data";
 
 describe("runtime sitemap", () => {
   it("escapes every XML entity and omits an absent modification date", () => {

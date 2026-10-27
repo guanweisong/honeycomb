@@ -1,5 +1,5 @@
 import { EnvironmentValidationError, parseR2Env } from "../../env/schema";
-import type { Environment } from "../../env/validation";
+import type { Environment } from "@/env/validation";
 
 export type SecurityHeader = {
   key: string;

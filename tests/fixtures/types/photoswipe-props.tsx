@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { PhotoSwipeClient } from "../../../src/components/PhotoSwipe";
+import { PhotoSwipeClient } from "@/components/PhotoSwipe";
 
 const childrenOnly: ComponentProps<typeof PhotoSwipeClient> = {
   children: "Image",

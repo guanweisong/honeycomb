@@ -3,8 +3,8 @@ import { requiredString } from "@/lib/validation/validation";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { PostStatus } from "../types/post.status";
-import { PostType } from "../types/post.type";
+import { PostStatus } from "@/features/post/types/post.status";
+import { PostType } from "@/features/post/types/post.type";
 
 const OptionalI18nSchema = z
   .strictObject({

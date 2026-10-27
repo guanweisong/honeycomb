@@ -5,7 +5,7 @@ export {
   getLogger,
   getMetrics,
   type ObservabilityConfiguration,
-} from "./registry";
+} from "@/lib/observability/server/registry";
 export {
   createRequestContext,
   getRequestIdFromHeaders,
@@ -13,14 +13,14 @@ export {
   type CreateRequestContextOptions,
   type RequestContext,
   type RequestHeaders,
-} from "./request-context";
+} from "@/lib/observability/server/request-context";
 export {
   observeDbOperation,
   type DatabaseOperation,
   type DatabaseQueryName,
-} from "./database-operation";
+} from "@/lib/observability/server/database-operation";
 export {
   observeExternalServiceOperation,
   type ExternalService,
   type ExternalServiceOperation,
-} from "./external-service-operation";
+} from "@/lib/observability/server/external-service-operation";

@@ -3,7 +3,7 @@ import {
   metricValue,
   taskDurationDelta,
   taskDurationSegment,
-} from "./performance-metrics";
+} from "@tests/helpers/performance-metrics";
 
 it.each(["TaskDuration", "JSHeapUsedSize", "NavigationStart", "Timestamp"])(
   "requires a finite nonnegative %s sample",

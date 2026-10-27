@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { ToolbarButton } from "./ToolbarButton";
+import { ToolbarButton } from "@/components/editor/components/ToolbarButton";
 import { Image as ImageIcon } from "lucide-react";
-import { useTiptapMediaPicker } from "../media-picker";
+import { useTiptapMediaPicker } from "@/components/editor/media-picker";
 
 export function ToolbarImageItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);

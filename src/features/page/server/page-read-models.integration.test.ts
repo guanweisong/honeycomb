@@ -12,7 +12,7 @@ import {
   listPages,
   listPageSummaries,
   listPageMenuOptions,
-} from "./page-queries";
+} from "@/features/page/server/page-queries";
 import { PageStatus } from "@/features/page/types/page.status";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (

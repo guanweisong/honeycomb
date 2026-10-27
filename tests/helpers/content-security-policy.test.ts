@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getDirectiveSources } from "./content-security-policy";
+import { getDirectiveSources } from "@tests/helpers/content-security-policy";
 
 describe("getDirectiveSources", () => {
   it("returns only the sources for the requested CSP directive", () => {

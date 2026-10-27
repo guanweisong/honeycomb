@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server";
 import { CommentStatus } from "@/features/comment/types/comment.status";
-import { sendCommentEmail } from "./comment-email";
+import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 vi.mock("@/env/client", () => ({
   clientEnv: { NEXT_PUBLIC_SITE_URL: "https://blog.example.test/blog/" },

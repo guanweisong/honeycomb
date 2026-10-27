@@ -65,7 +65,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { usePostEditor } from "./use-post-editor";
+import { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
 
 let cache: ReturnType<typeof createAdminListCache>;
 

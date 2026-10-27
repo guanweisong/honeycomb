@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { createUserRepository } from "./user-repository";
+import { createUserRepository } from "@/features/user/server/user-repository";
 
 describe("direct current-user query", () => {
   it("rejects a missing persisted user as unauthorized", async () => {

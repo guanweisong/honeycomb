@@ -35,7 +35,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,
 }));
-vi.mock("./tag-table-columns", () => ({ tagTableColumns: [] }));
+vi.mock("@/features/tag/admin/tag-table-columns", () => ({ tagTableColumns: [] }));
 vi.mock("@/components/DataTable", () => ({
   DataTable: ({ rowActions }: { rowActions: (row: TagRecord) => ReactNode }) =>
     rowActions({
@@ -85,7 +85,7 @@ vi.mock("@/components/DynamicForm", () => ({
   ),
 }));
 
-import Tag from "./page";
+import Tag from "@/features/tag/admin/page";
 
 describe("Tag page public-sync feedback", () => {
   let container: HTMLDivElement;

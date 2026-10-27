@@ -10,10 +10,10 @@ import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
 import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 import type { MediaRecord } from "@/features/media/types/media.record";
 import type { MediaListInput } from "@/features/media/types/media.list";
-import type { UploadIntent } from "./upload-intent";
-import type { validateMediaImage } from "./image-validation";
-import { assertOrdinaryMediaSchema } from "./media-schema-readiness";
-import { findKnownMediaReferences } from "./media-references";
+import type { UploadIntent } from "@/features/media/server/upload-intent";
+import type { validateMediaImage } from "@/features/media/server/image-validation";
+import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
+import { findKnownMediaReferences } from "@/features/media/server/media-references";
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 async function requireActor(
   tx: Transaction,

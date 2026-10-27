@@ -4,8 +4,8 @@ import { useId, type FormEventHandler, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useMounted } from "@/lib/hooks/use-mounted";
-import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
-import type { CommentIdentity } from "../hooks/use-comment-identity";
+import type { CommentTreeViewModel } from "@/features/comment/presentation/comment-view-model";
+import type { CommentIdentity } from "@/features/comment/public/components/hooks/use-comment-identity";
 
 interface CommentFormProps {
   identity?: CommentIdentity;

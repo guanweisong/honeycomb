@@ -1,4 +1,4 @@
-import type { AdminNavigationItem } from "../AdminNavigation";
+import type { AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
 
 /** 解析当前管理路由最具体的菜单标题。 */
 export function findMenuTitle(

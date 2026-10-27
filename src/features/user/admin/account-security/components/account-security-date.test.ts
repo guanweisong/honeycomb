@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAccountSecurityDate } from "./account-security-date";
+import { formatAccountSecurityDate } from "@/features/user/admin/account-security/components/account-security-date";
 
 describe("formatAccountSecurityDate", () => {
   it("formats dates and serialized numeric timestamps", () => {

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseSessionList } from "./session-contract";
+import { parseSessionList } from "@/features/user/admin/account-security/components/SessionSettings/session-contract";
 
 it("rejects malformed remote session rows", () => {
   expect(() => parseSessionList([{ id: "session", createdAt: 42 }])).toThrow();

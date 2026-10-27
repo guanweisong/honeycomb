@@ -2,7 +2,7 @@ import { MenuType } from "@/features/menu/types/menu.type";
 import React, { act, type CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import type { MenuEntityTree, SortableMenuNode } from "../../menu-transforms";
+import type { MenuEntityTree, SortableMenuNode } from "@/features/menu/admin/menu-transforms";
 
 let canUpdateMenu = false;
 const queryMocks = vi.hoisted(
@@ -117,7 +117,7 @@ vi.mock("@nosferatu500/react-sortable-tree", async () => {
   };
 });
 
-import { MenuPageShell } from "./index";
+import { MenuPageShell } from "@/features/menu/admin/components/MenuPageShell/index";
 
 describe("MenuPageShell", () => {
   let container: HTMLDivElement;

@@ -2,7 +2,7 @@ import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../ui/select", () => ({
+vi.mock("@/components/ui/select", () => ({
   Select: ({
     value,
     onValueChange,
@@ -36,7 +36,7 @@ vi.mock("../ui/select", () => ({
   }) => React.createElement("option", { value, disabled }, children),
 }));
 
-import { Select } from "./index";
+import { Select } from "@/components/Select/index";
 
 describe("Select", () => {
   let container: HTMLDivElement;

@@ -4,17 +4,17 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 
-import { Table } from "../ui/table";
+import { Table } from "@/components/ui/table";
 import { cn } from "cn";
-import { DataTableBody } from "./Body";
-import { DataTableHeader } from "./Header";
-import { DataTablePagination } from "./Pagination";
-import { useDataTableState } from "./useDataTableState";
-import { useRowSelection } from "./useRowSelection";
+import { DataTableBody } from "@/components/DataTable/Body";
+import { DataTableHeader } from "@/components/DataTable/Header";
+import { DataTablePagination } from "@/components/DataTable/Pagination";
+import { useDataTableState } from "@/components/DataTable/useDataTableState";
+import { useRowSelection } from "@/components/DataTable/useRowSelection";
 import LoadingState from "@/components/LoadingState";
-import type { DataTableProps } from "./types";
+import type { DataTableProps } from "@/components/DataTable/types";
 
-export type { DataTableProps } from "./types";
+export type { DataTableProps } from "@/components/DataTable/types";
 
 export function DataTable<TData>(props: DataTableProps<TData>) {
   const {

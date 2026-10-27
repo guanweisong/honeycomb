@@ -6,15 +6,15 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/blog-navigation";
 import { MenuType } from "@/features/menu/types/menu.type";
-import type { CommentTreeViewModel } from "../../../presentation/comment-view-model";
+import type { CommentTreeViewModel } from "@/features/comment/presentation/comment-view-model";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
   isDeterminateRejectionCode,
   readTrpcErrorCode,
 } from "@/lib/trpc/client/mutation-error";
 import { clientEnv } from "@/env/client";
-import type { CommentIdentity } from "./use-comment-identity";
-import { buildCommentInput } from "../utils/comment-input";
+import type { CommentIdentity } from "@/features/comment/public/components/hooks/use-comment-identity";
+import { buildCommentInput } from "@/features/comment/public/components/utils/comment-input";
 import { clientLogger } from "@/lib/observability/client";
 import { LogEvent } from "@/lib/observability/core/names";
 import { useTurnstileToken } from "@/lib/hooks/use-turnstile-token";

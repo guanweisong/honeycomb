@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { StatusBadgeTone } from "@/components/StatusBadge";
 
-import { getLinkStatusPresentation, linkTableColumns } from "./link-columns";
+import { getLinkStatusPresentation, linkTableColumns } from "@/features/link/admin/link-columns";
 
 describe("link columns", () => {
   it("keeps the visible column order and labels", () => {

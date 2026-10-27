@@ -4,7 +4,7 @@ import {
   CommentContentSchema,
   CommentEmailSchema,
   CommentSiteSchema,
-} from "./comment.fields.schema";
+} from "@/features/comment/schemas/comment.fields.schema";
 
 /**
  * 新增评论时的数据验证 schema。

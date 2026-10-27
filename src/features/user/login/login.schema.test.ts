@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { CredentialPasswordSchema } from "@/lib/auth/password-policy";
 
-import { LoginSchema } from "./login.schema.ts";
+import { LoginSchema } from "@/features/user/login/login.schema.ts";
 
 describe("后台登录输入校验", () => {
   it("接受非空用户名和密码", () => {

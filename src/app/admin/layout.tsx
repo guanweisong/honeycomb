@@ -3,7 +3,7 @@ import { clientEnv } from "@/env/client";
 import React from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
-import "./globals.scss";
+import "@/app/admin/globals.scss";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Viewport } from "next";
 

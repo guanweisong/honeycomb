@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as BasePopover from "../ui/popover";
+import * as BasePopover from "@/components/ui/popover";
 import type { ComponentProps } from "react";
 
 export interface PopoverProps extends Omit<

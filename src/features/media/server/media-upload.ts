@@ -1,17 +1,17 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
-import { MediaUploadIntentInputSchema } from "../schemas/media.upload.schema";
-import { MEDIA_MAX_BYTES } from "../types/media.upload-policy";
-import type { MediaUploadIntentInput } from "../types/media.upload";
-import type { MediaPersistence } from "./media-repository";
-import type { MediaStorage } from "../types/media.storage";
-import type { MediaRecord } from "../types/media.record";
+import { MediaUploadIntentInputSchema } from "@/features/media/schemas/media.upload.schema";
+import { MEDIA_MAX_BYTES } from "@/features/media/types/media.upload-policy";
+import type { MediaUploadIntentInput } from "@/features/media/types/media.upload";
+import type { MediaPersistence } from "@/features/media/server/media-repository";
+import type { MediaStorage } from "@/features/media/types/media.storage";
+import type { MediaRecord } from "@/features/media/types/media.record";
 import { ApplicationError } from "@/lib/errors/application-error";
 import {
   validateMediaImage,
   tryAcquireMediaValidation,
-} from "./image-validation";
-import { createUploadIntent, verifyUploadIntent } from "./upload-intent";
+} from "@/features/media/server/image-validation";
+import { createUploadIntent, verifyUploadIntent } from "@/features/media/server/upload-intent";
 
 /** A signed temporary capability only: no provisional media record. */
 export async function prepareMediaUpload(

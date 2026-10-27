@@ -1,6 +1,6 @@
 import { IdSchema } from "@/lib/validation/id.schema";
 import { hasUpdateFields } from "@/lib/validation/validation";
-import { CategoryInsertSchema } from "./category.insert.schema";
+import { CategoryInsertSchema } from "@/features/category/schemas/category.insert.schema";
 
 export const CategoryUpdateSchema = CategoryInsertSchema.partial()
   .extend({ id: IdSchema })

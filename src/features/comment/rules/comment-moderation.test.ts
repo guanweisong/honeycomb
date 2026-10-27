@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { InvalidStateTransitionError } from "@/lib/errors/domain-error";
-import { assertCommentTransition } from "./comment-moderation";
+import { assertCommentTransition } from "@/features/comment/rules/comment-moderation";
 
 const allowed = new Set([
   "TO_AUDIT:PUBLISH",

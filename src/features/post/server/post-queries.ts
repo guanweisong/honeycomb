@@ -16,7 +16,7 @@ import {
   loadAdminPostListItems,
   loadPublicPostListItems,
   toMediaRecord,
-} from "./post-relations";
+} from "@/features/post/server/post-relations";
 import type {
   PostListInput,
   PostVisibility,

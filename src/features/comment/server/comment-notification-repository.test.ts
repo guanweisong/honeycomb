@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { createCommentNotificationRepository } from "./comment-notification-repository";
+import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 
 it("reads the stable settings singleton and preserves missing-setting behavior", async () => {
   const mock = createMockDb();

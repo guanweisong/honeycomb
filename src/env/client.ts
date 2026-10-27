@@ -1,4 +1,4 @@
-import { parseClientEnv } from "./client-schema";
+import { parseClientEnv } from "@/env/client-schema";
 
 export const clientEnv = parseClientEnv({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,

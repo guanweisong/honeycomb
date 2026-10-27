@@ -5,7 +5,7 @@ import { PostStatus } from "@/features/post/types/post.status";
 import {
   getPostPublishStatus,
   getPostWithdrawStatus,
-} from "./post-publication";
+} from "@/features/post/rules/post-publication";
 
 describe("post publication rules", () => {
   it.each([PostStatus.DRAFT, PostStatus.TO_AUDIT])("publishes %s", (status) => {

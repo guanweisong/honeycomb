@@ -33,7 +33,7 @@ vi.mock("@/components/Dialog", () => ({
     ),
 }));
 
-import { PageEditorActionButtons } from "./index";
+import { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons/index";
 
 describe("PageEditorActionButtons", () => {
   let container: HTMLDivElement;

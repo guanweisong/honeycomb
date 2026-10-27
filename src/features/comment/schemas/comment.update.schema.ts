@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { CommentStatus } from "../types/comment.status";
+import { CommentStatus } from "@/features/comment/types/comment.status";
 import {
   CommentAuthorSchema,
   CommentContentSchema,
   CommentEmailSchema,
   CommentSiteSchema,
-} from "./comment.fields.schema";
+} from "@/features/comment/schemas/comment.fields.schema";
 
 /**
  * 更新评论状态的数据验证 schema。

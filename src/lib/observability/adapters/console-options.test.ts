@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getRuntimeEnvironment } from "./console-options";
+import { getRuntimeEnvironment } from "@/lib/observability/adapters/console-options";
 
 afterEach(() => {
   vi.unstubAllEnvs();

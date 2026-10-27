@@ -1,6 +1,6 @@
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
-import messages from "./en.json";
+import messages from "@/app/(blog)/messages/en.json";
 
 const t = createTranslator({ locale: "en", messages });
 describe("English count messages", () => {

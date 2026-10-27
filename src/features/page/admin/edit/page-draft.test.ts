@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePageDraft } from "./page-draft";
+import { parsePageDraft } from "@/features/page/admin/edit/page-draft";
 describe("page draft validation", () => {
   it("preserves incomplete language fields and strips noneditable properties", () => {
     expect(

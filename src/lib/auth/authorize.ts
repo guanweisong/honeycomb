@@ -1,4 +1,4 @@
-import { can, type Permission } from "./permissions";
+import { can, type Permission } from "@/lib/auth/permissions";
 
 export interface AuthorizationContext {
   readonly role: string | null | undefined;

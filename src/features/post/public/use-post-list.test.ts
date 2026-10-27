@@ -14,7 +14,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { post: { index: { query: transport.request } } },
 }));
 
-import usePostList from "./use-post-list";
+import usePostList from "@/features/post/public/use-post-list";
 
 const page = (ids: string[], total: number) => ({
   list: ids.map((id) => createPostFixture({ id })),

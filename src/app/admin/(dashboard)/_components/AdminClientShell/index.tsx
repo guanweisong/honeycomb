@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import {
   clearHoneycombRuntimeCaches,
   navigateToAdminLogin,
-} from "./logout-browser-state";
+} from "@/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state";
 import { findMenuTitle } from "@/app/admin/_components/AdminLayout/menu-title";
 
 export function AdminClientShell({

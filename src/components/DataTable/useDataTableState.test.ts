@@ -6,7 +6,7 @@ import {
   normalizeDataTableParams,
   normalizeFilters,
   useDataTableState,
-} from "./useDataTableState";
+} from "@/components/DataTable/useDataTableState";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

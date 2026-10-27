@@ -16,7 +16,7 @@ const loading = () => (
   />
 );
 
-const PhotoPickerModal = dynamic(() => import("../PhotoPicker"), { loading });
+const PhotoPickerModal = dynamic(() => import("@/features/media/admin/components/PhotoPicker"), { loading });
 const MediaPageShell = dynamic(
   () =>
     import("@/features/media/admin/components/MediaPageShell").then(

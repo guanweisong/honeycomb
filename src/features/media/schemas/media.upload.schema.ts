@@ -3,7 +3,7 @@ import { requiredString } from "@/lib/validation/validation";
 import {
   MEDIA_MIME_TYPES,
   MEDIA_MAX_BYTES,
-} from "../types/media.upload-policy";
+} from "@/features/media/types/media.upload-policy";
 
 const extensionsByMime: Record<
   (typeof MEDIA_MIME_TYPES)[number],

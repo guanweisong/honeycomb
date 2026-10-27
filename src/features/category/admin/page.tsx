@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import CategoryFormDialog from "./components/CategoryFormDialog";
-import categoryListTableColumns from "./category-list-table-columns";
+import CategoryFormDialog from "@/features/category/admin/components/CategoryFormDialog";
+import categoryListTableColumns from "@/features/category/admin/category-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
 import { DataTable } from "@/components/DataTable";

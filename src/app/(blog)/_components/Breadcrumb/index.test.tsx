@@ -26,7 +26,7 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
   ),
 }));
 
-import Breadcrumb from "./";
+import Breadcrumb from "@/app/(blog)/_components/Breadcrumb";
 
 const menu = [
   {

@@ -1,5 +1,5 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { EnableStatusName } from "../types/enable-status-name";
+import { EnableStatusName } from "@/components/admin/types/enable-status-name";
 
 export const enableStatusOptions = [
   {

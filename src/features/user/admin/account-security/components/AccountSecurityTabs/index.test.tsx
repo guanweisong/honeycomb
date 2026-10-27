@@ -9,23 +9,23 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/account/security",
 }));
 
-vi.mock("../PasskeySettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/PasskeySettings", () => ({
   default: () => React.createElement("div", null, "Passkey settings"),
 }));
-vi.mock("../PasswordSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/PasswordSettings", () => ({
   default: () => React.createElement("div", null, "Password settings"),
 }));
-vi.mock("../SessionSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/SessionSettings", () => ({
   default: () => React.createElement("div", null, "Session settings"),
 }));
-vi.mock("../LinkedAccountsSettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/LinkedAccountsSettings", () => ({
   default: () => React.createElement("div", null, "Linked accounts settings"),
 }));
-vi.mock("../LoginHistorySettings", () => ({
+vi.mock("@/features/user/admin/account-security/components/LoginHistorySettings", () => ({
   default: () => React.createElement("div", null, "Login history settings"),
 }));
 
-import { AccountSecurityTabs } from "./index";
+import { AccountSecurityTabs } from "@/features/user/admin/account-security/components/AccountSecurityTabs/index";
 
 describe("AccountSecurityTabs", () => {
   let pushState: ReturnType<typeof vi.spyOn>;

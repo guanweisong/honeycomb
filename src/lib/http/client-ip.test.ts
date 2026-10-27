@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { getClientIp } from "./client-ip";
+import { getClientIp } from "@/lib/http/client-ip";
 
 describe("getClientIp", () => {
   it("uses the first x-forwarded-for entry when available", () => {

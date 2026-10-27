@@ -20,8 +20,8 @@ import {
   destroyPosts,
   getPostCreationResult,
   incrementPostViews,
-} from "./post-commands";
-import { getPost } from "./post-queries";
+} from "@/features/post/server/post-commands";
+import { getPost } from "@/features/post/server/post-queries";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 vi.mock("@/env/client", () => ({

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import { getPasskeyConfig } from "./passkey-config";
+import { getPasskeyConfig } from "@/lib/auth/passkey-config";
 
 describe("Passkey configuration", () => {
   it("derives the RP ID and origin from the configured auth URL", () => {

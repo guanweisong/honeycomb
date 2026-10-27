@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { runWithRequestContext } from "../observability/server/node-request-context";
+import { runWithRequestContext } from "@/lib/observability/server/node-request-context";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 
@@ -29,7 +29,7 @@ vi.mock("@/lib/db/db", () => ({
   getDb: () => database,
 }));
 
-import { createContext } from "./context";
+import { createContext } from "@/lib/trpc/context";
 
 describe("createContext", () => {
   it("keeps the request ID supplied by a tRPC request", async () => {

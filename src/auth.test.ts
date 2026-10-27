@@ -57,7 +57,7 @@ describe("auth transport boundary", () => {
   });
 
   it("does not expose Better Auth's generic user update endpoint", async () => {
-    await import("./auth");
+    await import("@/auth");
 
     expect(captured.options?.disabledPaths).toContain("/update-user");
   });
@@ -65,7 +65,7 @@ describe("auth transport boundary", () => {
   it("protects both password sign-in endpoints when Turnstile is configured", async () => {
     captured.env.turnstile = { secretKey: "turnstile-secret" };
 
-    await import("./auth");
+    await import("@/auth");
 
     expect(captcha).toHaveBeenCalledWith({
       provider: "cloudflare-turnstile",
@@ -75,7 +75,7 @@ describe("auth transport boundary", () => {
   });
 
   it("does not enable CAPTCHA when Turnstile is not configured", async () => {
-    await import("./auth");
+    await import("@/auth");
 
     expect(captcha).not.toHaveBeenCalled();
   });

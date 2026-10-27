@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { verifyPassword } from "better-auth/crypto";
-import { hashCredentialPassword } from "./credentials";
+import { hashCredentialPassword } from "@/lib/auth/credentials";
 
 describe("Better Auth credential passwords", () => {
   it("hashes passwords in a format Better Auth can verify", async () => {

@@ -1,9 +1,9 @@
 import "server-only";
 import { auth } from "@/auth";
-import { isUserEnabled } from "../rules/user-status";
+import { isUserEnabled } from "@/features/user/rules/user-status";
 import { ApplicationError } from "@/lib/errors/application-error";
-import type { UserRepository } from "./user-repository";
-import type { AdminUser } from "../types/user.current";
+import type { UserRepository } from "@/features/user/server/user-repository";
+import type { AdminUser } from "@/features/user/types/user.current";
 
 /** 从当前请求会话读取可进入 Admin 的启用用户。 */
 export async function getAdminUser(

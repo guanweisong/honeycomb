@@ -33,7 +33,7 @@ vi.mock("@/components/Dialog", () => ({
     ),
 }));
 
-import { PostEditorActions } from "./index";
+import { PostEditorActions } from "@/features/post/admin/edit/components/PostEditorActions/index";
 
 describe("PostEditorActions", () => {
   let container: HTMLDivElement;

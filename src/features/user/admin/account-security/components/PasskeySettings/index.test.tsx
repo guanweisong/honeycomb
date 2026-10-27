@@ -21,7 +21,7 @@ vi.mock("@/lib/auth/client", () => ({
   },
 }));
 
-import PasskeySettings from "./index";
+import PasskeySettings from "@/features/user/admin/account-security/components/PasskeySettings/index";
 
 describe("PasskeySettings", () => {
   let container: HTMLDivElement;

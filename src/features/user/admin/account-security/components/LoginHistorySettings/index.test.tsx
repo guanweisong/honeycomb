@@ -23,7 +23,7 @@ vi.mock("sonner", () => ({
   toast: { error: mocks.toastError },
 }));
 
-import LoginHistorySettings from "./index";
+import LoginHistorySettings from "@/features/user/admin/account-security/components/LoginHistorySettings/index";
 
 const history = [
   {

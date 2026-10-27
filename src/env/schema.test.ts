@@ -11,8 +11,8 @@ import {
   parseServerEnv,
   parseTurnstileEnv,
   parseUpstashEnv,
-} from "./schema";
-import { parseClientEnv } from "./client-schema";
+} from "@/env/schema";
+import { parseClientEnv } from "@/env/client-schema";
 import {
   getAuthEnv,
   getDatabaseEnv,
@@ -21,8 +21,8 @@ import {
   getServerEnv,
   getTurnstileEnv,
   getUpstashEnv,
-} from "./server";
-import { parseSchema } from "./validation";
+} from "@/env/server";
+import { parseSchema } from "@/env/validation";
 
 const validCoreEnv = {
   NEXT_PUBLIC_SITE_URL: "https://honeycomb.example.com",

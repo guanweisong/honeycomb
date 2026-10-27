@@ -71,7 +71,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { LinkPageShell } from "./index";
+import { LinkPageShell } from "@/features/link/admin/components/LinkPageShell/index";
 
 describe("LinkPageShell", () => {
   let container: HTMLDivElement;

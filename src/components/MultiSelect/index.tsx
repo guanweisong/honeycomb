@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Command, CommandInput, CommandItem, CommandList } from "../ui/command";
-import { Checkbox } from "../ui/checkbox";
-import { Popover } from "../Popover";
-import { PopoverProps } from "../Popover";
+import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover } from "@/components/Popover";
+import { PopoverProps } from "@/components/Popover";
 
 export interface MultiSelectOption {
   label: string;

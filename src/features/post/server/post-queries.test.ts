@@ -10,7 +10,7 @@ import {
 import { sql } from "drizzle-orm";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getPost, listPosts } from "./post-queries";
+import { getPost, listPosts } from "@/features/post/server/post-queries";
 
 const mockDb = createMockDb();
 const dialect = new SQLiteSyncDialect();

@@ -4,12 +4,12 @@ import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import {
   configureObservability,
   getMetrics,
-} from "./lib/observability/server/registry";
-import { MetricName } from "./lib/observability/core/names";
-import { onRequestError, register } from "./instrumentation";
+} from "@/lib/observability/server/registry";
+import { MetricName } from "@/lib/observability/core/names";
+import { onRequestError, register } from "@/instrumentation";
 
 const sentry = vi.hoisted(() => ({ configureSentryLogs: vi.fn() }));
-vi.mock("./lib/observability/server/sentry", () => sentry);
+vi.mock("@/lib/observability/server/sentry", () => sentry);
 
 const productionCoreEnv = {
   NEXT_PUBLIC_SITE_URL: "https://honeycomb.example.com",

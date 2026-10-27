@@ -21,7 +21,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     },
   },
 }));
-import PostListClient from "./index";
+import PostListClient from "@/features/post/admin/list/components/PostListClient/index";
 it("associates the post search field with a persistent label", async () => {
   const container = document.createElement("div");
   document.body.append(container);

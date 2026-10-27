@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
-import type { AdminCommentViewModel } from "../../presentation/comment-view-model";
+import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
 import { commentStatusOptions } from "@/features/comment/admin/options";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
 import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";

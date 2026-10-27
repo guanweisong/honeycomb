@@ -11,14 +11,14 @@ import { PostStatus } from "@/features/post/types/post.status";
 import { PageStatus } from "@/features/page/types/page.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
-import { createComment, updateComment } from "./comment-commands";
+import { createComment, updateComment } from "@/features/comment/server/comment-commands";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import type { PublicCommentInput } from "@/features/comment/types/comment.insert";
-import { createCommentCommandRepository } from "./comment-command-repository";
+import { createCommentCommandRepository } from "@/features/comment/server/comment-command-repository";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { createCommentQueryRepository } from "./comment-query-repository";
-import { listPublicCommentsByRef } from "./comment-public-queries";
-import { createCommentTargetRepository } from "./comment-target-repository";
+import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
+import { listPublicCommentsByRef } from "@/features/comment/server/comment-public-queries";
+import { createCommentTargetRepository } from "@/features/comment/server/comment-target-repository";
 
 describe("public comment insertion consistency with real libSQL", () => {
   let directory: string;

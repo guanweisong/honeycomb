@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { BlogProviders } from "./BlogProviders";
+import { BlogProviders } from "@/app/(blog)/BlogProviders";
 
 /**
  * 根布局组件的属性类型。

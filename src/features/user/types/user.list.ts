@@ -1,4 +1,4 @@
-import type { UserListQuerySchema } from "../schemas/user.list.schema";
+import type { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
 import type { PaginationInput } from "@/lib/validation/pagination";
 import type { z } from "zod";
 

@@ -49,7 +49,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { UserPageShell } from "./index";
+import { UserPageShell } from "@/features/user/admin/components/UserPageShell/index";
 
 describe("UserPageShell", () => {
   let container: HTMLDivElement;

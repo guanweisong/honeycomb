@@ -9,7 +9,7 @@ import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { DomainError } from "@/lib/errors/domain-error";
 import { configureObservability } from "@/lib/observability/server/registry";
-import { createTRPCRouter, mapApplicationError, publicProcedure } from "./core";
+import { createTRPCRouter, mapApplicationError, publicProcedure } from "@/lib/trpc/core";
 
 const syntheticSecret = "synthetic-database-value";
 const databaseError = () =>

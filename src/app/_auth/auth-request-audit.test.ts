@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAuthRequestAuditHandler } from "./auth-request-audit";
+import { createAuthRequestAuditHandler } from "@/app/_auth/auth-request-audit";
 
 describe("createAuthRequestAuditHandler", () => {
   it("isolates Better Auth from the original request being consumed during audit", async () => {

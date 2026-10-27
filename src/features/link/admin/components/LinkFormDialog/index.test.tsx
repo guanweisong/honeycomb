@@ -26,7 +26,7 @@ vi.mock("@/components/DynamicForm", () => ({
 import { ModalType } from "@/components/admin/types/modal-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { LinkFormDialog } from ".";
-import type { LinkDialogState } from "../../link-actions";
+import type { LinkDialogState } from "@/features/link/admin/link-actions";
 
 describe("LinkFormDialog", () => {
   let container: HTMLDivElement;

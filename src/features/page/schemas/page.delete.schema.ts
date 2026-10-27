@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { IdSchema } from "@/lib/validation/id.schema";
 import { MAX_BATCH_SIZE } from "@/lib/validation/resource-limits";
-import { PageVersionSchema } from "./page.fields.schema";
+import { PageVersionSchema } from "@/features/page/schemas/page.fields.schema";
 
 export const PageDeleteSchema = z.strictObject({
   items: z

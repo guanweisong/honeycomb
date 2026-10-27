@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
-import { createMemoryObservability } from "./memory-observability";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 
 describe("createMemoryObservability", () => {
   it("captures log and metric events for assertions", () => {

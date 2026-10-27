@@ -5,7 +5,7 @@ const env = vi.hoisted((): { NEXT_PUBLIC_SITE_URL: string | undefined } => ({
   NEXT_PUBLIC_SITE_URL: undefined,
 }));
 vi.mock("@/env/client", () => ({ clientEnv: env }));
-import robots from "./robots";
+import robots from "@/app/robots";
 
 beforeEach(() => {
   env.NEXT_PUBLIC_SITE_URL = undefined;

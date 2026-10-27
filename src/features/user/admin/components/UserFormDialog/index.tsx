@@ -20,7 +20,7 @@ import type { UserDialogState } from "@/features/user/admin/user-actions";
 import {
   isUserResourceProtected,
   toUserFormDefaults,
-} from "../../transforms/user-transforms";
+} from "@/features/user/admin/transforms/user-transforms";
 
 type UserFormDialogProps = {
   state: UserDialogState;

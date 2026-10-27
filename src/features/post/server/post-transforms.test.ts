@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PostType } from "@/features/post/types/post.type";
 import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
-import { toPostInsertValues, toPostUpdateValues } from "./post-transforms";
+import { toPostInsertValues, toPostUpdateValues } from "@/features/post/server/post-transforms";
 
 describe("post command transforms", () => {
   it("maps only scalar parent fields on create", () => {

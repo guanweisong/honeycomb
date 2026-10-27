@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLocalizedAlternates } from "./metadata";
+import { createLocalizedAlternates } from "@/app/(blog)/lib/metadata";
 import { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
 describe("createLocalizedAlternates", () => {

@@ -10,7 +10,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     useUtils: () => ({ setting: { index: { fetch: mocks.fetch } } }),
   },
 }));
-import { SiteSettingProvider, useSiteSetting } from "./use-site-setting";
+import { SiteSettingProvider, useSiteSetting } from "@/features/setting/admin/use-site-setting";
 it("explicit review forces a fresh server fetch rather than reusing a fresh cached snapshot", async () => {
   const root = createRoot(document.createElement("div"));
   let refresh: (() => Promise<unknown>) | undefined;

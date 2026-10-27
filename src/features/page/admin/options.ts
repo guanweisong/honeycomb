@@ -1,5 +1,5 @@
-import { PageStatusName } from "../types/page.status-name";
-import { PageTemplateName } from "../types/page.template-name";
+import { PageStatusName } from "@/features/page/types/page.status-name";
+import { PageTemplateName } from "@/features/page/types/page.template-name";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
 

@@ -12,11 +12,11 @@ import { Color, TextStyle } from "@tiptap/extension-text-style";
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-vi.mock("../components/ToolbarLinkItem", () => ({
+vi.mock("@/components/editor/components/ToolbarLinkItem", () => ({
   ToolbarLinkItem: () => React.createElement("span", null, "link-control"),
 }));
 
-vi.mock("../components/ToolbarImageItem", () => ({
+vi.mock("@/components/editor/components/ToolbarImageItem", () => ({
   ToolbarImageItem: () => React.createElement("span", null, "image-control"),
 }));
 
@@ -24,7 +24,7 @@ import {
   toolbarItems,
   type ToolbarItem,
   type ToolbarItemOrGroup,
-} from "./toolbar-items";
+} from "@/components/editor/config/toolbar-items";
 
 const actionableItems = toolbarItems
   .flat()

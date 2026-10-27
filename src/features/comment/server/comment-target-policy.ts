@@ -1,4 +1,4 @@
-import type { CommentTargetRepository } from "./comment-target-repository";
+import type { CommentTargetRepository } from "@/features/comment/server/comment-target-repository";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PostStatus } from "@/features/post/types/post.status";

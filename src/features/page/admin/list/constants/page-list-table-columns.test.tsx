@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { pageListTableColumns } from "./page-list-table-columns";
+import { pageListTableColumns } from "@/features/page/admin/list/constants/page-list-table-columns";
 it("labels page titles and creation dates accurately without changing the sort fields", () => {
   expect(
     pageListTableColumns.find(

@@ -13,14 +13,14 @@ import sharp from "sharp";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 import { UserLevel } from "@/features/user/types/user.level";
-import { createMediaRepository } from "./media-repository";
+import { createMediaRepository } from "@/features/media/server/media-repository";
 import {
   prepareMediaUpload,
   registerMediaUpload,
 } from "@/features/media/server/media-upload";
 import { destroyMedia } from "@/features/media/server/media-delete";
 import { type MediaStorage } from "@/features/media/types/media.storage";
-import { verifyUploadIntent } from "./upload-intent";
+import { verifyUploadIntent } from "@/features/media/server/upload-intent";
 vi.mock("@/env/client", () => ({
   clientEnv: { NEXT_PUBLIC_ASSET_URL: "https://assets.example.test" },
 }));
@@ -378,7 +378,7 @@ it("keeps shared historical keys protected by another ordinary row", () =>
   }));
 it("checks known body references before deleting and rejects new references after deletion", () =>
   withDatabase(async (db) => {
-    const { assertMediaReferencesExist } = await import("./media-references");
+    const { assertMediaReferencesExist } = await import("@/features/media/server/media-references");
     const { repo, storage, started } = await fixture(db);
     const media = await registerMediaUpload(
       repo,
@@ -418,7 +418,7 @@ it("checks known body references before deleting and rejects new references afte
   }));
 it("serializes deletion against a competing content write without creating a broken reference", () =>
   withDatabase(async (db, url) => {
-    const { assertMediaReferencesExist } = await import("./media-references");
+    const { assertMediaReferencesExist } = await import("@/features/media/server/media-references");
     const { repo, storage, started, objects } = await fixture(db);
     const media = await registerMediaUpload(
       repo,

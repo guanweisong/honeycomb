@@ -10,21 +10,21 @@ import { parseEnumValue } from "@/lib/db/value-validation";
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { PageStatus } from "../types/page.status";
+import { PageStatus } from "@/features/page/types/page.status";
 import { observeDbOperation } from "@/lib/observability/server";
-import { toPageInsertValues, toPageUpdateValues } from "./page-transforms";
+import { toPageInsertValues, toPageUpdateValues } from "@/features/page/server/page-transforms";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import { sanitizeOptionalI18nHtml } from "@/lib/security/sanitize-html";
 import {
   groupPageTranslations,
   toPageTranslationRows,
-} from "./page-translations";
-import { PageInsertSchema } from "../schemas/page.insert.schema";
-import { PageUpdateSchema } from "../schemas/page.update.schema";
-import { PageDeleteSchema } from "../schemas/page.delete.schema";
-import type { PageInsert } from "../types/page.insert";
-import type { PageUpdate } from "../types/page.update";
-import type { PageDelete } from "../types/page.delete";
+} from "@/features/page/server/page-translations";
+import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
+import { PageDeleteSchema } from "@/features/page/schemas/page.delete.schema";
+import type { PageInsert } from "@/features/page/types/page.insert";
+import type { PageUpdate } from "@/features/page/types/page.update";
+import type { PageDelete } from "@/features/page/types/page.delete";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import { DomainError } from "@/lib/errors/domain-error";
 import { ApplicationError } from "@/lib/errors/application-error";
@@ -33,7 +33,7 @@ import { can, Permission } from "@/lib/auth/permissions";
 import {
   getPagePublishStatus,
   getPageWithdrawStatus,
-} from "../rules/page-publication";
+} from "@/features/page/rules/page-publication";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";
 

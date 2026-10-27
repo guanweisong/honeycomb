@@ -3,7 +3,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 
 import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 
-import { submitLinkUpdate } from "./link-actions";
+import { submitLinkUpdate } from "@/features/link/admin/link-actions";
 
 const link = {
   id: "link-1",

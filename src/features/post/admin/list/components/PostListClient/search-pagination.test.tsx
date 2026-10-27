@@ -74,7 +74,7 @@ vi.mock("@/components/MultiSelect", () => ({
   ),
 }));
 
-import PostListClient from "./index";
+import PostListClient from "@/features/post/admin/list/components/PostListClient/index";
 
 let container: HTMLDivElement;
 let root: Root;

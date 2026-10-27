@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePostDraft } from "./post-draft";
+import { parsePostDraft } from "@/features/post/admin/edit/utils/post-draft";
 
 describe("post draft validation", () => {
   it("preserves unfinished bilingual input without persisting API or permission fields", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Checkbox as BaseCheckbox } from "../ui/checkbox"; // 根据实际路径调整
+import { Checkbox as BaseCheckbox } from "@/components/ui/checkbox"; // 根据实际路径调整
 import { cn } from "cn";
 
 interface LabeledCheckboxProps extends React.ComponentProps<

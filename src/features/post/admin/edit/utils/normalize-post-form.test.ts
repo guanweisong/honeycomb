@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PostStatus } from "@/features/post/types/post.status";
 import { PostType } from "@/features/post/types/post.type";
-import { normalizePostForm } from "./normalize-post-form";
+import { normalizePostForm } from "@/features/post/admin/edit/utils/normalize-post-form";
 
 describe("normalize-post-form", () => {
   it.each([PostType.ARTICLE, PostType.MOVIE, PostType.PHOTOGRAPH])(

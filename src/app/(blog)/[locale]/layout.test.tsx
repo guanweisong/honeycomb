@@ -16,7 +16,7 @@ vi.mock("next-intl", () => ({
   NextIntlClientProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
-import LocaleLayout from "./layout";
+import LocaleLayout from "@/app/(blog)/[locale]/layout";
 
 function countToasters(node: ReactNode): number {
   if (Array.isArray(node)) {

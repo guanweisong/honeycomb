@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { initializeE2ETestTarget } from "../../scripts/e2e-seed-policy";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resolveAssetOrigin } from "../e2e/security-headers-config";
+import { resolveAssetOrigin } from "@tests/e2e/security-headers-config";
 
 async function loadWebServerConfiguration() {
   vi.resetModules();

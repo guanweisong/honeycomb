@@ -6,7 +6,7 @@ import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 import type { UserRecord } from "@/features/user/types/user.record";
 import { UserUpdateSchema } from "@/features/user/schemas/user.write.schema";
-import { submitUserUpdate } from "../../user-actions";
+import { submitUserUpdate } from "@/features/user/admin/user-actions";
 import { UserFormDialog } from ".";
 
 vi.mock("@/components/Dialog", () => ({

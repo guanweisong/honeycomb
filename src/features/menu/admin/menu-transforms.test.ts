@@ -10,7 +10,7 @@ import {
   toggleMenuSelection,
   type MenuEntityTree,
   type MenuSelectableItem,
-} from "./menu-transforms";
+} from "@/features/menu/admin/menu-transforms";
 
 const createdAt = "2026-01-02T03:04:05.000Z";
 

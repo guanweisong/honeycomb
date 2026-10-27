@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createStaticOfflineDocument } from "./offline-document";
+import { createStaticOfflineDocument } from "@/lib/pwa/offline-document";
 
 describe("static offline document", () => {
   it("移除 Next 水合脚本并保留页面内容与响应元数据", async () => {

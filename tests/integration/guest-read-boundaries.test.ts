@@ -22,7 +22,7 @@ import { PageTemplate } from "@/features/page/types/page.template";
 import type { Context } from "@/lib/trpc/context";
 import * as schema from "@/lib/db/schema";
 import { configureObservability } from "@/lib/observability/server/registry";
-import { createMemoryObservability } from "../helpers/memory-observability";
+import { createMemoryObservability } from "@tests/helpers/memory-observability";
 
 const id = (name: string) => name.padEnd(24, "0");
 const statuses = [PostStatus.PUBLISHED, PostStatus.DRAFT, PostStatus.TO_AUDIT];

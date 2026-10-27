@@ -7,7 +7,7 @@ import {
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoadingState from "@/components/LoadingState";
-import { getAdminRouteAccessDecision } from "./admin-route-access";
+import { getAdminRouteAccessDecision } from "@/app/admin/(dashboard)/admin-route-access";
 
 export default function AdminRouteTemplate({
   children,

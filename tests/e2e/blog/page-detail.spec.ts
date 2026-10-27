@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openBlogHome } from "./helpers";
+import { openBlogHome } from "@tests/e2e/blog/helpers";
 
 test.describe("blog page detail", () => {
   test("@regression static page detail (about) loads successfully", async ({

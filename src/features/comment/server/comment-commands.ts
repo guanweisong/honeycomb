@@ -1,15 +1,15 @@
-import type { CommentTargetRepository } from "./comment-target-repository";
-import type { CommentCommandRepository } from "./comment-command-repository";
+import type { CommentTargetRepository } from "@/features/comment/server/comment-target-repository";
+import type { CommentCommandRepository } from "@/features/comment/server/comment-command-repository";
 import "server-only";
 
-import { toPublicComment } from "./comment-public-dto";
+import { toPublicComment } from "@/features/comment/server/comment-public-dto";
 import {
   assertCommentParentMatches,
   assertPublicTarget,
   toCommentTargetReference,
-} from "./comment-target-policy";
+} from "@/features/comment/server/comment-target-policy";
 import type { CommentStatus } from "@/features/comment/types/comment.status";
-import { assertCommentTransition } from "../rules/comment-moderation";
+import { assertCommentTransition } from "@/features/comment/rules/comment-moderation";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import type {

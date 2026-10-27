@@ -2,8 +2,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import type { Logger, Metrics } from "./contracts";
-import { LogEvent, MetricName } from "./names";
+import type { Logger, Metrics } from "@/lib/observability/core/contracts";
+import { LogEvent, MetricName } from "@/lib/observability/core/names";
 
 describe("observability contracts", () => {
   it("allows a logger and metrics implementation to serve the stable contracts", () => {

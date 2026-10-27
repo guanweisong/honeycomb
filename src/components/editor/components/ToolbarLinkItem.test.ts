@@ -19,7 +19,7 @@ vi.mock("@/components/ui/input", () => ({
     return React.createElement("input", { ...props, onChange });
   },
 }));
-vi.mock("./ToolbarButton", () => ({
+vi.mock("@/components/editor/components/ToolbarButton", () => ({
   ToolbarButton: ({
     children,
     onOpenChange,
@@ -39,7 +39,7 @@ vi.mock("./ToolbarButton", () => ({
     ),
 }));
 
-import { ToolbarLinkItem } from "./ToolbarLinkItem";
+import { ToolbarLinkItem } from "@/components/editor/components/ToolbarLinkItem";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

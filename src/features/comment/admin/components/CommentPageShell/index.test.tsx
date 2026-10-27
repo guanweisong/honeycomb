@@ -73,7 +73,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { CommentPageShell } from "./index";
+import { CommentPageShell } from "@/features/comment/admin/components/CommentPageShell/index";
 
 describe("CommentPageShell", () => {
   let container: HTMLDivElement;

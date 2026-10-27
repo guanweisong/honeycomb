@@ -117,7 +117,7 @@ vi.mock("@/components/ui/command", () => ({
     React.createElement("div", null, children),
 }));
 
-import MultiTag, { type MultiTagProps } from "./index";
+import MultiTag, { type MultiTagProps } from "@/features/post/admin/edit/components/MultiTag/index";
 
 describe("MultiTag", () => {
   let container: HTMLDivElement;

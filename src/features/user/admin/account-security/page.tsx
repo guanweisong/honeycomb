@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { AccountSecurityTabs } from "./components/AccountSecurityTabs";
+import { AccountSecurityTabs } from "@/features/user/admin/account-security/components/AccountSecurityTabs";
 import { getEnabledSocialProviders } from "@/lib/auth/providers.server";
 import LoadingState from "@/components/LoadingState";
 

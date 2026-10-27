@@ -1,7 +1,7 @@
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { parseEnumValue } from "@/lib/db/value-validation";
 import type * as schema from "@/lib/db/schema";
-import type { PublicCommentSource } from "./comment-public-dto";
+import type { PublicCommentSource } from "@/features/comment/server/comment-public-dto";
 export function parseCommentStatus(status: unknown): CommentStatus | null {
   return status === null
     ? null

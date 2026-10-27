@@ -80,7 +80,7 @@ vi.mock("@/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
 
-import Pages, { generateMetadata } from "./page";
+import Pages, { generateMetadata } from "@/app/(blog)/[locale]/pages/[id]/page";
 
 describe("pages detail page", () => {
   let container: HTMLDivElement;

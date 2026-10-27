@@ -1,4 +1,4 @@
-import type { LogEvent, MetricLabelName, MetricName } from "./names";
+import type { LogEvent, MetricLabelName, MetricName } from "@/lib/observability/core/names";
 
 export type LogContext = Record<string, unknown>;
 

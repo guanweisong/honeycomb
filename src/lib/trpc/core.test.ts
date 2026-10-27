@@ -12,8 +12,8 @@ import {
   permissionProcedure,
   permissionsProcedure,
   publicProcedure,
-} from "./core";
-import type { Context } from "./context";
+} from "@/lib/trpc/core";
+import type { Context } from "@/lib/trpc/context";
 
 const requestId = "req-trpc-observability";
 

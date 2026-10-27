@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { refreshMockedAdminUser, signInAsDashboardTestUser } from "./auth";
+import { refreshMockedAdminUser, signInAsDashboardTestUser } from "@tests/e2e/admin/auth";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 import { MediaUploadIntentInputSchema } from "@/features/media/schemas/media.upload.schema";
 import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
 import { MediaRegisterUploadSchema } from "@/features/media/schemas/media.upload.schema";
 import { MediaDeleteSchema } from "@/features/media/schemas/media.delete.schema";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
-import { mockedAdminUser, mockedSiteSetting } from "./fixtures";
+import { mockedAdminUser, mockedSiteSetting } from "@tests/e2e/admin/fixtures";
 
 test.use({ bypassCSP: true });
 

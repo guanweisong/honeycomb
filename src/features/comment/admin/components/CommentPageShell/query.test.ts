@@ -57,7 +57,7 @@ vi.mock("@/components/DynamicForm", () => ({
     return null;
   },
 }));
-import { CommentPageShell } from "./index";
+import { CommentPageShell } from "@/features/comment/admin/components/CommentPageShell/index";
 import { adminListQueryOptions } from "@/components/admin/config/query-options";
 
 describe("comment query parameters", () => {

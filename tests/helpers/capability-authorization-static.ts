@@ -1,6 +1,6 @@
 import { posix } from "node:path";
 import * as ts from "typescript";
-export { loadProductionSources } from "./capability-authorization-sources";
+export { loadProductionSources } from "@tests/helpers/capability-authorization-sources";
 
 function bindingIdentifiers(name: ts.BindingName): string[] {
   if (ts.isIdentifier(name)) return [name.text];

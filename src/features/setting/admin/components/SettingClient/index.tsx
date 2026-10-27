@@ -20,7 +20,7 @@ import { useSiteSetting } from "@/features/setting/admin/use-site-setting";
 import {
   useSettingSnapshotForm,
   type SettingFormValues,
-} from "../../use-setting-snapshot-form";
+} from "@/features/setting/admin/use-setting-snapshot-form";
 import type { SettingRecord } from "@/features/setting/types/setting.record";
 
 export default function Setting() {

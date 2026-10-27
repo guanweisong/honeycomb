@@ -1,8 +1,8 @@
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 友情链接表 (link)

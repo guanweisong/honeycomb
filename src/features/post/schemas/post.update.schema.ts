@@ -4,7 +4,7 @@ import {
   PostFieldsSchema,
   PostRelationPatchSchema,
   PostVersionSchema,
-} from "./post.fields.schema";
+} from "@/features/post/schemas/post.fields.schema";
 
 export const PostUpdateSchema = PostFieldsSchema.partial()
   .extend(PostRelationPatchSchema.shape)

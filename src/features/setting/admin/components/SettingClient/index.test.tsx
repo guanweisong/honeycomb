@@ -58,7 +58,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("sonner", () => ({
   toast: { success: mocks.success, error: mocks.error, warning: mocks.warning },
 }));
-import SettingClient from "./index";
+import SettingClient from "@/features/setting/admin/components/SettingClient/index";
 
 describe("SettingClient", () => {
   let root: Root;

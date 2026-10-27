@@ -7,7 +7,7 @@ import {
   setCacheJSON,
 } from "@/lib/cache/upstash-cache";
 import type { PostListInput } from "@/features/post/types/post.list-query";
-import { listPublicPosts } from "./post-queries";
+import { listPublicPosts } from "@/features/post/server/post-queries";
 import {
   POST_CACHE_NAMESPACE as namespace,
   POST_CACHE_VERSION_KEY as versionKey,

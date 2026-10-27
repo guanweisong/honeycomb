@@ -8,13 +8,13 @@ import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { listPosts, listPublicPosts, getPost } from "../server/post-queries";
+import { listPosts, listPublicPosts, getPost } from "@/features/post/server/post-queries";
 import {
   loadAdminPostListItems,
   loadPostRelations,
-} from "../server/post-relations";
+} from "@/features/post/server/post-relations";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
-import { destroyPosts } from "../server/post-commands";
+import { destroyPosts } from "@/features/post/server/post-commands";
 import { PostStatus } from "@/features/post/types/post.status";
 import { TagType } from "@/features/tag/types/tag.type";
 import { UserLevel } from "@/features/user/types/user.level";

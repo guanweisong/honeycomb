@@ -8,11 +8,11 @@ import {
   check,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { objectId } from "../object-id";
-import { withTimestamps } from "../timestamps";
-import { category } from "./content-category";
-import { page } from "./content-page";
-import { enumCheck } from "../constraint-helpers";
+import { objectId } from "@/lib/db/object-id";
+import { withTimestamps } from "@/lib/db/timestamps";
+import { category } from "@/lib/db/schema/content-category";
+import { page } from "@/lib/db/schema/content-page";
+import { enumCheck } from "@/lib/db/constraint-helpers";
 
 /**
  * 菜单表 (menu)

@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import LoadingState from "@/components/LoadingState";
 import { usePathname } from "next/navigation";
-import type { AdminNavigationItem } from "./index";
+import type { AdminNavigationItem } from "@/app/admin/_components/AdminNavigation/index";
 
 export interface NavigationItemProps {
   item: AdminNavigationItem;

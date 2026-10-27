@@ -3,9 +3,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ToolbarLinkItem } from "./ToolbarLinkItem";
-import { ToolbarButton } from "./ToolbarButton";
-import { ToolbarGroupItem } from "./ToolbarGroupItem";
+import { ToolbarLinkItem } from "@/components/editor/components/ToolbarLinkItem";
+import { ToolbarButton } from "@/components/editor/components/ToolbarButton";
+import { ToolbarGroupItem } from "@/components/editor/components/ToolbarGroupItem";
 
 describe("real toolbar control semantics", () => {
   let container: HTMLDivElement;

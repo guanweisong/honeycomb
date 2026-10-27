@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
-vi.mock("./hooks/use-post-editor", () => ({
+vi.mock("@/features/post/admin/edit/hooks/use-post-editor", () => ({
   usePostEditor: () => {
     const [showPhotoPicker, setShowPhotoPicker] = useState(false);
     const baselineVersion = state.baselineVersion;
@@ -44,10 +44,10 @@ vi.mock("@/components/ui/form", () => ({
   Form: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock("./components/PostTypeFields", () => ({
+vi.mock("@/features/post/admin/edit/components/PostTypeFields", () => ({
   PostTypeFields: () => <input aria-label="Title" />,
 }));
-vi.mock("./components/PostSidebarFields", () => ({
+vi.mock("@/features/post/admin/edit/components/PostSidebarFields", () => ({
   PostSidebarFields: ({
     editor,
   }: {
@@ -97,12 +97,12 @@ vi.mock("@/features/media/admin/components/MediaPageShell", () => {
     ),
   };
 });
-vi.mock("../../../category/admin/components/CategoryFormDialog", () => ({
+vi.mock("@/features/category/admin/components/CategoryFormDialog", () => ({
   default: () => null,
 }));
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
-import PostDetail from "./page";
+import PostDetail from "@/features/post/admin/edit/page";
 import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
 
 function LayoutHarness() {

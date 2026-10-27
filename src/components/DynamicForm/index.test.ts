@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { DynamicForm, type DynamicFormRef } from "./index";
+import { DynamicForm, type DynamicFormRef } from "@/components/DynamicForm/index";
 
 if (typeof ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
