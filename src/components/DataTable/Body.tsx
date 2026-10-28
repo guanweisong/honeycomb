@@ -4,6 +4,8 @@ import type { CheckedState } from "radix-ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { cn } from "cn";
+import type { PinnedColumnOffsets } from "@/components/DataTable/usePinnedColumnOffsets";
 
 interface DataTableBodyProps<TData> {
   table: TanStackTable<TData>;
@@ -17,6 +19,7 @@ interface DataTableBodyProps<TData> {
   onSelectRow: (row: TData, checked: CheckedState) => void;
   rowActions?: (row: TData) => React.ReactNode;
   onRetry?: () => void;
+  pinnedColumnOffsets: PinnedColumnOffsets;
 }
 
 export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
@@ -32,6 +35,7 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
     onSelectRow,
     rowActions,
     onRetry,
+    pinnedColumnOffsets,
   } = props;
   const colSpan = columnCount + (selectableRows ? 1 : 0) + (rowActions ? 1 : 0);
 
@@ -64,9 +68,19 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
         </TableRow>
       ) : (
         table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
+          <TableRow
+            key={row.id}
+            className={cn(pinnedColumnOffsets.enabled && "group")}
+          >
             {selectableRows && (
-              <TableCell>
+              <TableCell
+                style={pinnedColumnOffsets.getSelectionStyle("body")}
+                className={cn(
+                  pinnedColumnOffsets.getSelectionStyle("body") &&
+                    "bg-background group-hover:bg-muted",
+                  "[&:has([role=checkbox])]:pr-2",
+                )}
+              >
                 <Checkbox
                   aria-label={`选择记录 ${getRowLabel?.(row.original) ?? row.id}`}
                   checked={isRowSelected(row.original)}
@@ -77,12 +91,34 @@ export function DataTableBody<TData>(props: DataTableBodyProps<TData>) {
                 />
               </TableCell>
             )}
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            {row.getVisibleCells().map((cell) => {
+              const stickyStyle = pinnedColumnOffsets.getColumnStyle(
+                cell.column.id,
+                "body",
+              );
+              return (
+                <TableCell
+                  key={cell.id}
+                  style={stickyStyle}
+                  className={cn(
+                    stickyStyle && "bg-background group-hover:bg-muted",
+                  )}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              );
+            })}
+            {rowActions && (
+              <TableCell
+                style={pinnedColumnOffsets.getActionStyle("body")}
+                className={cn(
+                  pinnedColumnOffsets.getActionStyle("body") &&
+                    "bg-background group-hover:bg-muted",
+                )}
+              >
+                {rowActions(row.original)}
               </TableCell>
-            ))}
-            {rowActions && <TableCell>{rowActions(row.original)}</TableCell>}
+            )}
           </TableRow>
         ))
       )}

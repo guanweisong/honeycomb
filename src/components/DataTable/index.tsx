@@ -5,7 +5,9 @@ import { cn } from "cn";
 import { DataTableBody } from "@/components/DataTable/Body";
 import { DataTableHeader } from "@/components/DataTable/Header";
 import { DataTablePagination } from "@/components/DataTable/Pagination";
+import { PinnedColumnShadow } from "@/components/DataTable/PinnedColumnShadow";
 import { useDataTableState } from "@/components/DataTable/useDataTableState";
+import { usePinnedColumnOffsets } from "@/components/DataTable/usePinnedColumnOffsets";
 import { useRowSelection } from "@/components/DataTable/useRowSelection";
 import LoadingState from "@/components/LoadingState";
 import type { DataTableProps } from "@/components/DataTable/types";
@@ -74,6 +76,12 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     getCoreRowModel: getCoreRowModel(),
   });
 
+  const pinnedColumnOffsets = usePinnedColumnOffsets({
+    table,
+    selectableRows,
+    hasRowActions: Boolean(rowActions),
+  });
+
   const {
     isAllSelectedOnCurrentPage,
     isRowSelected,
@@ -121,6 +129,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             isAllSelectedOnCurrentPage={isAllSelectedOnCurrentPage}
             onSelectAll={handleSelectAll}
             hasRowActions={Boolean(rowActions)}
+            pinnedColumnOffsets={pinnedColumnOffsets}
           />
           <DataTableBody
             getRowLabel={getRowLabel}
@@ -134,8 +143,16 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
             onSelectRow={handleSelectRow}
             rowActions={rowActions}
             onRetry={onRetry}
+            pinnedColumnOffsets={pinnedColumnOffsets}
           />
         </Table>
+        {pinnedColumnOffsets.shadowOverlays.map((overlay) => (
+          <PinnedColumnShadow
+            key={overlay.edge}
+            edge={overlay.edge}
+            style={overlay.style}
+          />
+        ))}
         {isFetching && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
             <LoadingState
