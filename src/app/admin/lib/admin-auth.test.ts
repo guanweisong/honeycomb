@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   getAdminUser: vi.fn(),
 }));
 
+vi.mock("next/server", () => ({ connection: vi.fn(async () => {}) }));
+
 vi.mock("@/features/user/server/admin-user", () => ({
   getAdminUser: mocks.getAdminUser,
 }));

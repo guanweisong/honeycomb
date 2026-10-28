@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BetterAuthOptions } from "better-auth";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createLogger, type BetterAuthOptions } from "better-auth";
 import { captcha } from "better-auth/plugins";
 import { getConfiguredProviderIds } from "@/lib/auth/providers";
 
@@ -10,6 +10,7 @@ const captured = vi.hoisted(() => ({
     AUTH_SECRET: "test-secret",
     turnstile: undefined as { secretKey: string } | undefined,
   },
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 vi.mock("better-auth/minimal", () => ({
@@ -37,6 +38,9 @@ vi.mock("@/lib/auth/passkey-config", () => ({
 vi.mock("@/app/_auth/auth-hooks", () => ({
   createAuthDatabaseHooks: () => ({}),
 }));
+vi.mock("@/lib/observability/server/registry", () => ({
+  getLogger: () => captured.logger,
+}));
 
 describe("auth transport boundary", () => {
   beforeEach(() => {
@@ -44,6 +48,54 @@ describe("auth transport boundary", () => {
     vi.clearAllMocks();
     captured.options = undefined;
     captured.env.turnstile = undefined;
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("routes real SDK diagnostics through the safe logger without raw arguments", async () => {
+    const rawConsole = vi.spyOn(console, "error").mockImplementation(() => {});
+    await import("@/auth");
+    const sdkLogger = createLogger(captured.options?.logger);
+    const cause = Object.assign(new Error("session=private-session-token"), {
+      code: "SQLITE_BUSY",
+    });
+    const failure = Object.assign(
+      new Error("select session where token = ?", { cause }),
+      {
+        params: ["private-session-token"],
+      },
+    );
+
+    sdkLogger.error("INTERNAL_SERVER_ERROR", failure);
+
+    expect(captured.logger.error).toHaveBeenCalledExactlyOnceWith(
+      "server.error",
+      {
+        operation: "better-auth",
+        diagnosticCode: "SQLITE_BUSY",
+      },
+    );
+    expect(rawConsole).not.toHaveBeenCalled();
+    expect(captured.options?.logger?.disabled).not.toBe(true);
+  });
+
+  it("preserves the SDK default warning threshold", async () => {
+    const rawConsole = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await import("@/auth");
+    const sdkLogger = createLogger(captured.options?.logger);
+    sdkLogger.debug("private debug detail");
+    sdkLogger.info("private info detail");
+    sdkLogger.warn("private warning detail");
+
+    expect(captured.logger.info).not.toHaveBeenCalled();
+    expect(captured.logger.warn).toHaveBeenCalledExactlyOnceWith(
+      "server.error",
+      {
+        operation: "better-auth",
+        diagnosticCode: "UNKNOWN",
+      },
+    );
+    expect(rawConsole).not.toHaveBeenCalled();
   });
 
   it("keeps the supported social provider order stable", () => {

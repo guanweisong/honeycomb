@@ -41,6 +41,20 @@ import {
 
 export type PostSubmitAction = "create" | "update";
 
+// Match registered fields without turning optional locales into empty-string writes.
+const newPostValues: PostEditorValues = {
+  type: PostType.ARTICLE,
+  title: { zh: undefined, en: undefined },
+  content: { zh: undefined, en: undefined },
+  excerpt: { zh: undefined, en: undefined },
+  categoryId: undefined,
+  coverId: undefined,
+  galleryStyles: [],
+  movieActors: [],
+  movieDirectors: [],
+  movieStyles: [],
+};
+
 /**
  * 维护文章编辑快照、版本和账户隔离的创建尝试；未知结果必须先核对，不能换令牌重建。
  * 保存成功后的刷新失败与写入失败分开反馈，提交期间的新输入仍保留为未保存编辑。
@@ -71,13 +85,7 @@ export function usePostEditor(id: string | null) {
   );
   const form = useForm<PostEditorValues>({
     resolver: zodResolver(PostEditorSchema),
-    defaultValues: {
-      type: PostType.ARTICLE,
-      galleryStyles: [],
-      movieActors: [],
-      movieDirectors: [],
-      movieStyles: [],
-    },
+    defaultValues: newPostValues,
   });
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = watchedType ?? PostType.ARTICLE;
@@ -132,7 +140,7 @@ export function usePostEditor(id: string | null) {
       );
       setBaselineVersion(post?.version);
       form.reset({
-        ...post,
+        ...(post ?? newPostValues),
         type: post?.type ?? PostType.ARTICLE,
         galleryStyles: post?.galleryStyles ?? [],
         movieActors: post?.movieActors ?? [],

@@ -54,18 +54,6 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
   const interactiveLoginInFlight = useRef(false);
   const [interactiveLoginPending, setInteractiveLoginPending] = useState(false);
 
-  const [backgroundMotionAllowed, setBackgroundMotionAllowed] = useState(false);
-  const [backgroundPaused, setBackgroundPaused] = useState(false);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia("(prefers-reduced-motion: no-preference)");
-    const update = () => setBackgroundMotionAllowed(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-
   const callbackUrl = normalizeAdminCallback(targetUrl);
 
   useEffect(() => {
@@ -179,29 +167,16 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
         />
       ) : null}
       <div className="min-h-dvh box-border flex items-center justify-center px-4 py-8 text-center bg-green-700">
-        {backgroundMotionAllowed && !backgroundPaused && (
-          <video
-            src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
-            className="fixed inset-0 w-full h-full object-cover"
-            autoPlay={true}
-            muted={true}
-            loop={true}
-            playsInline
-            aria-hidden="true"
-          />
-        )}
+        <video
+          src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
+          className="fixed inset-0 w-full h-full object-cover"
+          autoPlay={true}
+          muted={true}
+          loop={true}
+          playsInline
+          aria-hidden="true"
+        />
         <div className="relative z-10 w-full max-w-96 my-auto text-white p-6 bg-white/20 backdrop-blur rounded">
-          {backgroundMotionAllowed && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="mb-4"
-              onClick={() => setBackgroundPaused((paused) => !paused)}
-            >
-              {backgroundPaused ? "播放背景动画" : "暂停背景动画"}
-            </Button>
-          )}
           <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
           <div className="opacity-80 mb-6">游客账号：guest 123456</div>
           <div className="space-y-4 [&_[data-slot=form-item]]:gap-1.5 [&_input[data-slot=input]]:h-10 [&_input[data-slot=input]]:rounded-md [&_input[data-slot=input]]:border-white/20 [&_input[data-slot=input]]:bg-white/80 [&_input[data-slot=input]]:px-4 [&_input[data-slot=input]]:text-black [&_input[data-slot=input]]:shadow-none [&_input[data-slot=input]]:placeholder:text-black/45 [&_input[data-slot=input]]:focus-visible:border-white [&_input[data-slot=input]]:focus-visible:ring-white/30 [&_[data-slot=form-message]]:text-left [&_[data-slot=form-message]]:text-red-200">

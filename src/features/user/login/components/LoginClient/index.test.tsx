@@ -369,40 +369,56 @@ describe("admin login page", () => {
     expect(card?.parentElement?.className).toContain("min-h-dvh");
   });
 
-  it("starts no video for reduced motion and supports preference changes and a keyboard pause control", async () => {
-    const query = Object.assign(new EventTarget(), { matches: false });
-    const matchMedia = vi.fn(() => query);
-    vi.stubGlobal("matchMedia", matchMedia);
+  it.each([true, false, undefined])(
+    "renders the looping background without playback controls for system motion preference %s",
+    async (matches) => {
+      vi.stubGlobal(
+        "matchMedia",
+        matches === undefined
+          ? undefined
+          : () => Object.assign(new EventTarget(), { matches }),
+      );
+      await act(async () =>
+        root.render(<LoginClient setting={undefined} providers={[]} />),
+      );
+
+      const video = container.querySelector("video");
+      expect(video?.getAttribute("src")).toBe(
+        "https://assets.honeycomb.test/common/rainAndBird.mp4",
+      );
+      expect(video?.autoplay).toBe(true);
+      expect(video?.muted).toBe(true);
+      expect(video?.loop).toBe(true);
+      expect(video?.playsInline).toBe(true);
+      expect(video?.getAttribute("aria-hidden")).toBe("true");
+      expect(
+        [...container.querySelectorAll("button")].filter((button) =>
+          /(?:暂停|播放)背景动画/.test(button.textContent ?? ""),
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it("keeps the same background video mounted when system motion preferences change", async () => {
+    const query = Object.assign(new EventTarget(), { matches: true });
+    vi.stubGlobal("matchMedia", () => query);
     await act(async () =>
       root.render(<LoginClient setting={undefined} providers={[]} />),
     );
-    expect(matchMedia).toHaveBeenCalledWith(
-      "(prefers-reduced-motion: no-preference)",
-    );
-    expect(container.querySelector("video")).toBeNull();
-    await act(async () => {
-      query.matches = true;
-      query.dispatchEvent(new Event("change"));
-    });
-    expect(container.querySelector("video")?.autoplay).toBe(true);
-    const pause = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "暂停背景动画",
-    );
-    expect(pause).toBeDefined();
-    await act(async () => {
-      pause?.focus();
-      pause?.click();
-    });
-    expect(document.activeElement).toBe(pause);
-    expect(container.querySelector("video")).toBeNull();
-    await act(async () => pause?.click());
-    expect(container.querySelector("video")).not.toBeNull();
+    const video = container.querySelector("video");
+    expect(video).not.toBeNull();
     await act(async () => {
       query.matches = false;
       query.dispatchEvent(new Event("change"));
     });
-    expect(container.querySelector("video")).toBeNull();
+    expect(container.querySelector("video")).toBe(video);
+    await act(async () => {
+      query.matches = true;
+      query.dispatchEvent(new Event("change"));
+    });
+    expect(container.querySelector("video")).toBe(video);
   });
+
   it("associates login labels and autocomplete with the real inputs", async () => {
     await act(async () =>
       root.render(<LoginClient setting={undefined} providers={[]} />),

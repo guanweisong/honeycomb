@@ -9,6 +9,7 @@ import { getAuthEnv } from "@/env/server";
 import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { getPasskeyConfig } from "@/lib/auth/passkey-config";
+import { safeAuthLogger } from "@/lib/auth/safe-auth-logger";
 import type { AuthProviderConfig } from "@/lib/auth/providers";
 import { createAuthDatabaseHooks } from "@/app/_auth/auth-hooks";
 import {
@@ -61,6 +62,7 @@ function buildPlugins(): NonNullable<BetterAuthOptions["plugins"]> {
 }
 
 const authOptions: BetterAuthOptions = {
+  logger: safeAuthLogger,
   baseURL: authBaseURL || "http://localhost:3000",
   secret: authEnv.AUTH_SECRET,
   disabledPaths: ["/update-user"],
