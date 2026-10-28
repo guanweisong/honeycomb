@@ -85,7 +85,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
-          call: { callee: "setModalProps" },
+          reference: "onCreateCategory",
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },

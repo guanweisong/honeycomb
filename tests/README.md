@@ -70,6 +70,8 @@ bun run test:e2e:ui
 
 ## CI 执行与测试环境
 
+CI 各 lane 仍独立创建随机 fixture；`scripts/ci-fixture-lifecycle.sh` 只共享退出清理、信号和阶段计时。子进程 fixture 使用 `tests/helpers/run-test-process.ts`；历史迁移测试通过 `tests/helpers/local-test-database.ts` 管理独占本地 client 和显式 journal 截止版本，业务 seed、真实 SQL 与回滚断言保留在各 suite。
+
 E2E 的显式临时目录初始化、凭据隔离及清理契约见 [README 的 E2E 说明](../README.md#可用脚本)。包命令的 `scripts/e2e-preflight.ts` 只做参数和报告目的地预检，不替代现有 CI 生命周期或 Playwright 服务管理。普通筛选与诊断参数保持可用；配置、输出、源码更新及自定义 reporter 覆盖被拒绝。`--list` / `--help` 使用 stdout，不初始化数据库或启动服务。
 
 CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage` 同时验证断言和覆盖率，不再额外执行重复的 `test:unit:run`。五个进程级门禁文件继续通过 `bun run test:unit:process` 单独运行；测试清单、覆盖率排除项和门槛不因此缩减。本地仍可使用 `test:unit:run` 进行不采集覆盖率的快速验证。

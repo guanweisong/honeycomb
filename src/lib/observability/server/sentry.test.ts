@@ -5,8 +5,13 @@ const sdk = vi.hoisted(() => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("@sentry/nextjs", () => sdk);
+import * as sanitizers from "@/lib/observability/core/sanitize";
 import { configureSentryLogs } from "@/lib/observability/server/sentry";
-import { configureObservability, getLogger, getMetrics } from "@/lib/observability/server/registry";
+import {
+  configureObservability,
+  getLogger,
+  getMetrics,
+} from "@/lib/observability/server/registry";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
 describe("Sentry setup", () => {
   afterEach(() => {
@@ -19,6 +24,7 @@ describe("Sentry setup", () => {
     const metrics = { increment: vi.fn(), recordDuration: vi.fn() };
     configureObservability({ metrics });
     vi.stubEnv("VERCEL_ENV", "preview");
+    const sanitizeLabels = vi.spyOn(sanitizers, "sanitizeMetricLabels");
     configureSentryLogs("https://public@example.invalid/1");
     expect(sdk.init).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -54,5 +60,6 @@ describe("Sentry setup", () => {
       {},
     );
     expect(output).toHaveBeenCalledTimes(1);
+    expect(sanitizeLabels).toHaveBeenCalledTimes(1);
   });
 });

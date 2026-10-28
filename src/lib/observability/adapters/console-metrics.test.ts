@@ -3,16 +3,20 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { MetricName } from "@/lib/observability/core/names";
-import { createConsoleMetrics } from "@/lib/observability/adapters/console-metrics";
+import { createConsoleMetricSink } from "@/lib/observability/adapters/console-metrics";
+
+import { createSafeMetrics } from "@/lib/observability/core/safe-adapters";
 
 describe("console metrics", () => {
   it("输出包含稳定运行时字段的 counter 与 duration JSON", () => {
     const lines: string[] = [];
-    const metrics = createConsoleMetrics({
-      service: "honeycomb-test",
-      environment: "test",
-      write: (line) => lines.push(line),
-    });
+    const metrics = createSafeMetrics(
+      createConsoleMetricSink({
+        service: "honeycomb-test",
+        environment: "test",
+        write: (line) => lines.push(line),
+      }),
+    );
 
     metrics.increment(MetricName.apiRequestsTotal, { method: "query" });
     metrics.recordDuration(MetricName.apiRequestDurationMs, 12, {
@@ -46,7 +50,7 @@ describe("console metrics", () => {
 
   it("丢弃非法标签和值且不泄露敏感字段", () => {
     const write = vi.fn();
-    const metrics = createConsoleMetrics({ write });
+    const metrics = createSafeMetrics(createConsoleMetricSink({ write }));
 
     metrics.increment(MetricName.apiErrorsTotal, {
       procedure: "private-user-id",
@@ -62,11 +66,13 @@ describe("console metrics", () => {
   });
 
   it("writer 抛错时保持 fail-open", () => {
-    const metrics = createConsoleMetrics({
-      write: () => {
-        throw new Error("stdout unavailable");
-      },
-    });
+    const metrics = createSafeMetrics(
+      createConsoleMetricSink({
+        write: () => {
+          throw new Error("stdout unavailable");
+        },
+      }),
+    );
 
     expect(() => metrics.increment(MetricName.apiErrorsTotal)).not.toThrow();
     expect(() =>

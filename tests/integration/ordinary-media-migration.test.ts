@@ -1,62 +1,19 @@
 // @vitest-environment node
-import { createClient, type Client } from "@libsql/client/node";
+import type { Client } from "@libsql/client/node";
+import {
+  withTestDatabase,
+  prepareMigrationFolder,
+} from "@tests/helpers/local-test-database";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { getTableConfig } from "drizzle-orm/sqlite-core";
-import {
-  existsSync,
-  lstatSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  mkdirSync,
-  copyFileSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { media } from "@/lib/db/schema/content-media";
 
 async function withLegacyDatabase(run: (client: Client) => Promise<void>) {
-  const directory = mkdtempSync(join(tmpdir(), "honeycomb-ordinary-media-"));
-  let client: Client | undefined;
-  const cleanup = () => {
-    client?.close();
-    rmSync(directory, { recursive: true, force: true });
-  };
-  const signals = ["SIGHUP", "SIGINT", "SIGTERM"] as const;
-  const handlers = signals.map((signal) => {
-    const handler = () => {
-      cleanup();
-      process.exit(1);
-    };
-    process.once(signal, handler);
-    return { signal, handler };
-  });
-  try {
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    expect(stat.uid).toBe(process.getuid?.());
-    const migrationsFolder = join(directory, "baseline");
-    mkdirSync(join(migrationsFolder, "meta"), { recursive: true });
-    for (const file of readdirSync("drizzle").filter((name) =>
-      /^000[0-7]_.*\.sql$/.test(name),
-    )) {
-      copyFileSync(join("drizzle", file), join(migrationsFolder, file));
-    }
-    const journal: { entries: { idx: number }[] } = JSON.parse(
-      readFileSync("drizzle/meta/_journal.json", "utf8"),
-    );
-    writeFileSync(
-      join(migrationsFolder, "meta/_journal.json"),
-      JSON.stringify({
-        ...journal,
-        entries: journal.entries.filter(({ idx }) => idx < 8),
-      }),
-    );
-    client = createClient({ url: `file:${join(directory, "migration.db")}` });
+  return withTestDatabase(async (client, directory) => {
+    const migrationsFolder = prepareMigrationFolder(directory, 7);
     await migrate(drizzle(client), { migrationsFolder });
     await client.executeMultiple(`
       INSERT INTO user (id, email) VALUES ('author', 'author@example.test'), ('other', 'other@example.test');
@@ -69,13 +26,7 @@ async function withLegacyDatabase(run: (client: Client) => Promise<void>) {
       INSERT INTO comment (id, author, content, email, post_id) VALUES ('comment', 'Reader', 'Comment', 'reader@example.test', 'legacy');
     `);
     await run(client);
-  } finally {
-    cleanup();
-    handlers.forEach(({ signal, handler }) =>
-      process.removeListener(signal, handler),
-    );
-    expect(existsSync(directory)).toBe(false);
-  }
+  });
 }
 
 describe("ordinary media migration", () => {

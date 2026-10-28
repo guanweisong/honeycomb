@@ -1,10 +1,6 @@
 import "server-only";
 import { Permission } from "@/lib/auth/permissions";
-import {
-  permissionProcedure,
-  createTRPCRouter,
-  mapApplicationError,
-} from "@/lib/trpc/core";
+import { permissionProcedure, createTRPCRouter } from "@/lib/trpc/core";
 import { MediaListQuerySchema } from "@/features/media/schemas/media.list.schema";
 import { MediaDeleteSchema } from "@/features/media/schemas/media.delete.schema";
 import { MediaRegisterUploadSchema } from "@/features/media/schemas/media.upload.schema";
@@ -20,9 +16,7 @@ import { publicContentInvalidator } from "@/lib/cache/next-public-content-invali
 export const mediaRouter = createTRPCRouter({
   index: permissionProcedure(Permission.mediaReadAll)
     .input(MediaListQuerySchema)
-    .query(({ input, ctx }) =>
-      createMediaRepository(ctx.db).list(input).catch(mapApplicationError),
-    ),
+    .query(({ input, ctx }) => createMediaRepository(ctx.db).list(input)),
   prepareUpload: permissionProcedure(Permission.mediaUpload)
     .input(MediaUploadIntentInputSchema)
     .mutation(({ input, ctx }) =>
@@ -31,7 +25,7 @@ export const mediaRouter = createTRPCRouter({
         R2Storage,
         input,
         ctx.user.id,
-      ).catch(mapApplicationError),
+      ),
     ),
   registerUpload: permissionProcedure(Permission.mediaUpload)
     .input(MediaRegisterUploadSchema)
@@ -41,7 +35,7 @@ export const mediaRouter = createTRPCRouter({
         R2Storage,
         input.intent,
         ctx.user.id,
-      ).catch(mapApplicationError),
+      ),
     ),
   destroy: permissionProcedure(Permission.mediaDelete)
     .input(MediaDeleteSchema)
@@ -53,6 +47,6 @@ export const mediaRouter = createTRPCRouter({
         publicContentInvalidator,
         ctx.user.id,
         input.acknowledgeUnknownReferences,
-      ).catch(mapApplicationError),
+      ),
     ),
 });

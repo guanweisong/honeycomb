@@ -1,4 +1,5 @@
 import React, { act } from "react";
+import { within } from "@testing-library/dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LinkRecord } from "@/features/link/types/link.record";
@@ -104,14 +105,12 @@ function page(id: string, version = 1): PageWithRelations {
   };
 }
 function button(text: string) {
-  return requireDefined(
-    Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find(
-      (element) => element.textContent?.trim() === text,
-    ),
-  );
+  return within(document.body).getByRole<HTMLButtonElement>("button", {
+    name: text,
+  });
 }
 async function search(container: HTMLElement, value: string) {
-  const input = requireDefined(container.querySelector("input"));
+  const input = within(container).getByRole("textbox");
   const setter = requireDefined(
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set,
   );
@@ -155,11 +154,9 @@ describe.each(["link", "page"] as const)(
     });
 
     async function selectRow() {
-      const checkbox = requireDefined(
-        container.querySelector<HTMLButtonElement>(
-          'tbody button[role="checkbox"]',
-        ),
-      );
+      const checkbox = within(container).getByRole("checkbox", {
+        name: `选择记录 ${kind}-1`,
+      });
       await act(async () => checkbox.click());
     }
 

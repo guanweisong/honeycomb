@@ -11,10 +11,6 @@ type PageEditorDetail = {
   template?: PageTemplate | null;
 } | null;
 
-export function getPageEditorId(searchParams: Pick<URLSearchParams, "get">) {
-  return searchParams.get("id");
-}
-
 export function toPageEditorFormValues(
   detail?: PageEditorDetail,
 ): Partial<PageEditorFormValues> | undefined {

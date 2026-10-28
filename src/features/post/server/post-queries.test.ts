@@ -90,15 +90,15 @@ describe("post ID selection and hydration", () => {
     ).toContain(PostStatus.PUBLISHED);
   });
 
-  it("selects only the detail ID before reading the current snapshot", async () => {
-    mockDb.limit.mockResolvedValue([{ id: first }]);
+  it("reads the authoritative detail snapshot without a redundant preflight", async () => {
     mockDb.query.post.findMany.mockResolvedValue([relation(first)]);
     const result = await getPost(
       asMockDatabase(mockDb),
       first,
       "PUBLISHED_ONLY",
     );
-    expect(mockDb.select).toHaveBeenCalledWith({ id: schema.post.id });
+    expect(mockDb.select).not.toHaveBeenCalled();
+    expect(mockDb.query.post.findMany).toHaveBeenCalledOnce();
     expect(result).toMatchObject({
       id: first,
       version: 3,
@@ -122,7 +122,6 @@ describe("post ID selection and hydration", () => {
     );
     expect(result.list.map((post) => post.id)).toEqual([first]);
     expect(result.total).toBe(2);
-    mockDb.limit.mockResolvedValue([{ id: second }]);
     mockDb.query.post.findMany.mockResolvedValue([]);
     expect(
       await getPost(asMockDatabase(mockDb), second, "PUBLISHED_ONLY"),
@@ -197,7 +196,6 @@ describe("localized media relations", () => {
   it("post detail loads unique images from all supported locales", async () => {
     const db = createMockDb();
     const post = createPostFixture({ content });
-    db.limit.mockResolvedValue([post]);
     db.query.post.findMany.mockResolvedValue([
       {
         ...post,
@@ -226,17 +224,51 @@ describe("localized media relations", () => {
         postTags: [],
       },
     ]);
-    db.where
-      .mockReturnValueOnce(db)
-      .mockResolvedValueOnce([...images, ...images]);
+    db.where.mockResolvedValueOnce([...images, ...images]);
     const result = await getPost(asMockDatabase(db), "post-1", "ALL");
     const query = new SQLiteSyncDialect().sqlToQuery(
-      db.where.mock.calls[1]?.[0],
+      db.where.mock.calls[0]?.[0],
     );
     expect(query.params).toEqual([zhUrl, enUrl]);
     expect(result?.imagesInContent.map(({ url }) => url)).toEqual([
       zhUrl,
       enUrl,
     ]);
+  });
+  it("post detail preserves every localized media URL across bounded SQL reads", async () => {
+    const db = createMockDb();
+    const urls = Array.from(
+      { length: 1001 },
+      (_, index) => `https://cdn.test/${index}.png`,
+    );
+    const rows = urls.map((url, index) => ({
+      ...images[0],
+      id: `media-${index}`,
+      url,
+    }));
+    db.query.post.findMany.mockResolvedValue([
+      {
+        ...relation(first),
+        translations: [
+          {
+            postId: first,
+            locale: "en",
+            title: "Images",
+            content: urls.map((url) => `<img src="${url}">`).join(""),
+          },
+        ],
+      },
+    ]);
+    db.where
+      .mockResolvedValueOnce(rows.slice(0, 500))
+      .mockResolvedValueOnce(rows.slice(500, 1000))
+      .mockResolvedValueOnce(rows.slice(1000));
+    const result = await getPost(asMockDatabase(db), first, "PUBLISHED_ONLY");
+    const batches = db.where.mock.calls.map(
+      ([where]) => dialect.sqlToQuery(where).params,
+    );
+    expect(batches.map((batch) => batch.length)).toEqual([500, 500, 1]);
+    expect(batches.flat()).toEqual(urls);
+    expect(result?.imagesInContent.map(({ url }) => url)).toEqual(urls);
   });
 });

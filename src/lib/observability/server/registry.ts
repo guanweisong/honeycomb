@@ -1,23 +1,30 @@
 import "server-only";
 
-import { createConsoleLogger } from "@/lib/observability/adapters/console";
-import { createConsoleMetrics } from "@/lib/observability/adapters/console-metrics";
+import { createConsoleLogSink } from "@/lib/observability/adapters/console";
+import { createConsoleMetricSink } from "@/lib/observability/adapters/console-metrics";
 import type { Logger, Metrics } from "@/lib/observability/core/contracts";
-import { createSafeLogger, createSafeMetrics } from "@/lib/observability/core/safe-adapters";
+import {
+  createSafeLogger,
+  createSafeMetrics,
+} from "@/lib/observability/core/safe-adapters";
 
 export interface ObservabilityConfiguration {
   logger?: Logger;
   metrics?: Metrics;
 }
 
-let logger = createSafeLogger(createConsoleLogger());
-let metrics = createSafeMetrics(createConsoleMetrics());
+let logger = createSafeLogger(createConsoleLogSink());
+let metrics = createSafeMetrics(createConsoleMetricSink());
 
+/** 仅替换提供的输出端；无参数时恢复全部默认输出端。 */
 export function configureObservability(
-  configuration: ObservabilityConfiguration = {},
+  configuration: ObservabilityConfiguration = {
+    logger: createConsoleLogSink(),
+    metrics: createConsoleMetricSink(),
+  },
 ): void {
-  logger = createSafeLogger(configuration.logger ?? createConsoleLogger());
-  metrics = createSafeMetrics(configuration.metrics ?? createConsoleMetrics());
+  if (configuration.logger) logger = createSafeLogger(configuration.logger);
+  if (configuration.metrics) metrics = createSafeMetrics(configuration.metrics);
 }
 
 export function getLogger(): Logger {

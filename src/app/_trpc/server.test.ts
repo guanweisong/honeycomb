@@ -15,14 +15,22 @@ vi.mock("@/lib/trpc/context", () => ({
 import { createServerClient } from "@/app/_trpc/server";
 
 describe("createServerClient", () => {
-  it("passes current request headers into server context", async () => {
+  it("creates a public context without a fabricated HTTP request", async () => {
     mocks.createCaller.mockReturnValueOnce({});
-    const headers = new Headers({ cookie: "better-auth.session_token=test" });
+    await createServerClient();
+    expect(mocks.createContext).toHaveBeenCalledExactlyOnceWith({});
+  });
 
-    await createServerClient(headers);
-
-    expect(mocks.createContext).toHaveBeenCalledWith({
-      req: expect.objectContaining({ headers }),
+  it("preserves explicit cache request context and observability options", async () => {
+    mocks.createContext.mockClear();
+    const requestContext = { requestId: "cache-fill" };
+    await createServerClient({
+      requestContext,
+      skipRequestObservability: true,
+    });
+    expect(mocks.createContext).toHaveBeenCalledExactlyOnceWith({
+      requestContext,
+      skipRequestObservability: true,
     });
   });
 });

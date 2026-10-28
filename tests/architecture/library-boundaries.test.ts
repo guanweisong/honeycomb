@@ -40,6 +40,16 @@ function libraryImportViolations(path: string, source: string) {
   });
 }
 
+function rawObservabilitySinkImports(path: string, source: string) {
+  if (path.startsWith("src/lib/observability/")) return [];
+  return moduleDependencies(source, path).flatMap(({ specifier, typeOnly }) => {
+    const target = localModulePath(path, specifier);
+    return !typeOnly && target?.startsWith("src/lib/observability/adapters/")
+      ? [`${path} -> ${specifier}`]
+      : [];
+  });
+}
+
 /** Comments are trivia; only top-level directive-prologue strings define clients. */
 function isClientEntry(source: string) {
   const file = ts.createSourceFile(
@@ -82,6 +92,31 @@ function isBrowserForbidden(path: string, source: string) {
 }
 
 describe("technical library and browser dependency boundaries", () => {
+  it("keeps raw telemetry sinks internal to the public sanitized facades", () => {
+    const unsafe =
+      'export { createConsoleLogSink } from "@/lib/observability/adapters/console";';
+    expect(
+      rawObservabilitySinkImports("src/features/example/server/log.ts", unsafe),
+    ).toHaveLength(1);
+    expect(
+      rawObservabilitySinkImports(
+        "src/lib/observability/server/registry.ts",
+        unsafe,
+      ),
+    ).toEqual([]);
+    expect(
+      rawObservabilitySinkImports(
+        "src/features/example/server/log.ts",
+        'import { getLogger } from "@/lib/observability/server";',
+      ),
+    ).toEqual([]);
+    expect(
+      sourceFiles("src").flatMap((path) =>
+        rawObservabilitySinkImports(path, readFileSync(path, "utf8")),
+      ),
+    ).toEqual([]);
+  });
+
   it.each([
     ['"use client"; export const View = () => null;', true],
     ['// License header\n"use client"; export const View = () => null;', true],

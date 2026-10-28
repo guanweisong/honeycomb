@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "cn";
 import { MultiSelect } from "@/components/MultiSelect";
-import { DataTableColumnMetaSchema } from "@/components/DataTable/types";
 
 interface DataTableHeaderProps<TData> {
   table: TanStackTable<TData>;
@@ -43,12 +42,7 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
           )}
           {headerGroup.headers.map((header) => {
             const column = header.column;
-            const metadata = DataTableColumnMetaSchema.safeParse(
-              column.columnDef.meta,
-            );
-            const filterOptions = metadata.success
-              ? metadata.data.filterOptions
-              : undefined;
+            const filterOptions = column.columnDef.meta?.filterOptions;
             const isSorted = column.getIsSorted();
             const rawFilterValue: unknown = column.getFilterValue();
             const filterValue = Array.isArray(rawFilterValue)

@@ -8,7 +8,7 @@ import "@/app/(blog)/app.scss";
 import BackToTop from "@/app/(blog)/_components/BackToTop";
 import Header from "@/app/(blog)/_components/Header";
 import Footer from "@/app/(blog)/_components/Footer";
-import ThemeProvider from "@/app/(blog)/_components/ThemeProvider";
+import { ThemeProvider } from "next-themes";
 import { setRequestLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { NextIntlClientProvider } from "next-intl";

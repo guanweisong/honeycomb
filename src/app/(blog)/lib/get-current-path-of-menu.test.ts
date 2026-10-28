@@ -40,31 +40,21 @@ describe("get-current-path-of-menu", () => {
   it("returns ancestor paths from root to the selected item", () => {
     expect(
       getCurrentPathOfMenu({
-        familyProp: "path",
         id: "child-id",
         menu: flatMenu,
       }),
     ).toEqual(["parent", "child"]);
   });
 
-  it("returns an empty path for missing ids or non-string family values", () => {
+  it("returns an empty path for missing ids", () => {
     expect(
       getCurrentPathOfMenu({
-        familyProp: "path",
         id: "missing",
         menu: flatMenu,
       }),
     ).toEqual([]);
     expect(
       getCurrentPathOfMenu({
-        familyProp: "title",
-        id: "child-id",
-        menu: flatMenu,
-      }),
-    ).toEqual([]);
-    expect(
-      getCurrentPathOfMenu({
-        familyProp: "path",
         menu: flatMenu,
       }),
     ).toEqual([]);
@@ -73,7 +63,6 @@ describe("get-current-path-of-menu", () => {
   it("supports a single root record", () => {
     expect(
       getCurrentPathOfMenu({
-        familyProp: "path",
         id: "only",
         menu: [
           {
@@ -101,7 +90,6 @@ describe("deep menu ancestry", () => {
     expect(
       getCurrentPathOfMenu({
         id: "c",
-        familyProp: "path",
         menu: [record("a", null), record("b", "a"), record("c", "b")],
       }),
     ).toEqual(["a", "b", "c"]);
@@ -110,7 +98,6 @@ describe("deep menu ancestry", () => {
     expect(
       getCurrentPathOfMenu({
         id: "missing",
-        familyProp: "path",
         menu: [record("a", null)],
       }),
     ).toEqual([]);
@@ -119,21 +106,18 @@ describe("deep menu ancestry", () => {
     expect(
       getCurrentPathOfMenu({
         id: "b",
-        familyProp: "path",
         menu: [record("a", "missing"), record("b", "a")],
       }),
     ).toEqual(["a", "b"]);
     expect(
       getCurrentPathOfMenu({
         id: "b",
-        familyProp: "path",
         menu: [record("a", "b"), record("b", "a")],
       }),
     ).toEqual(["a", "b"]);
     expect(
       getCurrentPathOfMenu({
         id: "a",
-        familyProp: "path",
         menu: [record("a", "a")],
       }),
     ).toEqual(["a"]);

@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { createTableRelationsHelpers } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import {
   SQLiteSyncDialect,
@@ -197,6 +198,40 @@ describe("db schema helpers", () => {
     expect(settingConfig.indexes.map(({ config }) => config.name)).toContain(
       "setting_singleton_idx",
     );
+  });
+
+  it("keeps self-relation names and foreign-key wiring intact", () => {
+    const category = schema.categoryRelations.config(
+      createTableRelationsHelpers(schema.category),
+    );
+    const comment = schema.commentRelations.config(
+      createTableRelationsHelpers(schema.comment),
+    );
+    const menu = schema.menuRelations.config(
+      createTableRelationsHelpers(schema.menu),
+    );
+    expect(category.parentItem.relationName).toBe("category_parent");
+    expect(category.children.relationName).toBe("category_parent");
+    expect(category.parentItem.config?.fields).toEqual([
+      schema.category.parent,
+    ]);
+    expect(category.parentItem.config?.references).toEqual([
+      schema.category.id,
+    ]);
+    expect(comment.parent.relationName).toBe("comment_parent");
+    expect(comment.children.relationName).toBe("comment_parent");
+    expect(comment.parent.config?.fields).toEqual([schema.comment.parentId]);
+    expect(comment.parent.config?.references).toEqual([schema.comment.id]);
+    expect(menu.parentItem.relationName).toBe("menu_parent");
+    expect(menu.children.relationName).toBe("menu_parent");
+    expect(menu.parentItem.config?.fields).toEqual([schema.menu.parent]);
+    expect(menu.parentItem.config?.references).toEqual([schema.menu.id]);
+    const post = schema.postRelations.config(
+      createTableRelationsHelpers(schema.post),
+    );
+    expect(post.cover.referencedTable).toBe(schema.media);
+    expect(post.cover.config?.fields).toEqual([schema.post.coverId]);
+    expect(post.cover.config?.references).toEqual([schema.media.id]);
   });
 
   it("exposes the expected relation graph", () => {

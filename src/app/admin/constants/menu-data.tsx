@@ -2,10 +2,10 @@ import React from "react";
 import type { AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
 import {
   Permission,
+  can,
+  isPermission,
   type Permission as PermissionValue,
 } from "@/lib/auth/permissions";
-import { authorize } from "@/lib/auth/authorize";
-import { isCapability } from "@/lib/auth/capability-registry";
 import {
   FileChartColumn,
   Gauge,
@@ -131,7 +131,7 @@ function assertRegisteredMenuCapabilities(
   items: readonly AdminMenuItem[],
 ): void {
   for (const item of items) {
-    if (!isCapability(item.permission))
+    if (!isPermission(item.permission))
       throw new Error(`菜单使用了未注册的能力: ${item.path}`);
     if (item.children) assertRegisteredMenuCapabilities(item.children);
   }
@@ -144,7 +144,7 @@ export function getMenuForCapabilities(
   items: readonly AdminMenuItem[] = menu,
 ): AdminMenuItem[] {
   return items.flatMap((item) => {
-    if (!authorize({ role, permission: item.permission })) return [];
+    if (!can(role, item.permission)) return [];
     const children = item.children
       ? getMenuForCapabilities(role, item.children)
       : undefined;

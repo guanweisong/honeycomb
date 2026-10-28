@@ -33,7 +33,7 @@ export const UserDropdown = (props: UserDropdownProps) => {
           aria-label={`账户菜单：${user.name || "用户"}`}
           className="flex w-full items-center text-left hover:bg-gray-200 cursor-pointer transition px-3 py-2 rounded-sm"
         >
-          <Avatar url="/logo.jpg" fallback={user.name} />
+          <Avatar src="/logo.jpg" alt="" fallback={user.name} />
           {!collapsed && (
             <div className="flex-1 mx-3 min-w-0">
               <div className="truncate">{user.name}</div>

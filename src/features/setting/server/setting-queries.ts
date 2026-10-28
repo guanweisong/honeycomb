@@ -5,25 +5,14 @@ import * as schema from "@/lib/db/schema";
 import { observeDbOperation } from "@/lib/observability/server";
 import { toSettingRecord } from "@/features/setting/server/setting-translations";
 
-/** 在同一读取事务中取得设置版本与翻译，避免拼接不同版本的编辑快照。 */
+/** 单条关系查询取得设置版本与翻译，不为读取快照持有交互式写事务。 */
 export async function getSetting(db: Database) {
-  return db.transaction((tx) => readSetting(tx));
-}
-
-async function readSetting(db: Pick<Database, "select">) {
-  const [setting] = await observeDbOperation("setting.get", "select", () =>
-    db
-      .select()
-      .from(schema.setting)
-      .where(eq(schema.setting.singletonKey, 1))
-      .limit(1),
+  const setting = await observeDbOperation("setting.get", "select", () =>
+    db.query.setting.findFirst({
+      where: eq(schema.setting.singletonKey, 1),
+      with: { translations: true },
+    }),
   );
   if (!setting) return undefined;
-  const translations = await observeDbOperation("setting.get", "select", () =>
-    db
-      .select()
-      .from(schema.settingTranslation)
-      .where(eq(schema.settingTranslation.settingId, setting.id)),
-  );
-  return toSettingRecord(setting, translations);
+  return toSettingRecord(setting, setting.translations);
 }

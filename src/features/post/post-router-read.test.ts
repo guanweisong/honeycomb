@@ -33,7 +33,6 @@ function prepareDetail(
   post: ReturnType<typeof createPostFixture>,
   relations = {},
 ) {
-  mockDb.limit.mockResolvedValueOnce([{ id: post.id }]);
   mockDb.query.post.findMany.mockResolvedValueOnce([
     {
       ...post,
@@ -85,9 +84,7 @@ describe("Post Router", () => {
       expect(result.id).toBe(TEST_IDS.ID_1);
       expect(result.status).toBe(PostStatus.PUBLISHED);
       const dialect = new SQLiteSyncDialect();
-      expect(
-        dialect.sqlToQuery(mockDb.where.mock.calls[0]?.[0]).params,
-      ).toContain(PostStatus.PUBLISHED);
+      expect(mockDb.select).not.toHaveBeenCalled();
       const relationQuery = mockDb.query.post.findMany.mock.calls[0]?.[0];
       expect(relationQuery?.where).toBeDefined();
       expect(dialect.sqlToQuery(relationQuery.where).params).toContain(
@@ -164,11 +161,7 @@ describe("Post Router", () => {
     });
 
     it("should throw NOT_FOUND error for non-existent post", async () => {
-      // 设置不存在文章查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([]);
+      mockDb.query.post.findMany.mockResolvedValueOnce([]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
 
@@ -179,7 +172,7 @@ describe("Post Router", () => {
   });
 
   describe("incrementViews procedure", () => {
-    it("should increment post views", async () => {
+    it("increments post views for unauthenticated users only while published", async () => {
       const updatedViews = { views: 101 };
 
       // 设置增加浏览量查询的模拟调用链。
@@ -230,23 +223,6 @@ describe("Post Router", () => {
       await expect(
         caller.incrementViews({ id: TEST_IDS.ID_NOT_FOUND }),
       ).rejects.toThrow("NOT_FOUND");
-    });
-
-    it("should increment views for unauthenticated users", async () => {
-      const updatedViews = { views: 101 };
-
-      // 设置增加浏览量查询的模拟调用链。
-      mockDb.update.mockReturnValueOnce(mockDb);
-      mockDb.set.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedViews]);
-
-      const caller = postRouter.createCaller(createMockContext(null, mockDb));
-
-      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
-
-      expect(result).toEqual(updatedViews);
-      expect(mockDb.update).toHaveBeenCalledWith(schema.post);
     });
 
     it("should reject invalid post ids", async () => {

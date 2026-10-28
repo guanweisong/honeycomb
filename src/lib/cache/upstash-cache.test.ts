@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
+import type { CacheNamespace } from "@/lib/cache/cache-namespaces";
 
 const { redisCtor, redisInstance } = vi.hoisted(() => {
   const instance = {
@@ -50,6 +51,10 @@ describe("upstash cache", () => {
     process.env.UPSTASH_REDIS_REST_TOKEN = "token";
     const { cache } = await loadModule();
     const decoder = z.object({ total: z.number() }).parse;
+    expectTypeOf(cache.getCacheJSON).parameters.toEqualTypeOf<
+      [CacheNamespace, string, (value: unknown) => unknown]
+    >();
+
     redisInstance.get.mockResolvedValueOnce({ total: "invalid" });
     await expect(
       cache.getCacheJSON("post.index", "key", decoder),
@@ -68,7 +73,9 @@ describe("upstash cache", () => {
     const observed = memory.createMemoryObservability();
     registry.configureObservability(observed);
 
-    await expect(cache.getCacheJSON("post.index", "key")).resolves.toBeNull();
+    await expect(
+      cache.getCacheJSON("post.index", "key", (value) => value),
+    ).resolves.toBeNull();
     await expect(cache.getCacheVersion("post.index", "version")).resolves.toBe(
       1,
     );
@@ -90,7 +97,7 @@ describe("upstash cache", () => {
 
     redisInstance.get.mockResolvedValueOnce({ foo: "bar" });
     await expect(
-      cache.getCacheJSON("post.index", "cache:key"),
+      cache.getCacheJSON("post.index", "cache:key", (value) => value),
     ).resolves.toEqual({ foo: "bar" });
     expect(redisCtor).toHaveBeenCalledWith({
       url: "https://example.upstash.io",
@@ -158,8 +165,16 @@ describe("upstash cache", () => {
     redisInstance.get
       .mockResolvedValueOnce({ foo: "bar" })
       .mockResolvedValueOnce(null);
-    await cache.getCacheJSON("post.index", "cache:post:index:user-123");
-    await cache.getCacheJSON("post.index", "cache:post:index:user-456");
+    await cache.getCacheJSON(
+      "post.index",
+      "cache:post:index:user-123",
+      (value) => value,
+    );
+    await cache.getCacheJSON(
+      "post.index",
+      "cache:post:index:user-456",
+      (value) => value,
+    );
     await cache.setCacheJSON(
       "post.index",
       "cache:post:index:user-123",
@@ -168,7 +183,11 @@ describe("upstash cache", () => {
     );
     redisInstance.get.mockRejectedValueOnce(new Error("token=secret user-789"));
     await expect(
-      cache.getCacheJSON("post.index", "cache:post:index:user-789"),
+      cache.getCacheJSON(
+        "post.index",
+        "cache:post:index:user-789",
+        (value) => value,
+      ),
     ).rejects.toThrow("token=secret user-789");
 
     expect(observed.metricEvents.map(({ labels }) => labels)).toEqual([
@@ -197,7 +216,7 @@ describe("upstash cache", () => {
 
     await expect(
       // @ts-expect-error Deliberately reject an untrusted namespace at runtime.
-      cache.getCacheJSON("user-123", "cache:secret-resource"),
+      cache.getCacheJSON("user-123", "cache:secret-resource", (value) => value),
     ).resolves.toBeNull();
 
     expect(observed.metricEvents).toEqual([]);

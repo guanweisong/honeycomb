@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { describe, expect, it } from "vitest";
 import {
   assertE2EPreflightEnvironment,
@@ -113,14 +113,13 @@ describe("E2E package entrypoint", () => {
     ].map((args) => ({ args })),
   )(
     "rejects destination overrides %j even during inspection",
-    ({ args }) => {
-      const result = spawnSync(
+    async ({ args }) => {
+      const result = await runTestProcess(
         "bun",
         ["run", "test:e2e", ...args, "--list", "--reporter=json"],
         {
           cwd: process.cwd(),
           env: { ...process.env, TURSO_URL: "libsql://synthetic.invalid" },
-          encoding: "utf8",
           timeout: 30_000,
         },
       );
@@ -138,8 +137,8 @@ describe("E2E package entrypoint", () => {
     "test:e2e:regression",
   ])(
     "keeps %s inspection usable without a test database",
-    (script) => {
-      const result = spawnSync(
+    async (script) => {
+      const result = await runTestProcess(
         "bun",
         ["run", script, "--list", "--reporter=json"],
         {
@@ -149,7 +148,6 @@ describe("E2E package entrypoint", () => {
             E2E_SEED: "0",
             TURSO_URL: "libsql://synthetic.invalid",
           },
-          encoding: "utf8",
           timeout: 30_000,
         },
       );
@@ -159,12 +157,15 @@ describe("E2E package entrypoint", () => {
     40_000,
   );
 
-  it("rejects UI inspection before starting the interactive server", () => {
-    const result = spawnSync("bun", ["run", "test:e2e:ui", "--list"], {
-      cwd: process.cwd(),
-      encoding: "utf8",
-      timeout: 10_000,
-    });
+  it("rejects UI inspection before starting the interactive server", async () => {
+    const result = await runTestProcess(
+      "bun",
+      ["run", "test:e2e:ui", "--list"],
+      {
+        cwd: process.cwd(),
+        timeout: 10_000,
+      },
+    );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("UI mode cannot be combined");
   });

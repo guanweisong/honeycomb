@@ -1,7 +1,7 @@
 import React, { act } from "react";
+import { within } from "@testing-library/dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { requireDefined } from "@tests/helpers/require-defined";
 import type { PageWithRelations } from "@/features/page/types/page.read-model";
 import type { TagRecord } from "@/features/tag/types/tag.record";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
@@ -109,10 +109,20 @@ import Tag from "@/features/tag/admin/page";
 import PostListClient from "@/features/post/admin/list/components/PostListClient";
 
 describe.each([
-  { name: "page", Component: Page, id: "507f1f77bcf86cd799439011" },
-  { name: "tag", Component: Tag, id: "tag-1" },
-  { name: "post", Component: PostListClient, id: "post-1" },
-])("$name actual delete consumer", ({ name, Component, id }) => {
+  {
+    name: "page",
+    Component: Page,
+    id: "507f1f77bcf86cd799439011",
+    deleteLabel: "删除页面",
+  },
+  { name: "tag", Component: Tag, id: "tag-1", deleteLabel: "删除标签" },
+  {
+    name: "post",
+    Component: PostListClient,
+    id: "post-1",
+    deleteLabel: "删除文章",
+  },
+])("$name actual delete consumer", ({ name, Component, id, deleteLabel }) => {
   let container: HTMLDivElement;
   let root: Root;
   beforeEach(() => {
@@ -143,30 +153,22 @@ describe.each([
     async (mode) => {
       await act(async () => root.render(<Component />));
       await act(async () =>
-        requireDefined(
-          container.querySelectorAll<HTMLElement>('[role="checkbox"]')[1],
-        ).click(),
+        within(container)
+          .getByRole("checkbox", { name: `选择记录 ${id}` })
+          .click(),
       );
-      const batch = requireDefined(
-        Array.from(container.querySelectorAll("button")).find((button) =>
-          button.textContent?.includes("批量删除"),
-        ),
-      );
+      const batch = within(container).getByRole<HTMLButtonElement>("button", {
+        name: "批量删除",
+      });
       const trigger =
         mode === "batch"
           ? batch
-          : requireDefined(
-              Array.from(
-                container.querySelectorAll<HTMLButtonElement>("tbody button"),
-              ).at(-1),
-            );
+          : within(container).getByRole("button", { name: deleteLabel });
       await act(async () => trigger.click());
       const confirm = () =>
-        requireDefined(
-          Array.from(document.body.querySelectorAll("button")).find(
-            (button) => button.textContent === "确定",
-          ),
-        );
+        within(within(document.body).getByRole("dialog")).getByRole("button", {
+          name: "确定",
+        });
       await act(async () => confirm().click());
       expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
       expect(batch.disabled).toBe(false);

@@ -92,12 +92,17 @@ export const ROLE_PERMISSIONS = {
 const knownRoles = Object.values(UserLevel);
 const knownPermissions = new Set<string>(ALL_PERMISSIONS);
 
+/** 权限目录的唯一运行时成员判定，未知和原型属性一律拒绝。 */
+export function isPermission(value: string): value is Permission {
+  return knownPermissions.has(value);
+}
+
 export function can(
   role: string | null | undefined,
   permission: string,
 ): boolean {
   const knownRole = knownRoles.find((candidate) => candidate === role);
-  if (!knownRole || !knownPermissions.has(permission)) {
+  if (!knownRole || !isPermission(permission)) {
     return false;
   }
 

@@ -6,7 +6,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
@@ -77,39 +76,22 @@ export const pageRouter = createTRPCRouter({
     .input(PageInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPage(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return createPage(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
   destroy: permissionProcedure(Permission.pageDelete)
     .input(PageDeleteSchema)
     .mutation(async ({ input, ctx }) => {
-      return destroyPages(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return destroyPages(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
   update: permissionProcedure(Permission.pageUpdate)
     .input(PageUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      return updatePage(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return updatePage(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
   creationResult: permissionProcedure(Permission.pageCreate)
     .input(PageCreationResultInputSchema)
     .query(({ input, ctx }) =>
-      getPageCreationResult(ctx.db, input.creationToken, ctx.user.id).catch(
-        mapApplicationError,
-      ),
+      getPageCreationResult(ctx.db, input.creationToken, ctx.user.id),
     ),
   incrementViews: publicProcedure
     .input(z.object({ id: IdSchema }))

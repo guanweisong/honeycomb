@@ -2,31 +2,30 @@ import { test, expect } from "@playwright/test";
 import { openBlogHome } from "@tests/e2e/blog/helpers";
 
 test.describe("blog theme", () => {
-  test("@smoke toggle should update html class and persist after reload", async ({
-    page,
-  }) => {
-    await openBlogHome(page);
+  for (const initialTheme of ["light", "dark"] as const) {
+    test(`@smoke toggle from ${initialTheme} persists after reload`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: initialTheme });
+      await openBlogHome(page);
 
-    const themeToggle = page
-      .locator(
-        'header [data-testid="theme-switcher"], header img[alt="moon"], header img[alt="sun"]',
-      )
-      .first();
-    await expect(themeToggle).toBeVisible();
+      const themeToggle = page
+        .locator('[data-testid="theme-switcher"]')
+        .first();
+      await expect(themeToggle).toBeVisible();
+      const html = page.locator("html");
+      await expect(html).toHaveClass(
+        new RegExp(`(?:^|\\s)${initialTheme}(?:\\s|$)`),
+      );
+      const chosenTheme = initialTheme === "dark" ? "light" : "dark";
+      const chosenClass = new RegExp(`(?:^|\\s)${chosenTheme}(?:\\s|$)`);
+      await themeToggle.click();
+      await expect(html).toHaveClass(chosenClass);
+      await expect(page.locator('meta[name="theme-color"]')).toHaveCount(1);
 
-    const before = await page.locator("html").getAttribute("class");
-    await themeToggle.click();
-    await page.waitForTimeout(300);
-
-    const after = await page.locator("html").getAttribute("class");
-    expect(after).not.toBe(before);
-
-    const themeColor = page.locator('meta[name="theme-color"]');
-    await expect(themeColor).toHaveCount(1);
-
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.locator("main")).toBeVisible();
-    const afterReload = await page.locator("html").getAttribute("class");
-    expect(afterReload).toBe(after);
-  });
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page.locator("main")).toBeVisible();
+      await expect(html).toHaveClass(chosenClass);
+    });
+  }
 });

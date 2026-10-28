@@ -78,11 +78,11 @@ describe("R2Storage observability", () => {
     configureObservability(memory);
     send.mockResolvedValue({});
 
-    await R2Storage.putObject({
-      Bucket: "ignored-by-wrapper",
-      Key: "private/user-123.png",
-      Body: "image",
-    });
+    await R2Storage.putValidatedObject(
+      "private/user-123.png",
+      new Uint8Array([1, 2, 3]),
+      "image/png",
+    );
 
     expect(memory.metricEvents.map(({ name }) => name)).toEqual([
       MetricName.externalServiceOperationsTotal,

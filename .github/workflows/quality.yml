@@ -58,42 +58,7 @@ jobs:
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
-          cleanup() {
-            status=$?
-            cleanup_start=$(node -p 'Date.now()')
-            trap - EXIT HUP INT TERM
-            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
-              rm -rf -- "$HONEYCOMB_TEST_DIR"
-              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
-            else
-              echo "Test directory cleanup could not verify ownership" >&2
-              status=1
-            fi
-            cleanup_elapsed=$(( $(node -p 'Date.now()') - cleanup_start ))
-            printf 'Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status" >> "$GITHUB_STEP_SUMMARY" || status=1
-            fi
-            exit "$status"
-          }
-          trap cleanup EXIT
-          trap 'exit 129' HUP
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
-          phase() {
-            local label="$1"; shift
-            local start elapsed code
-            start=$(node -p 'Date.now()')
-            echo "::group::$label"
-            if "$@"; then code=0; else code=$?; fi
-            elapsed=$(( $(node -p 'Date.now()') - start ))
-            printf '%s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code"
-            echo "::endgroup::"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- %s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code" >> "$GITHUB_STEP_SUMMARY"
-            fi
-            return "$code"
-          }
+          source scripts/ci-fixture-lifecycle.sh
           export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
           export TURSO_TOKEN=e2e-local-only
           phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
@@ -147,42 +112,7 @@ jobs:
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
-          cleanup() {
-            status=$?
-            cleanup_start=$(node -p 'Date.now()')
-            trap - EXIT HUP INT TERM
-            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
-              rm -rf -- "$HONEYCOMB_TEST_DIR"
-              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
-            else
-              echo "Test directory cleanup could not verify ownership" >&2
-              status=1
-            fi
-            cleanup_elapsed=$(( $(node -p 'Date.now()') - cleanup_start ))
-            printf 'Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status" >> "$GITHUB_STEP_SUMMARY" || status=1
-            fi
-            exit "$status"
-          }
-          trap cleanup EXIT
-          trap 'exit 129' HUP
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
-          phase() {
-            local label="$1"; shift
-            local start elapsed code
-            start=$(node -p 'Date.now()')
-            echo "::group::$label"
-            if "$@"; then code=0; else code=$?; fi
-            elapsed=$(( $(node -p 'Date.now()') - start ))
-            printf '%s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code"
-            echo "::endgroup::"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- %s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code" >> "$GITHUB_STEP_SUMMARY"
-            fi
-            return "$code"
-          }
+          source scripts/ci-fixture-lifecycle.sh
           export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
           export TURSO_TOKEN=e2e-local-only
           phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
@@ -273,42 +203,7 @@ jobs:
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
-          cleanup() {
-            status=$?
-            cleanup_start=$(node -p 'Date.now()')
-            trap - EXIT HUP INT TERM
-            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
-              rm -rf -- "$HONEYCOMB_TEST_DIR"
-              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
-            else
-              echo "Test directory cleanup could not verify ownership" >&2
-              status=1
-            fi
-            cleanup_elapsed=$(( $(node -p 'Date.now()') - cleanup_start ))
-            printf 'Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status" >> "$GITHUB_STEP_SUMMARY" || status=1
-            fi
-            exit "$status"
-          }
-          trap cleanup EXIT
-          trap 'exit 129' HUP
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
-          phase() {
-            local label="$1"; shift
-            local start elapsed code
-            start=$(node -p 'Date.now()')
-            echo "::group::$label"
-            if "$@"; then code=0; else code=$?; fi
-            elapsed=$(( $(node -p 'Date.now()') - start ))
-            printf '%s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code"
-            echo "::endgroup::"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- %s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code" >> "$GITHUB_STEP_SUMMARY"
-            fi
-            return "$code"
-          }
+          source scripts/ci-fixture-lifecycle.sh
           export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
           export TURSO_TOKEN=e2e-local-only
           phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
@@ -357,42 +252,7 @@ jobs:
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
-          cleanup() {
-            status=$?
-            cleanup_start=$(node -p 'Date.now()')
-            trap - EXIT HUP INT TERM
-            if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
-              rm -rf -- "$HONEYCOMB_TEST_DIR"
-              test ! -e "$HONEYCOMB_TEST_DIR" || status=1
-            else
-              echo "Test directory cleanup could not verify ownership" >&2
-              status=1
-            fi
-            cleanup_elapsed=$(( $(node -p 'Date.now()') - cleanup_start ))
-            printf 'Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- Fixture cleanup: %s ms (final exit=%s)\n' "$cleanup_elapsed" "$status" >> "$GITHUB_STEP_SUMMARY" || status=1
-            fi
-            exit "$status"
-          }
-          trap cleanup EXIT
-          trap 'exit 129' HUP
-          trap 'exit 130' INT
-          trap 'exit 143' TERM
-          phase() {
-            local label="$1"; shift
-            local start elapsed code
-            start=$(node -p 'Date.now()')
-            echo "::group::$label"
-            if "$@"; then code=0; else code=$?; fi
-            elapsed=$(( $(node -p 'Date.now()') - start ))
-            printf '%s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code"
-            echo "::endgroup::"
-            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-              printf -- '- %s: %s ms (exit=%s)\n' "$label" "$elapsed" "$code" >> "$GITHUB_STEP_SUMMARY"
-            fi
-            return "$code"
-          }
+          source scripts/ci-fixture-lifecycle.sh
           export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
           export TURSO_TOKEN=e2e-local-only
           phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize

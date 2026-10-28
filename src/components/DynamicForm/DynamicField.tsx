@@ -1,11 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  useFormContext,
-  useWatch,
-  type ControllerRenderProps,
-} from "react-hook-form";
+import { useFormContext, type ControllerRenderProps } from "react-hook-form";
 import {
   FormField,
   FormItem,
@@ -26,10 +22,6 @@ export type { FieldConfig } from "@/components/DynamicForm/types";
 export function DynamicField(field: FieldConfig) {
   const labelId = React.useId();
   const form = useFormContext<Record<string, unknown>>();
-  useWatch({
-    control: form.control,
-    disabled: !field.disabled && typeof field.options !== "function",
-  });
 
   const renderField = (
     name: string,
@@ -41,7 +33,6 @@ export function DynamicField(field: FieldConfig) {
           field={field}
           name={name}
           controllerField={controllerField}
-          formValues={form.getValues()}
           aria-labelledby={field.label ? labelId : undefined}
         />
       </FormControl>

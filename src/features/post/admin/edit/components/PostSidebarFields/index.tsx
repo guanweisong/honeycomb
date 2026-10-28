@@ -4,54 +4,52 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DynamicField } from "@/components/DynamicForm/DynamicField";
 import { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
-import { ModalType } from "@/components/admin/types/modal-type";
+import { useFormContext, useController, useWatch } from "react-hook-form";
+import type { PostEditorValues } from "@/features/post/admin/edit/utils/post-draft";
+import type { CategoryListItem } from "@/features/category/types/category.record";
+import type { PhotoPickerItemProps } from "@/features/media/admin/components/PhotoPickerItem";
 import { PostType } from "@/features/post/types/post.type";
 import { postTypeOptions } from "@/features/post/admin/options";
 import { TagType } from "@/features/tag/types/tag.type";
 import MultiTag from "@/features/post/admin/edit/components/MultiTag";
 import PhotoPickerItem from "@/features/media/admin/components/PhotoPickerItem";
-import type { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/features/user/admin/use-current-user";
 
-type Editor = ReturnType<typeof usePostEditor>;
-
 interface PostSidebarFieldsProps {
-  editor: Pick<
-    Editor,
-    | "category"
-    | "detail"
-    | "galleryStyles"
-    | "movieActors"
-    | "movieDirectors"
-    | "movieStyles"
-    | "photoPickerProps"
-    | "setGalleryStyles"
-    | "setModalProps"
-    | "setMovieActors"
-    | "setMovieDirectors"
-    | "setMovieStyles"
-    | "type"
-  >;
+  postId?: string;
+  categories?: CategoryListItem[];
+  onCreateCategory: () => void;
+  photoPickerProps: PhotoPickerItemProps;
 }
 
-export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
+type PostTagFieldName =
+  "galleryStyles" | "movieActors" | "movieDirectors" | "movieStyles";
+function PostTagField({
+  name,
+  ...props
+}: {
+  name: PostTagFieldName;
+  postId: string;
+  title: string;
+  type: TagType;
+}) {
+  const { control } = useFormContext<PostEditorValues>();
+  const { field } = useController({ control, name });
+  return (
+    <MultiTag {...props} value={field.value ?? []} onChange={field.onChange} />
+  );
+}
+
+export function PostSidebarFields({
+  postId,
+  categories,
+  onCreateCategory,
+  photoPickerProps,
+}: PostSidebarFieldsProps) {
   const canCreateCategory = useCan(Permission.categoryCreate);
-  const {
-    category,
-    detail,
-    galleryStyles,
-    movieActors,
-    movieDirectors,
-    movieStyles,
-    photoPickerProps,
-    setGalleryStyles,
-    setModalProps,
-    setMovieActors,
-    setMovieDirectors,
-    setMovieStyles,
-    type,
-  } = editor;
+  const { control } = useFormContext<PostEditorValues>();
+  const type = useWatch({ control, name: "type" }) ?? PostType.ARTICLE;
 
   return (
     <>
@@ -66,17 +64,13 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
         name="categoryId"
         type="select"
         placeholder="请选择"
-        options={category?.list?.map((item) => ({
+        options={categories?.map((item) => ({
           label: renderCategoryTitleByDepth(item.title?.zh, item),
           value: item.id ?? "0",
         }))}
       />
       {canCreateCategory && (
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => setModalProps({ open: true, type: ModalType.ADD })}
-        >
+        <Button variant="outline" type="button" onClick={onCreateCategory}>
           <Plus className="w-4 h-4 mr-1" />
           新建分类
         </Button>
@@ -94,26 +88,23 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
             type="calendar"
             placeholder="请选择上映时间"
           />
-          <MultiTag
-            postId={detail?.id || ""}
+          <PostTagField
+            postId={postId ?? ""}
             title="导演"
             type={TagType.DIRECTOR}
-            value={movieDirectors}
-            onChange={setMovieDirectors}
+            name="movieDirectors"
           />
-          <MultiTag
-            postId={detail?.id || ""}
+          <PostTagField
+            postId={postId ?? ""}
             title="演员"
             type={TagType.ACTOR}
-            value={movieActors}
-            onChange={setMovieActors}
+            name="movieActors"
           />
-          <MultiTag
-            postId={detail?.id || ""}
+          <PostTagField
+            postId={postId ?? ""}
             title="电影风格"
             type={TagType.MOVIE_STYLE}
-            value={movieStyles}
-            onChange={setMovieStyles}
+            name="movieStyles"
           />
         </>
       )}
@@ -133,12 +124,11 @@ export function PostSidebarFields({ editor }: PostSidebarFieldsProps) {
             type="calendar"
             placeholder="请选择拍摄时间"
           />
-          <MultiTag
-            postId={detail?.id || ""}
+          <PostTagField
+            postId={postId ?? ""}
             title="照片风格"
             type={TagType.GALLERY_STYLE}
-            value={galleryStyles}
-            onChange={setGalleryStyles}
+            name="galleryStyles"
           />
         </>
       )}

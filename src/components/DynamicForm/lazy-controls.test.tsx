@@ -51,8 +51,7 @@ function TestField({
   return (
     <FieldControl
       name="value"
-      field={{ name: "value", type, disabled: () => disabled }}
-      formValues={{ value }}
+      field={{ name: "value", type, disabled }}
       id="field-control"
       aria-labelledby="field-label"
       aria-describedby="field-error"
@@ -255,46 +254,7 @@ describe("FieldControl lazy controls", () => {
     expect(input?.value).toMatch(/-12$/);
   });
 
-  it("preserves calendar-range values and selection after the calendar chunk loads", async () => {
-    const currentDate = new Date();
-    const from = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      10,
-    );
-    const to = new Date(currentDate.getFullYear(), currentDate.getMonth(), 12);
-    const onChange = vi.fn();
-    await act(async () =>
-      root.render(<TestField type="calendar-range" onChange={onChange} />),
-    );
-    const input = container.querySelector("input");
-    await act(async () => input?.click());
-    await act(async () => {
-      await import("@/components/ui/calendar");
-    });
-    await act(async () => dayButton(from).click());
-    await act(async () => dayButton(to).click());
-    expect(onChange).toHaveBeenLastCalledWith({ from, to });
-    expect(input?.value).toMatch(/-10 ~ \d{4}-\d{2}-12$/);
-  });
-
-  it("opens an existing historical range at its start month", async () => {
-    const from = new Date(2001, 1, 10);
-    const to = new Date(2001, 1, 12);
-    await act(async () =>
-      root.render(
-        <TestField type="calendar-range" initialValue={{ from, to }} />,
-      ),
-    );
-    await act(async () => container.querySelector("input")?.click());
-    await act(async () => {
-      await import("@/components/ui/calendar");
-    });
-    expect(dayButton(from).getAttribute("data-range-start")).toBe("true");
-    expect(dayButton(to).getAttribute("data-range-end")).toBe("true");
-  });
-
-  it.each(["calendar", "calendar-range"] as const)(
+  it.each(["calendar"] as const)(
     "keeps disabled %s inputs unavailable",
     async (type) => {
       await act(async () => root.render(<TestField type={type} disabled />));

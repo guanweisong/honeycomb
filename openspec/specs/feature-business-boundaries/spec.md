@@ -22,7 +22,7 @@
 
 ### Requirement: Transport infrastructure is separate from business features
 
-lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 router MUST 在 app/_trpc/router.ts 组合，服务端 caller MUST 在 app/_trpc/server.ts 提供；lib/trpc MUST NOT 组合或运行时加载根 router 及 feature router；context 仅为会话读取延迟加载 src/auth.ts 的既有技术集成 MAY 保留，认证框架组合仍归 app/_auth。
+lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 router MUST 在 app/_trpc/router.ts 组合，服务端 caller MUST 在 app/_trpc/server.ts 提供；传输技术库的运行时方向和会话例外 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: Router composition uses feature routers
 
@@ -41,7 +41,7 @@ lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 ro
 
 ### Requirement: 跨 Feature 导入必须经过公开边界
 
-生产 feature MAY 通过目标 feature 的纯 schema/type/catalog、有意复用的具名 UI 或 server 操作具体入口复用能力，不要求 public barrel；MUST NOT 耦合另一 feature router、反向导入 app，或违反纯模块/浏览器的运行时边界。通用 components MUST 通过注入接入业务能力，不加载 feature 运行时。
+生产 feature MAY 通过目标 feature 的纯 schema/type/catalog、有意复用的具名 UI 或 server 操作具体入口复用能力，不要求 public barrel；运行时方向与通用组件注入边界 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: 耦合其他 Feature 的 Router
 

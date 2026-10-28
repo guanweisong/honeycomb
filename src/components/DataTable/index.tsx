@@ -1,8 +1,4 @@
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-} from "@tanstack/react-table";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 
 import { Table } from "@/components/ui/table";
 import { cn } from "cn";
@@ -41,12 +37,10 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
   const {
     sorting,
     columnFilters,
-    columnVisibility,
     paginationState,
     handlePaginationChange,
     handleSortingChange,
     handleColumnFiltersChange,
-    setColumnVisibility,
   } = useDataTableState<TData>({
     pagination,
     onChange,
@@ -64,7 +58,6 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       pagination: pagination
         ? {
             pageIndex: paginationState.page - 1,
@@ -78,9 +71,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     manualFiltering: true,
     onSortingChange: handleSortingChange,
     onColumnFiltersChange: handleColumnFiltersChange,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
 
   const {

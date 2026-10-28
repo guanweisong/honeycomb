@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Command, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover } from "@/components/Popover";
 import { PopoverProps } from "@/components/Popover";
@@ -18,7 +22,6 @@ export interface MultiSelectProps extends PopoverProps {
 
 export function MultiSelect(props: MultiSelectProps) {
   const { options = [], value = [], onChange, ...rest } = props;
-  const [open, setOpen] = useState(false);
 
   const handleChange = (data: string) => {
     onChange?.(
@@ -28,8 +31,6 @@ export function MultiSelect(props: MultiSelectProps) {
 
   return (
     <Popover
-      open={open}
-      onOpenChange={setOpen}
       {...rest}
       content={
         <Command>

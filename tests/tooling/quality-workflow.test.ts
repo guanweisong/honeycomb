@@ -168,9 +168,13 @@ describe("quality workflow", () => {
       expect(job.env?.TURSO_URL).toBeUndefined();
       const script = commandsFor(job).join("\n");
       expect(script).toContain("mktemp -d");
-      expect(script).toContain("trap cleanup EXIT");
-      expect(script).toContain("stat -c %u");
-      expect(script).toContain('test ! -e "$HONEYCOMB_TEST_DIR"');
+      expect(script).toContain("source scripts/ci-fixture-lifecycle.sh");
+      expect(
+        script.indexOf("source scripts/ci-fixture-lifecycle.sh"),
+      ).toBeGreaterThan(script.indexOf("mktemp -d"));
+      expect(
+        script.indexOf("source scripts/ci-fixture-lifecycle.sh"),
+      ).toBeLessThan(script.indexOf("export TURSO_URL"));
       expect(script).toContain(
         'export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"',
       );
@@ -250,10 +254,11 @@ describe("quality workflow", () => {
   });
 
   it("times individual phases without swallowing failures", () => {
-    const script = jobSchema
-      .parse(ci.jobs.unit_checks)
-      .steps.find((step) => step.run?.includes("trap cleanup EXIT"))?.run;
-    const timer = script?.match(/phase\(\) \{[\s\S]*?\n\}/)?.[0];
+    const script = readFileSync(
+      resolve("scripts/ci-fixture-lifecycle.sh"),
+      "utf8",
+    );
+    const timer = script.match(/phase\(\) \{[\s\S]*?\n\}/)?.[0];
     expect(timer).toBeDefined();
     const result = spawnSync(
       "bash",

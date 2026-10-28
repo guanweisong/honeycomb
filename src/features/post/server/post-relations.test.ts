@@ -1,8 +1,6 @@
 import { PostWithRelationsSchema } from "@/features/post/schemas/post.read-model.schema";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
 import { TagType } from "@/features/tag/types/tag.type";
-import { UserLevel } from "@/features/user/types/user.level";
-import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { createPostFixture } from "@tests/helpers/post-fixtures";
@@ -207,27 +205,6 @@ describe("post snapshot privacy", () => {
 });
 
 describe("required persistence results", () => {
-  function authorize(db: ReturnType<typeof createMockDb>) {
-    db.from.mockImplementation((table: object) => {
-      if (table === schema.user) {
-        const actor = createMockDb();
-        actor.limit.mockResolvedValue([
-          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
-        ]);
-        return Object.assign(Promise.resolve([]), actor);
-      }
-      if (
-        table === schema.postTranslation ||
-        table === schema.settingTranslation ||
-        table === schema.pageTranslation
-      ) {
-        const read = createMockDb();
-        read.where.mockResolvedValue([]);
-        return read;
-      }
-      return db;
-    });
-  }
   it.each(["status", "type", "commentStatus"])(
     "rejects an unknown post %s during DTO mapping",
     async (field) => {
@@ -249,7 +226,6 @@ describe("required persistence results", () => {
         updatedAt: null,
       };
       const db = createMockDb();
-      authorize(db);
       db.query.post.findMany.mockResolvedValue([
         {
           ...row,

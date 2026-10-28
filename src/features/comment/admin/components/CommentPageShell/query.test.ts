@@ -1,4 +1,3 @@
-import type { DataTableProps } from "@/components/DataTable";
 import type { z } from "zod";
 import type { CommentListQuerySchema } from "@/features/comment/schemas/comment.list-query.schema";
 type CommentListQueryInput = z.input<typeof CommentListQuerySchema>;
@@ -10,14 +9,12 @@ const trpcMocks = vi.hoisted(() => ({
   queryInputs: [] as unknown[],
   refetch: vi.fn(),
   options: [] as unknown[],
-  table: undefined as DataTableProps<unknown> | undefined,
   submit: undefined as ((input: CommentListQueryInput) => void) | undefined,
 }));
 
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     comment: {
-      create: { useMutation: () => ({ mutateAsync: vi.fn() }) },
       update: { useMutation: () => ({ mutateAsync: vi.fn() }) },
       destroy: { useMutation: () => ({ mutateAsync: vi.fn() }) },
       index: {
@@ -39,16 +36,6 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => false,
 }));
-vi.mock("@/components/DataTable", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/components/DataTable")>();
-  return {
-    DataTable: (props: DataTableProps<unknown>) => {
-      trpcMocks.table = props;
-      return React.createElement(actual.DataTable, props);
-    },
-  };
-});
 vi.mock("@/components/DynamicForm", () => ({
   DynamicForm: (props: {
     onSubmit: (input: CommentListQueryInput) => void;
@@ -58,7 +45,7 @@ vi.mock("@/components/DynamicForm", () => ({
   },
 }));
 import { CommentPageShell } from "@/features/comment/admin/components/CommentPageShell/index";
-import { adminListQueryOptions } from "@/components/admin/config/query-options";
+import { keepPreviousData } from "@tanstack/react-query";
 
 describe("comment query parameters", () => {
   let container: HTMLDivElement;
@@ -120,9 +107,12 @@ describe("comment query parameters", () => {
       trpcMocks.submit?.({});
     });
 
-    expect(
-      trpcMocks.options.every((options) => options === adminListQueryOptions),
-    ).toBe(true);
+    expect(trpcMocks.options.length).toBeGreaterThan(0);
+    for (const options of trpcMocks.options)
+      expect(options).toEqual({
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
+      });
     expect(trpcMocks.queryInputs.at(-1)).toEqual({
       page: 1,
       limit: 20,

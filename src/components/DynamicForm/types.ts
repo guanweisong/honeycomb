@@ -9,17 +9,11 @@ export type FieldConfig = {
     | "textarea"
     | "select"
     | "radio"
-    | "switch"
     | "calendar"
-    | "calendar-range"
     | "richText";
-  options?:
-    | { label: React.ReactNode; value: string }[]
-    | ((
-        formValues: Record<string, unknown>,
-      ) => { label: React.ReactNode; value: string }[]);
+  options?: { label: React.ReactNode; value: string }[];
   placeholder?: string;
   autoComplete?: React.ComponentProps<"input">["autoComplete"];
-  disabled?: (formValues: Record<string, unknown>) => boolean;
+  disabled?: boolean;
   multiLang?: boolean;
 };

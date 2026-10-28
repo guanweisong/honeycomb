@@ -70,12 +70,7 @@ describe("DynamicField subscriptions", () => {
     { type: "textarea", initialValue: "Initial" },
     { type: "select", initialValue: "initial" },
     { type: "radio", initialValue: "initial" },
-    { type: "switch", initialValue: true },
     { type: "calendar", initialValue: "2026-10-15" },
-    {
-      type: "calendar-range",
-      initialValue: { from: "2026-10-15", to: "2026-10-16" },
-    },
   ] satisfies { type: FieldConfig["type"]; initialValue: unknown }[])(
     "does not re-render a static $type field when another field is edited",
     async ({ type, initialValue }) => {
@@ -134,77 +129,24 @@ describe("DynamicField subscriptions", () => {
     expect(container.querySelector('[data-slot="form-message"]')).toBeNull();
   });
 
-  it("still updates function-valued options from another field", async () => {
-    await act(async () =>
+  it("updates boolean disabled props without replacing the field or losing its value", async () => {
+    const render = (disabled: boolean) =>
       root.render(
         <TestForm
-          field={{
-            name: "value",
-            type: "radio",
-            options: (values) => [
-              { value: "choice", label: String(values.other) },
-            ],
-          }}
-          initialValue="choice"
-          formRef={formRef}
-        />,
-      ),
-    );
-    expect(container.querySelector("label")?.textContent).toBe("Initial");
-    await act(async () => form().setValue("other", "Updated option"));
-    expect(container.querySelector("label")?.textContent).toBe(
-      "Updated option",
-    );
-    expect(form().getValues("value")).toBe("choice");
-  });
-
-  it("still updates disabled callbacks from another field and reset", async () => {
-    await act(async () =>
-      root.render(
-        <TestForm
-          field={{
-            name: "value",
-            type: "text",
-            disabled: (values) => values.other === "Locked",
-          }}
-          formRef={formRef}
-        />,
-      ),
-    );
-    expect(input().disabled).toBe(false);
-    await act(async () => form().setValue("other", "Locked"));
-    expect(input().disabled).toBe(true);
-    await act(async () => form().reset({ value: "Reset", other: "Unlocked" }));
-    expect(input().disabled).toBe(false);
-    expect(input().value).toBe("Reset");
-  });
-
-  it("uses current values when callbacks are added after static edits", async () => {
-    const render = (dependent: boolean) =>
-      root.render(
-        <TestForm
-          field={{
-            name: "value",
-            type: "text",
-            disabled: dependent
-              ? (values) => values.other === "Locked"
-              : undefined,
-          }}
+          field={{ name: "value", type: "text", disabled }}
           formRef={formRef}
         />,
       );
     await act(async () => render(false));
     const originalInput = input();
-    originalInput.focus();
-    await act(async () => form().setValue("other", "Locked"));
+    await act(async () => form().setValue("value", "Draft"));
     await act(async () => render(true));
     expect(input().disabled).toBe(true);
+    expect(input().value).toBe("Draft");
     await act(async () => render(false));
     expect(input().disabled).toBe(false);
-    await act(async () => form().setValue("other", "Unlocked"));
-    await act(async () => render(true));
-    expect(input().disabled).toBe(false);
     expect(input()).toBe(originalInput);
+    input().focus();
     expect(document.activeElement).toBe(originalInput);
   });
 

@@ -50,19 +50,6 @@ describe("Comment Router", () => {
 
   describe("create procedure", () => {
     it("rejects replies whose parent belongs to another resource", async () => {
-      const comment = {
-        id: TEST_IDS.ID_3,
-        author: "Test User",
-        content: "Reply",
-        email: "test@example.com",
-        postId: TEST_IDS.ID_1,
-        pageId: null,
-        customId: null,
-        parentId: TEST_IDS.ID_2,
-        status: CommentStatus.PUBLISH,
-        createdAt: new Date(),
-      };
-
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -83,20 +70,6 @@ describe("Comment Router", () => {
           customId: null,
         },
       ]);
-      mockDb.insert.mockReturnValueOnce(mockDb);
-      mockDb.values.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([comment]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([comment]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockResolvedValueOnce([{ id: TEST_IDS.ID_1 }]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([
-        { ...comment, postId: TEST_IDS.ID_2 },
-      ]);
-
       const caller = commentRouter.createCaller(
         createMockContext(null, mockDb),
       );
@@ -111,6 +84,9 @@ describe("Comment Router", () => {
           parentId: TEST_IDS.ID_2,
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockDb.insert).not.toHaveBeenCalled();
+      expect(sendCommentEmail).not.toHaveBeenCalled();
+      expect(mockInvalidatePublicContent).not.toHaveBeenCalled();
     });
 
     it("should create comment with captcha validation", async () => {

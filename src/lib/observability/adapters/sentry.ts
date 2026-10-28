@@ -1,7 +1,5 @@
 import type { Logger, LogContext } from "@/lib/observability/core/contracts";
-import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
-import { sanitizeContext } from "@/lib/observability/core/sanitize";
-import { createConsoleLogger } from "@/lib/observability/adapters/console";
+import { createConsoleLogSink } from "@/lib/observability/adapters/console";
 
 type LogAttributes = Record<string, string | number | boolean>;
 interface SentryLogSink {
@@ -10,36 +8,37 @@ interface SentryLogSink {
   error(message: string, attributes: LogAttributes): void;
 }
 
-/** Keep business callers independent of Sentry and preserve local JSON logs. */
-export function createSentryLogger(
+/** 内部双输出端；安全 facade 先清洗一次，各输出失败仍相互隔离。 */
+export function createSentryLogSink(
   sink: SentryLogSink,
-  consoleLogger: Logger = createConsoleLogger(),
+  consoleSink: Logger = createConsoleLogSink(),
 ): Logger {
-  const local = createSafeLogger(consoleLogger);
-  const remote = createSafeLogger({
-    info: (event, context) => sink.info(event, toAttributes(context)),
-    warn: (event, context) => sink.warn(event, toAttributes(context)),
-    error: (event, context) => sink.error(event, toAttributes(context)),
-  });
+  const write = (
+    level: keyof Logger,
+    event: Parameters<Logger["info"]>[0],
+    context?: LogContext,
+  ) => {
+    try {
+      consoleSink[level](event, context);
+    } catch {
+      // 本地输出故障不能阻止远程输出。
+    }
+    try {
+      sink[level](event, toAttributes(context));
+    } catch {
+      // 任一观测输出故障不能影响业务，也不递归记录自身异常。
+    }
+  };
   return {
-    info: (event, context) => {
-      local.info(event, context);
-      remote.info(event, context);
-    },
-    warn: (event, context) => {
-      local.warn(event, context);
-      remote.warn(event, context);
-    },
-    error: (event, context) => {
-      local.error(event, context);
-      remote.error(event, context);
-    },
+    info: (event, context) => write("info", event, context),
+    warn: (event, context) => write("warn", event, context),
+    error: (event, context) => write("error", event, context),
   };
 }
 function toAttributes(context: LogContext = {}): LogAttributes {
   return {
     ...Object.fromEntries(
-      Object.entries(sanitizeContext(context)).map(([key, value]) => [
+      Object.entries(context).map(([key, value]) => [
         key,
         typeof value === "string" ||
         typeof value === "number" ||

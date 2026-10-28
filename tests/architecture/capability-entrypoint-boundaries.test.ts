@@ -14,7 +14,7 @@ import nextConfig from "../../next.config";
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
-import { isCapability } from "@/lib/auth/capability-registry";
+import { isPermission } from "@/lib/auth/permissions";
 
 const adminRoot = join(process.cwd(), "src/app/admin");
 const publicAdminPages = [
@@ -74,7 +74,7 @@ describe("授权入口边界", () => {
       ]),
     ];
 
-    expect(permissions.every((permission) => isCapability(permission))).toBe(
+    expect(permissions.every((permission) => isPermission(permission))).toBe(
       true,
     );
   });

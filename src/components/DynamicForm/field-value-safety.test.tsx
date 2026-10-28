@@ -7,7 +7,6 @@ it("does not display an object as a text field value", () => {
     <FieldControl
       field={{ name: "name", type: "text" }}
       name="name"
-      formValues={{}}
       controllerField={{
         name: "name",
         value: { broken: true },
@@ -26,7 +25,6 @@ it("renders an invalid calendar value as an empty control", () => {
     <FieldControl
       field={{ name: "date", type: "calendar" }}
       name="date"
-      formValues={{}}
       controllerField={{
         name: "date",
         value: "not-a-date",

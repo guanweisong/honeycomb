@@ -13,7 +13,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 
 import { Permission } from "@/lib/auth/permissions";
@@ -42,9 +41,7 @@ export const categoryRouter = createTRPCRouter({
   create: permissionProcedure(Permission.categoryCreate)
     .input(CategoryInsertSchema)
     .mutation(({ input, ctx }) =>
-      createCategory(ctx.db, input, publicContentInvalidator).catch(
-        mapApplicationError,
-      ),
+      createCategory(ctx.db, input, publicContentInvalidator),
     ),
   destroy: permissionProcedure(Permission.categoryDelete)
     .input(CategoryDeleteSchema)
@@ -54,8 +51,6 @@ export const categoryRouter = createTRPCRouter({
   update: permissionProcedure(Permission.categoryUpdate)
     .input(CategoryUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateCategory(ctx.db, input, publicContentInvalidator).catch(
-        mapApplicationError,
-      ),
+      updateCategory(ctx.db, input, publicContentInvalidator),
     ),
 });

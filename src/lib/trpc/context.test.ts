@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { runWithRequestContext } from "@/lib/observability/server/node-request-context";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 
@@ -42,15 +41,15 @@ describe("createContext", () => {
     expect(context.requestId).toBe("req-trpc-client");
   });
 
-  it("generates a request ID without reading a Node request scope", async () => {
-    await runWithRequestContext({ requestId: "req-trpc-scope" }, async () => {
-      const context = await createContext({});
-
-      expect(context.requestId).not.toBe("req-trpc-scope");
-      expect(context.requestId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-      );
-    });
+  it("generates a fresh request ID for each unbound context", async () => {
+    const [first, second] = await Promise.all([
+      createContext({}),
+      createContext({}),
+    ]);
+    expect(first.requestId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(first.requestId).not.toBe(second.requestId);
   });
 
   it("preserves the request ID through the shared tRPC context factory", async () => {

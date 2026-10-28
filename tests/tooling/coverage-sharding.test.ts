@@ -21,17 +21,16 @@ import shardConfig from "../../vitest.shard.config.mts";
 const fixture = resolve("tests/fixtures/coverage-sharding");
 
 describe("coverage sharding", () => {
-  it("defers only thresholds and reports, never the production denominator", () => {
-    expect(shardConfig.test?.coverage?.thresholds).toBeUndefined();
-    expect(shardConfig.test?.coverage?.reporter).toEqual([]);
-    expect(shardConfig.test?.coverage?.include).toEqual(
-      baseConfig.test?.coverage?.include,
-    );
-    expect(shardConfig.test?.coverage?.exclude).toEqual(
-      baseConfig.test?.coverage?.exclude,
-    );
-    expect(shardConfig.test?.include).toEqual(baseConfig.test?.include);
-    expect(shardConfig.test?.exclude).toEqual(baseConfig.test?.exclude);
+  it("defers only incomplete shard thresholds while preserving coverage scope and isolation", () => {
+    expect(shardConfig.test).toEqual({
+      ...baseConfig.test,
+      coverage: {
+        ...baseConfig.test?.coverage,
+        thresholds: undefined,
+        reporter: [],
+      },
+    });
+    // The default/merge command still reads the original required thresholds.
     expect(baseConfig.test?.coverage?.thresholds).toMatchObject({
       statements: 70,
       lines: 70,
@@ -39,7 +38,6 @@ describe("coverage sharding", () => {
       branches: 60,
     });
   });
-
   it("merges real shards, retains untested sources, and fails stricter gates", async () => {
     const output = mkdtempSync(join(tmpdir(), "honeycomb-coverage-shards-"));
     const blobs = join(output, "blobs");

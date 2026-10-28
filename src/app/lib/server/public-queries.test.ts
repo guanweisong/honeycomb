@@ -104,7 +104,7 @@ describe("public server queries", () => {
     expect(mocks.createServerClient).toHaveBeenCalledTimes(5);
     expect(mocks.cacheLife).toHaveBeenCalledTimes(4);
     expect(mocks.cacheTag).toHaveBeenCalledWith("public.layout");
-    expect(mocks.createServerClient).toHaveBeenCalledWith(undefined, {
+    expect(mocks.createServerClient).toHaveBeenCalledWith({
       requestContext: { requestId: "next-public-cache-fill" },
       skipRequestObservability: true,
     });

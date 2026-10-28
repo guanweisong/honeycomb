@@ -15,10 +15,6 @@ import { createRoot, type Root } from "react-dom/client";
 
 import { Permission } from "@/lib/auth/permissions";
 
-(
-  globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-
 beforeAll(() => {
   globalThis.ResizeObserver = class {
     observe() {}
@@ -119,8 +115,10 @@ describe("CommentPageShell", () => {
           ? batch
           : requireDefined(
               Array.from(
-                container.querySelectorAll<HTMLButtonElement>("tbody button"),
-              ).at(-1),
+                container.querySelectorAll<HTMLButtonElement>(
+                  'tbody button[aria-label="删除评论"]',
+                ),
+              ).at(0),
             );
       await act(async () => trigger.click());
       const confirm = () =>
@@ -161,7 +159,9 @@ describe("CommentPageShell", () => {
         ),
       ).toEqual(labels);
       expect(
-        container.querySelector("tbody button:last-child svg.lucide-trash"),
+        container.querySelector(
+          'tbody button:last-child[aria-label="删除评论"]',
+        ),
       ).not.toBeNull();
     },
   );
@@ -275,7 +275,7 @@ describe("CommentPageShell", () => {
       (header) => header.textContent?.includes("评论文章"),
     );
     expect(targetHeader).toBeDefined();
-    expect(targetHeader?.className).not.toContain("cursor-pointer");
+    expect(targetHeader?.querySelector("button")).toBeNull();
   });
 
   it("keeps private comment columns for authorized readers without moderation", async () => {

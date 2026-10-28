@@ -96,6 +96,29 @@ describe("DataTable", () => {
     container.remove();
   });
 
+  it.each([true, false])(
+    "renders the supplied server rows without client-side slicing (pagination: %s)",
+    async (pagination) => {
+      const rows = Array.from({ length: 25 }, (_, index) => ({
+        id: `row-${index}`,
+        name: `Person ${index}`,
+        role: "member",
+      }));
+      await act(async () =>
+        root.render(
+          React.createElement(DataTable<Person>, {
+            columns,
+            getRowId: (row) => row.id,
+            data: { list: rows, total: 100 },
+            pagination,
+          }),
+        ),
+      );
+      expect(container.querySelectorAll("tbody tr")).toHaveLength(25);
+      expect(container.textContent).toContain("Person 24");
+    },
+  );
+
   it("renders static and table-aware toolbar content without changing its behavior", async () => {
     await act(async () =>
       root.render(

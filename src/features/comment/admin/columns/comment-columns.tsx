@@ -2,24 +2,21 @@ import type { ColumnDef } from "@tanstack/react-table";
 import MultiLangText from "@/components/MultiLangText";
 import { formatAdminDateTime } from "@/lib/ui/admin-date-time";
 import type { AdminCommentViewModel } from "@/features/comment/presentation/comment-view-model";
-import { commentStatusOptions } from "@/features/comment/admin/options";
+import { CommentStatus } from "@/features/comment/types/comment.status";
+import { CommentStatusName } from "@/features/comment/types/comment.status-name";
 import { StatusBadge, StatusBadgeTone } from "@/components/StatusBadge";
-import { getStatusBadgeTone } from "@/components/StatusBadge/status-tone";
 
-export function getCommentStatusPresentation(status?: string | null) {
-  const toneMap = {
-    TO_AUDIT: StatusBadgeTone.AMBER,
-    PUBLISH: StatusBadgeTone.GREEN,
-    RUBBISH: StatusBadgeTone.GRAY,
-    BAN: StatusBadgeTone.RED,
-  } as const;
+const commentStatusTones = {
+  [CommentStatus.TO_AUDIT]: StatusBadgeTone.AMBER,
+  [CommentStatus.PUBLISH]: StatusBadgeTone.GREEN,
+  [CommentStatus.RUBBISH]: StatusBadgeTone.GRAY,
+  [CommentStatus.BAN]: StatusBadgeTone.RED,
+} satisfies Record<CommentStatus, StatusBadgeTone>;
 
-  return commentStatusOptions
-    .filter((option) => status?.includes(option.value))
-    .map((option) => ({
-      label: option.label,
-      tone: getStatusBadgeTone(option.value, toneMap),
-    }));
+export function getCommentStatusPresentation(status?: CommentStatus | null) {
+  return status
+    ? { label: CommentStatusName[status], tone: commentStatusTones[status] }
+    : null;
 }
 
 export const commentTableColumns: ColumnDef<AdminCommentViewModel>[] = [
@@ -57,16 +54,10 @@ export const commentTableColumns: ColumnDef<AdminCommentViewModel>[] = [
     accessorKey: "status",
     header: "评论状态",
     cell: ({ row }) => {
-      const statuses = getCommentStatusPresentation(row.original.status);
+      const status = getCommentStatusPresentation(row.original.status);
       return (
         <div className="flex flex-wrap gap-1">
-          {statuses.length ? (
-            statuses.map((status) => (
-              <StatusBadge key={status.label} {...status} />
-            ))
-          ) : (
-            <span>—</span>
-          )}
+          {status ? <StatusBadge {...status} /> : <span>—</span>}
         </div>
       );
     },

@@ -9,15 +9,9 @@ export type ServerClientOptions = Pick<
   "requestContext" | "skipRequestObservability"
 >;
 
-export const createServerClient = async (
-  headers?: Headers,
-  options: ServerClientOptions = {},
-) =>
+export const createServerClient = async (options: ServerClientOptions = {}) =>
   appRouter.createCaller(
     await createContext({
-      req: headers
-        ? new Request("https://honeycomb.test", { headers })
-        : undefined,
       ...options,
     }),
   );

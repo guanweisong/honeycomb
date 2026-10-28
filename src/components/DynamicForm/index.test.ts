@@ -3,7 +3,26 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { DynamicForm, type DynamicFormRef } from "@/components/DynamicForm/index";
+import { DynamicForm } from "@/components/DynamicForm/index";
+
+// Capture the real native form handler only to observe rejected submit promises;
+// fields and React Hook Form still run unchanged, without a production ref API.
+const nativeForm = vi.hoisted(() => ({
+  submit: undefined as (() => Promise<void>) | undefined,
+}));
+vi.mock("@/components/ui/form", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ui/form")>();
+  return {
+    ...actual,
+    Form: (props: React.ComponentProps<typeof actual.Form>) => {
+      if (
+        React.isValidElement<{ onSubmit: () => Promise<void> }>(props.children)
+      )
+        nativeForm.submit = props.children.props.onSubmit;
+      return React.createElement(actual.Form, props);
+    },
+  };
+});
 
 if (typeof ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
@@ -66,18 +85,16 @@ describe("DynamicForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({ title: "更新后的标题" });
   });
 
-  it.each(["button", "imperative"] as const)(
+  it.each(["button", "form"] as const)(
     "keeps %s submission pending until the returned promise resolves",
     async (entry) => {
       const schema = z.object({ title: z.string() });
-      const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
       const pending = Promise.withResolvers<void>();
       const onSubmit = vi.fn(() => pending.promise);
       await act(async () => {
         root.render(
           React.createElement(DynamicForm<typeof schema.shape>, {
             schema,
-            ref: formRef,
             fields: [{ name: "title", type: "text" }],
             defaultValues: { title: "Draft" },
             onSubmit,
@@ -91,7 +108,7 @@ describe("DynamicForm", () => {
       if (!button) throw new Error("Submit button missing");
       let submission: void | Promise<void>;
       await act(async () => {
-        if (entry === "imperative") submission = formRef.current?.submit();
+        if (entry === "form") submission = nativeForm.submit?.();
         else button.click();
       });
 
@@ -107,25 +124,31 @@ describe("DynamicForm", () => {
     },
   );
 
-  it("clears imperative pending after rejection without losing the draft", async () => {
+  it("clears native form pending after rejection without losing the draft", async () => {
     const schema = z.object({ title: z.string() });
-    const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
     const pending = Promise.withResolvers<void>();
     await act(async () => {
       root.render(
         React.createElement(DynamicForm<typeof schema.shape>, {
           schema,
-          ref: formRef,
           fields: [{ name: "title", type: "text" }],
           defaultValues: { title: "Initial" },
           onSubmit: () => pending.promise,
         }),
       );
     });
-    await act(async () => formRef.current?.setValue("title", "Draft"));
+    await act(async () => {
+      const input = container.querySelector("input");
+      if (!input) throw new Error("Input missing");
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set?.call(input, "Draft");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     let rejection: Promise<unknown> | undefined;
     await act(async () => {
-      rejection = Promise.resolve(formRef.current?.submit()).catch(
+      rejection = Promise.resolve(nativeForm.submit?.()).catch(
         (error: unknown) => error,
       );
     });
@@ -139,20 +162,18 @@ describe("DynamicForm", () => {
     });
     expect(button?.disabled).toBe(false);
     expect(button?.textContent).toBe("提交");
-    expect(formRef.current?.getValues()).toEqual({ title: "Draft" });
+    expect(container.querySelector("input")?.value).toBe("Draft");
   });
 
   it.each([true, false])(
     "preserves explicit submitProps.disabled=%s while pending",
     async (disabled) => {
       const schema = z.object({ title: z.string() });
-      const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
       const pending = Promise.withResolvers<void>();
       await act(async () => {
         root.render(
           React.createElement(DynamicForm<typeof schema.shape>, {
             schema,
-            ref: formRef,
             fields: [{ name: "title", type: "text" }],
             defaultValues: { title: "Draft" },
             onSubmit: () => pending.promise,
@@ -162,7 +183,7 @@ describe("DynamicForm", () => {
       });
       let submission: void | Promise<void>;
       await act(async () => {
-        submission = formRef.current?.submit();
+        submission = nativeForm.submit?.();
       });
       const button = container.querySelector<HTMLButtonElement>(
         'button[type="submit"]',
@@ -208,27 +229,43 @@ describe("DynamicForm", () => {
 
   it("preserves a draft after failed submission and same-session defaults refresh", async () => {
     const schema = z.object({ title: z.string() });
-    const formRef = React.createRef<DynamicFormRef<{ title: string }>>();
     const onSubmit = vi.fn().mockRejectedValue(new Error("write failed"));
     const render = (title: string) =>
       root.render(
         React.createElement(DynamicForm<typeof schema.shape>, {
           schema,
-          ref: formRef,
           fields: [{ name: "title", type: "text" }],
           defaultValues: { title },
           onSubmit,
         }),
       );
     await act(async () => render("Initial"));
-    await act(async () => formRef.current?.setValue("title", "Draft"));
     await act(async () => {
-      await expect(formRef.current?.submit()).rejects.toThrow("write failed");
+      const input = container.querySelector("input");
+      if (!input) throw new Error("Input missing");
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set?.call(input, "Draft");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      await expect(nativeForm.submit?.()).rejects.toThrow("write failed");
     });
     await act(async () => render("Refetched"));
     expect(container.querySelector("input")?.value).toBe("Draft");
-    await act(async () => formRef.current?.reset({ title: "Explicit reset" }));
-    expect(container.querySelector("input")?.value).toBe("Explicit reset");
+    await act(async () =>
+      root.render(
+        React.createElement(DynamicForm<typeof schema.shape>, {
+          key: "new-session",
+          schema,
+          fields: [{ name: "title", type: "text" }],
+          defaultValues: { title: "New session" },
+          onSubmit,
+        }),
+      ),
+    );
+    expect(container.querySelector("input")?.value).toBe("New session");
   });
 
   it("shows validation feedback and does not submit invalid values", async () => {
@@ -260,9 +297,8 @@ describe("DynamicForm", () => {
     expect(container.textContent).toContain("标题不能为空");
   });
 
-  it("renders textarea fields and applies dynamic disabled state", async () => {
+  it("renders textarea fields and applies a boolean disabled state", async () => {
     const schema = z.object({
-      enabled: z.boolean(),
       description: z.string(),
     });
 
@@ -271,17 +307,15 @@ describe("DynamicForm", () => {
         React.createElement(DynamicForm, {
           schema,
           fields: [
-            { name: "enabled", label: "启用", type: "switch" },
             {
               name: "description",
               label: "描述",
               type: "textarea",
-              disabled: (values) => values.enabled === false,
+              disabled: true,
             },
           ],
-          defaultValues: { enabled: false, description: "说明" },
+          defaultValues: { description: "说明" },
           onSubmit: vi.fn(),
-          renderSubmitButton: false,
         }),
       );
     });
@@ -322,7 +356,6 @@ describe("DynamicForm", () => {
             title: { zh: "中文", en: "English" },
           },
           onSubmit: vi.fn(),
-          renderSubmitButton: false,
         }),
       );
     });

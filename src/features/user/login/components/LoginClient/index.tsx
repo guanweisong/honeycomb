@@ -9,7 +9,7 @@ import {
   TurnstileInstance,
 } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
-import { DynamicForm, DynamicFormRef } from "@/components/DynamicForm";
+import { DynamicForm } from "@/components/DynamicForm";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,7 +51,6 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
   const [isPasskeySupported, setIsPasskeySupported] = useState<boolean | null>(
     null,
   );
-  const form = useRef<DynamicFormRef<LoginValues>>(null);
   const interactiveLoginInFlight = useRef(false);
   const [interactiveLoginPending, setInteractiveLoginPending] = useState(false);
 
@@ -80,18 +79,12 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
    * 表单提交处理器。
    * 当用户点击登录按钮时，如果验证码已就绪，则调用 Better Auth 的用户名登录接口完成登录。
    */
-  const onSubmit = () => {
+  const onSubmit = ({ name, password }: LoginValues) => {
     if (clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
       toast.error("验证码加载中，请稍候");
       return Promise.reject("验证码未加载");
     }
 
-    const values = form.current?.getValues();
-    if (!values) {
-      toast.error("表单未初始化");
-      return Promise.reject("表单未初始化");
-    }
-    const { name, password } = values;
     return authClient.signIn
       .username({
         username: name,
@@ -213,7 +206,6 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
           <div className="opacity-80 mb-6">游客账号：guest 123456</div>
           <div className="space-y-4 [&_[data-slot=form-item]]:gap-1.5 [&_input[data-slot=input]]:h-10 [&_input[data-slot=input]]:rounded-md [&_input[data-slot=input]]:border-white/20 [&_input[data-slot=input]]:bg-white/80 [&_input[data-slot=input]]:px-4 [&_input[data-slot=input]]:text-black [&_input[data-slot=input]]:shadow-none [&_input[data-slot=input]]:placeholder:text-black/45 [&_input[data-slot=input]]:focus-visible:border-white [&_input[data-slot=input]]:focus-visible:ring-white/30 [&_[data-slot=form-message]]:text-left [&_[data-slot=form-message]]:text-red-200">
             <DynamicForm
-              ref={form}
               schema={LoginSchema}
               fields={[
                 {

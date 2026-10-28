@@ -5,7 +5,10 @@ import { getUpstashEnv } from "@/env/server";
 import { MetricName } from "@/lib/observability/core/names";
 import { getMetrics } from "@/lib/observability/server/registry";
 
-import { cacheNamespaceValues, type CacheNamespace } from "@/lib/cache/cache-namespaces";
+import {
+  cacheNamespaceValues,
+  type CacheNamespace,
+} from "@/lib/cache/cache-namespaces";
 export type { CacheNamespace } from "@/lib/cache/cache-namespaces";
 const cacheNamespaces = new Set<CacheNamespace>(cacheNamespaceValues);
 const implicitCacheVersion = 1;
@@ -64,20 +67,11 @@ async function observeCacheRead<T>(
 }
 
 /** 读取并解析指定命名空间下的 JSON 缓存。 */
-export function getCacheJSON(
-  namespace: CacheNamespace,
-  key: string,
-): Promise<unknown>;
-export function getCacheJSON<T>(
+export async function getCacheJSON<T>(
   namespace: CacheNamespace,
   key: string,
   decode: (value: unknown) => T,
-): Promise<T | null>;
-export async function getCacheJSON(
-  namespace: CacheNamespace,
-  key: string,
-  decode: (value: unknown) => unknown = (value) => value,
-): Promise<unknown> {
+): Promise<T | null> {
   const redis = getRedisClient();
   if (!redis) return null;
   return observeCacheRead(namespace, async () => {

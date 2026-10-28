@@ -95,7 +95,7 @@ vi.mock("@/features/category/admin/components/CategoryFormDialog", () => ({
 }));
 
 import PostDetail from "@/features/post/admin/edit/page";
-import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
+import { AdminLayoutHeaderContext } from "@/components/admin/layout-context";
 
 const published: PostDetailResult = {
   id: state.id,
@@ -124,12 +124,16 @@ const published: PostDetailResult = {
   imagesInContent: [],
 };
 function LayoutHarness() {
-  const [actions, setActions] = useState<React.ReactNode>(null);
+  const [actions, setActions] = useState<HTMLElement | null>(null);
+  const [title, setTitle] = useState<HTMLElement | null>(null);
   return (
-    <AdminLayoutActionsContext.Provider value={{ setActions }}>
-      <header>{actions}</header>
+    <AdminLayoutHeaderContext.Provider value={{ actions, title }}>
+      <header>
+        <span data-testid="page-title" ref={setTitle} />
+        <div ref={setActions} />
+      </header>
       <PostDetail />
-    </AdminLayoutActionsContext.Provider>
+    </AdminLayoutHeaderContext.Provider>
   );
 }
 

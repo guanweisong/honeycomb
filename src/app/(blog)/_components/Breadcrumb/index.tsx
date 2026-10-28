@@ -68,7 +68,6 @@ const Breadcrumb = (props: BreadCrumbProps) => {
         // Match the public URL ancestry, which omits null-path bridge nodes.
         const canonicalPaths = getCurrentPathOfMenu({
           id: item.id,
-          familyProp: "path",
           menu,
         });
         return (

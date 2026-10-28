@@ -622,6 +622,19 @@ describe("admin action capability guards", () => {
     ).toContain("category.create");
   });
 
+  it("rejects an unguarded post-sidebar category callback", () => {
+    const sidebarPath =
+      "src/features/post/admin/edit/components/PostSidebarFields/index.tsx";
+    const actions = getActions(sidebarPath);
+    expect(findUnboundActionIds(sidebarPath, actions)).toEqual([]);
+    expect(
+      findUnboundActionIds(sidebarPath, actions, (source) => {
+        expect(source).toContain("{canCreateCategory && (");
+        return source.replace("{canCreateCategory && (", "{true && (");
+      }),
+    ).toEqual(["post-sidebar.create-category"]);
+  });
+
   it.each(actionGuardMatrix)(
     "$sourcePath binds each permission to its named action",
     ({ sourcePath, actions }) => {

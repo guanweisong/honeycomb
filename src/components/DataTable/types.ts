@@ -1,12 +1,12 @@
 import type * as React from "react";
-import { z } from "zod";
 import type {
   ColumnDef,
+  RowData,
   ColumnFiltersState,
   SortingState,
   Table,
-  VisibilityState,
 } from "@tanstack/react-table";
+import type { MultiSelectOption } from "@/components/MultiSelect";
 import type { CheckedState } from "radix-ui/checkbox";
 
 import type { PaginationInput } from "@/lib/validation/pagination";
@@ -46,11 +46,13 @@ export interface DataTableProps<TData> {
   pagination?: boolean;
 }
 
-export const DataTableColumnMetaSchema = z.object({
-  filterOptions: z
-    .array(z.object({ label: z.string(), value: z.string() }))
-    .optional(),
-});
+declare module "@tanstack/react-table" {
+  // TanStack's extension point requires the original generic parameters.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    filterOptions?: MultiSelectOption[];
+  }
+}
 
 export interface DataTableRequestState {
   pagination: boolean;
@@ -68,7 +70,6 @@ export interface UseDataTableStateOptions<TData> {
 export interface UseDataTableStateResult {
   sorting: SortingState;
   columnFilters: ColumnFiltersState;
-  columnVisibility: VisibilityState;
   paginationState: DataTablePaginationState;
   requestParams: DataTableQueryParams;
   handlePaginationChange: (value: DataTablePaginationState) => void;
@@ -76,7 +77,6 @@ export interface UseDataTableStateResult {
   handleColumnFiltersChange: React.Dispatch<
     React.SetStateAction<ColumnFiltersState>
   >;
-  setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
 }
 
 export interface UseRowSelectionOptions<TData> {

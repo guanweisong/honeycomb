@@ -60,47 +60,61 @@ const creationToken = "11111111-1111-4111-8111-111111111111";
 
 describe("required persistence results", () => {
   const updates = [
-    (db: Database, input: { id: string }) =>
-      updatePost(
-        db,
-        {
-          ...input,
-          id: "507f1f77bcf86cd799439011",
-          expectedVersion: 0,
-          title: { en: "Changed" },
-        },
-        "author",
-        invalidator,
-      ),
-    (db: Database) =>
-      updatePage(
-        db,
-        {
-          id: "507f1f77bcf86cd799439011",
-          expectedVersion: 0,
-          title: { en: "Changed", zh: "变更" },
-        },
-        "author",
-        invalidator,
-      ),
-    updateCategory,
-    updateTag,
-    updateLink,
-
-    (db: Database, input: { id: string }) =>
-      createCommentCommandRepository(db).update(input),
-    (db: Database, input: { id: string }) =>
-      createUserRepository(db).update(input),
+    {
+      name: "post",
+      run: (db: Database, input: { id: string }) =>
+        updatePost(
+          db,
+          {
+            ...input,
+            id: "507f1f77bcf86cd799439011",
+            expectedVersion: 0,
+            title: { en: "Changed" },
+          },
+          "author",
+          invalidator,
+        ),
+    },
+    {
+      name: "page",
+      run: (db: Database) =>
+        updatePage(
+          db,
+          {
+            id: "507f1f77bcf86cd799439011",
+            expectedVersion: 0,
+            title: { en: "Changed", zh: "变更" },
+          },
+          "author",
+          invalidator,
+        ),
+    },
+    { name: "category", run: updateCategory },
+    { name: "tag", run: updateTag },
+    { name: "link", run: updateLink },
+    {
+      name: "comment",
+      run: (db: Database, input: { id: string }) =>
+        createCommentCommandRepository(db).update(input),
+    },
+    {
+      name: "user",
+      run: (db: Database, input: { id: string }) =>
+        createUserRepository(db).update(input),
+    },
   ];
-  it.each(updates)("rejects a missing update target (%#)", async (update) => {
-    const db = createMockDb();
-    authorize(db);
-    db.returning.mockResolvedValue([]);
-    db.limit.mockResolvedValue([]);
-    await expect(
-      update(asMockDatabase(db), { id: "missing" }, invalidator),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
+  it.each(updates)(
+    "$name rejects a missing update target",
+    async ({ run: update }) => {
+      const db = createMockDb();
+      authorize(db);
+      db.returning.mockResolvedValue([]);
+      db.limit.mockResolvedValue([]);
+      await expect(
+        update(asMockDatabase(db), { id: "missing" }, invalidator),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    },
+  );
   it("rejects empty create results across repositories", async () => {
     const fake = createMockDb();
     authorize(fake);
@@ -145,60 +159,83 @@ describe("required persistence results", () => {
       ),
     ).rejects.toThrow("Media registration not confirmed");
     const creates = [
-      () =>
-        createCategory(
-          db,
-          {
-            path: "category",
-            title: { en: "title", zh: "标题" },
-            description: { en: "description", zh: "描述" },
-          },
-          invalidator,
-        ),
-      () => createTag(db, { name: { en: "tag", zh: "标签" } }, invalidator),
-      () =>
-        createLink(
-          db,
-          { name: "link", url: "https://test.dev", logo: "logo" },
-          invalidator,
-        ),
-      () =>
-        createUserRepository(db).create({
-          name: "user",
-          email: "a@test.dev",
-          password: "password",
-        }),
+      {
+        name: "category",
+        run: () =>
+          createCategory(
+            db,
+            {
+              path: "category",
+              title: { en: "title", zh: "标题" },
+              description: { en: "description", zh: "描述" },
+            },
+            invalidator,
+          ),
+      },
+      {
+        name: "tag",
+        run: () =>
+          createTag(db, { name: { en: "tag", zh: "标签" } }, invalidator),
+      },
+      {
+        name: "link",
+        run: () =>
+          createLink(
+            db,
+            { name: "link", url: "https://test.dev", logo: "logo" },
+            invalidator,
+          ),
+      },
+      {
+        name: "user",
+        run: () =>
+          createUserRepository(db).create({
+            name: "user",
+            email: "a@test.dev",
+            password: "password",
+          }),
+      },
     ];
-    for (const create of creates)
-      await expect(create()).rejects.toMatchObject({
+    for (const { name, run: create } of creates)
+      await expect(create(), name).rejects.toMatchObject({
         code: "INTERNAL_SERVER_ERROR",
       });
   });
   it.each([
-    (db: Database) =>
-      updatePost(
-        db,
-        {
-          id: "507f1f77bcf86cd799439011",
-          expectedVersion: 0,
-          status: PostStatus.PUBLISHED,
-        },
-        "author",
-        invalidator,
-      ),
-    (db: Database) =>
-      updatePage(
-        db,
-        {
-          id: "507f1f77bcf86cd799439011",
-          expectedVersion: 0,
-          status: PageStatus.PUBLISHED,
-        },
-        "author",
-        invalidator,
-      ),
-    (db: Database) => createCommentCommandRepository(db).findStatus("id"),
-  ])("rejects unknown stored status (%#)", async (read) => {
+    {
+      name: "post",
+      run: (db: Database) =>
+        updatePost(
+          db,
+          {
+            id: "507f1f77bcf86cd799439011",
+            expectedVersion: 0,
+            status: PostStatus.PUBLISHED,
+          },
+          "author",
+          invalidator,
+        ),
+    },
+    {
+      name: "page",
+      run: (db: Database) =>
+        updatePage(
+          db,
+          {
+            id: "507f1f77bcf86cd799439011",
+            expectedVersion: 0,
+            status: PageStatus.PUBLISHED,
+          },
+          "author",
+          invalidator,
+        ),
+    },
+    {
+      name: "comment",
+      run: (db: Database) =>
+        createCommentCommandRepository(db).findStatus("id"),
+    },
+  ])("$name rejects unknown stored status", async ({ run: read }) => {
     const db = createMockDb();
     authorize(db);
     db.limit.mockResolvedValue([{ status: "UNKNOWN", version: 0 }]);

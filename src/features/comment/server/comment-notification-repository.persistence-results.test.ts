@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
-import { UserLevel } from "@/features/user/types/user.level";
-import { UserStatus } from "@/features/user/types/user.status";
 import * as schema from "@/lib/db/schema";
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
 
@@ -32,30 +30,9 @@ describe("required persistence results", () => {
     userAgent: null,
     ip: null,
   };
-  function authorize(db: ReturnType<typeof createMockDb>) {
-    db.from.mockImplementation((table: object) => {
-      if (table === schema.user) {
-        const actor = createMockDb();
-        actor.limit.mockResolvedValue([
-          { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
-        ]);
-        return Object.assign(Promise.resolve([]), actor);
-      }
-      if (
-        table === schema.postTranslation ||
-        table === schema.settingTranslation ||
-        table === schema.pageTranslation
-      ) {
-        const read = createMockDb();
-        read.where.mockResolvedValue([]);
-        return read;
-      }
-      return db;
-    });
-  }
+
   it("rejects invalid status when loading a notification comment", async () => {
     const db = createMockDb();
-    authorize(db);
     db.where.mockResolvedValue([{ ...commentRow, post: null, page: null }]);
     await expect(
       createCommentNotificationRepository(asMockDatabase(db)).getComment(

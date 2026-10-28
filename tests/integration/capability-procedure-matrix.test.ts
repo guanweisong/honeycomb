@@ -13,7 +13,7 @@ import {
 import {
   capabilityRegistry,
   type CapabilityConsumer,
-} from "@/lib/auth/capability-registry";
+} from "@tests/helpers/capability-consumers";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { configureObservability } from "@/lib/observability/server/registry";
 import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";

@@ -1,13 +1,11 @@
-import { createPostFixture } from "@tests/helpers/post-fixtures";
 import { EnableStatus } from "@/lib/validation/enable-status";
+import { FormProvider, useForm, type UseFormReturn } from "react-hook-form";
+import type { PostEditorValues } from "@/features/post/admin/edit/utils/post-draft";
+import { requireDefined } from "@tests/helpers/require-defined";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { PostType } from "@/features/post/types/post.type";
-
-(
-  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
 
 const grantedPermissions = new Set<string>();
 
@@ -51,8 +49,24 @@ vi.mock("@/components/DynamicForm/DynamicField", () => ({
 }));
 
 vi.mock("@/features/post/admin/edit/components/MultiTag", () => ({
-  default: ({ title }: { title: string }) =>
-    React.createElement("div", { "data-testid": "multi-tag" }, title),
+  default: ({
+    title,
+    value,
+    onChange,
+  }: {
+    title: string;
+    value: unknown[];
+    onChange: (value: unknown[]) => void;
+  }) =>
+    React.createElement(
+      "button",
+      {
+        "data-testid": "multi-tag",
+        onClick: () => onChange([{ id: "selected", name: { en: title } }]),
+      },
+      title,
+      `:${value.length}`,
+    ),
 }));
 
 vi.mock("@/features/media/admin/components/PhotoPickerItem", () => ({
@@ -61,12 +75,12 @@ vi.mock("@/features/media/admin/components/PhotoPickerItem", () => ({
 }));
 
 import { PostSidebarFields } from "@/features/post/admin/edit/components/PostSidebarFields/index";
-import { PostTypeFields } from "@/features/post/admin/edit/components/PostTypeFields";
 
 describe("post editor type-specific fields", () => {
   let container: HTMLDivElement;
   let root: Root;
   let modalChanges: unknown[];
+  let form: UseFormReturn<PostEditorValues> | undefined;
 
   beforeEach(() => {
     container = document.createElement("div");
@@ -74,6 +88,7 @@ describe("post editor type-specific fields", () => {
     root = createRoot(container);
     grantedPermissions.clear();
     modalChanges = [];
+    form = undefined;
   });
 
   afterEach(async () => {
@@ -82,28 +97,22 @@ describe("post editor type-specific fields", () => {
   });
 
   async function renderSidebar(type: PostType) {
-    const editor: React.ComponentProps<typeof PostSidebarFields>["editor"] = {
-      category: {
-        list: [
-          {
-            deepPath: 2,
-            id: "category-1",
-            title: { zh: "子分类", en: "Child" },
-            description: null,
-            parent: null,
-            path: "child",
-            status: EnableStatus.ENABLE,
-            createdAt: null,
-            updatedAt: null,
-          },
-        ],
-        total: 1,
-      },
-      detail: { ...createPostFixture(), imagesInContent: [] },
-      galleryStyles: [],
-      movieActors: [],
-      movieDirectors: [],
-      movieStyles: [],
+    const props: React.ComponentProps<typeof PostSidebarFields> = {
+      categories: [
+        {
+          deepPath: 2,
+          id: "category-1",
+          title: { zh: "子分类", en: "Child" },
+          description: null,
+          parent: null,
+          path: "child",
+          status: EnableStatus.ENABLE,
+          createdAt: null,
+          updatedAt: null,
+        },
+      ],
+      postId: "post-1",
+      onCreateCategory: () => modalChanges.push({ open: true, type: 0 }),
       photoPickerProps: {
         cover: undefined,
         handlePhotoClear: vi.fn(),
@@ -111,16 +120,24 @@ describe("post editor type-specific fields", () => {
         size: "1920*1080",
         title: "封面",
       },
-      setGalleryStyles: vi.fn(),
-      setModalProps: (value: unknown) => modalChanges.push(value),
-      setMovieActors: vi.fn(),
-      setMovieDirectors: vi.fn(),
-      setMovieStyles: vi.fn(),
-      type,
     };
-    await act(async () => {
-      root.render(React.createElement(PostSidebarFields, { editor }));
-    });
+    function Harness() {
+      form = useForm<PostEditorValues>({
+        defaultValues: {
+          type,
+          galleryStyles: [],
+          movieActors: [],
+          movieDirectors: [],
+          movieStyles: [],
+        },
+      });
+      return (
+        <FormProvider {...form}>
+          <PostSidebarFields {...props} />
+        </FormProvider>
+      );
+    }
+    await act(async () => root.render(<Harness />));
   }
 
   it("renders nested category options, cover and authorized category creation", async () => {
@@ -150,7 +167,7 @@ describe("post editor type-specific fields", () => {
       Array.from(container.querySelectorAll('[data-testid="multi-tag"]')).map(
         (item) => item.textContent,
       ),
-    ).toEqual(["导演", "演员", "电影风格"]);
+    ).toEqual(["导演:0", "演员:0", "电影风格:0"]);
     expect(
       container.querySelector('[data-testid="photo-picker"]'),
     ).not.toBeNull();
@@ -167,7 +184,7 @@ describe("post editor type-specific fields", () => {
     ).not.toBeNull();
     expect(
       container.querySelector('[data-testid="multi-tag"]')?.textContent,
-    ).toBe("照片风格");
+    ).toBe("照片风格:0");
   });
 
   it("does not offer covers or tag relationships for quotes", async () => {
@@ -177,23 +194,30 @@ describe("post editor type-specific fields", () => {
     expect(container.querySelector('[data-testid="multi-tag"]')).toBeNull();
   });
 
-  it.each([
-    [PostType.ARTICLE, ["title", "content", "excerpt"]],
-    [PostType.MOVIE, ["title", "content", "excerpt"]],
-    [PostType.PHOTOGRAPH, ["title", "content", "excerpt"]],
-    [PostType.QUOTE, ["quoteContent", "quoteAuthor"]],
-    ["UNSUPPORTED", []],
-  ] as const)("renders the %s content fields", async (type, expectedFields) => {
-    await act(async () => {
-      root.render(
-        React.createElement(PostTypeFields, { type: type as PostType }),
-      );
-    });
-
+  it("binds tag changes and resets directly to the existing form context", async () => {
+    await renderSidebar(PostType.MOVIE);
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('[data-testid="multi-tag"]')
+        ?.click(),
+    );
+    expect(requireDefined(form).getValues("movieDirectors")).toEqual([
+      { id: "selected", name: { en: "导演" } },
+    ]);
+    expect(requireDefined(form).getFieldState("movieDirectors").isDirty).toBe(
+      true,
+    );
+    await act(async () =>
+      requireDefined(form).reset({
+        type: PostType.PHOTOGRAPH,
+        galleryStyles: [],
+      }),
+    );
     expect(
-      Array.from(container.querySelectorAll("[data-field]")).map((field) =>
-        field.getAttribute("data-field"),
-      ),
-    ).toEqual([...expectedFields]);
+      container.querySelector('[data-testid="multi-tag"]')?.textContent,
+    ).toBe("照片风格:0");
+    expect(requireDefined(form).getFieldState("movieDirectors").isDirty).toBe(
+      false,
+    );
   });
 });

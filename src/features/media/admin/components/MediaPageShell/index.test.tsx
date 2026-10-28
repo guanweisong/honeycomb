@@ -17,7 +17,7 @@ import type { MediaRecord as MediaViewModel } from "@/features/media/types/media
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-let accountId = "user-1";
+let accountId: string | undefined = "user-1";
 let allowedPermissions = new Set<Permission>();
 const existingMedia: MediaViewModel = {
   id: "media-1",
@@ -79,7 +79,7 @@ const toastMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
-  useCurrentUser: () => ({ user: { id: accountId } }),
+  useCurrentUser: () => ({ user: accountId ? { id: accountId } : undefined }),
   useCan: (permission: Permission) => allowedPermissions.has(permission),
 }));
 
@@ -170,19 +170,6 @@ describe("MediaPageShell", () => {
     vi.stubGlobal("File", NodeFile);
     accountId = "user-1";
     allowedPermissions = new Set();
-    vi.stubGlobal(
-      "Image",
-      class {
-        width = 0;
-        height = 0;
-        onerror?: () => void;
-        set src(_value: string) {
-          queueMicrotask(() => this.onerror?.());
-        }
-      },
-    );
-    URL.createObjectURL = vi.fn(() => "blob:test");
-    URL.revokeObjectURL = vi.fn();
     trpcMocks.destroy.mockReset();
     trpcMocks.prepareUpload.mockReset();
     trpcMocks.input = undefined;
@@ -365,6 +352,74 @@ describe("MediaPageShell", () => {
     expect(trpcMocks.input).toEqual({ page: 2, limit: 50 });
     expect(container.querySelector('[title="next.png"]')).not.toBeNull();
   });
+
+  it.each(["account", "signout", "unmount", "observer"] as const)(
+    "ignores a queued sentinel callback after %s changes",
+    async (change) => {
+      const callbacks: Array<(entries: IntersectionObserverEntry[]) => void> =
+        [];
+      vi.stubGlobal(
+        "IntersectionObserver",
+        class {
+          observe = vi.fn();
+          disconnect = vi.fn();
+          constructor(
+            callback: (entries: IntersectionObserverEntry[]) => void,
+          ) {
+            callbacks.push(callback);
+          }
+        },
+      );
+      if (change === "observer") {
+        trpcMocks.request.mockImplementation(async ({ page }) => ({
+          list: [
+            page === 1 ? existingMedia : page === 2 ? nextMedia : uploadedMedia,
+          ],
+          total: 3,
+        }));
+      }
+      await act(async () => root.render(<MediaPageShell />));
+      const queuedCallback = requireDefined(callbacks.at(-1));
+      if (change === "observer") {
+        // Loading page 2 replaces the observer while the original callback can still be queued.
+        await act(async () =>
+          queuedCallback([
+            { isIntersecting: true } as IntersectionObserverEntry,
+          ]),
+        );
+      } else {
+        accountId = change === "account" ? "user-2" : undefined;
+        await act(async () =>
+          root.render(change === "unmount" ? null : <MediaPageShell />),
+        );
+      }
+      const calls = trpcMocks.request.mock.calls.length;
+
+      await act(async () =>
+        queuedCallback([{ isIntersecting: true } as IntersectionObserverEntry]),
+      );
+
+      expect(trpcMocks.request).toHaveBeenCalledTimes(calls);
+      if (change === "account" || change === "observer") {
+        const currentCallback = requireDefined(callbacks.at(-1));
+        await act(async () =>
+          currentCallback([
+            { isIntersecting: true } as IntersectionObserverEntry,
+          ]),
+        );
+        expect(trpcMocks.request).toHaveBeenCalledTimes(calls + 1);
+        expect(trpcMocks.input).toEqual({
+          page: change === "account" ? 2 : 3,
+          limit: 50,
+        });
+        expect(
+          container.querySelector(
+            change === "account" ? '[title="next.png"]' : '[title="image.png"]',
+          ),
+        ).not.toBeNull();
+      }
+    },
+  );
 
   it("uploads through the file input with loading, storage, selection, and refresh behavior", async () => {
     allowedPermissions = new Set([Permission.mediaUpload]);

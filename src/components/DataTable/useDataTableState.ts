@@ -48,7 +48,6 @@ export function useDataTableState<TData = unknown>(
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
-  const [columnVisibility, setColumnVisibility] = React.useState({});
   const [paginationState, setPaginationState] =
     React.useState<DataTablePaginationState>(tablePaginationDefaults);
   const onChangeRef = React.useRef(onChange);
@@ -120,12 +119,10 @@ export function useDataTableState<TData = unknown>(
   return {
     sorting,
     columnFilters,
-    columnVisibility,
     paginationState,
     requestParams,
     handlePaginationChange,
     handleSortingChange,
     handleColumnFiltersChange,
-    setColumnVisibility,
   };
 }

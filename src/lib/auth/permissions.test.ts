@@ -9,6 +9,7 @@ import {
   Permission,
   ROLE_PERMISSIONS,
   can,
+  isPermission,
 } from "@/lib/auth/permissions";
 
 const expectedPermissions = [
@@ -93,6 +94,21 @@ const expectedGuestPermissions = [
 ] as const;
 
 describe("capability authorization", () => {
+  it("recognizes each catalog permission and rejects unknown or inherited keys", () => {
+    expect(expectedPermissions.every(isPermission)).toBe(true);
+    for (const value of [
+      "postReadAll",
+      "post:unknown",
+      "__proto__",
+      "constructor",
+      "toString",
+      "",
+    ]) {
+      expect(isPermission(value)).toBe(false);
+      expect(can(UserLevel.ADMIN, value)).toBe(false);
+    }
+  });
+
   it("defines the complete stable business permission catalog", () => {
     expect(ALL_PERMISSIONS).toEqual(expectedPermissions);
     expect(Object.values(Permission)).toEqual(expectedPermissions);
@@ -116,6 +132,8 @@ describe("capability authorization", () => {
   });
 
   it("allows known grants and denies unknown roles, permissions, and omissions", () => {
+    expect(can(UserLevel.ADMIN, Permission.postUpdate)).toBe(true);
+    expect(can(UserLevel.GUEST, Permission.postUpdate)).toBe(false);
     expect(can(UserLevel.EDITOR, Permission.postUpdate)).toBe(true);
     expect(can(UserLevel.EDITOR, Permission.userManage)).toBe(false);
     expect(can("OWNER", Permission.postUpdate)).toBe(false);

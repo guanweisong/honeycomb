@@ -41,7 +41,6 @@ const getActiveCategories = ({
 
     const categoryPath = `/list/category/${getCurrentPathOfMenu({
       id: postCategoryId,
-      familyProp: "path",
       menu: flatMenuData,
     }).join("/")}`;
 

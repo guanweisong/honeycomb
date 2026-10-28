@@ -9,7 +9,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 
 import { Permission } from "@/lib/auth/permissions";
@@ -27,8 +26,6 @@ export const menuRouter = createTRPCRouter({
   saveAll: permissionProcedure(Permission.menuUpdate)
     .input(MenuUpdateSchema)
     .mutation(({ input, ctx }) =>
-      saveAllMenus(ctx.db, input, ctx.user.id, publicContentInvalidator).catch(
-        mapApplicationError,
-      ),
+      saveAllMenus(ctx.db, input, ctx.user.id, publicContentInvalidator),
     ),
 });

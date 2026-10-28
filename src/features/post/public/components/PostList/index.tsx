@@ -107,7 +107,7 @@ export default function PostList(props: PostListProps): JSX.Element {
             <Link href={`/archives/${item.id}`} className="relative block">
               <ViewTransition name={`postContent-${item.id}`}>
                 <Image
-                  priority={isFirstItem}
+                  preload={isFirstItem}
                   src={item.cover?.url ?? ""}
                   alt={item.title?.[locale] ?? ""}
                   width={item.cover.width}

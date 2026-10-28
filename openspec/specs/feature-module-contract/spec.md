@@ -25,7 +25,7 @@
 
 ### Requirement: 模块依赖方向必须可自动验证
 
-app MUST 承担框架组合，feature MUST NOT 反向依赖 app；纯 schemas/type/catalog/rules MUST NOT 加载数据库、UI、服务端认证或框架实现，server 函数 MAY 直接依赖 Drizzle 和 lib 技术能力。
+模块的直接及间接依赖 MUST 按[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)自动验证；以下场景分别保护纯契约隔离与实际 server 直接数据库访问。
 
 #### Scenario: 纯规则引入运行时依赖
 

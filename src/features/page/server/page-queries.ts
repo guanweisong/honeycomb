@@ -1,11 +1,11 @@
 import "server-only";
-import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
+import { readMediaByUrls } from "@/features/media/server/read-media-by-urls";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
 import { parseEnumValue } from "@/lib/db/value-validation";
 import { PageTemplate } from "@/features/page/types/page.template";
 import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 
-import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableName, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import {
@@ -60,30 +60,6 @@ function toPageRecord(
   };
 }
 
-async function readPageImages(
-  db: Database,
-  urls: string[],
-  operation: "page.service.images" | "page.service.detail-images",
-) {
-  const images: (typeof schema.media.$inferSelect)[] = [];
-  for (let offset = 0; offset < urls.length; offset += SQL_ID_CHUNK_SIZE) {
-    images.push(
-      ...(await observeDbOperation(operation, "select", () =>
-        db
-          .select()
-          .from(schema.media)
-          .where(
-            inArray(
-              schema.media.url,
-              urls.slice(offset, offset + SQL_ID_CHUNK_SIZE),
-            ),
-          ),
-      )),
-    );
-  }
-  return images;
-}
-
 async function mapRelations(
   db: Database,
   pages: Pick<PageRow, "id">[],
@@ -128,7 +104,7 @@ async function mapRelations(
     for (const url of getLocalizedImageLinks(page.content)) urls.add(url);
   }
   const urlList = [...urls];
-  const medias = await readPageImages(db, urlList, "page.service.images");
+  const medias = await readMediaByUrls(db, urlList, "page.service.images");
   const imageMap = new Map(medias.map((media) => [media.url, media]));
   return localizedPages.map((page) => ({
     ...page,
@@ -335,7 +311,7 @@ export async function getPage(
   const translations = groupPageTranslations(page.translations);
   const localized = toPageRecord(page, translations.get(page.id));
   const urls = getLocalizedImageLinks(localized.content);
-  const imagesInContent = await readPageImages(
+  const imagesInContent = await readMediaByUrls(
     db,
     urls,
     "page.service.detail-images",
@@ -347,4 +323,31 @@ export async function getPage(
       ...new Map(imagesInContent.map((image) => [image.url, image])).values(),
     ].map((image) => MediaRecordSchema.parse(image)),
   };
+}
+
+/** Sitemap owns a published-only projection; no body, author or media hydration. */
+export async function listPublishedPageSitemapEntries(
+  db: Database,
+  page: number,
+  limit: number,
+) {
+  return observeDbOperation("page.service.list", "select", () =>
+    db
+      .select({ id: schema.page.id, updatedAt: schema.page.updatedAt })
+      .from(schema.page)
+      .where(eq(schema.page.status, PageStatus.PUBLISHED))
+      .orderBy(desc(schema.page.updatedAt), asc(schema.page.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  );
+}
+
+export async function countPublishedPages(db: Database) {
+  const rows = await observeDbOperation("page.service.count", "select", () =>
+    db
+      .select({ count: sql<number>`count(*)`.as("count") })
+      .from(schema.page)
+      .where(eq(schema.page.status, PageStatus.PUBLISHED)),
+  );
+  return Number(rows[0]?.count) || 0;
 }

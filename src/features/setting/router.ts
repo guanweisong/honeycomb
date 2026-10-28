@@ -6,7 +6,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 
 import { Permission } from "@/lib/auth/permissions";
@@ -21,8 +20,6 @@ export const settingRouter = createTRPCRouter({
   update: permissionProcedure(Permission.settingUpdate)
     .input(SettingUpdateSchema)
     .mutation(({ input, ctx }) =>
-      updateSetting(ctx.db, input, ctx.user.id, publicContentInvalidator).catch(
-        mapApplicationError,
-      ),
+      updateSetting(ctx.db, input, ctx.user.id, publicContentInvalidator),
     ),
 });

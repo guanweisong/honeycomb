@@ -203,16 +203,84 @@ export async function listMenus(
   return { list, total: list.length };
 }
 
-/** Read the revision and full editable tree from one database snapshot. */
+/** A fixed atomic batch keeps the revision and tree in one snapshot without
+ * holding an interactive write transaction across JavaScript awaits. */
 export async function getMenuSnapshot(db: Database) {
-  return db.transaction(async (tx) => {
-    const [revision] = await tx
-      .select()
-      .from(schema.menuRevision)
-      .where(eq(schema.menuRevision.singletonKey, 1))
-      .limit(1);
-    if (!revision)
-      throw new ApplicationError("INTERNAL_SERVER_ERROR", "菜单版本尚未初始化");
-    return { ...(await listMenus(tx, "ALL")), version: revision.version };
+  const [[revision], rows] = await observeDbOperation(
+    "menu.service.list",
+    "select",
+    () =>
+      db.batch([
+        db
+          .select({ version: schema.menuRevision.version })
+          .from(schema.menuRevision)
+          .where(eq(schema.menuRevision.singletonKey, 1))
+          .limit(1),
+        db.query.menu.findMany({
+          orderBy: [asc(schema.menu.power)],
+          with: {
+            category: {
+              columns: { path: true },
+              with: {
+                translations: { columns: { locale: true, title: true } },
+              },
+            },
+            page: {
+              columns: { id: true },
+              with: {
+                translations: { columns: { locale: true, title: true } },
+              },
+            },
+          },
+        }),
+      ]),
+  );
+  if (!revision)
+    throw new ApplicationError("INTERNAL_SERVER_ERROR", "菜单版本尚未初始化");
+
+  const menus = rows.map((menu) => ({
+    ...menu,
+    type: parseEnumValue(menu.type, Object.values(MenuType), "menu.type"),
+  }));
+  const businessIdByRowId = new Map(
+    menus.map((menu) => [
+      menu.id,
+      menu.type === MenuType.CATEGORY
+        ? menu.categoryId
+        : menu.type === MenuType.PAGE
+          ? menu.pageId
+          : menu.customId,
+    ]),
+  );
+  const list = menus.map((menu) => {
+    let title: MultiLang | undefined | null;
+    let path: string | null | undefined = null;
+    if (menu.type === MenuType.CATEGORY) {
+      title = menu.category
+        ? assembleRequiredLocalizedField(
+            menu.category.translations,
+            (row) => row.title,
+          )
+        : null;
+      path = menu.category?.path;
+    } else if (menu.type === MenuType.PAGE) {
+      title = menu.page
+        ? assembleRequiredLocalizedField(
+            menu.page.translations,
+            (row) => row.title,
+          )
+        : null;
+    }
+    return {
+      id: businessIdByRowId.get(menu.id) ?? menu.id,
+      parent: menu.parent ? (businessIdByRowId.get(menu.parent) ?? null) : null,
+      power: menu.power,
+      type: menu.type,
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+      title,
+      path,
+    };
   });
+  return { list, total: list.length, version: revision.version };
 }

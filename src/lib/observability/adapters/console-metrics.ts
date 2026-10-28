@@ -1,20 +1,19 @@
 import type { MetricLabels, Metrics } from "@/lib/observability/core/contracts";
 import type { MetricName } from "@/lib/observability/core/names";
-import { createSafeMetrics } from "@/lib/observability/core/safe-adapters";
-import { sanitizeMetricLabels } from "@/lib/observability/core/sanitize";
 import {
   getRuntimeEnvironment,
   type ConsoleAdapterOptions,
 } from "@/lib/observability/adapters/console-options";
 
-export function createConsoleMetrics(
+/** 内部指标输出端；调用方必须使用安全指标 facade。 */
+export function createConsoleMetricSink(
   options: ConsoleAdapterOptions = {},
 ): Metrics {
   const service = options.service ?? "honeycomb";
   const environment = options.environment ?? getRuntimeEnvironment();
   const write = options.write ?? ((line: string) => console.log(line));
 
-  return createSafeMetrics({
+  return {
     increment: (name, labels) =>
       writeMetric(
         write,
@@ -37,7 +36,7 @@ export function createConsoleMetrics(
         service,
         environment,
       ),
-  });
+  };
 }
 
 function writeMetric(
@@ -60,7 +59,7 @@ function writeMetric(
       unit,
       service,
       environment,
-      labels: sanitizeMetricLabels(labels),
+      labels,
     }),
   );
 }
