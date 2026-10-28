@@ -96,6 +96,7 @@ export function LinkPageShell() {
                     name: "name",
                     type: "text",
                     label: "搜索链接",
+                    labelHidden: true,
                     placeholder: "请输入链接名称进行搜索",
                   },
                 ]}

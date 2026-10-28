@@ -129,6 +129,7 @@ export default function PostListClient() {
                 {
                   name: "title",
                   label: "搜索文章",
+                  labelHidden: true,
                   type: "text",
                   placeholder: "请输入文章名称进行搜索",
                 },

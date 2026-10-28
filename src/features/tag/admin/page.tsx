@@ -158,6 +158,8 @@ const Tag = () => {
                     {
                       name: "name",
                       type: "text",
+                      label: "搜索标签",
+                      labelHidden: true,
                       placeholder: "请输入标签名进行搜索",
                     },
                   ]}

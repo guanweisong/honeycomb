@@ -94,6 +94,7 @@ export function UserPageShell() {
                     name: "name",
                     type: "text",
                     label: "搜索用户",
+                    labelHidden: true,
                     placeholder: "请输入用户名进行搜索",
                   },
                 ]}

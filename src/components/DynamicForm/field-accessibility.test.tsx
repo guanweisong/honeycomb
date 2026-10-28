@@ -16,11 +16,13 @@ function TestForm({
   invalid = true,
   multiLang = false,
   disabled = false,
+  labelHidden = false,
 }: {
   type: FieldConfig["type"];
   invalid?: boolean;
   multiLang?: boolean;
   disabled?: boolean;
+  labelHidden?: boolean;
 }) {
   const value =
     type === "calendar"
@@ -44,6 +46,7 @@ function TestForm({
         name="value"
         label={<span>Field label</span>}
         type={type}
+        labelHidden={labelHidden}
         disabled={disabled}
         multiLang={multiLang}
         options={[{ value: "draft", label: "Draft" }]}
@@ -96,6 +99,7 @@ describe("DynamicField accessibility", () => {
       );
       expect(control).not.toBeNull();
       expect(label).not.toBeNull();
+      expect(label?.classList.contains("sr-only")).toBe(false);
       expect(error).not.toBeNull();
       expect(control?.id).toBeTruthy();
       expect(control?.id).toBe(label?.htmlFor);
@@ -115,6 +119,21 @@ describe("DynamicField accessibility", () => {
         control?.getAttribute("aria-describedby")?.split(" "),
       ).not.toContain(error?.id);
       expect(container.querySelector("[data-slot=form-message]")).toBeNull();
+    },
+  );
+
+  it.each([false, true])(
+    "only visually hides an opted-in label (multilingual: %s)",
+    async (multiLang) => {
+      await act(async () =>
+        root.render(<TestForm type="text" multiLang={multiLang} labelHidden />),
+      );
+      const label = container.querySelector<HTMLLabelElement>("label");
+      const input = container.querySelector<HTMLInputElement>("input");
+      expect(label?.classList.contains("sr-only")).toBe(true);
+      expect(label?.getAttribute("aria-hidden")).not.toBe("true");
+      expect(input?.getAttribute("aria-labelledby")).toBe(label?.id);
+      expect(label?.textContent).toBe("Field label");
     },
   );
 
@@ -142,6 +161,7 @@ describe("DynamicField accessibility", () => {
     const control =
       container.querySelector<HTMLInputElement>("input[type=text]");
     expect(label?.id).toBeTruthy();
+    expect(label?.classList.contains("sr-only")).toBe(false);
     expect(control?.getAttribute("aria-labelledby")).toBe(label?.id);
   });
 });
