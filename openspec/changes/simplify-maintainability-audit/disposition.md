@@ -1,6 +1,6 @@
 # 全量审查处置台账
 
-来源：2026-10-28 总报告、七份域报告和 CT/INT 补充。基线 `de5d8887697d1d116661ecefdcf551ec51553169`。A/B 是域编号别名，不重复计数。“已实现”说明代码处置，不自动表示浏览器、生产或发布验收通过；本次所有改动未提交。
+来源：2026-10-28 总报告、七份域报告和 CT/INT 补充。基线 `de5d8887697d1d116661ecefdcf551ec51553169`。A/B 是域编号别名，不重复计数。“已实现”说明代码处置，不自动表示浏览器、生产或发布验收通过；变更已提交为草稿 PR #30，尚未合并。
 
 ## 逐项结果
 
@@ -75,18 +75,26 @@
 
 本轮不是保持总测试数量不变：删除只证明已退役 API/模式的 DynamicForm imperative/switch/range/Avatar扩展/ALS/site-setting/theme-wrapper/id-wrapper/文件拼写测试；重复纯规则/视图场景合并；评论4个动作场景移到真实hook仍共12项；新增真实输入/原生input/ColumnMeta/关系/错误隐私/portal生命周期/有界读取/真实SQL/CI失败注入/DB清理/tuple变异等回归。独立权限预期、真实 SQL 初始化次数和全部 race/CAS/未知结果矩阵没有为了减测试量删减。具体移动、保留与新增回归已在上表逐项说明。
 
-## 本轮验证结果（2026-10-28）
+## 发布前本地验证快照（2026-10-28）
 
 - 最终冻结源树：类型、lint、491 文件 / 3395 普通测试及覆盖率门槛、6 文件 / 104 process 测试、真实迁移与合成 seed 的隔离 production build 均通过。
 - 全局覆盖率：statements 93.93%、branches 89.48%、functions 93.81%、lines 95.05%；没有降低门槛或关闭隔离。
 - 独立评审发现并修复 Avatar null 回退、旧测试契约表示和排队哨兵生命周期问题；最终相关范围无未解决重要发现。
 - 78 项严格 OpenSpec 检查通过；七份主规格保留全部原 Requirement/Scenario 名称。构建与测试前后非文档源文件指纹一致，独占测试数据库确认清理。
 - 首次聚合的三项旧测试表示失败和未迁移测试库导致的 prerender 失败均保留记录；按具体根因修复后才重跑，没有盲目重试或放宽断言。
-- 真实 Chromium/E2E 仍未验证；C9/T6 的 JSDOM/库存检查不能替代浏览器。未提交、未推送、未运行远端 CI、未发布。
+- 当时真实 Chromium/E2E 未验证；C9/T6 的 JSDOM/库存检查不能替代浏览器。此快照产生于提交、推送与远端 CI 之前，不代表后续提交的完整验收。
+
+## 草稿 PR 与首轮 CI
+
+- [草稿 PR #30](https://github.com/guanweisong/honeycomb/pull/30) 首次发布提交为 `856d0afcc72b950d47c2ffe6f63a80dd8a8c8a7d`，未合并。正常提交钩子执行类型、lint 和 491 文件 / 3395 测试；一次焦点断言因 Radix 延迟归还焦点失败，改用默认时限 `waitFor` 等待同一精确断言后通过，无生产代码或超时改动。
+- [首轮远端 CI](https://github.com/guanweisong/honeycomb/actions/runs/40617534103) 的覆盖率、104 项 process、构建和 1 项生产浏览器测试通过；开发浏览器 74 项中 69 通过、4 失败、1 项重试后通过。不能称为完整浏览器通过。
+- 三个编辑器标题失败的原断言读取 `textContent`，包含 CSS 隐藏的布局回退文本。后续测试使用精确 `innerText`，并分别断言当前标题可见、另一个标题的计算样式为 `display: none`；没有改成包含匹配或放宽超时。真实浏览器修正结果仍需后续提交的 CI 验证。
+- 独立发现的本地 SQLite `SQLITE_BUSY` 与标题断言分开调查。真实 Node/libSQL 在两个并发四过程 HTTP 批请求及 session 写入下复现：只读快照的交互事务使用 `BEGIN IMMEDIATE`，可导致菜单/设置读取和认证写入争锁。设置改为单次关联 SELECT，管理菜单改为原生原子 `db.batch`；11 项新回归及相关测试共 39 项通过。原生批次不是无锁承诺；公开菜单、写事务、CAS、全局数据库设置和重试政策不变，真实浏览器仍待新提交 CI。
+- 修正后的真实迁移/合成 seed 构建通过；正常提交钩子发现一处设置 router 测试仍只模拟旧查询链（其余 3405 项通过）。仅调整该测试的局部关联查询夹具，保留断言并增加精确本地化值和不暴露原始 translations 的检查；相关 14 项通过后再执行正常钩子，不跳过门禁。生产代码未因此再次改动。
 
 ## 验证材料
 
-随本次未提交变更单独交付验证包，含 `verification.md`、`changed-files.tsv`、`changes.patch` 和 SHA-256 清单；仓库中不依赖执行环境绝对路径。定向验证与独立评审结论在验证摘要中汇总，原始执行日志单独保留，不要求维护者依赖内部工作记录。
+随本次变更单独交付验证包，含 `verification.md`、`changed-files.tsv`、`changes.patch` 和 SHA-256 清单，并注明其对应的精确提交或未提交源树；仓库中不依赖执行环境绝对路径。定向验证与独立评审结论在验证摘要中汇总，原始执行日志单独保留，不要求维护者依赖内部工作记录。
 
 核心命令为 `bun install --frozen-lockfile`、`bun --no-env-file run check-types`、`bun --no-env-file run lint`、`bun --no-env-file run test:unit:coverage`、`bun --no-env-file run test:unit:process`、`bun --no-env-file run build`、`openspec validate --all --strict` 和 `git diff --check`；每次结果及不同失败根因见单独交付的 `verification.md`，不将定向测试数量累加成全量结果。
 

@@ -38,11 +38,7 @@ describe("Setting Router", () => {
         siteCopyright: { en: "Copyright", zh: "版权" },
       };
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([mockSetting]);
-      mockDb.where.mockResolvedValueOnce([
+      const translations = [
         {
           settingId: TEST_IDS.ID_1,
           locale: "en",
@@ -59,16 +55,30 @@ describe("Setting Router", () => {
           siteSignature: "签名",
           siteCopyright: "版权",
         },
-      ]);
+      ];
+      const db = {
+        ...mockDb,
+        query: {
+          ...mockDb.query,
+          setting: {
+            findFirst: vi.fn().mockResolvedValue({
+              ...mockSetting,
+              translations,
+            }),
+          },
+        },
+      };
 
       const caller = settingRouter.createCaller(
-        createMockContext(null, mockDb),
+        createMockContext(null, db),
       );
 
       const result = await caller.index();
 
       expect(result).toHaveProperty("siteName");
+      expect(result?.siteName).toEqual(mockSetting.siteName);
       expect(result).not.toHaveProperty("customObjectId");
+      expect(result).not.toHaveProperty("translations");
     });
   });
 

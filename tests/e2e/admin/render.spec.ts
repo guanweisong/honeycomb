@@ -46,6 +46,25 @@ async function healthyPage(page: Page) {
   ).toHaveCount(0);
 }
 
+async function expectPageTitle(
+  page: Page,
+  expected: string,
+  source: "fallback" | "portal" = "fallback",
+) {
+  const header = page.getByTestId("admin-page-title");
+  const portal = header.locator('[data-slot="admin-header-title"]');
+  const fallback = header.locator('[data-slot="admin-header-title-fallback"]');
+  const [visible, hidden] =
+    source === "portal" ? [portal, fallback] : [fallback, portal];
+
+  await expect(visible).toBeVisible();
+  // Check computed display separately so a broken Tailwind fallback rule is
+  // reported as a visibility failure, not mistaken for a text oracle mismatch.
+  await expect(hidden).toHaveCSS("display", "none");
+  // textContent also includes the deliberately hidden route fallback.
+  await expect(header).toHaveText(expected, { useInnerText: true });
+}
+
 test.describe("@smoke admin page rendering with real local reads", () => {
   // Keep one password sign-in for this read-only group even when the suite is
   // fully parallel; production auth intentionally rate-limits sign-in bursts.
@@ -54,7 +73,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
 
   test("dashboard", async ({ page }) => {
     await visit(page, "/admin/dashboard", ["statistic.index"]);
-    await expect(page.getByTestId("admin-page-title")).toHaveText("控制台");
+    await expectPageTitle(page, "控制台");
     await expect(page.getByText("贡献", { exact: true })).toBeVisible();
     await expect(page.getByTestId("custom-pie-loading-skeleton")).toHaveCount(
       0,
@@ -107,7 +126,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
   for (const { path, title, column, procedure } of lists) {
     test(path, async ({ page }) => {
       await visit(page, `/admin/${path}`, [procedure]);
-      await expect(page.getByTestId("admin-page-title")).toHaveText(title);
+      await expectPageTitle(page, title);
       await expect(
         page.getByRole("columnheader", { name: column, exact: true }),
       ).toBeVisible();
@@ -132,8 +151,10 @@ test.describe("@smoke admin page rendering with real local reads", () => {
           `/admin/${kind}/edit${editing ? `?id=${id}` : ""}`,
           procedures,
         );
-        await expect(page.getByTestId("admin-page-title")).toHaveText(
+        await expectPageTitle(
+          page,
           `${editing ? "修改" : "添加新"}${noun}`,
+          "portal",
         );
         const title = page.getByPlaceholder(`在此输入${noun}标题`);
         await expect(title).toBeEditable();
@@ -295,7 +316,7 @@ test.describe("@smoke admin page rendering with real local reads", () => {
     test(`redirect ${entry}`, async ({ page }) => {
       await page.goto(entry);
       await expect(page).toHaveURL(new RegExp(`${target}$`));
-      await expect(page.getByTestId("admin-page-title")).toHaveText(title);
+      await expectPageTitle(page, title);
     });
   }
 });
