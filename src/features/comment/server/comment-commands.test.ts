@@ -365,6 +365,7 @@ describe("comment commands", () => {
   });
 
   it("审核成功后返回持久化结果", async () => {
+    const findStatus = vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT);
     const update = vi
       .fn()
       .mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
@@ -372,7 +373,7 @@ describe("comment commands", () => {
       updateComment(
         {
           update,
-          findStatus: vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT),
+          findStatus,
         },
         { id: "comment-1", status: CommentStatus.PUBLISH },
         {
@@ -386,30 +387,10 @@ describe("comment commands", () => {
       status: CommentStatus.PUBLISH,
       publicSync: "completed",
     });
-    expect(update).toHaveBeenCalledWith(
-      {
-        id: "comment-1",
-        status: CommentStatus.PUBLISH,
-      },
-      CommentStatus.TO_AUDIT,
-    );
-  });
-
-  it("更新评论状态时必须先校验审核规则", async () => {
-    const findStatus = vi.fn().mockResolvedValue(CommentStatus.TO_AUDIT);
-    const update = vi
-      .fn()
-      .mockResolvedValue({ id: "comment-1", status: CommentStatus.PUBLISH });
-
-    await updateComment(
-      { findStatus, update },
-      { id: "comment-1", status: CommentStatus.PUBLISH },
-      {
-        invalidate: vi.fn().mockResolvedValue({ state: "completed" as const }),
-      },
-    );
-
     expect(findStatus).toHaveBeenCalledWith("comment-1");
+    expect(findStatus.mock.invocationCallOrder[0]).toBeLessThan(
+      update.mock.invocationCallOrder[0]!,
+    );
     expect(update).toHaveBeenCalledWith(
       {
         id: "comment-1",

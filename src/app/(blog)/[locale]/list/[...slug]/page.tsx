@@ -4,7 +4,6 @@ import NoData from "@/app/(blog)/[locale]/list/[...slug]/_components/NoData";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import {
-  getPublicMenu,
   getPublicPostList,
   getPublicSetting,
 } from "@/app/lib/server/public-queries";
@@ -13,7 +12,10 @@ import {
   createLocalizedAlternates,
   defaultSocialImage,
 } from "@/app/(blog)/lib/metadata";
-import { resolveListContext, resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
+import {
+  resolveListContext,
+  resolveListTitle,
+} from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { connection } from "next/server";
 import LoadingState from "@/components/LoadingState";
 
@@ -44,13 +46,9 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
       namespace: "PostList",
     }),
   );
-  const contextPromise = props.params.then(async (params) =>
+  const contextPromise = props.params.then((params) =>
     resolveListContext({
       locale: normalizeMultiLangLocale(params.locale),
-      menu:
-        params.slug?.[0] === "category" && params.slug.length > 1
-          ? await getPublicMenu()
-          : undefined,
       slug: params.slug,
     }),
   );
@@ -104,13 +102,9 @@ export async function generateMetadata(
       namespace: "PostList",
     }),
   );
-  const contextPromise = props.params.then(async (params) =>
+  const contextPromise = props.params.then((params) =>
     resolveListContext({
       locale: normalizeMultiLangLocale(params.locale),
-      menu:
-        params.slug?.[0] === "category" && params.slug.length > 1
-          ? await getPublicMenu()
-          : undefined,
       slug: params.slug,
     }),
   );

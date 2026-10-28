@@ -40,12 +40,12 @@ vi.mock("react", async (importOriginal) => {
 
 vi.mock("next/image", () => ({
   default: ({
-    priority,
+    preload,
     ...props
-  }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) =>
+  }: React.ImgHTMLAttributes<HTMLImageElement> & { preload?: boolean }) =>
     React.createElement("img", {
       ...props,
-      "data-priority": priority ? "true" : "false",
+      "data-preload": preload ? "true" : "false",
     }),
 }));
 
@@ -239,7 +239,7 @@ describe("PostList", () => {
     expect(container.textContent).toContain("照片标题");
     expect(container.textContent).toContain("“引用正文” —— 引用作者");
     expect(container.querySelectorAll("img")).toHaveLength(3);
-    expect(container.querySelector("img")?.getAttribute("data-priority")).toBe(
+    expect(container.querySelector("img")?.getAttribute("data-preload")).toBe(
       "true",
     );
     expect(

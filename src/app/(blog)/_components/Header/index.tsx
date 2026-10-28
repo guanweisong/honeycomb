@@ -72,7 +72,7 @@ export default async function Header() {
             : "";
       if (data.type === MenuType.PAGE) link = `/pages/${data.id}`;
       if (data.type === MenuType.CATEGORY) {
-        link = `/list/category/${getCurrentPathOfMenu({ id: data.id, familyProp: "path", menu: menu.list }).join("/")}`;
+        link = `/list/category/${getCurrentPathOfMenu({ id: data.id, menu: menu.list }).join("/")}`;
       }
       return { label: data.title?.[language] ?? "", link };
     });

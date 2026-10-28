@@ -1,16 +1,19 @@
-import type {
-  CommentListInput,
-  CommentRefInput,
-} from "@/features/comment/types/comment.query";
+import type { CommentListInput } from "@/features/comment/types/comment.query";
 import "server-only";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { PageStatus } from "@/features/page/types/page.status";
-import { MenuType } from "@/features/menu/types/menu.type";
+import type { CommentTargetReference } from "@/features/comment/types/comment.target";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
-import { toCommentRecord, toPublicCommentSource } from "@/features/comment/server/comment-dto";
-import { buildPublicCommentTree, toPublicComment } from "@/features/comment/server/comment-public-dto";
+import {
+  toCommentRecord,
+  toPublicCommentSource,
+} from "@/features/comment/server/comment-dto";
+import {
+  buildPublicCommentTree,
+  toPublicComment,
+} from "@/features/comment/server/comment-public-dto";
 
 import { and, asc, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
@@ -167,7 +170,7 @@ export function createCommentQueryRepository(db: Database) {
       }));
       return { list, total: Number(countRows[0]?.count) || 0 };
     },
-    async listPublicByRef(input: CommentRefInput) {
+    async listPublic(input: CommentTargetReference) {
       let where: SQL | undefined = inArray(schema.comment.status, [
         CommentStatus.PUBLISH,
         CommentStatus.BAN,
@@ -175,7 +178,7 @@ export function createCommentQueryRepository(db: Database) {
       // Recheck visibility in the same SQL snapshot as the comment bodies.
       // The earlier policy gate supplies the stable NOT_FOUND/FORBIDDEN errors,
       // but cannot authorize text edited after a concurrent withdrawal.
-      if (input.type === MenuType.PAGE) {
+      if (input.type === "page") {
         const visibleTarget = db
           .select({ id: schema.page.id })
           .from(schema.page)
@@ -202,7 +205,7 @@ export function createCommentQueryRepository(db: Database) {
             ),
           );
         const targetColumn =
-          input.type === MenuType.CATEGORY
+          input.type === "post"
             ? schema.comment.postId
             : schema.comment.customId;
         where = and(

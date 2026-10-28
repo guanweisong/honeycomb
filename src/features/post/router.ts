@@ -6,7 +6,6 @@ import {
   createTRPCRouter,
   permissionProcedure,
   publicProcedure,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
@@ -88,34 +87,19 @@ export const postRouter = createTRPCRouter({
     .input(PostInsertSchema)
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return createPost(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return createPost(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
 
   destroy: permissionProcedure(Permission.postDelete)
     .input(PostDeleteSchema)
     .mutation(async ({ input, ctx }) => {
-      return destroyPosts(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return destroyPosts(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
 
   update: permissionProcedure(Permission.postUpdate)
     .input(PostUpdateSchema)
     .mutation(async ({ input, ctx }) => {
-      return updatePost(
-        ctx.db,
-        input,
-        ctx.user.id,
-        publicContentInvalidator,
-      ).catch(mapApplicationError);
+      return updatePost(ctx.db, input, ctx.user.id, publicContentInvalidator);
     }),
 
   getRandomByCategory: publicProcedure
@@ -139,8 +123,6 @@ export const postRouter = createTRPCRouter({
   creationResult: permissionProcedure(Permission.postCreate)
     .input(PostCreationResultInputSchema)
     .query(({ input, ctx }) =>
-      getPostCreationResult(ctx.db, input.creationToken, ctx.user.id).catch(
-        mapApplicationError,
-      ),
+      getPostCreationResult(ctx.db, input.creationToken, ctx.user.id),
     ),
 });

@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   formProps: undefined as
     | {
         defaultValues?: Record<string, unknown>;
-        fields: Array<{ name: string; disabled?: () => boolean }>;
+        fields: Array<{ name: string; disabled?: boolean }>;
         onSubmit: (values: Record<string, unknown>) => void;
       }
     | undefined,
@@ -63,7 +63,7 @@ describe("UserFormDialog", () => {
       status: UserStatus.ENABLE,
       level: UserLevel.GUEST,
     });
-    expect(mocks.formProps?.fields.every((field) => !field.disabled?.())).toBe(
+    expect(mocks.formProps?.fields.every((field) => !field.disabled)).toBe(
       true,
     );
   });
@@ -91,7 +91,7 @@ describe("UserFormDialog", () => {
     expect(
       mocks.formProps?.fields
         .filter((field) => field.name === "level" || field.name === "status")
-        .every((field) => field.disabled?.()),
+        .every((field) => field.disabled === true),
     ).toBe(true);
   });
 

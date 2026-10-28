@@ -98,4 +98,49 @@ describe("Comment public-sync feedback", () => {
       },
     );
   });
+  describe("comment moderation actions", () => {
+    it("updates the selected comment status then refreshes with existing success copy", async () => {
+      mocks.update.mockResolvedValue(undefined);
+      expect(
+        await requireDefined(actions).handleSetStatus(
+          "comment-1",
+          CommentStatus.PUBLISH,
+        ),
+      ).toBe("success");
+      expect(mocks.update).toHaveBeenCalledWith({
+        id: "comment-1",
+        status: CommentStatus.PUBLISH,
+      });
+      expect(mocks.refetch).toHaveBeenCalledOnce();
+      expect(mocks.success).toHaveBeenCalledWith("更新成功");
+    });
+    it("reports moderation failures without refreshing stale data", async () => {
+      mocks.update.mockRejectedValue(new Error("network"));
+      expect(
+        await requireDefined(actions).handleSetStatus(
+          "comment-1",
+          CommentStatus.RUBBISH,
+        ),
+      ).toBe("error");
+      expect(mocks.refetch).not.toHaveBeenCalled();
+      expect(mocks.error).toHaveBeenCalledWith("更新失败");
+    });
+    it("keeps delete success feedback and refresh behavior", async () => {
+      mocks.destroy.mockResolvedValue(undefined);
+      expect(await requireDefined(actions).handleDelete(["comment-1"])).toBe(
+        "success",
+      );
+      expect(mocks.destroy).toHaveBeenCalledWith({ ids: ["comment-1"] });
+      expect(mocks.refetch).toHaveBeenCalledOnce();
+      expect(mocks.success).toHaveBeenCalledWith("删除成功");
+    });
+    it("reports delete failures without refreshing", async () => {
+      mocks.destroy.mockRejectedValue(new Error("delete failed"));
+      expect(await requireDefined(actions).handleDelete(["comment-1"])).toBe(
+        "error",
+      );
+      expect(mocks.refetch).not.toHaveBeenCalled();
+      expect(mocks.error).toHaveBeenCalledWith("删除失败");
+    });
+  });
 });

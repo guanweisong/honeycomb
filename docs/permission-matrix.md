@@ -1,6 +1,6 @@
 # 权限矩阵
 
-Honeycomb 使用 capability-based authorization。用户数据和会话中只保存 `ADMIN`、`EDITOR`、`GUEST` 角色，角色在请求时通过 `src/lib/auth/permissions.ts` 中唯一的 `ROLE_PERMISSIONS` 映射为 Permission；权限数组不会固化进 JWT。Capability 只接受登记表中的稳定 `resource:action` 值，旧属性名（例如 `postReadAll`）不再作为兼容输入。
+Honeycomb 使用 capability-based authorization。用户数据和会话中只保存 `ADMIN`、`EDITOR`、`GUEST` 角色，角色在请求时通过 `src/lib/auth/permissions.ts` 中唯一的 `ROLE_PERMISSIONS` 映射为 Permission；权限数组不会固化进 JWT。Capability 由同一文件的 `isPermission` 判定，只接受目录中的稳定 `resource:action` 值，旧属性名（例如 `postReadAll`）不再作为兼容输入。
 
 前端通过共享的 `can` / `useCan` 隐藏无权访问的导航和操作，但这不是安全边界。后台 route 由服务端 template 根据 proxy 注入并覆盖的 pathname 执行同一 capability 检查；每个受保护的 tRPC procedure 仍必须使用 `permissionProcedure` 或 `permissionsProcedure` 在 handler 执行前检查 capability。绕过或伪造前端请求会由服务端以重定向、`UNAUTHORIZED` 或 `FORBIDDEN` 拒绝。禁用用户会在请求上下文回库时被移除，unknown route、unknown role、unknown Permission 和空 Permission 集均默认拒绝。
 
@@ -50,7 +50,7 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 
 ## 后台演示读取边界
 
-`comment:read-all`、`post:read-all` 和 `page:read-all` 允许进入相应后台列表，不代表可以读取全部敏感数据。GUEST 保留后台演示访问，但读取范围由服务端额外限制。以下三项读取范围能力在登记表中标为 `trpc-data`，用于已通过入口鉴权的 handler 内部数据范围检查，而非替代原有 `trpc` procedure gate：
+`comment:read-all`、`post:read-all` 和 `page:read-all` 允许进入相应后台列表，不代表可以读取全部敏感数据。GUEST 保留后台演示访问，但读取范围由服务端额外限制。以下三项读取范围能力在测试拥有的 `tests/helpers/capability-consumers.ts` 审计清单中标为 `trpc-data`，用于已通过入口鉴权的 handler 内部数据范围检查，而非替代原有 `trpc` procedure gate：
 
 - `post:read-unpublished` / `page:read-unpublished` 才允许后台列表和详情读取未发布内容。没有该能力时复用 `PUBLISHED_ONLY`，过滤条件不能覆盖发布状态限制，分页与总数只计算可见数据；隐藏详情沿用公开详情的未找到行为。
 - `comment:read-private` 才允许返回邮箱、IP、User Agent、父评论及目标关联标识，并允许按这些私有字段筛选或排序。没有该能力时使用显式安全投影，私有筛选或排序请求返回 `FORBIDDEN`。

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { assembleLocalizedField } from "@/lib/db/translation-values";
@@ -9,6 +9,7 @@ import {
   buildDrizzleOrderBy,
   buildDrizzleWhere,
 } from "@/lib/db/query/query-builders";
+import { readMediaByUrls } from "@/features/media/server/read-media-by-urls";
 import { getLocalizedImageLinks } from "@/lib/content/image-links";
 import { observeDbOperation } from "@/lib/observability/server";
 import {
@@ -147,27 +148,14 @@ export async function getPost(
   id: string,
   visibility: PostVisibility,
 ): Promise<PostDetailResult | null> {
-  const idFilter = eq(schema.post.id, id);
-  const [item] = await observeDbOperation("post.service.detail", "select", () =>
-    db
-      .select({ id: schema.post.id })
-      .from(schema.post)
-      .where(
-        visibility === "ALL"
-          ? idFilter
-          : and(idFilter, eq(schema.post.status, PostStatus.PUBLISHED)),
-      )
-      .limit(1),
-  );
-  if (!item) return null;
-  const [result] = await loadPostRelations(db, [item], visibility);
+  const [result] = await loadPostRelations(db, [{ id }], visibility);
   if (!result) return null;
   const urls = getLocalizedImageLinks(result.content);
-  const imagesInContent = urls.length
-    ? await observeDbOperation("post.service.detail-images", "select", () =>
-        db.select().from(schema.media).where(inArray(schema.media.url, urls)),
-      )
-    : [];
+  const imagesInContent = await readMediaByUrls(
+    db,
+    urls,
+    "post.service.detail-images",
+  );
   const uniqueImages = new Map(
     imagesInContent.map((image) => [image.url, image]),
   );
@@ -247,4 +235,31 @@ export async function getPublishedPostCategoryId(db: Database, id: string) {
       ),
   );
   return result ? { categoryId: result.categoryId ?? undefined } : result;
+}
+
+/** Sitemap owns a published-only projection; no body, author or media hydration. */
+export async function listPublishedPostSitemapEntries(
+  db: Database,
+  page: number,
+  limit: number,
+) {
+  return observeDbOperation("post.service.list", "select", () =>
+    db
+      .select({ id: schema.post.id, updatedAt: schema.post.updatedAt })
+      .from(schema.post)
+      .where(eq(schema.post.status, PostStatus.PUBLISHED))
+      .orderBy(desc(schema.post.updatedAt), asc(schema.post.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  );
+}
+
+export async function countPublishedPosts(db: Database) {
+  const rows = await observeDbOperation("post.service.count", "select", () =>
+    db
+      .select({ count: sql<number>`count(*)`.as("count") })
+      .from(schema.post)
+      .where(eq(schema.post.status, PostStatus.PUBLISHED)),
+  );
+  return Number(rows[0]?.count) || 0;
 }

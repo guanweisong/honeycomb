@@ -22,7 +22,6 @@ function TestForm() {
               options: [{ value: "draft", label: "Draft" }],
             }}
             controllerField={field}
-            formValues={form.getValues()}
             id="status"
             aria-describedby="status-help"
           />

@@ -8,8 +8,9 @@ import { createMockContext } from "@tests/helpers/test-utils";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { DomainError } from "@/lib/errors/domain-error";
+import { LogEvent } from "@/lib/observability/core/names";
 import { configureObservability } from "@/lib/observability/server/registry";
-import { createTRPCRouter, mapApplicationError, publicProcedure } from "@/lib/trpc/core";
+import { createTRPCRouter, publicProcedure } from "@/lib/trpc/core";
 
 const syntheticSecret = "synthetic-database-value";
 const databaseError = () =>
@@ -32,9 +33,21 @@ const router = createTRPCRouter({
   conflict: publicProcedure.query(() => {
     throw new ApplicationError("CONFLICT", "Item conflict");
   }),
-  domain: publicProcedure.query(() =>
-    mapApplicationError(new DomainError("文章不存在", "POST_NOT_FOUND")),
-  ),
+  domain: publicProcedure.query(async () => {
+    await Promise.resolve();
+    throw new DomainError("文章不存在", "POST_NOT_FOUND");
+  }),
+  protected: publicProcedure.query(() => {
+    throw new DomainError("禁止修改保护用户", "PROTECTED_USER");
+  }),
+  invalid: publicProcedure.query(() => {
+    throw new DomainError("状态转换无效", "INVALID_STATE_TRANSITION");
+  }),
+  middleware: publicProcedure
+    .use(() => {
+      throw new DomainError("中间件拒绝操作", "INVALID_STATE_TRANSITION");
+    })
+    .query(() => "unreachable"),
   explicit: publicProcedure.query(() => {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -104,6 +117,10 @@ describe("tRPC HTTP error boundary", () => {
         ["application", 403, "FORBIDDEN"],
         ["missing", 404, "NOT_FOUND"],
         ["conflict", 409, "CONFLICT"],
+        ["domain", 404, "NOT_FOUND"],
+        ["protected", 403, "FORBIDDEN"],
+        ["invalid", 400, "BAD_REQUEST"],
+        ["middleware", 400, "BAD_REQUEST"],
       ] as const)(
         "preserves %s over HTTP and server callers",
         async (path, status, code) => {
@@ -111,6 +128,18 @@ describe("tRPC HTTP error boundary", () => {
           configureObservability(memory);
           const response = await request(path, { observability });
           expect(response.status).toBe(status);
+          if (observability) {
+            expect(
+              memory.logEvents.filter(
+                ({ event }) => event === LogEvent.requestFailed,
+              ),
+            ).toEqual([
+              expect.objectContaining({
+                level: "warn",
+                context: expect.objectContaining({ outcome: code }),
+              }),
+            ]);
+          }
           expect(await response.json()).toMatchObject({
             error: { data: { code, httpStatus: status } },
           });

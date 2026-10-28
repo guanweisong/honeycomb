@@ -1,5 +1,9 @@
-import { createConsoleLogger } from "@/lib/observability/adapters/console";
+import { createConsoleLogSink } from "@/lib/observability/adapters/console";
 
-export const clientLogger = createConsoleLogger({
-  service: "honeycomb-client",
-});
+import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
+
+export const clientLogger = createSafeLogger(
+  createConsoleLogSink({
+    service: "honeycomb-client",
+  }),
+);

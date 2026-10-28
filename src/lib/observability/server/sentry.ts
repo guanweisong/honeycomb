@@ -1,8 +1,8 @@
 import "server-only";
 import * as Sentry from "@sentry/nextjs";
-import { createSentryLogger } from "@/lib/observability/adapters/sentry";
+import { createSentryLogSink } from "@/lib/observability/adapters/sentry";
 import { sanitizeContext } from "@/lib/observability/core/sanitize";
-import { configureObservability, getMetrics } from "@/lib/observability/server/registry";
+import { configureObservability } from "@/lib/observability/server/registry";
 
 /** Logs only: no automatic console, request, exception, tracing, or replay collection. */
 export function configureSentryLogs(dsn: string): void {
@@ -36,7 +36,6 @@ export function configureSentryLogs(dsn: string): void {
     }),
   });
   configureObservability({
-    logger: createSentryLogger(Sentry.logger),
-    metrics: getMetrics(),
+    logger: createSentryLogSink(Sentry.logger),
   });
 }

@@ -59,14 +59,14 @@ export function UserFormDialog({
       name: "level",
       type: "radio" as const,
       options: userLevelOptions,
-      disabled: () => protectedResource,
+      disabled: protectedResource,
     },
     {
       label: "状态",
       name: "status",
       type: "radio" as const,
       options: userStatusOptions,
-      disabled: () => protectedResource,
+      disabled: protectedResource,
     },
   ];
 

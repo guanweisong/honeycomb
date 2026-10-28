@@ -75,9 +75,10 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
       return;
     }
 
+    let active = true;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        if (active && entries.some((entry) => entry.isIntersecting)) {
           loadMore();
         }
       },
@@ -85,7 +86,11 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
     );
 
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      // disconnect 不撤回已排队的回调；旧面板不能继续命令共享查询。
+      active = false;
+      observer.disconnect();
+    };
   }, [hasMore, loadMore]);
 
   return (

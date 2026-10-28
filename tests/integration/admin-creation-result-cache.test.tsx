@@ -24,8 +24,7 @@ vi.mock("@/features/user/admin/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("@/components/admin/layout-context", () => ({
-  useAdminLayoutActions: () => {},
-  useAdminLayoutPageTitle: () => {},
+  AdminPageHeader: () => null,
 }));
 vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
   PageEditorForm: () => null,

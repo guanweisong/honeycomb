@@ -1,63 +1,19 @@
 // @vitest-environment node
-import { createClient, type Client } from "@libsql/client/node";
+import type { Client } from "@libsql/client/node";
+import {
+  withTestDatabase,
+  prepareMigrationFolder,
+} from "@tests/helpers/local-test-database";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import {
-  copyFileSync,
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 async function withLegacySettings(
   run: (client: Client, folder: string) => Promise<void>,
 ) {
-  const directory = mkdtempSync(join(tmpdir(), "honeycomb-setting-upgrade-"));
-  let client: Client | undefined;
-  const cleanup = () => {
-    client?.close();
-    client = undefined;
-    rmSync(directory, { recursive: true, force: true });
-  };
-  const handlers = (["SIGHUP", "SIGINT", "SIGTERM"] as const).map((signal) => {
-    const handler = () => {
-      cleanup();
-      process.exit(1);
-    };
-    process.once(signal, handler);
-    return { signal, handler };
-  });
-  try {
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    if (process.getuid) expect(stat.uid).toBe(process.getuid());
-    const folder = join(directory, "migrations");
-    mkdirSync(join(folder, "meta"), { recursive: true });
-    const journal: { entries: { idx: number }[] } = JSON.parse(
-      readFileSync("drizzle/meta/_journal.json", "utf8"),
-    );
-    const writeJournal = (end: number) =>
-      writeFileSync(
-        join(folder, "meta/_journal.json"),
-        JSON.stringify({
-          ...journal,
-          entries: journal.entries.filter(({ idx }) => idx <= end),
-        }),
-      );
-    for (const name of readdirSync("drizzle").filter((name) =>
-      /^000[0-5]_.*\.sql$/.test(name),
-    ))
-      copyFileSync(join("drizzle", name), join(folder, name));
-    writeJournal(5);
-    client = createClient({ url: `file:${join(directory, "settings.db")}` });
+  return withTestDatabase(async (client, directory) => {
+    const folder = prepareMigrationFolder(directory, 5);
     await client.execute("PRAGMA foreign_keys = ON");
     await migrate(drizzle(client), { migrationsFolder: folder });
     await client.execute(
@@ -66,18 +22,9 @@ async function withLegacySettings(
     await client.execute(
       "INSERT INTO setting_translation (setting_id, locale, site_name, site_sub_name, site_signature, site_copyright) VALUES ('legacy', 'en', 'Site', 'Subtitle', 'Signature', 'Copyright'), ('legacy', 'zh', '站点', '副标题', '签名', '版权')",
     );
-    copyFileSync(
-      "drizzle/0006_site_snapshot_versions.sql",
-      join(folder, "0006_site_snapshot_versions.sql"),
-    );
-    writeJournal(6);
+    prepareMigrationFolder(directory, 6);
     await run(client, folder);
-  } finally {
-    cleanup();
-    for (const { signal, handler } of handlers)
-      process.removeListener(signal, handler);
-    expect(existsSync(directory)).toBe(false);
-  }
+  });
 }
 
 describe("site snapshot migration on populated SQLite", () => {

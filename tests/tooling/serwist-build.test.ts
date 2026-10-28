@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { mkdtemp, mkdir, readFile, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,15 +19,19 @@ describe("service worker build mode", () => {
           await symlink(join(process.cwd(), path), join(directory, path));
         }
         await mkdir(join(directory, "public"));
-        execFileSync("bun", ["scripts/build-serwist.ts", `--${mode}`], {
-          cwd: directory,
-          env: {
-            ...process.env,
-            NODE_ENV: mode === "production" ? "development" : "production",
+        const result = await runTestProcess(
+          "bun",
+          ["scripts/build-serwist.ts", `--${mode}`],
+          {
+            cwd: directory,
+            env: {
+              ...process.env,
+              NODE_ENV: mode === "production" ? "development" : "production",
+            },
+            timeout: 30_000,
           },
-          timeout: 30_000,
-          stdio: "pipe",
-        });
+        );
+        expect(result.status, result.stdout + result.stderr).toBe(0);
         const worker = await readFile(
           join(directory, "public/serwist/sw.js"),
           "utf8",

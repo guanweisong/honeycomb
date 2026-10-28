@@ -13,8 +13,6 @@ export interface NavigationItemProps {
   openMenus: string[];
   toggleMenu?: (path: string) => void;
   className?: string;
-  style?: React.CSSProperties;
-  collapsed?: boolean;
   isPending?: boolean;
   onNavigateStart?: (path: string) => void;
 }
@@ -25,8 +23,6 @@ export const NavigationItem = (props: NavigationItemProps) => {
     openMenus,
     toggleMenu,
     className = "",
-    style,
-    collapsed = false,
     isPending = false,
     onNavigateStart,
   } = props;
@@ -35,7 +31,7 @@ export const NavigationItem = (props: NavigationItemProps) => {
   const content = (
     <span className="flex items-center gap-2 w-full min-w-0">
       <span>{item.icon}</span>
-      {!collapsed && <span className="truncate text-sm">{item.name}</span>}
+      <span className="truncate text-sm">{item.name}</span>
       {isPending && (
         <LoadingState
           variant="inline"
@@ -72,7 +68,6 @@ export const NavigationItem = (props: NavigationItemProps) => {
       type="button"
       aria-label={item.name}
       aria-expanded={openMenus.includes(item.path)}
-      style={style}
       className={containerClass}
       onClick={() => toggleMenu?.(item.path)}
     >

@@ -95,11 +95,6 @@ describe("Comment Router", () => {
           commentStatus: EnableStatus.DISABLE,
         },
       ]);
-      mockDb.query.comment.findMany.mockResolvedValueOnce([]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
-
       const caller = commentRouter.createCaller(
         createMockContext(null, mockDb),
       );
@@ -157,8 +152,6 @@ describe("Comment Router", () => {
           createdAt: new Date(),
         },
       ];
-      const mockCount = [{ count: "2" }];
-
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -171,10 +164,6 @@ describe("Comment Router", () => {
       ]);
 
       mockDb.query.comment.findMany.mockResolvedValueOnce(mockComments);
-
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockImplementationOnce(async () => mockCount);
 
       const caller = commentRouter.createCaller(
         createMockContext(null, mockDb),
@@ -202,8 +191,6 @@ describe("Comment Router", () => {
     });
 
     it("should return empty list for non-existent ref", async () => {
-      const mockCount = [{ count: "0" }];
-
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);
@@ -216,10 +203,6 @@ describe("Comment Router", () => {
       ]);
 
       mockDb.query.comment.findMany.mockResolvedValueOnce([]);
-
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockImplementationOnce(async () => mockCount);
 
       const caller = commentRouter.createCaller(
         createMockContext(null, mockDb),

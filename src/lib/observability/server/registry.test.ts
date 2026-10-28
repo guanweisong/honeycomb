@@ -3,9 +3,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
+import * as sanitizers from "@/lib/observability/core/sanitize";
 import type { Logger, Metrics } from "@/lib/observability/core/contracts";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
-import { configureObservability, getLogger, getMetrics } from "@/lib/observability/server/registry";
+import {
+  configureObservability,
+  getLogger,
+  getMetrics,
+} from "@/lib/observability/server/registry";
 
 describe("observability server registry", () => {
   afterEach(() => {
@@ -95,6 +100,38 @@ describe("observability server registry", () => {
     expect(() =>
       getMetrics().increment(MetricName.apiErrorsTotal),
     ).not.toThrow();
+  });
+
+  it("preserves omitted adapters when changing only one sink", () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
+    const originalMetrics = getMetrics();
+    const replacement = createMemoryObservability();
+    configureObservability({ logger: replacement.logger });
+    expect(getMetrics()).toBe(originalMetrics);
+    const replacementLogger = getLogger();
+    configureObservability({ metrics: replacement.metrics });
+    expect(getLogger()).toBe(replacementLogger);
+    getLogger().info(LogEvent.requestStarted);
+    getMetrics().increment(MetricName.apiRequestsTotal);
+    expect(replacement.logEvents).toHaveLength(1);
+    expect(replacement.metricEvents).toHaveLength(1);
+  });
+
+  it("sanitizes once at each default public entry before writing", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const context = vi.spyOn(sanitizers, "sanitizeContext");
+    const labels = vi.spyOn(sanitizers, "sanitizeMetricLabels");
+    configureObservability();
+
+    getLogger().warn(LogEvent.requestFailed, { token: "private-token" });
+    getMetrics().increment(MetricName.apiErrorsTotal, {
+      method: "mutation",
+      token: "private-token",
+    });
+
+    expect(context).toHaveBeenCalledTimes(1);
+    expect(labels).toHaveBeenCalledTimes(1);
   });
 
   it("keeps callers running when a configured adapter throws", () => {

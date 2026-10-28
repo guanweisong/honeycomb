@@ -1,3 +1,7 @@
+import {
+  readStoredJson,
+  writeVerifiedJson,
+} from "@/components/admin/draft/verified-storage";
 import { z } from "zod";
 import { PostFieldsSchema } from "@/features/post/schemas/post.fields.schema";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
@@ -35,22 +39,14 @@ export function writePostCreationAttempt(
   input: PostInsert,
 ): boolean {
   try {
-    const json = JSON.stringify(PostInsertSchema.parse(input));
-    window.localStorage.setItem(attemptKey(userId), json);
-    return window.localStorage.getItem(attemptKey(userId)) === json;
+    return writeVerifiedJson(attemptKey(userId), PostInsertSchema.parse(input));
   } catch {
     return false;
   }
 }
 export function readPostCreationAttempt(userId: string): PostInsert | null {
-  try {
-    const raw = window.localStorage.getItem(attemptKey(userId));
-    if (!raw) return null;
-    const result = PostInsertSchema.safeParse(JSON.parse(raw));
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
+  const result = PostInsertSchema.safeParse(readStoredJson(attemptKey(userId)));
+  return result.success ? result.data : null;
 }
 export function clearPostCreationAttempt(
   userId: string,
@@ -70,12 +66,6 @@ export function preservePostDraft(
   postId: string,
   values: PostDraft,
 ): boolean {
-  try {
-    const raw = JSON.stringify({ version: 1, savedAt: Date.now(), values });
-    const key = `honeycomb:draft:post:${encodeURIComponent(userId)}:${postId}`;
-    window.localStorage.setItem(key, raw);
-    return window.localStorage.getItem(key) === raw;
-  } catch {
-    return false;
-  }
+  const key = `honeycomb:draft:post:${encodeURIComponent(userId)}:${postId}`;
+  return writeVerifiedJson(key, { version: 1, savedAt: Date.now(), values });
 }

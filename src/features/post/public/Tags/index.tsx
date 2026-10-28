@@ -8,10 +8,15 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 /**
  * 标签组件。
  * 用于显示文章相关的标签，如导演、演员、风格等，并提供跳转到对应标签列表页面的链接。
- * @param {PostWithRelations} props - 包含文章详情的属性。
+ * @param props - 文章的标签关系。
  * @returns {JSX.Element} 标签列表。
  */
-const Tag = (props: PostWithRelations) => {
+const Tag = (
+  props: Pick<
+    PostWithRelations,
+    "movieDirectors" | "movieActors" | "movieStyles" | "galleryStyles"
+  >,
+) => {
   const t = useTranslations("Tag");
   const locale = normalizeMultiLangLocale(useLocale());
 

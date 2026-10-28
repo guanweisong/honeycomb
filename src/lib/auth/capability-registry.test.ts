@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { capabilityRegistry, isCapability } from "@/lib/auth/capability-registry";
-import { ALL_PERMISSIONS, Permission } from "@/lib/auth/permissions";
+import { capabilityRegistry } from "@tests/helpers/capability-consumers";
+import {
+  ALL_PERMISSIONS,
+  Permission,
+  isPermission,
+} from "@/lib/auth/permissions";
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
 import { menu } from "@/app/admin/constants/menu-data";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
@@ -25,9 +29,12 @@ describe("能力注册表", () => {
   });
 
   it("拒绝未注册的能力字符串", () => {
-    expect(isCapability(Permission.postReadAll)).toBe(true);
-    expect(isCapability("postReadAll")).toBe(false);
-    expect(isCapability("post:unknown")).toBe(false);
+    expect(isPermission(Permission.postReadAll)).toBe(true);
+    expect(isPermission("postReadAll")).toBe(false);
+    expect(isPermission("post:unknown")).toBe(false);
+    expect(isPermission("__proto__")).toBe(false);
+    expect(isPermission("constructor")).toBe(false);
+    expect(isPermission("toString")).toBe(false);
   });
 
   it("覆盖 tRPC、菜单和 Admin Action 的全部能力声明", () => {
@@ -41,7 +48,7 @@ describe("能力注册表", () => {
         ...(item.children?.map((child) => child.permission) ?? []),
       ]),
     ];
-    expect(permissions.every((permission) => isCapability(permission))).toBe(
+    expect(permissions.every((permission) => isPermission(permission))).toBe(
       true,
     );
   });

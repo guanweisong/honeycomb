@@ -95,7 +95,9 @@ describe("Upstash cache request deadlines", () => {
       const state = track(
         operation === "setCacheJSON"
           ? cache.setCacheJSON("post.index", "private-key", {}, 60)
-          : cache[operation]("post.index", "private-key"),
+          : operation === "getCacheJSON"
+            ? cache.getCacheJSON("post.index", "private-key", (value) => value)
+            : cache[operation]("post.index", "private-key"),
       );
 
       await vi.advanceTimersByTimeAsync(999);

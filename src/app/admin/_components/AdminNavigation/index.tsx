@@ -15,7 +15,6 @@ export interface AdminNavigationItem {
 
 export interface AdminNavigationProps {
   data?: AdminNavigationItem[];
-  collapsed?: boolean;
   pendingPath?: string | null;
   onNavigateStart?: (path: string) => void;
 }
@@ -23,7 +22,7 @@ export interface AdminNavigationProps {
 export const AdminNavigation = (props: AdminNavigationProps) => {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
-  const { data = [], collapsed = false, pendingPath, onNavigateStart } = props;
+  const { data = [], pendingPath, onNavigateStart } = props;
   const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   useEffect(() => {
@@ -57,7 +56,6 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
     return menuItems.map((item, index) => {
       const isOpen = openMenus.includes(item.path);
       const delay = index * 0.05;
-      const exitDelay = (menuItems.length - index - 1) * 0.05;
 
       return (
         <div key={item.path}>
@@ -67,13 +65,6 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
               opacity: 1,
               x: 0,
             }}
-            exit={{
-              opacity: 0,
-              x: -16,
-              transition: reducedMotion
-                ? { duration: 0 }
-                : { duration: 0.25, delay: exitDelay },
-            }}
             transition={
               reducedMotion ? { duration: 0 } : { duration: 0.25, delay }
             }
@@ -82,16 +73,14 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
               item={item}
               openMenus={openMenus}
               toggleMenu={toggleMenu}
-              collapsed={collapsed}
               isPending={pendingPath === item.path}
               onNavigateStart={onNavigateStart}
               className={clsx({
-                "pl-3": depth === 0 && !collapsed,
-                "pl-8": depth === 1 && !collapsed,
-                "pl-16": depth === 2 && !collapsed,
-                "pl-24": depth === 3 && !collapsed,
-                "pl-32": depth === 4 && !collapsed,
-                "justify-center px-2": collapsed,
+                "pl-3": depth === 0,
+                "pl-8": depth === 1,
+                "pl-16": depth === 2,
+                "pl-24": depth === 3,
+                "pl-32": depth === 4,
               })}
             />
           </motion.div>
@@ -99,7 +88,6 @@ export const AdminNavigation = (props: AdminNavigationProps) => {
             <motion.div
               initial={reducedMotion ? false : { height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
               transition={{ duration: reducedMotion ? 0 : 0.25 }}
               style={{ overflow: "hidden" }}
             >

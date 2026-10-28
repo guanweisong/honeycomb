@@ -13,9 +13,7 @@ export async function listPublicCommentsByRef(
   targetRepository: CommentTargetRepository,
   input: CommentRefInput,
 ) {
-  await assertPublicTarget(
-    targetRepository,
-    toCommentTargetReferenceFromRef(input),
-  );
-  return repository.listPublicByRef(input);
+  const target = toCommentTargetReferenceFromRef(input);
+  await assertPublicTarget(targetRepository, target);
+  return repository.listPublic(target);
 }

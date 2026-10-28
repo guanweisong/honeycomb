@@ -12,6 +12,10 @@ it.each([
   "tests/tooling/coverage-governance.test.ts",
   "tests/tooling/quality-spec.test.ts",
   "tests/tooling/quality-workflow.test.ts",
+  "tests/integration/dashboard-auth-render.test.ts",
+  "tests/tooling/serwist-build.test.ts",
+  "tests/tooling/e2e-preflight.test.ts",
+  "tests/tooling/audit-production-dependencies.test.ts",
 ])("every blocking process in %s owns a hard deadline", (path) => {
   const calls: ts.CallExpression[] = [];
   const source = sourceFile(path);

@@ -28,9 +28,9 @@ vi.mock("@/features/post/admin/edit/hooks/use-post-editor", () => ({
       form: { setValue: state.setValue },
       showPhotoPicker,
       setShowPhotoPicker,
+      photoPickerProps: { openPhotoPicker: () => setShowPhotoPicker(true) },
       setCoverPreview: state.setCoverPreview,
       loading: state.readOnly,
-      actionsKey: `account-a:new:${baselineVersion}:${creationToken ?? "none"}`,
       creationAttempt: creationToken ? { token: creationToken } : null,
       creationResult: { data: null, refetch: vi.fn() },
       submit: async () => {
@@ -49,11 +49,11 @@ vi.mock("@/features/post/admin/edit/components/PostTypeFields", () => ({
 }));
 vi.mock("@/features/post/admin/edit/components/PostSidebarFields", () => ({
   PostSidebarFields: ({
-    editor,
+    photoPickerProps,
   }: {
-    editor: { setShowPhotoPicker: (show: boolean) => void };
+    photoPickerProps: { openPhotoPicker: () => void };
   }) => (
-    <button type="button" onClick={() => editor.setShowPhotoPicker(true)}>
+    <button type="button" onClick={() => photoPickerProps.openPhotoPicker()}>
       Choose cover
     </button>
   ),
@@ -103,15 +103,19 @@ vi.mock("@/features/category/admin/components/CategoryFormDialog", () => ({
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
 import PostDetail from "@/features/post/admin/edit/page";
-import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
+import { AdminLayoutHeaderContext } from "@/components/admin/layout-context";
 
 function LayoutHarness() {
-  const [actions, setActions] = useState<React.ReactNode>(null);
+  const [actions, setActions] = useState<HTMLElement | null>(null);
+  const [title, setTitle] = useState<HTMLElement | null>(null);
   return (
-    <AdminLayoutActionsContext.Provider value={{ setActions }}>
-      <header>{actions}</header>
+    <AdminLayoutHeaderContext.Provider value={{ actions, title }}>
+      <header>
+        <span data-testid="page-title" ref={setTitle} />
+        <div ref={setActions} />
+      </header>
       <PostDetail />
-    </AdminLayoutActionsContext.Provider>
+    </AdminLayoutHeaderContext.Provider>
   );
 }
 

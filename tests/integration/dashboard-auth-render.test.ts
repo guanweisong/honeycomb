@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -87,11 +87,14 @@ it("shares one admin lookup between layout and template only within a server ren
         },
       ],
     });
-    const result = spawnSync("node", ["--conditions=react-server", outfile], {
-      encoding: "utf8",
-      env: { ...process.env, NODE_ENV: "production" },
-      timeout: 20_000,
-    });
+    const result = await runTestProcess(
+      "node",
+      ["--conditions=react-server", outfile],
+      {
+        env: { ...process.env, NODE_ENV: "production" },
+        timeout: 20_000,
+      },
+    );
     expect(result.status, result.stderr).toBe(0);
     const renders = JSON.parse(result.stdout);
     expect(renders.first.errors).toEqual([]);

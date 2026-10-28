@@ -1,5 +1,4 @@
 import {
-  ALL_PERMISSIONS,
   Permission,
   type Permission as PermissionValue,
 } from "@/lib/auth/permissions";
@@ -11,7 +10,7 @@ export interface CapabilityDefinition {
   readonly consumers: readonly CapabilityConsumer[];
 }
 
-/** 所有生产授权入口共享的能力注册表。 */
+/** 独立的授权入口审计清单；不参与生产权限判定。 */
 export const capabilityRegistry = {
   [Permission.categoryReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.categoryCreate]: { consumers: ["trpc", "admin-action"] },
@@ -49,17 +48,3 @@ export const capabilityRegistry = {
   [Permission.userReadAll]: { consumers: ["trpc", "admin-route", "menu"] },
   [Permission.userManage]: { consumers: ["trpc", "admin-action"] },
 } as const satisfies Record<PermissionValue, CapabilityDefinition>;
-
-export type Capability = keyof typeof capabilityRegistry;
-
-export function isCapability(value: string): value is Capability {
-  return Object.prototype.hasOwnProperty.call(capabilityRegistry, value);
-}
-
-const registeredCapabilities: readonly PermissionValue[] = Object.freeze(
-  Object.keys(capabilityRegistry).filter(isCapability),
-);
-
-if (registeredCapabilities.length !== ALL_PERMISSIONS.length) {
-  throw new Error("能力注册表必须覆盖全部权限");
-}

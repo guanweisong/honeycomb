@@ -1,10 +1,5 @@
 import { createAdminListCache } from "@tests/helpers/admin-list-cache";
-import React, {
-  act,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
+import React, { act, useState, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
@@ -13,7 +8,7 @@ import { PageTemplate } from "@/features/page/types/page.template";
 import type { PageWithRelations as PageViewModel } from "@/features/page/types/page.read-model";
 import type { PageEditorForm } from "@/features/page/admin/edit/components/PageEditorForm";
 import type { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons";
-import { AdminLayoutActionsContext } from "@/components/admin/layout-context";
+import { AdminLayoutHeaderContext } from "@/components/admin/layout-context";
 
 type EditorDetail = Pick<
   PageViewModel,
@@ -37,7 +32,6 @@ const mocks = vi.hoisted(() => ({
   success: vi.fn(),
   error: vi.fn(),
   logger: vi.fn(),
-  pageTitle: vi.fn(),
 }));
 
 vi.mock("@/features/user/admin/use-current-user", () => ({
@@ -83,13 +77,6 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/components/admin/layout-context", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/components/admin/layout-context")
-  >("@/components/admin/layout-context");
-  return { ...actual, useAdminLayoutPageTitle: mocks.pageTitle };
-});
-
 vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
   PageEditorForm: ({ form }: ComponentProps<typeof PageEditorForm>) => {
     mocks.form = form;
@@ -97,36 +84,43 @@ vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
   },
 }));
 
-vi.mock("@/features/page/admin/edit/components/PageEditorActionButtons", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/features/page/admin/edit/components/PageEditorActionButtons")
-  >("@/features/page/admin/edit/components/PageEditorActionButtons");
-  return {
-    PageEditorActionButtons: (
-      props: ComponentProps<typeof PageEditorActionButtons>,
-    ) =>
-      mocks.realActions ? (
-        <actual.PageEditorActionButtons {...props} />
-      ) : (
-        <button
-          disabled={props.loading}
-          onClick={() => props.onSubmit(PageStatus.PUBLISHED)}
-        >
-          save
-        </button>
-      ),
-  };
-});
+vi.mock(
+  "@/features/page/admin/edit/components/PageEditorActionButtons",
+  async () => {
+    const actual = await vi.importActual<
+      typeof import("@/features/page/admin/edit/components/PageEditorActionButtons")
+    >("@/features/page/admin/edit/components/PageEditorActionButtons");
+    return {
+      PageEditorActionButtons: (
+        props: ComponentProps<typeof PageEditorActionButtons>,
+      ) =>
+        mocks.realActions ? (
+          <actual.PageEditorActionButtons {...props} />
+        ) : (
+          <button
+            disabled={props.loading}
+            onClick={() => props.onSubmit(PageStatus.PUBLISHED)}
+          >
+            save
+          </button>
+        ),
+    };
+  },
+);
 
 import { PageEditorPage } from ".";
 
 function LayoutHarness() {
-  const [actions, setActions] = useState<ReactNode>(null);
+  const [actions, setActions] = useState<HTMLElement | null>(null);
+  const [title, setTitle] = useState<HTMLElement | null>(null);
   return (
-    <AdminLayoutActionsContext.Provider value={{ setActions }}>
-      <header>{actions}</header>
+    <AdminLayoutHeaderContext.Provider value={{ actions, title }}>
+      <header>
+        <span data-testid="page-title" ref={setTitle} />
+        <div ref={setActions} />
+      </header>
       <PageEditorPage />
-    </AdminLayoutActionsContext.Provider>
+    </AdminLayoutHeaderContext.Provider>
   );
 }
 
@@ -336,7 +330,9 @@ describe("PageEditorPage", () => {
   it("configures the new-page title and initializes default values", async () => {
     await render(null);
 
-    expect(mocks.pageTitle).toHaveBeenCalledWith("添加新页面", "new:false");
+    expect(
+      container.querySelector('[data-testid="page-title"]')?.textContent,
+    ).toBe("添加新页面");
     expect(requireDefined(mocks.form).getValues()).toEqual({
       template: PageTemplate.DEFAULT,
     });
@@ -400,7 +396,9 @@ describe("PageEditorPage", () => {
     expect(
       container.querySelector("header button")?.hasAttribute("disabled"),
     ).toBe(false);
-    expect(mocks.pageTitle).toHaveBeenCalledWith("修改页面", `${pageId}:false`);
+    expect(
+      container.querySelector('[data-testid="page-title"]')?.textContent,
+    ).toBe("修改页面");
     expect(requireDefined(mocks.form).getValues()).toEqual({
       title: originalDetail.title,
       content: originalDetail.content,

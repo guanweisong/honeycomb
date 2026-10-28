@@ -1,26 +1,25 @@
 import type { Logger } from "@/lib/observability/core/contracts";
-import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
-import { sanitizeContext } from "@/lib/observability/core/sanitize";
 import {
   getRuntimeEnvironment,
   type ConsoleAdapterOptions,
 } from "@/lib/observability/adapters/console-options";
 
-export function createConsoleLogger(
+/** 内部 JSON 输出端；调用方必须使用安全日志 facade。 */
+export function createConsoleLogSink(
   options: ConsoleAdapterOptions = {},
 ): Logger {
   const service = options.service ?? "honeycomb";
   const environment = options.environment ?? getRuntimeEnvironment();
   const write = options.write ?? ((line: string) => console.log(line));
 
-  return createSafeLogger({
+  return {
     info: (event, context) =>
       writeLog(write, "info", event, context, service, environment),
     warn: (event, context) =>
       writeLog(write, "warn", event, context, service, environment),
     error: (event, context) =>
       writeLog(write, "error", event, context, service, environment),
-  });
+  };
 }
 
 function writeLog(
@@ -33,7 +32,7 @@ function writeLog(
 ): void {
   write(
     JSON.stringify({
-      ...sanitizeContext(context ?? {}),
+      ...context,
       timestamp: new Date().toISOString(),
       level,
       event,

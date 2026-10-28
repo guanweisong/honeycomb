@@ -508,8 +508,8 @@ describe("admin login page", () => {
       "value",
     )?.set;
     for (const [placeholder, value] of [
-      ["用户名", "guest"],
-      ["密码", "123456"],
+      ["用户名", "  guest  "],
+      ["密码", " 123456 "],
     ]) {
       const input = container.querySelector<HTMLInputElement>(
         `input[placeholder="${placeholder}"]`,
@@ -528,7 +528,7 @@ describe("admin login page", () => {
     });
     expect(mocks.username).toHaveBeenCalledWith({
       username: "guest",
-      password: "123456",
+      password: " 123456 ",
       fetchOptions: {
         headers: { "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX" },
       },

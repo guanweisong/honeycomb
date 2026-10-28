@@ -78,4 +78,33 @@ describe("ToolbarLinkItem", () => {
     });
     expect(editor.getAttributes("link").href).toBe("https://example.com");
   });
+  it("snapshots the selected link on each opening and keeps cancellation non-mutating", async () => {
+    editor.commands.setLink({ href: "https://first.test" });
+    await act(async () =>
+      root.render(React.createElement(ToolbarLinkItem, { editor })),
+    );
+    await act(async () => container.querySelector("button")?.click());
+    expect(container.querySelector("input")?.value).toBe("https://first.test");
+    await act(async () =>
+      inputMocks.onChange?.({ target: { value: "https://discard.test" } }),
+    );
+    await act(async () =>
+      [...container.querySelectorAll("button")]
+        .find((button) => button.textContent === "取消")
+        ?.click(),
+    );
+    expect(editor.getAttributes("link").href).toBe("https://first.test");
+    await act(async () =>
+      editor.commands.setLink({ href: "https://second.test" }),
+    );
+    await act(async () => container.querySelector("button")?.click());
+    expect(container.querySelector("input")?.value).toBe("https://second.test");
+    await act(async () =>
+      [...container.querySelectorAll("button")]
+        .find((button) => button.textContent === "移除")
+        ?.click(),
+    );
+    expect(editor.getAttributes("link").href).toBeUndefined();
+    expect(editor.getText()).toBe("Text");
+  });
 });

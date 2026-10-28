@@ -2,17 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
-import {
-  getPageEditorId,
-  toPageEditorFormValues,
-} from "@/features/page/admin/edit/transforms/page-editor-transforms";
+import { toPageEditorFormValues } from "@/features/page/admin/edit/transforms/page-editor-transforms";
 
 describe("page editor transforms", () => {
-  it("preserves the id query parameter used by the existing edit route", () => {
-    expect(getPageEditorId(new URLSearchParams("id=page-42"))).toBe("page-42");
-    expect(getPageEditorId(new URLSearchParams())).toBeNull();
-  });
-
   it("maps an admin detail DTO to the existing form defaults", () => {
     expect(
       toPageEditorFormValues({

@@ -60,7 +60,6 @@ export const databaseQueryNames = [
   "post.search",
   "post.service.category-tree",
   "post.service.count",
-  "post.service.detail",
   "post.service.detail-images",
   "post.service.ids-by-tag",
   "post.service.list",

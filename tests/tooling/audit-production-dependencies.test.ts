@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { spawnSync } from "node:child_process";
+import { runTestProcess } from "@tests/helpers/run-test-process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -153,21 +153,20 @@ describe("Bun lock JSONC parsing", () => {
     ['{"workspaces":{},"packages":{},"nested":[1,2,],}', true],
     ['{"workspaces":{},"packages":', false],
     ['{"unexpected":true}', false],
-  ])("parses JSONC and rejects invalid lock input %#", (input, valid) => {
+  ])("parses JSONC and rejects invalid lock input %#", async (input, valid) => {
     const directory = mkdtempSync(join(tmpdir(), "honeycomb-lock-jsonc-"));
     try {
       const path = join(directory, "bun.lock");
       writeFileSync(path, input);
-      const result = spawnSync(
+      const result = await runTestProcess(
         "bun",
         [
           "--no-env-file",
           "-e",
           `import { parseBunLock } from ${JSON.stringify(resolve("scripts/audit-production-dependencies.ts"))}; console.log(JSON.stringify(parseBunLock(${JSON.stringify(path)})));`,
         ],
-        { encoding: "utf8", timeout: 10000 },
+        { timeout: 10_000 },
       );
-      expect(result.error).toBeUndefined();
       expect(result.status === 0, result.stderr).toBe(valid);
       if (valid) {
         const parsed = JSON.parse(result.stdout);

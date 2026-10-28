@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
-import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema";
 
 const {
   cacheRegistrations,
@@ -8,8 +7,11 @@ const {
   createServerClientMock,
   getServerEnvMock,
   menuIndexMock,
-  pageIndexMock,
-  postIndexMock,
+  pageEntriesMock,
+  pageCountMock,
+  postCountMock,
+  getDbMock,
+  postEntriesMock,
   unstableCacheMock,
 } = vi.hoisted(() => ({
   cacheRegistrations: [] as Array<{
@@ -20,8 +22,11 @@ const {
   createServerClientMock: vi.fn(),
   getServerEnvMock: vi.fn(),
   menuIndexMock: vi.fn(),
-  pageIndexMock: vi.fn(),
-  postIndexMock: vi.fn(),
+  pageEntriesMock: vi.fn(),
+  pageCountMock: vi.fn(),
+  postCountMock: vi.fn(),
+  getDbMock: vi.fn(),
+  postEntriesMock: vi.fn(),
   unstableCacheMock: vi.fn(
     <T extends (...args: never[]) => Promise<unknown>>(
       loader: T,
@@ -57,14 +62,22 @@ vi.mock("@/env/server", () => ({
   getServerEnv: getServerEnvMock,
 }));
 
+vi.mock("@/lib/db/db", () => ({ getDb: getDbMock }));
+vi.mock("@/features/post/server/post-queries", () => ({
+  listPublishedPostSitemapEntries: postEntriesMock,
+  countPublishedPosts: postCountMock,
+}));
+vi.mock("@/features/page/server/page-queries", () => ({
+  listPublishedPageSitemapEntries: pageEntriesMock,
+  countPublishedPages: pageCountMock,
+}));
+
 import * as sitemapIndexRoute from "@/app/sitemap.xml/route";
 import * as sitemapShardRoute from "@/app/sitemaps/[id]/route";
 import { getCachedSitemapShard } from "@/app/lib/server/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },
-  post: { index: postIndexMock },
-  page: { index: pageIndexMock },
 };
 
 function list<T>(items: T[], total = items.length) {
@@ -72,16 +85,23 @@ function list<T>(items: T[], total = items.length) {
 }
 
 describe("runtime sitemap", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     cacheStores.forEach((store) => store.clear());
-    process.env.NEXT_PUBLIC_SITE_URL = "https://example.com/path";
-    delete process.env.NEXT_PHASE;
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://example.com/path");
+    vi.stubEnv("NEXT_PHASE", undefined);
     getServerEnvMock.mockImplementation(() => ({
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     }));
 
     createServerClientMock.mockResolvedValue(client);
+    getDbMock.mockReturnValue({});
+    postCountMock.mockResolvedValue(0);
+    pageCountMock.mockResolvedValue(0);
     menuIndexMock.mockResolvedValue(
       list([
         {
@@ -93,8 +113,8 @@ describe("runtime sitemap", () => {
         },
       ]),
     );
-    postIndexMock.mockResolvedValue(list([]));
-    pageIndexMock.mockResolvedValue(list([]));
+    postEntriesMock.mockResolvedValue([]);
+    pageEntriesMock.mockResolvedValue([]);
   });
 
   it("tags both cached sitemap datasets for immediate invalidation", () => {
@@ -112,7 +132,7 @@ describe("runtime sitemap", () => {
 
   it("lets production build route discovery import handlers without reading environment or requesting database data", async () => {
     vi.resetModules();
-    process.env.NEXT_PHASE = "phase-production-build";
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
 
     const index = await import("@/app/sitemap.xml/route");
     const shard = await import("@/app/sitemaps/[id]/route");
@@ -123,8 +143,8 @@ describe("runtime sitemap", () => {
   });
 
   it("creates a runtime sitemap index that discovers every required shard and caches its count", async () => {
-    postIndexMock.mockResolvedValue(list([], 1001));
-    pageIndexMock.mockResolvedValue(list([], 3));
+    postCountMock.mockResolvedValue(1001);
+    pageCountMock.mockResolvedValue(3);
 
     const first = await sitemapIndexRoute.GET();
     const second = await sitemapIndexRoute.GET();
@@ -136,20 +156,18 @@ describe("runtime sitemap", () => {
     expect(firstXml).toContain("https://example.com/sitemaps/1.xml");
     expect(firstXml).toContain("https://example.com/sitemaps/10.xml");
     expect(firstXml).not.toContain("https://example.com/sitemaps/11.xml");
-    expect(createServerClientMock).toHaveBeenCalledTimes(1);
-    expect(postIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 1, limit: 1 }),
-    );
-    expect(pageIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 1, limit: 1 }),
-    );
+    expect(createServerClientMock).not.toHaveBeenCalled();
+    expect(postCountMock).toHaveBeenCalledOnce();
+    expect(pageCountMock).toHaveBeenCalledOnce();
+    expect(postEntriesMock).not.toHaveBeenCalled();
+    expect(pageEntriesMock).not.toHaveBeenCalled();
     expect(first.headers.get("content-type")).toBe(
       "application/xml; charset=utf-8",
     );
   });
 
   it("falls back to one safe shard when sitemap index discovery fails", async () => {
-    postIndexMock.mockRejectedValue(new Error("database unavailable"));
+    postCountMock.mockRejectedValue(new Error("database unavailable"));
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     const response = await sitemapIndexRoute.GET();
@@ -162,12 +180,12 @@ describe("runtime sitemap", () => {
   });
 
   it("reuses cached runtime data for repeated requests to the same sitemap shard", async () => {
-    postIndexMock.mockResolvedValue(
-      list([{ id: "post-1", updatedAt: "2026-01-02T00:00:00.000Z" }]),
-    );
-    pageIndexMock.mockResolvedValue(
-      list([{ id: "page-1", updatedAt: "2026-01-03T00:00:00.000Z" }]),
-    );
+    postEntriesMock.mockResolvedValue([
+      { id: "post-1", updatedAt: "2026-01-02T00:00:00.000Z" },
+    ]);
+    pageEntriesMock.mockResolvedValue([
+      { id: "page-1", updatedAt: "2026-01-03T00:00:00.000Z" },
+    ]);
 
     const first = await sitemapShardRoute.GET(
       new Request("https://example.com/sitemaps/0.xml"),
@@ -183,10 +201,10 @@ describe("runtime sitemap", () => {
     );
 
     expect(await second.text()).toBe(await first.text());
-    expect(createServerClientMock).toHaveBeenCalledTimes(2);
+    expect(createServerClientMock).toHaveBeenCalledTimes(1);
     expect(menuIndexMock).toHaveBeenCalledTimes(1);
-    expect(postIndexMock).toHaveBeenCalledTimes(2);
-    expect(pageIndexMock).toHaveBeenCalledTimes(2);
+    expect(postEntriesMock).toHaveBeenCalledTimes(1);
+    expect(pageEntriesMock).toHaveBeenCalledTimes(1);
   });
 
   it("only emits category menu entries with non-empty paths and escapes XML URLs", async () => {
@@ -238,7 +256,7 @@ describe("runtime sitemap", () => {
       new Request("https://example.com/sitemaps/0.xml"),
       { params: Promise.resolve({ id: "0.xml" }) },
     );
-    process.env.NEXT_PUBLIC_SITE_URL = "https://second.example/path";
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://second.example/path");
     const second = await sitemapShardRoute.GET(
       new Request("https://second.example/sitemaps/0.xml"),
       { params: Promise.resolve({ id: "0.xml" }) },
@@ -252,12 +270,12 @@ describe("runtime sitemap", () => {
   it("uses a valid current timestamp when persisted modification dates are null", async () => {
     const now = Date.parse("2026-09-05T12:00:00.000Z");
     vi.spyOn(Date, "now").mockReturnValue(now);
-    postIndexMock.mockResolvedValue(
-      list([{ id: "post-null-date", updatedAt: null }]),
-    );
-    pageIndexMock.mockResolvedValue(
-      list([{ id: "page-null-date", updatedAt: null }]),
-    );
+    postEntriesMock.mockResolvedValue([
+      { id: "post-null-date", updatedAt: null },
+    ]);
+    pageEntriesMock.mockResolvedValue([
+      { id: "page-null-date", updatedAt: null },
+    ]);
 
     const urls = await getCachedSitemapShard("https://example.com", 0);
     const persistedUrls = urls.filter(({ url }) => url.includes("null-date"));
@@ -269,8 +287,8 @@ describe("runtime sitemap", () => {
   });
 
   it("rejects a shard beyond the discovered range before requesting its high offset", async () => {
-    postIndexMock.mockResolvedValue(list([], 101));
-    pageIndexMock.mockResolvedValue(list([], 0));
+    postCountMock.mockResolvedValue(101);
+    pageCountMock.mockResolvedValue(0);
 
     const response = await sitemapShardRoute.GET(
       new Request("https://example.com/sitemaps/2.xml"),
@@ -278,17 +296,13 @@ describe("runtime sitemap", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(postIndexMock).not.toHaveBeenCalledWith(
-      expect.objectContaining({ page: 3, limit: 100 }),
-    );
-    expect(pageIndexMock).not.toHaveBeenCalledWith(
-      expect.objectContaining({ page: 3, limit: 100 }),
-    );
+    expect(postEntriesMock).not.toHaveBeenCalledWith(expect.anything(), 3, 100);
+    expect(pageEntriesMock).not.toHaveBeenCalledWith(expect.anything(), 3, 100);
   });
 
   it("returns only safe static URLs and reports the failure when dynamic data is unavailable", async () => {
     const error = new Error("Turso unavailable");
-    postIndexMock.mockRejectedValue(error);
+    postEntriesMock.mockRejectedValue(error);
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     const sitemap = await sitemapShardRoute.GET(
@@ -318,24 +332,20 @@ describe("runtime sitemap", () => {
   });
 
   it("reads the second bounded batch so URLs after the first 100 records remain discoverable", async () => {
-    postIndexMock.mockImplementation(({ page }) =>
+    postCountMock.mockResolvedValue(101);
+    pageCountMock.mockResolvedValue(101);
+    postEntriesMock.mockImplementation((_db, page) =>
       Promise.resolve(
         page === 2
-          ? list(
-              [{ id: "post-101", updatedAt: "2026-01-02T00:00:00.000Z" }],
-              101,
-            )
-          : list([], 101),
+          ? [{ id: "post-101", updatedAt: "2026-01-02T00:00:00.000Z" }]
+          : [],
       ),
     );
-    pageIndexMock.mockImplementation(({ page }) =>
+    pageEntriesMock.mockImplementation((_db, page) =>
       Promise.resolve(
         page === 2
-          ? list(
-              [{ id: "page-101", updatedAt: "2026-01-03T00:00:00.000Z" }],
-              101,
-            )
-          : list([], 101),
+          ? [{ id: "page-101", updatedAt: "2026-01-03T00:00:00.000Z" }]
+          : [],
       ),
     );
 
@@ -346,12 +356,8 @@ describe("runtime sitemap", () => {
       },
     );
 
-    expect(postIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2, limit: 100 }),
-    );
-    expect(pageIndexMock).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2, limit: 100 }),
-    );
+    expect(postEntriesMock).toHaveBeenCalledWith(expect.anything(), 2, 100);
+    expect(pageEntriesMock).toHaveBeenCalledWith(expect.anything(), 2, 100);
     const xml = await sitemap.text();
     expect(xml).toContain("https://example.com/zh/archives/post-101");
     expect(xml).toContain("https://example.com/en/archives/post-101");
@@ -394,7 +400,9 @@ describe("runtime sitemap", () => {
     }
   });
 
-  it("enumerates every dynamic URL through the real bounded list schemas", async () => {
+  it("enumerates every dynamic URL through bounded internal reads", async () => {
+    postCountMock.mockResolvedValue(205);
+    pageCountMock.mockResolvedValue(101);
     const posts = Array.from({ length: 205 }, (_, index) => ({
       id: `post-${index + 1}`,
       updatedAt: null,
@@ -403,14 +411,18 @@ describe("runtime sitemap", () => {
       id: `page-${index + 1}`,
       updatedAt: null,
     }));
-    postIndexMock.mockImplementation(async (input: unknown) => {
-      const { page = 1, limit = 10 } = PostListQuerySchema.parse(input);
-      return list(posts.slice((page - 1) * limit, page * limit), posts.length);
-    });
-    pageIndexMock.mockImplementation(async (input: unknown) => {
-      const { page = 1, limit = 10 } = PageListQuerySchema.parse(input);
-      return list(pages.slice((page - 1) * limit, page * limit), pages.length);
-    });
+    postEntriesMock.mockImplementation(
+      async (_db: unknown, page: number, limit: number) => {
+        PaginationQuerySchema.parse({ page, limit });
+        return posts.slice((page - 1) * limit, page * limit);
+      },
+    );
+    pageEntriesMock.mockImplementation(
+      async (_db: unknown, page: number, limit: number) => {
+        PaginationQuerySchema.parse({ page, limit });
+        return pages.slice((page - 1) * limit, page * limit);
+      },
+    );
     menuIndexMock.mockResolvedValue(
       list([
         {

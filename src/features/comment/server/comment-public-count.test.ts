@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import * as schema from "@/lib/db/schema";
-import { MenuType } from "@/features/menu/types/menu.type";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 
 describe("public comment count", () => {
@@ -26,7 +25,7 @@ describe("public comment count", () => {
 
     const result = await createCommentQueryRepository(
       asMockDatabase(db),
-    ).listPublicByRef({ id: "post", type: MenuType.CATEGORY });
+    ).listPublic({ id: "post", type: "post" });
 
     expect(result.total).toBe(4);
     expect(result.list).toHaveLength(1);
@@ -47,7 +46,7 @@ describe("public comment count", () => {
     db.query.comment.findMany.mockResolvedValue([]);
     const result = await createCommentQueryRepository(
       asMockDatabase(db),
-    ).listPublicByRef({ id: "page", type: MenuType.PAGE });
+    ).listPublic({ id: "page", type: "page" });
     expect(result).toEqual({ list: [], total: 0 });
     expect(db.select).toHaveBeenCalledOnce();
     expect(db.select).toHaveBeenCalledWith({ id: schema.page.id });

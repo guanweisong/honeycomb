@@ -338,7 +338,7 @@ describe("Page Router", () => {
   });
 
   describe("incrementViews procedure", () => {
-    it("should increment page views", async () => {
+    it("increments page views for unauthenticated users only while published", async () => {
       const updatedViews = { views: 101 };
 
       // 设置增加浏览量查询的模拟调用链。
@@ -384,23 +384,6 @@ describe("Page Router", () => {
       const caller = pageRouter.createCaller(
         createMockContext(createGuestUser(TEST_IDS.ID_2), mockDb),
       );
-
-      const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
-
-      expect(result).toEqual(updatedViews);
-      expect(mockDb.update).toHaveBeenCalledWith(schema.page);
-    });
-
-    it("should increment views for unauthenticated users", async () => {
-      const updatedViews = { views: 101 };
-
-      // 设置增加浏览量查询的模拟调用链。
-      mockDb.update.mockReturnValueOnce(mockDb);
-      mockDb.set.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.returning.mockResolvedValueOnce([updatedViews]);
-
-      const caller = pageRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.incrementViews({ id: TEST_IDS.ID_1 });
 

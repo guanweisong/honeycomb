@@ -32,27 +32,38 @@ describe("Avatar", () => {
     container.remove();
   });
 
-  it("renders initials and status when no image is provided", async () => {
+  it("renders a fallback when no image is provided", async () => {
     await act(async () =>
-      root.render(
-        React.createElement(Avatar, { name: "Jane Doe", status: "online" }),
-      ),
+      root.render(React.createElement(Avatar, { fallback: "Jane" })),
     );
-    expect(container.textContent).toContain("JD");
-    expect(
-      container.querySelector('[aria-label="status-online"]')?.className,
-    ).toContain("bg-emerald-500");
+    expect(container.textContent).toBe("Jane");
+    expect(container.querySelector("img")).toBeNull();
   });
+
+  it.each([undefined, null])(
+    "keeps the placeholder for a %s name",
+    async (fallback) => {
+      await act(async () =>
+        root.render(React.createElement(Avatar, { fallback })),
+      );
+      expect(container.textContent).toBe("?");
+    },
+  );
 
   it("renders the image source and explicit fallback", async () => {
     await act(async () =>
       root.render(
-        React.createElement(Avatar, { url: "/avatar.png", fallback: "A" }),
+        React.createElement(Avatar, {
+          src: "/avatar.png",
+          alt: "Jane",
+          fallback: "A",
+        }),
       ),
     );
     expect(container.querySelector("img")?.getAttribute("src")).toBe(
       "/avatar.png",
     );
+    expect(container.querySelector("img")?.getAttribute("alt")).toBe("Jane");
     expect(container.textContent).toContain("A");
   });
 });

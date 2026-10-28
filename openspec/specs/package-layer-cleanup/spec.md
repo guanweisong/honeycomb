@@ -8,7 +8,7 @@
 
 ### Requirement: 共享技术与组件保持运行时独立
 
-components 与 lib MUST 不运行时加载 app 或业务 feature；lib/db、lib/auth 的纯 feature 契约依赖、lib/trpc 的 type-only AppRouter 引用及 context 为会话读取延迟加载 src/auth.ts 的既有技术集成按明确例外处理。认证框架组合位于 app/_auth，例外不允许 lib/auth 引用业务运行时。
+共享技术与组件 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)，不在本规范另列一套认证或类型例外。
 
 #### Scenario: 检查共享依赖
 

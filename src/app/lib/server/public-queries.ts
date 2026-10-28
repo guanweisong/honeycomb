@@ -22,7 +22,7 @@ const cachedClientOptions = {
 } as const;
 
 async function createCachedPublicClient() {
-  return createServerClient(undefined, cachedClientOptions);
+  return createServerClient(cachedClientOptions);
 }
 
 /** 逐页读取友情链接，保留完整公开列表并遵守单次查询上限。 */

@@ -40,8 +40,7 @@ vi.mock("@/features/page/admin/edit/page-editor-actions", () => ({
   usePageEditorActions: () => ({ loading: false }),
 }));
 vi.mock("@/components/admin/layout-context", () => ({
-  useAdminLayoutActions: () => {},
-  useAdminLayoutPageTitle: () => {},
+  AdminPageHeader: () => null,
 }));
 vi.mock("@/features/user/admin/use-current-user", () => ({
   useCurrentUser: () => ({ user: null }),
@@ -52,10 +51,15 @@ vi.mock("@/components/admin/draft/use-local-draft", () => ({
 vi.mock("@/components/admin/draft/LocalDraftPrompt", () => ({
   LocalDraftPrompt: () => null,
 }));
-vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({ PageEditorForm: () => null }));
-vi.mock("@/features/page/admin/edit/components/PageEditorActionButtons", () => ({
-  PageEditorActionButtons: () => null,
+vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
+  PageEditorForm: () => null,
 }));
+vi.mock(
+  "@/features/page/admin/edit/components/PageEditorActionButtons",
+  () => ({
+    PageEditorActionButtons: () => null,
+  }),
+);
 import { PageEditorPage } from "@/features/page/admin/edit/components/PageEditorPage/index";
 
 (

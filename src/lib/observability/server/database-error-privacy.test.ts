@@ -4,8 +4,8 @@ import { DrizzleQueryError } from "drizzle-orm/errors";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { createTRPCRouter, publicProcedure } from "@/lib/trpc/core";
-import { createConsoleLogger } from "@/lib/observability/adapters/console";
-import { createSentryLogger } from "@/lib/observability/adapters/sentry";
+import { createConsoleLogSink } from "@/lib/observability/adapters/console";
+import { createSentryLogSink } from "@/lib/observability/adapters/sentry";
 import { LogEvent } from "@/lib/observability/core/names";
 import { observeDbOperation } from "@/lib/observability/server/database-operation";
 import { configureObservability } from "@/lib/observability/server/registry";
@@ -30,9 +30,9 @@ describe("database error privacy at log sinks", () => {
       const lines: string[] = [];
       const remote = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
       configureObservability({
-        logger: createSentryLogger(
+        logger: createSentryLogSink(
           remote,
-          createConsoleLogger({ write: (line) => lines.push(line) }),
+          createConsoleLogSink({ write: (line) => lines.push(line) }),
         ),
         metrics: createMemoryObservability().metrics,
       });

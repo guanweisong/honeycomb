@@ -9,8 +9,8 @@ const mocks = vi.hoisted(() => ({
   headers: vi.fn<typeof import("next/headers").headers>(),
   getAdminUser:
     vi.fn<typeof import("@/app/admin/lib/admin-auth").getAdminUser>(),
-  getSiteSetting:
-    vi.fn<typeof import("@/app/lib/server/site-setting").getSiteSetting>(),
+  getPublicSetting:
+    vi.fn<typeof import("@/app/lib/server/public-queries").getPublicSetting>(),
   getAuthProviders:
     vi.fn<typeof import("@/app/admin/lib/auth-providers").getAuthProviders>(),
   redirect: vi.fn<(path: string) => never>(),
@@ -21,8 +21,8 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/app/admin/lib/admin-auth", () => ({
   getAdminUser: mocks.getAdminUser,
 }));
-vi.mock("@/app/lib/server/site-setting", () => ({
-  getSiteSetting: mocks.getSiteSetting,
+vi.mock("@/app/lib/server/public-queries", () => ({
+  getPublicSetting: mocks.getPublicSetting,
 }));
 vi.mock("@/app/admin/lib/auth-providers", () => ({
   getAuthProviders: mocks.getAuthProviders,
@@ -86,7 +86,7 @@ describe("login server page", () => {
     vi.resetAllMocks();
     mocks.headers.mockResolvedValue(new Headers());
     mocks.getAdminUser.mockResolvedValue(null);
-    mocks.getSiteSetting.mockResolvedValue(setting);
+    mocks.getPublicSetting.mockResolvedValue(setting);
     mocks.getAuthProviders.mockReturnValue(providers);
     mocks.redirect.mockImplementation((path) => {
       throw new Error(`redirect:${path}`);
@@ -112,7 +112,7 @@ describe("login server page", () => {
       expect(mocks.headers).toHaveBeenCalledExactlyOnceWith();
       expect(mocks.getAdminUser).toHaveBeenCalledExactlyOnceWith(headers);
       expect(mocks.getAdminUser.mock.calls[0]?.[0]).toBe(headers);
-      expect(mocks.getSiteSetting).toHaveBeenCalledExactlyOnceWith();
+      expect(mocks.getPublicSetting).toHaveBeenCalledExactlyOnceWith();
       expect(mocks.getAuthProviders).toHaveBeenCalledExactlyOnceWith();
       expect(mocks.redirect).not.toHaveBeenCalled();
       expect(props).toEqual({
@@ -141,7 +141,7 @@ describe("login server page", () => {
     expect(mocks.getAdminUser).toHaveBeenCalledExactlyOnceWith(headers);
     expect(mocks.getAdminUser.mock.calls[0]?.[0]).toBe(headers);
     expect(mocks.redirect).toHaveBeenCalledExactlyOnceWith("/admin/dashboard");
-    expect(mocks.getSiteSetting).not.toHaveBeenCalled();
+    expect(mocks.getPublicSetting).not.toHaveBeenCalled();
     expect(mocks.getAuthProviders).not.toHaveBeenCalled();
   });
 
@@ -155,7 +155,7 @@ describe("login server page", () => {
   );
 
   it("passes missing settings and no configured providers to the client", async () => {
-    mocks.getSiteSetting.mockResolvedValue(undefined);
+    mocks.getPublicSetting.mockResolvedValue(undefined);
     mocks.getAuthProviders.mockReturnValue([]);
 
     expect(await renderLogin()).toEqual({

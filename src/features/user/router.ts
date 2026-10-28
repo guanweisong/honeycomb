@@ -6,7 +6,6 @@ import {
   permissionProcedure,
   publicProcedure,
   createTRPCRouter,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
 import { IdSchema } from "@/lib/validation/id.schema";
@@ -29,9 +28,7 @@ export const userRouter = createTRPCRouter({
     .input(z.object({ id: IdSchema }))
     .query(({ ctx, input }) => createUserRepository(ctx.db).detail(input.id)),
   current: permissionProcedure(Permission.userReadSelf).query(({ ctx }) =>
-    createUserRepository(ctx.db)
-      .current(ctx.user.id)
-      .catch(mapApplicationError),
+    createUserRepository(ctx.db).current(ctx.user.id),
   ),
   index: permissionProcedure(Permission.userReadAll)
     .input(UserListQuerySchema)
@@ -43,7 +40,7 @@ export const userRouter = createTRPCRouter({
         createUserRepository(ctx.db),
         input,
         publicContentInvalidator,
-      ).catch(mapApplicationError);
+      );
       return result;
     }),
   destroy: permissionProcedure(Permission.userManage)
@@ -53,7 +50,7 @@ export const userRouter = createTRPCRouter({
         createUserRepository(ctx.db),
         input.ids,
         publicContentInvalidator,
-      ).catch(mapApplicationError);
+      );
       return result;
     }),
   update: permissionProcedure(Permission.userManage)
@@ -64,7 +61,7 @@ export const userRouter = createTRPCRouter({
         input,
         ctx.user.level,
         publicContentInvalidator,
-      ).catch(mapApplicationError);
+      );
       return result;
     }),
 });

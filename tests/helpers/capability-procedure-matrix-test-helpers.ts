@@ -15,12 +15,13 @@ export function normalizeDeclarationMatrix<
 >(matrix: readonly T[]): T[] {
   const seenPaths = new Set<string>();
   return matrix
-    .map(([path, permission]) => {
+    .map((entry) => {
+      const [path] = entry;
       if (seenPaths.has(path)) {
         throw new Error(`Duplicate protected procedure path: ${path}`);
       }
       seenPaths.add(path);
-      return [path, permission] as unknown as T;
+      return entry;
     })
     .sort(([left], [right]) => left.localeCompare(right));
 }

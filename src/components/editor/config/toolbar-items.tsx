@@ -46,6 +46,16 @@ export interface ToolbarGroup {
 
 export type ToolbarItemOrGroup = ToolbarItem | ToolbarGroup;
 
+const colorPalette = [
+  { color: "red", label: "红", className: "text-red-600" },
+  { color: "orange", label: "橙", className: "text-orange-600" },
+  { color: "yellow", label: "黄", className: "text-yellow-600" },
+  { color: "green", label: "绿", className: "text-green-600" },
+  { color: "teal", label: "青", className: "text-teal-600" },
+  { color: "blue", label: "蓝", className: "text-blue-600" },
+  { color: "purple", label: "紫", className: "text-purple-600" },
+];
+
 export const toolbarItems: ToolbarItemOrGroup[][] = [
   [
     {
@@ -160,78 +170,15 @@ export const toolbarItems: ToolbarItemOrGroup[][] = [
     {
       label: "颜色",
       icon: <Baseline className="h-4 w-4" />,
-      items: [
-        {
-          icon: <Circle className="h-4 w-4 text-red-600" />,
-          label: "红",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "red" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "red" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("red").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-orange-600" />,
-          label: "橙",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "orange" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "orange" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("orange").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-yellow-600" />,
-          label: "黄",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "yellow" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "yellow" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("yellow").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-green-600" />,
-          label: "绿",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "green" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "green" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("green").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-teal-600" />,
-          label: "青",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "teal" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "teal" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("teal").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-blue-600" />,
-          label: "蓝",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "blue" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "blue" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("blue").run(),
-        },
-        {
-          icon: <Circle className="h-4 w-4 text-purple-600" />,
-          label: "紫",
-          isActive: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "purple" }),
-          onClick: (editor: Editor) =>
-            editor.isActive("textStyle", { color: "purple" })
-              ? editor.chain().focus().unsetColor().run()
-              : editor.chain().focus().setColor("purple").run(),
-        },
-      ],
+      items: colorPalette.map(({ color, label, className }) => ({
+        icon: <Circle className={`h-4 w-4 ${className}`} />,
+        label,
+        isActive: (editor: Editor) => editor.isActive("textStyle", { color }),
+        onClick: (editor: Editor) =>
+          editor.isActive("textStyle", { color })
+            ? editor.chain().focus().unsetColor().run()
+            : editor.chain().focus().setColor(color).run(),
+      })),
     },
     {
       icon: <Highlighter className="h-4 w-4" />,

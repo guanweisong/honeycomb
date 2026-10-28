@@ -19,7 +19,6 @@ import { PostType } from "@/features/post/types/post.type";
 import { normalizePostForm } from "@/features/post/admin/edit/utils/normalize-post-form";
 import { clientLogger } from "@/lib/observability/client";
 import { LogEvent } from "@/lib/observability/core/names";
-import type { PostTagOption } from "@/features/post/admin/edit/components/MultiTag/use-multi-tag";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 import {
   notifyPublicSyncWarning,
@@ -80,22 +79,6 @@ export function usePostEditor(id: string | null) {
       movieStyles: [],
     },
   });
-  const galleryStyles =
-    useWatch({ control: form.control, name: "galleryStyles" }) ?? [];
-  const movieActors =
-    useWatch({ control: form.control, name: "movieActors" }) ?? [];
-  const movieDirectors =
-    useWatch({ control: form.control, name: "movieDirectors" }) ?? [];
-  const movieStyles =
-    useWatch({ control: form.control, name: "movieStyles" }) ?? [];
-  const setGalleryStyles = (value: PostTagOption[]) =>
-    form.setValue("galleryStyles", value, { shouldDirty: true });
-  const setMovieActors = (value: PostTagOption[]) =>
-    form.setValue("movieActors", value, { shouldDirty: true });
-  const setMovieDirectors = (value: PostTagOption[]) =>
-    form.setValue("movieDirectors", value, { shouldDirty: true });
-  const setMovieStyles = (value: PostTagOption[]) =>
-    form.setValue("movieStyles", value, { shouldDirty: true });
   const watchedType = useWatch({ control: form.control, name: "type" });
   const type = watchedType ?? PostType.ARTICLE;
   const { data: category } = trpc.category.adminTree.useQuery();
@@ -556,7 +539,6 @@ export function usePostEditor(id: string | null) {
     category,
     confirmedStatus:
       confirmedBaseline?.id === id ? confirmedBaseline.status : undefined,
-    actionsKey: `${userId ?? ""}:${user?.level ?? ""}:${id ?? "new"}:${baselineVersion ?? "unknown"}:${creationAttempt?.creationToken ?? "none"}`,
     saveProblem,
     preservedDraft,
     restorePreservedDraft: () => {
@@ -574,22 +556,14 @@ export function usePostEditor(id: string | null) {
     detail,
     draft,
     form,
-    galleryStyles,
     loading:
       loading || isNavigating || Boolean(id && detail?.id !== id && !loadError),
     readOnly:
       Boolean(id && detail?.id !== id) || (!id && (loading || isNavigating)),
     modalProps,
-    movieActors,
-    movieDirectors,
-    movieStyles,
     photoPickerProps,
     setCoverPreview,
-    setGalleryStyles,
     setModalProps,
-    setMovieActors,
-    setMovieDirectors,
-    setMovieStyles,
     setShowPhotoPicker,
     showPhotoPicker,
     submit,

@@ -15,13 +15,15 @@ import type { trpcClient } from "@/lib/trpc/client/trpc";
 type MediaPage = Awaited<ReturnType<typeof trpcClient.media.index.query>>;
 const transport = vi.hoisted(() => ({
   request: vi.fn<typeof trpcClient.media.index.query>(),
-  accountId: "account-a",
+  accountId: "account-a" as string | undefined,
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpcClient: { media: { index: { query: transport.request } } },
 }));
 vi.mock("@/features/user/admin/use-current-user", () => ({
-  useCurrentUser: () => ({ user: { id: transport.accountId } }),
+  useCurrentUser: () => ({
+    user: transport.accountId ? { id: transport.accountId } : undefined,
+  }),
 }));
 
 import { useMediaQuery } from "@/features/media/admin/media-query";
@@ -93,7 +95,7 @@ describe("media reconciliation with React and TanStack Query", () => {
     }));
     renderMedia();
     await waitForCount(1);
-    const key = ["media", "account-a", { page: 1, limit: 50 }];
+    const key = ["media", "account-a", { limit: 50 }];
     const cached = client.getQueryData(key);
     expect(cached).toBeDefined();
 
@@ -458,7 +460,49 @@ describe("media reconciliation with React and TanStack Query", () => {
     expect(query.hasMore).toBe(false);
   });
 
-  it("starts from the first page on remount with production cache defaults", async () => {
+  it("does not request media or advance pagination without an account", async () => {
+    transport.accountId = undefined;
+    transport.request.mockResolvedValue({ list: [], total: 0 });
+    renderMedia();
+    await act(async () => {
+      query.loadMore();
+      query.retry();
+      query.reset();
+    });
+    expect(transport.request).not.toHaveBeenCalled();
+    expect(query.data).toEqual({ list: [], total: 0 });
+    expect(query.hasMore).toBe(false);
+  });
+
+  it("does not restore discarded pages when a reset is canceled by unmount", async () => {
+    transport.request.mockImplementation(async ({ page }) => ({
+      list: [media(`page-${page}`)],
+      total: 3,
+    }));
+    const view = renderMedia();
+    await waitForCount(1);
+    await act(async () => query.loadMore());
+    await waitForCount(2);
+    const refresh = Promise.withResolvers<MediaPage>();
+    transport.request.mockReturnValueOnce(refresh.promise);
+    await act(async () => query.reset());
+    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    const signal = transport.request.mock.calls[2]?.[1]?.signal;
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+    renderMedia();
+    await waitForFetch();
+    await act(async () =>
+      refresh.resolve({ list: [media("canceled-reset")], total: 3 }),
+    );
+    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 1, 1,
+    ]);
+  });
+
+  it("reuses loaded pages on remount and refreshes them sequentially", async () => {
     transport.request.mockImplementation(async ({ page }) => ({
       list: [media(`page-${page}`)],
       total: 3,
@@ -477,15 +521,26 @@ describe("media reconciliation with React and TanStack Query", () => {
     expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
       1, 2, 3, 1,
     ]);
-    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    expect(query.data.list.map(({ id }) => id)).toEqual([
+      "page-1",
+      "page-2",
+      "page-3",
+    ]);
     await act(async () =>
       refresh.resolve({ list: [media("refreshed-1")], total: 3 }),
     );
     await waitForFetch();
-    expect(query.data.list.map(({ id }) => id)).toEqual(["refreshed-1"]);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 3, 1, 2, 3,
+    ]);
+    expect(query.data.list.map(({ id }) => id)).toEqual([
+      "refreshed-1",
+      "page-2",
+      "page-3",
+    ]);
   });
 
-  it("refreshes only the current page on focus with production cache defaults", async () => {
+  it("refreshes all loaded pages on focus with production cache defaults", async () => {
     focusManager.setFocused(false);
     transport.request.mockImplementation(async ({ page }) => ({
       list: [media(`page-${page}`)],
@@ -498,19 +553,80 @@ describe("media reconciliation with React and TanStack Query", () => {
     await act(async () => query.loadMore());
     await waitForCount(3);
 
-    transport.request.mockResolvedValueOnce({
-      list: [media("refreshed-3")],
+    transport.request.mockImplementation(async ({ page }) => ({
+      list: [media(`refreshed-${page}`)],
       total: 3,
-    });
+    }));
     await act(async () => focusManager.setFocused(true));
     await waitForFetch();
     expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
-      1, 2, 3, 3,
+      1, 2, 3, 1, 2, 3,
     ]);
     expect(query.data.list.map(({ id }) => id)).toEqual([
+      "refreshed-1",
+      "refreshed-2",
+      "refreshed-3",
+    ]);
+  });
+
+  it("shares pages, in-flight requests, and mutation resets between same-account consumers", async () => {
+    client.setDefaultOptions({
+      queries: { retry: false, staleTime: Infinity },
+    });
+    transport.request.mockImplementation(async ({ page }) => ({
+      list: [media(`page-${page}`)],
+      total: 3,
+    }));
+    renderMedia();
+    await waitForCount(1);
+    await act(async () => query.loadMore());
+    await waitForCount(2);
+
+    let pickerQuery: ReturnType<typeof useMediaQuery> | undefined;
+    function Picker() {
+      pickerQuery = useMediaQuery();
+      return (
+        <div>{pickerQuery.data.list.map(({ name }) => name).join(",")}</div>
+      );
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Picker />
+      </QueryClientProvider>,
+    );
+    expect(pickerQuery?.data.list.map(({ id }) => id)).toEqual([
       "page-1",
       "page-2",
-      "refreshed-3",
+    ]);
+
+    const next = Promise.withResolvers<MediaPage>();
+    transport.request.mockReturnValueOnce(next.promise);
+    await act(async () => {
+      query.loadMore();
+      pickerQuery?.loadMore();
+    });
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 3,
+    ]);
+    expect(query.isFetchingMore).toBe(true);
+    expect(pickerQuery?.isFetchingMore).toBe(true);
+    await act(async () => next.resolve({ list: [media("page-3")], total: 3 }));
+    await waitForCount(3);
+    expect(pickerQuery?.data.list).toEqual(query.data.list);
+
+    const refresh = Promise.withResolvers<MediaPage>();
+    transport.request.mockReturnValueOnce(refresh.promise);
+    await act(async () => pickerQuery?.reset());
+    expect(query.data.list.map(({ id }) => id)).toEqual(["page-1"]);
+    expect(pickerQuery?.data.list).toEqual(query.data.list);
+    await act(async () =>
+      refresh.resolve({ list: [media("refreshed")], total: 1 }),
+    );
+    await waitForFetch();
+    expect(query.data.list.map(({ id }) => id)).toEqual(["refreshed"]);
+    expect(pickerQuery?.data.list).toEqual(query.data.list);
+    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
+      1, 2, 3, 1,
     ]);
   });
 });

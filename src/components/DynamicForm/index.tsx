@@ -1,12 +1,7 @@
 "use client";
 
-import React, { useEffect, useImperativeHandle, useRef } from "react";
-import {
-  useForm,
-  FieldValues,
-  UseFormReturn,
-  DefaultValues,
-} from "react-hook-form";
+import React, { useEffect, useRef } from "react";
+import { useForm, DefaultValues } from "react-hook-form";
 import { z, ZodObject, ZodRawShape } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -14,26 +9,19 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/LoadingState";
 
-import { DynamicField, FieldConfig } from "@/components/DynamicForm/DynamicField";
-
-export type DynamicFormRef<T extends FieldValues = FieldValues> = {
-  setValue: UseFormReturn<T>["setValue"];
-  getValues: UseFormReturn<T>["getValues"];
-  reset: UseFormReturn<T>["reset"];
-  setValues: (values: Partial<T>) => void;
-  submit: () => void | Promise<void>;
-};
+import {
+  DynamicField,
+  FieldConfig,
+} from "@/components/DynamicForm/DynamicField";
 
 interface DynamicFormProps<TShape extends ZodRawShape> {
   schema: ZodObject<TShape>;
   fields: FieldConfig[];
-  /** 会话初值；切换记录使用 key，保存后需要替换输入时显式调用 reset。 */
+  /** 会话初值；首次到达后不覆盖本地输入，切换记录或会话使用 key。 */
   defaultValues?: DefaultValues<z.input<ZodObject<TShape>>>;
   onSubmit: (values: z.output<ZodObject<TShape>>) => void | Promise<void>;
-  ref?: React.Ref<DynamicFormRef<z.input<ZodObject<TShape>>>>;
   inline?: boolean;
   submitProps?: React.ComponentProps<typeof Button>;
-  renderSubmitButton?: boolean;
 }
 
 export function DynamicForm<TShape extends ZodRawShape>({
@@ -43,8 +31,6 @@ export function DynamicForm<TShape extends ZodRawShape>({
   onSubmit,
   inline = false,
   submitProps,
-  renderSubmitButton = true,
-  ref,
 }: DynamicFormProps<TShape>) {
   const initializedDefaults = useRef(defaultValues !== undefined);
 
@@ -68,20 +54,6 @@ export function DynamicForm<TShape extends ZodRawShape>({
     }
   }, [defaultValues, form]);
 
-  useImperativeHandle(ref, () => ({
-    setValue: form.setValue,
-    getValues: form.getValues,
-    reset: form.reset,
-    setValues: (values) => {
-      form.reset(
-        { ...form.getValues(), ...values },
-        { keepDefaultValues: true },
-      );
-      void form.trigger();
-    },
-    submit: submitForm,
-  }));
-
   return (
     <Form {...form}>
       <form
@@ -92,22 +64,20 @@ export function DynamicForm<TShape extends ZodRawShape>({
           <DynamicField key={field.name} {...field} />
         ))}
 
-        {renderSubmitButton && (
-          <div className="flex gap-2 justify-center">
-            <Button
-              type="submit"
-              className={`cursor-pointer ${inline ? "" : "mt-2"}`}
-              disabled={isSubmitting}
-              {...submitProps}
-            >
-              {isSubmitting ? (
-                <LoadingState variant="inline" label="处理中..." />
-              ) : (
-                (submitProps?.children ?? "提交")
-              )}
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 justify-center">
+          <Button
+            type="submit"
+            className={`cursor-pointer ${inline ? "" : "mt-2"}`}
+            disabled={isSubmitting}
+            {...submitProps}
+          >
+            {isSubmitting ? (
+              <LoadingState variant="inline" label="处理中..." />
+            ) : (
+              (submitProps?.children ?? "提交")
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );

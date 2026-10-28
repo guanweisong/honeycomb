@@ -2,7 +2,10 @@
 
 import type { ReactNode } from "react";
 import Avatar from "@/components/Avatar";
-import { AdminNavigation, type AdminNavigationItem } from "@/app/admin/_components/AdminNavigation";
+import {
+  AdminNavigation,
+  type AdminNavigationItem,
+} from "@/app/admin/_components/AdminNavigation";
 import { UserDropdown } from "@/features/user/admin/UserDropdown";
 import type { CurrentUser } from "@/features/user/types/user.current";
 
@@ -27,7 +30,7 @@ export function AdminSidebar({
   return (
     <>
       <div className="flex items-center gap-3 p-3">
-        <Avatar url="/logo.jpg" fallback={title} />
+        <Avatar src="/logo.jpg" alt="" fallback={title} />
         <span className="min-w-0 truncate text-sm font-medium text-gray-900">
           {title}
         </span>

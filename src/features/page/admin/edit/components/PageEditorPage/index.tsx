@@ -17,10 +17,7 @@ import type { PageInsert } from "@/features/page/types/page.insert";
 import type { PageRecord } from "@/features/page/types/page.read-model";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
-import {
-  useAdminLayoutActions,
-  useAdminLayoutPageTitle,
-} from "@/components/admin/layout-context";
+import { AdminPageHeader } from "@/components/admin/layout-context";
 import { EditorLoadError } from "@/components/admin/editor-load-error";
 import { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons";
 import { PageEditorForm } from "@/features/page/admin/edit/components/PageEditorForm";
@@ -28,10 +25,7 @@ import { usePageEditorActions } from "@/features/page/admin/edit/page-editor-act
 import { usePageCreationResult } from "@/features/page/admin/edit/use-page-creation-result";
 import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
 import { trpc } from "@/lib/trpc/client/trpc";
-import {
-  getPageEditorId,
-  toPageEditorFormValues,
-} from "@/features/page/admin/edit/transforms/page-editor-transforms";
+import { toPageEditorFormValues } from "@/features/page/admin/edit/transforms/page-editor-transforms";
 import { useLocalDraft } from "@/components/admin/draft/use-local-draft";
 import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
 import { useCurrentUser } from "@/features/user/admin/use-current-user";
@@ -48,7 +42,7 @@ import {
 } from "@/features/page/admin/edit/page-draft";
 
 export function PageEditorPage() {
-  const id = getPageEditorId(useSearchParams());
+  const id = useSearchParams().get("id");
   const { user } = useCurrentUser();
   const actorId = user?.id;
   const router = useRouter();
@@ -338,115 +332,119 @@ export function PageEditorPage() {
       }
     }
   };
-  useAdminLayoutPageTitle(
-    id ? "修改页面" : "添加新页面",
-    `${id ?? "new"}:${actions.loading}`,
-  );
-  useAdminLayoutActions(
-    loadError ? null : (
-      <div className="flex flex-wrap gap-3">
-        <PageEditorActionButtons
-          isEdit={!!id}
-          loading={loading || !!problem || !!attempt}
-          status={baseStatus}
-          onSubmit={submit}
-        />
-      </div>
-    ),
-    `${identity}:${user?.level}:${baseStatus}:${loading}:${Boolean(loadError)}:${baseVersion}:${problem}:${attempt?.creationToken}`,
-  );
-  if (loadError)
-    return (
-      <EditorLoadError
-        kind="页面"
-        notFound={loadError.data?.code === "NOT_FOUND"}
-        listHref="/admin/page"
-        onRetry={query.refetch}
-      />
-    );
-  return (
-    <div inert={isLoadingDetail} aria-busy={isLoadingDetail}>
-      {problem && (
-        <div role="status">
-          <p>
-            {problem === "conflict"
-              ? "服务器版本已改变，本地编辑仍保留。"
-              : "保存结果暂时无法确认，本地编辑仍保留。内容一致也不能证明历史请求已执行。"}
-          </p>
-          {id && (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void loadLatest()}
-            >
-              保留本地内容并加载最新版本
-            </button>
-          )}
-        </div>
-      )}
-      {preserved && (
-        <div role="status">
-          已保留加载前的本地内容。
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => {
-              applyDraft(preserved);
-              setProblem("conflict");
-            }}
-          >
-            恢复本地内容以核对
-          </button>
-        </div>
-      )}
-      {attempt && (
-        <div role="status">
-          <p>
-            存在尚未确认的创建请求。重试只使用原始内容，不包含之后的编辑。查无结果不代表从未创建，已删除的页面可能被重新创建；时间较久或有删除迹象时请先人工核对列表，不要重试。
-          </p>
-          <a href="/admin/page" target="_blank" rel="noreferrer">
-            核对页面列表
-          </a>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void recoverCreation(false)}
-          >
-            核对上次结果并打开
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void recoverCreation(true)}
-          >
-            已核对，重试原始创建
-          </button>
-          <Dialog
-            trigger={
-              <button type="button" disabled={loading}>
-                已核对列表，开始新的创建
-              </button>
-            }
-            title="确认开始新的创建？"
-            description="请先核对页面列表和上次结果。新建意图不会复用原凭据，可能产生重复页面；当前输入会保留，不会立即提交。"
-            onOK={() => {
-              if (
-                !actorId ||
-                !clearPageCreationAttempt(actorId, attempt.creationToken)
-              ) {
-                toast.error("无法清除原创建凭据，请保留当前页面并稍后重试");
-                return false;
-              }
-              setAttempt(null);
-              setProblem(null);
-              foundCreation.current = false;
-              return true;
-            }}
+  const header = (
+    <AdminPageHeader title={id ? "修改页面" : "添加新页面"}>
+      {loadError ? null : (
+        <div className="flex flex-wrap gap-3">
+          <PageEditorActionButtons
+            isEdit={!!id}
+            loading={loading || !!problem || !!attempt}
+            status={baseStatus}
+            onSubmit={submit}
           />
         </div>
       )}
-      <LocalDraftPrompt {...draft} />
-      <PageEditorForm form={form} />
-    </div>
+    </AdminPageHeader>
+  );
+
+  if (loadError)
+    return (
+      <>
+        {header}
+        <EditorLoadError
+          kind="页面"
+          notFound={loadError.data?.code === "NOT_FOUND"}
+          listHref="/admin/page"
+          onRetry={query.refetch}
+        />
+      </>
+    );
+  return (
+    <>
+      {header}
+      <div inert={isLoadingDetail} aria-busy={isLoadingDetail}>
+        {problem && (
+          <div role="status">
+            <p>
+              {problem === "conflict"
+                ? "服务器版本已改变，本地编辑仍保留。"
+                : "保存结果暂时无法确认，本地编辑仍保留。内容一致也不能证明历史请求已执行。"}
+            </p>
+            {id && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void loadLatest()}
+              >
+                保留本地内容并加载最新版本
+              </button>
+            )}
+          </div>
+        )}
+        {preserved && (
+          <div role="status">
+            已保留加载前的本地内容。
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                applyDraft(preserved);
+                setProblem("conflict");
+              }}
+            >
+              恢复本地内容以核对
+            </button>
+          </div>
+        )}
+        {attempt && (
+          <div role="status">
+            <p>
+              存在尚未确认的创建请求。重试只使用原始内容，不包含之后的编辑。查无结果不代表从未创建，已删除的页面可能被重新创建；时间较久或有删除迹象时请先人工核对列表，不要重试。
+            </p>
+            <a href="/admin/page" target="_blank" rel="noreferrer">
+              核对页面列表
+            </a>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void recoverCreation(false)}
+            >
+              核对上次结果并打开
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void recoverCreation(true)}
+            >
+              已核对，重试原始创建
+            </button>
+            <Dialog
+              trigger={
+                <button type="button" disabled={loading}>
+                  已核对列表，开始新的创建
+                </button>
+              }
+              title="确认开始新的创建？"
+              description="请先核对页面列表和上次结果。新建意图不会复用原凭据，可能产生重复页面；当前输入会保留，不会立即提交。"
+              onOK={() => {
+                if (
+                  !actorId ||
+                  !clearPageCreationAttempt(actorId, attempt.creationToken)
+                ) {
+                  toast.error("无法清除原创建凭据，请保留当前页面并稍后重试");
+                  return false;
+                }
+                setAttempt(null);
+                setProblem(null);
+                foundCreation.current = false;
+                return true;
+              }}
+            />
+          </div>
+        )}
+        <LocalDraftPrompt {...draft} />
+        <PageEditorForm form={form} />
+      </div>
+    </>
   );
 }

@@ -7,7 +7,9 @@ import { DynamicField } from "@/components/DynamicForm/DynamicField";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 
 // Keep the real editor and form primitives; toolbar actions are unrelated here.
-vi.mock("@/components/editor/config/toolbar-items", () => ({ toolbarItems: [] }));
+vi.mock("@/components/editor/config/toolbar-items", () => ({
+  toolbarItems: [],
+}));
 
 function TestForm({
   type,
@@ -21,15 +23,11 @@ function TestForm({
   disabled?: boolean;
 }) {
   const value =
-    type === "switch"
-      ? false
-      : type === "calendar"
-        ? "2026-10-15T00:00:00.000Z"
-        : type === "calendar-range"
-          ? { from: "2026-10-15", to: "2026-10-16" }
-          : type === "richText"
-            ? "<p>Draft</p>"
-            : "draft";
+    type === "calendar"
+      ? "2026-10-15T00:00:00.000Z"
+      : type === "richText"
+        ? "<p>Draft</p>"
+        : "draft";
   const form = useForm<Record<string, unknown>>({
     defaultValues: { value: multiLang ? { zh: value, en: value } : value },
   });
@@ -46,7 +44,7 @@ function TestForm({
         name="value"
         label={<span>Field label</span>}
         type={type}
-        disabled={() => disabled}
+        disabled={disabled}
         multiLang={multiLang}
         options={[{ value: "draft", label: "Draft" }]}
       />
@@ -60,9 +58,7 @@ const fieldCases: { type: FieldConfig["type"]; selector: string }[] = [
   { type: "textarea", selector: "textarea" },
   { type: "select", selector: "button[role=combobox]" },
   { type: "radio", selector: "[role=radiogroup]" },
-  { type: "switch", selector: "button[role=switch]" },
   { type: "calendar", selector: "input" },
-  { type: "calendar-range", selector: "input" },
   { type: "richText", selector: ".tiptap[contenteditable]" },
 ];
 

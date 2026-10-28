@@ -104,6 +104,11 @@ async function setup(
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);
+  cleanups.push(async () => {
+    await act(async () => root.unmount());
+    queryClient.clear();
+    container.remove();
+  });
   function wrap(children: React.ReactNode) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -124,11 +129,6 @@ async function setup(
   await settle();
   await act(async () => {
     await waitFor(() => expect(container.textContent).toContain("first"));
-  });
-  cleanups.push(async () => {
-    await act(async () => root.unmount());
-    queryClient.clear();
-    container.remove();
   });
   const editLabel = resource === "post" ? "编辑文章" : "编辑页面";
   function link() {

@@ -1,8 +1,8 @@
 import {
   Permission,
+  can,
   type Permission as PermissionValue,
 } from "@/lib/auth/permissions";
-import { authorize } from "@/lib/auth/authorize";
 
 export const ADMIN_PATHNAME_HEADER = "x-honeycomb-admin-pathname";
 
@@ -33,9 +33,9 @@ export function getAdminRoutePermission(
   if (!Object.prototype.hasOwnProperty.call(adminRouteCapabilities, pathname)) {
     return undefined;
   }
-  return Object.entries(adminRouteCapabilities).find(
-    ([path]) => path === pathname,
-  )?.[1];
+  return adminRouteCapabilities[
+    pathname as keyof typeof adminRouteCapabilities
+  ];
 }
 
 export function canAccessAdminRoute(
@@ -43,5 +43,5 @@ export function canAccessAdminRoute(
   pathname: string,
 ): boolean {
   const permission = getAdminRoutePermission(pathname);
-  return permission !== undefined && authorize({ role, permission });
+  return permission !== undefined && can(role, permission);
 }

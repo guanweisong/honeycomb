@@ -3,14 +3,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { PostStatus } from "@/features/post/types/post.status";
-import { PostType } from "@/features/post/types/post.type";
-import type { PostDetailResult as PostDetailViewModel } from "@/features/post/types/post.read-model";
-
-type EditorDetail = Pick<
-  PostDetailViewModel,
-  "id" | "categoryId" | "coverId" | "type"
-> &
-  Partial<PostDetailViewModel>;
+import {
+  createPostEditorTestFixture,
+  type PostEditorTestDetail as EditorDetail,
+} from "@tests/helpers/post-editor-test-helpers";
 
 const mocks = vi.hoisted(() => ({
   userId: "draft-user",
@@ -68,39 +64,7 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
   let container: HTMLDivElement;
   let root: Root;
   let editor: ReturnType<typeof usePostEditor> | undefined;
-  const postId = "123456789012345678901234";
-  const cover = {
-    id: "cover-1",
-    key: "cover.jpg",
-    name: "cover.jpg",
-    size: 100,
-    type: "image/jpeg",
-    url: "/cover.jpg",
-    color: null,
-    height: 1080,
-    width: 1920,
-    createdAt: null,
-    updatedAt: null,
-  };
-  const tag = {
-    id: "111111111111111111111111",
-    name: { zh: "原标签", en: "Original tag" },
-    createdAt: null,
-    updatedAt: null,
-  };
-  const originalDetail: EditorDetail = {
-    id: postId,
-    version: 0,
-    categoryId: "category-1",
-    coverId: cover.id,
-    cover,
-    type: PostType.ARTICLE,
-    title: { zh: "原始标题" },
-    galleryStyles: [tag],
-    movieActors: [tag],
-    movieDirectors: [tag],
-    movieStyles: [tag],
-  };
+  const { postId, cover, tag, originalDetail } = createPostEditorTestFixture();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -155,10 +119,18 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
       );
       current.form.setValue("coverId", selectedCover.id, { shouldDirty: true });
       current.setCoverPreview(selectedCover);
-      current.setGalleryStyles([selectedTag]);
-      current.setMovieActors([selectedTag]);
-      current.setMovieDirectors([selectedTag]);
-      current.setMovieStyles([selectedTag]);
+      current.form.setValue("galleryStyles", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieActors", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieDirectors", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieStyles", [selectedTag], {
+        shouldDirty: true,
+      });
     });
     mocks.detail = { ...originalDetail, title: { zh: "后台更新标题" } };
     await rerenderEditor(postId);
@@ -168,16 +140,16 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     expect(current.form.getValues("coverId")).toBe(selectedCover.id);
     expect(current.form.formState.isDirty).toBe(true);
     expect(current.photoPickerProps.cover).toEqual(selectedCover);
-    expect(current.galleryStyles).toEqual([
+    expect(current.form.getValues("galleryStyles")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieActors).toEqual([
+    expect(current.form.getValues("movieActors")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieDirectors).toEqual([
+    expect(current.form.getValues("movieDirectors")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieStyles).toEqual([
+    expect(current.form.getValues("movieStyles")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
   });
@@ -201,10 +173,10 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     const current = requireDefined(editor);
     expect(current.form.getValues("title")).toEqual(refreshed.title);
     expect(current.photoPickerProps.cover).toEqual(refreshed.cover);
-    expect(current.galleryStyles).toEqual([]);
-    expect(current.movieActors).toEqual([]);
-    expect(current.movieDirectors).toEqual([]);
-    expect(current.movieStyles).toEqual([]);
+    expect(current.form.getValues("galleryStyles")).toEqual([]);
+    expect(current.form.getValues("movieActors")).toEqual([]);
+    expect(current.form.getValues("movieDirectors")).toEqual([]);
+    expect(current.form.getValues("movieStyles")).toEqual([]);
     expect(current.form.formState.isDirty).toBe(false);
   });
 
@@ -233,10 +205,10 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
       });
       expect(current.form.formState.isDirty).toBe(false);
       expect(current.photoPickerProps.cover).toBeUndefined();
-      expect(current.galleryStyles).toEqual([]);
-      expect(current.movieActors).toEqual([]);
-      expect(current.movieDirectors).toEqual([]);
-      expect(current.movieStyles).toEqual([]);
+      expect(current.form.getValues("galleryStyles")).toEqual([]);
+      expect(current.form.getValues("movieActors")).toEqual([]);
+      expect(current.form.getValues("movieDirectors")).toEqual([]);
+      expect(current.form.getValues("movieStyles")).toEqual([]);
 
       if (nextId) {
         mocks.detail = {
@@ -250,7 +222,9 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
           zh: "新文章",
         });
         expect(requireDefined(editor).photoPickerProps.cover).toEqual(cover);
-        expect(requireDefined(editor).galleryStyles).toEqual([tag]);
+        expect(requireDefined(editor).form.getValues("galleryStyles")).toEqual([
+          tag,
+        ]);
       }
     },
   );
@@ -287,10 +261,10 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
         { shouldDirty: true },
       );
       current.setCoverPreview(undefined);
-      current.setGalleryStyles([]);
-      current.setMovieActors([]);
-      current.setMovieDirectors([]);
-      current.setMovieStyles([]);
+      current.form.setValue("galleryStyles", [], { shouldDirty: true });
+      current.form.setValue("movieActors", [], { shouldDirty: true });
+      current.form.setValue("movieDirectors", [], { shouldDirty: true });
+      current.form.setValue("movieStyles", [], { shouldDirty: true });
     });
     const savedDetail = {
       ...originalDetail,
@@ -310,10 +284,10 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     expect(current.form.getValues("status")).toBe(PostStatus.PUBLISHED);
     expect(current.form.formState.isDirty).toBe(false);
     expect(current.photoPickerProps.cover).toEqual(cover);
-    expect(current.galleryStyles).toEqual([tag]);
-    expect(current.movieActors).toEqual([tag]);
-    expect(current.movieDirectors).toEqual([tag]);
-    expect(current.movieStyles).toEqual([tag]);
+    expect(current.form.getValues("galleryStyles")).toEqual([tag]);
+    expect(current.form.getValues("movieActors")).toEqual([tag]);
+    expect(current.form.getValues("movieDirectors")).toEqual([tag]);
+    expect(current.form.getValues("movieStyles")).toEqual([tag]);
   });
 
   it("keeps the saved values when refetch fails with an older cached detail", async () => {
@@ -326,10 +300,18 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
       current.form.setValue("title", { zh: "保存标题" }, { shouldDirty: true });
       current.form.setValue("coverId", selectedCover.id, { shouldDirty: true });
       current.setCoverPreview(selectedCover);
-      current.setGalleryStyles([selectedTag]);
-      current.setMovieActors([selectedTag]);
-      current.setMovieDirectors([selectedTag]);
-      current.setMovieStyles([selectedTag]);
+      current.form.setValue("galleryStyles", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieActors", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieDirectors", [selectedTag], {
+        shouldDirty: true,
+      });
+      current.form.setValue("movieStyles", [selectedTag], {
+        shouldDirty: true,
+      });
     });
     mocks.refetch.mockResolvedValue({
       data: originalDetail,
@@ -349,16 +331,16 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     expect(current.form.getValues("status")).toBe(PostStatus.PUBLISHED);
     expect(current.form.formState.isDirty).toBe(false);
     expect(current.photoPickerProps.cover).toEqual(selectedCover);
-    expect(current.galleryStyles).toEqual([
+    expect(current.form.getValues("galleryStyles")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieActors).toEqual([
+    expect(current.form.getValues("movieActors")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieDirectors).toEqual([
+    expect(current.form.getValues("movieDirectors")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
-    expect(current.movieStyles).toEqual([
+    expect(current.form.getValues("movieStyles")).toEqual([
       expect.objectContaining({ id: selectedTag.id, name: selectedTag.name }),
     ]);
   });

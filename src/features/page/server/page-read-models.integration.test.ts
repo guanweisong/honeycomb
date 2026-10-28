@@ -10,9 +10,17 @@ import { MultiLangEnum } from "@/lib/i18n/i18n";
 import type { Database } from "@/lib/db/db";
 import {
   listPages,
+  listPublishedPageSitemapEntries,
+  countPublishedPages,
   listPageSummaries,
   listPageMenuOptions,
 } from "@/features/page/server/page-queries";
+import { eq } from "drizzle-orm";
+import {
+  listPublishedPostSitemapEntries,
+  countPublishedPosts,
+} from "@/features/post/server/post-queries";
+import { PostStatus } from "@/features/post/types/post.status";
 import { PageStatus } from "@/features/page/types/page.status";
 vi.mock("@/lib/observability/server", () => ({
   observeDbOperation: (
@@ -140,6 +148,79 @@ it("measures the same 101-page fixture without selecting or serializing bodies f
       }) +
       "\n",
   );
+  statements = [];
+  const publishedPages = (
+    await Promise.all(
+      [1, 2, 3].map((page) => listPublishedPageSitemapEntries(db, page, 25)),
+    )
+  ).flat();
+  expect(await countPublishedPages(db)).toBe(51);
+  expect(publishedPages.map(({ id }) => id).sort()).toEqual(
+    full.list
+      .filter(({ status }) => status === PageStatus.PUBLISHED)
+      .map(({ id }) => id)
+      .sort(),
+  );
+  expect(new Set(publishedPages.map(({ id }) => id)).size).toBe(51);
+  expect(
+    publishedPages.every(
+      (row) =>
+        Object.keys(row).sort().join(",") === "id,updatedAt" &&
+        row.updatedAt === full.list.find(({ id }) => id === row.id)?.updatedAt,
+    ),
+  ).toBe(true);
+  expect(statements).toHaveLength(4);
+  expect(
+    statements.some((query) =>
+      /content|translation|media|user|creation_token/.test(query),
+    ),
+  ).toBe(false);
+  expect(statements.at(-1)).not.toMatch(/limit|offset/);
+  process.stdout.write(
+    `CONTENT-01 sitemap ${JSON.stringify({ publishedPages: 51, queriesForThreeShardsAndCount: statements.length, bytes: Buffer.byteLength(JSON.stringify(publishedPages)) })}\n`,
+  );
+  await db
+    .update(schema.page)
+    .set({ status: PageStatus.DRAFT })
+    .where(eq(schema.page.id, "page-0"));
+  expect(await countPublishedPages(db)).toBe(50);
+  expect(
+    (await listPublishedPageSitemapEntries(db, 1, 100)).some(
+      ({ id }) => id === "page-0",
+    ),
+  ).toBe(false);
+  await db.update(schema.page).set({ status: PageStatus.DRAFT });
+  expect(await countPublishedPages(db)).toBe(0);
+  expect(await listPublishedPageSitemapEntries(db, 1, 100)).toEqual([]);
+
+  // A minimal real SQL table deliberately has no bodies/relations to hydrate.
+  await client?.executeMultiple(
+    `CREATE TABLE post (id TEXT PRIMARY KEY, status TEXT, updated_at TEXT); INSERT INTO post (id, status) VALUES ${Array.from({ length: 205 }, (_, index) => `('post-${String(index).padStart(3, "0")}', '${index % 2 ? PostStatus.DRAFT : PostStatus.PUBLISHED}')`).join(",")};`,
+  );
+  statements = [];
+  const posts = [
+    ...(await listPublishedPostSitemapEntries(db, 1, 100)),
+    ...(await listPublishedPostSitemapEntries(db, 2, 100)),
+  ];
+  expect(await countPublishedPosts(db)).toBe(103);
+  expect(posts.map(({ id }) => id)).toEqual(
+    Array.from(
+      { length: 103 },
+      (_, index) => `post-${String(index * 2).padStart(3, "0")}`,
+    ),
+  );
+  expect(statements).toHaveLength(3);
+  expect(
+    statements.some((query) =>
+      /content|translation|media|user|creation_token/.test(query),
+    ),
+  ).toBe(false);
+  await db
+    .update(schema.post)
+    .set({ status: PostStatus.DRAFT })
+    .where(eq(schema.post.id, "post-200"));
+  expect(await countPublishedPosts(db)).toBe(102);
+  expect(await listPublishedPostSitemapEntries(db, 3, 100)).toEqual([]);
 });
 it("filters guest menu options and summaries using the same publication visibility", async () => {
   const menu = await listPageMenuOptions(

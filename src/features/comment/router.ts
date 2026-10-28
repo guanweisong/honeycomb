@@ -7,7 +7,6 @@ import {
   permissionProcedure,
   publicProcedure,
   createTRPCRouter,
-  mapApplicationError,
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { DeleteBatchSchema } from "@/lib/validation/delete.batch.schema";
@@ -102,7 +101,7 @@ export const commentRouter = createTRPCRouter({
         createCommentQueryRepository(ctx.db),
         createCommentTargetRepository(ctx.db),
         input,
-      ).catch(mapApplicationError),
+      ),
     ),
 
   create: createCommentProcedure
@@ -127,7 +126,7 @@ export const commentRouter = createTRPCRouter({
           userAgent: ctx.header.get("user-agent") ?? null,
         },
         input,
-      ).catch(mapApplicationError);
+      );
     }),
 
   update: permissionProcedure(Permission.commentModerate)
@@ -137,7 +136,7 @@ export const commentRouter = createTRPCRouter({
         createCommentCommandRepository(ctx.db),
         input,
         publicContentInvalidator,
-      ).catch(mapApplicationError);
+      );
       return result;
     }),
 

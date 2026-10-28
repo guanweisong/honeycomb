@@ -10,12 +10,18 @@ vi.mock("resend", () => ({
     emails = { send: sendMock };
   },
 }));
-vi.mock("@/features/comment/notifications/templates/AdminCommentEmailMessage", () => ({
-  default: () => null,
-}));
-vi.mock("@/features/comment/notifications/templates/ReplyCommentEmailMessage", () => ({
-  default: () => null,
-}));
+vi.mock(
+  "@/features/comment/notifications/templates/AdminCommentEmailMessage",
+  () => ({
+    default: () => null,
+  }),
+);
+vi.mock(
+  "@/features/comment/notifications/templates/ReplyCommentEmailMessage",
+  () => ({
+    default: () => null,
+  }),
+);
 
 import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
@@ -44,12 +50,15 @@ const payload = {
 describe("comment email observability", () => {
   beforeEach(() => {
     sendMock.mockReset();
-    process.env.RESEND_API_KEY = "test-key";
-    process.env.RESEND_FROM_EMAIL = "sender@example.com";
-    process.env.ADMIN_EMAIL = "admin@example.com";
+    vi.stubEnv("RESEND_API_KEY", "test-key");
+    vi.stubEnv("RESEND_FROM_EMAIL", "sender@example.com");
+    vi.stubEnv("ADMIN_EMAIL", "admin@example.com");
   });
 
-  afterEach(() => configureObservability());
+  afterEach(() => {
+    configureObservability();
+    vi.unstubAllEnvs();
+  });
 
   it("records email success without recipient labels", async () => {
     const memory = createMemoryObservability();

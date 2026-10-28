@@ -1,6 +1,6 @@
 import { getAdminUser } from "@/app/admin/lib/admin-auth";
 import { getAuthProviders } from "@/app/admin/lib/auth-providers";
-import { getSiteSetting } from "@/app/lib/server/site-setting";
+import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "@/features/user/login/components/LoginClient";
@@ -26,7 +26,7 @@ async function LoginContent({
   }
 
   const [setting, providers] = await Promise.all([
-    getSiteSetting(),
+    getPublicSetting(),
     getAuthProviders(),
   ]);
   const targetUrl = normalizeAdminCallback((await searchParams).targetUrl);

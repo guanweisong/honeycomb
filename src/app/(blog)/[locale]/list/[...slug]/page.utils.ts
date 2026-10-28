@@ -14,14 +14,12 @@ const PAGE_SIZE = 10;
 
 type ListContextInput = {
   locale: MultiLangEnum;
-  menu?: Awaited<ReturnType<typeof getPublicMenu>>;
   slug?: string[];
 };
 
 /** 将动态列表路径解析为唯一的查询条件和本地化标题上下文。 */
 export async function resolveListContext({
   locale,
-  menu,
   slug = [],
 }: ListContextInput) {
   const type = slug[0];
@@ -44,8 +42,8 @@ export async function resolveListContext({
 
   switch (type) {
     case "category": {
-      const items = menu?.list ?? [];
       const paths = slug.slice(1);
+      const items = paths.length ? (await getPublicMenu()).list : [];
       const category = paths.length
         ? items.find((item) => item.path === typeValue)
         : undefined;
@@ -55,7 +53,6 @@ export async function resolveListContext({
         // PAGE/CUSTOM ancestors whose paths are null.
         const canonicalPaths = getCurrentPathOfMenu({
           id: category.id,
-          familyProp: "path",
           menu: items,
         });
         if (

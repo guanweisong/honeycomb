@@ -48,9 +48,6 @@ describe("dashboard statistics", () => {
       }
       return db;
     });
-    for (const count of ["2", 3, null, "invalid", 1, "4", 0, 8, 7, "6", 5]) {
-      db.where.mockResolvedValueOnce([{ count }]);
-    }
     db.groupBy.mockResolvedValue([
       { authorId: "named", count: "9" },
       { authorId: "unnamed", count: "2" },
@@ -105,7 +102,6 @@ describe("dashboard statistics", () => {
         ? { from: vi.fn().mockResolvedValue([]) }
         : db,
     );
-    db.where.mockResolvedValue([]);
     db.groupBy.mockResolvedValue([]);
     const result = await getStatistics(asMockDatabase(db));
     expect(

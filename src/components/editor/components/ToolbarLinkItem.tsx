@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,13 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
 
-  useEffect(() => {
-    if (open) {
+  const onOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       const href: unknown = editor.getAttributes("link").href;
       setUrl(typeof href === "string" ? href : "");
     }
-  }, [open, editor]);
+    setOpen(nextOpen);
+  };
 
   const apply = () => {
     const chain = editor.chain().focus().extendMarkRange("link");
@@ -38,7 +39,7 @@ export function ToolbarLinkItem({ editor }: { editor: Editor }) {
       label="超链接"
       active={editor.isActive("link")}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={onOpenChange}
     >
       <div className="space-y-2">
         <Input

@@ -6,12 +6,10 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   DeleteObjectsCommand,
-  type PutObjectCommandInput,
   type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
 import { Readable, addAbortSignal } from "node:stream";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { clientEnv } from "@/env/client";
 import { getR2Env } from "@/env/server";
 import { observeExternalServiceOperation } from "@/lib/observability/server";
 
@@ -42,10 +40,6 @@ interface DeleteMultipleObjectParams {
 }
 
 class R2Storage {
-  static getPublicAssetUrl = (key: string) => {
-    return `${clientEnv.NEXT_PUBLIC_ASSET_URL}/${key}`;
-  };
-
   /**
    * 实例初始化
    */
@@ -63,31 +57,6 @@ class R2Storage {
         secretAccessKey: r2.secretAccessKey,
       },
     });
-  };
-
-  /**
-   * 上传文件
-   * @param params
-   */
-  static putObject = async (params: PutObjectCommandInput): Promise<string> => {
-    const { Key, Body, ContentType } = params;
-    if (!Key) throw new Error("Object storage key is required");
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
-    await observeExternalServiceOperation("object-storage", "put", () =>
-      withR2Deadline((abortSignal) =>
-        R2Storage.createClient().send(
-          new PutObjectCommand({
-            Bucket: r2.bucketName,
-            ContentType,
-            Key,
-            Body,
-          }),
-          { abortSignal },
-        ),
-      ),
-    );
-    return R2Storage.getPublicAssetUrl(Key);
   };
 
   /**

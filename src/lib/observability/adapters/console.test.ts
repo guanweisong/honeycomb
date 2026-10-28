@@ -4,20 +4,24 @@ import { requireDefined } from "@tests/helpers/require-defined";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LogEvent } from "@/lib/observability/core/names";
-import { createConsoleLogger } from "@/lib/observability/adapters/console";
+import { createConsoleLogSink } from "@/lib/observability/adapters/console";
 
-describe("createConsoleLogger", () => {
+import { createSafeLogger } from "@/lib/observability/core/safe-adapters";
+
+describe("createConsoleLogSink", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   it("writes a single-line JSON event with stable common fields", () => {
     const output: string[] = [];
-    const logger = createConsoleLogger({
-      service: "honeycomb",
-      environment: "test",
-      write: (line) => output.push(line),
-    });
+    const logger = createSafeLogger(
+      createConsoleLogSink({
+        service: "honeycomb",
+        environment: "test",
+        write: (line) => output.push(line),
+      }),
+    );
 
     logger.warn(LogEvent.requestFailed, {
       requestId: "req-1",
@@ -38,11 +42,13 @@ describe("createConsoleLogger", () => {
   });
 
   it("fails open when its output sink throws", () => {
-    const logger = createConsoleLogger({
-      write: () => {
-        throw new Error("stdout unavailable");
-      },
-    });
+    const logger = createSafeLogger(
+      createConsoleLogSink({
+        write: () => {
+          throw new Error("stdout unavailable");
+        },
+      }),
+    );
 
     expect(() => logger.info(LogEvent.requestStarted)).not.toThrow();
   });
@@ -50,6 +56,8 @@ describe("createConsoleLogger", () => {
   it("creates a logger without Node process globals", () => {
     vi.stubGlobal("process", undefined);
 
-    expect(() => createConsoleLogger({ write: () => undefined })).not.toThrow();
+    expect(() =>
+      createConsoleLogSink({ write: () => undefined }),
+    ).not.toThrow();
   });
 });

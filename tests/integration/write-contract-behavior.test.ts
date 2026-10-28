@@ -9,6 +9,7 @@ import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-v
 describe("唯一写入契约及边界行为", () => {
   it.each([
     [
+      "link",
       LinkInsertSchema,
       {
         url: "https://example.test",
@@ -18,6 +19,7 @@ describe("唯一写入契约及边界行为", () => {
       },
     ],
     [
+      "category",
       CategoryInsertSchema,
       {
         title: { en: "Category", zh: "分类" },
@@ -26,7 +28,7 @@ describe("唯一写入契约及边界行为", () => {
         status: "BROKEN",
       },
     ],
-  ])("状态写入契约拒绝未知值", (schema, input) => {
+  ])("%s 状态写入契约拒绝未知值", (_name, schema, input) => {
     expect(schema.safeParse(input).success).toBe(false);
   });
   it("指标 namespace 白名单引用缓存目录", () => {

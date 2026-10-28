@@ -1,13 +1,11 @@
 import { isValidElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 
 vi.mock("@/app/(blog)/_components/Header", () => ({ default: () => null }));
 vi.mock("@/app/(blog)/_components/Footer", () => ({ default: () => null }));
 vi.mock("@/app/(blog)/_components/BackToTop", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/_components/ThemeProvider", () => ({
-  default: ({ children }: { children: ReactNode }) => children,
-}));
 vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: vi.fn(),
 }));
@@ -26,6 +24,15 @@ function countToasters(node: ReactNode): number {
   return (node.type === Toaster ? 1 : 0) + countToasters(node.props.children);
 }
 
+function findTheme(
+  node: ReactNode,
+): React.ReactElement<Record<string, unknown>> | undefined {
+  if (Array.isArray(node)) return node.map(findTheme).find(Boolean);
+  if (!isValidElement<{ children?: ReactNode }>(node)) return undefined;
+  if (node.type === ThemeProvider) return node;
+  return findTheme(node.props.children);
+}
+
 describe("public feedback host", () => {
   it("mounts one toast host for public mutation and captcha feedback", async () => {
     const layout = await LocaleLayout({
@@ -33,5 +40,11 @@ describe("public feedback host", () => {
       params: Promise.resolve({ locale: "en" }),
     });
     expect(countToasters(layout)).toBe(1);
+    expect(findTheme(layout)?.props).toMatchObject({
+      attribute: "class",
+      defaultTheme: "system",
+      enableSystem: true,
+      disableTransitionOnChange: true,
+    });
   });
 });

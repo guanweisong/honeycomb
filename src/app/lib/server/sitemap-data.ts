@@ -51,21 +51,31 @@ export function getStaticSitemapUrls(baseUrl: string): SitemapUrl[] {
 
 export const getCachedSitemapShard = unstable_cache(
   async (baseUrl: string, shard: number) => {
-    // 延迟加载 tRPC，避免 sitemap -> tRPC context -> auth -> database hooks
-    // 与认证 Route Handler 之间在生产构建阶段形成循环模块初始化。
-    const { createServerClient } = await import("@/app/_trpc/server");
-    const serverClient = await createServerClient();
+    // Keep data/auth initialization lazy: route discovery must remain database-free.
+    const [
+      { getDb },
+      { listPublishedPostSitemapEntries },
+      { listPublishedPageSitemapEntries },
+    ] = await Promise.all([
+      import("@/lib/db/db"),
+      import("@/features/post/server/post-queries"),
+      import("@/features/page/server/page-queries"),
+    ]);
+    const db = getDb();
     const page = shard + 1;
     const [menu, posts, pages] = await Promise.all([
-      shard === 0 ? serverClient.menu.index() : Promise.resolve(null),
-      serverClient.post.index({ page, limit: SITEMAP_BATCH_SIZE }),
-      serverClient.page.index({ page, limit: SITEMAP_BATCH_SIZE }),
+      shard === 0
+        ? import("@/app/_trpc/server").then(async ({ createServerClient }) =>
+            (await createServerClient()).menu.index(),
+          )
+        : Promise.resolve(null),
+      listPublishedPostSitemapEntries(db, page, SITEMAP_BATCH_SIZE),
+      listPublishedPageSitemapEntries(db, page, SITEMAP_BATCH_SIZE),
     ]);
     const categoryMenus =
       menu?.list.flatMap((item) => {
         const path = getCurrentPathOfMenu({
           id: item.id,
-          familyProp: "path",
           menu: menu.list,
         })
           .join("/")
@@ -89,7 +99,7 @@ export const getCachedSitemapShard = unstable_cache(
           priority: 0.8,
         },
       ]),
-      ...posts.list.flatMap((post) => [
+      ...posts.flatMap((post) => [
         {
           url: `${baseUrl}/zh/archives/${post.id}`,
           lastModified: new Date(post.updatedAt ?? Date.now()),
@@ -103,7 +113,7 @@ export const getCachedSitemapShard = unstable_cache(
           priority: 0.7,
         },
       ]),
-      ...pages.list.flatMap((pageItem) => [
+      ...pages.flatMap((pageItem) => [
         {
           url: `${baseUrl}/zh/pages/${pageItem.id}`,
           lastModified: new Date(pageItem.updatedAt ?? Date.now()),
@@ -133,17 +143,19 @@ export const getCachedSitemapShard = unstable_cache(
 export const getCachedSitemapShardCount = unstable_cache(
   async (baseUrl: string) => {
     void baseUrl;
-    const { createServerClient } = await import("@/app/_trpc/server");
-    const serverClient = await createServerClient();
+    const [{ getDb }, { countPublishedPosts }, { countPublishedPages }] =
+      await Promise.all([
+        import("@/lib/db/db"),
+        import("@/features/post/server/post-queries"),
+        import("@/features/page/server/page-queries"),
+      ]);
+    const db = getDb();
     const [posts, pages] = await Promise.all([
-      serverClient.post.index({ page: 1, limit: 1 }),
-      serverClient.page.index({ page: 1, limit: 1 }),
+      countPublishedPosts(db),
+      countPublishedPages(db),
     ]);
 
-    return Math.max(
-      1,
-      Math.ceil(Math.max(posts.total, pages.total) / SITEMAP_BATCH_SIZE),
-    );
+    return Math.max(1, Math.ceil(Math.max(posts, pages) / SITEMAP_BATCH_SIZE));
   },
   ["runtime-sitemap-shard-count"],
   {

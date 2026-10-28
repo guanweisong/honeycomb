@@ -8,7 +8,7 @@
 
 ### Requirement: 底层模块不得依赖传输层
 
-系统 SHALL 让领域契约、数据库和认证模块独立于 tRPC 与 App Router 传输实现，并 MUST 保持现有外部输入输出契约而不保留无职责兼容出口。
+底层模块 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)；重构 MUST 保持现有外部输入输出契约而不保留无职责兼容出口。
 
 #### Scenario: 加载数据库或认证模块
 
@@ -32,7 +32,7 @@
 
 ### Requirement: Route Handler 保持薄适配层
 
-系统 SHALL 让 App Router Route Handler 只处理 HTTP 输入输出、会话认证和服务调用，数据库查询 MUST 位于所属 feature server 或技术数据库适配器；Better Auth hook 与认证请求审计的框架组合 SHALL 位于 app/_auth，src/auth.ts 保留框架绑定，lib/auth MUST NOT 运行时加载 feature 业务操作。
+系统 SHALL 让 App Router Route Handler 只处理 HTTP 输入输出、会话认证和服务调用，数据库查询 MUST 位于所属 feature server 或技术数据库适配器；认证框架绑定与技术例外 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: 处理 Better Auth 请求
 
@@ -69,7 +69,7 @@
 
 ### Requirement: 通用 UI 不依赖具体 App feature
 
-系统 SHALL 让通用 UI 通过显式接口接收页面特有能力，并 MUST NOT 从 `components` 导入 `src/app` 模块。
+通用 UI SHALL 通过显式接口接收页面特有能力，其运行时方向 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: 富文本选择媒体
 

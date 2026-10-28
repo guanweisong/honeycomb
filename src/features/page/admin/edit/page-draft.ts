@@ -1,3 +1,7 @@
+import {
+  readStoredJson,
+  writeVerifiedJson,
+} from "@/components/admin/draft/verified-storage";
 import { z } from "zod";
 import { PageFieldsSchema } from "@/features/page/schemas/page.fields.schema";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
@@ -27,13 +31,8 @@ export function parsePageDraft(value: unknown): PageDraft | null {
 const attemptKey = (userId: string) =>
   `honeycomb:draft:page:${encodeURIComponent(userId)}:creation-attempt`;
 export function readPageCreationAttempt(userId: string): PageInsert | null {
-  try {
-    const raw = window.localStorage.getItem(attemptKey(userId));
-    const result = PageInsertSchema.safeParse(raw ? JSON.parse(raw) : null);
-    return result.success ? result.data : null;
-  } catch {
-    return null;
-  }
+  const result = PageInsertSchema.safeParse(readStoredJson(attemptKey(userId)));
+  return result.success ? result.data : null;
 }
 /** 发送前按账户同步保存并回读创建意图；结果未知时必须复用原令牌与内容核对。 */
 export function writePageCreationAttempt(
@@ -41,9 +40,7 @@ export function writePageCreationAttempt(
   input: PageInsert,
 ): boolean {
   try {
-    const raw = JSON.stringify(PageInsertSchema.parse(input));
-    window.localStorage.setItem(attemptKey(userId), raw);
-    return window.localStorage.getItem(attemptKey(userId)) === raw;
+    return writeVerifiedJson(attemptKey(userId), PageInsertSchema.parse(input));
   } catch {
     return false;
   }
@@ -64,12 +61,6 @@ export function preservePageDraft(
   id: string,
   values: PageDraft,
 ): boolean {
-  try {
-    const key = `honeycomb:draft:page:${encodeURIComponent(userId)}:${id}`;
-    const raw = JSON.stringify({ version: 1, savedAt: Date.now(), values });
-    window.localStorage.setItem(key, raw);
-    return window.localStorage.getItem(key) === raw;
-  } catch {
-    return false;
-  }
+  const key = `honeycomb:draft:page:${encodeURIComponent(userId)}:${id}`;
+  return writeVerifiedJson(key, { version: 1, savedAt: Date.now(), values });
 }

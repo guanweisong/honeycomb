@@ -24,7 +24,6 @@ const criticalCoverageFiles = [
   "src/lib/observability/server/database-operation.ts",
   "src/lib/observability/server/external-service-operation.ts",
   "src/lib/observability/server/index.ts",
-  "src/lib/observability/server/node-request-context.ts",
   "src/lib/observability/server/registry.ts",
   "src/lib/observability/server/request-context.ts",
 ] as const;

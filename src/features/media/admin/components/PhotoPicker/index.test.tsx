@@ -41,15 +41,6 @@ vi.mock("@/components/Sheet", () => ({
   },
 }));
 
-vi.mock("@/features/media/admin/components/MediaPageShell", () => ({
-  MediaPageShell: (props: {
-    onSelect: (media: MediaEntity | undefined) => void;
-  }) => {
-    selectMediaRef.current = props.onSelect;
-    return <div>media-page</div>;
-  },
-}));
-
 import PhotoPickerModal from "@/features/media/admin/components/PhotoPicker";
 
 const mediaFixture = {

@@ -5,7 +5,6 @@ import PhotoSwipeLightbox from "photoswipe/lightbox";
 
 export function PhotoSwipeClient({ children }: PropsWithChildren) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const lightboxRef = useRef<PhotoSwipeLightbox | null>(null);
 
   useEffect(() => {
     if (!rootRef.current) return;
@@ -19,11 +18,9 @@ export function PhotoSwipeClient({ children }: PropsWithChildren) {
     });
 
     lightbox.init();
-    lightboxRef.current = lightbox;
 
     return () => {
       lightbox.destroy();
-      lightboxRef.current = null;
     };
   }, []);
 

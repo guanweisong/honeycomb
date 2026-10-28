@@ -2,6 +2,8 @@
 
 ## 当前架构与开发入口
 
+本次维护工作见[2026-10-28 精简处置台账](../openspec/changes/simplify-maintainability-audit/disposition.md)及[活动变更收尾核对](../openspec/changes/simplify-maintainability-audit/change-status.md)；它们不代表当前提交 CI 或发布完成。
+
 - [代码阅读地图](code-reading-map.md)：从实际业务入口追踪调用。
 - [架构与依赖边界](architecture-dependency-report.md)：当前职责、运行时边界和不可变行为。
 - [简单 Feature 迁移说明](ddd-migration-guide.md)：旧文件名保留链接兼容，正文是当前迁移方法。
