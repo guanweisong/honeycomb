@@ -152,6 +152,7 @@ export function CommentPageShell() {
                   name: "content",
                   type: "text",
                   label: "搜索评论",
+                  labelHidden: true,
                   placeholder: "请输入评论内容进行搜索",
                 },
               ]}

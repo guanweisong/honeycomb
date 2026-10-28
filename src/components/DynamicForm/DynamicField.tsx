@@ -45,7 +45,12 @@ export function DynamicField(field: FieldConfig) {
       <FormItem key={field.name}>
         <Tabs defaultValue="zh">
           <div className="flex justify-between">
-            <Label id={labelId}>{field.label}</Label>
+            <Label
+              id={labelId}
+              className={field.labelHidden ? "sr-only" : undefined}
+            >
+              {field.label}
+            </Label>
             <TabsList>
               {supportedLangs.map((lang) => {
                 const { error } = form.getFieldState(
@@ -86,7 +91,14 @@ export function DynamicField(field: FieldConfig) {
       name={field.name}
       render={({ field: controllerField }) => (
         <FormItem key={field.name}>
-          {field.label && <FormLabel id={labelId}>{field.label}</FormLabel>}
+          {field.label && (
+            <FormLabel
+              id={labelId}
+              className={field.labelHidden ? "sr-only" : undefined}
+            >
+              {field.label}
+            </FormLabel>
+          )}
           {renderField(field.name, controllerField)}
         </FormItem>
       )}
