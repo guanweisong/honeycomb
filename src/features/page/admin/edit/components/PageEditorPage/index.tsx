@@ -41,6 +41,13 @@ import {
   preservePageDraft,
 } from "@/features/page/admin/edit/page-draft";
 
+// Match registered locale fields so effect replay does not mark an untouched form dirty.
+const newPageValues: PageEditorValues = {
+  template: PageTemplate.DEFAULT,
+  title: { zh: "", en: "" },
+  content: { zh: "", en: "" },
+};
+
 export function PageEditorPage() {
   const id = useSearchParams().get("id");
   const { user } = useCurrentUser();
@@ -65,7 +72,7 @@ export function PageEditorPage() {
   }, [identity]);
   const form = useForm<PageEditorValues>({
     resolver: zodResolver(PageEditorSchema),
-    defaultValues: { template: PageTemplate.DEFAULT },
+    defaultValues: newPageValues,
   });
   const query = trpc.page.adminDetail.useQuery(
     { id: id ?? "" },
@@ -127,9 +134,7 @@ export function PageEditorPage() {
     const record = id && detail?.id === id ? detail : undefined;
     setBaseVersion(record?.version);
     setBaseStatus(record?.status);
-    form.reset(
-      toPageEditorFormValues(record) ?? { template: PageTemplate.DEFAULT },
-    );
+    form.reset(toPageEditorFormValues(record) ?? newPageValues);
   }, [identity, id, actorId, detail, isDirty, form]);
   const applyDraft = (values: PageDraft) => {
     setBaseVersion(values.baseVersion);

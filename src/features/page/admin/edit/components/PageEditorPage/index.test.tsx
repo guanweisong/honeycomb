@@ -335,6 +335,8 @@ describe("PageEditorPage", () => {
     ).toBe("添加新页面");
     expect(requireDefined(mocks.form).getValues()).toEqual({
       template: PageTemplate.DEFAULT,
+      title: { zh: "", en: "" },
+      content: { zh: "", en: "" },
     });
     expect(container.querySelector("output")?.textContent).toBe("pristine");
   });
@@ -464,6 +466,8 @@ describe("PageEditorPage", () => {
 
       expect(requireDefined(mocks.form).getValues()).toEqual({
         template: PageTemplate.DEFAULT,
+        title: { zh: "", en: "" },
+        content: { zh: "", en: "" },
       });
       expect(requireDefined(mocks.form).formState.isDirty).toBe(false);
 

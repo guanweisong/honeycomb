@@ -333,19 +333,22 @@ test.describe("@smoke admin public pages", () => {
       page.getByRole("button", { name: "登录", exact: true }),
     ).toBeVisible();
   });
-  test("@regression narrow and short login viewports remain reachable with reduced motion", async ({
+  test("@regression narrow and short login viewports keep the background despite reduced motion", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 568 });
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await visit(page, "/admin/login");
-    // Wait for the real preference subscription, without waiting for external
-    // background media or submitting the CAPTCHA-protected login form.
-    await expect(
-      page.getByRole("button", { name: "暂停背景动画", exact: true }),
-    ).toBeVisible();
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(page.locator("video")).toHaveCount(0);
+    await visit(page, "/admin/login");
+    // The login background deliberately ignores system motion preferences;
+    // do not wait for external media or submit the CAPTCHA-protected form.
+    await expect(page.locator("video")).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: /(?:暂停|播放)背景动画/ }),
+    ).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(page.locator("video")).toHaveCount(1);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(page.locator("video")).toHaveCount(1);
 
     for (const viewport of [
       { width: 320, height: 568 },

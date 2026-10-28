@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 
 import { getAdminUser as getApplicationAdminUser } from "@/features/user/server/admin-user";
 import { type AdminUser } from "@/features/user/types/user.current";
@@ -12,6 +13,8 @@ export type { AdminUser } from "@/features/user/types/user.current";
 export async function getAdminUser(
   headers: Headers,
 ): Promise<AdminUser | null> {
+  // Runtime prerenders can provide headers, but must not start session DB reads.
+  await connection();
   return getApplicationAdminUser(headers, createUserRepository(getDb()));
 }
 

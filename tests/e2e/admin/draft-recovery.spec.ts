@@ -61,10 +61,34 @@ test.describe("@regression local editor draft recovery", () => {
       await page.getByRole("button", { name: "恢复草稿", exact: true }).click();
       await expect(title).toHaveValue("浏览器未保存草稿");
       await page.reload();
+      const readNewDrafts = () =>
+        page.evaluate(
+          (entity) =>
+            Object.keys(localStorage)
+              .filter(
+                (key) =>
+                  key.startsWith(`honeycomb:draft:${entity}:`) &&
+                  key.endsWith(":new"),
+              )
+              .map((key) => ({ key, raw: localStorage.getItem(key) })),
+          kind,
+        );
+      expect(await readNewDrafts()).toHaveLength(1);
       await page.getByRole("button", { name: "丢弃草稿", exact: true }).click();
+      await expect(
+        page.getByRole("button", { name: "恢复草稿", exact: true }),
+      ).toHaveCount(0);
       await expect(title).toHaveValue("");
+      // Distinguish failed removal from a blank draft rewritten by pagehide.
+      expect(await readNewDrafts()).toEqual([]);
+      await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+      expect(await readNewDrafts()).toEqual([]);
       await page.reload();
       await expect(title).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "保存草稿", exact: true }),
+      ).toBeEnabled();
+      expect(await readNewDrafts()).toEqual([]);
       await expect(
         page.getByRole("button", { name: "恢复草稿", exact: true }),
       ).toHaveCount(0);

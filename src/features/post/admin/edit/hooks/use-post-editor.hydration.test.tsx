@@ -104,6 +104,43 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     });
   }
 
+  it("does not turn untouched optional locales into empty-string writes", async () => {
+    await renderEditor();
+    const current = requireDefined(editor);
+    await act(async () => {
+      current.form.setValue("title.zh", "新文章", { shouldDirty: true });
+      await current.submit(PostStatus.DRAFT, "create");
+    });
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    const wire = JSON.parse(
+      JSON.stringify(requireDefined(mocks.create.mock.calls[0])[0]),
+    );
+    expect(wire.title).toEqual({ zh: "新文章" });
+    expect(wire.content).toEqual({});
+    expect(wire.excerpt).toEqual({});
+  });
+
+  it("preserves fetched nulls and omitted locales in update payloads", async () => {
+    mocks.detail = {
+      ...originalDetail,
+      title: { zh: "保留原语言" },
+      content: null,
+      excerpt: null,
+    };
+    await renderEditor(postId);
+    const current = requireDefined(editor);
+    expect(current.form.getValues("content")).toBeNull();
+    expect(current.form.getValues("excerpt")).toBeNull();
+    await act(async () => current.submit(PostStatus.DRAFT, "update"));
+    expect(mocks.update).toHaveBeenCalledTimes(1);
+    const wire = JSON.parse(
+      JSON.stringify(requireDefined(mocks.update.mock.calls[0])[0]),
+    );
+    expect(wire.title).toEqual({ zh: "保留原语言" });
+    expect(wire.content).toBeNull();
+    expect(wire.excerpt).toBeNull();
+  });
+
   it("preserves dirty fields and cover/tag selections during a same-post refetch", async () => {
     mocks.detail = originalDetail;
     await renderEditor(postId);
@@ -198,6 +235,11 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
       const current = requireDefined(editor);
       expect(current.form.getValues()).toEqual({
         type: "ARTICLE",
+        title: { zh: undefined, en: undefined },
+        content: { zh: undefined, en: undefined },
+        excerpt: { zh: undefined, en: undefined },
+        categoryId: undefined,
+        coverId: undefined,
         galleryStyles: [],
         movieActors: [],
         movieDirectors: [],

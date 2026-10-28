@@ -56,7 +56,7 @@ it("shares one admin lookup between layout and template only within a server ren
             builder.onResolve(
               {
                 filter:
-                  /^(auth-fixture|server-only|next\/headers|next\/navigation|@\/features\/user\/server\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/_components\/AdminClientShell|@\/components\/LoadingState)$/,
+                  /^(auth-fixture|server-only|next\/headers|next\/server|next\/navigation|@\/features\/user\/server\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/_components\/AdminClientShell|@\/components\/LoadingState)$/,
               },
               (args) => ({ path: args.path, namespace: "fixture" }),
             );
@@ -67,6 +67,7 @@ it("shares one admin lookup between layout and template only within a server ren
                 "server-only": "",
                 "next/headers":
                   'export async function headers() { return new Headers({ "x-honeycomb-admin-pathname": "/admin/tag" }); }',
+                "next/server": "export async function connection() {}",
                 "next/navigation":
                   'export function redirect(path) { throw new Error("redirect:" + path); }',
                 "@/features/user/server/admin-user":
