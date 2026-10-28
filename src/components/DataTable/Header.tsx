@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "cn";
 import { MultiSelect } from "@/components/MultiSelect";
+import type { PinnedColumnOffsets } from "@/components/DataTable/usePinnedColumnOffsets";
 
 interface DataTableHeaderProps<TData> {
   table: TanStackTable<TData>;
@@ -14,6 +15,7 @@ interface DataTableHeaderProps<TData> {
   isAllSelectedOnCurrentPage: boolean;
   onSelectAll: (checked: CheckedState) => void;
   hasRowActions: boolean;
+  pinnedColumnOffsets: PinnedColumnOffsets;
 }
 
 export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
@@ -24,14 +26,29 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
     isAllSelectedOnCurrentPage,
     onSelectAll,
     hasRowActions,
+    pinnedColumnOffsets,
   } = props;
+  const selectionStyle = pinnedColumnOffsets.getSelectionStyle("header");
+  const actionStyle = pinnedColumnOffsets.getActionStyle("header");
 
   return (
     <TableHeader className="[&_tr]:border-b">
       {table.getHeaderGroups().map((headerGroup) => (
         <TableRow key={headerGroup.id}>
           {selectableRows && (
-            <TableHead>
+            <TableHead
+              ref={
+                selectionStyle
+                  ? (element) =>
+                      pinnedColumnOffsets.registerSelectionHeader(element)
+                  : undefined
+              }
+              style={selectionStyle}
+              className={cn(
+                selectionStyle && "bg-background",
+                "[&:has([role=checkbox])]:pr-2",
+              )}
+            >
               <Checkbox
                 aria-label="选择当前页全部可选行"
                 disabled={isFetching}
@@ -51,11 +68,25 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
                 )
               : [];
             const isFiltered = filterValue.length;
-
+            const stickyStyle = pinnedColumnOffsets.getColumnStyle(
+              column.id,
+              "header",
+            );
             return (
               <TableHead
                 key={header.id}
+                ref={
+                  stickyStyle
+                    ? (element) =>
+                        pinnedColumnOffsets.registerColumnHeader(
+                          column.id,
+                          element,
+                        )
+                    : undefined
+                }
                 colSpan={header.colSpan}
+                style={stickyStyle}
+                className={cn(stickyStyle && "bg-background")}
                 aria-sort={
                   column.getCanSort()
                     ? isSorted === "asc"
@@ -121,7 +152,20 @@ export function DataTableHeader<TData>(props: DataTableHeaderProps<TData>) {
               </TableHead>
             );
           })}
-          {hasRowActions && <TableHead>操作</TableHead>}
+          {hasRowActions && (
+            <TableHead
+              ref={
+                hasRowActions
+                  ? (element) =>
+                      pinnedColumnOffsets.registerActionHeader(element)
+                  : undefined
+              }
+              style={actionStyle}
+              className={cn(actionStyle && "bg-background")}
+            >
+              操作
+            </TableHead>
+          )}
         </TableRow>
       ))}
     </TableHeader>
