@@ -2,7 +2,7 @@
 
 ### Requirement: 路由私有与通用组件保持明确归属
 
-路由家族私有组件 MUST 位于其 _components 中，NoData MUST 就近归列表路由；共享 SectionCard、MultiLangText MUST 位于 components，TextDivider MUST 跟随 PostList。现有框架路由入口及 URL MUST 保持不变，不得为统一目录合并不同职责组件或新增兼容 barrel。
+路由家族私有组件 MUST 位于其 components 中，NoData MUST 就近归列表路由；共享 SectionCard、MultiLangText MUST 位于 components，TextDivider MUST 跟随 PostList。现有框架路由入口及 URL MUST 保持不变，不得为统一目录合并不同职责组件或新增兼容 barrel。这些路由家族的 components 是普通共置目录而非 Next.js 私有目录，其子树 MUST NOT 新增 page、route 或框架 metadata 入口。
 
 #### Scenario: 消费迁移后的展示组件
 

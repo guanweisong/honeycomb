@@ -35,7 +35,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 1. 页面组合：`src/app/(blog)/[locale]` 对应路由。
 2. 框架缓存和请求内去重：`src/app/lib/server/public-queries.ts`。
-3. 根服务端 caller：`src/app/_trpc/server.ts`；业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现 提供。
+3. 根服务端 caller：`src/app/trpc/server.ts`；业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现 提供。
 4. UI 使用 feature 拥有的模型与有意复用的具体入口（可在 public/admin/components）；不要求 public barrel 或中央 contracts 转发。
 
 文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
@@ -50,9 +50,9 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 跨 feature 的后台状态辅助在 `src/components/admin/lib`，查询/启用选项在 `config`，三个 UI 枚举各自归 `types`；草稿 hook、提示 UI 与完整场景测试同归 `draft`。布局协议和加载错误 UI 保留原内聚文件，不因归组反向依赖 app。
 
-浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/_auth`。前者保留 use client，不经根目录兼容转出口。
+浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/auth`。前者保留 use client，不经根目录兼容转出口。
 
-后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/_auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns，IP 解析只从 `src/lib/http/client-ip.ts` 导入。
+后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns，IP 解析只从 `src/lib/http/client-ip.ts` 导入。
 
 1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。
 2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
@@ -61,7 +61,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 后台邮箱规范化与碰撞检查位于 `src/features/user/schemas/user.write.schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
 
-认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/_auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
+认证框架绑定在 `src/auth.ts`，登录 hook 与请求审计组合在 `src/app/auth`。`lib/trpc/context.ts` 仅为会话读取延迟加载认证绑定。
 
 `useCan` 只控制界面呈现。认证技术实现可引用 feature 纯角色目录，但不能反向加载用户业务写入。
 
@@ -69,7 +69,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；业务 UI 在 `src/features/dashboard/admin/components/DashboardPageClient/index.tsx`。
 2. 统计入口与读取：`src/features/dashboard/router.ts` → `server/dashboard-queries.ts`；结果类型从实现经 tRPC 推断，不保留仅供测试引用的平行模型。
-3. `src/app/_trpc/router.ts` 仍挂载 `statistic`，保留 `Permission.statisticsRead` 对应的 `statistics:read` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
+3. `src/app/trpc/router.ts` 仍挂载 `statistic`，保留 `Permission.statisticsRead` 对应的 `statistics:read` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
 
 `src/app/admin/(dashboard)/layout.tsx` 与 `template.tsx` 是认证和页面边界；login、forbidden 直接位于 admin 下，不再套无职责的 `(root)`。post/page 根路由只是客户端导航，直接在 app 保留 `useLayoutEffect` / `router.replace`，不需要 feature 壳或改成服务端 redirect。
 
@@ -78,7 +78,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 - 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/_components/AdminNavigation/NavigationItem.tsx`。
+- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 
@@ -100,4 +100,4 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ## 组件归属
 
-路由私有组件位于各路由家族的 _components；业务 UI 留在 feature 的 admin/public，通用 SectionCard、MultiLangText 位于 components。媒体后台选择、动作与查询归 media/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。具体映射和验证见[组件归属迁移记录](component-ownership-migration.md)，两套 Provider 与 PostInfo 保持原位。
+路由私有组件位于各路由家族的 components；业务 UI 留在 feature 的 admin/public，通用 SectionCard、MultiLangText 位于 components。媒体后台选择、动作与查询归 media/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。具体映射和验证见[组件归属迁移记录](component-ownership-migration.md)，两套 Provider 与 PostInfo 保持原位。

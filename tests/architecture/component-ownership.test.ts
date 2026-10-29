@@ -3,8 +3,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
+import { createValidFileMatcher } from "next/dist/server/lib/find-page-file";
 import { moduleDependencies } from "@tests/helpers/architecture-imports";
-import { sourceFile } from "@tests/helpers/source-files";
+import { filesInDirectory, sourceFile } from "@tests/helpers/source-files";
 
 function directives(path: string) {
   return sourceFile(path).statements.flatMap((node) =>
@@ -15,18 +16,25 @@ function directives(path: string) {
 }
 
 describe("component ownership", () => {
-  it("keeps route-private, shared and business UI at their owned paths", () => {
+  it("keeps route-local, shared and business UI at their owned paths", () => {
     const moves = [
-      ["src/app/(blog)/components", "src/app/(blog)/_components"],
-      ["src/app/admin/components", "src/app/admin/_components"],
+      ["src/app/(blog)/_components", "src/app/(blog)/components"],
+      ["src/app/admin/_components", "src/app/admin/components"],
       [
-        "src/app/admin/(dashboard)/components",
         "src/app/admin/(dashboard)/_components",
+        "src/app/admin/(dashboard)/components",
       ],
       [
-        "src/app/(blog)/_components/NoData",
-        "src/app/(blog)/[locale]/list/[...slug]/_components/NoData/index.tsx",
+        "src/app/(blog)/components/NoData",
+        "src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx",
       ],
+      [
+        "src/app/(blog)/[locale]/list/[...slug]/_components",
+        "src/app/(blog)/[locale]/list/[...slug]/components",
+      ],
+      ["src/app/_auth", "src/app/auth"],
+      ["src/app/_trpc", "src/app/trpc"],
+      ["src/app/_pwa", "src/app/pwa"],
       ["src/components/blog/Card", "src/components/SectionCard/index.tsx"],
       [
         "src/components/blog/TextDivider",
@@ -47,6 +55,23 @@ describe("component ownership", () => {
       expect(existsSync(previous), previous).toBe(false);
       expect(existsSync(current), current).toBe(true);
     }
+  });
+
+  it.each([
+    "src/app/(blog)/components",
+    "src/app/(blog)/[locale]/list/[...slug]/components",
+    "src/app/admin/components",
+    "src/app/admin/(dashboard)/components",
+    "src/app/auth",
+    "src/app/trpc",
+    "src/app/pwa",
+  ])("keeps %s non-routable without a private-folder prefix", (directory) => {
+    expect(existsSync(directory), directory).toBe(true);
+    const { isAppRouterPage } = createValidFileMatcher(
+      ["tsx", "ts", "jsx", "js"],
+      "src/app",
+    );
+    expect(filesInDirectory(directory).filter(isAppRouterPage)).toEqual([]);
   });
 
   it("preserves server-compatible cards and the explicit interactive entry", () => {

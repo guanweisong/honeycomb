@@ -26,7 +26,7 @@ vi.mock("next/server", async (importOriginal) => ({
   connection: async () => undefined,
 }));
 
-vi.mock("@/app/_trpc/server", () => ({
+vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({
     menu: { index: mockMenuIndex },
     post: { index: mockPostIndex },
@@ -52,7 +52,7 @@ vi.mock("@/features/post/public/components/PostList", () => ({
     ),
 }));
 
-vi.mock("@/app/(blog)/[locale]/list/[...slug]/_components/NoData", () => ({
+vi.mock("@/app/(blog)/[locale]/list/[...slug]/components/NoData", () => ({
   default: ({ title }: { title: string }) =>
     React.createElement("div", { "data-testid": "no-data" }, title),
 }));

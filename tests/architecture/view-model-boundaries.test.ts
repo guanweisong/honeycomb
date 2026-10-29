@@ -37,7 +37,7 @@ const scopes = [
   },
 ];
 const transportOutput =
-  /(?:lib\/trpc\/outputs|app\/_trpc\/router|inferRouterOutputs)/;
+  /(?:lib\/trpc\/outputs|app\/trpc\/router|inferRouterOutputs)/;
 
 describe("View Model boundaries", () => {
   it.each(scopes)(
@@ -57,7 +57,7 @@ describe("View Model boundaries", () => {
     },
   );
 
-  it.each(["lib/trpc/outputs", "app/_trpc/router", "inferRouterOutputs"])(
+  it.each(["lib/trpc/outputs", "app/trpc/router", "inferRouterOutputs"])(
     "rejects %s references",
     (reference) => {
       expect(

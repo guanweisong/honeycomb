@@ -26,7 +26,7 @@ describe("dashboard feature ownership", () => {
     expect(settingSources).not.toContain("StatisticsType");
     expect(existsSync("src/features/dashboard/types")).toBe(false);
     expect(existsSync("src/features/dashboard/schemas")).toBe(false);
-    const rootRouter = readFileSync("src/app/_trpc/router.ts", "utf8");
+    const rootRouter = readFileSync("src/app/trpc/router.ts", "utf8");
     expect(rootRouter).toContain("@/features/dashboard/router");
     expect(rootRouter).toMatch(/statistic:\s*statisticRouter/);
   });

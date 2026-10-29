@@ -15,10 +15,10 @@ describe("React lint policy", () => {
   it("keeps the precise documented exception list without weakening other rules", async () => {
     const eslint = new ESLint();
     for (const file of [
-      "src/app/(blog)/_components/Menu/index.tsx",
-      "src/app/admin/(dashboard)/_components/AdminClientShell/index.tsx",
-      "src/app/admin/_components/AdminLayout/index.tsx",
-      "src/app/admin/_components/AdminNavigation/index.tsx",
+      "src/app/(blog)/components/Menu/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminClientShell/index.tsx",
+      "src/app/admin/components/AdminLayout/index.tsx",
+      "src/app/admin/components/AdminNavigation/index.tsx",
       "src/features/comment/public/components/hooks/use-comment-identity.ts",
       "src/features/media/admin/components/PhotoPicker/index.tsx",
       "src/features/media/admin/media-query.ts",

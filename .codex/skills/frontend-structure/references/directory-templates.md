@@ -4,9 +4,9 @@
 
 ```text
 src/
-  app/<route>/_components/ # 路由私有 UI，不移动 page/layout 等框架入口
-  app/_trpc/router.ts       # 根业务 router 组合
-  app/_trpc/server.ts       # 服务端 caller
+  app/<route>/components/ # 路由私有 UI，不移动 page/layout 等框架入口
+  app/trpc/router.ts       # 根业务 router 组合
+  app/trpc/server.ts       # 服务端 caller
   features/<feature>/
     router.ts              # 输入、入口权限、协议适配
     schemas/               # 如 tag.insert.schema.ts，具体运行时契约

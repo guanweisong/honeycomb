@@ -35,7 +35,7 @@ vi.mock("@/lib/db/schema", () => ({}));
 vi.mock("@/lib/auth/passkey-config", () => ({
   getPasskeyConfig: () => ({}),
 }));
-vi.mock("@/app/_auth/auth-hooks", () => ({
+vi.mock("@/app/auth/auth-hooks", () => ({
   createAuthDatabaseHooks: () => ({}),
 }));
 vi.mock("@/lib/observability/server/registry", () => ({

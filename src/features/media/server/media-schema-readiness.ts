@@ -2,7 +2,7 @@ import "server-only";
 import { getTableColumns } from "drizzle-orm";
 import { z } from "zod";
 import type { Database } from "@/lib/db/db";
-import { media } from "@/lib/db/schema/content-media";
+import { media } from "@/lib/db/schema/media";
 import { ApplicationError } from "@/lib/errors/application-error";
 
 const TableInfoSchema = z.array(z.object({ name: z.string().min(1) }));

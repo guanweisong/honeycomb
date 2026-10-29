@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
-import { AdminClientShell } from "./_components/AdminClientShell";
+import { AdminClientShell } from "./components/AdminClientShell";
 import { AdminProviders } from "@/app/admin/AdminProviders";
 import LoadingState from "@/components/LoadingState";
 

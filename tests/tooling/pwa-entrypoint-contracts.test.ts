@@ -15,7 +15,7 @@ describe("web app manifest", () => {
 
     expect(source).toContain("await connection()");
     expect(source).toContain("await getPublicSetting()");
-    expect(source).not.toContain("@/app/_trpc/server");
+    expect(source).not.toContain("@/app/trpc/server");
     expect(source).not.toContain("createServerClient");
   });
 });
@@ -26,7 +26,7 @@ describe("PWA 离线可靠性", () => {
       join(process.cwd(), "scripts/build-serwist.ts"),
       "utf8",
     );
-    expect(source).toContain('entrypoints: ["src/app/_pwa/sw.ts"]');
+    expect(source).toContain('entrypoints: ["src/app/pwa/sw.ts"]');
     expect(source).toContain('resolve("public/serwist/sw.js")');
   });
 
@@ -36,7 +36,7 @@ describe("PWA 离线可靠性", () => {
       "utf8",
     );
     const workerSource = await readFile(
-      join(process.cwd(), "src/app/_pwa/sw.ts"),
+      join(process.cwd(), "src/app/pwa/sw.ts"),
       "utf8",
     );
     const providerSource = await readFile(

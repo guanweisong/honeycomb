@@ -7,7 +7,7 @@
 #### Scenario: 加载数据库或认证模块
 
 - **WHEN** 测试或服务端运行时导入 DB、Auth 或领域契约
-- **THEN** 模块 MUST NOT 加载 `app/_trpc/router.ts`、App Route Handler、客户端页面或 feature server 操作
+- **THEN** 模块 MUST NOT 加载 `app/trpc/router.ts`、App Route Handler、客户端页面或 feature server 操作
 
 #### Scenario: 复用用户纯契约
 
@@ -26,12 +26,12 @@
 
 ### Requirement: Route Handler 保持薄适配层
 
-系统 SHALL 让 App Router Route Handler 只处理 HTTP 输入输出、会话认证和服务调用，数据库查询 MUST 位于所属 feature server 或技术数据库适配器；Better Auth hook 与认证请求审计的框架组合 SHALL 位于 app/_auth，src/auth.ts 保留框架绑定，lib/auth MUST NOT 运行时加载 feature 业务操作。
+系统 SHALL 让 App Router Route Handler 只处理 HTTP 输入输出、会话认证和服务调用，数据库查询 MUST 位于所属 feature server 或技术数据库适配器；Better Auth hook 与认证请求审计的框架组合 SHALL 位于 app/auth，src/auth.ts 保留框架绑定，lib/auth MUST NOT 运行时加载 feature 业务操作。
 
 #### Scenario: 处理 Better Auth 请求
 
 - **WHEN** GET 或 POST 请求进入 Better Auth catch-all route
-- **THEN** Route Handler SHALL 委托 app/_auth 的认证请求审计 handler 执行，保持原 Better Auth Response 及登录历史行为
+- **THEN** Route Handler SHALL 委托 app/auth 的认证请求审计 handler 执行，保持原 Better Auth Response 及登录历史行为
 
 #### Scenario: 查询登录历史
 
