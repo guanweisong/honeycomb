@@ -2,12 +2,12 @@
 
 ### Requirement: Transport infrastructure is separate from business features
 
-lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 router MUST 在 app/_trpc/router.ts 组合，服务端 caller MUST 在 app/_trpc/server.ts 提供；传输技术库的运行时方向和会话例外 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
+lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 router MUST 在 app/trpc/router.ts 组合，服务端 caller MUST 在 app/trpc/server.ts 提供；传输技术库的运行时方向和会话例外 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: Router composition uses feature routers
 
 - **WHEN** 根 router 构建业务路由表
-- **THEN** app/_trpc/router.ts MUST 组合相应 feature 的 router，procedure 名称与外部类型保持不变
+- **THEN** app/trpc/router.ts MUST 组合相应 feature 的 router，procedure 名称与外部类型保持不变
 
 #### Scenario: 客户端引用根 Router 类型
 

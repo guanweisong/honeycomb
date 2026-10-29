@@ -7,7 +7,7 @@ import {
 } from "@trpc/react-query";
 import { observable } from "@trpc/server/observable";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@/app/_trpc/router";
+import type { AppRouter } from "@/app/trpc/router";
 
 /** Real tRPC utilities and cache; only the transport is replaced. */
 export function createAdminListCache(kind: "post" | "page") {

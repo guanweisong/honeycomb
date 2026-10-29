@@ -19,7 +19,7 @@ import { configureObservability } from "@/lib/observability/server/registry";
 import { metricLabelValueCatalog } from "@/lib/observability/core/metric-label-values";
 import { UserLevel } from "@/features/user/types/user.level";
 
-import { appRouter } from "@/app/_trpc/router";
+import { appRouter } from "@/app/trpc/router";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
 import {
   boundaryCounts,
@@ -463,7 +463,7 @@ describe("capability procedure matrix", () => {
 
   it("matches direct capability declarations in every real registered router", () => {
     const appRouterSource = readFileSync(
-      join(process.cwd(), "src/app/_trpc/router.ts"),
+      join(process.cwd(), "src/app/trpc/router.ts"),
       "utf8",
     );
     const expected = capabilityProcedureMatrix.map(

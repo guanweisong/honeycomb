@@ -54,7 +54,7 @@ vi.mock("next/cache", () => ({
   unstable_cache: unstableCacheMock,
 }));
 
-vi.mock("@/app/_trpc/server", () => ({
+vi.mock("@/app/trpc/server", () => ({
   createServerClient: createServerClientMock,
 }));
 

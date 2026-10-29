@@ -25,7 +25,7 @@ const bun = (
 ).Bun;
 
 const bundle = await bun.build({
-  entrypoints: ["src/app/_pwa/sw.ts"],
+  entrypoints: ["src/app/pwa/sw.ts"],
   outdir: buildDirectory,
   target: "browser",
   format: "esm",

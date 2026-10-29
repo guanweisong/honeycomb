@@ -43,7 +43,7 @@ vi.mock("next-intl", () => ({
     `${values.count} views`,
 }));
 
-vi.mock("@/app/_trpc/server", () => ({
+vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
     post: {

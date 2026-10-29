@@ -11,7 +11,7 @@
 
 ### Requirement: 入口策略与通用技术能力分离
 
-后台 query client MUST 归 app/admin/lib，认证事件适配 MUST 归 app/_auth；评论专属限制 MUST 由 comment 显式配置 5/min、原 prefix 及 fallbackLimit=5。通用 Redis 工厂、API 120/min、750ms 和生产 fail-closed MUST 留在 lib 且保持原语义。
+后台 query client MUST 归 app/admin/lib，认证事件适配 MUST 归 app/auth；评论专属限制 MUST 由 comment 显式配置 5/min、原 prefix 及 fallbackLimit=5。通用 Redis 工厂、API 120/min、750ms 和生产 fail-closed MUST 留在 lib 且保持原语义。
 
 #### Scenario: 评论限流失败
 

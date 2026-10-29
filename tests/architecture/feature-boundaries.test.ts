@@ -47,7 +47,7 @@ function featureUiDependencyViolations(path: string, source: string) {
 }
 
 /** Inspect values actually mounted in appRouter, not merely imported routers. */
-function composedRouters(source: string, path = "src/app/_trpc/router.ts") {
+function composedRouters(source: string, path = "src/app/trpc/router.ts") {
   const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
   const imports = new Map<string, { specifier: string; imported: string }>();
   for (const statement of file.statements) {
@@ -240,7 +240,7 @@ describe("feature-owned business boundaries", () => {
   it("mounts every discovered feature router in the actual root composition", () => {
     expect(routers.length).toBeGreaterThan(0);
     expect(
-      composedRouters(readFileSync("src/app/_trpc/router.ts", "utf8")),
+      composedRouters(readFileSync("src/app/trpc/router.ts", "utf8")),
     ).toEqual(routers.toSorted());
   });
 
@@ -415,8 +415,8 @@ describe("feature-owned business boundaries", () => {
 
   it("allows only the reviewed LinkRecord type-only table dependency", () => {
     for (const specifier of [
-      "@/lib/db/schema/content-link",
-      "../../../lib/db/schema/content-link",
+      "@/lib/db/schema/link",
+      "../../../lib/db/schema/link",
     ]) {
       expect(
         isContractForbidden(
@@ -457,13 +457,13 @@ describe("feature-owned business boundaries", () => {
   });
 
   it.each([
-    'export type { link } from "@/lib/db/schema/content-link";',
-    'import type { link } from "@/lib/db/schema/content-link"; export type { link };',
-    'import type { link } from "@/lib/db/schema/content-link"; export { type link as table };',
-    'export type * from "@/lib/db/schema/content-link";',
-    'import type * as tables from "@/lib/db/schema/content-link";',
-    'type Table = typeof import("@/lib/db/schema/content-link").link;',
-    'import type { link } from "@/lib/db/schema/content-link"; export type { link } from "@/lib/db/schema/content-link";',
+    'export type { link } from "@/lib/db/schema/link";',
+    'import type { link } from "@/lib/db/schema/link"; export type { link };',
+    'import type { link } from "@/lib/db/schema/link"; export { type link as table };',
+    'export type * from "@/lib/db/schema/link";',
+    'import type * as tables from "@/lib/db/schema/link";',
+    'type Table = typeof import("@/lib/db/schema/link").link;',
+    'import type { link } from "@/lib/db/schema/link"; export type { link } from "@/lib/db/schema/link";',
   ])(
     "rejects table type outlets outside the reviewed named import: %s",
     (source) => {
@@ -478,7 +478,7 @@ describe("feature-owned business boundaries", () => {
   );
 
   it("keeps the reviewed link table closure free of reverse feature dependencies", () => {
-    const pending = ["src/lib/db/schema/content-link.ts"];
+    const pending = ["src/lib/db/schema/link.ts"];
     const visited = new Set<string>();
     const violations: string[] = [];
     while (pending.length) {

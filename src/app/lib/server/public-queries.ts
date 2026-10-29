@@ -4,7 +4,7 @@ import { cache } from "react";
 import { TRPCError } from "@trpc/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
-import { createServerClient } from "@/app/_trpc/server";
+import { createServerClient } from "@/app/trpc/server";
 import type { MenuType } from "@/features/menu/types/menu.type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";

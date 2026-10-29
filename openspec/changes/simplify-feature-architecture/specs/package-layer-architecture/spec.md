@@ -20,7 +20,7 @@
 
 ### Requirement: 技术依赖不加载业务运行时
 
-lib MUST NOT 承担业务 router 组合或直接加载 feature server 操作。lib/db 与 lib/auth MAY 引用 feature 纯 catalog/schema/type；lib/trpc 客户端 MAY type-only 引用根 AppRouter。通用 components MUST 不运行时依赖 app 或 feature。现有 lib/trpc/context.ts MAY 仅为会话读取延迟导入 src/auth.ts 技术绑定，其认证框架组合归 app/_auth；该窄例外不得扩大为 lib/auth 的运行时业务依赖。
+lib MUST NOT 承担业务 router 组合或直接加载 feature server 操作。lib/db 与 lib/auth MAY 引用 feature 纯 catalog/schema/type；lib/trpc 客户端 MAY type-only 引用根 AppRouter。通用 components MUST 不运行时依赖 app 或 feature。现有 lib/trpc/context.ts MAY 仅为会话读取延迟导入 src/auth.ts 技术绑定，其认证框架组合归 app/auth；该窄例外不得扩大为 lib/auth 的运行时业务依赖。
 
 #### Scenario: 执行依赖边界测试
 
@@ -30,7 +30,7 @@ lib MUST NOT 承担业务 router 组合或直接加载 feature server 操作。l
 #### Scenario: 认证会话技术集成
 
 - **WHEN** tRPC context 读取 Better Auth 会话
-- **THEN** 它 MAY 延迟加载 src/auth.ts 技术绑定，但业务 hook 与审计组合 MUST 留在 app/_auth，lib/auth MUST 不运行时导入 feature 操作
+- **THEN** 它 MAY 延迟加载 src/auth.ts 技术绑定，但业务 hook 与审计组合 MUST 留在 app/auth，lib/auth MUST 不运行时导入 feature 操作
 
 ## REMOVED Requirements
 

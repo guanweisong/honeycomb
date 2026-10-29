@@ -11,7 +11,7 @@ import * as schema from "@/lib/db/schema";
 import { getPasskeyConfig } from "@/lib/auth/passkey-config";
 import { safeAuthLogger } from "@/lib/auth/safe-auth-logger";
 import type { AuthProviderConfig } from "@/lib/auth/providers";
-import { createAuthDatabaseHooks } from "@/app/_auth/auth-hooks";
+import { createAuthDatabaseHooks } from "@/app/auth/auth-hooks";
 import {
   CREDENTIAL_PASSWORD_MAX_LENGTH,
   CREDENTIAL_PASSWORD_MIN_LENGTH,

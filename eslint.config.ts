@@ -14,13 +14,13 @@ export default defineConfig([
   {
     files: [
       // Reset pending navigation after the route commits.
-      "src/app/(blog)/_components/Menu/index.tsx",
+      "src/app/(blog)/components/Menu/index.tsx",
       // Hydrate browser-owned dashboard preferences after SSR.
-      "src/app/admin/(dashboard)/_components/AdminClientShell/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminClientShell/index.tsx",
       // Hydrate and reconcile stored layout preferences without changing SSR markup.
-      "src/app/admin/_components/AdminLayout/index.tsx",
+      "src/app/admin/components/AdminLayout/index.tsx",
       // Synchronize controlled menu selection with a committed route.
-      "src/app/admin/_components/AdminNavigation/index.tsx",
+      "src/app/admin/components/AdminNavigation/index.tsx",
       // Restore browser-owned guest identity after hydration.
       "src/features/comment/public/components/hooks/use-comment-identity.ts",
       // Clear picker selection when an externally controlled session closes.

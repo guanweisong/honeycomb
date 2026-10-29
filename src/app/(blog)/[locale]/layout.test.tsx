@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 
-vi.mock("@/app/(blog)/_components/Header", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/_components/Footer", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/_components/BackToTop", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/components/Header", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/components/Footer", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/components/BackToTop", () => ({ default: () => null }));
 vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicSetting: vi.fn(),
 }));

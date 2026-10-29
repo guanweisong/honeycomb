@@ -16,7 +16,7 @@ const expectedExclusions = [
   "**/*.d.ts",
   "**/*.test.{ts,tsx}",
   "**/*.spec.{ts,tsx}",
-  "src/app/_pwa/sw.ts",
+  "src/app/pwa/sw.ts",
   "src/components/ui/**",
   "tests/**",
 ];
@@ -37,7 +37,7 @@ const protectedProductionPatterns = [
   "src/lib/observability/**/*.ts",
   "src/app/sitemap*.ts",
   "src/app/lib/server/sitemap-data.ts",
-  "src/app/_pwa/service-worker-*.ts",
+  "src/app/pwa/service-worker-*.ts",
   "src/app/sitemap*/**/*.ts",
   "src/lib/cache/upstash-cache.ts",
 ];
@@ -106,7 +106,7 @@ describe("coverage governance", () => {
       "utf8",
     );
 
-    expect(coverage?.exclude).toContain("src/app/_pwa/sw.ts");
+    expect(coverage?.exclude).toContain("src/app/pwa/sw.ts");
     expect(pwaE2e).toContain("navigator.serviceWorker.ready");
     expect(pwaE2e).toContain("context.setOffline(true)");
     expect(pwaE2e).toContain("page.goto(offlineTarget");

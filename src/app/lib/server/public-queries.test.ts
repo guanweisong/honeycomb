@@ -30,7 +30,7 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
-vi.mock("@/app/_trpc/server", () => ({
+vi.mock("@/app/trpc/server", () => ({
   createServerClient: mocks.createServerClient,
 }));
 vi.mock("next/cache", () => ({

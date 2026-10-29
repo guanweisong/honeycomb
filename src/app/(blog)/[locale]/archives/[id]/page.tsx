@@ -5,7 +5,7 @@ import Tags from "@/features/post/public/Tags";
 import Card from "@/components/SectionCard";
 import { Link } from "@/lib/i18n/blog-navigation";
 import Comment from "@/features/comment/public/components/CommentClient";
-import PageTitle from "@/app/(blog)/_components/PageTitle";
+import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";

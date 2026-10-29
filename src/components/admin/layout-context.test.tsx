@@ -2,11 +2,11 @@ import { act, createContext, StrictMode, useContext } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { AdminLayout } from "@/app/admin/_components/AdminLayout";
+import { AdminLayout } from "@/app/admin/components/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/layout-context";
 
 // Navigation data is unrelated; retain the real layout, header DOM and drawer.
-vi.mock("@/app/admin/_components/AdminLayout/AdminSidebar", () => ({
+vi.mock("@/app/admin/components/AdminLayout/AdminSidebar", () => ({
   AdminSidebar: () => <nav>Navigation</nav>,
 }));
 

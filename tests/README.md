@@ -49,7 +49,7 @@ bunx vitest run tests/architecture/feature-boundaries.test.ts tests/architecture
 
 它会检查 Feature Router 将业务操作交给所属 Feature 的 server/ 具名模块、纯 schema/types/rules 不依赖持久化或 UI、共享组件不拥有业务，以及 lib 不反向编排业务。权限矩阵、菜单和管理入口继续使用已登记的 capability。
 
-`tests/architecture/library-boundaries.test.ts` 还跟踪 Client Component 的传递依赖，覆盖 import、re-export、动态 import 与 require，阻止数据库、服务端认证、原生 SDK 和 Node 模块进入浏览器。类型导入单独识别；lib/trpc/client 对 app/_trpc/router 的纯类型引用不产生运行时依赖。
+`tests/architecture/library-boundaries.test.ts` 还跟踪 Client Component 的传递依赖，覆盖 import、re-export、动态 import 与 require，阻止数据库、服务端认证、原生 SDK 和 Node 模块进入浏览器。类型导入单独识别；lib/trpc/client 对 app/trpc/router 的纯类型引用不产生运行时依赖。
 
 ```bash
 # 运行所有单元测试（监听模式）
@@ -93,7 +93,7 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 | `**/*.d.ts`                                | TypeScript 声明没有可执行行为                                                                                                    |
 | `**/*.test.{ts,tsx}`、`**/*.spec.{ts,tsx}` | 测试是覆盖率证据，不是生产分母                                                                                                   |
 | `tests/**`                                 | 跨模块测试、fixture 和测试配置不是生产源码                                                                                       |
-| `src/app/_pwa/sw.ts`                       | E2E-only service worker 薄入口；`/en/offline` 由构建脚本显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
+| `src/app/pwa/sw.ts`                       | E2E-only service worker 薄入口；`/en/offline` 由构建脚本显式预缓存，PWA E2E 会真实注册 worker、切换离线并验证未缓存导航 fallback |
 | `src/components/ui/**`                     | 既有 shadcn 基础组件目录排除（含已定制的 tabs）；目录外扩展组件和业务 UI 仍纳入统计                                              |
 
 业务页面、hooks、Feature server/schemas/types/rules、权限、环境变量、sitemap、缓存和观测模块不得加入排除项。`tests/tooling/coverage-governance.test.ts` 会用实际 glob 结果审计这条边界。
@@ -171,4 +171,4 @@ Feature schemas/types 职责由 `tests/architecture/schema-type-ownership.test.t
 
 `tests/types/*-derived-contracts.ts` 是编译时独立预期，不由被测 schema 重新生成 oracle。默认 `bun run check-types` 收集这些文件；本轮同时在 optional 开关两种模式下验证受影响契约与私有签名，后者不代表全工程已经启用 exactOptionalPropertyTypes。测试和边界记录见[类型派生说明](../docs/type-derivation-refactor.md)。真实 E2E 未运行时必须独立披露，不能以编译或 mock 测试替代。
 
-跨 blog/admin/global 的真实 Next retry 恢复测试位于 `tests/integration/framework-error-recovery.test.tsx`；PWA 策略测试随实现就近放在 `src/app/_pwa/`，只有 `sw.ts` 薄入口使用上述精确覆盖率排除。
+跨 blog/admin/global 的真实 Next retry 恢复测试位于 `tests/integration/framework-error-recovery.test.tsx`；PWA 策略测试随实现就近放在 `src/app/pwa/`，只有 `sw.ts` 薄入口使用上述精确覆盖率排除。

@@ -21,7 +21,7 @@ function libraryImportViolations(path: string, source: string) {
     if (target.startsWith("src/app/")) {
       return typeOnly &&
         path.startsWith("src/lib/trpc/") &&
-        target === "src/app/_trpc/router"
+        target === "src/app/trpc/router"
         ? []
         : [`${path} -> ${specifier}`];
     }
@@ -78,7 +78,7 @@ function isBrowserForbidden(path: string, source: string) {
   return (
     /import\s*["']server-only["']/.test(source) ||
     /^src\/lib\/(?:db|storage|rate-limit)\//.test(path) ||
-    /^src\/app\/_trpc\//.test(path) ||
+    /^src\/app\/trpc\//.test(path) ||
     /\/(?:server|notifications)(?:\/|\.tsx?$)/.test(path) ||
     moduleDependencies(source, path).some(
       ({ specifier, typeOnly }) =>
@@ -154,7 +154,7 @@ describe("technical library and browser dependency boundaries", () => {
     expect(
       moduleDependencies(
         [
-          'import type { Router } from "@/app/_trpc/router";',
+          'import type { Router } from "@/app/trpc/router";',
           'import { type User } from "@/features/user/types/user.current";',
           'import { type User, save } from "./mixed";',
           'export type { Input } from "./types";',
@@ -166,7 +166,7 @@ describe("technical library and browser dependency boundaries", () => {
         ].join("\n"),
       ),
     ).toEqual([
-      { specifier: "@/app/_trpc/router", typeOnly: true },
+      { specifier: "@/app/trpc/router", typeOnly: true },
       { specifier: "@/features/user/types/user.current", typeOnly: true },
       { specifier: "./mixed", typeOnly: false },
       { specifier: "./types", typeOnly: true },
@@ -198,19 +198,19 @@ describe("technical library and browser dependency boundaries", () => {
     expect(
       libraryImportViolations(
         "src/lib/trpc/client/trpc.ts",
-        'export { appRouter } from "../../../app/_trpc/router";',
+        'export { appRouter } from "../../../app/trpc/router";',
       ),
     ).toHaveLength(1);
     expect(
       libraryImportViolations(
         "src/lib/trpc/client/trpc.ts",
-        'import { appRouter } from "@/app/_trpc/router";',
+        'import { appRouter } from "@/app/trpc/router";',
       ),
     ).toHaveLength(1);
     expect(
       libraryImportViolations(
         "src/lib/trpc/client/trpc.ts",
-        'import type { AppRouter } from "@/app/_trpc/router";',
+        'import type { AppRouter } from "@/app/trpc/router";',
       ),
     ).toEqual([]);
     expect(
@@ -223,7 +223,7 @@ describe("technical library and browser dependency boundaries", () => {
 
   it("rejects display enums in persistence and identity bindings", () => {
     for (const path of [
-      "src/lib/db/schema/content-post.ts",
+      "src/lib/db/schema/post.ts",
       "src/lib/auth/hooks.ts",
       "src/lib/trpc/context.ts",
     ])
@@ -235,7 +235,7 @@ describe("technical library and browser dependency boundaries", () => {
       ).toHaveLength(1);
     expect(
       libraryImportViolations(
-        "src/lib/db/schema/content-post.ts",
+        "src/lib/db/schema/post.ts",
         'export { Align } from "../../../features/post/types/post-info.align";',
       ),
     ).toHaveLength(1);
@@ -294,7 +294,7 @@ describe("technical library and browser dependency boundaries", () => {
   });
 
   it("puts root tRPC composition and server callers in app, not lib", () => {
-    for (const path of ["src/app/_trpc/router.ts", "src/app/_trpc/server.ts"])
+    for (const path of ["src/app/trpc/router.ts", "src/app/trpc/server.ts"])
       expect(existsSync(path), path).toBe(true);
     for (const path of [
       "src/lib/trpc/router.ts",

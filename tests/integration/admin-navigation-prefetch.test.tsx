@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@/app/_trpc/router";
+import type { AppRouter } from "@/app/trpc/router";
 import { observable } from "@trpc/server/observable";
 import { TRPCClientError } from "@trpc/client";
 import { waitFor } from "@testing-library/dom";

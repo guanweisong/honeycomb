@@ -65,7 +65,7 @@ export const getCachedSitemapShard = unstable_cache(
     const page = shard + 1;
     const [menu, posts, pages] = await Promise.all([
       shard === 0
-        ? import("@/app/_trpc/server").then(async ({ createServerClient }) =>
+        ? import("@/app/trpc/server").then(async ({ createServerClient }) =>
             (await createServerClient()).menu.index(),
           )
         : Promise.resolve(null),

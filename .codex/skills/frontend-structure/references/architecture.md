@@ -38,7 +38,7 @@
 
 本轮复审实现的现行约束另见[邮箱写入与审计](../../../../openspec/specs/better-authentication/spec.md)、[媒体分页协调](../../../../openspec/specs/admin-media-infinite-scroll/spec.md)、[响应式与可访问交互](../../../../openspec/specs/public-web-experience/spec.md)、[仅分类取消删除数量上限](../../../../openspec/specs/category-bulk-deletion/spec.md)和[公开单层导航](../../../../openspec/specs/flat-blog-navigation/spec.md)。文章会话归属、评论读取快照、布局失效及 R2 截止时间已同步到上表对应主规格；实现与验证证据仍见 [remediate-skill-reaudit](../../../../openspec/changes/remediate-skill-reaudit/tasks.md)，不据此推断精确提交 CI 或生产验证完成。
 
-组件归属的当前增量约束见[组件归属规范](../../../../openspec/changes/refine-component-ownership/specs/component-ownership/spec.md)：路由 _components、共享展示入口、业务发布颜色及 media/admin；迁移不得扩大为 Provider/PostInfo 合并，也不改变 editor 媒体注入方向。
+组件归属的当前增量约束见[组件归属规范](../../../../openspec/changes/refine-component-ownership/specs/component-ownership/spec.md)：路由 components、共享展示入口、业务发布颜色及 media/admin；迁移不得扩大为 Provider/PostInfo 合并，也不改变 editor 媒体注入方向。
 
 类型事实源的本轮实施记录见[类型派生说明](../../../../docs/type-derivation-refactor.md)。LinkRecord 的单文件 type-only 字段投影例外已同步到 model-boundary-governance，不是所有 feature/types 对数据库的通行证；类型派生不替代运行时白名单。
 

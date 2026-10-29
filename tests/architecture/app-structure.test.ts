@@ -9,7 +9,7 @@ const appFiles = sourceFiles(appRoot);
 
 function componentDirectories(): string[] {
   return appFiles
-    .filter((path) => /\/_components\/[^/]+\/index\.tsx$/.test(path))
+    .filter((path) => /\/components\/[^/]+\/index\.tsx$/.test(path))
     .map((path) => path.slice(0, -"/index.tsx".length));
 }
 
@@ -101,7 +101,7 @@ describe("App Router composition boundaries", () => {
     expect(invalidDirectories).toEqual([]);
     expect(
       existsSync(
-        join(appRoot, "admin/_components/AdminLayout/AdminSidebar.tsx"),
+        join(appRoot, "admin/components/AdminLayout/AdminSidebar.tsx"),
       ),
     ).toBe(true);
   });

@@ -24,7 +24,7 @@
 
 ## Link 的精确持久化类型例外
 
-LinkRecord 固定选择 link 表的 7 个普通字段，status 单独保持 `EnableStatus | null`。只允许 `src/features/link/types/link.record.ts` 到 `src/lib/db/schema/content-link` 的 type-only 边；DB barrel、其他 DTO、运行时导入和 types→server 继续被拒绝。该表依赖中立 EnableStatus，而非 feature 派生 DTO，不形成反向类型环。
+LinkRecord 固定选择 link 表的 7 个普通字段，status 单独保持 `EnableStatus | null`。只允许 `src/features/link/types/link.record.ts` 到 `src/lib/db/schema/link` 的 type-only 边；DB barrel、其他 DTO、运行时导入和 types→server 继续被拒绝。该表依赖中立 EnableStatus，而非 feature 派生 DTO，不形成反向类型环。
 
 mapper 对原有 8 个字段显式赋值，不使用对象扩展隐式透传数据库新增列。创建、更新及列表的新列模拟用例先失败再通过；未知持久化状态仍在失效缓存前抛错。编译期固定字段白名单和运行时裁剪分别验证，不能互相替代。
 
