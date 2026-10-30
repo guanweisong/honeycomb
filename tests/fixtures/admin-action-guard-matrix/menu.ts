@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const menuActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/features/menu/admin/components/MenuPageShell/index.tsx",
+    sourcePath: "src/app/admin/(dashboard)/menu/components/MenuPageShell/index.tsx",
     actions: [
       {
         id: "menu.update",

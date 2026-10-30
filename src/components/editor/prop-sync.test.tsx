@@ -3,9 +3,9 @@ import { createRoot } from "react-dom/client";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { expect, it, vi } from "vitest";
 import { Editor } from "@tiptap/core";
-import Tiptap from "@/components/editor/index";
+import Tiptap from "@/components/Editor/index";
 
-vi.mock("@/components/editor/config/toolbar-items", () => ({ toolbarItems: [] }));
+vi.mock("@/components/Editor/config/toolbar-items", () => ({ toolbarItems: [] }));
 
 it("updates external HTML without echoing edits or dirtying a reset baseline", async () => {
   let form: UseFormReturn<{ content: string }> | undefined;

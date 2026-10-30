@@ -71,7 +71,7 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
         // This thin service-worker entry is exercised only by the real offline E2E.
-        "src/app/_pwa/sw.ts",
+        "src/app/pwa/sw.ts",
         // Retain the existing UI primitive path exclusion; modified primitives have focused tests.
         "src/components/ui/**",
         // Cross-module tests and fixtures are never production sources.

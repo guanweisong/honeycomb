@@ -1,1 +1,1 @@
-export { UserPageShell as default } from "@/features/user/admin/components/UserPageShell";
+export { UserPageShell as default } from "@/app/admin/(dashboard)/user/components/UserPageShell";

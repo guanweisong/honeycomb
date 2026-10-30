@@ -4,7 +4,7 @@ import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FieldControl } from "@/components/DynamicForm/FieldControl";
 import type { FieldConfig } from "@/components/DynamicForm/types";
-import { TiptapMediaPickerProvider } from "@/components/editor/media-picker";
+import { TiptapMediaPickerProvider } from "@/components/Editor/media-picker";
 
 const loadedModules = vi.hoisted(() => ({ calendar: false, editor: false }));
 
@@ -13,13 +13,13 @@ vi.mock("@/components/ui/calendar", async (importOriginal) => {
   loadedModules.calendar = true;
   return importOriginal();
 });
-vi.mock("@/components/editor", async (importOriginal) => {
+vi.mock("@/components/Editor", async (importOriginal) => {
   loadedModules.editor = true;
   return importOriginal();
 });
-vi.mock("@/components/editor/config/toolbar-items", async () => {
+vi.mock("@/components/Editor/config/toolbar-items", async () => {
   const { ToolbarImageItem } =
-    await import("@/components/editor/components/ToolbarImageItem");
+    await import("@/components/Editor/components/ToolbarImageItem");
   return {
     toolbarItems: [
       [
@@ -156,7 +156,7 @@ describe("FieldControl lazy controls", () => {
       ),
     );
     await act(async () => {
-      await import("@/components/editor");
+      await import("@/components/Editor");
     });
     expect(
       container.querySelector('[data-testid="media-picker"]')?.textContent,
@@ -184,7 +184,7 @@ describe("FieldControl lazy controls", () => {
     );
     await act(async () => {
       root.render(render(false));
-      await import("@/components/editor");
+      await import("@/components/Editor");
     });
     const editorElement =
       container.querySelector<HTMLElement>('[role="textbox"]');

@@ -3,7 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ToolbarButton } from "@/components/editor/components/ToolbarButton";
+import { ToolbarButton } from "@/components/Editor/components/ToolbarButton";
 
 export function ToolbarLinkItem({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);

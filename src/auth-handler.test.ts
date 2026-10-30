@@ -13,7 +13,7 @@ vi.mock("@/lib/db/db", () => ({
   }),
 }));
 vi.mock("@/lib/db/schema", () => ({}));
-vi.mock("@/app/_auth/auth-hooks", () => ({
+vi.mock("@/app/auth/auth-hooks", () => ({
   createAuthDatabaseHooks: () => ({}),
 }));
 

@@ -3,18 +3,18 @@ import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@/app/_trpc/router";
+import type { AppRouter } from "@/app/trpc/router";
 import { observable } from "@trpc/server/observable";
 import { TRPCClientError } from "@trpc/client";
 import { waitFor } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAdminQueryClient } from "@/app/admin/lib/admin-query-client";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
-import PostListClient from "@/features/post/admin/list/components/PostListClient";
-import PageList from "@/features/page/admin/list/page";
+import { adminDetailQueryOptions } from "@/app/admin/(dashboard)/config/query-options";
+import PostListClient from "@/app/admin/(dashboard)/post/list/components/PostListClient";
+import PageList from "@/app/admin/(dashboard)/page/list/page";
 
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("@/components/MultiLangText", () => ({

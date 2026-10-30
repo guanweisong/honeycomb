@@ -383,7 +383,7 @@ function getActions(sourcePath: string): readonly ActionGuardContract[] {
 
 describe("admin action capability guards", () => {
   const postListPath =
-    "src/features/post/admin/list/components/PostListClient/index.tsx";
+    "src/app/admin/(dashboard)/post/list/components/PostListClient/index.tsx";
 
   it.each([
     ["canDelete || true", "positive", false],
@@ -419,7 +419,7 @@ describe("admin action capability guards", () => {
 
   it.each([
     ["post", postListPath, "Post"],
-    ["page", "src/features/page/admin/list/page.tsx", "Page"],
+    ["page", "src/app/admin/(dashboard)/page/list/page.tsx", "Page"],
   ])(
     "rejects removed or swapped %s navigation guards",
     (feature, path, suffix) => {
@@ -487,7 +487,7 @@ describe("admin action capability guards", () => {
 
   it("rejects a positive guard used as a disabled condition", () => {
     const settingPath =
-      "src/features/setting/admin/components/SettingClient/index.tsx";
+      "src/app/admin/(dashboard)/setting/components/SettingClient/index.tsx";
     const [settingAction] = getActions(settingPath);
     const disabledAction: ActionGuardContract = {
       ...requireDefined(settingAction),
@@ -510,7 +510,7 @@ describe("admin action capability guards", () => {
 
   it("rejects one unguarded submit among matching post update controls", () => {
     const editorPath =
-      "src/features/post/admin/edit/components/PostEditorActions/index.tsx";
+      "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
 
     expect(
       findUnboundActionIds(editorPath, getActions(editorPath), (source) =>
@@ -529,7 +529,7 @@ describe("admin action capability guards", () => {
     "rejects a derived save guard that does not require update permission: %s",
     (replacement) => {
       const editorPath =
-        "src/features/post/admin/edit/components/PostEditorActions/index.tsx";
+        "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
       expect(
         findUnboundActionIds(editorPath, getActions(editorPath), (source) =>
           source.replace(
@@ -555,7 +555,7 @@ describe("admin action capability guards", () => {
     ],
   ])("rejects an alias bypass at the %s use site", (_label, before, after) => {
     const editorPath =
-      "src/features/post/admin/edit/components/PostEditorActions/index.tsx";
+      "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
     expect(
       findUnboundActionIds(editorPath, getActions(editorPath), (source) => {
         expect(source).toContain(before);
@@ -575,7 +575,7 @@ describe("admin action capability guards", () => {
     "rejects a shared publish button bypass in its declared mode: %s",
     (before, after, action) => {
       const path =
-        "src/features/page/admin/edit/components/PageEditorActionButtons/index.tsx";
+        "src/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx";
       expect(
         findUnboundActionIds(path, getActions(path), (source) => {
           expect(source).toContain(before);
@@ -587,7 +587,7 @@ describe("admin action capability guards", () => {
 
   it("rejects an unguarded batch delete while row delete stays guarded", () => {
     const linkPath =
-      "src/features/link/admin/components/LinkPageShell/index.tsx";
+      "src/app/admin/(dashboard)/link/components/LinkPageShell/index.tsx";
 
     expect(
       findUnboundActionIds(linkPath, getActions(linkPath), (source) =>
@@ -601,7 +601,7 @@ describe("admin action capability guards", () => {
 
   it("rejects an unguarded add-tag entry while remove-tag stays guarded", () => {
     const multiTagPath =
-      "src/features/post/admin/edit/components/MultiTag/index.tsx";
+      "src/app/admin/(dashboard)/post/edit/components/MultiTag/index.tsx";
 
     expect(
       findUnboundActionIds(multiTagPath, getActions(multiTagPath), (source) =>
@@ -614,7 +614,7 @@ describe("admin action capability guards", () => {
   });
 
   it("keeps relocated category actions bound to their own capability guards", () => {
-    const categoryPath = "src/features/category/admin/page.tsx";
+    const categoryPath = "src/app/admin/(dashboard)/post/category/page.tsx";
     expect(
       findUnboundActionIds(categoryPath, getActions(categoryPath), (source) =>
         source.replaceAll("{canCreateCategory && (", "{true && ("),
@@ -624,7 +624,7 @@ describe("admin action capability guards", () => {
 
   it("rejects an unguarded post-sidebar category callback", () => {
     const sidebarPath =
-      "src/features/post/admin/edit/components/PostSidebarFields/index.tsx";
+      "src/app/admin/(dashboard)/post/edit/components/PostSidebarFields/index.tsx";
     const actions = getActions(sidebarPath);
     expect(findUnboundActionIds(sidebarPath, actions)).toEqual([]);
     expect(

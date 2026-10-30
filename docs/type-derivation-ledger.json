@@ -305,7 +305,7 @@
       "id": "src/app/(blog)/components/Breadcrumb/index.tsx:14:BreadCrumbProps",
       "name": "BreadCrumbProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/(blog)/_components/Breadcrumb/index.tsx",
+      "currentFile": "src/app/(blog)/components/Breadcrumb/index.tsx",
       "currentLine": 14,
       "disposition": "retained-independent",
       "reason": "保留面包屑 props；menu 已直接复用 MenuNavigationItem。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
@@ -316,7 +316,7 @@
       "id": "src/app/(blog)/components/Breadcrumb/index.tsx:24:BreadData",
       "name": "BreadData",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/(blog)/_components/Breadcrumb/index.tsx",
+      "currentFile": "src/app/(blog)/components/Breadcrumb/index.tsx",
       "currentLine": 24,
       "disposition": "retained-independent",
       "reason": "保留面包屑渲染项；label 可为 ReactNode，当前项允许无 link，与必有字符串链接的 BlogNavigationLink 不同。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
@@ -327,7 +327,7 @@
       "id": "src/app/(blog)/components/Menu/index.tsx:15:MenuProps",
       "name": "MenuProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/(blog)/_components/Menu/index.tsx",
+      "currentFile": "src/app/(blog)/components/Menu/index.tsx",
       "currentLine": 15,
       "disposition": "retained-independent",
       "reason": "保留导航组件的根链接和扁平菜单两种输入，分别复用 BlogNavigationLink/MenuNavigationItem。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
@@ -338,7 +338,7 @@
       "id": "src/app/(blog)/components/NoData/index.tsx:6:NoDataProps",
       "name": "NoDataProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/(blog)/[locale]/list/[...slug]/_components/NoData/index.tsx",
+      "currentFile": "src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx",
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留提示组件唯一 title 属性；不是业务标题模型。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
@@ -349,7 +349,7 @@
       "id": "src/app/(blog)/components/PageTitle/index.tsx:6:PageTitleProps",
       "name": "PageTitleProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/(blog)/_components/PageTitle/index.tsx",
+      "currentFile": "src/app/(blog)/components/PageTitle/index.tsx",
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留标题组件的 ReactNode children 约束，不为单个 JSX 字段制造共享 DTO。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
@@ -401,54 +401,54 @@
       "originalDeclarationUnchanged": true
     },
     {
-      "id": "src/app/_auth/auth-request-audit.ts:19:Session",
+      "id": "src/app/auth/auth-request-audit.ts:19:Session",
       "name": "Session",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/_auth/auth-request-audit.ts",
+      "currentFile": "src/app/auth/auth-request-audit.ts",
       "currentLine": 19,
       "disposition": "retained-independent",
       "reason": "保留认证审计技术接口的最小 session 视图，只读取可选 user.id，不等同带权限的 CurrentUser。 Better Auth 返回值在 createAppAuthRequestHandler 中供审计消费；无需让审计耦合完整 auth 实例及插件泛型。",
-      "authority": "src/app/_auth/auth-request-audit.ts#Session",
+      "authority": "src/app/auth/auth-request-audit.ts#Session",
       "originalDeclarationUnchanged": true
     },
     {
-      "id": "src/app/_auth/auth-request-audit.ts:21:AuthRequestAuditDependencies",
+      "id": "src/app/auth/auth-request-audit.ts:21:AuthRequestAuditDependencies",
       "name": "AuthRequestAuditDependencies",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/_auth/auth-request-audit.ts",
+      "currentFile": "src/app/auth/auth-request-audit.ts",
       "currentLine": 21,
       "disposition": "retained-independent",
       "reason": "保留真实外部适配依赖：请求处理、会话查询、标识查找和审计写入；LoginHistoryRecordInput 已复用。 认证请求前后快照和失败不阻断策略由此编排；不是为测试虚构业务 Repository。",
-      "authority": "src/app/_auth/auth-request-audit.ts#AuthRequestAuditDependencies",
+      "authority": "src/app/auth/auth-request-audit.ts#AuthRequestAuditDependencies",
       "originalDeclarationUnchanged": true
     },
     {
-      "id": "src/app/_auth/auth-request-audit.ts:118:AuthSessionApi",
+      "id": "src/app/auth/auth-request-audit.ts:118:AuthSessionApi",
       "name": "AuthSessionApi",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/_auth/auth-request-audit.ts",
+      "currentFile": "src/app/auth/auth-request-audit.ts",
       "currentLine": 118,
       "disposition": "retained-independent",
       "reason": "保留仅需要 api.getSession 的 provider 适配形状，返回 Session 复用而非重写。 允许真正 auth 实例与最小替身接入，不复制整套第三方认证 API。",
-      "authority": "src/app/_auth/auth-request-audit.ts#AuthSessionApi",
+      "authority": "src/app/auth/auth-request-audit.ts#AuthSessionApi",
       "originalDeclarationUnchanged": true
     },
     {
-      "id": "src/app/_trpc/router.ts:32:AppRouter",
+      "id": "src/app/trpc/router.ts:32:AppRouter",
       "name": "AppRouter",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/app/_trpc/router.ts",
+      "currentFile": "src/app/trpc/router.ts",
       "currentLine": 32,
       "disposition": "retained-derived",
       "reason": "保留 typeof appRouter。 仅静态派生；不新增运行时依赖或改变数据形状。",
-      "authority": "src/app/_trpc/router.ts#appRouter",
+      "authority": "src/app/trpc/router.ts#appRouter",
       "originalDeclarationUnchanged": true
     },
     {
-      "id": "src/app/_trpc/server.ts:7:ServerClientOptions",
+      "id": "src/app/trpc/server.ts:7:ServerClientOptions",
       "name": "ServerClientOptions",
       "baselineCategory": "应派生",
-      "currentFile": "src/app/_trpc/server.ts",
+      "currentFile": "src/app/trpc/server.ts",
       "currentLine": 7,
       "disposition": "implemented",
       "reason": "Pick<CreateContextOptions, requestContext | skipRequestObservability>. No signature/default/spread change; no extra context options exposed.",
@@ -459,7 +459,7 @@
       "id": "src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts:1:CacheStorageBoundary",
       "name": "CacheStorageBoundary",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts",
       "currentLine": 1,
       "disposition": "retained-derived",
       "reason": "保留 Pick<CacheStorage,\"delete\"|\"keys\">。 仅静态派生；不新增运行时依赖或改变数据形状。",
@@ -470,7 +470,7 @@
       "id": "src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts:2:LocationBoundary",
       "name": "LocationBoundary",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts",
       "currentLine": 2,
       "disposition": "retained-derived",
       "reason": "保留 Pick<Location,\"replace\">。 仅静态派生；不新增运行时依赖或改变数据形状。",
@@ -481,7 +481,7 @@
       "id": "src/app/admin/components/AdminLayout/AdminSidebar.tsx:9:AdminSidebarProps",
       "name": "AdminSidebarProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/admin/_components/AdminLayout/AdminSidebar.tsx",
+      "currentFile": "src/app/admin/components/AdminLayout/AdminSidebar.tsx",
       "currentLine": 9,
       "disposition": "retained-independent",
       "reason": "保留侧边栏独立 props，menu 为必填而布局允许省略；CurrentUser/AdminNavigationItem 已引用。可选择从布局 Pick，但不是必需的领域去重。 布局先默认 menu=[] 再传入；UI 组合及导航回调，不是手写用户字段副本。",
@@ -492,7 +492,7 @@
       "id": "src/app/admin/components/AdminLayout/index.tsx:23:AdminLayoutProps",
       "name": "AdminLayoutProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/admin/_components/AdminLayout/index.tsx",
+      "currentFile": "src/app/admin/components/AdminLayout/index.tsx",
       "currentLine": 23,
       "disposition": "retained-independent",
       "reason": "保留布局组件组合槽位与导航控制 props，user/menu 使用权威类型。 桌面/移动布局、标题与操作区的本地 API；不要与用户 DTO 或菜单持久化行合并。",
@@ -503,7 +503,7 @@
       "id": "src/app/admin/components/AdminNavigation/NavigationItem.tsx:11:NavigationItemProps",
       "name": "NavigationItemProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/admin/_components/AdminNavigation/NavigationItem.tsx",
+      "currentFile": "src/app/admin/components/AdminNavigation/NavigationItem.tsx",
       "currentLine": 11,
       "disposition": "retained-independent",
       "reason": "保留单个导航节点渲染/折叠控制 props，item 已复用 AdminNavigationItem。 组件交互状态与业务菜单记录不同。",
@@ -514,7 +514,7 @@
       "id": "src/app/admin/components/AdminNavigation/index.tsx:9:AdminNavigationItem",
       "name": "AdminNavigationItem",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/admin/_components/AdminNavigation/index.tsx",
+      "currentFile": "src/app/admin/components/AdminNavigation/index.tsx",
       "currentLine": 9,
       "disposition": "retained-independent",
       "reason": "保留后台静态导航结构，name/icon/path/children 描述 UI 菜单而非前台持久化 MenuItem。 由后台常量构造并按权限过滤；ReactNode 图标不能进入持久化 DTO。",
@@ -525,7 +525,7 @@
       "id": "src/app/admin/components/AdminNavigation/index.tsx:16:AdminNavigationProps",
       "name": "AdminNavigationProps",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/admin/_components/AdminNavigation/index.tsx",
+      "currentFile": "src/app/admin/components/AdminNavigation/index.tsx",
       "currentLine": 16,
       "disposition": "retained-independent",
       "reason": "保留导航列表及 pendingPath 回调的组件契约，data 使用 AdminNavigationItem。 多处 UI 组合的控制输入，不是重复业务实体。",
@@ -558,11 +558,11 @@
       "id": "src/app/service-worker-cache-rules.ts:1:RuntimeRequest",
       "name": "RuntimeRequest",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/app/_pwa/service-worker-cache-rules.ts",
+      "currentFile": "src/app/pwa/service-worker-cache-rules.ts",
       "currentLine": 1,
       "disposition": "retained-independent",
       "reason": "保留缓存匹配器最小输入；URL.pathname 已 Pick，sameOrigin 是路由策略上下文。 独立 Serwist 回调适配，不引入完整 Request 或服务端数据。",
-      "authority": "src/app/_pwa/service-worker-cache-rules.ts#RuntimeRequest",
+      "authority": "src/app/pwa/service-worker-cache-rules.ts#RuntimeRequest",
       "originalDeclarationUnchanged": true
     },
     {
@@ -580,7 +580,7 @@
       "id": "src/app/sw.ts:13:WorkerGlobalScope",
       "name": "WorkerGlobalScope",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/app/_pwa/sw.ts",
+      "currentFile": "src/app/pwa/sw.ts",
       "currentLine": 13,
       "disposition": "retained-derived",
       "reason": "保留 WorkerGlobalScope 的框架声明合并和 __SW_MANIFEST 类型。 Service Worker 全局声明，非业务模型；构建注入 manifest。",
@@ -1031,121 +1031,121 @@
       "id": "src/components/admin/action-state.ts:3:AdminDialogState",
       "name": "AdminDialogState",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 3,
       "disposition": "retained-independent",
       "reason": "保留泛型编辑弹窗状态；type 使用 ModalType，record 使用调用方泛型。 本地状态含 open/type，与任意业务 Record 的读取/写入生命周期不同。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminDialogState",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:29:AdminMutationState",
       "name": "AdminMutationState",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 29,
       "disposition": "retained-independent",
       "reason": "保留本地 mutation 工作流 success/error/noop 状态，非服务端提交结果。 runAdminMutation 将 promise/成功判定/刷新副作用转换为该联合。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminMutationState",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminMutationState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:30:AdminTargetMutationState",
       "name": "AdminTargetMutationState",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 30,
       "disposition": "retained-derived",
       "reason": "保留 AdminMutationState | \"missing-target\"。 仅静态派生；不新增运行时依赖或改变数据形状。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminMutationState",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminMutationState",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:32:AdminMutationFeedback",
       "name": "AdminMutationFeedback",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 32,
       "disposition": "retained-independent",
       "reason": "保留 UI 通知与刷新效果接口。 真实跨组件依赖端口，和服务端结果数据不是相同模型。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminMutationFeedback",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:39:AdminListActionOptions",
       "name": "AdminListActionOptions",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 39,
       "disposition": "retained-independent",
       "reason": "保留通用批量操作配置，selectedRows 与 onSelectionChange 保持泛型。 只消费选择和刷新行为，不复制业务字段；refetch 与反馈接口共享签名但无须新造抽象。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminListActionOptions",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminListActionOptions",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:45:RunAdminMutationOptions",
       "name": "RunAdminMutationOptions",
       "baselineCategory": "已合理派生",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 45,
       "disposition": "retained-derived",
       "reason": "保留 extends AdminMutationFeedback 与 Input/Result 泛型。 仅静态派生；不新增运行时依赖或改变数据形状。",
-      "authority": "src/components/admin/lib/action-state.ts#AdminMutationFeedback",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/action-state.ts:107:SubmitAdminBatchDeleteOptions",
       "name": "SubmitAdminBatchDeleteOptions",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/lib/action-state.ts",
+      "currentFile": "src/app/admin/(dashboard)/lib/action-state.ts",
       "currentLine": 107,
       "disposition": "retained-independent",
       "reason": "保留批删流程的最小 readonly id 输入与结果回调。 仅抽取 id 后调用 deleteItems，不伪装成完整实体；Selection 泛型用于清空选择。",
-      "authority": "src/components/admin/lib/action-state.ts#SubmitAdminBatchDeleteOptions",
+      "authority": "src/app/admin/(dashboard)/lib/action-state.ts#SubmitAdminBatchDeleteOptions",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.test.tsx:6:Values",
       "name": "Values",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/draft/local-draft.test.tsx",
+      "currentFile": "src/app/admin/(dashboard)/draft/local-draft.test.tsx",
       "currentLine": 7,
       "disposition": "retained-independent",
       "reason": "保留 local-draft 测试自定义 Values，验证任意嵌套结构的序列化。 不是 production I18n 规则测试；其语言形状刻意作为独立测试数据。",
-      "authority": "src/components/admin/draft/local-draft.test.tsx#Values",
+      "authority": "src/app/admin/(dashboard)/draft/local-draft.test.tsx#Values",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.tsx:5:Draft",
       "name": "Draft",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/draft/use-local-draft.ts",
+      "currentFile": "src/app/admin/(dashboard)/draft/use-local-draft.ts",
       "currentLine": 5,
       "disposition": "retained-independent",
       "reason": "保留已验证本地草稿 savedAt/values 包装，T 由调用方解析。 load 从带 version 的 localStorage envelope 实际验证后投影为 Draft<T>，不等同业务草稿。",
-      "authority": "src/components/admin/draft/use-local-draft.ts#Draft",
+      "authority": "src/app/admin/(dashboard)/draft/use-local-draft.ts#Draft",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.tsx:6:Options",
       "name": "Options",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/draft/use-local-draft.ts",
+      "currentFile": "src/app/admin/(dashboard)/draft/use-local-draft.ts",
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留本地草稿 hook 的 storageKey、会话状态和 parse/onRestore 协议。 不绑定业务 schema；调用者提供解析器才能把 unknown 变成 T。",
-      "authority": "src/components/admin/draft/use-local-draft.ts#Options",
+      "authority": "src/app/admin/(dashboard)/draft/use-local-draft.ts#Options",
       "originalDeclarationUnchanged": true
     },
     {
       "id": "src/components/admin/local-draft.tsx:14:Session",
       "name": "Session",
       "baselineCategory": "独立契约应保留",
-      "currentFile": "src/components/admin/draft/use-local-draft.ts",
+      "currentFile": "src/app/admin/(dashboard)/draft/use-local-draft.ts",
       "currentLine": 14,
       "disposition": "retained-independent",
       "reason": "保留本地恢复会话的 raw/json/dirty/suppressed/timer 状态机；pending 已引用 Draft<T>。 运行时过程状态而非存储 envelope；timer 已从 setTimeout 派生。",
-      "authority": "src/components/admin/draft/use-local-draft.ts#Session",
+      "authority": "src/app/admin/(dashboard)/draft/use-local-draft.ts#Session",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1321,7 +1321,7 @@
       "currentLine": 25,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<CategoryEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/category/types/category.record.ts: CategoryListItem（本地别名 CategoryEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
+      "authority": "src/features/category/types/category.record.ts: CategoryListItem（本地别名 CategoryEntity）；src/app/admin/(dashboard)/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1332,7 +1332,7 @@
       "currentLine": 30,
       "disposition": "retained-independent",
       "reason": "保留组件开关/回调 props；modalProps 已使用 AdminDialogState<CategoryListItem>，不是分类记录的字段副本。 React 交互契约只组合纯类型，不从数据库或 router 反推组件 API。",
-      "authority": "src/features/category/admin/components/CategoryFormDialog/index.tsx: CategoryFormDialog；src/components/admin/lib/action-state.ts: AdminDialogState",
+      "authority": "src/features/category/admin/components/CategoryFormDialog/index.tsx: CategoryFormDialog；src/app/admin/(dashboard)/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1343,7 +1343,7 @@
       "currentLine": 12,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.categoryTranslation.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-category.ts: categoryTranslation；src/features/category/server/category-translations.ts",
+      "authority": "src/lib/db/schema/category.ts: categoryTranslation；src/features/category/server/category-translations.ts",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1783,7 +1783,7 @@
       "currentLine": 4,
       "disposition": "retained-independent",
       "reason": "保留后台内部评论读取契约；toCommentRecord 实际白名单构造且将数据库 status 验证为 CommentStatus | null，插入输入有 optional/验证码/互斥目标等不同语义。 该模型包含 email/ip/userAgent，只能用于后台/通知内部；公开路径必须经过独立脱敏 mapper。type-only ORM 无运行时成本但会新增表结构耦合，不是自动正确的替换。",
-      "authority": "src/features/comment/server/comment-dto.ts: toCommentRecord/parseCommentStatus；src/lib/db/schema/content-comment.ts: comment",
+      "authority": "src/features/comment/server/comment-dto.ts: toCommentRecord/parseCommentStatus；src/lib/db/schema/comment.ts: comment",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1904,7 +1904,7 @@
       "currentLine": 26,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<LinkEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/link/types/link.record.ts: LinkRecord（本地别名 LinkEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
+      "authority": "src/features/link/types/link.record.ts: LinkRecord（本地别名 LinkEntity）；src/app/admin/(dashboard)/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1915,7 +1915,7 @@
       "currentLine": 28,
       "disposition": "retained-independent",
       "reason": "保留反馈回调加记录/更新输入的操作依赖；LinkRecord、LinkUpdate 均已直接引用，不复制业务字段。 客户端 orchestration，不以 Promise<unknown> 隐藏实际会被消费的返回字段，当前仅交给通用反馈处理。",
-      "authority": "src/features/link/admin/link-actions.ts: submitLinkUpdate；src/components/admin/lib/action-state.ts: AdminMutationFeedback",
+      "authority": "src/features/link/admin/link-actions.ts: submitLinkUpdate；src/app/admin/(dashboard)/lib/action-state.ts: AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
@@ -1970,7 +1970,7 @@
       "currentLine": 5,
       "disposition": "derived-with-runtime-projection",
       "reason": "固定七字段 Pick 加 EnableStatus|null，状态校验不变；创建/更新/列表新增列红绿回归，精确 named import type 依赖例外与反向 feature 闭包门禁。 ",
-      "authority": "src/lib/db/schema/content-link.ts: link；src/features/link/server/link-operations.ts: toLinkRecord；src/features/link/types/link.record.ts",
+      "authority": "src/lib/db/schema/link.ts: link；src/features/link/server/link-operations.ts: toLinkRecord；src/features/link/types/link.record.ts",
       "originalDeclarationUnchanged": false
     },
     {
@@ -2520,7 +2520,7 @@
       "currentLine": 30,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.page.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-page.ts: page.$inferSelect",
+      "authority": "src/lib/db/schema/page.ts: page.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2542,7 +2542,7 @@
       "currentLine": 6,
       "disposition": "retained-derived",
       "reason": "保留 InferInsertModel<typeof schema.page>。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-page.ts: page；drizzle-orm: InferInsertModel",
+      "authority": "src/lib/db/schema/page.ts: page；drizzle-orm: InferInsertModel",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2553,7 +2553,7 @@
       "currentLine": 6,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.pageTranslation.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-page.ts: pageTranslation.$inferSelect",
+      "authority": "src/lib/db/schema/page.ts: pageTranslation.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2630,7 +2630,7 @@
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留纯读取模型：聚合完整双语翻译、验证 status/template，并实际排除 creationToken/creationInputHash 等创建恢复内部字段。 读取 record 不等于 PageInsert（含创建令牌）、PageFields（必填输入）或 ORM 行；type-only ORM 不加载运行时，但需明确白名单与翻译聚合而不是完整 inferSelect。",
-      "authority": "src/features/page/server/page-queries.ts: toPageRecord；src/features/page/server/page-translations.ts: groupPageTranslations；src/lib/db/schema/content-page.ts",
+      "authority": "src/features/page/server/page-queries.ts: toPageRecord；src/features/page/server/page-translations.ts: groupPageTranslations；src/lib/db/schema/page.ts",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2894,7 +2894,7 @@
       "currentLine": 25,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.post.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-post.ts: post.$inferSelect",
+      "authority": "src/lib/db/schema/post.ts: post.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2927,7 +2927,7 @@
       "currentLine": 4,
       "disposition": "retained-derived",
       "reason": "保留 InferInsertModel<typeof schema.post>。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-post.ts: post；drizzle-orm: InferInsertModel",
+      "authority": "src/lib/db/schema/post.ts: post；drizzle-orm: InferInsertModel",
       "originalDeclarationUnchanged": true
     },
     {
@@ -2938,7 +2938,7 @@
       "currentLine": 12,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.postTranslation.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-post.ts: postTranslation.$inferSelect",
+      "authority": "src/lib/db/schema/post.ts: postTranslation.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3191,7 +3191,7 @@
       "currentLine": 10,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.settingTranslation.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-setting.ts: settingTranslation.$inferSelect",
+      "authority": "src/lib/db/schema/setting.ts: settingTranslation.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3279,7 +3279,7 @@
       "currentLine": 34,
       "disposition": "retained-independent",
       "reason": "保留 AdminDialogState<TagRecord> 扩展 onClose/onSuccess 的 UI 协议，业务记录已经派生。 可选回调不是标签字段，不应与 Link/User 对话框强制合并泛型。",
-      "authority": "src/features/tag/admin/components/TagFormDialog/index.tsx: TagFormDialog；src/components/admin/lib/action-state.ts: AdminDialogState；src/features/tag/types/tag.record.ts",
+      "authority": "src/features/tag/admin/components/TagFormDialog/index.tsx: TagFormDialog；src/app/admin/(dashboard)/lib/action-state.ts: AdminDialogState；src/features/tag/types/tag.record.ts",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3290,7 +3290,7 @@
       "currentLine": 9,
       "disposition": "retained-derived",
       "reason": "保留 typeof schema.tagTranslation.$inferSelect。 服务端实现内的持久化或具体函数推导；不进入 UI / 纯业务契约运行时，实际投影、校验与事务行为仍由实现承担。",
-      "authority": "src/lib/db/schema/content-tag.ts: tagTranslation.$inferSelect",
+      "authority": "src/lib/db/schema/tag.ts: tagTranslation.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3477,7 +3477,7 @@
       "currentLine": 28,
       "disposition": "retained-derived",
       "reason": "保留 AdminDialogState<UserEntity>。 UI / presentation 局部组合，不引入 ORM 或服务端运行时；现有表单、草稿或结果转换不能由类型别名替代。",
-      "authority": "src/features/user/types/user.record.ts: UserRecord（本地别名 UserEntity）；src/components/admin/lib/action-state.ts: AdminDialogState",
+      "authority": "src/features/user/types/user.record.ts: UserRecord（本地别名 UserEntity）；src/app/admin/(dashboard)/lib/action-state.ts: AdminDialogState",
       "originalDeclarationUnchanged": true
     },
     {
@@ -3488,7 +3488,7 @@
       "currentLine": 30,
       "disposition": "retained-independent",
       "reason": "保留 mutation 反馈依赖，record/values 分别复用 UserRecord/UserUpdate；这是执行参数而非用户字段副本。 UI 回调与持久化用户对象分离；更新密码等运行时安全处理仍由 server 负责。",
-      "authority": "src/features/user/admin/user-actions.ts: submitUserUpdate；src/components/admin/lib/action-state.ts: AdminMutationFeedback",
+      "authority": "src/features/user/admin/user-actions.ts: submitUserUpdate；src/app/admin/(dashboard)/lib/action-state.ts: AdminMutationFeedback",
       "originalDeclarationUnchanged": true
     },
     {
@@ -4610,7 +4610,7 @@
       "currentLine": 7,
       "disposition": "retained-derived",
       "reason": "保留 fixture 交集中的显式派生；创建基础 fixture 同时服务持久化 mock 与关联读取测试。 只限 tests helper，字段不是手写第二套类型；交集耦合两模型，若用途分离宜拆 factory，不能作为生产公开 DTO。",
-      "authority": "src/features/post/types/post.read-model.ts#PostWithRelations；src/lib/db/schema/content-post.ts#post.$inferSelect",
+      "authority": "src/features/post/types/post.read-model.ts#PostWithRelations；src/lib/db/schema/post.ts#post.$inferSelect",
       "originalDeclarationUnchanged": true
     },
     {

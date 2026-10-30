@@ -8,7 +8,7 @@
 
 ## 决策
 
-- PWA 六文件整体归 app/_pwa，basename 与相对依赖保持；不用普通共享 lib 承载应用路由策略，不留旧转发壳。构建输出仍 public/serwist/sw.js，scope / 与 header 不变。
+- PWA 六文件整体归 app/pwa，basename 与相对依赖保持；不用普通共享 lib 承载应用路由策略，不留旧转发壳。构建输出仍 public/serwist/sw.js，scope / 与 header 不变。
 - sitemap-data 归 app/lib/server，显式 server-only 并加入架构入口保护。保留动态 tRPC 导入、缓存 key/tag、分片及 XML 和降级逻辑。精确关键文件阈值和 protected patterns 跟随新路径，不扩大排除。
 - 三边界恢复测试归 tests/integration/framework-error-recovery.test.tsx，只改组件导入；既有 error-boundaries 的上报测试不合并。测试逻辑、矩阵与钩子迁前后对比。
 - 类型台账保留历史 id，仅更新 currentFile/currentLine/当前 authority；历史归档和旧计划不机械重写。

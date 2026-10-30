@@ -36,7 +36,7 @@ After: feature router (same input/authorization entry) → `updatePage(db, input
 
 Before category update: router → application forwarding → repository adapter. After: category/router.ts → category/server.ts direct operation. Both preflight cycle validation and the atomic recursive SQL parent guard remain. A new regression simulates a stale preflight race and verifies rollback and no invalidation.
 
-Post/page editor media picker/provider now share their media feature owner; neither editor imports business UI from the other. Generic Tiptap remains in components/editor. Page editor query input is passed directly as `{ id }`, without a one-line forwarding function.
+Post/page editor media picker/provider now share their media feature owner; neither editor imports business UI from the other. Generic Tiptap remains in components/Editor. Page editor query input is passed directly as `{ id }`, without a one-line forwarding function.
 
 ## Validation record
 

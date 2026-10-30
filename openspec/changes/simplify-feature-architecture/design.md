@@ -24,11 +24,11 @@ feature 可用 server.ts，规模与职责需要时才拆 server/。函数直接
 
 ### 根组合留在 app
 
-app/_trpc/router.ts 组合 feature router，app/_trpc/server.ts 提供 caller。lib/trpc 仅包含公共 core/context/client 及传输工具；客户端可以 type-only 引用根 AppRouter，不能运行时导入根 router。
+app/trpc/router.ts 组合 feature router，app/trpc/server.ts 提供 caller。lib/trpc 仅包含公共 core/context/client 及传输工具；客户端可以 type-only 引用根 AppRouter，不能运行时导入根 router。
 
 没有选择由 lib/trpc 组合业务：共享技术库不应成为依赖全部业务的组合根。
 
-认证保留窄技术集成：src/auth.ts 绑定 Better Auth，app/_auth 组合登录 hook 与请求审计；lib/trpc/context.ts 仅为会话读取延迟加载 src/auth.ts。该例外不允许 lib/auth 加载业务操作，也不允许 lib/trpc 组合业务 router。
+认证保留窄技术集成：src/auth.ts 绑定 Better Auth，app/auth 组合登录 hook 与请求审计；lib/trpc/context.ts 仅为会话读取延迟加载 src/auth.ts。该例外不允许 lib/auth 加载业务操作，也不允许 lib/trpc 组合业务 router。
 
 ### 纯业务契约由 feature 拥有
 

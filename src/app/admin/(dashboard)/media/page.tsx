@@ -1,1 +1,1 @@
-export { MediaPageShell as default } from "@/features/media/admin/components/MediaPageShell";
+export { MediaPageShell as default } from "@/app/admin/(dashboard)/components/MediaPageShell";

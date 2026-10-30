@@ -4,7 +4,7 @@ src/app 根目录混放了非框架入口的 PWA 实现、跨路由 sitemap help
 
 ## 变更内容
 
-- 六个 PWA 实现/测试保持文件名迁到 app/_pwa，构建入口同步，公开 worker URL 不变。
+- 六个 PWA 实现/测试保持文件名迁到 app/pwa，构建入口同步，公开 worker URL 不变。
 - sitemap-data 迁到既有 app/lib/server，增加 server-only 并同步消费者、精确覆盖率门槛与保护路径。
 - 跨三个错误边界的恢复测试迁到 tests/integration，保持全部断言。
 - 同步当前规范、工程导航和类型台账；不改历史记录、auth、404、Provider、manifest 或依赖版本。
@@ -17,7 +17,7 @@ src/app 根目录混放了非框架入口的 PWA 实现、跨路由 sitemap help
 
 ### 修改能力
 
-- pwa-offline-reliability：唯一 worker 源入口更新到 app/_pwa，公开输出保持不变。
+- pwa-offline-reliability：唯一 worker 源入口更新到 app/pwa，公开输出保持不变。
 - coverage-governance：精确 worker 排除路径更新，PWA 策略仍纳入覆盖。
 
 ## 影响范围

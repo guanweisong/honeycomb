@@ -1,1 +1,1 @@
-export { default } from "@/features/setting/admin/components/SettingClient";
+export { default } from "@/app/admin/(dashboard)/setting/components/SettingClient";

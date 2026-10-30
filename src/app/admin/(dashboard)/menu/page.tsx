@@ -1,1 +1,1 @@
-export { MenuPageShell as default } from "@/features/menu/admin/components/MenuPageShell";
+export { MenuPageShell as default } from "@/app/admin/(dashboard)/menu/components/MenuPageShell";

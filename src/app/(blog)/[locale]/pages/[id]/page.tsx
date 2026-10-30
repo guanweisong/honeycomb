@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
-import PostInfo from "@/features/post/public/PostInfo";
-import { PostCommentCount } from "@/features/post/public/PostInfo";
-import Comment from "@/features/comment/public/components/CommentClient";
-import PageTitle from "@/app/(blog)/_components/PageTitle";
+import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
+import { PostCommentCount } from "@/app/(blog)/components/features/post/public/PostInfo";
+import Comment from "@/app/(blog)/components/features/comment/public/components/CommentClient";
+import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
 import {
@@ -11,8 +11,8 @@ import {
   getPublicSetting,
   getPublicLinks,
 } from "@/app/lib/server/public-queries";
-import { RichText } from "@/features/media/public/RichText";
-import { PageViewTracker } from "@/features/page/public/PageViewTracker";
+import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
+import { PageViewTracker } from "@/app/(blog)/components/features/page/public/PageViewTracker";
 import { PageTemplate } from "@/features/page/types/page.template";
 import { cn } from "cn";
 import { connection } from "next/server";

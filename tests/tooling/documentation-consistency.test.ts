@@ -127,8 +127,8 @@ describe("repository documentation consistency", () => {
       "openspec/specs/account-security-trpc-api/spec.md",
     );
     expect(spec).toContain("features/user/account-security");
-    expect(spec).toContain("app/_auth");
+    expect(spec).toContain("app/auth");
     expect(existsSync("src/features/user/account-security")).toBe(true);
-    expect(existsSync("src/app/_auth")).toBe(true);
+    expect(existsSync("src/app/auth")).toBe(true);
   });
 });

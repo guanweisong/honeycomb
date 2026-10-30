@@ -20,8 +20,8 @@ vi.mock("@/components/PhotoSwipe", () => ({
     <>{children}</>
   ),
 }));
-import Tiptap from "@/components/editor";
-import { RichText } from "@/features/media/public/RichText";
+import Tiptap from "@/components/Editor";
+import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
 
 it("round trips supported editor HTML through save sanitization and public rendering", async () => {
   const container = document.createElement("div");

@@ -32,8 +32,8 @@ vi.mock("next-intl", () => ({
     `${values.count} 次浏览`,
 }));
 
-import { PageViewTracker } from "@/features/page/public/PageViewTracker";
-import { PostViewTracker } from "@/features/post/public/PostViewTracker";
+import { PageViewTracker } from "@/app/(blog)/components/features/page/public/PageViewTracker";
+import { PostViewTracker } from "@/app/(blog)/components/features/post/public/PostViewTracker";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 

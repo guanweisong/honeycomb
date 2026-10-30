@@ -27,8 +27,8 @@ import {
 } from "lucide-react";
 import { Editor } from "@tiptap/core";
 import { ReactNode } from "react";
-import { ToolbarLinkItem } from "@/components/editor/components/ToolbarLinkItem";
-import { ToolbarImageItem } from "@/components/editor/components/ToolbarImageItem";
+import { ToolbarLinkItem } from "@/components/Editor/components/ToolbarLinkItem";
+import { ToolbarImageItem } from "@/components/Editor/components/ToolbarImageItem";
 
 export interface ToolbarItem {
   icon: ReactNode;

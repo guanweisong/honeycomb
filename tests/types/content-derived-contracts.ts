@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import type {
   submitMediaDelete,
   submitMediaUpload,
-} from "@/features/media/admin/media-actions";
+} from "@/app/admin/(dashboard)/media/media-actions";
 import type {
   MediaDeleteInput,
   MediaDeleteResult,
@@ -10,11 +10,11 @@ import type {
 import type { MediaRegisterUploadInput } from "@/features/media/types/media.upload";
 import type { MediaRecord } from "@/features/media/types/media.record";
 import type { findKnownMediaReferences } from "@/features/media/server/media-references";
-import type { PageEditorActionButtons } from "@/features/page/admin/edit/components/PageEditorActionButtons";
-import type { submitPageEditor } from "@/features/page/admin/edit/page-editor-actions";
+import type { PageEditorActionButtons } from "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons";
+import type { submitPageEditor } from "@/app/admin/(dashboard)/page/edit/page-editor-actions";
 import type { PageInput } from "@/features/page/types/page.list-query";
 import type { PageStatus } from "@/features/page/types/page.status";
-import type { PostEditorActions } from "@/features/post/admin/edit/components/PostEditorActions";
+import type { PostEditorActions } from "@/app/admin/(dashboard)/post/edit/components/PostEditorActions";
 import type { PostListInput } from "@/features/post/types/post.list-query";
 import type { PostStatus } from "@/features/post/types/post.status";
 import type {

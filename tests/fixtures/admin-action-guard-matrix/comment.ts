@@ -4,7 +4,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
   {
     sourcePath:
-      "src/features/comment/admin/components/CommentPageShell/index.tsx",
+      "src/app/admin/(dashboard)/comment/components/CommentPageShell/index.tsx",
     actions: [
       {
         id: "comment.moderate",

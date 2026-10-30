@@ -3,8 +3,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
+import { createValidFileMatcher } from "next/dist/server/lib/find-page-file";
 import { moduleDependencies } from "@tests/helpers/architecture-imports";
-import { sourceFile } from "@tests/helpers/source-files";
+import { filesInDirectory, sourceFile } from "@tests/helpers/source-files";
 
 function directives(path: string) {
   return sourceFile(path).statements.flatMap((node) =>
@@ -15,22 +16,33 @@ function directives(path: string) {
 }
 
 describe("component ownership", () => {
-  it("keeps route-private, shared and business UI at their owned paths", () => {
+  it("keeps route-local, shared and business UI at their owned paths", () => {
     const moves = [
-      ["src/app/(blog)/components", "src/app/(blog)/_components"],
-      ["src/app/admin/components", "src/app/admin/_components"],
+      ["src/app/(blog)/_components", "src/app/(blog)/components"],
+      ["src/app/admin/_components", "src/app/admin/components"],
       [
-        "src/app/admin/(dashboard)/components",
         "src/app/admin/(dashboard)/_components",
+        "src/app/admin/(dashboard)/components",
       ],
       [
-        "src/app/(blog)/_components/NoData",
-        "src/app/(blog)/[locale]/list/[...slug]/_components/NoData/index.tsx",
+        "src/app/admin/login/_components",
+        "src/app/admin/login/components",
       ],
+      [
+        "src/app/(blog)/components/NoData",
+        "src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx",
+      ],
+      [
+        "src/app/(blog)/[locale]/list/[...slug]/_components",
+        "src/app/(blog)/[locale]/list/[...slug]/components",
+      ],
+      ["src/app/_auth", "src/app/auth"],
+      ["src/app/_trpc", "src/app/trpc"],
+      ["src/app/_pwa", "src/app/pwa"],
       ["src/components/blog/Card", "src/components/SectionCard/index.tsx"],
       [
         "src/components/blog/TextDivider",
-        "src/features/post/public/components/PostList/TextDivider.tsx",
+        "src/app/(blog)/components/features/post/public/components/PostList/TextDivider.tsx",
       ],
       [
         "src/components/admin/MultiLangText",
@@ -39,14 +51,52 @@ describe("component ownership", () => {
       ["src/components/admin/date-time.ts", "src/lib/ui/admin-date-time.ts"],
       [
         "src/features/media/components",
-        "src/features/media/admin/components/EditorMediaProvider/index.tsx",
+        "src/app/admin/(dashboard)/components/EditorMediaProvider/index.tsx",
       ],
-      ["src/features/media/shared", "src/features/media/admin/media-query.ts"],
+      ["src/features/media/shared", "src/app/admin/(dashboard)/media/components/media-query.ts"],
     ] as const;
     for (const [previous, current] of moves) {
       expect(existsSync(previous), previous).toBe(false);
       expect(existsSync(current), current).toBe(true);
     }
+  });
+
+  it.each([
+    "src/app/(blog)/components",
+    "src/app/(blog)/[locale]/list/[...slug]/components",
+    "src/app/admin/components",
+    "src/app/admin/(dashboard)/components",
+    "src/app/admin/(dashboard)/components/CategoryFormDialog",
+    "src/app/admin/(dashboard)/components/EditorMediaProvider",
+    "src/app/admin/(dashboard)/components/MediaPageShell",
+    "src/app/admin/(dashboard)/components/PhotoPicker",
+    "src/app/admin/(dashboard)/account/security/components",
+    "src/app/admin/(dashboard)/comment/components",
+    "src/app/admin/(dashboard)/dashboard/components",
+    "src/app/admin/(dashboard)/link/components",
+    "src/app/admin/(dashboard)/media/components",
+    "src/app/admin/(dashboard)/menu/components",
+    "src/app/admin/(dashboard)/page/components",
+    "src/app/admin/(dashboard)/page/edit/components",
+    "src/app/admin/(dashboard)/page/list/components",
+    "src/app/admin/(dashboard)/post/category/components",
+    "src/app/admin/(dashboard)/post/components",
+    "src/app/admin/(dashboard)/post/edit/components",
+    "src/app/admin/(dashboard)/post/list/components",
+    "src/app/admin/(dashboard)/setting/components",
+    "src/app/admin/(dashboard)/tag/components",
+    "src/app/admin/(dashboard)/user/components",
+    "src/app/admin/login/components",
+    "src/app/auth",
+    "src/app/trpc",
+    "src/app/pwa",
+  ])("keeps %s non-routable", (directory) => {
+    expect(existsSync(directory), directory).toBe(true);
+    const { isAppRouterPage } = createValidFileMatcher(
+      ["tsx", "ts", "jsx", "js"],
+      "src/app",
+    );
+    expect(filesInDirectory(directory).filter(isAppRouterPage)).toEqual([]);
   });
 
   it("preserves server-compatible cards and the explicit interactive entry", () => {
@@ -56,20 +106,27 @@ describe("component ownership", () => {
     expect(directives("src/components/MultiLangText/index.tsx")).toContain(
       "use client",
     );
+    expect(
+      existsSync("src/app/admin/(dashboard)/components/features"),
+    ).toBe(false);
+    for (const owner of ["category", "media", "page", "post"])
+      expect(
+        existsSync(`src/app/admin/(dashboard)/components/${owner}`),
+      ).toBe(false);
     const provider =
-      "src/features/media/admin/components/EditorMediaProvider/index.tsx";
+      "src/app/admin/(dashboard)/components/EditorMediaProvider/index.tsx";
     expect(
       moduleDependencies(readFileSync(provider, "utf8"), provider),
     ).toContainEqual({
-      specifier: "@/components/editor/media-picker",
+      specifier: "@/components/Editor/media-picker",
       typeOnly: false,
     });
   });
 
   it.each(["post", "page"])(
-    "keeps %s publication display tied to its own state contract",
+    "keeps %s publication display in app and tied to its own state contract",
     (feature) => {
-      const path = `src/features/${feature}/admin/publication-status-tone.ts`;
+      const path = `src/app/admin/(dashboard)/${feature}/list/components/publication-status-tone.ts`;
       const dependencies = moduleDependencies(readFileSync(path, "utf8"), path);
       expect(dependencies).toContainEqual({
         specifier: `@/features/${feature}/types/${feature}.status`,

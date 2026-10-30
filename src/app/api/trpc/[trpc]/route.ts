@@ -1,4 +1,4 @@
-import { appRouter } from "@/app/_trpc/router";
+import { appRouter } from "@/app/trpc/router";
 import { createContext } from "@/lib/trpc/context";
 import {
   createRequestContext,

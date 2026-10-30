@@ -18,15 +18,11 @@ const scopes = [
   },
   {
     name: "Post",
-    roots: ["src/features/post"],
-    paths: [
-      "/public/",
-      "/presentation/",
-      "/admin/edit/hooks/use-post-editor",
-      "/admin/edit/components/PhotoPickerItem",
-      "/admin/list/components/PostListClient",
-      "/admin/list/constants/post-list-table-columns",
+    roots: [
+      "src/features/post",
+      "src/app/admin/(dashboard)/post",
     ],
+    paths: ["/public/", "/presentation/", "/admin/"],
   },
   {
     name: "Other features",
@@ -37,7 +33,7 @@ const scopes = [
   },
 ];
 const transportOutput =
-  /(?:lib\/trpc\/outputs|app\/_trpc\/router|inferRouterOutputs)/;
+  /(?:lib\/trpc\/outputs|app\/trpc\/router|inferRouterOutputs)/;
 
 describe("View Model boundaries", () => {
   it.each(scopes)(
@@ -57,7 +53,7 @@ describe("View Model boundaries", () => {
     },
   );
 
-  it.each(["lib/trpc/outputs", "app/_trpc/router", "inferRouterOutputs"])(
+  it.each(["lib/trpc/outputs", "app/trpc/router", "inferRouterOutputs"])(
     "rejects %s references",
     (reference) => {
       expect(

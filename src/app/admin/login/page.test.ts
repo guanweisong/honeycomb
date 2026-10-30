@@ -27,12 +27,12 @@ vi.mock("@/app/lib/server/public-queries", () => ({
 vi.mock("@/app/admin/lib/auth-providers", () => ({
   getAuthProviders: mocks.getAuthProviders,
 }));
-vi.mock("@/features/user/login/components/LoginClient", () => ({
+vi.mock("@/app/admin/login/components/LoginClient", () => ({
   default: () => null,
 }));
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
-import LoginClient from "@/features/user/login/components/LoginClient";
+import LoginClient from "@/app/admin/login/components/LoginClient";
 import LoginPage from "@/app/admin/login/page";
 
 type LoginPageProps = Parameters<typeof LoginPage>[0];

@@ -1,4 +1,4 @@
-import type { renderCategoryTitleByDepth } from "@/features/category/admin/category-title";
+import type { renderCategoryTitleByDepth } from "@/app/admin/(dashboard)/post/edit/components/category-title";
 import type { CommentRequestMetadata } from "@/features/comment/types/comment.insert";
 import type {
   NotificationComment,
@@ -8,13 +8,13 @@ import type { CommentListInput } from "@/features/comment/types/comment.query";
 import type { PublicCommentNode } from "@/features/comment/types/comment.read-model";
 import type { CommentStatus } from "@/features/comment/types/comment.status";
 import type { CommentTarget } from "@/features/comment/types/comment.target";
-import type { MenuSaveResult } from "@/features/menu/admin/menu-actions";
+import type { MenuSaveResult } from "@/app/admin/(dashboard)/menu/menu-actions";
 import type {
   MenuEntityTree,
   MenuSelectableItem,
-} from "@/features/menu/admin/menu-transforms";
+} from "@/app/admin/(dashboard)/menu/components/menu-transforms";
 import type { MenuType } from "@/features/menu/types/menu.type";
-import type LoginClient from "@/features/user/login/components/LoginClient";
+import type LoginClient from "@/app/admin/login/components/LoginClient";
 import type { CurrentUser } from "@/features/user/types/user.current";
 import type { UserLevel } from "@/features/user/types/user.level";
 import type {

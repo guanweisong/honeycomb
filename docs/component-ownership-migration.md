@@ -10,44 +10,44 @@
 
 | 项目 | 原文件                                                                             | 当前文件                                                                                                           |
 | ---- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| P01  | src/app/(blog)/components/BackToTop/index.test.tsx                                 | src/app/(blog)/_components/BackToTop/index.test.tsx                                                                |
-| P01  | src/app/(blog)/components/BackToTop/index.tsx                                      | src/app/(blog)/_components/BackToTop/index.tsx                                                                     |
-| P01  | src/app/(blog)/components/BackToTop/scroll-integration.test.tsx                    | src/app/(blog)/_components/BackToTop/scroll-integration.test.tsx                                                   |
-| P01  | src/app/(blog)/components/Breadcrumb/index.test.tsx                                | src/app/(blog)/_components/Breadcrumb/index.test.tsx                                                               |
-| P01  | src/app/(blog)/components/Breadcrumb/index.tsx                                     | src/app/(blog)/_components/Breadcrumb/index.tsx                                                                    |
-| P01  | src/app/(blog)/components/Footer/index.test.tsx                                    | src/app/(blog)/_components/Footer/index.test.tsx                                                                   |
-| P01  | src/app/(blog)/components/Footer/index.tsx                                         | src/app/(blog)/_components/Footer/index.tsx                                                                        |
-| P01  | src/app/(blog)/components/Header/index.test.tsx                                    | src/app/(blog)/_components/Header/index.test.tsx                                                                   |
-| P01  | src/app/(blog)/components/Header/index.tsx                                         | src/app/(blog)/_components/Header/index.tsx                                                                        |
-| P01  | src/app/(blog)/components/LanguageSwitcher/img/en.light.svg                        | src/app/(blog)/_components/LanguageSwitcher/img/en.light.svg                                                       |
-| P01  | src/app/(blog)/components/LanguageSwitcher/img/en.svg                              | src/app/(blog)/_components/LanguageSwitcher/img/en.svg                                                             |
-| P01  | src/app/(blog)/components/LanguageSwitcher/img/zh.light.svg                        | src/app/(blog)/_components/LanguageSwitcher/img/zh.light.svg                                                       |
-| P01  | src/app/(blog)/components/LanguageSwitcher/img/zh.svg                              | src/app/(blog)/_components/LanguageSwitcher/img/zh.svg                                                             |
-| P01  | src/app/(blog)/components/LanguageSwitcher/index.test.tsx                          | src/app/(blog)/_components/LanguageSwitcher/index.test.tsx                                                         |
-| P01  | src/app/(blog)/components/LanguageSwitcher/index.tsx                               | src/app/(blog)/_components/LanguageSwitcher/index.tsx                                                              |
-| P01  | src/app/(blog)/components/Menu/index.test.tsx                                      | src/app/(blog)/_components/Menu/index.test.tsx                                                                     |
-| P01  | src/app/(blog)/components/Menu/index.tsx                                           | src/app/(blog)/_components/Menu/index.tsx                                                                          |
-| P01  | src/app/(blog)/components/NoData/index.test.tsx                                    | src/app/(blog)/[locale]/list/[...slug]/_components/NoData/index.test.tsx                                           |
-| P01  | src/app/(blog)/components/NoData/index.tsx                                         | src/app/(blog)/[locale]/list/[...slug]/_components/NoData/index.tsx                                                |
-| P01  | src/app/(blog)/components/PageTitle/index.test.tsx                                 | src/app/(blog)/_components/PageTitle/index.test.tsx                                                                |
-| P01  | src/app/(blog)/components/PageTitle/index.tsx                                      | src/app/(blog)/_components/PageTitle/index.tsx                                                                     |
-| P01  | src/app/(blog)/components/ThemeProvider/index.test.tsx                             | src/app/(blog)/_components/ThemeProvider/index.test.tsx                                                            |
-| P01  | src/app/(blog)/components/ThemeProvider/index.tsx                                  | src/app/(blog)/_components/ThemeProvider/index.tsx                                                                 |
-| P01  | src/app/(blog)/components/ThemeSwitcher/index.test.tsx                             | src/app/(blog)/_components/ThemeSwitcher/index.test.tsx                                                            |
-| P01  | src/app/(blog)/components/ThemeSwitcher/index.tsx                                  | src/app/(blog)/_components/ThemeSwitcher/index.tsx                                                                 |
-| P01  | src/app/admin/(dashboard)/components/AdminClientShell/index.test.tsx               | src/app/admin/(dashboard)/_components/AdminClientShell/index.test.tsx                                              |
-| P01  | src/app/admin/(dashboard)/components/AdminClientShell/index.tsx                    | src/app/admin/(dashboard)/_components/AdminClientShell/index.tsx                                                   |
-| P01  | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.test.ts | src/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state.test.ts                                |
-| P01  | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts      | src/app/admin/(dashboard)/_components/AdminClientShell/logout-browser-state.ts                                     |
-| P01  | src/app/admin/components/AdminLayout/AdminSidebar.tsx                              | src/app/admin/_components/AdminLayout/AdminSidebar.tsx                                                             |
-| P01  | src/app/admin/components/AdminLayout/index.test.ts                                 | src/app/admin/_components/AdminLayout/index.test.ts                                                                |
-| P01  | src/app/admin/components/AdminLayout/index.tsx                                     | src/app/admin/_components/AdminLayout/index.tsx                                                                    |
-| P01  | src/app/admin/components/AdminLayout/menu-title.test.ts                            | src/app/admin/_components/AdminLayout/menu-title.test.ts                                                           |
-| P01  | src/app/admin/components/AdminLayout/menu-title.ts                                 | src/app/admin/_components/AdminLayout/menu-title.ts                                                                |
-| P01  | src/app/admin/components/AdminNavigation/NavigationItem.test.ts                    | src/app/admin/_components/AdminNavigation/NavigationItem.test.ts                                                   |
-| P01  | src/app/admin/components/AdminNavigation/NavigationItem.tsx                        | src/app/admin/_components/AdminNavigation/NavigationItem.tsx                                                       |
-| P01  | src/app/admin/components/AdminNavigation/index.test.ts                             | src/app/admin/_components/AdminNavigation/index.test.ts                                                            |
-| P01  | src/app/admin/components/AdminNavigation/index.tsx                                 | src/app/admin/_components/AdminNavigation/index.tsx                                                                |
+| P01  | src/app/(blog)/components/BackToTop/index.test.tsx                                 | src/app/(blog)/components/BackToTop/index.test.tsx                                                                |
+| P01  | src/app/(blog)/components/BackToTop/index.tsx                                      | src/app/(blog)/components/BackToTop/index.tsx                                                                     |
+| P01  | src/app/(blog)/components/BackToTop/scroll-integration.test.tsx                    | src/app/(blog)/components/BackToTop/scroll-integration.test.tsx                                                   |
+| P01  | src/app/(blog)/components/Breadcrumb/index.test.tsx                                | src/app/(blog)/components/Breadcrumb/index.test.tsx                                                               |
+| P01  | src/app/(blog)/components/Breadcrumb/index.tsx                                     | src/app/(blog)/components/Breadcrumb/index.tsx                                                                    |
+| P01  | src/app/(blog)/components/Footer/index.test.tsx                                    | src/app/(blog)/components/Footer/index.test.tsx                                                                   |
+| P01  | src/app/(blog)/components/Footer/index.tsx                                         | src/app/(blog)/components/Footer/index.tsx                                                                        |
+| P01  | src/app/(blog)/components/Header/index.test.tsx                                    | src/app/(blog)/components/Header/index.test.tsx                                                                   |
+| P01  | src/app/(blog)/components/Header/index.tsx                                         | src/app/(blog)/components/Header/index.tsx                                                                        |
+| P01  | src/app/(blog)/components/LanguageSwitcher/img/en.light.svg                        | src/app/(blog)/components/LanguageSwitcher/img/en.light.svg                                                       |
+| P01  | src/app/(blog)/components/LanguageSwitcher/img/en.svg                              | src/app/(blog)/components/LanguageSwitcher/img/en.svg                                                             |
+| P01  | src/app/(blog)/components/LanguageSwitcher/img/zh.light.svg                        | src/app/(blog)/components/LanguageSwitcher/img/zh.light.svg                                                       |
+| P01  | src/app/(blog)/components/LanguageSwitcher/img/zh.svg                              | src/app/(blog)/components/LanguageSwitcher/img/zh.svg                                                             |
+| P01  | src/app/(blog)/components/LanguageSwitcher/index.test.tsx                          | src/app/(blog)/components/LanguageSwitcher/index.test.tsx                                                         |
+| P01  | src/app/(blog)/components/LanguageSwitcher/index.tsx                               | src/app/(blog)/components/LanguageSwitcher/index.tsx                                                              |
+| P01  | src/app/(blog)/components/Menu/index.test.tsx                                      | src/app/(blog)/components/Menu/index.test.tsx                                                                     |
+| P01  | src/app/(blog)/components/Menu/index.tsx                                           | src/app/(blog)/components/Menu/index.tsx                                                                          |
+| P01  | src/app/(blog)/components/NoData/index.test.tsx                                    | src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.test.tsx                                           |
+| P01  | src/app/(blog)/components/NoData/index.tsx                                         | src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx                                                |
+| P01  | src/app/(blog)/components/PageTitle/index.test.tsx                                 | src/app/(blog)/components/PageTitle/index.test.tsx                                                                |
+| P01  | src/app/(blog)/components/PageTitle/index.tsx                                      | src/app/(blog)/components/PageTitle/index.tsx                                                                     |
+| P01  | src/app/(blog)/components/ThemeProvider/index.test.tsx                             | src/app/(blog)/components/ThemeProvider/index.test.tsx                                                            |
+| P01  | src/app/(blog)/components/ThemeProvider/index.tsx                                  | src/app/(blog)/components/ThemeProvider/index.tsx                                                                 |
+| P01  | src/app/(blog)/components/ThemeSwitcher/index.test.tsx                             | src/app/(blog)/components/ThemeSwitcher/index.test.tsx                                                            |
+| P01  | src/app/(blog)/components/ThemeSwitcher/index.tsx                                  | src/app/(blog)/components/ThemeSwitcher/index.tsx                                                                 |
+| P01  | src/app/admin/(dashboard)/components/AdminClientShell/index.test.tsx               | src/app/admin/(dashboard)/components/AdminClientShell/index.test.tsx                                              |
+| P01  | src/app/admin/(dashboard)/components/AdminClientShell/index.tsx                    | src/app/admin/(dashboard)/components/AdminClientShell/index.tsx                                                   |
+| P01  | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.test.ts | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.test.ts                                |
+| P01  | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts      | src/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state.ts                                     |
+| P01  | src/app/admin/components/AdminLayout/AdminSidebar.tsx                              | src/app/admin/components/AdminLayout/AdminSidebar.tsx                                                             |
+| P01  | src/app/admin/components/AdminLayout/index.test.ts                                 | src/app/admin/components/AdminLayout/index.test.ts                                                                |
+| P01  | src/app/admin/components/AdminLayout/index.tsx                                     | src/app/admin/components/AdminLayout/index.tsx                                                                    |
+| P01  | src/app/admin/components/AdminLayout/menu-title.test.ts                            | src/app/admin/components/AdminLayout/menu-title.test.ts                                                           |
+| P01  | src/app/admin/components/AdminLayout/menu-title.ts                                 | src/app/admin/components/AdminLayout/menu-title.ts                                                                |
+| P01  | src/app/admin/components/AdminNavigation/NavigationItem.test.ts                    | src/app/admin/components/AdminNavigation/NavigationItem.test.ts                                                   |
+| P01  | src/app/admin/components/AdminNavigation/NavigationItem.tsx                        | src/app/admin/components/AdminNavigation/NavigationItem.tsx                                                       |
+| P01  | src/app/admin/components/AdminNavigation/index.test.ts                             | src/app/admin/components/AdminNavigation/index.test.ts                                                            |
+| P01  | src/app/admin/components/AdminNavigation/index.tsx                                 | src/app/admin/components/AdminNavigation/index.tsx                                                                |
 | P05  | src/components/admin/MultiLangText/img/en.svg                                      | src/components/MultiLangText/img/en.svg                                                                            |
 | P05  | src/components/admin/MultiLangText/img/zh.svg                                      | src/components/MultiLangText/img/zh.svg                                                                            |
 | P05  | src/components/admin/MultiLangText/index.test.tsx                                  | src/components/MultiLangText/index.test.tsx                                                                        |
@@ -96,7 +96,7 @@
 
 ## 门禁与文档
 
-新增 component-ownership 检查具体归属、SectionCard/MultiLangText 边界、媒体 renderer 注入和各业务发布状态来源。既有 feature/library 直接及间接依赖门禁继续生效，不增宽 allowlist。app shell 测试发现器迁到 _components，并断言发现结果非空；媒体 UI 对 transport outputs 的专项限制迁到 media/admin，同时新增两个拒绝和一个允许 fixture，先红后绿验证。
+新增 component-ownership 检查具体归属、SectionCard/MultiLangText 边界、媒体 renderer 注入和各业务发布状态来源。既有 feature/library 直接及间接依赖门禁继续生效，不增宽 allowlist。app shell 测试发现器迁到 components，并断言发现结果非空；媒体 UI 对 transport outputs 的专项限制迁到 media/admin，同时新增两个拒绝和一个允许 fixture，先红后绿验证。
 
 旧路径只在禁止回归测试、迁移对照及冻结历史中保留。目录模板、阅读地图、工程 Skill 和当前架构说明同步；历史审计文件不机械改写。Vitest 隔离、worker、coverage 范围/阈值、CI 和数据库实现均未调整。
 

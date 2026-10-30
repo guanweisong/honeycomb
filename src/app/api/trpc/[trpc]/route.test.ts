@@ -6,7 +6,7 @@ const state = vi.hoisted(() => ({
   gates: new Map<string, Promise<void>>(),
 }));
 
-vi.mock("@/app/_trpc/router", () => ({ appRouter: {} }));
+vi.mock("@/app/trpc/router", () => ({ appRouter: {} }));
 vi.mock("@/lib/trpc/context", () => ({
   createContext: async (options: CreateContextOptions) => {
     const requestId = options.requestContext?.requestId;

@@ -1,1 +1,1 @@
-export { CommentPageShell as default } from "@/features/comment/admin/components/CommentPageShell";
+export { CommentPageShell as default } from "@/app/admin/(dashboard)/comment/components/CommentPageShell";

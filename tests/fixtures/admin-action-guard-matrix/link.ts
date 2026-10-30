@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const linkActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/features/link/admin/components/LinkPageShell/index.tsx",
+    sourcePath: "src/app/admin/(dashboard)/link/components/LinkPageShell/index.tsx",
     actions: [
       {
         id: "link.create",

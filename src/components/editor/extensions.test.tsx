@@ -3,10 +3,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { Editor } from "@tiptap/core";
 import { Fragment, Slice } from "@tiptap/pm/model";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import Tiptap from "@/components/editor/index";
+import Tiptap from "@/components/Editor/index";
 
 // Toolbar menus are independent of the real editor extension configuration.
-vi.mock("@/components/editor/config/toolbar-items", () => ({ toolbarItems: [] }));
+vi.mock("@/components/Editor/config/toolbar-items", () => ({ toolbarItems: [] }));
 
 describe("editor link extension contract", () => {
   let container: HTMLDivElement;

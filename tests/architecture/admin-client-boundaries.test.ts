@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 describe("admin client dependency boundaries", () => {
   it("keeps editor media dependencies out of the shared admin provider", () => {
-    const source = readFileSync("src/app/admin/AdminProviders.tsx", "utf8");
+    const source = readFileSync("src/app/admin/(dashboard)/providers/AdminProviders.tsx", "utf8");
 
     expect(source).not.toMatch(/PhotoPicker|MediaPageShell|TiptapMediaPicker/);
   });
@@ -32,7 +32,7 @@ describe("admin client dependency boundaries", () => {
     expect(dashboard).toContain("DashboardPageClient");
     expect(menu).toContain("MenuPageShell");
     expect(
-      readFileSync("src/app/admin/AdminProviders.tsx", "utf8"),
+      readFileSync("src/app/admin/(dashboard)/providers/AdminProviders.tsx", "utf8"),
     ).not.toMatch(/DashboardPageClient|MenuPageShell/);
   });
 });

@@ -68,7 +68,7 @@ const query = <Record,>(record: Record) => ({
     isError: false,
   }),
 });
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: (permission: Permission) =>
     new Set<Permission>([
       Permission.pageDelete,
@@ -104,9 +104,9 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     },
   },
 }));
-import Page from "@/features/page/admin/list/page";
-import Tag from "@/features/tag/admin/page";
-import PostListClient from "@/features/post/admin/list/components/PostListClient";
+import Page from "@/app/admin/(dashboard)/page/list/page";
+import Tag from "@/app/admin/(dashboard)/tag/page";
+import PostListClient from "@/app/admin/(dashboard)/post/list/components/PostListClient";
 
 describe.each([
   {

@@ -4,7 +4,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
   {
     sourcePath:
-      "src/features/page/admin/edit/components/PageEditorActionButtons/index.tsx",
+      "src/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons/index.tsx",
     actions: [
       {
         id: "page-editor.create",
@@ -86,7 +86,7 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
     ],
   },
   {
-    sourcePath: "src/features/page/admin/list/page.tsx",
+    sourcePath: "src/app/admin/(dashboard)/page/list/page.tsx",
     actions: [
       {
         id: "page-list.create",

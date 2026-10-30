@@ -19,8 +19,8 @@ vi.mock("@/lib/trpc/client/trpc", () => {
   };
   return { trpc: { user: resource, link: resource } };
 });
-import { useUserActions } from "@/features/user/admin/user-actions";
-import { useLinkActions } from "@/features/link/admin/link-actions";
+import { useUserActions } from "@/app/admin/(dashboard)/user/user-actions";
+import { useLinkActions } from "@/app/admin/(dashboard)/link/link-actions";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }

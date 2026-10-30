@@ -43,7 +43,7 @@ vi.mock("next-intl", () => ({
     `${values.count} views`,
 }));
 
-vi.mock("@/app/_trpc/server", () => ({
+vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({
     comment: { listByRef: mockComments },
     post: {
@@ -72,7 +72,7 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-vi.mock("@/features/post/public/PostInfo", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: ({ views, ...props }: Record<string, unknown>) =>
     React.createElement(
       "output",
@@ -83,7 +83,7 @@ vi.mock("@/features/post/public/PostInfo", () => ({
   PostCommentCount: () => React.createElement("span", null, "3 comments"),
 }));
 
-vi.mock("@/features/post/public/Tags", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/Tags", () => ({
   default: () => React.createElement("div", { "data-testid": "tags" }),
 }));
 
@@ -102,12 +102,12 @@ vi.mock("@/lib/i18n/blog-navigation", () => ({
     React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/features/comment/public/components/CommentClient", () => ({
+vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
   default: ({ id }: { id: string }) =>
     React.createElement("div", { "data-testid": "comment" }, id),
 }));
 
-vi.mock("@/features/media/public/RichText", () => ({
+vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) =>
     React.createElement("article", { "data-testid": "rich-text" }, html),
 }));

@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import type { AuditSeverity } from "../../scripts/audit-production-dependencies";
 import type { getPostTitle } from "@/app/(blog)/[locale]/archives/[id]/page.utils";
-import type { ServerClientOptions } from "@/app/_trpc/server";
+import type { ServerClientOptions } from "@/app/trpc/server";
 import type { Select } from "@/components/Select";
 import type { Sheet } from "@/components/Sheet";
 import type { OAuthProviderConfig } from "@/env/schema";

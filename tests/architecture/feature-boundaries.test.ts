@@ -30,24 +30,31 @@ import {
 const featuresRoot = "src/features";
 const features = featureInventory(featuresRoot);
 const featureFiles = features.flatMap(({ files }) => files);
+const appFiles = sourceFiles("src/app");
+const appUiFiles = appFiles.filter(
+  (path) => path.includes("/components/") || path.endsWith("/page.tsx"),
+);
 const routers = featureFiles.filter(isFeatureRouter);
 
 function featureUiDependencyViolations(path: string, source: string) {
-  if (!/\/(?:admin|public|shared|components|presentation)\//.test(path))
+  if (!/^src\/app\/.*(?:\/components\/|\/page\.tsx$)/.test(path))
     return [];
   return moduleDependencies(source, path)
     .filter(
       ({ specifier }) =>
         /^drizzle-/.test(specifier) ||
         /^src\/lib\/db(?:\/|$)/.test(localModulePath(path, specifier) ?? "") ||
-        (/^src\/features\/media\/admin\//.test(path) &&
-          specifier.includes("lib/trpc/outputs")),
+        (
+          /^src\/app\/admin\/\(dashboard\)\/(?:components\/(?:EditorMediaProvider|MediaPageShell|PhotoPicker)|media\/components)\//.test(
+            path,
+          ) && specifier.includes("lib/trpc/outputs")
+        ),
     )
     .map(({ specifier }) => `${path} -> ${specifier}`);
 }
 
 /** Inspect values actually mounted in appRouter, not merely imported routers. */
-function composedRouters(source: string, path = "src/app/_trpc/router.ts") {
+function composedRouters(source: string, path = "src/app/trpc/router.ts") {
   const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
   const imports = new Map<string, { specifier: string; imported: string }>();
   for (const statement of file.statements) {
@@ -195,25 +202,16 @@ describe("feature-owned business boundaries", () => {
       expect(feature.files.length, feature.name).toBeGreaterThan(0);
   });
 
-  it("discovers future UI-only and server-read-only features without boilerplate contracts or routers", () => {
+  it("discovers server-read-only features without boilerplate contracts or routers", () => {
     const root = mkdtempSync(join(tmpdir(), "feature-inventory-"));
     try {
-      mkdirSync(join(root, "future-banner", "public"), { recursive: true });
       mkdirSync(join(root, "future-report"));
-      writeFileSync(
-        join(root, "future-banner", "public", "Banner.tsx"),
-        "export const Banner = () => null;",
-      );
       writeFileSync(
         join(root, "future-report", "server.ts"),
         "export const readReport = () => []; ",
       );
       const discovered = featureInventory(root);
       expect(discovered).toEqual([
-        {
-          name: "future-banner",
-          files: [join(root, "future-banner", "public", "Banner.tsx")],
-        },
         {
           name: "future-report",
           files: [join(root, "future-report", "server.ts")],
@@ -240,7 +238,7 @@ describe("feature-owned business boundaries", () => {
   it("mounts every discovered feature router in the actual root composition", () => {
     expect(routers.length).toBeGreaterThan(0);
     expect(
-      composedRouters(readFileSync("src/app/_trpc/router.ts", "utf8")),
+      composedRouters(readFileSync("src/app/trpc/router.ts", "utf8")),
     ).toEqual(routers.toSorted());
   });
 
@@ -375,7 +373,7 @@ describe("feature-owned business boundaries", () => {
 
   it("detects providers, runtime operations and wildcard business exports hidden in data contracts", () => {
     const source = [
-      'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
+      'export { CurrentUserProvider } from "@/app/admin/(dashboard)/providers/use-current-user";',
       'export { getCurrentUser } from "./server/user-queries";',
       'export * from "@/features/user/server";',
       'export { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";',
@@ -388,7 +386,7 @@ describe("feature-owned business boundaries", () => {
           isContractForbidden("src/features/user/schema.ts", statement, true),
         ),
     ).toEqual([
-      'export { CurrentUserProvider } from "@/features/user/admin/use-current-user";',
+      'export { CurrentUserProvider } from "@/app/admin/(dashboard)/providers/use-current-user";',
       'export { getCurrentUser } from "./server/user-queries";',
       'export * from "@/features/user/server";',
     ]);
@@ -415,8 +413,8 @@ describe("feature-owned business boundaries", () => {
 
   it("allows only the reviewed LinkRecord type-only table dependency", () => {
     for (const specifier of [
-      "@/lib/db/schema/content-link",
-      "../../../lib/db/schema/content-link",
+      "@/lib/db/schema/link",
+      "../../../lib/db/schema/link",
     ]) {
       expect(
         isContractForbidden(
@@ -457,13 +455,13 @@ describe("feature-owned business boundaries", () => {
   });
 
   it.each([
-    'export type { link } from "@/lib/db/schema/content-link";',
-    'import type { link } from "@/lib/db/schema/content-link"; export type { link };',
-    'import type { link } from "@/lib/db/schema/content-link"; export { type link as table };',
-    'export type * from "@/lib/db/schema/content-link";',
-    'import type * as tables from "@/lib/db/schema/content-link";',
-    'type Table = typeof import("@/lib/db/schema/content-link").link;',
-    'import type { link } from "@/lib/db/schema/content-link"; export type { link } from "@/lib/db/schema/content-link";',
+    'export type { link } from "@/lib/db/schema/link";',
+    'import type { link } from "@/lib/db/schema/link"; export type { link };',
+    'import type { link } from "@/lib/db/schema/link"; export { type link as table };',
+    'export type * from "@/lib/db/schema/link";',
+    'import type * as tables from "@/lib/db/schema/link";',
+    'type Table = typeof import("@/lib/db/schema/link").link;',
+    'import type { link } from "@/lib/db/schema/link"; export type { link } from "@/lib/db/schema/link";',
   ])(
     "rejects table type outlets outside the reviewed named import: %s",
     (source) => {
@@ -478,7 +476,7 @@ describe("feature-owned business boundaries", () => {
   );
 
   it("keeps the reviewed link table closure free of reverse feature dependencies", () => {
-    const pending = ["src/lib/db/schema/content-link.ts"];
+    const pending = ["src/lib/db/schema/link.ts"];
     const visited = new Set<string>();
     const violations: string[] = [];
     while (pending.length) {
@@ -583,28 +581,32 @@ describe("feature-owned business boundaries", () => {
   });
 
   it.each([
-    ["src/features/post/admin/server.ts", "../../../lib/db/schema", true],
     [
-      "src/features/post/public/server/query.ts",
+      "src/app/admin/(dashboard)/post/edit/components/server.ts",
+      "../../../../../../lib/db/schema",
+      true,
+    ],
+    [
+      "src/app/(blog)/components/features/post/public/server/query.ts",
       "../../../../lib/db/schema/post",
       true,
     ],
     ["src/features/post/shared/server.ts", "../../../lib/db/schema/post", true],
-    ["src/features/post/admin/server.ts", "@/lib/db/schema/post", true],
-    ["src/features/post/admin/server.ts", "drizzle-orm", true],
-    ["src/features/media/admin/media-query.ts", "@/lib/trpc/outputs", true],
+    ["src/app/admin/(dashboard)/post/edit/components/server.ts", "@/lib/db/schema/post", true],
+    ["src/app/admin/(dashboard)/post/edit/components/server.ts", "drizzle-orm", true],
+    ["src/app/admin/(dashboard)/media/components/media-query.ts", "@/lib/trpc/outputs", true],
     [
-      "src/features/media/admin/components/MediaGrid/index.tsx",
+      "src/app/admin/(dashboard)/media/components/MediaGrid/index.tsx",
       "@/lib/trpc/outputs",
       true,
     ],
     [
-      "src/features/media/admin/media-query.ts",
+      "src/app/admin/(dashboard)/media/components/media-query.ts",
       "@/features/media/types/media.record",
       false,
     ],
-    ["src/features/post/admin/server.ts", "../types", false],
-    ["src/features/post/public/server/query.ts", "../../types", false],
+    ["src/app/admin/(dashboard)/post/edit/components/server.ts", "../types", false],
+    ["src/app/(blog)/components/features/post/public/server/query.ts", "../../types", false],
     [
       "src/features/post/server/queries.ts",
       "../../../lib/db/schema/post",
@@ -623,13 +625,13 @@ describe("feature-owned business boundaries", () => {
     },
   );
 
-  it("keeps feature UI independent of ORM/database contracts", () => {
+  it("keeps app UI independent of ORM/database contracts", () => {
     expect(
-      featureFiles.filter((path) =>
-        path.startsWith("src/features/media/admin/"),
+      appUiFiles.filter((path) =>
+        path.startsWith("src/app/admin/(dashboard)/media/components"),
       ).length,
     ).toBeGreaterThan(0);
-    const violations = featureFiles.flatMap((path) =>
+    const violations = appUiFiles.flatMap((path) =>
       featureUiDependencyViolations(path, readFileSync(path, "utf8")),
     );
     expect(violations).toEqual([]);

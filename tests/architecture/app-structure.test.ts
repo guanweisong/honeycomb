@@ -9,7 +9,7 @@ const appFiles = sourceFiles(appRoot);
 
 function componentDirectories(): string[] {
   return appFiles
-    .filter((path) => /\/_components\/[^/]+\/index\.tsx$/.test(path))
+    .filter((path) => /\/components\/[^/]+\/index\.tsx$/.test(path))
     .map((path) => path.slice(0, -"/index.tsx".length));
 }
 
@@ -42,7 +42,7 @@ describe("App Router composition boundaries", () => {
     },
   );
 
-  it("keeps business admin routes as composition of feature-owned pages", () => {
+  it("keeps business admin UI in app-owned route entries", () => {
     const pages = appFiles.filter(
       (path) => path.includes("/(dashboard)/") && path.endsWith("/page.tsx"),
     );
@@ -64,10 +64,10 @@ describe("App Router composition boundaries", () => {
         );
         expect(imports, route).toEqual(["next/navigation", "react"]);
       } else {
-        expect(source, route).toMatch(/from ["']@\/features\//);
+        expect(source, route).not.toMatch(/@\/features\/[^"']+\/(?:admin|public)\//);
       }
       expect(source, relative(process.cwd(), path)).not.toMatch(
-        /\b(?:useState|useReducer|useMutation|useQuery)\s*\(|(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
+        /(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
       );
     }
   });
@@ -85,13 +85,23 @@ describe("App Router composition boundaries", () => {
     expect(missingTests).toEqual([]);
   });
 
-  it("allows cohesive shell helper components but keeps business editors and CRUD UI in features", () => {
+  it("keeps business editors and CRUD UI under app route groups", () => {
     const businessComponents = appFiles.filter((path) =>
       /\/(?:CategoryFormDialog|PhotoPicker|PostEditorActions|PageEditorActionButtons|CommentPageShell|MediaPageShell|LinkPageShell|UserPageShell|PostInfo|Tags|ViewTracker|RichText)\//.test(
         path,
       ),
     );
-    expect(businessComponents).toEqual([]);
+    expect(businessComponents.length).toBeGreaterThan(0);
+    expect(businessComponents.every((path) => path.includes("/components/"))).toBe(
+      true,
+    );
+    expect(
+      existsSync(join(appRoot, "admin/(dashboard)/components/features")),
+    ).toBe(false);
+    const featureFiles = sourceFiles(join(process.cwd(), "src", "features"));
+    expect(
+      featureFiles.filter((path) => /\/[^/]+\/(?:admin|public)\//.test(path)),
+    ).toEqual([]);
     const invalidDirectories = componentDirectories()
       .filter(
         (directory) =>
@@ -101,7 +111,7 @@ describe("App Router composition boundaries", () => {
     expect(invalidDirectories).toEqual([]);
     expect(
       existsSync(
-        join(appRoot, "admin/_components/AdminLayout/AdminSidebar.tsx"),
+        join(appRoot, "admin/components/AdminLayout/AdminSidebar.tsx"),
       ),
     ).toBe(true);
   });

@@ -28,10 +28,10 @@ vi.mock("next/image", () => ({ default: () => null }));
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
 }));
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: () => true,
 }));
-vi.mock("@/features/link/admin/components/LinkFormDialog", () => ({
+vi.mock("@/app/admin/(dashboard)/link/components/LinkFormDialog", () => ({
   LinkFormDialog: () => null,
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
@@ -73,8 +73,8 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 
-import { LinkPageShell } from "@/features/link/admin/components/LinkPageShell";
-import Page from "@/features/page/admin/list/page";
+import { LinkPageShell } from "@/app/admin/(dashboard)/link/components/LinkPageShell";
+import Page from "@/app/admin/(dashboard)/page/list/page";
 
 function link(id: string): LinkRecord {
   return {

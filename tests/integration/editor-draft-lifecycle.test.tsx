@@ -3,22 +3,22 @@ import { createRoot, type Root } from "react-dom/client";
 import { fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Form } from "@/components/ui/form";
-import { LocalDraftPrompt } from "@/components/admin/draft/LocalDraftPrompt";
-import { PageEditorPage } from "@/features/page/admin/edit/components/PageEditorPage";
-import { usePostEditor } from "@/features/post/admin/edit/hooks/use-post-editor";
-import { PostTypeFields } from "@/features/post/admin/edit/components/PostTypeFields";
-import { PostSidebarFields } from "@/features/post/admin/edit/components/PostSidebarFields";
+import { LocalDraftPrompt } from "@/app/admin/(dashboard)/components/LocalDraftPrompt";
+import { PageEditorPage } from "@/app/admin/(dashboard)/page/edit/components/PageEditorPage";
+import { usePostEditor } from "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor";
+import { PostTypeFields } from "@/app/admin/(dashboard)/post/edit/components/PostTypeFields";
+import { PostSidebarFields } from "@/app/admin/(dashboard)/post/edit/components/PostSidebarFields";
 
 const observed = vi.hoisted(() => ({ dirty: false }));
 const writes = vi.hoisted(() => vi.fn());
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: "draft-user", level: "ADMIN" } }),
   useCan: () => true,
 }));
-vi.mock("@/features/page/admin/edit/use-page-creation-result", () => ({
+vi.mock("@/app/admin/(dashboard)/page/edit/components/use-page-creation-result", () => ({
   usePageCreationResult: () => ({ data: null, refetch: vi.fn() }),
 }));
-vi.mock("@/features/post/admin/edit/hooks/use-post-creation-result", () => ({
+vi.mock("@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result", () => ({
   usePostCreationResult: () => ({ data: null, refetch: vi.fn() }),
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
@@ -38,13 +38,13 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
   },
 }));
 // Keep real controllers and rich-text content; toolbar popovers are unrelated.
-vi.mock("@/components/editor/config/toolbar-items", () => ({
+vi.mock("@/components/Editor/config/toolbar-items", () => ({
   toolbarItems: [],
 }));
-vi.mock("@/features/page/admin/edit/components/PageEditorForm", async () => {
+vi.mock("@/app/admin/(dashboard)/page/edit/components/PageEditorForm", async () => {
   const actual = await vi.importActual<
-    typeof import("@/features/page/admin/edit/components/PageEditorForm")
-  >("@/features/page/admin/edit/components/PageEditorForm");
+    typeof import("@/app/admin/(dashboard)/page/edit/components/PageEditorForm")
+  >("@/app/admin/(dashboard)/page/edit/components/PageEditorForm");
   return {
     PageEditorForm: (
       props: React.ComponentProps<typeof actual.PageEditorForm>,

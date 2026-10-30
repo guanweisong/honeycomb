@@ -9,7 +9,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { getTableConfig } from "drizzle-orm/sqlite-core";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { media } from "@/lib/db/schema/content-media";
+import { media } from "@/lib/db/schema/media";
 
 async function withLegacyDatabase(run: (client: Client) => Promise<void>) {
   return withTestDatabase(async (client, directory) => {

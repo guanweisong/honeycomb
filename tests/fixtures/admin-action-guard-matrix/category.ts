@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const categoryActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/features/category/admin/page.tsx",
+    sourcePath: "src/app/admin/(dashboard)/post/category/page.tsx",
     actions: [
       {
         id: "category.create",

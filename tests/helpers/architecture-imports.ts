@@ -164,7 +164,7 @@ export function isReviewedLinkTableTypeDependency(
   dependency: ModuleDependency,
   source: string,
 ): boolean {
-  const target = "src/lib/db/schema/content-link";
+  const target = "src/lib/db/schema/link";
   if (
     path !== "src/features/link/types/link.record.ts" ||
     !dependency.typeOnly ||

@@ -19,7 +19,7 @@ vi.mock("@tiptap/react", async (importOriginal) => {
   };
 });
 
-import Tiptap from "@/components/editor/index";
+import Tiptap from "@/components/Editor/index";
 
 describe("Tiptap", () => {
   beforeEach(() => {

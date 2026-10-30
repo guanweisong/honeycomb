@@ -3,7 +3,7 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/features/post/admin/edit/components/MultiTag/index.tsx",
+    sourcePath: "src/app/admin/(dashboard)/post/edit/components/MultiTag/index.tsx",
     actions: [
       {
         id: "post-tags.manage",
@@ -39,7 +39,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   },
   {
     sourcePath:
-      "src/features/post/admin/edit/components/PostEditorActions/index.tsx",
+      "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx",
     actions: [
       {
         id: "post-editor.create",
@@ -77,7 +77,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   },
   {
     sourcePath:
-      "src/features/post/admin/edit/components/PostSidebarFields/index.tsx",
+      "src/app/admin/(dashboard)/post/edit/components/PostSidebarFields/index.tsx",
     actions: [
       {
         id: "post-sidebar.create-category",
@@ -93,7 +93,7 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   },
   {
     sourcePath:
-      "src/features/post/admin/list/components/PostListClient/index.tsx",
+      "src/app/admin/(dashboard)/post/list/components/PostListClient/index.tsx",
     actions: [
       {
         id: "post-list.create",

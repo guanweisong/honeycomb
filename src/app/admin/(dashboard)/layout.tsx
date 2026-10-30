@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { getCurrentAdminUser } from "@/app/admin/lib/admin-auth";
 import { redirect } from "next/navigation";
-import { AdminClientShell } from "./_components/AdminClientShell";
-import { AdminProviders } from "@/app/admin/AdminProviders";
+import { AdminClientShell } from "./components/AdminClientShell";
+import { AdminProviders } from "./providers/AdminProviders";
 import LoadingState from "@/components/LoadingState";
 
 export default function AdminDashboardLayout({

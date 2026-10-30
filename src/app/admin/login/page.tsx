@@ -3,7 +3,7 @@ import { getAuthProviders } from "@/app/admin/lib/auth-providers";
 import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import LoginClient from "@/features/user/login/components/LoginClient";
+import LoginClient from "@/app/admin/login/components/LoginClient";
 import { normalizeAdminCallback } from "@/features/user/login/safe-admin-callback";
 import LoadingState from "@/components/LoadingState";
 
