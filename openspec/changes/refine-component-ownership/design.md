@@ -9,7 +9,7 @@
 
 ## 决策
 
-- app 的三个既有路由组件目录改为 _components；NoData 仅归列表路由。框架 page/layout/template/error/loading/route 入口及 URL 不动。
+- app 的三个既有路由组件目录改为 components；NoData 仅归列表路由。框架 page/layout/template/error/loading/route 入口及 URL 不动。
 - Card 位于 components/SectionCard，保留导出名和纯展示 RSC/Client 双向可用性，不整体加 use client。MultiLangText 位于 components/MultiLangText，唯一新增明确 use client 指令，保持文本回退与语言切换。
 - TextDivider 跟随唯一 PostList 消费者；admin-date-time 归 lib/ui，保留既有本地日期和无效值行为，不并入 UTC 工具。
 - 发布颜色由 post/page 各自拥有，使用所属状态契约，保留共享 StatusBadge；分别验证三种状态颜色，不改变常量值。

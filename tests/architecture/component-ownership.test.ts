@@ -25,6 +25,10 @@ describe("component ownership", () => {
         "src/app/admin/(dashboard)/components",
       ],
       [
+        "src/app/admin/login/_components",
+        "src/app/admin/login/components",
+      ],
+      [
         "src/app/(blog)/components/NoData",
         "src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx",
       ],
@@ -38,7 +42,7 @@ describe("component ownership", () => {
       ["src/components/blog/Card", "src/components/SectionCard/index.tsx"],
       [
         "src/components/blog/TextDivider",
-        "src/features/post/public/components/PostList/TextDivider.tsx",
+        "src/app/(blog)/components/features/post/public/components/PostList/TextDivider.tsx",
       ],
       [
         "src/components/admin/MultiLangText",
@@ -47,9 +51,9 @@ describe("component ownership", () => {
       ["src/components/admin/date-time.ts", "src/lib/ui/admin-date-time.ts"],
       [
         "src/features/media/components",
-        "src/features/media/admin/components/EditorMediaProvider/index.tsx",
+        "src/app/admin/(dashboard)/components/EditorMediaProvider/index.tsx",
       ],
-      ["src/features/media/shared", "src/features/media/admin/media-query.ts"],
+      ["src/features/media/shared", "src/app/admin/(dashboard)/media/components/media-query.ts"],
     ] as const;
     for (const [previous, current] of moves) {
       expect(existsSync(previous), previous).toBe(false);
@@ -62,6 +66,25 @@ describe("component ownership", () => {
     "src/app/(blog)/[locale]/list/[...slug]/components",
     "src/app/admin/components",
     "src/app/admin/(dashboard)/components",
+    "src/app/admin/(dashboard)/components/CategoryFormDialog",
+    "src/app/admin/(dashboard)/components/EditorMediaProvider",
+    "src/app/admin/(dashboard)/components/MediaPageShell",
+    "src/app/admin/(dashboard)/components/PhotoPicker",
+    "src/app/admin/(dashboard)/account/security/components",
+    "src/app/admin/(dashboard)/comment/components",
+    "src/app/admin/(dashboard)/dashboard/components",
+    "src/app/admin/(dashboard)/link/components",
+    "src/app/admin/(dashboard)/media/components",
+    "src/app/admin/(dashboard)/menu/components",
+    "src/app/admin/(dashboard)/page/edit/components",
+    "src/app/admin/(dashboard)/page/list/components",
+    "src/app/admin/(dashboard)/post/category/components",
+    "src/app/admin/(dashboard)/post/edit/components",
+    "src/app/admin/(dashboard)/post/list/components",
+    "src/app/admin/(dashboard)/setting/components",
+    "src/app/admin/(dashboard)/tag/components",
+    "src/app/admin/(dashboard)/user/components",
+    "src/app/admin/login/components",
     "src/app/auth",
     "src/app/trpc",
     "src/app/pwa",
@@ -81,20 +104,27 @@ describe("component ownership", () => {
     expect(directives("src/components/MultiLangText/index.tsx")).toContain(
       "use client",
     );
+    expect(
+      existsSync("src/app/admin/(dashboard)/components/features"),
+    ).toBe(false);
+    for (const owner of ["category", "media", "page", "post"])
+      expect(
+        existsSync(`src/app/admin/(dashboard)/components/${owner}`),
+      ).toBe(false);
     const provider =
-      "src/features/media/admin/components/EditorMediaProvider/index.tsx";
+      "src/app/admin/(dashboard)/components/EditorMediaProvider/index.tsx";
     expect(
       moduleDependencies(readFileSync(provider, "utf8"), provider),
     ).toContainEqual({
-      specifier: "@/components/editor/media-picker",
+      specifier: "@/components/Editor/media-picker",
       typeOnly: false,
     });
   });
 
   it.each(["post", "page"])(
-    "keeps %s publication display tied to its own state contract",
+    "keeps %s publication display in app and tied to its own state contract",
     (feature) => {
-      const path = `src/features/${feature}/admin/publication-status-tone.ts`;
+      const path = `src/app/admin/(dashboard)/${feature}/list/components/publication-status-tone.ts`;
       const dependencies = moduleDependencies(readFileSync(path, "utf8"), path);
       expect(dependencies).toContainEqual({
         specifier: `@/features/${feature}/types/${feature}.status`,

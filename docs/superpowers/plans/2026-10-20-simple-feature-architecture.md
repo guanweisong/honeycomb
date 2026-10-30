@@ -30,7 +30,7 @@ No product, URL, persistence schema, public interface, dependency or security co
 - [x] Move technical packages to lib, shared UI/editor to components, business types and options to owning features.
 - [x] Move category admin and editor media controls to their correct business owners.
 - [x] Flatten artificial feature layers into schema/types/rules/server responsibilities.
-- [x] Move root tRPC composition/server caller to app/_trpc; retain lib/trpc common context/client/middleware.
+- [x] Move root tRPC composition/server caller to app/trpc; retain lib/trpc common context/client/middleware.
 - [x] Update all imports, configs, tests and runtime paths; preserve real public client/server boundaries.
 
 ## Task 2: Simplify business call chains

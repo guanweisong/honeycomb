@@ -12,7 +12,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("shared helper ownership", () => {
   it("derives the picker cover from media, not post", () => {
     const path =
-      "src/features/media/admin/components/PhotoPickerItem/index.tsx";
+      "src/app/admin/(dashboard)/post/edit/components/PhotoPickerItem/index.tsx";
     const source = read(path);
     expect(moduleDependencies(source, path)).toContainEqual({
       specifier: "@/features/media/types/media.record",

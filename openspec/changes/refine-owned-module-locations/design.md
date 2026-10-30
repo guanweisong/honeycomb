@@ -4,9 +4,9 @@
 
 ## 决策
 
-- action-state 与测试归 admin/lib；query-options、enable-status-options 与测试归 admin/config；ModalType、ModalTypeName、EnableStatusName 各归独立 admin/types 文件。
-- 草稿 hook、原有私有辅助与提示 UI 分开，整体测试留在同一个 draft 目录，500ms、TTL、大小、key 切换及比较删除不变。
-- 后台 query client 归 app/admin/lib，认证事件解释归 app/_auth；技术库不反向依赖这些组合。
+- 后台专属的 action-state、query-options、enable-status-options、UI 枚举和本地草稿实现归 `src/app/admin/(dashboard)`：分别放在 `lib`、`config`、`types`、`draft`，枚举仍各自独立文件。它们属于 app 组合，不放在通用 `src/components`。
+- AdminLayout 的 header context 归 `src/app/admin/components/AdminLayout`；文章和页面编辑器共用的 `EditorLoadError`、`LocalDraftPrompt` 直接归 dashboard 根 `components`。草稿 hook、私有辅助与完整场景测试仍按职责归 `draft`，500ms、TTL、大小、key 切换及比较删除不变。
+- 后台 query client 归 app/admin/lib，认证事件解释归 app/auth；技术库不反向依赖这些组合。
 - 评论在 router 组合 5/min、专属 prefix 和 fallbackLimit=5，通用 API 120/min、750ms、生产 fail-closed 保持。通用 procedure 的 optional 输入形状不变。
 - 通知查询直接使用 Drizzle getTableColumns；IP 三个旧测试完整迁入 HTTP 测试，不复制限流环境钩子。
 
@@ -21,6 +21,8 @@ auth-client 已独立提交；admin 与适配整理分别本地提交，最终�
 ## admin 定向结果
 
 迁移的 73 个顶层声明/语句、70 个 expect 调用点和两个生命周期 hook 与基线一致，三个枚举内容未变。整合后 18 文件 / 164 用例通过，布局协议及加载错误 UI 字节未变。页面查询测试的一个混合模块 mock 按两个新模块拆开，原 stub 函数与所有断言保持；只新增必要模块注册，不新增昂贵 fixture。
+
+后续归属修正仅调整 app 专属后台工具的位置：`src/components/admin` 不再承载后台应用状态、配置、类型、草稿或 UI；其导出、行为与既有测试内容保持。
 
 ## 适配定向结果
 

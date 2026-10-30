@@ -5,14 +5,14 @@ import {
   type RenderResult,
 } from "@testing-library/react";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
-import { ModalType } from "@/components/admin/types/modal-type";
+import { ModalType } from "@/app/admin/(dashboard)/types/modal-type";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
-import { LinkFormDialog } from "@/features/link/admin/components/LinkFormDialog";
-import { UserFormDialog } from "@/features/user/admin/components/UserFormDialog";
-import TagFormDialog from "@/features/tag/admin/components/TagFormDialog";
-import CategoryFormDialog from "@/features/category/admin/components/CategoryFormDialog";
+import { LinkFormDialog } from "@/app/admin/(dashboard)/link/components/LinkFormDialog";
+import { UserFormDialog } from "@/app/admin/(dashboard)/user/components/UserFormDialog";
+import TagFormDialog from "@/app/admin/(dashboard)/tag/components/TagFormDialog";
+import CategoryFormDialog from "@/app/admin/(dashboard)/components/CategoryFormDialog";
 
 const mocks = vi.hoisted(() => ({
   categoryQuery: { data: { list: [] }, refetch: vi.fn() },

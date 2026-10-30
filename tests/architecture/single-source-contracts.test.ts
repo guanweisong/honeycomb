@@ -51,7 +51,7 @@ describe("唯一事实源架构门禁", () => {
       "LinkListInput",
       "LinkListQueryInput",
     ],
-    ["src/features/menu/admin/menu-transforms.ts", "MenuSaveItem", "MenuInput"],
+    ["src/app/admin/(dashboard)/menu/components/menu-transforms.ts", "MenuSaveItem", "MenuInput"],
     [
       "src/features/post/server/post-translations.ts",
       "PostTranslationInput",
@@ -197,8 +197,8 @@ describe("唯一事实源架构门禁", () => {
 
   it("文章列表消费者不再次定义结果字段", () => {
     for (const path of [
-      "src/features/post/public/use-post-list.ts",
-      "src/features/post/public/components/PostList/index.tsx",
+      "src/app/(blog)/components/features/post/public/use-post-list.ts",
+      "src/app/(blog)/components/features/post/public/components/PostList/index.tsx",
     ]) {
       expect(
         sourceFile(path)
@@ -279,7 +279,9 @@ describe("唯一事实源架构门禁", () => {
   });
 
   it("后台公共交互参数只维护一份反馈字段", () => {
-    const actionState = sourceFile("src/components/admin/lib/action-state.ts");
+    const actionState = sourceFile(
+      "src/app/admin/(dashboard)/lib/action-state.ts",
+    );
     const runOptions = actionState.statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) &&
@@ -299,7 +301,7 @@ describe("唯一事实源架构门禁", () => {
       ).toEqual([]);
     }
 
-    const menuActions = sourceFile("src/features/menu/admin/menu-actions.ts");
+    const menuActions = sourceFile("src/app/admin/(dashboard)/menu/menu-actions.ts");
     const submitOptions = menuActions.statements.find(
       (node) =>
         ts.isInterfaceDeclaration(node) &&
@@ -317,7 +319,7 @@ describe("唯一事实源架构门禁", () => {
 
   it("编辑器状态不依赖具体弹窗组件的 Props", () => {
     const editor = sourceFile(
-      "src/features/post/admin/edit/hooks/use-post-editor.tsx",
+      "src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx",
     );
     const modalPropImports = editor.statements
       .filter(ts.isImportDeclaration)

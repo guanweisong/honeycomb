@@ -1,0 +1,104 @@
+"use client";
+
+import { ModalType } from "@/app/admin/(dashboard)/types/modal-type";
+import { ModalTypeName } from "@/app/admin/(dashboard)/types/modal-type-name";
+import {
+  UserInsertSchema,
+  UserUpdateSchema,
+} from "@/features/user/schemas/user.write.schema";
+import type { UserInsert } from "@/features/user/types/user.insert";
+import type { UserUpdate } from "@/features/user/types/user.update";
+import { UserLevel } from "@/features/user/types/user.level";
+import { UserStatus } from "@/features/user/types/user.status";
+import {
+  userLevelOptions,
+  userStatusOptions,
+} from "@/app/admin/(dashboard)/user/options";
+import { Dialog } from "@/components/Dialog";
+import { DynamicForm } from "@/components/DynamicForm";
+import type { UserDialogState } from "@/app/admin/(dashboard)/user/user-actions";
+import {
+  isUserResourceProtected,
+  toUserFormDefaults,
+} from "@/app/admin/(dashboard)/user/components/transforms/user-transforms";
+
+type UserFormDialogProps = {
+  state: UserDialogState;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (values: UserInsert | UserUpdate) => void | Promise<void>;
+};
+
+export function UserFormDialog({
+  state,
+  onOpenChange,
+  onSubmit,
+}: UserFormDialogProps) {
+  const isEdit = state.type === ModalType.EDIT;
+  const protectedResource = isUserResourceProtected(state.record);
+  const fields = [
+    {
+      label: "用户名",
+      name: "name",
+      type: "text" as const,
+      placeholder: "请输入用户名",
+    },
+    {
+      label: "密码",
+      name: "password",
+      type: "password" as const,
+      placeholder: isEdit ? "留空则为不修改" : "请输入密码",
+    },
+    {
+      label: "邮箱",
+      name: "email",
+      type: "text" as const,
+      placeholder: "请输入邮箱",
+    },
+    {
+      label: "级别",
+      name: "level",
+      type: "radio" as const,
+      options: userLevelOptions,
+      disabled: protectedResource,
+    },
+    {
+      label: "状态",
+      name: "status",
+      type: "radio" as const,
+      options: userStatusOptions,
+      disabled: protectedResource,
+    },
+  ];
+
+  return (
+    <Dialog
+      title={`${isEdit ? ModalTypeName.EDIT : ModalTypeName.ADD}用户`}
+      open={state.open}
+      onOpenChange={onOpenChange}
+    >
+      {isEdit ? (
+        <DynamicForm
+          key={`edit:${state.record?.id}:${state.open}`}
+          defaultValues={toUserFormDefaults(state.record)}
+          schema={UserUpdateSchema}
+          fields={fields}
+          onSubmit={(values) => onSubmit(values)}
+        />
+      ) : (
+        <DynamicForm
+          key={`add:${state.open}`}
+          defaultValues={{
+            status: UserStatus.ENABLE,
+            level: UserLevel.GUEST,
+          }}
+          schema={UserInsertSchema}
+          fields={fields}
+          onSubmit={(values) => onSubmit(values)}
+        />
+      )}
+    </Dialog>
+  );
+}
+/**
+ * 用户编辑弹窗，负责用户表单、权限字段和新增/编辑提交。
+ */

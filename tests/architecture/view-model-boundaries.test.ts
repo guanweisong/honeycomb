@@ -18,21 +18,18 @@ const scopes = [
   },
   {
     name: "Post",
-    roots: ["src/features/post"],
-    paths: [
-      "/public/",
-      "/presentation/",
-      "/admin/edit/hooks/use-post-editor",
-      "/admin/edit/components/PhotoPickerItem",
-      "/admin/list/components/PostListClient",
-      "/admin/list/constants/post-list-table-columns",
+    roots: [
+      "src/features/post",
+      "src/app/admin/(dashboard)/post",
     ],
+    paths: ["/public/", "/presentation/", "/admin/"],
   },
   {
     name: "Other features",
-    roots: ["link", "tag", "page", "user"].map(
-      (feature) => `src/features/${feature}`,
-    ),
+    roots: ["link", "tag", "page", "user"].flatMap((feature) => [
+      `src/app/admin/(dashboard)/${feature}`,
+      `src/features/${feature}`,
+    ]),
     paths: ["/admin/", "/presentation/"],
   },
 ];

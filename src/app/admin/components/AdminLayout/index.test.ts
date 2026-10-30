@@ -10,7 +10,7 @@ vi.mock("@/components/Avatar", () => ({
     React.createElement("div", { "data-testid": "avatar" }, fallback),
 }));
 
-vi.mock("@/features/user/admin/UserDropdown", () => ({
+vi.mock("@/app/admin/components/AdminLayout/UserDropdown", () => ({
   UserDropdown: () => {
     mockUserDropdown({});
     return React.createElement("div", { "data-testid": "user-dropdown" });

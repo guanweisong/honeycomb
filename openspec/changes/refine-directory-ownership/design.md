@@ -14,7 +14,7 @@
 
 以 `features/dashboard/router.ts`、`server.ts`、实际后台组件及必要测试为最少结构；路由直接消费展示组件，不保留纯转发 admin/page.tsx。统计输出由服务端实现与 tRPC 推断，不为测试保留未使用的独立类型。以真实消费者决定是否需要显式契约，不强制 types.ts。
 
-从 setting 提取统计代码，不搬动站点设置、翻译和配置操作。`app/_trpc/router.ts` 仍将统计 router 注册为 `statistic`。保留 `statisticsRead`、输入输出和数据库计算方式。相比继续使用 setting 或创建通用统计层，dashboard 能表达现有业务且无需兼容转发。
+从 setting 提取统计代码，不搬动站点设置、翻译和配置操作。`app/trpc/router.ts` 仍将统计 router 注册为 `statistic`。保留 `statisticsRead`、输入输出和数据库计算方式。相比继续使用 setting 或创建通用统计层，dashboard 能表达现有业务且无需兼容转发。
 
 ### 媒体封面从权威模型推导
 

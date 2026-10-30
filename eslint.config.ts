@@ -22,21 +22,21 @@ export default defineConfig([
       // Synchronize controlled menu selection with a committed route.
       "src/app/admin/components/AdminNavigation/index.tsx",
       // Restore browser-owned guest identity after hydration.
-      "src/features/comment/public/components/hooks/use-comment-identity.ts",
+      "src/app/(blog)/components/features/comment/public/components/hooks/use-comment-identity.ts",
       // Clear picker selection when an externally controlled session closes.
-      "src/features/media/admin/components/PhotoPicker/index.tsx",
+      "src/app/admin/(dashboard)/components/PhotoPicker/index.tsx",
       // Accumulate key-scoped external query pages; do not drop prior pages on a new response.
-      "src/features/media/admin/media-query.ts",
+      "src/app/admin/(dashboard)/media/components/media-query.ts",
       // Adopt a newer server snapshot only while the editor is pristine.
-      "src/features/menu/admin/use-menu-tree-editor.ts",
+      "src/app/admin/(dashboard)/menu/components/use-menu-tree-editor.ts",
       // Reset pending state when the editor identity changes; stale completions stay guarded.
-      "src/features/page/admin/edit/page-editor-actions.ts",
+      "src/app/admin/(dashboard)/page/edit/page-editor-actions.ts",
       // Reconcile external identity and confirmed server snapshots without overwriting dirty drafts.
-      "src/features/post/admin/edit/hooks/use-post-editor.tsx",
+      "src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx",
       // Synchronize the external authentication SDK passkey snapshot.
-      "src/features/user/admin/account-security/components/PasskeySettings/index.tsx",
+      "src/app/admin/(dashboard)/account/security/components/PasskeySettings/index.tsx",
       // Reconcile browser identity and authentication state after hydration.
-      "src/features/user/login/components/LoginClient/index.tsx",
+      "src/app/admin/login/components/LoginClient/index.tsx",
       // Expose an explicit SSR-safe hydration boundary.
       "src/lib/hooks/use-mounted.ts",
     ],

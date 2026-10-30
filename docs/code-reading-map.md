@@ -6,7 +6,7 @@
 
 ### 修改文章
 
-1. 编辑交互：`src/features/post/admin/edit/hooks/use-post-editor.tsx`。
+1. 编辑交互：`src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx`。
 2. API 输入、权限和协议适配：`src/features/post/router.ts`。
 3. 写入、事务与缓存失效：`src/features/post/server/` 内的实际操作函数；发布不变量在 `src/features/post/rules/post-publication.ts`。
 4. 数据库连接与表：`src/lib/db`；输入与输出模型由 post feature 自己拥有。
@@ -36,9 +36,9 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 1. 页面组合：`src/app/(blog)/[locale]` 对应路由。
 2. 框架缓存和请求内去重：`src/app/lib/server/public-queries.ts`。
 3. 根服务端 caller：`src/app/trpc/server.ts`；业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现 提供。
-4. UI 使用 feature 拥有的模型与有意复用的具体入口（可在 public/admin/components）；不要求 public barrel 或中央 contracts 转发。
+4. UI 位于 `src/app`，使用 feature 拥有的纯模型；服务端读取由相应 feature 的具名 server 实现提供。不要求 public barrel 或中央 contracts 转发。
 
-文章元信息和标签展示位于 `src/features/post/public/PostInfo` 与 `src/features/post/public/Tags`；文章和页面浏览量上报各自由对应 feature 的 public 组件负责。媒体富文本在 `src/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`，不把业务 mutation 放回 app 组件。
+文章元信息和标签展示位于 `src/app/(blog)/components/features/post/public/PostInfo` 与 `Tags`；文章和页面浏览量上报分别由 `src/app/(blog)/components/features/post/public/PostViewTracker.tsx` 和 `page/public/PageViewTracker.tsx` 负责。媒体富文本在 `src/app/(blog)/components/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`。这些 app 组件调用 feature 提供的业务契约，不承载业务写入实现。
 
 文章查询与缓存解码共用 `src/features/post/schemas/post.read-model.schema.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types/media.record.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
@@ -48,15 +48,15 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台当前用户与权限
 
-跨 feature 的后台状态辅助在 `src/components/admin/lib`，查询/启用选项在 `config`，三个 UI 枚举各自归 `types`；草稿 hook、提示 UI 与完整场景测试同归 `draft`。布局协议和加载错误 UI 保留原内聚文件，不因归组反向依赖 app。
+后台专属的状态辅助、查询/启用选项、UI 枚举和草稿逻辑分别位于 `src/app/admin/(dashboard)/lib`、`config`、`types` 和 `draft`。文章与页面编辑器共用的 `LocalDraftPrompt`、`EditorLoadError` 直接位于 dashboard 根 `components`；AdminLayout header context 位于 `src/app/admin/components/AdminLayout`。这些模块由后台 app 拥有，不属于全站通用 UI。
 
 浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/auth`。前者保留 use client，不经根目录兼容转出口。
 
 后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns，IP 解析只从 `src/lib/http/client-ip.ts` 导入。
 
 1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。
-2. 页面提供初始用户：`src/app/admin/AdminProviders.tsx`。
-3. 客户端当前用户与刷新：`src/features/user/admin/use-current-user.ts`。
+2. 页面提供初始用户：`src/app/admin/(dashboard)/providers/AdminProviders.tsx`。
+3. 客户端当前用户与刷新：`src/app/admin/(dashboard)/providers/use-current-user.ts`。
 4. 权限规则：`src/lib/auth/permissions.ts` 与 `authorize.ts`；服务端 API 仍是最终授权边界。
 
 后台邮箱规范化与碰撞检查位于 `src/features/user/schemas/user.write.schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
@@ -67,7 +67,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台统计与路由
 
-1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；业务 UI 在 `src/features/dashboard/admin/components/DashboardPageClient/index.tsx`。
+1. 统计页面组合：`src/app/admin/(dashboard)/dashboard/page.tsx`；统计 UI 在 `src/app/admin/(dashboard)/dashboard/components/DashboardPageClient/index.tsx`。
 2. 统计入口与读取：`src/features/dashboard/router.ts` → `server/dashboard-queries.ts`；结果类型从实现经 tRPC 推断，不保留仅供测试引用的平行模型。
 3. `src/app/trpc/router.ts` 仍挂载 `statistic`，保留 `Permission.statisticsRead` 对应的 `statistics:read` 权限。站点设置及翻译仍归 setting，不把统计放回该 feature。
 
@@ -78,7 +78,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 - 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
+- 文章分页 hook：`src/app/(blog)/components/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 
@@ -89,7 +89,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 | 输入校验与稳定业务类型             | 所属 feature 的 `schemas/` / `types/` 具名文件 |
 | 查询、事务、写入和副作用顺序       | 所属 feature 的 `server/` 具名实现             |
 | 可独立测试的状态不变量             | 所属 feature 的 `rules/` 具名纯规则            |
-| 业务枚举、显示选项、专用组件       | 所属 feature 的纯目录、`admin` / `public`      |
+| 业务枚举与类型                     | 所属 feature 的 `types/`                       |
+| 展示选项、专用组件                 | 对应 app 路由的 `components/`                 |
 | 通用 UI 与编辑器                   | `src/components`                               |
 | 数据库、认证、缓存、存储、可观测性 | `src/lib` 对应技术目录                         |
 | 路由、HTTP、根 tRPC 和框架组合     | `src/app`                                      |
@@ -100,4 +101,4 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ## 组件归属
 
-路由私有组件位于各路由家族的 components；业务 UI 留在 feature 的 admin/public，通用 SectionCard、MultiLangText 位于 components。媒体后台选择、动作与查询归 media/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。具体映射和验证见[组件归属迁移记录](component-ownership-migration.md)，两套 Provider 与 PostInfo 保持原位。
+路由局部与路由组共享组件位于 app 的 `components`；浏览器业务 UI 由 app 路由组拥有，通用 SectionCard、MultiLangText 位于 `src/components`。媒体后台选择、动作与查询位于 app/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。历史组件映射见[组件归属迁移记录](component-ownership-migration.md)，当前路径以 app 路由为准。

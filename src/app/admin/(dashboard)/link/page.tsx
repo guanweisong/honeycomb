@@ -1,1 +1,1 @@
-export { LinkPageShell as default } from "@/features/link/admin/components/LinkPageShell";
+export { LinkPageShell as default } from "@/app/admin/(dashboard)/link/components/LinkPageShell";

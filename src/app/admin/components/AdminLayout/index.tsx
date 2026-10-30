@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Menu as MenuIcon, PanelLeft, X } from "lucide-react";
 import { cn } from "cn";
 import { usePathname } from "next/navigation";
-import { AdminLayoutHeaderContext } from "@/components/admin/layout-context";
+import { AdminLayoutHeaderContext } from "@/app/admin/components/AdminLayout/layout-context";
 import { AdminSidebar } from "@/app/admin/components/AdminLayout/AdminSidebar";
 import {
   Sheet,

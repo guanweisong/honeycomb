@@ -4,7 +4,7 @@ import { Link } from "@/lib/i18n/blog-navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
-import PostSearch from "@/features/post/public/components/PostSearch";
+import PostSearch from "@/app/(blog)/components/features/post/public/components/PostSearch";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
 import {
   getPublicMenu,

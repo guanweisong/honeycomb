@@ -6,7 +6,7 @@ import {
   AdminNavigation,
   type AdminNavigationItem,
 } from "@/app/admin/components/AdminNavigation";
-import { UserDropdown } from "@/features/user/admin/UserDropdown";
+import { UserDropdown } from "@/app/admin/components/AdminLayout/UserDropdown";
 import type { CurrentUser } from "@/features/user/types/user.current";
 
 interface AdminSidebarProps {

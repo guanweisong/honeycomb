@@ -222,7 +222,7 @@
 
 ## 任务 17：R16 少量输入/语言成员仍有平行权威定义
 
-**文件：** `src/features/link/schema.ts`；`src/features/link/types.ts`；`src/features/menu/admin/menu-transforms.ts`；`src/features/menu/schema.ts`；`src/features/post/server/post-translations.ts`；`src/lib/db/schema/content-category.ts`；`src/features/comment/server/comment-notification-repository.ts`及其相邻行为测试。
+**文件：** `src/features/link/schema.ts`；`src/features/link/types.ts`；`src/features/menu/admin/menu-transforms.ts`；`src/features/menu/schema.ts`；`src/features/post/server/post-translations.ts`；`src/lib/db/schema/category.ts`；`src/features/comment/server/comment-notification-repository.ts`及其相邻行为测试。
 
 **接口：** 保留上述模块现有公开调用签名；只在实际需要处增加有类型的可选UI属性，不新增平行契约。
 

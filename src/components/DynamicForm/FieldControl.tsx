@@ -19,7 +19,7 @@ import { cn } from "cn";
 import LoadingState from "@/components/LoadingState";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 
-const Tiptap = dynamic(() => import("@/components/editor"), {
+const Tiptap = dynamic(() => import("@/components/Editor"), {
   ssr: false,
   loading: () => <LoadingState variant="inline" label="正在加载编辑器…" />,
 });

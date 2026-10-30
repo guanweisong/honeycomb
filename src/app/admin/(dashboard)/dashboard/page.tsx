@@ -1,1 +1,1 @@
-export { default } from "@/features/dashboard/admin/components/DashboardPageClient";
+export { default } from "@/app/admin/(dashboard)/dashboard/components/DashboardPageClient";

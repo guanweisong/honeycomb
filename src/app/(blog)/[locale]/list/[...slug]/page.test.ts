@@ -43,7 +43,7 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicAuthor: (...args: unknown[]) => mockPublicAuthor(...args),
 }));
 
-vi.mock("@/features/post/public/components/PostList", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/components/PostList", () => ({
   default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
     React.createElement(
       "output",

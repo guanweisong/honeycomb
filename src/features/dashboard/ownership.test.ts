@@ -9,16 +9,15 @@ describe("dashboard feature ownership", () => {
     for (const path of [
       "server/dashboard-queries.ts",
       "router.ts",
-      "admin/components/DashboardPageClient/index.tsx",
     ]) {
       expect(existsSync(`src/features/dashboard/${path}`), path).toBe(true);
     }
-    expect(existsSync("src/features/dashboard/admin/page.tsx")).toBe(false);
+    expect(existsSync("src/features/dashboard/admin")).toBe(false);
     expect(
       readFileSync("src/app/admin/(dashboard)/dashboard/page.tsx", "utf8"),
-    ).toContain("@/features/dashboard/admin/components/DashboardPageClient");
+    ).toContain("@/app/admin/(dashboard)/dashboard/components/DashboardPageClient");
     expect(existsSync("src/features/setting/statistic.router.ts")).toBe(false);
-    expect(existsSync("src/features/setting/admin/dashboard")).toBe(false);
+    expect(existsSync("src/app/admin/(dashboard)/setting/components/dashboard")).toBe(false);
     const settingSources = sourceFiles("src/features/setting")
       .map((path) => readFileSync(path, "utf8"))
       .join("\n");

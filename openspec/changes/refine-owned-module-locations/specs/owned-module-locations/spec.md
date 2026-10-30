@@ -2,12 +2,17 @@
 
 ### Requirement: 后台共享职责就近组织
 
-共享后台状态工具 MUST 归 admin/lib，查询选项 MUST 归 admin/config，三个 UI 枚举 MUST 各自位于 admin/types 的独立文件；草稿 hook、提示 UI 和完整测试 MUST 就近归 draft。共享消费者 MUST 不反向依赖 app，不得增加兼容 barrel 或改动草稿/显示行为。
+后台专属状态工具 MUST 归 `src/app/admin/(dashboard)/lib`，查询选项 MUST 归 `src/app/admin/(dashboard)/config`，三个 UI 枚举 MUST 各自位于 `src/app/admin/(dashboard)/types` 的独立文件；草稿 hook、存储辅助及完整生命周期测试 MUST 归 `src/app/admin/(dashboard)/draft`。AdminLayout header context MUST 归 `src/app/admin/components/AdminLayout`；文章与页面编辑器共用的错误 UI 和草稿提示 MUST 直接归 dashboard 根 `components`。这些 app 专属模块 MUST NOT 留在 `src/components/admin`；Feature MUST NOT 反向依赖这些 app 模块；不得增加兼容 barrel 或改动草稿/显示行为。
 
 #### Scenario: 迁移后台共享消费者
 
 - **WHEN** 业务页面引用状态、选项、枚举或本地草稿
 - **THEN** MUST 使用真实职责入口，原枚举值、JSX、存储时序、断言和完整场景 MUST 保持
+
+#### Scenario: 后台模块归 app 所有
+
+- **WHEN** 后台路由组合共享状态、配置、布局协议或编辑 UI
+- **THEN** MUST 从 `src/app/admin` 的实际职责目录导入，不得从通用 `src/components/admin` 导入
 
 ### Requirement: 入口策略与通用技术能力分离
 

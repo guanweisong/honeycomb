@@ -8,7 +8,7 @@
 
 - [x] 1.1 确认基线与既有行为测试，记录迁移前目录、文件和代表调用链。
 - [x] 1.2 将技术能力迁入 lib、通用 UI/编辑器迁入 components，业务类型、状态、选项和 UI 归回所属 feature。
-- [x] 1.3 将根 tRPC router/caller 迁入 app/_trpc，更新生产、测试、mock、配置和脚本中的所有导入。
+- [x] 1.3 将根 tRPC router/caller 迁入 app/trpc，更新生产、测试、mock、配置和脚本中的所有导入。
 - [x] 1.4 删除旧 packages、人工 feature 分层和中央 contracts，保留必要的纯契约及真实运行时边界。
 
 ## 2. 业务链路简化

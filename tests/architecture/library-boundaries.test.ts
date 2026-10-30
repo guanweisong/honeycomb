@@ -318,12 +318,12 @@ describe("technical library and browser dependency boundaries", () => {
       ),
     );
     expect(violations).toEqual([]);
-    expect(existsSync("src/features/category/admin")).toBe(true);
-    expect(existsSync("src/features/media/admin/components/PhotoPicker")).toBe(
+    expect(existsSync("src/app/admin/(dashboard)/post/category")).toBe(true);
+    expect(existsSync("src/app/admin/(dashboard)/components/PhotoPicker")).toBe(
       true,
     );
     expect(
-      existsSync("src/features/media/admin/components/EditorMediaProvider"),
+      existsSync("src/app/admin/(dashboard)/components/EditorMediaProvider"),
     ).toBe(true);
   });
 
@@ -355,18 +355,18 @@ describe("technical library and browser dependency boundaries", () => {
     );
   });
 
-  it("keeps shared admin tools, configuration, drafts and individual UI enums colocated", () => {
+  it("keeps shared admin tools, configuration, drafts and individual UI enums in app", () => {
     for (const path of [
-      "lib/action-state.ts",
-      "config/query-options.ts",
-      "config/enable-status-options.ts",
-      "draft/use-local-draft.ts",
-      "draft/LocalDraftPrompt.tsx",
-      "types/modal-type.ts",
-      "types/modal-type-name.ts",
-      "types/enable-status-name.ts",
+      "src/app/admin/(dashboard)/lib/action-state.ts",
+      "src/app/admin/(dashboard)/config/query-options.ts",
+      "src/app/admin/(dashboard)/config/enable-status-options.ts",
+      "src/app/admin/(dashboard)/draft/use-local-draft.ts",
+      "src/app/admin/(dashboard)/components/LocalDraftPrompt.tsx",
+      "src/app/admin/(dashboard)/types/modal-type.ts",
+      "src/app/admin/(dashboard)/types/modal-type-name.ts",
+      "src/app/admin/(dashboard)/types/enable-status-name.ts",
     ])
-      expect(existsSync(`src/components/admin/${path}`)).toBe(true);
+      expect(existsSync(path)).toBe(true);
     for (const path of [
       "action-state.ts",
       "query-options.ts",
@@ -375,7 +375,7 @@ describe("technical library and browser dependency boundaries", () => {
       "local-draft.tsx",
     ])
       expect(existsSync(`src/components/admin/${path}`)).toBe(false);
-    for (const path of sourceFiles("src/components/admin")) {
+    for (const path of sourceFiles("src/app/admin/(dashboard)/types")) {
       const file = ts.createSourceFile(
         path,
         readFileSync(path, "utf8"),
@@ -384,7 +384,7 @@ describe("technical library and browser dependency boundaries", () => {
       );
       const enums = file.statements.filter(ts.isEnumDeclaration);
       if (enums.length) {
-        expect(path.startsWith("src/components/admin/types/")).toBe(true);
+        expect(path.startsWith("src/app/admin/(dashboard)/types/")).toBe(true);
         expect(enums).toHaveLength(1);
       }
     }

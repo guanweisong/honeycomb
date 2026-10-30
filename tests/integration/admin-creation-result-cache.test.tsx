@@ -9,44 +9,44 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
-import { writePostCreationAttempt } from "@/features/post/admin/edit/utils/post-draft";
-import { writePageCreationAttempt } from "@/features/page/admin/edit/page-draft";
-import PostDetail from "@/features/post/admin/edit/page";
-import { PageEditorPage } from "@/features/page/admin/edit/components/PageEditorPage";
+import { writePostCreationAttempt } from "@/app/admin/(dashboard)/post/edit/components/utils/post-draft";
+import { writePageCreationAttempt } from "@/app/admin/(dashboard)/page/edit/components/page-draft";
+import PostDetail from "@/app/admin/(dashboard)/post/edit/page";
+import { PageEditorPage } from "@/app/admin/(dashboard)/page/edit/components/PageEditorPage";
 
 const state = vi.hoisted(() => ({ userId: "owner-a", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: state.push }),
 }));
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: state.userId, level: "ADMIN" } }),
   useCan: () => true,
 }));
-vi.mock("@/components/admin/layout-context", () => ({
+vi.mock("@/app/admin/components/AdminLayout/layout-context", () => ({
   AdminPageHeader: () => null,
 }));
-vi.mock("@/features/page/admin/edit/components/PageEditorForm", () => ({
+vi.mock("@/app/admin/(dashboard)/page/edit/components/PageEditorForm", () => ({
   PageEditorForm: () => null,
 }));
 vi.mock(
-  "@/features/page/admin/edit/components/PageEditorActionButtons",
+  "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons",
   () => ({ PageEditorActionButtons: () => null }),
 );
 
-vi.mock("@/features/post/admin/edit/components/PostTypeFields", () => ({
+vi.mock("@/app/admin/(dashboard)/post/edit/components/PostTypeFields", () => ({
   PostTypeFields: () => null,
 }));
-vi.mock("@/features/post/admin/edit/components/PostSidebarFields", () => ({
+vi.mock("@/app/admin/(dashboard)/post/edit/components/PostSidebarFields", () => ({
   PostSidebarFields: () => null,
 }));
-vi.mock("@/features/media/admin/components/PhotoPicker/index", () => ({
+vi.mock("@/app/admin/(dashboard)/components/PhotoPicker/index", () => ({
   default: () => null,
 }));
-vi.mock("@/features/media/admin/components/MediaPageShell", () => ({
+vi.mock("@/app/admin/(dashboard)/components/MediaPageShell", () => ({
   MediaPageShell: () => null,
 }));
-vi.mock("@/features/category/admin/components/CategoryFormDialog", () => ({
+vi.mock("@/app/admin/(dashboard)/components/CategoryFormDialog", () => ({
   default: () => null,
 }));
 

@@ -10,11 +10,11 @@ import { waitFor } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAdminQueryClient } from "@/app/admin/lib/admin-query-client";
 import { trpc } from "@/lib/trpc/client/trpc";
-import { adminDetailQueryOptions } from "@/components/admin/config/query-options";
-import PostListClient from "@/features/post/admin/list/components/PostListClient";
-import PageList from "@/features/page/admin/list/page";
+import { adminDetailQueryOptions } from "@/app/admin/(dashboard)/config/query-options";
+import PostListClient from "@/app/admin/(dashboard)/post/list/components/PostListClient";
+import PageList from "@/app/admin/(dashboard)/page/list/page";
 
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: () => true,
 }));
 vi.mock("@/components/MultiLangText", () => ({

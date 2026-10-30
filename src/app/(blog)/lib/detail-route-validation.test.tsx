@@ -25,21 +25,21 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicRandomPosts: vi.fn(),
   getPublicLinks: vi.fn(),
 }));
-vi.mock("@/features/post/public/PostInfo", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: () => null,
   PostCommentCount: () => null,
 }));
-vi.mock("@/features/post/public/Tags", () => ({ default: () => null }));
-vi.mock("@/features/post/public/PostViewTracker", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/Tags", () => ({ default: () => null }));
+vi.mock("@/app/(blog)/components/features/post/public/PostViewTracker", () => ({
   PostViewTracker: () => null,
 }));
-vi.mock("@/features/page/public/PageViewTracker", () => ({
+vi.mock("@/app/(blog)/components/features/page/public/PageViewTracker", () => ({
   PageViewTracker: () => null,
 }));
-vi.mock("@/features/comment/public/components/CommentClient", () => ({
+vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
   default: () => null,
 }));
-vi.mock("@/features/media/public/RichText", () => ({ RichText: () => null }));
+vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({ RichText: () => null }));
 vi.mock("@/lib/i18n/blog-navigation", () => ({ Link: () => null }));
 
 import Archives, {

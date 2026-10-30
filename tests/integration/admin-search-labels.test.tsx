@@ -5,7 +5,7 @@ import { requireDefined } from "@tests/helpers/require-defined";
 
 const query = vi.hoisted(() => vi.fn());
 
-vi.mock("@/features/user/admin/use-current-user", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: () => false,
 }));
 vi.mock("@/lib/trpc/client/trpc", () => {
@@ -43,11 +43,11 @@ vi.mock("@/lib/trpc/client/trpc", () => {
   };
 });
 
-import PostListClient from "@/features/post/admin/list/components/PostListClient";
-import { UserPageShell } from "@/features/user/admin/components/UserPageShell";
-import { LinkPageShell } from "@/features/link/admin/components/LinkPageShell";
-import { CommentPageShell } from "@/features/comment/admin/components/CommentPageShell";
-import Tag from "@/features/tag/admin/page";
+import PostListClient from "@/app/admin/(dashboard)/post/list/components/PostListClient";
+import { UserPageShell } from "@/app/admin/(dashboard)/user/components/UserPageShell";
+import { LinkPageShell } from "@/app/admin/(dashboard)/link/components/LinkPageShell";
+import { CommentPageShell } from "@/app/admin/(dashboard)/comment/components/CommentPageShell";
+import Tag from "@/app/admin/(dashboard)/tag/page";
 
 beforeEach(() => {
   query.mockReset().mockReturnValue({

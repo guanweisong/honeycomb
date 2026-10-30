@@ -6,6 +6,12 @@ import { sourceFiles } from "@tests/helpers/source-files";
 const appRoot = join(process.cwd(), "src", "app");
 
 const appFiles = sourceFiles(appRoot);
+const separatelyCoveredComponents = new Map([
+  [
+    join(appRoot, "admin/(dashboard)/components/EditorMediaProvider"),
+    join(process.cwd(), "tests/architecture/admin-client-boundaries.test.ts"),
+  ],
+]);
 
 function componentDirectories(): string[] {
   return appFiles
@@ -42,7 +48,7 @@ describe("App Router composition boundaries", () => {
     },
   );
 
-  it("keeps business admin routes as composition of feature-owned pages", () => {
+  it("keeps business admin UI in app-owned route entries", () => {
     const pages = appFiles.filter(
       (path) => path.includes("/(dashboard)/") && path.endsWith("/page.tsx"),
     );
@@ -64,10 +70,10 @@ describe("App Router composition boundaries", () => {
         );
         expect(imports, route).toEqual(["next/navigation", "react"]);
       } else {
-        expect(source, route).toMatch(/from ["']@\/features\//);
+        expect(source, route).not.toMatch(/@\/features\/[^"']+\/(?:admin|public)\//);
       }
       expect(source, relative(process.cwd(), path)).not.toMatch(
-        /\b(?:useState|useReducer|useMutation|useQuery)\s*\(|(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
+        /(?:ctx\.)?db\.(?:insert|update|delete)\s*\(/,
       );
     }
   });
@@ -75,23 +81,34 @@ describe("App Router composition boundaries", () => {
   it("keeps app shell entrypoints covered without prescribing TSX test syntax", () => {
     expect(componentDirectories().length).toBeGreaterThan(0);
     const missingTests = componentDirectories()
-      .filter(
-        (directory) =>
-          !["index.test.ts", "index.test.tsx"].some((file) =>
-            existsSync(join(directory, file)),
-          ),
-      )
+      .filter((directory) => {
+        const hasLocalTest = sourceFiles(directory, { includeTests: true }).some(
+          (path) => /\.(?:test|spec)\.(?:ts|tsx)$/.test(path),
+        );
+        const separateTest = separatelyCoveredComponents.get(directory);
+        return !hasLocalTest && !(separateTest && existsSync(separateTest));
+      })
       .map((directory) => relative(process.cwd(), directory));
     expect(missingTests).toEqual([]);
   });
 
-  it("allows cohesive shell helper components but keeps business editors and CRUD UI in features", () => {
+  it("keeps business editors and CRUD UI under app route groups", () => {
     const businessComponents = appFiles.filter((path) =>
       /\/(?:CategoryFormDialog|PhotoPicker|PostEditorActions|PageEditorActionButtons|CommentPageShell|MediaPageShell|LinkPageShell|UserPageShell|PostInfo|Tags|ViewTracker|RichText)\//.test(
         path,
       ),
     );
-    expect(businessComponents).toEqual([]);
+    expect(businessComponents.length).toBeGreaterThan(0);
+    expect(businessComponents.every((path) => path.includes("/components/"))).toBe(
+      true,
+    );
+    expect(
+      existsSync(join(appRoot, "admin/(dashboard)/components/features")),
+    ).toBe(false);
+    const featureFiles = sourceFiles(join(process.cwd(), "src", "features"));
+    expect(
+      featureFiles.filter((path) => /\/[^/]+\/(?:admin|public)\//.test(path)),
+    ).toEqual([]);
     const invalidDirectories = componentDirectories()
       .filter(
         (directory) =>

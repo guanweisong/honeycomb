@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import ts from "typescript";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { sourceFile } from "@tests/helpers/source-files";
 import { featureInventory } from "@tests/helpers/feature-inventory";
@@ -64,6 +64,20 @@ describe("feature responsibility folders", () => {
           .map(() => path),
       ),
     ).toEqual([]);
+
+    const featureUi = files.filter((path) => {
+      if (path.startsWith("src/features/comment/notifications/")) return false;
+      if (
+        /\/[^/]+\/(?:admin|public)\//.test(path) ||
+        (path.endsWith(".tsx") && !path.includes("/notifications/"))
+      )
+        return true;
+      return /^\s*["']use client["']/m.test(readFileSync(path, "utf8")) ||
+        /from\s+["'](?:react|next\/navigation|@tanstack\/react-query|@trpc\/react-query|@\/lib\/trpc\/client(?:\/trpc)?)["']/.test(
+          readFileSync(path, "utf8"),
+        );
+    });
+    expect(featureUi).toEqual([]);
   });
 
   it("keeps every feature enum in its own types file", () => {

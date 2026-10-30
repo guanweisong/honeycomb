@@ -144,7 +144,7 @@ describe("配置与契约所有权", () => {
 
   it.each([
     "src/features/user/account-security/login-history.ts",
-    "src/features/user/admin/account-security/components/LoginHistorySettings/index.tsx",
+    "src/app/admin/(dashboard)/account/security/components/LoginHistorySettings/index.tsx",
   ])("%s 引用登录历史事件类型，不重写联合", (path) => {
     const violations: string[] = [];
     function visit(node: ts.Node) {

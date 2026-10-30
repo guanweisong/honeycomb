@@ -117,7 +117,7 @@ vi.mock("@/app/(blog)/components/LanguageSwitcher", () => ({
   default: () => React.createElement("button", null, "语言"),
 }));
 
-vi.mock("@/features/post/public/components/PostSearch", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/components/PostSearch", () => ({
   default: () => React.createElement("button", null, "搜索"),
 }));
 

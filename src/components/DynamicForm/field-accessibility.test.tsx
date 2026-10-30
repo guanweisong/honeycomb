@@ -7,7 +7,7 @@ import { DynamicField } from "@/components/DynamicForm/DynamicField";
 import type { FieldConfig } from "@/components/DynamicForm/types";
 
 // Keep the real editor and form primitives; toolbar actions are unrelated here.
-vi.mock("@/components/editor/config/toolbar-items", () => ({
+vi.mock("@/components/Editor/config/toolbar-items", () => ({
   toolbarItems: [],
 }));
 
@@ -86,7 +86,7 @@ describe("DynamicField accessibility", () => {
       await act(async () => root.render(<TestForm type={type} />));
       if (type === "richText") {
         await act(async () => {
-          await import("@/components/editor");
+          await import("@/components/Editor");
         });
       }
 
@@ -140,7 +140,7 @@ describe("DynamicField accessibility", () => {
   it("keeps a real rich-text editor read-only until a dynamic disabled field is cleared", async () => {
     await act(async () => {
       root.render(<TestForm type="richText" disabled />);
-      await import("@/components/editor");
+      await import("@/components/Editor");
     });
     const editor = container.querySelector<HTMLElement>(".tiptap");
     expect(editor?.getAttribute("contenteditable")).toBe("false");

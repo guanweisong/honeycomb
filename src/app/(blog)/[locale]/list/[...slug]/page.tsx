@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import PostList from "@/features/post/public/components/PostList";
+import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";

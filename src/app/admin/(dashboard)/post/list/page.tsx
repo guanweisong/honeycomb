@@ -1,1 +1,1 @@
-export { default } from "@/features/post/admin/list/components/PostListClient";
+export { default } from "@/app/admin/(dashboard)/post/list/components/PostListClient";

@@ -66,17 +66,17 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     post: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },
   },
 }));
-vi.mock("@/features/post/public/PostInfo", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
   PostCommentCount: () => null,
 }));
-vi.mock("@/features/comment/public/components/CommentClient", () => ({
+vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
   default: (props: unknown) => {
     mockCommentRender(props);
     return null;
   },
 }));
-vi.mock("@/features/media/public/RichText", () => ({
+vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
 

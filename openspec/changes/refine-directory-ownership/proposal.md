@@ -27,6 +27,6 @@
 
 ## 影响
 
-涉及 `src/features/{dashboard,setting,media,category,post,page}`、`src/app/admin`、`src/app/_trpc`、`src/components/Menu`、`src/components/blog`、`src/lib/ui`、`src/lib/db/query`，以及相应测试、文档和工程技能。修补另涉及共享后台交互、可观测性、菜单、数据库验证脚本与 CI。不得改写已应用迁移、升级依赖、改名 API、改变角色策略或访问生产数据库；遗留 JSON 仅增加前向只读预检。完整视频支持及历史规格生命周期调整仍需另行批准，不归档旧规格。不提交、推送、合并或部署；不扩大到全工程目录统一。
+涉及 `src/features/{dashboard,setting,media,category,post,page}`、`src/app/admin`、`src/app/trpc`、`src/components/Menu`、`src/components/blog`、`src/lib/ui`、`src/lib/db/query`，以及相应测试、文档和工程技能。修补另涉及共享后台交互、可观测性、菜单、数据库验证脚本与 CI。不得改写已应用迁移、升级依赖、改名 API、改变角色策略或访问生产数据库；遗留 JSON 仅增加前向只读预检。完整视频支持及历史规格生命周期调整仍需另行批准，不归档旧规格。不提交、推送、合并或部署；不扩大到全工程目录统一。
 
 2026-10-20 用户批准追加“8 个薄包装文件合并＋重复规则去重”：只将已确认的单消费者页面壳、查询包装和显示映射并回现有所有者；规范、SKILL、说明及静态测试按现有职责收敛重复内容，保留独有要求与反例。具体清单在 tasks 第 9 节，不扩展 API 重设计、剩余缺陷或历史归档。

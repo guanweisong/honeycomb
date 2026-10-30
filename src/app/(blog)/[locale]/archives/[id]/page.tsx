@@ -1,10 +1,10 @@
 import React, { Suspense, ViewTransition } from "react";
-import PostInfo from "@/features/post/public/PostInfo";
-import { PostCommentCount } from "@/features/post/public/PostInfo";
-import Tags from "@/features/post/public/Tags";
+import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
+import { PostCommentCount } from "@/app/(blog)/components/features/post/public/PostInfo";
+import Tags from "@/app/(blog)/components/features/post/public/Tags";
 import Card from "@/components/SectionCard";
 import { Link } from "@/lib/i18n/blog-navigation";
-import Comment from "@/features/comment/public/components/CommentClient";
+import Comment from "@/app/(blog)/components/features/comment/public/components/CommentClient";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { getTranslations } from "next-intl/server";
@@ -19,8 +19,8 @@ import {
 } from "@/app/lib/server/public-queries";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
-import { RichText } from "@/features/media/public/RichText";
-import { PostViewTracker } from "@/features/post/public/PostViewTracker";
+import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
+import { PostViewTracker } from "@/app/(blog)/components/features/post/public/PostViewTracker";
 import { serializeJsonLd } from "@/lib/security/serialize-json-ld";
 import {
   assertPostDetail,

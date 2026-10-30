@@ -33,7 +33,7 @@ vi.mock("sonner", () => ({
   toast: { error: mocks.error, success: mocks.success },
 }));
 
-vi.mock("@/features/setting/admin/use-site-setting", () => ({
+vi.mock("@/app/admin/(dashboard)/providers/use-site-setting", () => ({
   useSiteSetting: () => ({
     setting: {
       siteName: { zh: "Honeycomb" },

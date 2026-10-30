@@ -4,7 +4,7 @@
 
 ## 变更内容
 
-- 实施 P01/P03/P04/P05/P06/P07/P08：路由私有目录使用 _components；Card、MultiLangText 明确共享归属；TextDivider 归 PostList；日期格式化归 lib/ui；发布颜色映射分属 post/page；媒体后台配套归 media/admin。
+- 实施 P01/P03/P04/P05/P06/P07/P08：路由私有目录使用 components；Card、MultiLangText 明确共享归属；TextDivider 归 PostList；日期格式化归 lib/ui；发布颜色映射分属 post/page；媒体后台配套归 media/admin。
 - 同步相邻测试、六个 SVG、静态和动态消费者、mock、门禁与当前文档；不增加兼容 barrel。
 - P02 Providers 与 P09 PostInfo 保持现状，不纳入类型派生审查建议，不改变路由入口或 URL。
 

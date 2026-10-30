@@ -5,7 +5,7 @@
 ## 变更内容
 
 - 采用 app / features / components / lib 职责，移除 src/packages 与人工 application/domain/infrastructure 层。
-- 根 tRPC router/caller 归 app/_trpc，lib/trpc 保留公共核心、上下文、客户端与传输工具。
+- 根 tRPC router/caller 归 app/trpc，lib/trpc 保留公共核心、上下文、客户端与传输工具。
 - 业务 schema、types、rules、server 及 admin/public UI 归所属 feature；直接数据库操作取代无职责 Repository、factory、Use Case 和 handler 跳转。
 - 同步路径、配置、测试、文档、技能与当前规格，不保留中央 contracts 或兼容转发入口。
 - 保留发布/账号规则、权限与 GUEST 范围、事务/并发保护、缓存降级、媒体副作用、草稿恢复、Sentry 隐私及运行时隔离。

@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth/client";
 import type { AdminUser } from "@/app/admin/lib/admin-auth";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { AdminLayout } from "@/app/admin/components/AdminLayout";
-import { useSiteSetting } from "@/features/setting/admin/use-site-setting";
+import { useSiteSetting } from "@/app/admin/(dashboard)/providers/use-site-setting";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
