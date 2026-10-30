@@ -56,7 +56,7 @@ it("shares one admin lookup between layout and template only within a server ren
             builder.onResolve(
               {
                 filter:
-                  /^(auth-fixture|server-only|next\/headers|next\/server|next\/navigation|@\/features\/user\/server\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/components\/AdminClientShell|@\/components\/LoadingState)$/,
+                  /^(auth-fixture|server-only|next\/headers|next\/server|next\/navigation|@\/features\/user\/server\/admin-user|@\/features\/user\/server\/user-repository|@\/lib\/db\/db|@\/app\/admin\/AdminProviders|\.\/providers\/AdminProviders|\.\/components\/AdminClientShell|@\/components\/LoadingState)$/,
               },
               (args) => ({ path: args.path, namespace: "fixture" }),
             );
@@ -76,6 +76,8 @@ it("shares one admin lookup between layout and template only within a server ren
                   "export function createUserRepository() { return {}; }",
                 "@/lib/db/db": "export function getDb() { return {}; }",
                 "@/app/admin/(dashboard)/providers/AdminProviders":
+                  "export function AdminProviders({ children }) { return children; }",
+                "./providers/AdminProviders":
                   "export function AdminProviders({ children }) { return children; }",
                 "./components/AdminClientShell":
                   "export function AdminClientShell({ user, children }) { return [user.id, children]; }",

@@ -588,10 +588,10 @@ describe("feature-owned business boundaries", () => {
     ],
     [
       "src/app/(blog)/components/features/post/public/server/query.ts",
-      "../../../../lib/db/schema/post",
+      "@/lib/db/schema/post",
       true,
     ],
-    ["src/features/post/shared/server.ts", "../../../lib/db/schema/post", true],
+    ["src/features/post/shared/server.ts", "../../../lib/db/schema/post", false],
     ["src/app/admin/(dashboard)/post/edit/components/server.ts", "@/lib/db/schema/post", true],
     ["src/app/admin/(dashboard)/post/edit/components/server.ts", "drizzle-orm", true],
     ["src/app/admin/(dashboard)/media/components/media-query.ts", "@/lib/trpc/outputs", true],

@@ -26,9 +26,10 @@ const scopes = [
   },
   {
     name: "Other features",
-    roots: ["link", "tag", "page", "user"].map(
-      (feature) => `src/features/${feature}`,
-    ),
+    roots: ["link", "tag", "page", "user"].flatMap((feature) => [
+      `src/app/admin/(dashboard)/${feature}`,
+      `src/features/${feature}`,
+    ]),
     paths: ["/admin/", "/presentation/"],
   },
 ];
