@@ -6,6 +6,12 @@ import { sourceFiles } from "@tests/helpers/source-files";
 const appRoot = join(process.cwd(), "src", "app");
 
 const appFiles = sourceFiles(appRoot);
+const separatelyCoveredComponents = new Map([
+  [
+    join(appRoot, "admin/(dashboard)/components/EditorMediaProvider"),
+    join(process.cwd(), "tests/architecture/admin-client-boundaries.test.ts"),
+  ],
+]);
 
 function componentDirectories(): string[] {
   return appFiles
@@ -75,12 +81,13 @@ describe("App Router composition boundaries", () => {
   it("keeps app shell entrypoints covered without prescribing TSX test syntax", () => {
     expect(componentDirectories().length).toBeGreaterThan(0);
     const missingTests = componentDirectories()
-      .filter(
-        (directory) =>
-          !["index.test.ts", "index.test.tsx"].some((file) =>
-            existsSync(join(directory, file)),
-          ),
-      )
+      .filter((directory) => {
+        const hasLocalTest = sourceFiles(directory, { includeTests: true }).some(
+          (path) => /\.(?:test|spec)\.(?:ts|tsx)$/.test(path),
+        );
+        const separateTest = separatelyCoveredComponents.get(directory);
+        return !hasLocalTest && !(separateTest && existsSync(separateTest));
+      })
       .map((directory) => relative(process.cwd(), directory));
     expect(missingTests).toEqual([]);
   });
