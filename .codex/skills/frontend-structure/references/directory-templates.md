@@ -24,7 +24,7 @@ src/
     rules/                 # 如 post-publication.ts，纯不变量与就近测试
     server/                # 如 tag-commands.ts、tag-queries.ts，实际操作
   components/              # 全站通用 UI
-    editor/                # 通用编辑器，注入业务媒体选择
+    Editor/                # 通用编辑器，注入业务媒体选择
   lib/                     # db/auth/trpc/cache/storage/observability/i18n
     auth/client.ts         # use client 浏览器认证单例；服务端 auth.ts 保留根位置
 ```
