@@ -3,6 +3,7 @@
 - 本工程使用当前安装版本的 Next.js；写代码前阅读 `node_modules/next/dist/docs/` 中相关指南，遵循本仓库生成的 Next.js agent rules。
 - 使用 App Router，不新增 Pages Router。服务端默认优先；只有交互、浏览器 API 或客户端状态才使用 Client Component。
 - `@/*` 用于源码绝对导入，`@tests/*` 用于测试；避免深层相对路径。Server-only 代码保持服务端边界，禁止被客户端 bundle 引入。
+- 路由家族的 `components` 以及 `app/auth`、`app/trpc`、`app/pwa` 是普通就近共置目录，不是 Next.js `_folder` 私有目录；保持内部实现归属，不在这些目录及其子目录新增 `page`、`route` 或框架 metadata 入口，现有公开路由和 URL 不变。目录命名不替代 `server-only`、类型导入或认证授权边界。
 - Provider 放在最靠近实际消费者的位置；不要把局部状态升级为全局状态。服务端数据、URL 状态、表单状态和 UI 瞬时状态分别放在合适边界。
 - UI 优先复用已有组件和设计系统；样式遵循仓库既有方案，不为局部需求引入新依赖或重复造组件。
 - tRPC、TanStack Query 和缓存的使用遵循现有运行时与 feature 边界；新增依赖前检查 package、版本和现有能力。

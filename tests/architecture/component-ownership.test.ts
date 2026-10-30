@@ -90,7 +90,7 @@ describe("component ownership", () => {
     "src/app/auth",
     "src/app/trpc",
     "src/app/pwa",
-  ])("keeps %s non-routable", (directory) => {
+  ])("keeps %s non-routable without a private-folder prefix", (directory) => {
     expect(existsSync(directory), directory).toBe(true);
     const { isAppRouterPage } = createValidFileMatcher(
       ["tsx", "ts", "jsx", "js"],

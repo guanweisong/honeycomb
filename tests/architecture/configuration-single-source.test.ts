@@ -2,6 +2,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import * as providers from "@/lib/auth/providers";
 import * as validation from "@/lib/db/value-validation";
+import { resolveSourceModule } from "@tests/helpers/architecture-imports";
 import { sourceFile, sourceFiles } from "@tests/helpers/source-files";
 
 function inspectEnumDefaults(source: ts.SourceFile) {
@@ -63,9 +64,21 @@ describe("配置与契约所有权", () => {
     }
   });
   it("内容表枚举默认值引用领域成员，不复制字符串", () => {
-    const definitions = sourceFiles("src/lib/db/schema").filter((path) =>
-      /\/content-[^/]+\.ts$/.test(path),
-    );
+    const barrel = "src/lib/db/schema/content.ts";
+    const definitions = sourceFile(barrel).statements.flatMap((node) => {
+      if (
+        !ts.isExportDeclaration(node) ||
+        !node.moduleSpecifier ||
+        !ts.isStringLiteral(node.moduleSpecifier)
+      )
+        return [];
+      const path = resolveSourceModule(barrel, node.moduleSpecifier.text);
+      if (!path)
+        throw new Error(
+          `Cannot resolve content schema: ${node.moduleSpecifier.text}`,
+        );
+      return [path];
+    });
     expect(definitions.length).toBeGreaterThan(0);
     const results = definitions.map((path) =>
       inspectEnumDefaults(sourceFile(path)),

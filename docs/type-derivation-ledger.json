@@ -342,7 +342,7 @@
       "currentLine": 6,
       "disposition": "retained-independent",
       "reason": "保留提示组件唯一 title 属性；不是业务标题模型。 UI/路由组合契约；无 ORM 依赖，保留展示与控制属性的独立生命周期。",
-      "authority": "src/app/(blog)/components/NoData/index.tsx#NoDataProps",
+      "authority": "src/app/(blog)/[locale]/list/[...slug]/components/NoData/index.tsx#NoDataProps",
       "originalDeclarationUnchanged": true
     },
     {
