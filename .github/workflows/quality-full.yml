@@ -1,0 +1,275 @@
+name: quality-full
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-full-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit_coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: Run coverage shard with an isolated fixture
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Coverage shard ${{ matrix.shard }}/2" bun run test:unit:coverage --shard=${{ matrix.shard }}/2 --reporter=default --reporter=blob --reporter=github-actions --config=vitest.shard.config.mts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage-shard-${{ matrix.shard }}
+          path: .vitest/blob/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  coverage_gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [unit_coverage]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: unit-coverage-shard-*
+          path: .vitest/blob/
+          merge-multiple: true
+      - name: Require both shards and enforce the original coverage thresholds
+        shell: bash
+        run: |
+          test -s .vitest/blob/blob-1-2.json
+          test -s .vitest/blob/blob-2-2.json
+          test "$(find .vitest/blob -mindepth 1 -maxdepth 1 | wc -l)" -eq 2
+          bun run test:unit:coverage --merge-reports=.vitest/blob
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-coverage
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 14
+
+  development_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache/turbopack
+          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality-full.yml') }}
+          restore-keys: |
+            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - name: Run complete development E2E with an isolated fixture
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Development E2E" env PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development
+
+  production_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache/turbopack
+          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality-full.yml') }}
+          restore-keys: |
+            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - name: Run complete production E2E with an isolated fixture
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Production E2E" env PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production
+
+  bundle_analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache/turbopack
+          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality-full.yml') }}
+          restore-keys: |
+            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - name: Build and analyze production bundle
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Production build" bun run build
+          phase "Bundle analysis" timeout 10m bun run analyze
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-analysis
+          path: .next/diagnostics/analyze/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      [
+        unit_coverage,
+        coverage_gate,
+        development_e2e,
+        production_e2e,
+        bundle_analysis,
+      ]
+    if: ${{ always() }}
+    steps:
+      - name: Require every full quality lane to succeed
+        env:
+          UNIT_COVERAGE_RESULT: ${{ needs.unit_coverage.result }}
+          COVERAGE_GATE_RESULT: ${{ needs.coverage_gate.result }}
+          DEVELOPMENT_E2E_RESULT: ${{ needs.development_e2e.result }}
+          PRODUCTION_E2E_RESULT: ${{ needs.production_e2e.result }}
+          BUNDLE_ANALYSIS_RESULT: ${{ needs.bundle_analysis.result }}
+        run: |
+          test "$UNIT_COVERAGE_RESULT" = success
+          test "$COVERAGE_GATE_RESULT" = success
+          test "$DEVELOPMENT_E2E_RESULT" = success
+          test "$PRODUCTION_E2E_RESULT" = success
+          test "$BUNDLE_ANALYSIS_RESULT" = success
