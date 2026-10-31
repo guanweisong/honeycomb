@@ -21,7 +21,7 @@
 
 1. **在现有质量 workflow 中分类变更。** `specs` job 用 base/head diff 调用一个仓库内分类脚本，并输出是否有 TS/TSX 测试目标及是否命中高风险路径。使用本地 Git diff，避免引入第三方路径分类 action。
 2. **普通改动运行 Vitest 相关用例。** 使用 Vitest `--changed=<base SHA>`，不启用 coverage。测试配置的现有 include/exclude 保持不变；静态、migration-governance、invariant、process 与生产依赖审计仍在常规 workflow 阻塞执行。
-3. **高风险改动升级检查。** 认证/授权、DB schema/migration、feature `server` 目录、媒体/存储、E2E 配置/生命周期等路径触发完整非覆盖率 Vitest 清单及完整开发 E2E。PWA、Playwright 配置、E2E 测试和 E2E 生命周期本身的改动还触发生产 E2E。各测试 job 各自创建并清理专属 `file:` 数据库。
+3. **高风险改动升级检查。** 认证/授权、安全响应头配置、DB schema/migration、feature `server` 目录及路由、媒体/存储、E2E 配置/生命周期等路径触发完整非覆盖率 Vitest 清单及完整开发 E2E。PWA、Playwright 配置、E2E 测试和 E2E 生命周期本身的改动还触发生产 E2E。各测试 job 各自创建并清理专属 `file:` 数据库。
 4. **把完整保障放入独立 workflow。** `quality-full.yml` 由 UTC 每日计划任务和 `workflow_dispatch` 触发。覆盖率维持两个 shard 和原合并阈值；开发 E2E、生产 E2E、bundle 分析作为独立 job，各自安装依赖。生产 E2E 由现有 Playwright webServer 完成一次 build 和启动；分析 job 单独 build 后生成静态报告，避免在同一生产 E2E job 重复构建。
 5. **稳定 PR 汇总状态。** `quality / verify` 使用 classifier 输出区分必须成功和允许跳过的条件 job；被要求的 lane 必须为 `success`，失败或取消都使汇总失败。
 6. **保护风险分类器自身。** `unit_checks` 在每个 PR 上运行现有 workflow 契约测试，不依赖 classifier 输出；契约断言覆盖分类器自身、质量 workflow 和授权/限流边界路径。
