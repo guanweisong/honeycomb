@@ -55,7 +55,12 @@ const commandsFor = (job: z.infer<typeof jobSchema>) =>
       ? step.run
           .trim()
           .split("\n")
-          .map((line) => line.trim().replace(/^phase "[^"]+" (?:env )?/, ""))
+          .map((line) =>
+            line
+              .trim()
+              .replace(/^phase "[^"]+" (?:env )?/, "")
+              .replace(/\s+\|\|\s+exit \$\?$/, ""),
+          )
       : [],
   );
 

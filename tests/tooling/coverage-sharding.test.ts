@@ -145,7 +145,7 @@ describe("coverage sharding", () => {
     "checks workflow blobs: $files, empty: $emptyFile, directory: $directory",
     async ({ files, accepted, emptyFile, directory }) => {
       const workflow = parse(
-        readFileSync(resolve(".github/workflows/quality.yml"), "utf8"),
+        readFileSync(resolve(".github/workflows/quality-full.yml"), "utf8"),
       ) as { jobs: Record<string, { steps: { run?: string }[] }> };
       const command = workflow.jobs.coverage_gate?.steps.find((step) =>
         step.run?.includes("--merge-reports="),
