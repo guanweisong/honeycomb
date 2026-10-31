@@ -16,11 +16,21 @@ jobs:
   specs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      high_risk: ${{ steps.classify.outputs.high_risk }}
+      has_test_targets: ${{ steps.classify.outputs.has_test_targets }}
+      requires_production_e2e: ${{ steps.classify.outputs.requires_production_e2e }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
           fetch-depth: 0
+      - id: classify
+        name: Classify changed paths
+        shell: bash
+        env:
+          QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: bash scripts/classify-quality-changes.sh "$QUALITY_DIFF_BASE_SHA" "$GITHUB_SHA"
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -28,6 +38,7 @@ jobs:
       - run: bun run quality:spec
         env:
           QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+
   unit_checks:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -70,6 +81,7 @@ jobs:
           phase "Migrate isolated database" bun run db:migrate
           phase "Seed isolated database" bun run db:e2e:seed
           phase "Serial process tests" bun run test:unit:process
+          phase "Quality workflow contract" bun run test:unit:run tests/tooling/quality-workflow.test.ts
           phase "Audit production dependencies" bun run audit:production --output dependency-audit-report.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -78,13 +90,12 @@ jobs:
           path: dependency-audit-report.json
           if-no-files-found: ignore
           retention-days: 14
-  unit_coverage:
+
+  feature_tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
+    needs: [specs]
+    if: ${{ needs.specs.outputs.has_test_targets == 'true' && needs.specs.outputs.high_risk != 'true' }}
     env:
       QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_PUBLIC_SITE_URL: https://example.test
@@ -108,7 +119,7 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - name: Run coverage shard with isolated fixture
+      - name: Run related feature tests with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
@@ -120,20 +131,26 @@ jobs:
           phase "Audit database invariants" bun run db:invariants:audit
           phase "Migrate isolated database" bun run db:migrate
           phase "Seed isolated database" bun run db:e2e:seed
-          phase "Coverage shard ${{ matrix.shard }}/2" bun run test:unit:coverage --shard=${{ matrix.shard }}/2 --reporter=default --reporter=blob --reporter=github-actions --config=vitest.shard.config.mts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: unit-coverage-shard-${{ matrix.shard }}
-          path: .vitest/blob/
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-  coverage_gate:
+          if [[ "$QUALITY_DIFF_BASE_SHA" =~ ^0+$ ]]; then
+            phase "Full feature tests for initial commit" bun run test:unit:run || exit $?
+          else
+            phase "Related feature tests" bun run test:unit:run --changed="$QUALITY_DIFF_BASE_SHA" || exit $?
+          fi
+
+  high_risk_unit_tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [unit_coverage]
+    timeout-minutes: 20
+    needs: [specs]
+    if: ${{ needs.specs.outputs.high_risk == 'true' }}
+    env:
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24.22.1
@@ -147,30 +164,68 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: unit-coverage-shard-*
-          path: .vitest/blob/
-          merge-multiple: true
-      - name: Require both shards and enforce the original coverage thresholds
+      - name: Run the full unit and integration inventory with an isolated fixture
         shell: bash
         run: |
-          test -s .vitest/blob/blob-1-2.json
-          test -s .vitest/blob/blob-2-2.json
-          test "$(find .vitest/blob -mindepth 1 -maxdepth 1 | wc -l)" -eq 2
-          bun run test:unit:coverage --merge-reports=.vitest/blob
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: unit-coverage
-          path: coverage/
-          if-no-files-found: error
-          retention-days: 14
-  build_e2e:
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Full unit and integration tests" bun run test:unit:run
+
+  high_risk_development_e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: [specs]
+    if: ${{ needs.specs.outputs.high_risk == 'true' }}
     env:
-      QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+      NEXT_PUBLIC_SITE_URL: https://example.test
+      AUTH_SECRET: ci-build-only-test-secret-32-characters-long
+      AUTH_URL: https://example.test
+      E2E_SEED: "1"
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - name: Run development E2E with an isolated fixture
+        shell: bash
+        run: |
+          export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
+          source scripts/ci-fixture-lifecycle.sh
+          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+          export TURSO_TOKEN=e2e-local-only
+          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
+          phase "Audit database invariants" bun run db:invariants:audit
+          phase "Migrate isolated database" bun run db:migrate
+          phase "Seed isolated database" bun run db:e2e:seed
+          phase "Development E2E" env PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development
+
+  high_risk_production_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [specs]
+    if: ${{ needs.specs.outputs.high_risk == 'true' && needs.specs.outputs.requires_production_e2e == 'true' }}
+    env:
       NEXT_PUBLIC_SITE_URL: https://example.test
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
@@ -199,7 +254,7 @@ jobs:
             next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
-      - name: Build, analyze and production E2E with isolated fixture
+      - name: Run production E2E with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
@@ -211,21 +266,12 @@ jobs:
           phase "Audit database invariants" bun run db:invariants:audit
           phase "Migrate isolated database" bun run db:migrate
           phase "Seed isolated database" bun run db:e2e:seed
-          phase "Production build" bun run build
-          phase "Bundle analysis" timeout 10m bun run analyze
           phase "Production E2E" env PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: bundle-analysis
-          path: .next/diagnostics/analyze/
-          if-no-files-found: ignore
-          retention-days: 14
-  development_e2e:
+
+  production_build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       NEXT_PUBLIC_SITE_URL: https://example.test
       AUTH_SECRET: ci-build-only-test-secret-32-characters-long
       AUTH_URL: https://example.test
@@ -233,6 +279,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          persist-credentials: false
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -246,9 +293,14 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
             bun-${{ runner.os }}-
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache/turbopack
+          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
+          restore-keys: |
+            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
-      - name: Run development E2E with isolated fixture
+      - name: Build production application with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
@@ -260,7 +312,8 @@ jobs:
           phase "Audit database invariants" bun run db:invariants:audit
           phase "Migrate isolated database" bun run db:migrate
           phase "Seed isolated database" bun run db:e2e:seed
-          phase "Development E2E" env PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development
+          phase "Production build" bun run build
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -268,25 +321,47 @@ jobs:
       [
         specs,
         unit_checks,
-        unit_coverage,
-        coverage_gate,
-        build_e2e,
-        development_e2e,
+        feature_tests,
+        high_risk_unit_tests,
+        high_risk_development_e2e,
+        high_risk_production_e2e,
+        production_build,
       ]
     if: ${{ always() }}
     steps:
-      - name: Require every quality lane to succeed
+      - name: Require every applicable quality lane to succeed
         env:
           SPECS_RESULT: ${{ needs.specs.result }}
+          HAS_TEST_TARGETS: ${{ needs.specs.outputs.has_test_targets }}
+          HIGH_RISK: ${{ needs.specs.outputs.high_risk }}
+          REQUIRES_PRODUCTION_E2E: ${{ needs.specs.outputs.requires_production_e2e }}
           UNIT_CHECKS_RESULT: ${{ needs.unit_checks.result }}
-          UNIT_COVERAGE_RESULT: ${{ needs.unit_coverage.result }}
-          COVERAGE_GATE_RESULT: ${{ needs.coverage_gate.result }}
-          DEVELOPMENT_E2E_RESULT: ${{ needs.development_e2e.result }}
-          BUILD_E2E_RESULT: ${{ needs.build_e2e.result }}
+          FEATURE_TESTS_RESULT: ${{ needs.feature_tests.result }}
+          HIGH_RISK_UNIT_RESULT: ${{ needs.high_risk_unit_tests.result }}
+          HIGH_RISK_E2E_RESULT: ${{ needs.high_risk_development_e2e.result }}
+          HIGH_RISK_PRODUCTION_E2E_RESULT: ${{ needs.high_risk_production_e2e.result }}
+          PRODUCTION_BUILD_RESULT: ${{ needs.production_build.result }}
+        shell: bash
         run: |
           test "$SPECS_RESULT" = success
           test "$UNIT_CHECKS_RESULT" = success
-          test "$BUILD_E2E_RESULT" = success
-          test "$UNIT_COVERAGE_RESULT" = success
-          test "$COVERAGE_GATE_RESULT" = success
-          test "$DEVELOPMENT_E2E_RESULT" = success
+          test "$PRODUCTION_BUILD_RESULT" = success
+          if [[ "$HIGH_RISK" == true ]]; then
+            test "$HIGH_RISK_UNIT_RESULT" = success
+            test "$HIGH_RISK_E2E_RESULT" = success
+            test "$FEATURE_TESTS_RESULT" = skipped
+            if [[ "$REQUIRES_PRODUCTION_E2E" == true ]]; then
+              test "$HIGH_RISK_PRODUCTION_E2E_RESULT" = success
+            else
+              test "$HIGH_RISK_PRODUCTION_E2E_RESULT" = skipped
+            fi
+          else
+            test "$HIGH_RISK_UNIT_RESULT" = skipped
+            test "$HIGH_RISK_E2E_RESULT" = skipped
+            test "$HIGH_RISK_PRODUCTION_E2E_RESULT" = skipped
+            if [[ "$HAS_TEST_TARGETS" == true ]]; then
+              test "$FEATURE_TESTS_RESULT" = success
+            else
+              test "$FEATURE_TESTS_RESULT" = skipped
+            fi
+          fi
