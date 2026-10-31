@@ -93,6 +93,7 @@ describe("quality workflow", () => {
     for (const command of [
       "bun run check-types",
       "bun run lint",
+      "bun run test:unit:run tests/tooling/quality-workflow.test.ts",
       "bun run test:unit:coverage",
       "bun run test:unit:process",
       "bun run audit:production",
@@ -115,6 +116,12 @@ describe("quality workflow", () => {
       "utf8",
     );
     for (const path of [
+      "scripts/classify-quality-changes.sh",
+      ".github/workflows/quality*.yml",
+      "src/app/admin/*",
+      "src/features/*/*router.ts",
+      "src/proxy.ts",
+      "src/lib/http/client-ip.ts",
       "src/lib/auth/*",
       "src/lib/db/*",
       "src/lib/rate-limit/*",

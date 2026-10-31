@@ -81,6 +81,7 @@ jobs:
           phase "Migrate isolated database" bun run db:migrate
           phase "Seed isolated database" bun run db:e2e:seed
           phase "Serial process tests" bun run test:unit:process
+          phase "Quality workflow contract" bun run test:unit:run tests/tooling/quality-workflow.test.ts
           phase "Audit production dependencies" bun run audit:production --output dependency-audit-report.json
       - uses: actions/upload-artifact@v4
         if: always()

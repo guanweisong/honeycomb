@@ -3,6 +3,7 @@
 ### Requirement: 普通变更运行快速且阻塞的 PR 基础门禁
 
 质量工作流 MUST 在每个 PR 上阻塞执行规格校验、类型检查、lint、变更相关测试和生产构建。全量覆盖率、双环境完整 E2E 和 bundle 分析 MUST NOT 成为普通 PR 的必跑任务。生产依赖审计、迁移审查、数据库不变量检查及 process 测试 MUST 保留在常规 PR 门禁。
+工作流分类器契约测试 MUST 在每个 PR 上独立于风险分类结果执行，以防分类器改动跳过自身校验。
 
 #### Scenario: 普通 TypeScript 改动
 
@@ -13,6 +14,11 @@
 
 - **WHEN** PR 仅改文档或其他无 TS/TSX 测试目标的文件
 - **THEN** 规格校验、类型、lint、既有 process/治理检查和生产构建仍阻塞，变更相关测试 lane 可跳过
+
+#### Scenario: 风险分类器或 workflow 改动
+
+- **WHEN** PR 改动风险分类器或质量 workflow
+- **THEN** 无条件执行 workflow 契约测试，验证高风险路径与 lane 条件
 
 ### Requirement: 高风险改动升级到完整集成与浏览器检查
 

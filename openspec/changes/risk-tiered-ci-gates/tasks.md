@@ -2,7 +2,7 @@
 
 - [x] 1.1 新增基于 base/head diff 的高风险与测试目标分类脚本，覆盖认证/授权、数据库/迁移、feature server、媒体/存储和 E2E 生命周期路径。
 - [x] 1.2 调整 `quality.yml`：保留基础阻塞检查和生产构建，普通改动跑相关测试，高风险改动跑完整单元/集成及隔离数据库开发 E2E。
-- [x] 1.3 保持 `quality / verify` 稳定且 fail-closed，更新既有 workflow 契约测试，断言安全门禁与测试隔离保留。
+- [x] 1.3 保持 `quality / verify` 稳定且 fail-closed；在无条件 PR 基础 lane 运行 workflow 契约测试，断言风险路径、安全门禁与测试隔离保留。
 
 ## 2. 夜间与手动完整保障
 
