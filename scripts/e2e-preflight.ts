@@ -122,7 +122,7 @@ if (
     assertE2EPreflightEnvironment(process.env, invocation.inspection);
     const nodeRequire = createRequire(resolve("package.json"));
     const child = spawn(
-      "node",
+      process.execPath,
       [nodeRequire.resolve("@playwright/test/cli"), "test", ...invocation.args],
       {
         stdio: "inherit",

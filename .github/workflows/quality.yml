@@ -52,9 +52,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -106,9 +103,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -151,9 +145,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -192,9 +183,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -205,7 +193,7 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx --bun playwright install --with-deps chromium
       - name: Run development E2E with an isolated fixture
         shell: bash
         run: |
@@ -234,9 +222,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -249,11 +234,11 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .next/cache/turbopack
-          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
+          key: next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
           restore-keys: |
-            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
+            next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx --bun playwright install --with-deps chromium
       - name: Run production E2E with an isolated fixture
         shell: bash
         run: |
@@ -281,9 +266,6 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24.22.1
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -296,9 +278,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .next/cache/turbopack
-          key: next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
+          key: next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
           restore-keys: |
-            next-${{ runner.os }}-node24-bun1.4.4-${{ hashFiles('bun.lock') }}-
+            next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-
       - run: bun install --frozen-lockfile
       - name: Build production application with an isolated fixture
         shell: bash
