@@ -19,3 +19,8 @@
 - [x] 4.1 完成类型检查、lint、工作流 YAML 解析、Node 可执行调用扫描及差异格式检查；未运行测试集。
 - [x] 4.2 使用隔离临时数据库完成 Bun + Webpack 生产构建和 Serwist 产物生成；记录沙箱中默认 Turbopack 的端口绑定限制。
 - [x] 4.3 运行 OpenSpec 严格校验，确认变更工件结构和规格有效。
+
+## 5. 收窄 Vercel Bun runtime 次版本
+
+- [x] 5.1 将 Vercel Bun runtime 配置为 1.4.x，并同步设计与规格说明。
+- [x] 5.2 更新质量工作流契约测试，断言 Vercel Bun runtime 使用 1.4.x。

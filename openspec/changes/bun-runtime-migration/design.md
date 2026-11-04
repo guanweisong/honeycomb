@@ -26,7 +26,7 @@
 
 ### 本地和 CI 固定 Bun，Vercel 单独声明 Bun runtime
 
-保留 `packageManager: "bun@1.4.4"` 和 CI 的 Bun 版本，删除 `engines.node` 及 `actions/setup-node`。在 `vercel.json` 设置 `bunVersion: "1.x"`，继续使用当前安装及构建命令。
+保留 `packageManager: "bun@1.4.4"` 和 CI 的 Bun 版本，删除 `engines.node` 及 `actions/setup-node`。在 `vercel.json` 设置 `bunVersion: "1.4.x"`，让 Vercel 管理 1.4 次版本线中的补丁版本，并继续使用当前安装及构建命令。
 
 ### 保留 Node 兼容接口
 

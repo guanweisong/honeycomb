@@ -16,12 +16,12 @@
 
 ### Requirement: Vercel 使用 Bun runtime
 
-Vercel 项目 MUST 通过 `bunVersion` 声明 Bun runtime，并使用 Bun 执行既有依赖安装和构建命令。
+Vercel 项目 MUST 通过 `bunVersion: "1.4.x"` 声明 Bun runtime，使 Functions 使用 Bun 1.4 次版本线；具体补丁版本由 Vercel 管理。项目 MUST 使用 Bun 执行既有依赖安装和构建命令。
 
 #### Scenario: 构建 Vercel 部署
 
 - **WHEN** Vercel 安装依赖并构建项目
-- **THEN** 部署配置选择 Bun runtime，使用冻结锁文件安装依赖，并运行项目构建命令
+- **THEN** 部署配置选择 Bun 1.4.x runtime，使用冻结锁文件安装依赖，并运行项目构建命令
 
 ### Requirement: Bun runtime 支持保留的 Node 兼容接口
 
