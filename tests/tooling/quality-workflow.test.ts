@@ -74,7 +74,7 @@ describe("quality workflow", () => {
 
   it("uses Vercel's Bun runtime and frozen lockfile installer", () => {
     expect(vercelJson.installCommand).toBe("bun install --frozen-lockfile");
-    expect(vercelJson.bunVersion).toBe("1.x");
+    expect(vercelJson.bunVersion).toBe("1.4.x");
   });
 
   it("runs project CLIs with Bun and does not install Node.js", () => {

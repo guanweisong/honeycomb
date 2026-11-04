@@ -23,3 +23,4 @@
 ## 5. 收窄 Vercel Bun runtime 次版本
 
 - [x] 5.1 将 Vercel Bun runtime 配置为 1.4.x，并同步设计与规格说明。
+- [x] 5.2 更新质量工作流契约测试，断言 Vercel Bun runtime 使用 1.4.x。
