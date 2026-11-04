@@ -15,9 +15,7 @@ const requiredBoundaries = [
 describe("route recovery boundaries", () => {
   it("provides public, admin, and global recovery boundaries", async () => {
     await Promise.all(
-      requiredBoundaries.map((path) =>
-        expect(access(path, constants.R_OK)).resolves.toBeUndefined(),
-      ),
+      requiredBoundaries.map((path) => access(path, constants.R_OK)),
     );
   });
 

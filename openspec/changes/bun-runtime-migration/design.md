@@ -36,6 +36,10 @@
 
 E2E preflight 通过 `process.execPath` 启动 Playwright，使其沿用当前 Bun 进程；CI fixture 计时通过 Bun 单行脚本读取时间。参数、环境和计时单位保持不变。
 
+### 将 Playwright E2E spec 作为 TypeScript ESM 加载
+
+Playwright 根据最近的 `package.json` 决定用 `require` 还是动态 `import` 加载测试文件。仓库根包未声明模块类型时，它会把 `.ts` 测试按 CommonJS 方式交给 Bun，导致类型语法解析失败。`tests/e2e/package.json` 声明 ESM 边界后，Playwright 使用动态导入，Bun 可直接加载现有 TypeScript spec，仍由 Bun 运行 Playwright CLI。
+
 ## Risks / Trade-offs
 
 - **Vercel Bun runtime 与本地 Bun 存在差异** → 本地和 CI 固定 Bun 版本并构建验证；部署后仍需观察托管 runtime。

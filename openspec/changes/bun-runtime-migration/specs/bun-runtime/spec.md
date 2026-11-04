@@ -36,3 +36,8 @@ Vercel 项目 MUST 通过 `bunVersion` 声明 Bun runtime，并使用 Bun 执行
 
 - **WHEN** CI 测量 fixture 生命周期或启动 Playwright
 - **THEN** 辅助脚本通过 Bun 或当前 Bun 可执行程序运行，不查找 Node.js 可执行程序
+
+#### Scenario: 在 Bun 下收集 Playwright 测试清单
+
+- **WHEN** 开发者或 CI 使用 Playwright 的 `--list` 检查 E2E 测试
+- **THEN** E2E TypeScript spec 按 ESM 加载，Playwright CLI 由 Bun 执行，并返回完整测试清单

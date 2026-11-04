@@ -7,6 +7,7 @@
 
 - [x] 2.1 让 E2E preflight 使用当前 Bun 可执行程序启动 Playwright，并将 CI fixture 计时改为 Bun。
 - [x] 2.2 更新既有质量工作流和子进程契约断言，保留 Node 兼容 API 与框架环境标签。
+- [x] 2.3 为 Playwright E2E TypeScript spec 添加 ESM package 边界，确保 Bun 运行时可收集测试。
 
 ## 3. 同步环境文档
 
