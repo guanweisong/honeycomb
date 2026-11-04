@@ -91,7 +91,7 @@ it("shares one admin lookup between layout and template only within a server ren
       ],
     });
     const result = await runTestProcess(
-      "node",
+      "bun",
       ["--conditions=react-server", outfile],
       {
         env: { ...process.env, NODE_ENV: "production" },

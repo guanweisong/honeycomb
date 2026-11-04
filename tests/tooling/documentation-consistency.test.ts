@@ -108,7 +108,7 @@ describe("repository documentation consistency", () => {
       scripts: Record<string, string>;
     };
     expect(packageJson.scripts["test:unit:coverage"]).toBe(
-      "vitest run --coverage",
+      "bun run --bun vitest run --coverage",
     );
   });
 

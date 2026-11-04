@@ -143,9 +143,9 @@ describe("admin read snapshots on local SQLite", () => {
   });
 
   it("serves the real menu HTTP batch alongside a session insert without interactive read locks", async () => {
-    // This regression runs in Node, as does the Next CLI; no browser or socket
-    // is needed to exercise the actual routers, adapter and local driver.
-    expect(process.versions.bun).toBeUndefined();
+    // This regression runs in Bun, matching the project CLI runtime; no
+    // browser or socket is needed to exercise the routers and local driver.
+    expect(process.versions.bun).toBeTypeOf("string");
     await withSnapshots(async (db) => {
       const requests = await Promise.allSettled([
         menuRequest(db),

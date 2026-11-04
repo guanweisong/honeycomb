@@ -13,7 +13,7 @@ import { execFileSync } from "node:child_process";
 import { expect, it, vi } from "vitest";
 import { runTestProcess } from "@tests/helpers/run-test-process";
 
-it.each(["node", "bun-script", "bun-binary"] as const)(
+it.each(["bun-runtime", "bun-script", "bun-binary"] as const)(
   "terminates the complete %s descendant tree on timeout",
   async (mode) => {
     const fixture = mkdtempSync(join(tmpdir(), "honeycomb-process-tree-"));
@@ -37,7 +37,7 @@ it.each(["node", "bun-script", "bun-binary"] as const)(
       }, 10);
     `,
       );
-      const launcherSource = `#!/usr/bin/env node
+      const launcherSource = `#!/usr/bin/env bun
       const { spawn } = require("node:child_process");
       spawn(process.execPath, [${JSON.stringify(child)}], { stdio: "ignore" });
       setInterval(() => {}, 1000);
@@ -57,9 +57,9 @@ it.each(["node", "bun-script", "bun-binary"] as const)(
           },
         }),
       );
-      const command = mode === "node" ? process.execPath : "bun";
+      const command = mode === "bun-runtime" ? process.execPath : "bun";
       const args =
-        mode === "node"
+        mode === "bun-runtime"
           ? [launcher]
           : mode === "bun-script"
             ? ["run", "fixture"]

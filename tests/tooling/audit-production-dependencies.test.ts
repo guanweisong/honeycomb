@@ -140,8 +140,8 @@ describe("production dependency audit policy", () => {
 });
 
 describe("Bun lock JSONC parsing", () => {
-  it("imports audit policy in Node without requiring the Bun runtime", () => {
-    expect("Bun" in globalThis).toBe(false);
+  it("imports audit policy in the Bun runtime without running the CLI", () => {
+    expect(process.versions.bun).toBeTypeOf("string");
     expect(parseBunLock).toBeTypeOf("function");
   });
   it.each([

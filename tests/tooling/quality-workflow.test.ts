@@ -20,7 +20,6 @@ const fullWorkflow = readFileSync(
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as {
-  engines: { node: string };
   packageManager: string;
   scripts: Record<string, string>;
 };
@@ -73,15 +72,22 @@ describe("quality workflow", () => {
     expect(fullWorkflow).toContain("bun install --frozen-lockfile");
   });
 
-  it("uses Vercel's detected Bun installer with a frozen lockfile", () => {
+  it("uses Vercel's Bun runtime and frozen lockfile installer", () => {
     expect(vercelJson.installCommand).toBe("bun install --frozen-lockfile");
-    expect(vercelJson).not.toHaveProperty("bunVersion");
+    expect(vercelJson.bunVersion).toBe("1.x");
   });
 
-  it("pins the supported Node major and development minimum", () => {
-    expect(packageJson.engines.node).toBe(">=24.15.0 <25");
-    expect(workflow.match(/node-version: 24\.22\.1/g)).toHaveLength(6);
-    expect(fullWorkflow.match(/node-version: 24\.22\.1/g)).toHaveLength(5);
+  it("runs project CLIs with Bun and does not install Node.js", () => {
+    expect(packageJson).not.toHaveProperty("engines.node");
+    expect(packageJson.scripts.dev).toContain("bun run --bun next dev");
+    expect(packageJson.scripts.build).toContain("bun run --bun next build");
+    expect(packageJson.scripts.start).toBe("bun run --bun next start");
+    expect(packageJson.scripts.lint).toBe("bunx --bun eslint .");
+    expect(packageJson.scripts["test:unit:run"]).toBe(
+      "bun run --bun vitest run",
+    );
+    expect(`${workflow}\n${fullWorkflow}`).not.toContain("actions/setup-node");
+    expect(`${workflow}\n${fullWorkflow}`).not.toMatch(/node-version:/);
   });
 
   it("keeps Turbopack analysis finite and writes static diagnostics", () => {
@@ -89,7 +95,7 @@ describe("quality workflow", () => {
     expect(fullWorkflow).toContain("timeout 10m bun run analyze");
     expect(fullWorkflow).toContain("path: .next/diagnostics/analyze/");
     expect(packageJson.scripts.analyze).toBe(
-      "bun next experimental-analyze --output",
+      "bun run --bun next experimental-analyze --output",
     );
     expect(`${workflow}\n${fullWorkflow}`).not.toMatch(/webpack/i);
   });
@@ -189,10 +195,10 @@ describe("quality workflow", () => {
     ].flatMap(commandsFor);
 
     expect(packageJson.scripts["test:unit:coverage"]).toBe(
-      "vitest run --coverage",
+      "bun run --bun vitest run --coverage",
     );
     expect(packageJson.scripts["test:unit:process"]).toBe(
-      "vitest run --config vitest.process.config.mts",
+      "bun run --bun vitest run --config vitest.process.config.mts",
     );
     expect(
       commands.filter((command) =>
