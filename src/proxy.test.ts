@@ -96,7 +96,7 @@ describe("proxy", () => {
   });
 
   it("delegates non-API request to i18n proxy", async () => {
-    const req = createProxyRequest("/zh");
+    const req = createProxyRequest("/zh/list/category");
 
     const res = await proxy(req);
 

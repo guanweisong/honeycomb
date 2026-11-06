@@ -59,7 +59,21 @@ export async function proxy(req: NextRequest) {
     });
   }
 
-  return i18nMiddleware(req);
+  const response = i18nMiddleware(req);
+  const isHome =
+    req.nextUrl.pathname === "/" ||
+    routing.locales.some((locale) => req.nextUrl.pathname === `/${locale}`);
+
+  if (!isHome) return response;
+
+  // 复用 next-intl 的语言协商与 Cookie，避免首页渲染后再次跳转、丢失语言前缀。
+  const destination = new URL(response.headers.get("location") ?? req.url);
+  destination.pathname = `${destination.pathname.replace(/\/$/, "")}/list/category`;
+  const redirect = NextResponse.redirect(destination);
+  for (const cookie of response.cookies.getAll()) {
+    redirect.cookies.set(cookie);
+  }
+  return redirect;
 }
 
 export const config = {
