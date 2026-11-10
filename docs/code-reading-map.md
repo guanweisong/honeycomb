@@ -40,6 +40,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 文章元信息和标签展示位于 `src/app/(blog)/components/features/post/public/PostInfo` 与 `Tags`；文章和页面浏览量上报分别由 `src/app/(blog)/components/features/post/public/PostViewTracker.tsx` 和 `page/public/PageViewTracker.tsx` 负责。媒体富文本在 `src/app/(blog)/components/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`。这些 app 组件调用 feature 提供的业务契约，不承载业务写入实现。
 
+博客多语言导航包装及链接默认预取策略位于 `src/app/(blog)/lib/blog-navigation.ts`；底层 locale 与 routing 配置仍属于 `src/lib/i18n`。跨 post/page 且通过注入 mutation 复用的 `useTrackedViews` 留在 `src/lib/hooks`。
+
 文章查询与缓存解码共用 `src/features/post/schemas/post.read-model.schema.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types/media.record.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
 页面详情先确认公开状态再启动评论读取，并立即接管评论 Promise 的拒绝，保留原错误供消费者处理，不用空列表吞错。`comment-query-repository.ts` 在读取评论的同一条 SQL 中再次约束目标发布状态，以及文章/自定义目标的评论启用状态，不能仅依赖较早的预读；这不等于撤回已发送或已缓存的内容。

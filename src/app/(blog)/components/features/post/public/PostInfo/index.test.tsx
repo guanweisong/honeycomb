@@ -22,7 +22,7 @@ vi.mock("@/lib/ui/utc-format", () => ({
   utcFormat: (date: string) => `formatted:${date}`,
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   Link: ({
     children,
     ...props

@@ -7,7 +7,7 @@ import { Search, X } from "lucide-react";
 import Image from "next/image";
 import { trpcClient } from "@/lib/trpc/client/trpc";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 import {
   Dialog,
   DialogClose,

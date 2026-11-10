@@ -37,7 +37,7 @@ vi.mock("next-intl", () => ({
   useTranslations: () => mockUseTranslations(),
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   useRouter: () => mockUseRouter(),
   usePathname: () => mockUsePathname(),
 }));

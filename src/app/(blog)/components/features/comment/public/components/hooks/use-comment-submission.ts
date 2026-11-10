@@ -4,7 +4,7 @@ import { type FormEvent, type RefObject, useRef, useTransition } from "react";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/lib/i18n/blog-navigation";
+import { useRouter } from "@/app/(blog)/lib/blog-navigation";
 import { MenuType } from "@/features/menu/types/menu.type";
 import type { CommentTreeViewModel } from "@/features/comment/presentation/comment-view-model";
 import { trpc } from "@/lib/trpc/client/trpc";

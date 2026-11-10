@@ -40,7 +40,7 @@ vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClien
   default: () => null,
 }));
 vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({ RichText: () => null }));
-vi.mock("@/lib/i18n/blog-navigation", () => ({ Link: () => null }));
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({ Link: () => null }));
 
 import Archives, {
   generateMetadata as generateArchiveMetadata,

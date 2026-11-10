@@ -97,7 +97,7 @@ vi.mock("@/components/SectionCard", () => ({
   }) => React.createElement("section", { "data-title": title }, children),
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
 }));
