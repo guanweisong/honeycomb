@@ -1,4 +1,4 @@
-> 历史路径要求：其中 AdminLayout header context 的根目录归属已由 [move-admin-shell-to-dashboard](../../move-admin-shell-to-dashboard/specs/package-layer-architecture/spec.md) 取代；其他要求及当时验收记录保留。
+> 历史路径要求：其中 AdminLayout header context 的根目录归属已由 [move-admin-shell-to-dashboard](../../../move-admin-shell-to-dashboard/specs/package-layer-architecture/spec.md) 取代；其他要求及当时验收记录保留。
 
 ## ADDED Requirements
 

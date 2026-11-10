@@ -1,3 +1,5 @@
+> 后续归属更新：[align-site-runtime-ownership](../align-site-runtime-ownership/design.md) 将本文记录的 sitemap helper 与 PWA 目标路径改为 `src/app/(blog)`；本文保留最初迁移记录。
+
 ## 为什么
 
 src/app 根目录混放了非框架入口的 PWA 实现、跨路由 sitemap helper 和跨边界恢复测试。按真实消费者归组，保留 Next 自动发现入口及其作用域，避免把目录整洁误做运行时重构。

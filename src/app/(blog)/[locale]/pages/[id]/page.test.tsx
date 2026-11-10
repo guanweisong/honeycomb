@@ -320,27 +320,27 @@ describe("pages detail page", () => {
       imagesInContent: [],
       views: 0,
     });
-    mockLinks
-      .mockResolvedValueOnce({
+    mockLinks.mockImplementation(({ page }: { page: number }) =>
+      Promise.resolve({
         total: 101,
-        list: [
-          {
-            name: "Example",
-            url: "https://example.test",
-            logo: "https://example.test/logo.png",
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        total: 101,
-        list: [
-          {
-            name: "Second page",
-            url: "https://second.example.test",
-            logo: "https://second.example.test/logo.png",
-          },
-        ],
-      });
+        list:
+          page === 1
+            ? [
+                {
+                  name: "Example",
+                  url: "https://example.test",
+                  logo: "https://example.test/logo.png",
+                },
+              ]
+            : [
+                {
+                  name: "Second page",
+                  url: "https://second.example.test",
+                  logo: "https://second.example.test/logo.png",
+                },
+              ],
+      }),
+    );
     const element = await Pages({
       params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
