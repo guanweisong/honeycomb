@@ -1,5 +1,5 @@
 import { runTestProcess } from "@tests/helpers/run-test-process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { glob } from "tinyglobby";
@@ -157,7 +157,7 @@ describe("coverage governance", () => {
       Record<string, unknown> | undefined;
 
     for (const file of criticalCoverageFiles) {
-      expect(await glob(file)).toEqual([file]);
+      expect(existsSync(file)).toBe(true);
       expect(thresholds?.[file]).toEqual({
         statements: 90,
         lines: 90,
