@@ -16,7 +16,7 @@
 2. 数据契约：category、link、page、post、tag、user 的 presentation 文件只定义同义别名，删除这些文件。features/contracts/content.ts 直接从权威 application 模型导出公开名字，既有消费端不必大面积改名。CategoryListItem 在所属 application 明确命名并保留 deepPath；不要误用缺少该字段的 CategoryRecord。评论公开 DTO 的实际脱敏转换和媒体有独立语义的模型保留。
 3. 展示选项：PostStatus/PostType、PageStatus/PageTemplate、CommentStatus、EnableStatus、UserLevel/UserStatus、MenuType 的名称与选项迁到 packages/ui/admin 下具名模块。既有字符串、顺序和选项集合逐项保留；领域枚举、规则仍由原文件唯一持有。消费端拆分枚举和 UI 导入，禁止 domain 反向导入 UI。
 4. 用户运行时：features/contracts/admin/use-current-user.ts 移到 packages/ui/admin/use-current-user.ts，保留 Provider、Hook、权限调用与查询配置。契约目录只导出共享数据和 schema，不创建网络查询或 React context。
-5. 组合根：评论 UI 的 queryCommentPromise 使用所属 feature 的已存在结果契约，不再引用 app/lib/server/public-queries 的函数类型。app 仍负责框架缓存、请求内去重与页面组合，不整体搬家。
+5. 组合根：评论 UI 的 queryCommentPromise 使用所属 feature 的已存在结果契约，不依赖博客聚合查询层的函数类型。博客路由/组件直接调用 app server caller；sitemap 保留自己的专属缓存实现，缓存行为不为目录归属创建通用查询包装。
 6. 阅读地图：以文章写入、公开读取、当前用户三条真实路径说明入口及边界，README 链接到简短文档。历史审计保留时间属性，标注被本轮替代的旧结论，避免当前目录指引失真。
 
 ## 验证与交付

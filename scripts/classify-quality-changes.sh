@@ -25,11 +25,11 @@ while IFS= read -r path; do
   esac
 
   case "$path" in
-    src/app/pwa/*|src/lib/pwa/*|scripts/build-serwist.ts|package.json|bun.lock|patches/*|scripts/e2e-*.ts|scripts/seed-e2e.ts|scripts/ci-fixture-lifecycle.sh|playwright.config.ts|tests/e2e/*)
+    src/app/*/pwa/*|src/lib/pwa/*|scripts/build-serwist.ts|package.json|bun.lock|patches/*|scripts/e2e-*.ts|scripts/seed-e2e.ts|scripts/ci-fixture-lifecycle.sh|playwright.config.ts|tests/e2e/*)
       high_risk=true
       requires_production_e2e=true
       ;;
-    src/env/*|src/instrumentation*.ts|src/auth.ts|src/auth-*.ts|src/proxy.ts|src/app/auth/*|src/app/admin/*|src/app/api/*|src/app/trpc/*|src/app/lib/server/*|src/app/sitemap.xml/*|src/app/sitemaps/*|src/lib/auth/*|src/lib/trpc/*|src/lib/db/*|src/lib/http/client-ip.ts|src/lib/http/client-ip.server.ts|src/lib/security/*|src/lib/rate-limit/*|src/lib/cache/*|src/lib/content/*|src/lib/observability/*|src/features/*/server/*|src/features/*/*router.ts|src/features/user/*|src/features/admin/*|src/features/media/*|src/lib/storage/*|vercel.json|.github/actions/*|drizzle/*|migrations/*|*.sql|scripts/migrate-database.ts|scripts/check-migrations.ts|scripts/backup-remote-database.ts|scripts/audit-persistence-invariants.ts|scripts/audit-production-schema.ts|scripts/classify-quality-changes.sh|.github/workflows/quality*.yml|next.config.ts|vitest*.config.mts|tests/tooling/e2e-*.test.ts|tests/tooling/ci-fixture-lifecycle.test.ts)
+    src/env/*|src/instrumentation*.ts|src/auth.ts|src/auth-*.ts|src/proxy.ts|src/app/auth/*|src/app/admin/*|src/app/api/*|src/app/trpc/*|src/app/lib/server/*|src/app/*/lib/server/*|src/app/sitemap.xml/*|src/app/sitemaps/*|src/app/*/sitemap.xml/*|src/app/*/sitemaps/*|src/lib/auth/*|src/lib/trpc/*|src/lib/db/*|src/lib/http/client-ip.ts|src/lib/http/client-ip.server.ts|src/lib/security/*|src/lib/rate-limit/*|src/lib/cache/*|src/lib/content/*|src/lib/observability/*|src/features/*/server/*|src/features/*/*router.ts|src/features/user/*|src/features/admin/*|src/features/media/*|src/lib/storage/*|vercel.json|.github/actions/*|drizzle/*|migrations/*|*.sql|scripts/migrate-database.ts|scripts/check-migrations.ts|scripts/backup-remote-database.ts|scripts/audit-persistence-invariants.ts|scripts/audit-production-schema.ts|scripts/classify-quality-changes.sh|.github/workflows/quality*.yml|next.config.ts|vitest*.config.mts|tests/tooling/e2e-*.test.ts|tests/tooling/ci-fixture-lifecycle.test.ts)
       high_risk=true
       ;;
   esac

@@ -55,13 +55,6 @@ vi.mock("@/app/trpc/server", () => ({
     setting: { index: mockSettingIndex },
   }),
 }));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicComments: (...args: unknown[]) => mockComments(...args),
-  getPublicPostDetail: (...args: unknown[]) => mockPostDetail(...args),
-  getPublicRandomPosts: (...args: unknown[]) => mockRandomPosts(...args),
-  getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
-}));
-
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
     page: { incrementViews: { useMutation: () => ({ mutate: vi.fn() }) } },

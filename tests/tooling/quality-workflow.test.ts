@@ -227,7 +227,7 @@ describe("quality workflow", () => {
       "src/features/*/server/*",
       "src/features/media/*",
       "src/lib/storage/*",
-      "src/app/pwa/*",
+      "src/app/*/pwa/*",
       "tests/e2e/*",
     ]) {
       expect(classifier).toContain(path);

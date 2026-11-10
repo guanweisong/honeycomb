@@ -1,3 +1,5 @@
+> 后续归属补充：[move-admin-shell-to-dashboard](../move-admin-shell-to-dashboard/design.md) 明确受保护 dashboard 独占的布局、导航和头部 UI 归路由组；本设计中“外层后台布局 UI 位于 admin 根目录”的早期路径描述不再适用于这些模块。
+
 ## Context
 
 Feature 目录目前混放业务服务操作与浏览器页面、组件、React hooks、表格列定义和展示 helper。Next.js 路由已经归 `src/app`，但不少路由文件仍只是转导出 feature 内的 UI。应用侧 UI 放在实际拥有该页面或交互的路由 `components` 目录；目录中不放 `page`、`layout` 或 `route` 等 App Router 入口。

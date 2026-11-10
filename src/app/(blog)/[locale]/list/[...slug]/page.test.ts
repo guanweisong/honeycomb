@@ -13,9 +13,9 @@ const mockMenuIndex = vi.fn();
 const mockTagIndex = vi.fn();
 const mockUserDetail = vi.fn();
 const mockPostIndex = vi.fn();
-const mockPublicPostList = vi.fn();
-const mockPublicTag = vi.fn();
-const mockPublicAuthor = vi.fn();
+const { mockConnection } = vi.hoisted(() => ({
+  mockConnection: vi.fn(async () => undefined),
+}));
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
@@ -23,7 +23,7 @@ vi.mock("next-intl/server", () => ({
 }));
 vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
-  connection: async () => undefined,
+  connection: mockConnection,
 }));
 
 vi.mock("@/app/trpc/server", () => ({
@@ -35,14 +35,6 @@ vi.mock("@/app/trpc/server", () => ({
     user: { detail: mockUserDetail },
   }),
 }));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicMenu: () => mockMenuIndex(),
-  getPublicPostList: (...args: unknown[]) => mockPublicPostList(...args),
-  getPublicSetting: () => mockSettingIndex(),
-  getPublicTag: (...args: unknown[]) => mockPublicTag(...args),
-  getPublicAuthor: (...args: unknown[]) => mockPublicAuthor(...args),
-}));
-
 vi.mock(
   "@/app/(blog)/components/features/post/public/components/PostList",
   () => ({
@@ -64,8 +56,6 @@ import List, {
   generateMetadata,
 } from "@/app/(blog)/[locale]/list/[...slug]/page";
 import { resolveListContext } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
-import { IdSchema } from "@/lib/validation/id.schema";
-import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
@@ -82,6 +72,7 @@ describe("blog list page", () => {
     document.body.appendChild(container);
     root = createRoot(container);
 
+    mockConnection.mockReset().mockResolvedValue(undefined);
     mockGetLocale.mockReset().mockResolvedValue("zh");
     mockGetTranslations
       .mockReset()
@@ -110,25 +101,14 @@ describe("blog list page", () => {
     mockTagIndex.mockReset().mockResolvedValue({
       list: [{ id: "111111111111111111111111", name: { zh: "标签名称" } }],
     });
-    mockPublicTag.mockReset().mockImplementation(async (id: string) => {
-      const input = TagListQuerySchema.parse({ limit: 1, page: 1, id: [id] });
-      return (await mockTagIndex(input)).list[0];
-    });
     mockUserDetail.mockReset().mockResolvedValue({
       id: "222222222222222222222222",
       name: "作者名称",
-    });
-    mockPublicAuthor.mockReset().mockImplementation((id: string) => {
-      IdSchema.parse(id);
-      return mockUserDetail({ id });
     });
     mockPostIndex.mockReset().mockResolvedValue({
       list: [{ id: "post-1" }],
       total: 1,
     });
-    mockPublicPostList
-      .mockReset()
-      .mockImplementation((input) => mockPostIndex(input));
   });
 
   afterEach(async () => {
@@ -167,9 +147,9 @@ describe("blog list page", () => {
                   searchParams: Promise.resolve({}),
                 });
           await expect(result).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
-          expect(mockPublicTag).not.toHaveBeenCalled();
-          expect(mockPublicAuthor).not.toHaveBeenCalled();
-          expect(mockPublicPostList).not.toHaveBeenCalled();
+          expect(mockTagIndex).not.toHaveBeenCalled();
+          expect(mockUserDetail).not.toHaveBeenCalled();
+          expect(mockPostIndex).not.toHaveBeenCalled();
         },
       );
     });
@@ -197,7 +177,7 @@ describe("blog list page", () => {
       try {
         expect(mockGetTranslations).toHaveBeenCalled();
         if (entryPoint === "content")
-          expect(mockPublicPostList).toHaveBeenCalledWith(
+          expect(mockPostIndex).toHaveBeenCalledWith(
             expect.objectContaining({ categoryId: "category-1" }),
           );
       } finally {
@@ -218,12 +198,12 @@ describe("blog list page", () => {
           const requestedId = "aaaaaaaaaaaaaaaaaaaaaaaa";
           const matchedId = "bbbbbbbbbbbbbbbbbbbbbbbb";
           if (type === "tags")
-            mockPublicTag.mockResolvedValue({
-              id: matchedId,
-              name: { zh: "标签名称" },
+            mockTagIndex.mockResolvedValue({
+              list: [{ id: matchedId, name: { zh: "标签名称" } }],
+              total: 1,
             });
           else
-            mockPublicAuthor.mockResolvedValue({
+            mockUserDetail.mockResolvedValue({
               id: matchedId,
               name: "作者名称",
             });
@@ -241,12 +221,14 @@ describe("blog list page", () => {
               : content.type(content.props);
           for (let index = 0; index < 12; index++) await Promise.resolve();
           try {
-            expect(
-              type === "tags" ? mockPublicTag : mockPublicAuthor,
-            ).toHaveBeenCalledWith(requestedId);
+            expect(type === "tags" ? mockTagIndex : mockUserDetail).toHaveBeenCalledWith(
+              type === "tags"
+                ? { limit: 1, page: 1, id: [requestedId] }
+                : { id: requestedId },
+            );
             expect(mockMenuIndex).not.toHaveBeenCalled();
             if (entryPoint === "content")
-              expect(mockPublicPostList).toHaveBeenCalledWith(
+              expect(mockPostIndex).toHaveBeenCalledWith(
                 expect.objectContaining(
                   type === "tags"
                     ? { tagId: matchedId }
@@ -276,10 +258,11 @@ describe("blog list page", () => {
         try {
           expect(mockMenuIndex).not.toHaveBeenCalled();
           if (entryPoint === "content") {
-            expect(mockPublicPostList).toHaveBeenCalledExactlyOnceWith({
+            expect(mockPostIndex).toHaveBeenCalledExactlyOnceWith({
               status: ["PUBLISHED"],
               limit: 10,
               sortField: "createdAt",
+              cursor: null,
             });
           }
         } finally {
@@ -321,14 +304,14 @@ describe("blog list page", () => {
             : content.type(content.props);
         for (let index = 0; index < 12; index++) await Promise.resolve();
         expect(mockMenuIndex).toHaveBeenCalledOnce();
-        expect(mockPublicPostList).not.toHaveBeenCalled();
+        expect(mockPostIndex).not.toHaveBeenCalled();
         menuDeferred.resolve({
           list: [{ id: "category-1", path: "tech", title: { zh: "技术" } }],
           total: 1,
         });
         await pending;
         if (entryPoint === "content")
-          expect(mockPublicPostList).toHaveBeenCalledWith(
+          expect(mockPostIndex).toHaveBeenCalledWith(
             expect.objectContaining({ categoryId: "category-1" }),
           );
       });
@@ -342,6 +325,31 @@ describe("blog list page", () => {
       sortField: "createdAt",
       status: ["PUBLISHED"],
     });
+  });
+
+  it("waits for the request boundary before creating the list snapshot", async () => {
+    let requestReady = false;
+    mockConnection.mockImplementation(async () => {
+      requestReady = true;
+    });
+    const randomUUID = vi
+      .spyOn(globalThis.crypto, "randomUUID")
+      .mockImplementation(() => {
+        expect(requestReady).toBe(true);
+        return "00000000-0000-4000-8000-000000000000";
+      });
+    const props = {
+      params: Promise.resolve({ locale: "zh", slug: ["category"] }),
+      searchParams: Promise.resolve({}),
+    };
+    const content = List(props).props.children[1].props.children;
+
+    try {
+      await content.type(content.props);
+      expect(randomUUID).toHaveBeenCalledOnce();
+    } finally {
+      randomUUID.mockRestore();
+    }
   });
 
   it("resolves category paths to the category id used by the post query", async () => {
@@ -446,7 +454,7 @@ describe("blog list page", () => {
               ? generateMetadata(props)
               : content.type(content.props);
           await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
-          expect(mockPublicPostList).not.toHaveBeenCalled();
+          expect(mockPostIndex).not.toHaveBeenCalled();
         },
       );
 
@@ -475,9 +483,9 @@ describe("blog list page", () => {
               ? generateMetadata(props)
               : content.type(content.props);
           await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
-          expect(mockPublicPostList).not.toHaveBeenCalled();
-          expect(mockPublicTag).not.toHaveBeenCalled();
-          expect(mockPublicAuthor).not.toHaveBeenCalled();
+          expect(mockPostIndex).not.toHaveBeenCalled();
+          expect(mockTagIndex).not.toHaveBeenCalled();
+          expect(mockUserDetail).not.toHaveBeenCalled();
         },
       );
 
@@ -488,7 +496,7 @@ describe("blog list page", () => {
       )(
         "preserves category URLs through null-path $parentType ancestors (nested=$nested)",
         async ({ parentType, nested }) => {
-          mockPublicPostList.mockClear();
+          mockPostIndex.mockClear();
           mockMenuIndex.mockResolvedValue({
             list: [
               ...(nested
@@ -537,7 +545,7 @@ describe("blog list page", () => {
               },
             });
           else
-            expect(mockPublicPostList).toHaveBeenCalledWith(
+            expect(mockPostIndex).toHaveBeenCalledWith(
               expect.objectContaining({ categoryId: "category-1" }),
             );
         },
@@ -581,7 +589,7 @@ describe("blog list page", () => {
             alternates: { canonical: "/zh/list/category/topics/tech" },
           });
         else
-          expect(mockPublicPostList).toHaveBeenCalledWith(
+          expect(mockPostIndex).toHaveBeenCalledWith(
             expect.objectContaining({ categoryId: "category-1" }),
           );
       });

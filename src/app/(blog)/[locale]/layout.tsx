@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
@@ -13,15 +13,18 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
 import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
-import { getPublicSetting } from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import { Toaster } from "@/components/ui/sonner";
+import { connection } from "next/server";
 
 export async function generateMetadata({
   params,
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
+  await connection();
   const { locale: rawLocale } = await params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  const setting = await getPublicSetting();
+  const trpc = await createServerClient();
+  const setting = await trpc.setting.index();
   const siteName = setting?.siteName?.[locale] ?? "Honeycomb";
   const siteSubName =
     setting?.siteSubName?.[locale] ?? "Honeycomb content management system";
@@ -80,11 +83,15 @@ export default async function LocaleLayout({
               >
                 Skip to main content
               </a>
-              <Header />
+              <Suspense fallback={null}>
+                <Header />
+              </Suspense>
               <main id="main-content" className="container px-2">
                 {children}
               </main>
-              <Footer />
+              <Suspense fallback={null}>
+                <Footer />
+              </Suspense>
               <BackToTop />
               <Toaster />
             </NextIntlClientProvider>

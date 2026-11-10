@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 const serverOnlyEntrypoints = [
   "src/auth.ts",
-  "src/app/lib/server/sitemap-data.ts",
+  "src/app/(blog)/lib/server/sitemap-data.ts",
   "src/app/auth/auth-hooks.ts",
   "src/app/auth/auth-request-audit.ts",
   "src/env/server.ts",

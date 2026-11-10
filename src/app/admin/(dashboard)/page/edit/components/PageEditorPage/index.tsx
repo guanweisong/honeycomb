@@ -18,7 +18,7 @@ import type { PageInsert } from "@/features/page/types/page.insert";
 import type { PageRecord } from "@/features/page/types/page.read-model";
 import { PageStatus } from "@/features/page/types/page.status";
 import { PageTemplate } from "@/features/page/types/page.template";
-import { AdminPageHeader } from "@/app/admin/components/AdminLayout/layout-context";
+import { AdminPageHeader } from "@/app/admin/(dashboard)/components/AdminLayout/layout-context";
 import { EditorLoadError } from "@/app/admin/(dashboard)/components/EditorLoadError";
 import { PageEditorActionButtons } from "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons";
 import { PageEditorForm } from "@/app/admin/(dashboard)/page/edit/components/PageEditorForm";

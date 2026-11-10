@@ -209,7 +209,7 @@ describe("Upstash cache request deadlines", () => {
     );
 
     await vi.advanceTimersByTimeAsync(1000);
-    expect(revalidateTag).toHaveBeenCalledTimes(4);
+    expect(revalidateTag).toHaveBeenCalledTimes(1);
     expect(revalidatePath).toHaveBeenCalledTimes(3);
     await vi.advanceTimersByTimeAsync(1000);
 
@@ -220,12 +220,7 @@ describe("Upstash cache request deadlines", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(revalidateTag.mock.calls).toEqual(
       Array(2)
-        .fill([
-          ["public.post-index", { expire: 0 }],
-          ["public.sitemap", { expire: 0 }],
-          ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
-          ["public.layout", { expire: 0 }],
-        ])
+        .fill([["public.sitemap", { expire: 0 }]])
         .flat(),
     );
     expect(revalidatePath.mock.calls).toEqual(

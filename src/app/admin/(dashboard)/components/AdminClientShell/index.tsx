@@ -1,9 +1,9 @@
 "use client";
 
-import { getMenuForCapabilities } from "@/app/admin/constants/menu-data";
+import { getMenuForCapabilities } from "@/app/admin/(dashboard)/config/menu-data";
 import { authClient } from "@/lib/auth/client";
 import { useCurrentUser } from "@/app/admin/(dashboard)/providers/use-current-user";
-import { AdminLayout } from "@/app/admin/components/AdminLayout";
+import { AdminLayout } from "@/app/admin/(dashboard)/components/AdminLayout";
 import { useSiteSetting } from "@/app/admin/(dashboard)/providers/use-site-setting";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
@@ -13,7 +13,7 @@ import {
   clearHoneycombRuntimeCaches,
   navigateToAdminLogin,
 } from "@/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state";
-import { findMenuTitle } from "@/app/admin/components/AdminLayout/menu-title";
+import { findMenuTitle } from "@/app/admin/(dashboard)/components/AdminLayout/menu-title";
 
 export function AdminClientShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

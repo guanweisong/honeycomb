@@ -4,9 +4,8 @@ import { PaginationQuerySchema } from "@/lib/validation/pagination.query.schema"
 const {
   cacheRegistrations,
   cacheStores,
-  createServerClientMock,
   getServerEnvMock,
-  menuIndexMock,
+  listMenusMock,
   pageEntriesMock,
   pageCountMock,
   postCountMock,
@@ -19,9 +18,8 @@ const {
     options: { revalidate?: number; tags?: string[] };
   }>,
   cacheStores: [] as Array<Map<string, Promise<unknown>>>,
-  createServerClientMock: vi.fn(),
   getServerEnvMock: vi.fn(),
-  menuIndexMock: vi.fn(),
+  listMenusMock: vi.fn(),
   pageEntriesMock: vi.fn(),
   pageCountMock: vi.fn(),
   postCountMock: vi.fn(),
@@ -54,15 +52,14 @@ vi.mock("next/cache", () => ({
   unstable_cache: unstableCacheMock,
 }));
 
-vi.mock("@/app/trpc/server", () => ({
-  createServerClient: createServerClientMock,
-}));
-
 vi.mock("@/env/server", () => ({
   getServerEnv: getServerEnvMock,
 }));
 
 vi.mock("@/lib/db/db", () => ({ getDb: getDbMock }));
+vi.mock("@/features/menu/server/menu-queries", () => ({
+  listMenus: listMenusMock,
+}));
 vi.mock("@/features/post/server/post-queries", () => ({
   listPublishedPostSitemapEntries: postEntriesMock,
   countPublishedPosts: postCountMock,
@@ -72,13 +69,9 @@ vi.mock("@/features/page/server/page-queries", () => ({
   countPublishedPages: pageCountMock,
 }));
 
-import * as sitemapIndexRoute from "@/app/sitemap.xml/route";
-import * as sitemapShardRoute from "@/app/sitemaps/[id]/route";
-import { getCachedSitemapShard } from "@/app/lib/server/sitemap-data";
-
-const client = {
-  menu: { index: menuIndexMock },
-};
+import * as sitemapIndexRoute from "@/app/(blog)/sitemap.xml/route";
+import * as sitemapShardRoute from "@/app/(blog)/sitemaps/[id]/route";
+import { getCachedSitemapShard } from "@/app/(blog)/lib/server/sitemap-data";
 
 function list<T>(items: T[], total = items.length) {
   return { list: items, total };
@@ -98,11 +91,10 @@ describe("runtime sitemap", () => {
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     }));
 
-    createServerClientMock.mockResolvedValue(client);
     getDbMock.mockReturnValue({});
     postCountMock.mockResolvedValue(0);
     pageCountMock.mockResolvedValue(0);
-    menuIndexMock.mockResolvedValue(
+    listMenusMock.mockResolvedValue(
       list([
         {
           id: "category",
@@ -134,12 +126,12 @@ describe("runtime sitemap", () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
 
-    const index = await import("@/app/sitemap.xml/route");
-    const shard = await import("@/app/sitemaps/[id]/route");
+    const index = await import("@/app/(blog)/sitemap.xml/route");
+    const shard = await import("@/app/(blog)/sitemaps/[id]/route");
     expect(index).not.toHaveProperty("dynamic");
     expect(shard).not.toHaveProperty("dynamic");
     expect(getServerEnvMock).not.toHaveBeenCalled();
-    expect(createServerClientMock).not.toHaveBeenCalled();
+    expect(getDbMock).not.toHaveBeenCalled();
   });
 
   it("creates a runtime sitemap index that discovers every required shard and caches its count", async () => {
@@ -156,7 +148,7 @@ describe("runtime sitemap", () => {
     expect(firstXml).toContain("https://example.com/sitemaps/1.xml");
     expect(firstXml).toContain("https://example.com/sitemaps/10.xml");
     expect(firstXml).not.toContain("https://example.com/sitemaps/11.xml");
-    expect(createServerClientMock).not.toHaveBeenCalled();
+    expect(getDbMock).toHaveBeenCalledOnce();
     expect(postCountMock).toHaveBeenCalledOnce();
     expect(pageCountMock).toHaveBeenCalledOnce();
     expect(postEntriesMock).not.toHaveBeenCalled();
@@ -201,8 +193,7 @@ describe("runtime sitemap", () => {
     );
 
     expect(await second.text()).toBe(await first.text());
-    expect(createServerClientMock).toHaveBeenCalledTimes(1);
-    expect(menuIndexMock).toHaveBeenCalledTimes(1);
+    expect(listMenusMock).toHaveBeenCalledTimes(1);
     expect(postEntriesMock).toHaveBeenCalledTimes(1);
     expect(pageEntriesMock).toHaveBeenCalledTimes(1);
   });
@@ -211,7 +202,7 @@ describe("runtime sitemap", () => {
     postEntriesMock.mockResolvedValue([
       { id: "research&development", updatedAt: null },
     ]);
-    menuIndexMock.mockResolvedValue(
+    listMenusMock.mockResolvedValue(
       list([
         {
           id: "category",
@@ -283,7 +274,7 @@ describe("runtime sitemap", () => {
 
     expect(await first.text()).toContain("https://example.com");
     expect(await second.text()).toContain("https://second.example");
-    expect(menuIndexMock).toHaveBeenCalledTimes(2);
+    expect(listMenusMock).toHaveBeenCalledTimes(2);
   });
 
   it("uses a valid current timestamp when persisted modification dates are null", async () => {
@@ -385,7 +376,7 @@ describe("runtime sitemap", () => {
   });
 
   it("uses the same parent-chain category paths as blog navigation", async () => {
-    menuIndexMock.mockResolvedValue(
+    listMenusMock.mockResolvedValue(
       list([
         { id: "root", type: "CATEGORY", path: "root", parent: null, title: {} },
         {
@@ -442,7 +433,7 @@ describe("runtime sitemap", () => {
         return pages.slice((page - 1) * limit, page * limit);
       },
     );
-    menuIndexMock.mockResolvedValue(
+    listMenusMock.mockResolvedValue(
       list([
         {
           id: "category",
@@ -514,7 +505,7 @@ describe("runtime sitemap", () => {
       );
 
       expect(response.status).toBe(404);
-      expect(createServerClientMock).not.toHaveBeenCalled();
+      expect(listMenusMock).not.toHaveBeenCalled();
     },
   );
 

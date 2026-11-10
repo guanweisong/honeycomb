@@ -1,3 +1,5 @@
+> 当前路径由[站点运行时归属变更](../../../align-site-runtime-ownership/specs/coverage-governance/spec.md)更新为 `src/app/(blog)/pwa/sw.ts`；下方要求保留原有行为契约。
+
 ## MODIFIED Requirements
 
 ### Requirement: 被排除的 Service Worker 必须有双层行为证据

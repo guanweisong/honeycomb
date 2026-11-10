@@ -70,7 +70,7 @@ vi.mock(
   }),
 );
 
-vi.mock("@/app/admin/components/AdminLayout", () => ({
+vi.mock("@/app/admin/(dashboard)/components/AdminLayout", () => ({
   AdminLayout: (props: {
     onLogout: () => Promise<void>;
     children: React.ReactNode;

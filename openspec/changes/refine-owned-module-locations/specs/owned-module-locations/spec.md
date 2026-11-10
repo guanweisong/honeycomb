@@ -1,3 +1,5 @@
+> 历史路径要求：其中 AdminLayout header context 的根目录归属已由 [move-admin-shell-to-dashboard](../../../move-admin-shell-to-dashboard/specs/package-layer-architecture/spec.md) 取代；其他要求及当时验收记录保留。
+
 ## ADDED Requirements
 
 > 旧代理头优先级断言属于迁移时的行为基线。后续改用[可信入口地址规则](../../../fix-engineering-audit-follow-up/specs/api-security-boundaries/spec.md#requirement-限流只使用可信入口的客户端地址)。

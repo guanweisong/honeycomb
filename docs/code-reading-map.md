@@ -34,8 +34,8 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 ### 读取公开内容
 
 1. 页面组合：`src/app/(blog)/[locale]` 对应路由。
-2. 框架缓存和请求内去重：`src/app/lib/server/public-queries.ts`。
-3. 根服务端 caller：`src/app/trpc/server.ts`；业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现 提供。
+2. 各路由/组件通过 `src/app/trpc/server.ts` 直接调用 tRPC server caller；文章索引仍由 post feature 的 Upstash 缓存负责，sitemap 缓存单独位于 `(blog)/lib/server/sitemap-data.ts`。
+3. 业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现提供。
 4. UI 位于 `src/app`，使用 feature 拥有的纯模型；服务端读取由相应 feature 的具名 server 实现提供。不要求 public barrel 或中央 contracts 转发。
 
 文章元信息和标签展示位于 `src/app/(blog)/components/features/post/public/PostInfo` 与 `Tags`。文章和页面共用 `src/app/(blog)/components/ContentViewTracker.tsx`，按内容种类调用对应的浏览量接口。媒体富文本在 `src/app/(blog)/components/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`。这些 app 组件调用 feature 提供的业务契约。
@@ -50,7 +50,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ### 后台当前用户与权限
 
-后台专属的状态辅助、查询/启用选项、UI 枚举和草稿逻辑分别位于 `src/app/admin/(dashboard)/lib`、`config`、`types` 和 `draft`。文章与页面编辑器共用的 `LocalDraftPrompt`、`EditorLoadError` 直接位于 dashboard 根 `components`；AdminLayout header context 位于 `src/app/admin/components/AdminLayout`。这些模块由后台 app 拥有，不属于全站通用 UI。
+后台专属的状态辅助、查询/启用选项、UI 枚举和草稿逻辑分别位于 `src/app/admin/(dashboard)/lib`、`config`、`types` 和 `draft`。文章与页面编辑器共用的 `LocalDraftPrompt`、`EditorLoadError` 直接位于 dashboard 根 `components`；`AdminLayout`、`AdminNavigation` 与 header context 位于 dashboard 根 `components`，仅供 shell 使用的菜单数据位于 `config`。这些模块由后台 app 拥有，不属于全站通用 UI。
 
 浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/auth`。前者保留 use client，不经根目录兼容转出口。
 
@@ -80,7 +80,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 - 分类批量删除没有 100 项数量上限；其他资源仍遵循各自 schema 的有界批量合同。分类 URL 保留完整祖先链，博客菜单呈现仍为扁平结构。
 - 分类树：`src/features/category/tree.ts`；Drizzle 查询构造：`src/lib/db/query/query-builders.ts`。
 - UTC 展示格式：`src/lib/ui/utc-format.ts`；HTML 图片提取：`src/lib/content/image-links.ts`。
-- 文章分页 hook：`src/app/(blog)/components/features/post/public/use-post-list.ts`；菜单标题：`src/app/admin/components/AdminNavigation/NavigationItem.tsx`。
+- 文章分页 hook：`src/app/(blog)/components/features/post/public/use-post-list.ts`；菜单项：`src/app/admin/(dashboard)/components/AdminNavigation/NavigationItem.tsx`。
 
 这些路径按语义归属，不是全工程统一压平模板；职责明确的子目录仍可保留。
 
@@ -104,3 +104,7 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 ## 组件归属
 
 路由局部与路由组共享组件位于 app 的 `components`；浏览器业务 UI 由 app 路由组拥有，通用 SectionCard、MultiLangText 位于 `src/components`。媒体后台选择、动作与查询位于 app/admin；本地后台日期工具在 lib/ui/admin-date-time.ts。历史组件映射见[组件归属迁移记录](component-ownership-migration.md)，当前路径以 app 路由为准。
+
+## 博客站点运行时
+
+根 metadata 请求由 `src/app/(blog)/robots.ts`、`sitemap.xml/route.ts` 和 `sitemaps/[id]/route.ts` 处理，URL 不包含 `(blog)`；sitemap 查询与序列化位于 `(blog)/lib/server/sitemap-data.ts`。Serwist 由 `scripts/build-serwist.ts` 显式从 `(blog)/pwa/sw.ts` 构建到 `/serwist/sw.js`，博客 Provider 在根 scope 注册它。

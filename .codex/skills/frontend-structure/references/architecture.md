@@ -4,8 +4,9 @@
 
 | 主题                                            | 权威规范与具体章节                                                                                                                                                                                |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 四种源码职责、业务概念归属                      | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：源码采用四种职责目录、业务概念归属于 Feature                                                         |
+| 四种源码职责、业务概念及站点运行时归属          | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：源码采用四种职责目录、业务概念归属于 Feature，站点运行时实现归对应路由组                         |
 | 技术库、通用 UI 与认证会话例外                  | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：技术依赖不加载业务运行时                                                                             |
+| PWA worker 唯一源、覆盖率与站点路径             | [pwa-offline-reliability](../../../../openspec/specs/pwa-offline-reliability/spec.md)；[coverage-governance](../../../../openspec/specs/coverage-governance/spec.md)                             |
 | 纯模块的直接与间接依赖                          | [feature-module-contract](../../../../openspec/specs/feature-module-contract/spec.md)：模块依赖方向必须可自动验证                                                                                 |
 | 根 tRPC 组合、跨 feature 具名入口               | [feature-business-boundaries](../../../../openspec/specs/feature-business-boundaries/spec.md)：Transport infrastructure is separate from business features、跨 Feature 导入必须经过公开边界       |
 | server 操作、入口保护、直接数据库访问、纯转发层 | [application-use-case-boundary](../../../../openspec/specs/application-use-case-boundary/spec.md)：业务操作由 Feature server 函数负责、服务端操作允许直接数据库访问、纯转发层不得作为业务抽象保留 |
@@ -41,5 +42,7 @@
 浏览器业务 UI 的现行归属见[主架构规范](../../../../openspec/specs/package-layer-architecture/spec.md)的「技术依赖不加载业务运行时」。后台、登录和博客 UI 由 app 路由拥有，feature 保留业务契约与服务端实现。编辑器的媒体选择仍由 app 注入。历史组件路径映射见[组件归属规范](../../../../openspec/changes/refine-component-ownership/specs/component-ownership/spec.md)。
 
 类型事实源的本轮实施记录见[类型派生说明](../../../../docs/type-derivation-refactor.md)。LinkRecord 的单文件 type-only 字段投影例外已同步到 model-boundary-governance，不是所有 feature/types 对数据库的通行证；类型派生不替代运行时白名单。
+
+后台 Shell、导航、头部 context 与菜单数据的当前路径由[后台 Shell 归属变更](../../../../openspec/changes/move-admin-shell-to-dashboard/specs/package-layer-architecture/spec.md)约束；旧增量中 header context 的路径决定仅作历史记录。
 
 共享后台与入口策略归属见[模块归属规范](../../../../openspec/changes/refine-owned-module-locations/specs/owned-module-locations/spec.md)：UI 枚举一文件一个，业务限流数值显式留在入口，通用工厂不携带评论策略；迁移不得删除原 HTTP、草稿及失败路径断言。

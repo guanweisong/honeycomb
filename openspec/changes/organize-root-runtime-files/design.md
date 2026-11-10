@@ -1,3 +1,5 @@
+> 后续归属更新：[align-site-runtime-ownership](../align-site-runtime-ownership/design.md) 将本文记录的 sitemap helper 与 PWA 目标路径改为 `src/app/(blog)`；本文保留最初迁移决策。
+
 ## 背景
 
 基线 master 7f088b73648a506f3a7f8fc5dc07e8e0dd1a948e。Next 16.4.2；Bun 显式构建 worker，Next 不自动发现 sw.ts。实际调用为 build-serwist → sw → cache 策略；两个 sitemap route → sitemap-data → 延迟 tRPC；恢复测试覆盖 blog/admin/global。

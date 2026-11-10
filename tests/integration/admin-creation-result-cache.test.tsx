@@ -23,7 +23,7 @@ vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: state.userId, level: "ADMIN" } }),
   useCan: () => true,
 }));
-vi.mock("@/app/admin/components/AdminLayout/layout-context", () => ({
+vi.mock("@/app/admin/(dashboard)/components/AdminLayout/layout-context", () => ({
   AdminPageHeader: () => null,
 }));
 vi.mock("@/app/admin/(dashboard)/page/edit/components/PageEditorForm", () => ({

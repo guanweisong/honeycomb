@@ -6,9 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 vi.mock("@/app/(blog)/components/Header", () => ({ default: () => null }));
 vi.mock("@/app/(blog)/components/Footer", () => ({ default: () => null }));
 vi.mock("@/app/(blog)/components/BackToTop", () => ({ default: () => null }));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicSetting: vi.fn(),
-}));
 vi.mock("next-intl/server", () => ({ setRequestLocale: vi.fn() }));
 vi.mock("next-intl", () => ({
   NextIntlClientProvider: ({ children }: { children: ReactNode }) => children,

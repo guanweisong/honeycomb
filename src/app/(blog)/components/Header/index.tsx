@@ -9,16 +9,14 @@ import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import PostSearch from "@/app/(blog)/components/features/post/public/components/PostSearch";
 import LanguageSwitcher from "@/app/(blog)/components/LanguageSwitcher";
-import {
-  getPublicMenu,
-  getPublicSetting,
-} from "@/app/lib/server/public-queries";
 import { getLocale } from "next-intl/server";
 import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuItem as MenuEntity } from "@/features/menu/types/menu.list";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
+import { createServerClient } from "@/app/trpc/server";
+import { connection } from "next/server";
 
 const toNavigationItem = ({
   id,
@@ -38,9 +36,11 @@ const toNavigationItem = ({
  * @returns {Promise<JSX.Element>} 网站头部。
  */
 export default async function Header() {
+  await connection();
+  const trpc = await createServerClient();
   const [setting, menu, locale] = await Promise.all([
-    getPublicSetting(),
-    getPublicMenu(),
+    trpc.setting.index(),
+    trpc.menu.index(),
     getLocale(),
   ]);
   const language = normalizeMultiLangLocale(locale);

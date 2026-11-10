@@ -8,7 +8,7 @@ import { sourceFiles } from "@tests/helpers/source-files";
 const scopes = [
   {
     name: "App Router",
-    roots: ["src/app/(blog)", "src/app/lib"],
+    roots: ["src/app/(blog)"],
     paths: ["/"],
   },
   {

@@ -17,8 +17,8 @@ describe("React lint policy", () => {
     for (const file of [
       "src/app/(blog)/components/Menu/index.tsx",
       "src/app/admin/(dashboard)/components/AdminClientShell/index.tsx",
-      "src/app/admin/components/AdminLayout/index.tsx",
-      "src/app/admin/components/AdminNavigation/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminLayout/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminNavigation/index.tsx",
       "src/app/(blog)/components/features/comment/public/components/hooks/use-comment-identity.ts",
       "src/app/admin/(dashboard)/components/PhotoPicker/index.tsx",
       "src/app/admin/(dashboard)/media/components/media-query.ts",

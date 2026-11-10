@@ -18,54 +18,63 @@ vi.mock("next-intl/server", () => ({
   getLocale: async () => "zh",
 }));
 
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicMenu: async () => ({
-    list: [
-      {
-        id: "links",
-        parent: "0",
-        path: "/friend-links",
-        title: { zh: "友链" },
-        type: "CUSTOM",
-      },
-      {
-        id: "page-1",
-        parent: "0",
-        path: "about",
-        title: { zh: "关于" },
-        type: "PAGE",
-      },
-      {
-        id: "legacy-id",
-        parent: "0",
-        path: "old/segment",
-        title: { zh: "旧分类" },
-        type: "CATEGORY",
-      },
-      {
-        id: "parent-id",
-        parent: "0",
-        path: "parent",
-        title: { zh: "父分类" },
-        type: "CATEGORY",
-      },
-      {
-        id: "child-id",
-        parent: "parent-id",
-        path: "child",
-        title: { zh: "子分类" },
-        type: "CATEGORY",
-      },
-      {
-        id: "grandchild-id",
-        parent: "child-id",
-        path: "grandchild",
-        title: { zh: "孙分类" },
-        type: "CATEGORY",
-      },
-    ],
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
+}));
+
+vi.mock("@/app/trpc/server", () => ({
+  createServerClient: async () => ({
+    menu: {
+      index: async () => ({
+        list: [
+          {
+            id: "links",
+            parent: "0",
+            path: "/friend-links",
+            title: { zh: "友链" },
+            type: "CUSTOM",
+          },
+          {
+            id: "page-1",
+            parent: "0",
+            path: "about",
+            title: { zh: "关于" },
+            type: "PAGE",
+          },
+          {
+            id: "legacy-id",
+            parent: "0",
+            path: "old/segment",
+            title: { zh: "旧分类" },
+            type: "CATEGORY",
+          },
+          {
+            id: "parent-id",
+            parent: "0",
+            path: "parent",
+            title: { zh: "父分类" },
+            type: "CATEGORY",
+          },
+          {
+            id: "child-id",
+            parent: "parent-id",
+            path: "child",
+            title: { zh: "子分类" },
+            type: "CATEGORY",
+          },
+          {
+            id: "grandchild-id",
+            parent: "child-id",
+            path: "grandchild",
+            title: { zh: "孙分类" },
+            type: "CATEGORY",
+          },
+        ],
+      }),
+    },
+    setting: { index: async () => ({ siteName: { zh: "蜂巢博客" } }) },
   }),
-  getPublicSetting: async () => ({ siteName: { zh: "蜂巢博客" } }),
 }));
 
 vi.mock("@/app/(blog)/lib/blog-navigation", () => ({

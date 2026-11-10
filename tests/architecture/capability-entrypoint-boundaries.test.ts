@@ -15,7 +15,7 @@ import { filesInDirectory } from "@tests/helpers/source-files";
 import nextConfig from "../../next.config";
 
 import { actionGuardMatrix } from "@tests/helpers/admin-action-guard-matrix";
-import { menu } from "@/app/admin/constants/menu-data";
+import { menu } from "@/app/admin/(dashboard)/config/menu-data";
 import { capabilityProcedureMatrix } from "@tests/helpers/capability-procedure-matrix-data";
 import { isPermission } from "@/lib/auth/permissions";
 

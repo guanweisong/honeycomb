@@ -3,10 +3,8 @@ import PostList from "@/app/(blog)/components/features/post/public/components/Po
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import {
-  getPublicPostList,
-  getPublicSetting,
-} from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
+import { connection } from "next/server";
 import { Metadata } from "next";
 import {
   createContentMetadata,
@@ -44,6 +42,7 @@ function getListRouteData(
     locale: normalizeMultiLangLocale(locale),
     slug: slug ?? [],
   }));
+  const trpc = createServerClient();
   const context = route.then(resolveListContext);
   const translations = route.then(({ locale }) =>
     getTranslations({ locale, namespace: "PostList" }),
@@ -52,7 +51,7 @@ function getListRouteData(
     route,
     context,
     translations,
-    getPublicSetting(),
+    trpc.then((client) => client.setting.index()),
   ]).then(([{ locale, slug }, { type, typeName }, t, setting]) => ({
     locale,
     slug,
@@ -67,19 +66,24 @@ function getListRouteData(
     description: setting?.siteSubName?.[locale],
     emptyLabel: t("emptyTip"),
   }));
-  return { context, presentation };
+  return { context, presentation, trpc };
 }
 
 async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  const { context, presentation } = getListRouteData(props.params);
+  await connection();
+  const { context, presentation, trpc } = getListRouteData(props.params);
+  const postList = context.then(async ({ queryParams }) => {
+    const result = await (await trpc).post.index({
+      ...queryParams,
+      cursor: null,
+    });
+    return {
+      queryParams,
+      result: { ...result, snapshotVersion: crypto.randomUUID() },
+    };
+  });
   const [{ type, title, emptyLabel }, { queryParams, result }] =
-    await Promise.all([
-      presentation,
-      context.then(async ({ queryParams }) => ({
-        queryParams,
-        result: await getPublicPostList(queryParams),
-      })),
-    ]);
+    await Promise.all([presentation, postList]);
   const { snapshotVersion, ...post } = result;
 
   return (
@@ -109,6 +113,7 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
+  await connection();
   const { title, description, locale, slug } = await getListRouteData(
     props.params,
   ).presentation;

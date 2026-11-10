@@ -8,11 +8,7 @@ import {
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
-import {
-  getPublicPageDetail,
-  getPublicSetting,
-  getPublicLinks,
-} from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
 import { ContentViewTracker } from "@/app/(blog)/components/ContentViewTracker";
 import { PageTemplate } from "@/features/page/types/page.template";
@@ -25,6 +21,9 @@ import {
   createContentMetadata,
   DynamicMetadataMarker,
 } from "@/app/(blog)/lib/metadata";
+import { EnableStatus } from "@/lib/validation/enable-status";
+import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
+import { connection } from "next/server";
 /**
  * 页面详情组件。
  * 用于显示单个页面的详细内容，包括页面信息、评论等。
@@ -45,10 +44,12 @@ export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
 }
 
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
+  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
-  const pageDetail = await getPublicPageDetail(id);
+  const trpc = await createServerClient();
+  const pageDetail = await trpc.page.detail({ id });
   const publishedPage = assertPublishedPage(pageDetail);
   const comments = loadOptionalPublicComments(id, MenuType.PAGE);
   // Own early rejection until the other page data finishes. The original
@@ -58,10 +59,25 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
     getTranslations({ locale, namespace: "PostInfo" }),
     getTranslations({ locale, namespace: "Link" }),
   ]);
-  const links =
-    publishedPage.template === PageTemplate.FRIENDLY_LINKS
-      ? await getPublicLinks()
-      : null;
+  let links = null;
+  if (publishedPage.template === PageTemplate.FRIENDLY_LINKS) {
+    const input = {
+      limit: MAX_PAGE_SIZE,
+      status: [EnableStatus.ENABLE],
+    };
+    const first = await trpc.link.index({ ...input, page: 1 });
+    const list = [...first.list];
+    for (
+      let page = 2;
+      page <= Math.ceil(first.total / MAX_PAGE_SIZE);
+      page++
+    ) {
+      const result = await trpc.link.index({ ...input, page });
+      list.push(...result.list);
+      if (result.list.length === 0) break;
+    }
+    links = { list, total: first.total };
+  }
 
   return (
     <>
@@ -152,11 +168,13 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/pages/[id]">,
 ) {
+  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
+  const trpc = await createServerClient();
   const [setting, pageDetail] = await Promise.all([
-    getPublicSetting(),
-    getPublicPageDetail(id),
+    trpc.setting.index(),
+    trpc.page.detail({ id }),
   ]);
   const publishedPage = assertPublishedPage(pageDetail);
   const local = normalizeMultiLangLocale(rawLocale);

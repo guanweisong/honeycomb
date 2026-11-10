@@ -113,7 +113,7 @@ vi.mock("@/app/admin/(dashboard)/components/CategoryFormDialog", () => ({
 vi.mock("@/components/LoadingState", () => ({ default: () => null }));
 
 import PostDetail from "@/app/admin/(dashboard)/post/edit/page";
-import { AdminLayoutHeaderContext } from "@/app/admin/components/AdminLayout/layout-context";
+import { AdminLayoutHeaderContext } from "@/app/admin/(dashboard)/components/AdminLayout/layout-context";
 
 function LayoutHarness() {
   const [actions, setActions] = useState<HTMLElement | null>(null);

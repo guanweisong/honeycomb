@@ -15,11 +15,7 @@ import { getTranslations } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
-import {
-  getPublicPostDetail,
-  getPublicRandomPosts,
-  getPublicSetting,
-} from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
@@ -38,6 +34,7 @@ import {
 } from "@/app/(blog)/lib/metadata";
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
+import { connection } from "next/server";
 
 /**
  * 归档页面组件。
@@ -59,12 +56,14 @@ export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
 }
 
 async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
+  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
-  let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
+  const trpc = await createServerClient();
+  let postDetail: Awaited<ReturnType<typeof trpc.post.detail>>;
   try {
-    postDetail = assertPostDetail(await getPublicPostDetail(id));
+    postDetail = assertPostDetail(await trpc.post.detail({ id }));
   } catch (error) {
     handlePostDetailError(error);
   }
@@ -203,9 +202,11 @@ async function RecommendedPosts({
   locale: ReturnType<typeof normalizeMultiLangLocale>;
   title: string;
 }) {
-  let randomPostsList: Awaited<ReturnType<typeof getPublicRandomPosts>>;
+  await connection();
+  const trpc = await createServerClient();
+  let randomPostsList: Awaited<ReturnType<typeof trpc.post.getRandomByCategory>>;
   try {
-    randomPostsList = await getPublicRandomPosts(categoryId);
+    randomPostsList = await trpc.post.getRandomByCategory({ categoryId });
   } catch {
     // Recommendations are optional and must not replace the article on failure.
     return null;
@@ -238,14 +239,16 @@ async function RecommendedPosts({
 export async function generateMetadata(
   props: PageProps<"/[locale]/archives/[id]">,
 ): Promise<Metadata> {
+  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
-  let setting: Awaited<ReturnType<typeof getPublicSetting>>;
-  let postDetail: Awaited<ReturnType<typeof getPublicPostDetail>>;
+  const trpc = await createServerClient();
+  let setting: Awaited<ReturnType<typeof trpc.setting.index>>;
+  let postDetail: Awaited<ReturnType<typeof trpc.post.detail>>;
   try {
     [setting, postDetail] = await Promise.all([
-      getPublicSetting(),
-      getPublicPostDetail(id),
+      trpc.setting.index(),
+      trpc.post.detail({ id }),
     ]);
     postDetail = assertPostDetail(postDetail);
   } catch (error) {

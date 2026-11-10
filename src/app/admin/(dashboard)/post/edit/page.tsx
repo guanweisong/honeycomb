@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PhotoPickerModal from "@/app/admin/(dashboard)/components/PhotoPicker/index";
 import { Form } from "@/components/ui/form";
-import { AdminPageHeader } from "@/app/admin/components/AdminLayout/layout-context";
+import { AdminPageHeader } from "@/app/admin/(dashboard)/components/AdminLayout/layout-context";
 import CategoryFormDialog from "@/app/admin/(dashboard)/components/CategoryFormDialog";
 import { PostEditorActions } from "@/app/admin/(dashboard)/post/edit/components/PostEditorActions";
 import { PostSidebarFields } from "@/app/admin/(dashboard)/post/edit/components/PostSidebarFields";

@@ -1,6 +1,6 @@
 import { getAdminUser } from "@/app/admin/lib/admin-auth";
 import { getAuthProviders } from "@/app/admin/lib/auth-providers";
-import { getPublicSetting } from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "@/app/admin/login/components/LoginClient";
@@ -25,8 +25,11 @@ async function LoginContent({
     redirect("/admin/dashboard");
   }
 
+  const settingPromise = createServerClient().then((trpc) =>
+    trpc.setting.index(),
+  );
   const [setting, providers] = await Promise.all([
-    getPublicSetting(),
+    settingPromise,
     getAuthProviders(),
   ]);
   const targetUrl = normalizeAdminCallback((await searchParams).targetUrl);

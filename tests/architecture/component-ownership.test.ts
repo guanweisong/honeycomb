@@ -19,7 +19,22 @@ describe("component ownership", () => {
   it("keeps route-local, shared and business UI at their owned paths", () => {
     const moves = [
       ["src/app/(blog)/_components", "src/app/(blog)/components"],
-      ["src/app/admin/_components", "src/app/admin/components"],
+      [
+        "src/app/admin/_components",
+        "src/app/admin/(dashboard)/components/AdminLayout/AdminSidebar.tsx",
+      ],
+      [
+        "src/app/admin/components",
+        "src/app/admin/(dashboard)/components/AdminLayout/AdminSidebar.tsx",
+      ],
+      [
+        "src/app/admin/constants/menu-data.tsx",
+        "src/app/admin/(dashboard)/config/menu-data.tsx",
+      ],
+      [
+        "src/app/admin/constants/menu-data.test.ts",
+        "src/app/admin/(dashboard)/config/menu-data.test.ts",
+      ],
       [
         "src/app/admin/(dashboard)/_components",
         "src/app/admin/(dashboard)/components",
@@ -38,7 +53,7 @@ describe("component ownership", () => {
       ],
       ["src/app/_auth", "src/app/auth"],
       ["src/app/_trpc", "src/app/trpc"],
-      ["src/app/_pwa", "src/app/pwa"],
+      ["src/app/pwa", "src/app/(blog)/pwa"],
       ["src/components/blog/Card", "src/components/SectionCard/index.tsx"],
       [
         "src/components/blog/TextDivider",
@@ -64,8 +79,9 @@ describe("component ownership", () => {
   it.each([
     "src/app/(blog)/components",
     "src/app/(blog)/[locale]/list/[...slug]/components",
-    "src/app/admin/components",
     "src/app/admin/(dashboard)/components",
+    "src/app/admin/(dashboard)/components/AdminLayout",
+    "src/app/admin/(dashboard)/components/AdminNavigation",
     "src/app/admin/(dashboard)/components/CategoryFormDialog",
     "src/app/admin/(dashboard)/components/EditorMediaProvider",
     "src/app/admin/(dashboard)/components/MediaPageShell",
@@ -87,7 +103,7 @@ describe("component ownership", () => {
     "src/app/admin/login/components",
     "src/app/auth",
     "src/app/trpc",
-    "src/app/pwa",
+    "src/app/(blog)/pwa",
   ])("keeps %s non-routable without a private-folder prefix", (directory) => {
     expect(existsSync(directory), directory).toBe(true);
     const { isAppRouterPage } = createValidFileMatcher(
