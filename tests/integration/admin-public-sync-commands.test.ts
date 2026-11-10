@@ -175,7 +175,8 @@ function databaseCase<Result extends object>(
     saved,
     setup() {
       const db = createMockDb();
-      db.returning.mockResolvedValue([saved]);
+      const deletesContent = name === "destroyPosts" || name === "destroyPages";
+      db.returning.mockResolvedValue([deletesContent ? { id } : saved]);
       db.select.mockImplementation((projection?: object) => {
         const read = createMockDb();
         const isPathCheck =
@@ -194,10 +195,14 @@ function databaseCase<Result extends object>(
             read.limit.mockResolvedValue([
               { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
             ]);
-          if (table === schema.post || table === schema.page)
-            read.limit.mockResolvedValue([
-              { id, version: 0, status: PostStatus.DRAFT },
-            ]);
+          if (table === schema.post || table === schema.page) {
+            if (deletesContent)
+              read.where.mockResolvedValue([{ id, version: 0 }]);
+            else
+              read.limit.mockResolvedValue([
+                { id, version: 0, status: PostStatus.DRAFT },
+              ]);
+          }
           if (
             name === "saveAllMenus" &&
             table === schema.category &&
@@ -391,7 +396,7 @@ const commands = [
   ),
   commandCase("updateUser", user, (write, invalidator) =>
     updateUser(
-      { update: write, getStatus: async () => user },
+      { update: write },
       { id, name: user.name },
       UserLevel.ADMIN,
       invalidator,
@@ -402,18 +407,14 @@ const commands = [
     { ...user, status: UserStatus.DISABLE },
     (write, invalidator) =>
       updateUser(
-        { update: write, getStatus: async () => user },
+        { update: write },
         { id, status: UserStatus.DISABLE },
         UserLevel.ADMIN,
         invalidator,
       ),
   ),
   commandCase("destroyUsers", success, (write, invalidator) =>
-    destroyUsers(
-      { destroy: write, getStates: async () => [user] },
-      [id],
-      invalidator,
-    ),
+    destroyUsers({ destroy: write }, [id], invalidator),
   ),
   commandCase("updateComment", comment, (write, invalidator) =>
     updateComment(

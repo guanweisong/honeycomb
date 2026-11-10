@@ -51,25 +51,6 @@ export function sanitizePostTranslationInput(
   return { ...input, content: sanitizeLocalizedContent(input.content) };
 }
 
-export function toPostTranslationRows(
-  postId: string,
-  input: PostTranslationInput,
-): PostTranslationRow[] {
-  return supportedLanguages.flatMap((locale) => {
-    const fields: PostTranslationFields = {
-      title: input.title?.[locale] ?? null,
-      content: input.content?.[locale] ?? null,
-      excerpt: input.excerpt?.[locale] ?? null,
-      galleryLocation: input.galleryLocation?.[locale] ?? null,
-      quoteAuthor: input.quoteAuthor?.[locale] ?? null,
-      quoteContent: input.quoteContent?.[locale] ?? null,
-    };
-    return hasTranslationValues(Object.values(fields))
-      ? [{ postId, locale, ...fields }]
-      : [];
-  });
-}
-
 export function patchPostTranslationRows(
   postId: string,
   currentRows: readonly PostTranslationRow[],

@@ -1,9 +1,11 @@
 // @vitest-environment node
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { S3Client } from "@aws-sdk/client-s3";
 import { createMemoryObservability } from "@tests/helpers/memory-observability";
 import { MetricName } from "@/lib/observability/core/names";
 import { configureObservability } from "@/lib/observability/server";
+import * as serverEnv from "@/env/server";
 import { createSecurityHeaderOptions } from "@/lib/security/security-headers";
 import R2Storage from "@/lib/storage/r2-storage";
 import { Readable } from "node:stream";
@@ -27,15 +29,18 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function getClientMaxAttempts(client: unknown) {
+  if (!(client instanceof S3Client)) throw new Error("Missing SDK client");
+  return client.config.maxAttempts();
+}
+
 describe("R2Storage observability", () => {
   const send = vi.fn();
 
   beforeEach(() => {
     send.mockReset();
 
-    const client = R2Storage.createClient();
-    vi.spyOn(client, "send").mockImplementation(send);
-    vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
+    vi.spyOn(S3Client.prototype, "send").mockImplementation(send);
   });
 
   afterEach(() => {
@@ -43,6 +48,23 @@ describe("R2Storage observability", () => {
     vi.useRealTimers();
     configureObservability();
   });
+
+  it.each(["delete", "head"] as const)(
+    "cancels a pending %s at the caller deadline",
+    async (operation) => {
+      const controller = new AbortController();
+      send.mockImplementation(() => new Promise(() => undefined));
+      const request =
+        operation === "delete"
+          ? R2Storage.deleteObjects(["private.png"], controller.signal)
+          : R2Storage.headObject("private.png", controller.signal);
+      const reason = new Error("caller deadline");
+      controller.abort(reason);
+      await expect(request).rejects.toBe(reason);
+      expect(send.mock.calls[0]?.[1]?.abortSignal?.aborted).toBe(true);
+      expect(send).toHaveBeenCalledOnce();
+    },
+  );
 
   it("changing a signed content type produces a different signature for the same PUT", async () => {
     vi.restoreAllMocks();
@@ -101,6 +123,7 @@ describe("R2Storage observability", () => {
 
   it("keeps presigned uploads on the CSP account origin with bucket and key in the path", async () => {
     vi.restoreAllMocks();
+    const getR2Env = vi.spyOn(serverEnv, "getR2Env");
 
     const presignedUrl = new URL(
       await R2Storage.getPresignedUrl({
@@ -111,6 +134,7 @@ describe("R2Storage observability", () => {
     );
     const securityOptions = createSecurityHeaderOptions(process.env);
 
+    expect(getR2Env).toHaveBeenCalledOnce();
     expect(presignedUrl.origin).toBe(securityOptions.r2UploadOrigin);
     expect(presignedUrl.origin).toBe(
       "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
@@ -134,9 +158,7 @@ describe("R2Storage observability", () => {
     send.mockRejectedValue(failure);
 
     await expect(
-      R2Storage.deleteMultipleObject({
-        Objects: [{ Key: "private/user-123.png" }],
-      }),
+      R2Storage.deleteObjects(["private/user-123.png"]),
     ).rejects.toBe(failure);
 
     expect(memory.metricEvents.map(({ name }) => name)).toEqual([
@@ -185,12 +207,10 @@ describe("R2Storage observability", () => {
       send.mockResolvedValue(response);
 
       await expect(
-        R2Storage.deleteMultipleObject({
-          Objects: [
-            { Key: "private/user-123.png" },
-            { Key: "private/user-456.png" },
-          ],
-        }),
+        R2Storage.deleteObjects([
+          "private/user-123.png",
+          "private/user-456.png",
+        ]),
       ).rejects.toThrow("Object storage delete failed");
 
       expect(memory.metricEvents.map(({ name }) => name)).toEqual([
@@ -209,14 +229,13 @@ describe("R2Storage observability", () => {
 describe("immutable candidate storage", () => {
   afterEach(() => vi.restoreAllMocks());
   it("puts exact validated bytes once with automatic retry disabled", async () => {
-    const send = vi.fn().mockResolvedValue({});
-    const client = R2Storage.createClient();
-    vi.spyOn(client, "send").mockImplementation(send);
-    const factory = vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
+    const send = vi
+      .spyOn(S3Client.prototype, "send")
+      .mockImplementation(async () => ({}));
 
     const bytes = Buffer.from("validated");
     await R2Storage.putValidatedObject("media/a.png", bytes, "image/png");
-    expect(factory).toHaveBeenCalledWith(1);
+    await expect(getClientMaxAttempts(send.mock.contexts[0])).resolves.toBe(1);
     expect(send.mock.calls[0]?.[0].input).toMatchObject({
       Key: "media/a.png",
       Body: bytes,
@@ -226,11 +245,8 @@ describe("immutable candidate storage", () => {
   });
   it("distinguishes absence from forbidden or unknown HEAD results", async () => {
     const send = vi
-      .fn()
+      .spyOn(S3Client.prototype, "send")
       .mockRejectedValue({ $metadata: { httpStatusCode: 404 } });
-    const client = R2Storage.createClient();
-    vi.spyOn(client, "send").mockImplementation(send);
-    vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
     expect(await R2Storage.headObject("media/a.png")).toBeNull();
     send.mockRejectedValue({ $metadata: { httpStatusCode: 403 } });
     await expect(R2Storage.headObject("media/a.png")).rejects.toBeDefined();
@@ -238,18 +254,13 @@ describe("immutable candidate storage", () => {
 });
 it("bounds streamed candidate reads and destroys oversized streams", async () => {
   const body = Readable.from([Buffer.from("oversized")]);
-  const client = R2Storage.createClient();
-  vi.spyOn(client, "send").mockImplementation(async () => ({ Body: body }));
-  const factory = vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
-  try {
-    await expect(R2Storage.readObject("media/a.png", 3)).rejects.toThrow(
-      "byte limit",
-    );
-    expect(body.destroyed).toBe(true);
-  } finally {
-    factory.mockRestore();
-    vi.restoreAllMocks();
-  }
+  vi.spyOn(S3Client.prototype, "send").mockImplementation(async () => ({
+    Body: body,
+  }));
+  await expect(R2Storage.readObject("media/a.png", 3)).rejects.toThrow(
+    "byte limit",
+  );
+  expect(body.destroyed).toBe(true);
 });
 
 it("expires a silent body and releases the real registration validation slot", async () => {
@@ -257,11 +268,9 @@ it("expires a silent body and releases the real registration validation slot", a
   vi.stubEnv("AUTH_URL", "https://auth.example.test");
   vi.useFakeTimers();
   const body = new Readable({ read() {} });
-  const client = R2Storage.createClient();
   const send = vi
-    .spyOn(client, "send")
+    .spyOn(S3Client.prototype, "send")
     .mockImplementation(async () => ({ Body: body }));
-  vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
   const repo = mediaRepositoryFixture();
   const storage = mediaStorageFixture();
   storage.readObject.mockImplementation(R2Storage.readObject);
@@ -302,11 +311,9 @@ it.each(["head", "read", "put", "delete"] as const)(
   "bounds stalled %s requests and aborts the SDK without retrying mutations",
   async (operation) => {
     vi.useFakeTimers();
-    const client = R2Storage.createClient();
     const send = vi
-      .spyOn(client, "send")
+      .spyOn(S3Client.prototype, "send")
       .mockImplementation(() => new Promise(() => {}));
-    const factory = vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
     const operations = {
       head: () => R2Storage.headObject("media/a.png"),
       read: () => R2Storage.readObject("media/a.png", 10),
@@ -325,8 +332,9 @@ it.each(["head", "read", "put", "delete"] as const)(
     await outcome;
     expect(send).toHaveBeenCalledOnce();
     expect(send.mock.calls[0]?.[1]?.abortSignal?.aborted).toBe(true);
-    if (operation === "put" || operation === "delete")
-      expect(factory).toHaveBeenCalledWith(1);
+    await expect(getClientMaxAttempts(send.mock.contexts[0])).resolves.toBe(
+      operation === "put" || operation === "delete" ? 1 : 3,
+    );
     expect(vi.getTimerCount()).toBe(0);
   },
 );
@@ -334,11 +342,9 @@ it.each(["head", "read", "put", "delete"] as const)(
 it("clears the deadline after a complete read", async () => {
   vi.useFakeTimers();
   const body = Readable.from([Buffer.from("ok")]);
-  const client = R2Storage.createClient();
   const send = vi
-    .spyOn(client, "send")
+    .spyOn(S3Client.prototype, "send")
     .mockImplementation(async () => ({ Body: body }));
-  vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
   await expect(R2Storage.readObject("media/a.png", 2)).resolves.toEqual(
     Buffer.from("ok"),
   );
@@ -350,14 +356,12 @@ it("clears the deadline after a complete read", async () => {
 it("uses the same deadline for response headers and silent body consumption", async () => {
   vi.useFakeTimers();
   const body = new Readable({ read() {} });
-  const client = R2Storage.createClient();
-  vi.spyOn(client, "send").mockImplementation(
+  vi.spyOn(S3Client.prototype, "send").mockImplementation(
     () =>
       new Promise((resolve) => {
         setTimeout(() => resolve({ Body: body }), 20_000);
       }),
   );
-  vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
   let failure: unknown;
   const read = R2Storage.readObject("media/a.png", 10).catch(
     (error: unknown) => {
@@ -381,14 +385,12 @@ it("uses the same deadline for response headers and silent body consumption", as
 it("destroys a late body even when the SDK resolves after the deadline", async () => {
   vi.useFakeTimers();
   const body = new Readable({ read() {} });
-  const client = R2Storage.createClient();
-  vi.spyOn(client, "send").mockImplementation(
+  vi.spyOn(S3Client.prototype, "send").mockImplementation(
     () =>
       new Promise((resolve) => {
         setTimeout(() => resolve({ Body: body }), 31_000);
       }),
   );
-  vi.spyOn(R2Storage, "createClient").mockReturnValue(client);
   const read = expect(R2Storage.readObject("media/a.png", 10)).rejects.toThrow(
     "timed out",
   );

@@ -16,13 +16,15 @@ import { toLinkFormDefaults } from "@/app/admin/(dashboard)/link/components/link
 type LinkFormDialogProps = {
   state: LinkDialogState;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: LinkInsert | LinkUpdate) => void | Promise<void>;
+  onCreate: (values: LinkInsert) => void | Promise<void>;
+  onUpdate: (values: LinkUpdate) => void | Promise<void>;
 };
 
 export function LinkFormDialog({
   state,
   onOpenChange,
-  onSubmit,
+  onCreate,
+  onUpdate,
 }: LinkFormDialogProps) {
   if (!state.open) return null;
 
@@ -72,7 +74,7 @@ export function LinkFormDialog({
           defaultValues={toLinkFormDefaults(state.record)}
           schema={LinkUpdateSchema}
           fields={fields}
-          onSubmit={(values) => onSubmit(values)}
+          onSubmit={onUpdate}
         />
       ) : (
         <DynamicForm
@@ -80,7 +82,7 @@ export function LinkFormDialog({
           defaultValues={{ status: EnableStatus.ENABLE }}
           schema={LinkInsertSchema}
           fields={fields}
-          onSubmit={(values) => onSubmit(values)}
+          onSubmit={onCreate}
         />
       )}
     </Dialog>

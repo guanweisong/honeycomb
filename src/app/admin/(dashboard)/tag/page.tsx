@@ -4,12 +4,12 @@ import type { TagRecord as TagEntity } from "@/features/tag/types/tag.record";
 import { useState } from "react";
 import { tagTableColumns } from "@/app/admin/(dashboard)/tag/components/tag-table-columns";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { Pencil, Plus, Trash } from "lucide-react";
-import type { TagListQueryInput } from "@/features/tag/types/tag.list";
 import { TagListQuerySchema } from "@/features/tag/schemas/tag.list.schema";
 import TagFormDialog from "@/app/admin/(dashboard)/tag/components/TagFormDialog";
 import { trpc } from "@/lib/trpc/client/trpc";
@@ -34,11 +34,7 @@ const Tag = () => {
   const canCreateTag = useCan(Permission.tagCreate);
   const canUpdateTag = useCan(Permission.tagUpdate);
   const canDeleteTag = useCan(Permission.tagDelete);
-  /**
-   * 存储用户在表格中选中的行。
-   * 类型为 `TagEntity` 数组。
-   */
-  const [selectedRows, setSelectedRows] = useState<TagEntity[]>([]);
+  const tableState = useAdminTableState();
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的标签记录。
    */
@@ -47,18 +43,14 @@ const Tag = () => {
   );
 
   /**
-   * 存储标签列表的查询参数。
-   */
-  const [searchParams, setSearchParams] = useState<TagListQueryInput>({});
-
-  /**
    * 获取标签列表数据的 tRPC 查询。
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
   const { data, isFetching, isError, refetch } = trpc.tag.index.useQuery(
-    searchParams,
+    TagListQuerySchema.parse(tableState.requestState.requestParams),
     adminListQueryOptions,
   );
+  const selectedRows = tableState.getSelectedRows(data?.list);
   /**
    * 删除标签的 tRPC mutation。
    * 用于执行删除操作。
@@ -95,7 +87,7 @@ const Tag = () => {
     submitAdminBatchDelete({
       selectedRows,
       deleteItems: handleDeleteItem,
-      onSelectionChange: setSelectedRows,
+      onSelectionChange: tableState.clearSelection,
     });
 
   /**
@@ -108,7 +100,8 @@ const Tag = () => {
     <>
       <div className="flex min-h-0 flex-col">
         <DataTable<TagEntity>
-          getRowId={(row) => row.id}
+          getRowId={tableState.getRowId}
+          requestState={tableState.requestState}
           columns={tagTableColumns}
           data={{
             list: data?.list ?? [],
@@ -120,11 +113,8 @@ const Tag = () => {
             void refetch();
           }}
           selectableRows={canDeleteTag}
-          selectedRows={selectedRows}
-          onSelectionChange={setSelectedRows}
-          onChange={(params) => {
-            setSearchParams(TagListQuerySchema.parse(params));
-          }}
+          selectedRowIds={tableState.selectedRowIds}
+          onSelectedRowIdsChange={tableState.setSelectedRowIds}
           toolBar={(table) => (
             <div className="flex justify-between">
               <div className="flex gap-1">

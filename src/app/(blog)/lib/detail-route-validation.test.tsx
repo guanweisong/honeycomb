@@ -1,3 +1,6 @@
+vi.mock("@/app/(blog)/components/ContentViewTracker", () => ({
+  ContentViewTracker: () => null,
+}));
 import { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PageStatus } from "@/features/page/types/page.status";
@@ -11,8 +14,9 @@ const mockSetting = vi.fn();
 const mockComments = vi.fn();
 
 vi.mock("next/navigation", async (importOriginal) => {
-  const { notFound } = await importOriginal<typeof import("next/navigation")>();
-  return { notFound };
+  const { notFound, unstable_rethrow } =
+    await importOriginal<typeof import("next/navigation")>();
+  return { notFound, unstable_rethrow };
 });
 vi.mock("next-intl/server", () => ({
   getTranslations: async () => (key: string) => key,
@@ -29,17 +33,18 @@ vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: () => null,
   PostCommentCount: () => null,
 }));
-vi.mock("@/app/(blog)/components/features/post/public/Tags", () => ({ default: () => null }));
-vi.mock("@/app/(blog)/components/features/post/public/PostViewTracker", () => ({
-  PostViewTracker: () => null,
-}));
-vi.mock("@/app/(blog)/components/features/page/public/PageViewTracker", () => ({
-  PageViewTracker: () => null,
-}));
-vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
+vi.mock("@/app/(blog)/components/features/post/public/Tags", () => ({
   default: () => null,
 }));
-vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({ RichText: () => null }));
+vi.mock(
+  "@/app/(blog)/components/features/comment/public/components/CommentClient",
+  () => ({
+    default: () => null,
+  }),
+);
+vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
+  RichText: () => null,
+}));
 vi.mock("@/app/(blog)/lib/blog-navigation", () => ({ Link: () => null }));
 
 import Archives, {
@@ -48,8 +53,18 @@ import Archives, {
 import Pages, {
   generateMetadata as generatePageMetadata,
 } from "@/app/(blog)/[locale]/pages/[id]/page";
+import { loadOptionalPublicComments } from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { notFound } from "next/navigation";
 
 const validId = "111111111111111111111111";
+
+it("passes framework interruptions through the optional comment read", async () => {
+  mockComments.mockImplementationOnce(() => notFound());
+  await expect(
+    loadOptionalPublicComments(validId, MenuType.PAGE),
+  ).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+});
 const routeProps = (id: string) => ({
   params: Promise.resolve({ id, locale: "en" }),
   searchParams: Promise.resolve({}),

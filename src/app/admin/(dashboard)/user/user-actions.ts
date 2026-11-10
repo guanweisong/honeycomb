@@ -1,23 +1,12 @@
 "use client";
 
-import { ModalType } from "@/app/admin/(dashboard)/types/modal-type";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
-import {
-  UserInsertSchema,
-  UserUpdateSchema,
-} from "@/features/user/schemas/user.write.schema";
 import type { UserInsert } from "@/features/user/types/user.insert";
 import type { UserUpdate } from "@/features/user/types/user.update";
 import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
+import { useAdminRecordActions } from "@/app/admin/(dashboard)/lib/use-admin-record-actions";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
-  closeAdminDialog,
-  createInitialAdminDialogState,
-  openAddAdminDialog,
-  openEditAdminDialog,
   runAdminMutation,
-  submitAdminBatchDelete,
   withAdminRecordId,
   type AdminDialogState,
   type AdminListActionOptions,
@@ -66,87 +55,19 @@ export async function submitUserUpdate({
   });
 }
 
-export function useUserActions({
-  selectedRows,
-  onSelectionChange,
-  refetch,
-}: AdminListActionOptions<UserEntity>) {
-  const [dialogState, setDialogState] = useState<UserDialogState>(
-    createInitialAdminDialogState,
-  );
-  const dialogGeneration = useRef(0);
-  const createUser = trpc.user.create.useMutation();
-  const updateUser = trpc.user.update.useMutation();
-  const destroyUser = trpc.user.destroy.useMutation();
-
-  const handleDeleteItem = (ids: string[]) =>
-    runAdminMutation({
-      input: { ids },
-      mutate: destroyUser.mutateAsync,
-      isSuccess: (result) => result.success,
-      refetch,
-      notifySuccess: toast.success,
-      notifyWarning: toast.warning,
-      notifyError: toast.error,
-      successMessage: "删除成功",
-      errorMessage: "删除失败",
-    });
-
-  const handleDeleteBatch = () =>
-    submitAdminBatchDelete({
-      selectedRows,
-      deleteItems: handleDeleteItem,
-      onSelectionChange,
-    });
-
-  const handleModalOk = async (values: UserInsert | UserUpdate) => {
-    const generation = dialogGeneration.current;
-    const state =
-      dialogState.type === ModalType.ADD
-        ? await runAdminMutation({
-            input: UserInsertSchema.parse(values),
-            mutate: createUser.mutateAsync,
-            refetch,
-            notifySuccess: toast.success,
-            notifyWarning: toast.warning,
-            notifyError: toast.error,
-            successMessage: "添加成功",
-            errorMessage: "添加失败",
-          })
-        : await submitUserUpdate({
-            record: dialogState.record,
-            values: UserUpdateSchema.parse(values),
-            update: updateUser.mutateAsync,
-            refetch,
-            notifySuccess: toast.success,
-            notifyWarning: toast.warning,
-            notifyError: toast.error,
-          });
-
-    if (state === "success" && generation === dialogGeneration.current) {
-      setDialogState(closeAdminDialog());
-    }
-  };
-
-  return {
-    dialogState,
-    handleAddNew: () => {
-      dialogGeneration.current += 1;
-      setDialogState(openAddAdminDialog());
-    },
-    handleEditItem: (record: UserEntity) => {
-      dialogGeneration.current += 1;
-      setDialogState(openEditAdminDialog(record));
-    },
-    handleDeleteItem,
-    handleDeleteBatch,
-    handleModalOk,
-    handleDialogOpenChange: (open: boolean) => {
-      dialogGeneration.current += 1;
-      setDialogState((state) => ({ ...state, open }));
-    },
-  };
+export function useUserActions(options: AdminListActionOptions<UserEntity>) {
+  const create = trpc.user.create.useMutation();
+  const update = trpc.user.update.useMutation();
+  const destroy = trpc.user.destroy.useMutation();
+  return useAdminRecordActions<UserEntity, UserInsert, UserUpdate>(options, {
+    create: create.mutateAsync,
+    update: (record, values, feedback) =>
+      submitUserUpdate({
+        ...feedback,
+        record,
+        values,
+        update: update.mutateAsync,
+      }),
+    destroy: destroy.mutateAsync,
+  });
 }
-/**
- * 用户管理的弹窗状态、增删改操作及权限相关客户端编排。
- */

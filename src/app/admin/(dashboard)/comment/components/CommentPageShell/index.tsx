@@ -1,7 +1,5 @@
 "use client";
 
-import type { z } from "zod";
-import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCan } from "@/app/admin/(dashboard)/providers/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
@@ -10,6 +8,7 @@ import type { AdminCommentViewModel } from "@/features/comment/presentation/comm
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { useCommentActions } from "@/app/admin/(dashboard)/comment/comment-actions";
@@ -54,18 +53,16 @@ export function CommentPageShell() {
             ? { ...column, enableSorting: false }
             : column,
         );
-  const [selectedRows, setSelectedRows] = useState<AdminCommentViewModel[]>([]);
-  const [searchParams, setSearchParams] = useState<
-    z.input<typeof CommentListQuerySchema>
-  >({});
+  const tableState = useAdminTableState();
   const query = trpc.comment.index.useQuery(
-    searchParams,
+    CommentListQuerySchema.parse(tableState.requestState.requestParams),
     adminListQueryOptions,
   );
+  const selectedRows = tableState.getSelectedRows(query.data?.list);
   const { handleSetStatus, handleDelete, handleDeleteBatch } =
     useCommentActions({
       selectedRows,
-      onSelectionChange: setSelectedRows,
+      onSelectionChange: tableState.clearSelection,
       refetch: query.refetch,
     });
 
@@ -107,7 +104,8 @@ export function CommentPageShell() {
 
   return (
     <DataTable<AdminCommentViewModel>
-      getRowId={(row) => row.id}
+      getRowId={tableState.getRowId}
+      requestState={tableState.requestState}
       columns={columns}
       data={{
         list: query.data?.list ?? [],
@@ -118,12 +116,9 @@ export function CommentPageShell() {
       onRetry={() => {
         void query.refetch();
       }}
-      onChange={(params) =>
-        setSearchParams(CommentListQuerySchema.parse(params))
-      }
       selectableRows={canModerateComments}
-      selectedRows={selectedRows}
-      onSelectionChange={setSelectedRows}
+      selectedRowIds={tableState.selectedRowIds}
+      onSelectedRowIdsChange={tableState.setSelectedRowIds}
       toolBar={(table) => (
         <div className="flex justify-between">
           {canModerateComments && (

@@ -51,7 +51,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     {
       title: I18N_INPUT,
       description: I18N_INPUT,
-      path: "/test",
+      path: "test",
       status: "ENABLE",
     },
     "database",
@@ -67,7 +67,7 @@ export const capabilityProcedureMatrix: readonly CapabilityMatrixEntry[] = [
     "category.update",
     Permission.categoryUpdate,
     ADMIN_EDITOR,
-    { id: TEST_ID, path: "/updated" },
+    { id: TEST_ID, path: "updated" },
     "database",
   ],
   [

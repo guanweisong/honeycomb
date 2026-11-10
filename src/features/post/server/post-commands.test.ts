@@ -50,6 +50,7 @@ describe("atomic post writes", () => {
   let directory: string | undefined;
   let client: Client | undefined;
   let db: Database;
+  let statements: string[];
   afterEach(() => {
     client?.close();
     if (directory) {
@@ -65,7 +66,11 @@ describe("atomic post writes", () => {
     expect(stat.isSymbolicLink()).toBe(false);
     expect(stat.uid).toBe(process.getuid?.());
     client = createClient({ url: `file:${join(directory, "post.db")}` });
-    db = drizzle(client, { schema });
+    statements = [];
+    db = drizzle(client, {
+      schema,
+      logger: { logQuery: (query) => statements.push(query) },
+    });
     await migrate(db, { migrationsFolder: "drizzle" });
     await client.execute("pragma foreign_keys = on");
     await db.insert(schema.user).values({
@@ -625,6 +630,15 @@ describe("atomic post writes", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(await db.select().from(schema.post)).toHaveLength(2);
     expect(invalidator.invalidate).not.toHaveBeenCalled();
+    const missing = { id: "507f1f77bcf86cd799439000", expectedVersion: 0 };
+    const stale = { id: second.id, expectedVersion: 2 };
+    await expect(
+      destroyPosts(db, { items: [missing, stale] }, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      destroyPosts(db, { items: [stale, missing] }, actorId, invalidator),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    statements.length = 0;
     await destroyPosts(
       db,
       {
@@ -636,6 +650,14 @@ describe("atomic post writes", () => {
       actorId,
       invalidator,
     );
+    expect(
+      statements.filter((query) =>
+        query.startsWith('select "id", "version" from "post"'),
+      ),
+    ).toHaveLength(1);
+    expect(
+      statements.filter((query) => query.startsWith('delete from "post"')),
+    ).toHaveLength(1);
     expect(await db.select().from(schema.post)).toEqual([]);
     expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith(
       targets([first.id, second.id]),
@@ -651,6 +673,10 @@ describe("atomic post writes", () => {
       actorId,
       cache(),
     );
+    await db
+      .update(schema.post)
+      .set({ views: null })
+      .where(eq(schema.post.id, created.id));
     const before = await row(created.id);
     await incrementPostViews(db, created.id);
     expect(await row(created.id)).toMatchObject({
@@ -703,21 +729,34 @@ describe("atomic post writes", () => {
     expect(await db.select().from(schema.postTag)).toEqual([]);
   });
   it("stores the four typed relation roles distinctly", async () => {
+    const actor = "507f1f77bcf86cd799439021";
+    const director = "507f1f77bcf86cd799439031";
+    const movieStyle = "507f1f77bcf86cd799439032";
+    const galleryStyle = "507f1f77bcf86cd799439033";
+    await db
+      .insert(schema.tag)
+      .values([director, movieStyle, galleryStyle].map((id) => ({ id })));
     await createPost(
       db,
       {
         ...input,
-        movieActorIds: ["507f1f77bcf86cd799439021"],
-        movieDirectorIds: ["507f1f77bcf86cd799439021"],
-        movieStyleIds: ["507f1f77bcf86cd799439021"],
-        galleryStyleIds: ["507f1f77bcf86cd799439021"],
+        movieActorIds: [actor],
+        movieDirectorIds: [director],
+        movieStyleIds: [movieStyle],
+        galleryStyleIds: [galleryStyle],
       },
       actorId,
       cache(),
     );
+    const rows = await db.select().from(schema.postTag);
     expect(
-      (await db.select().from(schema.postTag)).map(({ type }) => type).sort(),
-    ).toEqual(Object.values(TagType).sort());
+      Object.fromEntries(rows.map(({ type, tagId }) => [type, tagId])),
+    ).toEqual({
+      [TagType.ACTOR]: actor,
+      [TagType.DIRECTOR]: director,
+      [TagType.MOVIE_STYLE]: movieStyle,
+      [TagType.GALLERY_STYLE]: galleryStyle,
+    });
   });
 });
 

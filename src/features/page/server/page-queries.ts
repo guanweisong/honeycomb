@@ -5,7 +5,7 @@ import { parseEnumValue } from "@/lib/db/value-validation";
 import { PageTemplate } from "@/features/page/types/page.template";
 import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 
-import { and, asc, desc, eq, getTableName, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableName, sql, type SQL } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import {
@@ -25,9 +25,16 @@ import type {
   PageListItem,
   PageMenuOption,
 } from "@/features/page/types/page.read-model";
-import { groupPageTranslations } from "@/features/page/server/page-translations";
+import {
+  groupPageTranslations,
+  type PageTranslationRow,
+} from "@/features/page/server/page-translations";
 
 type PageRow = typeof schema.page.$inferSelect;
+const pageRelations = {
+  author: { columns: { id: true, name: true } },
+  translations: true,
+} as const;
 type PageTranslations =
   ReturnType<typeof groupPageTranslations> extends Map<string, infer Value>
     ? Value
@@ -35,7 +42,7 @@ type PageTranslations =
 
 /** 显式白名单投影，避免创建令牌与原始意图哈希经详情或列表泄漏。 */
 function toPageRecord(
-  page: PageRow & { translations?: unknown; author?: unknown },
+  page: PageRow,
   translations: PageTranslations | undefined,
 ) {
   return {
@@ -62,53 +69,27 @@ function toPageRecord(
 
 async function mapRelations(
   db: Database,
-  pages: Pick<PageRow, "id">[],
-  visibility: PageVisibility,
+  rows: (PageRow & {
+    author: PageWithRelations["author"];
+    translations: PageTranslationRow[];
+  })[],
 ): Promise<PageWithRelations[]> {
-  if (!pages.length) return [];
-  const urls = new Set<string>();
-  // 关联读取重新约束公开状态；两次查询之间撤回的页面不能继续带出正文或关联数据。
-  const rows = await observeDbOperation(
-    "page.service.relations",
-    "select",
-    () =>
-      db.query.page.findMany({
-        where: and(
-          inArray(
-            schema.page.id,
-            pages.map((page) => page.id),
-          ),
-          visibility === "PUBLISHED_ONLY"
-            ? eq(schema.page.status, PageStatus.PUBLISHED)
-            : undefined,
-        ),
-        with: {
-          author: { columns: { id: true, name: true } },
-          translations: true,
-        },
-      }),
-  );
-  const translations = groupPageTranslations(
-    rows.flatMap((row) => row.translations),
-  );
-  const relationMap = new Map(rows.map((row) => [row.id, row]));
-  const visiblePages = pages.flatMap((page) => {
-    const row = relationMap.get(page.id);
-    return row ? [row] : [];
+  const localizedPages = rows.map((row) => {
+    const page = toPageRecord(
+      row,
+      groupPageTranslations(row.translations).get(row.id),
+    );
+    return {
+      page: { ...page, author: row.author ?? null },
+      urls: getLocalizedImageLinks(page.content),
+    };
   });
-  const localizedPages = visiblePages.map((page) => ({
-    ...toPageRecord(page, translations.get(page.id)),
-    author: relationMap.get(page.id)?.author ?? null,
-  }));
-  for (const page of localizedPages) {
-    for (const url of getLocalizedImageLinks(page.content)) urls.add(url);
-  }
-  const urlList = [...urls];
+  const urlList = [...new Set(localizedPages.flatMap(({ urls }) => urls))];
   const medias = await readMediaByUrls(db, urlList, "page.service.images");
   const imageMap = new Map(medias.map((media) => [media.url, media]));
-  return localizedPages.map((page) => ({
+  return localizedPages.map(({ page, urls }) => ({
     ...page,
-    imagesInContent: getLocalizedImageLinks(page.content)
+    imagesInContent: urls
       .map((url) => imageMap.get(url))
       .filter((image): image is typeof schema.media.$inferSelect =>
         Boolean(image),
@@ -158,33 +139,35 @@ function pageListQuery(input: PageInput, visibility: PageVisibility) {
   return { page, limit, where, order };
 }
 
+async function countPages(db: Database, where: SQL | undefined) {
+  const rows = await observeDbOperation("page.service.count", "select", () =>
+    db
+      .select({ count: sql<number>`count(*)`.as("count") })
+      .from(schema.page)
+      .where(where),
+  );
+  return Number(rows[0]?.count) || 0;
+}
+
 export async function listPages(
   db: Database,
   input: PageInput,
   visibility: PageVisibility,
 ) {
   const { page, limit, where, order } = pageListQuery(input, visibility);
-  const [list, countRows] = await Promise.all([
+  const [rows, total] = await Promise.all([
     observeDbOperation("page.service.list", "select", () =>
-      db
-        .select({ id: schema.page.id })
-        .from(schema.page)
-        .where(where)
-        .orderBy(order)
-        .limit(limit)
-        .offset((page - 1) * limit),
+      db.query.page.findMany({
+        where,
+        orderBy: order,
+        limit,
+        offset: (page - 1) * limit,
+        with: pageRelations,
+      }),
     ),
-    observeDbOperation("page.service.count", "select", () =>
-      db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.page)
-        .where(where),
-    ),
+    countPages(db, where),
   ]);
-  return {
-    list: await mapRelations(db, list, visibility),
-    total: Number(countRows[0]?.count) || 0,
-  };
+  return { list: await mapRelations(db, rows), total };
 }
 
 /** 后台表格只读取标题和行操作所需字段，不装配正文或媒体。 */
@@ -194,7 +177,7 @@ export async function listPageSummaries(
   visibility: PageVisibility,
 ): Promise<{ list: PageListItem[]; total: number }> {
   const { page, limit, where, order } = pageListQuery(input, visibility);
-  const [rows, counts] = await Promise.all([
+  const [rows, total] = await Promise.all([
     observeDbOperation("page.service.list", "select", () =>
       db.query.page.findMany({
         columns: {
@@ -216,12 +199,7 @@ export async function listPageSummaries(
         },
       }),
     ),
-    observeDbOperation("page.service.count", "select", () =>
-      db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.page)
-        .where(where),
-    ),
+    countPages(db, where),
   ]);
   return {
     list: rows.map((row) => ({
@@ -246,7 +224,7 @@ export async function listPageSummaries(
       ),
       author: row.author ?? null,
     })),
-    total: Number(counts[0]?.count) || 0,
+    total,
   };
 }
 
@@ -257,7 +235,7 @@ export async function listPageMenuOptions(
   visibility: PageVisibility,
 ): Promise<{ list: PageMenuOption[]; total: number }> {
   const { page, limit, where, order } = pageListQuery(input, visibility);
-  const [rows, counts] = await Promise.all([
+  const [rows, total] = await Promise.all([
     observeDbOperation("page.service.list", "select", () =>
       db.query.page.findMany({
         columns: { id: true, createdAt: true, updatedAt: true },
@@ -268,12 +246,7 @@ export async function listPageMenuOptions(
         with: { translations: { columns: { locale: true, title: true } } },
       }),
     ),
-    observeDbOperation("page.service.count", "select", () =>
-      db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(schema.page)
-        .where(where),
-    ),
+    countPages(db, where),
   ]);
   return {
     list: rows.map((row) => ({
@@ -285,7 +258,7 @@ export async function listPageMenuOptions(
         (translation) => translation.title,
       ),
     })),
-    total: Number(counts[0]?.count) || 0,
+    total,
   };
 }
 
@@ -301,10 +274,7 @@ export async function getPage(
         visibility === "ALL"
           ? idFilter
           : and(idFilter, eq(schema.page.status, PageStatus.PUBLISHED)),
-      with: {
-        author: { columns: { id: true, name: true } },
-        translations: true,
-      },
+      with: pageRelations,
     }),
   );
   if (!page) return null;
@@ -342,12 +312,6 @@ export async function listPublishedPageSitemapEntries(
   );
 }
 
-export async function countPublishedPages(db: Database) {
-  const rows = await observeDbOperation("page.service.count", "select", () =>
-    db
-      .select({ count: sql<number>`count(*)`.as("count") })
-      .from(schema.page)
-      .where(eq(schema.page.status, PageStatus.PUBLISHED)),
-  );
-  return Number(rows[0]?.count) || 0;
+export function countPublishedPages(db: Database) {
+  return countPages(db, eq(schema.page.status, PageStatus.PUBLISHED));
 }

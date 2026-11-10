@@ -1,5 +1,6 @@
 import { test as base, expect, type BrowserContext } from "@playwright/test";
 import { assertSafeE2ESeedTarget } from "../../../scripts/e2e-seed-policy";
+import { pageSmokeAdmin, turnstile } from "../fixtures/auth.json";
 
 /** Real password sign-in, once per worker. Each test gets a fresh browser context.
  * Only the local seed account is used; no role/session/data responses are mocked.
@@ -19,11 +20,8 @@ export const test = base.extend<
       const request = await playwright.request.newContext({ baseURL });
       try {
         const response = await request.post("/api/auth/sign-in/username", {
-          data: {
-            username: "page-smoke-admin",
-            password: "page-smoke-test-only",
-          },
-          headers: { "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX" },
+          data: pageSmokeAdmin,
+          headers: { "x-captcha-response": turnstile.response },
         });
         await expect(response).toBeOK();
         expect((await response.json()).user.level).toBe("ADMIN");

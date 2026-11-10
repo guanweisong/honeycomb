@@ -37,6 +37,8 @@ vi.mock("@/lib/auth/passkey-config", () => ({
 }));
 vi.mock("@/app/auth/auth-hooks", () => ({
   createAuthDatabaseHooks: () => ({}),
+  hideDisabledAccountSession: vi.fn(),
+  rejectDisabledAccountSession: vi.fn(),
 }));
 vi.mock("@/lib/observability/server/registry", () => ({
   getLogger: () => captured.logger,

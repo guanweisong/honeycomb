@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import type { PostDelete } from "@/features/post/types/post.delete";
-import type { PostListQueryInput } from "@/features/post/types/post.list-query";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import type { AdminPostListItem } from "@/features/post/types/post.read-model";
@@ -29,12 +29,9 @@ export default function PostListClient() {
   const canCreatePost = useCan(Permission.postCreate);
   const canUpdatePost = useCan(Permission.postUpdate);
   const canDeletePost = useCan(Permission.postDelete);
-  const [selectedRows, setSelectedRows] = useState<AdminPostListItem[]>([]);
+  const tableState = useAdminTableState();
   const [deleteItems, setDeleteItems] = useState<PostDelete["items"] | null>(
     null,
-  );
-  const [searchParams, setSearchParams] = useState<PostListQueryInput>(() =>
-    PostListQuerySchema.parse({ page: 1, limit: 20 }),
   );
   const utils = trpc.useUtils();
   const prefetchDetail = (id: string) => {
@@ -44,9 +41,10 @@ export default function PostListClient() {
     );
   };
   const { data, isFetching, isError, refetch } = trpc.post.adminIndex.useQuery(
-    searchParams,
+    PostListQuerySchema.parse(tableState.requestState.requestParams),
     adminListQueryOptions,
   );
+  const selectedRows = tableState.getSelectedRows(data?.list);
   const destroyPost = trpc.post.destroy.useMutation({
     // Mark every filter stale; the existing flow refreshes the current list once.
     onSuccess: () =>
@@ -72,21 +70,19 @@ export default function PostListClient() {
     if (!deleteItems) return false;
     const result = await handleDeleteItem(deleteItems);
     if (result !== "success") return false;
-    setSelectedRows([]);
+    tableState.clearSelection();
     return true;
   };
 
   return (
     <>
       <DataTable<AdminPostListItem>
-        getRowId={(row) => row.id}
+        getRowId={tableState.getRowId}
+        requestState={tableState.requestState}
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
-        onChange={(params) =>
-          setSearchParams(PostListQuerySchema.parse(params))
-        }
         columns={postListTableColumns}
         isFetching={isFetching}
         error={isError}
@@ -94,8 +90,8 @@ export default function PostListClient() {
           void refetch();
         }}
         selectableRows={canDeletePost}
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
+        selectedRowIds={tableState.selectedRowIds}
+        onSelectedRowIdsChange={tableState.setSelectedRowIds}
         toolBar={(table) => (
           <div className="flex justify-between">
             <div className="flex gap-1">

@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { installTurnstileWidgetFixture } from "./auth";
+import { pageSmokeAdmin } from "../fixtures/auth.json";
 import { assertSafeE2ESeedTarget } from "../../../scripts/e2e-seed-policy";
 
 test("@regression login form establishes a real session used by protected navigation", async ({
@@ -17,34 +19,17 @@ test("@regression login form establishes a real session used by protected naviga
   }
   // Only the third-party widget is a fixture. Credential transport, cookies,
   // session lookup, Server Component authorization and the destination are real.
-  await page.addInitScript(() => {
-    Object.defineProperty(window, "turnstile", {
-      value: {
-        ready: (callback: () => void) => callback(),
-        render: (
-          _element: unknown,
-          options: { callback?: (token: string) => void },
-        ) => {
-          setTimeout(() => options.callback?.("XXXX.DUMMY.TOKEN.XXXX"), 0);
-          return "fixture-widget";
-        },
-        reset: () => {},
-        remove: () => {},
-        getResponse: () => "XXXX.DUMMY.TOKEN.XXXX",
-      },
-    });
-  });
-  await page.route("https://challenges.cloudflare.com/**", (route) =>
-    route.fulfill({ contentType: "application/javascript", body: "" }),
-  );
+  await installTurnstileWidgetFixture(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/admin/dashboard");
   await expect(page).toHaveURL(/\/admin\/login$/);
   await expect(page.getByTestId("admin-sidebar")).toHaveCount(0);
   const login = page.getByRole("button", { name: "登录", exact: true });
   await expect(login).toBeEnabled();
-  await page.getByLabel("用户名", { exact: true }).fill("page-smoke-admin");
-  await page.getByLabel("密码", { exact: true }).fill("page-smoke-test-only");
+  await page
+    .getByLabel("用户名", { exact: true })
+    .fill(pageSmokeAdmin.username);
+  await page.getByLabel("密码", { exact: true }).fill(pageSmokeAdmin.password);
   const signedIn = page.waitForResponse(
     (response) =>
       new URL(response.url()).pathname === "/api/auth/sign-in/username" &&
@@ -63,7 +48,7 @@ test("@regression login form establishes a real session used by protected naviga
   ).toBe(true);
   const session = await context.request.get("/api/auth/get-session");
   await expect(session).toBeOK();
-  expect((await session.json()).user.username).toBe("page-smoke-admin");
+  expect((await session.json()).user.username).toBe(pageSmokeAdmin.username);
   await page.reload();
   await expect(page).toHaveURL(/\/admin\/dashboard$/);
   await expect(page.getByTestId("admin-sidebar")).toBeVisible();

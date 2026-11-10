@@ -9,6 +9,10 @@ import type { PageWithRelations as PageViewModel } from "@/features/page/types/p
 import type { PageEditorForm } from "@/app/admin/(dashboard)/page/edit/components/PageEditorForm";
 import type { PageEditorActionButtons } from "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons";
 import { AdminLayoutHeaderContext } from "@/app/admin/components/AdminLayout/layout-context";
+import {
+  readPageCreationAttempt,
+  writePageCreationAttempt,
+} from "@/app/admin/(dashboard)/page/edit/components/page-draft";
 
 type EditorDetail = Pick<
   PageViewModel,
@@ -144,6 +148,7 @@ describe("PageEditorPage", () => {
     vi.resetAllMocks();
     cache = createAdminListCache("page");
     localStorage.clear();
+    sessionStorage.clear();
     mocks.confirmedCreation = null;
     mocks.searchId = null;
     mocks.queryError = null;
@@ -182,6 +187,33 @@ describe("PageEditorPage", () => {
   async function save() {
     await act(async () => container.querySelector("button")?.click());
   }
+
+  it("does not submit incomplete create input", async () => {
+    await render(null);
+    await save();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(readPageCreationAttempt(mocks.actorId)).toBeNull();
+    expect(container.querySelector("button")?.disabled).toBe(false);
+  });
+
+  it("rejects a locally invalid create command before storing or sending it", async () => {
+    await render(null);
+    await act(async () => {
+      requireDefined(mocks.form).setValue("title", originalDetail.title);
+      requireDefined(mocks.form).setValue("content", originalDetail.content);
+    });
+    const uuid = vi
+      .spyOn(crypto, "randomUUID")
+      .mockReturnValue("invalid-token");
+    try {
+      await save();
+    } finally {
+      uuid.mockRestore();
+    }
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(readPageCreationAttempt(mocks.actorId)).toBeNull();
+    expect(mocks.error).toHaveBeenCalledWith("提交失败，请检查表单内容");
+  });
 
   it.each(["create", "update"])(
     "invalidates every fresh page list after %s",
@@ -528,6 +560,7 @@ describe("PageEditorPage", () => {
         "已保存，列表待刷新，请勿重复提交",
       );
       expect(mocks.error).not.toHaveBeenCalled();
+      expect(mocks.push).not.toHaveBeenCalled();
     },
   );
 
@@ -597,10 +630,21 @@ describe("PageEditorPage", () => {
       "下一页未保存标题",
     );
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.success).not.toHaveBeenCalled();
+    expect(mocks.warning).not.toHaveBeenCalled();
+    expect(await cache.readLists()).toEqual([
+      { title: "Saved title" },
+      { title: "Saved title" },
+    ]);
   });
   it("keeps StrictMode A → B → A edits when the first visit finishes saving", async () => {
     const pending = Promise.withResolvers<{ id: string; version: number }>();
-    mocks.update.mockReturnValueOnce(pending.promise);
+    const next = Promise.withResolvers<{ id: string; version: number }>();
+    mocks.update
+      .mockReturnValueOnce(pending.promise)
+      .mockReturnValueOnce(next.promise);
+    mocks.refetch.mockResolvedValue({ isSuccess: true });
     const renderStrict = async (id: string) => {
       mocks.searchId = id;
       mocks.detail = { ...originalDetail, id };
@@ -618,6 +662,8 @@ describe("PageEditorPage", () => {
     await renderStrict("234567890123456789012345");
     await renderStrict(pageId);
     await editTitle("return visit");
+    expect(container.querySelector("button")?.disabled).toBe(false);
+    await save();
     await act(async () => pending.resolve({ id: pageId, version: 1 }));
     expect(requireDefined(mocks.form).getValues("title.zh")).toBe(
       "return visit",
@@ -625,11 +671,53 @@ describe("PageEditorPage", () => {
     expect(requireDefined(mocks.form).formState.isDirty).toBe(true);
     expect(mocks.refetch).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
-    await save();
+    expect(container.querySelector("button")?.disabled).toBe(true);
     expect(mocks.update).toHaveBeenCalledTimes(2);
     expect(mocks.update).toHaveBeenLastCalledWith(
       expect.objectContaining({ expectedVersion: 0 }),
     );
+    await act(async () => next.resolve({ id: pageId, version: 2 }));
+    expect(mocks.refetch).toHaveBeenCalledOnce();
+    expect(mocks.success).toHaveBeenCalledOnce();
+    expect(container.querySelector("button")?.disabled).toBe(false);
+  });
+
+  it("suppresses save feedback after unmounting during the detail refresh", async () => {
+    mocks.detail = originalDetail;
+    const refresh = Promise.withResolvers<{ isSuccess: boolean }>();
+    mocks.refetch.mockReturnValue(refresh.promise);
+    await render();
+    await save();
+    expect(mocks.refetch).toHaveBeenCalledOnce();
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await act(async () => refresh.resolve({ isSuccess: true }));
+    expect(mocks.success).not.toHaveBeenCalled();
+  });
+
+  it("releases the old save when a cached editor is hidden and revealed", async () => {
+    mocks.detail = originalDetail;
+    mocks.searchId = pageId;
+    const pending = Promise.withResolvers<{ id: string; version: number }>();
+    mocks.update.mockReturnValueOnce(pending.promise);
+    const show = (mode: "visible" | "hidden") =>
+      act(async () =>
+        root.render(
+          <React.Activity mode={mode}>
+            <LayoutHarness />
+          </React.Activity>,
+        ),
+      );
+    await show("visible");
+    await save();
+    expect(container.querySelector("button")?.disabled).toBe(true);
+    await show("hidden");
+    await show("visible");
+    expect(container.querySelector("button")?.disabled).toBe(false);
+    await save();
+    await act(async () => pending.resolve({ id: pageId, version: 1 }));
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+    expect(mocks.refetch).toHaveBeenCalledOnce();
   });
 
   it("keeps the independent version after a dirty refetch and refreshes header closures after save", async () => {
@@ -661,7 +749,7 @@ describe("PageEditorPage", () => {
     expect(mocks.success).not.toHaveBeenCalled();
   });
 
-  it("does not replay an unknown creation on remount and retries only its frozen input", async () => {
+  it("recovers its frozen input after another tab starts a separate creation", async () => {
     await render(null);
     await act(async () => {
       requireDefined(mocks.form).setValue("title", originalDetail.title, {
@@ -673,10 +761,14 @@ describe("PageEditorPage", () => {
     });
     mocks.create.mockRejectedValueOnce(new Error("response lost"));
     await save();
-    const frozen = mocks.create.mock.calls[0]?.[0];
-    expect(frozen.creationToken).toBeTruthy();
+    const frozen = requireDefined(readPageCreationAttempt(mocks.actorId));
     await editTitle("later input");
     await act(async () => root.unmount());
+    const otherTab = { ...frozen, creationToken: crypto.randomUUID() };
+    const selectionKey = "honeycomb:draft:page:draft-user:creation-attempt";
+    sessionStorage.removeItem(selectionKey);
+    expect(writePageCreationAttempt(mocks.actorId, otherTab)).toBe(true);
+    sessionStorage.setItem(selectionKey, frozen.creationToken);
     root = createRoot(container);
     await render(null);
     expect(mocks.create).toHaveBeenCalledTimes(1);
@@ -688,6 +780,9 @@ describe("PageEditorPage", () => {
     await act(async () => retry?.click());
     expect(mocks.create).toHaveBeenLastCalledWith(frozen);
     expect(mocks.push).toHaveBeenCalledWith(`/admin/page/edit?id=${pageId}`);
+    expect(
+      readPageCreationAttempt(mocks.actorId, otherTab.creationToken),
+    ).toEqual(otherTab);
   });
   it("keeps new typing during a creation and backs it up before navigation", async () => {
     await render(null);
@@ -811,17 +906,17 @@ describe("PageEditorPage", () => {
   });
 });
 
-vi.mock("@/app/admin/(dashboard)/page/edit/components/use-page-creation-result", async () => {
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
   const { trpc } = await import("@/lib/trpc/client/trpc");
   return {
-    usePageCreationResult: (
-      creationToken: string,
-      _actorId: string | undefined,
-      enabled: boolean,
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
     ) =>
-      trpc.page.creationResult.useQuery(
-        { creationToken },
-        { enabled, retry: false },
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
       ),
   };
 });

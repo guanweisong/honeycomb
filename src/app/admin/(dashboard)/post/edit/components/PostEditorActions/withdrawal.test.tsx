@@ -45,7 +45,7 @@ it("waits for withdrawal and keeps its dialog open on failure until a successful
         ),
       );
     await act(async () => confirmButton().click());
-    expect(submit).toHaveBeenCalledWith("DRAFT", "update");
+    expect(submit).toHaveBeenCalledWith("DRAFT");
     expect(confirmButton().disabled).toBe(true);
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
 

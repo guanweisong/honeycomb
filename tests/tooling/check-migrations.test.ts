@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { withTestDatabase } from "@tests/helpers/local-test-database";
 
 import {
   findMigrationGovernanceErrors,
@@ -122,6 +123,49 @@ describe("migration governance checker", () => {
     );
   });
 
+  it("detects drift in a generated index key without collapsing string literals", async () => {
+    await withTestDatabase(async (client) => {
+      await client.execute(
+        "CREATE TABLE sample (email text, `email_key` text GENERATED ALWAYS AS (email || ' ') VIRTUAL)",
+      );
+      await client.execute("CREATE INDEX email_key_idx ON sample (email_key)");
+      const [table] = (await inspectSchema(client)).tables;
+      if (!table) throw new Error("Expected the generated-column fixture");
+      expect(table.columns).toContainEqual(
+        expect.objectContaining({
+          name: "email_key",
+          generated: "virtual",
+        }),
+      );
+      const snapshot = {
+        columns: {
+          email_key: {
+            name: "email_key",
+            type: "text",
+            notNull: false,
+            primaryKey: false,
+            generated: { as: "(email || '  ')", type: "virtual" as const },
+          },
+        },
+        indexes: {
+          email_key_idx: {
+            name: "email_key_idx",
+            columns: ["email_key"],
+            isUnique: false,
+          },
+        },
+        foreignKeys: {},
+        checkConstraints: {},
+        compositePrimaryKeys: {},
+      };
+      expect(findSnapshotTableErrors(table, snapshot)).toEqual([
+        "Migration replay generated column differs for sample.email_key",
+      ]);
+      snapshot.columns.email_key.generated.as = "(email || ' ')";
+      expect(findSnapshotTableErrors(table, snapshot)).toEqual([]);
+    });
+  });
+
   it("force-stops a migration child that ignores the graceful signal", async () => {
     const child = spawn(
       process.execPath,
@@ -191,7 +235,7 @@ describe("migration governance checker", () => {
   it("rejects journal entries whose SQL file is missing", () => {
     expect(
       findMigrationGovernanceErrors({
-        journalEntries: [{ idx: 0, tag: "0000_production_baseline" }],
+        journalEntries: [{ idx: 0, tag: "0000_production_baseline", when: 1 }],
         migrationFiles: [],
         snapshotFiles: [],
         trackedFiles: [],
@@ -201,10 +245,37 @@ describe("migration governance checker", () => {
     );
   });
 
+  it("rejects equal or descending Drizzle migration timestamps", () => {
+    const names = ["0000_baseline", "0001_equal", "0002_older"];
+    const migrationFiles = names.map((name) => `drizzle/${name}.sql`);
+    const snapshotFiles = names.map(
+      (name) => `drizzle/meta/${name.slice(0, 4)}_snapshot.json`,
+    );
+    expect(
+      findMigrationGovernanceErrors({
+        journalEntries: names.map((tag, idx) => ({
+          idx,
+          tag,
+          when: idx < 2 ? 10 : 9,
+        })),
+        migrationFiles,
+        snapshotFiles,
+        trackedFiles: [
+          "drizzle/meta/_journal.json",
+          ...migrationFiles,
+          ...snapshotFiles,
+        ],
+      }),
+    ).toEqual([
+      "Journal timestamp for 0001_equal must be greater than the preceding entry",
+      "Journal timestamp for 0002_older must be greater than the preceding entry",
+    ]);
+  });
+
   it("allows a schema source refactor when the replayed database shape is unchanged", () => {
     expect(
       findMigrationGovernanceErrors({
-        journalEntries: [{ idx: 0, tag: "0000_production_baseline" }],
+        journalEntries: [{ idx: 0, tag: "0000_production_baseline", when: 1 }],
         migrationFiles: ["drizzle/0000_production_baseline.sql"],
         snapshotFiles: ["drizzle/meta/0000_snapshot.json"],
         trackedFiles: [
@@ -218,7 +289,7 @@ describe("migration governance checker", () => {
 
   it("rejects SQL and snapshots that are not represented in the journal", () => {
     const errors = findMigrationGovernanceErrors({
-      journalEntries: [{ idx: 0, tag: "0000_production_baseline" }],
+      journalEntries: [{ idx: 0, tag: "0000_production_baseline", when: 1 }],
       migrationFiles: [
         "drizzle/0000_production_baseline.sql",
         "drizzle/0001_extra.sql",
@@ -240,8 +311,8 @@ describe("migration governance checker", () => {
   it("rejects missing snapshots and non-contiguous or mismatched indexes", () => {
     const errors = findMigrationGovernanceErrors({
       journalEntries: [
-        { idx: 0, tag: "0000_production_baseline" },
-        { idx: 2, tag: "0001_wrong_index" },
+        { idx: 0, tag: "0000_production_baseline", when: 1 },
+        { idx: 2, tag: "0001_wrong_index", when: 2 },
       ],
       migrationFiles: [
         "drizzle/0000_production_baseline.sql",

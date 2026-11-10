@@ -36,6 +36,13 @@ vi.mock("@/app/lib/server/public-queries", () => ({
         type: "PAGE",
       },
       {
+        id: "legacy-id",
+        parent: "0",
+        path: "old/segment",
+        title: { zh: "旧分类" },
+        type: "CATEGORY",
+      },
+      {
         id: "parent-id",
         parent: "0",
         path: "parent",
@@ -117,9 +124,12 @@ vi.mock("@/app/(blog)/components/LanguageSwitcher", () => ({
   default: () => React.createElement("button", null, "语言"),
 }));
 
-vi.mock("@/app/(blog)/components/features/post/public/components/PostSearch", () => ({
-  default: () => React.createElement("button", null, "搜索"),
-}));
+vi.mock(
+  "@/app/(blog)/components/features/post/public/components/PostSearch",
+  () => ({
+    default: () => React.createElement("button", null, "搜索"),
+  }),
+);
 
 import Header from "@/app/(blog)/components/Header/index";
 
@@ -136,6 +146,14 @@ describe("blog Header", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("uses a single stable segment for a legacy category path", async () => {
+    await act(async () => root.render(await Header()));
+    expect(
+      container.querySelector('a[href="/list/category/~legacy-id"]')
+        ?.textContent,
+    ).toBe("旧分类");
   });
 
   it("sends only navigation fields to client menu and breadcrumb components", async () => {
@@ -194,6 +212,7 @@ describe("blog Header", () => {
       "/list/category",
       "/friend-links",
       "/pages/page-1",
+      "/list/category/~legacy-id",
       "/list/category/parent",
     ]);
     expect(navigation?.querySelector("ul, button")).toBeNull();
@@ -204,7 +223,7 @@ describe("blog Header", () => {
       container
         .querySelector("[data-breadcrumb-count]")
         ?.getAttribute("data-breadcrumb-count"),
-    ).toBe("6");
+    ).toBe("7");
     expect(container.textContent).toContain("主题");
     expect(container.textContent).toContain("语言");
     expect(container.textContent).toContain("搜索");

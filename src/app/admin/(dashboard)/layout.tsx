@@ -30,7 +30,7 @@ async function AuthenticatedDashboard({
 
   return (
     <AdminProviders initialUser={user}>
-      <AdminClientShell user={user}>{children}</AdminClientShell>
+      <AdminClientShell>{children}</AdminClientShell>
     </AdminProviders>
   );
 }

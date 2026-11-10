@@ -18,6 +18,7 @@ import { TagType } from "@/features/tag/types/tag.type";
 import { createMediaRepository } from "@/features/media/server/media-repository";
 import { destroyMedia } from "@/features/media/server/media-delete";
 import { UserLevel } from "@/features/user/types/user.level";
+import { MultiLangEnum } from "@/lib/i18n/i18n";
 import { UserStatus } from "@/features/user/types/user.status";
 
 vi.mock("@/lib/observability/server", () => ({
@@ -142,6 +143,47 @@ describe("media deletion outcomes and related post versions", () => {
       expect(storage.headObject).not.toHaveBeenCalled();
       expect(cache.invalidate).not.toHaveBeenCalled();
     }));
+  it("finds embedded references beyond the first batch and never reaches storage", () =>
+    withDatabase(async (db) => {
+      await db.insert(schema.media).values({
+        id: "embedded",
+        key: "embedded.jpg",
+        name: "embedded",
+        size: 1,
+        type: "image/jpeg",
+        url: "https://assets.example.test/embedded.jpg",
+      });
+      const ids = Array.from(
+        { length: 70 },
+        (_, index) => `page-${index.toString().padStart(2, "0")}`,
+      );
+      await db
+        .insert(schema.page)
+        .values(ids.map((id) => ({ id, authorId: "author" })));
+      await db.insert(schema.pageTranslation).values(
+        ids.map((pageId, index) => ({
+          pageId,
+          locale: MultiLangEnum.En,
+          title: "fixture",
+          content:
+            index === ids.length - 1
+              ? '<img src="https://assets.example.test/embedded.jpg">'
+              : "<p>no image</p>",
+        })),
+      );
+      const storage = { deleteObjects: vi.fn(), headObject: vi.fn() };
+      await expect(
+        destroyMedia(
+          createMediaRepository(db),
+          storage,
+          ["embedded"],
+          invalidator(),
+          "author",
+          true,
+        ),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(storage.deleteObjects).not.toHaveBeenCalled();
+    }));
   it("preserves ordinary row and unrelated covers after storage success and database rollback", () =>
     withDatabase(async (db, client) => {
       await db.insert(schema.media).values({
@@ -183,9 +225,10 @@ describe("media deletion outcomes and related post versions", () => {
       ).toMatchObject({
         key: "unused.jpg",
       });
-      expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith([
-        "unused.jpg",
-      ]);
+      expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+        ["unused.jpg"],
+        expect.any(AbortSignal),
+      );
       expect(cache.invalidate).not.toHaveBeenCalled();
     }));
   it("does not repeat storage deletion when row deletion commits but acknowledgement is lost", () =>

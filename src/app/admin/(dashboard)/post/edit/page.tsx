@@ -5,7 +5,6 @@ import { LocalDraftPrompt } from "@/app/admin/(dashboard)/components/LocalDraftP
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PhotoPickerModal from "@/app/admin/(dashboard)/components/PhotoPicker/index";
-import dynamic from "next/dynamic";
 import { Form } from "@/components/ui/form";
 import { AdminPageHeader } from "@/app/admin/components/AdminLayout/layout-context";
 import CategoryFormDialog from "@/app/admin/(dashboard)/components/CategoryFormDialog";
@@ -16,14 +15,6 @@ import { usePostEditor } from "@/app/admin/(dashboard)/post/edit/components/hook
 import { EditorMediaProvider } from "@/app/admin/(dashboard)/components/EditorMediaProvider/index";
 import { EditorLoadError } from "@/app/admin/(dashboard)/components/EditorLoadError";
 import LoadingState from "@/components/LoadingState";
-
-const MediaPageShell = dynamic(
-  () =>
-    import("@/app/admin/(dashboard)/components/MediaPageShell").then(
-      (module) => module.MediaPageShell,
-    ),
-  { loading: () => <LoadingState variant="region" label="正在加载媒体库…" /> },
-);
 
 function PostDetailContent() {
   const id = useSearchParams().get("id");
@@ -174,7 +165,6 @@ function PostDetailContent() {
         </Form>
 
         <PhotoPickerModal
-          pickerContent={(onSelect) => <MediaPageShell onSelect={onSelect} />}
           showPhotoPicker={showPhotoPicker}
           handlePhotoPickerOk={(media) => {
             form.setValue("coverId", media.id, { shouldDirty: true });

@@ -11,7 +11,18 @@ const values = {
   title: { en: "About", zh: "关于" },
   content: { en: "English", zh: "中文" },
   template: PageTemplate.DEFAULT,
-} satisfies SubmitOptions["values"];
+};
+const createInput = {
+  ...values,
+  creationToken,
+  status: PageStatus.DRAFT,
+} satisfies SubmitOptions["input"];
+const updateInput = {
+  ...values,
+  id: "507f1f77bcf86cd799439011",
+  expectedVersion: 3,
+  status: PageStatus.PUBLISHED,
+} satisfies SubmitOptions["input"];
 
 describe("page editor action state", () => {
   it("creates with the requested status and returns the new page id", async () => {
@@ -21,21 +32,13 @@ describe("page editor action state", () => {
 
     await expect(
       submitPageEditor({
-        pageId: undefined,
-        values: {
-          ...values,
-          creationToken: "11111111-1111-4111-8111-111111111111",
-        },
-        status: PageStatus.DRAFT,
+        input: createInput,
         create,
         update: vi.fn(),
       }),
     ).resolves.toEqual({ state: "created", id: "page-created", version: 0 });
-    expect(create).toHaveBeenCalledWith({
-      ...values,
-      creationToken: "11111111-1111-4111-8111-111111111111",
-      status: PageStatus.DRAFT,
-    });
+    expect(create).toHaveBeenCalledExactlyOnceWith(createInput);
+    expect(create.mock.calls[0]?.[0]).toBe(createInput);
   });
 
   it("updates the existing id and reports mutation failures without redirecting", async () => {
@@ -43,10 +46,7 @@ describe("page editor action state", () => {
 
     await expect(
       submitPageEditor({
-        pageId: "507f1f77bcf86cd799439011",
-        expectedVersion: 3,
-        values,
-        status: PageStatus.PUBLISHED,
+        input: updateInput,
         create: vi.fn(),
         update,
       }),
@@ -61,10 +61,7 @@ describe("page editor action state", () => {
     update.mockResolvedValue({ id: "507f1f77bcf86cd799439011", version: 4 });
     await expect(
       submitPageEditor({
-        pageId: "507f1f77bcf86cd799439011",
-        expectedVersion: 3,
-        values,
-        status: PageStatus.PUBLISHED,
+        input: updateInput,
         create: vi.fn(),
         update,
       }),
@@ -73,19 +70,6 @@ describe("page editor action state", () => {
       id: "507f1f77bcf86cd799439011",
       version: 4,
     });
-  });
-
-  it("reports local schema rejection without calling create", async () => {
-    const create = vi.fn<SubmitOptions["create"]>();
-    await expect(
-      submitPageEditor({
-        values,
-        status: PageStatus.DRAFT,
-        create,
-        update: vi.fn(),
-      }),
-    ).resolves.toEqual({ state: "error" });
-    expect(create).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -97,8 +81,7 @@ describe("page editor action state", () => {
       const create = vi.fn<SubmitOptions["create"]>().mockRejectedValue(error);
       await expect(
         submitPageEditor({
-          values: { ...values, creationToken },
-          status: PageStatus.DRAFT,
+          input: createInput,
           create,
           update: vi.fn(),
         }),
@@ -115,10 +98,7 @@ describe("page editor action state", () => {
 describe("versioned page outcomes", () => {
   it("keeps an unavailable response distinct from a rejected write", async () => {
     const result = await submitPageEditor({
-      pageId: "507f1f77bcf86cd799439011",
-      expectedVersion: 3,
-      values,
-      status: PageStatus.DRAFT,
+      input: { ...updateInput, status: PageStatus.DRAFT },
       create: vi.fn(),
       update: vi.fn().mockRejectedValue(new Error("offline")),
     });
@@ -127,10 +107,7 @@ describe("versioned page outcomes", () => {
   it("reports a concurrency conflict without discarding input", async () => {
     const update = vi.fn().mockRejectedValue({ data: { code: "CONFLICT" } });
     const result = await submitPageEditor({
-      pageId: "507f1f77bcf86cd799439011",
-      expectedVersion: 3,
-      values,
-      status: PageStatus.DRAFT,
+      input: { ...updateInput, status: PageStatus.DRAFT },
       create: vi.fn(),
       update,
     });
@@ -154,10 +131,7 @@ describe("page transport error classification", () => {
   ])("classifies code %s as %s", async (code, state) => {
     await expect(
       submitPageEditor({
-        pageId: "507f1f77bcf86cd799439011",
-        expectedVersion: 3,
-        values,
-        status: PageStatus.DRAFT,
+        input: { ...updateInput, status: PageStatus.DRAFT },
         create: vi.fn(),
         update: vi.fn().mockRejectedValue({ data: { code } }),
       }),

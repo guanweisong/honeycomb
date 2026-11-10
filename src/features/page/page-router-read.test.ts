@@ -94,10 +94,7 @@ describe("Page Router", () => {
       async (procedure) => {
         const relatedPage = { ...pageRow, author: null, translations };
         if (procedure === "index") {
-          mockDb.offset.mockResolvedValueOnce([{ id: pageRow.id }]);
-          mockDb.where
-            .mockReturnValueOnce(mockDb)
-            .mockResolvedValueOnce([{ count: 1 }]);
+          mockDb.where.mockResolvedValueOnce([{ count: 1 }]);
           mockDb.query.page.findMany.mockResolvedValueOnce([relatedPage]);
         } else {
           mockDb.query.page.findFirst.mockResolvedValueOnce(relatedPage);
@@ -141,6 +138,10 @@ describe("Page Router", () => {
           status: PageStatus.PUBLISHED,
           template: PageTemplate.DEFAULT,
           author: null,
+          authorId: "author",
+          version: 0,
+          views: 0,
+          updatedAt: null,
           createdAt: new Date(),
         },
         {
@@ -150,18 +151,14 @@ describe("Page Router", () => {
           status: PageStatus.PUBLISHED,
           template: PageTemplate.DEFAULT,
           author: null,
+          authorId: "author",
+          version: 0,
+          views: 0,
+          updatedAt: null,
           createdAt: new Date(),
         },
       ];
       const mockCount = [{ count: "2" }];
-
-      // 设置页面列表查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPages);
 
       mockDb.query.page.findMany.mockResolvedValueOnce(
         mockPages.map(({ title, content, ...page }) => ({
@@ -201,14 +198,6 @@ describe("Page Router", () => {
     it("should handle empty page list", async () => {
       const mockPages: unknown[] = [];
       const mockCount = [{ count: "0" }];
-
-      // 设置空页面列表查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPages);
 
       mockDb.query.page.findMany.mockResolvedValueOnce(mockPages);
 

@@ -21,7 +21,7 @@ jobs:
       has_test_targets: ${{ steps.classify.outputs.has_test_targets }}
       requires_production_e2e: ${{ steps.classify.outputs.requires_production_e2e }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -31,9 +31,9 @@ jobs:
         env:
           QUALITY_DIFF_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: bash scripts/classify-quality-changes.sh "$QUALITY_DIFF_BASE_SHA" "$GITHUB_SHA"
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: 1.4.4
+          bun-version-file: package.json
       - run: bun add --global @fission-ai/openspec@1.4.1
       - run: bun run quality:spec
         env:
@@ -49,38 +49,24 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - uses: ./.github/actions/setup-honeycomb
       - name: Run static and serial process checks with isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
+          initialize_fixture
           phase "Typecheck" bun run check-types
           phase "Lint" bun run lint
           phase "Check migration governance" bun run db:migrations:check
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
+          seed_fixture
           phase "Serial process tests" bun run test:unit:process
           phase "Quality workflow contract" bun run test:unit:run tests/tooling/quality-workflow.test.ts
           phase "Audit production dependencies" bun run audit:production --output dependency-audit-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: production-dependency-audit
@@ -100,35 +86,20 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - uses: ./.github/actions/setup-honeycomb
       - name: Run related feature tests with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
+          prepare_fixture
           if [[ "$QUALITY_DIFF_BASE_SHA" =~ ^0+$ ]]; then
-            phase "Full feature tests for initial commit" bun run test:unit:run || exit $?
+            phase "Full feature tests for initial commit" bun run test:unit:run --exclude=tests/tooling/quality-workflow.test.ts
           else
-            phase "Related feature tests" bun run test:unit:run --changed="$QUALITY_DIFF_BASE_SHA" || exit $?
+            phase "Related feature tests" bun run test:unit:run --exclude=tests/tooling/quality-workflow.test.ts --changed="$QUALITY_DIFF_BASE_SHA"
           fi
 
   high_risk_unit_tests:
@@ -142,32 +113,17 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - uses: ./.github/actions/setup-honeycomb
       - name: Run the full unit and integration inventory with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
-          phase "Full unit and integration tests" bun run test:unit:run
+          prepare_fixture
+          phase "Full unit and integration tests" bun run test:unit:run --exclude=tests/tooling/quality-workflow.test.ts
 
   high_risk_development_e2e:
     runs-on: ubuntu-latest
@@ -180,33 +136,18 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
+      - uses: ./.github/actions/setup-honeycomb
       - run: bunx --bun playwright install --with-deps chromium
       - name: Run development E2E with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
-          phase "Development E2E" env PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development
+          prepare_fixture
+          phase "Development E2E" env PLAYWRIGHT_PORT=3100 bun run test:e2e:development
 
   high_risk_production_e2e:
     runs-on: ubuntu-latest
@@ -219,39 +160,20 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: ./.github/actions/setup-honeycomb
         with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - uses: actions/cache@v4
-        with:
-          path: .next/cache/turbopack
-          key: next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
-          restore-keys: |
-            next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-
-      - run: bun install --frozen-lockfile
+          cache-next: "true"
       - run: bunx --bun playwright install --with-deps chromium
       - name: Run production E2E with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
-          phase "Production E2E" env PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production
+          prepare_fixture
+          phase "Production E2E" env PLAYWRIGHT_PORT=3101 bun run test:e2e:production
 
   production_build:
     runs-on: ubuntu-latest
@@ -262,38 +184,19 @@ jobs:
       AUTH_URL: https://example.test
       E2E_SEED: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: ./.github/actions/setup-honeycomb
         with:
-          bun-version: 1.4.4
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-      - uses: actions/cache@v4
-        with:
-          path: .next/cache/turbopack
-          key: next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**', 'public/**', '*config*', 'scripts/build-serwist.ts', '.github/workflows/quality.yml') }}
-          restore-keys: |
-            next-${{ runner.os }}-bun1.4.4-${{ hashFiles('bun.lock') }}-
-      - run: bun install --frozen-lockfile
+          cache-next: "true"
       - name: Build production application with an isolated fixture
         shell: bash
         run: |
           export HONEYCOMB_TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/honeycomb-test.XXXXXXXX")"
           source scripts/ci-fixture-lifecycle.sh
-          export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
-          export TURSO_TOKEN=e2e-local-only
-          phase "Initialize isolated fixture" bun scripts/e2e-seed-policy.ts --initialize
-          phase "Check fixture safety" bun scripts/e2e-seed-policy.ts
-          phase "Audit database invariants" bun run db:invariants:audit
-          phase "Migrate isolated database" bun run db:migrate
-          phase "Seed isolated database" bun run db:e2e:seed
+          prepare_fixture
           phase "Production build" bun run build
 
   verify:

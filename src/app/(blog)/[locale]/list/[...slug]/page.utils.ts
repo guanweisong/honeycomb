@@ -1,3 +1,8 @@
+import {
+  findCategoryRouteItem,
+  getCategoryHref,
+  getCategoryRouteSegments,
+} from "@/app/(blog)/lib/category-route";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import {
   getPublicAuthor,
@@ -8,7 +13,7 @@ import type { MultiLangEnum } from "@/lib/i18n/i18n";
 import { PostStatus } from "@/features/post/types/post.status";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 const PAGE_SIZE = 10;
 
@@ -43,44 +48,49 @@ export async function resolveListContext({
   switch (type) {
     case "category": {
       const paths = slug.slice(1);
-      const items = paths.length ? (await getPublicMenu()).list : [];
-      const category = paths.length
-        ? items.find((item) => item.path === typeValue)
-        : undefined;
-      if (paths.length) {
-        if (!category || paths.some((path) => !path)) notFound();
-        // Use the same canonical ancestry as Header and sitemap, skipping
-        // PAGE/CUSTOM ancestors whose paths are null.
-        const canonicalPaths = getCurrentPathOfMenu({
-          id: category.id,
-          menu: items,
-        });
-        if (
-          canonicalPaths.length !== paths.length ||
-          canonicalPaths.some((path, index) => path !== paths[index])
-        )
-          notFound();
+      if (paths.length === 0) {
+        typeName = "";
+        break;
       }
-      if (category) queryParams = { ...queryParams, categoryId: category.id };
-      typeName = category?.title?.[locale] ?? "";
+      if (paths.some((path) => !path)) notFound();
+      const items = (await getPublicMenu()).list;
+      const matches = (expected: string[]) =>
+        expected.length === paths.length &&
+        expected.every((path, index) => path === paths[index]);
+      const category = findCategoryRouteItem(items, paths);
+      if (!category) {
+        const legacy = items.find(
+          (item) =>
+            item.path === typeValue &&
+            matches(getCurrentPathOfMenu({ id: item.id, menu: items })),
+        );
+        if (!legacy) notFound();
+        redirect(
+          `/${locale}${getCategoryHref(getCategoryRouteSegments({ id: legacy.id, menu: items }))}`,
+        );
+      }
+      queryParams = { ...queryParams, categoryId: category.id };
+      typeName = category.title?.[locale] ?? "";
       break;
     }
     case "tags": {
       const matchedTag = await getPublicTag(typeValue);
+      if (!matchedTag) notFound();
       queryParams = {
         ...queryParams,
-        tagId: matchedTag?.id ?? typeValue,
+        tagId: matchedTag.id,
       };
-      typeName = matchedTag?.name?.[locale] ?? "";
+      typeName = matchedTag.name?.[locale] ?? "";
       break;
     }
     case "authors": {
       const matchedAuthor = await getPublicAuthor(typeValue);
+      if (!matchedAuthor) notFound();
       queryParams = {
         ...queryParams,
-        authorId: matchedAuthor?.id ?? typeValue,
+        authorId: matchedAuthor.id,
       };
-      typeName = matchedAuthor?.name ?? "";
+      typeName = matchedAuthor.name ?? "";
       break;
     }
   }

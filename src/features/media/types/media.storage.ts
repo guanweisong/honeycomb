@@ -11,7 +11,8 @@ export interface MediaStorage {
   ): Promise<void>;
   headObject(
     key: string,
+    signal?: AbortSignal,
   ): Promise<{ size: number | undefined; type: string | undefined } | null>;
   readObject(key: string, maxBytes: number): Promise<Uint8Array>;
-  deleteObjects(keys: readonly string[]): Promise<void>;
+  deleteObjects(keys: readonly string[], signal?: AbortSignal): Promise<void>;
 }

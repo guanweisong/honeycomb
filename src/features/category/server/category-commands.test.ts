@@ -68,25 +68,28 @@ describe("Category server operations", () => {
 
   it("拒绝分类使用已存在的路径", async () => {
     const db = createMockDb();
-    db.limit
-      .mockResolvedValueOnce([row])
-      .mockResolvedValueOnce([{ id: "taken" }]);
+    db.limit.mockResolvedValue([row]);
+    db.transaction.mockRejectedValue(
+      new Error("Failed query", {
+        cause: new Error("UNIQUE constraint failed: category.path"),
+      }),
+    );
+    const cache = invalidator();
     await expect(
-      updateCategory(
-        asMockDatabase(db),
-        { id: "a", path: "taken" },
-        invalidator(),
-      ),
-    ).rejects.toThrow("分类路径已经存在");
-    expect(db.transaction).not.toHaveBeenCalled();
+      updateCategory(asMockDatabase(db), { id: "a", path: "taken" }, cache),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "分类路径已经存在",
+    });
+    expect(db.select).toHaveBeenCalledTimes(1);
+    expect(cache.invalidate).not.toHaveBeenCalled();
   });
 
   it("通过校验后更新分类", async () => {
     const db = createMockDb();
-    db.limit.mockResolvedValueOnce([row]).mockResolvedValueOnce([]);
+    db.limit.mockResolvedValueOnce([row]);
     db.returning.mockResolvedValue([row]);
     db.where
-      .mockReturnValueOnce(db)
       .mockReturnValueOnce(db)
       .mockReturnValueOnce(db)
       .mockResolvedValueOnce(translations);

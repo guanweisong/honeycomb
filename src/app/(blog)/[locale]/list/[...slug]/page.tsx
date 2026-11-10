@@ -9,14 +9,13 @@ import {
 } from "@/app/lib/server/public-queries";
 import { Metadata } from "next";
 import {
-  createLocalizedAlternates,
-  defaultSocialImage,
+  createContentMetadata,
+  DynamicMetadataMarker,
 } from "@/app/(blog)/lib/metadata";
 import {
   resolveListContext,
   resolveListTitle,
 } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
-import { connection } from "next/server";
 import LoadingState from "@/components/LoadingState";
 
 /**
@@ -38,49 +37,64 @@ export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
   );
 }
 
-async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  const settingPromise = getPublicSetting();
-  const translationsPromise = props.params.then(({ locale }) =>
-    getTranslations({
-      locale: normalizeMultiLangLocale(locale),
-      namespace: "PostList",
-    }),
+function getListRouteData(
+  params: PageProps<"/[locale]/list/[...slug]">["params"],
+) {
+  const route = params.then(({ locale, slug }) => ({
+    locale: normalizeMultiLangLocale(locale),
+    slug: slug ?? [],
+  }));
+  const context = route.then(resolveListContext);
+  const translations = route.then(({ locale }) =>
+    getTranslations({ locale, namespace: "PostList" }),
   );
-  const contextPromise = props.params.then((params) =>
-    resolveListContext({
-      locale: normalizeMultiLangLocale(params.locale),
-      slug: params.slug,
-    }),
-  );
-  const postPromise = contextPromise.then(({ queryParams }) =>
-    getPublicPostList(queryParams),
-  );
-  const [setting, t, { queryParams, type, typeName }, post, params] =
-    await Promise.all([
-      settingPromise,
-      translationsPromise,
-      contextPromise,
-      postPromise,
-      props.params,
-    ]);
-  const locale = normalizeMultiLangLocale(params.locale);
-  const title = resolveListTitle({
+  const presentation = Promise.all([
+    route,
+    context,
+    translations,
+    getPublicSetting(),
+  ]).then(([{ locale, slug }, { type, typeName }, t, setting]) => ({
+    locale,
+    slug,
     type,
-    typeName,
-    siteName: setting?.siteName?.[locale],
-    tagTitle: (tag) => t("postUnderTag", { tag }),
-    authorTitle: (author) => t("postUnderAuthor", { author }),
-  });
+    title: resolveListTitle({
+      type,
+      typeName,
+      siteName: setting?.siteName?.[locale],
+      tagTitle: (tag) => t("postUnderTag", { tag }),
+      authorTitle: (author) => t("postUnderAuthor", { author }),
+    }),
+    description: setting?.siteSubName?.[locale],
+    emptyLabel: t("emptyTip"),
+  }));
+  return { context, presentation };
+}
+
+async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
+  const { context, presentation } = getListRouteData(props.params);
+  const [{ type, title, emptyLabel }, { queryParams, result }] =
+    await Promise.all([
+      presentation,
+      context.then(async ({ queryParams }) => ({
+        queryParams,
+        result: await getPublicPostList(queryParams),
+      })),
+    ]);
+  const { snapshotVersion, ...post } = result;
 
   return (
     <>
       {(type === "tags" || type === "authors") && (
         <div className="mb-2 lg:mb-4">{title}</div>
       )}
-      {post.list.length > 0 ? (
-        <PostList initData={post} queryParams={queryParams} />
+      {post.list.length > 0 || post.nextCursor ? (
+        <PostList
+          initData={post}
+          queryParams={queryParams}
+          snapshotVersion={snapshotVersion}
+        />
       ) : (
-        <NoData title={t("emptyTip")} />
+        <NoData title={emptyLabel} />
       )}
     </>
   );
@@ -95,60 +109,14 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
-  const settingPromise = getPublicSetting();
-  const translationsPromise = props.params.then(({ locale }) =>
-    getTranslations({
-      locale: normalizeMultiLangLocale(locale),
-      namespace: "PostList",
-    }),
-  );
-  const contextPromise = props.params.then((params) =>
-    resolveListContext({
-      locale: normalizeMultiLangLocale(params.locale),
-      slug: params.slug,
-    }),
-  );
-  const [params, setting, t, { type, typeName }] = await Promise.all([
+  const { title, description, locale, slug } = await getListRouteData(
     props.params,
-    settingPromise,
-    translationsPromise,
-    contextPromise,
-  ]);
-  const locale = normalizeMultiLangLocale(params.locale);
-  const slug = params.slug ?? [];
-  const title = resolveListTitle({
-    type,
-    typeName,
-    siteName: setting?.siteName?.[locale],
-    tagTitle: (tag) => t("postUnderTag", { tag }),
-    authorTitle: (author) => t("postUnderAuthor", { author }),
-  });
-
-  const openGraph = {
-    title: title,
-    type: "website",
-    images: [defaultSocialImage],
-    description: setting?.siteSubName?.[locale],
-  };
-
-  return {
+  ).presentation;
+  return createContentMetadata({
     title,
-    description: setting?.siteSubName?.[locale],
-    alternates: createLocalizedAlternates(
-      locale,
-      `/list/${slug.map(encodeURIComponent).join("/")}`,
-    ),
-    openGraph,
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description: setting?.siteSubName?.[locale],
-      images: [defaultSocialImage],
-    },
-  };
-}
-
-async function DynamicMetadataMarker() {
-  await connection();
-  return null;
+    description,
+    locale,
+    path: `/list/${slug.map(encodeURIComponent).join("/")}`,
+    type: "website",
+  });
 }

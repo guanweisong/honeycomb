@@ -1,28 +1,29 @@
 import React, { Suspense } from "react";
 import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
 import { PostCommentCount } from "@/app/(blog)/components/features/post/public/PostInfo";
-import Comment from "@/app/(blog)/components/features/comment/public/components/CommentClient";
+import {
+  loadOptionalPublicComments,
+  PublicCommentSection,
+} from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
 import {
-  getPublicComments,
   getPublicPageDetail,
   getPublicSetting,
   getPublicLinks,
 } from "@/app/lib/server/public-queries";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
-import { PageViewTracker } from "@/app/(blog)/components/features/page/public/PageViewTracker";
+import { ContentViewTracker } from "@/app/(blog)/components/ContentViewTracker";
 import { PageTemplate } from "@/features/page/types/page.template";
 import { cn } from "cn";
-import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";
 import { assertPublishedPage } from "@/app/(blog)/[locale]/pages/[id]/page.utils";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 import {
-  createLocalizedAlternates,
-  defaultSocialImage,
+  createContentMetadata,
+  DynamicMetadataMarker,
 } from "@/app/(blog)/lib/metadata";
 /**
  * 页面详情组件。
@@ -49,10 +50,10 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
   const locale = normalizeMultiLangLocale(rawLocale);
   const pageDetail = await getPublicPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
-  const queryCommentPromise = getPublicComments(id, MenuType.PAGE);
-  // Own early rejection while translations/links suspend. Keep the original
-  // promise rejected so the comment consumers still surface their error.
-  void queryCommentPromise.catch(() => undefined);
+  const comments = loadOptionalPublicComments(id, MenuType.PAGE);
+  // Own early rejection until the other page data finishes. The original
+  // promise still propagates any framework-controlled interruption to Next.
+  void comments.catch(() => undefined);
   const [postInfoT, linkT] = await Promise.all([
     getTranslations({ locale, namespace: "PostInfo" }),
     getTranslations({ locale, namespace: "Link" }),
@@ -80,11 +81,15 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
               />
             }
           >
-            <PostCommentCount commentsPromise={queryCommentPromise} />
+            <PostCommentCount commentsPromise={comments} />
           </Suspense>
         }
         views={
-          <PageViewTracker id={id} initialViews={publishedPage.views ?? 0} />
+          <ContentViewTracker
+            kind="page"
+            id={id}
+            initialViews={publishedPage.views ?? 0}
+          />
         }
       />
       <div className="my-3 lg:my-5">
@@ -126,18 +131,16 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
           )}
         </div>
       ) : null}
-      <Comment
-        id={id}
-        type={MenuType.PAGE}
-        queryCommentPromise={queryCommentPromise}
-      />
+      <Suspense fallback={<LoadingState variant="region" />}>
+        <PublicCommentSection
+          id={id}
+          type={MenuType.PAGE}
+          locale={locale}
+          comments={comments}
+        />
+      </Suspense>
     </>
   );
-}
-
-async function DynamicMetadataMarker() {
-  await connection();
-  return null;
 }
 
 /**
@@ -160,25 +163,11 @@ export async function generateMetadata(
 
   const title = publishedPage.title?.[local];
 
-  const openGraph = {
-    title: title,
-    type: "article",
-    description: setting?.siteName?.[local],
-  };
-
-  return {
+  return createContentMetadata({
     title,
     description: setting?.siteName?.[local],
-    alternates: createLocalizedAlternates(
-      local,
-      `/pages/${encodeURIComponent(id)}`,
-    ),
-    openGraph: { ...openGraph, images: [defaultSocialImage] },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description: setting?.siteName?.[local],
-      images: [defaultSocialImage],
-    },
-  };
+    locale: local,
+    path: `/pages/${encodeURIComponent(id)}`,
+    type: "article",
+  });
 }

@@ -1,3 +1,4 @@
+import { UserStatus } from "@/features/user/types/user.status";
 import { UserLevel } from "@/features/user/types/user.level";
 import * as schema from "@/lib/db/schema";
 import { createClient, type Client } from "@libsql/client/node";
@@ -72,10 +73,13 @@ describe("administrator credential resets", () => {
       .set({ level: UserLevel.EDITOR })
       .where(eq(schema.user.id, "target"));
 
-    const result = await createUserRepository(db).update({
-      id: "target",
-      level: UserLevel.GUEST,
-    });
+    const result = await createUserRepository(db).update(
+      {
+        id: "target",
+        level: UserLevel.GUEST,
+      },
+      UserLevel.ADMIN,
+    );
 
     expect(result.level).toBe(UserLevel.GUEST);
     expect(await db.select().from(schema.session)).toHaveLength(3);
@@ -83,10 +87,13 @@ describe("administrator credential resets", () => {
 
   it("preserves not-found errors for missing role-update targets", async () => {
     await expect(
-      createUserRepository(db).update({
-        id: "missing",
-        level: UserLevel.GUEST,
-      }),
+      createUserRepository(db).update(
+        {
+          id: "missing",
+          level: UserLevel.GUEST,
+        },
+        UserLevel.ADMIN,
+      ),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
@@ -117,14 +124,12 @@ describe("administrator credential resets", () => {
         expiresAt: new Date(now.getTime() + 60_000),
       });
       const repository = createUserRepository(db);
-      const getStatus = repository.getStatus;
-      vi.spyOn(repository, "getStatus").mockImplementationOnce(
-        async (userId) => {
-          const stale = await getStatus(userId);
-          expect(stale?.level).toBe(UserLevel.EDITOR);
-          // A competing request commits its promotion after the command's read.
-          await repository.update({ id: userId, level: UserLevel.ADMIN });
-          return stale;
+      const update = repository.update;
+      vi.spyOn(repository, "update").mockImplementationOnce(
+        async (input, actorLevel) => {
+          // Commit a competing promotion before the stale command enters its transaction.
+          await update({ id, level: UserLevel.ADMIN }, UserLevel.ADMIN);
+          return update(input, actorLevel);
         },
       );
       const cache = {
@@ -166,11 +171,14 @@ describe("administrator credential resets", () => {
     async (hasCredential) => {
       if (!hasCredential) await db.delete(schema.account);
 
-      await createUserRepository(db).update({
-        id: "target",
-        name: "Renamed",
-        password: "new-password123",
-      });
+      await createUserRepository(db).update(
+        {
+          id: "target",
+          name: "Renamed",
+          password: "new-password123",
+        },
+        UserLevel.ADMIN,
+      );
 
       const [account] = await db.select().from(schema.account);
       expect(
@@ -186,10 +194,13 @@ describe("administrator credential resets", () => {
   );
 
   it("allows a password-only reset without profile changes", async () => {
-    await createUserRepository(db).update({
-      id: "target",
-      password: "new-password123",
-    });
+    await createUserRepository(db).update(
+      {
+        id: "target",
+        password: "new-password123",
+      },
+      UserLevel.ADMIN,
+    );
 
     const [user] = await db
       .select()
@@ -202,7 +213,10 @@ describe("administrator credential resets", () => {
   });
 
   it("preserves sessions for profile-only updates", async () => {
-    await createUserRepository(db).update({ id: "target", name: "Renamed" });
+    await createUserRepository(db).update(
+      { id: "target", name: "Renamed" },
+      UserLevel.ADMIN,
+    );
 
     expect(await db.select().from(schema.session)).toHaveLength(3);
     const [account] = await db.select().from(schema.account);
@@ -215,11 +229,14 @@ describe("administrator credential resets", () => {
       SELECT RAISE(ABORT, 'session revocation rejected'); END`);
 
     await expect(
-      createUserRepository(db).update({
-        id: "target",
-        name: "Renamed",
-        password: "new-password123",
-      }),
+      createUserRepository(db).update(
+        {
+          id: "target",
+          name: "Renamed",
+          password: "new-password123",
+        },
+        UserLevel.ADMIN,
+      ),
     ).rejects.toThrow();
 
     const [account] = await db.select().from(schema.account);
@@ -259,7 +276,10 @@ describe("required persistence results", () => {
         { status: "ENABLE", level: "GUEST", [field]: "UNKNOWN" },
       ]);
       await expect(
-        createUserRepository(asMockDatabase(db)).getStatus("user"),
+        createUserRepository(asMockDatabase(db)).update(
+          { id: "user", status: UserStatus.DISABLE },
+          UserLevel.ADMIN,
+        ),
       ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
     },
   );

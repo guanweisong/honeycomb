@@ -160,6 +160,15 @@ describe.each(["link", "page"] as const)(
       await act(async () => checkbox.click());
     }
 
+    it("starts with the visible table page and size", () => {
+      expect(query()).toHaveBeenNthCalledWith(1, {
+        sortField: "updatedAt",
+        sortOrder: "desc",
+        page: 1,
+        limit: 20,
+      });
+    });
+
     it("clears hidden bulk targets when searching before replacement rows arrive", async () => {
       await selectRow();
       expect(button("批量删除").disabled).toBe(false);
@@ -291,6 +300,15 @@ describe.each(["link", "page"] as const)(
       await act(async () => render());
       expect(button("批量删除").disabled).toBe(true);
       expect(container.textContent).toContain("暂无数据");
+      mocks.links = [link("link-1")];
+      mocks.pages = [page("page-1")];
+      await act(async () => render());
+      expect(button("批量删除").disabled).toBe(true);
+      expect(
+        container
+          .querySelector('tbody button[role="checkbox"]')
+          ?.getAttribute("data-state"),
+      ).toBe("unchecked");
       expect(mocks.destroy).not.toHaveBeenCalled();
     });
   },

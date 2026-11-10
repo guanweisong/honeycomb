@@ -101,10 +101,7 @@ describe("PostEditorActions", () => {
     expect(container.textContent).toContain("保存草稿");
     await click("发布");
     await click("保存草稿");
-    expect(submitted).toEqual([
-      ["PUBLISHED", "create"],
-      ["DRAFT", "create"],
-    ]);
+    expect(submitted).toEqual([["PUBLISHED"], ["DRAFT"]]);
   });
 
   it("offers update and withdrawal for a published post", async () => {
@@ -113,10 +110,7 @@ describe("PostEditorActions", () => {
 
     await click("更新");
     await click("确认撤回");
-    expect(submitted).toEqual([
-      ["PUBLISHED", "update"],
-      ["DRAFT", "update"],
-    ]);
+    expect(submitted).toEqual([["PUBLISHED"], ["DRAFT"]]);
   });
 
   it("offers save and publish for a draft post", async () => {
@@ -125,10 +119,7 @@ describe("PostEditorActions", () => {
 
     await click("保存");
     await click("发布");
-    expect(submitted).toEqual([
-      ["DRAFT", "update"],
-      ["PUBLISHED", "update"],
-    ]);
+    expect(submitted).toEqual([["DRAFT"], ["PUBLISHED"]]);
   });
 
   it("offers save and existing-authority publish for a post awaiting audit, without withdrawal", async () => {
@@ -139,10 +130,7 @@ describe("PostEditorActions", () => {
     expect(button("撤回为草稿")).toBeUndefined();
     await click("保存待审核");
     await click("发布");
-    expect(submitted).toEqual([
-      ["TO_AUDIT", "update"],
-      ["PUBLISHED", "update"],
-    ]);
+    expect(submitted).toEqual([["TO_AUDIT"], ["PUBLISHED"]]);
   });
 
   it("keeps awaiting-audit actions disabled while pending", async () => {

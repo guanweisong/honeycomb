@@ -17,7 +17,7 @@ import {
 
 import CommentClient from "@/app/(blog)/components/features/comment/public/components/CommentClient/index";
 
-const commentPromise = Promise.resolve({ total: 0, list: [] });
+const emptyComments = { total: 0, list: [] };
 
 describe("comment draft preservation during submission", () => {
   let container: HTMLDivElement;
@@ -46,7 +46,7 @@ describe("comment draft preservation during submission", () => {
       }),
     );
     vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
-    const tree = Promise.resolve({
+    const tree = {
       total: 1,
       list: [
         {
@@ -61,14 +61,10 @@ describe("comment draft preservation during submission", () => {
           children: [],
         },
       ],
-    });
+    };
     await act(async () => {
       root.render(
-        <CommentClient
-          id="post-1"
-          type={MenuType.CATEGORY}
-          queryCommentPromise={tree}
-        />,
+        <CommentClient id="post-1" type={MenuType.CATEGORY} comments={tree} />,
       );
     });
     field("author").value = "Alice";
@@ -203,7 +199,7 @@ describe("comment draft preservation during submission", () => {
           <CommentClient
             id="post-1"
             type={MenuType.CATEGORY}
-            queryCommentPromise={commentPromise}
+            comments={emptyComments}
           />,
         ),
       );

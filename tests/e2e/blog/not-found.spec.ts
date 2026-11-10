@@ -1,13 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { BLOG_HOME_PATH, FAKE_ID } from "@tests/e2e/blog/helpers";
+import { FAKE_ID } from "@tests/e2e/blog/helpers";
 
 const missingRoutes = [
   { path: "/en/route-that-does-not-exist", unmatched: true },
   { path: "/zh/route-that-does-not-exist", unmatched: true },
+  { path: "/zh/does-not-exist.json", unmatched: true },
   { path: `/en/archives/${FAKE_ID}`, unmatched: false },
   { path: `/zh/pages/${FAKE_ID}`, unmatched: false },
   { path: "/en/pages/short", unmatched: false },
   { path: "/zh/archives/short", unmatched: false },
+  { path: `/en/list/tags/${FAKE_ID}`, unmatched: false },
+  { path: `/zh/list/authors/${FAKE_ID}`, unmatched: false },
 ];
 
 for (const { path, unmatched } of missingRoutes) {
@@ -20,27 +23,53 @@ for (const { path, unmatched } of missingRoutes) {
     // streamed their Suspense shell, in which case Next preserves HTTP 200.
     if (unmatched) expect(response!.status()).toBe(404);
     else expect([200, 404]).toContain(response!.status());
-    // The shared fallback is currently Chinese in both locales. Do not invent
-    // a localized English copy or merely render NotFound outside Next's router.
+    const locale = path.startsWith("/zh/") ? "zh" : "en";
+    const title = locale === "zh" ? "页面未找到" : "Page not found";
+    const homeLabel = locale === "zh" ? "返回首页" : "Back to home";
+    const homePath = `/${locale}/list/category`;
+    await expect(page.locator("html")).toHaveAttribute("lang", locale);
     // Next also renders an alert-role route announcer after client hydration.
     const fallback = page.getByRole("alert").filter({
-      has: page.getByRole("heading", { name: "页面未找到", exact: true }),
+      has: page.getByRole("heading", { name: title, exact: true }),
     });
     await expect(fallback).toHaveCount(1);
     await expect(
-      fallback.getByRole("heading", { name: "页面未找到", exact: true }),
+      fallback.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
-    await expect(fallback).toContainText("404：请求的页面不存在或已被移除。");
+    await expect(fallback).toContainText("404");
     await expect(
       page.locator('meta[name="robots"][content*="noindex"]').first(),
     ).toBeAttached();
-    const home = fallback.getByRole("link", { name: "返回首页", exact: true });
-    await expect(home).toHaveAttribute("href", BLOG_HOME_PATH);
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+    const home = fallback.getByRole("link", { name: homeLabel, exact: true });
+    await expect(home).toHaveAttribute("href", homePath);
     await home.click();
-    await expect(page).toHaveURL(new RegExp(`${BLOG_HOME_PATH}$`));
-    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page).toHaveURL(new RegExp(`${homePath}$`));
+    await expect(page.locator("html")).toHaveAttribute("lang", locale);
     await expect(
-      page.locator('main a[href^="/en/archives/"]').first(),
+      page.locator(`main a[href^="/${locale}/archives/"]`).first(),
     ).toBeVisible();
   });
 }
+
+test("@regression @production localized 404 and missing collection stay out of the search index", async ({
+  page,
+}) => {
+  const unmatched = await page.goto("/zh/does-not-exist.json");
+  expect(unmatched?.status()).toBe(404);
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh");
+  await expect(page.getByRole("link", { name: "返回首页" })).toHaveAttribute(
+    "href",
+    "/zh/list/category",
+  );
+
+  const missingTag = await page.goto(`/en/list/tags/${FAKE_ID}`);
+  expect([200, 404]).toContain(missingTag?.status());
+  await expect(
+    page.getByRole("heading", { name: "Page not found" }),
+  ).toBeVisible();
+  await expect(
+    page.locator('meta[name="robots"][content*="noindex"]').first(),
+  ).toBeAttached();
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+});

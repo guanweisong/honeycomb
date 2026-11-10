@@ -1,7 +1,10 @@
 import { ViewTransition } from "react";
 import Menu from "@/app/(blog)/components/Menu";
 import { Link } from "@/app/(blog)/lib/blog-navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
+import {
+  getCategoryHref,
+  getCategoryRouteSegments,
+} from "@/app/(blog)/lib/category-route";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";
 import PostSearch from "@/app/(blog)/components/features/post/public/components/PostSearch";
@@ -72,7 +75,9 @@ export default async function Header() {
             : "";
       if (data.type === MenuType.PAGE) link = `/pages/${data.id}`;
       if (data.type === MenuType.CATEGORY) {
-        link = `/list/category/${getCurrentPathOfMenu({ id: data.id, menu: menu.list }).join("/")}`;
+        link = getCategoryHref(
+          getCategoryRouteSegments({ id: data.id, menu: menu.list }),
+        );
       }
       return { label: data.title?.[language] ?? "", link };
     });

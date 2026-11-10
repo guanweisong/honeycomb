@@ -31,6 +31,8 @@ describe("feature persistence contracts", () => {
             ? [{ id, version: 0 }]
             : [],
       );
+      if (table === schema.page)
+        read.where.mockResolvedValue([{ id, version: 0 }]);
       return read;
     });
     const input = {

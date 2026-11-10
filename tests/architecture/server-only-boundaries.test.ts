@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { readFileSync, rmSync } from "node:fs";
 import { sourceFiles } from "@tests/helpers/source-files";
 import {

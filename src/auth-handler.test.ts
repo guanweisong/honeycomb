@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getDb } from "@/lib/db/db";
 
 vi.mock("@/env/server", () => ({
   getAuthEnv: () => ({
@@ -13,13 +14,10 @@ vi.mock("@/lib/db/db", () => ({
   }),
 }));
 vi.mock("@/lib/db/schema", () => ({}));
-vi.mock("@/app/auth/auth-hooks", () => ({
-  createAuthDatabaseHooks: () => ({}),
-}));
-
 describe("auth handler security boundary", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.clearAllMocks();
     vi.stubEnv("TURSO_URL", "");
     vi.stubEnv("TURSO_TOKEN", "");
   });
@@ -47,8 +45,8 @@ describe("auth handler security boundary", () => {
   ])(
     "rejects %s password sign-in without CAPTCHA at the real handler",
     async (path, body) => {
-      const { auth } = await import("@/auth");
-      const response = await auth.handler(
+      const { POST } = await import("@/app/api/auth/[...all]/route");
+      const response = await POST(
         new Request(`http://localhost:3000/api/auth/sign-in/${path}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -58,6 +56,7 @@ describe("auth handler security boundary", () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toMatchObject({ code: "MISSING_RESPONSE" });
+      expect(getDb).not.toHaveBeenCalled();
     },
   );
 });

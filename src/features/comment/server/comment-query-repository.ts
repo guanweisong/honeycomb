@@ -84,15 +84,26 @@ export function createCommentQueryRepository(db: Database) {
         sortOrder,
         repositoryPaginationDefaults.sortField,
       );
-      const [commentIds, countRows] = await Promise.all([
-        observeDbOperation("comment.service.ids", "select", () =>
-          db
-            .select({ id: schema.comment.id })
-            .from(schema.comment)
-            .where(where)
-            .orderBy(orderBy)
-            .limit(limit)
-            .offset((page - 1) * limit),
+      const relatedTitle = {
+        columns: { id: true },
+        with: { translations: { columns: { locale: true, title: true } } },
+      } as const;
+      const [comments, countRows] = await Promise.all([
+        observeDbOperation("comment.service.list", "select", () =>
+          db.query.comment.findMany({
+            where,
+            orderBy,
+            limit,
+            offset: (page - 1) * limit,
+            with: {
+              post: relatedTitle,
+              page: relatedTitle,
+              customPost: {
+                ...relatedTitle,
+                columns: { id: true, status: true },
+              },
+            },
+          }),
         ),
         observeDbOperation("comment.service.count", "select", () =>
           db
@@ -101,71 +112,15 @@ export function createCommentQueryRepository(db: Database) {
             .where(where),
         ),
       ]);
-      const ids = commentIds.map(({ id }) => id);
-      const comments = ids.length
-        ? await observeDbOperation("comment.service.list", "select", () =>
-            db.query.comment.findMany({
-              where:
-                visibility === "PUBLISHED_ONLY"
-                  ? and(inArray(schema.comment.id, ids), where)
-                  : inArray(schema.comment.id, ids),
-              with: {
-                post: {
-                  columns: { id: true },
-                  with: {
-                    translations: { columns: { locale: true, title: true } },
-                  },
-                },
-                page: {
-                  columns: { id: true },
-                  with: {
-                    translations: { columns: { locale: true, title: true } },
-                  },
-                },
-              },
-            }),
-          )
-        : [];
-      const order = new Map(ids.map((id, index) => [id, index]));
-      const ordered = comments.sort(
-        (left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0),
-      );
-      const customIds = Array.from(
-        new Set(
-          ordered
-            .map(({ customId }) => customId)
-            .filter((id): id is string => Boolean(id)),
-        ),
-      );
-      const customPosts = customIds.length
-        ? await observeDbOperation(
-            "comment.service.custom-posts",
-            "select",
-            () =>
-              db.query.post.findMany({
-                columns: { id: true },
-                where:
-                  visibility === "PUBLISHED_ONLY"
-                    ? and(
-                        inArray(schema.post.id, customIds),
-                        eq(schema.post.status, PostStatus.PUBLISHED),
-                      )
-                    : inArray(schema.post.id, customIds),
-                with: {
-                  translations: { columns: { locale: true, title: true } },
-                },
-              }),
-          )
-        : [];
-      const customPostMap = Object.fromEntries(
-        customPosts.map((post) => [post.id, post]),
-      );
-      const list: CommentListItem[] = ordered.map((comment) => ({
+      const list: CommentListItem[] = comments.map((comment) => ({
         ...toCommentRecord(comment),
         post: toRelatedRecord(comment.post),
         page: toRelatedRecord(comment.page),
         custom: toRelatedRecord(
-          comment.customId ? (customPostMap[comment.customId] ?? null) : null,
+          visibility === "ALL" ||
+            comment.customPost?.status === PostStatus.PUBLISHED
+            ? (comment.customPost ?? null)
+            : null,
         ),
       }));
       return { list, total: Number(countRows[0]?.count) || 0 };

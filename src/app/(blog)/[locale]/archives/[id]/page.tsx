@@ -4,7 +4,11 @@ import { PostCommentCount } from "@/app/(blog)/components/features/post/public/P
 import Tags from "@/app/(blog)/components/features/post/public/Tags";
 import Card from "@/components/SectionCard";
 import { Link } from "@/app/(blog)/lib/blog-navigation";
-import Comment from "@/app/(blog)/components/features/comment/public/components/CommentClient";
+import {
+  loadOptionalPublicComments,
+  PublicCommentSection,
+} from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
+import { EnableStatus } from "@/lib/validation/enable-status";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { getTranslations } from "next-intl/server";
@@ -12,7 +16,6 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import {
-  getPublicComments,
   getPublicPostDetail,
   getPublicRandomPosts,
   getPublicSetting,
@@ -20,7 +23,7 @@ import {
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
-import { PostViewTracker } from "@/app/(blog)/components/features/post/public/PostViewTracker";
+import { ContentViewTracker } from "@/app/(blog)/components/ContentViewTracker";
 import { serializeJsonLd } from "@/lib/security/serialize-json-ld";
 import {
   assertPostDetail,
@@ -30,10 +33,9 @@ import {
   handlePostDetailError,
 } from "@/app/(blog)/[locale]/archives/[id]/page.utils";
 import {
-  createLocalizedAlternates,
-  defaultSocialImage,
+  createContentMetadata,
+  DynamicMetadataMarker,
 } from "@/app/(blog)/lib/metadata";
-import { connection } from "next/server";
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 
@@ -73,7 +75,10 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
 
   const category = assertPostCategory(postDetail);
 
-  const queryCommentPromise = getPublicComments(id, MenuType.CATEGORY);
+  const comments =
+    postDetail.commentStatus === EnableStatus.ENABLE
+      ? loadOptionalPublicComments(id, MenuType.CATEGORY)
+      : undefined;
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
 
@@ -92,19 +97,27 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ""}
         comments={
-          <Suspense
-            fallback={
-              <LoadingState
-                variant="inline"
-                label={postInfoT("loading")}
-                visuallyHiddenLabel
-              />
-            }
-          >
-            <PostCommentCount commentsPromise={queryCommentPromise} />
-          </Suspense>
+          comments ? (
+            <Suspense
+              fallback={
+                <LoadingState
+                  variant="inline"
+                  label={postInfoT("loading")}
+                  visuallyHiddenLabel
+                />
+              }
+            >
+              <PostCommentCount commentsPromise={comments} />
+            </Suspense>
+          ) : undefined
         }
-        views={<PostViewTracker id={id} initialViews={postDetail.views ?? 0} />}
+        views={
+          <ContentViewTracker
+            kind="post"
+            id={id}
+            initialViews={postDetail.views ?? 0}
+          />
+        }
       />
       {postDetail.type !== PostType.QUOTE && (
         <div className="my-3 lg:my-5">
@@ -165,11 +178,16 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
           title={t("guessWhatYouLike")}
         />
       </Suspense>
-      <Comment
-        id={id}
-        type={MenuType.CATEGORY}
-        queryCommentPromise={queryCommentPromise}
-      />
+      {comments && (
+        <Suspense fallback={<LoadingState variant="region" />}>
+          <PublicCommentSection
+            id={id}
+            type={MenuType.CATEGORY}
+            locale={locale}
+            comments={comments}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
@@ -211,11 +229,6 @@ async function RecommendedPosts({
   );
 }
 
-async function DynamicMetadataMarker() {
-  await connection();
-  return null;
-}
-
 /**
  * 为归档页面生成元数据。
  * 用于设置页面的标题、描述、开放图谱等，以优化 SEO 和社交媒体分享。
@@ -245,25 +258,11 @@ export async function generateMetadata(
    */
   const title = getPostTitle(postDetail, locale) ?? "";
 
-  const openGraph = {
-    title: title,
-    type: "article",
-    description: setting?.siteName?.[locale],
-  };
-
-  return {
+  return createContentMetadata({
     title,
     description: setting?.siteName?.[locale],
-    alternates: createLocalizedAlternates(
-      locale,
-      `/archives/${encodeURIComponent(id)}`,
-    ),
-    openGraph: { ...openGraph, images: [defaultSocialImage] },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description: setting?.siteName?.[locale],
-      images: [defaultSocialImage],
-    },
-  };
+    locale,
+    path: `/archives/${encodeURIComponent(id)}`,
+    type: "article",
+  });
 }

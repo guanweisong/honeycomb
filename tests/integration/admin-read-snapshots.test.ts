@@ -375,7 +375,7 @@ describe("admin read snapshots on local SQLite", () => {
         ],
       });
       // Public filtering remains in the existing listMenus path.
-      expect(await listMenus(db, "PUBLIC_ONLY")).toEqual({
+      expect(await listMenus(db)).toEqual({
         list: [],
         total: 0,
       });

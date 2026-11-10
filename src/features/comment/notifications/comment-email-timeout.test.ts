@@ -11,13 +11,12 @@ import { notifyCommentCreated } from "@/features/comment/notifications/comment-d
 import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 // Keep the real Resend SDK and its HTTP transport; templates are unrelated to deadlines.
-vi.mock("@/features/comment/notifications/templates/AdminCommentEmailMessage", () => ({
-  default: () => null,
-}));
-vi.mock("@/features/comment/notifications/templates/ReplyCommentEmailMessage", () => ({
-  default: () => null,
-}));
-
+vi.mock(
+  "@/features/comment/notifications/templates/AdminCommentEmailMessage",
+  () => ({
+    default: () => null,
+  }),
+);
 const currentComment = {
   id: "comment-1",
   author: "Reader",
@@ -37,7 +36,7 @@ const currentComment = {
   page: null,
 };
 const setting = { siteName: { zh: "站点", en: "Site" } };
-const payload = { setting, currentComment, parentComment: currentComment };
+const payload = { setting, currentComment };
 
 describe("comment email HTTP deadlines", () => {
   beforeEach(() => {
@@ -75,30 +74,27 @@ describe("comment email HTTP deadlines", () => {
     return { fetchMock, signals };
   }
 
-  it.each(["ADMIN_NOTICE", "REPLY_NOTICE"] as const)(
-    "aborts stalled %s HTTP without retry",
-    async (type) => {
-      const { fetchMock, signals } = stallHttp();
-      let outcome = "pending";
-      const sending = sendCommentEmail(type, payload).then(
-        () => {
-          outcome = "success";
-        },
-        () => {
-          outcome = "failed";
-        },
-      );
-      await vi.advanceTimersByTimeAsync(4999);
-      expect(outcome).toBe("pending");
-      await vi.advanceTimersByTimeAsync(1);
-      expect(outcome).toBe("failed");
-      expect(signals).toHaveLength(1);
-      expect(signals[0]?.aborted).toBe(true);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(vi.getTimerCount()).toBe(0);
-      await sending;
-    },
-  );
+  it("aborts stalled HTTP without retry", async () => {
+    const { fetchMock, signals } = stallHttp();
+    let outcome = "pending";
+    const sending = sendCommentEmail(payload).then(
+      () => {
+        outcome = "success";
+      },
+      () => {
+        outcome = "failed";
+      },
+    );
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(outcome).toBe("pending");
+    await vi.advanceTimersByTimeAsync(1);
+    expect(outcome).toBe("failed");
+    expect(signals).toHaveLength(1);
+    expect(signals[0]?.aborted).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    await sending;
+  });
 
   it("clears a successful send deadline without aborting its HTTP request", async () => {
     let signal: AbortSignal | null | undefined;
@@ -107,7 +103,7 @@ describe("comment email HTTP deadlines", () => {
       return Promise.resolve(Response.json({ id: "synthetic-message" }));
     });
     vi.stubGlobal("fetch", fetchMock);
-    await sendCommentEmail("ADMIN_NOTICE", payload);
+    await sendCommentEmail(payload);
     expect(signal).toBeInstanceOf(AbortSignal);
     expect(signal?.aborted).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
@@ -116,7 +112,7 @@ describe("comment email HTTP deadlines", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("returns the committed public comment and invalidates caches after both email requests time out", async () => {
+  it("returns the committed public comment and invalidates caches when only the administrator notice is sent and times out", async () => {
     const { fetchMock, signals } = stallHttp();
     const invalidate = vi.fn().mockResolvedValue({ state: "completed" });
     const notifications = {
@@ -140,8 +136,7 @@ describe("comment email HTTP deadlines", () => {
             .mockResolvedValue({ type: "post", id: "post-1" }),
         },
         validateCaptcha: vi.fn(),
-        notify: (id, parentId) =>
-          notifyCommentCreated(notifications, id, parentId),
+        notify: (id) => notifyCommentCreated(notifications, id),
         logNotificationFailure: vi.fn(),
         invalidator: { invalidate },
       },
@@ -167,7 +162,14 @@ describe("comment email HTTP deadlines", () => {
     expect(result).not.toHaveProperty("email");
     expect(result).not.toHaveProperty("ip");
     expect(invalidate).toHaveBeenCalledOnce();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const request = fetchMock.mock.calls[0]?.[1];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      to: "admin@example.test",
+    });
+    expect(notifications.getComment).toHaveBeenCalledExactlyOnceWith(
+      "comment-1",
+    );
     expect(signals.every((signal) => signal.aborted)).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
   });

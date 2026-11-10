@@ -1,3 +1,6 @@
+import { getAdminRoutePermission } from "@/app/admin/constants/route-capabilities";
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import {
   existsSync,
@@ -68,10 +71,16 @@ describe("授权入口边界", () => {
       ...actionGuardMatrix.flatMap((file) =>
         file.actions.map((action) => action.permission),
       ),
-      ...menu.flatMap((item) => [
-        item.permission,
-        ...(item.children?.map((child) => child.permission) ?? []),
-      ]),
+      ...menu.flatMap((item) =>
+        [
+          getAdminRoutePermission(item.path),
+          item.additionalPermission,
+          ...(item.children?.flatMap((child) => [
+            getAdminRoutePermission(child.path),
+            child.additionalPermission,
+          ]) ?? []),
+        ].filter((permission) => permission !== undefined),
+      ),
     ];
 
     expect(permissions.every((permission) => isPermission(permission))).toBe(

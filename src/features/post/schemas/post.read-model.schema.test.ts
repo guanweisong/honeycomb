@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { PostListResultSchema } from "@/features/post/schemas/post.read-model.schema";
 import { createPostFixture } from "@tests/helpers/post-fixtures";

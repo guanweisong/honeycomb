@@ -124,8 +124,17 @@ describe("Page Router", () => {
 
   describe("destroy procedure", () => {
     it("should delete pages with admin permissions", async () => {
-      mockDb.limit.mockResolvedValue([{ version: 0 }]);
-      mockDb.returning.mockResolvedValue([{ id: TEST_IDS.ID_1 }]);
+      const rows = [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+        id,
+        version: 0,
+      }));
+      const read = createMockDb();
+      read.where.mockResolvedValue(rows);
+      const from = mockDb.from.getMockImplementation();
+      mockDb.from.mockImplementation((table: object) =>
+        table === schema.page ? read : (from?.(table) ?? mockDb),
+      );
+      mockDb.returning.mockResolvedValue(rows);
 
       const caller = pageRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),

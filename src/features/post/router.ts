@@ -9,7 +9,10 @@ import {
 } from "@/lib/trpc/core";
 import { can, Permission } from "@/lib/auth/permissions";
 import { IdSchema } from "@/lib/validation/id.schema";
-import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
+import {
+  PostListQuerySchema,
+  PublicPostListQuerySchema,
+} from "@/features/post/schemas/post.list-query.schema";
 import {
   PostInsertSchema,
   PostCreationResultInputSchema,
@@ -42,11 +45,11 @@ export const postRouter = createTRPCRouter({
     .query(({ input, ctx }) => searchPublishedPosts(ctx.db, input)),
 
   index: publicProcedure
-    .input(PostListQuerySchema)
-    .query(({ input, ctx }) =>
+    .input(PublicPostListQuerySchema)
+    .query(({ input: { cursor, ...input }, ctx }) =>
       ctx.hasRequest
-        ? getCachedPostList(ctx.db, input)
-        : listPublicPosts(ctx.db, input),
+        ? getCachedPostList(ctx.db, input, cursor)
+        : listPublicPosts(ctx.db, input, cursor),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)

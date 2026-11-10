@@ -1,9 +1,13 @@
 import "server-only";
 
-import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
+import {
+  getCategoryHref,
+  getCategoryRouteSegments,
+} from "@/app/(blog)/lib/category-route";
 import { unstable_cache } from "next/cache";
 
 import { getServerEnv } from "@/env/server";
+import { supportedLanguages } from "@/lib/i18n/i18n";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { LogEvent } from "@/lib/observability/core/names";
@@ -24,6 +28,17 @@ export function getSiteOrigin() {
   return new URL(getServerEnv().NEXT_PUBLIC_SITE_URL).origin;
 }
 
+function localizeSitemapUrl(
+  baseUrl: string,
+  href: string,
+  attributes: Omit<SitemapUrl, "url">,
+): SitemapUrl[] {
+  return supportedLanguages.map((locale) => ({
+    url: `${baseUrl}/${locale}${href}`,
+    ...attributes,
+  }));
+}
+
 export function getStaticSitemapUrls(baseUrl: string): SitemapUrl[] {
   const lastModified = new Date();
 
@@ -34,18 +49,11 @@ export function getStaticSitemapUrls(baseUrl: string): SitemapUrl[] {
       changeFrequency: "daily",
       priority: 1,
     },
-    {
-      url: `${baseUrl}/zh/list/category`,
+    ...localizeSitemapUrl(baseUrl, "/list/category", {
       lastModified,
       changeFrequency: "daily",
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/en/list/category`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
+    }),
   ];
 }
 
@@ -72,61 +80,36 @@ export const getCachedSitemapShard = unstable_cache(
       listPublishedPostSitemapEntries(db, page, SITEMAP_BATCH_SIZE),
       listPublishedPageSitemapEntries(db, page, SITEMAP_BATCH_SIZE),
     ]);
-    const categoryMenus =
-      menu?.list.flatMap((item) => {
-        const path = getCurrentPathOfMenu({
-          id: item.id,
-          menu: menu.list,
-        })
-          .join("/")
-          .trim();
-        return item.type === MenuType.CATEGORY && item.path?.trim() && path
-          ? [{ ...item, path }]
-          : [];
-      }) ?? [];
+    const categoryHrefs =
+      menu?.list
+        .filter((item) => item.type === MenuType.CATEGORY && item.path != null)
+        .map((item) =>
+          getCategoryHref(
+            getCategoryRouteSegments({ id: item.id, menu: menu.list }),
+          ),
+        ) ?? [];
     const dynamicUrls: SitemapUrl[] = [
-      ...categoryMenus.flatMap((item) => [
-        {
-          url: `${baseUrl}/zh/list/category/${item.path}`,
+      ...categoryHrefs.flatMap((href) =>
+        localizeSitemapUrl(baseUrl, href, {
           lastModified: new Date(),
-          changeFrequency: "weekly" as const,
+          changeFrequency: "weekly",
           priority: 0.8,
-        },
-        {
-          url: `${baseUrl}/en/list/category/${item.path}`,
-          lastModified: new Date(),
-          changeFrequency: "weekly" as const,
-          priority: 0.8,
-        },
-      ]),
-      ...posts.flatMap((post) => [
-        {
-          url: `${baseUrl}/zh/archives/${post.id}`,
-          lastModified: new Date(post.updatedAt ?? Date.now()),
-          changeFrequency: "weekly" as const,
+        }),
+      ),
+      ...posts.flatMap(({ id, updatedAt }) =>
+        localizeSitemapUrl(baseUrl, `/archives/${id}`, {
+          lastModified: new Date(updatedAt ?? Date.now()),
+          changeFrequency: "weekly",
           priority: 0.7,
-        },
-        {
-          url: `${baseUrl}/en/archives/${post.id}`,
-          lastModified: new Date(post.updatedAt ?? Date.now()),
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        },
-      ]),
-      ...pages.flatMap((pageItem) => [
-        {
-          url: `${baseUrl}/zh/pages/${pageItem.id}`,
-          lastModified: new Date(pageItem.updatedAt ?? Date.now()),
-          changeFrequency: "monthly" as const,
+        }),
+      ),
+      ...pages.flatMap(({ id, updatedAt }) =>
+        localizeSitemapUrl(baseUrl, `/pages/${id}`, {
+          lastModified: new Date(updatedAt ?? Date.now()),
+          changeFrequency: "monthly",
           priority: 0.6,
-        },
-        {
-          url: `${baseUrl}/en/pages/${pageItem.id}`,
-          lastModified: new Date(pageItem.updatedAt ?? Date.now()),
-          changeFrequency: "monthly" as const,
-          priority: 0.6,
-        },
-      ]),
+        }),
+      ),
     ];
 
     return shard === 0

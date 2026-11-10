@@ -64,6 +64,13 @@
       "when": 1792490000000,
       "tag": "0008_ordinary_media",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1794280497366,
+      "tag": "0009_login_email_audit_index",
+      "breakpoints": true
     }
   ]
 }

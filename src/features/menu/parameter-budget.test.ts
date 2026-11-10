@@ -48,6 +48,8 @@ beforeEach(async () => {
     CREATE TABLE menu (id TEXT PRIMARY KEY, parent TEXT REFERENCES menu(id), category_id TEXT, page_id TEXT, custom_id TEXT, power INTEGER NOT NULL, type TEXT NOT NULL, created_at TEXT, updated_at TEXT);
     CREATE TABLE category (id TEXT PRIMARY KEY, parent TEXT, status TEXT NOT NULL, path TEXT NOT NULL, created_at TEXT, updated_at TEXT);
     CREATE TABLE category_translation (category_id TEXT, locale TEXT, title TEXT, description TEXT);
+    CREATE TABLE page (id TEXT PRIMARY KEY, status TEXT NOT NULL);
+    CREATE TABLE page_translation (page_id TEXT, locale TEXT, title TEXT);
     INSERT INTO user VALUES ('${actor}', 'ADMIN', 'ENABLE');
     INSERT INTO menu_revision VALUES (1, 0);
   `);
@@ -81,7 +83,7 @@ it("persists a tree exceeding one local SQL statement budget and keeps forward p
     cache,
   );
   expect(result).toMatchObject({ count: 4000, version: 1 });
-  const rows = await listMenus(db, "ALL");
+  const rows = await listMenus(db);
   expect(rows.list).toHaveLength(4000);
   expect(rows.list[0]).toMatchObject({
     id: item(0).id,
@@ -142,6 +144,6 @@ it("reads every category translation and menu target using bounded ID queries", 
   expect(Math.max(...bindings)).toBeLessThanOrEqual(500);
   await saveAllMenus(db, { expectedVersion: 0, items }, actor, cache);
   bindings = [];
-  expect((await listMenus(db, "ALL")).list).toHaveLength(1101);
+  expect((await listMenus(db)).list).toHaveLength(1101);
   expect(Math.max(...bindings)).toBeLessThanOrEqual(500);
 }, 30_000);

@@ -1,5 +1,4 @@
 import React from "react";
-import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
@@ -65,12 +64,6 @@ export default async function LocaleLayout({
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="manifest" href={`/${locale}/manifest.webmanifest`} />
         <meta name="theme-color" content="#FFFFFF" />
-        {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-          <Script
-            src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-            strategy="lazyOnload"
-          />
-        ) : null}
       </head>
       <body>
         <ThemeProvider

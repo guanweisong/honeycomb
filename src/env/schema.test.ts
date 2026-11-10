@@ -171,6 +171,32 @@ describe("environment schemas", () => {
     ).toBe("short");
   });
 
+  it("shares provider mappings while keeping partial OAuth configuration build-only", () => {
+    const configured = {
+      ...validCoreEnv,
+      AUTH_APPLE_ID: " apple-id ",
+      AUTH_APPLE_SECRET: " apple-secret ",
+      AUTH_GOOGLE_ID: " google-id ",
+      AUTH_GOOGLE_SECRET: " google-secret ",
+      AUTH_GITHUB_ID: " github-id ",
+      AUTH_GITHUB_SECRET: " github-secret ",
+    };
+    const providers = {
+      apple: { clientId: "apple-id", clientSecret: "apple-secret" },
+      google: { clientId: "google-id", clientSecret: "google-secret" },
+      github: { clientId: "github-id", clientSecret: "github-secret" },
+    };
+
+    expect(parseAuthEnv(configured)).toMatchObject(providers);
+    expect(parseBuildAuthEnv(configured)).toMatchObject(providers);
+    expect(parseServerEnv(configured).oauth).toEqual(providers);
+
+    const partial = { ...configured, AUTH_GITHUB_SECRET: undefined };
+    expect(parseBuildAuthEnv(partial).github).toBeUndefined();
+    expect(() => parseAuthEnv(partial)).toThrow(/AUTH_GITHUB_SECRET/);
+    expect(() => parseServerEnv(partial)).toThrow(/AUTH_GITHUB_SECRET/);
+  });
+
   it("marks an entirely absent optional integration as disabled", () => {
     const environment = parseServerEnv(validCoreEnv);
 

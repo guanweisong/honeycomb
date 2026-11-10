@@ -1,18 +1,23 @@
 import { test, expect } from "@playwright/test";
-import { FAKE_ID } from "@tests/e2e/blog/helpers";
 
 test.describe("blog empty state", () => {
-  test("@regression fake tag/author pages should render no data page", async ({
+  test("@regression an existing tag with no posts remains indexable", async ({
     page,
   }) => {
-    await page.goto(`/en/list/tags/${FAKE_ID}`, { waitUntil: "networkidle" });
+    const path = "/en/list/tags/000000000000000000000018";
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(200);
     await expect(page.locator("main")).toBeVisible();
+    await expect(
+      page.getByRole("main").getByText("Articles under the tag Empty tag"),
+    ).toBeVisible();
     await expect(page.locator('a[href*="/en/archives/"]')).toHaveCount(0);
-
-    await page.goto(`/en/list/authors/${FAKE_ID}`, {
-      waitUntil: "networkidle",
-    });
-    await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator('a[href*="/en/archives/"]')).toHaveCount(0);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      new RegExp(`${path}$`),
+    );
+    await expect(
+      page.locator('meta[name="robots"][content*="noindex"]'),
+    ).toHaveCount(0);
   });
 });

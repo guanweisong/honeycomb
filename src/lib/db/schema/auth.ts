@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { objectId } from "@/lib/db/object-id";
 import { withTimestamps } from "@/lib/db/timestamps";
@@ -34,8 +35,14 @@ export const user = sqliteTable(
       .default(UserStatus.ENABLE)
       .notNull(),
     ...withTimestamps(),
+    // The Kelvin sign is the only non-ASCII letter with an ASCII JS lowercase.
+    loginEmailKey: text("login_email_key").generatedAlwaysAs(
+      sql`lower(replace("email", 'K', 'K'))`,
+      { mode: "virtual" },
+    ),
   },
   (table) => ({
+    loginEmailKeyIdx: index("user_login_email_key_idx").on(table.loginEmailKey),
     userLevelCheck: enumCheck(
       "user_level_check",
       table.level,

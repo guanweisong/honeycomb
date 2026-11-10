@@ -19,7 +19,7 @@ import { publicContentInvalidator } from "@/lib/cache/next-public-content-invali
 
 /** 菜单 API 的传输层，只负责输入、权限和业务服务编排。 */
 export const menuRouter = createTRPCRouter({
-  index: publicProcedure.query(({ ctx }) => listMenus(ctx.db, "PUBLIC_ONLY")),
+  index: publicProcedure.query(({ ctx }) => listMenus(ctx.db)),
   adminIndex: permissionProcedure(Permission.menuReadAll).query(({ ctx }) =>
     getMenuSnapshot(ctx.db),
   ),

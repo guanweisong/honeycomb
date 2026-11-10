@@ -32,9 +32,10 @@ vi.mock("next-intl", () => ({
 
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList/index";
 
-function page(id: string, total = 3): PublicPostListResult {
+function page(id: string, more = true): PublicPostListResult {
   return {
-    total,
+    total: 3,
+    nextCursor: more ? { id, createdAt: null } : null,
     list: [
       {
         id,
@@ -123,7 +124,7 @@ describe("PostList query recovery", () => {
             finishRetry = resolve;
           }),
       )
-      .mockResolvedValueOnce(page("third"));
+      .mockResolvedValueOnce(page("third", false));
 
     await render();
     await render();
@@ -138,9 +139,9 @@ describe("PostList query recovery", () => {
     expect(finishRetry).toBeTypeOf("function");
     await act(async () => finishRetry?.(page("second")));
 
-    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
-      2, 2, 3,
-    ]);
+    expect(
+      transport.request.mock.calls.map(([input]) => input.cursor?.id),
+    ).toEqual(["original-first", "original-first", "second"]);
     expect(container.textContent).toContain("original-first");
     expect(container.textContent).toContain("second");
     expect(container.textContent).toContain("third");
@@ -163,7 +164,7 @@ describe("PostList query recovery", () => {
       intersect();
     });
     expect(transport.request).toHaveBeenCalledTimes(1);
-    await act(async () => finish?.(page("second", 2)));
+    await act(async () => finish?.(page("second", false)));
     expect(container.textContent).toContain("original-first");
     expect(container.textContent).toContain("second");
     expect(container.textContent).toContain("listEnd");
@@ -172,7 +173,7 @@ describe("PostList query recovery", () => {
   it("does not carry a failed query's pause into new filters", async () => {
     transport.request
       .mockRejectedValueOnce(new Error("original category failed"))
-      .mockResolvedValueOnce(page("new-second", 2));
+      .mockResolvedValueOnce(page("new-second", false));
     await render();
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
 

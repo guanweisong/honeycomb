@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { repositoryPaginationDefaults } from "@/lib/validation/pagination";
@@ -40,28 +40,6 @@ export async function findCategory(db: Database, id: string) {
         ),
       }
     : null;
-}
-
-export async function categoryPathExists(
-  db: Database,
-  path: string,
-  excludeId?: string,
-) {
-  const [value] = await observeDbOperation("category.update", "select", () =>
-    db
-      .select({ id: schema.category.id })
-      .from(schema.category)
-      .where(
-        excludeId
-          ? and(
-              eq(schema.category.path, path),
-              ne(schema.category.id, excludeId),
-            )
-          : eq(schema.category.path, path),
-      )
-      .limit(1),
-  );
-  return Boolean(value);
 }
 
 export async function listCategories(

@@ -32,17 +32,14 @@ function relation(id: string) {
   };
 }
 function prepareList() {
-  mockDb.offset.mockResolvedValue([{ id: second }, { id: first }]);
-  mockDb.where
-    .mockReturnValueOnce(mockDb)
-    .mockResolvedValueOnce([{ count: "2" }]);
+  mockDb.where.mockResolvedValueOnce([{ count: "2" }]);
   mockDb.query.post.findMany.mockResolvedValue([
-    relation(first),
     relation(second),
+    relation(first),
   ]);
 }
 
-describe("post ID selection and hydration", () => {
+describe("ordered post relation query", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     resetMockDb(mockDb);
@@ -52,7 +49,7 @@ describe("post ID selection and hydration", () => {
     );
   });
 
-  it("selects only ordered paginated IDs and returns the current public projection", async () => {
+  it("loads ordered paginated metadata and relations in one selection", async () => {
     prepareList();
     const result = await listPosts(
       asMockDatabase(mockDb),
@@ -64,9 +61,14 @@ describe("post ID selection and hydration", () => {
       },
       "PUBLISHED_ONLY",
     );
-    expect(mockDb.select).toHaveBeenNthCalledWith(1, { id: schema.post.id });
-    expect(mockDb.limit).toHaveBeenCalledWith(5);
-    expect(mockDb.offset).toHaveBeenCalledWith(5);
+    expect(mockDb.select).toHaveBeenCalledOnce();
+    expect(mockDb.query.post.findMany).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        limit: 5,
+        offset: 5,
+        orderBy: expect.anything(),
+      }),
+    );
     expect(tools.buildDrizzleOrderBy).toHaveBeenCalledWith(
       schema.post,
       "createdAt",
@@ -112,7 +114,7 @@ describe("post ID selection and hydration", () => {
     ).toContain(PostStatus.PUBLISHED);
   });
 
-  it("drops IDs withdrawn or deleted before hydration without changing the count", async () => {
+  it("keeps the count distinct from the visibility-filtered relation result", async () => {
     prepareList();
     mockDb.query.post.findMany.mockResolvedValue([relation(first)]);
     const result = await listPosts(
@@ -142,10 +144,8 @@ describe("post ID selection and hydration", () => {
   });
 
   it("returns empty when a tag has no matching IDs", async () => {
-    mockDb.offset.mockResolvedValue([]);
-    mockDb.where
-      .mockReturnValueOnce(mockDb)
-      .mockResolvedValueOnce([{ count: 0 }]);
+    mockDb.query.post.findMany.mockResolvedValue([]);
+    mockDb.where.mockResolvedValueOnce([{ count: 0 }]);
     expect(
       await listPosts(
         asMockDatabase(mockDb),
@@ -153,11 +153,10 @@ describe("post ID selection and hydration", () => {
         "PUBLISHED_ONLY",
       ),
     ).toEqual({ list: [], total: 0 });
-    expect(mockDb.orderBy).toHaveBeenCalled();
     const filter = dialect.sqlToQuery(mockDb.where.mock.calls[0]?.[0]);
     expect(filter.sql).toContain("exists");
     expect(filter.params).toEqual([PostStatus.PUBLISHED, first]);
-    expect(mockDb.query.post.findMany).not.toHaveBeenCalled();
+    expect(mockDb.query.post.findMany).toHaveBeenCalledOnce();
   });
   it.each(["status", "type"] as const)(
     "still validates the hydrated %s enum",

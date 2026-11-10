@@ -1,52 +1,62 @@
 // @vitest-environment node
 
-import { describe, expect, it } from "vitest";
-import { getClientIp } from "@/lib/http/client-ip";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { getClientIp } from "@/lib/http/client-ip.server";
+
+function request(forwarded?: string) {
+  const headers = new Headers({ "x-real-ip": "198.51.100.7" });
+  if (forwarded !== undefined) headers.set("x-forwarded-for", forwarded);
+  return { headers };
+}
 
 describe("getClientIp", () => {
-  it("uses the first x-forwarded-for entry when available", () => {
-    const request = new Request("https://example.com", {
-      headers: {
-        "x-forwarded-for": " 1.2.3.4, 5.6.7.8 ",
-        "x-real-ip": "9.9.9.9",
-      },
-    });
+  afterEach(() => vi.unstubAllEnvs());
 
-    expect(getClientIp(request)).toBe("1.2.3.4");
+  it("ignores forwarded headers without an explicit proxy contract", () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", undefined);
+    vi.stubEnv("VERCEL", undefined);
+    expect(getClientIp(request("203.0.113.8"))).toBe("anonymous");
   });
 
-  it("falls back to x-real-ip when x-forwarded-for is missing", () => {
-    const request = new Request("https://example.com", {
-      headers: {
-        "x-real-ip": " 9.9.9.9 ",
-      },
-    });
-
-    expect(getClientIp(request)).toBe("9.9.9.9");
+  it("uses the platform-owned Vercel header only in the Vercel environment", () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", undefined);
+    vi.stubEnv("VERCEL", "1");
+    const incoming = request("203.0.113.8");
+    incoming.headers.set("x-vercel-forwarded-for", "192.0.2.5");
+    expect(getClientIp(incoming)).toBe("192.0.2.5");
+    incoming.headers.set("x-vercel-forwarded-for", "192.0.2.5, 10.0.0.1");
+    expect(getClientIp(incoming)).toBe("anonymous");
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "0");
+    expect(getClientIp(incoming)).toBe("anonymous");
   });
 
-  it("returns anonymous when no ip header exists", () => {
-    const request = new Request("https://example.com");
-
-    expect(getClientIp(request)).toBe("anonymous");
+  it("selects the client at the trusted right edge of a multi-hop chain", () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
+    expect(getClientIp(request("spoofed, 203.0.113.8, 10.0.0.1"))).toBe(
+      "203.0.113.8",
+    );
   });
 
-  it("uses the first forwarded address", () => {
-    const request = new Request("https://example.test", {
-      headers: { "x-forwarded-for": "203.0.113.8, 10.0.0.1" },
-    });
+  it.each([
+    undefined,
+    "203.0.113.8",
+    "203.0.113.8, invalid",
+    ", 10.0.0.1",
+    "203.0.113.8:8080, 10.0.0.1",
+    "fe80::1%eth0, 10.0.0.1",
+  ])(
+    "uses the anonymous bucket for an incomplete or invalid trusted suffix",
+    (chain) => {
+      vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
+      expect(getClientIp(request(chain))).toBe("anonymous");
+    },
+  );
 
-    expect(getClientIp(request)).toBe("203.0.113.8");
-  });
-
-  it("falls back to the real IP and then anonymous", () => {
-    expect(
-      getClientIp(
-        new Request("https://example.test", {
-          headers: { "x-real-ip": " 2001:db8::1 " },
-        }),
-      ),
-    ).toBe("2001:db8::1");
-    expect(getClientIp(new Request("https://example.test"))).toBe("anonymous");
+  it.each([
+    ["2001:0DB8:0:0::1", "2001:db8::1"],
+    ["::ffff:203.0.113.8", "203.0.113.8"],
+  ])("canonicalizes %s", (source, canonical) => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "1");
+    expect(getClientIp(request(source))).toBe(canonical);
   });
 });

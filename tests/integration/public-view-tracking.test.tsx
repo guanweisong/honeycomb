@@ -1,3 +1,4 @@
+import { ContentViewTracker } from "@/app/(blog)/components/ContentViewTracker";
 import React, { act, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -31,9 +32,6 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} 次浏览`,
 }));
-
-import { PageViewTracker } from "@/app/(blog)/components/features/page/public/PageViewTracker";
-import { PostViewTracker } from "@/app/(blog)/components/features/post/public/PostViewTracker";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -69,12 +67,12 @@ describe("ViewTracker with real QueryClient and MutationObserver", () => {
     postRequest.mockReturnValue(pending.promise);
     await render(
       <StrictMode>
-        <PostViewTracker id="post-1" initialViews={7} />
+        <ContentViewTracker kind="post" id="post-1" initialViews={7} />
       </StrictMode>,
     );
     await render(
       <StrictMode>
-        <PostViewTracker id="post-1" initialViews={7} />
+        <ContentViewTracker kind="post" id="post-1" initialViews={7} />
       </StrictMode>,
     );
     expect(postRequest).toHaveBeenCalledTimes(1);
@@ -88,7 +86,9 @@ describe("ViewTracker with real QueryClient and MutationObserver", () => {
 
   it("keeps the page fallback after an actual rejected mutation", async () => {
     pageRequest.mockRejectedValue(new Error("Synthetic network failure"));
-    await render(<PageViewTracker id="page-1" initialViews={3} />);
+    await render(
+      <ContentViewTracker kind="page" id="page-1" initialViews={3} />,
+    );
     await act(flush);
     expect(pageRequest).toHaveBeenCalledTimes(1);
     expect(client.getMutationCache().getAll()[0]?.state.status).toBe("error");
@@ -104,8 +104,12 @@ describe("ViewTracker with real QueryClient and MutationObserver", () => {
       postRequest.mockImplementation(({ id }) =>
         id === "first" ? first.promise : second.promise,
       );
-      await render(<PostViewTracker id="first" initialViews={7} />);
-      await render(<PostViewTracker id="second" initialViews={20} />);
+      await render(
+        <ContentViewTracker kind="post" id="first" initialViews={7} />,
+      );
+      await render(
+        <ContentViewTracker kind="post" id="second" initialViews={20} />,
+      );
       expect(container.textContent).toBe("20 次浏览");
       await act(async () => {
         second.resolve({ views: 21 });

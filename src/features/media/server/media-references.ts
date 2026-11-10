@@ -1,5 +1,5 @@
 import "server-only";
-import { eq, inArray, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, notInArray, or, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import type { MediaRecord } from "@/features/media/types/media.record";
@@ -79,14 +79,34 @@ export async function assertMediaReferencesExist(
   }
 }
 
+const REFERENCE_SCAN_BATCH_SIZE = 64;
+
+async function scanReferenceBatches<Row extends object>(
+  read: (cursor: Row | undefined) => PromiseLike<Row[]>,
+  matches: (row: Row) => boolean,
+  signal?: AbortSignal,
+) {
+  let cursor: Row | undefined;
+  do {
+    signal?.throwIfAborted();
+    const rows = await read(cursor);
+    signal?.throwIfAborted();
+    if (rows.some(matches)) return true;
+    if (rows.length < REFERENCE_SCAN_BATCH_SIZE) return false;
+    cursor = rows.at(-1);
+  } while (cursor);
+  return false;
+}
+
 /** 只证明已知字段中的引用；无结果不代表历史、外部或未登记用途均不存在。 */
 export async function findKnownMediaReferences(
   tx: Transaction,
   targets: readonly Pick<MediaRecord, "id" | "key" | "url">[],
+  signal?: AbortSignal,
 ) {
+  signal?.throwIfAborted();
   if (!targets.length) return false;
   const ids = targets.map((row) => row.id);
-  const targetIds = new Set(ids);
   const keys = new Set(targets.map((row) => row.key));
   const urls = new Set(targets.map((row) => row.url));
   const [cover] = await tx
@@ -94,34 +114,73 @@ export async function findKnownMediaReferences(
     .from(schema.post)
     .where(inArray(schema.post.coverId, ids))
     .limit(1);
+  signal?.throwIfAborted();
   if (cover) return true;
-  const duplicate = await tx
+  const [duplicate] = await tx
     .select({ id: schema.media.id })
     .from(schema.media)
     .where(
-      or(
-        inArray(schema.media.key, [...keys]),
-        inArray(schema.media.url, [...urls]),
+      and(
+        notInArray(schema.media.id, ids),
+        or(
+          inArray(schema.media.key, [...keys]),
+          inArray(schema.media.url, [...urls]),
+        ),
       ),
-    );
-  if (duplicate.some((row) => !targetIds.has(row.id))) return true;
-  const contents = [
-    ...(await tx
-      .select({ content: schema.postTranslation.content })
-      .from(schema.postTranslation)),
-    ...(await tx
-      .select({ content: schema.pageTranslation.content })
-      .from(schema.pageTranslation)),
-  ];
-  const matches = (url: string) =>
-    urls.has(url) || keys.has(managedMediaKey(url) ?? "");
-  if (
-    contents.some((row) =>
-      getAllImageLinkFromHtml(row.content ?? undefined).some(matches),
     )
-  )
-    return true;
-  const logos = await tx.select({ url: schema.link.logo }).from(schema.link);
-  const avatars = await tx.select({ url: schema.user.image }).from(schema.user);
-  return [...logos, ...avatars].some((row) => row.url && matches(row.url));
+    .limit(1);
+  signal?.throwIfAborted();
+  if (duplicate) return true;
+
+  const matchesUrl = (url: string) =>
+    urls.has(url) || keys.has(managedMediaKey(url) ?? "");
+  for (const { table, id } of [
+    { table: schema.postTranslation, id: schema.postTranslation.postId },
+    { table: schema.pageTranslation, id: schema.pageTranslation.pageId },
+  ]) {
+    if (
+      await scanReferenceBatches<
+        { id: string } & Pick<
+          typeof schema.postTranslation.$inferSelect,
+          "locale" | "content"
+        >
+      >(
+        (cursor) =>
+          tx
+            .select({ id, locale: table.locale, content: table.content })
+            .from(table)
+            .where(
+              cursor
+                ? sql`(${id}, ${table.locale}) > (${cursor.id}, ${cursor.locale})`
+                : undefined,
+            )
+            .orderBy(asc(id), asc(table.locale))
+            .limit(REFERENCE_SCAN_BATCH_SIZE),
+        (row) =>
+          getAllImageLinkFromHtml(row.content ?? undefined).some(matchesUrl),
+        signal,
+      )
+    )
+      return true;
+  }
+  for (const { table, url } of [
+    { table: schema.link, url: schema.link.logo },
+    { table: schema.user, url: schema.user.image },
+  ]) {
+    if (
+      await scanReferenceBatches<{ id: string; url: string | null }>(
+        (cursor) =>
+          tx
+            .select({ id: table.id, url })
+            .from(table)
+            .where(cursor ? gt(table.id, cursor.id) : undefined)
+            .orderBy(asc(table.id))
+            .limit(REFERENCE_SCAN_BATCH_SIZE),
+        (row) => Boolean(row.url && matchesUrl(row.url)),
+        signal,
+      )
+    )
+      return true;
+  }
+  return false;
 }

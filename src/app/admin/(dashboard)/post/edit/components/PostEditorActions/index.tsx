@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/Dialog";
 import type { PostWithRelations } from "@/features/post/types/post.read-model";
 import { PostStatus } from "@/features/post/types/post.status";
-import type { PostSubmitAction } from "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor";
 import { Permission } from "@/lib/auth/permissions";
 import { useCan } from "@/app/admin/(dashboard)/providers/use-current-user";
 
@@ -12,7 +11,7 @@ interface PostEditorActionsProps {
   id?: string;
   loading: boolean;
   status?: `${PostWithRelations["status"]}`;
-  submit: (status: PostStatus, action: PostSubmitAction) => Promise<boolean>;
+  submit: (status: PostStatus) => Promise<boolean>;
 }
 
 export function PostEditorActions({
@@ -36,7 +35,7 @@ export function PostEditorActions({
         <Button
           type="button"
           disabled={loading}
-          onClick={() => submit(PostStatus.PUBLISHED, "update")}
+          onClick={() => submit(PostStatus.PUBLISHED)}
         >
           更新
         </Button>
@@ -51,7 +50,7 @@ export function PostEditorActions({
           type="danger"
           title="确定要撤回吗？"
           OKProps={{ disabled: loading }}
-          onOK={() => submit(PostStatus.DRAFT, "update")}
+          onOK={() => submit(PostStatus.DRAFT)}
         />
       )}
       {canSaveUnpublished && (
@@ -59,10 +58,7 @@ export function PostEditorActions({
           type="button"
           disabled={loading}
           onClick={() =>
-            submit(
-              isAwaitingAudit ? PostStatus.TO_AUDIT : PostStatus.DRAFT,
-              "update",
-            )
+            submit(isAwaitingAudit ? PostStatus.TO_AUDIT : PostStatus.DRAFT)
           }
         >
           {isAwaitingAudit ? "保存待审核" : "保存"}
@@ -72,9 +68,7 @@ export function PostEditorActions({
         <Button
           type="button"
           disabled={loading}
-          onClick={() =>
-            submit(PostStatus.PUBLISHED, isEdit ? "update" : "create")
-          }
+          onClick={() => submit(PostStatus.PUBLISHED)}
         >
           发布
         </Button>
@@ -83,7 +77,7 @@ export function PostEditorActions({
         <Button
           type="button"
           disabled={loading}
-          onClick={() => submit(PostStatus.DRAFT, "create")}
+          onClick={() => submit(PostStatus.DRAFT)}
         >
           保存草稿
         </Button>

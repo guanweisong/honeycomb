@@ -333,22 +333,15 @@ test.describe("@smoke admin public pages", () => {
       page.getByRole("button", { name: "登录", exact: true }),
     ).toBeVisible();
   });
-  test("@regression narrow and short login viewports keep the background despite reduced motion", async ({
+  test("@regression narrow and short login viewports use a static background", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await visit(page, "/admin/login");
-    // The login background deliberately ignores system motion preferences;
-    // do not wait for external media or submit the CAPTCHA-protected form.
-    await expect(page.locator("video")).toHaveCount(1);
-    await expect(
-      page.getByRole("button", { name: /(?:暂停|播放)背景动画/ }),
-    ).toHaveCount(0);
+    await expect(page.locator("video")).toHaveCount(0);
     await page.emulateMedia({ reducedMotion: "no-preference" });
-    await expect(page.locator("video")).toHaveCount(1);
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(page.locator("video")).toHaveCount(1);
+    await expect(page.locator("video")).toHaveCount(0);
 
     for (const viewport of [
       { width: 320, height: 568 },
@@ -366,7 +359,7 @@ test.describe("@smoke admin public pages", () => {
         .toBe(true);
       for (const name of ["用户名", "密码"]) {
         const field = page.getByLabel(name, { exact: true });
-        await field.focus();
+        await field.click();
         await expect(field).toBeFocused();
         await expect(field).toBeInViewport({ ratio: 1 });
       }

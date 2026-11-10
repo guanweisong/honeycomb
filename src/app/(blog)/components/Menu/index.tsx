@@ -3,7 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "@/app/(blog)/lib/blog-navigation";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
-import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
+import {
+  getCategoryHref,
+  getCategoryRouteSegments,
+} from "@/app/(blog)/lib/category-route";
 import { cn } from "cn";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
@@ -39,10 +42,12 @@ const getActiveCategories = ({
       return [allCategoryPath];
     }
 
-    const categoryPath = `/list/category/${getCurrentPathOfMenu({
+    const categorySegments = getCategoryRouteSegments({
       id: postCategoryId,
       menu: flatMenuData,
-    }).join("/")}`;
+    });
+    if (!categorySegments.length) return [allCategoryPath];
+    const categoryPath = getCategoryHref(categorySegments);
 
     return [categoryPath.split("/").slice(0, 4).join("/"), categoryPath];
   }

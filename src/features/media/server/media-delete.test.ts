@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { requireDefined } from "@tests/helpers/require-defined";
 import { destroyMedia } from "@/features/media/server/media-delete";
 import {
@@ -17,7 +17,10 @@ it("deletes storage and confirms absence inside the repository transaction", asy
   expect(
     await destroyMedia(repo, storage, ["id"], cache, "actor", true),
   ).toEqual({ success: true, publicSync: "completed" });
-  expect(storage.deleteObjects).toHaveBeenCalledWith(["media/final.png"]);
+  expect(storage.deleteObjects).toHaveBeenCalledWith(
+    ["media/final.png"],
+    expect.any(AbortSignal),
+  );
 });
 it("reports partial or unknown deletion without promising rollback", async () => {
   for (const phase of ["storage", "database"]) {
@@ -43,10 +46,14 @@ it("idempotently bulk deletes an already absent object", async () => {
   const repo = mediaRepositoryFixture();
   const storage = mediaStorageFixture();
   await destroyMedia(repo, storage, ["id"], cache, "actor", true);
-  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith([
+  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+    ["media/final.png"],
+    expect.any(AbortSignal),
+  );
+  expect(storage.headObject).toHaveBeenCalledExactlyOnceWith(
     "media/final.png",
-  ]);
-  expect(storage.headObject).toHaveBeenCalledExactlyOnceWith("media/final.png");
+    expect.any(AbortSignal),
+  );
 });
 it("keeps committed deletion successful when public cache refresh fails", async () => {
   const repo = mediaRepositoryFixture();
@@ -76,7 +83,10 @@ it("bulk deletes unique keys after reference checks and verifies before row dele
     return null;
   });
   await destroyMedia(repo, storage, ["id"], cache, "actor", true);
-  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(["a", "b"]);
+  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+    ["a", "b"],
+    expect.any(AbortSignal),
+  );
   expect(events).toEqual([
     "references checked",
     "bulk delete",
@@ -128,7 +138,10 @@ it("verifies a large batch in full chunks of at most eight HEADs", async () => {
   await deletion;
   expect(maxActive).toBe(8);
   expect(active).toBe(0);
-  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(keys);
+  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+    keys,
+    expect.any(AbortSignal),
+  );
   expect(storage.headObject).toHaveBeenCalledTimes(keys.length);
 });
 it.each(["unknown", "present"])(
@@ -172,7 +185,10 @@ it.each(["unknown", "present"])(
     await rejected;
     expect(rowsDeleted).toBe(false);
     expect(storage.headObject).toHaveBeenCalledTimes(8);
-    expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(keys);
+    expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+      keys,
+      expect.any(AbortSignal),
+    );
   },
 );
 
@@ -188,7 +204,50 @@ it("passes an empty historical key to storage and retains rows when storage reje
   await expect(
     destroyMedia(repo, storage, ["id"], cache, "actor", true),
   ).rejects.toThrow("部分删除");
-  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith([""]);
+  expect(storage.deleteObjects).toHaveBeenCalledExactlyOnceWith(
+    [""],
+    expect.any(AbortSignal),
+  );
   expect(storage.headObject).not.toHaveBeenCalled();
   expect(rowsDeleted).toBe(false);
+});
+
+afterEach(() => vi.useRealTimers());
+
+it("uses one deadline for object deletion and all verification batches", async () => {
+  vi.useFakeTimers();
+  const storage = mediaStorageFixture();
+  const signals: AbortSignal[] = [];
+  storage.deleteObjects.mockImplementation(async (_keys, signal) => {
+    if (signal) signals.push(signal);
+    await new Promise((resolve) => setTimeout(resolve, 25_000));
+  });
+  storage.headObject.mockImplementation((_key, signal) => {
+    if (signal) signals.push(signal);
+    return new Promise((_resolve, reject) => {
+      signal?.addEventListener("abort", () => reject(signal.reason), {
+        once: true,
+      });
+    });
+  });
+  const repo = mediaRepositoryFixture();
+  const invalidate = vi.fn(async () => ({ state: "completed" as const }));
+  const deletion = destroyMedia(
+    repo,
+    storage,
+    ["id"],
+    { invalidate },
+    "actor",
+    true,
+  );
+  const expectedFailure = expect(deletion).rejects.toThrow("部分删除");
+  await vi.advanceTimersByTimeAsync(29_999);
+  expect(signals).toHaveLength(2);
+  expect(signals[0]).toBe(signals[1]);
+  expect(signals[0]?.aborted).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  await expectedFailure;
+  expect(signals[0]?.aborted).toBe(true);
+  expect(invalidate).not.toHaveBeenCalled();
+  expect(vi.getTimerCount()).toBe(0);
 });

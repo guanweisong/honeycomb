@@ -2,7 +2,10 @@ import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { useMenuTreeEditor, type MenuTreeEditor } from "@/app/admin/(dashboard)/menu/components/use-menu-tree-editor";
+import {
+  useMenuTreeEditor,
+  type MenuTreeEditor,
+} from "@/app/admin/(dashboard)/menu/components/use-menu-tree-editor";
 import type {
   CheckedMenuData,
   MenuEntityTree,
@@ -26,8 +29,14 @@ describe("use-menu-tree-editor", () => {
   let root: Root;
   let editor: MenuTreeEditor;
 
-  function Probe({ checkedData }: { checkedData?: CheckedMenuData }) {
-    editor = useMenuTreeEditor(checkedData);
+  function Probe({
+    checkedData,
+    protectedSnapshot,
+  }: {
+    checkedData?: CheckedMenuData;
+    protectedSnapshot?: boolean;
+  }) {
+    editor = useMenuTreeEditor(checkedData, protectedSnapshot);
     return null;
   }
 
@@ -74,7 +83,6 @@ describe("use-menu-tree-editor", () => {
         }),
       ),
     );
-    await act(async () => editor.setProtected(true));
     const item = {
       id: "page-pending",
       title: { en: "P", zh: "页" },
@@ -89,6 +97,7 @@ describe("use-menu-tree-editor", () => {
       root.render(
         React.createElement(Probe, {
           checkedData: { list: submitted, version: 1 },
+          protectedSnapshot: true,
         }),
       ),
     );

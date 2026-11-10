@@ -23,7 +23,6 @@ export type MenuTreeEditor = {
   menuTree: SortableMenuNode[];
   baseVersion: number | undefined;
   dirty: boolean;
-  setProtected: (value: boolean) => void;
   removeBranch: (id: string) => void;
   acknowledge: (submitted: MenuEntityTree[], version: number) => void;
   acceptLatest: (snapshot: CheckedMenuData, keepLocal: boolean) => void;
@@ -39,8 +38,8 @@ export type MenuTreeEditor = {
  */
 export function useMenuTreeEditor(
   checkedData: CheckedMenuData | undefined,
+  protectedSnapshot = false,
 ): MenuTreeEditor {
-  const [protectedSnapshot, setProtected] = useState(false);
   const [checkedList, setCheckedList] = useState<MenuEntityTree[]>([]);
   const [baseline, setBaseline] = useState({
     rows: [] as MenuEntityTree[],
@@ -66,7 +65,6 @@ export function useMenuTreeEditor(
     menuTree: formatMenuTree(checkedList),
     baseVersion: baseline.version,
     dirty,
-    setProtected,
     removeBranch: (id) => {
       if (baseline.version === undefined) return;
       setCheckedList((current) => {

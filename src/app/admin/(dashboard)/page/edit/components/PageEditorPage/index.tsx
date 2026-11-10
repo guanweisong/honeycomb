@@ -13,6 +13,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Dialog } from "@/components/Dialog";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
+import { PageUpdateSchema } from "@/features/page/schemas/page.update.schema";
 import type { PageInsert } from "@/features/page/types/page.insert";
 import type { PageRecord } from "@/features/page/types/page.read-model";
 import { PageStatus } from "@/features/page/types/page.status";
@@ -22,7 +23,7 @@ import { EditorLoadError } from "@/app/admin/(dashboard)/components/EditorLoadEr
 import { PageEditorActionButtons } from "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons";
 import { PageEditorForm } from "@/app/admin/(dashboard)/page/edit/components/PageEditorForm";
 import { usePageEditorActions } from "@/app/admin/(dashboard)/page/edit/page-editor-actions";
-import { usePageCreationResult } from "@/app/admin/(dashboard)/page/edit/components/use-page-creation-result";
+import { useCreationResult } from "@/app/admin/(dashboard)/draft/use-creation-result";
 import { adminDetailQueryOptions } from "@/app/admin/(dashboard)/config/query-options";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { toPageEditorFormValues } from "@/app/admin/(dashboard)/page/edit/components/transforms/page-editor-transforms";
@@ -59,7 +60,8 @@ export function PageEditorPage() {
   const [problem, setProblem] = useState<"conflict" | "unknown" | null>(null);
   const [attempt, setAttempt] = useState<PageInsert | null>(null);
   const [preserved, setPreserved] = useState<PageDraft | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [working, setWorking] = useState(false);
+  const busy = useRef(false);
   const foundCreation = useRef(false);
   const generation = useRef(0);
   const identity = `${actorId ?? ""}:${id ?? "new"}`;
@@ -68,6 +70,7 @@ export function PageEditorPage() {
     currentIdentity.current = identity;
     return () => {
       generation.current += 1;
+      busy.current = false;
     };
   }, [identity]);
   const form = useForm<PageEditorValues>({
@@ -79,16 +82,12 @@ export function PageEditorPage() {
     { ...adminDetailQueryOptions, enabled: !!id },
   );
   const detail = query.data;
-  const actions = usePageEditorActions({
-    pageId: id ?? undefined,
+  const savePage = usePageEditorActions(query.refetch);
+  const creationResult = useCreationResult(
+    "page",
+    id ? undefined : attempt?.creationToken,
     actorId,
-    expectedVersion: baseVersion,
-    refetch: query.refetch,
-  });
-  const creationResult = usePageCreationResult(
-    attempt?.creationToken ?? "",
-    actorId,
-    Boolean(actorId && !id && attempt),
+    readPageCreationAttempt,
   );
   useEffect(() => {
     if (creationResult.data) foundCreation.current = true;
@@ -98,11 +97,7 @@ export function PageEditorPage() {
     ? (query.error ??
       (detail === null ? { data: { code: "NOT_FOUND" } } : null))
     : null;
-  const loading =
-    actions.loading ||
-    navigating ||
-    checking ||
-    (isLoadingDetail && !loadError);
+  const loading = working || navigating || (isLoadingDetail && !loadError);
   const { isDirty } = form.formState;
   const draftValues =
     parsePageDraft({ ...useWatch({ control: form.control }), baseVersion }) ??
@@ -110,11 +105,12 @@ export function PageEditorPage() {
   const previous = useRef<{ identity: string; detail: typeof detail } | null>(
     null,
   );
-  const busy = useRef(false);
   const consumed = useRef<typeof detail>(undefined);
   useEffect(() => {
     const old = previous.current;
     previous.current = { identity, detail };
+    // Cached routes can reconnect effects with the same identity after cleanup.
+    if (!busy.current) setWorking(false);
     if (old?.identity === identity) {
       if (
         old.detail === detail ||
@@ -127,8 +123,6 @@ export function PageEditorPage() {
       setAttempt(!id && actorId ? readPageCreationAttempt(actorId) : null);
       setProblem(null);
       setPreserved(null);
-      setChecking(false);
-      busy.current = false;
       foundCreation.current = false;
     }
     const record = id && detail?.id === id ? detail : undefined;
@@ -193,6 +187,7 @@ export function PageEditorPage() {
     const active = () =>
       started === generation.current && currentIdentity.current === identity;
     busy.current = true;
+    setWorking(true);
     let saved = false;
     try {
       await form.handleSubmit(async (values) => {
@@ -200,46 +195,56 @@ export function PageEditorPage() {
         const snapshot = JSON.stringify(form.getValues());
         const submittedDraft =
           parsePageDraft({ ...form.getValues(), baseVersion }) ?? {};
-        let input: Partial<PageInsert> = values;
-        if (!id) {
-          if (!actorId || attempt) {
-            toast.error("上次创建结果尚待核对，请先核对");
-            return;
-          }
-          const frozen = PageInsertSchema.parse({
-            ...values,
-            status,
-            creationToken: crypto.randomUUID(),
-          });
-          if (!writePageCreationAttempt(actorId, frozen)) {
-            toast.error("无法保存创建凭据，请允许浏览器本地存储后重试");
-            return;
-          }
-          setAttempt(frozen);
-          input = frozen;
-        } else if (baseVersion === undefined) {
+        if (!id && (!actorId || attempt)) {
+          toast.error("上次创建结果尚待核对，请先核对");
+          return;
+        }
+        if (id && baseVersion === undefined) {
           setProblem("conflict");
           toast.error("缺少编辑版本，请先加载最新版本");
           return;
         }
-        const result = await actions.submit(input, status);
-        if (!active() || result.state === "stale") return;
+        const parsed = id
+          ? PageUpdateSchema.safeParse({
+              ...values,
+              status,
+              id,
+              expectedVersion: baseVersion,
+            })
+          : PageInsertSchema.safeParse({
+              ...values,
+              status,
+              creationToken: crypto.randomUUID(),
+            });
+        if (!parsed.success) {
+          toast.error("提交失败，请检查表单内容");
+          return;
+        }
+        const input = parsed.data;
+        if ("creationToken" in input && actorId) {
+          if (!writePageCreationAttempt(actorId, input)) {
+            toast.error("无法保存创建凭据，请允许浏览器本地存储后重试");
+            return;
+          }
+          setAttempt(input);
+        }
+        const result = await savePage(input, active);
+        if (!active() || !result) return;
         if (result.state === "conflict" || result.state === "unknown") {
           setProblem(result.state);
           setPreserved(submittedDraft);
           return;
         }
         if (result.state === "error") {
-          if (!id && actorId && input.creationToken) {
+          if (actorId && "creationToken" in input) {
             clearPageCreationAttempt(actorId, input.creationToken);
             setAttempt(null);
           }
           return;
         }
         saved = true;
-        if (result.state === "created") {
-          const frozen = PageInsertSchema.parse(input);
-          finishCreation(result, frozen, snapshot);
+        if (result.state === "created" && "creationToken" in input) {
+          finishCreation(result, input, snapshot);
           draft.clearSaved(submittedDraft);
           return;
         }
@@ -255,7 +260,10 @@ export function PageEditorPage() {
       })();
       return saved;
     } finally {
-      if (active()) busy.current = false;
+      if (active()) {
+        busy.current = false;
+        setWorking(false);
+      }
     }
   };
   const loadLatest = async () => {
@@ -269,7 +277,7 @@ export function PageEditorPage() {
     const snapshot = JSON.stringify(form.getValues());
     const started = generation.current;
     busy.current = true;
-    setChecking(true);
+    setWorking(true);
     try {
       const latest = await query.refetch();
       if (started !== generation.current) return;
@@ -292,15 +300,16 @@ export function PageEditorPage() {
     } finally {
       if (started === generation.current) {
         busy.current = false;
-        setChecking(false);
+        setWorking(false);
       }
     }
   };
   const recoverCreation = async (retry: boolean) => {
     if (!attempt || !actorId || busy.current) return;
     const started = generation.current;
+    const active = () => started === generation.current;
     busy.current = true;
-    setChecking(true);
+    setWorking(true);
     try {
       const checked = await creationResult.refetch();
       if (started !== generation.current) return;
@@ -321,19 +330,19 @@ export function PageEditorPage() {
         toast.error("此前页面已无法确认，不能重试原始创建，请先核对页面列表");
         return;
       }
-      const result = await actions.submit(
-        attempt,
-        attempt.status ?? PageStatus.DRAFT,
+      const result = await savePage(
+        { ...attempt, status: attempt.status ?? PageStatus.DRAFT },
+        active,
       );
       if (started !== generation.current) return;
-      if (result.state === "created") finishCreation(result, attempt);
+      if (result?.state === "created") finishCreation(result, attempt);
     } catch {
       if (started === generation.current)
         toast.error("上次创建结果仍无法确认，原始内容和凭据已保留");
     } finally {
       if (started === generation.current) {
         busy.current = false;
-        setChecking(false);
+        setWorking(false);
       }
     }
   };

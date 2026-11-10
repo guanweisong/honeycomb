@@ -68,8 +68,7 @@ function card(type: PostType) {
 function setupDb(type: PostType, updatedAt: string | null = null) {
   const db = createMockDb();
   const post = fixture(type);
-  db.where.mockReturnValueOnce(db).mockResolvedValueOnce([{ count: 11 }]);
-  db.offset.mockResolvedValue([{ id: post.id }]);
+  db.where.mockResolvedValueOnce([{ count: 11 }]);
   db.query.post.findMany.mockResolvedValue([
     {
       ...post,
@@ -93,7 +92,7 @@ function setupDb(type: PostType, updatedAt: string | null = null) {
 }
 
 describe("public post list payload", () => {
-  it("drops withdrawn IDs without inventing empty cards or changing the count", async () => {
+  it("returns the visibility-filtered relation result and an independent count", async () => {
     const db = setupDb(PostType.ARTICLE);
     db.query.post.findMany.mockResolvedValue([]);
     const caller = postRouter.createCaller(createMockContext(null, db));
@@ -158,8 +157,7 @@ describe("public post list payload", () => {
         });
 
         expect(result).toEqual({ list: [card(type)], total: 11 });
-        expect(db.limit).toHaveBeenCalledWith(5);
-        expect(db.offset).toHaveBeenCalledWith(5);
+        expect(db.select).toHaveBeenCalledOnce();
         const where = new SQLiteSyncDialect().sqlToQuery(
           db.where.mock.calls[0]?.[0],
         );
@@ -169,7 +167,15 @@ describe("public post list payload", () => {
         );
         expect(db.query.post.findMany).toHaveBeenCalledWith(
           expect.objectContaining({
-            columns: { id: true, type: true, movieTime: true, updatedAt: true },
+            limit: 5,
+            offset: 5,
+            columns: {
+              id: true,
+              type: true,
+              movieTime: true,
+              updatedAt: true,
+              createdAt: true,
+            },
             with: {
               translations: {
                 columns: {

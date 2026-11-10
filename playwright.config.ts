@@ -3,9 +3,10 @@ import {
   assertSafeE2ESeedTarget,
   E2E_TEST_TOKEN,
 } from "./scripts/e2e-seed-policy";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
+import { turnstile } from "./tests/e2e/fixtures/auth.json";
 
 const HOST = process.env.PLAYWRIGHT_HOST ?? "127.0.0.1";
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? process.env.PORT ?? 3100);
@@ -60,11 +61,12 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 240_000,
     env: {
+      NODE_OPTIONS: `--require ${JSON.stringify(resolve("tests/e2e/fixtures/turnstile-siteverify.cjs"))}`,
       NEXT_PUBLIC_SITE_URL: BASE_URL,
       NEXT_PUBLIC_ASSET_URL:
         process.env.NEXT_PUBLIC_ASSET_URL ?? "https://assets.honeycomb.test",
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
-      TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: turnstile.siteKey,
+      TURNSTILE_SECRET_KEY: turnstile.secretKey,
       R2_ACCOUNT_ID: "0123456789abcdef0123456789abcdef",
       R2_ACCESS_KEY_ID: "playwright-unused-r2-access-key",
       R2_SECRET_ACCESS_KEY: "playwright-unused-r2-secret-key",

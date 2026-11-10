@@ -16,30 +16,33 @@ const state = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
-vi.mock("@/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor", () => ({
-  usePostEditor: () => {
-    const [showPhotoPicker, setShowPhotoPicker] = useState(false);
-    const baselineVersion = state.baselineVersion;
-    const creationToken = state.creationToken;
-    return {
-      readOnly: state.readOnly,
-      loadError: state.loadError,
-      retryLoad: state.retryLoad,
-      form: { setValue: state.setValue },
-      showPhotoPicker,
-      setShowPhotoPicker,
-      photoPickerProps: { openPhotoPicker: () => setShowPhotoPicker(true) },
-      setCoverPreview: state.setCoverPreview,
-      loading: state.readOnly,
-      creationAttempt: creationToken ? { token: creationToken } : null,
-      creationResult: { data: null, refetch: vi.fn() },
-      submit: async () => {
-        state.submitted({ baselineVersion, creationToken });
-        return true;
-      },
-    };
-  },
-}));
+vi.mock(
+  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor",
+  () => ({
+    usePostEditor: () => {
+      const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+      const baselineVersion = state.baselineVersion;
+      const creationToken = state.creationToken;
+      return {
+        readOnly: state.readOnly,
+        loadError: state.loadError,
+        retryLoad: state.retryLoad,
+        form: { setValue: state.setValue },
+        showPhotoPicker,
+        setShowPhotoPicker,
+        photoPickerProps: { openPhotoPicker: () => setShowPhotoPicker(true) },
+        setCoverPreview: state.setCoverPreview,
+        loading: state.readOnly,
+        creationAttempt: creationToken ? { token: creationToken } : null,
+        creationResult: { data: null, refetch: vi.fn() },
+        submit: async () => {
+          state.submitted({ baselineVersion, creationToken });
+          return true;
+        },
+      };
+    },
+  }),
+);
 vi.mock("@/components/ui/form", () => ({
   Form: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -47,19 +50,23 @@ vi.mock("@/components/ui/form", () => ({
 vi.mock("@/app/admin/(dashboard)/post/edit/components/PostTypeFields", () => ({
   PostTypeFields: () => <input aria-label="Title" />,
 }));
-vi.mock("@/app/admin/(dashboard)/post/edit/components/PostSidebarFields", () => ({
-  PostSidebarFields: ({
-    photoPickerProps,
-  }: {
-    photoPickerProps: { openPhotoPicker: () => void };
-  }) => (
-    <button type="button" onClick={() => photoPickerProps.openPhotoPicker()}>
-      Choose cover
-    </button>
-  ),
-}));
+vi.mock(
+  "@/app/admin/(dashboard)/post/edit/components/PostSidebarFields",
+  () => ({
+    PostSidebarFields: ({
+      photoPickerProps,
+    }: {
+      photoPickerProps: { openPhotoPicker: () => void };
+    }) => (
+      <button type="button" onClick={() => photoPickerProps.openPhotoPicker()}>
+        Choose cover
+      </button>
+    ),
+  }),
+);
 vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCan: () => true,
+  useCurrentUser: () => ({ user: { id: "owner" } }),
 }));
 vi.mock("@/components/Sheet", () => ({
   Sheet: ({
@@ -87,11 +94,14 @@ vi.mock("@/app/admin/(dashboard)/components/MediaPageShell", () => {
   state.mediaModuleLoads += 1;
   return {
     MediaPageShell: ({
-      onSelect,
+      selection,
     }: {
-      onSelect: (media: { id: string }) => void;
+      selection: { setCurrentItem: (media: { id: string }) => void };
     }) => (
-      <button type="button" onClick={() => onSelect({ id: "chosen-cover" })}>
+      <button
+        type="button"
+        onClick={() => selection.setCurrentItem({ id: "chosen-cover" })}
+      >
         Select image
       </button>
     ),

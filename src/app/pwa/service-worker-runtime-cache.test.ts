@@ -5,7 +5,10 @@ import {
   isRuntimeResponseCacheable,
   runtimeResponseCacheabilityPlugin,
 } from "@/app/pwa/service-worker-cache-policy";
-import { runtimeCache } from "@/app/pwa/service-worker-runtime-cache";
+import { createRuntimeCache } from "@/app/pwa/service-worker-runtime-cache";
+
+const offlineFallback = { handlerDidError: vi.fn() };
+const runtimeCache = createRuntimeCache(offlineFallback);
 
 function runtimeRequest(
   pathname: string,
@@ -25,6 +28,25 @@ function matchingStrategies(request: RouteMatchCallbackOptions) {
     if (typeof matcher === "string") return request.url.href.includes(matcher);
     return Boolean(matcher(request));
   });
+}
+
+function requestWithBrowserMetadata(
+  href: string,
+  metadata: { mode?: RequestMode; destination?: RequestDestination },
+) {
+  const request = new Request(href);
+  Object.defineProperties(
+    request,
+    Object.fromEntries(
+      Object.entries(metadata).map(([key, value]) => [key, { value }]),
+    ),
+  );
+  return {
+    ...runtimeRequest("/"),
+    request,
+    sameOrigin: new URL(href).origin === "https://honeycomb.test",
+    url: new URL(href),
+  };
 }
 
 class TestExtendableEvent {
@@ -94,6 +116,15 @@ describe("Service Worker runtime cache policy", () => {
     ).toBe(true);
   });
 
+  it("installs the offline fallback on the public document strategy only", () => {
+    const cacheNames = runtimeCache.flatMap(({ handler }) =>
+      handler instanceof Strategy && handler.plugins.includes(offlineFallback)
+        ? [handler.cacheName]
+        : [],
+    );
+    expect(cacheNames).toEqual(["pages"]);
+  });
+
   it.each([
     runtimeRequest("/api/posts", { "Content-Type": "text/html" }),
     runtimeRequest("/api/posts", { RSC: "1" }),
@@ -107,6 +138,42 @@ describe("Service Worker runtime cache policy", () => {
       expect(matchingStrategies(request)).toEqual([]);
     },
   );
+
+  it("matches actual navigation metadata for documents", () => {
+    const matches = matchingStrategies(
+      requestWithBrowserMetadata("https://honeycomb.test/en/posts", {
+        mode: "navigate",
+        destination: "document",
+      }),
+    );
+    expect(matches[0]?.handler).toMatchObject({ cacheName: "pages" });
+    for (const path of ["/admin", "/api/private"]) {
+      expect(
+        matchingStrategies(
+          requestWithBrowserMetadata(`https://honeycomb.test${path}`, {
+            mode: "navigate",
+            destination: "document",
+          }),
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it("only matches registered cross-origin font destinations", () => {
+    const match = (href: string, destination: RequestDestination) =>
+      matchingStrategies(requestWithBrowserMetadata(href, { destination }));
+    expect(
+      match("https://fonts.gstatic.com/inter.woff2", "font")[0]?.handler,
+    ).toMatchObject({ cacheName: "google-fonts-webfonts" });
+    expect(
+      match("https://fonts.googleapis.com/css2", "style")[0]?.handler,
+    ).toMatchObject({ cacheName: "google-fonts-stylesheets" });
+    expect(match("https://fonts.gstatic.com/inter.woff2", "")).toEqual([]);
+    expect(match("https://fonts.googleapis.com/css2", "script")).toEqual([]);
+    expect(match("https://untrusted.test/any.js", "script")).toEqual([]);
+    expect(match("https://untrusted.test/avatar.png", "image")).toEqual([]);
+    expect(match("https://untrusted.test/api/private", "")).toEqual([]);
+  });
 
   it("registers strategies for public document, RSC, and static asset requests", () => {
     expect(

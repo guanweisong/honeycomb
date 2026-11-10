@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { createTableRelationsHelpers } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/libsql/web";
 import { describe, expect, it } from "vitest";
 import {
   SQLiteSyncDialect,
@@ -15,21 +15,6 @@ type ColumnView = {
     defaultFn?: () => unknown;
     onUpdateFn?: () => unknown;
   };
-};
-
-type RelationHelpers = {
-  many: () => {
-    withFieldName(fieldName: string): { kind: "many"; fieldName: string };
-  };
-  one: () => {
-    withFieldName(fieldName: string): { kind: "one"; fieldName: string };
-  };
-};
-
-type RelationView = {
-  config: (
-    helpers: RelationHelpers,
-  ) => Record<string, { kind: string; fieldName: string }>;
 };
 
 function requireTable(name: string): SQLiteTable {
@@ -200,139 +185,81 @@ describe("db schema helpers", () => {
     );
   });
 
-  it("keeps self-relation names and foreign-key wiring intact", () => {
-    const category = schema.categoryRelations.config(
-      createTableRelationsHelpers(schema.category),
-    );
-    const comment = schema.commentRelations.config(
-      createTableRelationsHelpers(schema.comment),
-    );
-    const menu = schema.menuRelations.config(
-      createTableRelationsHelpers(schema.menu),
-    );
-    expect(category.parentItem.relationName).toBe("category_parent");
-    expect(category.children.relationName).toBe("category_parent");
-    expect(category.parentItem.config?.fields).toEqual([
+  it.each([
+    [
+      schema.category,
       schema.category.parent,
-    ]);
-    expect(category.parentItem.config?.references).toEqual([
+      schema.category,
       schema.category.id,
-    ]);
-    expect(comment.parent.relationName).toBe("comment_parent");
-    expect(comment.children.relationName).toBe("comment_parent");
-    expect(comment.parent.config?.fields).toEqual([schema.comment.parentId]);
-    expect(comment.parent.config?.references).toEqual([schema.comment.id]);
-    expect(menu.parentItem.relationName).toBe("menu_parent");
-    expect(menu.children.relationName).toBe("menu_parent");
-    expect(menu.parentItem.config?.fields).toEqual([schema.menu.parent]);
-    expect(menu.parentItem.config?.references).toEqual([schema.menu.id]);
-    const post = schema.postRelations.config(
-      createTableRelationsHelpers(schema.post),
-    );
-    expect(post.cover.referencedTable).toBe(schema.media);
-    expect(post.cover.config?.fields).toEqual([schema.post.coverId]);
-    expect(post.cover.config?.references).toEqual([schema.media.id]);
+    ],
+    [schema.comment, schema.comment.parentId, schema.comment, schema.comment.id],
+    [schema.menu, schema.menu.parent, schema.menu, schema.menu.id],
+    [schema.post, schema.post.coverId, schema.media, schema.media.id],
+  ])(
+    "keeps the physical parent and cover foreign keys",
+    (table, from, target, to) => {
+      const foreignKey = getTableConfig(table).foreignKeys.find(
+        ({ reference }) => reference().columns[0] === from,
+      );
+      expect(foreignKey?.reference()).toMatchObject({
+        columns: [from],
+        foreignTable: target,
+        foreignColumns: [to],
+      });
+      expect(foreignKey?.onDelete).toBe("set null");
+    },
+  );
+
+  it("compiles content and authentication joins through the live relationships", () => {
+    const { query } = drizzle.mock({ schema });
+    const post = query.post.findMany({
+      with: {
+        author: true,
+        cover: true,
+        category: { with: { translations: true } },
+        postTags: { with: { tag: { with: { translations: true } } } },
+        translations: true,
+      },
+    }).toSQL();
+    for (const table of [
+      "user",
+      "media",
+      "category_translation",
+      "post_tag",
+      "tag_translation",
+      "post_translation",
+    ]) {
+      expect(post.sql).toContain(`from "${table}"`);
+    }
+
+    const menu = query.menu.findMany({
+      with: {
+        category: { with: { translations: true } },
+        page: { with: { translations: true } },
+      },
+    }).toSQL();
+    expect(menu.sql).toContain('from "category_translation"');
+    expect(menu.sql).toContain('from "page_translation"');
+
+    const setting = query.setting.findFirst({
+      with: { translations: true },
+    }).toSQL();
+    expect(setting.sql).toContain('from "setting_translation"');
+
+    const session = query.session.findFirst({ with: { user: true } }).toSQL();
+    expect(session.sql).toContain('from "user"');
   });
 
-  it("exposes the expected relation graph", () => {
-    const helpers: RelationHelpers = {
-      many: () => ({
-        withFieldName(fieldName: string) {
-          return { kind: "many", fieldName };
-        },
-      }),
-      one: () => ({
-        withFieldName(fieldName: string) {
-          return { kind: "one", fieldName };
-        },
-      }),
-    };
-
-    expect(
-      (schema.userRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      posts: { kind: "many", fieldName: "posts" },
-      pages: { kind: "many", fieldName: "pages" },
-      accounts: { kind: "many", fieldName: "accounts" },
-      sessions: { kind: "many", fieldName: "sessions" },
-      passkeys: { kind: "many", fieldName: "passkeys" },
-      loginHistories: { kind: "many", fieldName: "loginHistories" },
-    });
-    expect(
-      (schema.categoryRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      posts: { kind: "many", fieldName: "posts" },
-      parentItem: { kind: "one", fieldName: "parentItem" },
-      children: { kind: "many", fieldName: "children" },
-      translations: { kind: "many", fieldName: "translations" },
-    });
-    expect(
-      (schema.mediaRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      coverPosts: { kind: "many", fieldName: "coverPosts" },
-    });
-    expect(
-      (schema.postRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      author: { kind: "one", fieldName: "author" },
-      category: { kind: "one", fieldName: "category" },
-      cover: { kind: "one", fieldName: "cover" },
-      postTags: { kind: "many", fieldName: "postTags" },
-      translations: { kind: "many", fieldName: "translations" },
-    });
-    expect(
-      (schema.tagRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      postTags: { kind: "many", fieldName: "postTags" },
-      translations: { kind: "many", fieldName: "translations" },
-    });
-    expect(
-      (schema.postTagRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      post: { kind: "one", fieldName: "post" },
-      tag: { kind: "one", fieldName: "tag" },
-    });
-    expect(
-      (schema.pageRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      author: { kind: "one", fieldName: "author" },
-      comments: { kind: "many", fieldName: "comments" },
-      translations: { kind: "many", fieldName: "translations" },
-    });
-    expect(
-      (schema.commentRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      post: { kind: "one", fieldName: "post" },
-      page: { kind: "one", fieldName: "page" },
-      parent: { kind: "one", fieldName: "parent" },
-      children: { kind: "many", fieldName: "children" },
-    });
-    expect(
-      (schema.menuRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      parentItem: { kind: "one", fieldName: "parentItem" },
-      children: { kind: "many", fieldName: "children" },
-      category: { kind: "one", fieldName: "category" },
-      page: { kind: "one", fieldName: "page" },
-    });
-    expect(
-      (schema.settingRelations as unknown as RelationView).config(helpers),
-    ).toEqual({
-      translations: { kind: "many", fieldName: "translations" },
-    });
-    for (const relationName of [
-      "categoryTranslationRelations",
-      "postTranslationRelations",
-      "pageTranslationRelations",
-      "tagTranslationRelations",
-      "settingTranslationRelations",
-    ]) {
-      const relation = Reflect.get(schema, relationName) as
-        RelationView | undefined;
-      expect(relation, `${relationName} must be exported`).toBeDefined();
-      expect(relation?.config(helpers)).toEqual({
-        owner: { kind: "one", fieldName: "owner" },
-      });
-    }
+  it("joins a comment's ordinary and custom post references independently", () => {
+    const { sql } = drizzle.mock({ schema }).query.comment.findMany({
+      with: {
+        post: { with: { translations: true } },
+        page: { with: { translations: true } },
+        customPost: { with: { translations: true } },
+      },
+    }).toSQL();
+    expect(sql).toContain('"comment_post"."id" = "comment"."post_id"');
+    expect(sql).toContain('"comment_customPost"."id" = "comment"."custom_id"');
+    expect(sql).toContain('"comment_page"."id" = "comment"."page_id"');
   });
 });

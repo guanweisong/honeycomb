@@ -15,11 +15,8 @@ vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
   useCurrentUser: () => ({ user: { id: "draft-user", level: "ADMIN" } }),
   useCan: () => true,
 }));
-vi.mock("@/app/admin/(dashboard)/page/edit/components/use-page-creation-result", () => ({
-  usePageCreationResult: () => ({ data: null, refetch: vi.fn() }),
-}));
-vi.mock("@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result", () => ({
-  usePostCreationResult: () => ({ data: null, refetch: vi.fn() }),
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", () => ({
+  useCreationResult: () => ({ data: null, refetch: vi.fn() }),
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {

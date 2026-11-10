@@ -1,4 +1,5 @@
 import { createClient, type Client } from "@libsql/client/node";
+import { readMigrationFiles } from "drizzle-orm/migrator";
 import {
   existsSync,
   mkdtempSync,
@@ -67,5 +68,48 @@ describe("persistence invariant preflight", () => {
       "link.status: 1",
     );
     expect(applyMigrations).not.toHaveBeenCalled();
+  });
+
+  it("blocks an existing migration ledger that is not a prefix of reviewed migrations", async () => {
+    await client.execute(
+      'create table "__drizzle_migrations" (id serial primary key, hash text not null, created_at numeric)',
+    );
+    await client.execute(
+      "insert into \"__drizzle_migrations\" (hash, created_at) values ('unrecognized-hash', 9999999999999)",
+    );
+
+    await expect(migrateDatabase(client)).rejects.toThrow(
+      "Migration ledger differs at entry 1",
+    );
+  });
+
+  it("upgrades an existing reviewed prefix and preserves its records on retry", async () => {
+    const reviewed = readMigrationFiles({ migrationsFolder: "drizzle" });
+    await client.execute(
+      'create table "__drizzle_migrations" (id serial primary key, hash text not null, created_at numeric)',
+    );
+    for (const { hash, folderMillis } of reviewed.slice(0, 3)) {
+      await client.execute({
+        sql: 'insert into "__drizzle_migrations" (hash, created_at) values (?, ?)',
+        args: [hash, folderMillis],
+      });
+    }
+    await client.execute(
+      "insert into link (id, url, name, logo) values ('kept', 'https://example.test/', 'Kept', 'https://example.test/logo')",
+    );
+
+    await migrateDatabase(client);
+    await migrateDatabase(client);
+
+    const ledger = await client.execute(
+      'select hash, created_at from "__drizzle_migrations" order by created_at',
+    );
+    expect(
+      ledger.rows.map(({ hash, created_at }) => [hash, created_at]),
+    ).toEqual(reviewed.map(({ hash, folderMillis }) => [hash, folderMillis]));
+    expect(
+      (await client.execute("select id from link")).rows.map(({ id }) => id),
+    ).toEqual(["kept"]);
+    expect((await client.execute("pragma foreign_key_check")).rows).toEqual([]);
   });
 });

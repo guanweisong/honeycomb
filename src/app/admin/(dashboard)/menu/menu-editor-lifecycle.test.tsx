@@ -43,16 +43,18 @@ describe("menu editor save lifecycle", () => {
         return { editor, actions };
       };
       function Probe({ remote }: { remote: CheckedMenuData }) {
-        editor = useMenuTreeEditor(remote);
-        actions = useMenuActions(
-          editor.checkedList,
-          editor.baseVersion,
-          mocks.refresh,
-          editor.acknowledge,
-          editor.setProtected,
-        );
+        actions = useMenuActions(mocks.refresh);
+        editor = useMenuTreeEditor(remote, actions.loading || actions.blocked);
         return null;
       }
+      const submit = () => {
+        const { editor, actions } = current();
+        return actions.submit(
+          editor.checkedList,
+          editor.baseVersion,
+          editor.acknowledge,
+        );
+      };
       let finish: ((value: unknown) => void) | undefined;
       let fail: ((error: Error) => void) | undefined;
       mocks.save.mockImplementation(
@@ -72,7 +74,7 @@ describe("menu editor save lifecycle", () => {
         );
         let pending: Promise<void> | undefined;
         await act(async () => {
-          pending = current().actions.submit();
+          pending = submit();
         });
         await act(async () =>
           current().editor.onCheck(second, false, MenuType.CUSTOM),
@@ -95,7 +97,7 @@ describe("menu editor save lifecycle", () => {
             root.render(<Probe remote={{ list: [row, second], version: 1 }} />),
           );
           expect(current().editor.checkedList).toEqual([row]);
-          await act(async () => current().actions.submit());
+          await act(async () => submit());
           expect(mocks.save).toHaveBeenCalledOnce();
         }
       } finally {

@@ -8,20 +8,13 @@ import {
   updateCategory,
 } from "@/features/category/server/category-commands";
 import { listPosts } from "@/features/post/server/post-queries";
-import {
-  existsSync,
-  lstatSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createClient } from "@libsql/client/node";
+import { readFileSync } from "node:fs";
+import type { Client } from "@libsql/client/node";
+import { withTestDatabase } from "@tests/helpers/local-test-database";
 import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import { eq } from "drizzle-orm";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { aroundEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 
 import { createUserRepository } from "@/features/user/server/user-repository";
@@ -50,51 +43,39 @@ const invalidator = {
 };
 
 describe("relational integrity with real libSQL", () => {
-  let client: ReturnType<typeof createClient>;
+  let client: Client;
   let db: ReturnType<typeof drizzle<typeof schema>>;
-  let directory: string;
-  beforeEach(async () => {
-    directory = mkdtempSync(join(tmpdir(), "honeycomb-relational-"));
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    if (typeof process.getuid === "function")
-      expect(stat.uid).toBe(process.getuid());
-    client = createClient({ url: `file:${join(directory, "relational.db")}` });
-    db = drizzle(client, { schema });
-    for (const file of readdirSync("drizzle")
-      .filter((file) => file.endsWith(".sql"))
-      .sort()) {
-      await client.executeMultiple(readFileSync(`drizzle/${file}`, "utf8"));
-    }
-    await db
-      .insert(schema.category)
-      .values([
-        categoryValues("root"),
-        categoryValues("child", "root"),
-        categoryValues("grandchild", "child"),
-      ]);
-    await db.insert(schema.categoryTranslation).values(
-      ["root", "child", "grandchild"].flatMap((categoryId) => [
-        {
-          categoryId,
-          locale: MultiLangEnum.En,
-          title: categoryId,
-          description: categoryId,
-        },
-        {
-          categoryId,
-          locale: MultiLangEnum.Zh,
-          title: categoryId,
-          description: categoryId,
-        },
-      ]),
-    );
-  });
-  afterEach(() => {
-    client.close();
-    rmSync(directory, { recursive: true });
-    expect(existsSync(directory)).toBe(false);
-  });
+  aroundEach((runTest) =>
+    withTestDatabase(async (localClient) => {
+      client = localClient;
+      db = drizzle(client, { schema });
+      await migrate(db, { migrationsFolder: "drizzle" });
+      await db
+        .insert(schema.category)
+        .values([
+          categoryValues("root"),
+          categoryValues("child", "root"),
+          categoryValues("grandchild", "child"),
+        ]);
+      await db.insert(schema.categoryTranslation).values(
+        ["root", "child", "grandchild"].flatMap((categoryId) => [
+          {
+            categoryId,
+            locale: MultiLangEnum.En,
+            title: categoryId,
+            description: categoryId,
+          },
+          {
+            categoryId,
+            locale: MultiLangEnum.Zh,
+            title: categoryId,
+            description: categoryId,
+          },
+        ]),
+      );
+      await runTest();
+    }),
+  );
 
   it("includes grandchildren in ancestor post filters", async () => {
     await db
@@ -274,7 +255,7 @@ describe("relational integrity with real libSQL", () => {
       (await db.select().from(schema.postTag)).map(({ type }) => type).sort(),
     ).toEqual(["ACTOR", "DIRECTOR"]);
   });
-  it("rejects the entire deletion batch when a target is promoted after the application pre-read", async () => {
+  it("rejects the entire deletion batch when a competing promotion commits before the write transaction", async () => {
     await db.insert(schema.user).values(
       ["promoted", "guest"].map((id) => ({
         id,
@@ -288,19 +269,18 @@ describe("relational integrity with real libSQL", () => {
       destroyUsers(
         {
           ...repository,
-          getStates: async (ids) => {
-            const states = await repository.getStates(ids);
+          destroy: async (ids) => {
             await db
               .update(schema.user)
               .set({ level: UserLevel.ADMIN })
               .where(eq(schema.user.id, "promoted"));
-            return states;
+            return repository.destroy(ids);
           },
         },
         ["promoted", "guest"],
         invalidator,
       ),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    ).rejects.toMatchObject({ code: "PROTECTED_USER" });
     expect(
       (await db.select().from(schema.user)).map(({ id }) => id).sort(),
     ).toEqual(["guest", "promoted"]);

@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import type { CheckedMenuData } from "@/app/admin/(dashboard)/menu/components/menu-transforms";
 import { Save } from "lucide-react";
 import { renderCategoryTitleByDepth } from "@/app/admin/(dashboard)/post/edit/components/category-title";
-import { useCan, useCurrentUser } from "@/app/admin/(dashboard)/providers/use-current-user";
+import {
+  useCan,
+  useCurrentUser,
+} from "@/app/admin/(dashboard)/providers/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { Button } from "@/components/ui/button";
@@ -46,15 +49,12 @@ function MenuEditor() {
     menuFetching,
     refetchMenu,
   } = useMenuQuery();
-  const editor = useMenuTreeEditor(checkedData);
+  const actions = useMenuActions(refetchMenu);
+  const { loading, blocked, clearBlocked } = actions;
+  const editor = useMenuTreeEditor(checkedData, loading || blocked);
   const hasBaseline = editor.baseVersion !== undefined;
-  const { submit, loading, blocked, clearBlocked } = useMenuActions(
-    editor.checkedList,
-    editor.baseVersion,
-    refetchMenu,
-    editor.acknowledge,
-    editor.setProtected,
-  );
+  const submit = () =>
+    actions.submit(editor.checkedList, editor.baseVersion, editor.acknowledge);
   const [latest, setLatest] = useState<CheckedMenuData>();
   const reviewLatest = async () => {
     try {

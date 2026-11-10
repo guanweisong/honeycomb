@@ -7,32 +7,35 @@ import { MediaUploadIntentInputSchema } from "@/features/media/schemas/media.upl
 import { type MediaUploadIntentInput } from "@/features/media/types/media.upload";
 
 const DOMAIN = "honeycomb:media-upload-intent:v1\0";
-const PayloadSchema = MediaUploadIntentInputSchema.safeExtend({
+const UploadIntentMetadataSchema = z.object({
   version: z.literal(1),
   actorId: z.string().min(1),
   id: z.string().regex(/^[a-f0-9]{24}$/),
   uploadKey: z.string().regex(/^temporary\/[a-f0-9-]+\.[a-z]+$/),
   expiresAt: z.number().int().positive(),
 });
+const PayloadSchema = MediaUploadIntentInputSchema.safeExtend(
+  UploadIntentMetadataSchema.shape,
+);
 export type UploadIntent = z.infer<typeof PayloadSchema>;
 function signature(encoded: string) {
   const secret = getAuthEnv().AUTH_SECRET;
   if (!secret) throw new Error("Upload signing secret is not configured");
   return createHmac("sha256", secret).update(DOMAIN).update(encoded).digest();
 }
+/** Sign file metadata already validated by the preparing command. */
 export function createUploadIntent(
   file: MediaUploadIntentInput,
   actorId: string,
 ) {
-  const input = MediaUploadIntentInputSchema.parse(file);
-  const payload = PayloadSchema.parse({
-    ...input,
+  const metadata = UploadIntentMetadataSchema.parse({
     version: 1,
     actorId,
     id: randomUUID().replaceAll("-", "").slice(0, 24),
-    uploadKey: `temporary/${randomUUID()}.${input.name.split(".").at(-1)?.toLowerCase()}`,
+    uploadKey: `temporary/${randomUUID()}.${file.name.split(".").at(-1)?.toLowerCase()}`,
     expiresAt: Date.now() + 3600_000,
   });
+  const payload = { ...file, ...metadata };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return {
     intent: `${encoded}.${signature(encoded).toString("base64url")}`,

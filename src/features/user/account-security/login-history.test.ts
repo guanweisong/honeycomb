@@ -1,13 +1,16 @@
 // @vitest-environment node
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryEvent,
 } from "@/features/user/account-security/login-history";
 
 describe("login history", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("builds a redacted history record from request metadata", () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
     const request = new Request(
       "https://example.test/api/auth/sign-in/username",
       {

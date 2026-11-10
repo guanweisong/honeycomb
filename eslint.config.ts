@@ -6,6 +6,7 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
       "react-hooks/set-state-in-effect": "error",
       "react-hooks/immutability": "error",
@@ -30,7 +31,6 @@ export default defineConfig([
       // Adopt a newer server snapshot only while the editor is pristine.
       "src/app/admin/(dashboard)/menu/components/use-menu-tree-editor.ts",
       // Reset pending state when the editor identity changes; stale completions stay guarded.
-      "src/app/admin/(dashboard)/page/edit/page-editor-actions.ts",
       // Reconcile external identity and confirmed server snapshots without overwriting dirty drafts.
       "src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx",
       // Synchronize the external authentication SDK passkey snapshot.

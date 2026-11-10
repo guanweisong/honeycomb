@@ -92,7 +92,7 @@ describe("site snapshot transactions on isolated SQLite", () => {
     );
     expect(result).toMatchObject({ count: 2, version: 1 });
     expect((await getMenuSnapshot(db)).list).toHaveLength(2);
-    expect((await listMenus(db, "PUBLIC_ONLY")).list).toEqual([]);
+    expect((await listMenus(db)).list).toEqual([]);
   });
   it("rolls back revision and tree on invalid target or insert failure", async () => {
     await saveAllMenus(

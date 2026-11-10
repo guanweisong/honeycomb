@@ -93,7 +93,10 @@ test.describe("blog home", () => {
     ).toContainEqual({
       procedure: "post.index",
       input: {
-        page: 2,
+        cursor: {
+          id: firstPageHrefs.at(-1)?.split("/").at(-1),
+          createdAt: expect.any(String),
+        },
         limit: 10,
         sortField: "createdAt",
         status: ["PUBLISHED"],

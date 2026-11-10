@@ -37,7 +37,9 @@ test.describe("@regression local editor draft recovery", () => {
       await expect(
         page.getByRole("button", { name: "保存草稿", exact: true }),
       ).toBeEnabled();
-      const title = page.getByPlaceholder(placeholder);
+      const title = page
+        .getByPlaceholder(placeholder)
+        .filter({ visible: true });
       await title.fill("浏览器未保存草稿");
       await expect(title).toHaveValue("浏览器未保存草稿");
       await expect

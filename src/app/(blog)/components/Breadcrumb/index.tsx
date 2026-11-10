@@ -6,7 +6,10 @@ import { Link } from "@/app/(blog)/lib/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
-import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
+import {
+  findCategoryRouteItem,
+  getCategoryHref,
+} from "@/app/(blog)/lib/category-route";
 
 /**
  * 面包屑组件的属性接口。
@@ -61,30 +64,16 @@ const Breadcrumb = (props: BreadCrumbProps) => {
   ];
 
   if (segmentType === "list" && segmentTypePath[0] === "category") {
-    const paths = segmentTypePath.slice(1);
-    for (const [index, path] of paths.entries()) {
-      const item = menu.find((item) => {
-        if (item.path !== path) return false;
-        // Match the public URL ancestry, which omits null-path bridge nodes.
-        const canonicalPaths = getCurrentPathOfMenu({
-          id: item.id,
-          menu,
-        });
-        return (
-          canonicalPaths.length === index + 1 &&
-          canonicalPaths.every((part, ancestor) => part === paths[ancestor])
-        );
-      });
+    const paths = segmentTypePath.slice(1).map(decodeURIComponent);
+    for (const index of paths.keys()) {
+      const item = findCategoryRouteItem(menu, paths.slice(0, index + 1));
       // Do not invent a current page for a partially resolved route.
       if (!item) return null;
       breadData.push({
         label: item.title?.[locale],
         link:
           index < paths.length - 1
-            ? `/list/category/${paths
-                .slice(0, index + 1)
-                .map(encodeURIComponent)
-                .join("/")}`
+            ? getCategoryHref(paths.slice(0, index + 1))
             : undefined,
       });
     }

@@ -2,7 +2,9 @@
 
 ## 当前架构与开发入口
 
-本次维护工作见[2026-10-28 精简处置台账](../openspec/changes/simplify-maintainability-audit/disposition.md)及[活动变更收尾核对](../openspec/changes/simplify-maintainability-audit/change-status.md)；它们不代表当前提交 CI 或发布完成。
+当前修复范围和本地验证见[工程审查后续修复](../openspec/changes/fix-engineering-audit-follow-up/tasks.md)。使用 `openspec list` 查看活动变更，使用 `openspec status --change <名称>` 核对单项状态。
+
+较早的维护工作见[2026-10-28 精简处置台账](../openspec/changes/simplify-maintainability-audit/disposition.md)及[活动变更收尾核对](../openspec/changes/simplify-maintainability-audit/change-status.md)；它们不代表当前提交 CI 或发布完成。
 
 - [代码阅读地图](code-reading-map.md)：从实际业务入口追踪调用。
 - [架构与依赖边界](architecture-dependency-report.md)：当前职责、运行时边界和不可变行为。

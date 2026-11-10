@@ -16,19 +16,19 @@ import {
   updateCategory,
 } from "@/features/category/server/category-commands";
 import { listCategories } from "@/features/category/server/category-queries";
-import { createClient, type Client } from "@libsql/client/node";
+import type { Client } from "@libsql/client/node";
+import { withTestDatabase } from "@tests/helpers/local-test-database";
 import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import {
-  existsSync,
-  lstatSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+  afterEach,
+  aroundEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 
@@ -49,41 +49,22 @@ vi.mock("@/lib/observability/server", () => ({
   ) => operation(),
 }));
 
-async function migrate(client: Client) {
-  for (const file of readdirSync("drizzle")
-    .filter((name) => name.endsWith(".sql"))
-    .sort()) {
-    await client.executeMultiple(readFileSync(join("drizzle", file), "utf8"));
-  }
-}
-
 describe("translation repository writes", () => {
-  let directory: string;
   let client: Client;
   let db: ReturnType<typeof drizzle<typeof schema>>;
 
-  beforeEach(async () => {
-    directory = mkdtempSync(
-      join(tmpdir(), `honeycomb-repository-${process.getuid?.() ?? "user"}-`),
-    );
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    if (typeof process.getuid === "function")
-      expect(stat.uid).toBe(process.getuid());
-    client = createClient({ url: `file:${join(directory, "repository.db")}` });
-    await client.execute("pragma foreign_keys = on");
-    await migrate(client);
-    db = drizzle(client, { schema });
-    await client.execute(
-      "insert into user (id, email, level, status) values ('author', 'author@example.com', 'ADMIN', 'ENABLE')",
-    );
-  });
-
-  afterEach(() => {
-    client.close();
-    rmSync(directory, { recursive: true });
-    expect(existsSync(directory)).toBe(false);
-  });
+  aroundEach((runTest) =>
+    withTestDatabase(async (localClient) => {
+      client = localClient;
+      await client.execute("pragma foreign_keys = on");
+      await migrate(drizzle(client), { migrationsFolder: "drizzle" });
+      db = drizzle(client, { schema });
+      await client.execute(
+        "insert into user (id, email, level, status) values ('author', 'author@example.com', 'ADMIN', 'ENABLE')",
+      );
+      await runTest();
+    }),
+  );
 
   it("writes required entity translations without changing repository DTOs", async () => {
     const category = await createCategory(

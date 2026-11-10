@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 

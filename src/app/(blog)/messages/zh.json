@@ -37,6 +37,7 @@
     }
   },
   "Comment": {
+    "unavailable": "评论暂时不可用。",
     "title": "发表留言",
     "summary": "{count}条留言",
     "banMessage": "该条评论已屏蔽",
@@ -56,6 +57,11 @@
       "cancel": "取消",
       "reply": "回复"
     }
+  },
+  "NotFound": {
+    "title": "页面未找到",
+    "description": "404：请求的页面不存在或已被移除。",
+    "home": "返回首页"
   },
   "Offline": {
     "title": "你已离线",

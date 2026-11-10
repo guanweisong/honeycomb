@@ -60,6 +60,10 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 }));
 
 import { usePostEditor } from "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor";
+import {
+  readPostCreationAttempt,
+  writePostCreationAttempt,
+} from "@/app/admin/(dashboard)/post/edit/components/utils/post-draft";
 
 describe("usePostEditor draft recovery and version conflicts", () => {
   let container: HTMLDivElement;
@@ -70,6 +74,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
     mocks.userId = "draft-user";
     mocks.detail = undefined;
     mocks.queryError = null;
@@ -115,7 +120,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     );
     expect(requireDefined(editor).form.formState.isDirty).toBe(true);
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -142,7 +147,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     mocks.detail = { ...originalDetail, version: 8 };
     await rerenderEditor(postId);
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ expectedVersion: 3 }),
@@ -154,7 +159,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     mocks.update.mockResolvedValueOnce({ id: postId, version: 4 });
     await renderEditor(postId);
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     await act(async () =>
       requireDefined(editor).form.setValue(
@@ -164,7 +169,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       ),
     );
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(mocks.update).toHaveBeenLastCalledWith(
       expect.objectContaining({ expectedVersion: 4 }),
@@ -190,7 +195,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       ),
     );
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     const original = mocks.create.mock.calls[0]?.[0];
     await act(async () =>
@@ -201,7 +206,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       ),
     );
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.PUBLISHED, "create");
+      await requireDefined(editor).submit(PostStatus.PUBLISHED);
     });
     expect(mocks.create).toHaveBeenCalledTimes(1);
     await act(async () => {
@@ -211,12 +216,22 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     expect(mocks.create).toHaveBeenLastCalledWith(original);
   });
 
-  it("does not create again when a recovered attempt is found", async () => {
+  it("finds the original creation after another tab has saved its own receipt", async () => {
     mocks.create.mockRejectedValueOnce(new Error("lost response"));
     await renderEditor();
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
+    const firstTab = requireDefined(requireDefined(editor).creationAttempt);
+    const otherTab = { ...firstTab, creationToken: crypto.randomUUID() };
+    const selectionKey = "honeycomb:draft:post:draft-user:creation-attempt";
+    await act(async () => root.unmount());
+    sessionStorage.removeItem(selectionKey);
+    expect(writePostCreationAttempt(mocks.userId, otherTab)).toBe(true);
+    sessionStorage.setItem(selectionKey, firstTab.creationToken);
+    root = createRoot(container);
+    await renderEditor();
+    expect(requireDefined(editor).creationAttempt).toEqual(firstTab);
     mocks.creationResult.mockResolvedValueOnce({
       isSuccess: true,
       data: { id: postId, version: 7 },
@@ -226,6 +241,9 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     });
     expect(mocks.create).toHaveBeenCalledTimes(1);
     expect(mocks.push).toHaveBeenCalledWith(`/admin/post/edit?id=${postId}`);
+    expect(
+      readPostCreationAttempt(mocks.userId, otherTab.creationToken),
+    ).toEqual(otherTab);
   });
 
   it("keeps local input on conflict and requires an explicit latest-version reload", async () => {
@@ -240,7 +258,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       ),
     );
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(requireDefined(editor).saveProblem).toBe("conflict");
     expect(requireDefined(editor).form.getValues("title")).toEqual({
@@ -286,7 +304,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       });
     try {
       await act(async () => {
-        await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+        await requireDefined(editor).submit(PostStatus.DRAFT);
       });
       expect(mocks.create).not.toHaveBeenCalled();
       expect(requireDefined(editor).form.getValues("title")).toEqual({
@@ -335,7 +353,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     await renderEditor();
     let saving: Promise<boolean> | undefined;
     await act(async () => {
-      saving = requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      saving = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     await act(async () =>
       requireDefined(editor).form.setValue("movieActors", [tag], {
@@ -362,7 +380,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
     mocks.create.mockRejectedValueOnce(new Error("lost response"));
     await renderEditor();
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     await act(async () =>
       requireDefined(editor).form.setValue(
@@ -419,7 +437,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       zh: "typed during read",
     });
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ expectedVersion: 3 }),
@@ -501,7 +519,7 @@ describe("usePostEditor draft recovery and version conflicts", () => {
       expect(requireDefined(editor).loading).toBe(false);
       expect(requireDefined(editor).readOnly).toBe(true);
       await act(async () => {
-        await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+        await requireDefined(editor).submit(PostStatus.DRAFT);
       });
       expect(mocks.create).not.toHaveBeenCalled();
       mocks.queryError = null;
@@ -514,20 +532,17 @@ describe("usePostEditor draft recovery and version conflicts", () => {
   );
 });
 
-vi.mock(
-  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result",
-  async () => {
-    const { trpc } = await import("@/lib/trpc/client/trpc");
-    return {
-      usePostCreationResult: (
-        creationToken: string,
-        _actorId: string | undefined,
-        enabled: boolean,
-      ) =>
-        trpc.post.creationResult.useQuery(
-          { creationToken },
-          { enabled, retry: false },
-        ),
-    };
-  },
-);
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
+    ) =>
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
+      ),
+  };
+});

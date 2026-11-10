@@ -58,7 +58,7 @@ it("counts other ordinary rows sharing a storage key as a known reference", asyn
       if (table === schema.post)
         return { where: () => ({ limit: async () => [] }) };
       if (table === schema.media)
-        return { where: async () => [{ id: "target" }, { id: "duplicate" }] };
+        return { where: () => ({ limit: async () => [{ id: "duplicate" }] }) };
       throw new Error("Duplicate reference should stop further queries");
     },
   }));

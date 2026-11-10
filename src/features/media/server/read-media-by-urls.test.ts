@@ -17,6 +17,19 @@ describe("bounded media URL reads", () => {
     ).toEqual([]);
     expect(db.select).not.toHaveBeenCalled();
   });
+  it("fails closed before reading rows from a legacy table", async () => {
+    const db = createMockDb();
+    db.all.mockResolvedValueOnce([{ name: "state" }]);
+    await expect(
+      readMediaByUrls(
+        asMockDatabase(db),
+        ["https://cdn.test/old.png"],
+        "post.service.detail-images",
+      ),
+    ).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+    expect(db.select).not.toHaveBeenCalled();
+  });
+
   it("keeps every URL while respecting the SQL binding budget", async () => {
     const db = createMockDb();
     const urls = Array.from(

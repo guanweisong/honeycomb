@@ -1,4 +1,5 @@
 import "server-only";
+import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
 
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { Parser } from "htmlparser2";
@@ -64,6 +65,7 @@ export async function searchPublishedPosts(
   db: Database,
   input: PostSearchInput,
 ): Promise<PostSearchResult[]> {
+  await assertOrdinaryMediaSchema(db);
   const pattern = `%${input.query.replace(/[\\%_]/g, "\\$&")}%`;
   const body = sql<string | null>`case
     when ${post.type} = ${PostType.QUOTE} then ${postTranslation.quoteContent}

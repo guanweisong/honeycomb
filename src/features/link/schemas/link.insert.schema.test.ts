@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { LinkInsertSchema } from "@/features/link/schemas/link.insert.schema";
 import { EnableStatus } from "@/lib/validation/enable-status";

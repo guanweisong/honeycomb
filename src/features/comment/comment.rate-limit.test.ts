@@ -34,12 +34,13 @@ const input = {
 
 function createCaller() {
   const context = createMockContext(null, createMockDb());
-  context.header.set("x-forwarded-for", "203.0.113.10");
+  context.header.set("x-forwarded-for", "spoofed, 203.0.113.10, 10.0.0.1");
   return commentRouter.createCaller(context);
 }
 
 describe("comment creation rate-limit composition", () => {
   beforeEach(() => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
     limiter.limit.mockReset();
     vi.mocked(limitWithTimeout).mockClear();
   });

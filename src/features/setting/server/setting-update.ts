@@ -9,8 +9,8 @@ import {
   patchSettingTranslationRows,
 } from "@/features/setting/server/setting-translations";
 import { SettingPatchSchema } from "@/features/setting/schemas/setting.patch.schema";
-import { can, Permission } from "@/lib/auth/permissions";
-import { UserStatus } from "@/features/user/types/user.status";
+import { Permission } from "@/lib/auth/permissions";
+import { requireActiveActor } from "@/features/user/server/require-active-actor";
 import { ApplicationError } from "@/lib/errors/application-error";
 import type { SettingUpdate } from "@/features/setting/types/setting.patch";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
@@ -42,17 +42,12 @@ export async function updateSetting(
     "transaction",
     () =>
       transactionWithBeginRetry(db, busyMessage, async (tx) => {
-        const [actor] = await tx
-          .select({ level: schema.user.level, status: schema.user.status })
-          .from(schema.user)
-          .where(eq(schema.user.id, actorId))
-          .limit(1);
-        if (
-          !actor ||
-          actor.status !== UserStatus.ENABLE ||
-          !can(actor.level, Permission.settingUpdate)
-        )
-          throw new ApplicationError("FORBIDDEN", "当前账户无权保存设置");
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.settingUpdate],
+          "当前账户无权保存设置",
+        );
         const [updated] = await tx
           .update(schema.setting)
           .set({

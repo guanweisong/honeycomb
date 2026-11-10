@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useDialogSession } from "@/app/admin/(dashboard)/lib/use-dialog-session";
 import { ModalType } from "@/app/admin/(dashboard)/types/modal-type";
 import { ModalTypeName } from "@/app/admin/(dashboard)/types/modal-type-name";
 import { DynamicForm } from "@/components/DynamicForm";
@@ -51,69 +51,47 @@ export type TagFormDialogProps = AdminDialogState<TagEntity> & {
  */
 export default function TagFormDialog(props: TagFormDialogProps) {
   const { type = ModalType.ADD, open, record, onClose, onSuccess } = props;
-  const session = useRef(0);
-  useEffect(
-    () => () => {
-      session.current += 1;
-    },
-    [open, type, record?.id],
-  );
+  const session = useDialogSession(open, type, record?.id);
   const close = () => {
-    session.current += 1;
+    session.invalidate();
     onClose?.();
   };
-  /**
-   * 创建标签的 tRPC mutation。
-   */
   const createTag = trpc.tag.create.useMutation();
-  /**
-   * 更新标签的 tRPC mutation。
-   */
   const updateTag = trpc.tag.update.useMutation();
-
-  /**
-   * 新增、编辑弹窗表单保存事件
-   */
-  const handleModalOk = async (values: TagInsertValues | TagUpdateValues) => {
-    const submittedSession = session.current;
-    switch (type) {
-      case ModalType.ADD:
-        if (
-          (await runAdminMutation({
-            input: TagInsertSchema.parse(values),
-            mutate: createTag.mutateAsync,
-            refetch: () => onSuccess?.(),
-            notifySuccess: toast.success,
-            notifyWarning: toast.warning,
-            notifyError: toast.error,
-            successMessage: "添加成功",
-            errorMessage: "添加失败",
-          })) === "success" &&
-          session.current === submittedSession
-        )
-          close();
-        break;
-      case ModalType.EDIT:
-        if (!record) {
-          toast.error("标签不存在，无法更新");
-          return;
-        }
-        if (
-          (await runAdminMutation({
-            input: TagUpdateSchema.parse(withAdminRecordId(record, values)),
-            mutate: updateTag.mutateAsync,
-            refetch: () => onSuccess?.(),
-            notifySuccess: toast.success,
-            notifyWarning: toast.warning,
-            notifyError: toast.error,
-            successMessage: "更新成功",
-            errorMessage: "更新失败",
-          })) === "success" &&
-          session.current === submittedSession
-        )
-          close();
-        break;
+  const feedback = {
+    refetch: () => onSuccess?.(),
+    notifySuccess: toast.success,
+    notifyWarning: toast.warning,
+    notifyError: toast.error,
+  };
+  const handleCreate = (values: TagInsertValues) =>
+    session.closeAfter(
+      () =>
+        runAdminMutation({
+          ...feedback,
+          input: values,
+          mutate: createTag.mutateAsync,
+          successMessage: "添加成功",
+          errorMessage: "添加失败",
+        }),
+      close,
+    );
+  const handleUpdate = async (values: TagUpdateValues) => {
+    if (!record) {
+      toast.error("标签不存在，无法更新");
+      return;
     }
+    await session.closeAfter(
+      () =>
+        runAdminMutation({
+          ...feedback,
+          input: withAdminRecordId(record, values),
+          mutate: updateTag.mutateAsync,
+          successMessage: "更新成功",
+          errorMessage: "更新失败",
+        }),
+      close,
+    );
   };
 
   return (
@@ -135,7 +113,7 @@ export default function TagFormDialog(props: TagFormDialogProps) {
           }
           schema={TagUpdateSchema}
           fields={tagFields}
-          onSubmit={handleModalOk}
+          onSubmit={handleUpdate}
         />
       ) : (
         <DynamicForm
@@ -145,7 +123,7 @@ export default function TagFormDialog(props: TagFormDialogProps) {
           }
           schema={TagInsertSchema}
           fields={tagFields}
-          onSubmit={handleModalOk}
+          onSubmit={handleCreate}
         />
       )}
     </Dialog>

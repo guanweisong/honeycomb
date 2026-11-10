@@ -37,6 +37,7 @@
     }
   },
   "Comment": {
+    "unavailable": "Comments are temporarily unavailable.",
     "title": "Leave a message",
     "summary": "{count, plural, one {# message} other {# messages}}",
     "banMessage": "This comment has been blocked",
@@ -56,6 +57,11 @@
       "cancel": "Cancel",
       "reply": "Reply"
     }
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "404: The page you requested does not exist or was removed.",
+    "home": "Back to home"
   },
   "Offline": {
     "title": "You're offline",

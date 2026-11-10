@@ -6,14 +6,13 @@ import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
 import { transactionWithBeginRetry } from "@/lib/db/transaction-begin-retry";
 import { observeDbOperation } from "@/lib/observability/server";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import { can, Permission } from "@/lib/auth/permissions";
-import { UserStatus } from "@/features/user/types/user.status";
+import { Permission } from "@/lib/auth/permissions";
+import { requireActiveActor } from "@/features/user/server/require-active-actor";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { MenuType } from "@/features/menu/types/menu.type";
 import type { MenuInput } from "@/features/menu/types/menu.write";
 import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
 import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
-import { readMenuChunks } from "@/features/menu/server/menu-queries";
 
 // Insert budgets count every bound column, including generated timestamps.
 const menuInsertChunkSize = Math.max(
@@ -22,6 +21,17 @@ const menuInsertChunkSize = Math.max(
     SQL_ID_CHUNK_SIZE / Object.keys(getTableColumns(schema.menu)).length,
   ),
 );
+
+async function readMenuChunks<Row>(
+  ids: string[],
+  read: (ids: string[]) => PromiseLike<Row[]>,
+): Promise<Row[]> {
+  const rows: Row[] = [];
+  for (let offset = 0; offset < ids.length; offset += SQL_ID_CHUNK_SIZE) {
+    rows.push(...(await read(ids.slice(offset, offset + SQL_ID_CHUNK_SIZE))));
+  }
+  return rows;
+}
 
 const busyMessage = "保存暂时繁忙，请核对最新版本后重试";
 
@@ -72,17 +82,12 @@ export async function saveAllMenus(
     "transaction",
     () =>
       transactionWithBeginRetry(db, busyMessage, async (tx) => {
-        const [actor] = await tx
-          .select({ level: schema.user.level, status: schema.user.status })
-          .from(schema.user)
-          .where(eq(schema.user.id, actorId))
-          .limit(1);
-        if (
-          !actor ||
-          actor.status !== UserStatus.ENABLE ||
-          !can(actor.level, Permission.menuUpdate)
-        )
-          throw new ApplicationError("FORBIDDEN", "当前账户无权保存菜单");
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.menuUpdate],
+          "当前账户无权保存菜单",
+        );
         const [revision] = await tx
           .update(schema.menuRevision)
           .set({ version: sql`${schema.menuRevision.version} + 1` })

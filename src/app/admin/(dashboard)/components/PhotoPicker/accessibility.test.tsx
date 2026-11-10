@@ -2,6 +2,12 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import PhotoPicker from "@/app/admin/(dashboard)/components/PhotoPicker/index";
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: "owner" } }),
+}));
+vi.mock("@/app/admin/(dashboard)/components/MediaPageShell", () => ({
+  MediaPageShell: () => <button>选择媒体</button>,
+}));
 it("uses a viewport-bounded real sheet with reachable selection and cancel controls", async () => {
   const container = document.createElement("div");
   document.body.append(container);
@@ -14,7 +20,6 @@ it("uses a viewport-bounded real sheet with reachable selection and cancel contr
           showPhotoPicker
           handlePhotoPickerOk={vi.fn()}
           handlePhotoPickerCancel={cancel}
-          pickerContent={() => <button>选择媒体</button>}
         />,
       ),
     );

@@ -117,9 +117,9 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       if (action === "update") mocks.detail = originalDetail;
       await renderEditor(action === "update" ? postId : null);
       await act(async () => {
-        expect(
-          await requireDefined(editor).submit(PostStatus.DRAFT, action),
-        ).toBe(true);
+        expect(await requireDefined(editor).submit(PostStatus.DRAFT)).toBe(
+          true,
+        );
       });
       expect(await cache.readLists()).toEqual([
         { title: "Saved title" },
@@ -138,9 +138,9 @@ describe("usePostEditor asynchronous save lifecycle", () => {
         new Error("refresh unavailable"),
       );
       await act(async () => {
-        expect(
-          await requireDefined(editor).submit(PostStatus.DRAFT, action),
-        ).toBe(true);
+        expect(await requireDefined(editor).submit(PostStatus.DRAFT)).toBe(
+          true,
+        );
       });
       expect(requireDefined(editor).saveProblem).toBeNull();
       expect(mocks[action]).toHaveBeenCalledTimes(1);
@@ -153,7 +153,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     mocks.update.mockRejectedValue({ data: { code: "FORBIDDEN" } });
     await renderEditor(postId);
     await act(async () => {
-      await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      await requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(await cache.readLists()).toEqual([
       { title: "Old title" },
@@ -184,7 +184,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       );
       let saving: Promise<boolean> | undefined;
       await act(async () => {
-        saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+        saving = requireDefined(editor).submit(PostStatus.PUBLISHED);
       });
       await act(async () => {
         requireDefined(editor).form.setValue(
@@ -259,7 +259,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     mocks.refetch.mockResolvedValue({ isSuccess: true, data: originalDetail });
     let saving: Promise<boolean> | undefined;
     await act(async () => {
-      saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      saving = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     const selectedTag = { ...tag, id: "222222222222222222222222" };
     await act(async () => {
@@ -290,7 +290,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       );
       let saving: Promise<boolean> | undefined;
       await act(async () => {
-        saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+        saving = requireDefined(editor).submit(PostStatus.PUBLISHED);
       });
       const selectedTag = { ...tag, id: "222222222222222222222222" };
       await act(async () => {
@@ -331,7 +331,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     );
     let saving: Promise<boolean> | undefined;
     await act(async () => {
-      saving = requireDefined(editor).submit(PostStatus.DRAFT, "create");
+      saving = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     mocks.detail = originalDetail;
     await rerenderEditor(postId);
@@ -359,7 +359,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       );
       let saving: Promise<boolean> | undefined;
       await act(async () => {
-        saving = requireDefined(editor).submit(PostStatus.DRAFT, "create");
+        saving = requireDefined(editor).submit(PostStatus.DRAFT);
       });
       if (navigation === "unmount") {
         await act(async () => root.render(<div>Other page</div>));
@@ -402,7 +402,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     );
     let saving: Promise<boolean> | undefined;
     await act(async () => {
-      saving = requireDefined(editor).submit(PostStatus.PUBLISHED, "update");
+      saving = requireDefined(editor).submit(PostStatus.PUBLISHED);
     });
     mocks.detail = { ...originalDetail, title: { zh: "Background snapshot" } };
     await rerenderEditor(postId);
@@ -423,7 +423,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       if (operation === "retry") {
         mocks.create.mockRejectedValueOnce(new Error("Unknown create"));
         await act(async () => {
-          await requireDefined(editor).submit(PostStatus.DRAFT, "create");
+          await requireDefined(editor).submit(PostStatus.DRAFT);
         });
       }
       let reject: ((error: Error) => void) | undefined;
@@ -453,7 +453,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       );
       let saving: Promise<boolean> | undefined;
       await act(async () => {
-        saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+        saving = requireDefined(editor).submit(PostStatus.DRAFT);
       });
       await act(async () => {
         reject?.(new Error("Late failure"));
@@ -483,7 +483,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
       );
       let saving: Promise<boolean> | undefined;
       await act(async () => {
-        saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+        saving = requireDefined(editor).submit(PostStatus.DRAFT);
       });
       if (change === "unmount") await act(async () => root.render(null));
       else if (change === "account") {
@@ -528,7 +528,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     );
     let oldSave: Promise<boolean> | undefined;
     await act(async () => {
-      oldSave = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      oldSave = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     const nextId = "234567890123456789012345";
     mocks.detail = { ...originalDetail, id: nextId };
@@ -543,7 +543,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     );
     let newSave: Promise<boolean> | undefined;
     await act(async () => {
-      newSave = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      newSave = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     expect(mocks.update).toHaveBeenCalledTimes(2);
     await act(async () => {
@@ -574,7 +574,7 @@ describe("usePostEditor asynchronous save lifecycle", () => {
     mocks.refetch.mockResolvedValue({ isSuccess: true, data: originalDetail });
     let saving: Promise<boolean> | undefined;
     await act(async () => {
-      saving = requireDefined(editor).submit(PostStatus.DRAFT, "update");
+      saving = requireDefined(editor).submit(PostStatus.DRAFT);
     });
     const nextId = "234567890123456789012345";
     mocks.detail = {
@@ -594,20 +594,17 @@ describe("usePostEditor asynchronous save lifecycle", () => {
   });
 });
 
-vi.mock(
-  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result",
-  async () => {
-    const { trpc } = await import("@/lib/trpc/client/trpc");
-    return {
-      usePostCreationResult: (
-        creationToken: string,
-        _actorId: string | undefined,
-        enabled: boolean,
-      ) =>
-        trpc.post.creationResult.useQuery(
-          { creationToken },
-          { enabled, retry: false },
-        ),
-    };
-  },
-);
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
+    ) =>
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
+      ),
+  };
+});

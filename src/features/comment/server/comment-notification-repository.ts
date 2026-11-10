@@ -10,6 +10,7 @@ import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import { observeDbOperation } from "@/lib/observability/server";
 import { assembleLocalizedField } from "@/lib/db/translation-values";
+import { getSetting } from "@/features/setting/server/setting-queries";
 
 const selection = {
   ...getTableColumns(schema.comment),
@@ -75,24 +76,8 @@ export function createCommentNotificationRepository(db: Database) {
       };
     },
     async getSetting(): Promise<NotificationSetting | undefined> {
-      const [setting] = await observeDbOperation(
-        "comment.notification.setting",
-        "select",
-        () =>
-          db
-            .select()
-            .from(schema.setting)
-            .where(eq(schema.setting.singletonKey, 1))
-            .limit(1),
-      );
-      if (!setting) return undefined;
-      const translations = await db
-        .select()
-        .from(schema.settingTranslation)
-        .where(eq(schema.settingTranslation.settingId, setting.id));
-      return {
-        siteName: assembleLocalizedField(translations, (row) => row.siteName),
-      };
+      const setting = await getSetting(db);
+      return setting ? { siteName: setting.siteName } : undefined;
     },
   };
 }

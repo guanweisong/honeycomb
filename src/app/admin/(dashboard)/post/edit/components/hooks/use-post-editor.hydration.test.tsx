@@ -109,7 +109,7 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     const current = requireDefined(editor);
     await act(async () => {
       current.form.setValue("title.zh", "新文章", { shouldDirty: true });
-      await current.submit(PostStatus.DRAFT, "create");
+      await current.submit(PostStatus.DRAFT);
     });
     expect(mocks.create).toHaveBeenCalledTimes(1);
     const wire = JSON.parse(
@@ -131,7 +131,7 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     const current = requireDefined(editor);
     expect(current.form.getValues("content")).toBeNull();
     expect(current.form.getValues("excerpt")).toBeNull();
-    await act(async () => current.submit(PostStatus.DRAFT, "update"));
+    await act(async () => current.submit(PostStatus.DRAFT));
     expect(mocks.update).toHaveBeenCalledTimes(1);
     const wire = JSON.parse(
       JSON.stringify(requireDefined(mocks.update.mock.calls[0])[0]),
@@ -317,7 +317,7 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
     mocks.refetch.mockResolvedValue({ data: savedDetail, isSuccess: true });
     await act(async () => {
       await expect(
-        requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+        requireDefined(editor).submit(PostStatus.PUBLISHED),
       ).resolves.toBe(true);
     });
 
@@ -363,7 +363,7 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
 
     await act(async () => {
       await expect(
-        requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+        requireDefined(editor).submit(PostStatus.PUBLISHED),
       ).resolves.toBe(true);
     });
 
@@ -388,20 +388,17 @@ describe("usePostEditor hydration and saved-value reconciliation", () => {
   });
 });
 
-vi.mock(
-  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result",
-  async () => {
-    const { trpc } = await import("@/lib/trpc/client/trpc");
-    return {
-      usePostCreationResult: (
-        creationToken: string,
-        _actorId: string | undefined,
-        enabled: boolean,
-      ) =>
-        trpc.post.creationResult.useQuery(
-          { creationToken },
-          { enabled, retry: false },
-        ),
-    };
-  },
-);
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
+    ) =>
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
+      ),
+  };
+});

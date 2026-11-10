@@ -1,4 +1,5 @@
 import "server-only";
+import { isCategoryPathSegment } from "@/features/category/rules/category-path";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
@@ -12,7 +13,7 @@ import { supportedLanguages } from "@/lib/i18n/i18n";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
 import type { CategoryInsert } from "@/features/category/types/category.insert";
 import type { CategoryUpdate } from "@/features/category/types/category.update";
-import { categoryPathExists, findCategory } from "@/features/category/server/category-queries";
+import { findCategory } from "@/features/category/server/category-queries";
 import {
   toCategoryTranslationRows,
   withTranslations,
@@ -58,14 +59,9 @@ async function assertParentChain(
   }
 }
 
-async function assertPath(
-  db: Database,
-  path: string | undefined,
-  excludeId?: string,
-): Promise<void> {
-  if (path !== undefined && (await categoryPathExists(db, path, excludeId))) {
-    throw new ApplicationError("BAD_REQUEST", "分类路径已经存在");
-  }
+function assertPath(path: string | undefined): void {
+  if (path !== undefined && !isCategoryPathSegment(path))
+    throw new ApplicationError("BAD_REQUEST", "分类路径必须是单个 URL 路径段");
 }
 
 export async function createCategory(
@@ -75,7 +71,7 @@ export async function createCategory(
 ) {
   assertStatus(input.status);
   await assertParentChain(db, undefined, input.parent);
-  await assertPath(db, input.path);
+  assertPath(input.path);
 
   const persisted = await observeDbOperation(
     "category.create",
@@ -120,7 +116,7 @@ export async function updateCategory(
   if (!current) throw new ApplicationError("NOT_FOUND", "分类不存在");
   assertStatus(input.status);
   await assertParentChain(db, input.id, input.parent);
-  await assertPath(db, input.path, input.id);
+  assertPath(input.path);
 
   const { id, title, description, ...changes } = input;
   const parentChanges = {

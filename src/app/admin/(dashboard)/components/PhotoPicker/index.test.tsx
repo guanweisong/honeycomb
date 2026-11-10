@@ -41,6 +41,26 @@ vi.mock("@/components/Sheet", () => ({
   },
 }));
 
+let account = "first";
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
+  useCurrentUser: () => ({ user: { id: account } }),
+}));
+vi.mock("@/app/admin/(dashboard)/components/MediaPageShell", () => ({
+  MediaPageShell: ({
+    selection,
+  }: {
+    selection: import("@/app/admin/(dashboard)/components/MediaPageShell").MediaSelection;
+  }) => {
+    selectMediaRef.current = selection.setCurrentItem;
+    return <div>media-page</div>;
+  },
+}));
+vi.mock("next/dynamic", async () => {
+  const { MediaPageShell } =
+    await import("@/app/admin/(dashboard)/components/MediaPageShell");
+  return { default: () => MediaPageShell };
+});
+
 import PhotoPickerModal from "@/app/admin/(dashboard)/components/PhotoPicker";
 
 const mediaFixture = {
@@ -65,6 +85,7 @@ describe("PhotoPickerModal", () => {
     act(() => root?.unmount());
     container?.remove();
     toastInfo.mockReset();
+    account = "first";
     selectMediaRef.current = undefined;
     confirmRef.current = undefined;
   });
@@ -79,10 +100,6 @@ describe("PhotoPickerModal", () => {
     act(() =>
       root.render(
         <PhotoPickerModal
-          pickerContent={(onSelect) => {
-            selectMediaRef.current = onSelect;
-            return <div>media-page</div>;
-          }}
           showPhotoPicker
           handlePhotoPickerOk={handlePhotoPickerOk}
           handlePhotoPickerCancel={handlePhotoPickerCancel}
@@ -120,10 +137,6 @@ describe("PhotoPickerModal", () => {
         showPhotoPicker={open}
         handlePhotoPickerOk={confirm}
         handlePhotoPickerCancel={vi.fn()}
-        pickerContent={(onSelect) => {
-          selectMediaRef.current = onSelect;
-          return null;
-        }}
       />
     );
     act(() => root.render(picker(false)));
@@ -155,10 +168,6 @@ describe("PhotoPickerModal", () => {
         showPhotoPicker={open}
         handlePhotoPickerOk={confirm}
         handlePhotoPickerCancel={vi.fn()}
-        pickerContent={(onSelect) => {
-          selectMediaRef.current = onSelect;
-          return null;
-        }}
       />
     );
     act(() => root.render(picker(false)));
@@ -178,12 +187,32 @@ describe("PhotoPickerModal", () => {
           showPhotoPicker={false}
           handlePhotoPickerOk={confirm}
           handlePhotoPickerCancel={vi.fn()}
-          pickerContent={() => null}
         />,
       ),
     );
     act(() => staleConfirm?.());
     expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("clears selection and invalidates an old confirmation when the account changes", () => {
+    const confirm = vi.fn();
+    render(confirm);
+    act(() => selectMediaRef.current?.(mediaFixture));
+    const staleConfirm = confirmRef.current;
+    account = "second";
+    act(() =>
+      root.render(
+        <PhotoPickerModal
+          showPhotoPicker
+          handlePhotoPickerOk={confirm}
+          handlePhotoPickerCancel={vi.fn()}
+        />,
+      ),
+    );
+    act(() => staleConfirm?.());
+    act(() => confirmRef.current?.());
+    expect(confirm).not.toHaveBeenCalled();
+    expect(toastInfo).toHaveBeenCalledWith("请选择图片");
   });
 
   it("forwards cancellation from the sheet", () => {

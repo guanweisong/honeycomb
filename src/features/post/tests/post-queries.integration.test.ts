@@ -8,11 +8,12 @@ import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
-import { listPosts, listPublicPosts, getPost } from "@/features/post/server/post-queries";
 import {
-  loadAdminPostListItems,
-  loadPostRelations,
-} from "@/features/post/server/post-relations";
+  listPosts,
+  listPublicPosts,
+  getPost,
+} from "@/features/post/server/post-queries";
+import { loadPostRelations } from "@/features/post/server/post-relations";
 import { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
 import { destroyPosts } from "@/features/post/server/post-commands";
 import { PostStatus } from "@/features/post/types/post.status";
@@ -103,12 +104,16 @@ describe("post list SQL with isolated real SQLite", () => {
       list: [],
       total: 0,
     });
-    expect(queries).toHaveLength(2);
+    const postQueries = queries.filter(({ sql }) => !sql.startsWith("PRAGMA"));
+    expect(postQueries).toHaveLength(2);
     expect(
-      queries.every(
+      postQueries.every(
         ({ sql }) => sql.includes("exists") && sql.includes('"post_tag"'),
       ),
     ).toBe(true);
+    expect(
+      postQueries.filter(({ sql }) => sql.includes('"post_translation"')),
+    ).toHaveLength(1);
   });
 
   it("intersects descendant category, tag roles, author and publication without duplicates", async () => {
@@ -184,8 +189,10 @@ describe("post list SQL with isolated real SQLite", () => {
     await tagPost("first");
     queries.length = 0;
     await listPublicPosts(db, { tagId: "tag", limit: 10 });
-    const before = queries.find(({ sql }) =>
-      sql.startsWith('select "id" from "post"'),
+    const before = queries.find(
+      ({ sql }) =>
+        sql.includes('from "post" "post"') &&
+        sql.includes('"post_translation"'),
     );
     expect(before).toBeDefined();
     const ids = Array.from({ length: 150 }, (_, index) => `many-${index}`);
@@ -201,13 +208,18 @@ describe("post list SQL with isolated real SQLite", () => {
     );
     queries.length = 0;
     const result = await listPublicPosts(db, { tagId: "tag", limit: 10 });
-    const after = queries.find(({ sql }) =>
-      sql.startsWith('select "id" from "post"'),
+    const after = queries.find(
+      ({ sql }) =>
+        sql.includes('from "post" "post"') &&
+        sql.includes('"post_translation"'),
     );
     expect(result.total).toBe(151);
     expect(result.list).toHaveLength(10);
     expect(after?.params.length).toBe(before?.params.length);
     expect(queries).toHaveLength(3);
+    expect(
+      queries.filter(({ sql }) => /pragma table_info\(media\)/i.test(sql)),
+    ).toHaveLength(1);
     expect(after?.sql).toContain("exists");
     if (!client || !after)
       throw new Error("Missing isolated query measurement");
@@ -216,6 +228,25 @@ describe("post list SQL with isolated real SQLite", () => {
       args: after.params.map((value) => String(value)),
     });
     process.stdout.write(`post-tag-query-plan ${JSON.stringify(plan.rows)}\n`);
+  });
+
+  it("keeps the public feed boundary through publication and nullable timestamp ties", async () => {
+    await insertPost("post-newest", { createdAt: "2020-03-01" });
+    await insertPost("post-a", { createdAt: "2020-02-01" });
+    await insertPost("post-b", { createdAt: "2020-02-01" });
+    await insertPost("post-null-a", { createdAt: null });
+    await insertPost("post-null-b", { createdAt: null });
+    const first = await listPublicPosts(db, { limit: 2 }, null);
+    expect(first.list.map(({ id }) => id)).toEqual(["post-newest", "post-a"]);
+    expect(first.nextCursor).toEqual({ id: "post-a", createdAt: "2020-02-01" });
+
+    await insertPost("post-concurrent", { createdAt: "2020-04-01" });
+    const second = await listPublicPosts(db, { limit: 2 }, first.nextCursor);
+    expect(second.list.map(({ id }) => id)).toEqual(["post-b", "post-null-a"]);
+    expect(second.nextCursor).toEqual({ id: "post-null-a", createdAt: null });
+    const third = await listPublicPosts(db, { limit: 2 }, second.nextCursor);
+    expect(third.list.map(({ id }) => id)).toEqual(["post-null-b"]);
+    expect(third.nextCursor).toBeNull();
   });
 
   it.each(["createdAt", "updatedAt", "views"] as const)(
@@ -248,8 +279,10 @@ describe("post list SQL with isolated real SQLite", () => {
         expect(
           new Set([...first.list, ...second.list].map(({ id }) => id)).size,
         ).toBe(4);
-        const selected = queries.find(({ sql }) =>
-          sql.startsWith('select "id" from "post"'),
+        const selected = queries.find(
+          ({ sql }) =>
+            sql.includes('from "post" "post"') &&
+            sql.includes('"post_translation"'),
         );
         expect(selected?.sql).toMatch(/order by .+, "post"\."id" asc limit/);
       }
@@ -396,9 +429,6 @@ describe("post list SQL with isolated real SQLite", () => {
         "ALL",
       );
       const narrowListMs = performance.now() - start;
-      const narrowStart = performance.now();
-      await loadAdminPostListItems(db, narrow.list, "ALL");
-      const narrowHydrationMs = performance.now() - narrowStart;
       const fullStart = performance.now();
       const full = await loadPostRelations(db, narrow.list, "ALL");
       const fullHydrationMs = performance.now() - fullStart;
@@ -412,10 +442,9 @@ describe("post list SQL with isolated real SQLite", () => {
           narrowBytes,
           fullBytes,
           narrowListMs,
-          narrowHydrationMs,
           fullHydrationMs,
           scope:
-            "synthetic local SQLite, single sample per projection; hydration timings exclude ID/count selection, not production latency",
+            "synthetic local SQLite, single sample per projection; full projection timing excludes pagination and count",
         })}\n`,
       );
     }

@@ -1,8 +1,13 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getByRole } from "@testing-library/dom";
+import { PageStatus } from "@/features/page/types/page.status";
+import { PageTemplate } from "@/features/page/types/page.template";
+import type { PageListItem } from "@/features/page/types/page.read-model";
 
 const mocks = vi.hoisted(() => ({
+  query: vi.fn(),
   destroy: vi.fn(),
   refetch: vi.fn(),
   success: vi.fn(),
@@ -21,47 +26,30 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
       page: { adminDetail: { prefetch: vi.fn().mockResolvedValue(undefined) } },
     }),
     page: {
-      adminIndex: {
-        useQuery: () => ({
-          data: { list: [{ id: "page-1", version: 4 }], total: 1 },
-          refetch: mocks.refetch,
-        }),
-      },
+      adminIndex: { useQuery: mocks.query },
       destroy: { useMutation: () => ({ mutateAsync: mocks.destroy }) },
     },
   },
 }));
-vi.mock("@/components/DataTable", () => ({
-  DataTable: ({
-    data,
-    rowActions,
-  }: {
-    data: { list: { id: string }[] };
-    rowActions: (row: { id: string }) => React.ReactNode;
-  }) => (
-    <div>
-      {data.list.map((row) => (
-        <div key={row.id}>{rowActions(row)}</div>
-      ))}
-    </div>
-  ),
-}));
-vi.mock("@/components/Dialog", () => ({
-  Dialog: ({
-    onOK,
-    trigger,
-  }: {
-    onOK: () => Promise<void>;
-    trigger: React.ReactNode;
-  }) => (
-    <>
-      {trigger}
-      <button onClick={() => void onOK()}>delete</button>
-    </>
-  ),
-}));
-
 import Page from "@/app/admin/(dashboard)/page/list/page";
+
+function showPage(version: number) {
+  const row = {
+    id: "page-1",
+    version,
+    status: PageStatus.DRAFT,
+    template: PageTemplate.DEFAULT,
+    title: null,
+    author: null,
+    createdAt: null,
+    updatedAt: null,
+    views: 0,
+  } satisfies PageListItem;
+  mocks.query.mockReturnValue({
+    data: { list: [row], total: 1 },
+    refetch: mocks.refetch,
+  });
+}
 
 describe("page deletion public sync feedback", () => {
   let container: HTMLDivElement;
@@ -69,6 +57,7 @@ describe("page deletion public sync feedback", () => {
 
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
+    showPage(4);
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -81,11 +70,16 @@ describe("page deletion public sync feedback", () => {
   });
 
   async function deletePage() {
-    const button = Array.from(container.querySelectorAll("button")).find(
-      (item) => item.textContent === "delete",
+    await act(async () =>
+      getByRole(container, "button", { name: "删除页面" }).click(),
     );
-    if (!button) throw new Error("Missing deletion action");
-    await act(async () => button.click());
+    await confirmDelete();
+  }
+
+  async function confirmDelete() {
+    await act(async () =>
+      getByRole(document.body, "button", { name: "确定" }).click(),
+    );
   }
 
   it("names the page row actions", () => {
@@ -94,6 +88,32 @@ describe("page deletion public sync feedback", () => {
       container.querySelector('button[aria-label="删除页面"]'),
     ).not.toBeNull();
   });
+
+  it.each(["删除页面", "批量删除"])(
+    "uses the current version at confirmation for %s",
+    async (action) => {
+      mocks.destroy.mockResolvedValue({ success: true });
+      mocks.refetch.mockResolvedValue({ isSuccess: true });
+      if (action === "批量删除") {
+        await act(async () =>
+          getByRole(
+            getByRole(container, "row", { name: /草稿/ }),
+            "checkbox",
+          ).click(),
+        );
+      }
+      await act(async () =>
+        getByRole(container, "button", { name: action }).click(),
+      );
+      showPage(5);
+      await act(async () => root.render(<Page />));
+      await confirmDelete();
+
+      expect(mocks.destroy).toHaveBeenCalledExactlyOnceWith({
+        items: [{ id: "page-1", expectedVersion: 5 }],
+      });
+    },
+  );
 
   it.each(["completed", "degraded"])(
     "reports committed %s deletion even if refreshing fails",

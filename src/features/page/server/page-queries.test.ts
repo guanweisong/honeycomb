@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { asMockDatabase, createMockDb } from "@tests/helpers/test-utils";
 import { getPage, listPages } from "@/features/page/server/page-queries";
 import { PageTemplate } from "@/features/page/types/page.template";
-import * as schema from "@/lib/db/schema";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { PageStatus } from "@/features/page/types/page.status";
 const row = {
@@ -16,13 +15,9 @@ const row = {
   updatedAt: null,
 };
 describe("page relation read snapshot", () => {
-  it("gets revision and translations from the same reread and drops disappeared rows", async () => {
+  it("gets revision and translations from a single relation read", async () => {
     const fake = createMockDb();
-    fake.offset.mockResolvedValue([
-      { id: row.id },
-      { id: "507f1f77bcf86cd799439012" },
-    ]);
-    fake.where.mockReturnValueOnce(fake).mockResolvedValueOnce([{ count: 2 }]);
+    fake.where.mockResolvedValueOnce([{ count: 2 }]);
     fake.query.page.findMany.mockResolvedValue([
       {
         ...row,
@@ -37,7 +32,8 @@ describe("page relation read snapshot", () => {
       },
     ]);
     const result = await listPages(asMockDatabase(fake), {}, "ALL");
-    expect(fake.select).toHaveBeenNthCalledWith(1, { id: schema.page.id });
+    expect(fake.select).toHaveBeenCalledOnce();
+    expect(fake.query.page.findMany).toHaveBeenCalledOnce();
     expect(result.list).toHaveLength(1);
     expect(result.list[0]).toMatchObject({
       id: row.id,
@@ -48,13 +44,12 @@ describe("page relation read snapshot", () => {
     expect(result.list[0]).not.toHaveProperty("creationToken");
     expect(result.list[0]).not.toHaveProperty("creationInputHash");
   });
-  it("preserves paginated ID order and rechecks published visibility", async () => {
+  it("orders and limits the visibility-constrained relation read", async () => {
     const fake = createMockDb();
     const otherId = "507f1f77bcf86cd799439012";
-    fake.offset.mockResolvedValue([{ id: otherId }, { id: row.id }]);
-    fake.where.mockReturnValueOnce(fake).mockResolvedValueOnce([{ count: 2 }]);
+    fake.where.mockResolvedValueOnce([{ count: 2 }]);
     fake.query.page.findMany.mockResolvedValue(
-      [row.id, otherId].map((id) => ({
+      [otherId, row.id].map((id) => ({
         ...row,
         id,
         status: PageStatus.PUBLISHED,
@@ -68,8 +63,14 @@ describe("page relation read snapshot", () => {
       "PUBLISHED_ONLY",
     );
     expect(result.list.map((page) => page.id)).toEqual([otherId, row.id]);
-    expect(fake.limit).toHaveBeenCalledWith(2);
-    expect(fake.offset).toHaveBeenCalledWith(4);
+    expect(fake.query.page.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: 2,
+        offset: 4,
+        orderBy: expect.anything(),
+      }),
+    );
+    expect(fake.select).toHaveBeenCalledOnce();
     const dialect = new SQLiteSyncDialect();
     expect(dialect.sqlToQuery(fake.where.mock.calls[0]?.[0]).params).toContain(
       PageStatus.PUBLISHED,
@@ -83,10 +84,7 @@ describe("page relation read snapshot", () => {
     "still validates the hydrated %s enum",
     async (field) => {
       const fake = createMockDb();
-      fake.offset.mockResolvedValue([{ id: row.id }]);
-      fake.where
-        .mockReturnValueOnce(fake)
-        .mockResolvedValueOnce([{ count: 1 }]);
+      fake.where.mockResolvedValueOnce([{ count: 1 }]);
       fake.query.page.findMany.mockResolvedValue([
         {
           ...row,
@@ -153,12 +151,10 @@ describe("localized media relations", () => {
   });
   it("page lists map deduplicated images from all locales", async () => {
     const db = createMockDb();
-    db.offset.mockResolvedValue([page]);
     db.query.page.findMany.mockResolvedValue([
       { ...page, translations: pageTranslations },
     ]);
     db.where
-      .mockReturnValueOnce(db)
       .mockResolvedValueOnce([{ count: 1 }])
       .mockResolvedValueOnce(images);
     const result = await listPages(asMockDatabase(db), {}, "ALL");

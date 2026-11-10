@@ -10,6 +10,11 @@
 - Each skill directory MUST contain a `SKILL.md`.
 - Commit skill path is `.codex/skills/english-commit/SKILL.md`.
 
+## 全仓审视与复审
+
+- 全仓审视（包括架构与过度设计复审）MUST 执行[全仓复审流程](docs/architecture-dependency-report.md#全仓复审)。同时覆盖目录与文件清单，以及从真实入口到持久化、外部副作用和界面反馈的调用链。
+- 发现一种重复职责或缺陷后，MUST 在同类业务、其他入口和测试流程中追查同一模式。逐项给出证据和验证范围，并注明必须保留的契约与待验证项。
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

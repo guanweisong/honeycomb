@@ -1,6 +1,11 @@
 "use client";
 
-import { usePostCreationResult } from "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result";
+import {
+  postTagFields,
+  postTagRoles,
+} from "@/features/post/rules/post-tag-roles";
+import type { PostRelationPatch } from "@/features/post/types/post.insert";
+import { useCreationResult } from "@/app/admin/(dashboard)/draft/use-creation-result";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
@@ -38,8 +43,6 @@ import {
   writePostCreationAttempt,
   clearPostCreationAttempt,
 } from "@/app/admin/(dashboard)/post/edit/components/utils/post-draft";
-
-export type PostSubmitAction = "create" | "update";
 
 // Match registered fields without turning optional locales into empty-string writes.
 const newPostValues: PostEditorValues = {
@@ -116,10 +119,11 @@ export function usePostEditor(id: string | null) {
       ...useWatch({ control: form.control }),
       baseVersion: baselineVersion,
     }) ?? {};
-  const creationResult = usePostCreationResult(
-    creationAttempt?.creationToken ?? "",
+  const creationResult = useCreationResult(
+    "post",
+    id ? undefined : creationAttempt?.creationToken,
     userId,
-    Boolean(user && !id && creationAttempt),
+    readPostCreationAttempt,
   );
   useEffect(() => {
     setCreationAttempt(!id && userId ? readPostCreationAttempt(userId) : null);
@@ -242,10 +246,7 @@ export function usePostEditor(id: string | null) {
     startNavigation(() => router.push(`/admin/post/edit?id=${result.id}`));
   };
 
-  const submit = async (
-    status: PostStatus,
-    action: PostSubmitAction,
-  ): Promise<boolean> => {
+  const submit = async (status: PostStatus): Promise<boolean> => {
     if (submitting.current || isNavigating || (id && detail?.id !== id))
       return false;
     submitting.current = true;
@@ -256,6 +257,7 @@ export function usePostEditor(id: string | null) {
       parsePostDraft({ ...form.getValues(), baseVersion: baselineVersion }) ??
       {};
     const submittedGeneration = recordGeneration.current;
+    let submittedAttempt: PostInsert | undefined;
 
     try {
       await form.handleSubmit(
@@ -284,18 +286,14 @@ export function usePostEditor(id: string | null) {
             quoteContent: data.quoteContent,
             galleryLocation: data.galleryLocation,
           };
-          const relations =
-            user && can(user.level, Permission.postManageTags)
-              ? {
-                  movieActorIds: data.movieActors?.map(({ id }) => id) ?? [],
-                  movieDirectorIds:
-                    data.movieDirectors?.map(({ id }) => id) ?? [],
-                  movieStyleIds: data.movieStyles?.map(({ id }) => id) ?? [],
-                  galleryStyleIds:
-                    data.galleryStyles?.map(({ id }) => id) ?? [],
-                }
-              : {};
-          if (action === "create") {
+          const relations: PostRelationPatch = {};
+          if (user && can(user.level, Permission.postManageTags)) {
+            for (const field of postTagFields) {
+              relations[postTagRoles[field].input] =
+                data[field]?.map(({ id }) => id) ?? [];
+            }
+          }
+          if (!id) {
             if (!data.categoryId) {
               toast.error("请选择分类目录");
               return;
@@ -314,6 +312,7 @@ export function usePostEditor(id: string | null) {
               toast.error("无法保存创建凭据，请允许浏览器本地存储后重试");
               return;
             }
+            submittedAttempt = attempt;
             setCreationAttempt(attempt);
             const result = await createPost.mutateAsync(attempt);
             if (result.id) {
@@ -424,12 +423,11 @@ export function usePostEditor(id: string | null) {
         setSaveProblem("conflict");
         toast.error("服务器已有更新，本地内容已保留，请核对最新版本");
       } else if (isDeterminateRejectionCode(String(code))) {
-        if (action === "create" && user) {
-          const attempt = readPostCreationAttempt(user.id);
-          if (attempt) clearPostCreationAttempt(user.id, attempt.creationToken);
+        if (submittedAttempt && user) {
+          clearPostCreationAttempt(user.id, submittedAttempt.creationToken);
           setCreationAttempt(null);
         }
-        toast.error(action === "create" ? "添加失败" : "更新失败");
+        toast.error(id ? "更新失败" : "添加失败");
       } else {
         setSaveProblem("unknown");
         toast.error("保存结果暂时无法确认，本地内容已保留，请先核对");

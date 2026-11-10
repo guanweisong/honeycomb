@@ -5,6 +5,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 import { PartialLocalizedTextSchema } from "@/lib/i18n/i18n";
 import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
 import { TagRecordSchema } from "@/features/tag/schemas/tag.record.schema";
+import { PublicPostCursorSchema } from "@/features/post/schemas/post.list-query.schema";
 
 const localized = PartialLocalizedTextSchema.nullable();
 const timestamps = {
@@ -80,6 +81,7 @@ export const PublicPostListItemSchema = PostWithRelationsSchema.pick({
 });
 export const PublicPostListResultSchema = PostListResultSchema.extend({
   list: z.array(PublicPostListItemSchema),
+  nextCursor: PublicPostCursorSchema.nullable().optional(),
 });
 
 /** 管理表格只接收展示字段和删除所需的 CAS 版本，不传输正文及媒体/标签关系。 */

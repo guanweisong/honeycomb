@@ -23,27 +23,26 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 import { MenuType } from "@/features/menu/types/menu.type";
 import { useMenuActions } from "@/app/admin/(dashboard)/menu/menu-actions";
 
-let actions: ReturnType<typeof useMenuActions> | undefined;
+let submit: (() => Promise<void>) | undefined;
 function Harness() {
-  const currentActions = useMenuActions(
-    [
-      {
-        id: "111111111111111111111111",
-        type: MenuType.CUSTOM,
-        power: 0,
-        parent: null,
-        createdAt: null,
-        updatedAt: null,
-      },
-    ],
-    0,
-    mocks.refetch,
-    () => {},
-    () => {},
-  );
+  const actions = useMenuActions(mocks.refetch);
   React.useEffect(() => {
-    actions = currentActions;
-  }, [currentActions]);
+    submit = () =>
+      actions.submit(
+        [
+          {
+            id: "111111111111111111111111",
+            type: MenuType.CUSTOM,
+            power: 0,
+            parent: null,
+            createdAt: null,
+            updatedAt: null,
+          },
+        ],
+        0,
+        () => {},
+      );
+  }, [actions]);
   return null;
 }
 
@@ -53,7 +52,7 @@ describe("Menu public-sync feedback", () => {
 
   beforeEach(async () => {
     for (const mock of Object.values(mocks)) mock.mockReset();
-    actions = undefined;
+    submit = undefined;
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -79,12 +78,10 @@ describe("Menu public-sync feedback", () => {
         }),
     );
     const settled = vi.fn();
-    const submission = requireDefined(actions)
-      .submit()
-      .then((state) => {
-        settled(state);
-        return state;
-      });
+    const submission = requireDefined(submit)().then((state) => {
+      settled(state);
+      return state;
+    });
 
     await Promise.resolve();
     await Promise.resolve();
@@ -110,7 +107,7 @@ describe("Menu public-sync feedback", () => {
       if (refreshFails)
         mocks.refetch.mockRejectedValue(new Error("refresh failed"));
 
-      await expect(requireDefined(actions).submit()).resolves.toBeUndefined();
+      await expect(requireDefined(submit)()).resolves.toBeUndefined();
 
       expect(mocks.saveAll).toHaveBeenCalledExactlyOnceWith({
         expectedVersion: 0,

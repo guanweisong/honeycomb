@@ -10,6 +10,7 @@ export interface SchemaColumn {
   notnull: number;
   dfltValue: string | null;
   pk: number;
+  generated?: "virtual" | "stored";
 }
 
 export interface SchemaIndex {
@@ -142,7 +143,7 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
       const name = string(tableRow, "name");
       const quotedName = quoteSqliteIdentifier(name);
       const [columnRows, indexRows, foreignKeyRows] = await Promise.all([
-        readOnlyQuery(client, `PRAGMA table_info(${quotedName})`),
+        readOnlyQuery(client, `PRAGMA table_xinfo(${quotedName})`),
         readOnlyQuery(client, `PRAGMA index_list(${quotedName})`),
         readOnlyQuery(client, `PRAGMA foreign_key_list(${quotedName})`),
       ]);
@@ -182,17 +183,24 @@ export async function inspectSchema(client: Client): Promise<SchemaInventory> {
       return {
         name,
         sql: string(tableRow, "sql"),
-        columns: columnRows.map((row) => ({
-          cid: integer(row, "cid"),
-          name: string(row, "name"),
-          type: string(row, "type"),
-          notnull: integer(row, "notnull"),
-          dfltValue:
-            row.dflt_value === null || row.dflt_value === undefined
-              ? null
-              : String(row.dflt_value),
-          pk: integer(row, "pk"),
-        })),
+        columns: columnRows
+          .filter((row) => integer(row, "hidden") !== 1)
+          .map((row) => {
+            const hidden = integer(row, "hidden");
+            return {
+              cid: integer(row, "cid"),
+              name: string(row, "name"),
+              type: string(row, "type"),
+              notnull: integer(row, "notnull"),
+              dfltValue:
+                row.dflt_value === null || row.dflt_value === undefined
+                  ? null
+                  : String(row.dflt_value),
+              pk: integer(row, "pk"),
+              generated:
+                hidden === 2 ? "virtual" : hidden === 3 ? "stored" : undefined,
+            };
+          }),
         indexes,
         foreignKeys: foreignKeyRows.map((row) => ({
           id: integer(row, "id"),

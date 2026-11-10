@@ -25,13 +25,15 @@ import {
 type UserFormDialogProps = {
   state: UserDialogState;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: UserInsert | UserUpdate) => void | Promise<void>;
+  onCreate: (values: UserInsert) => void | Promise<void>;
+  onUpdate: (values: UserUpdate) => void | Promise<void>;
 };
 
 export function UserFormDialog({
   state,
   onOpenChange,
-  onSubmit,
+  onCreate,
+  onUpdate,
 }: UserFormDialogProps) {
   const isEdit = state.type === ModalType.EDIT;
   const protectedResource = isUserResourceProtected(state.record);
@@ -82,7 +84,7 @@ export function UserFormDialog({
           defaultValues={toUserFormDefaults(state.record)}
           schema={UserUpdateSchema}
           fields={fields}
-          onSubmit={(values) => onSubmit(values)}
+          onSubmit={onUpdate}
         />
       ) : (
         <DynamicForm
@@ -93,7 +95,7 @@ export function UserFormDialog({
           }}
           schema={UserInsertSchema}
           fields={fields}
-          onSubmit={(values) => onSubmit(values)}
+          onSubmit={onCreate}
         />
       )}
     </Dialog>

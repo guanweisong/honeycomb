@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useDialogSession } from "@/app/admin/(dashboard)/lib/use-dialog-session";
+import { z } from "zod";
 import type { CategoryListItem as CategoryEntity } from "@/features/category/types/category.record";
 
 import { enableStatusOptions } from "@/app/admin/(dashboard)/config/enable-status-options";
@@ -47,13 +48,7 @@ export interface CategoryFormDialogProps {
  */
 const CategoryFormDialog = (props: CategoryFormDialogProps) => {
   const { modalProps, setModalProps } = props;
-  const session = useRef(0);
-  useEffect(
-    () => () => {
-      session.current += 1;
-    },
-    [modalProps?.open, modalProps?.type, modalProps?.record?.id],
-  );
+  const session = useDialogSession(modalProps?.open, modalProps?.type, modalProps?.record?.id);
   const defaultValues = modalProps?.record
     ? {
         ...modalProps.record,
@@ -62,6 +57,15 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
         description: modalProps.record.description ?? undefined,
       }
     : undefined;
+
+  // 旧路径保持原值，只有实际修改路径时才应用新 slug 规则。
+  const editSchema = CategoryUpdateSchema.safeExtend({
+    path: z.preprocess(
+      (value: string | undefined) =>
+        value === modalProps?.record?.path ? undefined : value,
+      CategoryUpdateSchema.shape.path,
+    ),
+  });
 
   /**
    * 分类列表获取
@@ -81,61 +85,43 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
    */
   const updateCategory = trpc.category.update.useMutation();
 
-  /**
-   * 关闭弹窗
-   */
-  const handleModalCancel = () => {
-    session.current += 1;
-    setModalProps({
-      open: false,
-    });
+  const close = () => {
+    session.invalidate();
+    setModalProps({ open: false });
   };
-
-  /**
-   * 确认按钮事件
-   */
-  const handleModalOk = async (values: Record<string, unknown>) => {
-    const submittedSession = session.current;
-    const modalType = modalProps?.type;
-    if (modalType === undefined) {
-      return;
-    }
-    if (values.parent === "0") {
-      if (modalType === ModalType.EDIT) values.parent = null;
-      else delete values.parent;
-    }
-    const feedback = {
-      refetch: categoryQuery.refetch,
-      notifySuccess: toast.success,
-      notifyWarning: toast.warning,
-      notifyError: toast.error,
-    };
-    let state;
-    switch (modalType) {
-      case ModalType.ADD:
-        state = await runAdminMutation({
-          ...feedback,
-          input: CategoryInsertSchema.parse(values),
-          mutate: createCategory.mutateAsync,
-          successMessage: "添加成功",
-          errorMessage: "添加失败",
-        });
-        break;
-      case ModalType.EDIT:
-        if (!modalProps?.record?.id) return;
-        state = await runAdminMutation({
-          ...feedback,
-          input: CategoryUpdateSchema.parse(
-            withAdminRecordId({ id: modalProps.record.id }, values),
-          ),
-          mutate: updateCategory.mutateAsync,
-          successMessage: "更新成功",
-          errorMessage: "更新失败",
-        });
-        break;
-    }
-    if (state === "success" && session.current === submittedSession)
-      handleModalCancel();
+  const feedback = {
+    refetch: categoryQuery.refetch,
+    notifySuccess: toast.success,
+    notifyWarning: toast.warning,
+    notifyError: toast.error,
+  };
+  const handleCreate = async ({ parent, ...values }: z.output<typeof CategoryInsertSchema>) => {
+    if (modalProps?.type !== ModalType.ADD) return;
+    await session.closeAfter(
+      () => runAdminMutation({
+        ...feedback,
+        input: { ...values, ...(parent !== "0" ? { parent } : {}) },
+        mutate: createCategory.mutateAsync,
+        successMessage: "添加成功",
+        errorMessage: "添加失败",
+      }),
+      close,
+    );
+  };
+  const handleUpdate = async ({ parent, ...values }: z.output<typeof editSchema>) => {
+    const record = modalProps?.record;
+    if (!record?.id) return;
+    const input = withAdminRecordId(record, { ...values, parent: parent === "0" ? null : parent });
+    await session.closeAfter(
+      () => runAdminMutation({
+        ...feedback,
+        input,
+        mutate: updateCategory.mutateAsync,
+        successMessage: "更新成功",
+        errorMessage: "更新失败",
+      }),
+      close,
+    );
   };
 
   const fields: FieldConfig[] = [
@@ -189,7 +175,7 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
       }
       open={modalProps?.open}
       onOpenChange={(open) => {
-        if (!open) session.current += 1;
+        if (!open) session.invalidate();
         setModalProps({ ...modalProps, open });
       }}
     >
@@ -197,9 +183,9 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
         <DynamicForm
           key={`edit:${modalProps.record?.id}:${modalProps.open}`}
           defaultValues={defaultValues}
-          schema={CategoryUpdateSchema}
+          schema={editSchema}
           fields={fields}
-          onSubmit={handleModalOk}
+          onSubmit={handleUpdate}
         />
       ) : (
         <DynamicForm
@@ -207,7 +193,7 @@ const CategoryFormDialog = (props: CategoryFormDialogProps) => {
           defaultValues={defaultValues}
           schema={CategoryInsertSchema}
           fields={fields}
-          onSubmit={handleModalOk}
+          onSubmit={handleCreate}
         />
       )}
     </Dialog>

@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/app/admin/(dashboard)/providers/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { UserListQuerySchema } from "@/features/user/schemas/user.list.schema";
-import type { UserListQueryInput } from "@/features/user/types/user.list";
 import type { UserRecord as UserEntity } from "@/features/user/types/user.record";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { UserFormDialog } from "@/app/admin/(dashboard)/user/components/UserFormDialog";
@@ -23,12 +22,18 @@ import {
 
 export function UserPageShell() {
   const canManageUsers = useCan(Permission.userManage);
-  const [selectedRows, setSelectedRows] = useState<UserEntity[]>([]);
-  const [searchParams, setSearchParams] = useState<UserListQueryInput>({});
-  const query = trpc.user.index.useQuery(searchParams, adminListQueryOptions);
+  const tableState = useAdminTableState();
+  const query = trpc.user.index.useQuery(
+    UserListQuerySchema.parse(tableState.requestState.requestParams),
+    adminListQueryOptions,
+  );
+  const selectedRows = tableState.getSelectedRows(
+    query.data?.list,
+    isUserResourceProtected,
+  );
   const actions = useUserActions({
     selectedRows,
-    onSelectionChange: setSelectedRows,
+    onSelectionChange: tableState.clearSelection,
     refetch: query.refetch,
   });
   const {
@@ -37,14 +42,16 @@ export function UserPageShell() {
     handleEditItem,
     handleDeleteItem,
     handleDeleteBatch,
-    handleModalOk,
+    handleCreate,
+    handleUpdate,
     handleDialogOpenChange,
   } = actions;
 
   return (
     <>
       <DataTable<UserEntity>
-        getRowId={(row) => row.id}
+        getRowId={tableState.getRowId}
+        requestState={tableState.requestState}
         data={{
           list: query.data?.list ?? [],
           total: query.data?.total ?? 0,
@@ -57,11 +64,8 @@ export function UserPageShell() {
         }}
         selectableRows={canManageUsers}
         disabledRowSelectable={isUserResourceProtected}
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
-        onChange={(params) =>
-          setSearchParams(UserListQuerySchema.parse(params))
-        }
+        selectedRowIds={tableState.selectedRowIds}
+        onSelectedRowIdsChange={tableState.setSelectedRowIds}
         toolBar={(table) => (
           <div className="flex justify-between">
             {canManageUsers && (
@@ -145,7 +149,8 @@ export function UserPageShell() {
       <UserFormDialog
         state={dialogState}
         onOpenChange={handleDialogOpenChange}
-        onSubmit={handleModalOk}
+        onCreate={handleCreate}
+        onUpdate={handleUpdate}
       />
     </>
   );

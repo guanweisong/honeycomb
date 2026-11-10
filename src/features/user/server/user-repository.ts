@@ -5,7 +5,7 @@ import { parseEnumValue, requireWriteResult } from "@/lib/db/value-validation";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import {
@@ -19,8 +19,9 @@ import {
 } from "@/lib/auth/credentials";
 import { ApplicationError } from "@/lib/errors/application-error";
 import {
+  assertUserDeletable,
   assertUserLevelChange,
-  isProtectedUser,
+  assertUserStatusChange,
 } from "../rules/user-protection";
 import type { UserCommandInput } from "@/features/user/types/user.insert";
 import type { UserUpdateCommandInput } from "@/features/user/types/user.update";
@@ -81,29 +82,6 @@ function validateUserState<T extends { status: unknown; level: unknown }>(
 
 export function createUserRepository(db: Database) {
   return {
-    async getStatus(id: string) {
-      const [user] = await observeDbOperation("user.update", "select", () =>
-        db
-          .select({ status: schema.user.status, level: schema.user.level })
-          .from(schema.user)
-          .where(eq(schema.user.id, id)),
-      );
-      return user ? validateUserState(user) : null;
-    },
-    async getStates(ids: string[]) {
-      if (ids.length === 0) return [];
-      const users = await observeDbOperation("user.states", "select", () =>
-        db
-          .select({
-            id: schema.user.id,
-            status: schema.user.status,
-            level: schema.user.level,
-          })
-          .from(schema.user)
-          .where(inArray(schema.user.id, ids)),
-      );
-      return users.map(validateUserState);
-    },
     async detail(id: string) {
       const [user] = await observeDbOperation("user.detail", "select", () =>
         db
@@ -191,40 +169,48 @@ export function createUserRepository(db: Database) {
       // libSQL transactions acquire the write lock before the first read.
       // Promotion and deletion therefore serialize around this entire batch.
       await db.transaction(async (tx) => {
-        const [admin] = await tx
-          .select({ id: schema.user.id })
-          .from(schema.user)
-          .where(
-            and(
-              inArray(schema.user.id, ids),
-              eq(schema.user.level, UserLevel.ADMIN),
-            ),
-          )
-          .limit(1);
-        if (admin) throw new ApplicationError("FORBIDDEN", "不能删除管理员");
+        const targets = await observeDbOperation("user.states", "select", () =>
+          tx
+            .select({
+              id: schema.user.id,
+              status: schema.user.status,
+              level: schema.user.level,
+            })
+            .from(schema.user)
+            .where(inArray(schema.user.id, ids)),
+        );
+        for (const target of targets.map(validateUserState)) {
+          assertUserDeletable(target.id, target.level);
+        }
         await observeDbOperation("user.destroy", "delete", () =>
           tx.delete(schema.user).where(inArray(schema.user.id, ids)),
         );
       });
       return { success: true } as const;
     },
-    async update(input: UserUpdateCommandInput) {
+    async update(input: UserUpdateCommandInput, actorLevel: UserLevel) {
       const { id, password, ...rest } = input;
-      const protectsLevel = !!rest.level && !isProtectedUser(rest.level);
+      const { level: nextRank } = rest;
+      const checksState = nextRank !== undefined || rest.status !== undefined;
       const update = async (
         store: CredentialStore & Pick<Database, "delete">,
       ) => {
-        if (rest.email !== undefined)
-          rest.email = await resolveEmailWrite(store, rest.email, id);
         let rename = rest.name !== undefined;
-        if (protectsLevel || rename) {
+        const enabling = rest.status === UserStatus.ENABLE;
+        let revokeSessions =
+          rest.status !== undefined && rest.status !== UserStatus.ENABLE;
+        if (checksState || rename) {
           // The write transaction serializes this guard with competing promotions.
           const [current] = await observeDbOperation(
             "user.update",
             "select",
             () =>
               store
-                .select({ level: schema.user.level, name: schema.user.name })
+                .select({
+                  level: schema.user.level,
+                  name: schema.user.name,
+                  status: schema.user.status,
+                })
                 .from(schema.user)
                 .where(eq(schema.user.id, id)),
           );
@@ -232,19 +218,23 @@ export function createUserRepository(db: Database) {
             rename =
               rest.name !== undefined &&
               rest.name.trim() !== current.name?.trim();
+            // Discard sessions left by earlier deployments or a sign-in
+            // that reached storage after the previous revocation.
+            revokeSessions ||= enabling && current.status !== UserStatus.ENABLE;
           }
-          if (current && protectsLevel && rest.level) {
-            assertUserLevelChange(
-              id,
-              parseEnumValue(
-                current.level,
-                Object.values(UserLevel),
-                "user.level",
-              ),
-              rest.level,
-            );
+          if (checksState) {
+            if (!current) throw new ApplicationError("NOT_FOUND", "用户不存在");
+            const { level, status } = validateUserState(current);
+            if (nextRank !== undefined) {
+              assertUserLevelChange(id, level, nextRank);
+            }
+            if (rest.status !== undefined && status !== rest.status) {
+              assertUserStatusChange(id, level, actorLevel);
+            }
           }
         }
+        if (rest.email !== undefined)
+          rest.email = await resolveEmailWrite(store, rest.email, id);
         const [row] = await observeDbOperation("user.update", "update", () =>
           store
             .update(schema.user)
@@ -259,8 +249,8 @@ export function createUserRepository(db: Database) {
             .returning(safeUserColumns),
         );
         const user = requireWriteResult(row, "update", "user");
-        if (password) {
-          await setCredentialPassword(store, id, password);
+        if (password) await setCredentialPassword(store, id, password);
+        if (password || revokeSessions) {
           await observeDbOperation("user.update", "delete", () =>
             store.delete(schema.session).where(eq(schema.session.userId, id)),
           );
@@ -268,7 +258,7 @@ export function createUserRepository(db: Database) {
         return validateUserState(user);
       };
       return password ||
-        protectsLevel ||
+        checksState ||
         rest.name !== undefined ||
         rest.email !== undefined
         ? db.transaction(update)

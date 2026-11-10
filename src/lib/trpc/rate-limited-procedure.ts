@@ -1,7 +1,7 @@
 import "server-only";
 
 import { TRPCError } from "@trpc/server";
-import { getClientIp } from "@/lib/http/client-ip";
+import { getClientIp } from "@/lib/http/client-ip.server";
 import {
   limitWithTimeout,
   type ApiRatelimit,
@@ -40,6 +40,6 @@ export function createRateLimitedPublicProcedure({
       });
     }
 
-    return next();
+    return next({ ctx: { clientIp } });
   });
 }

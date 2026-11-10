@@ -1,60 +1,34 @@
-import { createClient, type Client } from "@libsql/client/node";
-import {
-  existsSync,
-  lstatSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-
-function migrationSql(): string[] {
-  return readdirSync("drizzle")
-    .filter((name) => /^\d{4}_.+\.sql$/.test(name))
-    .sort()
-    .map((name) => readFileSync(join("drizzle", name), "utf8"));
-}
+import type { Client } from "@libsql/client/node";
+import { withTestDatabase } from "@tests/helpers/local-test-database";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { aroundEach, describe, expect, it } from "vitest";
 
 describe("persistence invariants from deployed migrations", () => {
   let client: Client;
-  let directory: string;
 
-  beforeEach(async () => {
-    directory = mkdtempSync(
-      join(tmpdir(), `honeycomb-integrity-${process.getuid?.() ?? "user"}-`),
-    );
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    if (typeof process.getuid === "function")
-      expect(stat.uid).toBe(process.getuid());
-    client = createClient({ url: `file:${join(directory, "integrity.db")}` });
-    await client.execute("pragma foreign_keys = on");
-    for (const migration of migrationSql())
-      await client.executeMultiple(migration);
-    await client.execute(
-      "insert into user (id, email) values ('author', 'author@example.test')",
-    );
-    await client.execute(
-      "insert into category (id, path) values ('category', 'category')",
-    );
-    await client.execute(
-      "insert into page (id, author_id) values ('page', 'author')",
-    );
-    await client.execute(
-      "insert into post (id, author_id, category_id) values ('post', 'author', 'category')",
-    );
-    await client.execute("insert into tag (id) values ('tag')");
-    await client.execute("insert into setting (id) values ('setting')");
-  });
-
-  afterEach(() => {
-    client.close();
-    rmSync(directory, { recursive: true });
-    expect(existsSync(directory)).toBe(false);
-  });
+  aroundEach((runTest) =>
+    withTestDatabase(async (localClient) => {
+      client = localClient;
+      await client.execute("pragma foreign_keys = on");
+      await migrate(drizzle(client), { migrationsFolder: "drizzle" });
+      await client.execute(
+        "insert into user (id, email) values ('author', 'author@example.test')",
+      );
+      await client.execute(
+        "insert into category (id, path) values ('category', 'category')",
+      );
+      await client.execute(
+        "insert into page (id, author_id) values ('page', 'author')",
+      );
+      await client.execute(
+        "insert into post (id, author_id, category_id) values ('post', 'author', 'category')",
+      );
+      await client.execute("insert into tag (id) values ('tag')");
+      await client.execute("insert into setting (id) values ('setting')");
+      await runTest();
+    }),
+  );
 
   it.each([
     [

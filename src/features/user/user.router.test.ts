@@ -153,8 +153,6 @@ describe("User Router", () => {
           status: UserStatus.ENABLE,
         },
       ]);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([]);
       mockDb.delete.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(undefined);
 
@@ -216,12 +214,8 @@ describe("User Router", () => {
       mockDb.where.mockResolvedValueOnce([
         { level: UserLevel.EDITOR, status: UserStatus.ENABLE },
       ]);
-      // The email scan is awaited directly, before the privilege recheck.
+      // The email scan follows the single persisted-state check in the transaction.
       mockDb.from.mockResolvedValueOnce([]);
-      // The repository rechecks the persisted level inside its write transaction.
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([{ level: UserLevel.EDITOR }]);
       mockDb.update.mockReturnValueOnce(mockDb);
       mockDb.set.mockReturnValueOnce(mockDb);
       mockDb.where.mockReturnValueOnce(mockDb);

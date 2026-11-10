@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { useCan } from "@/app/admin/(dashboard)/providers/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import { LinkListQuerySchema } from "@/features/link/schemas/link.list.schema";
-import type { LinkListQueryInput } from "@/features/link/types/link.list";
 import type { LinkRecord as LinkEntity } from "@/features/link/types/link.record";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { LinkFormDialog } from "@/app/admin/(dashboard)/link/components/LinkFormDialog";
@@ -21,15 +20,15 @@ export function LinkPageShell() {
   const canCreateLink = useCan(Permission.linkCreate);
   const canUpdateLink = useCan(Permission.linkUpdate);
   const canDeleteLink = useCan(Permission.linkDelete);
-  const [selectedRows, setSelectedRows] = useState<LinkEntity[]>([]);
-  const [searchParams, setSearchParams] = useState<LinkListQueryInput>({});
+  const tableState = useAdminTableState();
   const query = trpc.link.adminIndex.useQuery(
-    searchParams,
+    LinkListQuerySchema.parse(tableState.requestState.requestParams),
     adminListQueryOptions,
   );
+  const selectedRows = tableState.getSelectedRows(query.data?.list);
   const actions = useLinkActions({
     selectedRows,
-    onSelectionChange: setSelectedRows,
+    onSelectionChange: tableState.clearSelection,
     refetch: query.refetch,
   });
   const {
@@ -38,21 +37,20 @@ export function LinkPageShell() {
     handleEditItem,
     handleDeleteItem,
     handleDeleteBatch,
-    handleModalOk,
+    handleCreate,
+    handleUpdate,
     handleDialogOpenChange,
   } = actions;
 
   return (
     <>
       <DataTable<LinkEntity>
-        getRowId={(row) => row.id}
+        getRowId={tableState.getRowId}
+        requestState={tableState.requestState}
         data={{
           list: query.data?.list ?? [],
           total: query.data?.total ?? 0,
         }}
-        onChange={(params) =>
-          setSearchParams(LinkListQuerySchema.parse(params))
-        }
         isFetching={query.isFetching}
         error={query.isError}
         onRetry={() => {
@@ -60,8 +58,8 @@ export function LinkPageShell() {
         }}
         columns={linkTableColumns}
         selectableRows={canDeleteLink}
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
+        selectedRowIds={tableState.selectedRowIds}
+        onSelectedRowIdsChange={tableState.setSelectedRowIds}
         toolBar={(table) => (
           <div className="flex justify-between">
             <div className="flex gap-1">
@@ -149,7 +147,8 @@ export function LinkPageShell() {
       <LinkFormDialog
         state={dialogState}
         onOpenChange={handleDialogOpenChange}
-        onSubmit={handleModalOk}
+        onCreate={handleCreate}
+        onUpdate={handleUpdate}
       />
     </>
   );
