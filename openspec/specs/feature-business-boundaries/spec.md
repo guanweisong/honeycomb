@@ -8,7 +8,7 @@
 
 ### Requirement: Feature owns business implementation
 
-每个业务 feature MUST 在 src/features/<feature> 中拥有业务 schema、router、types、rules、server 操作、UI 和测试；业务概念 MUST NOT 迁入共享 lib 或中央 contracts 目录。
+每个业务 feature MUST 在 `src/features/<feature>` 中拥有业务 schema、router、types、rules、server 操作和业务测试。业务概念 MUST NOT 迁入共享 lib 或中央 contracts 目录。浏览器页面、展示组件、交互 hooks、客户端 tRPC action/query 和新增的路由专属展示配置 MUST 归 `src/app`。
 
 #### Scenario: Feature schema is the source of truth
 
@@ -19,6 +19,11 @@
 
 - **WHEN** 架构门禁扫描源码
 - **THEN** src/packages 与集中 features/contracts MUST 不存在，业务实现 MUST 归属于相应 feature
+
+#### Scenario: 浏览器 UI 由 app 拥有
+
+- **WHEN** 新增或迁移浏览器页面、展示组件、交互 hook、客户端 action/query 或展示配置
+- **THEN** 实现 MUST 位于对应 app 路由、路由组或其共置目录，`components` 目录不得新增 App Router 入口。Feature 不得保存或反向导入浏览器 UI。
 
 ### Requirement: Transport infrastructure is separate from business features
 
@@ -41,7 +46,7 @@ lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 ro
 
 ### Requirement: 跨 Feature 导入必须经过公开边界
 
-生产 feature MAY 通过目标 feature 的纯 schema/type/catalog、有意复用的具名 UI 或 server 操作具体入口复用能力，不要求 public barrel；运行时方向与通用组件注入边界 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
+生产 feature MAY 通过目标 feature 的纯 schema/type/catalog 或具名 server 操作复用能力，无需 public barrel。运行时方向与通用组件注入边界 MUST 遵守[依赖方向权威矩阵](../package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
 
 #### Scenario: 耦合其他 Feature 的 Router
 
@@ -53,7 +58,7 @@ lib/trpc MUST 只承载公共 core/context/client 及传输工具。根业务 ro
 - **WHEN** feature 直接复用其他 feature 拥有的纯 schema、type 或状态目录
 - **THEN** 架构门禁 SHALL 允许该依赖，且不得要求经过集中 contracts 转发
 
-#### Scenario: 复用所属业务的 UI 或服务端操作
+#### Scenario: App 组合多个 Feature 的 UI
 
-- **WHEN** Post 使用 user/admin/use-current-user、category/admin/category-title、media/components/PhotoPicker，或服务端消费者复用其他 feature 的明确 server 操作
-- **THEN** 该依赖 SHALL 允许直接指向有意复用的具体入口，不为目录形式增加 public 或 contracts 转发；浏览器不得因此加载 server 实现
+- **WHEN** 页面需要展示一个或多个 feature 的业务数据
+- **THEN** App 路由 MUST 组合 app 拥有的 UI 与各 feature 的纯契约或服务端入口，浏览器不得加载 server 实现。

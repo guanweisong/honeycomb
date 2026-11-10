@@ -44,5 +44,5 @@
 
 #### Scenario: 回复已有评论
 
-- **WHEN** 回复存在有效父评论邮箱
-- **THEN** 系统 SHALL 保持既有回复通知规则，并在失败时记录脱敏错误
+- **WHEN** 评论成功回复已有评论
+- **THEN** 通知仍由 comment feature 负责，遵守[收件人验证与失败隔离规则](../side-effect-consistency/spec.md)。

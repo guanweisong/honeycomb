@@ -59,7 +59,7 @@ editor modules while preserving their external behavior and contracts.
 #### Scenario: 创建评论并发送通知
 
 - **WHEN** 公共评论通过目标及父子关系校验并成功写入
-- **THEN** 系统返回相同公共 DTO，并按原有规则通过独立通知能力发送管理员和回复通知
+- **THEN** 系统返回相同公共 DTO，并通过独立通知能力按[通知成功边界和收件人规则](../side-effect-consistency/spec.md)处理邮件。
 
 #### Scenario: 拒绝无效评论目标
 

@@ -13,18 +13,13 @@ metadata:
 
 Archive a completed change in the experimental workflow.
 
-**Input**: Optionally specify a change name. If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+**Input**: Use the change named in the request or already identified in context. Ask the user to select a change if the target is ambiguous.
 
 **Steps**
 
-1. **If no change name provided, prompt for selection**
+1. **Identify the change**
 
-   Run `openspec list --json` to get available changes. Use the **AskUserQuestion tool** to let the user select.
-
-   Show only active changes (not already archived).
-   Include the schema used for each change if available.
-
-   **IMPORTANT**: Do NOT guess or auto-select a change. Always let the user choose.
+   If selection is needed, use `openspec list --json` to show active changes. Get a change's schema from `openspec status --change "<name>" --json`.
 
 2. **Check artifact completion status**
 
@@ -37,23 +32,13 @@ Archive a completed change in the experimental workflow.
 
    If status reports `actionContext.mode: "workspace-planning"`, explain that workspace archive is not supported in this slice and STOP. Do not move workspace changes into repo-local archives or edit linked repos.
 
-   **If any artifacts are not `done`:**
-   - Display warning listing incomplete artifacts
-   - Use **AskUserQuestion tool** to confirm user wants to proceed
-   - Proceed if user confirms
+   If any artifact is incomplete, list the missing work and stop before moving the change.
 
-3. **Check task completion status**
+3. **Verify implementation and acceptance**
 
-   Read the tasks file (typically `tasks.md`) to check for incomplete tasks.
+   Read the task artifact for the change's schema, typically `tasks.md` in the spec-driven workflow. Use `openspec instructions apply --change "<name>" --json` to check its progress. Review the implementation and verification evidence required by the change. An artifact marked `done` or a checked task establishes workflow progress only.
 
-   Count tasks marked with `- [ ]` (incomplete) vs `- [x]` (complete).
-
-   **If incomplete tasks found:**
-   - Display warning showing count of incomplete tasks
-   - Use **AskUserQuestion tool** to confirm user wants to proceed
-   - Proceed if user confirms
-
-   **If no tasks file exists:** Proceed without task-related warning.
+   If required tasks, implementation, or acceptance evidence are incomplete, report what remains and stop before moving the change.
 
 4. **Assess delta spec sync state**
 
@@ -64,11 +49,7 @@ Archive a completed change in the experimental workflow.
    - Determine what changes would be applied (adds, modifications, removals, renames)
    - Show a combined summary before prompting
 
-   **Prompt options:**
-   - If changes needed: "Sync now (recommended)", "Archive without syncing"
-   - If already synced: "Archive now", "Sync anyway", "Cancel"
-
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
+   If changes are needed, follow the user's stated sync choice or ask whether to sync, archive without syncing, or cancel. For an approved sync, use [openspec-sync-specs](../openspec-sync-specs/SKILL.md) and finish validation before archiving. If the delta is already synced, proceed with the requested archive. If the user cancels, stop before changing any files.
 
 5. **Perform the archive**
 
@@ -94,7 +75,7 @@ Archive a completed change in the experimental workflow.
    - Schema that was used
    - Archive location
    - Whether specs were synced (if applicable)
-   - Note about any warnings (incomplete artifacts/tasks)
+   - Evidence used to confirm archive readiness
 
 **Output On Success**
 
@@ -110,9 +91,9 @@ All artifacts complete. All tasks complete.
 ```
 
 **Guardrails**
-- Always prompt for change selection if not provided
+- Ask for change selection when the target is ambiguous
 - Use artifact graph (openspec status --json) for completion checking
-- Don't block archive on warnings - just inform and confirm
+- Require completed implementation and acceptance before archiving
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
 - If sync is requested, use openspec-sync-specs approach (agent-driven)

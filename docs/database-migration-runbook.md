@@ -15,8 +15,10 @@
 1. Create an empty LibSQL/Turso database.
 2. Set `TURSO_URL` and `TURSO_TOKEN` for that new database.
 3. Run `bun run db:migrate`.
-4. Run `bun run db:schema:audit -- --local <database-url> --output <new-report-path>` and compare the
-   inventory with the reviewed migration chain and current generated schema.
+4. For a remote database, keep the `TURSO_URL` and `TURSO_TOKEN` from step 2 and
+   run `bun run db:schema:audit -- --output <new-report-path>`. For a local file,
+   run `bun run db:schema:audit -- --local file:/absolute/path/to/database.db --output <new-report-path>`.
+   Compare the inventory with the reviewed migration chain and current generated schema.
    `docs/production-schema-baseline-report.md` records the historical baseline,
    not the expected schema after subsequent migrations.
 5. Start the application and run its smoke tests.
@@ -25,7 +27,7 @@
 
 1. Modify `src/lib/db/schema/`.
 2. Run `bun run db:generate` and review the generated SQL and snapshot.
-3. Run `bun run db:migrations:check` and the test suite. Keep journal timestamps strictly increasing. `db:migrate` verifies the existing ledger against the reviewed SQL hashes and timestamps before applying pending entries, then verifies the complete ledger.
+3. Run `bun run db:migrations:check` and the test suite. Keep journal timestamps strictly increasing. `db:migrate` audits existing rows for persistence invariant violations, verifies the ledger against the reviewed SQL hashes and timestamps, applies pending migrations, then verifies the complete ledger. Use the read-only `bun run db:invariants:audit` to check for data violations separately.
 4. Apply the migration to a disposable database before deployment.
 5. Back up the target shared database, then run `bun run db:migrate` during the
    approved release.

@@ -14,12 +14,13 @@
 - [全仓审查实施账本](full-audit-implementation-ledger.json)与[实施计划](superpowers/plans/2026-10-21-full-audit-implementation.md)：74项结论的逐项处理状态。
 - [逐文件复审建议实施](skill-reaudit-implementation.md)与[51项处置账本](skill-reaudit-implementation-ledger.json)：本轮验证、边界和待测项。
 - [测试指南](../tests/README.md)：architecture、tooling、integration 分组、相邻业务测试和 E2E 命令。
-- [OpenSpec 规范](../openspec/specs/)与[当前目录归属变更](../openspec/changes/refine-directory-ownership/proposal.md)：现行行为规范及本轮范围、设计和任务。
+- [OpenSpec 主规格](../openspec/specs/)记录现行行为，[目录归属变更](../openspec/changes/refine-directory-ownership/proposal.md)保留当时的迁移范围与验收。
 
 ## 运维与治理
 
 - [数据库迁移](database-migration-runbook.md)、[媒体存储](media-storage-runbook.md)、[Sentry 日志](sentry-logging.md)。
 - [公开缓存与离线验收](public-cache-verification.md)：缓存链路、配置值、失效恢复与未验证环境边界。
+- [依赖维护约定](dependency-maintenance.md)记录依赖边界和 UTC 补丁的移除条件。
 - [依赖审计例外](dependency-audit-exceptions.md)与[审计库存](dependency-audit-inventory.json)：治理规则与记录；按记录日期判断适用性，不沿用旧验证结论。
 
 ## 历史计划与报告

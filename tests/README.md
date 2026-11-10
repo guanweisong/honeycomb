@@ -52,17 +52,20 @@ bunx vitest run tests/architecture/feature-boundaries.test.ts tests/architecture
 `tests/architecture/library-boundaries.test.ts` 还跟踪 Client Component 的传递依赖，覆盖 import、re-export、动态 import 与 require，阻止数据库、服务端认证、原生 SDK 和 Node 模块进入浏览器。类型导入单独识别；lib/trpc/client 对 app/trpc/router 的纯类型引用不产生运行时依赖。
 
 ```bash
-# 运行所有单元测试（监听模式）
+# 运行普通单元和集成测试（监听模式）
 bun run test:unit
 
 # 运行特定模块测试
-bunx vitest src/features/user/user.router.test.ts
+bun run test:unit:run src/features/user/user.router.test.ts
 
 # 监听模式
 bun run test:unit --watch
 
-# 一次性运行
+# 一次性运行普通单元和集成测试
 bun run test:unit:run
+
+# 单独串行运行进程级门禁
+bun run test:unit:process
 
 # 运行 Playwright UI 模式
 bun run test:e2e:ui
@@ -70,15 +73,15 @@ bun run test:e2e:ui
 
 ## CI 执行与测试环境
 
-CI 各 lane 仍独立创建随机 fixture；`scripts/ci-fixture-lifecycle.sh` 只共享退出清理、信号和阶段计时。子进程 fixture 使用 `tests/helpers/run-test-process.ts`；历史迁移测试通过 `tests/helpers/local-test-database.ts` 管理独占本地 client 和显式 journal 截止版本，业务 seed、真实 SQL 与回滚断言保留在各 suite。
+需要数据库的 CI 任务各自创建随机独占 fixture。`scripts/ci-fixture-lifecycle.sh` 提供 fixture 初始化、迁移与 seed 的入口，并处理退出清理、信号和阶段计时。子进程测试使用 `tests/helpers/run-test-process.ts`。历史迁移测试通过 `tests/helpers/local-test-database.ts` 管理独占本地 client 和显式 journal 截止版本，业务 seed、真实 SQL 与回滚断言保留在各 suite。
 
 E2E 的显式临时目录初始化、凭据隔离及清理契约见 [README 的 E2E 说明](../README.md#可用脚本)。包命令的 `scripts/e2e-preflight.ts` 只做参数和报告目的地预检，不替代现有 CI 生命周期或 Playwright 服务管理。普通筛选与诊断参数保持可用；配置、输出、源码更新及自定义 reporter 覆盖被拒绝。`--list` / `--help` 使用 stdout，不初始化数据库或启动服务。
 
-CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage` 同时验证断言和覆盖率，不再额外执行重复的 `test:unit:run`。五个进程级门禁文件继续通过 `bun run test:unit:process` 单独运行；测试清单、覆盖率排除项和门槛不因此缩减。本地仍可使用 `test:unit:run` 进行不采集覆盖率的快速验证。
+[`quality`](../.github/workflows/quality.yml) 在 PR 和推送到 `master` 时运行。始终执行规格检查、类型检查、Lint、迁移治理、六个串行进程级套件、工作流契约测试、生产依赖审计和生产构建。普通改动有测试目标时运行相关测试，高风险改动运行完整普通单元和集成测试及开发 E2E。生产 E2E 由[路径分类脚本](../scripts/classify-quality-changes.sh)单独判定，例如依赖、PWA 和 E2E 工具链改动。测试分组以 [`vitest-test-groups.mts`](../vitest-test-groups.mts) 为准。
 
-普通覆盖率测试分成两个独立 runner shard，每个文件仍只执行一次。`vitest.shard.config.mts` 继承完整测试清单、覆盖率分母和隔离配置，只将不完整分片的阈值检查延后到合并阶段。`coverage_gate` 必须取得两个指定 blob，使用未改动的默认配置合并并执行全部全局和关键文件阈值；缺片、测试失败或合并失败都不能通过 `verify`。分片不能只采集已导入源码，否则未测试文件会从分母遗漏。新增分片/合并回归测试也进入串行进程组，原五个门禁文件全部保留。
+[`quality-full`](../.github/workflows/quality-full.yml) 每日定时运行，也可手动触发。它将普通单元和集成测试分到两个独立覆盖率 shard，每个文件执行一次。`vitest.shard.config.mts` 继承完整测试清单、覆盖率分母和隔离配置，将阈值检查延后到合并阶段。`coverage_gate` 必须取得两个指定 blob，合并后执行全部全局和关键文件阈值；缺片、测试失败或合并失败都不能通过 `verify`。分片必须把未导入源码纳入分母。
 
-开发模式 E2E 与生产构建/分析/生产模式 E2E 独立运行，各自使用随机独占临时数据库，仍执行完整且不重叠的开发/生产测试清单。每个 Playwright job 保持单 worker，不共享数据库、不复用已有服务。生产构建仅持久化 `.next/cache/turbopack` 编译缓存，不缓存数据库、完整构建产物或测试通过状态。并行化以缩短墙钟为目标，可能增加 runner 总占用；实际收益以相同提交的 GitHub 冷/暖缓存运行对比为准。
+完整工作流的开发 E2E、生产 E2E 和 bundle 分析是三个独立任务，各自使用随机独占临时数据库。生产 E2E 由 Playwright 构建并启动应用，bundle 分析在自己的任务中构建。开发和生产 E2E 覆盖完整且互不重叠的 Chromium 清单。各 CI Playwright 任务使用单 worker 和专属服务。生产构建的缓存仅包含 `.next/cache/turbopack`。
 
 独占数据库是整个验证 step 的安全边界，不代表整个 step 都在建库。每条构建/测试/迁移/种子命令分别输出耗时并写入 Actions step summary；清理单独记录耗时。所有阶段仍在同一 EXIT/signal 清理边界内，任何命令失败都保留非零退出码。
 
@@ -115,11 +118,11 @@ CI 只运行一次普通单元测试清单：使用 `bun run test:unit:coverage`
 
 关键文件仍使用逐文件 statements/lines 90%、branches 80% 门槛；该历史覆盖率命令成功退出，说明全局门槛与关键文件门槛均通过。覆盖率仍存在分布不均：部分 Admin 页面入口、客户端 Shell、邮件组件和数据库 schema 的覆盖率较低，后续新增行为应优先补充这些模块的相邻测试，不得通过扩大 exclude 或降低门槛解决。
 
-## 管理 feature 目录约定
+## 后台路由与业务模块
 
-管理页面采用 feature-local 组织，app 路由只负责框架与页面组合。按实际复杂度拆分查询输入、mutation/反馈、列定义、表单或纯转换，不要求固定命名后缀、目录模板或一行转发 helper；例如现有 `page-editor-actions.ts`、`page-editor-transforms.ts` 以真实职责命名。测试与相应实现就近放置。
+管理页面的组件、查询状态、mutation 反馈、表单及展示转换归对应的 `src/app/admin` 路由。业务契约、纯规则和服务端操作归 `src/features`。按实际职责拆分文件，例如页面编辑路由的 `page-editor-actions.ts` 和 `page-editor-transforms.ts`。测试跟随被测实现。
 
-页面特有类型、状态和逻辑必须留在对应 feature 目录。只有至少两个 feature 已存在稳定、语义相同的消费者时，才允许上移为 shared；相似命名、预期复用或减少文件行数都不足以建立共享抽象。DataTable 保持共享 facade，内部状态、选择、表头、表体、工具栏和分页可独立测试，消费者保持泛型接口，必须提供稳定业务 ID 的 `getRowId`。搜索通过表格列筛选状态更新；查询改变立即清选择，刷新按 ID 对齐当前记录，读取期间禁止改变选择，不以对象引用或数组索引作为业务身份。
+页面专有的展示类型、状态和逻辑放在对应路由。至少两个后台页面已有稳定、语义相同的消费者时，可将共用的后台实现提取到所属路由组。DataTable 保持通用泛型接口，消费者必须提供稳定业务 ID 的 `getRowId`。搜索通过表格列筛选状态更新，查询改变立即清选择，刷新按 ID 对齐当前记录，读取期间禁止改变选择。
 
 ### 2026-07-30 重构等价性审计
 

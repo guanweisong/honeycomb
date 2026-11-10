@@ -2,7 +2,7 @@
 
 ### Requirement: Feature owns business implementation
 
-每个业务 feature MUST 在 `src/features/<feature>` 中拥有业务 schema、router、types、rules、server 操作和业务测试；业务概念 MUST NOT 迁入共享 lib 或中央 contracts 目录。浏览器页面、展示组件、交互 hooks、客户端 tRPC action/query 和展示配置 MUST 归 `src/app`。
+每个业务 feature MUST 在 `src/features/<feature>` 中拥有业务 schema、router、types、rules、server 操作和业务测试。业务概念 MUST NOT 迁入共享 lib 或中央 contracts 目录。浏览器页面、展示组件、交互 hooks、客户端 tRPC action/query 和新增的路由专属展示配置 MUST 归 `src/app`。
 
 #### Scenario: Feature schema is the source of truth
 
@@ -17,7 +17,7 @@
 #### Scenario: Browser UI belongs to app
 
 - **WHEN** 新增或迁移浏览器页面、展示组件、交互 hook、客户端 action/query 或展示配置
-- **THEN** 实现 MUST 位于对应 `src/app` 路由组及其 `components` 目录；这些目录 MUST NOT 包含 App Router 入口文件；`src/features` MUST NOT 保存浏览器 UI 或反向导入 app UI
+- **THEN** 实现 MUST 位于对应 app 路由、路由组或其共置目录，`components` 目录不得新增 App Router 入口。Feature 不得保存或反向导入浏览器 UI。
 
 ### Requirement: 跨 Feature 导入必须经过公开边界
 

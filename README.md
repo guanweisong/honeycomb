@@ -23,7 +23,7 @@
 - **Serverless 架构** - 完全无服务器部署
 - **现代化数据库** - Turso (LibSQL) 高性能 SQLite
 - **邮件通知** - Resend 邮件服务集成
-- **对象存储** - Cloudflare R2 / AWS S3 支持
+- **对象存储** - 通过 AWS S3 SDK 接入 Cloudflare R2
 - **验证码** - Cloudflare Turnstile 行为验证
 
 ## 技术架构
@@ -106,9 +106,11 @@ TURSO_TOKEN=your_turso_token
 
 # 站点配置（NEXT_PUBLIC_SITE_URL 必填）
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# 媒体上传必填，填可公开读取媒体对象的 R2 域名或 CDN 基础 URL
 NEXT_PUBLIC_ASSET_URL=https://static.example.com
 
-# Cloudflare R2（对象存储，可选；启用时四项必须同时配置）
+# Cloudflare R2（对象存储，可选，启用时四项必须同时配置）
 R2_ACCOUNT_ID=your_account_id
 R2_ACCESS_KEY_ID=your_access_key_id
 R2_SECRET_ACCESS_KEY=your_secret_access_key
@@ -166,7 +168,7 @@ Vercel 环境默认使用平台设置的 `X-Vercel-Forwarded-For`，自托管默
 - 六位密码下限为兼容现有账号而保留，属于已接受风险；未来提升长度必须单独评估已有凭据和用户迁移。
 - 登录后的会话由 Better Auth 维护，权限判定以数据库中的用户状态和角色为准
 - 从 NextAuth 切换后旧 Cookie 不再兼容，首次发布后所有用户需要重新登录
-- Passkey 的生产 RP ID 为 `www.guanweisong.com`，认证来源为 `https://www.guanweisong.com`
+- Passkey 从 `AUTH_URL` 提取主机名作为 RP ID，并提取 origin 作为认证来源。本站生产环境使用 `www.guanweisong.com` 和 `https://www.guanweisong.com`
 
 ### 数据库迁移
 
@@ -348,30 +350,31 @@ permissionsProcedure([Permission.postUpdate, Permission.postManageTags], {
 
 每条 console 日志固定包含以下字段：
 
-| 字段          | 含义                                                                                                                                                              |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `timestamp`   | ISO 8601 时间戳                                                                                                                                                   |
-| `level`       | `info`、`warn` 或 `error`                                                                                                                                         |
-| `event`       | `request.started`、`request.completed`、`request.failed`、`server.error`、`database.operation`、`cache.operation`、`external-service.operation` 或 `client.error` |
-| `service`     | 服务名，默认 `honeycomb`                                                                                                                                          |
-| `environment` | 运行环境，默认取 `NODE_ENV`，不可用时为 `development`                                                                                                             |
+| 字段          | 含义                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `timestamp`   | ISO 8601 时间戳                                                                                                   |
+| `level`       | `info`、`warn` 或 `error`                                                                                         |
+| `event`       | 来自 [LogEvent 目录](src/lib/observability/core/names.ts)，包括请求、授权拒绝、数据库、缓存、外部服务和客户端事件 |
+| `service`     | 服务名，默认 `honeycomb`                                                                                          |
+| `environment` | 运行环境，默认取 `NODE_ENV`，不可用时为 `development`                                                             |
 
 请求日志还会带上 `requestId`、`procedure`、`method`，完成或失败时增加 `durationMs` 和 `outcome`。错误使用有界 `cause` 链序列化为 `name`、`message` 和可选 `stack`。所有 context 在输出前递归清洗：密码、token、cookie、authorization、secret、邮箱、IP、请求体、输入参数和 SQL 参数会被脱敏；循环引用和过深对象会转换为安全占位符。不要依赖脱敏来记录原始请求体、凭据或个人信息，调用方仍应避免传入这些数据。
 
 ### 指标目录
 
-| 指标                                     | 类型     | 允许标签                            | 说明                                                                         |
-| ---------------------------------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------------- |
-| `api.requests.total`                     | counter  | `procedure`, `method`, `outcome`    | API 请求次数                                                                 |
-| `api.request.duration_ms`                | duration | `procedure`, `method`, `outcome`    | API 请求耗时（毫秒）                                                         |
-| `api.errors.total`                       | counter  | `procedure`, `method`, `outcome`    | API 失败次数                                                                 |
-| `database.operations.total`              | counter  | `queryName`, `operation`, `outcome` | 命名数据库操作次数                                                           |
-| `database.operation.duration_ms`         | duration | `queryName`, `operation`, `outcome` | 数据库操作耗时（毫秒）                                                       |
-| `database.errors.total`                  | counter  | `queryName`, `operation`, `outcome` | 数据库操作失败次数                                                           |
-| `cache.operations.total`                 | counter  | `namespace`, `operation`, `outcome` | 缓存 read、hit、miss、write 和 error 次数；`hit / (hit + miss)` 可计算命中率 |
-| `external-service.operations.total`      | counter  | `service`, `operation`, `outcome`   | 外部服务调用次数                                                             |
-| `external-service.operation.duration_ms` | duration | `service`, `operation`, `outcome`   | 外部服务调用耗时（毫秒）                                                     |
-| `external-service.errors.total`          | counter  | `service`, `operation`, `outcome`   | 外部服务调用失败次数                                                         |
+| 指标                                     | 类型     | 允许标签                            | 说明                                                                                      |
+| ---------------------------------------- | -------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `api.requests.total`                     | counter  | `procedure`, `method`, `outcome`    | API 请求次数                                                                              |
+| `api.request.duration_ms`                | duration | `procedure`, `method`, `outcome`    | API 请求耗时（毫秒）                                                                      |
+| `api.errors.total`                       | counter  | `procedure`, `method`, `outcome`    | API 失败次数                                                                              |
+| `database.operations.total`              | counter  | `queryName`, `operation`, `outcome` | 命名数据库操作次数                                                                        |
+| `database.operation.duration_ms`         | duration | `queryName`, `operation`, `outcome` | 数据库操作耗时（毫秒）                                                                    |
+| `database.errors.total`                  | counter  | `queryName`, `operation`, `outcome` | 数据库操作失败次数                                                                        |
+| `cache.operations.total`                 | counter  | `namespace`, `operation`, `outcome` | 缓存 read、hit、miss、write 和 error 次数；`hit / (hit + miss)` 可计算命中率              |
+| `public-cache.invalidations.total`       | counter  | `operation`, `outcome`              | 公开缓存失效计划次数，`operation` 为 `invalidate`，`outcome` 为 `completed` 或 `degraded` |
+| `external-service.operations.total`      | counter  | `service`, `operation`, `outcome`   | 外部服务调用次数                                                                          |
+| `external-service.operation.duration_ms` | duration | `service`, `operation`, `outcome`   | 外部服务调用耗时（毫秒）                                                                  |
+| `external-service.errors.total`          | counter  | `service`, `operation`, `outcome`   | 外部服务调用失败次数                                                                      |
 
 指标标签只允许字符串类型的 `procedure`、`method`、`outcome`、`queryName`、`operation`、`namespace` 和 `service`；其他名称或非字符串值会被丢弃。标签值必须来自稳定枚举或命名目录，禁止使用用户 ID、资源 ID、请求 ID、完整 URL、SQL、参数、错误消息及其他自由文本。API 的 `outcome` 为 `success` 或稳定的 tRPC 错误码；数据库和外部服务使用 `success`/`error`；缓存使用稳定 operation 和 `success`/`error`。
 
@@ -406,7 +409,7 @@ configureObservability({ logger, metrics });
 
 ## Sitemap 运行时策略
 
-`/sitemap.xml` 在请求时生成 sitemap 索引，文章与页面各按 `MAX_PAGE_SIZE`（当前 100 条）分页读取，每条生成中英文 URL；首片另含静态入口及按真实祖先链生成的分类 URL，缓存 5 分钟。数据库不可用时，索引和首片会降级到站点首页及中英文分类入口，不影响应用构建；动态内容恢复后会在缓存刷新时重新出现。
+`/sitemap.xml` 在请求时生成 sitemap 索引。文章与页面各按 `MAX_PAGE_SIZE`（当前 100 条）分页读取，每条生成中英文 URL。首片另含静态入口及按真实祖先链生成的分类 URL。索引的分片数量和各分片内容缓存 5 分钟。数据库读取失败时，索引只列出首片链接，分片端点返回站点首页及中英文分类入口。应用构建无需数据库，动态内容可在数据库恢复并刷新缓存后重新出现。
 
 ## 部署
 

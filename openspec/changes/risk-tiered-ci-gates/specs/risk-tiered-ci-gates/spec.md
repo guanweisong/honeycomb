@@ -2,7 +2,7 @@
 
 ### Requirement: 普通变更运行快速且阻塞的 PR 基础门禁
 
-质量工作流 MUST 在每个 PR 上阻塞执行规格校验、类型检查、lint、变更相关测试和生产构建。全量覆盖率、双环境完整 E2E 和 bundle 分析 MUST NOT 成为普通 PR 的必跑任务。生产依赖审计、迁移审查、数据库不变量检查及 process 测试 MUST 保留在常规 PR 门禁。
+质量工作流 MUST 在每个 PR 上阻塞执行规格校验、类型检查、lint、适用的单元与集成测试和生产构建。全量覆盖率、开发和生产 E2E 及 bundle 分析 MUST NOT 成为普通 PR 的必跑任务。生产依赖审计、迁移审查、数据库不变量检查及 process 测试 MUST 保留在常规 PR 门禁。
 工作流分类器契约测试 MUST 在每个 PR 上独立于风险分类结果执行，以防分类器改动跳过自身校验。
 
 #### Scenario: 普通 TypeScript 改动
@@ -41,7 +41,7 @@
 
 ### Requirement: 完整质量保障在夜间和手动门禁中保留
 
-工程 MUST 提供夜间及手动触发的完整保障 workflow，其中全量覆盖率继续执行现有分片与合并阈值，开发和生产完整 E2E 均执行，bundle 分析生成静态报告。各数据库测试 lane MUST 保持独立隔离数据库。
+工程 MUST 提供夜间及手动触发的完整保障 workflow，执行分片覆盖率及合并阈值、开发 E2E、生产 E2E 和 bundle 静态分析。开发 E2E 执行未标记 `@production` 的 Chromium 用例，生产 E2E 执行标记 `@production` 的用例。两组均 MUST 有用例、互不重叠，且合并覆盖完整 Chromium 库存。各数据库测试 lane MUST 使用独立的隔离数据库。
 
 #### Scenario: 夜间完整保障
 
@@ -51,7 +51,12 @@
 #### Scenario: 手动完整保障
 
 - **WHEN** 维护者手动触发完整保障 workflow
-- **THEN** 执行与夜间相同的全量覆盖率、双环境完整 E2E、bundle 分析和汇总门禁
+- **THEN** 执行与夜间相同的覆盖率、开发和生产 E2E 分组、bundle 分析和汇总门禁
+
+#### Scenario: 新增 Chromium 用例
+
+- **WHEN** E2E 目录新增被 Chromium 项目匹配的用例
+- **THEN** 用例按 `@production` 标记自动进入对应分组，无需维护 workflow 文件清单。工作流契约测试验证两组清单的并集与项目完整清单相等。
 
 ### Requirement: 安全与数据保护门禁不得因 CI 分层而削弱
 
@@ -59,5 +64,5 @@
 
 #### Scenario: 调整工作流成本
 
-- **WHEN** 普通 PR 不再运行完整覆盖率或双环境 E2E
+- **WHEN** 普通 PR 不运行全量覆盖率或开发和生产 E2E
 - **THEN** 这些检查仍由夜间/手动完整保障执行，高风险改动仍运行完整单元/集成与开发 E2E，现有安全测试和覆盖阈值保持不变

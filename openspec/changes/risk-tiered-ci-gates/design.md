@@ -1,5 +1,7 @@
 ## Context
 
+本文记录初始 CI 分层设计。后续收敛把 Chromium 库存分配给开发和生产两组，现行分组以[风险分层 CI 主规格](../../specs/risk-tiered-ci-gates/spec.md)为准。
+
 当前 `quality` 在 PR 和 master push 上都启动类型/Lint/规格检查、全量覆盖率、完整开发与生产 E2E、生产依赖审计和 bundle 分析。最近 15 个当前配置运行中，工作流耗时 P50/P90 为 4.7/15 分钟，job 耗时合计 P50/P90 为 16.3/25.5 分钟；覆盖率与开发 E2E 合计 P50/P90 为 11.2/21 job 分钟。覆盖率规范及阈值由 `coverage-governance` 主规格管理；本变更只调整触发时机和风险分层。
 
 ## Goals / Non-Goals
