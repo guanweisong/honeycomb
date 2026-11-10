@@ -1,3 +1,4 @@
+import { EnableStatus } from "@/lib/validation/enable-status";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
@@ -102,10 +103,13 @@ vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
     React.createElement("a", { href }, children),
 }));
 
-vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
-  default: ({ id }: { id: string }) =>
-    React.createElement("div", { "data-testid": "comment" }, id),
-}));
+vi.mock(
+  "@/app/(blog)/components/features/comment/public/components/CommentClient",
+  () => ({
+    default: ({ id }: { id: string }) =>
+      React.createElement("div", { "data-testid": "comment" }, id),
+  }),
+);
 
 vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) =>
@@ -113,8 +117,13 @@ vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
 }));
 
 import type { PostDetailResult } from "@/features/post/types/post.read-model";
-import Archives, { generateMetadata } from "@/app/(blog)/[locale]/archives/[id]/page";
-import { assertPostCategory, assertPostDetail } from "@/app/(blog)/[locale]/archives/[id]/page.utils";
+import Archives, {
+  generateMetadata,
+} from "@/app/(blog)/[locale]/archives/[id]/page";
+import {
+  assertPostCategory,
+  assertPostDetail,
+} from "@/app/(blog)/[locale]/archives/[id]/page.utils";
 
 // 输入夹具只允许真实详情字段；故障场景仍可显式省略正文和关联。
 type DetailFixture = Pick<PostDetailResult, "id"> & {
@@ -135,6 +144,7 @@ const articleDetail: DetailFixture = {
   author: { name: "Alice" },
   authorId: "author-1",
   category: { id: "category-1" },
+  commentStatus: EnableStatus.ENABLE,
   content: { zh: "文章正文" },
   cover: { url: "/cover.jpg" },
   createdAt: "2024-01-02T03:04:05.000Z",
@@ -263,6 +273,15 @@ describe("archives page", () => {
     );
   });
 
+  it("keeps a published article readable without querying disabled comments", async () => {
+    await renderArchive({
+      ...articleDetail,
+      commentStatus: EnableStatus.DISABLE,
+    });
+    expect(container.querySelector("h1")?.textContent).toBe("文章标题");
+    expect(mockComments).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain("3 comments");
+  });
   it("renders the article while recommendations are still pending", async () => {
     mockGetTranslations.mockResolvedValue((key: string) => {
       if (key === "loading") return "Loading recommendations";

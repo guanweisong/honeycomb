@@ -2,44 +2,45 @@
 
 import { describe, expect, it } from "vitest";
 import { PostStatus } from "@/features/post/types/post.status";
-import {
-  getPostPublishStatus,
-  getPostWithdrawStatus,
-} from "@/features/post/rules/post-publication";
+import { assertPublicationStatusChange } from "@/lib/validation/publication-status";
 
 describe("post publication rules", () => {
+  const transition = (id: string, current: PostStatus, next?: PostStatus) =>
+    assertPublicationStatusChange(id, current, next, PostStatus, "post");
+
   it.each([PostStatus.DRAFT, PostStatus.TO_AUDIT])("publishes %s", (status) => {
-    expect(getPostPublishStatus("post-1", status)).toBe(PostStatus.PUBLISHED);
+    expect(() =>
+      transition("post-1", status, PostStatus.PUBLISHED),
+    ).not.toThrow();
   });
-  it("withdraws a published post", () => {
-    expect(getPostWithdrawStatus("post-1", PostStatus.PUBLISHED)).toBe(
-      PostStatus.DRAFT,
+
+  it("withdraws a published record and accepts a same-state patch", () => {
+    expect(() =>
+      transition("post-1", PostStatus.PUBLISHED, PostStatus.DRAFT),
+    ).not.toThrow();
+    expect(() =>
+      transition("post-1", PostStatus.PUBLISHED, PostStatus.PUBLISHED),
+    ).not.toThrow();
+    expect(() => transition("post-1", PostStatus.TO_AUDIT)).not.toThrow();
+  });
+
+  it("rejects withdrawal from an unpublished record", () => {
+    expect(() =>
+      transition("post-1", PostStatus.TO_AUDIT, PostStatus.DRAFT),
+    ).toThrow(
+      expect.objectContaining({
+        code: "INVALID_STATE_TRANSITION",
+        message: "只有已发布文章可以撤回",
+      }),
     );
   });
-  it.each([
-    [getPostPublishStatus, PostStatus.PUBLISHED, "文章已经发布"],
-    [getPostWithdrawStatus, PostStatus.DRAFT, "只有已发布文章可以撤回"],
-    [getPostWithdrawStatus, PostStatus.TO_AUDIT, "只有已发布文章可以撤回"],
-  ])("rejects an invalid transition", (transition, current, message) => {
-    expect(() => transition("post-1", current)).toThrow(
-      expect.objectContaining({ code: "INVALID_STATE_TRANSITION", message }),
-    );
+
+  it("rejects an unsupported status and a blank ID for a transition", () => {
+    expect(() =>
+      transition(" ", PostStatus.DRAFT, PostStatus.TO_AUDIT),
+    ).toThrow(expect.objectContaining({ code: "INVALID_POST_STATUS" }));
+    expect(() =>
+      transition(" ", PostStatus.DRAFT, PostStatus.PUBLISHED),
+    ).toThrow("聚合标识不能为空");
   });
-  it.each([getPostPublishStatus, getPostWithdrawStatus])(
-    "validates status before id and id before transitions",
-    (transition) => {
-      expect(() => transition(" ", undefined)).toThrow(
-        expect.objectContaining({ code: "MISSING_POST_STATUS" }),
-      );
-      expect(() => transition(" ", "UNKNOWN")).toThrow(
-        expect.objectContaining({
-          code: "INVALID_POST_STATUS",
-          message: "文章当前状态不合法",
-        }),
-      );
-      expect(() => transition(" ", PostStatus.DRAFT)).toThrow(
-        "聚合标识不能为空",
-      );
-    },
-  );
 });

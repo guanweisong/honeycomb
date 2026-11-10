@@ -37,3 +37,18 @@ it("prepares only temporary capability without inserting a media row", async () 
   expect(repo.insertRegistered).not.toHaveBeenCalled();
   expect(result).not.toHaveProperty("key");
 });
+
+it("rejects an invalid file digest before authorization or signing", async () => {
+  const repo = mediaRepositoryFixture();
+  const storage = mediaStorageFixture();
+  await expect(
+    prepareMediaUpload(
+      repo,
+      storage,
+      { name: "a.png", type: "image/png", size: 3, sha256: "A".repeat(64) },
+      "actor",
+    ),
+  ).rejects.toThrow("无效的 SHA-256 摘要");
+  expect(repo.authorizeUpload).not.toHaveBeenCalled();
+  expect(storage.getPresignedUrl).not.toHaveBeenCalled();
+});

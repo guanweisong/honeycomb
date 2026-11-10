@@ -50,8 +50,8 @@ export const userActionGuardMatrix: readonly ActionGuardFile[] = [
         permission: Permission.userManage,
         control: {
           tag: "DataTable",
-          attribute: "onSelectionChange",
-          reference: "setSelectedRows",
+          attribute: "onSelectedRowIdsChange",
+          expression: "tableState.setSelectedRowIds",
         },
         guard: {
           kind: "attribute",

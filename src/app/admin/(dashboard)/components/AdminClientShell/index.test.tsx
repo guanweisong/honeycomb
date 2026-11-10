@@ -10,12 +10,16 @@ const mocks = vi.hoisted(() => ({
   clear: vi.fn(),
   clearRuntimeCaches: vi.fn().mockResolvedValue(undefined),
   navigateToLogin: vi.fn(),
-  setData: vi.fn(),
   signOut: vi.fn().mockResolvedValue({ error: null }),
   push: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
   onLogout: undefined as (() => Promise<void>) | undefined,
+}));
+
+let currentUser: AdminUser | null;
+vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({
+  useCurrentUser: () => ({ user: currentUser }),
 }));
 
 const navigation = vi.hoisted(() => ({ pathname: "/admin/dashboard" }));
@@ -47,7 +51,6 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
     useUtils: () => ({
       user: {
         current: {
-          setData: mocks.setData,
           invalidate: mocks.invalidate,
         },
       },
@@ -59,16 +62,21 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ clear: mocks.clear }),
 }));
 
-vi.mock("@/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state", () => ({
-  clearHoneycombRuntimeCaches: mocks.clearRuntimeCaches,
-  navigateToAdminLogin: mocks.navigateToLogin,
-}));
+vi.mock(
+  "@/app/admin/(dashboard)/components/AdminClientShell/logout-browser-state",
+  () => ({
+    clearHoneycombRuntimeCaches: mocks.clearRuntimeCaches,
+    navigateToAdminLogin: mocks.navigateToLogin,
+  }),
+);
 
 vi.mock("@/app/admin/components/AdminLayout", () => ({
   AdminLayout: (props: {
     onLogout: () => Promise<void>;
     children: React.ReactNode;
     pendingPath?: string | null;
+    user?: AdminUser | null;
+    menu: { title: string }[];
     onNavigateStart?: (path: string) => void;
   }) => {
     mocks.onLogout = props.onLogout;
@@ -81,6 +89,8 @@ vi.mock("@/app/admin/components/AdminLayout", () => ({
           标签
         </button>
         <output aria-label="pending route">{props.pendingPath}</output>
+        <output aria-label="account">{props.user?.name}</output>
+        <output aria-label="menu size">{props.menu.length}</output>
         {props.children}
       </main>
     );
@@ -108,7 +118,6 @@ describe("AdminClientShell", () => {
     mocks.clear.mockClear();
     mocks.clearRuntimeCaches.mockReset().mockResolvedValue(undefined);
     mocks.navigateToLogin.mockClear();
-    mocks.setData.mockClear();
     mocks.signOut.mockReset().mockResolvedValue({ error: null });
     mocks.push.mockClear();
     mocks.success.mockClear();
@@ -118,17 +127,33 @@ describe("AdminClientShell", () => {
   });
 
   function render() {
+    currentUser = user;
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
     act(() =>
       root.render(
-        <AdminClientShell user={user}>
+        <AdminClientShell>
           <span>dashboard</span>
         </AdminClientShell>,
       ),
     );
   }
+
+  it("reflects refreshed identity and permissions in the shell", async () => {
+    render();
+    const account = container.querySelector('output[aria-label="account"]');
+    const menu = container.querySelector('output[aria-label="menu size"]');
+    const menuSize = Number(menu?.textContent);
+    expect(account?.textContent).toBe("Admin");
+    expect(menuSize).toBeGreaterThan(0);
+    currentUser = { ...user, name: "Refreshed", level: UserLevel.GUEST };
+    await act(async () =>
+      root.render(<AdminClientShell>dashboard</AdminClientShell>),
+    );
+    expect(account?.textContent).toBe("Refreshed");
+    expect(Number(menu?.textContent)).toBeLessThan(menuSize);
+  });
 
   it("marks only the destination menu while navigation is pending", async () => {
     render();
@@ -145,7 +170,7 @@ describe("AdminClientShell", () => {
     navigation.pathname = "/admin/tag";
     await act(async () => {
       root.render(
-        <AdminClientShell user={user}>
+        <AdminClientShell>
           <span>tag</span>
         </AdminClientShell>,
       );
@@ -177,7 +202,6 @@ describe("AdminClientShell", () => {
     await act(async () => mocks.onLogout?.());
 
     expect(mocks.signOut).toHaveBeenCalledTimes(1);
-    expect(mocks.setData).toHaveBeenCalledWith(undefined, undefined);
     expect(mocks.invalidate).not.toHaveBeenCalled();
     expect(mocks.clearRuntimeCaches).toHaveBeenCalledTimes(1);
     expect(mocks.clear).toHaveBeenCalledTimes(1);
@@ -194,7 +218,6 @@ describe("AdminClientShell", () => {
     await act(async () => mocks.onLogout?.());
 
     expect(mocks.signOut).toHaveBeenCalledTimes(1);
-    expect(mocks.setData).toHaveBeenCalledWith(undefined, undefined);
     expect(mocks.clear).toHaveBeenCalledTimes(1);
     expect(mocks.navigateToLogin).toHaveBeenCalledTimes(1);
     expect(mocks.success).toHaveBeenCalledWith("登出成功");
@@ -208,7 +231,6 @@ describe("AdminClientShell", () => {
     await act(async () => mocks.onLogout?.());
 
     expect(mocks.push).not.toHaveBeenCalled();
-    expect(mocks.setData).not.toHaveBeenCalled();
     expect(mocks.clearRuntimeCaches).not.toHaveBeenCalled();
     expect(mocks.clear).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();

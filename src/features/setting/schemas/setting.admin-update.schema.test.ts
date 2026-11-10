@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { describe, expect, it } from "vitest";
 import { SettingAdminUpdateSchema } from "@/features/setting/schemas/setting.admin-update.schema";
 

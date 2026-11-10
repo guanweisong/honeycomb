@@ -1,4 +1,4 @@
-import { getClientIp } from "@/lib/http/client-ip";
+import { ANONYMOUS_CLIENT_IP, getClientIp } from "@/lib/http/client-ip.server";
 
 import type { LoginHistoryEvent } from "@/features/user/account-security/login-history-events";
 export type { LoginHistoryEvent } from "@/features/user/account-security/login-history-events";
@@ -22,7 +22,7 @@ export function buildLoginHistoryRecord({
     event,
     provider,
     userId,
-    ipAddress: request ? getClientIp(request) : "anonymous",
+    ipAddress: request ? getClientIp(request) : ANONYMOUS_CLIENT_IP,
     userAgent: request?.headers.get("user-agent") ?? null,
     createdAt: occurredAt,
   };

@@ -16,6 +16,7 @@ import { MultiLangEnum } from "@/lib/i18n/i18n";
 import * as schema from "@/lib/db/schema";
 import { hashCredentialPassword } from "@/lib/auth/credentials";
 import { assertSafeE2ESeedTarget } from "./e2e-seed-policy";
+import { guest, pageSmokeAdmin } from "../tests/e2e/fixtures/auth.json";
 
 const ids = {
   user: "000000000000000000000001",
@@ -27,6 +28,7 @@ const ids = {
   categoryMenu: "000000000000000000000007",
   pageMenu: "000000000000000000000008",
   tag: "000000000000000000000009",
+  emptyTag: "000000000000000000000018",
   childCategory: "000000000000000000000010",
   grandchildCategory: "000000000000000000000011",
   bannedComment: "000000000000000000000012",
@@ -35,8 +37,8 @@ const ids = {
 
 export async function seed(): Promise<void> {
   const url = assertSafeE2ESeedTarget(process.env);
-  const username = process.env.E2E_ADMIN_USERNAME ?? "guest";
-  const password = process.env.E2E_ADMIN_PASSWORD ?? "123456";
+  const username = process.env.E2E_ADMIN_USERNAME ?? guest.username;
+  const password = process.env.E2E_ADMIN_PASSWORD ?? guest.password;
   const client = createClient({ url, authToken: process.env.TURSO_TOKEN });
   const db = drizzle(client, { schema });
   const now = new Date().toISOString();
@@ -98,9 +100,9 @@ export async function seed(): Promise<void> {
           email: "page-smoke@honeycomb.test",
           emailVerified: true,
           level: UserLevel.ADMIN,
-          name: "page-smoke-admin",
-          username: "page-smoke-admin",
-          displayUsername: "page-smoke-admin",
+          name: pageSmokeAdmin.username,
+          username: pageSmokeAdmin.username,
+          displayUsername: pageSmokeAdmin.username,
           status: UserStatus.ENABLE,
           createdAt: now,
           updatedAt: now,
@@ -113,7 +115,7 @@ export async function seed(): Promise<void> {
           accountId: "000000000000000000000014",
           providerId: "credential",
           userId: "000000000000000000000014",
-          password: await hashCredentialPassword("page-smoke-test-only"),
+          password: await hashCredentialPassword(pageSmokeAdmin.password),
           createdAt: now,
           updatedAt: now,
         })
@@ -163,99 +165,48 @@ export async function seed(): Promise<void> {
           },
         });
 
-      await tx
-        .insert(schema.category)
-        .values({
-          id: ids.category,
-          status: EnableStatus.ENABLE,
-          path: "engineering",
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: schema.category.id,
-          set: {
-            status: EnableStatus.ENABLE,
-            path: "engineering",
-            updatedAt: now,
-          },
-        });
-      await tx
-        .insert(schema.categoryTranslation)
-        .values([
-          {
-            categoryId: ids.category,
-            locale: MultiLangEnum.En,
-            title: "Engineering",
-            description: "E2E category",
-          },
-          {
-            categoryId: ids.category,
-            locale: MultiLangEnum.Zh,
-            title: "工程",
-            description: "E2E 分类",
-          },
-        ])
-        .onConflictDoUpdate({
-          target: [
-            schema.categoryTranslation.categoryId,
-            schema.categoryTranslation.locale,
-          ],
-          set: {
-            title: schema.categoryTranslation.title,
-            description: schema.categoryTranslation.description,
-          },
-        });
-
       for (const category of [
+        {
+          id: ids.category,
+          path: "engineering",
+          title: { en: "Engineering", zh: "工程" },
+          description: { en: "E2E category", zh: "E2E 分类" },
+        },
         {
           id: ids.childCategory,
           parent: ids.category,
           path: "testing",
           title: { en: "Testing", zh: "测试" },
+          description: { en: "Nested E2E category", zh: "嵌套 E2E 分类" },
         },
         {
           id: ids.grandchildCategory,
           parent: ids.childCategory,
           path: "browser-tests",
           title: { en: "Browser tests", zh: "浏览器测试" },
+          description: { en: "Nested E2E category", zh: "嵌套 E2E 分类" },
         },
       ]) {
+        const fields = {
+          parent: category.parent,
+          path: category.path,
+          status: EnableStatus.ENABLE,
+          updatedAt: now,
+        };
         await tx
           .insert(schema.category)
-          .values({
-            id: category.id,
-            parent: category.parent,
-            path: category.path,
-            status: EnableStatus.ENABLE,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .onConflictDoUpdate({
-            target: schema.category.id,
-            set: {
-              parent: category.parent,
-              path: category.path,
-              status: EnableStatus.ENABLE,
-              updatedAt: now,
-            },
-          });
+          .values({ id: category.id, createdAt: now, ...fields })
+          .onConflictDoUpdate({ target: schema.category.id, set: fields });
         await tx
           .insert(schema.categoryTranslation)
-          .values([
-            {
+          .values(
+            [MultiLangEnum.En, MultiLangEnum.Zh].map((locale) => ({
               categoryId: category.id,
-              locale: MultiLangEnum.En,
-              title: category.title.en,
-              description: "Nested E2E category",
-            },
-            {
-              categoryId: category.id,
-              locale: MultiLangEnum.Zh,
-              title: category.title.zh,
-              description: "嵌套 E2E 分类",
-            },
-          ])
+              locale,
+              title: category.title[locale],
+              description: category.description[locale],
+            })),
+          )
           .onConflictDoUpdate({
             target: [
               schema.categoryTranslation.categoryId,
@@ -345,6 +296,7 @@ export async function seed(): Promise<void> {
           authorId: ids.user,
           categoryId: ids.grandchildCategory,
           status: PostStatus.PUBLISHED,
+          commentStatus: EnableStatus.DISABLE,
           type: PostType.ARTICLE,
           coverId: "000000000000000000000016",
           createdAt: "2000-01-01T00:00:00.000Z",
@@ -490,11 +442,13 @@ export async function seed(): Promise<void> {
 
       await tx
         .insert(schema.tag)
-        .values({
-          id: ids.tag,
-          createdAt: now,
-          updatedAt: now,
-        })
+        .values(
+          [ids.tag, ids.emptyTag].map((id) => ({
+            id,
+            createdAt: now,
+            updatedAt: now,
+          })),
+        )
         .onConflictDoUpdate({
           target: schema.tag.id,
           set: { updatedAt: now },
@@ -504,6 +458,8 @@ export async function seed(): Promise<void> {
         .values([
           { tagId: ids.tag, locale: MultiLangEnum.En, name: "Testing" },
           { tagId: ids.tag, locale: MultiLangEnum.Zh, name: "测试" },
+          { tagId: ids.emptyTag, locale: MultiLangEnum.En, name: "Empty tag" },
+          { tagId: ids.emptyTag, locale: MultiLangEnum.Zh, name: "空标签" },
         ])
         .onConflictDoUpdate({
           target: [schema.tagTranslation.tagId, schema.tagTranslation.locale],

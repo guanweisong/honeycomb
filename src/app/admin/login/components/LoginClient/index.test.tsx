@@ -369,54 +369,14 @@ describe("admin login page", () => {
     expect(card?.parentElement?.className).toContain("min-h-dvh");
   });
 
-  it.each([true, false, undefined])(
-    "renders the looping background without playback controls for system motion preference %s",
-    async (matches) => {
-      vi.stubGlobal(
-        "matchMedia",
-        matches === undefined
-          ? undefined
-          : () => Object.assign(new EventTarget(), { matches }),
-      );
-      await act(async () =>
-        root.render(<LoginClient setting={undefined} providers={[]} />),
-      );
-
-      const video = container.querySelector("video");
-      expect(video?.getAttribute("src")).toBe(
-        "https://assets.honeycomb.test/common/rainAndBird.mp4",
-      );
-      expect(video?.autoplay).toBe(true);
-      expect(video?.muted).toBe(true);
-      expect(video?.loop).toBe(true);
-      expect(video?.playsInline).toBe(true);
-      expect(video?.getAttribute("aria-hidden")).toBe("true");
-      expect(
-        [...container.querySelectorAll("button")].filter((button) =>
-          /(?:暂停|播放)背景动画/.test(button.textContent ?? ""),
-        ),
-      ).toHaveLength(0);
-    },
-  );
-
-  it("keeps the same background video mounted when system motion preferences change", async () => {
-    const query = Object.assign(new EventTarget(), { matches: true });
-    vi.stubGlobal("matchMedia", () => query);
+  it("uses a static decorative background without autoplay media", async () => {
     await act(async () =>
       root.render(<LoginClient setting={undefined} providers={[]} />),
     );
-    const video = container.querySelector("video");
-    expect(video).not.toBeNull();
-    await act(async () => {
-      query.matches = false;
-      query.dispatchEvent(new Event("change"));
-    });
-    expect(container.querySelector("video")).toBe(video);
-    await act(async () => {
-      query.matches = true;
-      query.dispatchEvent(new Event("change"));
-    });
-    expect(container.querySelector("video")).toBe(video);
+    expect(container.querySelector("video")).toBeNull();
+    expect(
+      container.querySelector("h1")?.parentElement?.parentElement?.className,
+    ).toContain("bg-linear-to-br");
   });
 
   it("associates login labels and autocomplete with the real inputs", async () => {

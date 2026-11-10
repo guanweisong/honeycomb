@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { guest, turnstile } from "../fixtures/auth.json";
 
 /** 建立真实服务端会话，让后台 E2E 能越过 Server Component 鉴权。 */
 export async function signInAsDashboardTestUser(page: Page) {
@@ -7,11 +8,11 @@ export async function signInAsDashboardTestUser(page: Page) {
     .context()
     .request.post("/api/auth/sign-in/username", {
       data: {
-        username: process.env.E2E_ADMIN_USERNAME ?? "guest",
-        password: process.env.E2E_ADMIN_PASSWORD ?? "123456",
+        username: process.env.E2E_ADMIN_USERNAME ?? guest.username,
+        password: process.env.E2E_ADMIN_PASSWORD ?? guest.password,
       },
       headers: {
-        "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX",
+        "x-captcha-response": turnstile.response,
       },
     });
 
@@ -26,4 +27,27 @@ export async function refreshMockedAdminUser(page: Page) {
   await page.clock.fastForward(31_000);
   await page.context().setOffline(true);
   await page.context().setOffline(false);
+}
+
+export async function installTurnstileWidgetFixture(page: Page) {
+  await page.addInitScript((token) => {
+    Object.defineProperty(window, "turnstile", {
+      value: {
+        ready: (callback: () => void) => callback(),
+        render: (
+          _element: unknown,
+          options: { callback?: (response: string) => void },
+        ) => {
+          setTimeout(() => options.callback?.(token), 0);
+          return "fixture-widget";
+        },
+        reset: () => {},
+        remove: () => {},
+        getResponse: () => token,
+      },
+    });
+  }, turnstile.response);
+  await page.route("https://challenges.cloudflare.com/**", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  );
 }

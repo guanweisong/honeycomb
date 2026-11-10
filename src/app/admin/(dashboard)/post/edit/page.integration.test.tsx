@@ -81,9 +81,12 @@ vi.mock("@/app/admin/(dashboard)/post/edit/components/PostTypeFields", () => ({
     );
   },
 }));
-vi.mock("@/app/admin/(dashboard)/post/edit/components/PostSidebarFields", () => ({
-  PostSidebarFields: () => null,
-}));
+vi.mock(
+  "@/app/admin/(dashboard)/post/edit/components/PostSidebarFields",
+  () => ({
+    PostSidebarFields: () => null,
+  }),
+);
 vi.mock("@/app/admin/(dashboard)/components/PhotoPicker/index", () => ({
   default: () => null,
 }));
@@ -420,20 +423,17 @@ describe("post confirmed state in the real layout header", () => {
   );
 });
 
-vi.mock(
-  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result",
-  async () => {
-    const { trpc } = await import("@/lib/trpc/client/trpc");
-    return {
-      usePostCreationResult: (
-        creationToken: string,
-        _actorId: string | undefined,
-        enabled: boolean,
-      ) =>
-        trpc.post.creationResult.useQuery(
-          { creationToken },
-          { enabled, retry: false },
-        ),
-    };
-  },
-);
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
+    ) =>
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
+      ),
+  };
+});

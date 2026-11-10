@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { installTurnstileWidgetFixture } from "./auth";
+import { guest } from "../fixtures/auth.json";
 
 for (const [target, expected] of [
   ["https://evil.test/steal", "/admin/dashboard"],
@@ -11,26 +13,7 @@ for (const [target, expected] of [
   test(`@regression login normalizes callback ${target}`, async ({ page }) => {
     // Only the external captcha and credential transport are fixtures; both
     // server/client normalization and browser navigation run unchanged.
-    await page.addInitScript(() => {
-      Object.defineProperty(window, "turnstile", {
-        value: {
-          ready: (callback: () => void) => callback(),
-          render: (
-            _element: unknown,
-            options: { callback?: (token: string) => void },
-          ) => {
-            setTimeout(() => options.callback?.("XXXX.DUMMY.TOKEN.XXXX"), 0);
-            return "fixture-widget";
-          },
-          reset: () => {},
-          remove: () => {},
-          getResponse: () => "XXXX.DUMMY.TOKEN.XXXX",
-        },
-      });
-    });
-    await page.route("https://challenges.cloudflare.com/**", (route) =>
-      route.fulfill({ contentType: "application/javascript", body: "" }),
-    );
+    await installTurnstileWidgetFixture(page);
     await page.route("**/api/auth/sign-in/username", (route) =>
       route.fulfill({
         json: { token: "fixture-token", user: { id: "fixture-user" } },
@@ -48,8 +31,8 @@ for (const [target, expected] of [
     // Wait for the committed token before filling so hydration cannot erase
     // the credentials, and submission cannot race captcha readiness.
     await expect(login).toBeEnabled();
-    await page.getByPlaceholder("用户名", { exact: true }).fill("guest");
-    await page.getByPlaceholder("密码", { exact: true }).fill("123456");
+    await page.getByPlaceholder("用户名", { exact: true }).fill(guest.username);
+    await page.getByPlaceholder("密码", { exact: true }).fill(guest.password);
     await login.click();
     await expect(page).toHaveURL(
       (url) => url.pathname + url.search === expected,

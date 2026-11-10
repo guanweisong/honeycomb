@@ -33,7 +33,6 @@ import { validateCaptcha } from "@/lib/security/validate-captcha";
 import { publicContentInvalidator } from "@/lib/cache/next-public-content-invalidator";
 import { createApiRatelimit } from "@/lib/rate-limit/rate-limit";
 import { createRateLimitedPublicProcedure } from "@/lib/trpc/rate-limited-procedure";
-import { getClientIp } from "@/lib/http/client-ip";
 
 /** 评论创建的独立高成本入口限流器。 */
 const commentCreateRatelimit = createApiRatelimit({
@@ -112,17 +111,16 @@ export const commentRouter = createTRPCRouter({
           repository: createCommentCommandRepository(ctx.db),
           targetRepository: createCommentTargetRepository(ctx.db),
           validateCaptcha,
-          notify: (commentId, parentId) =>
+          notify: (commentId) =>
             notifyCommentCreated(
               createCommentNotificationRepository(ctx.db),
               commentId,
-              parentId,
             ),
           logNotificationFailure: logCommentNotificationFailure,
           invalidator: publicContentInvalidator,
         },
         {
-          ip: getClientIp({ headers: ctx.header }),
+          ip: ctx.clientIp,
           userAgent: ctx.header.get("user-agent") ?? null,
         },
         input,

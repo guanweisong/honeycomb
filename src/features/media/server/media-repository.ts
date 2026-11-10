@@ -3,8 +3,8 @@ import { eq, inArray, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { clientEnv } from "@/env/client";
-import { can, Permission } from "@/lib/auth/permissions";
-import { UserStatus } from "@/features/user/types/user.status";
+import { Permission } from "@/lib/auth/permissions";
+import { requireActiveActor } from "@/features/user/server/require-active-actor";
 import { ApplicationError } from "@/lib/errors/application-error";
 import { buildDrizzleOrderBy } from "@/lib/db/query/query-builders";
 import { MediaRecordSchema } from "@/features/media/schemas/media.record.schema";
@@ -15,23 +15,6 @@ import type { validateMediaImage } from "@/features/media/server/image-validatio
 import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
 import { findKnownMediaReferences } from "@/features/media/server/media-references";
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-async function requireActor(
-  tx: Transaction,
-  actorId: string,
-  permission: Permission,
-) {
-  const [actor] = await tx
-    .select()
-    .from(schema.user)
-    .where(eq(schema.user.id, actorId))
-    .limit(1);
-  if (
-    !actor ||
-    actor.status !== UserStatus.ENABLE ||
-    !can(actor.level, permission)
-  )
-    throw new ApplicationError("FORBIDDEN", "当前账户无权操作媒体");
-}
 async function findRow(tx: Transaction, id: string) {
   const [row] = await tx
     .select()
@@ -44,13 +27,23 @@ export function createMediaRepository(db: Database) {
   return {
     async authorizeUpload(actorId: string) {
       await db.transaction(async (tx) => {
-        await requireActor(tx, actorId, Permission.mediaUpload);
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.mediaUpload],
+          "当前账户无权操作媒体",
+        );
         await assertOrdinaryMediaSchema(tx);
       });
     },
     async findRegistered(id: string, actorId: string) {
       return db.transaction(async (tx) => {
-        await requireActor(tx, actorId, Permission.mediaUpload);
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.mediaUpload],
+          "当前账户无权操作媒体",
+        );
         await assertOrdinaryMediaSchema(tx);
         return findRow(tx, id);
       });
@@ -64,7 +57,12 @@ export function createMediaRepository(db: Database) {
       const assetUrl = clientEnv.NEXT_PUBLIC_ASSET_URL;
       if (!assetUrl) throw new Error("Public asset URL is not configured");
       return db.transaction(async (tx) => {
-        await requireActor(tx, actorId, Permission.mediaUpload);
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.mediaUpload],
+          "当前账户无权操作媒体",
+        );
         await assertOrdinaryMediaSchema(tx);
         if (intent.actorId !== actorId)
           throw new ApplicationError("FORBIDDEN", "无权登记此上传");
@@ -113,23 +111,34 @@ export function createMediaRepository(db: Database) {
       ids: string[],
       actorId: string,
       removeObjects: (rows: MediaRecord[]) => Promise<void>,
+      signal?: AbortSignal,
     ) {
       // libSQL's default transaction mode is write: it serializes this boundary with content writes.
       await db.transaction(async (tx) => {
-        await requireActor(tx, actorId, Permission.mediaDelete);
+        signal?.throwIfAborted();
+        await requireActiveActor(
+          tx,
+          actorId,
+          [Permission.mediaDelete],
+          "当前账户无权操作媒体",
+        );
+        signal?.throwIfAborted();
         await assertOrdinaryMediaSchema(tx);
+        signal?.throwIfAborted();
         if (!ids.length) return;
         const rows = await tx
           .select()
           .from(schema.media)
           .where(inArray(schema.media.id, ids));
-        if (await findKnownMediaReferences(tx, rows))
+        if (await findKnownMediaReferences(tx, rows, signal))
           throw new ApplicationError(
             "CONFLICT",
             "媒体仍被内容引用，请先移除引用",
           );
         await removeObjects(rows.map((row) => MediaRecordSchema.parse(row)));
+        signal?.throwIfAborted();
         await tx.delete(schema.media).where(inArray(schema.media.id, ids));
+        signal?.throwIfAborted();
       });
     },
   };

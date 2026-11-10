@@ -141,6 +141,31 @@ describe("post list cache validation", () => {
     expect(listPublicPosts).not.toHaveBeenCalled();
   });
 
+  it("fails closed for cached covers when the ordinary media table is unavailable", async () => {
+    cache.value = {
+      ...fresh,
+      list: fresh.list.map((row) => ({
+        ...row,
+        cover: {
+          url: "https://assets.test/legacy.png",
+          width: null,
+          height: null,
+        },
+      })),
+    };
+    const db = createMockDb();
+    db.all.mockResolvedValueOnce([{ name: "state" }]);
+    await expect(
+      getCachedPostList(asMockDatabase(db), {}),
+    ).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+    expect(listPublicPosts).not.toHaveBeenCalled();
+    await expect(
+      getCachedPostList(asMockDatabase(db), {}),
+    ).resolves.toMatchObject({
+      list: [{ cover: { url: "https://assets.test/legacy.png" } }],
+    });
+  });
+
   it("strips bodies and unused relations from legacy cached public lists", async () => {
     cache.value = {
       list: [

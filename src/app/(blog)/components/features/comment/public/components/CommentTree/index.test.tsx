@@ -113,7 +113,10 @@ describe("CommentTree", () => {
         ?.click(),
     );
 
-    expect(onReply).toHaveBeenCalledWith(comments[0]);
+    expect(onReply).toHaveBeenCalledWith(
+      comments[0],
+      expect.any(HTMLButtonElement),
+    );
   });
 
   it("renders no list items for an empty comment tree", () => {

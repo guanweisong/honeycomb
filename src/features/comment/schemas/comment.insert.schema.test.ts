@@ -28,6 +28,20 @@ describe("CommentInsertSchema", () => {
     ).toBe(true);
   });
 
+  it.each(["postId", "pageId", "customId", "parentId"])(
+    "rejects a blank %s before persistence",
+    (field) => {
+      for (const value of ["", "  "]) {
+        const result = CommentInsertSchema.safeParse({
+          ...validComment,
+          postId: "post-id",
+          [field]: value,
+        });
+        expect(result.success).toBe(false);
+      }
+    },
+  );
+
   it.each([
     ["site", "javascript:alert(1)"],
     ["email", "not-an-email"],

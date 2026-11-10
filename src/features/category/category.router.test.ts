@@ -144,7 +144,7 @@ describe("Category Router", () => {
       const result = await caller.create({
         title: { en: "New Category", zh: "新分类" },
         description: { en: "New category description", zh: "新分类描述" },
-        path: "/new-category",
+        path: "new-category",
         status: EnableStatus.ENABLE,
       });
 
@@ -165,7 +165,7 @@ describe("Category Router", () => {
         caller.create({
           title: { en: "New Category", zh: "新分类" },
           description: { en: "New category description", zh: "新分类描述" },
-          path: "/new-category",
+          path: "new-category",
           status: EnableStatus.ENABLE,
         }),
       ).rejects.toThrow();
@@ -264,10 +264,6 @@ describe("Category Router", () => {
           status: EnableStatus.ENABLE,
         },
       ]);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([]);
       mockDb.where.mockResolvedValueOnce([
         {
           categoryId: TEST_IDS.ID_1,
@@ -289,7 +285,7 @@ describe("Category Router", () => {
           en: "Updated category description",
           zh: "更新的分类描述",
         },
-        path: "/updated-category",
+        path: "updated-category",
       });
 
       expect(result).toEqual({
@@ -316,7 +312,7 @@ describe("Category Router", () => {
             en: "Updated category description",
             zh: "更新的分类描述",
           },
-          path: "/updated-category",
+          path: "updated-category",
         }),
       ).rejects.toThrow();
     });

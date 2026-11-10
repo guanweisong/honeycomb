@@ -207,7 +207,10 @@ describe("runtime sitemap", () => {
     expect(pageEntriesMock).toHaveBeenCalledTimes(1);
   });
 
-  it("only emits category menu entries with non-empty paths and escapes XML URLs", async () => {
+  it("uses stable paths for legacy category entries and escapes XML URLs", async () => {
+    postEntriesMock.mockResolvedValue([
+      { id: "research&development", updatedAt: null },
+    ]);
     menuIndexMock.mockResolvedValue(
       list([
         {
@@ -245,7 +248,23 @@ describe("runtime sitemap", () => {
     expect(response.headers.get("content-type")).toBe(
       "application/xml; charset=utf-8",
     );
-    expect(xml).toContain("research&amp;development");
+    for (const locale of ["zh", "en"]) {
+      expect(xml).toContain(
+        `https://example.com/${locale}/archives/research&amp;development`,
+      );
+      expect(xml).toContain(
+        `https://example.com/${locale}/list/category/~category`,
+      );
+      expect(xml).toContain(
+        `https://example.com/${locale}/list/category/~empty`,
+      );
+      expect(xml).not.toContain(
+        `https://example.com/${locale}/list/category/research`,
+      );
+      expect(xml).not.toContain(
+        `https://example.com/${locale}/list/category/~null`,
+      );
+    }
     expect(xml).not.toContain("page-path");
     expect(xml).not.toContain("custom-path");
     expect(xml).not.toContain("category/null");
@@ -481,7 +500,7 @@ describe("runtime sitemap", () => {
           `https://example.com/${locale}/pages/${page.id}`,
         );
       expect(urls).toContain(
-        `https://example.com/${locale}/list/category/root/child/grandchild`,
+        `https://example.com/${locale}/list/category/~category`,
       );
     }
   });

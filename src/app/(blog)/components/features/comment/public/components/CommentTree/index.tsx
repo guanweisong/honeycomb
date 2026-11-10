@@ -8,7 +8,7 @@ import type { CommentTreeViewModel } from "@/features/comment/presentation/comme
 
 interface CommentTreeProps {
   comments: CommentTreeViewModel[];
-  onReply: (comment: CommentTreeViewModel) => void;
+  onReply: (comment: CommentTreeViewModel, trigger: HTMLButtonElement) => void;
 }
 
 function CommentItem({
@@ -16,7 +16,7 @@ function CommentItem({
   onReply,
 }: {
   comment: CommentTreeViewModel;
-  onReply: (comment: CommentTreeViewModel) => void;
+  onReply: (comment: CommentTreeViewModel, trigger: HTMLButtonElement) => void;
 }) {
   const t = useTranslations("Comment");
   const avatar =
@@ -64,7 +64,7 @@ function CommentItem({
           <button
             type="button"
             className="text-teal-500 focus-visible:outline-2 focus-visible:outline-teal-500"
-            onClick={() => onReply(comment)}
+            onClick={(event) => onReply(comment, event.currentTarget)}
           >
             {t("form.reply")}
           </button>

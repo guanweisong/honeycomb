@@ -1,6 +1,11 @@
 import "server-only";
 
 import type { BetterAuthOptions } from "better-auth";
+import {
+  APIError,
+  createAuthMiddleware,
+  getAuthoritativeSessionFromCtx,
+} from "better-auth/api";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
@@ -9,6 +14,53 @@ import { recordLoginHistory } from "@/features/user/account-security/server/logi
 import { getLogger } from "@/lib/observability/server";
 import { LogEvent } from "@/lib/observability/core/names";
 import { isUserEnabled } from "@/features/user/rules/user-status";
+import { UserStatus } from "@/features/user/types/user.status";
+
+const accountSessionPaths = new Set([
+  "/account-info",
+  "/change-email",
+  "/change-password",
+  "/delete-user",
+  "/delete-user/callback",
+  "/get-access-token",
+  "/link-social",
+  "/list-accounts",
+  "/list-sessions",
+  "/passkey/delete-passkey",
+  "/passkey/generate-register-options",
+  "/passkey/list-user-passkeys",
+  "/passkey/update-passkey",
+  "/passkey/verify-registration",
+  "/refresh-token",
+  "/revoke-other-sessions",
+  "/revoke-session",
+  "/revoke-sessions",
+  "/unlink-account",
+  "/update-session",
+]);
+
+export const rejectDisabledAccountSession = createAuthMiddleware(
+  async (ctx) => {
+    if (!accountSessionPaths.has(ctx.path)) return;
+    const session = await getAuthoritativeSessionFromCtx(ctx);
+    if (session && session.user.status !== UserStatus.ENABLE) {
+      throw new APIError("FORBIDDEN", {
+        code: "ACCOUNT_DISABLED",
+        message: "Account is disabled",
+      });
+    }
+  },
+);
+
+export const hideDisabledAccountSession = createAuthMiddleware(async (ctx) => {
+  if (
+    ctx.path === "/get-session" &&
+    ctx.context.returned &&
+    ctx.context.session &&
+    ctx.context.session.user.status !== UserStatus.ENABLE
+  )
+    return null;
+});
 
 export function createAuthDatabaseHooks(): NonNullable<
   BetterAuthOptions["databaseHooks"]

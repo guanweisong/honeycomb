@@ -133,8 +133,8 @@ export const pageActionGuardMatrix: readonly ActionGuardFile[] = [
         permission: Permission.pageDelete,
         control: {
           tag: "DataTable",
-          attribute: "onSelectionChange",
-          reference: "setSelectedRows",
+          attribute: "onSelectedRowIdsChange",
+          expression: "tableState.setSelectedRowIds",
         },
         guard: {
           kind: "attribute",

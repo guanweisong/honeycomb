@@ -1,18 +1,18 @@
 import "server-only";
-import {
-  transactionWithBeginRetry,
-  type DatabaseTransaction,
-} from "@/lib/db/transaction-begin-retry";
+import { transactionWithBeginRetry } from "@/lib/db/transaction-begin-retry";
 import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 import { bumpMenuRevisionForPageDeletion } from "@/features/menu/server/menu-revisions";
 import { hashCanonicalInput } from "@/lib/canonical-input-hash";
 import { parseEnumValue } from "@/lib/db/value-validation";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { PageStatus } from "@/features/page/types/page.status";
 import { observeDbOperation } from "@/lib/observability/server";
-import { toPageInsertValues, toPageUpdateValues } from "@/features/page/server/page-transforms";
+import {
+  toPageInsertValues,
+  toPageUpdateValues,
+} from "@/features/page/server/page-transforms";
 import { supportedLanguages } from "@/lib/i18n/i18n";
 import { sanitizeOptionalI18nHtml } from "@/lib/security/sanitize-html";
 import {
@@ -26,35 +26,12 @@ import type { PageInsert } from "@/features/page/types/page.insert";
 import type { PageUpdate } from "@/features/page/types/page.update";
 import type { PageDelete } from "@/features/page/types/page.delete";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import { DomainError } from "@/lib/errors/domain-error";
+import { assertPublicationStatusChange } from "@/lib/validation/publication-status";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { UserStatus } from "@/features/user/types/user.status";
-import { can, Permission } from "@/lib/auth/permissions";
-import {
-  getPagePublishStatus,
-  getPageWithdrawStatus,
-} from "@/features/page/rules/page-publication";
+import { requireActiveActor } from "@/features/user/server/require-active-actor";
+import { Permission } from "@/lib/auth/permissions";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";
-
-async function requireActor(
-  tx: DatabaseTransaction,
-  actorId: string,
-  permissions: Permission[],
-) {
-  const [actor] = await tx
-    .select({ level: schema.user.level, status: schema.user.status })
-    .from(schema.user)
-    .where(eq(schema.user.id, actorId))
-    .limit(1);
-  if (
-    !actor ||
-    actor.status !== UserStatus.ENABLE ||
-    permissions.some((permission) => !can(actor.level, permission))
-  ) {
-    throw new ApplicationError("FORBIDDEN", "当前账户无权保存此页面");
-  }
-}
 
 function safeResult(
   row: Pick<typeof schema.page.$inferSelect, "id" | "version">,
@@ -89,7 +66,12 @@ export async function createPage(
   const creationInputHash = hashCanonicalInput(intent);
   const result = await observeDbOperation("page.create", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [Permission.pageCreate]);
+      await requireActiveActor(
+        tx,
+        actorId,
+        [Permission.pageCreate],
+        "当前账户无权保存此页面",
+      );
       const [created] = await tx
         .insert(schema.page)
         .values({
@@ -140,7 +122,12 @@ export async function getPageCreationResult(
   actorId: string,
 ) {
   return transactionWithBeginRetry(db, busyMessage, async (tx) => {
-    await requireActor(tx, actorId, [Permission.pageCreate]);
+    await requireActiveActor(
+      tx,
+      actorId,
+      [Permission.pageCreate],
+      "当前账户无权保存此页面",
+    );
     const [result] = await tx
       .select({ id: schema.page.id, version: schema.page.version })
       .from(schema.page)
@@ -166,40 +153,50 @@ export async function destroyPages(
   if (!parsed.success)
     throw new ApplicationError("BAD_REQUEST", "页面删除输入不合法");
   input = parsed.data;
+  const ids = input.items.map(({ id }) => id);
   await observeDbOperation("page.destroy", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [Permission.pageDelete]);
-      await bumpMenuRevisionForPageDeletion(
+      await requireActiveActor(
         tx,
-        input.items.map((item) => item.id),
+        actorId,
+        [Permission.pageDelete],
+        "当前账户无权保存此页面",
       );
-      for (const item of input.items) {
-        const [current] = await tx
-          .select({ version: schema.page.version })
-          .from(schema.page)
-          .where(eq(schema.page.id, item.id))
-          .limit(1);
-        if (!current) throw new ApplicationError("NOT_FOUND", "页面不存在");
-        if (current.version !== item.expectedVersion)
-          throw new ApplicationError("CONFLICT", "页面已修改，请刷新后再删除");
-        const [deleted] = await tx
-          .delete(schema.page)
-          .where(
-            and(
-              eq(schema.page.id, item.id),
-              eq(schema.page.version, item.expectedVersion),
-            ),
-          )
-          .returning({ id: schema.page.id });
-        if (!deleted)
-          throw new ApplicationError("CONFLICT", "页面已修改，请刷新后再删除");
+      await bumpMenuRevisionForPageDeletion(tx, ids);
+      const versions = new Map(
+        (
+          await tx
+            .select({ id: schema.page.id, version: schema.page.version })
+            .from(schema.page)
+            .where(inArray(schema.page.id, ids))
+        ).map((row) => [row.id, row.version]),
+      );
+      const conflict = () =>
+        new ApplicationError("CONFLICT", "页面已修改，请刷新后再删除");
+      for (const { id, expectedVersion } of input.items) {
+        const current = versions.get(id);
+        if (current === undefined)
+          throw new ApplicationError("NOT_FOUND", "页面不存在");
+        if (current !== expectedVersion) throw conflict();
       }
+      const deleted = await tx
+        .delete(schema.page)
+        .where(
+          or(
+            ...input.items.map(({ id, expectedVersion }) =>
+              and(
+                eq(schema.page.id, id),
+                eq(schema.page.version, expectedVersion),
+              ),
+            ),
+          ),
+        )
+        .returning({ id: schema.page.id });
+      const deletedIds = new Set(deleted.map((row) => row.id));
+      if (ids.some((id) => !deletedIds.has(id))) throw conflict();
     }),
   );
-  const publicSync = await invalidatePages(
-    invalidator,
-    input.items.map(({ id }) => id),
-  );
+  const publicSync = await invalidatePages(invalidator, ids);
   return { success: true as const, publicSync: publicSync.state };
 }
 
@@ -216,7 +213,12 @@ export async function updatePage(
   input = parsed.data;
   const result = await observeDbOperation("page.update", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [Permission.pageUpdate]);
+      await requireActiveActor(
+        tx,
+        actorId,
+        [Permission.pageUpdate],
+        "当前账户无权保存此页面",
+      );
       const [current] = await tx
         .select()
         .from(schema.page)
@@ -233,18 +235,13 @@ export async function updatePage(
         Object.values(PageStatus),
         "page.status",
       );
-      let status = input.status;
-      if (status !== undefined && status !== currentStatus) {
-        if (status === PageStatus.PUBLISHED)
-          status = getPagePublishStatus(input.id, currentStatus);
-        else if (status === PageStatus.DRAFT)
-          status = getPageWithdrawStatus(input.id, currentStatus);
-        else
-          throw new DomainError(
-            `页面不支持变更为 ${status}`,
-            "INVALID_PAGE_STATUS",
-          );
-      }
+      assertPublicationStatusChange(
+        input.id,
+        currentStatus,
+        input.status,
+        PageStatus,
+        "page",
+      );
       const { id, title, content } = input;
       const previousRows = await tx
         .select()
@@ -262,7 +259,7 @@ export async function updatePage(
       const [updated] = await tx
         .update(schema.page)
         .set({
-          ...toPageUpdateValues({ ...input, status }),
+          ...toPageUpdateValues(input),
           version: sql`${schema.page.version} + 1`,
           updatedAt: new Date().toISOString(),
         })

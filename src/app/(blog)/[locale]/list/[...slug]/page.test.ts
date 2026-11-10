@@ -43,14 +43,17 @@ vi.mock("@/app/lib/server/public-queries", () => ({
   getPublicAuthor: (...args: unknown[]) => mockPublicAuthor(...args),
 }));
 
-vi.mock("@/app/(blog)/components/features/post/public/components/PostList", () => ({
-  default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
-    React.createElement(
-      "output",
-      { "data-testid": "post-list" },
-      JSON.stringify(queryParams),
-    ),
-}));
+vi.mock(
+  "@/app/(blog)/components/features/post/public/components/PostList",
+  () => ({
+    default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
+      React.createElement(
+        "output",
+        { "data-testid": "post-list" },
+        JSON.stringify(queryParams),
+      ),
+  }),
+);
 
 vi.mock("@/app/(blog)/[locale]/list/[...slug]/components/NoData", () => ({
   default: ({ title }: { title: string }) =>
@@ -353,6 +356,38 @@ describe("blog list page", () => {
     expect(container.textContent).not.toContain("技术_蜂巢");
   });
 
+  it("resolves a stable legacy category path and redirects a previously parseable alias", async () => {
+    mockMenuIndex.mockResolvedValue({
+      list: [
+        { id: "category-root", path: "old/path", title: { zh: "旧分类" } },
+        {
+          id: "category-child",
+          parent: "category-root",
+          path: "笔记",
+          title: { zh: "笔记" },
+        },
+        { id: "category-alias", path: "old+alias", title: { zh: "旧别名" } },
+      ],
+    });
+    await expect(
+      resolveListContext({
+        locale: MultiLangEnum.Zh,
+        slug: ["category", "~category-root", "笔记"],
+      }),
+    ).resolves.toMatchObject({
+      queryParams: { categoryId: "category-child" },
+      typeName: "笔记",
+    });
+    await expect(
+      resolveListContext({
+        locale: MultiLangEnum.Zh,
+        slug: ["category", "old+alias"],
+      }),
+    ).rejects.toMatchObject({
+      digest: expect.stringContaining("/zh/list/category/~category-alias"),
+    });
+  });
+
   it("uses the resolved tag id and localized tag heading", async () => {
     await renderList(["tags", "111111111111111111111111"]);
 
@@ -365,13 +400,12 @@ describe("blog list page", () => {
     expect(container.textContent).toContain("标签：标签名称");
   });
 
-  it("keeps an unknown tag id and renders the localized empty state", async () => {
-    mockTagIndex.mockResolvedValue({ list: [] });
+  it("keeps the localized empty state for an existing tag", async () => {
     mockPostIndex.mockResolvedValue({ list: [], total: 0 });
 
-    await renderList(["tags", "ffffffffffffffffffffffff"]);
+    await renderList(["tags", "111111111111111111111111"]);
 
-    expect(container.textContent).toContain("标签：");
+    expect(container.textContent).toContain("标签：标签名称");
     expect(
       container.querySelector('[data-testid="no-data"]')?.textContent,
     ).toBe("暂无文章");
@@ -389,20 +423,33 @@ describe("blog list page", () => {
     expect(container.textContent).toContain("作者：作者名称");
   });
 
-  it("keeps an unknown author id without inventing an author name", async () => {
-    mockUserDetail.mockResolvedValue(null);
-
-    await renderList(["authors", "eeeeeeeeeeeeeeeeeeeeeeee"]);
-
-    expect(renderedQuery()).toMatchObject({
-      authorId: "eeeeeeeeeeeeeeeeeeeeeeee",
-    });
-    expect(container.textContent).toContain("作者：");
-  });
-
   describe.each(["content", "metadata"])(
     "%s route validation",
     (entryPoint) => {
+      it.each([
+        ["tags", mockTagIndex, { list: [] }],
+        ["authors", mockUserDetail, null],
+      ] as const)(
+        "rejects missing %s before querying posts or emitting canonical",
+        async (type, query, missing) => {
+          query.mockResolvedValue(missing);
+          const props = {
+            params: Promise.resolve({
+              locale: "zh",
+              slug: [type, "f".repeat(24)],
+            }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children[1].props.children;
+          const pending =
+            entryPoint === "metadata"
+              ? generateMetadata(props)
+              : content.type(content.props);
+          await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+          expect(mockPublicPostList).not.toHaveBeenCalled();
+        },
+      );
+
       it.each(
         [
           [],
@@ -601,19 +648,5 @@ describe("blog list page", () => {
         searchParams: Promise.resolve({}),
       }),
     ).resolves.toMatchObject(expected);
-  });
-
-  it("uses an empty name when metadata cannot resolve a tag", async () => {
-    mockTagIndex.mockResolvedValue({ list: [] });
-
-    const metadata = await generateMetadata({
-      params: Promise.resolve({
-        slug: ["tags", "ffffffffffffffffffffffff"],
-        locale: "zh",
-      }),
-      searchParams: Promise.resolve({}),
-    });
-
-    expect(metadata.title).toBe("标签：");
   });
 });

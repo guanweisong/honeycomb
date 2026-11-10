@@ -1,8 +1,18 @@
 import type { LoginHistoryEvent } from "@/features/user/account-security/login-history";
+import type { LoginIdentifierField } from "@/features/user/account-security/server/login-history.repository";
+
+const passwordSignInFields = new Map<string, LoginIdentifierField>([
+  ["/sign-in/username", "username"],
+  ["/sign-in/email", "email"],
+]);
+export const passwordSignInPaths = [...passwordSignInFields.keys()];
+
+export function getPasswordSignInField(path: string) {
+  return passwordSignInFields.get(path);
+}
 
 const AUTHENTICATION_PATHS = new Set([
-  "/sign-in/username",
-  "/sign-in/email",
+  ...passwordSignInPaths,
   "/sign-in/passkey",
   "/sign-in/social",
   "/passkey/verify-authentication",
@@ -13,8 +23,7 @@ export function getAuthenticationProvider(
   body?: unknown,
   params?: unknown,
 ): string | null {
-  if (path === "/sign-in/username" || path === "/sign-in/email")
-    return "password";
+  if (passwordSignInFields.has(path)) return "password";
   if (path === "/sign-in/passkey" || path === "/passkey/verify-authentication")
     return "passkey";
   if (path === "/sign-in/social") {

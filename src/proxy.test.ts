@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 /**
@@ -6,9 +6,8 @@ import type { NextRequest } from "next/server";
  * 覆盖 API 限流行为与非 API 请求的 i18n 分流行为。
  */
 
-const { limitMock, getClientIpMock, i18nHandlerMock } = vi.hoisted(() => ({
+const { limitMock, i18nHandlerMock } = vi.hoisted(() => ({
   limitMock: vi.fn(),
-  getClientIpMock: vi.fn(() => "127.0.0.1"),
   i18nHandlerMock: vi.fn(() => new Response("i18n", { status: 200 })),
 }));
 
@@ -18,7 +17,6 @@ vi.mock("@/lib/rate-limit/rate-limit", () => ({
   },
   limitWithTimeout: (_limiter: unknown, identifier: string) =>
     limitMock(identifier),
-  getClientIp: getClientIpMock,
 }));
 
 vi.mock("next-intl/middleware", () => ({
@@ -53,6 +51,22 @@ function createProxyRequest(pathname: string): NextRequest {
 describe("proxy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("uses the same trusted suffix as the independent API procedures", async () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
+    limitMock.mockResolvedValue({
+      success: true,
+      limit: 120,
+      remaining: 119,
+      reset: 1,
+    });
+    const request = createProxyRequest("/api/trpc/comment.create");
+    request.headers.set("x-forwarded-for", "spoofed, 203.0.113.10, 10.0.0.1");
+
+    expect((await proxy(request)).status).toBe(200);
+    expect(limitMock).toHaveBeenCalledExactlyOnceWith("203.0.113.10");
   });
 
   it("returns 429 for API request when rate limit exceeded", async () => {

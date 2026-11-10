@@ -3,7 +3,8 @@ import type { ActionGuardFile } from "@tests/helpers/admin-action-guard-types";
 
 export const postActionGuardMatrix: readonly ActionGuardFile[] = [
   {
-    sourcePath: "src/app/admin/(dashboard)/post/edit/components/MultiTag/index.tsx",
+    sourcePath:
+      "src/app/admin/(dashboard)/post/edit/components/MultiTag/index.tsx",
     actions: [
       {
         id: "post-tags.manage",
@@ -47,10 +48,22 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
-          call: { callee: "submit", argument: '"create"' },
+          call: { callee: "submit", argument: "PostStatus.DRAFT" },
+          label: "保存草稿",
         },
         guard: { kind: "ancestor", polarity: "positive" },
-        expectedCount: 2,
+      },
+      {
+        id: "post-editor.create-publish",
+        when: { name: "isEdit", value: false },
+        permission: Permission.postCreate,
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "submit", argument: "PostStatus.PUBLISHED" },
+          label: "发布",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
       },
       {
         id: "post-editor.update",
@@ -58,10 +71,32 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Button",
           attribute: "onClick",
-          call: { callee: "submit", argument: '"update"' },
+          call: { callee: "submit", argument: "PostStatus.TO_AUDIT" },
         },
         guard: { kind: "ancestor", polarity: "positive" },
-        expectedCount: 3,
+      },
+      {
+        id: "post-editor.update-published",
+        permission: Permission.postUpdate,
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "submit", argument: "PostStatus.PUBLISHED" },
+          label: "更新",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
+      },
+      {
+        id: "post-editor.update-publish",
+        when: { name: "isEdit", value: true },
+        permission: Permission.postUpdate,
+        control: {
+          tag: "Button",
+          attribute: "onClick",
+          call: { callee: "submit", argument: "PostStatus.PUBLISHED" },
+          label: "发布",
+        },
+        guard: { kind: "ancestor", polarity: "positive" },
       },
       {
         id: "post-editor.update-withdraw",
@@ -69,7 +104,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         control: {
           tag: "Dialog",
           attribute: "onOK",
-          call: { callee: "submit", argument: '"update"' },
+          call: { callee: "submit", argument: "PostStatus.DRAFT" },
+          label: "撤回为草稿",
         },
         guard: { kind: "ancestor", polarity: "positive" },
       },
@@ -140,8 +176,8 @@ export const postActionGuardMatrix: readonly ActionGuardFile[] = [
         permission: Permission.postDelete,
         control: {
           tag: "DataTable",
-          attribute: "onSelectionChange",
-          reference: "setSelectedRows",
+          attribute: "onSelectedRowIdsChange",
+          expression: "tableState.setSelectedRowIds",
         },
         guard: {
           kind: "attribute",

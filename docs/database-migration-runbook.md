@@ -25,7 +25,7 @@
 
 1. Modify `src/lib/db/schema/`.
 2. Run `bun run db:generate` and review the generated SQL and snapshot.
-3. Run `bun run db:migrations:check` and the test suite.
+3. Run `bun run db:migrations:check` and the test suite. Keep journal timestamps strictly increasing. `db:migrate` verifies the existing ledger against the reviewed SQL hashes and timestamps before applying pending entries, then verifies the complete ledger.
 4. Apply the migration to a disposable database before deployment.
 5. Back up the target shared database, then run `bun run db:migrate` during the
    approved release.
@@ -139,3 +139,15 @@ atomicity. Storage success plus database rollback may leave missing objects,
 and uncertain registration may leave orphan objects. Database restoration alone
 cannot reverse external object deletion. No automatic production migration or
 object cleanup is part of this change.
+
+## Login audit lookup 0009
+
+Apply `0009_login_email_audit_index.sql` before rolling out the app version that uses
+`user.login_email_key`. The migration adds a virtual lookup column and a
+non-unique index. It preserves the stored email and does not merge accounts
+whose lookup values collide. An ambiguous match remains unattributed in login
+history.
+
+Rehearse the migration on a disposable copy and follow the existing backup and
+approval procedure for shared databases. Creating the index reads the existing
+user table.

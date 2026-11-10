@@ -35,6 +35,7 @@ export interface PostListProps {
    * 初始文章列表数据。
    */
   initData?: PublicPostListResult;
+  snapshotVersion?: string;
 }
 
 /**
@@ -44,7 +45,7 @@ export interface PostListProps {
  * @returns {JSX.Element} 文章列表。
  */
 export default function PostList(props: PostListProps): JSX.Element {
-  const { queryParams, initData } = props;
+  const { queryParams, initData, snapshotVersion } = props;
   const sentinel = useRef<HTMLDivElement>(null);
   const {
     data,
@@ -55,7 +56,7 @@ export default function PostList(props: PostListProps): JSX.Element {
     isFetching,
     isError,
     isFetchNextPageError,
-  } = useInfiniteQueryPostList(queryParams, initData);
+  } = useInfiniteQueryPostList(queryParams, initData, snapshotVersion);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
   const typeTranslations = useTranslations("Search.types");

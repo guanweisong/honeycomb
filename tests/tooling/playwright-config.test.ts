@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initializeE2ETestTarget } from "../../scripts/e2e-seed-policy";
@@ -140,6 +141,37 @@ describe("Playwright web server configuration", () => {
       AUTH_SECRET: "uW7fB4qZ9kLm2Rx5Nv8Cd1Yp6Hs3Ta0E",
       RESEND_API_KEY: "playwright-unused-resend-key",
     });
+  });
+
+  it("uses a deterministic server-side Turnstile boundary for the managed fixture", async () => {
+    const server = await loadWebServerConfiguration();
+    expect(server?.env?.NODE_OPTIONS).toMatch(
+      /--require .*turnstile-siteverify\.cjs/,
+    );
+    const program = `
+      globalThis.fetch = async () => new Response("forwarded", { status: 418 });
+      require(${JSON.stringify(join(process.cwd(), "tests/e2e/fixtures/turnstile-siteverify.cjs"))});
+      const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+      const verify = async (body, type) => (await fetch(url, {
+        method: "POST",
+        headers: { "content-type": type },
+        body,
+      })).json();
+      (async () => {
+        const secret = process.env.TURNSTILE_SECRET_KEY;
+        const response = "XXXX.DUMMY.TOKEN.XXXX";
+        const form = new URLSearchParams({ secret, response });
+        const valid = await verify(form, "application/x-www-form-urlencoded");
+        const invalid = await verify(JSON.stringify({ secret, response: "unknown" }), "application/json");
+        const unrelated = await fetch("https://challenges.cloudflare.com/other");
+        console.log(JSON.stringify([valid.success, invalid.success, unrelated.status]));
+      })();
+    `;
+    const output = execFileSync(process.execPath, ["-e", program], {
+      encoding: "utf8",
+      env: { ...process.env, ...server?.env, NODE_OPTIONS: "" },
+    });
+    expect(JSON.parse(output)).toEqual([true, false, 418]);
   });
 
   it("generates a development worker before starting the development server", async () => {

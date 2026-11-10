@@ -3,7 +3,7 @@ cleanup() {
   status=$?
   cleanup_start=$(bun -e 'console.log(Date.now())')
   trap - EXIT HUP INT TERM
-  if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
+  if [ -d "$HONEYCOMB_TEST_DIR" ] && [ ! -L "$HONEYCOMB_TEST_DIR" ] && [ "$(stat -c %u "$HONEYCOMB_TEST_DIR" 2>/dev/null || stat -f %u "$HONEYCOMB_TEST_DIR")" = "$(id -u)" ]; then
     rm -rf -- "$HONEYCOMB_TEST_DIR" || status=1
     test ! -e "$HONEYCOMB_TEST_DIR" || status=1
   else
@@ -36,4 +36,21 @@ phase() {
     fi
   fi
   return "$code"
+}
+
+initialize_fixture() {
+  export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"
+  export TURSO_TOKEN=e2e-local-only
+  phase "Initialize isolated fixture" bun --no-env-file scripts/e2e-seed-policy.ts --initialize
+}
+
+seed_fixture() {
+  phase "Check fixture safety" bun --no-env-file scripts/e2e-seed-policy.ts
+  phase "Migrate isolated database" bun run db:migrate
+  phase "Seed isolated database" bun run db:e2e:seed
+}
+
+prepare_fixture() {
+  initialize_fixture
+  seed_fixture
 }

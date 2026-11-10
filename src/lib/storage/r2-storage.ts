@@ -6,7 +6,6 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   DeleteObjectsCommand,
-  type DeleteObjectsCommandInput,
 } from "@aws-sdk/client-s3";
 import { Readable, addAbortSignal } from "node:stream";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -18,47 +17,50 @@ const R2_OPERATION_TIMEOUT_MS = 30_000;
 /** One deadline covers SDK retries, response headers and the entire body. */
 async function withR2Deadline<T>(
   operation: (signal: AbortSignal) => Promise<T>,
+  parentSignal?: AbortSignal,
 ): Promise<T> {
   const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const signal = parentSignal
+    ? AbortSignal.any([controller.signal, parentSignal])
+    : controller.signal;
+  signal.throwIfAborted();
+  let rejectOnAbort: (() => void) | undefined;
   const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      const error = new Error("Object storage operation timed out");
-      controller.abort(error);
-      reject(error);
-    }, R2_OPERATION_TIMEOUT_MS);
+    rejectOnAbort = () => reject(signal.reason);
+    signal.addEventListener("abort", rejectOnAbort, { once: true });
   });
+  const timer = setTimeout(
+    () => controller.abort(new Error("Object storage operation timed out")),
+    R2_OPERATION_TIMEOUT_MS,
+  );
   try {
-    return await Promise.race([operation(controller.signal), deadline]);
+    return await Promise.race([operation(signal), deadline]);
   } finally {
     clearTimeout(timer);
+    if (rejectOnAbort) signal.removeEventListener("abort", rejectOnAbort);
   }
 }
 
-interface DeleteMultipleObjectParams {
-  Objects: NonNullable<DeleteObjectsCommandInput["Delete"]>["Objects"];
+function requireR2Config() {
+  const r2 = getR2Env();
+  if (!r2) throw new Error("R2 integration is not configured");
+  return r2;
+}
+
+function createClient(r2: ReturnType<typeof requireR2Config>, maxAttempts = 3) {
+  return new S3Client({
+    region: "auto",
+    maxAttempts,
+    endpoint: `https://${r2.accountId}.r2.cloudflarestorage.com`,
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: r2.accessKeyId,
+      secretAccessKey: r2.secretAccessKey,
+    },
+  });
 }
 
 class R2Storage {
-  /**
-   * 实例初始化
-   */
-  static createClient = (maxAttempts = 3) => {
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
-
-    return new S3Client({
-      region: "auto",
-      maxAttempts,
-      endpoint: `https://${r2.accountId}.r2.cloudflarestorage.com`,
-      forcePathStyle: true,
-      credentials: {
-        accessKeyId: r2.accessKeyId,
-        secretAccessKey: r2.secretAccessKey,
-      },
-    });
-  };
-
   /**
    * 生成预签名上传 URL
    * @param params
@@ -69,8 +71,7 @@ class R2Storage {
     ContentLength?: number;
   }): Promise<string> => {
     const { Key, ContentType, ContentLength } = params;
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
+    const r2 = requireR2Config();
     const command = new PutObjectCommand({
       Bucket: r2.bucketName,
       Key,
@@ -78,7 +79,7 @@ class R2Storage {
       ContentLength,
     });
     return observeExternalServiceOperation("object-storage", "presign", () =>
-      getSignedUrl(R2Storage.createClient(), command, {
+      getSignedUrl(createClient(r2), command, {
         expiresIn: 3600,
         signableHeaders: new Set(["content-type"]),
       }),
@@ -91,11 +92,10 @@ class R2Storage {
     bytes: Uint8Array,
     type: string,
   ): Promise<void> => {
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
+    const r2 = requireR2Config();
     await observeExternalServiceOperation("object-storage", "put", () =>
       withR2Deadline((abortSignal) =>
-        R2Storage.createClient(1).send(
+        createClient(r2, 1).send(
           new PutObjectCommand({
             Bucket: r2.bucketName,
             Key: key,
@@ -109,15 +109,16 @@ class R2Storage {
     );
   };
 
-  static headObject = async (key: string) => {
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
+  static headObject = async (key: string, signal?: AbortSignal) => {
+    const r2 = requireR2Config();
     try {
-      const result = await withR2Deadline((abortSignal) =>
-        R2Storage.createClient().send(
-          new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }),
-          { abortSignal },
-        ),
+      const result = await withR2Deadline(
+        (abortSignal) =>
+          createClient(r2).send(
+            new HeadObjectCommand({ Bucket: r2.bucketName, Key: key }),
+            { abortSignal },
+          ),
+        signal,
       );
       return { size: result.ContentLength, type: result.ContentType };
     } catch (error) {
@@ -140,10 +141,9 @@ class R2Storage {
     key: string,
     maxBytes: number,
   ): Promise<Uint8Array> => {
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
+    const r2 = requireR2Config();
     return withR2Deadline(async (abortSignal) => {
-      const result = await R2Storage.createClient().send(
+      const result = await createClient(r2).send(
         new GetObjectCommand({ Bucket: r2.bucketName, Key: key }),
         { abortSignal },
       );
@@ -167,40 +167,27 @@ class R2Storage {
     });
   };
 
-  /**
-   * 删除文件
-   * @param params
-   */
-  static deleteMultipleObject = (params: DeleteMultipleObjectParams) => {
-    const { Objects } = params;
-    const r2 = getR2Env();
-    if (!r2) throw new Error("R2 integration is not configured");
-    return observeExternalServiceOperation(
-      "object-storage",
-      "delete",
-      async () => {
-        const result = await withR2Deadline((abortSignal) =>
-          R2Storage.createClient(1).send(
+  /** 删除一组对象；缺失 key 按成功处理，但这不保证整批业务可重放或跨存储回滚。 */
+  static deleteObjects = async (
+    keys: readonly string[],
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    if (keys.length === 0) return;
+    const r2 = requireR2Config();
+    const Objects = keys.map((Key) => ({ Key }));
+    await observeExternalServiceOperation("object-storage", "delete", async () => {
+      const result = await withR2Deadline(
+        (abortSignal) =>
+          createClient(r2, 1).send(
             new DeleteObjectsCommand({
               Bucket: r2.bucketName,
               Delete: { Objects },
             }),
             { abortSignal },
           ),
-        );
-        if (result.Errors?.length) {
-          throw new Error("Object storage delete failed");
-        }
-        return result;
-      },
-    );
-  };
-
-  /** 删除一组对象；缺失 key 按成功处理，但这不保证整批业务可重放或跨存储回滚。 */
-  static deleteObjects = async (keys: readonly string[]): Promise<void> => {
-    if (keys.length === 0) return;
-    await R2Storage.deleteMultipleObject({
-      Objects: keys.map((Key) => ({ Key })),
+        signal,
+      );
+      if (result.Errors?.length) throw new Error("Object storage delete failed");
     });
   };
 }

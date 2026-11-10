@@ -15,7 +15,10 @@ import {
 import { MenuSaveSnapshotSchema } from "@/features/menu/schemas/menu.save-snapshot.schema";
 import type { MenuSaveSnapshot } from "@/features/menu/types/menu.save-snapshot";
 import type { PublicCacheInvalidationResult } from "@/lib/cache/public-content-invalidator";
-import { buildMenuSaveInput, type MenuEntityTree } from "@/app/admin/(dashboard)/menu/components/menu-transforms";
+import {
+  buildMenuSaveInput,
+  type MenuEntityTree,
+} from "@/app/admin/(dashboard)/menu/components/menu-transforms";
 
 export type MenuSaveResult = {
   count: number;
@@ -90,36 +93,32 @@ export async function submitMenuChanges(
   return { state: "success", result, refreshFailed };
 }
 
-export function useMenuActions(
-  checkedList: MenuEntityTree[],
-  expectedVersion: number | undefined,
-  refetchMenu: () => unknown,
-  onCommitted: (submitted: MenuEntityTree[], version: number) => void,
-  setProtected: (value: boolean) => void,
-) {
+export function useMenuActions(refetchMenu: () => unknown) {
   const mutation = trpc.menu.saveAll.useMutation();
-  const [loading, setLoading] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "saving" | "review">("idle");
   const busy = useRef(false);
   const generation = useRef(0);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    if (!busy.current)
+      setPhase((previous) => (previous === "saving" ? "idle" : previous));
+    return () => {
       generation.current += 1;
-    },
-    [],
-  );
+      busy.current = false;
+    };
+  }, []);
+
   return {
-    loading,
-    blocked,
-    clearBlocked: () => {
-      setBlocked(false);
-      setProtected(false);
-    },
-    submit: async () => {
-      if (busy.current || blocked) return;
+    loading: phase === "saving",
+    blocked: phase === "review",
+    clearBlocked: () => setPhase("idle"),
+    submit: async (
+      checkedList: MenuEntityTree[],
+      expectedVersion: number | undefined,
+      onCommitted: (submitted: MenuEntityTree[], version: number) => void,
+    ) => {
+      if (busy.current || phase === "review") return;
       busy.current = true;
-      setProtected(true);
-      setLoading(true);
+      setPhase("saving");
       const current = generation.current;
       const active = () => generation.current === current;
       let needsReview = false;
@@ -135,18 +134,12 @@ export function useMenuActions(
           notifyWarning: toast.warning,
           notifyError: toast.error,
         });
-        if (
-          active() &&
-          (outcome.state === "conflict" || outcome.state === "unknown")
-        ) {
-          needsReview = true;
-          setBlocked(true);
-        }
+        needsReview =
+          outcome.state === "conflict" || outcome.state === "unknown";
       } finally {
         if (active()) {
           busy.current = false;
-          setLoading(false);
-          if (!needsReview) setProtected(false);
+          setPhase(needsReview ? "review" : "idle");
         }
       }
     },

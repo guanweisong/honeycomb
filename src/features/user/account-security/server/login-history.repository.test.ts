@@ -6,10 +6,17 @@ import {
   listUserLoginHistory,
   recordLoginHistory,
 } from "@/features/user/account-security/server/login-history.repository";
-import type { SQL } from "drizzle-orm";
+import { eq, type SQL } from "drizzle-orm";
 import { loginHistory } from "@/lib/db/schema/auth";
 import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { asMockDatabase } from "@tests/helpers/test-utils";
+import {
+  prepareMigrationFolder,
+  withTestDatabase,
+} from "@tests/helpers/local-test-database";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import * as schema from "@/lib/db/schema";
 
 describe("login history repository", () => {
   it("returns a safe, limited current-user history list", async () => {
@@ -166,27 +173,129 @@ it.each([
   ],
   [
     [
+      { id: "legacy", email: "Üser@EXAMPLE.TEST" },
+      { id: "other", email: "üser@example.test" },
+    ],
+    "üser@example.test",
+    null,
+  ],
+  [
+    [
+      { id: "legacy", email: "Key@Example.Test" },
+      { id: "other", email: "key@example.test" },
+    ],
+    "key@example.test",
+    null,
+  ],
+  [
+    [
       { id: "null", email: null },
       { id: "other", email: "elsewhere@example.test" },
     ],
     "reader@example.test",
     null,
   ],
+  [
+    [
+      { id: "ordinary", email: "reader@example.test" },
+      { id: "spaced", email: " Reader@Example.Test " },
+      { id: "nul", email: "reader@example.test\0" },
+    ],
+    "reader@example.test",
+    "ordinary",
+  ],
+  [
+    [{ id: "spaced", email: " Reader@Example.Test " }],
+    " READER@EXAMPLE.TEST ",
+    "spaced",
+  ],
 ] as const)(
   "resolves email candidates only when normalization is unambiguous",
   async (rows, identifier, expected) => {
-    const limit = vi.fn().mockResolvedValue([]);
-    const db = {
-      select: () => ({
-        from: () =>
-          Object.assign(Promise.resolve(rows), { where: () => ({ limit }) }),
-      }),
-    };
-    await expect(
-      findUserIdByIdentifier(asMockDatabase(db), identifier, "email"),
-    ).resolves.toBe(expected);
+    await withTestDatabase(async (client) => {
+      const db = drizzle(client, { schema });
+      await migrate(db, { migrationsFolder: "drizzle" });
+      for (const row of rows) {
+        await client.execute({
+          sql: 'INSERT INTO "user" ("id", "email") VALUES (?, ?)',
+          args: [row.id, row.email],
+        });
+      }
+      await expect(
+        findUserIdByIdentifier(db, identifier, "email"),
+      ).resolves.toBe(expected);
+    });
   },
 );
+
+it("uses the normalized index for the real failed-email lookup after upgrading a database", async () => {
+  await withTestDatabase(async (client, directory) => {
+    const db = drizzle(client, { schema });
+    await migrate(db, {
+      migrationsFolder: prepareMigrationFolder(directory, 8),
+    });
+    await db.insert(schema.user).values([
+      { id: "legacy", email: "Key@Example.Test" },
+      { id: "ordinary", email: "key@example.test" },
+    ]);
+    await migrate(db, { migrationsFolder: "drizzle" });
+    expect(
+      await db
+        .select({ id: schema.user.id, email: schema.user.email })
+        .from(schema.user)
+        .orderBy(schema.user.id),
+    ).toEqual([
+      { id: "legacy", email: "Key@Example.Test" },
+      { id: "ordinary", email: "key@example.test" },
+    ]);
+
+    const logQuery = vi.fn<(query: string, params: unknown[]) => void>();
+    const observed = drizzle(client, { schema, logger: { logQuery } });
+    expect(
+      await findUserIdByIdentifier(observed, "KEY@EXAMPLE.TEST", "email"),
+    ).toBeNull();
+    expect(logQuery).toHaveBeenCalledExactlyOnceWith(expect.any(String), [
+      "key@example.test",
+      2,
+    ]);
+    const query = logQuery.mock.calls[0]?.[0];
+    if (!query) throw new Error("The email query was not observed");
+    const plan = await client.execute({
+      sql: `EXPLAIN QUERY PLAN ${query}`,
+      args: ["key@example.test", 2],
+    });
+    expect(plan.rows.map(({ detail }) => detail)).toContainEqual(
+      expect.stringMatching(/SEARCH .*USING INDEX user_login_email_key_idx/u),
+    );
+    await db
+      .update(schema.user)
+      .set({ email: "other@example.test" })
+      .where(eq(schema.user.id, "ordinary"));
+    expect(await findUserIdByIdentifier(db, "KEY@EXAMPLE.TEST", "email")).toBe(
+      "legacy",
+    );
+  });
+});
+
+it("prunes a bounded batch of expired history when recording a login failure", async () => {
+  await withTestDatabase(async (client) => {
+    const db = drizzle(client, { schema });
+    await migrate(db, { migrationsFolder: "drizzle" });
+    await db.insert(loginHistory).values(
+      Array.from({ length: 55 }, () => ({
+        event: "LOGIN_FAILURE" as const,
+        createdAt: new Date("2026-01-01"),
+      })),
+    );
+    const occurredAt = new Date("2026-08-11");
+    await recordLoginHistory(db, { event: "LOGIN_FAILURE", occurredAt });
+    const rows = await db
+      .select({ createdAt: loginHistory.createdAt })
+      .from(loginHistory);
+    expect(rows).toHaveLength(6);
+    expect(rows).toContainEqual({ createdAt: occurredAt });
+  });
+});
 
 it("does not prune history when recording the new event fails", async () => {
   const failure = new Error("insert failed");

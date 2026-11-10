@@ -24,8 +24,6 @@ import {
 } from "@/lib/db/schema/content";
 
 export const userRelations = relations(user, ({ many }) => ({
-  posts: many(post),
-  pages: many(page),
   accounts: many(account),
   sessions: many(session),
   passkeys: many(passkey),
@@ -48,14 +46,7 @@ export const loginHistoryRelations = relations(loginHistory, ({ one }) => ({
   user: one(user, { fields: [loginHistory.userId], references: [user.id] }),
 }));
 
-export const categoryRelations = relations(category, ({ many, one }) => ({
-  posts: many(post),
-  parentItem: one(category, {
-    fields: [category.parent],
-    references: [category.id],
-    relationName: "category_parent",
-  }),
-  children: many(category, { relationName: "category_parent" }),
+export const categoryRelations = relations(category, ({ many }) => ({
   translations: many(categoryTranslation),
 }));
 
@@ -68,10 +59,6 @@ export const categoryTranslationRelations = relations(
     }),
   }),
 );
-
-export const mediaRelations = relations(media, ({ many }) => ({
-  coverPosts: many(post),
-}));
 
 export const postRelations = relations(post, ({ one, many }) => ({
   author: one(user, { fields: [post.authorId], references: [user.id] }),
@@ -95,7 +82,6 @@ export const postTranslationRelations = relations(
 );
 
 export const tagRelations = relations(tag, ({ many }) => ({
-  postTags: many(postTag),
   translations: many(tagTranslation),
 }));
 
@@ -113,7 +99,6 @@ export const postTagRelations = relations(postTag, ({ one }) => ({
 
 export const pageRelations = relations(page, ({ one, many }) => ({
   author: one(user, { fields: [page.authorId], references: [user.id] }),
-  comments: many(comment),
   translations: many(pageTranslation),
 }));
 
@@ -127,24 +112,17 @@ export const pageTranslationRelations = relations(
   }),
 );
 
-export const commentRelations = relations(comment, ({ one, many }) => ({
+export const commentRelations = relations(comment, ({ one }) => ({
   post: one(post, { fields: [comment.postId], references: [post.id] }),
   page: one(page, { fields: [comment.pageId], references: [page.id] }),
-  parent: one(comment, {
-    fields: [comment.parentId],
-    references: [comment.id],
-    relationName: "comment_parent",
+  customPost: one(post, {
+    fields: [comment.customId],
+    references: [post.id],
+    relationName: "comment_custom_post",
   }),
-  children: many(comment, { relationName: "comment_parent" }),
 }));
 
-export const menuRelations = relations(menu, ({ one, many }) => ({
-  parentItem: one(menu, {
-    fields: [menu.parent],
-    references: [menu.id],
-    relationName: "menu_parent",
-  }),
-  children: many(menu, { relationName: "menu_parent" }),
+export const menuRelations = relations(menu, ({ one }) => ({
   category: one(category, {
     fields: [menu.categoryId],
     references: [category.id],

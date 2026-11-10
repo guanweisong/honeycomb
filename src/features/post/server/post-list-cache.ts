@@ -1,12 +1,17 @@
 import "server-only";
+import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
 import { PublicPostListResultSchema } from "@/features/post/schemas/post.read-model.schema";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 import type { Database } from "@/lib/db/db";
 import {
   getCacheJSON,
   getCacheVersion,
   setCacheJSON,
 } from "@/lib/cache/upstash-cache";
-import type { PostListInput } from "@/features/post/types/post.list-query";
+import type {
+  PostListInput,
+  PublicPostCursor,
+} from "@/features/post/types/post.list-query";
 import { listPublicPosts } from "@/features/post/server/post-queries";
 import {
   POST_CACHE_NAMESPACE as namespace,
@@ -16,20 +21,32 @@ import {
  * 仅缓存公开文章投影；缓存命中仍按读模型解析，移除不属于公开契约的字段。
  * Redis 读取/解码/回填失败可退回数据库，但数据库失败不能伪装成空列表。
  */
-export async function getCachedPostList(db: Database, input: PostListInput) {
+export async function getCachedPostList(
+  db: Database,
+  input: PostListInput,
+  cursor?: PublicPostCursor | null,
+) {
   let key: string | undefined;
+  let cached: PublicPostListResult | null = null;
   try {
     const version = await getCacheVersion(namespace, versionKey);
-    key = `post:index:v${version}:${JSON.stringify(input)}`;
-    const cached = await getCacheJSON(namespace, key, (value) =>
+    key = `post:index:v${version}:${JSON.stringify({ ...input, cursor })}`;
+    cached = await getCacheJSON(namespace, key, (value) =>
       PublicPostListResultSchema.parse(value),
     );
-    if (cached) return cached;
   } catch {
     // Cache failures are observed by the adapter; public reads still use DB.
     key = undefined;
   }
-  const result = await listPublicPosts(db, input);
+  if (cached) {
+    if (cached.list.some(({ cover }) => cover))
+      await assertOrdinaryMediaSchema(db);
+    return cached;
+  }
+  const result =
+    cursor === undefined
+      ? await listPublicPosts(db, input)
+      : await listPublicPosts(db, input, cursor);
   if (key !== undefined) {
     try {
       await setCacheJSON(namespace, key, result, 60 * 60);

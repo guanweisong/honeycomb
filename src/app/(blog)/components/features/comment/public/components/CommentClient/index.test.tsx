@@ -17,7 +17,7 @@ import {
 
 import CommentClient from "@/app/(blog)/components/features/comment/public/components/CommentClient/index";
 
-const commentPromise = Promise.resolve({ total: 0, list: [] });
+const emptyComments = { total: 0, list: [] };
 
 describe("CommentClient", () => {
   let container: HTMLDivElement;
@@ -71,7 +71,7 @@ describe("CommentClient", () => {
           React.createElement(CommentClient, {
             id: "post-1",
             type: MenuType.CATEGORY,
-            queryCommentPromise: commentPromise,
+            comments: emptyComments,
           }),
         ),
       );
@@ -112,7 +112,7 @@ describe("CommentClient", () => {
           React.createElement(CommentClient, {
             id: "507f1f77bcf86cd799439011",
             type: MenuType.CATEGORY,
-            queryCommentPromise: commentPromise,
+            comments: emptyComments,
           }),
         ),
       );
@@ -158,7 +158,7 @@ describe("CommentClient", () => {
           React.createElement(CommentClient, {
             id: "post-1",
             type: MenuType.CATEGORY,
-            queryCommentPromise: commentPromise,
+            comments: emptyComments,
           }),
         ),
       );
@@ -178,10 +178,7 @@ describe("CommentClient", () => {
   });
 
   it("renders nested comments, hides banned content, and selects a reply", async () => {
-    const scrollTo = vi
-      .spyOn(window, "scrollTo")
-      .mockImplementation(() => undefined);
-    const treePromise = Promise.resolve({
+    const tree = {
       total: 2,
       list: [
         {
@@ -208,7 +205,7 @@ describe("CommentClient", () => {
           ],
         },
       ],
-    });
+    };
 
     await act(async () => {
       root.render(
@@ -218,7 +215,7 @@ describe("CommentClient", () => {
           React.createElement(CommentClient, {
             id: "post-1",
             type: MenuType.CATEGORY,
-            queryCommentPromise: treePromise,
+            comments: tree,
           }),
         ),
       );
@@ -235,9 +232,13 @@ describe("CommentClient", () => {
     );
     await act(async () => reply?.click());
 
-    expect(scrollTo).toHaveBeenCalledWith(0, 99999);
+    expect(document.activeElement).toBe(container.querySelector("textarea"));
     expect(container.textContent).toContain("Reply to:");
     expect(container.textContent).toContain("Parent");
-    scrollTo.mockRestore();
+    const cancel = Array.from(container.querySelectorAll("button")).find(
+      (element) => element.textContent === "[form.cancel]",
+    );
+    await act(async () => cancel?.click());
+    expect(document.activeElement).toBe(reply);
   });
 });

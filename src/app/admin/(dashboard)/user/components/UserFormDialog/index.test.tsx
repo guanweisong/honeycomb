@@ -49,7 +49,8 @@ describe("UserFormDialog", () => {
         <UserFormDialog
           state={state}
           onOpenChange={vi.fn()}
-          onSubmit={onSubmit}
+          onCreate={onSubmit}
+          onUpdate={onSubmit}
         />,
       ),
     );

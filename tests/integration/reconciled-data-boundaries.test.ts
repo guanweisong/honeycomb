@@ -1,17 +1,17 @@
 // @vitest-environment node
-import { createClient, type Client } from "@libsql/client/node";
+import type { Client } from "@libsql/client/node";
+import { withTestDatabase } from "@tests/helpers/local-test-database";
 import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import {
-  existsSync,
-  lstatSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+  afterEach,
+  aroundEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { updateCategory } from "@/features/category/server/category-commands";
 import { createCommentQueryRepository } from "@/features/comment/server/comment-query-repository";
 import { createCommentNotificationRepository } from "@/features/comment/server/comment-notification-repository";
@@ -42,54 +42,32 @@ const invalidator = {
 };
 
 describe("reconciled data boundaries", () => {
-  let directory: string | undefined;
-  let client: Client | undefined;
+  let client: Client;
   let db: ReturnType<typeof drizzle<typeof schema>>;
   let queries: string[];
 
-  beforeEach(async () => {
-    directory = mkdtempSync(join(tmpdir(), "honeycomb-data-boundaries-"));
-    const stat = lstatSync(directory);
-    expect(stat.isSymbolicLink()).toBe(false);
-    if (typeof process.getuid === "function")
-      expect(stat.uid).toBe(process.getuid());
-    const localClient = createClient({
-      url: `file:${join(directory, "repository.db")}`,
-    });
-    client = localClient;
-    await localClient.execute("pragma foreign_keys = on");
-    for (const file of readdirSync("drizzle")
-      .filter((name) => name.endsWith(".sql"))
-      .sort()) {
-      await localClient.executeMultiple(
-        readFileSync(join("drizzle", file), "utf8"),
-      );
-    }
-    queries = [];
-    db = drizzle(localClient, {
-      schema,
-      logger: { logQuery: (query) => queries.push(query) },
-    });
-    await db
-      .insert(schema.user)
-      .values({ id: "author", email: "author@example.com" });
-  });
+  aroundEach((runTest) =>
+    withTestDatabase(async (localClient) => {
+      client = localClient;
+      await client.execute("pragma foreign_keys = on");
+      await migrate(drizzle(client), { migrationsFolder: "drizzle" });
+      queries = [];
+      db = drizzle(localClient, {
+        schema,
+        logger: { logQuery: (query) => queries.push(query) },
+      });
+      await db
+        .insert(schema.user)
+        .values({ id: "author", email: "author@example.com" });
+      await runTest();
+    }),
+  );
 
   afterEach(() => {
     vi.useRealTimers();
-    client?.close();
-    client = undefined;
-    if (directory) {
-      rmSync(directory, { recursive: true, force: true });
-      expect(existsSync(directory)).toBe(false);
-      directory = undefined;
-    }
   });
 
-  async function execute(sql: string) {
-    if (!client) throw new Error("Local test database is not initialized");
-    return client.execute(sql);
-  }
+  const execute = (sql: string) => client.execute(sql);
 
   describe("exact tag ID filters", () => {
     beforeEach(async () => {
@@ -313,7 +291,7 @@ describe("reconciled data boundaries", () => {
         { id: "menu-page", pageId: "page", type: MenuType.PAGE, power: 1 },
       ]);
       queries.length = 0;
-      const result = await listMenus(db, "PUBLIC_ONLY");
+      const result = await listMenus(db);
       expect(result.list.map(({ title }) => title)).toEqual([
         { en: "Category en", zh: "Category zh" },
         { en: "Page en", zh: "Page zh" },

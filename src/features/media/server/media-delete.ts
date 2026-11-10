@@ -8,6 +8,8 @@ import type {
 } from "@/lib/cache/public-content-invalidator";
 import { ApplicationError } from "@/lib/errors/application-error";
 
+const MEDIA_DELETE_TIMEOUT_MS = 30_000;
+
 /** Hold the serialized database write transaction through whole-batch reference checks and storage deletion. */
 export async function destroyMedia(
   repository: Pick<MediaPersistence, "deleteWithStorage">,
@@ -22,29 +24,44 @@ export async function destroyMedia(
       "BAD_REQUEST",
       "请确认删除可能破坏未登记的历史或外部引用",
     );
+  const deadline = new AbortController();
+  const timeout = setTimeout(() => deadline.abort(), MEDIA_DELETE_TIMEOUT_MS);
+  const { signal } = deadline;
   try {
-    await repository.deleteWithStorage(ids, actorId, async (rows) => {
-      const keys = [...new Set(rows.map((row) => row.key))];
-      if (keys.length === 0) return;
-      await storage.deleteObjects(keys);
-      for (let offset = 0; offset < keys.length; offset += 8) {
-        const results = await Promise.allSettled(
-          keys.slice(offset, offset + 8).map((key) => storage.headObject(key)),
-        );
-        if (
-          results.some(
-            (result) => result.status === "rejected" || result.value !== null,
+    await repository.deleteWithStorage(
+      ids,
+      actorId,
+      async (rows) => {
+        signal.throwIfAborted();
+        const keys = [...new Set(rows.map((row) => row.key))];
+        if (keys.length === 0) return;
+        await storage.deleteObjects(keys, signal);
+        for (let offset = 0; offset < keys.length; offset += 8) {
+          signal.throwIfAborted();
+          const results = await Promise.allSettled(
+            keys
+              .slice(offset, offset + 8)
+              .map((key) => storage.headObject(key, signal)),
+          );
+          if (
+            results.some(
+              (result) => result.status === "rejected" || result.value !== null,
+            )
           )
-        )
-          throw new Error("Object absence not confirmed");
-      }
-    });
+            throw new Error("Object absence not confirmed");
+        }
+        signal.throwIfAborted();
+      },
+      signal,
+    );
   } catch (error) {
     if (error instanceof ApplicationError) throw error;
     throw new ApplicationError(
       "INTERNAL_SERVER_ERROR",
       "删除结果无法确认，可能已部分删除或留下失效记录；请人工核对后手动重试",
     );
+  } finally {
+    clearTimeout(timeout);
   }
   let publicSync: PublicCacheInvalidationResult["state"] = "degraded";
   try {

@@ -1,11 +1,8 @@
-import {
-  readStoredJson,
-  writeVerifiedJson,
-} from "@/app/admin/(dashboard)/draft/verified-storage";
+import { createCreationReceiptStore } from "@/app/admin/(dashboard)/draft/creation-receipts";
+import { writeVerifiedJson } from "@/app/admin/(dashboard)/draft/verified-storage";
 import { z } from "zod";
 import { PageFieldsSchema } from "@/features/page/schemas/page.fields.schema";
 import { PageInsertSchema } from "@/features/page/schemas/page.insert.schema";
-import type { PageInsert } from "@/features/page/types/page.insert";
 
 const localizedDraft = z.object({
   zh: z.string().optional(),
@@ -28,33 +25,11 @@ export function parsePageDraft(value: unknown): PageDraft | null {
   return result.success ? result.data : null;
 }
 
-const attemptKey = (userId: string) =>
-  `honeycomb:draft:page:${encodeURIComponent(userId)}:creation-attempt`;
-export function readPageCreationAttempt(userId: string): PageInsert | null {
-  const result = PageInsertSchema.safeParse(readStoredJson(attemptKey(userId)));
-  return result.success ? result.data : null;
-}
-/** 发送前按账户同步保存并回读创建意图；结果未知时必须复用原令牌与内容核对。 */
-export function writePageCreationAttempt(
-  userId: string,
-  input: PageInsert,
-): boolean {
-  try {
-    return writeVerifiedJson(attemptKey(userId), PageInsertSchema.parse(input));
-  } catch {
-    return false;
-  }
-}
-export function clearPageCreationAttempt(userId: string, token: string) {
-  try {
-    if (readPageCreationAttempt(userId)?.creationToken === token)
-      window.localStorage.removeItem(attemptKey(userId));
-    return window.localStorage.getItem(attemptKey(userId)) === null;
-  } catch {
-    return false;
-    /* Retain the form when browser storage is unavailable. */
-  }
-}
+const creationReceipts = createCreationReceiptStore("page", PageInsertSchema);
+export const writePageCreationAttempt = creationReceipts.write;
+export const readPageCreationAttempt = creationReceipts.read;
+export const clearPageCreationAttempt = creationReceipts.clear;
+
 /** 用户加载冲突版本前保留被替换的本地输入；写入失败时由调用方阻止丢弃编辑。 */
 export function preservePageDraft(
   userId: string,

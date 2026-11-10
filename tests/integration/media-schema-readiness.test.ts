@@ -9,6 +9,16 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 
 import { describe, expect, it, vi } from "vitest";
 import { createPage } from "@/features/page/server/page-commands";
+import {
+  getPost,
+  listPosts,
+  listPublicPosts,
+} from "@/features/post/server/post-queries";
+import { searchPublishedPosts } from "@/features/post/server/post-search";
+import { getPage, listPages } from "@/features/page/server/page-queries";
+import { readMediaByUrls } from "@/features/media/server/read-media-by-urls";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
+import { PostStatus } from "@/features/post/types/post.status";
 import { createPost } from "@/features/post/server/post-commands";
 import { PageTemplate } from "@/features/page/types/page.template";
 import * as schema from "@/lib/db/schema";
@@ -179,6 +189,87 @@ describe("ordinary media deployment readiness", () => {
           [],
         );
       expect(invalidator.invalidate).not.toHaveBeenCalled();
+    });
+  });
+  it("blocks 0007 cover and embedded reads while leaving narrow projections available", async () => {
+    await withLegacyDatabase(async (client) => {
+      const statements: string[] = [];
+      const db = drizzle(client, {
+        schema,
+        logger: { logQuery: (sql) => statements.push(sql) },
+      });
+      const url = "https://assets.example.test/cover.png";
+      await client.execute({
+        sql: "INSERT INTO media (id, key, name, size, type, url, state) VALUES ('legacy-cover', 'cover.png', 'cover.png', 10, 'image/png', ?, 'DELETING')",
+        args: [url],
+      });
+      await db
+        .insert(schema.category)
+        .values({ id: "category", path: "category" });
+      await db.insert(schema.post).values({
+        id: "legacy-post",
+        authorId: "author",
+        categoryId: "category",
+        coverId: "legacy-cover",
+        status: PostStatus.PUBLISHED,
+      });
+      await db.insert(schema.postTranslation).values({
+        postId: "legacy-post",
+        locale: MultiLangEnum.En,
+        title: "Legacy post",
+      });
+      await db.insert(schema.page).values([
+        { id: "with-image", authorId: "author" },
+        { id: "without-image", authorId: "author" },
+      ]);
+      await db.insert(schema.pageTranslation).values(
+        supportedLanguages.map((locale) => ({
+          pageId: "with-image",
+          locale,
+          title: "Legacy page",
+          content: `<img src="${url}">`,
+        })),
+      );
+      statements.length = 0;
+
+      for (const read of [
+        () => getPost(db, "legacy-post", "PUBLISHED_ONLY"),
+        () => listPublicPosts(db, {}),
+        () =>
+          searchPublishedPosts(db, {
+            query: "legacy",
+            locale: MultiLangEnum.En,
+          }),
+        () => readMediaByUrls(db, [url], "post.service.detail-images"),
+        () => getPage(db, "with-image", "ALL"),
+        () => listPages(db, {}, "ALL"),
+      ]) {
+        await expect(read()).rejects.toMatchObject(unavailable);
+      }
+      expect(
+        statements.filter((sql) => /pragma table_info\(media\)/i.test(sql)),
+      ).toHaveLength(6);
+      expect(statements.every((sql) => !sql.includes('"media"'))).toBe(true);
+      await expect(getPage(db, "without-image", "ALL")).resolves.toMatchObject({
+        id: "without-image",
+        imagesInContent: [],
+      });
+      await expect(listPosts(db, {}, "ALL")).resolves.toMatchObject({
+        total: 1,
+      });
+      // No cards means the incompatible media table is never queried, even
+      // though the total of the same numbered feed can be nonzero.
+      await expect(listPublicPosts(db, { page: 2 })).resolves.toEqual({
+        list: [],
+        total: 1,
+      });
+      await expect(
+        listPublicPosts(db, { authorId: "missing" }, null),
+      ).resolves.toEqual({
+        list: [],
+        total: 0,
+        nextCursor: null,
+      });
     });
   });
   it("preserves actor authorization errors on an incompatible schema", async () => {

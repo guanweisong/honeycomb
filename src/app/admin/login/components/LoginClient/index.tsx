@@ -166,16 +166,7 @@ const LoginContent = ({ setting, providers, targetUrl }: LoginClientProps) => {
           strategy="afterInteractive"
         />
       ) : null}
-      <div className="min-h-dvh box-border flex items-center justify-center px-4 py-8 text-center bg-green-700">
-        <video
-          src={`${clientEnv.NEXT_PUBLIC_ASSET_URL}/common/rainAndBird.mp4`}
-          className="fixed inset-0 w-full h-full object-cover"
-          autoPlay={true}
-          muted={true}
-          loop={true}
-          playsInline
-          aria-hidden="true"
-        />
+      <div className="min-h-dvh box-border flex items-center justify-center px-4 py-8 text-center bg-linear-to-br from-green-800 to-teal-950">
         <div className="relative z-10 w-full max-w-96 my-auto text-white p-6 bg-white/20 backdrop-blur rounded">
           <h1 className="text-2xl">{setting?.siteName?.zh}</h1>
           <div className="opacity-80 mb-6">游客账号：guest 123456</div>

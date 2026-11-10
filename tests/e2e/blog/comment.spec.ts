@@ -42,6 +42,22 @@ test.describe("blog comment", () => {
 
 const postId = "000000000000000000000005";
 
+test("@regression a published post with disabled comments keeps its body and skips Turnstile", async ({
+  page,
+}) => {
+  const response = await page.goto("/en/archives/000000000000000000000017");
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByText("Deterministic browser test content with a cover.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator('textarea[name="content"]')).toHaveCount(0);
+  await expect(
+    page.locator('script[src*="challenges.cloudflare.com/turnstile/"]'),
+  ).toHaveCount(0);
+});
+
 test("@regression public comments redact moderated content on the wire and retain replies", async ({
   request,
   page,
@@ -86,16 +102,21 @@ test("@regression comment reply and cancel controls work from the keyboard", asy
   // The saved identity appears after the comment component's mount effect;
   // this waits for hydration without arbitrary sleeps or internal React APIs.
   await expect(page.getByText(/Welcome back.*Keyboard visitor/)).toBeVisible();
+  await expect(
+    page.locator('script[src*="challenges.cloudflare.com/turnstile/"]'),
+  ).toHaveCount(1);
   const reply = page
     .getByRole("button", { name: "Reply", exact: true })
     .first();
   await reply.focus();
   await expect(reply).toBeFocused();
   await reply.press("Enter");
+  await expect(page.locator('textarea[name="content"]')).toBeFocused();
   await expect(page.getByText("Reply to:", { exact: true })).toBeVisible();
   const cancel = page.getByRole("button", { name: /Cancel/i });
   await cancel.focus();
   await cancel.press("Space");
+  await expect(reply).toBeFocused();
   await expect(page.getByText("Reply to:", { exact: true })).toHaveCount(0);
   const quit = page.getByRole("button", { name: /Quit/i });
   await quit.press("Enter");

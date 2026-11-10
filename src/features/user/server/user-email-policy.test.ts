@@ -5,6 +5,7 @@ import { UserUpdateSchema } from "@/features/user/schemas/user.write.schema";
 import { createUserRepository } from "@/features/user/server/user-repository";
 import { UserLevel } from "@/features/user/types/user.level";
 import { UserStatus } from "@/features/user/types/user.status";
+import { user } from "@/lib/db/schema";
 
 vi.mock("@/lib/auth/credentials", () => ({ setCredentialPassword: vi.fn() }));
 
@@ -26,7 +27,10 @@ it.each(["create", "update"] as const)(
             email: "reader@example.test",
             password: "123456",
           })
-        : repository.update({ id: "target", email: "reader@example.test" });
+        : repository.update(
+            { id: "target", email: "reader@example.test" },
+            UserLevel.ADMIN,
+          );
     await expect(write).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mock.transaction).toHaveBeenCalledOnce();
     expect(mock.insert).not.toHaveBeenCalled();
@@ -40,10 +44,13 @@ it("allows an explicit email edit for its own account, normalizes it, and does n
   mock.returning.mockResolvedValue([
     { id: "target", level: UserLevel.GUEST, status: UserStatus.ENABLE },
   ]);
-  await createUserRepository(asMockDatabase(mock)).update({
-    id: "target",
-    email: "New@Example.Test",
-  });
+  await createUserRepository(asMockDatabase(mock)).update(
+    {
+      id: "target",
+      email: "New@Example.Test",
+    },
+    UserLevel.ADMIN,
+  );
   expect(mock.transaction).toHaveBeenCalledOnce();
   expect(mock.set).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({ email: "new@example.test" }),
@@ -76,14 +83,25 @@ it("normalizes a new email inside the write transaction without changing usernam
 
 it("does not normalize or scan emails on an unrelated account update", async () => {
   const mock = createMockDb();
+  mock.where.mockResolvedValueOnce([
+    { status: UserStatus.ENABLE, level: UserLevel.GUEST },
+  ]);
   mock.returning.mockResolvedValue([
     { id: "target", level: UserLevel.GUEST, status: UserStatus.ENABLE },
   ]);
-  await createUserRepository(asMockDatabase(mock)).update({
-    id: "target",
-    status: UserStatus.ENABLE,
+  await createUserRepository(asMockDatabase(mock)).update(
+    {
+      id: "target",
+      status: UserStatus.ENABLE,
+    },
+    UserLevel.ADMIN,
+  );
+  expect(mock.select).toHaveBeenCalledExactlyOnceWith({
+    level: user.level,
+    name: user.name,
+    status: user.status,
   });
-  expect(mock.select).not.toHaveBeenCalled();
+  expect(mock.delete).not.toHaveBeenCalled();
   expect(mock.set).toHaveBeenCalledExactlyOnceWith(
     expect.not.objectContaining({ email: expect.anything() }),
   );
@@ -92,7 +110,7 @@ it("does not normalize or scan emails on an unrelated account update", async () 
 it("preserves an unchanged legacy email echoed by the full form during a name edit", async () => {
   const mock = createMockDb();
   const id = "000000000000000000000001";
-  mock.from.mockResolvedValueOnce([
+  mock.from.mockReturnValueOnce(mock).mockResolvedValueOnce([
     { id, email: "Reader@Example.Test" },
     { id: "other", email: "reader@example.test" },
   ]);
@@ -109,6 +127,7 @@ it("preserves an unchanged legacy email echoed by the full form during a name ed
   ]);
   await createUserRepository(asMockDatabase(mock)).update(
     UserUpdateSchema.parse({ id, name: "After", email: "Reader@Example.Test" }),
+    UserLevel.ADMIN,
   );
   expect(mock.set).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({ name: "After", email: "Reader@Example.Test" }),

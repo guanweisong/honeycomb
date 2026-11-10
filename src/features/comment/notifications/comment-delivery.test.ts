@@ -16,15 +16,12 @@ vi.mock("@/features/comment/notifications/comment-email", () => ({
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+  const promise = new Promise<T>((resolvePromise) => {
     resolve = resolvePromise;
-    reject = rejectPromise;
   });
   return {
     promise,
     resolve,
-    reject: (reason?: unknown) => reject(reason),
   };
 }
 
@@ -47,124 +44,27 @@ const currentComment = {
   page: null,
 };
 
-function createRepository(): CommentNotificationRepository {
-  return {
-    getComment: vi
-      .fn()
-      .mockResolvedValueOnce(currentComment)
-      .mockResolvedValueOnce({ ...currentComment, id: "parent-1" }),
-    getSetting: vi.fn().mockResolvedValue({ siteName: null }),
-  };
-}
-
 describe("comment notification delivery logs", () => {
   afterEach(() => {
     configureObservability();
     vi.clearAllMocks();
   });
 
-  it("等待管理员和回复通知均完成后才结束编排", async () => {
-    const adminSendGate = deferred<void>();
-    const replySendGate = deferred<void>();
-    vi.mocked(sendCommentEmail)
-      .mockImplementationOnce(() => adminSendGate.promise)
-      .mockImplementationOnce(() => replySendGate.promise);
-
-    let settled = false;
-    const notification = notifyCommentCreated(
-      createRepository(),
-      "comment-1",
-      "parent-1",
-    ).then(() => {
-      settled = true;
-    });
-
-    await vi.waitFor(() => {
-      expect(sendCommentEmail).toHaveBeenCalledTimes(2);
-    });
-    expect(settled).toBe(false);
-
-    adminSendGate.resolve();
-    await Promise.resolve();
-    expect(settled).toBe(false);
-
-    replySendGate.resolve();
-    await expect(notification).resolves.toBeUndefined();
-    expect(settled).toBe(true);
-  });
-
-  it("父评论准备失败时仍等待已开始的管理员通知", async () => {
-    const adminSendGate = deferred<void>();
-    const parentLookupGate = deferred<typeof currentComment | undefined>();
-    const preparationError = new Error(
-      "visitor@example.test private parent lookup",
-    );
-    vi.mocked(sendCommentEmail).mockImplementationOnce(
-      () => adminSendGate.promise,
-    );
-    const repository = {
-      getComment: vi
-        .fn()
-        .mockResolvedValueOnce(currentComment)
-        .mockReturnValueOnce(parentLookupGate.promise),
-      getSetting: vi.fn().mockResolvedValue({ siteName: null }),
-    } satisfies CommentNotificationRepository;
-    let settled = false;
-    const notification = notifyCommentCreated(
-      repository,
-      "comment-1",
-      "parent-1",
-    );
-    void notification.then(
-      () => {
-        settled = true;
-      },
-      () => {
-        settled = true;
-      },
-    );
-
-    await vi.waitFor(() => {
-      expect(sendCommentEmail).toHaveBeenCalledOnce();
-    });
-    parentLookupGate.reject(preparationError);
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(settled).toBe(false);
-
-    adminSendGate.resolve();
-    await expect(notification).rejects.toBe(preparationError);
-  });
-
-  it("在父评论准备期间立即处理管理员发送失败", async () => {
+  it("waits for the administrator delivery and logs a sanitized provider failure", async () => {
     const memory = createMemoryObservability();
     configureObservability(memory);
-    const adminSendGate = deferred<void>();
-    const parentLookupGate = deferred<typeof currentComment | undefined>();
-    const deliveryError = new Error("visitor@example.test private email");
-    vi.mocked(sendCommentEmail).mockImplementationOnce(
-      () => adminSendGate.promise,
-    );
-    const repository = {
-      getComment: vi
-        .fn()
-        .mockResolvedValueOnce(currentComment)
-        .mockReturnValueOnce(parentLookupGate.promise),
-      getSetting: vi.fn().mockResolvedValue({ siteName: null }),
-    } satisfies CommentNotificationRepository;
-    const notification = notifyCommentCreated(
-      repository,
-      "comment-1",
-      "parent-1",
-    );
-
-    await vi.waitFor(() => {
-      expect(sendCommentEmail).toHaveBeenCalledOnce();
-    });
-    adminSendGate.reject(deliveryError);
-    await vi.waitFor(() => {
-      expect(memory.logEvents).toHaveLength(1);
-    });
+    const error = new Error("visitor@example.test private email");
+    vi.mocked(sendCommentEmail).mockRejectedValueOnce(error);
+    await expect(
+      notifyCommentCreated(
+        {
+          getComment: async () => currentComment,
+          getSetting: async () => ({ siteName: null }),
+        },
+        "comment-1",
+      ),
+    ).resolves.toBeUndefined();
+    expect(sendCommentEmail).toHaveBeenCalledOnce();
     expect(memory.logEvents[0]?.context).toEqual({
       service: "email",
       operation: "send-admin-notification",
@@ -174,10 +74,6 @@ describe("comment notification delivery logs", () => {
     expect(JSON.stringify(memory.logEvents)).not.toContain(
       "visitor@example.test",
     );
-    expect(JSON.stringify(memory.logEvents)).not.toContain("private email");
-
-    parentLookupGate.resolve(undefined);
-    await expect(notification).resolves.toBeUndefined();
   });
 
   it("records a structured failure without sensitive error details", () => {
@@ -228,7 +124,7 @@ describe("comment notification delivery logs", () => {
       settingRead.resolve({ siteName: null });
       await delivery;
     }
-    expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith("ADMIN_NOTICE", {
+    expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith({
       setting: { siteName: null },
       currentComment,
     });

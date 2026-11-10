@@ -100,7 +100,7 @@ describe("required persistence results", () => {
     {
       name: "user",
       run: (db: Database, input: { id: string }) =>
-        createUserRepository(db).update(input),
+        createUserRepository(db).update(input, UserLevel.ADMIN),
     },
   ];
   it.each(updates)(

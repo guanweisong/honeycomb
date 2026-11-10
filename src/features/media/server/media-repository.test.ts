@@ -30,19 +30,18 @@ describe("media repository persistence", () => {
     const targets = [mediaRow()];
     db.select.mockImplementation((projection?: object) => ({
       from: (table: object) => {
-        if (table === schema.user && !projection) {
+        if (table === schema.user && projection && "level" in projection) {
           const read = createMockDb();
           read.limit.mockResolvedValue([{ level: "ADMIN", status: "ENABLE" }]);
           return read;
         }
-        if (table === schema.media)
+        if (table === schema.media && !projection)
           return { where: vi.fn().mockResolvedValue(targets) };
-        if (table === schema.post) {
+        {
           const read = createMockDb();
           read.limit.mockResolvedValue([]);
           return read;
         }
-        return [];
       },
     }));
     const remove = vi.fn(async () => {

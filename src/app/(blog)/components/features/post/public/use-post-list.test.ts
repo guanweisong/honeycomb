@@ -16,9 +16,10 @@ vi.mock("@/lib/trpc/client/trpc", () => ({
 
 import usePostList from "@/app/(blog)/components/features/post/public/use-post-list";
 
-const page = (ids: string[], total: number) => ({
+const page = (ids: string[], total: number, more = false) => ({
   list: ids.map((id) => createPostFixture({ id })),
   total,
+  nextCursor: more ? { id: ids.at(-1) ?? "", createdAt: null } : null,
 });
 
 describe("public post-list pagination", () => {
@@ -40,9 +41,14 @@ describe("public post-list pagination", () => {
     notifyManager.setScheduler((callback) => setTimeout(callback, 0));
   });
 
-  async function render(ids: string[], total: number) {
+  async function render(
+    ids: string[],
+    total: number,
+    snapshot?: string,
+    more = false,
+  ) {
     function Probe() {
-      query = usePostList({ limit: 10 }, page(ids, total));
+      query = usePostList({ limit: 10 }, page(ids, total, more), snapshot);
       return React.createElement(
         "output",
         null,
@@ -60,6 +66,29 @@ describe("public post-list pagination", () => {
     );
   }
 
+  it("prefers a changed RSC snapshot over previously cached data for the same filters", async () => {
+    await render(["old"], 1, "old-snapshot");
+    await render(["new"], 1, "new-snapshot");
+    expect(
+      requireDefined(query).data?.pages[0]?.list.map(({ id }) => id),
+    ).toEqual(["new"]);
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it("uses a new RSC revision when a previously seen first page recurs", async () => {
+    await render(["original"], 1, "first");
+    await act(async () => {
+      client.setQueryData(["posts", { limit: 10 }, "first"], {
+        pages: [page(["changed"], 1)],
+        pageParams: [null],
+      });
+    });
+    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("changed");
+
+    await render(["original"], 1, "later");
+    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("original");
+  });
+
   it("stops after an empty initial page even if its total is stale", async () => {
     await render([], 5);
     expect(requireDefined(query).hasNextPage).toBe(false);
@@ -67,7 +96,7 @@ describe("public post-list pagination", () => {
   });
 
   it("stops after an empty later page while preserving already loaded posts", async () => {
-    await render(["first"], 5);
+    await render(["first"], 5, undefined, true);
     transport.request.mockResolvedValueOnce(page([], 5));
     await act(async () => {
       await requireDefined(query).fetchNextPage();
@@ -80,21 +109,24 @@ describe("public post-list pagination", () => {
     ).toEqual(["first"]);
   });
 
-  it("continues after a nonempty short page until the total is reached", async () => {
-    await render(["first"], 3);
+  it("follows cursor boundaries independently of a changing total", async () => {
+    await render(["first"], 3, undefined, true);
     expect(requireDefined(query).hasNextPage).toBe(true);
-    transport.request.mockResolvedValueOnce(page(["second"], 3));
+    transport.request.mockResolvedValueOnce(page(["second"], 1, true));
     await act(async () => {
       await requireDefined(query).fetchNextPage();
     });
     expect(requireDefined(query).hasNextPage).toBe(true);
-    transport.request.mockResolvedValueOnce(page(["third"], 3));
+    transport.request.mockResolvedValueOnce(page(["third"], 9));
     await act(async () => {
       await requireDefined(query).fetchNextPage();
     });
     expect(requireDefined(query).hasNextPage).toBe(false);
-    expect(transport.request.mock.calls.map(([input]) => input.page)).toEqual([
-      2, 3,
-    ]);
+    expect(transport.request.mock.calls.map(([input]) => input.cursor)).toEqual(
+      [
+        { id: "first", createdAt: null },
+        { id: "second", createdAt: null },
+      ],
+    );
   });
 });

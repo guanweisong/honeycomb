@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { requireDefined } from "@tests/helpers/require-defined";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -292,39 +294,6 @@ function collectPermissionGuards(
   return guardByPermission;
 }
 
-/** Only a direct, parameterless action callback can supply a branch fact. */
-function getActionBranchFact(
-  control: ts.JsxElement | ts.JsxSelfClosingElement,
-  identity: ActionControlIdentity,
-  sourceFile: ts.SourceFile,
-): ActionBranchFact | undefined {
-  if (!identity.call?.argument) return undefined;
-  const element = ts.isJsxElement(control) ? control.openingElement : control;
-  const callback = getAttributeExpression(element, identity.attribute);
-  if (
-    !callback ||
-    !ts.isArrowFunction(callback) ||
-    callback.parameters.length !== 0 ||
-    !ts.isCallExpression(callback.body) ||
-    callback.body.expression.getText(sourceFile) !== identity.call.callee
-  )
-    return undefined;
-  for (const argument of callback.body.arguments) {
-    if (
-      !ts.isConditionalExpression(argument) ||
-      !ts.isIdentifier(argument.condition)
-    )
-      continue;
-    const whenTrue =
-      argument.whenTrue.getText(sourceFile) === identity.call.argument;
-    const whenFalse =
-      argument.whenFalse.getText(sourceFile) === identity.call.argument;
-    if (whenTrue !== whenFalse)
-      return { name: argument.condition.text, value: whenTrue };
-  }
-  return undefined;
-}
-
 function findUnboundActionIds(
   sourcePath: string,
   actions: readonly ActionGuardContract[],
@@ -354,8 +323,7 @@ function findUnboundActionIds(
               control,
               guardName,
               action.guard.polarity,
-              getActionBranchFact(control, action.control, sourceFile) ??
-                action.when,
+              action.when,
             );
           }
 
@@ -519,7 +487,7 @@ describe("admin action capability guards", () => {
           "{true && isEdit && isPublished && (",
         ),
       ),
-    ).toContain("post-editor.update");
+    ).toContain("post-editor.update-published");
   });
 
   it.each([
@@ -542,27 +510,37 @@ describe("admin action capability guards", () => {
   );
 
   it.each([
-    ["save", "{canSaveUnpublished && (", "{(canSaveUnpublished || true) && ("],
+    [
+      "save",
+      "{canSaveUnpublished && (",
+      "{(canSaveUnpublished || true) && (",
+      "post-editor.update",
+    ],
     [
       "publish",
       "{(canSaveUnpublished || (canCreatePost && !isEdit)) && (",
       "{(canSaveUnpublished || true) && (",
+      "post-editor.update-publish",
     ],
     [
-      "swapped publish action",
-      'isEdit ? "update" : "create"',
-      'isEdit ? "create" : "update"',
+      "swapped publish mode",
+      "(canCreatePost && !isEdit)",
+      "(canCreatePost && isEdit)",
+      "post-editor.update-publish",
     ],
-  ])("rejects an alias bypass at the %s use site", (_label, before, after) => {
-    const editorPath =
-      "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
-    expect(
-      findUnboundActionIds(editorPath, getActions(editorPath), (source) => {
-        expect(source).toContain(before);
-        return source.replace(before, after);
-      }),
-    ).toContain("post-editor.update");
-  });
+  ])(
+    "rejects an alias bypass at the %s use site",
+    (_label, before, after, action) => {
+      const editorPath =
+        "src/app/admin/(dashboard)/post/edit/components/PostEditorActions/index.tsx";
+      expect(
+        findUnboundActionIds(editorPath, getActions(editorPath), (source) => {
+          expect(source).toContain(before);
+          return source.replace(before, after);
+        }),
+      ).toContain(action);
+    },
+  );
 
   it.each([
     [

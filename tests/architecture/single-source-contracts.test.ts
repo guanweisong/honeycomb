@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import ts from "typescript";
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";

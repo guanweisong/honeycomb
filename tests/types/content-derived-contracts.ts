@@ -103,7 +103,7 @@ type ExpectedPostActions = {
   id?: string;
   loading: boolean;
   status?: "PUBLISHED" | "DRAFT" | "TO_AUDIT";
-  submit: (status: PostStatus, action: "create" | "update") => Promise<boolean>;
+  submit: (status: PostStatus) => Promise<boolean>;
 };
 type PageActions = ComponentProps<typeof PageEditorActionButtons>;
 type PostActions = ComponentProps<typeof PostEditorActions>;

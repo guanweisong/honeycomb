@@ -71,6 +71,7 @@ describe("loadPostRelations", () => {
       updatedAt: null,
     } satisfies NonNullable<PostWithRelations["cover"]>;
     const db = {
+      ...createMockDb(),
       query: {
         post: {
           findMany: vi.fn().mockResolvedValue([
@@ -175,6 +176,7 @@ describe("post snapshot privacy", () => {
         postTags: [],
       };
       const db = {
+        ...createMockDb(),
         query: { post: { findMany: vi.fn().mockResolvedValue([latest]) } },
       };
       const [result] = await loadPostRelations(
@@ -191,6 +193,7 @@ describe("post snapshot privacy", () => {
     "does not resurrect a deleted %s snapshot",
     async (visibility) => {
       const db = {
+        ...createMockDb(),
         query: { post: { findMany: vi.fn().mockResolvedValue([]) } },
       };
       expect(

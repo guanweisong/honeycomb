@@ -87,7 +87,9 @@ async function getCachedPublicPostList(input: PostListQueryInput) {
   cacheLife("max");
   cacheTag(POST_INDEX_CACHE_TAG);
   const client = await createCachedPublicClient();
-  return client.post.index(input);
+  const result = await client.post.index({ ...input, cursor: null });
+  // New cache fills get a distinct seed even when an earlier result recurs.
+  return { ...result, snapshotVersion: crypto.randomUUID() };
 }
 
 async function getCachedRandomPosts(categoryId: string) {

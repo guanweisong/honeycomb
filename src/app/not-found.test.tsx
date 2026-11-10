@@ -23,6 +23,6 @@ describe("global not-found", () => {
     );
     expect(
       container.querySelector('a[href="/en/list/category"]')?.textContent,
-    ).toBe("返回首页");
+    ).toBe("Back to home");
   });
 });

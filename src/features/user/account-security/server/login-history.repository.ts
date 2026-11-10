@@ -3,7 +3,7 @@ import "server-only";
 
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
-import { desc, eq, lt } from "drizzle-orm";
+import { desc, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   buildLoginHistoryRecord,
   type LoginHistoryRecordInput,
@@ -11,23 +11,37 @@ import {
 
 const LOGIN_HISTORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const LOGIN_HISTORY_LIMIT = 50;
+const FAILURE_HISTORY_PRUNE_LIMIT = 50;
 
 type LoginHistoryStore = Pick<Database, "select" | "insert" | "delete">;
 export type LoginIdentifierField = "username" | "email";
 
 export async function recordLoginHistory(
-  db: Pick<LoginHistoryStore, "insert" | "delete">,
+  db: LoginHistoryStore,
   input: LoginHistoryRecordInput,
 ) {
   const record = buildLoginHistoryRecord(input);
   await db.insert(schema.loginHistory).values(record);
+  const expired = lt(
+    schema.loginHistory.createdAt,
+    new Date(record.createdAt.getTime() - LOGIN_HISTORY_RETENTION_MS),
+  );
+  // A genuine failed login may contribute to cleanup, but it must not
+  // delete an arbitrarily large expired backlog in one request.
   await db
     .delete(schema.loginHistory)
     .where(
-      lt(
-        schema.loginHistory.createdAt,
-        new Date(record.createdAt.getTime() - LOGIN_HISTORY_RETENTION_MS),
-      ),
+      input.event === "LOGIN_FAILURE"
+        ? inArray(
+            schema.loginHistory.id,
+            db
+              .select({ id: schema.loginHistory.id })
+              .from(schema.loginHistory)
+              .where(expired)
+              .orderBy(schema.loginHistory.createdAt)
+              .limit(FAILURE_HISTORY_PRUNE_LIMIT),
+          )
+        : expired,
     );
 }
 
@@ -39,9 +53,23 @@ export async function findUserIdByIdentifier(
   if (!identifier.trim()) return null;
   if (field === "email") {
     const normalized = normalizeEmail(identifier);
+    if (/^[\x00-\x7f]+$/u.test(normalized)) {
+      const matches = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .where(eq(schema.user.loginEmailKey, normalized))
+        .limit(2);
+      return matches.length === 1 ? (matches[0]?.id ?? null) : null;
+    }
+
+    // Better Auth's current email sign-in validation accepts ASCII only.
+    // Preserve exact JavaScript folding for other callers and legacy data.
     const users = await db
       .select({ id: schema.user.id, email: schema.user.email })
-      .from(schema.user);
+      .from(schema.user)
+      .where(
+        sql`length(${schema.user.email}) <> length(cast(${schema.user.email} as blob))`,
+      );
     const matches = users.filter(
       (user) =>
         user.email !== null && normalizeEmail(user.email) === normalized,

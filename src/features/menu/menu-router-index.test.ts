@@ -55,66 +55,44 @@ describe("Menu Router", () => {
           updatedAt: null,
         },
       ] satisfies (typeof menu.$inferSelect)[];
-      const mockCategories = [
-        {
-          id: TEST_IDS.ID_1,
-          path: "/category1",
-          parent: null,
-        },
-      ];
-      const mockPages = [
-        {
-          id: TEST_IDS.ID_2,
-        },
-      ];
-      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
-
-      // 设置分类查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCategories);
-
-      // 设置页面查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockPages);
-      mockDb.where.mockResolvedValueOnce([
-        {
-          categoryId: TEST_IDS.ID_1,
-          locale: "en",
-          title: "Category 1",
-          description: "",
-        },
-        {
-          categoryId: TEST_IDS.ID_1,
-          locale: "zh",
-          title: "分类1",
-          description: "",
-        },
+      const category = {
+        status: "ENABLE",
+        path: "/category1",
+        translations: [
+          { locale: "en", title: "Category 1" },
+          { locale: "zh", title: "分类1" },
+        ],
+      };
+      const page = {
+        status: "PUBLISHED",
+        translations: [
+          { locale: "en", title: "Page 1" },
+          { locale: "zh", title: "页面1" },
+        ],
+      };
+      mockDb.query.menu.findMany.mockResolvedValueOnce([
+        { ...mockMenus[0], category, page: null },
+        { ...mockMenus[1], category: null, page },
       ]);
-      mockDb.where.mockResolvedValueOnce([
-        { pageId: TEST_IDS.ID_2, locale: "en", title: "Page 1", content: "" },
-        { pageId: TEST_IDS.ID_2, locale: "zh", title: "页面1", content: "" },
-      ]);
-
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
       const result = await caller.index();
 
+      expect(mockDb.select).not.toHaveBeenCalled();
       expect(result).toEqual({
         list: [
           {
-            id: requireDefined(mockCategories[0]).id,
+            id: TEST_IDS.ID_1,
             parent: null,
             power: 1,
             type: MenuType.CATEGORY,
             createdAt: requireDefined(mockMenus[0]).createdAt,
             updatedAt: null,
             title: { en: "Category 1", zh: "分类1" },
-            path: requireDefined(mockCategories[0]).path,
+            path: category.path,
           },
           {
-            id: requireDefined(mockPages[0]).id,
+            id: TEST_IDS.ID_2,
             parent: null,
             power: 2,
             type: MenuType.PAGE,
@@ -129,20 +107,7 @@ describe("Menu Router", () => {
     });
 
     it("should handle empty menu list", async () => {
-      const mockMenus: unknown[] = [];
-      const mockCategories: unknown[] = [];
-      const mockPages: unknown[] = [];
-      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
-
-      // 设置空分类查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockCategories);
-
-      // 设置空页面查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce(mockPages);
+      mockDb.query.menu.findMany.mockResolvedValueOnce([]);
 
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
 
@@ -179,11 +144,14 @@ describe("Menu Router", () => {
           updatedAt: null,
         },
       ] satisfies (typeof menu.$inferSelect)[];
-      mockDb.query.menu.findMany.mockResolvedValueOnce(mockMenus);
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockResolvedValueOnce([]);
-
+      mockDb.query.menu.findMany.mockResolvedValueOnce([
+        {
+          ...mockMenus[0],
+          category: null,
+          page: { status: "DRAFT", translations: [] },
+        },
+        { ...mockMenus[1], category: null, page: null },
+      ]);
       const caller = menuRouter.createCaller(createMockContext(null, mockDb));
       const result = await caller.index();
 

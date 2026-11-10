@@ -13,12 +13,14 @@ import { basename, join } from "node:path";
 import { createClient, type Client } from "@libsql/client/node";
 import {
   inspectSchema,
+  type SchemaColumn,
   type SchemaInventory,
   type SchemaTable,
 } from "./audit-production-schema";
+import { quoteSqliteIdentifier } from "./sqlite";
 
 interface MigrationCheckInput {
-  journalEntries: Array<{ idx: number; tag: string }>;
+  journalEntries: Array<{ idx: number; tag: string; when: number }>;
   migrationFiles: string[];
   snapshotFiles: string[];
   trackedFiles: string[];
@@ -43,7 +45,15 @@ export function findMigrationGovernanceErrors({
     }),
   );
 
-  for (const [position, { idx, tag }] of journalEntries.entries()) {
+  for (const [position, { idx, tag, when }] of journalEntries.entries()) {
+    const previous = journalEntries[position - 1];
+    if (!Number.isSafeInteger(when) || when <= 0) {
+      errors.push(`Journal timestamp for ${tag} must be a positive integer`);
+    } else if (previous && when <= previous.when) {
+      errors.push(
+        `Journal timestamp for ${tag} must be greater than the preceding entry`,
+      );
+    }
     if (!migrationNames.has(tag)) {
       errors.push(`Journal entry ${tag} has no matching migration SQL`);
     }
@@ -96,6 +106,10 @@ type SnapshotTable = {
       notNull: boolean;
       primaryKey: boolean;
       default?: unknown;
+      generated?: {
+        as: string;
+        type: NonNullable<SchemaColumn["generated"]>;
+      };
     }
   >;
   indexes: Record<
@@ -206,17 +220,25 @@ export async function waitForMigrationChild(
 }
 
 function normalizeSql(value: string): string {
-  return value.replaceAll("`", '"').replace(/\s+/gu, " ").trim();
+  return value
+    .replace(/'(?:[^']|'')*'|"(?:[^"]|"")*"|`(?:[^`]|``)*`|\s+/gu, (token) => {
+      if (token.startsWith("`")) {
+        return quoteSqliteIdentifier(token.slice(1, -1).replaceAll("``", "`"));
+      }
+      return /^\s/u.test(token) ? " " : token;
+    })
+    .trim();
 }
 
 function normalizedTable(table: SchemaTable) {
   return {
     ...table,
-    sql: table.sql
-      .replace(/^CREATE TABLE\s+[`"](?:[^`"]+)[`"]\s*/iu, "CREATE TABLE ")
-      .replaceAll("`", '"')
-      .replace(/\s+/gu, " ")
-      .trim(),
+    sql: normalizeSql(
+      table.sql.replace(
+        /^CREATE TABLE\s+[`"](?:[^`"]+)[`"]\s*/iu,
+        "CREATE TABLE ",
+      ),
+    ),
     indexes: table.indexes.map((index) => ({
       ...index,
       sql: index.sql ? normalizeSql(index.sql) : null,
@@ -250,6 +272,17 @@ export function findSnapshotTableErrors(
   }
 
   const tableSql = normalizeSql(table.sql);
+  for (const { name, type, generated } of Object.values(expected.columns)) {
+    if (!generated) continue;
+    const definition = normalizeSql(
+      `${quoteSqliteIdentifier(name)} ${type} GENERATED ALWAYS AS ${generated.as} ${generated.type.toUpperCase()}`,
+    );
+    if (!tableSql.includes(definition)) {
+      errors.push(
+        `Migration replay generated column differs for ${table.name}.${name}`,
+      );
+    }
+  }
   for (const { name, value } of Object.values(expected.checkConstraints)) {
     const expectedConstraint = normalizeSql(
       `CONSTRAINT "${name}" CHECK(${value})`,
@@ -408,12 +441,19 @@ async function replayStructureErrors(
         ),
       );
       const expectedColumns = Object.values(expected.columns).map(
-        ({ name, type, notNull, primaryKey, default: defaultValue }) =>
-          `${name}:${type.toLowerCase()}:${Number(notNull)}:${Number(primaryKey || compositePrimaryKeyColumns.has(name))}:${defaultValue === undefined ? "" : String(defaultValue)}`,
+        ({
+          name,
+          type,
+          notNull,
+          primaryKey,
+          default: defaultValue,
+          generated,
+        }) =>
+          `${name}:${type.toLowerCase()}:${Number(notNull)}:${Number(primaryKey || compositePrimaryKeyColumns.has(name))}:${defaultValue === undefined ? "" : String(defaultValue)}:${generated?.type ?? ""}`,
       );
       const actualColumns = table.columns.map(
-        ({ name, type, notnull, pk, dfltValue }) =>
-          `${name}:${type.toLowerCase()}:${notnull}:${Number(pk > 0)}:${dfltValue ?? ""}`,
+        ({ name, type, notnull, pk, dfltValue, generated }) =>
+          `${name}:${type.toLowerCase()}:${notnull}:${Number(pk > 0)}:${dfltValue ?? ""}:${generated ?? ""}`,
       );
       if (JSON.stringify(actualColumns) !== JSON.stringify(expectedColumns)) {
         errors.push(`Migration replay columns differ for ${name}`);
@@ -501,7 +541,7 @@ async function main(): Promise<void> {
   }
 
   const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
-    entries?: Array<{ idx?: number; tag?: string }>;
+    entries: MigrationCheckInput["journalEntries"];
   };
   const migrationFiles = readdirSync("drizzle")
     .filter((file) => file.endsWith(".sql"))
@@ -510,9 +550,7 @@ async function main(): Promise<void> {
     .filter((file) => /^\d{4}_snapshot\.json$/.test(file))
     .map((file) => join("drizzle/meta", file));
   const errors = findMigrationGovernanceErrors({
-    journalEntries: (journal.entries ?? []).flatMap(({ idx, tag }) =>
-      idx === undefined || !tag ? [] : [{ idx, tag }],
-    ),
+    journalEntries: journal.entries,
     migrationFiles,
     snapshotFiles,
     trackedFiles: gitLines(["ls-files"]),

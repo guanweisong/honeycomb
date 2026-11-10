@@ -1,6 +1,6 @@
 import { File as NodeFile } from "node:buffer";
 import { webcrypto } from "node:crypto";
-import React, { act } from "react";
+import React, { act, useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import {
@@ -154,6 +154,20 @@ async function changeFile(input: HTMLInputElement, file: File | File[]) {
   });
 }
 
+function ObservedMediaShell({
+  onSelect,
+}: {
+  onSelect: (value: MediaViewModel | undefined) => void;
+}) {
+  const [currentItem, setCurrentItem] = useState<MediaViewModel>();
+  const previous = useRef<MediaViewModel | undefined>(undefined);
+  useEffect(() => {
+    if (currentItem !== previous.current) onSelect(currentItem);
+    previous.current = currentItem;
+  }, [currentItem, onSelect]);
+  return <MediaPageShell selection={{ currentItem, setCurrentItem }} />;
+}
+
 describe("MediaPageShell", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -205,7 +219,9 @@ describe("MediaPageShell", () => {
       /媒体状态|检查状态|上传待确认|可使用/,
     );
     expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
-    await act(async () => root.render(<MediaPageShell onSelect={vi.fn()} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={vi.fn()} />),
+    );
     expect(container.querySelector("select")).toBeNull();
     expect(trpcMocks.input).toEqual({ page: 1, limit: 50 });
   });
@@ -214,7 +230,9 @@ describe("MediaPageShell", () => {
     const onSelect = vi.fn();
     const pending = createDeferred<unknown>();
     trpcMocks.prepareUpload.mockReturnValue(pending.promise);
-    await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={onSelect} />),
+    );
     await changeFile(
       requireDefined(
         container.querySelector<HTMLInputElement>('input[type="file"]'),
@@ -222,7 +240,9 @@ describe("MediaPageShell", () => {
       new File(["x"], "x.png", { type: "image/png" }),
     );
     accountId = "user-2";
-    await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={onSelect} />),
+    );
     onSelect.mockClear();
     await act(async () => pending.reject(new Error("old account request")));
     expect(toastMocks.error).not.toHaveBeenCalled();
@@ -242,7 +262,9 @@ describe("MediaPageShell", () => {
       "fetch",
       vi.fn(() => pending.promise),
     );
-    await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={onSelect} />),
+    );
     const input = requireDefined(
       container.querySelector<HTMLInputElement>('input[type="file"]'),
     );
@@ -263,7 +285,9 @@ describe("MediaPageShell", () => {
     const onSelect = vi.fn();
     const pending = createDeferred<{ success: true }>();
     trpcMocks.destroy.mockReturnValue(pending.promise);
-    await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={onSelect} />),
+    );
     await act(async () =>
       container
         .querySelector<HTMLButtonElement>('[title="cover.png"]')
@@ -292,11 +316,14 @@ describe("MediaPageShell", () => {
     trpcMocks.destroy.mockReturnValue(pending.promise);
     let actions: ReturnType<typeof useMediaActions> | undefined;
     function Harness() {
-      actions = useMediaActions({
+      const mediaActions = useMediaActions({
         refetch: vi.fn(),
         onUploadComplete: vi.fn(),
         onDeleteComplete: vi.fn(),
       });
+      useEffect(() => {
+        actions = mediaActions;
+      }, [mediaActions]);
       return null;
     }
     await act(async () => root.render(<Harness />));
@@ -434,7 +461,7 @@ describe("MediaPageShell", () => {
     });
     trpcMocks.registerUpload.mockResolvedValue(uploadedMedia);
     await act(async () =>
-      root.render(React.createElement(MediaPageShell, { onSelect })),
+      root.render(React.createElement(ObservedMediaShell, { onSelect })),
     );
 
     const input =
@@ -476,7 +503,7 @@ describe("MediaPageShell", () => {
     const presignedUrl = createDeferred<{ url: string; key: string }>();
     trpcMocks.prepareUpload.mockReturnValue(presignedUrl.promise);
     await act(async () =>
-      root.render(React.createElement(MediaPageShell, { onSelect })),
+      root.render(React.createElement(ObservedMediaShell, { onSelect })),
     );
 
     const input =
@@ -509,7 +536,7 @@ describe("MediaPageShell", () => {
       const onDeleteComplete = vi.fn();
       let actions: ReturnType<typeof useMediaActions> | undefined;
       function Harness() {
-        actions = useMediaActions({
+        const mediaActions = useMediaActions({
           refetch: () => {
             if (asyncFailure)
               return Promise.reject(new Error("refresh failed"));
@@ -518,6 +545,9 @@ describe("MediaPageShell", () => {
           onUploadComplete: vi.fn(),
           onDeleteComplete,
         });
+        useEffect(() => {
+          actions = mediaActions;
+        }, [mediaActions]);
         return null;
       }
       await act(async () => root.render(<Harness />));
@@ -541,12 +571,15 @@ describe("MediaPageShell", () => {
       let actions: ReturnType<typeof useMediaActions> | undefined;
       let scopeKey = "first";
       function Harness() {
-        actions = useMediaActions({
+        const mediaActions = useMediaActions({
           scopeKey,
           refetch: trpcMocks.refetch,
           onDeleteComplete,
           onUploadComplete: vi.fn(),
         });
+        useEffect(() => {
+          actions = mediaActions;
+        }, [mediaActions]);
         return null;
       }
       await act(async () => root.render(<Harness />));
@@ -583,7 +616,7 @@ describe("MediaPageShell", () => {
           .mockResolvedValueOnce(mediaPages.first)
           .mockRejectedValueOnce(new Error("refresh failed"));
       await act(async () =>
-        root.render(<MediaPageShell onSelect={onSelect} />),
+        root.render(<ObservedMediaShell onSelect={onSelect} />),
       );
       await act(async () =>
         container
@@ -616,7 +649,7 @@ describe("MediaPageShell", () => {
     const onSelect = vi.fn();
     trpcMocks.destroy.mockResolvedValue({ success: true });
     await act(async () =>
-      root.render(React.createElement(MediaPageShell, { onSelect })),
+      root.render(React.createElement(ObservedMediaShell, { onSelect })),
     );
 
     const tile = container.querySelector('[title="cover.png"]');
@@ -663,7 +696,6 @@ describe("MediaPageShell", () => {
             showPhotoPicker
             handlePhotoPickerOk={onConfirm}
             handlePhotoPickerCancel={vi.fn()}
-            pickerContent={(onSelect) => <MediaPageShell onSelect={onSelect} />}
           />,
         ),
       );
@@ -703,7 +735,7 @@ describe("MediaPageShell", () => {
       Object.assign(new Error("删除失败"), { data: { code: "CONFLICT" } }),
     );
     await act(async () =>
-      root.render(React.createElement(MediaPageShell, { onSelect })),
+      root.render(React.createElement(ObservedMediaShell, { onSelect })),
     );
 
     const tile = container.querySelector('[title="cover.png"]');
@@ -753,7 +785,9 @@ describe("MediaPageShell", () => {
       return new Response(null, { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
-    await act(async () => root.render(<MediaPageShell onSelect={onSelect} />));
+    await act(async () =>
+      root.render(<ObservedMediaShell onSelect={onSelect} />),
+    );
     await changeFile(
       requireDefined(
         container.querySelector<HTMLInputElement>('input[type="file"]'),

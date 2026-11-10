@@ -32,11 +32,11 @@ export const imageConfig = {
  * 包含了所有 Next.js 应用通用的配置，例如 ESLint、TypeScript、图片优化和环境变量等。
  */
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
     agentUpgrade: "latest",
+    globalNotFound: true,
     // Reuse visited dynamic route segments in the in-memory client router cache.
     // Auth exits use a hard navigation so private payloads do not cross sessions.
     staleTimes: {

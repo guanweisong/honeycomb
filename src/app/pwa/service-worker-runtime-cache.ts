@@ -1,4 +1,4 @@
-import type { RuntimeCaching } from "serwist";
+import type { RuntimeCaching, SerwistPlugin } from "serwist";
 import {
   CacheFirst,
   ExpirationPlugin,
@@ -22,16 +22,37 @@ const matchesPublicAsset = (
   pattern: RegExp,
 ) => isPublicRuntimeRequest({ sameOrigin, url }) && pattern.test(url.href);
 
-export const runtimeCache: RuntimeCaching[] = [
+export function createRuntimeCache(
+  offlineFallback: SerwistPlugin,
+): RuntimeCaching[] {
+  return [
+    {
+      matcher: ({ request, sameOrigin, url }) =>
+        request.mode === "navigate" &&
+        isPublicRuntimeRequest({ sameOrigin, url }),
+      handler: new NetworkFirst({
+        cacheName: "pages",
+        plugins: [...withExpiration(32, 24 * 60 * 60), offlineFallback],
+      }),
+    },
+    ...otherRuntimeCaching,
+  ];
+}
+
+const otherRuntimeCaching: RuntimeCaching[] = [
   {
-    matcher: /^https:\/\/fonts\.(?:gstatic)\.com\/.*$/i,
+    matcher: ({ request, url }) =>
+      url.origin === "https://fonts.gstatic.com" &&
+      request.destination === "font",
     handler: new CacheFirst({
       cacheName: "google-fonts-webfonts",
       plugins: withExpiration(4, 365 * 24 * 60 * 60),
     }),
   },
   {
-    matcher: /^https:\/\/fonts\.(?:googleapis)\.com\/.*$/i,
+    matcher: ({ request, url }) =>
+      url.origin === "https://fonts.googleapis.com" &&
+      request.destination === "style",
     handler: new StaleWhileRevalidate({
       cacheName: "google-fonts-stylesheets",
       plugins: withExpiration(4, 7 * 24 * 60 * 60),
@@ -101,14 +122,6 @@ export const runtimeCache: RuntimeCaching[] = [
     }),
   },
   {
-    matcher: (options) =>
-      matchesPublicAsset(options, /\/_next\/data\/.+\/.+\.json$/i),
-    handler: new NetworkFirst({
-      cacheName: "next-data",
-      plugins: withExpiration(32, 24 * 60 * 60),
-    }),
-  },
-  {
     matcher: (options) => matchesPublicAsset(options, /\.(?:json|xml|csv)$/i),
     handler: new NetworkFirst({
       cacheName: "static-data-assets",
@@ -135,28 +148,11 @@ export const runtimeCache: RuntimeCaching[] = [
     }),
   },
   {
-    matcher: ({ request, sameOrigin, url }) =>
-      request.headers.get("Content-Type")?.includes("text/html") === true &&
-      isPublicRuntimeRequest({ sameOrigin, url }),
-    handler: new NetworkFirst({
-      cacheName: "pages",
-      plugins: withExpiration(32, 24 * 60 * 60),
-    }),
-  },
-  {
     matcher: ({ sameOrigin, url }) =>
       isPublicRuntimeRequest({ sameOrigin, url }),
     handler: new NetworkFirst({
       cacheName: "others",
       plugins: withExpiration(32, 24 * 60 * 60),
-    }),
-  },
-  {
-    matcher: ({ sameOrigin }) => !sameOrigin,
-    handler: new NetworkFirst({
-      cacheName: "cross-origin",
-      plugins: withExpiration(32, 60 * 60),
-      networkTimeoutSeconds: 10,
     }),
   },
 ];

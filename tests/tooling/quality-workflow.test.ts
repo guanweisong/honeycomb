@@ -1,8 +1,16 @@
 // @vitest-environment node
 
-import { readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
 import { runTestProcess } from "@tests/helpers/run-test-process";
 import { parse } from "yaml";
 import { z } from "zod";
@@ -17,6 +25,11 @@ const fullWorkflow = readFileSync(
   resolve(process.cwd(), ".github/workflows/quality-full.yml"),
   "utf8",
 );
+const setupAction = readFileSync(
+  ".github/actions/setup-honeycomb/action.yml",
+  "utf8",
+);
+const fixtureHelper = readFileSync("scripts/ci-fixture-lifecycle.sh", "utf8");
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as {
@@ -36,6 +49,7 @@ const jobSchema = z.object({
   steps: z.array(
     z.object({
       run: z.string().optional(),
+      uses: z.string().optional(),
       if: z.string().optional(),
       "continue-on-error": z.boolean().optional(),
       env: z.record(z.string(), z.string()).optional(),
@@ -64,12 +78,80 @@ const commandsFor = (job: z.infer<typeof jobSchema>) =>
   );
 
 describe("quality workflow", () => {
+  it("classifies dependency, environment, and worker build changes by actual Git path", () => {
+    const directory = mkdtempSync(join(tmpdir(), "honeycomb-risk-classifier-"));
+    const classifier = resolve("scripts/classify-quality-changes.sh");
+    const git = (...args: string[]) =>
+      execFileSync(
+        "git",
+        ["-c", "user.name=Test", "-c", "user.email=test@example.test", ...args],
+        {
+          cwd: directory,
+          encoding: "utf8",
+        },
+      ).trim();
+    try {
+      git("init", "-q");
+      git("commit", "-q", "--allow-empty", "-m", "baseline");
+      for (const [file, production] of [
+        ["src/env/schema.ts", false],
+        ["src/lib/http/client-ip.server.ts", false],
+        ["scripts/build-serwist.ts", true],
+        ["package.json", true],
+        ["bun.lock", true],
+      ] as const) {
+        const base = git("rev-parse", "HEAD");
+        const target = join(directory, file);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, "change");
+        git("add", file);
+        git("commit", "-q", "-m", file);
+        const output = join(directory, "classification");
+        writeFileSync(output, "");
+        execFileSync("bash", [classifier, base, "HEAD"], {
+          cwd: directory,
+          env: { ...process.env, GITHUB_OUTPUT: output },
+        });
+        expect(readFileSync(output, "utf8"), file).toContain("high_risk=true");
+        expect(readFileSync(output, "utf8"), file).toContain(
+          `requires_production_e2e=${production}`,
+        );
+      }
+    } finally {
+      rmSync(directory, { recursive: true });
+    }
+  });
+
   it("uses the repository Bun version and lockfile installation", () => {
-    expect(packageJson.packageManager).toBe("bun@1.4.4");
-    expect(workflow.match(/bun-version: 1\.4\.4/g)).toHaveLength(7);
-    expect(fullWorkflow.match(/bun-version: 1\.4\.4/g)).toHaveLength(5);
-    expect(workflow).toContain("bun install --frozen-lockfile");
-    expect(fullWorkflow).toContain("bun install --frozen-lockfile");
+    expect(packageJson.packageManager).toMatch(/^bun@\d+\.\d+\.\d+$/);
+    expect(workflow).toContain("bun-version-file: package.json");
+    expect(setupAction).toContain("bun-version-file: package.json");
+    expect(setupAction).toContain("${{ steps.bun.outputs.bun-version }}");
+    expect(setupAction).toContain("bun install --frozen-lockfile");
+    for (const job of [
+      ...Object.values(ci.jobs),
+      ...Object.values(fullCi.jobs),
+    ]) {
+      if (
+        job.steps.some((step) => step.uses?.startsWith("actions/checkout@")) &&
+        !commandsFor(job).some((command) => command.includes("quality:spec"))
+      ) {
+        expect(
+          job.steps.some(
+            (step) => step.uses === "./.github/actions/setup-honeycomb",
+          ),
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("pins each external action to a full commit SHA", () => {
+    const references = [workflow, fullWorkflow, setupAction].flatMap((source) =>
+      [...source.matchAll(/uses: (?!\.\/)(\S+)/g)].map((match) => match[1]),
+    );
+    expect(references.length).toBeGreaterThan(0);
+    for (const reference of references)
+      expect(reference).toMatch(/@[a-f0-9]{40}$/);
   });
 
   it("uses Vercel's Bun runtime and frozen lockfile installer", () => {
@@ -112,8 +194,12 @@ describe("quality workflow", () => {
       "bun run test:e2e:development",
       "bun run test:e2e:production",
     ]) {
-      expect(`${workflow}\n${fullWorkflow}`).toContain(command);
+      expect([workflow, fullWorkflow, fixtureHelper].join("\n")).toContain(
+        command,
+      );
     }
+    expect(fixtureHelper).toContain("bun run db:migrate");
+    expect(fixtureHelper).not.toContain("bun run db:invariants:audit");
     expect(workflow).not.toContain("bun audit --audit-level=critical");
     expect(`${workflow}\n${fullWorkflow}`).not.toMatch(
       /playwright test\s+tests\/e2e\//,
@@ -178,7 +264,7 @@ describe("quality workflow", () => {
       .parse(parse(workflow));
     expect(parsed.jobs.unit_checks.steps).toContainEqual(
       expect.objectContaining({
-        uses: "actions/upload-artifact@v4",
+        uses: expect.stringMatching(/^actions\/upload-artifact@[a-f0-9]{40}$/),
         if: "always()",
         with: expect.objectContaining({
           name: "production-dependency-audit",
@@ -236,26 +322,10 @@ describe("quality workflow", () => {
       const script = commandsFor(job).join("\n");
       expect(script).toContain("mktemp -d");
       expect(script).toContain("source scripts/ci-fixture-lifecycle.sh");
-      expect(
-        script.indexOf("source scripts/ci-fixture-lifecycle.sh"),
-      ).toBeGreaterThan(script.indexOf("mktemp -d"));
-      expect(
-        script.indexOf("source scripts/ci-fixture-lifecycle.sh"),
-      ).toBeLessThan(script.indexOf("export TURSO_URL"));
-      expect(script).toContain(
-        'export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"',
-      );
-      expect(script).toContain("export TURSO_TOKEN=e2e-local-only");
-      expect(script.indexOf("--initialize")).toBeLessThan(
-        script.indexOf("bun run db:migrate"),
+      expect(script).toMatch(
+        /mktemp -d[^\n]*\nsource scripts\/ci-fixture-lifecycle.sh\n(?:initialize_fixture|prepare_fixture)/,
       );
       expect(script).not.toContain("honeycomb-ci.db");
-      const commands = commandsFor(job);
-      expect(commands).toContain("bun install --frozen-lockfile");
-      expect(commands.indexOf("bun run db:migrate")).toBeGreaterThan(-1);
-      expect(commands.indexOf("bun run db:e2e:seed")).toBeGreaterThan(
-        commands.indexOf("bun run db:migrate"),
-      );
       for (const step of job.steps.filter((step) => step.run)) {
         expect(step.if).toBeUndefined();
         expect(step["continue-on-error"]).toBeUndefined();
@@ -271,27 +341,27 @@ describe("quality workflow", () => {
         "bun run check-types",
         "bun run lint",
         "bun run db:migrations:check",
-        "bun run db:invariants:audit",
+        "seed_fixture",
         "bun run test:unit:process",
         "bun run audit:production --output dependency-audit-report.json",
       ]),
     );
-    expect(commandsFor(jobSchema.parse(ci.jobs.feature_tests))).toContain(
-      'bun run test:unit:run --changed="$QUALITY_DIFF_BASE_SHA"',
+    const withoutWorkflowContract =
+      "bun run test:unit:run --exclude=tests/tooling/quality-workflow.test.ts";
+    const relatedCommands = commandsFor(jobSchema.parse(ci.jobs.feature_tests));
+    expect(relatedCommands).toContain(withoutWorkflowContract);
+    expect(relatedCommands).toContain(
+      withoutWorkflowContract + ' --changed="$QUALITY_DIFF_BASE_SHA"',
     );
     expect(
       commandsFor(jobSchema.parse(ci.jobs.high_risk_unit_tests)),
-    ).toContain("bun run test:unit:run");
+    ).toContain(withoutWorkflowContract);
     expect(
       commandsFor(jobSchema.parse(ci.jobs.high_risk_development_e2e)),
-    ).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
-    );
+    ).toContain("PLAYWRIGHT_PORT=3100 bun run test:e2e:development");
     expect(
       commandsFor(jobSchema.parse(ci.jobs.high_risk_production_e2e)),
-    ).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
-    );
+    ).toContain("PLAYWRIGHT_PORT=3101 bun run test:e2e:production");
     for (const name of [
       "unit_coverage",
       "development_e2e",
@@ -303,15 +373,8 @@ describe("quality workflow", () => {
       expect(job.env?.TURSO_URL).toBeUndefined();
       expect(script).toContain("mktemp -d");
       expect(script).toContain("source scripts/ci-fixture-lifecycle.sh");
-      expect(script).toContain(
-        'export TURSO_URL="file:${HONEYCOMB_TEST_DIR}/test.db"',
-      );
-      expect(script).toContain("export TURSO_TOKEN=e2e-local-only");
-      expect(script.indexOf("--initialize")).toBeLessThan(
-        script.indexOf("bun run db:migrate"),
-      );
-      expect(script.indexOf("bun run db:e2e:seed")).toBeGreaterThan(
-        script.indexOf("bun run db:migrate"),
+      expect(script).toMatch(
+        /mktemp -d[^\n]*\nsource scripts\/ci-fixture-lifecycle.sh\nprepare_fixture/,
       );
     }
   });
@@ -354,12 +417,12 @@ describe("quality workflow", () => {
       jobSchema.parse(ci.jobs.high_risk_development_e2e),
     );
     expect(commands).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
+      "PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
     );
     expect(commands.join("\n")).not.toMatch(/bun run (?:build|analyze)/);
-    expect(workflow).toContain("path: .next/cache/turbopack");
+    expect(setupAction).toContain("path: .next/cache/turbopack");
     expect(commandsFor(jobSchema.parse(fullCi.jobs.development_e2e))).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
+      "PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
     );
   });
 
@@ -539,7 +602,7 @@ describe("quality workflow", () => {
       .flatMap(commandsFor)
       .join("\n");
     expect(fullCommands).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
+      "PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
     );
     expect(
       commandsFor(jobSchema.parse(fullCi.jobs.production_e2e)).join("\n"),
@@ -594,21 +657,25 @@ describe("quality workflow", () => {
       ...commandsFor(jobSchema.parse(fullCi.jobs.production_e2e)),
     ];
     expect(commands).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=1 PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
+      "PLAYWRIGHT_PORT=3100 bun run test:e2e:development",
     );
     expect(commands).toContain(
-      "PLAYWRIGHT_USE_DEV_SERVER=0 PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
+      "PLAYWRIGHT_PORT=3101 bun run test:e2e:production",
     );
-    expect(commands.join("\n")).not.toContain(
-      "PLAYWRIGHT_REUSE_EXISTING_SERVER=1",
+    expect(commands.join("\n")).not.toMatch(
+      /PLAYWRIGHT_(?:REUSE_EXISTING_SERVER|USE_DEV_SERVER)=/,
+    );
+    expect(packageJson.scripts["test:e2e:development"]).toMatch(
+      /^PLAYWRIGHT_USE_DEV_SERVER=1 /,
+    );
+    expect(packageJson.scripts["test:e2e:production"]).toMatch(
+      /^PLAYWRIGHT_USE_DEV_SERVER=0 /,
     );
     const full = await inventory("test:e2e");
     const dev = await inventory("test:e2e:development", {
-      PLAYWRIGHT_USE_DEV_SERVER: "1",
       PLAYWRIGHT_PORT: "3100",
     });
     const production = await inventory("test:e2e:production", {
-      PLAYWRIGHT_USE_DEV_SERVER: "0",
       PLAYWRIGHT_PORT: "3101",
     });
     expect(dev.length).toBeGreaterThan(0);

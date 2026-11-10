@@ -115,11 +115,11 @@ export default PostInfo;
 export async function PostCommentCount({
   commentsPromise,
 }: {
-  commentsPromise: Promise<{ total: number }>;
+  commentsPromise: Promise<{ total: number } | null>;
 }) {
   const [comments, t] = await Promise.all([
     commentsPromise,
     getTranslations("PostInfo"),
   ]);
-  return t("messages", { count: comments.total });
+  return comments ? t("messages", { count: comments.total }) : null;
 }

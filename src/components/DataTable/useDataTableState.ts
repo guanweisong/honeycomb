@@ -117,6 +117,7 @@ export function useDataTableState<TData = unknown>(
   );
 
   return {
+    pagination,
     sorting,
     columnFilters,
     paginationState,

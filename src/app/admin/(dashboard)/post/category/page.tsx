@@ -7,6 +7,7 @@ import categoryListTableColumns from "@/app/admin/(dashboard)/post/category/comp
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { adminListQueryOptions } from "@/app/admin/(dashboard)/config/query-options";
@@ -29,11 +30,7 @@ const Category = () => {
   const canCreateCategory = useCan(Permission.categoryCreate);
   const canUpdateCategory = useCan(Permission.categoryUpdate);
   const canDeleteCategory = useCan(Permission.categoryDelete);
-  /**
-   * 存储用户在表格中选中的行。
-   * 类型为 `CategoryEntity` 数组。
-   */
-  const [selectedRows, setSelectedRows] = useState<CategoryEntity[]>([]);
+  const tableState = useAdminTableState(false);
   /**
    * 控制模态框的显示状态、类型（新增/编辑）以及当前编辑的分类记录。
    */
@@ -46,6 +43,7 @@ const Category = () => {
    */
   const { data, isFetching, isError, refetch } =
     trpc.category.adminTree.useQuery(undefined, adminListQueryOptions);
+  const selectedRows = tableState.getSelectedRows(data?.list);
   /**
    * 删除分类的 tRPC mutation。
    * 用于执行删除操作。
@@ -75,7 +73,9 @@ const Category = () => {
       errorMessage: "删除失败",
     });
     if (state === "success") {
-      setSelectedRows((rows) => rows.filter((row) => !ids.includes(row.id)));
+      tableState.setSelectedRowIds((selected) =>
+        selected.filter((id) => !ids.includes(id)),
+      );
     }
     return state === "success";
   };
@@ -96,22 +96,22 @@ const Category = () => {
   return (
     <>
       <DataTable<CategoryEntity>
-        getRowId={(row) => row.id}
+        getRowId={tableState.getRowId}
+        requestState={tableState.requestState}
         columns={categoryListTableColumns}
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
         }}
         maxHeightRem={12}
-        pagination={false}
         isFetching={isFetching}
         error={isError}
         onRetry={() => {
           void refetch();
         }}
         selectableRows={canDeleteCategory}
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
+        selectedRowIds={tableState.selectedRowIds}
+        onSelectedRowIdsChange={tableState.setSelectedRowIds}
         toolBar={
           <div className="flex gap-1">
             {canCreateCategory && (

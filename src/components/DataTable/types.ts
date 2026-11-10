@@ -37,12 +37,16 @@ export interface DataTableProps<TData> {
   disabledRowSelectable?: (row: TData) => boolean;
   selectedRows?: TData[];
   onSelectionChange?: (selectedRows: TData[]) => void;
+  selectedRowIds?: readonly string[];
+  onSelectedRowIdsChange?: (ids: string[]) => void;
   rowActions?: (row: TData) => React.ReactNode;
   toolBar?: React.ReactNode | ((table: Table<TData>) => React.ReactNode);
   className?: string;
   maxHeightRem?: number;
   stickyHeader?: boolean;
   onChange?: (params: DataTableQueryParams) => void;
+  /** Use the table state that also drives a caller-owned list request. */
+  requestState?: UseDataTableStateResult;
   pagination?: boolean;
 }
 
@@ -69,6 +73,7 @@ export interface UseDataTableStateOptions<TData> {
 }
 
 export interface UseDataTableStateResult {
+  pagination: boolean;
   sorting: SortingState;
   columnFilters: ColumnFiltersState;
   paginationState: DataTablePaginationState;
@@ -85,6 +90,8 @@ export interface UseRowSelectionOptions<TData> {
   isFetching?: boolean;
   getRowId: (row: TData) => string;
   selectedRows: TData[];
+  selectedRowIds?: readonly string[];
+  onSelectedRowIdsChange?: (ids: string[]) => void;
   disabledRowSelectable?: (row: TData) => boolean;
   onSelectionChange?: (selectedRows: TData[]) => void;
 }

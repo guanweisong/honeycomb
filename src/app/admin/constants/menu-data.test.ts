@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Permission, can } from "@/lib/auth/permissions";
 import { UserLevel } from "@/features/user/types/user.level";
 
+import { getAdminRoutePermission } from "@/app/admin/constants/route-capabilities";
 import { getMenuForCapabilities, menu } from "@/app/admin/constants/menu-data";
 
 function paths(items: ReturnType<typeof getMenuForCapabilities>): string[] {
@@ -12,8 +13,10 @@ function paths(items: ReturnType<typeof getMenuForCapabilities>): string[] {
 describe("admin capability navigation", () => {
   it("declares a capability for every navigation entry", () => {
     const declared = menu.flatMap((item) => [
-      item.permission,
-      ...(item.children ?? []).map((child) => child.permission),
+      getAdminRoutePermission(item.path),
+      ...(item.children ?? []).map((child) =>
+        getAdminRoutePermission(child.path),
+      ),
     ]);
 
     expect(declared.every(Boolean)).toBe(true);
@@ -44,8 +47,13 @@ describe("admin capability navigation", () => {
       .find((item) => item.path === "/admin/post")
       ?.children?.find((item) => item.path === "/admin/post/edit");
 
-    expect(setting?.permission).toBe(Permission.settingUpdate);
-    expect(postCreate?.permission).toBe(Permission.postCreate);
+    expect(setting && getAdminRoutePermission(setting.path)).toBe(
+      Permission.settingUpdate,
+    );
+    expect(postCreate && getAdminRoutePermission(postCreate.path)).toBe(
+      Permission.postReadAll,
+    );
+    expect(postCreate?.additionalPermission).toBe(Permission.postCreate);
   });
 
   it.each([

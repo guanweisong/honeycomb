@@ -72,6 +72,9 @@ describe("required persistence results", () => {
       "author",
       invalidator,
     );
+    const deletedId = "507f1f77bcf86cd799439011";
+    db.where.mockResolvedValueOnce([{ id: deletedId, version: 0 }]);
+    db.returning.mockResolvedValueOnce([{ id: deletedId }]);
     await destroyPosts(
       database,
       { items: [{ id: "507f1f77bcf86cd799439011", expectedVersion: 0 }] },

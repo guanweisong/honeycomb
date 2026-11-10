@@ -17,6 +17,45 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it("clamps a deleted last page after its refreshed total arrives", async () => {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  const onChange = vi.fn();
+  const onSelectionChange = vi.fn();
+  const getRowId = (row: Row) => row.id;
+  const columns: ColumnDef<Row>[] = [{ accessorKey: "status", header: "状态" }];
+  const table = (total: number, isFetching = false) => (
+    <DataTable
+      columns={columns}
+      getRowId={getRowId}
+      data={{ list: [], total }}
+      isFetching={isFetching}
+      onChange={onChange}
+      onSelectionChange={onSelectionChange}
+    />
+  );
+  const { getByRole, rerender } = render(table(21));
+  fireEvent.click(getByRole("button", { name: "下一页" }));
+  expect(onChange).toHaveBeenLastCalledWith({ page: 2, limit: 20 });
+  onSelectionChange.mockClear();
+
+  rerender(table(20, true));
+  expect(onChange).toHaveBeenLastCalledWith({ page: 2, limit: 20 });
+  expect(onSelectionChange).not.toHaveBeenCalled();
+  rerender(table(20));
+
+  await waitFor(() =>
+    expect(onChange).toHaveBeenLastCalledWith({ page: 1, limit: 20 }),
+  );
+  expect(onSelectionChange).toHaveBeenCalledWith([]);
+});
+
 it("preserves the authored filter option contract through the real table header", async () => {
   vi.stubGlobal(
     "ResizeObserver",

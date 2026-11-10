@@ -10,7 +10,10 @@ import type { CategoryListItem } from "@/features/category/types/category.record
 import type { PhotoPickerItemProps } from "@/app/admin/(dashboard)/post/edit/components/PhotoPickerItem";
 import { PostType } from "@/features/post/types/post.type";
 import { postTypeOptions } from "@/app/admin/(dashboard)/post/options";
-import { TagType } from "@/features/tag/types/tag.type";
+import {
+  postTagRoles,
+  type PostTagField as PostTagFieldName,
+} from "@/features/post/rules/post-tag-roles";
 import MultiTag from "@/app/admin/(dashboard)/post/edit/components/MultiTag";
 import PhotoPickerItem from "@/app/admin/(dashboard)/post/edit/components/PhotoPickerItem";
 import { Permission } from "@/lib/auth/permissions";
@@ -23,8 +26,6 @@ interface PostSidebarFieldsProps {
   photoPickerProps: PhotoPickerItemProps;
 }
 
-type PostTagFieldName =
-  "galleryStyles" | "movieActors" | "movieDirectors" | "movieStyles";
 function PostTagField({
   name,
   ...props
@@ -32,12 +33,16 @@ function PostTagField({
   name: PostTagFieldName;
   postId: string;
   title: string;
-  type: TagType;
 }) {
   const { control } = useFormContext<PostEditorValues>();
   const { field } = useController({ control, name });
   return (
-    <MultiTag {...props} value={field.value ?? []} onChange={field.onChange} />
+    <MultiTag
+      {...props}
+      type={postTagRoles[name].type}
+      value={field.value ?? []}
+      onChange={field.onChange}
+    />
   );
 }
 
@@ -91,19 +96,19 @@ export function PostSidebarFields({
           <PostTagField
             postId={postId ?? ""}
             title="导演"
-            type={TagType.DIRECTOR}
+
             name="movieDirectors"
           />
           <PostTagField
             postId={postId ?? ""}
             title="演员"
-            type={TagType.ACTOR}
+
             name="movieActors"
           />
           <PostTagField
             postId={postId ?? ""}
             title="电影风格"
-            type={TagType.MOVIE_STYLE}
+
             name="movieStyles"
           />
         </>
@@ -127,7 +132,7 @@ export function PostSidebarFields({
           <PostTagField
             postId={postId ?? ""}
             title="照片风格"
-            type={TagType.GALLERY_STYLE}
+
             name="galleryStyles"
           />
         </>

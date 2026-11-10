@@ -97,11 +97,11 @@ describe("Link public-sync feedback", () => {
 
         if (operation === "create") {
           await act(async () => requireDefined(actions).handleAddNew());
-          await act(async () => requireDefined(actions).handleModalOk(values));
+          await act(async () => requireDefined(actions).handleCreate(values));
         } else if (operation === "update") {
           await act(async () => requireDefined(actions).handleEditItem(record));
           await act(async () =>
-            requireDefined(actions).handleModalOk({
+            requireDefined(actions).handleUpdate({
               id: record.id,
               name: "Updated",
             }),

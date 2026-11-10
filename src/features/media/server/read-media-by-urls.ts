@@ -5,6 +5,7 @@ import * as schema from "@/lib/db/schema";
 import { SQL_ID_CHUNK_SIZE } from "@/lib/db/query/parameter-limits";
 import { observeDbOperation } from "@/lib/observability/server";
 import type { DatabaseQueryName } from "@/lib/observability/server/database-operation";
+import { assertOrdinaryMediaSchema } from "@/features/media/server/media-schema-readiness";
 
 /** Keep SQL bindings bounded without truncating localized content image URLs. */
 export async function readMediaByUrls(
@@ -12,6 +13,8 @@ export async function readMediaByUrls(
   urls: string[],
   operation: DatabaseQueryName,
 ) {
+  if (!urls.length) return [];
+  await assertOrdinaryMediaSchema(db);
   const images: (typeof schema.media.$inferSelect)[] = [];
   for (let offset = 0; offset < urls.length; offset += SQL_ID_CHUNK_SIZE) {
     images.push(

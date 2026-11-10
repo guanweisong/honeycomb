@@ -25,8 +25,12 @@ it("rejects tampering, wrong actor, malformed payload, and expiry", () => {
   vi.advanceTimersByTime(3600_000);
   expect(() => intents.verifyUploadIntent(intent, "actor")).toThrow();
 });
-it("rejects invalid digests before producing a capability", () => {
-  expect(() =>
-    intents.createUploadIntent({ ...file, sha256: "A".repeat(64) }, "actor"),
-  ).toThrow();
+it("rejects a signed capability containing invalid file metadata", () => {
+  const { intent } = intents.createUploadIntent(
+    { ...file, sha256: "A".repeat(64) },
+    "actor",
+  );
+  expect(() => intents.verifyUploadIntent(intent, "actor")).toThrow(
+    "上传凭证无效",
+  );
 });

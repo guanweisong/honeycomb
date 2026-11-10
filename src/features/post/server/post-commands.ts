@@ -5,21 +5,23 @@ import {
 } from "@/lib/db/transaction-begin-retry";
 import { hashCanonicalInput } from "@/lib/canonical-input-hash";
 import { parseEnumValue } from "@/lib/db/value-validation";
-import { and, eq, sql } from "drizzle-orm";
+import { assembleLocalizedField } from "@/lib/db/translation-values";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import type { Database } from "@/lib/db/db";
 import { observeDbOperation } from "@/lib/observability/server";
 import { PostStatus } from "@/features/post/types/post.status";
-import { TagType } from "@/features/tag/types/tag.type";
-import { UserStatus } from "@/features/user/types/user.status";
-import { can, Permission } from "@/lib/auth/permissions";
+import { postTagRoles } from "@/features/post/rules/post-tag-roles";
+import { requireActiveActor } from "@/features/user/server/require-active-actor";
+import { Permission } from "@/lib/auth/permissions";
 import { ApplicationError } from "@/lib/errors/application-error";
-import { toPostInsertValues, toPostUpdateValues } from "@/features/post/server/post-transforms";
 import {
-  groupPostTranslations,
+  toPostInsertValues,
+  toPostUpdateValues,
+} from "@/features/post/server/post-transforms";
+import {
   patchPostTranslationRows,
   sanitizePostTranslationInput,
-  toPostTranslationRows,
 } from "@/features/post/server/post-translations";
 import { PostDeleteSchema } from "@/features/post/schemas/post.delete.schema";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
@@ -31,54 +33,24 @@ import type {
 import type { PostUpdate } from "@/features/post/types/post.update";
 import type { PostDelete } from "@/features/post/types/post.delete";
 import type { PublicContentInvalidator } from "@/lib/cache/public-content-invalidator";
-import { DomainError } from "@/lib/errors/domain-error";
-import {
-  getPostPublishStatus,
-  getPostWithdrawStatus,
-} from "@/features/post/rules/post-publication";
+import { assertPublicationStatusChange } from "@/lib/validation/publication-status";
 import { assertMediaReferencesExist } from "@/features/media/server/media-references";
 
 const busyMessage = "保存暂时繁忙，请核对结果后重试";
 
-const relationRoles = {
-  movieActorIds: TagType.ACTOR,
-  movieDirectorIds: TagType.DIRECTOR,
-  movieStyleIds: TagType.MOVIE_STYLE,
-  galleryStyleIds: TagType.GALLERY_STYLE,
-} as const;
-const relationKeys = Object.keys(
-  relationRoles,
-) as (keyof typeof relationRoles)[];
 function hasRelationPatch(input: PostRelationPatch) {
-  return relationKeys.some((key) => input[key] !== undefined);
-}
-async function requireActor(
-  tx: DatabaseTransaction,
-  actorId: string,
-  permissions: Permission[],
-) {
-  const [actor] = await tx
-    .select({ level: schema.user.level, status: schema.user.status })
-    .from(schema.user)
-    .where(eq(schema.user.id, actorId))
-    .limit(1);
-  if (
-    !actor ||
-    actor.status !== UserStatus.ENABLE ||
-    permissions.some((permission) => !can(actor.level, permission))
-  ) {
-    throw new ApplicationError("FORBIDDEN", "当前账户无权保存此文章");
-  }
+  return Object.values(postTagRoles).some(
+    ({ input: key }) => input[key] !== undefined,
+  );
 }
 async function patchRelations(
   tx: DatabaseTransaction,
   id: string,
   input: PostRelationPatch,
 ) {
-  for (const key of relationKeys) {
+  for (const { input: key, type } of Object.values(postTagRoles)) {
     const ids = input[key];
     if (ids === undefined) continue;
-    const type = relationRoles[key];
     await tx
       .delete(schema.postTag)
       .where(and(eq(schema.postTag.postId, id), eq(schema.postTag.type, type)));
@@ -125,10 +97,15 @@ export async function createPost(
   const creationInputHash = hashCanonicalInput(intent);
   const result = await observeDbOperation("post.create", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [
-        Permission.postCreate,
-        ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
-      ]);
+      await requireActiveActor(
+        tx,
+        actorId,
+        [
+          Permission.postCreate,
+          ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
+        ],
+        "当前账户无权保存此文章",
+      );
       const [created] = await tx
         .insert(schema.post)
         .values({
@@ -158,13 +135,14 @@ export async function createPost(
           );
         return safeResult(existing);
       }
-      const translations = toPostTranslationRows(
+      const translations = patchPostTranslationRows(
         created.id,
+        [],
         sanitizePostTranslationInput(input),
       );
       await assertMediaReferencesExist(tx, {
         coverId: input.coverId,
-        content: groupPostTranslations(translations).get(created.id)?.content,
+        content: assembleLocalizedField(translations, (row) => row.content),
       });
       if (translations.length)
         await tx.insert(schema.postTranslation).values(translations);
@@ -183,7 +161,12 @@ export async function getPostCreationResult(
   actorId: string,
 ) {
   return transactionWithBeginRetry(db, busyMessage, async (tx) => {
-    await requireActor(tx, actorId, [Permission.postCreate]);
+    await requireActiveActor(
+      tx,
+      actorId,
+      [Permission.postCreate],
+      "当前账户无权保存此文章",
+    );
     const [result] = await tx
       .select({ id: schema.post.id, version: schema.post.version })
       .from(schema.post)
@@ -209,36 +192,49 @@ export async function destroyPosts(
   if (!parsed.success)
     throw new ApplicationError("BAD_REQUEST", "文章删除输入不合法");
   input = parsed.data;
+  const ids = input.items.map(({ id }) => id);
   await observeDbOperation("post.destroy", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [Permission.postDelete]);
-      for (const item of input.items) {
-        const [current] = await tx
-          .select({ version: schema.post.version })
-          .from(schema.post)
-          .where(eq(schema.post.id, item.id))
-          .limit(1);
-        if (!current) throw new ApplicationError("NOT_FOUND", "文章不存在");
-        if (current.version !== item.expectedVersion)
-          throw new ApplicationError("CONFLICT", "文章已修改，请刷新后再删除");
-        const [deleted] = await tx
-          .delete(schema.post)
-          .where(
-            and(
-              eq(schema.post.id, item.id),
-              eq(schema.post.version, item.expectedVersion),
-            ),
-          )
-          .returning({ id: schema.post.id });
-        if (!deleted)
-          throw new ApplicationError("CONFLICT", "文章已修改，请刷新后再删除");
+      await requireActiveActor(
+        tx,
+        actorId,
+        [Permission.postDelete],
+        "当前账户无权保存此文章",
+      );
+      const versions = new Map(
+        (
+          await tx
+            .select({ id: schema.post.id, version: schema.post.version })
+            .from(schema.post)
+            .where(inArray(schema.post.id, ids))
+        ).map((row) => [row.id, row.version]),
+      );
+      const conflict = () =>
+        new ApplicationError("CONFLICT", "文章已修改，请刷新后再删除");
+      for (const { id, expectedVersion } of input.items) {
+        const current = versions.get(id);
+        if (current === undefined)
+          throw new ApplicationError("NOT_FOUND", "文章不存在");
+        if (current !== expectedVersion) throw conflict();
       }
+      const deleted = await tx
+        .delete(schema.post)
+        .where(
+          or(
+            ...input.items.map(({ id, expectedVersion }) =>
+              and(
+                eq(schema.post.id, id),
+                eq(schema.post.version, expectedVersion),
+              ),
+            ),
+          ),
+        )
+        .returning({ id: schema.post.id });
+      const deletedIds = new Set(deleted.map((row) => row.id));
+      if (ids.some((id) => !deletedIds.has(id))) throw conflict();
     }),
   );
-  const publicSync = await invalidatePosts(
-    invalidator,
-    input.items.map(({ id }) => id),
-  );
+  const publicSync = await invalidatePosts(invalidator, ids);
   return { success: true as const, publicSync: publicSync.state };
 }
 
@@ -255,10 +251,15 @@ export async function updatePost(
   input = parsed.data;
   const result = await observeDbOperation("post.update", "transaction", () =>
     transactionWithBeginRetry(db, busyMessage, async (tx) => {
-      await requireActor(tx, actorId, [
-        Permission.postUpdate,
-        ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
-      ]);
+      await requireActiveActor(
+        tx,
+        actorId,
+        [
+          Permission.postUpdate,
+          ...(hasRelationPatch(input) ? [Permission.postManageTags] : []),
+        ],
+        "当前账户无权保存此文章",
+      );
       const [current] = await tx
         .select()
         .from(schema.post)
@@ -275,22 +276,17 @@ export async function updatePost(
         Object.values(PostStatus),
         "post.status",
       );
-      let status = input.status;
-      if (status !== undefined && status !== currentStatus) {
-        if (status === PostStatus.PUBLISHED)
-          status = getPostPublishStatus(input.id, currentStatus);
-        else if (status === PostStatus.DRAFT)
-          status = getPostWithdrawStatus(input.id, currentStatus);
-        else
-          throw new DomainError(
-            `文章不支持变更为 ${status}`,
-            "INVALID_POST_STATUS",
-          );
-      }
+      assertPublicationStatusChange(
+        input.id,
+        currentStatus,
+        input.status,
+        PostStatus,
+        "post",
+      );
       const [updated] = await tx
         .update(schema.post)
         .set({
-          ...toPostUpdateValues({ ...input, status }),
+          ...toPostUpdateValues(input),
           version: sql`${schema.post.version} + 1`,
           updatedAt: new Date().toISOString(),
         })
@@ -334,8 +330,8 @@ export async function updatePost(
       );
       await assertMediaReferencesExist(tx, {
         coverId: input.coverId === undefined ? current.coverId : input.coverId,
-        content: groupPostTranslations(next).get(input.id)?.content,
-        previousContent: groupPostTranslations(rows).get(input.id)?.content,
+        content: assembleLocalizedField(next, (row) => row.content),
+        previousContent: assembleLocalizedField(rows, (row) => row.content),
       });
       if (
         Object.values(translationInput).some((value) => value !== undefined) ||
@@ -363,7 +359,7 @@ export async function incrementPostViews(db: Database, id: string) {
       db
         .update(schema.post)
         .set({
-          views: sql`${schema.post.views} + 1`,
+          views: sql`coalesce(${schema.post.views}, 0) + 1`,
           updatedAt: sql`${schema.post.updatedAt}`,
         })
         .where(

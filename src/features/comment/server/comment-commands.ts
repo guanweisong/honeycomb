@@ -24,7 +24,7 @@ export interface CreateCommentDependencies {
   repository: Pick<CommentCommandRepository, "createIfTargetMatches">;
   targetRepository: CommentTargetRepository;
   validateCaptcha: (token?: string) => Promise<void>;
-  notify: (commentId: string, parentId?: string | null) => Promise<void>;
+  notify: (commentId: string) => Promise<void>;
   logNotificationFailure: (error: unknown) => void;
   invalidator: PublicContentInvalidator;
 }
@@ -105,7 +105,7 @@ export async function createComment(
     throw new ApplicationError("BAD_REQUEST", "评论目标已变更，请刷新后重试");
   }
   try {
-    await notify(created.id, comment.parentId);
+    await notify(created.id);
   } catch (error) {
     logNotificationFailure(error);
   }

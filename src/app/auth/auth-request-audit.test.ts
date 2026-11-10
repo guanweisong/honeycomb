@@ -1,5 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { createAuthRequestAuditHandler } from "@/app/auth/auth-request-audit";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  createAppAuthRequestHandler,
+  createAuthRequestAuditHandler,
+} from "@/app/auth/auth-request-audit";
 
 describe("createAuthRequestAuditHandler", () => {
   it("isolates Better Auth from the original request being consumed during audit", async () => {
@@ -175,13 +178,18 @@ describe("createAuthRequestAuditHandler", () => {
     );
   });
 
-  it.each(["/sign-in/social", "/passkey/verify-authentication"])(
+  it.each([
+    ["/sign-in/social", "INVALID_TOKEN"],
+    ["/passkey/verify-authentication", "AUTHENTICATION_FAILED"],
+  ])(
     "does not infer a user from password identifiers on %s",
-    async (path) => {
+    async (path, code) => {
       const findUserIdByIdentifier = vi.fn();
       const recordHistory = vi.fn();
       const handler = createAuthRequestAuditHandler({
-        handle: vi.fn().mockResolvedValue(Response.json({}, { status: 401 })),
+        handle: vi
+          .fn()
+          .mockResolvedValue(Response.json({ code }, { status: 401 })),
         getSession: vi.fn(),
         findUserIdByIdentifier,
         recordHistory,
@@ -207,7 +215,14 @@ describe("createAuthRequestAuditHandler", () => {
     const findUserIdByIdentifier = vi.fn();
     const recordHistory = vi.fn();
     const handler = createAuthRequestAuditHandler({
-      handle: vi.fn().mockResolvedValue(Response.json({}, { status: 401 })),
+      handle: vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { code: "INVALID_USERNAME_OR_PASSWORD" },
+            { status: 401 },
+          ),
+        ),
       getSession: vi.fn(),
       findUserIdByIdentifier,
       recordHistory,
@@ -223,5 +238,177 @@ describe("createAuthRequestAuditHandler", () => {
     expect(recordHistory).toHaveBeenCalledWith(
       expect.objectContaining({ userId: null }),
     );
+  });
+});
+
+describe("authentication failure audit boundaries", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    ["/callback/github", 302, undefined, "/admin", undefined],
+    [
+      "/callback/github",
+      302,
+      undefined,
+      "/admin?error=application_value",
+      "better-auth.session_token=fixture; Path=/; HttpOnly",
+    ],
+    ["/sign-in/email", 429, undefined, undefined, undefined],
+    ["/sign-in/email", 400, "MISSING_RESPONSE", undefined, undefined],
+    ["/sign-in/username", 403, "VERIFICATION_FAILED", undefined, undefined],
+    ["/sign-in/social", 400, "VALIDATION_ERROR", undefined, undefined],
+    [
+      "/passkey/verify-authentication",
+      400,
+      "VALIDATION_ERROR",
+      undefined,
+      undefined,
+    ],
+    [
+      "/callback/github",
+      302,
+      undefined,
+      "/api/auth/error?error=state_not_found",
+      undefined,
+    ],
+  ] as const)(
+    "leaves the audit database untouched for %s returning %i",
+    async (path, status, code, location, cookie) => {
+      const headers = new Headers();
+      if (location) headers.set("location", location);
+      if (cookie) headers.append("set-cookie", cookie);
+      const response = code
+        ? Response.json({ code }, { status, headers })
+        : new Response(null, { status, headers });
+      const findUserIdByIdentifier = vi.fn();
+      const recordHistory = vi.fn();
+      const handler = createAuthRequestAuditHandler({
+        handle: async () => response,
+        getSession: async () => null,
+        findUserIdByIdentifier,
+        recordHistory,
+      });
+
+      expect(
+        await handler(new Request(`https://example.test/api/auth${path}`)),
+      ).toBe(response);
+      expect(findUserIdByIdentifier).not.toHaveBeenCalled();
+      expect(recordHistory).not.toHaveBeenCalled();
+    },
+  );
+
+  it("records an OAuth provider's error redirect without reading a user", async () => {
+    const response = new Response(null, {
+      status: 302,
+      headers: {
+        location: "https://example.test/api/auth/error?error=access_denied",
+      },
+    });
+    const findUserIdByIdentifier = vi.fn();
+    const recordHistory = vi.fn();
+    const handler = createAuthRequestAuditHandler({
+      handle: async () => response,
+      getSession: async () => null,
+      findUserIdByIdentifier,
+      recordHistory,
+    });
+
+    expect(
+      await handler(
+        new Request(
+          "https://example.test/api/auth/callback/github?state=valid",
+        ),
+      ),
+    ).toBe(response);
+    expect(findUserIdByIdentifier).not.toHaveBeenCalled();
+    expect(recordHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "LOGIN_FAILURE",
+        provider: "github",
+        userId: null,
+      }),
+    );
+  });
+
+  it("preserves a genuine failed response after the audit budget is exhausted", async () => {
+    const response = Response.json(
+      { code: "INVALID_EMAIL_OR_PASSWORD" },
+      { status: 401 },
+    );
+    const findUserIdByIdentifier = vi.fn();
+    const recordHistory = vi.fn();
+    const handler = createAuthRequestAuditHandler({
+      handle: async () => response,
+      getSession: async () => null,
+      findUserIdByIdentifier,
+      recordHistory,
+      allowFailureAudit: () => false,
+    });
+    const request = new Request("https://example.test/api/auth/sign-in/email", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "reader@example.test",
+        password: "fixture",
+      }),
+    });
+
+    expect(await handler(request)).toBe(response);
+    expect(findUserIdByIdentifier).not.toHaveBeenCalled();
+    expect(recordHistory).not.toHaveBeenCalled();
+  });
+
+  it("replaces the internal Better Auth IP header with the ingress-selected value", async () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
+    const handler = createAppAuthRequestHandler(
+      { api: { getSession: async () => null } },
+      async (request) =>
+        Response.json({
+          ip: request.headers.get("x-honeycomb-client-ip"),
+        }),
+    );
+    const headers = new Headers({
+      "x-honeycomb-client-ip": "198.51.100.11",
+      "x-forwarded-for": "198.51.100.12, 203.0.113.8, 10.0.0.1",
+    });
+    const url = "https://example.test/api/auth/get-session";
+
+    expect(await (await handler(new Request(url, { headers }))).json()).toEqual(
+      {
+        ip: "203.0.113.8",
+      },
+    );
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "0");
+    expect(await (await handler(new Request(url, { headers }))).json()).toEqual(
+      {
+        ip: "0.0.0.0",
+      },
+    );
+  });
+
+  it("forwards the streamed body of a framework Request proxy without requiring its native brand", async () => {
+    function wrap(request: Request): Request {
+      return new Proxy(request, {
+        get(target, key) {
+          if (key === "clone") return () => wrap(target.clone());
+          const value: unknown = Reflect.get(target, key, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    }
+    const handler = createAppAuthRequestHandler(
+      { api: { getSession: async () => null } },
+      async (request) => Response.json(await request.json()),
+    );
+    const request = new Request(
+      "https://example.test/api/auth/sign-in/username",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username: "fixture" }),
+      },
+    );
+    expect(await (await handler(wrap(request))).json()).toEqual({
+      username: "fixture",
+    });
   });
 });

@@ -1,6 +1,19 @@
 import * as React from "react";
 import type { CheckedState } from "radix-ui/checkbox";
-import type { UseRowSelectionOptions, UseRowSelectionResult } from "@/components/DataTable/types";
+import type {
+  UseRowSelectionOptions,
+  UseRowSelectionResult,
+} from "@/components/DataTable/types";
+
+export function selectedRowsById<TData>(
+  selectableById: ReadonlyMap<string, TData>,
+  selectedIds: readonly string[],
+): TData[] {
+  return [...new Set(selectedIds)].flatMap((id) => {
+    const row = selectableById.get(id);
+    return row === undefined ? [] : [row];
+  });
+}
 
 export function useRowSelection<TData>(
   options: UseRowSelectionOptions<TData>,
@@ -10,6 +23,8 @@ export function useRowSelection<TData>(
     isFetching,
     getRowId,
     selectedRows,
+    selectedRowIds,
+    onSelectedRowIdsChange,
     disabledRowSelectable,
     onSelectionChange,
   } = options;
@@ -22,29 +37,48 @@ export function useRowSelection<TData>(
     [getRowId, selectableRows],
   );
   // 选择仅属于当前页；刷新时保留业务身份，但使用最新记录（包括版本）。
-  const currentSelectedRows = React.useMemo(() => {
-    const seen = new Set<string>();
-    return selectedRows.flatMap((row) => {
-      const id = getRowId(row);
-      const current = selectableById.get(id);
-      if (current === undefined || seen.has(id)) return [];
-      seen.add(id);
-      return [current];
-    });
-  }, [getRowId, selectableById, selectedRows]);
+  const currentSelectedRows = React.useMemo(
+    () =>
+      selectedRowsById(
+        selectableById,
+        selectedRowIds ?? selectedRows.map(getRowId),
+      ),
+    [getRowId, selectableById, selectedRowIds, selectedRows],
+  );
+  const selectedIds = React.useMemo(
+    () => new Set(currentSelectedRows.map(getRowId)),
+    [currentSelectedRows, getRowId],
+  );
 
   React.useEffect(() => {
-    if (
+    if (selectedRowIds !== undefined) {
+      if (selectedIds.size !== selectedRowIds.length) {
+        onSelectedRowIdsChange?.([...selectedIds]);
+      }
+    } else if (
       currentSelectedRows.length !== selectedRows.length ||
       currentSelectedRows.some((row, index) => row !== selectedRows[index])
     ) {
       onSelectionChange?.(currentSelectedRows);
     }
-  }, [currentSelectedRows, onSelectionChange, selectedRows]);
+  }, [
+    currentSelectedRows,
+    onSelectedRowIdsChange,
+    onSelectionChange,
+    selectedIds,
+    selectedRowIds,
+    selectedRows,
+  ]);
 
-  const selectedIds = React.useMemo(
-    () => new Set(currentSelectedRows.map(getRowId)),
-    [currentSelectedRows, getRowId],
+  const changeSelection = React.useCallback(
+    (rows: TData[]) => {
+      if (selectedRowIds !== undefined) {
+        onSelectedRowIdsChange?.(rows.map(getRowId));
+      } else {
+        onSelectionChange?.(rows);
+      }
+    },
+    [getRowId, onSelectedRowIdsChange, onSelectionChange, selectedRowIds],
   );
   const isRowSelected = React.useCallback(
     (row: TData) => selectedIds.has(getRowId(row)),
@@ -55,9 +89,9 @@ export function useRowSelection<TData>(
   const handleSelectAll = React.useCallback(
     (checked: CheckedState) => {
       if (isFetching) return;
-      onSelectionChange?.(checked === true ? [...selectableById.values()] : []);
+      changeSelection(checked === true ? [...selectableById.values()] : []);
     },
-    [isFetching, onSelectionChange, selectableById],
+    [changeSelection, isFetching, selectableById],
   );
   const handleSelectRow = React.useCallback(
     (row: TData, checked: CheckedState) => {
@@ -67,17 +101,17 @@ export function useRowSelection<TData>(
       const remaining = currentSelectedRows.filter(
         (selected) => getRowId(selected) !== id,
       );
-      onSelectionChange?.(
+      changeSelection(
         checked === true && current !== undefined
           ? [...remaining, current]
           : remaining,
       );
     },
     [
+      changeSelection,
       currentSelectedRows,
       getRowId,
       isFetching,
-      onSelectionChange,
       selectableById,
     ],
   );

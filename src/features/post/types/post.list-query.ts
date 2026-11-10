@@ -1,6 +1,9 @@
 import type { z } from "zod";
 import type { PaginationInput } from "@/lib/validation/pagination";
-import type { PostListQuerySchema } from "@/features/post/schemas/post.list-query.schema";
+import type {
+  PostListQuerySchema,
+  PublicPostCursorSchema,
+} from "@/features/post/schemas/post.list-query.schema";
 
 export type PostVisibility = "PUBLISHED_ONLY" | "ALL";
 
@@ -13,3 +16,4 @@ export type PostListInput = PaginationInput & {
 };
 
 export type PostListQueryInput = z.output<typeof PostListQuerySchema>;
+export type PublicPostCursor = z.output<typeof PublicPostCursorSchema>;

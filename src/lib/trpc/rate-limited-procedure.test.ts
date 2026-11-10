@@ -1,10 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMockContext, createMockDb } from "@tests/helpers/test-utils";
 import { createTRPCRouter } from "@/lib/trpc/core";
 import { createRateLimitedPublicProcedure } from "@/lib/trpc/rate-limited-procedure";
 
 describe("createRateLimitedPublicProcedure", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("rejects before the handler when the independent limit is exhausted", async () => {
+    vi.stubEnv("TRUSTED_PROXY_HOPS", "1");
     const handler = vi.fn(() => "handled");
     const limiter = {
       limit: vi.fn().mockResolvedValue({

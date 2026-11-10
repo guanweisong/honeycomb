@@ -74,15 +74,6 @@ describe("Post Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      // 设置文章列表查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(
-        mockPosts.map((post) => ({ id: post.id })),
-      );
       mockDb.query.post.findMany.mockResolvedValueOnce(
         mockPosts.map((post) => ({
           ...post,
@@ -125,20 +116,9 @@ describe("Post Router", () => {
     });
 
     it("should handle empty post list", async () => {
-      const mockPosts: unknown[] = [];
       const mockCount = [{ count: "0" }];
 
-      // 设置空文章列表查询的模拟调用链。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockPosts);
-
-      // 设置总数查询的模拟调用。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.query.post.findMany.mockResolvedValueOnce([]);
       mockDb.where.mockResolvedValueOnce(mockCount);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
@@ -152,16 +132,7 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when tagId has no posts", async () => {
-      // EXISTS 标签筛选直接用于文章列表和总数，不再预查文章 ID。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce([]);
-
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.query.post.findMany.mockResolvedValueOnce([]);
       mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
@@ -176,16 +147,7 @@ describe("Post Router", () => {
     });
 
     it("should return empty list when authorId has no posts", async () => {
-      // 模拟 postTag 风格的作者筛选查询不返回文章。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce([]);
-
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
+      mockDb.query.post.findMany.mockResolvedValueOnce([]);
       mockDb.where.mockResolvedValueOnce([{ count: "0" }]);
 
       const caller = postRouter.createCaller(createMockContext(null, mockDb));
@@ -281,8 +243,18 @@ describe("Post Router", () => {
       mockDb.limit.mockResolvedValueOnce([
         { level: UserLevel.ADMIN, status: UserStatus.ENABLE },
       ]);
-      mockDb.limit.mockResolvedValue([{ version: 0 }]);
-      mockDb.returning.mockResolvedValue([{ id: TEST_IDS.ID_1 }]);
+
+      const rows = [TEST_IDS.ID_1, TEST_IDS.ID_2].map((id) => ({
+        id,
+        version: 0,
+      }));
+      const read = createMockDb();
+      read.where.mockResolvedValue(rows);
+      const from = mockDb.from.getMockImplementation();
+      mockDb.from.mockImplementation((table: object) =>
+        table === schema.post ? read : (from?.(table) ?? mockDb),
+      );
+      mockDb.returning.mockResolvedValue(rows);
 
       const caller = postRouter.createCaller(
         createMockContext(createAdminUser(TEST_IDS.ID_1), mockDb),

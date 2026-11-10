@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/lib/i18n/routing";
 import { apiRatelimit, limitWithTimeout } from "@/lib/rate-limit/rate-limit";
-import { getClientIp } from "@/lib/http/client-ip";
+import { getClientIp } from "@/lib/http/client-ip.server";
 import { ADMIN_PATHNAME_HEADER } from "@/app/admin/constants/route-capabilities";
 
 const i18nMiddleware = createMiddleware(routing);
@@ -80,6 +80,9 @@ export const config = {
   matcher: [
     "/api/:path*",
     "/admin/:path*",
+    // A localized missing URL can still contain dots. Keep its language on
+    // the routing-level 404 without matching unlocalized static assets.
+    "/:locale(en|zh)/:path*",
     "/((?!api|trpc|_next|_vercel|admin|.*\\..*).*)",
   ],
 };

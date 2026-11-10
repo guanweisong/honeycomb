@@ -2,7 +2,6 @@ import "server-only";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
-import { serializeError } from "@/lib/observability/core/sanitize";
 import { getLogger, getMetrics } from "@/lib/observability/server/registry";
 import { can, isPermission, type Permission } from "@/lib/auth/permissions";
 import { ApplicationError } from "@/lib/errors/application-error";
@@ -98,7 +97,7 @@ const requestObservabilityMiddleware = t.middleware(
     if (outcome === "INTERNAL_SERVER_ERROR") {
       getLogger().error(LogEvent.requestFailed, {
         ...completedContext,
-        error: serializeError(result.error.cause ?? result.error),
+        error: result.error.cause ?? result.error,
       });
     } else {
       getLogger().warn(LogEvent.requestFailed, completedContext);

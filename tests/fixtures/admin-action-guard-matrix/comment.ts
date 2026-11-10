@@ -35,8 +35,8 @@ export const commentActionGuardMatrix: readonly ActionGuardFile[] = [
         permission: Permission.commentModerate,
         control: {
           tag: "DataTable",
-          attribute: "onSelectionChange",
-          reference: "setSelectedRows",
+          attribute: "onSelectedRowIdsChange",
+          expression: "tableState.setSelectedRowIds",
         },
         guard: {
           kind: "attribute",

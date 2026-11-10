@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
 import { getQueryKey } from "@trpc/react-query";
 import { observable } from "@trpc/server/observable";
-import { waitFor } from "@testing-library/dom";
+import { waitFor, within } from "@testing-library/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { trpc } from "@/lib/trpc/client/trpc";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
@@ -37,9 +37,12 @@ vi.mock(
 vi.mock("@/app/admin/(dashboard)/post/edit/components/PostTypeFields", () => ({
   PostTypeFields: () => null,
 }));
-vi.mock("@/app/admin/(dashboard)/post/edit/components/PostSidebarFields", () => ({
-  PostSidebarFields: () => null,
-}));
+vi.mock(
+  "@/app/admin/(dashboard)/post/edit/components/PostSidebarFields",
+  () => ({
+    PostSidebarFields: () => null,
+  }),
+);
 vi.mock("@/app/admin/(dashboard)/components/PhotoPicker/index", () => ({
   default: () => null,
 }));
@@ -70,18 +73,27 @@ describe("creation-result cache ownership with a real delayed tRPC transport", (
     container.remove();
   });
 
-  it.each(
-    (["post", "page"] as const).flatMap((kind) =>
-      (["mounted", "unmount", "account", "manual"] as const).flatMap(
-        (lifecycle) =>
-          (["success", "missing", "error"] as const).map((outcome) => ({
-            kind,
-            lifecycle,
-            outcome,
-          })),
-      ),
+  const lifecycles = ["mounted", "unmount", "account", "manual"] as const;
+  const outcomes = ["success", "missing", "error"] as const;
+
+  // The shared hook handles all lifecycle/outcome combinations. Use Post for
+  // that matrix and exercise Page's endpoint, account switch and manual UI.
+  it.each([
+    ...lifecycles.flatMap((lifecycle) =>
+      outcomes.map((outcome) => ({
+        kind: "post" as const,
+        lifecycle,
+        outcome,
+      })),
     ),
-  )(
+    { kind: "page", lifecycle: "mounted", outcome: "success" },
+    { kind: "page", lifecycle: "account", outcome: "success" },
+    ...outcomes.map((outcome) => ({
+      kind: "page" as const,
+      lifecycle: "manual" as const,
+      outcome,
+    })),
+  ] as const)(
     "owns automatic $kind confirmation after $lifecycle with $outcome",
     async ({ kind, lifecycle, outcome }) => {
       const creationToken = crypto.randomUUID();
@@ -236,11 +248,18 @@ describe("creation-result cache ownership with a real delayed tRPC transport", (
         expect(nextAccountCache.getQueryData(confirmedKey)).toBeUndefined();
         nextAccountCache.clear();
       }
-      if (lifecycle === "manual" && kind === "page" && outcome === "success")
+      if (lifecycle === "manual" && kind === "page" && outcome === "success") {
         expect(state.push).toHaveBeenCalledWith(
           "/admin/page/edit?id=123456789012345678901234",
         );
-      else expect(state.push).not.toHaveBeenCalled();
+      } else {
+        expect(state.push).not.toHaveBeenCalled();
+      }
+      if (lifecycle === "manual" && kind === "post" && outcome === "success") {
+        expect(
+          within(container).getByRole("button", { name: "打开已创建文章" }),
+        ).toBeDefined();
+      }
     },
   );
 });

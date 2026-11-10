@@ -1,8 +1,17 @@
 "use client";
 
 import { UploadCloud } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useCan, useCurrentUser } from "@/app/admin/(dashboard)/providers/use-current-user";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import {
+  useCan,
+  useCurrentUser,
+} from "@/app/admin/(dashboard)/providers/use-current-user";
 import { Permission } from "@/lib/auth/permissions";
 import type { MediaRecord as MediaViewModel } from "@/features/media/types/media.record";
 import { Button } from "@/components/ui/button";
@@ -12,34 +21,40 @@ import { useMediaActions } from "@/app/admin/(dashboard)/media/media-actions";
 import { useMediaQuery } from "@/app/admin/(dashboard)/media/components/media-query";
 import { MEDIA_MIME_TYPES } from "@/features/media/types/media.upload-policy";
 
-export interface MediaProps {
-  onSelect?: (media: MediaViewModel | undefined) => void;
+export type MediaSelection = {
+  currentItem: MediaViewModel | undefined;
+  setCurrentItem: Dispatch<SetStateAction<MediaViewModel | undefined>>;
+};
+
+export function MediaPageShell({ selection }: { selection?: MediaSelection }) {
+  const { user } = useCurrentUser();
+  const scopeKey = user?.id ?? "signed-out";
+  return selection ? (
+    <MediaPanel key={scopeKey} scopeKey={scopeKey} selection={selection} />
+  ) : (
+    <StandaloneMediaPanel key={scopeKey} scopeKey={scopeKey} />
+  );
 }
 
-export function MediaPageShell({ onSelect }: MediaProps) {
-  const { user } = useCurrentUser();
-  const callback = useRef(onSelect);
-  useEffect(() => {
-    callback.current = onSelect;
-  }, [onSelect]);
-  const previousAccount = useRef(user?.id);
-  useEffect(() => {
-    if (previousAccount.current !== user?.id) callback.current?.(undefined);
-    previousAccount.current = user?.id;
-  }, [user?.id]);
+function StandaloneMediaPanel({ scopeKey }: { scopeKey: string }) {
+  const [currentItem, setCurrentItem] = useState<MediaViewModel>();
   return (
     <MediaPanel
-      key={user?.id ?? "signed-out"}
-      onSelect={onSelect}
-      scopeKey={user?.id ?? "signed-out"}
+      scopeKey={scopeKey}
+      selection={{ currentItem, setCurrentItem }}
     />
   );
 }
-function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
+
+function MediaPanel({
+  scopeKey,
+  selection,
+}: {
+  scopeKey: string;
+  selection: MediaSelection;
+}) {
   const canUploadMedia = useCan(Permission.mediaUpload);
-  const [currentItem, setCurrentItem] = useState<MediaViewModel>();
-  const onSelectRef = useRef(onSelect);
-  const hadSelection = useRef(false);
+  const { currentItem, setCurrentItem } = selection;
   const query = useMediaQuery();
   const { hasMore, loadMore } = query;
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -59,15 +74,6 @@ function MediaPanel({ onSelect, scopeKey }: MediaProps & { scopeKey: string }) {
     failures,
     unavailableIds,
   } = actions;
-
-  useEffect(() => {
-    onSelectRef.current = onSelect;
-  }, [onSelect]);
-
-  useEffect(() => {
-    if (currentItem || hadSelection.current) onSelectRef.current?.(currentItem);
-    hadSelection.current = currentItem !== undefined;
-  }, [currentItem]);
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;

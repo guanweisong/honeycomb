@@ -1,11 +1,7 @@
-import type {
-  PrecacheEntry,
-  SerwistGlobalConfig,
-  SerwistPlugin,
-} from "serwist";
-import { Serwist, Strategy } from "serwist";
+import { Serwist, type PrecacheEntry, type SerwistGlobalConfig } from "serwist";
 import { createStaticOfflineDocument } from "@/lib/pwa/offline-document";
-import { runtimeCache } from "@/app/pwa/service-worker-runtime-cache";
+import { offlinePrecacheUrl } from "@/lib/pwa/precache-config";
+import { createRuntimeCache } from "@/app/pwa/service-worker-runtime-cache";
 
 declare const self: WorkerGlobalScope;
 
@@ -15,31 +11,17 @@ declare global {
   }
 }
 
-const offlineFallbackUrl = "/en/offline";
-
-const serwist = new Serwist({
+const serwist: Serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
+  runtimeCaching: createRuntimeCache({
+    async handlerDidError() {
+      const response = await serwist.matchPrecache(offlinePrecacheUrl);
+      return response ? createStaticOfflineDocument(response) : undefined;
+    },
+  }),
 });
-
-const offlineFallbackPlugin: SerwistPlugin = {
-  async handlerDidError({ request }) {
-    if (request.destination !== "document") return undefined;
-    const response = await serwist.matchPrecache(offlineFallbackUrl);
-    return response ? createStaticOfflineDocument(response) : undefined;
-  },
-};
-
-for (const entry of runtimeCache) {
-  if (
-    entry.handler instanceof Strategy &&
-    !entry.handler.plugins.some((plugin) => "handlerDidError" in plugin)
-  ) {
-    entry.handler.plugins.push(offlineFallbackPlugin);
-  }
-  serwist.registerCapture(entry.matcher, entry.handler, entry.method);
-}
 
 serwist.addEventListeners();

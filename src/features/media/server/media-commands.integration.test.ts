@@ -50,7 +50,11 @@ describe("feature persistence contracts", () => {
       [id],
       "author",
       expect.any(Function),
+      expect.any(AbortSignal),
     );
-    expect(storage.deleteObjects).toHaveBeenCalledWith(["media/final.png"]);
+    expect(storage.deleteObjects).toHaveBeenCalledWith(
+      ["media/final.png"],
+      expect.any(AbortSignal),
+    );
   });
 });

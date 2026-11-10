@@ -1,7 +1,5 @@
-import {
-  readStoredJson,
-  writeVerifiedJson,
-} from "@/app/admin/(dashboard)/draft/verified-storage";
+import { createCreationReceiptStore } from "@/app/admin/(dashboard)/draft/creation-receipts";
+import { writeVerifiedJson } from "@/app/admin/(dashboard)/draft/verified-storage";
 import { z } from "zod";
 import { PostFieldsSchema } from "@/features/post/schemas/post.fields.schema";
 import { PostInsertSchema } from "@/features/post/schemas/post.insert.schema";
@@ -31,33 +29,14 @@ export function parsePostDraft(value: unknown): PostDraft | null {
   return result.success ? result.data : null;
 }
 
-const attemptKey = (userId: string) =>
-  `honeycomb:draft:post:${encodeURIComponent(userId)}:creation-attempt`;
-/** 按账户保存不可变创建意图；发送前同步写入并回读确认，不能依赖草稿防抖落盘。 */
-export function writePostCreationAttempt(
-  userId: string,
-  input: PostInsert,
-): boolean {
-  try {
-    return writeVerifiedJson(attemptKey(userId), PostInsertSchema.parse(input));
-  } catch {
-    return false;
-  }
-}
-export function readPostCreationAttempt(userId: string): PostInsert | null {
-  const result = PostInsertSchema.safeParse(readStoredJson(attemptKey(userId)));
-  return result.success ? result.data : null;
-}
+const creationReceipts = createCreationReceiptStore("post", PostInsertSchema);
+export const writePostCreationAttempt = creationReceipts.write;
+export const readPostCreationAttempt = creationReceipts.read;
 export function clearPostCreationAttempt(
   userId: string,
-  creationToken: string,
+  creationToken: PostInsert["creationToken"],
 ) {
-  try {
-    if (readPostCreationAttempt(userId)?.creationToken === creationToken)
-      window.localStorage.removeItem(attemptKey(userId));
-  } catch {
-    /* Keep editing available when storage is unavailable. */
-  }
+  creationReceipts.clear(userId, creationToken);
 }
 
 /** Preserve the displaced edit when the user explicitly loads a conflicting server version. */

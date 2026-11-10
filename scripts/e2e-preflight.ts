@@ -87,7 +87,12 @@ export function parseE2EArguments(args: readonly string[]) {
   });
   if (inspection && !parsed.values.reporter)
     commandArgs.push("--reporter=list");
-  if (parsed.positionals.length) commandArgs.push("--", ...parsed.positionals);
+  // Playwright treats everything after `--` as script arguments, so file
+  // filters must precede it. A zero-width regex prefix keeps a filter from
+  // being interpreted as a CLI option without changing its match or line range.
+  for (const filter of parsed.positionals) {
+    commandArgs.push(filter.startsWith("-") ? `(?:)${filter}` : filter);
+  }
   return { args: commandArgs, inspection };
 }
 

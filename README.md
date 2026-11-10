@@ -4,7 +4,7 @@
 
 一个基于 Next.js 16 + tRPC + Drizzle ORM 构建的现代化 Serverless 全栈 CMS 系统，实现了端到端类型安全。
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.4.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.6-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.3.1-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -151,6 +151,8 @@ CSP_REPORT_ONLY=true
 生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 阶段不会连接数据库，也不会执行生产启动校验。
 
 R2、Turnstile、Resend、OAuth Provider 与 Upstash 是可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。生产环境中，Upstash 缺失、超时或故障时，通用 API 代理会 fail-open 放行请求以保持可用；评论创建等具有独立限流的入口仍会 fail-closed 拒绝请求，返回 `503`。生产部署应完整配置 Upstash，以启用通用 API 限流和这些受保护的写入入口。
+
+Vercel 环境默认使用平台设置的 `X-Vercel-Forwarded-For`，自托管默认使用匿名限流桶。自托管部署应隔离 Next.js 源站，由最外层可信代理覆盖外来 `X-Forwarded-For` 并写入实际连接地址，后续可信代理各追加一个实际连接地址，再将 `TRUSTED_PROXY_HOPS` 设置为固定的代理层数。应用从右侧按层数选择地址，缺失或格式错误时回退到匿名桶。单层代理配置为 `1`，显式配置为 `0` 可关闭代理头信任。
 
 ### 登录说明
 

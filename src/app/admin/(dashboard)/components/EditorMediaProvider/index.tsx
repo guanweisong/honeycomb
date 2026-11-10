@@ -16,15 +16,10 @@ const loading = () => (
   />
 );
 
-const PhotoPickerModal = dynamic(() => import("@/app/admin/(dashboard)/components/PhotoPicker"), { loading });
-const MediaPageShell = dynamic(
-  () =>
-    import("@/app/admin/(dashboard)/components/MediaPageShell").then(
-      (module) => module.MediaPageShell,
-    ),
+const PhotoPickerModal = dynamic(
+  () => import("@/app/admin/(dashboard)/components/PhotoPicker"),
   { loading },
 );
-
 export function EditorMediaProvider({ children }: { children: ReactNode }) {
   const renderMediaPicker: MediaPickerRenderer = ({
     open,
@@ -35,7 +30,6 @@ export function EditorMediaProvider({ children }: { children: ReactNode }) {
 
     return (
       <PhotoPickerModal
-        pickerContent={(onSelect) => <MediaPageShell onSelect={onSelect} />}
         showPhotoPicker
         handlePhotoPickerOk={(media) => onConfirm({ url: media.url })}
         handlePhotoPickerCancel={onCancel}

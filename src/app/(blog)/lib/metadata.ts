@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import type { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
@@ -13,5 +14,33 @@ export function createLocalizedAlternates(
       en: `/en${path}`,
       zh: `/zh${path}`,
     },
+  };
+}
+
+export async function DynamicMetadataMarker() {
+  await connection();
+  return null;
+}
+
+export function createContentMetadata({
+  locale,
+  path,
+  title,
+  description,
+  type,
+}: {
+  locale: MultiLangEnum;
+  path: `/${string}`;
+  title?: string;
+  description?: string;
+  type: "article" | "website";
+}): Metadata {
+  const social = { title, description, images: [defaultSocialImage] };
+  return {
+    title,
+    description,
+    alternates: createLocalizedAlternates(locale, path),
+    openGraph: { ...social, type },
+    twitter: { ...social, card: "summary_large_image" },
   };
 }

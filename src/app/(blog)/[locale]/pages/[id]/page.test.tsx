@@ -25,7 +25,8 @@ vi.mock("next-intl/server", () => ({
   getLocale: () => Promise.resolve("zh"),
   getTranslations: (...args: unknown[]) => mockGetTranslations(...args),
 }));
-vi.mock("next/navigation", () => ({
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
   },
@@ -70,12 +71,15 @@ vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: ({ views }: { views?: React.ReactNode }) => <>{views}</>,
   PostCommentCount: () => null,
 }));
-vi.mock("@/app/(blog)/components/features/comment/public/components/CommentClient", () => ({
-  default: (props: unknown) => {
-    mockCommentRender(props);
-    return null;
-  },
-}));
+vi.mock(
+  "@/app/(blog)/components/features/comment/public/components/CommentClient",
+  () => ({
+    default: (props: unknown) => {
+      mockCommentRender(props);
+      return null;
+    },
+  }),
+);
 vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
@@ -98,7 +102,7 @@ describe("pages detail page", () => {
           options:
             | "Link"
             | "PostInfo"
-            | { locale: string; namespace: "Link" | "PostInfo" },
+            | { locale: string; namespace: "Comment" | "Link" | "PostInfo" },
         ) => {
           const locale =
             typeof options === "string" ? testLocale : options.locale;
@@ -209,12 +213,11 @@ describe("pages detail page", () => {
     expect(errors).toHaveLength(1);
   });
 
-  it("owns comment rejection immediately while other page data is pending", async () => {
+  it("renders a localized comments fallback while keeping a published page readable", async () => {
     let rejectComments!: (error: Error) => void;
     const comments = new Promise<{ total: number }>((_resolve, reject) => {
       rejectComments = reject;
     });
-    const catchSpy = vi.spyOn(comments, "catch");
     let resolveLinks!: (links: { list: []; total: number }) => void;
     mockLinks.mockReturnValue(
       new Promise((resolve) => {
@@ -226,6 +229,7 @@ describe("pages detail page", () => {
       status: PostStatus.PUBLISHED,
       template: PageTemplate.FRIENDLY_LINKS,
       imagesInContent: [],
+      title: { zh: "友链" },
     });
     mockComments.mockReturnValue(comments);
     await act(async () =>
@@ -239,15 +243,14 @@ describe("pages detail page", () => {
         }),
       ),
     );
-    expect(catchSpy).toHaveBeenCalled();
     expect(mockCommentRender).not.toHaveBeenCalled();
     const failure = new Error("comments unavailable");
     rejectComments(failure);
     await expect(comments).rejects.toBe(failure);
     await act(async () => resolveLinks({ list: [], total: 0 }));
-    expect(mockCommentRender).toHaveBeenCalledWith(
-      expect.objectContaining({ queryCommentPromise: comments }),
-    );
+    expect(container.querySelector("h1")?.textContent).toBe("友链");
+    expect(container.textContent).toContain("评论暂时不可用。");
+    expect(mockCommentRender).not.toHaveBeenCalled();
   });
 
   it("keeps server rendering read-only and reports the view after mounting", async () => {

@@ -57,17 +57,7 @@ describe("Comment Router", () => {
       ];
       const mockCount = [{ count: "2" }];
 
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.orderBy.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockReturnValueOnce(mockDb);
-      mockDb.offset.mockResolvedValueOnce(mockComments);
-
       mockDb.query.comment.findMany.mockResolvedValueOnce(mockComments);
-
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
       mockDb.where.mockResolvedValueOnce(mockCount);
 
       const caller = commentRouter.createCaller(
@@ -76,6 +66,14 @@ describe("Comment Router", () => {
 
       const result = await caller.index({ page: 1, limit: 10 });
 
+      expect(mockDb.select).toHaveBeenCalledOnce();
+      expect(mockDb.query.comment.findMany).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          limit: 10,
+          offset: 0,
+          orderBy: expect.anything(),
+        }),
+      );
       expect(result).toEqual({
         list: mockComments,
         total: 2,

@@ -151,11 +151,11 @@ describe("usePostEditor submission outcomes and validation", () => {
 
       await act(async () => {
         const submit = requireDefined(editor).submit;
-        first = submit(PostStatus.PUBLISHED, action);
+        first = submit(PostStatus.PUBLISHED);
         void first.then(() => {
           settled = true;
         });
-        duplicate = submit(PostStatus.DRAFT, action);
+        duplicate = submit(PostStatus.DRAFT);
       });
 
       expect(mutation).toHaveBeenCalledTimes(1);
@@ -204,7 +204,7 @@ describe("usePostEditor submission outcomes and validation", () => {
 
       await act(async () => {
         await expect(
-          requireDefined(editor).submit(PostStatus.DRAFT, action),
+          requireDefined(editor).submit(PostStatus.DRAFT),
         ).resolves.toBe(false);
       });
       expect(container.textContent).toBe("idle");
@@ -217,7 +217,7 @@ describe("usePostEditor submission outcomes and validation", () => {
 
       await act(async () => {
         await expect(
-          requireDefined(editor).submit(PostStatus.DRAFT, action),
+          requireDefined(editor).submit(PostStatus.DRAFT),
         ).resolves.toBe(true);
       });
       expect(mutation).toHaveBeenCalledTimes(2);
@@ -242,9 +242,7 @@ describe("usePostEditor submission outcomes and validation", () => {
       await renderEditor(action === "update" ? postId : null);
 
       await act(async () => {
-        await expect(
-          requireDefined(editor).submit(status, action),
-        ).resolves.toBe(true);
+        await expect(requireDefined(editor).submit(status)).resolves.toBe(true);
       });
 
       expect(mutation).toHaveBeenCalledOnce();
@@ -286,7 +284,7 @@ describe("usePostEditor submission outcomes and validation", () => {
       });
       await act(async () => {
         await expect(
-          requireDefined(editor).submit(PostStatus.PUBLISHED, "update"),
+          requireDefined(editor).submit(PostStatus.PUBLISHED),
         ).resolves.toBe(true);
       });
       expect(mocks.update).toHaveBeenCalledOnce();
@@ -306,7 +304,7 @@ describe("usePostEditor submission outcomes and validation", () => {
           { shouldDirty: true },
         );
         await expect(
-          requireDefined(editor).submit(PostStatus.DRAFT, "update"),
+          requireDefined(editor).submit(PostStatus.DRAFT),
         ).resolves.toBe(true);
       });
       expect(mocks.update).toHaveBeenNthCalledWith(
@@ -321,7 +319,7 @@ describe("usePostEditor submission outcomes and validation", () => {
     requireDefined(editor).form.setValue("categoryId", "");
     await act(async () => {
       await expect(
-        requireDefined(editor).submit(PostStatus.DRAFT, "create"),
+        requireDefined(editor).submit(PostStatus.DRAFT),
       ).resolves.toBe(false);
     });
     expect(mocks.create).not.toHaveBeenCalled();
@@ -330,7 +328,7 @@ describe("usePostEditor submission outcomes and validation", () => {
     requireDefined(editor).form.setValue("categoryId", "category-1");
     await act(async () => {
       await expect(
-        requireDefined(editor).submit(PostStatus.DRAFT, "create"),
+        requireDefined(editor).submit(PostStatus.DRAFT),
       ).resolves.toBe(true);
     });
   });
@@ -345,7 +343,7 @@ describe("usePostEditor submission outcomes and validation", () => {
       mocks.update.mockRejectedValueOnce(error);
       await renderEditor(postId);
       await act(async () => {
-        await requireDefined(editor).submit(PostStatus.DRAFT, "update");
+        await requireDefined(editor).submit(PostStatus.DRAFT);
       });
       expect(requireDefined(editor).saveProblem).toBe(problem);
       expect(mocks.error).toHaveBeenCalledWith(
@@ -361,7 +359,7 @@ describe("usePostEditor submission outcomes and validation", () => {
     requireDefined(editor).form.setValue("coverId", undefined);
     await act(async () => {
       await expect(
-        requireDefined(editor).submit(PostStatus.DRAFT, "create"),
+        requireDefined(editor).submit(PostStatus.DRAFT),
       ).resolves.toBe(false);
     });
     expect(mocks.create).not.toHaveBeenCalled();
@@ -370,20 +368,17 @@ describe("usePostEditor submission outcomes and validation", () => {
   });
 });
 
-vi.mock(
-  "@/app/admin/(dashboard)/post/edit/components/hooks/use-post-creation-result",
-  async () => {
-    const { trpc } = await import("@/lib/trpc/client/trpc");
-    return {
-      usePostCreationResult: (
-        creationToken: string,
-        _actorId: string | undefined,
-        enabled: boolean,
-      ) =>
-        trpc.post.creationResult.useQuery(
-          { creationToken },
-          { enabled, retry: false },
-        ),
-    };
-  },
-);
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
+  const { trpc } = await import("@/lib/trpc/client/trpc");
+  return {
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
+    ) =>
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
+      ),
+  };
+});

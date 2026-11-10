@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, use, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import { useTranslations } from "next-intl";
 import Card from "@/components/SectionCard";
-import LoadingState from "@/components/LoadingState";
 import type { MenuType } from "@/features/menu/types/menu.type";
 import type {
   CommentTreeViewModel,
@@ -21,36 +20,32 @@ import { useCommentSubmission } from "@/app/(blog)/components/features/comment/p
 export interface CommentClientProps {
   id: string;
   type: MenuType;
-  queryCommentPromise: Promise<CommentTreeViewResponse>;
+  comments: CommentTreeViewResponse;
 }
 
 function CommentListContent({
-  queryCommentPromise,
+  comments,
   onReply,
 }: {
-  queryCommentPromise: Promise<CommentTreeViewResponse>;
-  onReply: (comment: CommentTreeViewModel) => void;
+  comments: CommentTreeViewResponse;
+  onReply: (comment: CommentTreeViewModel, trigger: HTMLButtonElement) => void;
 }) {
-  const comment = use(queryCommentPromise);
   const t = useTranslations("Comment");
 
-  if (!comment || comment.total === 0) return null;
+  if (comments.total === 0) return null;
 
   return (
-    <Card title={t("summary", { count: comment.total })}>
+    <Card title={t("summary", { count: comments.total })}>
       <ul>
-        <CommentTree comments={comment.list} onReply={onReply} />
+        <CommentTree comments={comments.list} onReply={onReply} />
       </ul>
     </Card>
   );
 }
 
-const CommentClient = ({
-  id,
-  type,
-  queryCommentPromise,
-}: CommentClientProps) => {
+const CommentClient = ({ id, type, comments }: CommentClientProps) => {
   const [replyTo, setReplyTo] = useState<CommentTreeViewModel | null>(null);
+  const replyTrigger = useRef<HTMLButtonElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const t = useTranslations("Comment");
@@ -66,20 +61,22 @@ const CommentClient = ({
     clearReply: () => setReplyTo(null),
   });
 
-  const handleReply = (item: CommentTreeViewModel) => {
-    window.scrollTo(0, 99999);
+  const focusCommentInput = () =>
+    formRef.current?.querySelector("textarea")?.focus();
+
+  const handleReply = (
+    item: CommentTreeViewModel,
+    trigger: HTMLButtonElement,
+  ) => {
+    replyTrigger.current = trigger;
+    focusCommentInput();
     submission.onDraftChange();
     setReplyTo(item);
   };
 
   return (
     <div>
-      <Suspense fallback={<LoadingState variant="region" />}>
-        <CommentListContent
-          queryCommentPromise={queryCommentPromise}
-          onReply={handleReply}
-        />
-      </Suspense>
+      <CommentListContent comments={comments} onReply={handleReply} />
       <Card title={t("title")}>
         <CommentForm
           identity={identity}
@@ -91,6 +88,9 @@ const CommentClient = ({
           onCancelReply={() => {
             submission.onDraftChange();
             setReplyTo(null);
+            if (replyTrigger.current?.isConnected) replyTrigger.current.focus();
+            else focusCommentInput();
+            replyTrigger.current = null;
           }}
           onClearIdentity={() => {
             submission.onDraftChange();

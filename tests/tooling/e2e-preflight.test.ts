@@ -49,7 +49,6 @@ describe("E2E preflight policy", () => {
         "--debug=inspector",
         "--list",
         "--reporter=json",
-        "--",
         "tests/e2e/security-headers.spec.ts",
       ],
     });
@@ -62,12 +61,13 @@ describe("E2E preflight policy", () => {
   it("keeps flag-like values and delimiter filters distinct from inspection", () => {
     expect(parseE2EArguments(["--grep=--list", "--", "--help"])).toEqual({
       inspection: false,
-      args: ["--grep=--list", "--", "--help"],
+      args: ["--grep=--list", "(?:)--help"],
     });
     expect(parseE2EArguments(["-g--help"]).inspection).toBe(false);
-    expect(
-      parseE2EArguments(["--", "--list", "--output=filter"]).inspection,
-    ).toBe(false);
+    expect(parseE2EArguments(["--", "--list", "--output=filter"])).toEqual({
+      inspection: false,
+      args: ["(?:)--list", "(?:)--output=filter"],
+    });
   });
 
   it("allows standalone UI and uses stdout for read-only help/list", () => {
@@ -168,5 +168,16 @@ describe("E2E package entrypoint", () => {
     );
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("UI mode cannot be combined");
+  });
+
+  it("filters test files through the Playwright entrypoint", async () => {
+    const result = await runTestProcess(
+      "bun",
+      ["run", "test:e2e", "--list", "tests/e2e/private-cache-session.spec.ts"],
+      { cwd: process.cwd(), timeout: 10_000 },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("private-cache-session.spec.ts");
+    expect(result.stdout).toContain("Total: 1 test in 1 file");
   });
 });

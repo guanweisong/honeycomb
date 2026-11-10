@@ -16,13 +16,6 @@ vi.mock(
     default: () => null,
   }),
 );
-vi.mock(
-  "@/features/comment/notifications/templates/ReplyCommentEmailMessage",
-  () => ({
-    default: () => null,
-  }),
-);
-
 import { sendCommentEmail } from "@/features/comment/notifications/comment-email";
 
 const payload = {
@@ -45,7 +38,7 @@ const payload = {
     post: null,
     page: null,
   },
-} satisfies Parameters<typeof sendCommentEmail>[1];
+} satisfies Parameters<typeof sendCommentEmail>[0];
 
 describe("comment email observability", () => {
   beforeEach(() => {
@@ -65,7 +58,7 @@ describe("comment email observability", () => {
     configureObservability(memory);
     sendMock.mockResolvedValue({ data: { id: "message-1" } });
 
-    await sendCommentEmail("ADMIN_NOTICE", payload);
+    await sendCommentEmail(payload);
 
     expect(memory.metricEvents.map(({ name }) => name)).toEqual([
       MetricName.externalServiceOperationsTotal,
@@ -88,9 +81,7 @@ describe("comment email observability", () => {
     const failure = new Error("recipient admin@example.com rejected");
     sendMock.mockRejectedValue(failure);
 
-    await expect(sendCommentEmail("ADMIN_NOTICE", payload)).rejects.toBe(
-      failure,
-    );
+    await expect(sendCommentEmail(payload)).rejects.toBe(failure);
     expect(memory.metricEvents.map(({ name }) => name)).toEqual([
       MetricName.externalServiceOperationsTotal,
       MetricName.externalServiceErrorsTotal,
@@ -107,7 +98,7 @@ describe("comment email observability", () => {
       error: { message: "recipient admin@example.com rejected" },
     });
 
-    await expect(sendCommentEmail("ADMIN_NOTICE", payload)).rejects.toThrow(
+    await expect(sendCommentEmail(payload)).rejects.toThrow(
       "Email delivery failed",
     );
 
@@ -121,19 +112,14 @@ describe("comment email observability", () => {
     expect(JSON.stringify(memory.logEvents)).not.toContain("rejected");
   });
 
-  it.each(["ADMIN_NOTICE", "REPLY_NOTICE"] as const)(
-    "uses the approved generic subject for custom %s",
-    async (type) => {
-      sendMock.mockResolvedValue({ data: { id: "message-1" } });
-      const customComment = { ...payload.currentComment, customId: "custom-1" };
-      await sendCommentEmail(type, {
-        ...payload,
-        currentComment: customComment,
-        parentComment: customComment,
-      });
-      expect(sendMock.mock.calls[0]?.[0]).toMatchObject({
-        subject: "[站点]自定义内容收到评论",
-      });
-    },
-  );
+  it("uses the approved generic subject for a custom comment", async () => {
+    sendMock.mockResolvedValue({ data: { id: "message-1" } });
+    await sendCommentEmail({
+      ...payload,
+      currentComment: { ...payload.currentComment, customId: "custom-1" },
+    });
+    expect(sendMock.mock.calls[0]?.[0]).toMatchObject({
+      subject: "[站点]自定义内容收到评论",
+    });
+  });
 });

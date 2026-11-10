@@ -74,14 +74,16 @@ const dialogs: Array<{
           },
         }}
         onOpenChange={vi.fn()}
-        onSubmit={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
       />
     ),
     renderCreate: () => (
       <LinkFormDialog
         state={{ type: ModalType.ADD, open: true }}
         onOpenChange={vi.fn()}
-        onSubmit={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
       />
     ),
   },
@@ -104,14 +106,16 @@ const dialogs: Array<{
           },
         }}
         onOpenChange={vi.fn()}
-        onSubmit={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
       />
     ),
     renderCreate: () => (
       <UserFormDialog
         state={{ type: ModalType.ADD, open: true }}
         onOpenChange={vi.fn()}
-        onSubmit={vi.fn()}
+        onCreate={vi.fn()}
+        onUpdate={vi.fn()}
       />
     ),
   },

@@ -76,11 +76,11 @@ it("shares one admin lookup between layout and template only within a server ren
                   "export function createUserRepository() { return {}; }",
                 "@/lib/db/db": "export function getDb() { return {}; }",
                 "@/app/admin/(dashboard)/providers/AdminProviders":
-                  "export function AdminProviders({ children }) { return children; }",
+                  "export function AdminProviders({ initialUser, children }) { return [initialUser.id, children]; }",
                 "./providers/AdminProviders":
-                  "export function AdminProviders({ children }) { return children; }",
+                  "export function AdminProviders({ initialUser, children }) { return [initialUser.id, children]; }",
                 "./components/AdminClientShell":
-                  "export function AdminClientShell({ user, children }) { return [user.id, children]; }",
+                  "export function AdminClientShell({ children }) { return children; }",
                 "@/components/LoadingState":
                   "export default function LoadingState() { return null; }",
               };

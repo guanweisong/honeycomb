@@ -113,7 +113,7 @@ for (const kind of ["user", "link"] as const) {
         ).mockReturnValueOnce(pending.promise);
         let saving!: Promise<void>;
         await act(async () => {
-          saving = actions.handleModalOk({ id, name: "Changed" });
+          saving = actions.handleUpdate({ id, name: "Changed" });
         });
         await act(async () => actions.handleDialogOpenChange(false));
         await act(async () => open(recordId));
@@ -128,7 +128,7 @@ for (const kind of ["user", "link"] as const) {
       },
     );
     it("closes the submitting session after current success", async () => {
-      await act(async () => actions.handleModalOk({ id, name: "Changed" }));
+      await act(async () => actions.handleUpdate({ id, name: "Changed" }));
       expect(actions.dialogState.open).toBe(false);
     });
     it("keeps a reopened session on rejected mutation", async () => {
@@ -136,7 +136,7 @@ for (const kind of ["user", "link"] as const) {
       mocks.mutate.mockReturnValueOnce(pending.promise);
       let saving!: Promise<void>;
       await act(async () => {
-        saving = actions.handleModalOk({ id, name: "Changed" });
+        saving = actions.handleUpdate({ id, name: "Changed" });
       });
       await act(async () => actions.handleDialogOpenChange(false));
       await act(async () => open());

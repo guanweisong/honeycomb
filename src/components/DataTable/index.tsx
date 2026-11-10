@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 
 import { Table } from "@/components/ui/table";
@@ -10,11 +11,37 @@ import { useDataTableState } from "@/components/DataTable/useDataTableState";
 import { usePinnedColumnOffsets } from "@/components/DataTable/usePinnedColumnOffsets";
 import { useRowSelection } from "@/components/DataTable/useRowSelection";
 import LoadingState from "@/components/LoadingState";
-import type { DataTableProps } from "@/components/DataTable/types";
+import type {
+  DataTableProps,
+  UseDataTableStateResult,
+} from "@/components/DataTable/types";
 
 export type { DataTableProps } from "@/components/DataTable/types";
 
 export function DataTable<TData>(props: DataTableProps<TData>) {
+  return props.requestState ? (
+    <DataTableContent {...props} requestState={props.requestState} />
+  ) : (
+    <UncontrolledDataTable {...props} />
+  );
+}
+
+function UncontrolledDataTable<TData>(props: DataTableProps<TData>) {
+  const requestState = useDataTableState<TData>({
+    pagination: props.pagination ?? true,
+    onChange: props.onChange,
+    onSelectionChange:
+      props.selectedRowIds === undefined
+        ? props.onSelectionChange
+        : () => props.onSelectedRowIdsChange?.([]),
+  });
+
+  return <DataTableContent {...props} requestState={requestState} />;
+}
+
+function DataTableContent<TData>(
+  props: DataTableProps<TData> & { requestState: UseDataTableStateResult },
+) {
   const {
     columns,
     getRowId,
@@ -27,27 +54,44 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     disabledRowSelectable,
     onSelectionChange,
     selectedRows = [],
+    selectedRowIds,
+    onSelectedRowIdsChange,
     rowActions,
     toolBar,
     className,
     maxHeightRem = 15,
     stickyHeader = true,
-    onChange,
-    pagination = true,
+    requestState,
   } = props;
 
   const {
+    pagination,
     sorting,
     columnFilters,
     paginationState,
     handlePaginationChange,
     handleSortingChange,
     handleColumnFiltersChange,
-  } = useDataTableState<TData>({
+  } = requestState;
+
+  const lastPage = Math.max(1, Math.ceil(data.total / paginationState.limit));
+  useEffect(() => {
+    if (
+      pagination &&
+      !isFetching &&
+      !error &&
+      paginationState.page > lastPage
+    ) {
+      handlePaginationChange({ ...paginationState, page: lastPage });
+    }
+  }, [
     pagination,
-    onChange,
-    onSelectionChange,
-  });
+    isFetching,
+    error,
+    paginationState,
+    lastPage,
+    handlePaginationChange,
+  ]);
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table 使用可变辅助对象，此处仅隔离 React Compiler 抑制范围。
   const table = useReactTable({
@@ -92,6 +136,8 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     isFetching,
     getRowId,
     selectedRows,
+    selectedRowIds,
+    onSelectedRowIdsChange,
     disabledRowSelectable,
     onSelectionChange,
   });

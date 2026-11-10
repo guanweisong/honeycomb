@@ -26,13 +26,22 @@ test("@regression private requests stay out of Cache Storage and logout survives
     .toBe(true);
   await page.goto("/admin/dashboard");
   await expect(page.getByTestId("admin-sidebar")).toBeVisible();
-  await page.evaluate(async () => {
-    await fetch("/api/trpc/user.current", { cache: "no-store" });
-    await fetch("/admin/dashboard?_rsc=hardening", {
+  const privateResponses = await page.evaluate(async () => {
+    const api = await fetch("/api/trpc/user.current", { cache: "no-store" });
+    // RSC requests with no router state or prefetch headers use an empty hash.
+    const rsc = await fetch("/admin/dashboard?_rsc", {
       headers: { RSC: "1" },
       cache: "no-store",
     });
+    return {
+      apiStatus: api.status,
+      rscStatus: rsc.status,
+      rscType: rsc.headers.get("content-type"),
+    };
   });
+  expect(privateResponses.apiStatus).toBe(200);
+  expect(privateResponses.rscStatus).toBe(200);
+  expect(privateResponses.rscType).toContain("text/x-component");
   const privateEntries = await page.evaluate(async () => {
     const requests = (
       await Promise.all(

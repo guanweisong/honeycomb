@@ -10,6 +10,7 @@ import { MultiLangEnum } from "@/lib/i18n/i18n";
 import type { Database } from "@/lib/db/db";
 import * as schema from "@/lib/db/schema";
 import {
+  createCategory,
   destroyCategories,
   updateCategory,
 } from "@/features/category/server/category-commands";
@@ -193,6 +194,27 @@ describe("Category update transaction result boundary", () => {
       )?.parent,
     ).toBe(ids[0]);
     expect(invalidator.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("maps database path uniqueness failures without changing the stored record", async () => {
+    await db.insert(schema.category).values({ id: "other", path: "taken" });
+    const invalidator = cache();
+    const duplicate = { code: "BAD_REQUEST", message: "分类路径已经存在" };
+    await expect(
+      createCategory(
+        db,
+        { path: "taken", title: changed, description: changed },
+        invalidator,
+      ),
+    ).rejects.toMatchObject(duplicate);
+    await expect(
+      updateCategory(db, { id: "subject", path: "taken" }, invalidator),
+    ).rejects.toMatchObject(duplicate);
+    expect(invalidator.invalidate).not.toHaveBeenCalled();
+    await expect(
+      updateCategory(db, { id: "subject", path: "before" }, invalidator),
+    ).resolves.toMatchObject({ id: "subject", path: "before" });
+    expect(invalidator.invalidate).toHaveBeenCalledOnce();
   });
 
   it.each(["completed", "degraded"] as const)(

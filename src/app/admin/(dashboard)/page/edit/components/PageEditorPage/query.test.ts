@@ -37,7 +37,7 @@ vi.mock("next/navigation", () => ({
     new URLSearchParams(editorMocks.id ? `id=${editorMocks.id}` : ""),
 }));
 vi.mock("@/app/admin/(dashboard)/page/edit/page-editor-actions", () => ({
-  usePageEditorActions: () => ({ loading: false }),
+  usePageEditorActions: () => vi.fn(),
 }));
 vi.mock("@/app/admin/components/AdminLayout/layout-context", () => ({
   AdminPageHeader: () => null,
@@ -97,17 +97,17 @@ describe("page editor query", () => {
   });
 });
 
-vi.mock("@/app/admin/(dashboard)/page/edit/components/use-page-creation-result", async () => {
+vi.mock("@/app/admin/(dashboard)/draft/use-creation-result", async () => {
   const { trpc } = await import("@/lib/trpc/client/trpc");
   return {
-    usePageCreationResult: (
-      creationToken: string,
-      _actorId: string | undefined,
-      enabled: boolean,
+    useCreationResult: (
+      kind: "post" | "page",
+      creationToken: string | undefined,
+      actorId: string | undefined,
     ) =>
-      trpc.page.creationResult.useQuery(
-        { creationToken },
-        { enabled, retry: false },
+      trpc[kind].creationResult.useQuery(
+        { creationToken: creationToken ?? "" },
+        { enabled: Boolean(actorId && creationToken), retry: false },
       ),
   };
 });

@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { commentRouter } from "@/features/comment/router";
 import { CommentStatus } from "@/features/comment/types/comment.status";
 import { TEST_IDS } from "@tests/helpers/test-constants";
 import {
+  asMockDatabase,
   createAdminUser,
   createGuestUser,
   createMockContext,
@@ -13,6 +14,7 @@ import { PostStatus } from "@/features/post/types/post.status";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import * as schema from "@/lib/db/schema";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
+import * as clientIp from "@/lib/http/client-ip.server";
 import * as commandRepositories from "@/features/comment/server/comment-command-repository";
 
 const mockInvalidatePublicContent = vi.hoisted(() => vi.fn());
@@ -26,6 +28,11 @@ vi.mock("@/lib/cache/next-public-content-invalidator", () => ({
 // 模拟数据库及相关模块。
 vi.mock("@/lib/db/db", () => ({
   getDb: vi.fn(() => mockDb),
+}));
+
+vi.mock("@/env/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/env/server")>()),
+  getUpstashEnv: () => undefined,
 }));
 
 vi.mock("@/lib/security/validate-captcha", () => ({
@@ -42,6 +49,8 @@ import { sendCommentEmail } from "@/features/comment/notifications/comment-email
 const mockDb = createMockDb();
 
 describe("Comment Router", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockInvalidatePublicContent.mockResolvedValue({ state: "completed" });
@@ -144,22 +153,7 @@ describe("Comment Router", () => {
         { ...newComment, post: { id: TEST_IDS.ID_1 }, page: null },
       ]);
 
-      // 模拟站点设置查询。
-      mockDb.select.mockReturnValueOnce(mockDb);
-      mockDb.from.mockReturnValueOnce(mockDb);
-      mockDb.where.mockReturnValueOnce(mockDb);
-      mockDb.limit.mockResolvedValueOnce([
-        {
-          id: TEST_IDS.ID_2,
-          singletonKey: 1,
-          version: 0,
-          siteRecordNo: null,
-          siteRecordUrl: null,
-          createdAt: null,
-          updatedAt: null,
-        } satisfies typeof schema.setting.$inferSelect,
-      ]);
-      // Comment and setting reads run concurrently; each then loads its translations.
+      // Comment translations are read after the initial notification row.
       mockDb.where.mockResolvedValueOnce([
         { locale: MultiLangEnum.En, title: "Post" },
         { locale: MultiLangEnum.Zh, title: "文章" },
@@ -167,7 +161,7 @@ describe("Comment Router", () => {
         typeof schema.postTranslation.$inferSelect,
         "locale" | "title"
       >[]);
-      mockDb.where.mockResolvedValueOnce([
+      const translations = [
         {
           settingId: TEST_IDS.ID_2,
           locale: MultiLangEnum.En,
@@ -184,11 +178,29 @@ describe("Comment Router", () => {
           siteSignature: null,
           siteCopyright: null,
         },
-      ] satisfies (typeof schema.settingTranslation.$inferSelect)[]);
+      ] satisfies (typeof schema.settingTranslation.$inferSelect)[];
 
-      const context = createMockContext(null, mockDb);
+      const findFirst = vi.fn().mockResolvedValue({
+        id: TEST_IDS.ID_2,
+        singletonKey: 1,
+        version: 0,
+        siteRecordNo: null,
+        siteRecordUrl: null,
+        createdAt: null,
+        updatedAt: null,
+        translations,
+      });
+      const context = {
+        ...createMockContext(null, mockDb),
+        db: asMockDatabase({
+          ...mockDb,
+          query: { ...mockDb.query, setting: { findFirst } },
+        }),
+      };
+      vi.stubEnv("TRUSTED_PROXY_HOPS", "2");
       context.header.set("x-forwarded-for", "203.0.113.10, 10.0.0.1");
       context.header.set("user-agent", "Sensitive Browser");
+      const resolveClientIp = vi.spyOn(clientIp, "getClientIp");
       const caller = commentRouter.createCaller(context);
 
       const result = await caller.create({
@@ -200,7 +212,7 @@ describe("Comment Router", () => {
       });
 
       expect(validateCaptcha).toHaveBeenCalledWith("valid-captcha");
-      expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith("ADMIN_NOTICE", {
+      expect(sendCommentEmail).toHaveBeenCalledExactlyOnceWith({
         setting: { siteName: { en: "Test site", zh: "测试站点" } },
         currentComment: {
           ...newComment,
@@ -212,6 +224,8 @@ describe("Comment Router", () => {
       expect(result).not.toHaveProperty("email");
       expect(result).not.toHaveProperty("ip");
       expect(result).not.toHaveProperty("userAgent");
+      expect(resolveClientIp).toHaveBeenCalledOnce();
+      resolveClientIp.mockRestore();
       expect(guardedCreates).toHaveBeenCalledWith(
         expect.objectContaining({
           ip: "203.0.113.10",

@@ -43,7 +43,8 @@ it("submits the real form without treating normalization of a legacy name as a r
         <UserFormDialog
           state={{ type: ModalType.EDIT, open: true, record }}
           onOpenChange={vi.fn()}
-          onSubmit={async (values) => {
+          onCreate={() => {}}
+          onUpdate={async (values) => {
             await submitUserUpdate({
               record,
               values: UserUpdateSchema.parse(values),

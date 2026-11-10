@@ -36,6 +36,7 @@ describe("page creation receipt storage", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
   });
   const token = "123e4567-e89b-42d3-a456-426614174000";
   const input = {
@@ -57,6 +58,33 @@ describe("page creation receipt storage", () => {
     vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {});
     expect(clearPageCreationAttempt("account", token)).toBe(false);
     expect(readPageCreationAttempt("account")).toMatchObject(input);
+  });
+  it("recovers each pre-opened tab's attempt after refresh and preserves legacy receipts", () => {
+    const account = "account";
+    const otherToken = "123e4567-e89b-42d3-a456-426614174001";
+    const legacyToken = "123e4567-e89b-42d3-a456-426614174002";
+    const other = { ...input, creationToken: otherToken };
+    const legacy = { ...input, creationToken: legacyToken };
+    const key = "honeycomb:draft:page:account:creation-attempt";
+    localStorage.setItem(key, JSON.stringify(legacy));
+
+    expect(writePageCreationAttempt(account, input)).toBe(true);
+    const tabOne = sessionStorage.getItem(key);
+    sessionStorage.clear();
+    expect(writePageCreationAttempt(account, other)).toBe(true);
+    expect(readPageCreationAttempt(account)).toMatchObject(other);
+
+    expect(tabOne).toBe(token);
+    sessionStorage.setItem(key, token);
+    expect(readPageCreationAttempt(account)).toMatchObject(input);
+    expect(readPageCreationAttempt(account, otherToken)).toMatchObject(other);
+    expect(readPageCreationAttempt("another", otherToken)).toBeNull();
+    clearPageCreationAttempt(account, token);
+    expect(readPageCreationAttempt(account, token)).toBeNull();
+    expect(readPageCreationAttempt(account, otherToken)).toMatchObject(other);
+    expect(readPageCreationAttempt(account, legacyToken)).toMatchObject(legacy);
+    clearPageCreationAttempt(account, otherToken);
+    expect(readPageCreationAttempt(account)).toMatchObject(legacy);
   });
   it("rejects malformed or schema-invalid persisted attempts", () => {
     const key = "honeycomb:draft:page:account:creation-attempt";

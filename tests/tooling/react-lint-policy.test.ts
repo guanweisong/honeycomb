@@ -23,7 +23,6 @@ describe("React lint policy", () => {
       "src/app/admin/(dashboard)/components/PhotoPicker/index.tsx",
       "src/app/admin/(dashboard)/media/components/media-query.ts",
       "src/app/admin/(dashboard)/menu/components/use-menu-tree-editor.ts",
-      "src/app/admin/(dashboard)/page/edit/page-editor-actions.ts",
       "src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx",
       "src/app/admin/(dashboard)/account/security/components/PasskeySettings/index.tsx",
       "src/app/admin/login/components/LoginClient/index.tsx",

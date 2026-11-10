@@ -1,15 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { pageListTableColumns } from "@/app/admin/(dashboard)/page/list/components/constants/page-list-table-columns";
 import { Pencil, Plus, Trash } from "lucide-react";
 import { Dialog } from "@/components/Dialog";
 import { DynamicForm } from "@/components/DynamicForm";
 import { DataTable } from "@/components/DataTable";
+import { useAdminTableState } from "@/app/admin/(dashboard)/lib/use-admin-table-state";
 import { toast } from "sonner";
 import Link from "next/link";
-import type { PageListQueryInput } from "@/features/page/types/page.list-query";
 import { PageListQuerySchema } from "@/features/page/schemas/page.list-query.schema";
 import { trpc } from "@/lib/trpc/client/trpc";
 import {
@@ -29,18 +28,7 @@ const Page = () => {
   const canCreatePage = useCan(Permission.pageCreate);
   const canUpdatePage = useCan(Permission.pageUpdate);
   const canDeletePage = useCan(Permission.pageDelete);
-  /**
-   * 存储用户在表格中选中的行。
-   * 类型为 `PageEntity` 数组。
-   */
-  const [selectedRows, setSelectedRows] = useState<PageEntity[]>([]);
-  /**
-   * 存储页面列表的查询参数。
-   * 当这些参数变化时，会触发页面列表的重新加载。
-   */
-  const [searchParams, setSearchParams] = useState<PageListQueryInput>(() =>
-    PageListQuerySchema.parse({ page: 1, limit: 20 }),
-  );
+  const tableState = useAdminTableState();
   const utils = trpc.useUtils();
   const prefetchDetail = (id: string) => {
     void utils.page.adminDetail.prefetch(
@@ -53,9 +41,10 @@ const Page = () => {
    * `data` 包含列表数据和总数，`isFetching` 表示加载状态，`isError` 表示错误状态，`refetch` 用于手动重新获取数据。
    */
   const { data, isFetching, isError, refetch } = trpc.page.adminIndex.useQuery(
-    searchParams,
+    PageListQuerySchema.parse(tableState.requestState.requestParams),
     adminListQueryOptions,
   );
+  const selectedRows = tableState.getSelectedRows(data?.list);
   /**
    * 删除页面的 tRPC mutation。
    * 用于执行删除操作。
@@ -104,14 +93,15 @@ const Page = () => {
   const handleDeleteBatch = async () => {
     const result = await handleDeleteItem(selectedRows);
     if (result !== "success") return false;
-    setSelectedRows([]);
+    tableState.clearSelection();
     return true;
   };
 
   return (
     <>
       <DataTable<PageEntity>
-        getRowId={(row) => row.id}
+        getRowId={tableState.getRowId}
+        requestState={tableState.requestState}
         data={{
           list: data?.list ?? [],
           total: data?.total ?? 0,
@@ -121,13 +111,10 @@ const Page = () => {
         onRetry={() => {
           void refetch();
         }}
-        onChange={(params) => {
-          setSearchParams(PageListQuerySchema.parse(params));
-        }}
         columns={pageListTableColumns}
         selectableRows={canDeletePage}
-        selectedRows={selectedRows}
-        onSelectionChange={setSelectedRows}
+        selectedRowIds={tableState.selectedRowIds}
+        onSelectedRowIdsChange={tableState.setSelectedRowIds}
         toolBar={(table) => (
           <div className="flex justify-between">
             <div className="flex gap-1">
