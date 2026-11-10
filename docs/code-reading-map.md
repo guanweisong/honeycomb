@@ -8,7 +8,7 @@
 
 1. 编辑交互：`src/app/admin/(dashboard)/post/edit/components/hooks/use-post-editor.tsx`。
 2. API 输入、权限和协议适配：`src/features/post/router.ts`。
-3. 写入、事务与缓存失效：`src/features/post/server/` 内的实际操作函数；发布不变量在 `src/features/post/rules/post-publication.ts`。
+3. `src/features/post/server/post-commands.ts` 负责写入、事务与缓存失效。文章和页面各自在写入事务内校验发布状态，复用 `src/lib/validation/publication-status.ts` 的规则。
 4. 数据库连接与表：`src/lib/db`；输入与输出模型由 post feature 自己拥有。
 
 server 函数直接访问数据库，不额外创建只转发参数的工厂或用例。成功写入后的缓存降级通过 `publicSync` 表达，不能误报成写入失败。 分类与标签更新的完整翻译返回值在同一事务内组装；提交后不再补读数据库来决定成功与否。
@@ -38,15 +38,15 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 3. 根服务端 caller：`src/app/trpc/server.ts`；业务路由在各 feature 的 `router.ts`，读取实现由其 `server/` 具名实现 提供。
 4. UI 位于 `src/app`，使用 feature 拥有的纯模型；服务端读取由相应 feature 的具名 server 实现提供。不要求 public barrel 或中央 contracts 转发。
 
-文章元信息和标签展示位于 `src/app/(blog)/components/features/post/public/PostInfo` 与 `Tags`；文章和页面浏览量上报分别由 `src/app/(blog)/components/features/post/public/PostViewTracker.tsx` 和 `page/public/PageViewTracker.tsx` 负责。媒体富文本在 `src/app/(blog)/components/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`。这些 app 组件调用 feature 提供的业务契约，不承载业务写入实现。
+文章元信息和标签展示位于 `src/app/(blog)/components/features/post/public/PostInfo` 与 `Tags`。文章和页面共用 `src/app/(blog)/components/ContentViewTracker.tsx`，按内容种类调用对应的浏览量接口。媒体富文本在 `src/app/(blog)/components/features/media/public/RichText`，通用图片使用 `next/image`，灯箱在 `src/components/PhotoSwipe`。这些 app 组件调用 feature 提供的业务契约。
 
 博客多语言导航包装及链接默认预取策略位于 `src/app/(blog)/lib/blog-navigation.ts`；底层 locale 与 routing 配置仍属于 `src/lib/i18n`。跨 post/page 且通过注入 mutation 复用的 `useTrackedViews` 留在 `src/lib/hooks`。
 
 文章查询与缓存解码共用 `src/features/post/schemas/post.read-model.schema.ts` 的运行时 schema；读取版本不能用默认值补造，旧缓存校验失败回源。媒体读取模型在 `src/features/media/types/media.record.ts`；普通记录不承载上传/删除恢复状态，上传意图和临时能力不透传给公开消费者。
 
-页面详情先确认公开状态再启动评论读取，并立即接管评论 Promise 的拒绝，保留原错误供消费者处理，不用空列表吞错。`comment-query-repository.ts` 在读取评论的同一条 SQL 中再次约束目标发布状态，以及文章/自定义目标的评论启用状态，不能仅依赖较早的预读；这不等于撤回已发送或已缓存的内容。
+文章和页面详情先确认公开状态，再通过 `src/app/(blog)/components/features/comment/public/PublicCommentSection.tsx` 加载评论。评论读取失败或读取期间评论被关闭时，评论区域显示不可用提示，正文仍可显示。Next.js 控制流异常继续传播，页面详情会立即处理提前启动的评论 Promise 的拒绝。`comment-query-repository.ts` 在读取评论的同一条 SQL 中复查目标发布状态，以及文章和自定义目标的评论启用状态。
 
-评论公开 DTO 必须真正挑选允许字段，不能用类型别名代替脱敏。评论组件接收数据，不反向导入 app 查询实现。GUEST 后台读取同样受服务端数据范围限制。
+评论公开 DTO 显式挑选允许字段。服务端评论区域组合查询与降级展示，`CommentClient` 接收查询结果。GUEST 后台读取同样受服务端数据范围限制。
 
 ### 后台当前用户与权限
 
@@ -54,12 +54,12 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 浏览器 Better Auth 单例在 `src/lib/auth/client.ts`，登录、账户安全和后台退出共用；服务端技术绑定仍为 `src/auth.ts`，认证 hook 组合仍在 `src/app/auth`。前者保留 use client，不经根目录兼容转出口。
 
-后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns，IP 解析只从 `src/lib/http/client-ip.ts` 导入。
+后台专属 query client 在 `src/app/admin/lib/admin-query-client.ts`，认证路径到审计事件的适配在 `src/app/auth/authentication-events.ts`。评论 5/min、专属 prefix 与 fallbackLimit=5 由 comment/router 组合；Redis 工厂、超时和生产 fail-closed 仍由 lib 提供。通知字段直接采用 Drizzle getTableColumns。请求 IP 的可信代理策略在 `src/lib/http/client-ip.server.ts`，地址解析在 `src/lib/http/client-ip.ts`。
 
-1. 服务端会话和启用状态复核：`src/features/user/admin-user.ts`。
+1. `src/app/admin/lib/admin-auth.ts` 等待实际请求，调用 `src/features/user/server/admin-user.ts` 读取会话和用户状态。
 2. 页面提供初始用户：`src/app/admin/(dashboard)/providers/AdminProviders.tsx`。
 3. 客户端当前用户与刷新：`src/app/admin/(dashboard)/providers/use-current-user.ts`。
-4. 权限规则：`src/lib/auth/permissions.ts` 与 `authorize.ts`；服务端 API 仍是最终授权边界。
+4. `src/lib/auth/permissions.ts` 提供角色与 capability 映射，`src/lib/trpc/core.ts` 执行受保护接口的入口检查，写入事务由 `src/features/user/server/require-active-actor.ts` 复查。
 
 后台邮箱规范化与碰撞检查位于 `src/features/user/schemas/user.write.schema.ts` 和 `server/user-repository.ts`，审计归属位于 `account-security/server/login-history.repository.ts`；未来写入与历史原样值的边界见 [README 登录说明](../README.md)。
 

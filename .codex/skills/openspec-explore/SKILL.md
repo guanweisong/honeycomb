@@ -90,7 +90,7 @@ openspec list --json
 
 This tells you:
 - If there are active changes
-- Their names, schemas, and status
+- Their names, task counts, and status
 - What the user might be working on
 
 ### When no change exists
@@ -106,7 +106,7 @@ If the user mentions a change or you detect one is relevant:
 
 1. **Resolve and read existing artifacts for context**
    - Run `openspec status --change "<name>" --json`.
-   - Use `changeRoot`, `artifactPaths`, and `actionContext` from the status JSON.
+   - Use `schemaName`, `changeRoot`, `artifactPaths`, and `actionContext` from the status JSON.
    - Read existing files from `artifactPaths.<artifact>.existingOutputPaths`.
 
 2. **Reference them naturally in conversation**

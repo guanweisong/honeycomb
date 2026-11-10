@@ -1,5 +1,7 @@
 ## ADDED Requirements
 
+> 后续 UI 迁移调整了本文的展示层路径。统计业务仍由 dashboard feature 提供，后台统计展示与公开文章列表 hook 归各自的 app 路由组。现行归属见[源码依赖矩阵](../../../../specs/package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)。
+
 ### Requirement: dashboard 独立拥有统计业务
 
 系统 MUST 将统计 router、服务、后台展示及所属测试归入 dashboard feature，setting MUST 只保留设置业务。独立类型文件 MUST 有实际生产契约用途，不为测试或目录对称保留。根 tRPC MUST 保持外部 `statistic.index` 与既有统计返回数据、权限和错误语义。

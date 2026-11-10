@@ -53,7 +53,7 @@ Honeycomb 使用 capability-based authorization。用户数据和会话中只保
 `comment:read-all`、`post:read-all` 和 `page:read-all` 允许进入相应后台列表，不代表可以读取全部敏感数据。GUEST 保留后台演示访问，但读取范围由服务端额外限制。以下三项读取范围能力在测试拥有的 `tests/helpers/capability-consumers.ts` 审计清单中标为 `trpc-data`，用于已通过入口鉴权的 handler 内部数据范围检查，而非替代原有 `trpc` procedure gate：
 
 - `post:read-unpublished` / `page:read-unpublished` 才允许后台列表和详情读取未发布内容。没有该能力时复用 `PUBLISHED_ONLY`，过滤条件不能覆盖发布状态限制，分页与总数只计算可见数据；隐藏详情沿用公开详情的未找到行为。
-- `comment:read-private` 才允许返回邮箱、IP、User Agent、父评论及目标关联标识，并允许按这些私有字段筛选或排序。没有该能力时使用显式安全投影，私有筛选或排序请求返回 `FORBIDDEN`。
+- `comment:read-private` 才允许返回邮箱、IP、User Agent、`parentId` 及原始目标关联字段 `postId`、`pageId`、`customId`。没有该能力时，邮箱和 IP 筛选及这些私有字段的排序返回 `FORBIDDEN`。安全投影仍可展示可见目标的公开 ID 和标题。
 - 未同时拥有文章和页面未发布读取能力时，评论列表只包含已发布目标的评论（包括 custom 文章引用），在分页及计数前过滤，避免间接暴露未发布标题、关联标识及评论内容。无目标的 custom 评论同样不可见。
 - ADMIN 和 EDITOR 继续拥有完整读取范围；匿名请求仍不能调用后台接口。评论管理写权限不变。
 

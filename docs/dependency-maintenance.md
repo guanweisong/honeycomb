@@ -9,5 +9,6 @@
 - Cravatar 邮箱标识由服务端 `node:crypto` 生成 MD5；保留 trim/lowercase、UTF-8 和 hex 输出，不把该标识哈希描述为密码安全机制。
 - Better Auth 使用独立 Drizzle adapter 和外部迁移，因此采用 `better-auth/minimal`，不引入内置数据库连接或迁移。包体积探针不等于线上性能收益；认证、passkey、权限及实际构建仍须验证。
 - Bun 固定版本由 packageManager、README 和 CI 同步；Motion/AWS两包按兼容版本维护。官方 React Email 新包包含工具依赖，不能用直接依赖数量下降宣称安装或部署体积下降。
+- Bun 通过 `package.json` 和 `bun.lock` 的 `patchedDependencies` 应用 `patches/@date-fns%2Futc@2.1.1.patch`。补丁将 ESM 和 CommonJS 的 `UTCDateMini` 基类初始化改为 `super(0)`，避免固定时间输入在 Next 预渲染期间隐式读取当前时间。保留显式输入的 UTC 格式化及无参构造通过 `Date.now()` 读取当前时间的行为。升级时复核上游两个入口，并在隔离环境用未打补丁的候选版本运行 `bun run test:unit:run src/lib/ui/utc-format.test.ts`。确认上游已消除固定输入的时钟读取且回归通过后，再同步移除补丁及两处声明。
 
 实时安全结论和开发链限制见[生产依赖审计例外](dependency-audit-exceptions.md)。验证范围和未验证项以本轮实际执行记录为准，历史 CI 不能代表当前修改树。

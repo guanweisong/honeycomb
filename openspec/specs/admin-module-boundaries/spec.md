@@ -22,16 +22,16 @@
 
 ### Requirement: 大型管理页使用 feature 边界
 
-系统 SHALL 将 menu、user、link、media、page edit、comment、tag 和 post category 页面的查询、mutation、列定义、对话框、表单转换和页面组合职责分离。管理后台 feature 的共享辅助代码目录 MUST 使用 `lib` 或 `constants` 这类正确且一致的命名。
+系统 SHALL 将 menu、user、link、media、page edit、comment、tag 和 post category 页面的客户端查询、mutation、列定义、对话框、表单转换和页面组合职责分离。管理后台的应用层共享辅助代码目录 MUST 使用 `lib` 或 `constants` 这类正确且一致的命名。
 
 #### Scenario: 打开管理页面
 
 - **WHEN** 用户进入任一已迁移管理页面
-- **THEN** page shell 组合 feature 模块且不直接承载全部请求、表单和对话框实现
+- **THEN** Page shell 组合所属路由的 UI 和具名 feature 业务入口，各自保留请求、表单和对话框的独立职责。
 
 #### Scenario: 引用后台辅助代码
 
-- **WHEN** 管理后台 feature 引用本区域的帮助函数或常量
+- **WHEN** 管理后台路由引用本区域的帮助函数或常量
 - **THEN** 导入路径使用一致、正确的 `lib` 或 `constants` 目录名
 
 ### Requirement: 管理页重构保持外部行为
@@ -45,21 +45,21 @@
 
 ### Requirement: 共享抽象来自稳定重复
 
-系统 MUST 将页面特有类型和逻辑保留在 feature 内，仅当至少两个模块存在稳定相同行为时才提取新的共享抽象。
+页面特有的 UI、类型和交互逻辑 MUST 留在所属 app 路由。业务契约及服务端操作仍归 feature。仅当至少两个模块存在稳定相同行为时才提取新的共享抽象。
 
 #### Scenario: 单页专用对话框
 
 - **WHEN** 一个对话框仅由 menu 页面使用
-- **THEN** 它保留在 menu feature 内而不进入通用 components
+- **THEN** 它保留在后台 menu 路由的 `components`。
 
 ### Requirement: CI 必须执行完整且确定性的 Chromium E2E 库存
 
-质量工作流 MUST 在显式隔离的本地数据库迁移并播种最小确定性数据后运行完整 Chromium Playwright 项目，MUST NOT 通过点名 spec 文件缩小既有测试库存。关键场景 MUST NOT 因缺少运行时内容而条件跳过。
+质量工作流 MUST 在显式隔离的本地数据库迁移并播种最小确定性数据后运行 Chromium E2E。完整库存由[风险分层 CI 规格](../risk-tiered-ci-gates/spec.md)规定的开发和生产分组共同覆盖，MUST NOT 通过点名 spec 文件缩小库存。关键场景 MUST NOT 因缺少运行时内容而条件跳过。
 
 #### Scenario: 新增 E2E spec 自动进入质量门禁
 
 - **WHEN** 开发者在 E2E 目录新增由 Chromium 项目匹配的 spec
-- **THEN** CI 的完整项目命令 MUST 自动执行该文件，无需修改工作流文件列表
+- **THEN** 完整保障 workflow MUST 按用例的 `@production` 标记自动将其纳入对应分组，无需修改工作流文件列表。
 
 #### Scenario: 空白 CI 数据库获得确定性场景数据
 

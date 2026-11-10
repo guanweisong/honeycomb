@@ -1,5 +1,7 @@
 ## ADDED Requirements
 
+> 旧代理头优先级断言属于迁移时的行为基线。后续改用[可信入口地址规则](../../../fix-engineering-audit-follow-up/specs/api-security-boundaries/spec.md#requirement-限流只使用可信入口的客户端地址)。
+
 ### Requirement: 后台共享职责就近组织
 
 后台专属状态工具 MUST 归 `src/app/admin/(dashboard)/lib`，查询选项 MUST 归 `src/app/admin/(dashboard)/config`，三个 UI 枚举 MUST 各自位于 `src/app/admin/(dashboard)/types` 的独立文件；草稿 hook、存储辅助及完整生命周期测试 MUST 归 `src/app/admin/(dashboard)/draft`。AdminLayout header context MUST 归 `src/app/admin/components/AdminLayout`；文章与页面编辑器共用的错误 UI 和草稿提示 MUST 直接归 dashboard 根 `components`。这些 app 专属模块 MUST NOT 留在 `src/components/admin`；Feature MUST NOT 反向依赖这些 app 模块；不得增加兼容 barrel 或改动草稿/显示行为。

@@ -1,5 +1,7 @@
 ## ADDED Requirements
 
+> 后续 UI 迁移调整了本文的归属路径。发布状态颜色映射随文章和页面列表 UI，后台媒体选择、动作和客户端查询也归 app。现行归属见[源码依赖矩阵](../../../../specs/package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)，原有颜色、注入和交互约束仍适用。
+
 ### Requirement: 路由私有与通用组件保持明确归属
 
 路由家族私有组件 MUST 位于其 components 中，NoData MUST 就近归列表路由；共享 SectionCard、MultiLangText MUST 位于 components，TextDivider MUST 跟随 PostList。现有框架路由入口及 URL MUST 保持不变，不得为统一目录合并不同职责组件或新增兼容 barrel。这些路由家族的 components 是普通共置目录而非 Next.js 私有目录，其子树 MUST NOT 新增 page、route 或框架 metadata 入口。

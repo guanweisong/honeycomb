@@ -1,5 +1,7 @@
 ## ADDED Requirements
 
+> 博客站内链接统一强制 `true` 的历史规则已细化为共享链接默认完整预取，并保留显式覆盖。当前策略见[即时导航主规格](../../../../specs/instant-navigation/spec.md#requirement-博客站内链接完整预取目标内容)，页面外壳及授权约束仍适用。
+
 ### Requirement: 每个面向用户的 App Router 目标都提供即时且安全的页面外壳
 
 所有可通过客户端导航访问的公开博客和后台路由 MUST 渲染静态或缓存的页面外壳，以便导航时立即显示。请求时 API、依赖路由的未缓存读取和授权检查 MUST 放在路由局部的 Suspense 边界后。应用 MUST NOT 使用 `instant = false` 让路由避开即时导航验证。fallback MUST NOT 暴露后台私有内容或绕过授权。

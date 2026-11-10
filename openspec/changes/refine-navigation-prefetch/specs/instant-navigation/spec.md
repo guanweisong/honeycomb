@@ -1,5 +1,7 @@
 ## MODIFIED Requirements
 
+> 标签和搜索结果显式使用 `auto` 的历史策略已被替代。现行[预取规格](../../../../specs/instant-navigation/spec.md#requirement-博客站内链接完整预取目标内容)使用共享链接默认完整预取，并保留调用方显式覆盖、后台自适应预取和动态评论边界。
+
 ### Requirement: 博客站内链接完整预取目标内容
 
 博客共享站内链接 MUST 默认使用prefetch=true以预取目标URL缓存内容，同时 MUST 保留调用方显式指定的false、auto或null。密集标签与搜索结果 SHALL 使用auto以复用路由壳；文章主要入口、菜单和语言切换 MUST 保留原策略。后台导航链接 MUST 保留auto；单条已授权详情的意图数据预取不等于强制完整路由预取，MUST NOT 绕过服务器权限。实时评论 MUST 保持独立动态读取。

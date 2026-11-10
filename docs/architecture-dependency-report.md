@@ -24,7 +24,7 @@
 
 app、features、components、lib 的区别是框架组合、业务、通用交互与技术能力，而不是四层必须依次经过的调用栈。把业务放回 feature 是为了从概念找到实现，不是要求所有 feature 具有同一目录树。可选文件示例见[目录模板](../.codex/skills/frontend-structure/references/directory-templates.md)。
 
-例如统计与站点配置有不同的改变原因，dashboard 独立拥有统计更便于定位；分类树表达业务含义，Drizzle 查询构造和 UTC 格式化表达技术能力。当前具体归属及兼容要求见[目录归属变更](../openspec/changes/refine-directory-ownership/specs/directory-ownership/spec.md)，而非在多个说明中维护一份目录清单。
+统计查询由 dashboard feature 拥有，后台统计界面归对应 app 路由。分类树表达业务规则，Drizzle 查询构造和 UTC 格式化属于技术模块。具体实现见[代码阅读地图](code-reading-map.md)，归属规则见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md)。
 
 ## 缩短路径，不抹平职责
 
@@ -40,7 +40,7 @@ app、features、components、lib 的区别是框架组合、业务、通用交�
 
 ## 组件所有权
 
-路由拥有的 UI 放在 app 各路由组的 `components`，通用 UI 放在 `src/components`；不合成一个公共库，目录名称本身不决定 RSC/client 边界。feature UI 迁入 app 的要求见[feature UI 归属变更](../openspec/changes/move-feature-ui-to-app/specs/package-layer-architecture/spec.md)；此前组件归属迁移的历史映射见[迁移说明](component-ownership-migration.md)。
+路由拥有的 UI 放在 app 各路由组的 `components`，通用 UI 放在 `src/components`。RSC/client 边界由实际依赖和指令决定。现行归属见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)，此前迁移的路径映射见[迁移记录](component-ownership-migration.md)。
 
 ## 用行为证明精简安全
 

@@ -1,5 +1,7 @@
 ## MODIFIED Requirements
 
+> 原「媒体删除重试修复缓存」场景已被[普通媒体删除后的缓存降级](../../../../specs/public-content-freshness/spec.md#scenario-普通媒体删除后的缓存降级)取代。已提交的删除返回成功及降级反馈，缓存故障不触发再次删除。
+
 ### Requirement: 浏览量必须通过独立尽力上报路径更新
 
 公开详情页 SHALL 在客户端挂载后通过对应内容 mutation 上报一次浏览量，失败不得阻断正文或向用户显示破坏性错误；成功结果 SHALL 动态更新当前计数，且浏览量写入 MUST NOT 触发公开页面再生成。

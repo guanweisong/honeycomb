@@ -6,13 +6,13 @@
 
 | 依赖方                       | 允许的职责关系                                                                                                   | 必须拒绝的运行时关系                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| app                          | 组合 feature 的 router/server/admin/public 等具名入口及通用技术/UI                                               | 将业务所有权搬入路由或要求无职责转发层                                            |
+| app                          | 组合 feature 的 router、server 操作或纯契约，以及通用技术与 UI                                                   | 将业务所有权搬入路由或要求无职责转发层                                            |
 | feature                      | 复用目标 feature 的纯契约或 server 具名入口；server 可直接使用 Drizzle/lib                                       | 反向导入 app/UI、耦合另一 feature router、浏览器加载 server                        |
 | 纯 schema/type/catalog/rules | 复用纯契约和纯技术能力                                                                                           | 直接或间接加载数据库、UI、服务端认证或框架实现                                    |
 | components                   | 通用 UI 与显式注入的业务能力                                                                                     | 加载 app 或 feature 业务运行时                                                    |
 | lib                          | 技术能力；lib/db 与 lib/auth 可引用 feature 纯 catalog/schema/type；lib/trpc 客户端可 type-only 引用根 AppRouter | 组合业务 router 或加载 feature server；加载应用/UI 运行时（下述会话技术集成除外） |
 
-现有 lib/trpc/context.ts MAY 仅为会话读取延迟导入 src/auth.ts 技术绑定；认证框架组合 MUST 归 app/auth，浏览器 UI MUST 归 app 路由及其 `components` 目录，这些目录 MUST NOT 包含 App Router 入口文件；feature MUST NOT 保存浏览器页面、展示组件、交互 hook 或展示配置，也 MUST NOT 反向依赖 app UI。该边界 MUST NOT 扩大为 lib/auth 的业务运行时依赖。
+现有 lib/trpc/context.ts MAY 仅为会话读取延迟导入 src/auth.ts 技术绑定；认证框架组合 MUST 归 app/auth，该窄例外 MUST NOT 扩大为 lib/auth 的业务运行时依赖。业务浏览器页面、展示组件、交互 hook 和客户端 action/query MUST 归 app 路由或路由组，新增的路由专属展示配置也归 app。共置的 `components` 目录不得包含 App Router 入口文件，feature 的纯业务目录和通知邮件模板仍归其业务。
 
 #### Scenario: 执行依赖边界测试
 

@@ -22,7 +22,7 @@ Implement tasks from an OpenSpec change.
    If a name is provided, use it. Otherwise:
    - Infer from conversation context if the user mentioned a change
    - Auto-select if only one active change exists
-   - If ambiguous, run `openspec list --json` to get available changes and use the **AskUserQuestion tool** to let the user select
+   - If ambiguous, run `openspec list --json` and ask the user to select an active change
 
    Always announce: "Using change: <name>" and how to override (e.g., `/opsx:apply <other>`).
 
@@ -48,8 +48,8 @@ Implement tasks from an OpenSpec change.
    - Dynamic instruction based on current state
 
    **Handle states:**
-   - If `state: "blocked"` (missing artifacts): show message, suggest using openspec-continue-change
-   - If `state: "all_done"`: congratulate, suggest archive
+   - If `state: "blocked"`, identify the missing artifacts from the status and apply instructions. For an artifact within the requested scope, use `openspec instructions <artifact-id> --change "<name>" --json` and complete it in the existing change. Recheck apply instructions before implementing.
+   - If `state: "all_done"`, report the checked tasks. Assess implementation and verification evidence before suggesting [archive](../openspec-archive-change/SKILL.md).
    - Otherwise: proceed to implementation
 
    **Workspace guard:** If status JSON reports `actionContext.mode: "workspace-planning"` and `allowedEditRoots` is empty, explain that full workspace apply is not supported in this slice. Treat linked repos and folders as read-only context, ask the user to select an affected area through an explicit implementation workflow, and STOP before editing files.
@@ -89,7 +89,7 @@ Implement tasks from an OpenSpec change.
    Display:
    - Tasks completed this session
    - Overall progress: "N/M tasks complete"
-   - If all done: suggest archive
+   - If all tasks are checked and required verification is complete, report that the change is ready to archive
    - If paused: explain why and wait for guidance
 
 **Output During Implementation**
@@ -120,7 +120,7 @@ Working on task 4/7: <task description>
 - [x] Task 2
 ...
 
-All tasks complete! Ready to archive this change.
+Verification: <checks run, results, and any remaining acceptance items>
 ```
 
 **Output On Pause (Issue Encountered)**

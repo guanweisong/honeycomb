@@ -6,6 +6,8 @@
 
 ## 2. 夜间与手动完整保障
 
+> 本节保留最初实施记录。现行[开发与生产分组](../../specs/risk-tiered-ci-gates/spec.md#requirement-完整质量保障在夜间和手动门禁中保留)合并覆盖完整 Chromium 库存。
+
 - [x] 2.1 新增定时及手动完整保障 workflow，保留覆盖率分片/合并阈值、双环境完整 E2E、bundle 分析及 lane 汇总。
 - [x] 2.2 让生产 E2E 自行构建并启动生产服务器；分析 job 独立构建，不在同一 E2E lane 重复构建。
 
