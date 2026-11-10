@@ -13,7 +13,9 @@ const mockMenuIndex = vi.fn();
 const mockTagIndex = vi.fn();
 const mockUserDetail = vi.fn();
 const mockPostIndex = vi.fn();
-const mockConnection = vi.fn(async () => undefined);
+const { mockConnection } = vi.hoisted(() => ({
+  mockConnection: vi.fn(async () => undefined),
+}));
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
