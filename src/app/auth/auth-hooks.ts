@@ -27,6 +27,7 @@ const accountSessionPaths = new Set([
   "/list-accounts",
   "/list-sessions",
   "/passkey/delete-passkey",
+  "/passkey/generate-authenticate-options",
   "/passkey/generate-register-options",
   "/passkey/list-user-passkeys",
   "/passkey/update-passkey",

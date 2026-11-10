@@ -126,6 +126,38 @@ describe("Better Auth credential boundary", () => {
     });
   });
 
+  it("blocks a disabled user's legacy cookie from disclosing passkey authentication options", async () => {
+    await withAuthFixture(async ({ db, request, cookie }) => {
+      const credentialID = "Zml4dHVyZS1wYXNza2V5";
+      await db.insert(schema.passkey).values({
+        userId: "fixture-user",
+        publicKey: "fixture-public-key",
+        credentialID,
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+        createdAt: new Date(),
+      });
+      const path = "/passkey/generate-authenticate-options";
+      const active = await request(path, undefined, cookie);
+      expect(active.status).toBe(200);
+      expect(await active.json()).toMatchObject({
+        allowCredentials: [{ id: credentialID }],
+      });
+
+      await db.update(schema.user).set({ status: UserStatus.DISABLE });
+      const disabled = await request(path, undefined, cookie);
+      expect(disabled.status).toBe(403);
+      expect(await disabled.json()).toMatchObject({ code: "ACCOUNT_DISABLED" });
+
+      const anonymous = await request(path);
+      expect(anonymous.status).toBe(200);
+      const anonymousOptions = await anonymous.json();
+      expect(anonymousOptions).toHaveProperty("challenge", expect.any(String));
+      expect(anonymousOptions).not.toHaveProperty("allowCredentials");
+    });
+  });
+
   it("blocks a disabled user's legacy cookie for passwords and passkeys", async () => {
     await withAuthFixture(async ({ auth, db, request, cookie }) => {
       await db.update(schema.user).set({ status: UserStatus.DISABLE });
