@@ -19,9 +19,9 @@ export default defineConfig([
       // Hydrate browser-owned dashboard preferences after SSR.
       "src/app/admin/(dashboard)/components/AdminClientShell/index.tsx",
       // Hydrate and reconcile stored layout preferences without changing SSR markup.
-      "src/app/admin/components/AdminLayout/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminLayout/index.tsx",
       // Synchronize controlled menu selection with a committed route.
-      "src/app/admin/components/AdminNavigation/index.tsx",
+      "src/app/admin/(dashboard)/components/AdminNavigation/index.tsx",
       // Restore browser-owned guest identity after hydration.
       "src/app/(blog)/components/features/comment/public/components/hooks/use-comment-identity.ts",
       // Clear picker selection when an externally controlled session closes.

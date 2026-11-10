@@ -1,10 +1,8 @@
-import { Suspense } from "react";
 import { format } from "date-fns";
 import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
-import { getPublicSetting } from "@/app/lib/server/public-queries";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import LoadingState from "@/components/LoadingState";
+import { createServerClient } from "@/app/trpc/server";
 
 /**
  * 网站底部组件。
@@ -12,8 +10,10 @@ import LoadingState from "@/components/LoadingState";
  * @returns {Promise<JSX.Element>} 网站底部。
  */
 export default async function Footer() {
+  await connection();
+  const trpc = await createServerClient();
   const [setting, locale] = await Promise.all([
-    getPublicSetting(),
+    trpc.setting.index(),
     getLocale(),
   ]);
   const language = normalizeMultiLangLocale(locale);
@@ -22,18 +22,7 @@ export default async function Footer() {
     <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[language]}</div>
       <div>
-        ©
-        <Suspense
-          fallback={
-            <LoadingState
-              variant="inline"
-              label={language === "zh" ? "正在加载年份" : "Loading year"}
-              visuallyHiddenLabel
-            />
-          }
-        >
-          <CurrentYear />
-        </Suspense>
+        ©{format(new Date(), "yyyy")}
         &nbsp;
         {setting?.siteCopyright?.[language]}
       </div>
@@ -56,9 +45,4 @@ export default async function Footer() {
       </div>
     </footer>
   );
-}
-
-async function CurrentYear() {
-  await connection();
-  return format(new Date(), "yyyy");
 }

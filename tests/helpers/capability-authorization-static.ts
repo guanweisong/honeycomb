@@ -179,7 +179,7 @@ const ROLE_POLICY_ALLOWLIST = new Set([
   "src/lib/auth/permissions.ts",
   // tRPC transport adapter 只负责把会话映射为统一授权 context。
   "src/lib/trpc/core.ts",
-  "src/app/admin/constants/menu-data.tsx",
+  "src/app/admin/(dashboard)/config/menu-data.tsx",
   "src/app/admin/constants/route-capabilities.ts",
   // Admin route template 只把已复核的用户角色映射到登记的 route capability。
   "src/app/admin/(dashboard)/template.tsx",

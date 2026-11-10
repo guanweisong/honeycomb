@@ -16,7 +16,7 @@ const expectedExclusions = [
   "**/*.d.ts",
   "**/*.test.{ts,tsx}",
   "**/*.spec.{ts,tsx}",
-  "src/app/pwa/sw.ts",
+  "src/app/(blog)/pwa/sw.ts",
   "src/components/ui/**",
   "tests/**",
 ];
@@ -35,10 +35,10 @@ const protectedProductionPatterns = [
   "src/lib/auth/**/*.ts",
   "src/env/**/*.ts",
   "src/lib/observability/**/*.ts",
-  "src/app/sitemap*.ts",
-  "src/app/lib/server/sitemap-data.ts",
-  "src/app/pwa/service-worker-*.ts",
-  "src/app/sitemap*/**/*.ts",
+  "src/app/(blog)/sitemap*.ts",
+  "src/app/(blog)/lib/server/sitemap-data.ts",
+  "src/app/(blog)/pwa/service-worker-*.ts",
+  "src/app/(blog)/sitemap*/**/*.ts",
   "src/lib/cache/upstash-cache.ts",
 ];
 
@@ -49,9 +49,9 @@ const criticalCoverageFiles = [
   "src/env/schema.ts",
   "src/env/server.ts",
   "src/env/validation.ts",
-  "src/app/lib/server/sitemap-data.ts",
-  "src/app/sitemap.xml/route.ts",
-  "src/app/sitemaps/[id]/route.ts",
+  "src/app/(blog)/lib/server/sitemap-data.ts",
+  "src/app/(blog)/sitemap.xml/route.ts",
+  "src/app/(blog)/sitemaps/[id]/route.ts",
   "src/lib/cache/upstash-cache.ts",
   "src/lib/observability/client.ts",
   "src/lib/observability/adapters/console.ts",
@@ -106,7 +106,7 @@ describe("coverage governance", () => {
       "utf8",
     );
 
-    expect(coverage?.exclude).toContain("src/app/pwa/sw.ts");
+    expect(coverage?.exclude).toContain("src/app/(blog)/pwa/sw.ts");
     expect(pwaE2e).toContain("navigator.serviceWorker.ready");
     expect(pwaE2e).toContain("context.setOffline(true)");
     expect(pwaE2e).toContain("page.goto(offlineTarget");

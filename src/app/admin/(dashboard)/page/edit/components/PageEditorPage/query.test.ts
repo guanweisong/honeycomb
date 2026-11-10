@@ -39,7 +39,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/app/admin/(dashboard)/page/edit/page-editor-actions", () => ({
   usePageEditorActions: () => vi.fn(),
 }));
-vi.mock("@/app/admin/components/AdminLayout/layout-context", () => ({
+vi.mock("@/app/admin/(dashboard)/components/AdminLayout/layout-context", () => ({
   AdminPageHeader: () => null,
 }));
 vi.mock("@/app/admin/(dashboard)/providers/use-current-user", () => ({

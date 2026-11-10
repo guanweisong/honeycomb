@@ -8,13 +8,18 @@ src/
   app/<route>/options.ts   # 路由拥有的展示选项
   app/<route>/<feature>-actions.ts # 路由拥有的客户端业务操作
   app/<route>/components/  # 路由拥有的 UI；此处不放 page/layout/route 入口
-  app/admin/components/    # 管理后台外层 shell 拥有的 UI
   app/admin/(dashboard)/   # 后台路由组拥有的共享工具和 UI
-    components/            # 仅真正跨页面复用的组件
-    config/                # dashboard 路由组共享配置
+    components/            # dashboard shell 与跨页面共用 UI
+    config/                # dashboard 路由组共享配置（包括 shell 菜单数据）
     draft/                 # dashboard 路由组本地草稿能力
     lib/                   # dashboard 路由组共享状态工具
     types/                 # dashboard 路由组共享 UI 类型
+  app/(blog)/              # 博客站点；route group 不进入公开 URL
+    robots.ts              # 博客站点的 /robots.txt metadata 入口
+    sitemap.xml/route.ts   # 博客站点的 /sitemap.xml 入口
+    sitemaps/[id]/route.ts # 博客站点的 sitemap 分片入口
+    lib/server/            # sitemap 专属数据实现
+    pwa/                   # 由构建脚本显式打包的博客 worker 源码与策略
   app/trpc/router.ts        # 根业务 router 组合
   app/trpc/server.ts        # 服务端 caller
   features/<feature>/

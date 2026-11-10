@@ -40,7 +40,11 @@ app、features、components、lib 的区别是框架组合、业务、通用交�
 
 ## 组件所有权
 
-路由拥有的 UI 放在 app 各路由组的 `components`，通用 UI 放在 `src/components`。RSC/client 边界由实际依赖和指令决定。现行归属见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)，此前迁移的路径映射见[迁移记录](component-ownership-migration.md)。
+路由拥有的 UI 放在 app 各路由组的 `components`，通用 UI 放在 `src/components`。RSC/client 边界由实际依赖和指令决定。现行归属见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-技术依赖不加载业务运行时)；后台 shell 的路由组归属见[后台 Shell 归属变更](../openspec/changes/move-admin-shell-to-dashboard/specs/package-layer-architecture/spec.md)，此前迁移的路径映射见[迁移记录](component-ownership-migration.md)。
+
+## 站点运行时归属
+
+站点专属的框架 metadata 路由、生成数据和非框架发现的 worker 源码归对应站点路由组。例如博客的 robots、sitemap 与 Serwist 源码位于 `src/app/(blog)`；route group 不进入 URL。Next 的根 metadata URL 在同一 App Router 中仍只能有一个所有者；多个站点需要共用时，使用唯一的 host 分发入口或独立应用/部署。规范见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-站点专属运行时入口归所属路由组)。
 
 ## 用行为证明精简安全
 

@@ -6,8 +6,8 @@ const { setting, connection } = vi.hoisted(() => ({
   connection: vi.fn(),
 }));
 vi.mock("next/server", () => ({ connection }));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicSetting: setting,
+vi.mock("@/app/trpc/server", () => ({
+  createServerClient: async () => ({ setting: { index: setting } }),
 }));
 import { GET } from "@/app/(blog)/[locale]/manifest.webmanifest/route";
 

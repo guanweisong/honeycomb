@@ -24,8 +24,10 @@ vi.mock("next/server", async (importOriginal) => ({
   connection: async () => undefined,
 }));
 
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicSetting: vi.fn(async () => mocks.setting),
+vi.mock("@/app/trpc/server", () => ({
+  createServerClient: async () => ({
+    setting: { index: vi.fn(async () => mocks.setting) },
+  }),
 }));
 
 import Footer from "@/app/(blog)/components/Footer";

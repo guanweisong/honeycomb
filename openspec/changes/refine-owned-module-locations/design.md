@@ -1,3 +1,5 @@
+> 历史决策：AdminLayout header context 的路径后来由 [move-admin-shell-to-dashboard](../move-admin-shell-to-dashboard/design.md) 调整到 `src/app/admin/(dashboard)/components/AdminLayout`；以下记录保留当时的实施范围与结论。
+
 ## 背景与目标
 
 按真实消费者归属，不统一成全局 types/hooks，也不为小文件制造无意义层级。保留 layout-context 和 editor-load-error 的内聚实现。

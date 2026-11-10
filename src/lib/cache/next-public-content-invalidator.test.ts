@@ -35,7 +35,7 @@ describe("publicContentInvalidator", () => {
     mockMetricIncrement.mockReset();
   });
 
-  it("invalidates the layout tag actually inherited by grouped blog pages", async () => {
+  it("revalidates the complete grouped layout route", async () => {
     await publicContentInvalidator.invalidate({ refreshLayout: true });
     const [path, type] = requireDefined(mockRevalidatePath.mock.calls[0]);
     const inherited = await getImplicitTags(
@@ -73,11 +73,7 @@ describe("publicContentInvalidator", () => {
       "cache:post:index:version",
     );
     expect(mockRevalidateTag.mock.calls).toEqual([
-      ["public.post-index", { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
-      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
-      ["public.page.507f1f77bcf86cd799439012", { expire: 0 }],
-      ["public.layout", { expire: 0 }],
     ]);
   });
 
@@ -88,9 +84,7 @@ describe("publicContentInvalidator", () => {
       ["/(blog)/[locale]", "layout"],
     ]);
     expect(mockBumpCacheVersion).not.toHaveBeenCalled();
-    expect(mockRevalidateTag).toHaveBeenCalledWith("public.layout", {
-      expire: 0,
-    });
+    expect(mockRevalidateTag).not.toHaveBeenCalled();
   });
 
   it("rejects arbitrary paths and invalid identifiers before side effects", async () => {
@@ -158,14 +152,8 @@ describe("publicContentInvalidator", () => {
     ).resolves.toEqual({ state: "degraded" });
 
     expect(mockRevalidateTag.mock.calls).toEqual([
-      ["public.post-index", { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
-      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
-      ["public.layout", { expire: 0 }],
-      ["public.post-index", { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
-      ["public.post.507f1f77bcf86cd799439011", { expire: 0 }],
-      ["public.layout", { expire: 0 }],
     ]);
     expect(mockRevalidatePath.mock.calls).toEqual([
       ["/zh/archives/507f1f77bcf86cd799439011"],
@@ -177,10 +165,10 @@ describe("publicContentInvalidator", () => {
     ]);
   });
 
-  it("continues independent tags and routes after Next cache targets fail", async () => {
+  it("continues route revalidation after sitemap cache invalidation fails", async () => {
     mockRevalidateTag.mockImplementation((tag: string) => {
-      if (tag === "public.post.507f1f77bcf86cd799439011") {
-        throw new Error("detail tag unavailable");
+      if (tag === SITEMAP_CACHE_TAG) {
+        throw new Error("sitemap tag unavailable");
       }
     });
     mockRevalidatePath.mockImplementation((path: string) => {
@@ -195,15 +183,12 @@ describe("publicContentInvalidator", () => {
           { id: "507f1f77bcf86cd799439012", type: "page" },
         ],
         refreshLayout: true,
+        refreshSitemap: true,
       }),
     ).resolves.toEqual({ state: "degraded" });
 
-    expect(mockRevalidateTag).toHaveBeenCalledTimes(6);
-    expect(mockRevalidateTag).toHaveBeenCalledWith(
-      "public.page.507f1f77bcf86cd799439012",
-      { expire: 0 },
-    );
-    expect(mockRevalidateTag).toHaveBeenCalledWith("public.layout", {
+    expect(mockRevalidateTag).toHaveBeenCalledTimes(2);
+    expect(mockRevalidateTag).toHaveBeenCalledWith(SITEMAP_CACHE_TAG, {
       expire: 0,
     });
     expect(mockRevalidatePath).toHaveBeenCalledTimes(10);

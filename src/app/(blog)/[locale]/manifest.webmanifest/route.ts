@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import type { MetadataRoute } from "next";
-import { getPublicSetting } from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 
 /** 按当前语言在请求时生成 Web App Manifest。 */
@@ -12,7 +12,8 @@ export async function GET(
 
   const { locale: rawLocale } = await params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  const setting = await getPublicSetting();
+  const trpc = await createServerClient();
+  const setting = await trpc.setting.index();
   const manifest: MetadataRoute.Manifest = {
     name: setting?.siteName?.[locale] ?? "Honeycomb",
     short_name: setting?.siteName?.[locale] ?? "Honeycomb",

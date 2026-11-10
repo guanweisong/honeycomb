@@ -1,4 +1,4 @@
-> 后续归属整理（2026-10-21）：下文涉及的 `src/components/Menu` 当前迁至 `src/app/admin/components/AdminNavigation`，因为消费者全部属于后台；正文保留当时范围与授权边界，当前命名工作见 [clarify-names-and-ownership](../clarify-names-and-ownership/proposal.md)。
+> 后续归属整理（2026-10-21）：下文涉及的 `src/components/Menu` 当前迁至 `src/app/admin/components/AdminNavigation`，因为消费者全部属于后台；该路径后来由 [move-admin-shell-to-dashboard](../move-admin-shell-to-dashboard/design.md) 进一步调整到 dashboard 路由组；正文保留当时范围与授权边界，当前命名工作见 [clarify-names-and-ownership](../clarify-names-and-ownership/proposal.md)。
 
 ## 为什么
 

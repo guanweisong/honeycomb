@@ -120,7 +120,10 @@ describe("App Router composition boundaries", () => {
     expect(invalidDirectories).toEqual([]);
     expect(
       existsSync(
-        join(appRoot, "admin/components/AdminLayout/AdminSidebar.tsx"),
+        join(
+          appRoot,
+          "admin/(dashboard)/components/AdminLayout/AdminSidebar.tsx",
+        ),
       ),
     ).toBe(true);
   });
@@ -145,7 +148,8 @@ describe("App Router 恢复与 viewport 边界", () => {
     );
 
     expect(source).toContain("export async function generateMetadata");
-    expect(source).toContain("getPublicSetting");
+    expect(source).toContain("createServerClient");
+    expect(source).toContain("trpc.setting.index()");
     expect(source).toContain("metadataBase");
     expect(source).toContain("openGraph");
     expect(source).toContain("twitter");

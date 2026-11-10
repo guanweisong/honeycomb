@@ -1,5 +1,7 @@
 # 组件归属迁移记录
 
+> 后续调整：本记录中的 P01 路径是当时迁移结果。受保护后台 shell 的当前路径见 [move-admin-shell-to-dashboard](../openspec/changes/move-admin-shell-to-dashboard/design.md)，其实现与现行约定位于 `(dashboard)` 路由组。
+
 ## 基线与范围
 
 本地 d39e2bcca412c6b9fe93763f96f3c6100367eeb1 与远端 454f38c33d433aecbdbf683ed8dab34e220d4c60 共享 tree 517783d972b2024bbd691f8dd332d63543bc1751。旧组件方案基于 tree 28a8a9ae；本轮选中 66 文件与最新基线逐字节一致，之前 rules/schema 整理完整保留。

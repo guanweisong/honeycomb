@@ -8,7 +8,7 @@ import { PageTemplate } from "@/features/page/types/page.template";
 import type { PageWithRelations as PageViewModel } from "@/features/page/types/page.read-model";
 import type { PageEditorForm } from "@/app/admin/(dashboard)/page/edit/components/PageEditorForm";
 import type { PageEditorActionButtons } from "@/app/admin/(dashboard)/page/edit/components/PageEditorActionButtons";
-import { AdminLayoutHeaderContext } from "@/app/admin/components/AdminLayout/layout-context";
+import { AdminLayoutHeaderContext } from "@/app/admin/(dashboard)/components/AdminLayout/layout-context";
 import {
   readPageCreationAttempt,
   writePageCreationAttempt,

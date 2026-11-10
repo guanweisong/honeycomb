@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { PostStatus } from "@/features/post/types/post.status";
 import { PageTemplate } from "@/features/page/types/page.template";
+import { EnableStatus } from "@/lib/validation/enable-status";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -50,12 +51,6 @@ vi.mock("@/app/trpc/server", () => ({
     },
     setting: { index: mockSettingIndex },
   }),
-}));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicComments: (...args: unknown[]) => mockComments(...args),
-  getPublicPageDetail: (...args: unknown[]) => mockPageDetail(...args),
-  getPublicSetting: (...args: unknown[]) => mockSettingIndex(...args),
-  getPublicLinks: (...args: unknown[]) => mockLinks(...args),
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
@@ -315,7 +310,7 @@ describe("pages detail page", () => {
       openGraph: { images: ["/static/images/logo.png"] },
     });
   });
-  it("protects the opener for friendly links opened in another tab", async () => {
+  it("protects the opener and reads all bounded pages of friendly links", async () => {
     mockPageDetail.mockResolvedValue({
       id: "333333333333333333333333",
       title: { zh: "友情链接" },
@@ -325,21 +320,43 @@ describe("pages detail page", () => {
       imagesInContent: [],
       views: 0,
     });
-    mockLinks.mockResolvedValue({
-      total: 1,
-      list: [
-        {
-          name: "Example",
-          url: "https://example.test",
-          logo: "https://example.test/logo.png",
-        },
-      ],
-    });
+    mockLinks
+      .mockResolvedValueOnce({
+        total: 101,
+        list: [
+          {
+            name: "Example",
+            url: "https://example.test",
+            logo: "https://example.test/logo.png",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        total: 101,
+        list: [
+          {
+            name: "Second page",
+            url: "https://second.example.test",
+            logo: "https://second.example.test/logo.png",
+          },
+        ],
+      });
     const element = await Pages({
       params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
     await act(async () => root.render(element));
+    expect(mockLinks).toHaveBeenNthCalledWith(1, {
+      limit: 100,
+      status: [EnableStatus.ENABLE],
+      page: 1,
+    });
+    expect(mockLinks).toHaveBeenNthCalledWith(2, {
+      limit: 100,
+      status: [EnableStatus.ENABLE],
+      page: 2,
+    });
+    expect(container.textContent).toContain("Second page");
     expect(
       container
         .querySelector('a[target="_blank"]')

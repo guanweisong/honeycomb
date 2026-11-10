@@ -1,13 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { unstable_rethrow } from "next/navigation";
-import { getPublicComments } from "@/app/lib/server/public-queries";
+import { connection } from "next/server";
+import { createServerClient } from "@/app/trpc/server";
 import CommentClient from "@/app/(blog)/components/features/comment/public/components/CommentClient";
 import type { MenuType } from "@/features/menu/types/menu.type";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 
 export async function loadOptionalPublicComments(id: string, type: MenuType) {
   try {
-    return await getPublicComments(id, type);
+    await connection();
+    const trpc = await createServerClient();
+    return await trpc.comment.listByRef({ id, type });
   } catch (error) {
     unstable_rethrow(error);
     // A comment failure or a concurrent disable must not replace public content.

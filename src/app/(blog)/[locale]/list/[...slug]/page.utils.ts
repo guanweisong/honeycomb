@@ -4,11 +4,7 @@ import {
   getCategoryRouteSegments,
 } from "@/app/(blog)/lib/category-route";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
-import {
-  getPublicAuthor,
-  getPublicMenu,
-  getPublicTag,
-} from "@/app/lib/server/public-queries";
+import { createServerClient } from "@/app/trpc/server";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 import { PostStatus } from "@/features/post/types/post.status";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
@@ -53,7 +49,8 @@ export async function resolveListContext({
         break;
       }
       if (paths.some((path) => !path)) notFound();
-      const items = (await getPublicMenu()).list;
+      const trpc = await createServerClient();
+      const items = (await trpc.menu.index()).list;
       const matches = (expected: string[]) =>
         expected.length === paths.length &&
         expected.every((path, index) => path === paths[index]);
@@ -74,7 +71,10 @@ export async function resolveListContext({
       break;
     }
     case "tags": {
-      const matchedTag = await getPublicTag(typeValue);
+      const trpc = await createServerClient();
+      const matchedTag = (
+        await trpc.tag.index({ limit: 1, page: 1, id: [typeValue] })
+      ).list[0];
       if (!matchedTag) notFound();
       queryParams = {
         ...queryParams,
@@ -84,7 +84,8 @@ export async function resolveListContext({
       break;
     }
     case "authors": {
-      const matchedAuthor = await getPublicAuthor(typeValue);
+      const trpc = await createServerClient();
+      const matchedAuthor = await trpc.user.detail({ id: typeValue });
       if (!matchedAuthor) notFound();
       queryParams = {
         ...queryParams,

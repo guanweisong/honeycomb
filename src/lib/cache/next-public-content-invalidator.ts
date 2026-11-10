@@ -8,10 +8,6 @@ import {
 } from "@/lib/cache/public-content-invalidator";
 import { bumpCacheVersion } from "@/lib/cache/upstash-cache";
 import {
-  getPageDetailCacheTag,
-  getPostDetailCacheTag,
-  POST_INDEX_CACHE_TAG,
-  PUBLIC_LAYOUT_CACHE_TAG,
   POST_CACHE_NAMESPACE,
   POST_CACHE_VERSION_KEY,
   SITEMAP_CACHE_TAG,
@@ -43,25 +39,17 @@ async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
     await attempt(() =>
       bumpCacheVersion(POST_CACHE_NAMESPACE, POST_CACHE_VERSION_KEY),
     );
-    await attempt(() => revalidateTag(POST_INDEX_CACHE_TAG, { expire: 0 }));
   }
   if (plan.refreshSitemap) {
     await attempt(() => revalidateTag(SITEMAP_CACHE_TAG, { expire: 0 }));
   }
   for (const { id, type } of references.values()) {
-    await attempt(() =>
-      revalidateTag(
-        type === "post" ? getPostDetailCacheTag(id) : getPageDetailCacheTag(id),
-        { expire: 0 },
-      ),
-    );
     const segment = type === "post" ? "archives" : "pages";
     for (const locale of supportedLanguages) {
       await attempt(() => revalidatePath(`/${locale}/${segment}/${id}`));
     }
   }
   if (plan.refreshLayout) {
-    await attempt(() => revalidateTag(PUBLIC_LAYOUT_CACHE_TAG, { expire: 0 }));
     await attempt(() => revalidatePath("/(blog)/[locale]", "layout"));
   }
   if (failed) throw new Error("Public cache invalidation failed");

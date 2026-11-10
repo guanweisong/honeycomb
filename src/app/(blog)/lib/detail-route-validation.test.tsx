@@ -21,13 +21,21 @@ vi.mock("next/navigation", async (importOriginal) => {
 vi.mock("next-intl/server", () => ({
   getTranslations: async () => (key: string) => key,
 }));
-vi.mock("@/app/lib/server/public-queries", () => ({
-  getPublicPostDetail: (...args: unknown[]) => mockPostDetail(...args),
-  getPublicPageDetail: (...args: unknown[]) => mockPageDetail(...args),
-  getPublicSetting: (...args: unknown[]) => mockSetting(...args),
-  getPublicComments: (...args: unknown[]) => mockComments(...args),
-  getPublicRandomPosts: vi.fn(),
-  getPublicLinks: vi.fn(),
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  connection: async () => undefined,
+}));
+vi.mock("@/app/trpc/server", () => ({
+  createServerClient: async () => ({
+    comment: { listByRef: (...args: unknown[]) => mockComments(...args) },
+    link: { index: vi.fn() },
+    page: { detail: (...args: unknown[]) => mockPageDetail(...args) },
+    post: {
+      detail: (...args: unknown[]) => mockPostDetail(...args),
+      getRandomByCategory: vi.fn(),
+    },
+    setting: { index: (...args: unknown[]) => mockSetting(...args) },
+  }),
 }));
 vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
   default: () => null,
@@ -146,7 +154,7 @@ describe.each(entryPoints)("$name route validation", ({ query, invoke }) => {
     await expect(invoke(validId)).rejects.toThrow(
       "NEXT_HTTP_ERROR_FALLBACK;404",
     );
-    expect(query).toHaveBeenCalledWith(validId);
+    expect(query).toHaveBeenCalledWith({ id: validId });
     expect(mockComments).not.toHaveBeenCalled();
   });
 
@@ -164,7 +172,7 @@ describe.each(entryPoints)("$name route validation", ({ query, invoke }) => {
     "accepts the existing ID schema without inventing restrictions: %s",
     async (id) => {
       await expect(invoke(id)).resolves.toBeDefined();
-      expect(query).toHaveBeenCalledWith(id);
+      expect(query).toHaveBeenCalledWith({ id });
     },
   );
 });

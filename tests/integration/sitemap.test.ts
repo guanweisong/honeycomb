@@ -72,9 +72,9 @@ vi.mock("@/features/page/server/page-queries", () => ({
   countPublishedPages: pageCountMock,
 }));
 
-import * as sitemapIndexRoute from "@/app/sitemap.xml/route";
-import * as sitemapShardRoute from "@/app/sitemaps/[id]/route";
-import { getCachedSitemapShard } from "@/app/lib/server/sitemap-data";
+import * as sitemapIndexRoute from "@/app/(blog)/sitemap.xml/route";
+import * as sitemapShardRoute from "@/app/(blog)/sitemaps/[id]/route";
+import { getCachedSitemapShard } from "@/app/(blog)/lib/server/sitemap-data";
 
 const client = {
   menu: { index: menuIndexMock },
@@ -134,8 +134,8 @@ describe("runtime sitemap", () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
 
-    const index = await import("@/app/sitemap.xml/route");
-    const shard = await import("@/app/sitemaps/[id]/route");
+    const index = await import("@/app/(blog)/sitemap.xml/route");
+    const shard = await import("@/app/(blog)/sitemaps/[id]/route");
     expect(index).not.toHaveProperty("dynamic");
     expect(shard).not.toHaveProperty("dynamic");
     expect(getServerEnvMock).not.toHaveBeenCalled();

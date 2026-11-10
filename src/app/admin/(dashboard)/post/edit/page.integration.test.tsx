@@ -98,7 +98,7 @@ vi.mock("@/app/admin/(dashboard)/components/CategoryFormDialog", () => ({
 }));
 
 import PostDetail from "@/app/admin/(dashboard)/post/edit/page";
-import { AdminLayoutHeaderContext } from "@/app/admin/components/AdminLayout/layout-context";
+import { AdminLayoutHeaderContext } from "@/app/admin/(dashboard)/components/AdminLayout/layout-context";
 
 const published: PostDetailResult = {
   id: state.id,
