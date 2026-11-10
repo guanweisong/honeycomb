@@ -1,6 +1,6 @@
 import { ViewTransition } from "react";
 import Menu from "@/app/(blog)/components/Menu";
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 import getCurrentPathOfMenu from "@/app/(blog)/lib/get-current-path-of-menu";
 import Breadcrumb from "@/app/(blog)/components/Breadcrumb";
 import { ThemeSwitcher } from "@/app/(blog)/components/ThemeSwitcher";

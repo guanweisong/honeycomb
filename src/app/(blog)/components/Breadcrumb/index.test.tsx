@@ -17,7 +17,7 @@ vi.mock("next-intl", () => ({
   useLocale: () => locale,
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   Link: ({
     children,
     ...props

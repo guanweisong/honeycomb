@@ -1,5 +1,5 @@
 import { Align } from "@/features/post/types/post-info.align";
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 import React, { ViewTransition } from "react";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useTranslations } from "next-intl";

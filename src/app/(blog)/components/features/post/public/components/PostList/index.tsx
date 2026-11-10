@@ -3,7 +3,7 @@
 import Image from "next/image";
 import useInfiniteQueryPostList from "@/app/(blog)/components/features/post/public/use-post-list";
 import React, { JSX, useEffect, useRef, ViewTransition } from "react";
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 import TextDivider from "@/app/(blog)/components/features/post/public/components/PostList/TextDivider";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";

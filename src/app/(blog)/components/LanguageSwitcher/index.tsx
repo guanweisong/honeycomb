@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 import { ViewTransition } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
-import { getPathname, usePathname } from "@/lib/i18n/blog-navigation";
+import { getPathname, usePathname } from "@/app/(blog)/lib/blog-navigation";
 import { useTheme } from "next-themes";
 import zhIcon from "@/app/(blog)/components/LanguageSwitcher/img/zh.svg";
 import enIcon from "@/app/(blog)/components/LanguageSwitcher/img/en.svg";

@@ -2,7 +2,7 @@
 
 import { useSelectedLayoutSegments } from "next/navigation";
 import React from "react";
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";

@@ -21,7 +21,7 @@ vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
   ViewTransition: ({ children }: { children: React.ReactNode }) => children,
 }));
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
 }));

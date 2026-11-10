@@ -53,7 +53,7 @@ vi.mock("next/link", () => ({
   },
 }));
 
-vi.mock("@/lib/i18n/blog-navigation", () => ({
+vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   usePathname: () => mocks.pathname,
   getPathname: ({ href, locale }: { href: string; locale: string }) =>
     `/${locale}${href}`,

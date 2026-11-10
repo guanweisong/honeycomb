@@ -4,7 +4,7 @@ vi.mock("next-intl/navigation", () => ({
   createNavigation: () => ({ Link: () => null }),
 }));
 
-import { Link } from "@/lib/i18n/blog-navigation";
+import { Link } from "@/app/(blog)/lib/blog-navigation";
 
 describe("blog Link prefetch policy", () => {
   it("prefetches URL-specific content by default and preserves navigation props", () => {
