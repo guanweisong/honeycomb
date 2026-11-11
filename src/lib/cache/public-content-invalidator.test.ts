@@ -48,6 +48,15 @@ describe("PublicContentInvalidator", () => {
     expect(Object.keys(invalidator)).toEqual(["invalidate"]);
   });
 
+  it("接受按类型失效公开详情的结构化范围", () => {
+    const plan = {
+      refreshPostDetails: true,
+      refreshPageDetails: true,
+    } as const;
+
+    expect(PublicCacheInvalidationPlanSchema.parse(plan)).toEqual(plan);
+  });
+
   it("拒绝没有任何实际目标的失效计划", () => {
     for (const plan of [
       {},
@@ -55,6 +64,8 @@ describe("PublicContentInvalidator", () => {
       { refreshLayout: false },
       { refreshPostIndex: false },
       { refreshSitemap: false },
+      { refreshPostDetails: false },
+      { refreshPageDetails: false },
     ]) {
       expect(() => PublicCacheInvalidationPlanSchema.parse(plan)).toThrow();
     }

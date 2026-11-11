@@ -28,7 +28,6 @@ import {
 } from "@/features/post/server/post-commands";
 import {
   listPosts,
-  listPublicPosts,
   getPost,
   getRandomPostsByCategory,
   getPublishedPostCategoryId,
@@ -47,9 +46,7 @@ export const postRouter = createTRPCRouter({
   index: publicProcedure
     .input(PublicPostListQuerySchema)
     .query(({ input: { cursor, ...input }, ctx }) =>
-      ctx.hasRequest
-        ? getCachedPostList(ctx.db, input, cursor)
-        : listPublicPosts(ctx.db, input, cursor),
+      getCachedPostList(ctx.db, input, cursor),
     ),
 
   adminIndex: permissionProcedure(Permission.postReadAll)

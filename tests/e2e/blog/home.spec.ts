@@ -2,6 +2,16 @@ import { test, expect } from "@playwright/test";
 import { decodeTrpcBatchRequest } from "@tests/helpers/trpc-batch";
 import { openBlogHome } from "@tests/e2e/blog/helpers";
 
+function hasCursor(input: unknown): boolean {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    "cursor" in input &&
+    typeof input.cursor === "object" &&
+    input.cursor !== null
+  );
+}
+
 test.describe("blog home", () => {
   test("@regression back-to-top stays inside narrow and wide viewports", async ({
     page,
@@ -77,7 +87,10 @@ test.describe("blog home", () => {
           url: request.url(),
           method: request.method(),
           body: request.postData(),
-        }).some(({ procedure }) => procedure === "post.index"),
+        }).some(
+          ({ procedure, input }) =>
+            procedure === "post.index" && hasCursor(input),
+        ),
       { timeout: 15_000 },
     );
     await page.evaluate(() => {

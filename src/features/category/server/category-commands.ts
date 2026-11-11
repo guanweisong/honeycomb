@@ -200,6 +200,7 @@ export async function updateCategory(
   const persisted = requireWriteResult(value, "update", "category");
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
+    refreshPostDetails: true,
     refreshPostIndex: true,
     refreshSitemap: true,
   });
@@ -230,6 +231,7 @@ export async function destroyCategories(
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,
+    refreshPostDetails: true,
     refreshSitemap: true,
   });
   return { ...persisted, publicSync: publicSync.state };

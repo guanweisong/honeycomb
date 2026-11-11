@@ -9,6 +9,7 @@ import { createRoot, type Root } from "react-dom/client";
 
 const mockGetLocale = vi.fn();
 const mockGetTranslations = vi.fn();
+const mockCreateServerClient = vi.fn();
 const mockSettingIndex = vi.fn();
 const mockPostDetail = vi.fn();
 const mockRandomPosts = vi.fn();
@@ -33,6 +34,10 @@ vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,
 }));
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
+}));
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
@@ -45,15 +50,18 @@ vi.mock("next-intl", () => ({
 }));
 
 vi.mock("@/app/trpc/server", () => ({
-  createServerClient: async () => ({
-    comment: { listByRef: mockComments },
-    post: {
-      detail: mockPostDetail,
-      getRandomByCategory: mockRandomPosts,
-      incrementViews: mockIncrementViews,
-    },
-    setting: { index: mockSettingIndex },
-  }),
+  createServerClient: (...args: unknown[]) => {
+    mockCreateServerClient(...args);
+    return Promise.resolve({
+      comment: { listByRef: mockComments },
+      post: {
+        detail: mockPostDetail,
+        getRandomByCategory: mockRandomPosts,
+        incrementViews: mockIncrementViews,
+      },
+      setting: { index: mockSettingIndex },
+    });
+  },
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
@@ -159,6 +167,7 @@ describe("archives page", () => {
     root = createRoot(container);
 
     mockGetLocale.mockReset().mockResolvedValue("zh");
+    mockCreateServerClient.mockReset();
     mockGetTranslations.mockReset().mockResolvedValue((key: string) => {
       const values: Record<string, string> = {
         guessWhatYouLike: "猜你喜欢",
@@ -482,6 +491,21 @@ describe("archives page", () => {
         searchParams: Promise.resolve({}),
       }),
     ).resolves.toMatchObject(expected);
+  });
+
+  it("uses the body-prefetch cache for article metadata", async () => {
+    await generateMetadata({
+      params: Promise.resolve({
+        id: "111111111111111111111111",
+        locale: "zh",
+      }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(mockCreateServerClient).toHaveBeenCalledWith({
+      requestContext: { requestId: "public-detail-cache-fill" },
+      skipRequestObservability: true,
+    });
   });
 
   it.each(["增长 100%", "Literal %20 title", "Bad %E0%A4%A escape"])(

@@ -25,6 +25,7 @@ import { getImplicitTags } from "next/dist/server/lib/implicit-tags";
 import { NEXT_CACHE_IMPLICIT_TAG_ID } from "next/dist/lib/constants";
 
 const SITEMAP_CACHE_TAG = "public.sitemap";
+const BLOG_LIST_CACHE_TAG = "public.blog-lists";
 
 describe("publicContentInvalidator", () => {
   beforeEach(() => {
@@ -56,6 +57,8 @@ describe("publicContentInvalidator", () => {
         { id: "507f1f77bcf86cd799439012", type: "page" },
       ],
       refreshLayout: true,
+      refreshPageDetails: true,
+      refreshPostDetails: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     });
@@ -73,18 +76,52 @@ describe("publicContentInvalidator", () => {
       "cache:post:index:version",
     );
     expect(mockRevalidateTag.mock.calls).toEqual([
+      [BLOG_LIST_CACHE_TAG, { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post-details", { expire: 0 }],
+      ["public.page-details", { expire: 0 }],
+      ["public.post-detail:507f1f77bcf86cd799439011", { expire: 0 }],
+      ["public.page-detail:507f1f77bcf86cd799439012", { expire: 0 }],
     ]);
   });
 
-  it("does not execute omitted cache scopes", async () => {
+  it("invalidates per-detail cache tags before their public paths", async () => {
+    const postId = "507f1f77bcf86cd799439011";
+    const pageId = "507f1f77bcf86cd799439012";
+
+    await publicContentInvalidator.invalidate({
+      contents: [
+        { id: postId, type: "post" },
+        { id: pageId, type: "page" },
+      ],
+      refreshPageDetails: true,
+      refreshPostDetails: true,
+    });
+
+    expect(mockRevalidateTag.mock.calls).toEqual([
+      ["public.post-details", { expire: 0 }],
+      ["public.page-details", { expire: 0 }],
+      [`public.post-detail:${postId}`, { expire: 0 }],
+      [`public.page-detail:${pageId}`, { expire: 0 }],
+    ]);
+    expect(mockRevalidatePath.mock.calls).toEqual([
+      [`/zh/archives/${postId}`],
+      [`/en/archives/${postId}`],
+      [`/zh/pages/${pageId}`],
+      [`/en/pages/${pageId}`],
+    ]);
+  });
+
+  it("refreshes route-derived lists with the layout cache scope", async () => {
     await publicContentInvalidator.invalidate({ refreshLayout: true });
 
     expect(mockRevalidatePath.mock.calls).toEqual([
       ["/(blog)/[locale]", "layout"],
     ]);
     expect(mockBumpCacheVersion).not.toHaveBeenCalled();
-    expect(mockRevalidateTag).not.toHaveBeenCalled();
+    expect(mockRevalidateTag.mock.calls).toEqual([
+      [BLOG_LIST_CACHE_TAG, { expire: 0 }],
+    ]);
   });
 
   it("rejects arbitrary paths and invalid identifiers before side effects", async () => {
@@ -152,8 +189,12 @@ describe("publicContentInvalidator", () => {
     ).resolves.toEqual({ state: "degraded" });
 
     expect(mockRevalidateTag.mock.calls).toEqual([
+      [BLOG_LIST_CACHE_TAG, { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post-detail:507f1f77bcf86cd799439011", { expire: 0 }],
+      [BLOG_LIST_CACHE_TAG, { expire: 0 }],
       [SITEMAP_CACHE_TAG, { expire: 0 }],
+      ["public.post-detail:507f1f77bcf86cd799439011", { expire: 0 }],
     ]);
     expect(mockRevalidatePath.mock.calls).toEqual([
       ["/zh/archives/507f1f77bcf86cd799439011"],
@@ -187,8 +228,11 @@ describe("publicContentInvalidator", () => {
       }),
     ).resolves.toEqual({ state: "degraded" });
 
-    expect(mockRevalidateTag).toHaveBeenCalledTimes(2);
+    expect(mockRevalidateTag).toHaveBeenCalledTimes(8);
     expect(mockRevalidateTag).toHaveBeenCalledWith(SITEMAP_CACHE_TAG, {
+      expire: 0,
+    });
+    expect(mockRevalidateTag).toHaveBeenCalledWith(BLOG_LIST_CACHE_TAG, {
       expire: 0,
     });
     expect(mockRevalidatePath).toHaveBeenCalledTimes(10);
@@ -210,8 +254,14 @@ describe("publicContentInvalidator", () => {
       order.push("post-index");
       return 2;
     });
-    mockRevalidateTag.mockImplementationOnce(() => {
-      order.push("sitemap");
+    mockRevalidateTag.mockImplementation((tag: string) => {
+      order.push(
+        tag === SITEMAP_CACHE_TAG
+          ? "sitemap"
+          : tag === BLOG_LIST_CACHE_TAG
+            ? "blog-lists"
+            : "detail",
+      );
     });
     mockRevalidatePath.mockImplementation(() => {
       order.push("route");
@@ -224,6 +274,14 @@ describe("publicContentInvalidator", () => {
       refreshSitemap: true,
     });
 
-    expect(order).toEqual(["post-index", "sitemap", "route", "route", "route"]);
+    expect(order).toEqual([
+      "post-index",
+      "blog-lists",
+      "sitemap",
+      "detail",
+      "route",
+      "route",
+      "route",
+    ]);
   });
 });

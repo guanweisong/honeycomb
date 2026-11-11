@@ -41,14 +41,10 @@ describe("public post-list pagination", () => {
     notifyManager.setScheduler((callback) => setTimeout(callback, 0));
   });
 
-  async function render(
-    ids: string[],
-    total: number,
-    snapshot?: string,
-    more = false,
-  ) {
+  async function render(ids: string[], total: number, more = false) {
+    const queryParams = { limit: 10 };
     function Probe() {
-      query = usePostList({ limit: 10 }, page(ids, total, more), snapshot);
+      query = usePostList(queryParams, page(ids, total, more));
       return React.createElement(
         "output",
         null,
@@ -66,27 +62,36 @@ describe("public post-list pagination", () => {
     );
   }
 
-  it("prefers a changed RSC snapshot over previously cached data for the same filters", async () => {
-    await render(["old"], 1, "old-snapshot");
-    await render(["new"], 1, "new-snapshot");
-    expect(
-      requireDefined(query).data?.pages[0]?.list.map(({ id }) => id),
-    ).toEqual(["new"]);
-    expect(transport.request).not.toHaveBeenCalled();
-  });
+  it("seeds fresh prefetched data into the stable list query", async () => {
+    const queryParams = { limit: 10 };
+    const queryKey = ["posts", queryParams];
+    const startedAt = Date.now();
+    const initialData = page(["prefetched"], 1);
 
-  it("uses a new RSC revision when a previously seen first page recurs", async () => {
-    await render(["original"], 1, "first");
-    await act(async () => {
-      client.setQueryData(["posts", { limit: 10 }, "first"], {
-        pages: [page(["changed"], 1)],
-        pageParams: [null],
-      });
+    function Probe() {
+      query = usePostList(queryParams, initialData);
+      return React.createElement("output", null, query.data?.pages[0]?.list[0]?.id);
+    }
+
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client },
+          React.createElement(Probe),
+        ),
+      ),
+    );
+
+    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("prefetched");
+    expect(client.getQueryData(queryKey)).toEqual({
+      pages: [initialData],
+      pageParams: [null],
     });
-    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("changed");
-
-    await render(["original"], 1, "later");
-    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("original");
+    expect(client.getQueryState(queryKey)?.dataUpdatedAt).toBeGreaterThanOrEqual(
+      startedAt,
+    );
+    expect(transport.request).not.toHaveBeenCalled();
   });
 
   it("stops after an empty initial page even if its total is stale", async () => {
@@ -96,7 +101,7 @@ describe("public post-list pagination", () => {
   });
 
   it("stops after an empty later page while preserving already loaded posts", async () => {
-    await render(["first"], 5, undefined, true);
+    await render(["first"], 5, true);
     transport.request.mockResolvedValueOnce(page([], 5));
     await act(async () => {
       await requireDefined(query).fetchNextPage();
@@ -110,7 +115,7 @@ describe("public post-list pagination", () => {
   });
 
   it("follows cursor boundaries independently of a changing total", async () => {
-    await render(["first"], 3, undefined, true);
+    await render(["first"], 3, true);
     expect(requireDefined(query).hasNextPage).toBe(true);
     transport.request.mockResolvedValueOnce(page(["second"], 1, true));
     await act(async () => {
