@@ -6,8 +6,8 @@ import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
-import LoadingState from "@/components/LoadingState";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
+import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 
 /**
  * 列表页面组件。
@@ -18,7 +18,7 @@ import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page
 export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
   return (
     <>
-      <Suspense fallback={<LoadingState variant="region" />}>
+      <Suspense fallback={<PostListSkeleton label="Loading articles" />}>
         <ListContent {...props} />
       </Suspense>
     </>
@@ -54,14 +54,8 @@ function getListRouteData(
 }
 
 async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  const {
-    type,
-    title,
-    emptyLabel,
-    queryParams,
-    listResult,
-    listHasContent,
-  } = await getListRouteData(props.params);
+  const { type, title, emptyLabel, queryParams, listResult, listHasContent } =
+    await getListRouteData(props.params);
 
   return (
     <>

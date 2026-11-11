@@ -1,4 +1,3 @@
-import React, { Suspense } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
@@ -83,15 +82,11 @@ export default async function LocaleLayout({
               >
                 Skip to main content
               </a>
-              <Suspense fallback={null}>
-                <Header />
-              </Suspense>
+              <Header />
               <main id="main-content" className="container px-2">
                 {children}
               </main>
-              <Suspense fallback={null}>
-                <Footer />
-              </Suspense>
+              <Footer />
               <BackToTop />
               <Toaster />
             </NextIntlClientProvider>

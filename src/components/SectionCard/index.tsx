@@ -7,7 +7,7 @@ export interface CardProps {
   /**
    * 卡片的标题。
    */
-  title: string;
+  title: React.ReactNode;
   /**
    * 卡片的内容。
    */

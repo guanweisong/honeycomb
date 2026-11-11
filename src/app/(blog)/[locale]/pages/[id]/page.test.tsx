@@ -77,9 +77,10 @@ vi.mock("@/app/(blog)/components/features/post/public/PostInfo", () => ({
 vi.mock(
   "@/app/(blog)/components/features/comment/public/components/CommentClient",
   () => ({
-    default: (props: unknown) => {
+    CommentListContent: () => null,
+    default: (props: { children?: React.ReactNode }) => {
       mockCommentRender(props);
-      return null;
+      return props.children ?? null;
     },
   }),
 );
@@ -247,14 +248,14 @@ describe("pages detail page", () => {
         }),
       ),
     );
-    expect(mockCommentRender).not.toHaveBeenCalled();
+    expect(mockCommentRender).toHaveBeenCalled();
     const failure = new Error("comments unavailable");
     rejectComments(failure);
     await expect(comments).rejects.toBe(failure);
     await act(async () => resolveLinks({ list: [], total: 0 }));
     expect(container.querySelector("h1")?.textContent).toBe("友链");
     expect(container.textContent).toContain("评论暂时不可用。");
-    expect(mockCommentRender).not.toHaveBeenCalled();
+    expect(mockCommentRender).toHaveBeenCalled();
   });
 
   it("keeps server rendering read-only and reports the view after mounting", async () => {

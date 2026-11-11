@@ -7,7 +7,9 @@ import { Link } from "@/app/(blog)/lib/blog-navigation";
 import {
   PublicCommentCount,
   PublicCommentSection,
+  PublicCommentSectionSkeleton,
 } from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
+import CommentClient from "@/app/(blog)/components/features/comment/public/components/CommentClient";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { utcFormat } from "@/lib/ui/utc-format";
@@ -16,6 +18,7 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/app/trpc/server";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
@@ -72,9 +75,7 @@ export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
       <Suspense fallback={null}>
         <DynamicMetadataMarker />
       </Suspense>
-      <Suspense fallback={<LoadingState variant="region" />}>
-        <ArchiveContent {...props} />
-      </Suspense>
+      <ArchiveContent {...props} />
     </>
   );
 }
@@ -190,7 +191,10 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
       <Tags {...postDetail} />
       <Suspense
         fallback={
-          <LoadingState variant="region" label={postInfoT("loading")} />
+          <RecommendedPostsSkeleton
+            title={t("guessWhatYouLike")}
+            label={postInfoT("loading")}
+          />
         }
       >
         <RecommendedPosts
@@ -201,13 +205,19 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         />
       </Suspense>
       {hasComments && (
-        <Suspense fallback={<LoadingState variant="region" />}>
-          <PublicCommentSection
-            id={id}
-            type={MenuType.CATEGORY}
-            locale={locale}
-          />
-        </Suspense>
+        <CommentClient id={id} type={MenuType.CATEGORY}>
+          <Suspense
+            fallback={
+              <PublicCommentSectionSkeleton label={postInfoT("loading")} />
+            }
+          >
+            <PublicCommentSection
+              id={id}
+              type={MenuType.CATEGORY}
+              locale={locale}
+            />
+          </Suspense>
+        </CommentClient>
       )}
     </>
   );
@@ -251,6 +261,50 @@ async function RecommendedPosts({
         ))}
       </ul>
     </Card>
+  );
+}
+
+function RecommendedPostsSkeleton({
+  title,
+  label,
+}: {
+  title: string;
+  label: string;
+}) {
+  return (
+    <div role="status" aria-label={label} aria-busy="true">
+      <Card
+        title={
+          <Skeleton
+            aria-hidden="true"
+            className={`inline-block h-5 rounded-sm bg-auto-front-gray/10 align-middle ${
+              title.length <= 8 ? "w-20" : "w-32"
+            }`}
+          />
+        }
+      >
+        <ul aria-hidden="true" className="leading-5 ml-4 mt-2 list-none">
+          <li className="my-2">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-11/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
+              <Skeleton className="hidden h-4 w-3/5 rounded-sm bg-auto-front-gray/10 max-md:block" />
+            </div>
+          </li>
+          <li className="my-2">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-11/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
+              <Skeleton className="hidden h-4 w-3/5 rounded-sm bg-auto-front-gray/10 max-md:block" />
+            </div>
+          </li>
+          <li className="my-2">
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-7/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
+              <Skeleton className="hidden h-4 w-1/4 rounded-sm bg-auto-front-gray/10 max-md:block" />
+            </div>
+          </li>
+        </ul>
+      </Card>
+    </div>
   );
 }
 

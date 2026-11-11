@@ -184,9 +184,7 @@ describe("PostList", () => {
           messages={locale === "en" ? enMessages : zhMessages}
           timeZone="UTC"
         >
-          <PostList
-            queryParams={{ limit: 10 }}
-          />
+          <PostList queryParams={{ limit: 10 }} />
         </NextIntlClientProvider>,
       );
     });
@@ -403,13 +401,16 @@ describe("PostList", () => {
     expect(observer?.disconnect).toHaveBeenCalledOnce();
   });
 
-  it("shows a loading indicator while fetching the next page", async () => {
+  it("shows a skeleton while fetching the next page", async () => {
     listState.hasNextPage = true;
     listState.isFetchingNextPage = true;
     listState.isFetching = true;
     await renderList();
 
-    expect(container.querySelector(".animate-spin")).not.toBeNull();
+    expect(
+      container.querySelector('[role="status"][aria-busy="true"]'),
+    ).not.toBeNull();
+    expect(container.querySelector(".animate-spin")).toBeNull();
   });
 
   it("treats missing page lists as an empty completed feed", async () => {

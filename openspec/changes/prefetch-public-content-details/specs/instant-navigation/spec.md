@@ -12,6 +12,10 @@
 - **WHEN** 生产环境的页面链接进入视口且预取在点击前完成
 - **THEN** 对应 RSC 预取响应包含页面正文，动态友情链接或评论可继续显示自己的 fallback
 
+#### Scenario: 评论读取等待时仍可发表留言
+- **WHEN** 文章或独立页面的请求时评论读取仍在等待
+- **THEN** 发表留言表单先行渲染，评论列表在自己的 Suspense fallback 后加载，回复按钮仍可定位并更新该表单
+
 #### Scenario: 同筛选条件接收更新的 Blog 列表首屏
 - **WHEN** 客户端已有同一筛选条件的列表缓存，且路由收到更新的服务端首屏列表
 - **THEN** TanStack Query 在稳定的列表 query key 下应用较新的 hydration 数据，不依赖每请求 UUID 区分 query key

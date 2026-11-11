@@ -9,8 +9,8 @@ import { utcFormat } from "@/lib/ui/utc-format";
 import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "cn";
-import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
+import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 import type {
   PublicPostListItem,
   PublicPostListResult,
@@ -190,13 +190,7 @@ export default function PostList(props: PostListProps): JSX.Element {
       )}
       {isEnd && <TextDivider text={t("listEnd")} />}
       {isLoadingMore && (
-        <div className="mt-4 flex justify-center">
-          <LoadingState
-            variant="inline"
-            label={t("loadingMore")}
-            visuallyHiddenLabel
-          />
-        </div>
+        <PostListSkeleton label={t("loadingMore")} count={2} className="mt-4" />
       )}
     </>
   );
