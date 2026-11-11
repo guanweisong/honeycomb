@@ -194,14 +194,12 @@ describe("public post list payload", () => {
           db.query.post.findMany.mock.calls.at(-1)?.[0].where,
         );
         expect(hydratedWhere.params).toContain(PostStatus.PUBLISHED);
-        if (hasRequest) {
-          expect(cache.setJSON).toHaveBeenLastCalledWith(
-            "post.index",
-            expect.any(String),
-            { list: [card(type)], total: 11 },
-            3600,
-          );
-        }
+        expect(cache.setJSON).toHaveBeenLastCalledWith(
+          "post.index",
+          expect.any(String),
+          { list: [card(type)], total: 11 },
+          3600,
+        );
       }
     },
   );

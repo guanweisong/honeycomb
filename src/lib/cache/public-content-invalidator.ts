@@ -15,14 +15,28 @@ export const PublicCacheInvalidationPlanSchema = z
       .readonly()
       .optional(),
     refreshLayout: z.literal(true).optional(),
+    refreshPageDetails: z.literal(true).optional(),
+    refreshPostDetails: z.literal(true).optional(),
     refreshPostIndex: z.literal(true).optional(),
     refreshSitemap: z.literal(true).optional(),
   })
   .strict()
   .refine(
-    ({ contents, refreshLayout, refreshPostIndex, refreshSitemap }) =>
+    ({
+      contents,
+      refreshLayout,
+      refreshPageDetails,
+      refreshPostDetails,
+      refreshPostIndex,
+      refreshSitemap,
+    }) =>
       Boolean(
-        contents?.length || refreshLayout || refreshPostIndex || refreshSitemap,
+        contents?.length ||
+          refreshLayout ||
+          refreshPageDetails ||
+          refreshPostDetails ||
+          refreshPostIndex ||
+          refreshSitemap,
       ),
     { message: "缓存失效计划必须包含至少一个目标" },
   )

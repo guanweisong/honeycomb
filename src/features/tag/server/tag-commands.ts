@@ -80,6 +80,7 @@ export async function updateTag(
   const persisted = requireWriteResult(value, "update", "tag");
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
+    refreshPostDetails: true,
     refreshPostIndex: true,
   });
   return { ...persisted, publicSync: publicSync.state };
@@ -114,6 +115,7 @@ export async function destroyTags(
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
     refreshPostIndex: true,
+    refreshPostDetails: true,
   });
   return { ...persisted, publicSync: publicSync.state };
 }

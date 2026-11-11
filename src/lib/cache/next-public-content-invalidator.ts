@@ -10,7 +10,12 @@ import { bumpCacheVersion } from "@/lib/cache/upstash-cache";
 import {
   POST_CACHE_NAMESPACE,
   POST_CACHE_VERSION_KEY,
+  BLOG_LIST_CACHE_TAG,
+  PAGE_DETAILS_CACHE_TAG,
+  POST_DETAILS_CACHE_TAG,
   SITEMAP_CACHE_TAG,
+  pageDetailCacheTag,
+  postDetailCacheTag,
 } from "@/lib/cache/public-cache-keys";
 import { getLogger, getMetrics } from "@/lib/observability/server";
 import { LogEvent, MetricName } from "@/lib/observability/core/names";
@@ -40,11 +45,23 @@ async function executeInvalidationPlan(plan: PublicCacheInvalidationPlan) {
       bumpCacheVersion(POST_CACHE_NAMESPACE, POST_CACHE_VERSION_KEY),
     );
   }
+  if (plan.refreshPostIndex || plan.refreshLayout) {
+    await attempt(() => revalidateTag(BLOG_LIST_CACHE_TAG, { expire: 0 }));
+  }
   if (plan.refreshSitemap) {
     await attempt(() => revalidateTag(SITEMAP_CACHE_TAG, { expire: 0 }));
   }
+  if (plan.refreshPostDetails) {
+    await attempt(() => revalidateTag(POST_DETAILS_CACHE_TAG, { expire: 0 }));
+  }
+  if (plan.refreshPageDetails) {
+    await attempt(() => revalidateTag(PAGE_DETAILS_CACHE_TAG, { expire: 0 }));
+  }
   for (const { id, type } of references.values()) {
     const segment = type === "post" ? "archives" : "pages";
+    const detailTag =
+      type === "post" ? postDetailCacheTag(id) : pageDetailCacheTag(id);
+    await attempt(() => revalidateTag(detailTag, { expire: 0 }));
     for (const locale of supportedLanguages) {
       await attempt(() => revalidatePath(`/${locale}/${segment}/${id}`));
     }

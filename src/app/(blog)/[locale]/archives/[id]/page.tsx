@@ -1,11 +1,10 @@
 import React, { Suspense, ViewTransition } from "react";
 import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
-import { PostCommentCount } from "@/app/(blog)/components/features/post/public/PostInfo";
 import Tags from "@/app/(blog)/components/features/post/public/Tags";
 import Card from "@/components/SectionCard";
 import { Link } from "@/app/(blog)/lib/blog-navigation";
 import {
-  loadOptionalPublicComments,
+  PublicCommentCount,
   PublicCommentSection,
 } from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
 import { EnableStatus } from "@/lib/validation/enable-status";
@@ -35,6 +34,24 @@ import {
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
+import {
+  POST_DETAILS_CACHE_TAG,
+  postDetailCacheTag,
+} from "@/lib/cache/public-cache-keys";
+
+async function getPrefetchedPostDetail(id: string) {
+  "use cache";
+
+  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+  cacheTag(POST_DETAILS_CACHE_TAG, postDetailCacheTag(id));
+
+  const trpc = await createServerClient({
+    requestContext: { requestId: "public-detail-cache-fill" },
+    skipRequestObservability: true,
+  });
+  return trpc.post.detail({ id });
+}
 
 /**
  * 归档页面组件。
@@ -56,14 +73,12 @@ export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
 }
 
 async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
-  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
-  const trpc = await createServerClient();
-  let postDetail: Awaited<ReturnType<typeof trpc.post.detail>>;
+  let postDetail: Awaited<ReturnType<typeof getPrefetchedPostDetail>>;
   try {
-    postDetail = assertPostDetail(await trpc.post.detail({ id }));
+    postDetail = assertPostDetail(await getPrefetchedPostDetail(id));
   } catch (error) {
     handlePostDetailError(error);
   }
@@ -74,10 +89,7 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
 
   const category = assertPostCategory(postDetail);
 
-  const comments =
-    postDetail.commentStatus === EnableStatus.ENABLE
-      ? loadOptionalPublicComments(id, MenuType.CATEGORY)
-      : undefined;
+  const hasComments = postDetail.commentStatus === EnableStatus.ENABLE;
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
 
@@ -96,7 +108,7 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         authorId={postDetail.authorId}
         date={postDetail.createdAt ?? ""}
         comments={
-          comments ? (
+          hasComments ? (
             <Suspense
               fallback={
                 <LoadingState
@@ -106,7 +118,11 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
                 />
               }
             >
-              <PostCommentCount commentsPromise={comments} />
+              <PublicCommentCount
+                id={id}
+                type={MenuType.CATEGORY}
+                locale={locale}
+              />
             </Suspense>
           ) : undefined
         }
@@ -177,13 +193,12 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
           title={t("guessWhatYouLike")}
         />
       </Suspense>
-      {comments && (
+      {hasComments && (
         <Suspense fallback={<LoadingState variant="region" />}>
           <PublicCommentSection
             id={id}
             type={MenuType.CATEGORY}
             locale={locale}
-            comments={comments}
           />
         </Suspense>
       )}
@@ -204,7 +219,9 @@ async function RecommendedPosts({
 }) {
   await connection();
   const trpc = await createServerClient();
-  let randomPostsList: Awaited<ReturnType<typeof trpc.post.getRandomByCategory>>;
+  let randomPostsList: Awaited<
+    ReturnType<typeof trpc.post.getRandomByCategory>
+  >;
   try {
     randomPostsList = await trpc.post.getRandomByCategory({ categoryId });
   } catch {
@@ -244,11 +261,11 @@ export async function generateMetadata(
   assertDetailId(id);
   const trpc = await createServerClient();
   let setting: Awaited<ReturnType<typeof trpc.setting.index>>;
-  let postDetail: Awaited<ReturnType<typeof trpc.post.detail>>;
+  let postDetail: Awaited<ReturnType<typeof getPrefetchedPostDetail>>;
   try {
     [setting, postDetail] = await Promise.all([
       trpc.setting.index(),
-      trpc.post.detail({ id }),
+      getPrefetchedPostDetail(id),
     ]);
     postDetail = assertPostDetail(postDetail);
   } catch (error) {

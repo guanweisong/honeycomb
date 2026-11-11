@@ -40,6 +40,7 @@ describe("instrumentation register", () => {
   it("initializes only configured Node runtime logging", async () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", "");
     vi.stubEnv("SENTRY_DSN", "https://public@example.invalid/1");
     await register();
     expect(sentry.configureSentryLogs).toHaveBeenCalledWith(

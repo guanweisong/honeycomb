@@ -43,11 +43,19 @@ describe("Tag server operations", () => {
       destroyTags(asMockDatabase(db), [row.id], invalidator),
     ).resolves.toEqual({ success: true, publicSync: "completed" });
     expect(invalidator.invalidate).toHaveBeenCalledTimes(3);
-    for (let i = 1; i <= 3; i++)
-      expect(invalidator.invalidate).toHaveBeenNthCalledWith(i, {
-        refreshLayout: true,
-        refreshPostIndex: true,
-      });
+    const sharedPlan = {
+      refreshLayout: true,
+      refreshPostIndex: true,
+    };
+    expect(invalidator.invalidate).toHaveBeenNthCalledWith(1, sharedPlan);
+    expect(invalidator.invalidate).toHaveBeenNthCalledWith(2, {
+      ...sharedPlan,
+      refreshPostDetails: true,
+    });
+    expect(invalidator.invalidate).toHaveBeenNthCalledWith(3, {
+      ...sharedPlan,
+      refreshPostDetails: true,
+    });
   });
 
   it("写入失败时不刷新缓存", async () => {

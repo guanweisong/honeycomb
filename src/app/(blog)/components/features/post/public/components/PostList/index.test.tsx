@@ -185,7 +185,6 @@ describe("PostList", () => {
           timeZone="UTC"
         >
           <PostList
-            initData={{ list: posts, total: posts.length }}
             queryParams={{ limit: 10 }}
           />
         </NextIntlClientProvider>,

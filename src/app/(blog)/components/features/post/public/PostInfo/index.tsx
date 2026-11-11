@@ -4,7 +4,6 @@ import React, { ViewTransition } from "react";
 import { utcFormat } from "@/lib/ui/utc-format";
 import { useTranslations } from "next-intl";
 import { cn } from "cn";
-import { getTranslations } from "next-intl/server";
 
 /**
  * 文章信息组件的属性接口。
@@ -111,15 +110,3 @@ const PostInfo = (props: PostInfoProps) => {
 };
 
 export default PostInfo;
-
-export async function PostCommentCount({
-  commentsPromise,
-}: {
-  commentsPromise: Promise<{ total: number } | null>;
-}) {
-  const [comments, t] = await Promise.all([
-    commentsPromise,
-    getTranslations("PostInfo"),
-  ]);
-  return comments ? t("messages", { count: comments.total }) : null;
-}

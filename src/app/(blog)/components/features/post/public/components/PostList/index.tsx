@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import type { PublicPostListItem } from "@/features/post/types/post.read-model";
 import { PostType } from "@/features/post/types/post.type";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
-import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 
 const PostTypeBgColor = Object.freeze({
   [PostType.ARTICLE]: "bg-green-600",
@@ -31,11 +30,6 @@ export interface PostListProps {
    * 查询文章列表的参数。
    */
   queryParams: PostListQueryInput;
-  /**
-   * 初始文章列表数据。
-   */
-  initData?: PublicPostListResult;
-  snapshotVersion?: string;
 }
 
 /**
@@ -45,7 +39,7 @@ export interface PostListProps {
  * @returns {JSX.Element} 文章列表。
  */
 export default function PostList(props: PostListProps): JSX.Element {
-  const { queryParams, initData, snapshotVersion } = props;
+  const { queryParams } = props;
   const sentinel = useRef<HTMLDivElement>(null);
   const {
     data,
@@ -56,7 +50,7 @@ export default function PostList(props: PostListProps): JSX.Element {
     isFetching,
     isError,
     isFetchNextPageError,
-  } = useInfiniteQueryPostList(queryParams, initData, snapshotVersion);
+  } = useInfiniteQueryPostList(queryParams);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
   const typeTranslations = useTranslations("Search.types");

@@ -13,6 +13,7 @@ import { EnableStatus } from "@/lib/validation/enable-status";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockPageDetail = vi.fn();
+const mockCreateServerClient = vi.fn();
 const mockComments = vi.fn();
 const mockServerIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
@@ -36,21 +37,28 @@ vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,
 }));
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
+}));
 vi.mock("next-intl", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next-intl")>()),
   useTranslations: () => (_key: string, values: { count: number }) =>
     `${values.count} views`,
 }));
 vi.mock("@/app/trpc/server", () => ({
-  createServerClient: async () => ({
-    comment: { listByRef: mockComments },
-    link: { index: mockLinks },
-    page: {
-      detail: mockPageDetail,
-      incrementViews: mockServerIncrementViews,
-    },
-    setting: { index: mockSettingIndex },
-  }),
+  createServerClient: (...args: unknown[]) => {
+    mockCreateServerClient(...args);
+    return Promise.resolve({
+      comment: { listByRef: mockComments },
+      link: { index: mockLinks },
+      page: {
+        detail: mockPageDetail,
+        incrementViews: mockServerIncrementViews,
+      },
+      setting: { index: mockSettingIndex },
+    });
+  },
 }));
 vi.mock("@/lib/trpc/client/trpc", () => ({
   trpc: {
@@ -113,6 +121,7 @@ describe("pages detail page", () => {
         },
       );
     mockCommentRender.mockReset();
+    mockCreateServerClient.mockReset();
     mockLinks.mockReset().mockResolvedValue({ list: [], total: 0 });
     mockComments.mockReset().mockResolvedValue({ total: 0 });
     mockPageDetail.mockReset().mockResolvedValue({
@@ -137,7 +146,7 @@ describe("pages detail page", () => {
   });
 
   it.each(["zh", "en"])(
-    "starts both translations together using the %s route locale",
+    "loads the page-info translation using the %s route locale",
     async (locale) => {
       const translation = (key: string) => key;
       const pending = Promise.withResolvers<typeof translation>();
@@ -149,12 +158,12 @@ describe("pages detail page", () => {
       const rendered = content.type(content.props);
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
-        expect(mockGetTranslations).toHaveBeenCalledTimes(2);
+        expect(mockGetTranslations).toHaveBeenCalledTimes(1);
         expect(mockGetTranslations).toHaveBeenCalledWith({
           locale,
           namespace: "PostInfo",
         });
-        expect(mockGetTranslations).toHaveBeenCalledWith({
+        expect(mockGetTranslations).not.toHaveBeenCalledWith({
           locale,
           namespace: "Link",
         });
@@ -310,6 +319,19 @@ describe("pages detail page", () => {
       openGraph: { images: ["/static/images/logo.png"] },
     });
   });
+
+  it("uses the body-prefetch cache for page metadata", async () => {
+    await generateMetadata({
+      params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(mockCreateServerClient).toHaveBeenCalledWith({
+      requestContext: { requestId: "public-detail-cache-fill" },
+      skipRequestObservability: true,
+    });
+  });
+
   it("protects the opener and reads all bounded pages of friendly links", async () => {
     mockPageDetail.mockResolvedValue({
       id: "333333333333333333333333",

@@ -1,8 +1,7 @@
 import React, { Suspense } from "react";
 import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
-import { PostCommentCount } from "@/app/(blog)/components/features/post/public/PostInfo";
 import {
-  loadOptionalPublicComments,
+  PublicCommentCount,
   PublicCommentSection,
 } from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
 import PageTitle from "@/app/(blog)/components/PageTitle";
@@ -24,6 +23,24 @@ import {
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
 import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
+import {
+  PAGE_DETAILS_CACHE_TAG,
+  pageDetailCacheTag,
+} from "@/lib/cache/public-cache-keys";
+
+async function getPrefetchedPageDetail(id: string) {
+  "use cache";
+
+  cacheLife({ stale: 300, revalidate: 3600, expire: 86400 });
+  cacheTag(PAGE_DETAILS_CACHE_TAG, pageDetailCacheTag(id));
+
+  const trpc = await createServerClient({
+    requestContext: { requestId: "public-detail-cache-fill" },
+    skipRequestObservability: true,
+  });
+  return trpc.page.detail({ id });
+}
 /**
  * 页面详情组件。
  * 用于显示单个页面的详细内容，包括页面信息、评论等。
@@ -44,40 +61,12 @@ export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
 }
 
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
-  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
-  const trpc = await createServerClient();
-  const pageDetail = await trpc.page.detail({ id });
+  const pageDetail = await getPrefetchedPageDetail(id);
   const publishedPage = assertPublishedPage(pageDetail);
-  const comments = loadOptionalPublicComments(id, MenuType.PAGE);
-  // Own early rejection until the other page data finishes. The original
-  // promise still propagates any framework-controlled interruption to Next.
-  void comments.catch(() => undefined);
-  const [postInfoT, linkT] = await Promise.all([
-    getTranslations({ locale, namespace: "PostInfo" }),
-    getTranslations({ locale, namespace: "Link" }),
-  ]);
-  let links = null;
-  if (publishedPage.template === PageTemplate.FRIENDLY_LINKS) {
-    const input = {
-      limit: MAX_PAGE_SIZE,
-      status: [EnableStatus.ENABLE],
-    };
-    const first = await trpc.link.index({ ...input, page: 1 });
-    const list = [...first.list];
-    for (
-      let page = 2;
-      page <= Math.ceil(first.total / MAX_PAGE_SIZE);
-      page++
-    ) {
-      const result = await trpc.link.index({ ...input, page });
-      list.push(...result.list);
-      if (result.list.length === 0) break;
-    }
-    links = { list, total: first.total };
-  }
+  const postInfoT = await getTranslations({ locale, namespace: "PostInfo" });
 
   return (
     <>
@@ -97,7 +86,7 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
               />
             }
           >
-            <PostCommentCount commentsPromise={comments} />
+            <PublicCommentCount id={id} type={MenuType.PAGE} locale={locale} />
           </Suspense>
         }
         views={
@@ -117,45 +106,68 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
         </div>
       </div>
       {publishedPage.template === PageTemplate.FRIENDLY_LINKS ? (
-        <div className="py-2 lg:py-4">
-          {links?.total ? (
-            links.list.map((item, index) => (
-              <a
-                key={item.url}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn("flex items-center py-2", {
-                  "border-t-0.5 border-dashed border-auto-front-gray/30":
-                    index > 0,
-                })}
-              >
-                <span
-                  className="inline-block w-10 h-10 bg-no-repeat bg-center bg-contain mr-2"
-                  style={{ backgroundImage: `url(${item.logo})` }}
-                />
-                <div>
-                  <div>{item.name}</div>
-                  <div className="text-auto-front-gray/50 text-base">
-                    {item.description}
-                  </div>
-                </div>
-              </a>
-            ))
-          ) : (
-            <div className="text-auto-front-gray/60">{linkT("emptyTip")}</div>
-          )}
-        </div>
+        <Suspense fallback={<LoadingState variant="region" />}>
+          <FriendlyLinks locale={locale} />
+        </Suspense>
       ) : null}
       <Suspense fallback={<LoadingState variant="region" />}>
-        <PublicCommentSection
-          id={id}
-          type={MenuType.PAGE}
-          locale={locale}
-          comments={comments}
-        />
+        <PublicCommentSection id={id} type={MenuType.PAGE} locale={locale} />
       </Suspense>
     </>
+  );
+}
+
+async function FriendlyLinks({
+  locale,
+}: {
+  locale: ReturnType<typeof normalizeMultiLangLocale>;
+}) {
+  await connection();
+  const [trpc, linkT] = await Promise.all([
+    createServerClient(),
+    getTranslations({ locale, namespace: "Link" }),
+  ]);
+  const input = {
+    limit: MAX_PAGE_SIZE,
+    status: [EnableStatus.ENABLE],
+  };
+  const first = await trpc.link.index({ ...input, page: 1 });
+  const list = [...first.list];
+  for (let page = 2; page <= Math.ceil(first.total / MAX_PAGE_SIZE); page++) {
+    const result = await trpc.link.index({ ...input, page });
+    list.push(...result.list);
+    if (result.list.length === 0) break;
+  }
+
+  return (
+    <div className="py-2 lg:py-4">
+      {list.length ? (
+        list.map((item, index) => (
+          <a
+            key={item.url}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn("flex items-center py-2", {
+              "border-t-0.5 border-dashed border-auto-front-gray/30": index > 0,
+            })}
+          >
+            <span
+              className="inline-block w-10 h-10 bg-no-repeat bg-center bg-contain mr-2"
+              style={{ backgroundImage: `url(${item.logo})` }}
+            />
+            <div>
+              <div>{item.name}</div>
+              <div className="text-auto-front-gray/50 text-base">
+                {item.description}
+              </div>
+            </div>
+          </a>
+        ))
+      ) : (
+        <div className="text-auto-front-gray/60">{linkT("emptyTip")}</div>
+      )}
+    </div>
   );
 }
 
@@ -174,7 +186,7 @@ export async function generateMetadata(
   const trpc = await createServerClient();
   const [setting, pageDetail] = await Promise.all([
     trpc.setting.index(),
-    trpc.page.detail({ id }),
+    getPrefetchedPageDetail(id),
   ]);
   const publishedPage = assertPublishedPage(pageDetail);
   const local = normalizeMultiLangLocale(rawLocale);

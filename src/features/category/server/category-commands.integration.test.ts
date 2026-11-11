@@ -244,6 +244,7 @@ describe("Category update transaction result boundary", () => {
       expect(translationReadPhases).toEqual([false]);
       expect(invalidator.invalidate).toHaveBeenCalledExactlyOnceWith({
         refreshLayout: true,
+        refreshPostDetails: true,
         refreshPostIndex: true,
         refreshSitemap: true,
       });

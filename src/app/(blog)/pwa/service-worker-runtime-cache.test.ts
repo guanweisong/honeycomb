@@ -189,6 +189,30 @@ describe("Service Worker runtime cache policy", () => {
     ).not.toEqual([]);
   });
 
+  it.each(["1", "2", "3"])(
+    "keeps Next prefetch RSC responses in their own cache (kind %s)",
+    (prefetchKind) => {
+      const matches = matchingStrategies(
+        runtimeRequest("/zh/archives/post-1", {
+          RSC: "1",
+          "Next-Router-Prefetch": prefetchKind,
+        }),
+      );
+
+      expect(matches[0]?.handler).toMatchObject({
+        cacheName: "pages-rsc-prefetch",
+      });
+    },
+  );
+
+  it("keeps ordinary RSC navigations in the page cache", () => {
+    const matches = matchingStrategies(
+      runtimeRequest("/zh/archives/post-1", { RSC: "1" }),
+    );
+
+    expect(matches[0]?.handler).toMatchObject({ cacheName: "pages-rsc" });
+  });
+
   it.each([
     [
       "private",

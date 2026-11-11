@@ -2,19 +2,13 @@ import React, { Suspense } from "react";
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
-import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import { createServerClient } from "@/app/trpc/server";
-import { connection } from "next/server";
+import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
-import {
-  createContentMetadata,
-  DynamicMetadataMarker,
-} from "@/app/(blog)/lib/metadata";
-import {
-  resolveListContext,
-  resolveListTitle,
-} from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
+import { HydrationBoundary } from "@tanstack/react-query";
+import { createContentMetadata } from "@/app/(blog)/lib/metadata";
+import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import LoadingState from "@/components/LoadingState";
+import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
 
 /**
  * 列表页面组件。
@@ -25,9 +19,6 @@ import LoadingState from "@/components/LoadingState";
 export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
   return (
     <>
-      <Suspense fallback={null}>
-        <DynamicMetadataMarker />
-      </Suspense>
       <Suspense fallback={<LoadingState variant="region" />}>
         <ListContent {...props} />
       </Suspense>
@@ -38,65 +29,50 @@ export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
 function getListRouteData(
   params: PageProps<"/[locale]/list/[...slug]">["params"],
 ) {
-  const route = params.then(({ locale, slug }) => ({
-    locale: normalizeMultiLangLocale(locale),
-    slug: slug ?? [],
-  }));
-  const trpc = createServerClient();
-  const context = route.then(resolveListContext);
-  const translations = route.then(({ locale }) =>
-    getTranslations({ locale, namespace: "PostList" }),
-  );
-  const presentation = Promise.all([
-    route,
-    context,
-    translations,
-    trpc.then((client) => client.setting.index()),
-  ]).then(([{ locale, slug }, { type, typeName }, t, setting]) => ({
-    locale,
-    slug,
-    type,
-    title: resolveListTitle({
-      type,
-      typeName,
-      siteName: setting?.siteName?.[locale],
-      tagTitle: (tag) => t("postUnderTag", { tag }),
-      authorTitle: (author) => t("postUnderAuthor", { author }),
-    }),
-    description: setting?.siteSubName?.[locale],
-    emptyLabel: t("emptyTip"),
-  }));
-  return { context, presentation, trpc };
+  return params.then(async ({ locale, slug }) => {
+    const normalizedSlug = slug ?? [];
+    const [data, t] = await Promise.all([
+      getCachedListPageData(locale, normalizedSlug),
+      getTranslations({ locale, namespace: "PostList" }),
+    ]);
+    if (data.kind === "not-found") notFound();
+    if (data.kind === "redirect") redirect(data.href);
+
+    return {
+      ...data,
+      slug: normalizedSlug,
+      title: resolveListTitle({
+        type: data.type,
+        typeName: data.typeName,
+        siteName: data.siteName,
+        tagTitle: (tag) => t("postUnderTag", { tag }),
+        authorTitle: (author) => t("postUnderAuthor", { author }),
+      }),
+      description: data.siteSubName ?? undefined,
+      emptyLabel: t("emptyTip"),
+    };
+  });
 }
 
 async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  await connection();
-  const { context, presentation, trpc } = getListRouteData(props.params);
-  const postList = context.then(async ({ queryParams }) => {
-    const result = await (await trpc).post.index({
-      ...queryParams,
-      cursor: null,
-    });
-    return {
-      queryParams,
-      result: { ...result, snapshotVersion: crypto.randomUUID() },
-    };
-  });
-  const [{ type, title, emptyLabel }, { queryParams, result }] =
-    await Promise.all([presentation, postList]);
-  const { snapshotVersion, ...post } = result;
+  const {
+    type,
+    title,
+    emptyLabel,
+    queryParams,
+    hydrationState,
+    listHasContent,
+  } = await getListRouteData(props.params);
 
   return (
     <>
       {(type === "tags" || type === "authors") && (
         <div className="mb-2 lg:mb-4">{title}</div>
       )}
-      {post.list.length > 0 || post.nextCursor ? (
-        <PostList
-          initData={post}
-          queryParams={queryParams}
-          snapshotVersion={snapshotVersion}
-        />
+      {listHasContent ? (
+        <HydrationBoundary state={hydrationState}>
+          <PostList queryParams={queryParams} />
+        </HydrationBoundary>
       ) : (
         <NoData title={emptyLabel} />
       )}
@@ -113,10 +89,9 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/list/[...slug]">,
 ): Promise<Metadata> {
-  await connection();
   const { title, description, locale, slug } = await getListRouteData(
     props.params,
-  ).presentation;
+  );
   return createContentMetadata({
     title,
     description,

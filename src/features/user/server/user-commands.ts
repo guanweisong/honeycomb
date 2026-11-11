@@ -36,6 +36,8 @@ export async function destroyUsers(
   const result = await repository.destroy(ids);
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
+    refreshPageDetails: true,
+    refreshPostDetails: true,
     refreshPostIndex: true,
   });
   return { ...result, publicSync: publicSync.state };
@@ -52,6 +54,8 @@ export async function updateUser(
   const result = await repository.update(input, actorLevel);
   const publicSync = await invalidator.invalidate({
     refreshLayout: true,
+    refreshPageDetails: true,
+    refreshPostDetails: true,
     refreshPostIndex: true,
   });
   return { ...result, publicSync: publicSync.state };

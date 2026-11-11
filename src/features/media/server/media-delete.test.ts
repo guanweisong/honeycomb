@@ -11,6 +11,7 @@ const cache = {
   invalidate: vi.fn(async () => ({ state: "completed" as const })),
 };
 it("deletes storage and confirms absence inside the repository transaction", async () => {
+  cache.invalidate.mockClear();
   const repo = mediaRepositoryFixture();
   const storage = mediaStorageFixture();
   storage.headObject.mockResolvedValue(null);
@@ -21,6 +22,12 @@ it("deletes storage and confirms absence inside the repository transaction", asy
     ["media/final.png"],
     expect.any(AbortSignal),
   );
+  expect(cache.invalidate).toHaveBeenCalledWith({
+    refreshLayout: true,
+    refreshPageDetails: true,
+    refreshPostDetails: true,
+    refreshPostIndex: true,
+  });
 });
 it("reports partial or unknown deletion without promising rollback", async () => {
   for (const phase of ["storage", "database"]) {

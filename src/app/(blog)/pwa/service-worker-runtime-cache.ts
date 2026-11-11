@@ -131,7 +131,7 @@ const otherRuntimeCaching: RuntimeCaching[] = [
   {
     matcher: ({ request, sameOrigin, url }) =>
       request.headers.get("RSC") === "1" &&
-      request.headers.get("Next-Router-Prefetch") === "1" &&
+      request.headers.has("Next-Router-Prefetch") &&
       isPublicRuntimeRequest({ sameOrigin, url }),
     handler: new NetworkFirst({
       cacheName: "pages-rsc-prefetch",

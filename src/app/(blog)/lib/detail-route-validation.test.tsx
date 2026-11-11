@@ -25,6 +25,10 @@ vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => undefined,
 }));
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
+}));
 vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({
     comment: { listByRef: (...args: unknown[]) => mockComments(...args) },

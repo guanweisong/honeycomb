@@ -102,13 +102,17 @@ describe("PostList query recovery", () => {
   });
 
   async function render(categoryId = "original") {
+    const queryParams = { limit: 1, categoryId };
+    const queryKey = ["posts", queryParams];
+    if (!client.getQueryData(queryKey))
+      client.setQueryData(queryKey, {
+        pages: [page(`${categoryId}-first`)],
+        pageParams: [null],
+      });
     await act(async () =>
       root.render(
         <QueryClientProvider client={client}>
-          <PostList
-            queryParams={{ limit: 1, categoryId }}
-            initData={page(`${categoryId}-first`)}
-          />
+          <PostList queryParams={queryParams} />
         </QueryClientProvider>,
       ),
     );

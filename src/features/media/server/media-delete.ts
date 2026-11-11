@@ -68,6 +68,8 @@ export async function destroyMedia(
     publicSync = (
       await invalidator.invalidate({
         refreshLayout: true,
+        refreshPageDetails: true,
+        refreshPostDetails: true,
         refreshPostIndex: true,
       })
     ).state;

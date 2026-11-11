@@ -1,4 +1,5 @@
 import React, { act } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -13,17 +14,14 @@ const mockMenuIndex = vi.fn();
 const mockTagIndex = vi.fn();
 const mockUserDetail = vi.fn();
 const mockPostIndex = vi.fn();
-const { mockConnection } = vi.hoisted(() => ({
-  mockConnection: vi.fn(async () => undefined),
-}));
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
   getTranslations: (...args: unknown[]) => mockGetTranslations(...args),
 }));
-vi.mock("next/server", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/server")>()),
-  connection: mockConnection,
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: vi.fn(),
 }));
 
 vi.mock("@/app/trpc/server", () => ({
@@ -56,6 +54,7 @@ import List, {
   generateMetadata,
 } from "@/app/(blog)/[locale]/list/[...slug]/page";
 import { resolveListContext } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
+import { createServerClient } from "@/app/trpc/server";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { MultiLangEnum } from "@/lib/i18n/i18n";
 
@@ -66,13 +65,14 @@ vi.mock("next/navigation", async (importOriginal) => ({
 describe("blog list page", () => {
   let container: HTMLDivElement;
   let root: Root;
+  let queryClient: QueryClient;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
+    queryClient = new QueryClient();
 
-    mockConnection.mockReset().mockResolvedValue(undefined);
     mockGetLocale.mockReset().mockResolvedValue("zh");
     mockGetTranslations
       .mockReset()
@@ -113,6 +113,7 @@ describe("blog list page", () => {
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    queryClient.clear();
     container.remove();
   });
 
@@ -121,7 +122,15 @@ describe("blog list page", () => {
       params: Promise.resolve({ locale: "zh", slug }),
       searchParams: Promise.resolve({}),
     });
-    await act(async () => root.render(element));
+    await act(async () =>
+      root.render(
+        React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          element,
+        ),
+      ),
+    );
   }
 
   function renderedQuery() {
@@ -136,16 +145,15 @@ describe("blog list page", () => {
         "returns notFound before lookup for %s",
         async (id) => {
           const slug = id === undefined ? [type] : [type, id];
+          const props = {
+            params: Promise.resolve({ locale: "zh", slug }),
+            searchParams: Promise.resolve({}),
+          };
+          const content = List(props).props.children.props.children;
           const result =
             entryPoint === "content"
-              ? resolveListContext({
-                  locale: MultiLangEnum.Zh,
-                  slug,
-                })
-              : generateMetadata({
-                  params: Promise.resolve({ locale: "zh", slug }),
-                  searchParams: Promise.resolve({}),
-                });
+              ? content.type(content.props)
+              : generateMetadata(props);
           await expect(result).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
           expect(mockTagIndex).not.toHaveBeenCalled();
           expect(mockUserDetail).not.toHaveBeenCalled();
@@ -168,7 +176,7 @@ describe("blog list page", () => {
         params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
         searchParams: Promise.resolve({}),
       };
-      const content = List(props).props.children[1].props.children;
+      const content = List(props).props.children.props.children;
       const pending =
         entryPoint === "metadata"
           ? generateMetadata(props)
@@ -214,14 +222,16 @@ describe("blog list page", () => {
             }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children[1].props.children;
+          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
               : content.type(content.props);
           for (let index = 0; index < 12; index++) await Promise.resolve();
           try {
-            expect(type === "tags" ? mockTagIndex : mockUserDetail).toHaveBeenCalledWith(
+            expect(
+              type === "tags" ? mockTagIndex : mockUserDetail,
+            ).toHaveBeenCalledWith(
               type === "tags"
                 ? { limit: 1, page: 1, id: [requestedId] }
                 : { id: requestedId },
@@ -249,7 +259,7 @@ describe("blog list page", () => {
           params: Promise.resolve({ locale: "zh", slug: ["category"] }),
           searchParams: Promise.resolve({}),
         };
-        const content = List(props).props.children[1].props.children;
+        const content = List(props).props.children.props.children;
         const pending =
           entryPoint === "metadata"
             ? generateMetadata(props)
@@ -278,7 +288,7 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale, slug: ["category"] }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children[1].props.children;
+          const content = List(props).props.children.props.children;
           await (entryPoint === "metadata"
             ? generateMetadata(props)
             : content.type(content.props));
@@ -297,7 +307,7 @@ describe("blog list page", () => {
           params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
           searchParams: Promise.resolve({}),
         };
-        const content = List(props).props.children[1].props.children;
+        const content = List(props).props.children.props.children;
         const pending =
           entryPoint === "metadata"
             ? generateMetadata(props)
@@ -327,29 +337,30 @@ describe("blog list page", () => {
     });
   });
 
-  it("waits for the request boundary before creating the list snapshot", async () => {
-    let requestReady = false;
-    mockConnection.mockImplementation(async () => {
-      requestReady = true;
+  it("hydrates the server list under a stable filter query key", async () => {
+    await renderList(["category"]);
+
+    expect(queryClient.getQueryData(["posts", renderedQuery()])).toEqual({
+      pages: [{ list: [{ id: "post-1" }], total: 1 }],
+      pageParams: [null],
     });
-    const randomUUID = vi
-      .spyOn(globalThis.crypto, "randomUUID")
-      .mockImplementation(() => {
-        expect(requestReady).toBe(true);
-        return "00000000-0000-4000-8000-000000000000";
-      });
+  });
+
+  it("loads list cards from the cached route data", async () => {
     const props = {
       params: Promise.resolve({ locale: "zh", slug: ["category"] }),
       searchParams: Promise.resolve({}),
     };
-    const content = List(props).props.children[1].props.children;
+    const content = List(props).props.children.props.children;
 
-    try {
-      await content.type(content.props);
-      expect(randomUUID).toHaveBeenCalledOnce();
-    } finally {
-      randomUUID.mockRestore();
-    }
+    await content.type(content.props);
+    expect(mockPostIndex).toHaveBeenCalledOnce();
+    expect(mockPostIndex).toHaveBeenCalledWith({
+      status: ["PUBLISHED"],
+      limit: 10,
+      sortField: "createdAt",
+      cursor: null,
+    });
   });
 
   it("resolves category paths to the category id used by the post query", async () => {
@@ -378,21 +389,31 @@ describe("blog list page", () => {
       ],
     });
     await expect(
-      resolveListContext({
-        locale: MultiLangEnum.Zh,
-        slug: ["category", "~category-root", "笔记"],
-      }),
+      resolveListContext(
+        {
+          locale: MultiLangEnum.Zh,
+          slug: ["category", "~category-root", "笔记"],
+        },
+        await createServerClient(),
+      ),
     ).resolves.toMatchObject({
-      queryParams: { categoryId: "category-child" },
-      typeName: "笔记",
+      kind: "resolved",
+      context: {
+        queryParams: { categoryId: "category-child" },
+        typeName: "笔记",
+      },
     });
     await expect(
-      resolveListContext({
-        locale: MultiLangEnum.Zh,
-        slug: ["category", "old+alias"],
-      }),
-    ).rejects.toMatchObject({
-      digest: expect.stringContaining("/zh/list/category/~category-alias"),
+      resolveListContext(
+        {
+          locale: MultiLangEnum.Zh,
+          slug: ["category", "old+alias"],
+        },
+        await createServerClient(),
+      ),
+    ).resolves.toMatchObject({
+      kind: "redirect",
+      href: "/zh/list/category/~category-alias",
     });
   });
 
@@ -448,7 +469,7 @@ describe("blog list page", () => {
             }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children[1].props.children;
+          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
@@ -477,7 +498,7 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale: "zh", slug }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children[1].props.children;
+          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
@@ -532,7 +553,7 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale: "zh", slug }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children[1].props.children;
+          const content = List(props).props.children.props.children;
           const result = await (entryPoint === "metadata"
             ? generateMetadata(props)
             : content.type(content.props));
@@ -575,7 +596,7 @@ describe("blog list page", () => {
         });
         const run = (slug: string[]) => {
           const input = props(slug);
-          const content = List(input).props.children[1].props.children;
+          const content = List(input).props.children.props.children;
           return entryPoint === "metadata"
             ? generateMetadata(input)
             : content.type(content.props);

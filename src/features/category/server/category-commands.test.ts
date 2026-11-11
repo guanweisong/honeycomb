@@ -108,6 +108,7 @@ describe("Category server operations", () => {
     });
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
+      refreshPostDetails: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     });
@@ -125,13 +126,16 @@ describe("Category server operations", () => {
     await expect(
       destroyCategories(asMockDatabase(db), ["a"], cache),
     ).resolves.toEqual({ success: true, publicSync: "completed" });
-    const expectedPlan = {
+    const createdPlan = {
       refreshLayout: true,
       refreshPostIndex: true,
       refreshSitemap: true,
     };
-    expect(cache.invalidate).toHaveBeenNthCalledWith(1, expectedPlan);
-    expect(cache.invalidate).toHaveBeenNthCalledWith(2, expectedPlan);
+    expect(cache.invalidate).toHaveBeenNthCalledWith(1, createdPlan);
+    expect(cache.invalidate).toHaveBeenNthCalledWith(2, {
+      ...createdPlan,
+      refreshPostDetails: true,
+    });
   });
 
   it("写入失败时不刷新缓存", async () => {

@@ -60,6 +60,8 @@ describe("User commands", () => {
     expect(update).toHaveBeenCalledBefore(cache.invalidate);
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
+      refreshPageDetails: true,
+      refreshPostDetails: true,
       refreshPostIndex: true,
     });
   });
@@ -72,6 +74,8 @@ describe("User commands", () => {
     ).resolves.toEqual({ success: true, publicSync: "completed" });
     expect(cache.invalidate).toHaveBeenCalledWith({
       refreshLayout: true,
+      refreshPageDetails: true,
+      refreshPostDetails: true,
       refreshPostIndex: true,
     });
   });
