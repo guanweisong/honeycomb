@@ -87,7 +87,7 @@ const entryPoints = [
     name: "archive content",
     query: mockPostDetail,
     invoke: (id: string) => {
-      const content = Archives(routeProps(id)).props.children[1].props.children;
+      const content = Archives(routeProps(id)).props.children[1];
       return content.type(content.props);
     },
   },

@@ -198,10 +198,16 @@ describe("archives page", () => {
 
   async function renderArchive(detail: DetailFixture) {
     mockPostDetail.mockResolvedValue(detail);
-    const element = await Archives({
+    const route = Archives({
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
+    const content = React.Children.toArray(
+      route.props.children,
+    )[1] as React.ReactElement;
+    const element = await (
+      content.type as (props: unknown) => Promise<React.ReactNode>
+    )(content.props);
     await act(async () => root.render(element));
   }
 
@@ -219,11 +225,16 @@ describe("archives page", () => {
       const translation = (key: string) => key;
       const pending = Promise.withResolvers<typeof translation>();
       mockGetTranslations.mockReturnValueOnce(pending.promise);
-      const content = Archives({
+      const route = Archives({
         params: Promise.resolve({ id: articleDetail.id, locale }),
         searchParams: Promise.resolve({}),
-      }).props.children[1].props.children;
-      const rendered = content.type(content.props);
+      });
+      const content = React.Children.toArray(
+        route.props.children,
+      )[1] as React.ReactElement;
+      const rendered = (
+        content.type as (props: unknown) => Promise<React.ReactNode>
+      )(content.props);
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
         expect(mockGetTranslations).toHaveBeenCalledTimes(2);
@@ -306,9 +317,15 @@ describe("archives page", () => {
       container.querySelector('[data-testid="rich-text"]')?.textContent,
     ).toBe("文章正文");
     expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
-    expect(container.querySelector('[role="status"]')?.textContent).toBe(
+    const recommendationSkeleton = container.querySelector(
+      '[role="status"][aria-busy="true"]',
+    );
+    expect(recommendationSkeleton?.getAttribute("aria-label")).toBe(
       "Loading recommendations",
     );
+    expect(
+      recommendationSkeleton?.querySelectorAll('[data-slot="skeleton"]').length,
+    ).toBeGreaterThan(0);
     expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
 
     await act(async () => {

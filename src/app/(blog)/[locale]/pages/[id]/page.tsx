@@ -3,7 +3,9 @@ import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
 import {
   PublicCommentCount,
   PublicCommentSection,
+  PublicCommentSectionSkeleton,
 } from "@/app/(blog)/components/features/comment/public/PublicCommentSection";
+import CommentClient from "@/app/(blog)/components/features/comment/public/components/CommentClient";
 import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
@@ -110,9 +112,15 @@ async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
           <FriendlyLinks locale={locale} />
         </Suspense>
       ) : null}
-      <Suspense fallback={<LoadingState variant="region" />}>
-        <PublicCommentSection id={id} type={MenuType.PAGE} locale={locale} />
-      </Suspense>
+      <CommentClient id={id} type={MenuType.PAGE}>
+        <Suspense
+          fallback={
+            <PublicCommentSectionSkeleton label={postInfoT("loading")} />
+          }
+        >
+          <PublicCommentSection id={id} type={MenuType.PAGE} locale={locale} />
+        </Suspense>
+      </CommentClient>
     </>
   );
 }

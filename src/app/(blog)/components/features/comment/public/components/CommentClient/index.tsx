@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { clientEnv } from "@/env/client";
 import type { TurnstileInstance } from "@marsidev/react-turnstile";
@@ -20,19 +21,29 @@ import { useCommentSubmission } from "@/app/(blog)/components/features/comment/p
 export interface CommentClientProps {
   id: string;
   type: MenuType;
-  comments: CommentTreeViewResponse;
+  comments?: CommentTreeViewResponse;
+  children?: ReactNode;
 }
 
-function CommentListContent({
+type CommentReplyHandler = (
+  comment: CommentTreeViewModel,
+  trigger: HTMLButtonElement,
+) => void;
+
+const CommentReplyContext = createContext<CommentReplyHandler | null>(null);
+
+export function CommentListContent({
   comments,
-  onReply,
 }: {
   comments: CommentTreeViewResponse;
-  onReply: (comment: CommentTreeViewModel, trigger: HTMLButtonElement) => void;
 }) {
+  const onReply = useContext(CommentReplyContext);
   const t = useTranslations("Comment");
 
   if (comments.total === 0) return null;
+  if (!onReply) {
+    throw new Error("CommentListContent must be inside CommentClient");
+  }
 
   return (
     <Card title={t("summary", { count: comments.total })}>
@@ -43,7 +54,7 @@ function CommentListContent({
   );
 }
 
-const CommentClient = ({ id, type, comments }: CommentClientProps) => {
+const CommentClient = ({ id, type, comments, children }: CommentClientProps) => {
   const [replyTo, setReplyTo] = useState<CommentTreeViewModel | null>(null);
   const replyTrigger = useRef<HTMLButtonElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -75,38 +86,42 @@ const CommentClient = ({ id, type, comments }: CommentClientProps) => {
   };
 
   return (
-    <div>
-      <CommentListContent comments={comments} onReply={handleReply} />
-      <Card title={t("title")}>
-        <CommentForm
-          identity={identity}
-          replyTo={replyTo}
-          formRef={formRef}
-          isPending={submission.isPending}
-          onSubmit={submission.handleSubmit}
-          onDraftChange={submission.onDraftChange}
-          onCancelReply={() => {
-            submission.onDraftChange();
-            setReplyTo(null);
-            if (replyTrigger.current?.isConnected) replyTrigger.current.focus();
-            else focusCommentInput();
-            replyTrigger.current = null;
-          }}
-          onClearIdentity={() => {
-            submission.onDraftChange();
-            clearIdentity();
-          }}
-        />
-      </Card>
-      {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-          onSuccess={submission.onCaptchaSuccess}
-          onExpire={submission.resetCaptcha}
-        />
-      ) : null}
-    </div>
+    <CommentReplyContext.Provider value={handleReply}>
+      <div>
+        {comments ? <CommentListContent comments={comments} /> : null}
+        {children}
+        <Card title={t("title")}>
+          <CommentForm
+            identity={identity}
+            replyTo={replyTo}
+            formRef={formRef}
+            isPending={submission.isPending}
+            onSubmit={submission.handleSubmit}
+            onDraftChange={submission.onDraftChange}
+            onCancelReply={() => {
+              submission.onDraftChange();
+              setReplyTo(null);
+              if (replyTrigger.current?.isConnected)
+                replyTrigger.current.focus();
+              else focusCommentInput();
+              replyTrigger.current = null;
+            }}
+            onClearIdentity={() => {
+              submission.onDraftChange();
+              clearIdentity();
+            }}
+          />
+        </Card>
+        {clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={clientEnv.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={submission.onCaptchaSuccess}
+            onExpire={submission.resetCaptcha}
+          />
+        ) : null}
+      </div>
+    </CommentReplyContext.Provider>
   );
 };
 

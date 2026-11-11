@@ -22,7 +22,7 @@
 
 1. **缓存路由自身的公开详情 caller。** 文章页和页面页分别在本地 async 函数中使用 `use cache`、明确的 `cacheLife` 与按 ID 标签；不重建集中查询层，也不使用 `use cache: remote`。共享失效键只放在缓存键目录。
 2. **正文缓存填充使用显式内部上下文。** 缓存函数通过 `createServerClient({ requestContext: { requestId: "public-detail-cache-fill" }, skipRequestObservability: true })` 调用只读公开详情。这个固定 ID 不进入 tRPC 请求观测；正常动态组件继续由请求时边界生成真实 ID。
-3. **把真正动态的附属内容放到子组件。** 移除文章/页面内容父组件上的 `connection()`。评论加载、文章推荐和友情链接列表各在自己的 Suspense 子树内等待 `connection()`，不让它们阻塞缓存详情及正文。
+3. **把真正动态的附属内容放到子组件。** 移除文章/页面内容父组件上的 `connection()`。评论加载、文章推荐和友情链接列表各在自己的 Suspense 子树内等待 `connection()`，不让它们阻塞缓存详情及正文。评论表单由即时客户端容器渲染，异步评论列表作为其子树；回复交互通过容器内 context 共享，不再让评论查询延后表单。
 4. **按数据所有者失效详情。** 结构化计划增加 `refreshPostDetails` 与 `refreshPageDetails`，用于全局关联变化；`contents` 继续按 ID 精确失效。分类、标签写入使文章详情范围失效；作者和媒体写入使文章与页面详情范围失效。设置、菜单、友链写入不触碰正文详情标签。
 5. **保持失效顺序。** 先刷新文章索引及 sitemap，再失效详情标签，最后失效详情路径和布局。保留有限重试、降级反馈和已提交写入不回滚语义。
 6. **使用标准方式交接 Blog 列表首屏数据。** 服务端以 `QueryClient` 和稳定的 `posts` 查询 key 写入首屏无限列表，再通过 TanStack Query `dehydrate` / `HydrationBoundary` 交接。新 RSC 数据按 `dataUpdatedAt` 与已有客户端缓存合并；不在 query key 中附加每请求 UUID。
