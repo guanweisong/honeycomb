@@ -11,7 +11,6 @@ import { BLOG_LIST_CACHE_TAG } from "@/lib/cache/public-cache-keys";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
 import { cacheLife, cacheTag } from "next/cache";
-import { dehydrate, QueryClient } from "@tanstack/react-query";
 
 type CachedListPageData =
   | { kind: "not-found" }
@@ -27,19 +26,6 @@ type CachedListPageData =
       type: string;
       typeName: string;
     };
-
-/** Hydrate cached list data with a fresh client-cache timestamp per response. */
-export function createListHydrationState(
-  queryParams: PostListQueryInput,
-  listResult: PublicPostListResult,
-) {
-  const queryClient = new QueryClient();
-  queryClient.setQueryData(
-    ["posts", queryParams],
-    { pages: [listResult], pageParams: [null] },
-  );
-  return dehydrate(queryClient);
-}
 
 /** Cache URL-dependent list data so full Link prefetch can include the cards. */
 export async function getCachedListPageData(

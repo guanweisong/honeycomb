@@ -4,14 +4,10 @@ import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
-import { HydrationBoundary } from "@tanstack/react-query";
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import LoadingState from "@/components/LoadingState";
-import {
-  createListHydrationState,
-  getCachedListPageData,
-} from "@/app/(blog)/[locale]/list/[...slug]/page.data";
+import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
 
 /**
  * 列表页面组件。
@@ -73,11 +69,7 @@ async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
         <div className="mb-2 lg:mb-4">{title}</div>
       )}
       {listHasContent ? (
-        <HydrationBoundary
-          state={createListHydrationState(queryParams, listResult)}
-        >
-          <PostList queryParams={queryParams} />
-        </HydrationBoundary>
+        <PostList queryParams={queryParams} initialData={listResult} />
       ) : (
         <NoData title={emptyLabel} />
       )}

@@ -4,6 +4,7 @@ import type {
   PostListQueryInput,
   PublicPostCursor,
 } from "@/features/post/types/post.list-query";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 
 /**
  * 用于无限滚动加载文章列表的 React Query Hook。
@@ -12,6 +13,7 @@ import type {
  */
 export default function useInfiniteQueryPostList(
   queryParams: PostListQueryInput,
+  initialData?: PublicPostListResult,
 ) {
   return useInfiniteQuery({
     queryKey: ["posts", queryParams],
@@ -19,6 +21,9 @@ export default function useInfiniteQueryPostList(
       trpcClient.post.index.query({ ...queryParams, cursor: pageParam }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: null,
+    initialData: initialData
+      ? { pages: [initialData], pageParams: [null] }
+      : undefined,
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,

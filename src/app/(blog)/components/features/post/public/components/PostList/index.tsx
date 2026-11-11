@@ -11,7 +11,10 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "cn";
 import LoadingState from "@/components/LoadingState";
 import { Button } from "@/components/ui/button";
-import type { PublicPostListItem } from "@/features/post/types/post.read-model";
+import type {
+  PublicPostListItem,
+  PublicPostListResult,
+} from "@/features/post/types/post.read-model";
 import { PostType } from "@/features/post/types/post.type";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
 
@@ -30,6 +33,8 @@ export interface PostListProps {
    * 查询文章列表的参数。
    */
   queryParams: PostListQueryInput;
+  /** Prefetched first-page data from the route response. */
+  initialData?: PublicPostListResult;
 }
 
 /**
@@ -39,7 +44,7 @@ export interface PostListProps {
  * @returns {JSX.Element} 文章列表。
  */
 export default function PostList(props: PostListProps): JSX.Element {
-  const { queryParams } = props;
+  const { queryParams, initialData } = props;
   const sentinel = useRef<HTMLDivElement>(null);
   const {
     data,
@@ -50,7 +55,7 @@ export default function PostList(props: PostListProps): JSX.Element {
     isFetching,
     isError,
     isFetchNextPageError,
-  } = useInfiniteQueryPostList(queryParams);
+  } = useInfiniteQueryPostList(queryParams, initialData);
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
   const typeTranslations = useTranslations("Search.types");

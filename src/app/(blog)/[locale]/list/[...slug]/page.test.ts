@@ -1,5 +1,4 @@
 import React, { act } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -36,10 +35,19 @@ vi.mock("@/app/trpc/server", () => ({
 vi.mock(
   "@/app/(blog)/components/features/post/public/components/PostList",
   () => ({
-    default: ({ queryParams }: { queryParams: Record<string, unknown> }) =>
+    default: ({
+      queryParams,
+      initialData,
+    }: {
+      queryParams: Record<string, unknown>;
+      initialData?: unknown;
+    }) =>
       React.createElement(
         "output",
-        { "data-testid": "post-list" },
+        {
+          "data-testid": "post-list",
+          "data-initial": JSON.stringify(initialData),
+        },
         JSON.stringify(queryParams),
       ),
   }),
@@ -65,13 +73,11 @@ vi.mock("next/navigation", async (importOriginal) => ({
 describe("blog list page", () => {
   let container: HTMLDivElement;
   let root: Root;
-  let queryClient: QueryClient;
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    queryClient = new QueryClient();
 
     mockGetLocale.mockReset().mockResolvedValue("zh");
     mockGetTranslations
@@ -113,7 +119,6 @@ describe("blog list page", () => {
 
   afterEach(async () => {
     await act(async () => root.unmount());
-    queryClient.clear();
     container.remove();
   });
 
@@ -122,15 +127,7 @@ describe("blog list page", () => {
       params: Promise.resolve({ locale: "zh", slug }),
       searchParams: Promise.resolve({}),
     });
-    await act(async () =>
-      root.render(
-        React.createElement(
-          QueryClientProvider,
-          { client: queryClient },
-          element,
-        ),
-      ),
-    );
+    await act(async () => root.render(element));
   }
 
   function renderedQuery() {
@@ -337,16 +334,16 @@ describe("blog list page", () => {
     });
   });
 
-  it("hydrates the server list under a stable filter query key", async () => {
+  it("passes the cached first page to the stable client query key", async () => {
     await renderList(["category"]);
 
-    expect(queryClient.getQueryData(["posts", renderedQuery()])).toEqual({
-      pages: [{ list: [{ id: "post-1" }], total: 1 }],
-      pageParams: [null],
+    const initialData = container
+      .querySelector('[data-testid="post-list"]')
+      ?.getAttribute("data-initial");
+    expect(JSON.parse(initialData ?? "null")).toEqual({
+      list: [{ id: "post-1" }],
+      total: 1,
     });
-    expect(
-      queryClient.getQueryState(["posts", renderedQuery()])?.dataUpdatedAt,
-    ).toBeGreaterThan(Date.now() - 1000);
   });
 
   it("loads list cards from the cached route data", async () => {

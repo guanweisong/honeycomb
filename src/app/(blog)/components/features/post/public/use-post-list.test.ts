@@ -1,8 +1,6 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import {
-  dehydrate,
-  HydrationBoundary,
   QueryClient,
   QueryClientProvider,
   notifyManager,
@@ -45,12 +43,8 @@ describe("public post-list pagination", () => {
 
   async function render(ids: string[], total: number, more = false) {
     const queryParams = { limit: 10 };
-    client.setQueryData(["posts", queryParams], {
-      pages: [page(ids, total, more)],
-      pageParams: [null],
-    });
     function Probe() {
-      query = usePostList(queryParams);
+      query = usePostList(queryParams, page(ids, total, more));
       return React.createElement(
         "output",
         null,
@@ -68,23 +62,14 @@ describe("public post-list pagination", () => {
     );
   }
 
-  it("hydrates newer server data into an existing stable list query", async () => {
+  it("seeds fresh prefetched data into the stable list query", async () => {
     const queryParams = { limit: 10 };
     const queryKey = ["posts", queryParams];
-    client.setQueryData(
-      queryKey,
-      { pages: [page(["old"], 1)], pageParams: [null] },
-      { updatedAt: Date.now() - 1_000 },
-    );
-    const serverClient = new QueryClient();
-    serverClient.setQueryData(
-      queryKey,
-      { pages: [page(["new"], 1)], pageParams: [null] },
-      { updatedAt: Date.now() },
-    );
+    const startedAt = Date.now();
+    const initialData = page(["prefetched"], 1);
 
     function Probe() {
-      query = usePostList(queryParams);
+      query = usePostList(queryParams, initialData);
       return React.createElement("output", null, query.data?.pages[0]?.list[0]?.id);
     }
 
@@ -93,18 +78,20 @@ describe("public post-list pagination", () => {
         React.createElement(
           QueryClientProvider,
           { client },
-          React.createElement(
-            HydrationBoundary,
-            { state: dehydrate(serverClient) },
-            React.createElement(Probe),
-          ),
+          React.createElement(Probe),
         ),
       ),
     );
 
-    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("new");
+    expect(requireDefined(query).data?.pages[0]?.list[0]?.id).toBe("prefetched");
+    expect(client.getQueryData(queryKey)).toEqual({
+      pages: [initialData],
+      pageParams: [null],
+    });
+    expect(client.getQueryState(queryKey)?.dataUpdatedAt).toBeGreaterThanOrEqual(
+      startedAt,
+    );
     expect(transport.request).not.toHaveBeenCalled();
-    serverClient.clear();
   });
 
   it("stops after an empty initial page even if its total is stale", async () => {
