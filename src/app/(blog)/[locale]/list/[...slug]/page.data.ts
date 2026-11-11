@@ -6,6 +6,7 @@ import {
   resolveListContext,
 } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import type { PostListQueryInput } from "@/features/post/types/post.list-query";
+import type { PublicPostListResult } from "@/features/post/types/post.read-model";
 import { BLOG_LIST_CACHE_TAG } from "@/lib/cache/public-cache-keys";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import type { MultiLangEnum } from "@/lib/i18n/i18n";
@@ -18,7 +19,7 @@ type CachedListPageData =
   | {
       kind: "content";
       locale: MultiLangEnum;
-      hydrationState: ReturnType<typeof dehydrate>;
+      listResult: PublicPostListResult;
       listHasContent: boolean;
       queryParams: PostListQueryInput;
       siteName?: string | null;
@@ -26,6 +27,19 @@ type CachedListPageData =
       type: string;
       typeName: string;
     };
+
+/** Hydrate cached list data with a fresh client-cache timestamp per response. */
+export function createListHydrationState(
+  queryParams: PostListQueryInput,
+  listResult: PublicPostListResult,
+) {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(
+    ["posts", queryParams],
+    { pages: [listResult], pageParams: [null] },
+  );
+  return dehydrate(queryClient);
+}
 
 /** Cache URL-dependent list data so full Link prefetch can include the cards. */
 export async function getCachedListPageData(
@@ -54,17 +68,10 @@ export async function getCachedListPageData(
     trpc.setting.index(),
     trpc.post.index({ ...queryParams, cursor: null }),
   ]);
-  const queryClient = new QueryClient();
-  queryClient.setQueryData(
-    ["posts", queryParams],
-    { pages: [result], pageParams: [null] },
-    { updatedAt: Date.now() },
-  );
-
   return {
     kind: "content",
     locale,
-    hydrationState: dehydrate(queryClient),
+    listResult: result,
     listHasContent: result.list.length > 0 || Boolean(result.nextCursor),
     queryParams,
     siteName: setting?.siteName?.[locale],

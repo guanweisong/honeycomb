@@ -19,7 +19,9 @@ function captureRscPayloads(page: Page) {
 }
 
 test.describe("blog detail body prefetch", () => {
-  test("prefetches a category list body from the menu", async ({ page }) => {
+  test("@production prefetches a category list body from the menu", async ({
+    page,
+  }) => {
     const payloads = captureRscPayloads(page);
     await page.setViewportSize({ width: 1280, height: 1000 });
     await openBlogHome(page);
@@ -37,7 +39,9 @@ test.describe("blog detail body prefetch", () => {
     await expect(page.locator("main")).toContainText(postTitle);
   });
 
-  test("prefetches the public article body from the list", async ({ page }) => {
+  test("@production prefetches the public article body from the list", async ({
+    page,
+  }) => {
     const payloads = captureRscPayloads(page);
     await page.setViewportSize({ width: 1280, height: 1000 });
     await openBlogHome(page);
@@ -57,7 +61,9 @@ test.describe("blog detail body prefetch", () => {
     );
   });
 
-  test("prefetches the public page body from the menu", async ({ page }) => {
+  test("@production prefetches the public page body from the menu", async ({
+    page,
+  }) => {
     const payloads = captureRscPayloads(page);
     await page.setViewportSize({ width: 1280, height: 1000 });
     await openBlogHome(page);

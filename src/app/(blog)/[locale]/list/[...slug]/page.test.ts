@@ -344,6 +344,9 @@ describe("blog list page", () => {
       pages: [{ list: [{ id: "post-1" }], total: 1 }],
       pageParams: [null],
     });
+    expect(
+      queryClient.getQueryState(["posts", renderedQuery()])?.dataUpdatedAt,
+    ).toBeGreaterThan(Date.now() - 1000);
   });
 
   it("loads list cards from the cached route data", async () => {

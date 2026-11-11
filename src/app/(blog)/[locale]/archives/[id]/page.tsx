@@ -1,4 +1,5 @@
 import React, { Suspense, ViewTransition } from "react";
+import { TRPCError } from "@trpc/server";
 import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
 import Tags from "@/app/(blog)/components/features/post/public/Tags";
 import Card from "@/components/SectionCard";
@@ -50,7 +51,13 @@ async function getPrefetchedPostDetail(id: string) {
     requestContext: { requestId: "public-detail-cache-fill" },
     skipRequestObservability: true,
   });
-  return trpc.post.detail({ id });
+  try {
+    return await trpc.post.detail({ id });
+  } catch (error) {
+    // Keep framework not-found control flow outside the cached scope.
+    if (error instanceof TRPCError && error.code === "NOT_FOUND") return null;
+    throw error;
+  }
 }
 
 /**

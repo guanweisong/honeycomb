@@ -19,7 +19,10 @@ vi.mock("@/app/trpc/server", () => ({
   createServerClient: mocks.createServerClient,
 }));
 
-import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
+import {
+  createListHydrationState,
+  getCachedListPageData,
+} from "@/app/(blog)/[locale]/list/[...slug]/page.data";
 
 describe("cached blog list page data", () => {
   beforeEach(() => {
@@ -66,20 +69,20 @@ describe("cached blog list page data", () => {
       siteName: "Honeycomb",
       siteSubName: "A blog",
       listHasContent: true,
-      hydrationState: {
-        queries: [
-          {
-            state: {
-              data: {
-                pages: [{ list: [{ id: "post-1" }] }],
-                pageParams: [null],
-              },
-            },
-          },
-        ],
-      },
+      listResult: { list: [{ id: "post-1" }], total: 1 },
     });
     expect(JSON.stringify(result)).not.toContain("requestId");
+  });
+
+  it("creates fresh hydration timestamps outside the cached list data", async () => {
+    const cached = await getCachedListPageData("en", ["category"]);
+    if (cached.kind !== "content") throw new Error("Expected list content");
+    const startedAt = Date.now();
+    const state = createListHydrationState(cached.queryParams, cached.listResult);
+    const dataUpdatedAt = state.queries[0]?.state.dataUpdatedAt;
+
+    expect(dataUpdatedAt).toBeGreaterThanOrEqual(startedAt);
+    expect(dataUpdatedAt).toBeLessThanOrEqual(Date.now());
   });
 
   it("does not open a database context for malformed list routes", async () => {
