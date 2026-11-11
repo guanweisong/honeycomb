@@ -70,6 +70,13 @@ vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
 }));
 
+function renderListContent(props: Parameters<typeof List>[0]) {
+  const content = List(props);
+  return (
+    content.type as (props: unknown) => Promise<React.ReactNode>
+  )(content.props);
+}
+
 describe("blog list page", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -123,7 +130,7 @@ describe("blog list page", () => {
   });
 
   async function renderList(slug: string[]) {
-    const element = await List({
+    const element = await renderListContent({
       params: Promise.resolve({ locale: "zh", slug }),
       searchParams: Promise.resolve({}),
     });
@@ -146,10 +153,9 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale: "zh", slug }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           const result =
             entryPoint === "content"
-              ? content.type(content.props)
+              ? renderListContent(props)
               : generateMetadata(props);
           await expect(result).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
           expect(mockTagIndex).not.toHaveBeenCalled();
@@ -173,11 +179,10 @@ describe("blog list page", () => {
         params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
         searchParams: Promise.resolve({}),
       };
-      const content = List(props).props.children.props.children;
       const pending =
         entryPoint === "metadata"
           ? generateMetadata(props)
-          : content.type(content.props);
+          : renderListContent(props);
       for (let index = 0; index < 8; index++) await Promise.resolve();
       try {
         expect(mockGetTranslations).toHaveBeenCalled();
@@ -219,11 +224,10 @@ describe("blog list page", () => {
             }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
-              : content.type(content.props);
+              : renderListContent(props);
           for (let index = 0; index < 12; index++) await Promise.resolve();
           try {
             expect(
@@ -256,11 +260,10 @@ describe("blog list page", () => {
           params: Promise.resolve({ locale: "zh", slug: ["category"] }),
           searchParams: Promise.resolve({}),
         };
-        const content = List(props).props.children.props.children;
         const pending =
           entryPoint === "metadata"
             ? generateMetadata(props)
-            : content.type(content.props);
+            : renderListContent(props);
         for (let index = 0; index < 12; index++) await Promise.resolve();
         try {
           expect(mockMenuIndex).not.toHaveBeenCalled();
@@ -285,10 +288,9 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale, slug: ["category"] }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           await (entryPoint === "metadata"
             ? generateMetadata(props)
-            : content.type(content.props));
+            : renderListContent(props));
           expect(mockGetTranslations).toHaveBeenCalledExactlyOnceWith({
             locale,
             namespace: "PostList",
@@ -304,11 +306,10 @@ describe("blog list page", () => {
           params: Promise.resolve({ locale: "zh", slug: ["category", "tech"] }),
           searchParams: Promise.resolve({}),
         };
-        const content = List(props).props.children.props.children;
         const pending =
           entryPoint === "metadata"
             ? generateMetadata(props)
-            : content.type(content.props);
+            : renderListContent(props);
         for (let index = 0; index < 12; index++) await Promise.resolve();
         expect(mockMenuIndex).toHaveBeenCalledOnce();
         expect(mockPostIndex).not.toHaveBeenCalled();
@@ -351,9 +352,7 @@ describe("blog list page", () => {
       params: Promise.resolve({ locale: "zh", slug: ["category"] }),
       searchParams: Promise.resolve({}),
     };
-    const content = List(props).props.children.props.children;
-
-    await content.type(content.props);
+    await renderListContent(props);
     expect(mockPostIndex).toHaveBeenCalledOnce();
     expect(mockPostIndex).toHaveBeenCalledWith({
       status: ["PUBLISHED"],
@@ -469,11 +468,10 @@ describe("blog list page", () => {
             }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
-              : content.type(content.props);
+              : renderListContent(props);
           await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
           expect(mockPostIndex).not.toHaveBeenCalled();
         },
@@ -498,11 +496,10 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale: "zh", slug }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           const pending =
             entryPoint === "metadata"
               ? generateMetadata(props)
-              : content.type(content.props);
+              : renderListContent(props);
           await expect(pending).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
           expect(mockPostIndex).not.toHaveBeenCalled();
           expect(mockTagIndex).not.toHaveBeenCalled();
@@ -553,10 +550,9 @@ describe("blog list page", () => {
             params: Promise.resolve({ locale: "zh", slug }),
             searchParams: Promise.resolve({}),
           };
-          const content = List(props).props.children.props.children;
           const result = await (entryPoint === "metadata"
             ? generateMetadata(props)
-            : content.type(content.props));
+            : renderListContent(props));
           if (entryPoint === "metadata")
             expect(result).toMatchObject({
               alternates: {
@@ -596,10 +592,9 @@ describe("blog list page", () => {
         });
         const run = (slug: string[]) => {
           const input = props(slug);
-          const content = List(input).props.children.props.children;
           return entryPoint === "metadata"
             ? generateMetadata(input)
-            : content.type(content.props);
+            : renderListContent(input);
         };
         await expect(run(["category", "tech"])).rejects.toThrow(
           "NEXT_HTTP_ERROR_FALLBACK;404",
