@@ -30,6 +30,12 @@ const setupAction = readFileSync(
   "utf8",
 );
 const fixtureHelper = readFileSync("scripts/ci-fixture-lifecycle.sh", "utf8");
+const localTmpDirHelper = readFileSync(
+  "scripts/configure-local-tmpdir.sh",
+  "utf8",
+);
+const preCommitHook = readFileSync(".husky/pre-commit", "utf8");
+const verifyPrScript = readFileSync("scripts/verify-pr.sh", "utf8");
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as {
@@ -149,6 +155,17 @@ describe("quality workflow", () => {
     expect(packageJson.scripts["verify:pr"]).toBe(
       "bash scripts/verify-pr.sh",
     );
+  });
+
+  it("shares canonical temporary-directory setup across local checks", () => {
+    expect(preCommitHook).toContain(". scripts/configure-local-tmpdir.sh");
+    expect(verifyPrScript).toContain(
+      "source scripts/configure-local-tmpdir.sh",
+    );
+    expect(localTmpDirHelper).toContain(
+      'if [ "$(uname -s)" = "Darwin" ] && [ -d /private/tmp ]; then',
+    );
+    expect(localTmpDirHelper).toContain("export TMPDIR=/private/tmp");
   });
 
   it("pins each external action to a full commit SHA", () => {

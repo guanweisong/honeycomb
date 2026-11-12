@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$(uname -s)" == "Darwin" && -d /private/tmp ]]; then
-  export TMPDIR=/private/tmp
-fi
+source scripts/configure-local-tmpdir.sh
 
 export NEXT_PUBLIC_SITE_URL=https://example.test
 export AUTH_SECRET=ci-build-only-test-secret-32-characters-long
