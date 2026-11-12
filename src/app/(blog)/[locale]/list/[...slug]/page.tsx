@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
@@ -14,7 +15,11 @@ import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
 export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
-  return <ListContent {...props} />;
+  return (
+    <Suspense fallback={null}>
+      <ListContent {...props} />
+    </Suspense>
+  );
 }
 
 function getListRouteData(

@@ -71,7 +71,8 @@ vi.mock("next/navigation", async (importOriginal) => ({
 }));
 
 function renderListContent(props: Parameters<typeof List>[0]) {
-  const content = List(props);
+  const boundary = List(props);
+  const content = boundary.props.children;
   return (
     content.type as (props: unknown) => Promise<React.ReactNode>
   )(content.props);
