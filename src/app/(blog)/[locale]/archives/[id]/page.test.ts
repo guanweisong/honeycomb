@@ -205,9 +205,8 @@ describe("archives page", () => {
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    const content = route.props.children as React.ReactElement;
-    return (content.type as (props: unknown) => Promise<React.ReactNode>)(
-      content.props,
+    return (route.type as (props: unknown) => Promise<React.ReactNode>)(
+      route.props,
     );
   }
 
@@ -234,10 +233,9 @@ describe("archives page", () => {
         params: Promise.resolve({ id: articleDetail.id, locale }),
         searchParams: Promise.resolve({}),
       });
-      const content = route.props.children as React.ReactElement;
       const rendered = (
-        content.type as (props: unknown) => Promise<React.ReactNode>
-      )(content.props);
+        route.type as (props: unknown) => Promise<React.ReactNode>
+      )(route.props);
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
         expect(mockGetTranslations).toHaveBeenCalledTimes(2);

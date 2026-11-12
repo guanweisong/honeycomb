@@ -146,17 +146,28 @@ describe("pages detail page", () => {
     container.remove();
   });
 
+  function pageContent(props: Parameters<typeof Pages>[0]) {
+    const route = Pages(props);
+    return (
+      route.type as (props: Parameters<typeof Pages>[0]) => Promise<React.ReactNode>
+    )(route.props);
+  }
+
+  async function renderPage(props: Parameters<typeof Pages>[0]) {
+    const content = await pageContent(props);
+    await act(async () => root.render(content));
+  }
+
   it.each(["zh", "en"])(
     "loads the page-info translation using the %s route locale",
     async (locale) => {
       const translation = (key: string) => key;
       const pending = Promise.withResolvers<typeof translation>();
       mockGetTranslations.mockReturnValueOnce(pending.promise);
-      const content = Pages({
+      const rendered = pageContent({
         params: Promise.resolve({ id: "333333333333333333333333", locale }),
         searchParams: Promise.resolve({}),
-      }).props.children;
-      const rendered = content.type(content.props);
+      });
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
         expect(mockGetTranslations).toHaveBeenCalledTimes(1);
@@ -183,39 +194,18 @@ describe("pages detail page", () => {
         resolveDetail = resolve;
       }),
     );
-    const errors: unknown[] = [];
-    class Boundary extends React.Component<
-      { children: React.ReactNode },
-      { failed: boolean }
-    > {
-      state = { failed: false };
-      static getDerivedStateFromError() {
-        return { failed: true };
-      }
-      componentDidCatch(error: unknown) {
-        errors.push(error);
-      }
-      render() {
-        return this.state.failed ? <span>not found</span> : this.props.children;
-      }
-    }
-    await act(async () =>
-      root.render(
-        <Boundary>
-          {Pages({
-            params: Promise.resolve({
-              id: "444444444444444444444444",
-              locale: "zh",
-            }),
-            searchParams: Promise.resolve({}),
-          })}
-        </Boundary>,
-      ),
-    );
+    const rendered = pageContent({
+      params: Promise.resolve({
+        id: "444444444444444444444444",
+        locale: "zh",
+      }),
+      searchParams: Promise.resolve({}),
+    });
+    await vi.waitFor(() => expect(mockPageDetail).toHaveBeenCalled());
     expect(mockComments).not.toHaveBeenCalled();
-    await act(async () => resolveDetail(null));
+    resolveDetail(null);
+    await expect(rendered).rejects.toThrow("NEXT_NOT_FOUND");
     expect(mockComments).not.toHaveBeenCalled();
-    expect(errors).toHaveLength(1);
   });
 
   it("renders a localized comments fallback while keeping a published page readable", async () => {
@@ -237,17 +227,13 @@ describe("pages detail page", () => {
       title: { zh: "友链" },
     });
     mockComments.mockReturnValue(comments);
-    await act(async () =>
-      root.render(
-        Pages({
-          params: Promise.resolve({
-            id: "333333333333333333333333",
-            locale: "zh",
-          }),
-          searchParams: Promise.resolve({}),
-        }),
-      ),
-    );
+    await renderPage({
+      params: Promise.resolve({
+        id: "333333333333333333333333",
+        locale: "zh",
+      }),
+      searchParams: Promise.resolve({}),
+    });
     expect(mockCommentRender).toHaveBeenCalled();
     const failure = new Error("comments unavailable");
     rejectComments(failure);
@@ -259,11 +245,10 @@ describe("pages detail page", () => {
   });
 
   it("keeps server rendering read-only and reports the view after mounting", async () => {
-    const element = await Pages({
+    await renderPage({
       params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    await act(async () => root.render(element));
 
     expect(container.textContent).toContain("页面正文");
     expect(container.querySelector("h1")?.textContent).toBe("页面标题");
@@ -288,14 +273,10 @@ describe("pages detail page", () => {
         imagesInContent: [],
         views: 0,
       });
-      await act(async () =>
-        root.render(
-          Pages({
-            params: Promise.resolve({ id: "333333333333333333333333", locale }),
-            searchParams: Promise.resolve({}),
-          }),
-        ),
-      );
+      await renderPage({
+        params: Promise.resolve({ id: "333333333333333333333333", locale }),
+        searchParams: Promise.resolve({}),
+      });
       expect(container.textContent).toContain(
         locale === "en" ? enMessages.Link.emptyTip : zhMessages.Link.emptyTip,
       );
@@ -364,11 +345,10 @@ describe("pages detail page", () => {
               ],
       }),
     );
-    const element = await Pages({
+    await renderPage({
       params: Promise.resolve({ id: "333333333333333333333333", locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    await act(async () => root.render(element));
     expect(mockLinks).toHaveBeenNthCalledWith(1, {
       limit: 100,
       status: [EnableStatus.ENABLE],

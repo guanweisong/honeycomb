@@ -133,7 +133,53 @@ async function expectPrefetchedBody(
   }
 }
 
+async function expectDetailRefreshInFirstDocument(
+  page: Page,
+  href: string,
+  bodyText: string,
+) {
+  const response = await page.goto(href, { waitUntil: "domcontentloaded" });
+  expect(response?.status()).toBe(200);
+  const html = await response!.text();
+  const mainStart = html.indexOf("<main");
+  const mainEnd = html.indexOf("</main>", mainStart);
+  const footerStart = html.indexOf("<footer", mainEnd);
+
+  expect(mainStart).toBeGreaterThanOrEqual(0);
+  expect(mainEnd).toBeGreaterThan(mainStart);
+  expect(footerStart).toBeGreaterThan(mainEnd);
+  expect(html.slice(0, mainStart)).toContain("Honeycomb E2E");
+  expect(html.slice(mainStart, mainEnd)).toContain(bodyText);
+  expect(html.slice(footerStart)).toContain("Deterministic test site");
+
+  await expect(page.locator("main .prose-editor").first()).toContainText(
+    bodyText,
+  );
+}
+
 test.describe("blog detail body prefetch", () => {
+  test("@production renders the public article body between header and footer on refresh", async ({
+    page,
+  }) => {
+    const href = "/en/archives/000000000000000000000005";
+    await expectDetailRefreshInFirstDocument(
+      page,
+      href,
+      "Deterministic browser test content.",
+    );
+  });
+
+  test("@production renders the public page body between header and footer on refresh", async ({
+    page,
+  }) => {
+    const href = "/en/pages/000000000000000000000006";
+    await expectDetailRefreshInFirstDocument(
+      page,
+      href,
+      "About the E2E site.",
+    );
+  });
+
   test("@production prefetches a category list body from the menu", async ({
     page,
   }) => {

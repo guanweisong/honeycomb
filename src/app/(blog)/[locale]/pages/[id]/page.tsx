@@ -53,11 +53,7 @@ async function getPrefetchedPageDetail(id: string) {
  * @returns {Promise<JSX.Element>} 页面详情。
  */
 export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
-  return (
-    <Suspense fallback={<LoadingState variant="region" />}>
-      <PageContent {...props} />
-    </Suspense>
-  );
+  return <PageContent {...props} />;
 }
 
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
