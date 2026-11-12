@@ -12,6 +12,7 @@
     "format": "bunx --bun prettier --write \"**/*.{ts,tsx,md,css,scss}\"",
     "check-types": "bun run --bun next typegen && bun run --bun tsc --noEmit",
     "quality:spec": "bun run --bun openspec validate --all --strict && bun scripts/check-diff.ts",
+    "verify:pr": "bash scripts/verify-pr.sh",
     "prepare": "bun run --bun husky",
     "test": "bun run --bun vitest",
     "test:unit": "bun run --bun vitest",
