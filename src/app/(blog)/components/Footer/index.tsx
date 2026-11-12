@@ -1,28 +1,22 @@
-import { format } from "date-fns";
-import { connection } from "next/server";
-import { getLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
-import { createServerClient } from "@/app/trpc/server";
+import { getCachedMetadataSettings } from "@/app/(blog)/lib/metadata-settings";
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * 网站底部组件。
  * 显示网站的签名、版权信息和备案号等。
  * @returns {Promise<JSX.Element>} 网站底部。
  */
-export default async function Footer() {
-  await connection();
-  const trpc = await createServerClient();
-  const [setting, locale] = await Promise.all([
-    trpc.setting.index(),
-    getLocale(),
-  ]);
+export default async function Footer({ locale }: { locale: string }) {
+  const setting = await getCachedMetadataSettings();
   const language = normalizeMultiLangLocale(locale);
 
   return (
     <footer className="text-center py-4 px-2 text-sm text-auto-front-gray/40">
       <div>{setting?.siteSignature?.[language]}</div>
       <div>
-        ©{format(new Date(), "yyyy")}
+        ©{CURRENT_YEAR}
         &nbsp;
         {setting?.siteCopyright?.[language]}
       </div>

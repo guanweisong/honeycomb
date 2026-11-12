@@ -71,11 +71,13 @@ async function getPrefetchedPostDetail(id: string) {
  * @returns {Promise<JSX.Element>} 归档页面。
  */
 export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
-  return (
-    <Suspense fallback={null}>
-      <ArchiveContent {...props} />
-    </Suspense>
-  );
+  const content = <ArchiveContent {...props} />;
+  if (process.env.NODE_ENV === "development") {
+    // Let Next's dev instant-route validator see URL params behind Suspense.
+    // Production must render generated detail bodies into the first HTML response.
+    return <Suspense fallback={null}>{content}</Suspense>;
+  }
+  return content;
 }
 
 async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {

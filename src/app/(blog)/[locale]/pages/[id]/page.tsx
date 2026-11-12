@@ -53,11 +53,17 @@ async function getPrefetchedPageDetail(id: string) {
  * @returns {Promise<JSX.Element>} 页面详情。
  */
 export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
-  return (
-    <Suspense fallback={<LoadingState variant="region" />}>
-      <PageContent {...props} />
-    </Suspense>
-  );
+  const content = <PageContent {...props} />;
+  if (process.env.NODE_ENV === "development") {
+    // Let Next's dev instant-route validator see URL params behind Suspense.
+    // Production must render generated detail bodies into the first HTML response.
+    return (
+      <Suspense fallback={<LoadingState variant="region" />}>
+        {content}
+      </Suspense>
+    );
+  }
+  return content;
 }
 
 async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {

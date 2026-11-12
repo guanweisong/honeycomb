@@ -14,66 +14,56 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
-vi.mock("next-intl/server", () => ({
-  getLocale: async () => "zh",
+vi.mock("@/app/(blog)/lib/metadata-settings", () => ({
+  getCachedMetadataSettings: async () => ({ siteName: { zh: "蜂巢博客" } }),
 }));
 
-vi.mock("next/server", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/server")>()),
-  connection: async () => undefined,
-}));
-
-vi.mock("@/app/trpc/server", () => ({
-  createServerClient: async () => ({
-    menu: {
-      index: async () => ({
-        list: [
-          {
-            id: "links",
-            parent: "0",
-            path: "/friend-links",
-            title: { zh: "友链" },
-            type: "CUSTOM",
-          },
-          {
-            id: "page-1",
-            parent: "0",
-            path: "about",
-            title: { zh: "关于" },
-            type: "PAGE",
-          },
-          {
-            id: "legacy-id",
-            parent: "0",
-            path: "old/segment",
-            title: { zh: "旧分类" },
-            type: "CATEGORY",
-          },
-          {
-            id: "parent-id",
-            parent: "0",
-            path: "parent",
-            title: { zh: "父分类" },
-            type: "CATEGORY",
-          },
-          {
-            id: "child-id",
-            parent: "parent-id",
-            path: "child",
-            title: { zh: "子分类" },
-            type: "CATEGORY",
-          },
-          {
-            id: "grandchild-id",
-            parent: "child-id",
-            path: "grandchild",
-            title: { zh: "孙分类" },
-            type: "CATEGORY",
-          },
-        ],
-      }),
-    },
-    setting: { index: async () => ({ siteName: { zh: "蜂巢博客" } }) },
+vi.mock("@/app/(blog)/lib/public-menu", () => ({
+  getCachedPublicMenu: async () => ({
+    list: [
+      {
+        id: "links",
+        parent: "0",
+        path: "/friend-links",
+        title: { zh: "友链" },
+        type: "CUSTOM",
+      },
+      {
+        id: "page-1",
+        parent: "0",
+        path: "about",
+        title: { zh: "关于" },
+        type: "PAGE",
+      },
+      {
+        id: "legacy-id",
+        parent: "0",
+        path: "old/segment",
+        title: { zh: "旧分类" },
+        type: "CATEGORY",
+      },
+      {
+        id: "parent-id",
+        parent: "0",
+        path: "parent",
+        title: { zh: "父分类" },
+        type: "CATEGORY",
+      },
+      {
+        id: "child-id",
+        parent: "parent-id",
+        path: "child",
+        title: { zh: "子分类" },
+        type: "CATEGORY",
+      },
+      {
+        id: "grandchild-id",
+        parent: "child-id",
+        path: "grandchild",
+        title: { zh: "孙分类" },
+        type: "CATEGORY",
+      },
+    ],
   }),
 }));
 
@@ -158,7 +148,7 @@ describe("blog Header", () => {
   });
 
   it("uses a single stable segment for a legacy category path", async () => {
-    await act(async () => root.render(await Header()));
+    await act(async () => root.render(await Header({ locale: "zh" })));
     expect(
       container.querySelector('a[href="/list/category/~legacy-id"]')
         ?.textContent,
@@ -166,7 +156,7 @@ describe("blog Header", () => {
   });
 
   it("sends only navigation fields to client menu and breadcrumb components", async () => {
-    await act(async () => root.render(await Header()));
+    await act(async () => root.render(await Header({ locale: "zh" })));
     expect(
       clientProps.display.every(
         (item) =>
@@ -194,7 +184,7 @@ describe("blog Header", () => {
   });
 
   it("renders root menu destinations while retaining all categories for breadcrumbs", async () => {
-    const element = await Header();
+    const element = await Header({ locale: "zh" });
     await act(async () => root.render(element));
 
     expect(

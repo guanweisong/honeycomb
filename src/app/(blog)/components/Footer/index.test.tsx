@@ -16,18 +16,8 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("next-intl/server", () => ({
-  getLocale: vi.fn(async () => "zh"),
-}));
-vi.mock("next/server", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/server")>()),
-  connection: async () => undefined,
-}));
-
-vi.mock("@/app/trpc/server", () => ({
-  createServerClient: async () => ({
-    setting: { index: vi.fn(async () => mocks.setting) },
-  }),
+vi.mock("@/app/(blog)/lib/metadata-settings", () => ({
+  getCachedMetadataSettings: vi.fn(async () => mocks.setting),
 }));
 
 import Footer from "@/app/(blog)/components/Footer";
@@ -48,7 +38,7 @@ describe("Footer", () => {
   });
 
   const render = async () => {
-    const element = await Footer();
+    const element = await Footer({ locale: "zh" });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);

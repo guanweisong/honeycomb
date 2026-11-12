@@ -86,11 +86,11 @@ export default async function LocaleLayout({
               >
                 Skip to main content
               </a>
-              <Header />
+              <Header locale={locale} />
               <main id="main-content" className="container px-2">
                 {children}
               </main>
-              <Footer />
+              <Footer locale={locale} />
               <BackToTop />
               <Toaster />
             </NextIntlClientProvider>

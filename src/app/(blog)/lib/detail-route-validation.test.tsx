@@ -88,8 +88,8 @@ const entryPoints = [
     name: "archive content",
     query: mockPostDetail,
     invoke: (id: string) => {
-      const content = Archives(routeProps(id)).props.children;
-      return content.type(content.props);
+      const route = Archives(routeProps(id));
+      return route.type(route.props);
     },
   },
   {
@@ -101,8 +101,8 @@ const entryPoints = [
     name: "page content",
     query: mockPageDetail,
     invoke: (id: string) => {
-      const content = Pages(routeProps(id)).props.children;
-      return content.type(content.props);
+      const route = Pages(routeProps(id));
+      return route.type(route.props);
     },
   },
   {
